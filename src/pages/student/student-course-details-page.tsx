@@ -1,26 +1,49 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 
+import { useAuth } from '@/app/providers/auth-provider'
 import { Button } from '@/components/ui/button'
 import {
   fetchReleasedCourseById,
-  fetchReleasedCourseContent,
+  fetchStudentCourseContentWithProgress,
+  setLessonCompletion,
   toErrorMessage,
-  type CourseModuleWithLessons,
 } from '@/features/student/courses/api'
-import type { Course } from '@/types/content'
+import type { Course, ModuleLearningState, StudentCourseModuleProgress } from '@/types/content'
+
+function moduleStateLabel(state: ModuleLearningState) {
+  if (state === 'blocked') {
+    return 'Bloqueado'
+  }
+  if (state === 'completed') {
+    return 'Concluido'
+  }
+  return 'Em andamento'
+}
+
+function moduleStateClasses(state: ModuleLearningState) {
+  if (state === 'blocked') {
+    return 'bg-slate-200 text-slate-700'
+  }
+  if (state === 'completed') {
+    return 'bg-green-100 text-green-700'
+  }
+  return 'bg-amber-100 text-amber-700'
+}
 
 export function StudentCourseDetailsPage() {
   const { courseId } = useParams<{ courseId: string }>()
+  const { user } = useAuth()
   const [course, setCourse] = useState<Course | null>(null)
-  const [modules, setModules] = useState<CourseModuleWithLessons[]>([])
+  const [modules, setModules] = useState<StudentCourseModuleProgress[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [isSavingLessonId, setIsSavingLessonId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     let isMounted = true
 
-    async function loadCourse() {
+    async function loadCourseDetails() {
       if (!courseId) {
         setError('Curso invalido.')
         setIsLoading(false)
@@ -33,7 +56,7 @@ export function StudentCourseDetailsPage() {
       try {
         const [courseResult, modulesResult] = await Promise.all([
           fetchReleasedCourseById(courseId),
-          fetchReleasedCourseContent(courseId),
+          fetchStudentCourseContentWithProgress(courseId),
         ])
 
         if (isMounted) {
@@ -51,11 +74,42 @@ export function StudentCourseDetailsPage() {
       }
     }
 
-    void loadCourse()
+    void loadCourseDetails()
     return () => {
       isMounted = false
     }
   }, [courseId])
+
+  async function handleToggleLessonCompletion(
+    lessonId: string,
+    isCurrentlyCompleted: boolean,
+  ) {
+    if (!user) {
+      setError('Usuario nao autenticado.')
+      return
+    }
+
+    setError(null)
+    setIsSavingLessonId(lessonId)
+
+    try {
+      await setLessonCompletion({
+        user_id: user.id,
+        lesson_id: lessonId,
+        is_completed: !isCurrentlyCompleted,
+      })
+
+      if (!courseId) {
+        return
+      }
+      const refreshed = await fetchStudentCourseContentWithProgress(courseId)
+      setModules(refreshed)
+    } catch (toggleError) {
+      setError(toErrorMessage(toggleError))
+    } finally {
+      setIsSavingLessonId(null)
+    }
+  }
 
   if (isLoading) {
     return <p className="text-sm text-slate-600">Carregando...</p>
@@ -90,33 +144,88 @@ export function StudentCourseDetailsPage() {
       <div className="grid gap-3">
         {modules.map((module) => (
           <article key={module.id} className="rounded-lg border bg-white p-4 shadow-sm">
-            <h3 className="font-semibold text-slate-900">
-              {module.position}. {module.title}
-            </h3>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h3 className="font-semibold text-slate-900">
+                {module.position}. {module.title}
+              </h3>
+              <span
+                className={`rounded-full px-2 py-1 text-xs font-semibold ${moduleStateClasses(module.state)}`}
+              >
+                {moduleStateLabel(module.state)}
+              </span>
+            </div>
             {module.description ? (
               <p className="mt-1 text-sm text-slate-600">{module.description}</p>
             ) : null}
+            <p className="mt-2 text-xs text-slate-600">
+              Progresso do modulo: {module.progress_percent}% | Aulas obrigatorias:{' '}
+              {module.required_lessons_completed}/{module.required_lessons_total}
+            </p>
+            {module.has_required_assessment ? (
+              <p className="mt-1 text-xs text-slate-600">
+                Avaliacao obrigatoria: {module.required_assessment_approved ? 'Aprovada' : 'Pendente'}
+              </p>
+            ) : null}
 
-            <ul className="mt-3 space-y-2">
-              {module.lessons.map((lesson) => (
-                <li
-                  key={lesson.id}
-                  className="rounded-md border bg-slate-50 px-3 py-2 text-sm text-slate-700"
-                >
-                  {lesson.position}. {lesson.title}
-                  {lesson.youtube_url ? (
-                    <a
-                      className="ml-2 text-blue-700 underline"
-                      href={lesson.youtube_url}
-                      rel="noreferrer"
-                      target="_blank"
-                    >
-                      YouTube
-                    </a>
-                  ) : null}
-                </li>
-              ))}
-            </ul>
+            {module.state === 'blocked' ? (
+              <p className="mt-3 rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600">
+                Modulo bloqueado. Conclua o modulo anterior para liberar este conteudo.
+              </p>
+            ) : null}
+
+            {module.state !== 'blocked' ? (
+              <ul className="mt-3 space-y-2">
+                {module.lessons.map((lesson) => (
+                  <li
+                    key={lesson.id}
+                    className="rounded-md border bg-slate-50 px-3 py-2 text-sm text-slate-700"
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div>
+                        <p>
+                          {lesson.position}. {lesson.title}{' '}
+                          {lesson.is_required ? (
+                            <span className="text-xs text-slate-500">(Obrigatoria)</span>
+                          ) : (
+                            <span className="text-xs text-slate-500">(Opcional)</span>
+                          )}
+                        </p>
+                        <p className="text-xs text-slate-600">
+                          Estado da aula: {lesson.is_completed ? 'Concluida' : 'Em andamento'}
+                        </p>
+                      </div>
+                      <Button
+                        type="button"
+                        variant={lesson.is_completed ? 'outline' : 'default'}
+                        disabled={isSavingLessonId === lesson.id}
+                        onClick={() =>
+                          void handleToggleLessonCompletion(lesson.id, lesson.is_completed)
+                        }
+                      >
+                        {isSavingLessonId === lesson.id
+                          ? 'Salvando...'
+                          : lesson.is_completed
+                            ? 'Desmarcar conclusao'
+                            : 'Marcar como concluida'}
+                      </Button>
+                    </div>
+                    {lesson.youtube_url ? (
+                      <a
+                        className="mt-2 inline-block text-blue-700 underline"
+                        href={lesson.youtube_url}
+                        rel="noreferrer"
+                        target="_blank"
+                      >
+                        Abrir no YouTube
+                      </a>
+                    ) : null}
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+            {module.state !== 'blocked' && module.lessons.length === 0 ? (
+              <p className="mt-3 text-sm text-slate-600">Nenhuma aula neste modulo.</p>
+            ) : null}
           </article>
         ))}
 

@@ -76,3 +76,36 @@ export interface CourseRelease {
   created_by: string | null
   created_at: string
 }
+
+export type ModuleLearningState = 'blocked' | 'in_progress' | 'completed'
+
+export interface StudentLessonWithProgress {
+  id: string
+  module_id: string
+  position: number
+  title: string
+  description: string | null
+  is_required: boolean
+  youtube_url: string | null
+  estimated_minutes: number
+  is_completed: boolean
+  completed_at: string | null
+}
+
+export interface StudentCourseModuleProgress {
+  id: string
+  course_id: string
+  position: number
+  title: string
+  description: string | null
+  is_required: boolean
+  state: ModuleLearningState
+  is_unlocked: boolean
+  is_completed: boolean
+  required_lessons_total: number
+  required_lessons_completed: number
+  has_required_assessment: boolean
+  required_assessment_approved: boolean
+  progress_percent: number
+  lessons: StudentLessonWithProgress[]
+}
