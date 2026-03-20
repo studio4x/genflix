@@ -46,3 +46,33 @@ export interface LessonMaterial {
   created_by: string | null
   created_at: string
 }
+
+export interface AccessGroup {
+  id: string
+  name: string
+  description: string | null
+  is_active: boolean
+  created_by: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface AccessGroupMember {
+  id: number
+  group_id: string
+  user_id: string
+  created_at: string
+}
+
+export interface CourseRelease {
+  id: string
+  course_id: string
+  release_type: 'user' | 'group'
+  user_id: string | null
+  group_id: string | null
+  starts_at: string | null
+  ends_at: string | null
+  is_active: boolean
+  created_by: string | null
+  created_at: string
+}

@@ -13,7 +13,7 @@ export function AdminDashboardPage() {
         Usuario autenticado: {profile?.full_name ?? profile?.email ?? 'admin'}.
       </p>
       <p className="text-sm text-slate-600">
-        Sprint 2 em andamento: CRUD de cursos, modulos, aulas e materiais.
+        Sprint 3: liberacoes de cursos por usuario e grupo ativadas.
       </p>
       <div className="pt-2">
         <Button type="button" asChild>

@@ -27,8 +27,17 @@ export function StudentLayout() {
       <div className="mx-auto flex w-full max-w-6xl gap-6 p-6">
         <aside className="w-60 rounded-lg border bg-white p-4">
           <nav className="flex flex-col gap-2 text-sm">
-            <Link className="rounded-md px-3 py-2 hover:bg-slate-100" to="/aluno">
+            <Link
+              className="rounded-md px-3 py-2 hover:bg-slate-100"
+              to="/aluno/dashboard"
+            >
               Dashboard
+            </Link>
+            <Link
+              className="rounded-md px-3 py-2 hover:bg-slate-100"
+              to="/aluno/cursos"
+            >
+              Cursos liberados
             </Link>
           </nav>
         </aside>

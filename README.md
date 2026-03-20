@@ -18,6 +18,7 @@ Plataforma LMS web da HomeCare Match, criada como aplicacao separada e sem depen
 - Sprint 0 (itens obrigatorios): concluida.
 - Sprint 1 (itens obrigatorios): autenticacao, perfis/papeis, guardas e layouts base.
 - Sprint 2 (itens obrigatorios): CRUD admin de cursos, modulos, aulas e materiais.
+- Sprint 3 (itens obrigatorios): dashboard/aluno, cursos liberados, liberacao por usuario e grupo.
 
 ## Requisitos de ambiente
 
