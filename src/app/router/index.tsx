@@ -11,6 +11,7 @@ import { AdminGroupsPage } from '@/pages/admin/admin-groups-page'
 import { AdminLessonsPage } from '@/pages/admin/admin-lessons-page'
 import { AdminMaterialsPage } from '@/pages/admin/admin-materials-page'
 import { AdminModulesPage } from '@/pages/admin/admin-modules-page'
+import { AdminStudentsPage } from '@/pages/admin/admin-students-page'
 import { ForgotPasswordPage } from '@/pages/public/forgot-password-page'
 import { LoginPage } from '@/pages/public/login-page'
 import { ResetPasswordPage } from '@/pages/public/reset-password-page'
@@ -101,6 +102,10 @@ export const appRouter = createBrowserRouter([
           {
             path: '/admin/grupos',
             element: <AdminGroupsPage />,
+          },
+          {
+            path: '/admin/alunos',
+            element: <AdminStudentsPage />,
           },
         ],
       },

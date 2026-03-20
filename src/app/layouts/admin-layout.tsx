@@ -31,6 +31,9 @@ export function AdminLayout() {
             <Link className="rounded-md px-3 py-2 hover:bg-slate-100" to="/admin/cursos">
               Cursos
             </Link>
+            <Link className="rounded-md px-3 py-2 hover:bg-slate-100" to="/admin/alunos">
+              Alunos
+            </Link>
             <Link className="rounded-md px-3 py-2 hover:bg-slate-100" to="/admin/grupos">
               Grupos
             </Link>

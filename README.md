@@ -19,6 +19,7 @@ Plataforma LMS web da HomeCare Match, criada como aplicacao separada e sem depen
 - Sprint 1 (itens obrigatorios): autenticacao, perfis/papeis, guardas e layouts base.
 - Sprint 2 (itens obrigatorios): CRUD admin de cursos, modulos, aulas e materiais.
 - Sprint 3 (itens obrigatorios): dashboard/aluno, cursos liberados, liberacao por usuario e grupo.
+- Extensao admin: cadastro de alunos via painel (`/admin/alunos`).
 
 ## Requisitos de ambiente
 
@@ -60,6 +61,8 @@ Campos minimos:
 
 - `VITE_SUPABASE_URL`
 - `VITE_SUPABASE_ANON_KEY`
+- `SUPABASE_URL`
+- `SUPABASE_SERVICE_ROLE_KEY` (somente ambiente servidor/Vercel)
 - `VITE_APP_TIMEZONE`
 - `VITE_APP_LOCALE`
 

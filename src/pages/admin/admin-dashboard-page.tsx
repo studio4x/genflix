@@ -15,9 +15,12 @@ export function AdminDashboardPage() {
       <p className="text-sm text-slate-600">
         Sprint 3: liberacoes de cursos por usuario e grupo ativadas.
       </p>
-      <div className="pt-2">
+      <div className="flex flex-wrap gap-2 pt-2">
         <Button type="button" asChild>
           <Link to="/admin/cursos">Ir para cursos</Link>
+        </Button>
+        <Button type="button" variant="outline" asChild>
+          <Link to="/admin/alunos">Cadastrar aluno</Link>
         </Button>
       </div>
     </div>
