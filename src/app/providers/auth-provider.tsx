@@ -4,6 +4,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from 'react'
@@ -76,24 +77,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [profile, setProfile] = useState<Profile | null>(null)
   const [roles, setRoles] = useState<RoleCode[]>([])
+  const syncVersionRef = useRef(0)
 
   const syncAuthState = useCallback(async (nextSession: Session | null) => {
+    const syncVersion = ++syncVersionRef.current
+    setIsLoading(true)
     setSession(nextSession)
     setUser(nextSession?.user ?? null)
 
     if (!nextSession?.user) {
-      setProfile(null)
-      setRoles([])
-      setIsLoading(false)
+      if (syncVersion === syncVersionRef.current) {
+        setProfile(null)
+        setRoles([])
+        setIsLoading(false)
+      }
       return
     }
 
+    setProfile(null)
+    setRoles([])
+
     try {
       const context = await loadProfileAndRoles(nextSession.user.id)
-      setProfile(context.profile)
-      setRoles(context.roles)
+      if (syncVersion === syncVersionRef.current) {
+        setProfile(context.profile)
+        setRoles(context.roles)
+      }
+    } catch {
+      if (syncVersion === syncVersionRef.current) {
+        setProfile(null)
+        setRoles([])
+      }
     } finally {
-      setIsLoading(false)
+      if (syncVersion === syncVersionRef.current) {
+        setIsLoading(false)
+      }
     }
   }, [])
 

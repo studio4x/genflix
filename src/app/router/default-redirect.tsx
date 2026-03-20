@@ -4,8 +4,9 @@ import { useAuth } from '@/app/providers/auth-provider'
 
 export function DefaultRedirect() {
   const { isLoading, user, roles } = useAuth()
+  const waitingRoleResolution = !!user && roles.length === 0
 
-  if (isLoading) {
+  if (isLoading || waitingRoleResolution) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-slate-50 p-6">
         <p className="text-sm text-slate-600">Carregando...</p>
