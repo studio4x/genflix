@@ -3,6 +3,7 @@ import type { FormEvent } from 'react'
 import { Link, useParams } from 'react-router-dom'
 
 import { Button } from '@/components/ui/button'
+import { useLocalStorageState } from '@/hooks/use-local-storage-state'
 import {
   createModule,
   deleteModule,
@@ -24,15 +25,31 @@ const initialForm: ModuleFormInput = {
   is_required: true,
 }
 
+interface ModuleEditorDraft {
+  form: ModuleFormInput
+  editingModuleId: string | null
+}
+
+const initialDraft: ModuleEditorDraft = {
+  form: initialForm,
+  editingModuleId: null,
+}
+
 export function AdminModulesPage() {
   const { courseId } = useParams<{ courseId: string }>()
   const [course, setCourse] = useState<Course | null>(null)
   const [modules, setModules] = useState<CourseModule[]>([])
-  const [form, setForm] = useState<ModuleFormInput>(initialForm)
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [editingModuleId, setEditingModuleId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const draftStorageKey = useMemo(
+    () => `admin:modules:${courseId ?? 'unknown'}:editor-draft`,
+    [courseId],
+  )
+  const { state: draft, setState: setDraft, clear: clearDraft } =
+    useLocalStorageState<ModuleEditorDraft>(draftStorageKey, initialDraft)
+  const form = draft.form
+  const editingModuleId = draft.editingModuleId
 
   const isEditing = useMemo(() => !!editingModuleId, [editingModuleId])
 
@@ -65,8 +82,7 @@ export function AdminModulesPage() {
   }, [loadData])
 
   function resetForm() {
-    setForm(initialForm)
-    setEditingModuleId(null)
+    clearDraft()
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -101,11 +117,13 @@ export function AdminModulesPage() {
   }
 
   function handleEdit(module: CourseModule) {
-    setEditingModuleId(module.id)
-    setForm({
-      title: module.title,
-      description: module.description ?? '',
-      is_required: module.is_required,
+    setDraft({
+      editingModuleId: module.id,
+      form: {
+        title: module.title,
+        description: module.description ?? '',
+        is_required: module.is_required,
+      },
     })
     setError(null)
   }
@@ -174,7 +192,10 @@ export function AdminModulesPage() {
             className="w-full rounded-md border px-3 py-2 text-sm"
             value={form.title}
             onChange={(event) =>
-              setForm((prev) => ({ ...prev, title: event.target.value }))
+              setDraft((prev) => ({
+                ...prev,
+                form: { ...prev.form, title: event.target.value },
+              }))
             }
             required
           />
@@ -186,7 +207,10 @@ export function AdminModulesPage() {
             className="min-h-24 w-full rounded-md border px-3 py-2 text-sm"
             value={form.description}
             onChange={(event) =>
-              setForm((prev) => ({ ...prev, description: event.target.value }))
+              setDraft((prev) => ({
+                ...prev,
+                form: { ...prev.form, description: event.target.value },
+              }))
             }
           />
         </label>
@@ -196,7 +220,10 @@ export function AdminModulesPage() {
             checked={form.is_required}
             type="checkbox"
             onChange={(event) =>
-              setForm((prev) => ({ ...prev, is_required: event.target.checked }))
+              setDraft((prev) => ({
+                ...prev,
+                form: { ...prev.form, is_required: event.target.checked },
+              }))
             }
           />
           Modulo obrigatorio

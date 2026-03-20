@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom'
 
 import { useAuth } from '@/app/providers/auth-provider'
 import { Button } from '@/components/ui/button'
+import { useLocalStorageState } from '@/hooks/use-local-storage-state'
 import {
   createCourse,
   deleteCourse,
@@ -24,14 +25,26 @@ const initialForm: CourseFormInput = {
   workload_hours: 0,
 }
 
+interface CourseEditorDraft {
+  form: CourseFormInput
+  editingCourseId: string | null
+}
+
+const initialDraft: CourseEditorDraft = {
+  form: initialForm,
+  editingCourseId: null,
+}
+
 export function AdminCoursesPage() {
   const { user } = useAuth()
   const [courses, setCourses] = useState<Course[]>([])
-  const [form, setForm] = useState<CourseFormInput>(initialForm)
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [editingCourseId, setEditingCourseId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const { state: draft, setState: setDraft, clear: clearDraft } =
+    useLocalStorageState<CourseEditorDraft>('admin:courses:editor-draft', initialDraft)
+  const form = draft.form
+  const editingCourseId = draft.editingCourseId
 
   const isEditing = useMemo(() => !!editingCourseId, [editingCourseId])
 
@@ -53,8 +66,7 @@ export function AdminCoursesPage() {
   }, [])
 
   function resetForm() {
-    setForm(initialForm)
-    setEditingCourseId(null)
+    clearDraft()
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -89,12 +101,14 @@ export function AdminCoursesPage() {
   }
 
   function handleEdit(course: Course) {
-    setEditingCourseId(course.id)
-    setForm({
-      title: course.title,
-      description: course.description ?? '',
-      status: course.status,
-      workload_hours: course.workload_hours,
+    setDraft({
+      editingCourseId: course.id,
+      form: {
+        title: course.title,
+        description: course.description ?? '',
+        status: course.status,
+        workload_hours: course.workload_hours,
+      },
     })
     setError(null)
   }
@@ -139,7 +153,10 @@ export function AdminCoursesPage() {
               className="w-full rounded-md border px-3 py-2 text-sm"
               value={form.title}
               onChange={(event) =>
-                setForm((prev) => ({ ...prev, title: event.target.value }))
+                setDraft((prev) => ({
+                  ...prev,
+                  form: { ...prev.form, title: event.target.value },
+                }))
               }
               required
             />
@@ -151,9 +168,12 @@ export function AdminCoursesPage() {
               className="w-full rounded-md border px-3 py-2 text-sm"
               value={form.status}
               onChange={(event) =>
-                setForm((prev) => ({
+                setDraft((prev) => ({
                   ...prev,
-                  status: event.target.value as CourseFormInput['status'],
+                  form: {
+                    ...prev.form,
+                    status: event.target.value as CourseFormInput['status'],
+                  },
                 }))
               }
             >
@@ -170,7 +190,10 @@ export function AdminCoursesPage() {
             className="min-h-24 w-full rounded-md border px-3 py-2 text-sm"
             value={form.description}
             onChange={(event) =>
-              setForm((prev) => ({ ...prev, description: event.target.value }))
+              setDraft((prev) => ({
+                ...prev,
+                form: { ...prev.form, description: event.target.value },
+              }))
             }
           />
         </label>
@@ -183,9 +206,12 @@ export function AdminCoursesPage() {
             min={0}
             value={form.workload_hours}
             onChange={(event) =>
-              setForm((prev) => ({
+              setDraft((prev) => ({
                 ...prev,
-                workload_hours: Number(event.target.value || 0),
+                form: {
+                  ...prev.form,
+                  workload_hours: Number(event.target.value || 0),
+                },
               }))
             }
           />

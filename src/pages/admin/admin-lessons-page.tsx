@@ -3,6 +3,7 @@ import type { FormEvent } from 'react'
 import { Link, useParams } from 'react-router-dom'
 
 import { Button } from '@/components/ui/button'
+import { useLocalStorageState } from '@/hooks/use-local-storage-state'
 import {
   createLesson,
   deleteLesson,
@@ -26,15 +27,31 @@ const initialForm: LessonFormInput = {
   estimated_minutes: 0,
 }
 
+interface LessonEditorDraft {
+  form: LessonFormInput
+  editingLessonId: string | null
+}
+
+const initialDraft: LessonEditorDraft = {
+  form: initialForm,
+  editingLessonId: null,
+}
+
 export function AdminLessonsPage() {
   const { moduleId } = useParams<{ moduleId: string }>()
   const [module, setModule] = useState<CourseModule | null>(null)
   const [lessons, setLessons] = useState<Lesson[]>([])
-  const [form, setForm] = useState<LessonFormInput>(initialForm)
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [editingLessonId, setEditingLessonId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const draftStorageKey = useMemo(
+    () => `admin:lessons:${moduleId ?? 'unknown'}:editor-draft`,
+    [moduleId],
+  )
+  const { state: draft, setState: setDraft, clear: clearDraft } =
+    useLocalStorageState<LessonEditorDraft>(draftStorageKey, initialDraft)
+  const form = draft.form
+  const editingLessonId = draft.editingLessonId
 
   const isEditing = useMemo(() => !!editingLessonId, [editingLessonId])
 
@@ -67,8 +84,7 @@ export function AdminLessonsPage() {
   }, [loadData])
 
   function resetForm() {
-    setForm(initialForm)
-    setEditingLessonId(null)
+    clearDraft()
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -103,13 +119,15 @@ export function AdminLessonsPage() {
   }
 
   function handleEdit(lesson: Lesson) {
-    setEditingLessonId(lesson.id)
-    setForm({
-      title: lesson.title,
-      description: lesson.description ?? '',
-      is_required: lesson.is_required,
-      youtube_url: lesson.youtube_url ?? '',
-      estimated_minutes: lesson.estimated_minutes,
+    setDraft({
+      editingLessonId: lesson.id,
+      form: {
+        title: lesson.title,
+        description: lesson.description ?? '',
+        is_required: lesson.is_required,
+        youtube_url: lesson.youtube_url ?? '',
+        estimated_minutes: lesson.estimated_minutes,
+      },
     })
     setError(null)
   }
@@ -187,7 +205,10 @@ export function AdminLessonsPage() {
               className="w-full rounded-md border px-3 py-2 text-sm"
               value={form.title}
               onChange={(event) =>
-                setForm((prev) => ({ ...prev, title: event.target.value }))
+                setDraft((prev) => ({
+                  ...prev,
+                  form: { ...prev.form, title: event.target.value },
+                }))
               }
               required
             />
@@ -201,9 +222,12 @@ export function AdminLessonsPage() {
               min={0}
               value={form.estimated_minutes}
               onChange={(event) =>
-                setForm((prev) => ({
+                setDraft((prev) => ({
                   ...prev,
-                  estimated_minutes: Number(event.target.value || 0),
+                  form: {
+                    ...prev.form,
+                    estimated_minutes: Number(event.target.value || 0),
+                  },
                 }))
               }
             />
@@ -217,7 +241,10 @@ export function AdminLessonsPage() {
             placeholder="https://www.youtube.com/watch?v=..."
             value={form.youtube_url}
             onChange={(event) =>
-              setForm((prev) => ({ ...prev, youtube_url: event.target.value }))
+              setDraft((prev) => ({
+                ...prev,
+                form: { ...prev.form, youtube_url: event.target.value },
+              }))
             }
           />
         </label>
@@ -228,7 +255,10 @@ export function AdminLessonsPage() {
             className="min-h-24 w-full rounded-md border px-3 py-2 text-sm"
             value={form.description}
             onChange={(event) =>
-              setForm((prev) => ({ ...prev, description: event.target.value }))
+              setDraft((prev) => ({
+                ...prev,
+                form: { ...prev.form, description: event.target.value },
+              }))
             }
           />
         </label>
@@ -238,7 +268,10 @@ export function AdminLessonsPage() {
             checked={form.is_required}
             type="checkbox"
             onChange={(event) =>
-              setForm((prev) => ({ ...prev, is_required: event.target.checked }))
+              setDraft((prev) => ({
+                ...prev,
+                form: { ...prev.form, is_required: event.target.checked },
+              }))
             }
           />
           Aula obrigatoria
