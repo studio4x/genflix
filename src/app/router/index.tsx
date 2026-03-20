@@ -4,7 +4,11 @@ import { AdminLayout } from '@/app/layouts/admin-layout'
 import { StudentLayout } from '@/app/layouts/student-layout'
 import { DefaultRedirect } from '@/app/router/default-redirect'
 import { ProtectedRoute } from '@/app/router/protected-route'
+import { AdminCoursesPage } from '@/pages/admin/admin-courses-page'
 import { AdminDashboardPage } from '@/pages/admin/admin-dashboard-page'
+import { AdminLessonsPage } from '@/pages/admin/admin-lessons-page'
+import { AdminMaterialsPage } from '@/pages/admin/admin-materials-page'
+import { AdminModulesPage } from '@/pages/admin/admin-modules-page'
 import { ForgotPasswordPage } from '@/pages/public/forgot-password-page'
 import { LoginPage } from '@/pages/public/login-page'
 import { ResetPasswordPage } from '@/pages/public/reset-password-page'
@@ -57,6 +61,22 @@ export const appRouter = createBrowserRouter([
           {
             index: true,
             element: <AdminDashboardPage />,
+          },
+          {
+            path: '/admin/cursos',
+            element: <AdminCoursesPage />,
+          },
+          {
+            path: '/admin/cursos/:courseId/modulos',
+            element: <AdminModulesPage />,
+          },
+          {
+            path: '/admin/modulos/:moduleId/aulas',
+            element: <AdminLessonsPage />,
+          },
+          {
+            path: '/admin/aulas/:lessonId/materiais',
+            element: <AdminMaterialsPage />,
           },
         ],
       },
