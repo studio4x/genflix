@@ -12,6 +12,7 @@ import { AdminAssessmentEditorPage } from '@/pages/admin/admin-assessment-editor
 import { AdminLessonsPage } from '@/pages/admin/admin-lessons-page'
 import { AdminMaterialsPage } from '@/pages/admin/admin-materials-page'
 import { AdminModulesPage } from '@/pages/admin/admin-modules-page'
+import { AdminReportsPage } from '@/pages/admin/admin-reports-page'
 import { AdminStudentsPage } from '@/pages/admin/admin-students-page'
 import { ForgotPasswordPage } from '@/pages/public/forgot-password-page'
 import { LoginPage } from '@/pages/public/login-page'
@@ -120,6 +121,10 @@ export const appRouter = createBrowserRouter([
           {
             path: '/admin/alunos',
             element: <AdminStudentsPage />,
+          },
+          {
+            path: '/admin/relatorios',
+            element: <AdminReportsPage />,
           },
         ],
       },

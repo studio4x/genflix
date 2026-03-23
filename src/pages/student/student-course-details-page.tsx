@@ -192,7 +192,7 @@ export function StudentCourseDetailsPage() {
             <p className="text-green-700 font-medium">Voce completou todos os requisitos e finalizou este treinamento com sucesso.</p>
           </div>
           <div className="sm:ml-auto">
-             <Button className="bg-green-600 hover:bg-green-700" size="lg">Emitir Certificado</Button>
+             <Button variant="outline" disabled size="lg">Certificado (Breve)</Button>
           </div>
         </div>
       )}
