@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback, useMemo } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useState, useEffect, useCallback } from 'react'
+import { useParams } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/app/providers/auth-provider'
 import { 
@@ -18,13 +18,12 @@ import {
   updateAssessmentQuestion,
   type AssessmentQuestionWithOptions
 } from '@/features/admin/assessments/api'
-import { fetchCourse, fetchModule } from '@/features/admin/content/api'
-import type { Assessment, Course, CourseModule } from '@/types/content'
+import { fetchModule } from '@/features/admin/content/api'
+import type { Assessment, CourseModule } from '@/types/content'
 import { useCourseBuilder } from '@/app/layouts/admin-course-builder-layout'
 
 export function AssessmentBuilderPanel() {
   const { courseId, moduleId } = useParams<{ courseId: string; moduleId?: string }>()
-  const navigate = useNavigate()
   const { user } = useAuth()
   const { refreshTree } = useCourseBuilder()
 
