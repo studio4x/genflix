@@ -1,10 +1,8 @@
 import { useState, useEffect } from 'react'
-import { useParams } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { useCourseBuilder } from '@/app/layouts/admin-course-builder-layout'
 
 export function CourseSettingsPanel() {
-  const { courseId } = useParams<{ courseId: string }>()
   const { courseTree } = useCourseBuilder()
   
   const [form, setForm] = useState({
