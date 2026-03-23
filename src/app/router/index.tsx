@@ -27,6 +27,9 @@ import { StudentLessonPage } from '@/pages/student/student-lesson-page'
 import { CourseOverviewPanel } from '@/pages/admin/builder/course-overview-panel'
 import { ModuleEditorPanel } from '@/pages/admin/builder/module-editor-panel'
 import { LessonEditorPanel } from '@/pages/admin/builder/lesson-editor-panel'
+import { LessonMaterialsPanel } from '@/pages/admin/builder/lesson-materials-panel'
+import { CourseSettingsPanel } from '@/pages/admin/builder/course-settings-panel'
+import { CourseAssessmentsPanel } from '@/pages/admin/builder/course-assessments-panel'
 
 export const appRouter = createBrowserRouter([
   {
@@ -102,6 +105,26 @@ export const appRouter = createBrowserRouter([
           {
             path: 'modulos/:moduleId/aulas/:lessonId',
             element: <LessonEditorPanel />,
+          },
+          {
+            path: 'modulos/:moduleId/aulas/:lessonId/materiais',
+            element: <LessonMaterialsPanel />,
+          },
+          {
+            path: 'modulos/:moduleId/avaliacoes/:assessmentId',
+            element: <AdminAssessmentEditorPage hideHeader />,
+          },
+          {
+            path: 'assessments/final',
+            element: <AdminAssessmentEditorPage hideHeader />,
+          },
+          {
+            path: 'settings',
+            element: <CourseSettingsPanel />,
+          },
+          {
+            path: 'assessments',
+            element: <CourseAssessmentsPanel />,
           },
         ]
       },

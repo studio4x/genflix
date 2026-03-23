@@ -149,18 +149,44 @@ export function AdminCourseBuilderLayout() {
                           className={`group flex items-center justify-between py-1.5 px-2 rounded-md text-[13px] transition-colors ${isActiveLesson ? 'bg-blue-50 text-blue-700 font-semibold' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'}`}
                         >
                            <div className="flex items-center gap-2 truncate">
-                             <svg className={`h-3.5 w-3.5 shrink-0 ${isActiveLesson ? 'text-blue-500' : 'text-slate-400'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                             {l.lesson_type === 'video' ? (
+                               <svg className={`h-3.5 w-3.5 shrink-0 ${isActiveLesson ? 'text-blue-500' : 'text-slate-400'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                             ) : (
+                               <svg className={`h-3.5 w-3.5 shrink-0 ${isActiveLesson ? 'text-blue-500' : 'text-slate-400'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                             )}
                              <span className="truncate">{l.title}</span>
                            </div>
                         </Link>
                       )
                     })}
+
+                    {m.assessments.map(a => {
+                      const isActiveAssessment = location.pathname.includes(`/avaliacoes/${a.id}`);
+                      return (
+                        <Link
+                          key={a.id}
+                          to={`/admin/cursos/${courseId}/builder/modulos/${m.id}/avaliacoes/${a.id}`}
+                          className={`group flex items-center justify-between py-1.5 px-2 rounded-md text-[13px] transition-colors ${isActiveAssessment ? 'bg-amber-50 text-amber-700 font-semibold border border-amber-100' : 'text-slate-600 hover:text-slate-900 hover:bg-amber-50/50'}`}
+                        >
+                           <div className="flex items-center gap-2 truncate">
+                             <svg className={`h-3.5 w-3.5 shrink-0 ${isActiveAssessment ? 'text-amber-500' : 'text-slate-400'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
+                             <span className="truncate">{a.title}</span>
+                           </div>
+                        </Link>
+                      )
+                    })}
                     
-                    {/* Add Lesson quick action */}
-                    <Link to={`/admin/cursos/${courseId}/builder/modulos/${m.id}/aulas/nova`} className="flex items-center gap-2 py-1.5 px-2 mt-1 rounded-md text-[12px] font-medium text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors">
-                      <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
-                      Adicionar Aula
-                    </Link>
+                    {/* Add Lesson/Quiz quick actions */}
+                    <div className="flex items-center gap-1 mt-1">
+                      <Link to={`/admin/cursos/${courseId}/builder/modulos/${m.id}/aulas/nova`} className="flex-1 flex items-center gap-1.5 py-1 px-1.5 rounded-md text-[11px] font-bold text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors">
+                        <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+                        Aula
+                      </Link>
+                      <Link to={`/admin/cursos/${courseId}/builder/modulos/${m.id}/avaliacoes/nova`} className="flex-1 flex items-center gap-1.5 py-1 px-1.5 rounded-md text-[11px] font-bold text-slate-400 hover:text-amber-600 hover:bg-amber-50 transition-colors">
+                        <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+                        Quiz
+                      </Link>
+                    </div>
                   </div>
                 </div>
               ))}

@@ -4,6 +4,7 @@ import type {
   CourseModule,
   Lesson,
   LessonMaterial,
+  Assessment,
 } from '@/types/content'
 
 import type {
@@ -403,35 +404,41 @@ export type AdminCourseTree = {
   course: Course
   modules: (CourseModule & {
     lessons: Lesson[]
+    assessments: Assessment[]
   })[]
+  courseAssessments: Assessment[]
 }
 
 export async function fetchAdminCourseTree(courseId: string): Promise<AdminCourseTree> {
-  const [courseResult, modulesResult, lessonsResult] = await Promise.all([
+  const [courseResult, modulesResult, lessonsResult, assessmentsResult] = await Promise.all([
     supabase.from('courses').select('*').eq('id', courseId).single(),
     supabase.from('course_modules').select('*').eq('course_id', courseId).order('position', { ascending: true }),
-    supabase.from('lessons').select('*, course_modules!inner(course_id)').eq('course_modules.course_id', courseId).order('position', { ascending: true })
+    supabase.from('lessons').select('*, course_modules!inner(course_id)').eq('course_modules.course_id', courseId).order('position', { ascending: true }),
+    supabase.from('assessments').select('*').eq('course_id', courseId).order('created_at', { ascending: true })
   ])
 
   if (courseResult.error) throw courseResult.error
   if (modulesResult.error) throw modulesResult.error
   if (lessonsResult.error) throw lessonsResult.error
+  if (assessmentsResult.error) throw assessmentsResult.error
 
   const course = courseResult.data as Course
   const modules = (modulesResult.data as CourseModule[]) ?? []
-  
-  // lessonsResult has an inner join over course_modules to filter by courseId
-  // The shape returned is basically the lesson fields.
   const lessons = (lessonsResult.data as Lesson[]) ?? []
+  const assessments = (assessmentsResult.data as Assessment[]) ?? []
 
   const treeModules = modules.map(m => {
     return {
       ...m,
-      lessons: lessons.filter(l => l.module_id === m.id)
+      lessons: lessons.filter(l => l.module_id === m.id),
+      assessments: assessments.filter(a => a.module_id === m.id)
     }
   })
 
-  return { course, modules: treeModules }
+  // Course-level assessments (no module_id or course final assessment)
+  const courseAssessments = assessments.filter(a => !a.module_id)
+
+  return { course, modules: treeModules, courseAssessments }
 }
 
 export function toErrorMessage(error: unknown): string {

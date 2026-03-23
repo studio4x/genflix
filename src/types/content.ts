@@ -6,6 +6,7 @@ export interface Course {
   title: string
   description: string | null
   status: CourseStatus
+  thumbnail_url: string | null
   workload_hours: number
   created_by: string | null
   created_at: string

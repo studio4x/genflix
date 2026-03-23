@@ -52,7 +52,11 @@ const initialOptionForm: AssessmentOptionFormInput = {
   is_correct: false,
 }
 
-export function AdminAssessmentEditorPage() {
+interface AdminAssessmentEditorPageProps {
+  hideHeader?: boolean
+}
+
+export function AdminAssessmentEditorPage({ hideHeader }: AdminAssessmentEditorPageProps) {
   const { courseId, moduleId } = useParams<{ courseId?: string; moduleId?: string }>()
   const { user } = useAuth()
 
@@ -308,30 +312,32 @@ export function AdminAssessmentEditorPage() {
   }
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500 pb-12 relative max-w-[1400px]">
-      <header className="space-y-4 border-b border-slate-100 pb-6">
-        <nav className="flex flex-wrap items-center gap-2 text-sm font-medium text-slate-500">
-          <Link to="/admin/cursos" className="hover:text-blue-600 transition-colors">Cursos</Link>
-          <svg className="h-4 w-4 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
-          {course?.id ? (
-            <>
-              <Link to={`/admin/cursos/${course.id}/modulos`} className="hover:text-blue-600 transition-colors truncate max-w-[150px] sm:max-w-xs">{course.title}</Link>
-              <svg className="h-4 w-4 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
-            </>
-          ) : null}
-          <span className="text-slate-900 font-semibold">{scope === 'module' ? 'Avaliação Modular' : 'Avaliação Final'}</span>
-        </nav>
-        <div>
-          <h2 className="text-3xl font-extrabold tracking-tight text-slate-900">
-            {scope === 'module'
-              ? `Avaliação do Módulo: ${module ? module.title : '...'}`
-              : `Avaliação Final do Curso`}
-          </h2>
-          <p className="text-base text-slate-500 mt-1">
-            Configure as regras, perguntas e alternativas que compõem esta avaliação.
-          </p>
-        </div>
-      </header>
+    <div className={`space-y-8 animate-in fade-in duration-500 pb-12 relative max-w-[1400px] ${hideHeader ? 'p-0' : ''}`}>
+      {!hideHeader && (
+        <header className="space-y-4 border-b border-slate-100 pb-6">
+          <nav className="flex flex-wrap items-center gap-2 text-sm font-medium text-slate-500">
+            <Link to="/admin/cursos" className="hover:text-blue-600 transition-colors">Cursos</Link>
+            <svg className="h-4 w-4 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+            {course?.id ? (
+              <>
+                <Link to={`/admin/cursos/${course.id}/modulos`} className="hover:text-blue-600 transition-colors truncate max-w-[150px] sm:max-w-xs">{course.title}</Link>
+                <svg className="h-4 w-4 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+              </>
+            ) : null}
+            <span className="text-slate-900 font-semibold">{scope === 'module' ? 'Avaliação Modular' : 'Avaliação Final'}</span>
+          </nav>
+          <div>
+            <h2 className="text-3xl font-extrabold tracking-tight text-slate-900">
+              {scope === 'module'
+                ? `Avaliação do Módulo: ${module ? module.title : '...'}`
+                : `Avaliação Final do Curso`}
+            </h2>
+            <p className="text-base text-slate-500 mt-1">
+              Configure as regras, perguntas e alternativas que compõem esta avaliação.
+            </p>
+          </div>
+        </header>
+      )}
 
       {isLoading && !course && (
         <div className="flex justify-center p-12">
