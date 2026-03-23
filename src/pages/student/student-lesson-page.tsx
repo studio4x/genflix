@@ -211,7 +211,11 @@ export function StudentLessonPage() {
                           {l.title}
                         </p>
                         <p className="text-[10px] text-slate-400 font-semibold flex items-center gap-1 mt-0.5">
-                          {l.youtube_url ? <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 24 24"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg> : null}
+                          {l.lesson_type === 'video' ? (
+                            <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 24 24"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+                          ) : (
+                            <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                          )}
                           {l.estimated_minutes} min
                         </p>
                       </div>
@@ -267,23 +271,31 @@ export function StudentLessonPage() {
         <div className="flex-1 overflow-y-auto w-full">
            <div className="mx-auto max-w-5xl p-4 sm:p-8 space-y-8 animate-in fade-in duration-500 pb-24">
               
-              {/* VIDEO PLAYER AREA */}
-              {videoId ? (
-                <div className="w-full aspect-video rounded-2xl overflow-hidden bg-black shadow-lg ring-1 ring-slate-900/10">
-                  <iframe
-                    className="w-full h-full"
-                    src={`https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1&showinfo=0`}
-                    title="YouTube video player"
-                    frameBorder="0"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
-                  ></iframe>
-                </div>
+              {/* VIDEO PLAYER OR TEXT CONTENT AREA */}
+              {currentLesson.lesson_type === 'video' ? (
+                videoId ? (
+                  <div className="w-full aspect-video rounded-2xl overflow-hidden bg-black shadow-lg ring-1 ring-slate-900/10">
+                    <iframe
+                      className="w-full h-full"
+                      src={`https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1&showinfo=0`}
+                      title="YouTube video player"
+                      frameBorder="0"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                    ></iframe>
+                  </div>
+                ) : (
+                  <div className="w-full aspect-video rounded-2xl overflow-hidden bg-slate-100 border border-dashed border-slate-300 flex items-center justify-center">
+                    <div className="text-center text-slate-400">
+                      <svg className="h-12 w-12 mx-auto mb-2 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                      <p>Vídeo não disponível para esta aula.</p>
+                    </div>
+                  </div>
+                )
               ) : (
-                <div className="w-full aspect-video rounded-2xl overflow-hidden bg-slate-100 border border-dashed border-slate-300 flex items-center justify-center">
-                   <div className="text-center text-slate-400">
-                     <svg className="h-12 w-12 mx-auto mb-2 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
-                     <p>Vídeo não disponível para esta aula.</p>
+                <div className="w-full bg-white rounded-2xl border border-slate-200 shadow-sm p-6 sm:p-10">
+                   <div className="prose prose-blue prose-lg max-w-none text-slate-800 leading-relaxed whitespace-pre-wrap font-medium">
+                      {currentLesson.text_content || 'Nenhum conteúdo textual fornecido para esta aula.'}
                    </div>
                 </div>
               )}

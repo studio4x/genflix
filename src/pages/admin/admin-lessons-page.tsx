@@ -23,7 +23,9 @@ const initialForm: LessonFormInput = {
   title: '',
   description: '',
   is_required: true,
+  lesson_type: 'video',
   youtube_url: '',
+  text_content: '',
   estimated_minutes: 0,
 }
 
@@ -126,7 +128,9 @@ export function AdminLessonsPage() {
         title: lesson.title,
         description: lesson.description ?? '',
         is_required: lesson.is_required,
+        lesson_type: lesson.lesson_type,
         youtube_url: lesson.youtube_url ?? '',
+        text_content: lesson.text_content ?? '',
         estimated_minutes: lesson.estimated_minutes,
       },
     })

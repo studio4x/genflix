@@ -252,8 +252,9 @@ export async function createLesson(moduleId: string, input: LessonFormInput) {
       title: input.title,
       description: input.description?.trim() || null,
       is_required: input.is_required,
-      lesson_type: 'video',
+      lesson_type: input.lesson_type,
       youtube_url: input.youtube_url?.trim() || null,
+      text_content: input.text_content?.trim() || null,
       estimated_minutes: input.estimated_minutes,
       position: nextPosition,
     })
@@ -273,7 +274,9 @@ export async function updateLesson(lessonId: string, input: LessonFormInput) {
       title: input.title,
       description: input.description?.trim() || null,
       is_required: input.is_required,
+      lesson_type: input.lesson_type,
       youtube_url: input.youtube_url?.trim() || null,
+      text_content: input.text_content?.trim() || null,
       estimated_minutes: input.estimated_minutes,
     })
     .eq('id', lessonId)

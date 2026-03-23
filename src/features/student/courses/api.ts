@@ -35,7 +35,9 @@ interface StudentLessonProgressRpcRow {
   title: string
   description: string | null
   is_required: boolean
+  lesson_type: 'video' | 'text'
   youtube_url: string | null
+  text_content: string | null
   estimated_minutes: number
   is_completed: boolean
   completed_at: string | null
@@ -108,7 +110,9 @@ export async function fetchStudentCourseContentWithProgress(
       title: lesson.title,
       description: lesson.description,
       is_required: lesson.is_required,
+      lesson_type: lesson.lesson_type,
       youtube_url: lesson.youtube_url,
+      text_content: lesson.text_content,
       estimated_minutes: lesson.estimated_minutes,
       is_completed: lesson.is_completed,
       completed_at: lesson.completed_at,

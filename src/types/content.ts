@@ -30,8 +30,9 @@ export interface Lesson {
   description: string | null
   position: number
   is_required: boolean
-  lesson_type: 'video'
+  lesson_type: 'video' | 'text'
   youtube_url: string | null
+  text_content: string | null
   estimated_minutes: number
   created_at: string
   updated_at: string
@@ -158,7 +159,9 @@ export interface StudentLessonWithProgress {
   title: string
   description: string | null
   is_required: boolean
+  lesson_type: 'video' | 'text'
   youtube_url: string | null
+  text_content: string | null
   estimated_minutes: number
   is_completed: boolean
   completed_at: string | null

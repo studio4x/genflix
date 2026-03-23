@@ -10,7 +10,9 @@ const initialForm: LessonFormInput = {
   title: '',
   description: '',
   is_required: true,
+  lesson_type: 'video',
   youtube_url: '',
+  text_content: '',
   estimated_minutes: 0,
 }
 
@@ -48,7 +50,9 @@ export function LessonEditorPanel() {
           title: found.title,
           description: found.description ?? '',
           is_required: found.is_required,
+          lesson_type: found.lesson_type,
           youtube_url: found.youtube_url ?? '',
+          text_content: found.text_content ?? '',
           estimated_minutes: found.estimated_minutes,
         })
       }
@@ -149,24 +153,64 @@ export function LessonEditorPanel() {
               </label>
             </fieldset>
 
-            {/* Bloco 2: Mídia */}
-            <fieldset className="space-y-4">
-              <legend className="text-sm font-extrabold text-slate-800 uppercase tracking-widest border-b border-slate-100 pb-2 w-full mb-4">2. Configuração de Mídia</legend>
-              <div className="grid gap-6 sm:grid-cols-2">
-                <label className="block space-y-2 sm:col-span-2">
-                  <span className="text-sm font-bold text-slate-800 flex items-center gap-2">
-                    <svg className="h-4 w-4 text-red-500" fill="currentColor" viewBox="0 0 24 24"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
-                    URL do Vídeo Youtube
-                  </span>
-                  <input
-                    className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-3 text-sm shadow-inner transition-all focus:border-red-500 focus:ring-2 focus:ring-red-200 focus:bg-white placeholder:text-slate-400"
-                    placeholder="https://www.youtube.com/watch?v=..."
-                    value={form.youtube_url}
-                    onChange={(e) => setForm((prev) => ({ ...prev, youtube_url: e.target.value }))}
-                  />
-                </label>
+            {/* Bloco 2: Tipo de Conteúdo e Mídia */}
+            <fieldset className="space-y-6">
+              <legend className="text-sm font-extrabold text-slate-800 uppercase tracking-widest border-b border-slate-100 pb-2 w-full mb-4">2. Formato e Conteúdo</legend>
+              
+              <div className="flex bg-slate-100 p-1.5 rounded-2xl w-full sm:w-fit gap-1">
+                <button
+                  type="button"
+                  onClick={() => setForm(prev => ({ ...prev, lesson_type: 'video' }))}
+                  className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${form.lesson_type === 'video' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                >
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                  Vídeo-aula
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setForm(prev => ({ ...prev, lesson_type: 'text' }))}
+                  className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${form.lesson_type === 'text' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                >
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                  Conteúdo Textual
+                </button>
+              </div>
 
-                <label className="block space-y-2">
+              {form.lesson_type === 'video' ? (
+                <div className="grid gap-6">
+                  <label className="block space-y-2">
+                    <span className="text-sm font-bold text-slate-800 flex items-center gap-2">
+                      <svg className="h-4 w-4 text-red-500" fill="currentColor" viewBox="0 0 24 24"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+                      URL do Vídeo Youtube
+                    </span>
+                    <input
+                      className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-3 text-sm shadow-inner transition-all focus:border-red-500 focus:ring-2 focus:ring-red-200 focus:bg-white placeholder:text-slate-400"
+                      placeholder="https://www.youtube.com/watch?v=..."
+                      value={form.youtube_url}
+                      onChange={(e) => setForm((prev) => ({ ...prev, youtube_url: e.target.value }))}
+                    />
+                  </label>
+                </div>
+              ) : (
+                <div className="grid gap-6">
+                   <label className="block space-y-2">
+                    <span className="text-sm font-bold text-slate-800">Conteúdo Teórico Principal</span>
+                    <textarea
+                      className="min-h-[400px] w-full rounded-xl border border-slate-200 bg-slate-50/50 px-6 py-5 text-base shadow-inner transition-all focus:border-blue-500 focus:ring-2 focus:ring-blue-200 focus:bg-white leading-relaxed placeholder:text-slate-400"
+                      placeholder="Construa aqui o conteúdo textual da aula. Suporta múltiplos parágrafos e organização de blocos..."
+                      value={form.text_content}
+                      onChange={(e) => setForm((prev) => ({ ...prev, text_content: e.target.value }))}
+                    />
+                    <p className="text-[11px] text-slate-400 mt-2 flex items-center gap-1.5">
+                       <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                       Dica: Utilize a área acima para inserir o conteúdo que o aluno deverá ler.
+                    </p>
+                  </label>
+                </div>
+              )}
+
+              <div className="pt-2">
+                <label className="block space-y-2 max-w-xs">
                   <span className="text-sm font-bold text-slate-800">Duração Estimada (Min)</span>
                   <input
                     className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-3 text-sm shadow-inner transition-all focus:border-blue-500 focus:ring-2 focus:ring-blue-200 focus:bg-white placeholder:text-slate-400"
