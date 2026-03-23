@@ -35,7 +35,7 @@ interface StudentLessonProgressRpcRow {
   title: string
   description: string | null
   is_required: boolean
-  lesson_type: 'video' | 'text'
+  lesson_type: 'video' | 'text' | 'hybrid'
   youtube_url: string | null
   text_content: string | null
   estimated_minutes: number

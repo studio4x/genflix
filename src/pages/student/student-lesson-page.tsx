@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 
 import { useAuth } from '@/app/providers/auth-provider'
 import { Button } from '@/components/ui/button'
+import 'react-quill/dist/quill.snow.css'
 import {
   fetchReleasedCourseById,
   fetchStudentCourseContentWithProgress,
@@ -213,8 +214,10 @@ export function StudentLessonPage() {
                         <p className="text-[10px] text-slate-400 font-semibold flex items-center gap-1 mt-0.5">
                           {l.lesson_type === 'video' ? (
                             <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 24 24"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
-                          ) : (
+                          ) : l.lesson_type === 'text' ? (
                             <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                          ) : (
+                            <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
                           )}
                           {l.estimated_minutes} min
                         </p>
@@ -272,7 +275,7 @@ export function StudentLessonPage() {
            <div className="mx-auto max-w-5xl p-4 sm:p-8 space-y-8 animate-in fade-in duration-500 pb-24">
               
               {/* VIDEO PLAYER OR TEXT CONTENT AREA */}
-              {currentLesson.lesson_type === 'video' ? (
+              {(currentLesson.lesson_type === 'video' || currentLesson.lesson_type === 'hybrid') && (
                 videoId ? (
                   <div className="w-full aspect-video rounded-2xl overflow-hidden bg-black shadow-lg ring-1 ring-slate-900/10">
                     <iframe
@@ -292,11 +295,14 @@ export function StudentLessonPage() {
                     </div>
                   </div>
                 )
-              ) : (
+              )}
+
+              {(currentLesson.lesson_type === 'text' || currentLesson.lesson_type === 'hybrid') && (
                 <div className="w-full bg-white rounded-2xl border border-slate-200 shadow-sm p-6 sm:p-10">
-                   <div className="prose prose-blue prose-lg max-w-none text-slate-800 leading-relaxed whitespace-pre-wrap font-medium">
-                      {currentLesson.text_content || 'Nenhum conteúdo textual fornecido para esta aula.'}
-                   </div>
+                   <div 
+                      className="ql-editor prose prose-blue prose-lg max-w-none text-slate-800 leading-relaxed font-medium"
+                      dangerouslySetInnerHTML={{ __html: currentLesson.text_content || 'Nenhum conteúdo textual fornecido para esta aula.' }}
+                   />
                 </div>
               )}
 

@@ -20,7 +20,7 @@ export const lessonFormSchema = z.object({
   title: z.string().trim().min(2, 'Titulo deve ter ao menos 2 caracteres'),
   description: z.string().trim().max(2000).optional(),
   is_required: z.boolean(),
-  lesson_type: z.enum(['video', 'text']).default('video'),
+  lesson_type: z.enum(['video', 'text', 'hybrid']).default('video'),
   text_content: z.string().optional(),
   youtube_url: z
     .string()
