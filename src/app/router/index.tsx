@@ -1,6 +1,7 @@
 import { Navigate, createBrowserRouter } from 'react-router-dom'
 
 import { AdminLayout } from '@/app/layouts/admin-layout'
+import { AdminCourseBuilderLayout } from '@/app/layouts/admin-course-builder-layout'
 import { StudentLayout } from '@/app/layouts/student-layout'
 import { DefaultRedirect } from '@/app/router/default-redirect'
 import { ProtectedRoute } from '@/app/router/protected-route'
@@ -23,6 +24,9 @@ import { StudentCourseDetailsPage } from '@/pages/student/student-course-details
 import { StudentCoursesPage } from '@/pages/student/student-courses-page'
 import { StudentDashboardPage } from '@/pages/student/student-dashboard-page'
 import { StudentLessonPage } from '@/pages/student/student-lesson-page'
+import { CourseOverviewPanel } from '@/pages/admin/builder/course-overview-panel'
+import { ModuleEditorPanel } from '@/pages/admin/builder/module-editor-panel'
+import { LessonEditorPanel } from '@/pages/admin/builder/lesson-editor-panel'
 
 export const appRouter = createBrowserRouter([
   {
@@ -83,6 +87,24 @@ export const appRouter = createBrowserRouter([
   {
     element: <ProtectedRoute allowedRoles={['admin']} />,
     children: [
+      {
+        path: '/admin/cursos/:courseId/builder',
+        element: <AdminCourseBuilderLayout />,
+        children: [
+          {
+            index: true,
+            element: <CourseOverviewPanel />,
+          },
+          {
+            path: 'modulos/:moduleId',
+            element: <ModuleEditorPanel />,
+          },
+          {
+            path: 'modulos/:moduleId/aulas/:lessonId',
+            element: <LessonEditorPanel />,
+          },
+        ]
+      },
       {
         path: '/admin',
         element: <AdminLayout />,

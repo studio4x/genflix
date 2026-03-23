@@ -347,8 +347,11 @@ export function AdminCoursesPage() {
 
                 <div className="bg-slate-50 border-t border-slate-100 p-3 sm:px-5 flex flex-wrap items-center gap-3">
                   <div className="flex flex-wrap flex-1 justify-end gap-2 w-full">
-                    <Button type="button" variant="outline" size="sm" className="h-9 px-4 text-xs font-semibold bg-white border-slate-200 hover:bg-slate-50 hover:text-slate-900 shadow-sm flex-1 sm:flex-none justify-center" asChild>
-                      <Link to={`/admin/cursos/${course.id}/modulos`}>Módulos & Aulas</Link>
+                    <Button type="button" variant="outline" size="sm" className="h-9 px-4 text-xs font-extrabold bg-blue-600 border-transparent text-white hover:bg-blue-700 shadow-sm flex-1 sm:flex-none justify-center" asChild>
+                      <Link to={`/admin/cursos/${course.id}/builder`}>
+                        <svg className="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11v9h-2v-9H7v9H5v-9H3V9h18v2h-2z" /></svg>
+                        Construtor do Curso
+                      </Link>
                     </Button>
                     <Button type="button" variant="outline" size="sm" className="h-9 px-4 text-xs font-semibold bg-white border-slate-200 hover:bg-slate-50 hover:text-slate-900 shadow-sm flex-1 sm:flex-none justify-center" asChild>
                       <Link to={`/admin/cursos/${course.id}/avaliacao-final`}>Avaliação Final</Link>

@@ -396,6 +396,41 @@ export async function getSignedMaterialUrl(storagePath: string) {
   return result.data.signedUrl
 }
 
+export type AdminCourseTree = {
+  course: Course
+  modules: (CourseModule & {
+    lessons: Lesson[]
+  })[]
+}
+
+export async function fetchAdminCourseTree(courseId: string): Promise<AdminCourseTree> {
+  const [courseResult, modulesResult, lessonsResult] = await Promise.all([
+    supabase.from('courses').select('*').eq('id', courseId).single(),
+    supabase.from('course_modules').select('*').eq('course_id', courseId).order('position', { ascending: true }),
+    supabase.from('lessons').select('*, course_modules!inner(course_id)').eq('course_modules.course_id', courseId).order('position', { ascending: true })
+  ])
+
+  if (courseResult.error) throw courseResult.error
+  if (modulesResult.error) throw modulesResult.error
+  if (lessonsResult.error) throw lessonsResult.error
+
+  const course = courseResult.data as Course
+  const modules = (modulesResult.data as CourseModule[]) ?? []
+  
+  // lessonsResult has an inner join over course_modules to filter by courseId
+  // The shape returned is basically the lesson fields.
+  const lessons = (lessonsResult.data as Lesson[]) ?? []
+
+  const treeModules = modules.map(m => {
+    return {
+      ...m,
+      lessons: lessons.filter(l => l.module_id === m.id)
+    }
+  })
+
+  return { course, modules: treeModules }
+}
+
 export function toErrorMessage(error: unknown): string {
   const normalizedError = normalizeSupabaseError(error)
   return normalizedError.message || 'Erro inesperado.'

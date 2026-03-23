@@ -1,0 +1,200 @@
+import { createContext, useContext, useEffect, useState } from 'react'
+import { Link, Outlet, useLocation, useNavigate, useParams } from 'react-router-dom'
+import { Button } from '@/components/ui/button'
+import { fetchAdminCourseTree, toErrorMessage } from '@/features/admin/content/api'
+import type { AdminCourseTree } from '@/features/admin/content/api'
+
+
+interface BuilderContextData {
+  courseTree: AdminCourseTree | null
+  refreshTree: () => Promise<void>
+  isLoading: boolean
+}
+
+const BuilderContext = createContext<BuilderContextData | undefined>(undefined)
+
+export function useCourseBuilder() {
+  const context = useContext(BuilderContext)
+  if (!context) {
+    throw new Error('useCourseBuilder must be used within AdminCourseBuilderLayout')
+  }
+  return context
+}
+
+export function AdminCourseBuilderLayout() {
+  const { courseId } = useParams<{ courseId: string }>()
+  const location = useLocation()
+  const navigate = useNavigate()
+  
+  const [courseTree, setCourseTree] = useState<AdminCourseTree | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  
+  // local toggle for sidebar (so users can collapse it if needed)
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true)
+
+  const refreshTree = async () => {
+    if (!courseId) return
+    setIsLoading(true)
+    setError(null)
+    try {
+      const tree = await fetchAdminCourseTree(courseId)
+      setCourseTree(tree)
+    } catch (err) {
+      setError(toErrorMessage(err))
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    void refreshTree()
+  }, [courseId])
+
+  if (isLoading && !courseTree) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-slate-50">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent" />
+      </div>
+    )
+  }
+
+  if (error || !courseTree) {
+    return (
+      <div className="flex h-screen w-full flex-col items-center justify-center bg-slate-50 p-6 text-center">
+        <h2 className="text-xl font-bold text-slate-800">Falha ao carregar o curso</h2>
+        <p className="text-slate-500 mb-4">{error}</p>
+        <Button onClick={() => navigate('/admin/cursos')}>Voltar aos Cursos</Button>
+      </div>
+    )
+  }
+
+  const { course, modules } = courseTree
+  
+  // Nav paths
+  const coursePath = `/admin/cursos/${courseId}/builder`
+  const isCourseHome = location.pathname === coursePath
+
+  return (
+    <BuilderContext.Provider value={{ courseTree, refreshTree, isLoading }}>
+      <div className="flex flex-col h-screen w-full bg-slate-50 text-slate-900 font-sans overflow-hidden">
+        
+        {/* TOPBAR */}
+        <header className="shrink-0 h-14 border-b border-slate-200 bg-white shadow-sm z-20 flex items-center justify-between px-4">
+          <div className="flex items-center gap-3">
+            <Button variant="ghost" size="sm" onClick={() => navigate('/admin/cursos')} className="text-slate-500 hover:text-slate-900 -ml-2">
+               <svg className="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
+               Voltar
+            </Button>
+            <div className="h-5 border-l border-slate-200"></div>
+            <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="p-1.5 rounded-md hover:bg-slate-100 text-slate-600 transition-colors">
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={isSidebarOpen ? "M4 6h16M4 12h16M4 18h16" : "M4 6h16M4 12h16M4 18h16"} />
+              </svg>
+            </button>
+            <h1 className="text-sm font-bold text-slate-800 line-clamp-1 ml-1">{course.title}</h1>
+            <span className={`px-2 py-0.5 rounded text-xs font-semibold border ${course.status === 'published' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-amber-50 text-amber-700 border-amber-200'}`}>
+              {course.status === 'published' ? 'Publicado' : 'Rascunho'}
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button size="sm" variant="outline" className="hidden md:flex h-8" asChild>
+               <a href={`/aluno/cursos/${course.id}`} target="_blank" rel="noreferrer">
+                 <svg className="h-3.5 w-3.5 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                 Visualizar
+               </a>
+            </Button>
+          </div>
+        </header>
+
+        {/* WORKSPACE AREA */}
+        <div className="flex flex-1 overflow-hidden">
+          
+          {/* SIDEBAR - COURSE TREE */}
+          <aside className={`shrink-0 flex flex-col bg-white border-r border-slate-200 transition-all duration-300 ${isSidebarOpen ? 'w-80 lg:w-96' : 'w-0 overflow-hidden'}`}>
+            <div className="flex-1 overflow-y-auto w-full no-scrollbar p-3 space-y-1">
+              {/* Course Root */}
+              <Link 
+                to={coursePath} 
+                className={`group flex items-center justify-between p-2.5 rounded-lg text-sm transition-colors ${isCourseHome ? 'bg-blue-50 text-blue-700 font-semibold' : 'text-slate-700 hover:bg-slate-100'}`}
+              >
+                <div className="flex items-center gap-2.5 truncate">
+                  <div className={`p-1.5 rounded-md ${isCourseHome ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-500 group-hover:bg-white group-hover:shadow-sm'}`}>
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
+                  </div>
+                  <span className="truncate">Visão Geral do Curso</span>
+                </div>
+              </Link>
+              
+              {/* Modules tree */}
+              {modules.map((m, mIdx) => (
+                <div key={m.id} className="pt-2">
+                  <Link 
+                    to={`/admin/cursos/${courseId}/builder/modulos/${m.id}`}
+                    className={`group flex items-center justify-between p-2 rounded-lg text-sm transition-colors ${location.pathname.includes(`/modulos/${m.id}`) && !location.pathname.includes('/aulas/') ? 'bg-slate-100 font-bold text-slate-900 border border-slate-200 shadow-sm' : 'text-slate-800 font-medium hover:bg-slate-100/50'}`}
+                  >
+                    <div className="flex items-center gap-2 truncate">
+                      <div className="w-5 text-center text-[10px] font-extrabold text-slate-400">M{mIdx+1}</div>
+                      <span className="truncate">{m.title}</span>
+                    </div>
+                  </Link>
+
+                  <div className="ml-7 mt-0.5 space-y-0.5 border-l border-slate-200 pl-2">
+                    {m.lessons.map(l => {
+                      const isActiveLesson = location.pathname.includes(`/aulas/${l.id}`);
+                      return (
+                        <Link
+                          key={l.id}
+                          to={`/admin/cursos/${courseId}/builder/modulos/${m.id}/aulas/${l.id}`}
+                          className={`group flex items-center justify-between py-1.5 px-2 rounded-md text-[13px] transition-colors ${isActiveLesson ? 'bg-blue-50 text-blue-700 font-semibold' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'}`}
+                        >
+                           <div className="flex items-center gap-2 truncate">
+                             <svg className={`h-3.5 w-3.5 shrink-0 ${isActiveLesson ? 'text-blue-500' : 'text-slate-400'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                             <span className="truncate">{l.title}</span>
+                           </div>
+                        </Link>
+                      )
+                    })}
+                    
+                    {/* Add Lesson quick action */}
+                    <Link to={`/admin/cursos/${courseId}/builder/modulos/${m.id}/aulas/nova`} className="flex items-center gap-2 py-1.5 px-2 mt-1 rounded-md text-[12px] font-medium text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors">
+                      <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+                      Adicionar Aula
+                    </Link>
+                  </div>
+                </div>
+              ))}
+
+              {/* Add Module Quick Action */}
+              <div className="pt-4 pb-2">
+                 <Link to={`/admin/cursos/${courseId}/builder/modulos/novo`} className="flex items-center gap-2 p-2 rounded-lg text-sm font-bold text-blue-600 border border-dashed border-blue-200 bg-blue-50/50 hover:bg-blue-50 transition-colors">
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+                    Novo Módulo
+                 </Link>
+              </div>
+
+              {/* Additional nodes like Course Settings, Advanced */}
+              <div className="pt-4 border-t border-slate-100 space-y-1">
+                 <Link to={`/admin/cursos/${courseId}/builder/settings`} className="group flex items-center gap-2.5 p-2.5 rounded-lg text-sm transition-colors text-slate-600 hover:bg-slate-100">
+                    <svg className="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                    Configurações do Curso
+                 </Link>
+                 <Link to={`/admin/cursos/${courseId}/builder/assessments`} className="group flex items-center gap-2.5 p-2.5 rounded-lg text-sm transition-colors text-slate-600 hover:bg-slate-100">
+                    <svg className="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
+                    Gerenciar Avaliações
+                 </Link>
+              </div>
+            </div>
+          </aside>
+
+          {/* MAIN CANVAS */}
+          <main className="flex-1 h-full bg-slate-50/50 relative overflow-y-auto w-full border-t border-slate-100 shadow-inner">
+             <div className="absolute inset-0 p-4 md:p-8">
+               <Outlet />
+             </div>
+          </main>
+        </div>
+      </div>
+    </BuilderContext.Provider>
+  )
+}
