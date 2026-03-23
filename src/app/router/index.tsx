@@ -8,6 +8,7 @@ import { AdminCourseReleasesPage } from '@/pages/admin/admin-course-releases-pag
 import { AdminCoursesPage } from '@/pages/admin/admin-courses-page'
 import { AdminDashboardPage } from '@/pages/admin/admin-dashboard-page'
 import { AdminGroupsPage } from '@/pages/admin/admin-groups-page'
+import { AdminAssessmentEditorPage } from '@/pages/admin/admin-assessment-editor-page'
 import { AdminLessonsPage } from '@/pages/admin/admin-lessons-page'
 import { AdminMaterialsPage } from '@/pages/admin/admin-materials-page'
 import { AdminModulesPage } from '@/pages/admin/admin-modules-page'
@@ -16,6 +17,7 @@ import { ForgotPasswordPage } from '@/pages/public/forgot-password-page'
 import { LoginPage } from '@/pages/public/login-page'
 import { ResetPasswordPage } from '@/pages/public/reset-password-page'
 import { UnauthorizedPage } from '@/pages/public/unauthorized-page'
+import { StudentAssessmentExecutionPage } from '@/pages/student/student-assessment-execution-page'
 import { StudentCourseDetailsPage } from '@/pages/student/student-course-details-page'
 import { StudentCoursesPage } from '@/pages/student/student-courses-page'
 import { StudentDashboardPage } from '@/pages/student/student-dashboard-page'
@@ -64,6 +66,10 @@ export const appRouter = createBrowserRouter([
             path: '/aluno/cursos/:courseId',
             element: <StudentCourseDetailsPage />,
           },
+          {
+            path: '/aluno/cursos/:courseId/avaliacoes/:assessmentId',
+            element: <StudentAssessmentExecutionPage />,
+          },
         ],
       },
     ],
@@ -92,8 +98,16 @@ export const appRouter = createBrowserRouter([
             element: <AdminCourseReleasesPage />,
           },
           {
+            path: '/admin/cursos/:courseId/avaliacao-final',
+            element: <AdminAssessmentEditorPage />,
+          },
+          {
             path: '/admin/modulos/:moduleId/aulas',
             element: <AdminLessonsPage />,
+          },
+          {
+            path: '/admin/modulos/:moduleId/avaliacao',
+            element: <AdminAssessmentEditorPage />,
           },
           {
             path: '/admin/aulas/:lessonId/materiais',

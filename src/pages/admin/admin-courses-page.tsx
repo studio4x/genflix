@@ -276,6 +276,11 @@ export function AdminCoursesPage() {
                       Liberacoes
                     </Link>
                   </Button>
+                  <Button type="button" variant="outline" asChild>
+                    <Link to={`/admin/cursos/${course.id}/avaliacao-final`}>
+                      Avaliacao final
+                    </Link>
+                  </Button>
                   <Button
                     type="button"
                     variant="outline"

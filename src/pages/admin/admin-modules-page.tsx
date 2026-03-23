@@ -290,6 +290,9 @@ export function AdminModulesPage() {
                   Editar
                 </Button>
                 <Button type="button" variant="outline" asChild>
+                  <Link to={`/admin/modulos/${module.id}/avaliacao`}>Avaliacao</Link>
+                </Button>
+                <Button type="button" variant="outline" asChild>
                   <Link to={`/admin/modulos/${module.id}/aulas`}>Aulas</Link>
                 </Button>
                 <Button
