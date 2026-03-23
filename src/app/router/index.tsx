@@ -22,6 +22,7 @@ import { StudentAssessmentExecutionPage } from '@/pages/student/student-assessme
 import { StudentCourseDetailsPage } from '@/pages/student/student-course-details-page'
 import { StudentCoursesPage } from '@/pages/student/student-courses-page'
 import { StudentDashboardPage } from '@/pages/student/student-dashboard-page'
+import { StudentLessonPage } from '@/pages/student/student-lesson-page'
 
 export const appRouter = createBrowserRouter([
   {
@@ -72,6 +73,10 @@ export const appRouter = createBrowserRouter([
             element: <StudentAssessmentExecutionPage />,
           },
         ],
+      },
+      {
+        path: '/aluno/cursos/:courseId/aulas/:lessonId',
+        element: <StudentLessonPage />,
       },
     ],
   },
