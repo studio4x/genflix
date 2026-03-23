@@ -9,7 +9,7 @@ import {
   setLessonCompletion,
   toErrorMessage,
 } from '@/features/student/courses/api'
-import type { Course, StudentCourseModuleProgress } from '@/types/content'
+import type { Course, StudentCourseModuleProgress, StudentLessonWithProgress } from '@/types/content'
 
 // Utility to extract standard youtube ID
 function extractVideoId(url: string | null) {
@@ -77,8 +77,7 @@ export function StudentLessonPage() {
   }
 
   // Find the exact lesson details
-  let currentLesson = null
-  let currentModule = null
+  let currentLesson: StudentLessonWithProgress | null = null
   
   // Flatten timeline to find prev/next
   const timeline: { moduleId: string; lessonId: string; isBlocked: boolean; title: string, is_completed: boolean }[] = []
@@ -94,7 +93,6 @@ export function StudentLessonPage() {
       })
       if (l.id === lessonId) {
         currentLesson = l
-        currentModule = m
       }
     }
   }
@@ -214,7 +212,7 @@ export function StudentLessonPage() {
                         </p>
                         <p className="text-[10px] text-slate-400 font-semibold flex items-center gap-1 mt-0.5">
                           {l.youtube_url ? <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 24 24"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg> : null}
-                          {l.estimated_duration_minutes} min
+                          {l.estimated_minutes} min
                         </p>
                       </div>
                     </Link>
