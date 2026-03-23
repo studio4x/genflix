@@ -30,6 +30,7 @@ import { LessonEditorPanel } from '@/pages/admin/builder/lesson-editor-panel'
 import { LessonMaterialsPanel } from '@/pages/admin/builder/lesson-materials-panel'
 import { CourseSettingsPanel } from '@/pages/admin/builder/course-settings-panel'
 import { CourseAssessmentsPanel } from '@/pages/admin/builder/course-assessments-panel'
+import { AssessmentBuilderPanel } from '@/pages/admin/builder/assessment-builder-panel'
 
 export const appRouter = createBrowserRouter([
   {
@@ -112,11 +113,11 @@ export const appRouter = createBrowserRouter([
           },
           {
             path: 'modulos/:moduleId/avaliacoes/:assessmentId',
-            element: <AdminAssessmentEditorPage hideHeader />,
+            element: <AssessmentBuilderPanel />,
           },
           {
             path: 'assessments/final',
-            element: <AdminAssessmentEditorPage hideHeader />,
+            element: <AssessmentBuilderPanel />,
           },
           {
             path: 'settings',
