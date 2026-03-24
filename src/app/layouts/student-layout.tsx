@@ -17,7 +17,8 @@ export function StudentLayout() {
             </div>
             <div>
               <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Área do Aluno</p>
-              <h1 className="text-xl font-extrabold text-slate-900 tracking-tight leading-none">HomeCare Match</h1>
+              <h1 className="text-xl font-extrabold text-slate-900 tracking-tight leading-none">HomeCare Match <span className="text-blue-600">Academy</span></h1>
+              <p className="text-[10px] uppercase font-black tracking-widest text-slate-400 mt-1">LMS Platform</p>
             </div>
           </div>
           <div className="flex items-center gap-4">
