@@ -62,7 +62,7 @@ export async function exportModuleToPdf(courseTitle: string, moduleTitle: string
   element.appendChild(style)
 
   const opt = {
-    margin: [20, 20],
+    margin: 20,
     filename: `Material_${moduleTitle.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.pdf`,
     image: { type: 'jpeg', quality: 0.98 },
     html2canvas: { scale: 2, useCORS: true, letterRendering: true },
@@ -71,7 +71,7 @@ export async function exportModuleToPdf(courseTitle: string, moduleTitle: string
   }
 
   try {
-    await html2pdf().set(opt).from(element).save()
+    await (html2pdf() as any).set(opt).from(element).save()
   } catch (error) {
     console.error('Erro ao gerar PDF:', error)
     throw error
