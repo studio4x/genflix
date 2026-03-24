@@ -13,6 +13,7 @@ import {
   fetchStudentCourseAssessments,
   type StudentCourseAssessmentSummary,
 } from '@/features/student/assessments/api'
+import { exportModuleToPdf } from '@/features/student/content/pdf-exporter'
 import { supabase } from '@/services/supabase/client'
 import type { Course, ModuleLearningState, StudentCourseModuleProgress } from '@/types/content'
 
@@ -327,9 +328,22 @@ export function StudentCourseDetailsPage() {
                            <div className="bg-white rounded-[32px] border border-slate-100 p-8 shadow-sm group-hover:shadow-md transition-all">
                               <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
                                  <h4 className="text-xl font-black text-slate-900 group-hover:text-blue-600 transition-colors">{module.title}</h4>
-                                 <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all ${moduleStateClasses(module.state)}`}>
-                                    {moduleStateLabel(module.state)}
-                                 </span>
+                                 <div className="flex items-center gap-2">
+                                    <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all ${moduleStateClasses(module.state)}`}>
+                                       {moduleStateLabel(module.state)}
+                                    </span>
+                                    {!isBlocked && (
+                                       <Button 
+                                          variant="outline" 
+                                          size="sm" 
+                                          onClick={() => void exportModuleToPdf(course.title, module.title, module.lessons)}
+                                          className="h-8 px-3 rounded-xl border-slate-200 text-[10px] font-black uppercase tracking-widest text-slate-500 hover:bg-slate-100 hover:text-blue-600 flex items-center gap-1.5 transition-all"
+                                       >
+                                          <svg className="h-3.5 w-3.5 text-rose-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 9h6m-6 4h6m-6 4h1" /></svg>
+                                          Baixar PDF
+                                       </Button>
+                                    )}
+                                 </div>
                               </div>
                               <p className="text-sm font-medium text-slate-500 leading-relaxed mb-8">{module.description || "Inicie este módulo para explorar os fundamentos e técnicas deste tópico."}</p>
 
