@@ -322,7 +322,7 @@ export function AdminCoursesPage() {
          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-300">
             <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={resetForm} />
             
-            <div className="relative bg-white w-full max-w-2xl rounded-[40px] shadow-2xl overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-10 duration-500">
+            <div className="relative bg-white w-full max-w-2xl rounded-[40px] shadow-2xl overflow-y-auto max-h-[95vh] no-scrollbar animate-in zoom-in-95 slide-in-from-bottom-10 duration-500">
                <div className="flex items-center justify-between p-8 border-b border-slate-50 bg-slate-50/50">
                   <div>
                     <h3 className="text-2xl font-black text-slate-900 leading-tight">
