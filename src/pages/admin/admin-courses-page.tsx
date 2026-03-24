@@ -295,7 +295,6 @@ export function AdminCoursesPage() {
                                 <span className="text-[10px] font-bold uppercase tracking-tighter">Final</span>
                              </Link>
                           </Button>
-                          <div className="aspect-[4/3] w-full overflow-hidden bg-slate-100 relative group/img">
                           <Button 
                              onClick={() => handleEdit(course)}
                              variant="ghost" className="w-10 h-10 p-0 rounded-xl text-slate-300 hover:text-amber-600 hover:bg-amber-50"
