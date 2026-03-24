@@ -517,9 +517,17 @@ export async function clearCourseContent(courseId: string) {
   if (mError) throw mError
 }
 
-export async function importCourseContent(courseId: string, modules: ImportModuleData[], clearExisting = false) {
+export async function importCourseContent(courseId: string, input: any, clearExisting = false) {
   if (clearExisting) {
     await clearCourseContent(courseId)
+  }
+
+  // Se o input for um objeto com a propriedade 'modules', extraímos ela.
+  // Caso contrário, assumimos que o próprio input é a lista de módulos.
+  const modules = Array.isArray(input) ? input : (input && Array.isArray(input.modules) ? input.modules : [])
+
+  if (modules.length === 0) {
+    throw new Error('Nenhum módulo encontrado no JSON para importar.')
   }
 
   for (const [mIdx, mData] of modules.entries()) {
