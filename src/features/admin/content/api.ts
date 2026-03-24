@@ -518,8 +518,25 @@ export async function clearCourseContent(courseId: string) {
 }
 
 export async function importCourseContent(courseId: string, input: any, clearExisting = false) {
+  // Se o input não for um array, pode ser um objeto CourseFull
+  const isFullCourse = !Array.isArray(input) && input && input.modules
+
   if (clearExisting) {
     await clearCourseContent(courseId)
+  }
+
+  // Se for um curso completo, atualizamos os metadados do curso atual também
+  if (isFullCourse) {
+    const { error: updateError } = await supabase
+      .from('courses')
+      .update({
+        title: input.title,
+        description: input.description || null,
+        workload_minutes: input.workload_minutes || 0
+      })
+      .eq('id', courseId)
+    
+    if (updateError) throw updateError
   }
 
   const modules = (Array.isArray(input) ? input : (input && Array.isArray(input.modules) ? input.modules : [])) as ImportModuleData[]
