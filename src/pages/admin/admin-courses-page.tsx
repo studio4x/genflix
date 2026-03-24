@@ -9,8 +9,9 @@ import {
   createCourse,
   deleteCourse,
   fetchCourses,
-  toErrorMessage,
   updateCourse,
+  uploadCourseThumbnail,
+  toErrorMessage,
 } from '@/features/admin/content/api'
 import {
   courseFormSchema,
@@ -30,12 +31,14 @@ interface CourseEditorDraft {
   form: CourseFormInput
   editingCourseId: string | null
   isFormOpen: boolean
+  isUploadingThumbnail: boolean
 }
 
 const initialDraft: CourseEditorDraft = {
   form: initialForm,
   editingCourseId: null,
-  isFormOpen: false
+  isFormOpen: false,
+  isUploadingThumbnail: false
 }
 
 export function AdminCoursesPage() {
@@ -52,6 +55,7 @@ export function AdminCoursesPage() {
   const editingCourseId = draft.editingCourseId
   const isEditing = useMemo(() => !!editingCourseId, [editingCourseId])
   const isFormOpen = draft.isFormOpen
+  const isUploadingThumbnail = draft.isUploadingThumbnail
 
   async function loadCourses() {
     setIsLoading(true)
@@ -77,6 +81,18 @@ export function AdminCoursesPage() {
 
   function openNewCourseForm() {
      setDraft({ ...initialDraft, isFormOpen: true })
+  }
+
+  async function handleThumbnailUpload(file: File) {
+    setDraft((p) => ({ ...p, isUploadingThumbnail: true }))
+    setError(null)
+    try {
+      const url = await uploadCourseThumbnail(file)
+      setDraft((p) => ({ ...p, form: { ...p.form, thumbnail_url: url }, isUploadingThumbnail: false }))
+    } catch (err) {
+      setError(toErrorMessage(err))
+      setDraft((p) => ({ ...p, isUploadingThumbnail: false }))
+    }
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -111,7 +127,8 @@ export function AdminCoursesPage() {
   }
 
   function handleEdit(course: Course) {
-    setDraft({
+    setDraft((p) => ({
+      ...p,
       isFormOpen: true,
       editingCourseId: course.id,
       form: {
@@ -121,7 +138,7 @@ export function AdminCoursesPage() {
         workload_hours: course.workload_hours,
         thumbnail_url: course.thumbnail_url ?? '',
       },
-    })
+    }))
     setError(null)
   }
 
@@ -320,76 +337,114 @@ export function AdminCoursesPage() {
 
                <form className="p-8 space-y-8" onSubmit={handleSubmit}>
                   <div className="space-y-6">
-                     <label className="block space-y-2">
-                        <span className="text-xs font-black text-slate-400 uppercase tracking-widest pl-1">Identificação</span>
-                        <input
-                           className="w-full text-lg font-bold rounded-2xl border-slate-200 bg-slate-50/50 px-6 py-4 placeholder:text-slate-300 focus:bg-white focus:ring-4 focus:ring-blue-100 transition-all"
-                           placeholder="Ex: Treinamento Técnico v2"
-                           value={form.title}
-                           onChange={(event) => setDraft((p) => ({ ...p, form: { ...p.form, title: event.target.value } }))}
-                           required
-                        />
-                     </label>
+                      <label className="block space-y-2">
+                         <span className="text-xs font-black text-slate-400 uppercase tracking-widest pl-1">Identificação</span>
+                         <input
+                            className="w-full text-lg font-bold rounded-2xl border border-slate-200 bg-slate-100/50 px-6 py-4 placeholder:text-slate-300 focus:bg-white focus:ring-4 focus:ring-blue-100 transition-all"
+                            placeholder="Ex: Treinamento Técnico v2"
+                            value={form.title}
+                            onChange={(event) => setDraft((p) => ({ ...p, form: { ...p.form, title: event.target.value } }))}
+                            required
+                         />
+                      </label>
 
-                     <label className="block space-y-2">
-                        <div className="flex items-center justify-between">
-                           <span className="text-xs font-black text-slate-400 uppercase tracking-widest pl-1">Capa do Curso (URL)</span>
-                           {form.thumbnail_url && <span className="text-[10px] font-bold text-emerald-500 uppercase">Preview Disponível</span>}
-                        </div>
-                        <div className="relative group">
-                           <input
-                              className="w-full font-bold rounded-2xl border-slate-200 bg-slate-50/50 px-6 py-4 placeholder:text-slate-300 focus:bg-white focus:ring-4 focus:ring-blue-100 transition-all pr-14"
-                              placeholder="https://imagem.com/capa.jpg"
-                              value={form.thumbnail_url ?? ''}
-                              onChange={(event) => setDraft((p) => ({ ...p, form: { ...p.form, thumbnail_url: event.target.value } }))}
-                           />
-                           <div className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300">
-                              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                           </div>
-                        </div>
-                        {form.thumbnail_url && (
-                           <div className="mt-2 aspect-video w-full rounded-2xl overflow-hidden border border-slate-100 shadow-sm animate-in fade-in zoom-in duration-300">
-                              <img src={form.thumbnail_url} alt="Preview" className="w-full h-full object-cover" />
-                           </div>
-                        )}
-                     </label>
+                      <div className="space-y-4">
+                         <div className="flex items-center justify-between px-1">
+                            <span className="text-xs font-black text-slate-400 uppercase tracking-widest">Capa do Curso</span>
+                            {form.thumbnail_url && (
+                               <button 
+                                  type="button"
+                                  onClick={() => setDraft(p => ({ ...p, form: { ...p.form, thumbnail_url: '' } }))}
+                                  className="text-[10px] font-black text-rose-500 hover:text-rose-600 uppercase tracking-widest"
+                               >
+                                  Remover Imagem
+                               </button>
+                            )}
+                         </div>
+                         
+                         <label 
+                            className={`
+                               relative flex flex-col items-center justify-center h-48 rounded-[32px] border-2 border-dashed transition-all cursor-pointer overflow-hidden
+                               ${form.thumbnail_url ? 'border-emerald-200 bg-emerald-50/10' : 'border-slate-200 bg-slate-100/30 hover:bg-white hover:border-blue-300'}
+                               ${isUploadingThumbnail ? 'animate-pulse' : ''}
+                            `}
+                         >
+                            {form.thumbnail_url ? (
+                               <div className="absolute inset-0 group">
+                                  <img src={form.thumbnail_url} alt="Capa" className="w-full h-full object-cover" />
+                                  <div className="absolute inset-0 bg-blue-600/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white p-4 text-center">
+                                     <svg className="h-8 w-8 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+                                     <span className="font-black text-sm uppercase">Alterar Imagem de Capa</span>
+                                  </div>
+                               </div>
+                            ) : (
+                               <div className="flex flex-col items-center justify-center p-6 text-center space-y-2">
+                                  {isUploadingThumbnail ? (
+                                     <div className="flex flex-col items-center">
+                                        <div className="h-8 w-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4" />
+                                        <span className="text-sm font-black text-slate-400 uppercase">Subindo imagem...</span>
+                                     </div>
+                                  ) : (
+                                     <>
+                                        <div className="h-14 w-14 rounded-2xl bg-white shadow-sm border border-slate-100 text-slate-400 flex items-center justify-center mb-2">
+                                           <svg className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                                        </div>
+                                        <p className="text-sm font-black text-slate-500 uppercase">Fazer Upload de Imagem</p>
+                                        <p className="text-xs text-slate-400 font-medium max-w-[200px]">Formatos aceitos: JPG, PNG, WEBP (Recomendado 16:9)</p>
+                                     </>
+                                  )}
+                               </div>
+                            )}
+                            <input 
+                               type="file" 
+                               className="sr-only" 
+                               accept="image/*"
+                               disabled={isUploadingThumbnail}
+                               onChange={(e) => {
+                                  const file = e.target.files?.[0]
+                                  if (file) handleThumbnailUpload(file)
+                               }} 
+                            />
+                         </label>
+                      </div>
 
-                     <div className="grid grid-cols-2 gap-6">
-                        <label className="block space-y-2">
-                           <span className="text-xs font-black text-slate-400 uppercase tracking-widest pl-1">Status</span>
-                           <select
-                              className="w-full font-bold rounded-2xl border-slate-200 bg-slate-50/50 px-6 py-4 focus:bg-white focus:ring-4 focus:ring-blue-100 transition-all appearance-none"
-                              value={form.status}
-                              onChange={(event) => setDraft((p) => ({ ...p, form: { ...p.form, status: event.target.value as any } }))}
-                           >
-                              <option value="draft">🚀 Em Rascunho</option>
-                              <option value="published">✅ Publicado</option>
-                              <option value="archived">📦 Arquivado</option>
-                           </select>
-                        </label>
+                      <div className="grid grid-cols-2 gap-6">
+                         <label className="block space-y-2">
+                            <span className="text-xs font-black text-slate-400 uppercase tracking-widest pl-1">Status</span>
+                            <select
+                               className="w-full font-bold rounded-2xl border border-slate-200 bg-slate-100/50 px-6 py-4 focus:bg-white focus:ring-4 focus:ring-blue-100 transition-all appearance-none"
+                               value={form.status}
+                               onChange={(event) => setDraft((p) => ({ ...p, form: { ...p.form, status: event.target.value as any } }))}
+                            >
+                               <option value="draft">🚀 Em Rascunho</option>
+                               <option value="published">✅ Publicado</option>
+                               <option value="archived">📦 Arquivado</option>
+                            </select>
+                         </label>
 
-                        <label className="block space-y-2">
-                           <span className="text-xs font-black text-slate-400 uppercase tracking-widest pl-1">Carga (h)</span>
-                           <input
-                              className="w-full font-bold rounded-2xl border-slate-200 bg-slate-50/50 px-6 py-4 placeholder:text-slate-300 focus:bg-white focus:ring-4 focus:ring-blue-100 transition-all"
-                              type="number"
-                              placeholder="00"
-                              value={form.workload_hours || ''}
-                              onChange={(event) => setDraft((p) => ({ ...p, form: { ...p.form, workload_hours: Number(event.target.value || 0) } }))}
-                              required
-                           />
-                        </label>
-                     </div>
+                         <label className="block space-y-2">
+                            <span className="text-xs font-black text-slate-400 uppercase tracking-widest pl-1">Carga (H)</span>
+                            <input
+                               type="number"
+                               className="w-full font-bold rounded-2xl border border-slate-200 bg-slate-100/50 px-6 py-4 placeholder:text-slate-300 focus:bg-white focus:ring-4 focus:ring-blue-100 transition-all"
+                               placeholder="00"
+                               min={0}
+                               value={form.workload_hours}
+                               onChange={(event) => setDraft((p) => ({ ...p, form: { ...p.form, workload_hours: Number(event.target.value) } }))}
+                               required
+                            />
+                         </label>
+                      </div>
 
-                     <label className="block space-y-2">
-                        <span className="text-xs font-black text-slate-400 uppercase tracking-widest pl-1">Objetivos</span>
-                        <textarea
-                           className="w-full min-h-[120px] font-medium rounded-2xl border-slate-200 bg-slate-50/50 px-6 py-4 placeholder:text-slate-300 focus:bg-white focus:ring-4 focus:ring-blue-100 transition-all resize-none"
-                           placeholder="Qual o propósito deste curso?"
-                           value={form.description ?? ''}
-                           onChange={(event) => setDraft((p) => ({ ...p, form: { ...p.form, description: event.target.value } }))}
-                        />
-                     </label>
+                      <label className="block space-y-2">
+                         <span className="text-xs font-black text-slate-400 uppercase tracking-widest pl-1">Objetivos</span>
+                         <textarea
+                            className="w-full font-medium rounded-2xl border border-slate-200 bg-slate-100/50 px-6 py-4 placeholder:text-slate-300 focus:bg-white focus:ring-4 focus:ring-blue-100 transition-all min-h-[120px]"
+                            placeholder="Qual o propósito deste curso?"
+                            value={form.description}
+                            onChange={(event) => setDraft((p) => ({ ...p, form: { ...p.form, description: event.target.value } }))}
+                         />
+                      </label>
                   </div>
 
                   {error && (

@@ -447,3 +447,23 @@ export function toErrorMessage(error: unknown): string {
   const normalizedError = normalizeSupabaseError(error)
   return normalizedError.message || 'Erro inesperado.'
 }
+
+export async function uploadCourseThumbnail(file: File): Promise<string> {
+  const fileExt = file.name.split('.').pop()
+  const fileName = `${crypto.randomUUID()}.${fileExt}`
+  const filePath = `thumbnails/${fileName}`
+
+  const { error: uploadError } = await supabase.storage
+    .from(MATERIALS_BUCKET)
+    .upload(filePath, file)
+
+  if (uploadError) {
+    throw uploadError
+  }
+
+  const { data } = supabase.storage
+    .from(MATERIALS_BUCKET)
+    .getPublicUrl(filePath)
+
+  return data.publicUrl
+}
