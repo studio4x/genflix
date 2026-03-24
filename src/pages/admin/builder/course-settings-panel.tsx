@@ -59,7 +59,7 @@ export function CourseSettingsPanel() {
     try {
       const parsed = courseFormSchema.safeParse(form)
       if (!parsed.success) {
-        throw new Error(parsed.error.errors[0].message)
+        throw new Error(parsed.error.issues[0]?.message ?? 'Dados inválidos.')
       }
 
       await updateCourse(courseTree.course.id, parsed.data)
