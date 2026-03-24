@@ -227,9 +227,67 @@ export function StudentCourseDetailsPage() {
       )}
 
       {/* CURRICULUM GRID */}
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-12 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-12 items-start">
          
-         <div className="space-y-12">
+         {/* SIDEBAR (PROGRESS SUMMARY) */}
+         <aside className="space-y-8 sticky top-24 order-last lg:order-first">
+            <div className="bg-white rounded-[40px] border border-slate-100 shadow-sm p-8 space-y-8">
+               <div className="space-y-2">
+                  <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-center">Resumo da Jornada</h5>
+                  <div className="relative w-32 h-32 mx-auto">
+                     <svg className="w-full h-full transform -rotate-90">
+                        <circle cx="64" cy="64" r="58" stroke="currentColor" strokeWidth="12" fill="transparent" className="text-slate-100" />
+                        <circle cx="64" cy="64" r="58" stroke="currentColor" strokeWidth="12" fill="transparent" strokeDasharray={364.4} strokeDashoffset={364.4 - (364.4 * courseProgressPercent) / 100} strokeLinecap="round" className="text-blue-600 transition-all duration-1000" />
+                     </svg>
+                     <div className="absolute inset-0 flex flex-col items-center justify-center">
+                        <span className="text-3xl font-black text-slate-900">{courseProgressPercent}%</span>
+                     </div>
+                  </div>
+               </div>
+
+               <div className="space-y-4">
+                  <div className="flex items-center justify-between text-xs font-bold bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                     <span className="text-slate-500 uppercase">Módulos</span>
+                     <span className="text-slate-900">{totalCompleted} / {totalModules}</span>
+                  </div>
+                  <div className="text-center">
+                     <p className="text-[10px] font-medium text-slate-400 leading-relaxed uppercase tracking-widest">
+                        {courseStatus?.is_completed ? "Todos os requisitos foram atendidos." : "Complete todos os módulos para liberar o certificado final."}
+                     </p>
+                  </div>
+               </div>
+            </div>
+
+            {finalAssessment && (
+               <div className={`p-8 rounded-[40px] border transition-all ${
+                  finalAssessment.state === 'approved' ? 'bg-emerald-500 text-white shadow-emerald-100 border-emerald-400 shadow-2xl' :
+                  finalAssessment.state === 'blocked' ? 'bg-white text-slate-400 border-slate-100 shadow-sm opacity-60' :
+                  'bg-blue-600 text-white shadow-blue-100 border-blue-500 shadow-2xl'
+               }`}>
+                  <div className="space-y-6">
+                     <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${finalAssessment.state === 'approved' ? 'bg-white/20' : 'bg-white/10'} backdrop-blur-sm`}>
+                        <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
+                     </div>
+                     <div className="space-y-2">
+                        <h4 className="text-xl font-black tracking-tight">{finalAssessment.title}</h4>
+                        <p className="text-sm font-medium opacity-80 leading-relaxed">
+                           {finalAssessment.state === 'approved' ? "Você foi aprovado! Baixe seu certificado acima." : "Teste final para consolidar seu conhecimento."}
+                        </p>
+                     </div>
+                     <Button asChild disabled={finalAssessment.state === 'blocked'} className={`w-full h-14 rounded-2xl font-black ${
+                        finalAssessment.state === 'approved' ? 'bg-white text-emerald-600 hover:bg-emerald-50' : 'bg-white text-blue-600 hover:bg-slate-50'
+                     }`}>
+                        <Link to={`/aluno/cursos/${courseId}/avaliacoes/${finalAssessment.assessment_id}`}>
+                           {finalAssessment.state === 'approved' ? 'Refazer Prova' : 'Iniciar Prova Final'}
+                        </Link>
+                     </Button>
+                  </div>
+               </div>
+            )}
+         </aside>
+
+         {/* CURRICULUM CONTENT (FULL WIDTH) */}
+         <div className="space-y-12 order-first lg:order-last">
             <div className="flex items-center gap-4">
                <h3 className="text-3xl font-black text-slate-900 tracking-tight">Grade Curricular</h3>
                <div className="h-px flex-1 bg-slate-100" />
@@ -335,63 +393,6 @@ export function StudentCourseDetailsPage() {
                })}
             </div>
          </div>
-
-         {/* SIDEBAR */}
-         <aside className="space-y-8 sticky top-8">
-            <div className="bg-white rounded-[40px] border border-slate-100 shadow-sm p-8 space-y-8">
-               <div className="space-y-2">
-                  <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-center">Resumo da Jornada</h5>
-                  <div className="relative w-32 h-32 mx-auto">
-                     <svg className="w-full h-full transform -rotate-90">
-                        <circle cx="64" cy="64" r="58" stroke="currentColor" strokeWidth="12" fill="transparent" className="text-slate-100" />
-                        <circle cx="64" cy="64" r="58" stroke="currentColor" strokeWidth="12" fill="transparent" strokeDasharray={364.4} strokeDashoffset={364.4 - (364.4 * courseProgressPercent) / 100} strokeLinecap="round" className="text-blue-600 transition-all duration-1000" />
-                     </svg>
-                     <div className="absolute inset-0 flex flex-col items-center justify-center">
-                        <span className="text-3xl font-black text-slate-900">{courseProgressPercent}%</span>
-                     </div>
-                  </div>
-               </div>
-
-               <div className="space-y-4">
-                  <div className="flex items-center justify-between text-xs font-bold bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                     <span className="text-slate-500 uppercase">Módulos</span>
-                     <span className="text-slate-900">{totalCompleted} / {totalModules}</span>
-                  </div>
-                  <div className="text-center">
-                     <p className="text-[10px] font-medium text-slate-400 leading-relaxed uppercase tracking-widest">
-                        {courseStatus?.is_completed ? "Todos os requisitos foram atendidos." : "Complete todos os módulos para liberar o certificado final."}
-                     </p>
-                  </div>
-               </div>
-            </div>
-
-            {finalAssessment && (
-               <div className={`p-8 rounded-[40px] border transition-all ${
-                  finalAssessment.state === 'approved' ? 'bg-emerald-500 text-white shadow-emerald-100 border-emerald-400 shadow-2xl' :
-                  finalAssessment.state === 'blocked' ? 'bg-white text-slate-400 border-slate-100 shadow-sm opacity-60' :
-                  'bg-blue-600 text-white shadow-blue-100 border-blue-500 shadow-2xl'
-               }`}>
-                  <div className="space-y-6">
-                     <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${finalAssessment.state === 'approved' ? 'bg-white/20' : 'bg-white/10'} backdrop-blur-sm`}>
-                        <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
-                     </div>
-                     <div className="space-y-2">
-                        <h4 className="text-xl font-black tracking-tight">{finalAssessment.title}</h4>
-                        <p className="text-sm font-medium opacity-80 leading-relaxed">
-                           {finalAssessment.state === 'approved' ? "Você foi aprovado! Baixe seu certificado acima." : "Teste final para consolidar seu conhecimento."}
-                        </p>
-                     </div>
-                     <Button asChild disabled={finalAssessment.state === 'blocked'} className={`w-full h-14 rounded-2xl font-black ${
-                        finalAssessment.state === 'approved' ? 'bg-white text-emerald-600 hover:bg-emerald-50' : 'bg-white text-blue-600 hover:bg-slate-50'
-                     }`}>
-                        <Link to={`/aluno/cursos/${courseId}/avaliacoes/${finalAssessment.assessment_id}`}>
-                           {finalAssessment.state === 'approved' ? 'Refazer Prova' : 'Iniciar Prova Final'}
-                        </Link>
-                     </Button>
-                  </div>
-               </div>
-            )}
-         </aside>
       </div>
 
     </div>
