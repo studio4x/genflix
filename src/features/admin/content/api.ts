@@ -522,9 +522,7 @@ export async function importCourseContent(courseId: string, input: any, clearExi
     await clearCourseContent(courseId)
   }
 
-  // Se o input for um objeto com a propriedade 'modules', extraímos ela.
-  // Caso contrário, assumimos que o próprio input é a lista de módulos.
-  const modules = Array.isArray(input) ? input : (input && Array.isArray(input.modules) ? input.modules : [])
+  const modules = (Array.isArray(input) ? input : (input && Array.isArray(input.modules) ? input.modules : [])) as ImportModuleData[]
 
   if (modules.length === 0) {
     throw new Error('Nenhum módulo encontrado no JSON para importar.')
@@ -547,7 +545,7 @@ export async function importCourseContent(courseId: string, input: any, clearExi
 
     // 2. Criar Aulas do Módulo
     if (mData.lessons && mData.lessons.length > 0) {
-      const lessonsToInsert = mData.lessons.map((l, idx) => ({
+      const lessonsToInsert = mData.lessons.map((l: any, idx: number) => ({
         module_id: module.id,
         title: l.title,
         description: l.description || null,
@@ -597,7 +595,7 @@ export async function importCourseContent(courseId: string, input: any, clearExi
           if (qError) throw qError
 
           if (qData.options && qData.options.length > 0) {
-            const optionsToInsert = qData.options.map((o, idx) => ({
+            const optionsToInsert = qData.options.map((o: any, idx: number) => ({
               question_id: question.id,
               option_text: o.option_text,
               is_correct: o.is_correct,

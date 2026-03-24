@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 
 import { useAuth } from '@/app/providers/auth-provider'
 import { Button } from '@/components/ui/button'
+import { supabase } from '@/services/supabase/client'
 import 'react-quill/dist/quill.snow.css'
 import {
   fetchReleasedCourseById,
