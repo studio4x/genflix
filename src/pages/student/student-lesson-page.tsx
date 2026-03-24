@@ -320,7 +320,6 @@ export function StudentLessonPage() {
                    </div>
                  )}
               </div>
- </div>
 
               {/* FOOTER ACTIONS */}
               <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-8 border-t border-slate-200 mt-12">
