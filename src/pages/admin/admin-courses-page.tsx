@@ -14,7 +14,9 @@ import {
   updateCourse,
   uploadCourseThumbnail,
   toErrorMessage,
+  importFullCourse,
 } from '@/features/admin/content/api'
+import type { ImportCourseFullData } from '@/features/admin/content/api'
 import {
   courseFormSchema,
   type CourseFormInput,
@@ -58,6 +60,12 @@ export function AdminCoursesPage() {
   const isEditing = useMemo(() => !!editingCourseId, [editingCourseId])
   const isFormOpen = draft.isFormOpen
   const isUploadingThumbnail = draft.isUploadingThumbnail
+
+  // AI Import State
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false)
+  const [importJson, setImportJson] = useState('')
+  const [isImporting, setIsImporting] = useState(false)
+  const [importError, setImportError] = useState<string | null>(null)
 
   async function loadCourses() {
     setIsLoading(true)
@@ -162,6 +170,23 @@ export function AdminCoursesPage() {
     }
   }
 
+  async function handleImportFull() {
+    if (!user?.id) return
+    setIsImporting(true)
+    setImportError(null)
+    try {
+      const data = JSON.parse(importJson) as ImportCourseFullData
+      await importFullCourse(data, user.id)
+      await loadCourses()
+      setIsImportModalOpen(false)
+      setImportJson('')
+    } catch (err) {
+      setImportError(err instanceof Error ? err.message : 'JSON inválido ou erro na importação.')
+    } finally {
+      setIsImporting(false)
+    }
+  }
+
   const metrics = useMemo(() => {
      return {
         total: courses.length,
@@ -181,6 +206,16 @@ export function AdminCoursesPage() {
         </div>
         <div className="flex items-center gap-3">
            {isLoading && <span className="h-5 w-5 rounded-full border-2 border-slate-200 border-t-blue-600 animate-spin mr-2" />}
+           
+           <Button 
+              variant="outline"
+              onClick={() => setIsImportModalOpen(true)}
+              className="h-12 px-6 rounded-2xl border-slate-200 text-slate-500 font-bold hover:bg-slate-50 flex items-center gap-2 group transition-all transform active:scale-95"
+            >
+               <svg className="h-5 w-5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+               Importar de IA
+            </Button>
+
            <Button 
              onClick={openNewCourseForm}
              className="bg-blue-600 hover:bg-blue-700 text-white font-bold h-12 px-6 rounded-2xl shadow-xl shadow-blue-100 flex items-center gap-2 group transition-all transform active:scale-95"
@@ -378,7 +413,7 @@ export function AdminCoursesPage() {
                                      <svg className="h-8 w-8 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
                                      <span className="font-black text-sm uppercase">Alterar Imagem de Capa</span>
                                   </div>
-                               </div>
+                                </div>
                             ) : (
                                <div className="flex flex-col items-center justify-center p-6 text-center space-y-2">
                                   {isUploadingThumbnail ? (
@@ -479,7 +514,58 @@ export function AdminCoursesPage() {
          </div>
       )}
 
+      {/* AI IMPORT MODAL */}
+      {isImportModalOpen && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
+             <div className="bg-white rounded-[40px] w-full max-w-2xl shadow-2xl border border-white/20 overflow-y-auto max-h-[90vh] no-scrollbar animate-in zoom-in-95 duration-300">
+                <div className="p-8 border-b border-slate-100 flex items-center justify-between">
+                   <div>
+                      <h3 className="text-xl font-black text-slate-900 tracking-tight">Criar Curso via IA (JSON)</h3>
+                      <p className="text-sm text-slate-500 mt-1 font-medium">O JSON deve conter o título, descrição e módulos.</p>
+                   </div>
+                   <button onClick={() => setIsImportModalOpen(false)} className="h-10 w-10 flex items-center justify-center rounded-xl bg-slate-50 text-slate-400 hover:text-slate-900 transition-colors">
+                      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                   </button>
+                </div>
+
+                <div className="p-8 space-y-6">
+                   <div className="space-y-2">
+                      <span className="text-xs font-black text-slate-400 uppercase tracking-widest pl-1">Código JSON Estruturado</span>
+                      <textarea 
+                         className="w-full h-80 font-mono text-xs p-6 bg-slate-900 text-emerald-400 rounded-2xl border border-slate-800 focus:ring-4 focus:ring-blue-100 transition-all no-scrollbar"
+                         placeholder='{ "title": "Novo Curso", "modules": [...] }'
+                         value={importJson}
+                         onChange={e => setImportJson(e.target.value)}
+                      />
+                   </div>
+
+                   {importError && (
+                      <div className="p-4 rounded-xl bg-rose-50 border border-rose-100 text-rose-600 text-xs font-bold animate-in slide-in-from-left-2 transition-all">
+                         {importError}
+                      </div>
+                   )}
+                </div>
+
+                <div className="p-8 bg-slate-50/50 flex gap-4 border-t border-slate-100">
+                   <Button variant="ghost" onClick={() => setIsImportModalOpen(false)} className="flex-1 h-14 rounded-2xl font-bold text-slate-500">
+                      Cancelar
+                   </Button>
+                   <Button 
+                      onClick={handleImportFull}
+                      disabled={isImporting || !importJson.trim()}
+                      className="flex-[2] h-14 rounded-2xl bg-blue-600 font-black shadow-xl shadow-blue-100"
+                   >
+                      {isImporting ? (
+                         <span className="flex items-center gap-2">
+                            <svg className="animate-spin h-5 w-5 text-white" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                            Criando Curso Completo...
+                         </span>
+                      ) : 'Importar e Criar Curso'}
+                   </Button>
+                </div>
+             </div>
+          </div>
+       )}
     </div>
   )
 }
-

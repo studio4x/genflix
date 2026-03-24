@@ -605,3 +605,36 @@ export async function importCourseContent(courseId: string, modules: ImportModul
   }
 }
 
+export interface ImportCourseFullData {
+  title: string
+  description?: string
+  workload_minutes?: number
+  thumbnail_url?: string
+  status?: 'draft' | 'published'
+  modules: ImportModuleData[]
+}
+
+export async function importFullCourse(data: ImportCourseFullData, userId: string) {
+  // 1. Criar o Curso Base
+  const { data: course, error: cError } = await supabase
+    .from('courses')
+    .insert({
+      title: data.title,
+      description: data.description || null,
+      status: data.status || 'draft',
+      workload_minutes: data.workload_minutes || 0,
+      thumbnail_url: data.thumbnail_url || null,
+      created_by: userId
+    })
+    .select()
+    .single()
+
+  if (cError) throw cError
+
+  // 2. Importar Conteúdo (Módulos/Aulas/Quizzes)
+  if (data.modules && data.modules.length > 0) {
+    await importCourseContent(course.id, data.modules, false)
+  }
+  
+  return course
+}
