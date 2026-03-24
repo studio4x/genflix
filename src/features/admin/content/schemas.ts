@@ -8,6 +8,7 @@ export const courseFormSchema = z.object({
   description: z.string().trim().max(2000).optional(),
   status: z.enum(['draft', 'published', 'archived']),
   workload_hours: z.number().int().min(0),
+  thumbnail_url: z.string().trim().url('URL da imagem invalida').optional().or(z.literal('')),
 })
 
 export const moduleFormSchema = z.object({

@@ -23,6 +23,7 @@ const initialForm: CourseFormInput = {
   description: '',
   status: 'draft',
   workload_hours: 0,
+  thumbnail_url: '',
 }
 
 interface CourseEditorDraft {
@@ -118,6 +119,7 @@ export function AdminCoursesPage() {
         description: course.description ?? '',
         status: course.status,
         workload_hours: course.workload_hours,
+        thumbnail_url: course.thumbnail_url ?? '',
       },
     })
     setError(null)
@@ -219,7 +221,14 @@ export function AdminCoursesPage() {
                     className="group relative flex flex-col bg-white rounded-[32px] border border-slate-100 shadow-sm hover:shadow-2xl hover:border-blue-200 transition-all duration-500 overflow-hidden"
                   >
                     {/* Thumbnail Placeholder / Image */}
-                    <Link to={`/admin/cursos/${course.id}/builder`} className="aspect-[16/9] w-full bg-slate-900 relative overflow-hidden block">
+                    <Link to={`/admin/cursos/${course.id}/builder`} className="aspect-[16/9] w-full bg-slate-200 relative overflow-hidden block">
+                        {course.thumbnail_url ? (
+                           <img src={course.thumbnail_url} alt={course.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+                        ) : (
+                           <div className="w-full h-full flex items-center justify-center bg-slate-900">
+                             <span className="text-4xl font-black text-white/10 uppercase tracking-tighter">LMS</span>
+                           </div>
+                        )}
                         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-60 z-10" />
                         
                         {/* Status Badge */}
@@ -320,6 +329,29 @@ export function AdminCoursesPage() {
                            onChange={(event) => setDraft((p) => ({ ...p, form: { ...p.form, title: event.target.value } }))}
                            required
                         />
+                     </label>
+
+                     <label className="block space-y-2">
+                        <div className="flex items-center justify-between">
+                           <span className="text-xs font-black text-slate-400 uppercase tracking-widest pl-1">Capa do Curso (URL)</span>
+                           {form.thumbnail_url && <span className="text-[10px] font-bold text-emerald-500 uppercase">Preview Disponível</span>}
+                        </div>
+                        <div className="relative group">
+                           <input
+                              className="w-full font-bold rounded-2xl border-slate-200 bg-slate-50/50 px-6 py-4 placeholder:text-slate-300 focus:bg-white focus:ring-4 focus:ring-blue-100 transition-all pr-14"
+                              placeholder="https://imagem.com/capa.jpg"
+                              value={form.thumbnail_url ?? ''}
+                              onChange={(event) => setDraft((p) => ({ ...p, form: { ...p.form, thumbnail_url: event.target.value } }))}
+                           />
+                           <div className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300">
+                              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                           </div>
+                        </div>
+                        {form.thumbnail_url && (
+                           <div className="mt-2 aspect-video w-full rounded-2xl overflow-hidden border border-slate-100 shadow-sm animate-in fade-in zoom-in duration-300">
+                              <img src={form.thumbnail_url} alt="Preview" className="w-full h-full object-cover" />
+                           </div>
+                        )}
                      </label>
 
                      <div className="grid grid-cols-2 gap-6">

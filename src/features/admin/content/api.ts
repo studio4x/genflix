@@ -79,6 +79,7 @@ export async function createCourse(input: CourseFormInput, userId: string) {
       description: input.description?.trim() || null,
       status: input.status,
       workload_hours: input.workload_hours,
+      thumbnail_url: input.thumbnail_url?.trim() || null,
       created_by: userId,
     })
     .select('*')
@@ -97,6 +98,7 @@ export async function updateCourse(courseId: string, input: CourseFormInput) {
       description: input.description?.trim() || null,
       status: input.status,
       workload_hours: input.workload_hours,
+      thumbnail_url: input.thumbnail_url?.trim() || null,
     })
     .eq('id', courseId)
     .select('*')
