@@ -109,7 +109,7 @@ export function StudentCoursesPage() {
                   {course.title}
                 </h3>
                 <p className="mt-4 text-sm font-medium text-slate-500 line-clamp-2 leading-relaxed h-[40px]">
-                  {course.description || "Inicie este treinamento para desenvolver novas competências e aprimorar seus resultados."}
+                  {course.description ? course.description.replace(/<[^>]*>?/gm, '') : "Inicie este treinamento para desenvolver novas competências e aprimorar seus resultados."}
                 </p>
               </div>
 

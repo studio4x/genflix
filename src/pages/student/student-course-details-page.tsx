@@ -283,6 +283,20 @@ export function StudentCourseDetailsPage() {
             )}
          </div>
       </section>
+      
+      {/* COURSE DESCRIPTION (NEW) */}
+      {course.description && (
+         <section className="bg-white rounded-[40px] border border-slate-100 p-10 md:p-14 space-y-8 animate-in slide-in-from-bottom-4 duration-700 delay-400">
+            <div className="flex items-center gap-4">
+               <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] leading-none">Sobre este Treinamento</h3>
+               <div className="h-px flex-1 bg-slate-100" />
+            </div>
+            <div 
+               className="text-lg font-medium text-slate-600 leading-relaxed ql-editor !p-0"
+               dangerouslySetInnerHTML={{ __html: course.description }}
+            />
+         </section>
+      )}
 
       {/* CURRICULUM CONTENT (FULL WIDTH) */}
       <div className="space-y-12">

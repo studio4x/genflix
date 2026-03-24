@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
+import ReactQuill from 'react-quill'
+import 'react-quill/dist/quill.snow.css'
 import type { FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 
@@ -279,7 +281,7 @@ export function AdminCoursesPage() {
                     {/* Footer Actions */}
                     <div className="p-6 space-y-4">
                        <p className="text-sm text-slate-500 line-clamp-2 leading-relaxed h-[40px]">
-                          {course.description || 'Sem descrição definida para este curso.'}
+                          {course.description ? course.description.replace(/<[^>]*>?/gm, '') : 'Sem descrição definida para este curso.'}
                        </p>
                        
                        <div className="flex items-center gap-2 pt-2 border-t border-slate-50">
@@ -436,15 +438,25 @@ export function AdminCoursesPage() {
                          </label>
                       </div>
 
-                      <label className="block space-y-2">
-                         <span className="text-xs font-black text-slate-400 uppercase tracking-widest pl-1">Objetivos</span>
-                         <textarea
-                            className="w-full font-medium rounded-2xl border border-slate-200 bg-slate-100/50 px-6 py-4 placeholder:text-slate-300 focus:bg-white focus:ring-4 focus:ring-blue-100 transition-all min-h-[120px]"
-                            placeholder="Qual o propósito deste curso?"
-                            value={form.description}
-                            onChange={(event) => setDraft((p) => ({ ...p, form: { ...p.form, description: event.target.value } }))}
-                         />
-                      </label>
+                       <div className="block space-y-2">
+                          <span className="text-xs font-black text-slate-400 uppercase tracking-widest pl-1">Descrição Detalhada</span>
+                          <div className="rich-editor-container mini">
+                             <ReactQuill 
+                                theme="snow"
+                                value={form.description}
+                                onChange={val => setDraft((p) => ({ ...p, form: { ...p.form, description: val } }))}
+                                modules={{
+                                   toolbar: [
+                                      ['bold', 'italic', 'underline'],
+                                      [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                                      ['link', 'clean'],
+                                   ],
+                                }}
+                                placeholder="Qual o propósito deste curso?"
+                                className="bg-slate-100/50 rounded-2xl overflow-hidden border border-slate-200 focus-within:ring-4 focus-within:ring-blue-100 focus-within:bg-white transition-all"
+                             />
+                          </div>
+                       </div>
                   </div>
 
                   {error && (

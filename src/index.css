@@ -82,3 +82,47 @@
     @apply font-sans;
   }
 }
+
+/* Custom React Quill Styling */
+.quill {
+  border: none !important;
+  display: flex;
+  flex-direction: column;
+}
+
+.ql-toolbar.ql-snow {
+  border: none !important;
+  background-color: white !important;
+  border-bottom: 1px solid #f1f5f9 !important;
+  padding: 12px 24px !important;
+  border-radius: 20px 20px 0 0 !important;
+}
+
+.ql-container.ql-snow {
+  border: none !important;
+  font-family: inherit !important;
+  font-size: 0.95rem !important;
+  min-height: 200px;
+}
+
+.ql-editor {
+  padding: 24px !important;
+  min-height: 200px;
+  line-height: 1.6 !important;
+}
+
+.ql-editor.ql-blank::before {
+  left: 24px !important;
+  font-style: normal !important;
+  color: #94a3b8 !important;
+  font-weight: 500 !important;
+}
+
+.rich-editor-container .quill {
+  @apply transition-all duration-300;
+}
+
+.rich-editor-container:focus-within .ql-toolbar.ql-snow {
+  background-color: #fff !important;
+}
+

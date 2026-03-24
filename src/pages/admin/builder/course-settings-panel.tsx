@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react'
+import ReactQuill from 'react-quill'
 import { Button } from '@/components/ui/button'
 import { useCourseBuilder } from '@/app/layouts/admin-course-builder-layout'
 import { updateCourse, uploadCourseThumbnail, toErrorMessage } from '@/features/admin/content/api'
 import { courseFormSchema } from '@/features/admin/content/schemas'
+import 'react-quill/dist/quill.snow.css'
 
 export function CourseSettingsPanel() {
   const { courseTree, refreshTree } = useCourseBuilder()
@@ -73,6 +75,15 @@ export function CourseSettingsPanel() {
     }
   }
 
+  const quillModules = {
+    toolbar: [
+      [{ 'header': [1, 2, 3, false] }],
+      ['bold', 'italic', 'underline', 'strike'],
+      [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+      ['link', 'clean'],
+    ],
+  }
+
   return (
     <div className="max-w-4xl mx-auto space-y-6 animate-in fade-in duration-500 pb-24">
       <div className="border-b border-slate-200 pb-5">
@@ -112,7 +123,7 @@ export function CourseSettingsPanel() {
                         </div>
                      </>
                   ) : (
-                     <div className="flex flex-col items-center gap-4 p-8 text-center">
+                     <div className="flex flex-col items-center gap-4 p-8 text-center" style={{ height: '100%' }}>
                         <div className={`h-16 w-16 rounded-[20px] bg-white shadow-lg border border-slate-100 flex items-center justify-center text-slate-400 group-hover:text-blue-500 group-hover:rotate-6 transition-all duration-300 ${isUploadingThumbnail ? 'animate-pulse' : ''}`}>
                            {isUploadingThumbnail ? (
                               <svg className="h-8 w-8 animate-spin" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
@@ -142,15 +153,19 @@ export function CourseSettingsPanel() {
                   />
                </label>
 
-               <label className="block space-y-2">
+               <div className="block space-y-2">
                   <span className="text-xs font-black text-slate-400 uppercase tracking-widest pl-1">Descrição Detalhada</span>
-                  <textarea 
-                     className="w-full min-h-[160px] font-medium rounded-[24px] border border-slate-200 bg-slate-100/50 px-6 py-5 placeholder:text-slate-300 focus:bg-white focus:ring-4 focus:ring-blue-100 transition-all leading-relaxed"
-                     placeholder="Fale sobre os objetivos e o público-alvo do curso..."
-                     value={form.description}
-                     onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
-                  />
-               </label>
+                  <div className="rich-editor-container">
+                     <ReactQuill 
+                        theme="snow"
+                        value={form.description}
+                        onChange={val => setForm(f => ({ ...f, description: val }))}
+                        modules={quillModules}
+                        placeholder="Fale sobre os objetivos e o público-alvo do curso..."
+                        className="bg-slate-100/50 rounded-[24px] overflow-hidden border border-slate-200 focus-within:ring-4 focus-within:ring-blue-100 focus-within:bg-white transition-all"
+                     />
+                  </div>
+               </div>
 
                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   <label className="block space-y-2">
