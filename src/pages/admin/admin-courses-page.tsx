@@ -23,7 +23,7 @@ const initialForm: CourseFormInput = {
   title: '',
   description: '',
   status: 'draft',
-  workload_hours: 0,
+  workload_minutes: 0,
   thumbnail_url: '',
 }
 
@@ -135,7 +135,7 @@ export function AdminCoursesPage() {
         title: course.title,
         description: course.description ?? '',
         status: course.status,
-        workload_hours: course.workload_hours,
+        workload_minutes: course.workload_minutes,
         thumbnail_url: course.thumbnail_url ?? '',
       },
     }))
@@ -262,11 +262,10 @@ export function AdminCoursesPage() {
                              {course.title}
                            </h4>
                            <div className="flex items-center gap-2 mt-2">
-                              <span className="text-[10px] font-black text-slate-300 uppercase tracking-tighter flex items-center gap-1">
-                                 <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                 {course.workload_hours} Horas
-                              </span>
-                           </div>
+                              <span className="flex items-center gap-1.5 text-xs font-bold text-slate-500">
+                     <svg className="h-3.5 w-3.5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                     {course.workload_minutes} min
+                  </span>            </div>
                         </div>
 
                         {/* Hover Overlay Button */}
@@ -423,14 +422,14 @@ export function AdminCoursesPage() {
                          </label>
 
                          <label className="block space-y-2">
-                            <span className="text-xs font-black text-slate-400 uppercase tracking-widest pl-1">Carga (H)</span>
+                            <span className="text-xs font-black text-slate-400 uppercase tracking-widest pl-1">Duração (Minutos)</span>
                             <input
                                type="number"
                                className="w-full font-bold rounded-2xl border border-slate-200 bg-slate-100/50 px-6 py-4 placeholder:text-slate-300 focus:bg-white focus:ring-4 focus:ring-blue-100 transition-all"
                                placeholder="00"
                                min={0}
-                               value={form.workload_hours}
-                               onChange={(event) => setDraft((p) => ({ ...p, form: { ...p.form, workload_hours: Number(event.target.value) } }))}
+                               value={form.workload_minutes}
+                               onChange={(event) => setDraft((p) => ({ ...p, form: { ...p.form, workload_minutes: Number(event.target.value) } }))}
                                required
                             />
                          </label>

@@ -7,7 +7,7 @@ export interface Course {
   description: string | null
   status: CourseStatus
   thumbnail_url: string | null
-  workload_hours: number
+  workload_minutes: number
   created_by: string | null
   created_at: string
   updated_at: string

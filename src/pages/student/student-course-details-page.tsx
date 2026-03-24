@@ -182,7 +182,7 @@ export function StudentCourseDetailsPage() {
                <div className="flex flex-wrap items-center gap-6">
                   <span className="flex items-center gap-2 text-sm font-bold text-slate-300">
                      <svg className="h-5 w-5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                     {course.workload_hours} Horas
+                     {course.workload_minutes} Minutos
                   </span>
                   <span className="flex items-center gap-2 text-sm font-bold text-slate-300">
                      <svg className="h-5 w-5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11v9h-2v-9H7v9H5v-9H3V9h18v2h-2z" /></svg>

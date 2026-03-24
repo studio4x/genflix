@@ -78,7 +78,7 @@ export async function createCourse(input: CourseFormInput, userId: string) {
       title: input.title,
       description: input.description?.trim() || null,
       status: input.status,
-      workload_hours: input.workload_hours,
+      workload_minutes: input.workload_minutes,
       thumbnail_url: input.thumbnail_url?.trim() || null,
       created_by: userId,
     })
@@ -97,7 +97,7 @@ export async function updateCourse(courseId: string, input: CourseFormInput) {
       title: input.title,
       description: input.description?.trim() || null,
       status: input.status,
-      workload_hours: input.workload_hours,
+      workload_minutes: input.workload_minutes,
       thumbnail_url: input.thumbnail_url?.trim() || null,
     })
     .eq('id', courseId)
@@ -450,11 +450,10 @@ export function toErrorMessage(error: unknown): string {
 
 export async function uploadCourseThumbnail(file: File): Promise<string> {
   const fileExt = file.name.split('.').pop()
-  const fileName = `${crypto.randomUUID()}.${fileExt}`
-  const filePath = `thumbnails/${fileName}`
+  const filePath = `${crypto.randomUUID()}.${fileExt}`
 
   const { error: uploadError } = await supabase.storage
-    .from(MATERIALS_BUCKET)
+    .from('thumbnails')
     .upload(filePath, file)
 
   if (uploadError) {
@@ -462,7 +461,7 @@ export async function uploadCourseThumbnail(file: File): Promise<string> {
   }
 
   const { data } = supabase.storage
-    .from(MATERIALS_BUCKET)
+    .from('thumbnails')
     .getPublicUrl(filePath)
 
   return data.publicUrl
