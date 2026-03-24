@@ -78,7 +78,7 @@ export function StudentCoursesPage() {
             className="group relative flex flex-col bg-white rounded-[32px] border border-slate-100 shadow-sm hover:shadow-2xl hover:border-blue-200 transition-all duration-500 overflow-hidden"
           >
             {/* THUMBNAIL AREA */}
-            <Link to={`/aluno/cursos/${course.id}`} className="aspect-[16/9] w-full bg-slate-200 relative overflow-hidden block">
+            <Link to={`/aluno/cursos/${course.id}`} className="aspect-[4/3] w-full bg-slate-200 relative overflow-hidden block">
                {course.thumbnail_url ? (
                   <img src={course.thumbnail_url} alt={course.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
                ) : (

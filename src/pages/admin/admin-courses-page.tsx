@@ -238,7 +238,7 @@ export function AdminCoursesPage() {
                     className="group relative flex flex-col bg-white rounded-[32px] border border-slate-100 shadow-sm hover:shadow-2xl hover:border-blue-200 transition-all duration-500 overflow-hidden"
                   >
                     {/* Thumbnail Placeholder / Image */}
-                    <Link to={`/admin/cursos/${course.id}/builder`} className="aspect-[16/9] w-full bg-slate-200 relative overflow-hidden block">
+                    <Link to={`/admin/cursos/${course.id}/builder`} className="aspect-[4/3] w-full bg-slate-200 relative overflow-hidden block">
                         {course.thumbnail_url ? (
                            <img src={course.thumbnail_url} alt={course.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
                         ) : (
@@ -295,7 +295,7 @@ export function AdminCoursesPage() {
                                 <span className="text-[10px] font-bold uppercase tracking-tighter">Final</span>
                              </Link>
                           </Button>
-                          <div className="w-px h-8 bg-slate-100 mx-1" />
+                          <div className="aspect-[4/3] w-full overflow-hidden bg-slate-100 relative group/img">
                           <Button 
                              onClick={() => handleEdit(course)}
                              variant="ghost" className="w-10 h-10 p-0 rounded-xl text-slate-300 hover:text-amber-600 hover:bg-amber-50"
@@ -361,9 +361,10 @@ export function AdminCoursesPage() {
                             )}
                          </div>
                          
+                         <span className="text-xs font-black text-slate-400 uppercase tracking-widest pl-1">Imagem de Capa (1024x768)</span>
                          <label 
                             className={`
-                               relative flex flex-col items-center justify-center h-48 rounded-[32px] border-2 border-dashed transition-all cursor-pointer overflow-hidden
+                               relative flex flex-col items-center justify-center aspect-[4/3] w-full rounded-[32px] border-2 border-dashed transition-all cursor-pointer overflow-hidden
                                ${form.thumbnail_url ? 'border-emerald-200 bg-emerald-50/10' : 'border-slate-200 bg-slate-100/30 hover:bg-white hover:border-blue-300'}
                                ${isUploadingThumbnail ? 'animate-pulse' : ''}
                             `}
