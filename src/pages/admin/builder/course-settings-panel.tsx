@@ -98,9 +98,10 @@ export function CourseSettingsPanel() {
             <div className="space-y-4">
                <span className="text-xs font-black text-slate-400 uppercase tracking-widest pl-1">Capa do Curso (1024x768)</span>
                <div 
-                  className={`relative group aspect-[4/3] w-full rounded-[24px] border-2 border-dashed transition-all flex flex-col items-center justify-center overflow-hidden cursor-pointer ${
+                  className={`relative group w-full rounded-[24px] border-2 border-dashed transition-all flex flex-col items-center justify-center overflow-hidden cursor-pointer ${
                      form.thumbnail_url ? 'border-transparent' : 'border-slate-200 bg-slate-50/50 hover:bg-white hover:border-blue-400 hover:shadow-xl hover:shadow-blue-50'
                   }`}
+                  style={{ aspectRatio: '4/3' }}
                >
                   {form.thumbnail_url ? (
                      <>

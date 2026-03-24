@@ -238,7 +238,7 @@ export function AdminCoursesPage() {
                     className="group relative flex flex-col bg-white rounded-[32px] border border-slate-100 shadow-sm hover:shadow-2xl hover:border-blue-200 transition-all duration-500 overflow-hidden"
                   >
                     {/* Thumbnail Placeholder / Image */}
-                    <Link to={`/admin/cursos/${course.id}/builder`} className="aspect-[4/3] w-full bg-slate-200 relative overflow-hidden block">
+                     <Link to={`/admin/cursos/${course.id}/builder`} className="w-full bg-slate-200 relative overflow-hidden block" style={{ aspectRatio: '4/3' }}>
                         {course.thumbnail_url ? (
                            <img src={course.thumbnail_url} alt={course.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
                         ) : (
@@ -362,13 +362,14 @@ export function AdminCoursesPage() {
                          </div>
                          
                          <span className="text-xs font-black text-slate-400 uppercase tracking-widest pl-1">Imagem de Capa (1024x768)</span>
-                         <label 
-                            className={`
-                               relative flex flex-col items-center justify-center aspect-[4/3] w-full rounded-[32px] border-2 border-dashed transition-all cursor-pointer overflow-hidden
+                          <label 
+                             className={`
+                                relative flex flex-col items-center justify-center w-full rounded-[32px] border-2 border-dashed transition-all cursor-pointer overflow-hidden
                                ${form.thumbnail_url ? 'border-emerald-200 bg-emerald-50/10' : 'border-slate-200 bg-slate-100/30 hover:bg-white hover:border-blue-300'}
                                ${isUploadingThumbnail ? 'animate-pulse' : ''}
-                            `}
-                         >
+                             `}
+                             style={{ aspectRatio: '4/3' }}
+                          >
                             {form.thumbnail_url ? (
                                <div className="absolute inset-0 group">
                                   <img src={form.thumbnail_url} alt="Capa" className="w-full h-full object-cover" />
