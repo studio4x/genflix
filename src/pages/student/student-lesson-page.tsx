@@ -32,6 +32,8 @@ export function StudentLessonPage() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true)
   const [isTogglingCompletion, setIsTogglingCompletion] = useState(false)
 
+  const [activeLessonDetails, setActiveLessonDetails] = useState<any>(null)
+
   useEffect(() => {
     let isMounted = true
     async function loadData() {
@@ -55,6 +57,26 @@ export function StudentLessonPage() {
     void loadData()
     return () => { isMounted = false }
   }, [courseId])
+
+  useEffect(() => {
+    async function loadActiveLesson() {
+      if (!lessonId) return
+      try {
+        const { data, error } = await supabase
+          .from('lessons')
+          .select('*')
+          .eq('id', lessonId)
+          .single()
+        
+        if (!error && data) {
+          setActiveLessonDetails(data)
+        }
+      } catch (err) {
+        console.error('Erro ao buscar detalhes da aula:', err)
+      }
+    }
+    void loadActiveLesson()
+  }, [lessonId])
 
   if (isLoading) {
     return (
@@ -114,7 +136,11 @@ export function StudentLessonPage() {
     )
   }
 
-  const videoId = extractVideoId(currentLesson.youtube_url)
+  const videoUrl = activeLessonDetails?.youtube_url || currentLesson.youtube_url
+  const textContent = activeLessonDetails?.text_content || currentLesson.text_content
+  const lessonType = activeLessonDetails?.lesson_type || currentLesson.lesson_type
+  
+  const videoId = extractVideoId(videoUrl)
 
   async function handleToggleCompletion() {
     if (!user || !currentLesson) return
@@ -273,9 +299,29 @@ export function StudentLessonPage() {
         {/* LESSON CONTENT SCROLL AREA */}
         <div className="flex-1 overflow-y-auto w-full">
            <div className="mx-auto max-w-5xl p-4 sm:p-8 space-y-8 animate-in fade-in duration-500 pb-24">
-                         {/* VIDEO PLAYER AREA */}
-              {((currentLesson.lesson_type === 'video' || currentLesson.lesson_type === 'hybrid') && videoId) && (
-                  <div className="w-full aspect-video rounded-3xl overflow-hidden bg-black shadow-2xl ring-1 ring-slate-900/10 animate-in zoom-in-95 duration-500">
+                          {/* TITLE AREA TOP */}
+               <div className="space-y-4 pt-4 border-b border-slate-100 pb-8">
+                 <div className="flex items-center gap-3 mb-2">
+                    <span className="bg-blue-50 text-blue-600 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border border-blue-100">
+                       Aula Atual
+                    </span>
+                    {activeLessonDetails?.lesson_type === 'hybrid' && (
+                       <span className="bg-emerald-50 text-emerald-600 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border border-emerald-100">
+                          Vídeo + Texto
+                       </span>
+                    )}
+                 </div>
+                 <h1 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tight leading-tight">{currentLesson.title}</h1>
+                 {(activeLessonDetails?.description || currentLesson.description) && (
+                   <div className="text-lg font-medium text-slate-500 leading-relaxed max-w-3xl">
+                     {activeLessonDetails?.description || currentLesson.description}
+                   </div>
+                 )}
+               </div>
+
+               {/* VIDEO PLAYER AREA */}
+               {((lessonType === 'video' || lessonType === 'hybrid') && videoId) && (
+                  <div className="w-full aspect-video rounded-[32px] overflow-hidden bg-black shadow-2xl ring-1 ring-slate-900/10 animate-in zoom-in-95 duration-500">
                     <iframe
                       className="w-full h-full"
                       src={`https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1&showinfo=0`}
@@ -285,16 +331,16 @@ export function StudentLessonPage() {
                       allowFullScreen
                     ></iframe>
                   </div>
-              )}
+               )}
 
-              {/* TEXT CONTENT AREA */}
-              {(currentLesson.lesson_type === 'text' || currentLesson.lesson_type === 'hybrid') && currentLesson.text_content && (
+               {/* TEXT CONTENT AREA */}
+               {(lessonType === 'text' || lessonType === 'hybrid') && textContent && (
                 <div className="w-full bg-white rounded-[40px] border border-slate-100 shadow-sm overflow-hidden animate-in slide-in-from-bottom-4 duration-700">
                    <div className="p-8 sm:p-12">
                       <div className="ql-container ql-snow border-none">
                          <div 
                             className="ql-editor !p-0 prose prose-slate prose-lg max-w-none text-slate-700 leading-relaxed"
-                            dangerouslySetInnerHTML={{ __html: currentLesson.text_content }}
+                            dangerouslySetInnerHTML={{ __html: textContent }}
                          />
                       </div>
                    </div>
@@ -310,16 +356,6 @@ export function StudentLessonPage() {
                    `}</style>
                 </div>
               )}
-
-              {/* CONTENT INFO & DESCR */}
-              <div className="space-y-4 pt-4">
-                 <h1 className="text-4xl font-black text-slate-900 tracking-tight leading-tight">{currentLesson.title}</h1>
-                 {currentLesson.description && (
-                   <div className="text-lg font-medium text-slate-500 leading-relaxed max-w-3xl">
-                     {currentLesson.description}
-                   </div>
-                 )}
-              </div>
 
               {/* FOOTER ACTIONS */}
               <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-8 border-t border-slate-200 mt-12">
