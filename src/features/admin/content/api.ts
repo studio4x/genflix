@@ -528,7 +528,10 @@ export async function importCourseContent(courseId: string, input: any, clearExi
     throw new Error('Nenhum módulo encontrado no JSON para importar.')
   }
 
-  for (const [mIdx, mData] of modules.entries()) {
+  // Usar loop for tradicional para evitar problemas com .entries() em certos ambientes
+  for (let mIdx = 0; mIdx < modules.length; mIdx++) {
+    const mData = modules[mIdx]
+    
     // 1. Criar Módulo
     const { data: module, error: mError } = await supabase
       .from('course_modules')
@@ -580,30 +583,34 @@ export async function importCourseContent(courseId: string, input: any, clearExi
         if (aError) throw aError
 
         // Criar Questões e Opções
-        for (const [qIdx, qData] of aData.questions.entries()) {
-          const { data: question, error: qError } = await supabase
-            .from('assessment_questions')
-            .insert({
-              assessment_id: assessment.id,
-              question_text: qData.question_text,
-              points: qData.points || 1,
-              position: qIdx + 1
-            })
-            .select()
-            .single()
+        if (aData.questions && aData.questions.length > 0) {
+          for (let qIdx = 0; qIdx < aData.questions.length; qIdx++) {
+            const qData = aData.questions[qIdx]
+            
+            const { data: question, error: qError } = await supabase
+              .from('assessment_questions')
+              .insert({
+                assessment_id: assessment.id,
+                question_text: qData.question_text,
+                points: qData.points || 1,
+                position: qIdx + 1
+              })
+              .select()
+              .single()
 
-          if (qError) throw qError
+            if (qError) throw qError
 
-          if (qData.options && qData.options.length > 0) {
-            const optionsToInsert = qData.options.map((o: any, idx: number) => ({
-              question_id: question.id,
-              option_text: o.option_text,
-              is_correct: o.is_correct,
-              position: idx + 1
-            }))
+            if (qData.options && qData.options.length > 0) {
+              const optionsToInsert = qData.options.map((o: any, oIdx: number) => ({
+                question_id: question.id,
+                option_text: o.option_text,
+                is_correct: o.is_correct,
+                position: oIdx + 1
+              }))
 
-            const { error: oError } = await supabase.from('assessment_options').insert(optionsToInsert)
-            if (oError) throw oError
+              const { error: oError } = await supabase.from('assessment_options').insert(optionsToInsert)
+              if (oError) throw oError
+            }
           }
         }
       }
