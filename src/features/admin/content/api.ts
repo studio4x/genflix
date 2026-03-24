@@ -466,3 +466,119 @@ export async function uploadCourseThumbnail(file: File): Promise<string> {
 
   return data.publicUrl
 }
+
+/**
+ * IMPORTAÇÃO EM MASSA (IA)
+ * Permite subir uma estrutura completa de módulos, aulas e quizzes via JSON.
+ */
+export interface ImportModuleData {
+  title: string
+  description?: string
+  lessons?: {
+    title: string
+    description?: string
+    lesson_type: 'video' | 'text' | 'hybrid'
+    youtube_url?: string
+    text_content?: string
+    estimated_minutes?: number
+  }[]
+  assessments?: {
+    title: string
+    description?: string
+    assessment_type: 'module'
+    passing_score?: number
+    questions: {
+      question_text: string
+      points?: number
+      options: {
+        option_text: string
+        is_correct: boolean
+      }[]
+    }[]
+  }[]
+}
+
+export async function importCourseContent(courseId: string, modules: ImportModuleData[]) {
+  for (const [mIdx, mData] of modules.entries()) {
+    // 1. Criar Módulo
+    const { data: module, error: mError } = await supabase
+      .from('course_modules')
+      .insert({
+        course_id: courseId,
+        title: mData.title,
+        description: mData.description || null,
+        position: mIdx + 1
+      })
+      .select()
+      .single()
+
+    if (mError) throw mError
+
+    // 2. Criar Aulas do Módulo
+    if (mData.lessons && mData.lessons.length > 0) {
+      const lessonsToInsert = mData.lessons.map((l, idx) => ({
+        module_id: module.id,
+        title: l.title,
+        description: l.description || null,
+        lesson_type: l.lesson_type,
+        youtube_url: l.youtube_url || null,
+        text_content: l.text_content || null,
+        estimated_minutes: l.estimated_minutes || 10,
+        position: idx + 1
+      }))
+
+      const { error: lError } = await supabase.from('lessons').insert(lessonsToInsert)
+      if (lError) throw lError
+    }
+
+    // 3. Criar Quizzes do Módulo
+    if (mData.assessments && mData.assessments.length > 0) {
+      for (const aData of mData.assessments) {
+        const { data: assessment, error: aError } = await supabase
+          .from('assessments')
+          .insert({
+            course_id: courseId,
+            module_id: module.id,
+            assessment_type: 'module',
+            title: aData.title,
+            description: aData.description || null,
+            passing_score: aData.passing_score || 70,
+            is_active: true
+          })
+          .select()
+          .single()
+
+        if (aError) throw aError
+
+        // Criar Questões e Opções
+        for (const [qIdx, qData] of aData.questions.entries()) {
+          const { data: question, error: qError } = await supabase
+            .from('assessment_questions')
+            .insert({
+              assessment_id: assessment.id,
+              question_text: qData.question_text,
+              points: qData.points || 1,
+              position: qIdx + 1
+            })
+            .select()
+            .single()
+
+          if (qError) throw qError
+
+          if (qData.options && qData.options.length > 0) {
+            const optionsToInsert = qData.options.map((o, idx) => ({
+              question_id: question.id,
+              option_text: o.option_text,
+              is_correct: o.is_correct,
+              position: idx + 1
+            }))
+
+            const { error: oError } = await supabase.from('assessment_options').insert(optionsToInsert)
+            if (oError) throw oError
+          }
+        }
+      }
+    }
+  }
+}
+
