@@ -38,6 +38,7 @@ export function AdminCourseBuilderLayout() {
   const [importJson, setImportJson] = useState('')
   const [isImporting, setIsImporting] = useState(false)
   const [importError, setImportError] = useState<string | null>(null)
+  const [clearExisting, setClearExisting] = useState(false)
 
   const refreshTree = async () => {
     if (!courseId) return
@@ -63,10 +64,11 @@ export function AdminCourseBuilderLayout() {
     setImportError(null)
     try {
       const data = JSON.parse(importJson) as ImportModuleData[]
-      await importCourseContent(courseId, data)
+      await importCourseContent(courseId, data, clearExisting)
       await refreshTree()
       setIsImportModalOpen(false)
       setImportJson('')
+      setClearExisting(false)
     } catch (err) {
       setImportError(err instanceof Error ? err.message : 'JSON inválido ou erro na importação.')
     } finally {
@@ -278,6 +280,22 @@ export function AdminCourseBuilderLayout() {
                            {importError}
                         </div>
                      )}
+
+                     <label className="flex items-center gap-3 p-4 rounded-2xl bg-amber-50/50 border border-amber-100 cursor-pointer group">
+                        <input 
+                           type="checkbox" 
+                           checked={clearExisting}
+                           onChange={e => setClearExisting(e.target.checked)}
+                           className="h-5 w-5 rounded-lg border-amber-200 text-amber-600 focus:ring-amber-500"
+                        />
+                        <div className="flex-1">
+                           <div className="flex items-center gap-2">
+                              <span className="text-sm font-black text-amber-900">Substituir conteúdo atual</span>
+                              <svg className="h-4 w-4 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                           </div>
+                           <p className="text-[11px] text-amber-600 font-bold mt-0.5">Se marcado, todos os módulos, aulas e quizzes atuais deste curso serão apagados.</p>
+                        </div>
+                     </label>
                   </div>
 
                   <div className="p-8 bg-slate-50/50 flex gap-4 border-t border-slate-100">

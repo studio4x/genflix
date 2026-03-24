@@ -498,7 +498,30 @@ export interface ImportModuleData {
   }[]
 }
 
-export async function importCourseContent(courseId: string, modules: ImportModuleData[]) {
+export async function clearCourseContent(courseId: string) {
+  // O cascade delete do banco cuidará das aulas, materiais e quizzes vinculados aos módulos.
+  // IMPORTANTE: Deletar primeiro os assessments sem módulo (Assessment Final)
+  const { error: aError } = await supabase
+    .from('assessments')
+    .delete()
+    .eq('course_id', courseId)
+    .is('module_id', null)
+  
+  if (aError) throw aError
+
+  const { error: mError } = await supabase
+    .from('course_modules')
+    .delete()
+    .eq('course_id', courseId)
+  
+  if (mError) throw mError
+}
+
+export async function importCourseContent(courseId: string, modules: ImportModuleData[], clearExisting = false) {
+  if (clearExisting) {
+    await clearCourseContent(courseId)
+  }
+
   for (const [mIdx, mData] of modules.entries()) {
     // 1. Criar Módulo
     const { data: module, error: mError } = await supabase
