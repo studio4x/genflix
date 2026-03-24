@@ -60,11 +60,12 @@ export async function exportModuleToPdf(courseTitle: string, moduleTitle: string
   // Estilos globais específicos para o PDF (para tabelas e listas vindo do Quill)
   const style = document.createElement('style')
   style.innerHTML = `
-    .pdf-content h1, .pdf-content h2, .pdf-content h3 { color: #1e293b; margin-top: 25px; margin-bottom: 15px; }
-    .pdf-content p { margin-bottom: 15px; }
+    .pdf-content h1, .pdf-content h2, .pdf-content h3 { color: #1e293b; margin-top: 25px; margin-bottom: 15px; page-break-after: avoid; }
+    .pdf-content p { margin-bottom: 15px; page-break-inside: avoid; }
     .pdf-content ul, .pdf-content ol { margin-bottom: 20px; padding-left: 25px; }
-    .pdf-content li { margin-bottom: 8px; }
-    .pdf-content table { width: 100%; border-collapse: collapse; margin: 25px 0; font-size: 13px; }
+    .pdf-content li { margin-bottom: 8px; page-break-inside: avoid; }
+    .pdf-content table { width: 100%; border-collapse: collapse; margin: 25px 0; font-size: 13px; page-break-inside: auto; }
+    .pdf-content tr { page-break-inside: avoid; page-break-after: auto; }
     .pdf-content th { background: #f8fafc; text-align: left; padding: 12px; border-bottom: 2px solid #e2e8f0; font-weight: 900; color: #2563eb; }
     .pdf-content td { padding: 10px; border-bottom: 1px solid #f1f5f9; vertical-align: top; }
     .pdf-content tr:nth-child(even) { background: #fcfcfd; }
@@ -78,7 +79,7 @@ export async function exportModuleToPdf(courseTitle: string, moduleTitle: string
     image: { type: 'jpeg', quality: 0.98 },
     html2canvas: { scale: 2, useCORS: true, letterRendering: true },
     jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-    pagebreak: { mode: ['css', 'legacy'] }
+    pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
   }
 
   try {
