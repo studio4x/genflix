@@ -1,7 +1,18 @@
+import { supabase } from '@/services/supabase/client'
 // @ts-ignore - html2pdf doesn't have official types easily available
 import html2pdf from 'html2pdf.js'
 
-export async function exportModuleToPdf(courseTitle: string, moduleTitle: string, lessons: any[]) {
+export async function exportModuleToPdf(courseTitle: string, moduleTitle: string, moduleId: string) {
+  // Buscar os dados mais recentes das aulas diretamente do banco para garantir que o texto completo esteja lá
+  const { data: latestLessons, error: lError } = await supabase
+    .from('lessons')
+    .select('*')
+    .eq('module_id', moduleId)
+    .order('position', { ascending: true })
+
+  if (lError) throw lError
+  const lessons = latestLessons || []
+
   // Criar o container temporário para o PDF
   const element = document.createElement('div')
   element.className = 'pdf-export-container'
