@@ -273,11 +273,9 @@ export function StudentLessonPage() {
         {/* LESSON CONTENT SCROLL AREA */}
         <div className="flex-1 overflow-y-auto w-full">
            <div className="mx-auto max-w-5xl p-4 sm:p-8 space-y-8 animate-in fade-in duration-500 pb-24">
-              
-              {/* VIDEO PLAYER OR TEXT CONTENT AREA */}
-              {(currentLesson.lesson_type === 'video' || currentLesson.lesson_type === 'hybrid') && (
-                videoId ? (
-                  <div className="w-full aspect-video rounded-2xl overflow-hidden bg-black shadow-lg ring-1 ring-slate-900/10">
+                         {/* VIDEO PLAYER AREA */}
+              {((currentLesson.lesson_type === 'video' || currentLesson.lesson_type === 'hybrid') && videoId) && (
+                  <div className="w-full aspect-video rounded-3xl overflow-hidden bg-black shadow-2xl ring-1 ring-slate-900/10 animate-in zoom-in-95 duration-500">
                     <iframe
                       className="w-full h-full"
                       src={`https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1&showinfo=0`}
@@ -287,34 +285,42 @@ export function StudentLessonPage() {
                       allowFullScreen
                     ></iframe>
                   </div>
-                ) : (
-                  <div className="w-full aspect-video rounded-2xl overflow-hidden bg-slate-100 border border-dashed border-slate-300 flex items-center justify-center">
-                    <div className="text-center text-slate-400">
-                      <svg className="h-12 w-12 mx-auto mb-2 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
-                      <p>Vídeo não disponível para esta aula.</p>
-                    </div>
-                  </div>
-                )
               )}
 
-              {(currentLesson.lesson_type === 'text' || currentLesson.lesson_type === 'hybrid') && (
-                <div className="w-full bg-white rounded-2xl border border-slate-200 shadow-sm p-6 sm:p-10">
-                   <div 
-                      className="ql-editor prose prose-blue prose-lg max-w-none text-slate-800 leading-relaxed font-medium"
-                      dangerouslySetInnerHTML={{ __html: currentLesson.text_content || 'Nenhum conteúdo textual fornecido para esta aula.' }}
-                   />
+              {/* TEXT CONTENT AREA */}
+              {(currentLesson.lesson_type === 'text' || currentLesson.lesson_type === 'hybrid') && currentLesson.text_content && (
+                <div className="w-full bg-white rounded-[40px] border border-slate-100 shadow-sm overflow-hidden animate-in slide-in-from-bottom-4 duration-700">
+                   <div className="p-8 sm:p-12">
+                      <div className="ql-container ql-snow border-none">
+                         <div 
+                            className="ql-editor !p-0 prose prose-slate prose-lg max-w-none text-slate-700 leading-relaxed"
+                            dangerouslySetInnerHTML={{ __html: currentLesson.text_content }}
+                         />
+                      </div>
+                   </div>
+                   
+                   <style>{`
+                      .ql-editor table { width: 100% !important; border-collapse: collapse; margin: 24px 0; font-size: 14px; }
+                      .ql-editor th { background: #f8fafc; text-align: left; padding: 12px 16px; border-bottom: 2px solid #e2e8f0; font-weight: 800; color: #2563eb; }
+                      .ql-editor td { padding: 12px 16px; border-bottom: 1px solid #f1f5f9; vertical-align: top; }
+                      .ql-editor tr:nth-child(even) { background: #fcfcfd; }
+                      .ql-editor p { margin-bottom: 1.25em; }
+                      .ql-editor h3 { color: #0f172a; font-weight: 900; margin-top: 2em; margin-bottom: 1em; }
+                      .ql-editor ul, .ql-editor ol { margin-bottom: 1.5em; }
+                   `}</style>
                 </div>
               )}
 
-              {/* CONTENT INFO */}
-              <div className="space-y-4">
-                 <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">{currentLesson.title}</h1>
+              {/* CONTENT INFO & DESCR */}
+              <div className="space-y-4 pt-4">
+                 <h1 className="text-4xl font-black text-slate-900 tracking-tight leading-tight">{currentLesson.title}</h1>
                  {currentLesson.description && (
-                   <div className="prose prose-slate prose-sm sm:prose-base max-w-none text-slate-600 leading-relaxed">
-                     <p>{currentLesson.description}</p>
+                   <div className="text-lg font-medium text-slate-500 leading-relaxed max-w-3xl">
+                     {currentLesson.description}
                    </div>
                  )}
               </div>
+ </div>
 
               {/* FOOTER ACTIONS */}
               <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-8 border-t border-slate-200 mt-12">
