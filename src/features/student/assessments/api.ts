@@ -1,6 +1,7 @@
 import { supabase } from '@/services/supabase/client'
 import type {
   Assessment,
+  AssessmentAnswer,
   AssessmentAttempt,
   AssessmentOption,
   AssessmentQuestion,
@@ -41,6 +42,11 @@ export interface SubmitAssessmentAttemptResult {
   attempt_number: number
   max_attempts: number
   remaining_attempts: number
+}
+
+export interface StudentAssessmentReview {
+  latestAttempt: AssessmentAttempt | null
+  answers: AssessmentAnswer[]
 }
 
 function toError(error: unknown): Error {
@@ -159,3 +165,28 @@ export async function fetchOwnAssessmentAttempts(assessmentId: string) {
   return (result.data as AssessmentAttempt[]) ?? []
 }
 
+export async function fetchOwnAssessmentReview(assessmentId: string) {
+  const attempts = await fetchOwnAssessmentAttempts(assessmentId)
+  const latestAttempt = attempts[0] ?? null
+
+  if (!latestAttempt) {
+    return {
+      latestAttempt: null,
+      answers: [],
+    } satisfies StudentAssessmentReview
+  }
+
+  const answersResult = await supabase
+    .from('assessment_answers')
+    .select('*')
+    .eq('attempt_id', latestAttempt.id)
+
+  if (answersResult.error) {
+    throw answersResult.error
+  }
+
+  return {
+    latestAttempt,
+    answers: (answersResult.data as AssessmentAnswer[]) ?? [],
+  } satisfies StudentAssessmentReview
+}
