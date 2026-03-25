@@ -6,7 +6,8 @@ import 'react-quill/dist/quill.snow.css'
 import { createLesson, deleteLesson, updateLesson, toErrorMessage } from '@/features/admin/content/api'
 import { lessonFormSchema, type LessonFormInput } from '@/features/admin/content/schemas'
 import { useCourseBuilder } from '@/app/layouts/admin-course-builder-layout'
-import { splitContent, mergeContent, type LessonContentBlock, sanitizeTableHtml } from '@/features/admin/content/content-blocks'
+import { splitContent, mergeContent, sanitizeTableHtml } from '@/features/admin/content/content-blocks'
+import type { LessonContentBlock } from '@/features/admin/content/content-blocks'
 import { Button } from '@/components/ui/button'
 import { Plus, Trash2, Code2, Eye } from 'lucide-react'
 
@@ -110,7 +111,11 @@ export function LessonEditorPanel() {
       const next = [...prev]
       const targetIndex = direction === 'up' ? index - 1 : index + 1
       if (targetIndex < 0 || targetIndex >= next.length) return prev
-      [next[index], next[targetIndex]] = [next[targetIndex], next[index]]
+      
+      const temp = next[index]
+      next[index] = next[targetIndex]
+      next[targetIndex] = temp
+      
       return next
     })
   }
@@ -281,7 +286,7 @@ export function LessonEditorPanel() {
                     </label>
                  </div>
                )}
- 
+
                 {(form.lesson_type === 'text' || form.lesson_type === 'hybrid') && (
                    <div className="animate-in slide-in-from-top-2 duration-300 space-y-6">
                       <div className="flex items-center justify-between">

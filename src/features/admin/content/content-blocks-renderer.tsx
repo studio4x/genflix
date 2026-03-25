@@ -1,0 +1,36 @@
+import type { LessonContentBlock } from "./content-blocks";
+
+type Props = {
+  blocks: LessonContentBlock[];
+  className?: string;
+};
+
+export function ContentBlocksRenderer({ blocks, className }: Props) {
+  return (
+    <div className={className}>
+      {blocks.map((block, index) => {
+        if (block.type === "table") {
+          return (
+            <div
+              key={`table-${index}`}
+              className="my-6 overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm"
+            >
+              <div
+                className="table-content min-w-full"
+                dangerouslySetInnerHTML={{ __html: block.content }}
+              />
+            </div>
+          );
+        }
+
+        return (
+          <div
+            key={`rich-${index}`}
+            className="prose prose-slate max-w-none"
+            dangerouslySetInnerHTML={{ __html: block.content }}
+          />
+        );
+      })}
+    </div>
+  );
+}
