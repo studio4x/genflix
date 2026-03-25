@@ -63,11 +63,17 @@ export function AdminCourseBuilderLayout() {
     setIsImporting(true)
     setImportError(null)
     try {
-      // 1. Limpeza inteligente dos blocos de código Markdown
+      // 1. Extração robusta do JSON de blocos de código Markdown
+      // Remove qualquer texto antes do primeiro ``` e depois do último ```
       let cleanedJson = importJson.trim()
-        .replace(/^```(json)?\s+/, '')
-        .replace(/\s+```$/, '')
-        .trim()
+      
+      const match = cleanedJson.match(/```(?:json)?\s*([\s\S]*?)\s*```/)
+      if (match && match[1]) {
+        cleanedJson = match[1].trim()
+      } else {
+        // Se não houver blocos, apenas remove eventuais backticks soltos nas extremidades
+        cleanedJson = cleanedJson.replace(/^```(json)?\s+/, '').replace(/\s+```$/, '').trim()
+      }
       
       let data
       try {
