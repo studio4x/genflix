@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams, Outlet } from 'react-router-dom'
 
 import { useAuth } from '@/app/providers/auth-provider'
-import { supabase } from '@/services/supabase/client'
+import { Button } from '@/components/ui/button'
 import {
   fetchReleasedCourseById,
   fetchStudentCourseContentWithProgress,
