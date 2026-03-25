@@ -206,9 +206,10 @@ export function AdminCoursesPage() {
       await loadCourses()
       setIsImportModalOpen(false)
       setImportJson('')
-    } catch (err) {
+    } catch (err: any) {
       console.error('Erro no import full:', err)
-      setImportError(err instanceof Error ? err.message : 'JSON inválido ou erro na importação.')
+      const errorMessage = err?.message || (typeof err === 'string' ? err : 'Erro inesperado na importação.')
+      setImportError(errorMessage)
     } finally {
       setIsImporting(false)
     }
