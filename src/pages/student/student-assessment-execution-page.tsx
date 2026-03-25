@@ -358,5 +358,3 @@ export function StudentAssessmentExecutionPage() {
     </div>
   )
 }
-   
- 
