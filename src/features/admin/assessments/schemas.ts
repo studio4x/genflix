@@ -13,6 +13,11 @@ export const assessmentFormSchema = z.object({
     .int()
     .min(1, 'Tentativas deve ser ao menos 1.')
     .max(20, 'Tentativas deve ser no maximo 20.'),
+  estimated_minutes: z
+    .number()
+    .int()
+    .min(1, 'Duracao deve ser ao menos 1 minuto.')
+    .max(600, 'Duracao deve ser no maximo 600 minutos.'),
   is_active: z.boolean(),
 })
 

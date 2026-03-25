@@ -7,7 +7,6 @@ export const courseFormSchema = z.object({
   title: z.string().trim().min(3, 'Titulo deve ter ao menos 3 caracteres'),
   description: z.string().trim().max(2000).optional(),
   status: z.enum(['draft', 'published', 'archived']),
-  workload_minutes: z.number().int().min(0),
   thumbnail_url: z.string().optional().or(z.literal('')),
   has_linear_progression: z.boolean().default(true),
 })

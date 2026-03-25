@@ -78,7 +78,6 @@ export async function createCourse(input: CourseFormInput, userId: string) {
       title: input.title,
       description: input.description?.trim() || null,
       status: input.status,
-      workload_minutes: input.workload_minutes,
       thumbnail_url: input.thumbnail_url?.trim() || null,
       created_by: userId,
     })
@@ -97,7 +96,6 @@ export async function updateCourse(courseId: string, input: CourseFormInput) {
       title: input.title,
       description: input.description?.trim() || null,
       status: input.status,
-      workload_minutes: input.workload_minutes,
       thumbnail_url: input.thumbnail_url?.trim() || null,
       has_linear_progression: input.has_linear_progression,
     })

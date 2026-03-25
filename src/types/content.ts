@@ -91,6 +91,7 @@ export interface Assessment {
   is_required: boolean
   passing_score: number
   max_attempts: number
+  estimated_minutes: number
   is_active: boolean
   created_by: string | null
   created_at: string

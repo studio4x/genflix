@@ -8,7 +8,11 @@ export function CourseOverviewPanel() {
   const { course, modules } = courseTree
 
   const totalLessons = modules.reduce((acc, m) => acc + m.lessons.length, 0)
-  const totalDuration = modules.reduce((acc, m) => acc + m.lessons.reduce((lAcc, l) => lAcc + l.estimated_minutes, 0), 0)
+  const totalDuration = modules.reduce((acc, m) => {
+    const lessonsDur = m.lessons.reduce((lAcc, l) => lAcc + l.estimated_minutes, 0)
+    const assessmentsDur = m.assessments.reduce((aAcc, a) => aAcc + a.estimated_minutes, 0)
+    return acc + lessonsDur + assessmentsDur
+  }, 0) + courseTree.courseAssessments.reduce((aAcc, a) => aAcc + a.estimated_minutes, 0)
 
   return (
     <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in duration-500 pb-12">

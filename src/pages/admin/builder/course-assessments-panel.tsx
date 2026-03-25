@@ -57,7 +57,8 @@ export function CourseAssessmentsPanel() {
             is_active: true,
             is_required: true,
             max_attempts: data.max_attempts || 3,
-            passing_score: data.passing_score || 70
+            passing_score: data.passing_score || 70,
+            estimated_minutes: data.estimated_minutes || 10
           }, user.id)
           assessmentId = newA.id
         }
@@ -73,7 +74,8 @@ export function CourseAssessmentsPanel() {
             is_active: true,
             is_required: true,
             max_attempts: data.max_attempts || 3,
-            passing_score: data.passing_score || 70
+            passing_score: data.passing_score || 70,
+            estimated_minutes: data.estimated_minutes || 10
           }, user.id)
           assessmentId = newA.id
         }

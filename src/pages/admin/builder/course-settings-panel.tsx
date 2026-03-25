@@ -13,7 +13,6 @@ export function CourseSettingsPanel() {
     title: '',
     description: '',
     status: 'draft' as 'draft' | 'published' | 'archived',
-    workload_minutes: 0,
     thumbnail_url: '',
     has_linear_progression: true
   })
@@ -28,7 +27,6 @@ export function CourseSettingsPanel() {
         title: courseTree.course.title || '',
         description: courseTree.course.description ?? '',
         status: (courseTree.course.status as any) || 'draft',
-        workload_minutes: courseTree.course.workload_minutes || 0,
         thumbnail_url: courseTree.course.thumbnail_url ?? '',
         has_linear_progression: courseTree.course.has_linear_progression ?? true
       })
@@ -169,20 +167,6 @@ export function CourseSettingsPanel() {
                   </div>
                </div>
 
-               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  <label className="block space-y-2">
-                     <span className="text-xs font-black text-slate-400 uppercase tracking-widest pl-1">Duração (Minutos)</span>
-                     <input 
-                        type="number"
-                        className="w-full font-bold rounded-[20px] border border-slate-200 bg-slate-100/50 px-6 py-4 placeholder:text-slate-300 focus:bg-white focus:ring-4 focus:ring-blue-100 transition-all"
-                        placeholder="00"
-                        min={0}
-                        value={form.workload_minutes}
-                        onChange={e => setForm(f => ({ ...f, workload_minutes: Number(e.target.value) }))}
-                        required
-                     />
-                  </label>
-
                   <label className="block space-y-2">
                      <span className="text-xs font-black text-slate-400 uppercase tracking-widest pl-1">Status de Publicação</span>
                      <select 
@@ -231,7 +215,6 @@ export function CourseSettingsPanel() {
                   ) : 'Salvar Alterações'}
                </Button>
             </div>
-         </div>
       </form>
     </div>
   )

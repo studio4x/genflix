@@ -71,6 +71,7 @@ export async function createModuleAssessment(
       is_required: input.is_required,
       passing_score: input.passing_score,
       max_attempts: input.max_attempts,
+      estimated_minutes: input.estimated_minutes,
       is_active: input.is_active,
       created_by: userId,
     })
@@ -99,6 +100,7 @@ export async function createFinalAssessment(
       is_required: input.is_required,
       passing_score: input.passing_score,
       max_attempts: input.max_attempts,
+      estimated_minutes: input.estimated_minutes,
       is_active: input.is_active,
       created_by: userId,
     })
@@ -120,6 +122,7 @@ export async function updateAssessment(assessmentId: string, input: AssessmentFo
       is_required: input.is_required,
       passing_score: input.passing_score,
       max_attempts: input.max_attempts,
+      estimated_minutes: input.estimated_minutes,
       is_active: input.is_active,
     })
     .eq('id', assessmentId)
@@ -309,6 +312,7 @@ export interface ImportAssessmentData {
   description?: string
   passing_score?: number
   max_attempts?: number
+  estimated_minutes?: number
   questions: {
     question_text: string
     points?: number
@@ -329,6 +333,7 @@ export async function importAssessmentContent(assessmentId: string, data: Import
       description: data.description || null,
       passing_score: data.passing_score || 70,
       max_attempts: data.max_attempts || 3,
+      estimated_minutes: data.estimated_minutes || 10,
     })
     .eq('id', assessmentId)
 

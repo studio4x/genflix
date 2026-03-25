@@ -87,6 +87,7 @@ export function AssessmentBuilderPanel() {
            is_required: true,
            passing_score: 70,
            max_attempts: 3,
+           estimated_minutes: 10,
            is_active: true
         }
         if (!isFinal && moduleId) {
@@ -112,6 +113,7 @@ export function AssessmentBuilderPanel() {
            is_required: updates.is_required ?? assessment.is_required,
            passing_score: updates.passing_score ?? assessment.passing_score,
            max_attempts: updates.max_attempts ?? assessment.max_attempts,
+           estimated_minutes: updates.estimated_minutes ?? assessment.estimated_minutes,
            is_active: updates.is_active ?? assessment.is_active
         })
         setAssessment(prev => prev ? ({ ...prev, ...updates }) : null)
@@ -234,6 +236,7 @@ export function AssessmentBuilderPanel() {
             is_required: true,
             passing_score: data.passing_score || 70,
             max_attempts: data.max_attempts || 3,
+            estimated_minutes: data.estimated_minutes || 10,
             is_active: true
           }
           
@@ -322,6 +325,15 @@ export function AssessmentBuilderPanel() {
                   className="w-12 text-center font-black text-blue-600 bg-transparent border-none p-0 focus:ring-0" 
                   value={assessment.max_attempts}
                   onChange={e => handleUpdateAssessment({ max_attempts: Number(e.target.value) })}
+               />
+            </div>
+            <div className="px-3 border-l border-slate-200 text-center">
+               <p className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">Duração (Min)</p>
+               <input 
+                  type="number" 
+                  className="w-12 text-center font-black text-blue-600 bg-transparent border-none p-0 focus:ring-0" 
+                  value={assessment.estimated_minutes}
+                  onChange={e => handleUpdateAssessment({ estimated_minutes: Number(e.target.value) })}
                />
             </div>
          </div>
