@@ -28,6 +28,7 @@ const initialForm: CourseFormInput = {
   status: 'draft',
   workload_minutes: 0,
   thumbnail_url: '',
+  has_linear_progression: true,
 }
 
 interface CourseEditorDraft {
@@ -146,6 +147,7 @@ export function AdminCoursesPage() {
         status: course.status,
         workload_minutes: course.workload_minutes,
         thumbnail_url: course.thumbnail_url ?? '',
+        has_linear_progression: course.has_linear_progression ?? true,
       },
     }))
     setError(null)
