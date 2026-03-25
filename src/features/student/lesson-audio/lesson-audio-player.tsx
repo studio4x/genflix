@@ -33,7 +33,6 @@ export function LessonAudioPlayer({ lessonId }: LessonAudioPlayerProps) {
     }
 
     const player = audioRef.current
-    player.load()
     void player.play().catch(() => null)
     setShouldAutoPlayNext(false)
   }, [currentPart, shouldAutoPlayNext])
@@ -46,6 +45,7 @@ export function LessonAudioPlayer({ lessonId }: LessonAudioPlayerProps) {
       const payload = await prepareLessonNarration(lessonId)
       setNarration(payload)
       setCurrentPartIndex(0)
+      setError(null)
     } catch (prepareError) {
       const message = prepareError instanceof Error ? prepareError.message : 'Falha ao preparar a narracao da aula.'
       setError(message)
@@ -61,6 +61,17 @@ export function LessonAudioPlayer({ lessonId }: LessonAudioPlayerProps) {
 
     setCurrentPartIndex((index) => index + 1)
     setShouldAutoPlayNext(true)
+  }
+
+  function handleAudioError() {
+    const mediaError = audioRef.current?.error
+
+    // Ignore canceled loads during source switching; only surface real media failures.
+    if (!mediaError) {
+      return
+    }
+
+    setError('Falha ao reproduzir o audio. Gere novamente para renovar os links.')
   }
 
   return (
@@ -109,7 +120,8 @@ export function LessonAudioPlayer({ lessonId }: LessonAudioPlayerProps) {
                 className="w-full"
                 src={currentPart.url}
                 onEnded={handlePartEnded}
-                onError={() => setError('Falha ao reproduzir o audio. Gere novamente para renovar os links.')}
+                onLoadedMetadata={() => setError(null)}
+                onError={handleAudioError}
               />
             ) : null}
 
