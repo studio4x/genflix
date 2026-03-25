@@ -48,7 +48,13 @@ Deno.serve(async (request) => {
       return jsonResponse({ error: 'Token ausente.' }, 401)
     }
 
-    const supabase = createClient(supabaseUrl, supabaseAnonKey)
+    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+      global: {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      },
+    })
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceRoleKey)
 
     const {
