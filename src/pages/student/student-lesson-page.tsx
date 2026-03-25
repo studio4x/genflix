@@ -36,6 +36,10 @@ export function StudentLessonPage() {
   const [activeLessonDetails, setActiveLessonDetails] = useState<any>(null)
 
   useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [lessonId])
+
+  useEffect(() => {
     let isMounted = true
     async function loadData() {
       if (!courseId) return
