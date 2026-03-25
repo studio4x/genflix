@@ -139,6 +139,22 @@ th, td {
   text-align: left;
 }
 
+.table-content td[data-empty-cell="true"],
+.table-content th[data-empty-cell="true"],
+.lesson-content-html td[data-empty-cell="true"],
+.lesson-content-html th[data-empty-cell="true"] {
+  position: relative;
+  color: #94a3b8;
+}
+
+.table-content td[data-empty-cell="true"]::before,
+.table-content th[data-empty-cell="true"]::before,
+.lesson-content-html td[data-empty-cell="true"]::before,
+.lesson-content-html th[data-empty-cell="true"]::before {
+  content: "—";
+  font-weight: 600;
+}
+
 th {
   background-color: #f8fafc;
   font-weight: 700;

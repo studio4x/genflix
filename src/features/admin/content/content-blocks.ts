@@ -117,6 +117,17 @@ export function sanitizeTableHtml(tableHtml: string): string {
     }
   });
 
+  table.querySelectorAll("th, td").forEach((cell) => {
+    const hasChildElements = cell.children.length > 0;
+    const cellText = cell.textContent?.replace(/\u00a0/g, " ").trim() ?? "";
+
+    if (!hasChildElements && cellText === "") {
+      cell.setAttribute("data-empty-cell", "true");
+    } else {
+      cell.removeAttribute("data-empty-cell");
+    }
+  });
+
   return table.outerHTML;
 }
 
