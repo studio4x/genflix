@@ -5,10 +5,13 @@ import { useAuth } from '@/app/providers/auth-provider'
 import { Button } from '@/components/ui/button'
 import {
   fetchAssessmentForExecution,
+  fetchOwnAssessmentAttemptRequest,
   fetchOwnAssessmentReview,
   fetchStudentCourseAssessments,
+  requestAssessmentAttemptRetry,
   submitAssessmentAttempt,
   toErrorMessage,
+  type AssessmentAttemptRequest,
   type StudentAssessmentQuestionWithOptions,
   type StudentAssessmentReview,
   type SubmitAssessmentAttemptResult,
@@ -32,12 +35,13 @@ export function StudentAssessmentExecutionPage() {
   const [questions, setQuestions] = useState<StudentAssessmentQuestionWithOptions[]>([])
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
   const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>({})
-
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isRequestingRetry, setIsRequestingRetry] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [result, setResult] = useState<SubmitAssessmentAttemptResult | null>(null)
   const [review, setReview] = useState<StudentAssessmentReview | null>(null)
+  const [attemptRequest, setAttemptRequest] = useState<AssessmentAttemptRequest | null>(null)
 
   const studentAssessment = useMemo(() => {
     return assessments?.find((item) => item.assessment_id === assessmentId || item.id === assessmentId)
@@ -55,21 +59,25 @@ export function StudentAssessmentExecutionPage() {
   useEffect(() => {
     async function loadAssessment() {
       if (!assessmentId) {
-        setError('Avaliação não encontrada.')
+        setError('Avaliacao nao encontrada.')
         setIsLoading(false)
         return
       }
 
       setIsLoading(true)
+      setError(null)
+
       try {
-        const [{ assessment: assessmentData, questions: questionsData }, reviewData] = await Promise.all([
+        const [{ assessment: assessmentData, questions: questionsData }, reviewData, requestData] = await Promise.all([
           fetchAssessmentForExecution(assessmentId),
           fetchOwnAssessmentReview(assessmentId),
+          fetchOwnAssessmentAttemptRequest(assessmentId),
         ])
 
         setAssessment(assessmentData)
         setQuestions(questionsData)
         setReview(reviewData)
+        setAttemptRequest(requestData)
         setResult(null)
         setCurrentQuestionIndex(0)
 
@@ -129,7 +137,7 @@ export function StudentAssessmentExecutionPage() {
 
     if (nextModuleWithLessons) {
       return {
-        label: 'Ir para o Próximo Módulo',
+        label: 'Ir para o Proximo Modulo',
         href: `/aluno/cursos/${courseId}/player/aulas/${nextModuleWithLessons.lessons[0].id}`,
       }
     }
@@ -148,6 +156,67 @@ export function StudentAssessmentExecutionPage() {
     }
   }, [assessments, courseId, modules, studentAssessment])
 
+  const finalAssessmentBlockReason = useMemo(() => {
+    if (!studentAssessment || studentAssessment.assessment_type !== 'final' || studentAssessment.state !== 'blocked') {
+      return null
+    }
+
+    const incompleteModule = modules.find((module) => {
+      if (!module.is_required) return false
+      if (!module.lessons.every((lesson) => lesson.is_completed)) return true
+      if (module.has_required_assessment && !module.required_assessment_approved) return true
+      return false
+    })
+
+    if (!incompleteModule) {
+      return {
+        title: 'Prova Final Ainda Bloqueada',
+        description: 'A prova final so e liberada depois que todos os requisitos obrigatorios do curso forem concluidos.',
+      }
+    }
+
+    const blockingQuiz = assessments.find(
+      (item) =>
+        item.assessment_type === 'module' &&
+        item.module_id === incompleteModule.id &&
+        item.is_required,
+    )
+
+    if (blockingQuiz?.state === 'failed_limit') {
+      return {
+        title: 'Prova Final Bloqueada por Quiz Pendente',
+        description: `A prova final ainda nao pode ser aberta porque o quiz "${blockingQuiz.title}" do modulo "${incompleteModule.title}" esta com o limite de tentativas atingido e ainda nao foi aprovado.`,
+      }
+    }
+
+    if (blockingQuiz && !blockingQuiz.last_is_approved) {
+      return {
+        title: 'Prova Final Bloqueada por Quiz Pendente',
+        description: `A prova final so sera liberada depois da aprovacao no quiz "${blockingQuiz.title}" do modulo "${incompleteModule.title}".`,
+      }
+    }
+
+    return {
+      title: 'Prova Final Bloqueada por Modulo Incompleto',
+      description: `A prova final ainda nao pode ser aberta porque o modulo "${incompleteModule.title}" nao foi concluido por completo.`,
+    }
+  }, [assessments, modules, studentAssessment])
+
+  async function refreshCourseState() {
+    if (!courseId) return
+
+    try {
+      const [refreshedModules, refreshedAssessments] = await Promise.all([
+        fetchStudentCourseContentWithProgress(courseId),
+        fetchStudentCourseAssessments(courseId),
+      ])
+      setModules(refreshedModules)
+      setAssessments(refreshedAssessments)
+    } catch (refreshError) {
+      console.error('Falha ao atualizar progresso:', refreshError)
+    }
+  }
+
   async function handleSubmit() {
     if (!assessmentId || !courseId || isPerfectApprovedReview) return
 
@@ -162,21 +231,31 @@ export function StudentAssessmentExecutionPage() {
 
       const submissionResult = await submitAssessmentAttempt(assessmentId, answers)
       setResult(submissionResult)
-
-      try {
-        const [refreshedModules, refreshedAssessments] = await Promise.all([
-          fetchStudentCourseContentWithProgress(courseId),
-          fetchStudentCourseAssessments(courseId),
-        ])
-        setModules(refreshedModules)
-        setAssessments(refreshedAssessments)
-      } catch (refreshErr) {
-        console.error('Falha ao atualizar progresso:', refreshErr)
-      }
+      await refreshCourseState()
     } catch (submitError) {
       setError(toErrorMessage(submitError))
     } finally {
       setIsSubmitting(false)
+    }
+  }
+
+  async function handleRequestRetry() {
+    if (!assessmentId) return
+
+    setIsRequestingRetry(true)
+    setError(null)
+
+    try {
+      await requestAssessmentAttemptRetry(assessmentId)
+      const [requestData] = await Promise.all([
+        fetchOwnAssessmentAttemptRequest(assessmentId),
+        refreshCourseState(),
+      ])
+      setAttemptRequest(requestData)
+    } catch (requestError) {
+      setError(toErrorMessage(requestError))
+    } finally {
+      setIsRequestingRetry(false)
     }
   }
 
@@ -190,7 +269,7 @@ export function StudentAssessmentExecutionPage() {
 
   if (isModuleQuizLockedByLessons && !result) {
     return (
-      <div className="mx-auto max-w-2xl p-4 py-12 md:py-24 animate-in fade-in zoom-in-95 duration-500">
+      <div className="mx-auto max-w-2xl animate-in fade-in zoom-in-95 p-4 py-12 duration-500 md:py-24">
         <div className="overflow-hidden rounded-[40px] border border-amber-100 bg-white shadow-2xl shadow-amber-200/20">
           <div className="bg-gradient-to-b from-amber-50/60 to-white p-12 text-center">
             <div className="mx-auto mb-8 flex h-24 w-24 items-center justify-center rounded-full border-2 border-white bg-amber-100 text-amber-600 shadow-lg shadow-amber-100">
@@ -200,7 +279,7 @@ export function StudentAssessmentExecutionPage() {
             </div>
             <h2 className="text-3xl font-black leading-tight tracking-tight text-slate-900">Quiz Ainda Bloqueado</h2>
             <p className="mt-4 font-medium leading-relaxed text-slate-500">
-              Para realizar o quiz deste módulo, conclua todas as aulas do módulo primeiro.
+              Para realizar o quiz deste modulo, conclua todas as aulas do modulo primeiro.
             </p>
             <Button
               size="lg"
@@ -216,8 +295,11 @@ export function StudentAssessmentExecutionPage() {
   }
 
   if (studentAssessment?.state === 'failed_limit' && !result) {
+    const hasPendingRequest = attemptRequest?.status === 'pending'
+    const isRejectedRequest = attemptRequest?.status === 'rejected'
+
     return (
-      <div className="mx-auto max-w-2xl p-4 py-12 md:py-24 animate-in fade-in zoom-in-95 duration-500">
+      <div className="mx-auto max-w-2xl animate-in fade-in zoom-in-95 p-4 py-12 duration-500 md:py-24">
         <div className="overflow-hidden rounded-[40px] border border-rose-100 bg-white shadow-2xl shadow-rose-200/20">
           <div className="bg-gradient-to-b from-rose-50/50 to-white p-12 text-center">
             <div className="mx-auto mb-8 flex h-24 w-24 items-center justify-center rounded-full border-2 border-white bg-rose-100 text-rose-600 shadow-lg shadow-rose-100">
@@ -227,17 +309,66 @@ export function StudentAssessmentExecutionPage() {
             </div>
             <h2 className="text-3xl font-black leading-tight tracking-tight text-slate-900">Limite de Tentativas Atingido</h2>
             <p className="mt-4 font-medium leading-relaxed text-slate-500">
-              Você já realizou todas as tentativas permitidas para este quiz ({studentAssessment.max_attempts} de {studentAssessment.max_attempts}) e não obteve a pontuação mínima necessária.
+              Voce ja realizou todas as tentativas permitidas para este quiz ({studentAssessment.max_attempts} de {studentAssessment.max_attempts}) e nao obteve a pontuacao minima necessaria.
             </p>
+
             <div className="mt-8 rounded-3xl border border-slate-100 bg-slate-50 p-6 text-left">
               <div className="mb-2 flex items-center gap-3">
                 <div className="h-2 w-2 rounded-full bg-rose-500" />
-                <span className="text-sm font-bold text-slate-700">O que acontece agora?</span>
+                <span className="text-sm font-bold text-slate-700">Proximo passo</span>
               </div>
               <p className="text-xs leading-relaxed text-slate-500">
-                O acesso a esta avaliação está bloqueado para seu usuário. Entre em contato com o suporte ou com seu gestor para solicitar uma nova oportunidade, se aplicável ao seu plano de estudos.
+                {hasPendingRequest
+                  ? 'Sua solicitacao de nova tentativa ja foi enviada e esta aguardando analise do administrador.'
+                  : isRejectedRequest
+                    ? 'Sua ultima solicitacao foi recusada. Se necessario, envie um novo pedido para que a equipe analise outra liberacao.'
+                    : 'Voce pode enviar uma solicitacao de nova tentativa para analise do administrador diretamente por esta tela.'}
               </p>
+              {attemptRequest?.admin_response ? (
+                <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-4 text-xs text-slate-600">
+                  <span className="block text-[10px] font-bold uppercase tracking-widest text-slate-400">Retorno do administrador</span>
+                  <p className="mt-2 leading-relaxed">{attemptRequest.admin_response}</p>
+                </div>
+              ) : null}
             </div>
+
+            <div className="mt-10 flex flex-col gap-4 sm:flex-row">
+              <Button
+                size="lg"
+                className="h-14 flex-1 rounded-2xl bg-slate-900 font-bold shadow-xl shadow-slate-200 hover:bg-slate-800"
+                onClick={() => navigate(`/aluno/cursos/${courseId}`)}
+              >
+                Voltar para o Curso
+              </Button>
+              <Button
+                size="lg"
+                variant="outline"
+                className="h-14 flex-1 rounded-2xl border-slate-300 font-bold text-slate-700 hover:bg-slate-50"
+                disabled={hasPendingRequest || isRequestingRetry}
+                onClick={() => void handleRequestRetry()}
+              >
+                {hasPendingRequest ? 'Solicitacao Enviada' : isRequestingRetry ? 'Enviando...' : 'Solicitar Nova Tentativa'}
+              </Button>
+            </div>
+            {error ? <p className="mt-4 text-sm font-medium text-rose-600">{error}</p> : null}
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (finalAssessmentBlockReason && !result) {
+    return (
+      <div className="mx-auto max-w-2xl animate-in fade-in zoom-in-95 p-4 py-12 duration-500 md:py-24">
+        <div className="overflow-hidden rounded-[40px] border border-amber-100 bg-white shadow-2xl shadow-amber-200/20">
+          <div className="bg-gradient-to-b from-amber-50/60 to-white p-12 text-center">
+            <div className="mx-auto mb-8 flex h-24 w-24 items-center justify-center rounded-full border-2 border-white bg-amber-100 text-amber-600 shadow-lg shadow-amber-100">
+              <svg className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 8v4m0 4h.01M4.93 19h14.14c1.54 0 2.502-1.667 1.732-3L13.73 4c-.77-1.333-2.69-1.333-3.46 0L3.2 16c-.77 1.333.19 3 1.73 3z" />
+              </svg>
+            </div>
+            <h2 className="text-3xl font-black leading-tight tracking-tight text-slate-900">{finalAssessmentBlockReason.title}</h2>
+            <p className="mt-4 font-medium leading-relaxed text-slate-500">{finalAssessmentBlockReason.description}</p>
             <Button
               size="lg"
               className="mt-10 h-14 w-full rounded-2xl bg-slate-900 font-bold shadow-xl shadow-slate-200 hover:bg-slate-800"
@@ -277,7 +408,7 @@ export function StudentAssessmentExecutionPage() {
 
   if (result) {
     return (
-      <div className="mx-auto max-w-2xl p-4 py-8 md:py-16 animate-in fade-in zoom-in-95 duration-500">
+      <div className="mx-auto max-w-2xl animate-in fade-in zoom-in-95 p-4 py-8 duration-500 md:py-16">
         <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl shadow-slate-200/50">
           <div className={`p-10 text-center ${result.is_approved ? 'bg-gradient-to-b from-emerald-50 to-white' : 'bg-gradient-to-b from-rose-50 to-white'}`}>
             <div className={`mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-full border shadow-sm ${
@@ -294,7 +425,7 @@ export function StudentAssessmentExecutionPage() {
               )}
             </div>
             <h2 className={`text-3xl font-extrabold tracking-tight ${result.is_approved ? 'text-emerald-900' : 'text-rose-900'}`}>
-              {result.is_approved ? 'Parabéns! Você foi aprovado.' : 'Não foi desta vez.'}
+              {result.is_approved ? 'Parabens! Voce foi aprovado.' : 'Nao foi desta vez.'}
             </h2>
             <div className="mt-4 flex flex-col items-center justify-center gap-1">
               <span className="text-sm font-bold uppercase tracking-widest text-slate-400">Nota Final</span>
@@ -348,29 +479,33 @@ export function StudentAssessmentExecutionPage() {
   }
 
   if (!assessment || questions.length === 0) {
-    return <div className="mx-auto mt-20 max-w-2xl rounded-3xl border border-slate-200 bg-white p-12 text-center font-bold uppercase tracking-widest text-slate-500 shadow-sm">Nenhuma questão configurada para esta avaliação.</div>
+    return (
+      <div className="mx-auto mt-20 max-w-2xl rounded-3xl border border-slate-200 bg-white p-12 text-center font-bold uppercase tracking-widest text-slate-500 shadow-sm">
+        Nenhuma questao configurada para esta avaliacao.
+      </div>
+    )
   }
 
   return (
-    <div className="mx-auto max-w-4xl space-y-8 p-4 pb-32 sm:p-8 animate-in fade-in duration-500">
+    <div className="mx-auto max-w-4xl animate-in fade-in space-y-8 p-4 pb-32 duration-500 sm:p-8">
       <header className="space-y-6">
         <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
           <div className="space-y-2">
             <div className="mb-1 flex items-center gap-3">
               <span className="rounded-full bg-blue-600 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-white shadow-lg shadow-blue-100">
-                AVALIAÇÃO OFICIAL
+                AVALIACAO OFICIAL
               </span>
               <span className="text-xs font-black uppercase tracking-widest italic text-slate-400">
                 {assessment.title}
               </span>
             </div>
-            <h2 className="text-3xl font-black leading-tight tracking-tight text-slate-900 md:text-4xl">Questão {currentQuestionIndex + 1} de {questions.length}</h2>
+            <h2 className="text-3xl font-black leading-tight tracking-tight text-slate-900 md:text-4xl">Questao {currentQuestionIndex + 1} de {questions.length}</h2>
           </div>
         </div>
 
         {isPerfectApprovedReview && (
           <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm font-bold text-emerald-700">
-            Você já concluiu este quiz com 100%. As respostas corretas estão destacadas e uma nova tentativa não é permitida.
+            Voce ja concluiu este quiz com 100%. As respostas corretas estao destacadas e uma nova tentativa nao e permitida.
           </div>
         )}
 
@@ -446,9 +581,9 @@ export function StudentAssessmentExecutionPage() {
             size="lg"
             className="h-14 w-full rounded-2xl px-8 text-xs font-black uppercase tracking-widest text-slate-500 hover:bg-slate-100 hover:text-slate-900 sm:w-auto"
             disabled={currentQuestionIndex === 0}
-            onClick={() => setCurrentQuestionIndex((i) => i - 1)}
+            onClick={() => setCurrentQuestionIndex((index) => index - 1)}
           >
-            Questão Anterior
+            Questao Anterior
           </Button>
 
           {isPerfectApprovedReview ? (
@@ -467,9 +602,11 @@ export function StudentAssessmentExecutionPage() {
                 disabled={!allQuestionsAnswered || isSubmitting}
                 onClick={handleSubmit}
               >
-                {isSubmitting ? 'ENVIANDO RESPOSTAS...' : 'FINALIZAR AVALIAÇÃO'}
+                {isSubmitting ? 'ENVIANDO RESPOSTAS...' : 'FINALIZAR AVALIACAO'}
                 {!isSubmitting && (
-                  <svg className="ml-2 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
+                  <svg className="ml-2 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                  </svg>
                 )}
               </Button>
             </div>
@@ -478,10 +615,12 @@ export function StudentAssessmentExecutionPage() {
               size="lg"
               className="h-14 w-full rounded-[24px] bg-blue-600 px-12 text-sm font-black uppercase tracking-widest text-white shadow-2xl shadow-blue-200 transition-all hover:bg-blue-700 sm:w-auto"
               disabled={!selectedOptions[currentQuestion.id]}
-              onClick={() => setCurrentQuestionIndex((i) => i + 1)}
+              onClick={() => setCurrentQuestionIndex((index) => index + 1)}
             >
-              PRÓXIMA QUESTÃO
-              <svg className="ml-2 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M9 5l7 7-7 7" /></svg>
+              PROXIMA QUESTAO
+              <svg className="ml-2 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M9 5l7 7-7 7" />
+              </svg>
             </Button>
           )}
         </footer>

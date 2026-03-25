@@ -49,6 +49,18 @@ export interface StudentAssessmentReview {
   answers: AssessmentAnswer[]
 }
 
+export interface AssessmentAttemptRequest {
+  id: string
+  assessment_id: string
+  user_id: string
+  status: 'pending' | 'approved' | 'rejected'
+  requested_message: string | null
+  admin_response: string | null
+  requested_at: string
+  reviewed_at: string | null
+  reviewed_by: string | null
+}
+
 function toError(error: unknown): Error {
   if (error instanceof Error) {
     return error
@@ -189,4 +201,36 @@ export async function fetchOwnAssessmentReview(assessmentId: string) {
     latestAttempt,
     answers: (answersResult.data as AssessmentAnswer[]) ?? [],
   } satisfies StudentAssessmentReview
+}
+
+export async function fetchOwnAssessmentAttemptRequest(assessmentId: string) {
+  const result = await supabase
+    .from('assessment_attempt_requests')
+    .select('*')
+    .eq('assessment_id', assessmentId)
+    .order('requested_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  if (result.error) {
+    throw result.error
+  }
+
+  return (result.data as AssessmentAttemptRequest | null) ?? null
+}
+
+export async function requestAssessmentAttemptRetry(
+  assessmentId: string,
+  requestedMessage?: string,
+) {
+  const result = await supabase.rpc('request_assessment_attempt_retry', {
+    _assessment_id: assessmentId,
+    _requested_message: requestedMessage?.trim() ? requestedMessage.trim() : null,
+  })
+
+  if (result.error) {
+    throw result.error
+  }
+
+  return (result.data?.[0] as { request_id: string; status: AssessmentAttemptRequest['status'] } | undefined) ?? null
 }
