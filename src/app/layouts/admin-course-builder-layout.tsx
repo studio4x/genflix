@@ -256,59 +256,8 @@ export function AdminCourseBuilderLayout() {
                         className="group w-full flex items-center gap-2.5 p-2.5 rounded-lg text-sm transition-colors text-slate-600 hover:bg-slate-100"
                      >
                         <svg className="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-                        Exportar ConteÃºdo
+                        Exportar Conteúdo
                      </button>
-                     <div className="hidden rounded-xl border border-slate-200 bg-slate-50/60 p-3 space-y-2">
-                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Exportar JSON</p>
-                        <Button
-                           variant="outline"
-                           size="sm"
-                           className="w-full h-9 justify-start text-[11px] font-bold"
-                           onClick={() => void handleExportCourse()}
-                           disabled={isExportingCourse}
-                        >
-                           <svg className="h-3.5 w-3.5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-                           {isExportingCourse ? 'Exportando curso...' : 'Curso completo'}
-                        </Button>
-
-                        <div className="space-y-1">
-                           <select
-                              className="w-full h-9 rounded-lg border border-slate-200 bg-white px-2 text-[11px] font-semibold text-slate-700"
-                              value={selectedModuleIdToExport}
-                              onChange={(e) => setSelectedModuleIdToExport(e.target.value)}
-                              disabled={courseTree.modules.length === 0}
-                           >
-                              {courseTree.modules.length === 0 ? (
-                                <option value="">Sem módulos</option>
-                              ) : (
-                                courseTree.modules.map((m, idx) => (
-                                  <option key={m.id} value={m.id}>Módulo {idx + 1}: {m.title}</option>
-                                ))
-                              )}
-                           </select>
-                           <Button
-                              variant="outline"
-                              size="sm"
-                              className="w-full h-9 justify-start text-[11px] font-bold"
-                              onClick={() => void handleExportModule()}
-                              disabled={!selectedModuleIdToExport || isExportingModule}
-                           >
-                              <svg className="h-3.5 w-3.5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-                              {isExportingModule ? 'Exportando módulo...' : 'Módulo selecionado'}
-                           </Button>
-                        </div>
-
-                        <Button
-                           variant="outline"
-                           size="sm"
-                           className="w-full h-9 justify-start text-[11px] font-bold"
-                           onClick={() => void handleExportFinalAssessment()}
-                           disabled={isExportingFinal}
-                        >
-                           <svg className="h-3.5 w-3.5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-                           {isExportingFinal ? 'Exportando avaliação...' : 'Avaliação final'}
-                        </Button>
-                     </div>
 
                      <Button 
                         variant="outline" 
@@ -441,8 +390,8 @@ export function AdminCourseBuilderLayout() {
               <div className="bg-white rounded-[32px] w-full max-w-2xl shadow-2xl border border-white/20 overflow-y-auto max-h-[95vh] no-scrollbar animate-in zoom-in-95 duration-300">
                 <div className="p-8 border-b border-slate-100 flex items-center justify-between">
                   <div>
-                    <h3 className="text-xl font-black text-slate-900 tracking-tight">Exportar ConteÃºdo (JSON)</h3>
-                    <p className="text-sm text-slate-500 mt-1 font-medium">Baixe a estrutura do curso, mÃ³dulo ou avaliaÃ§Ã£o final.</p>
+                    <h3 className="text-xl font-black text-slate-900 tracking-tight">Exportar Conteúdo (JSON)</h3>
+                    <p className="text-sm text-slate-500 mt-1 font-medium">Baixe a estrutura do curso, módulo ou avaliação final.</p>
                   </div>
                   <button onClick={() => setIsExportModalOpen(false)} className="h-10 w-10 flex items-center justify-center rounded-xl bg-slate-50 text-slate-400 hover:text-slate-900 transition-colors">
                     <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
@@ -462,7 +411,7 @@ export function AdminCourseBuilderLayout() {
                   </Button>
 
                   <div className="space-y-2 p-4 rounded-xl border border-slate-200 bg-slate-50/60">
-                    <label className="text-xs font-black uppercase tracking-widest text-slate-400">MÃ³dulo para exportaÃ§Ã£o</label>
+                    <label className="text-xs font-black uppercase tracking-widest text-slate-400">Módulo para exportação</label>
                     <select
                       className="w-full h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700"
                       value={selectedModuleIdToExport}
@@ -470,10 +419,10 @@ export function AdminCourseBuilderLayout() {
                       disabled={courseTree.modules.length === 0}
                     >
                       {courseTree.modules.length === 0 ? (
-                        <option value="">Sem mÃ³dulos</option>
+                        <option value="">Sem módulos</option>
                       ) : (
                         courseTree.modules.map((m, idx) => (
-                          <option key={m.id} value={m.id}>MÃ³dulo {idx + 1}: {m.title}</option>
+                          <option key={m.id} value={m.id}>Módulo {idx + 1}: {m.title}</option>
                         ))
                       )}
                     </select>
@@ -485,7 +434,7 @@ export function AdminCourseBuilderLayout() {
                       disabled={!selectedModuleIdToExport || isExportingModule}
                     >
                       <svg className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-                      {isExportingModule ? 'Exportando mÃ³dulo...' : 'MÃ³dulo selecionado'}
+                      {isExportingModule ? 'Exportando módulo...' : 'Módulo selecionado'}
                     </Button>
                   </div>
 
@@ -497,7 +446,7 @@ export function AdminCourseBuilderLayout() {
                     disabled={isExportingFinal}
                   >
                     <svg className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-                    {isExportingFinal ? 'Exportando avaliaÃ§Ã£o final...' : 'AvaliaÃ§Ã£o final'}
+                    {isExportingFinal ? 'Exportando avaliação final...' : 'Avaliação final'}
                   </Button>
                 </div>
               </div>

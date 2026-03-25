@@ -145,7 +145,7 @@ export function StudentAssessmentExecutionPage() {
             </div>
             <h2 className="text-3xl font-black tracking-tight text-slate-900 leading-tight">Quiz Ainda Bloqueado</h2>
             <p className="mt-4 text-slate-500 font-medium leading-relaxed">
-              Para realizar o quiz deste mÃ³dulo, conclua todas as aulas do mÃ³dulo primeiro.
+              Para realizar o quiz deste módulo, conclua todas as aulas do módulo primeiro.
             </p>
             <Button
               size="lg"
