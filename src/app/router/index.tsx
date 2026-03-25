@@ -3,6 +3,7 @@ import { Navigate, createBrowserRouter } from 'react-router-dom'
 import { AdminLayout } from '@/app/layouts/admin-layout'
 import { AdminCourseBuilderLayout } from '@/app/layouts/admin-course-builder-layout'
 import { StudentLayout } from '@/app/layouts/student-layout'
+import { StudentCoursePlayerLayout } from '@/pages/student/student-course-player-layout'
 import { DefaultRedirect } from '@/app/router/default-redirect'
 import { ProtectedRoute } from '@/app/router/protected-route'
 import { AdminCourseReleasesPage } from '@/pages/admin/admin-course-releases-page'
@@ -77,17 +78,21 @@ export const appRouter = createBrowserRouter([
             element: <StudentCourseDetailsPage />,
           },
           {
-            path: '/aluno/cursos/:courseId/avaliacoes/:assessmentId',
-            element: <StudentAssessmentExecutionPage />,
+            path: '/aluno/cursos/:courseId/player',
+            element: <StudentCoursePlayerLayout />,
+            children: [
+              {
+                path: 'aulas/:lessonId',
+                element: <StudentLessonPage />,
+              },
+              {
+                path: 'avaliacoes/:assessmentId',
+                element: <StudentAssessmentExecutionPage />,
+              },
+            ],
           },
         ],
       },
-      {
-        path: '/aluno/cursos/:courseId/aulas/:lessonId',
-        element: <StudentLessonPage />,
-      },
-    ],
-  },
   {
     element: <ProtectedRoute allowedRoles={['admin']} />,
     children: [

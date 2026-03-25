@@ -287,7 +287,7 @@ export function StudentCourseDetailsPage() {
 
             <div className="pt-4">
                <Button className="bg-white text-slate-900 hover:bg-slate-100 h-16 px-10 rounded-2xl font-black text-lg shadow-xl" asChild>
-                  <Link to={modules[0]?.lessons[0] ? `/aluno/cursos/${courseId}/aulas/${modules[0].lessons[0].id}` : '#'}>
+                  <Link to={modules[0]?.lessons[0] ? `/aluno/cursos/${courseId}/player/aulas/${modules[0].lessons[0].id}` : '#'}>
                      Continuar Aprendizado
                   </Link>
                </Button>
@@ -362,7 +362,7 @@ export function StudentCourseDetailsPage() {
                   <Button asChild disabled={finalAssessment.state === 'blocked'} size="sm" className={`h-12 px-6 rounded-xl font-black ${
                      finalAssessment.state === 'approved' ? 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-lg shadow-emerald-100' : 'bg-blue-600'
                   }`}>
-                     <Link to={`/aluno/cursos/${courseId}/avaliacoes/${finalAssessment.assessment_id}`}>
+                     <Link to={`/aluno/cursos/${courseId}/player/avaliacoes/${finalAssessment.assessment_id}`}>
                         {finalAssessment.state === 'approved' ? 'Ver Resultado' : 'Iniciar Prova'}
                      </Link>
                   </Button>
@@ -456,7 +456,7 @@ export function StudentCourseDetailsPage() {
                                                    <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
                                                 )}
                                              </button>
-                                             <Link to={`/aluno/cursos/${courseId}/aulas/${lesson.id}`} className="flex-1 flex items-center justify-between p-4 rounded-2xl bg-slate-50/50 hover:bg-blue-50/50 border border-transparent hover:border-blue-100 transition-all">
+                                             <Link to={`/aluno/cursos/${courseId}/player/aulas/${lesson.id}`} className="flex-1 flex items-center justify-between p-4 rounded-2xl bg-slate-50/50 hover:bg-blue-50/50 border border-transparent hover:border-blue-100 transition-all">
                                                 <div>
                                                    <p className={`text-sm font-bold ${lesson.is_completed ? 'text-slate-400 line-through' : 'text-slate-700'}`}>{lesson.title}</p>
                                                    {lesson.is_required && <span className="text-[9px] font-black text-blue-400 uppercase tracking-tighter">Obrigatória</span>}
@@ -483,7 +483,7 @@ export function StudentCourseDetailsPage() {
                                                 <p className="text-xs font-medium text-slate-400">Avaliação Obrigatória do Módulo</p>
                                              </div>
                                              <Button size="sm" asChild disabled={moduleAssessment.state === 'blocked'} className={`h-11 px-6 rounded-xl font-black ${moduleAssessment.state === 'approved' ? 'bg-white text-emerald-600 border-emerald-200 shadow-sm' : 'bg-blue-600'}`}>
-                                                <Link to={`/aluno/cursos/${courseId}/avaliacoes/${moduleAssessment.assessment_id}`}>
+                                                <Link to={`/aluno/cursos/${courseId}/player/avaliacoes/${moduleAssessment.assessment_id}`}>
                                                    {moduleAssessment.state === 'approved' ? 'Refazer Quiz' : 'Iniciar Quiz'}
                                                 </Link>
                                              </Button>

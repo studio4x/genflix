@@ -1,19 +1,22 @@
 import { useEffect, useState, useMemo } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams, useOutletContext } from 'react-router-dom'
 
 import { Button } from '@/components/ui/button'
 import {
   fetchAssessmentForExecution,
   submitAssessmentAttempt,
+  fetchStudentCourseAssessments,
   toErrorMessage,
   type StudentAssessmentQuestionWithOptions,
   type SubmitAssessmentAttemptResult,
 } from '@/features/student/assessments/api'
+import { fetchStudentCourseContentWithProgress } from '@/features/student/courses/api'
 import type { Assessment, AssessmentOption } from '@/types/content'
 
 export function StudentAssessmentExecutionPage() {
   const { courseId, assessmentId } = useParams<{ courseId: string; assessmentId: string }>()
   const navigate = useNavigate()
+  const { setModules, setAssessments } = useOutletContext<{ setModules: (m: any) => void, setAssessments: (a: any) => void }>()
 
   const [assessment, setAssessment] = useState<Assessment | null>(null)
   const [questions, setQuestions] = useState<StudentAssessmentQuestionWithOptions[]>([])
@@ -40,6 +43,9 @@ export function StudentAssessmentExecutionPage() {
         
         setAssessment(assessmentData)
         setQuestions(questionsData)
+        setResult(null)
+        setCurrentQuestionIndex(0)
+        setSelectedOptions({})
       } catch (loadError) {
         setError(toErrorMessage(loadError))
       } finally {
@@ -48,6 +54,7 @@ export function StudentAssessmentExecutionPage() {
     }
 
     void loadAssessment()
+    window.scrollTo(0, 0)
   }, [assessmentId])
 
   const currentQuestion = questions[currentQuestionIndex]
@@ -61,7 +68,7 @@ export function StudentAssessmentExecutionPage() {
   }, [questions, selectedOptions])
 
   async function handleSubmit() {
-    if (!assessmentId) return
+    if (!assessmentId || !courseId) return
     
     setIsSubmitting(true)
     setError(null)
@@ -74,6 +81,20 @@ export function StudentAssessmentExecutionPage() {
 
       const submissionResult = await submitAssessmentAttempt(assessmentId, answers)
       setResult(submissionResult)
+
+      // Se passou, atualizar o progresso na sidebar do player
+      if (submissionResult.is_approved) {
+         try {
+            const [refreshedModules, refreshedAssessments] = await Promise.all([
+               fetchStudentCourseContentWithProgress(courseId),
+               fetchStudentCourseAssessments(courseId)
+            ])
+            setModules(refreshedModules)
+            setAssessments(refreshedAssessments)
+         } catch (refreshErr) {
+            console.error('Falha ao atualizar progresso:', refreshErr)
+         }
+      }
     } catch (submitError) {
       setError(toErrorMessage(submitError))
     } finally {
@@ -92,14 +113,14 @@ export function StudentAssessmentExecutionPage() {
     return (
       <div className="flex min-h-[400px] flex-col items-center justify-center space-y-4">
         <div className="h-10 w-10 animate-spin rounded-full border-4 border-blue-600 border-t-transparent" />
-        <p className="text-sm font-medium text-slate-500 animate-pulse">Preparando ambiente de prova...</p>
+        <p className="text-sm font-medium text-slate-500 animate-pulse font-bold uppercase tracking-widest">Preparando ambiente de prova...</p>
       </div>
     )
   }
 
   if (error && !result) {
     return (
-      <div className="mx-auto max-w-2xl rounded-2xl border border-red-200 bg-red-50 p-8 text-center shadow-sm">
+      <div className="mx-auto max-w-2xl mt-10 rounded-2xl border border-red-200 bg-red-50 p-8 text-center shadow-sm">
         <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-red-100 text-red-600 shadow-sm border border-red-200">
           <svg className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
@@ -107,18 +128,15 @@ export function StudentAssessmentExecutionPage() {
         </div>
         <h2 className="text-2xl font-bold tracking-tight text-slate-900">Ops! Algo deu errado</h2>
         <p className="mt-2 text-slate-600">{error}</p>
-        <Button size="lg" className="mt-6 bg-slate-900 hover:bg-slate-800" onClick={() => navigate(-1)}>Voltar para o Curso</Button>
+        <Button size="lg" className="mt-6 bg-slate-900 hover:bg-slate-800 rounded-2xl" onClick={() => navigate(-1)}>Voltar</Button>
       </div>
     )
   }
 
   if (result) {
     return (
-      <div className="mx-auto max-w-2xl py-8 animate-in fade-in zoom-in-95 duration-500">
-        <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-2xl shadow-sm mb-6 bg-white border border-slate-200">
-          <span className="font-bold text-2xl leading-none text-blue-600">HM</span>
-        </div>
-        <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-xl shadow-slate-200/40">
+      <div className="mx-auto max-w-2xl py-8 md:py-16 animate-in fade-in zoom-in-95 duration-500 p-4">
+        <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl shadow-slate-200/50">
           <div className={`p-10 text-center ${result.is_approved ? 'bg-gradient-to-b from-emerald-50 to-white' : 'bg-gradient-to-b from-rose-50 to-white'}`}>
             <div className={`mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-full shadow-sm border ${
               result.is_approved ? 'bg-emerald-100 text-emerald-600 border-emerald-200' : 'bg-rose-100 text-rose-600 border-rose-200'
@@ -138,7 +156,7 @@ export function StudentAssessmentExecutionPage() {
             </h2>
             <div className="mt-4 flex flex-col items-center justify-center gap-1">
               <span className="text-sm font-bold uppercase tracking-widest text-slate-400">Nota Final</span>
-              <span className={`text-5xl font-black tracking-tighter ${result.is_approved ? 'text-emerald-600' : 'text-rose-600'}`}>
+              <span className={`text-6xl font-black tracking-tighter ${result.is_approved ? 'text-emerald-600' : 'text-rose-600'}`}>
                 {result.score_percent}%
               </span>
             </div>
@@ -151,43 +169,19 @@ export function StudentAssessmentExecutionPage() {
                 <p className="mt-1 text-3xl font-extrabold text-slate-900">{result.attempt_number}<span className="text-xl text-slate-400">/{result.max_attempts}</span></p>
               </div>
               <div className="rounded-2xl border border-slate-100 bg-slate-50/50 p-5 text-center shadow-sm">
-                <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Tentativas Restantes</p>
+                <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Saldo Restante</p>
                 <p className={`mt-1 text-3xl font-extrabold ${result.remaining_attempts === 0 ? 'text-rose-600' : 'text-slate-900'}`}>
                   {result.remaining_attempts}
                 </p>
               </div>
             </div>
 
-            {!result.is_approved && result.remaining_attempts > 0 && (
-              <div className="flex gap-4 rounded-2xl border border-blue-100 bg-blue-50/50 p-5">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-100 text-blue-600">
-                   <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                </div>
-                <div>
-                  <h4 className="font-bold text-blue-900">Dica de Estudo</h4>
-                  <p className="mt-1 text-sm text-blue-800 leading-relaxed">Revise os conteúdos do módulo com calma antes de tentar novamente para garantir sua aprovação. Todo o material continuará disponível.</p>
-                </div>
-              </div>
-            )}
-
-            {!result.is_approved && result.remaining_attempts === 0 && (
-              <div className="flex gap-4 rounded-2xl border border-rose-200 bg-rose-50 p-5">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-rose-100 text-rose-600">
-                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
-                </div>
-                <div>
-                  <h4 className="font-bold text-rose-900">Atenção Especial</h4>
-                  <p className="mt-1 text-sm text-rose-800 leading-relaxed">Você atingiu o limite de tentativas. Entre em contato com seu tutor ou suporte da plataforma para orientações sobre como prosseguir.</p>
-                </div>
-              </div>
-            )}
-
             <div className="flex flex-col sm:flex-row gap-4 pt-4">
-              <Button size="lg" className="flex-1 shrink-0 h-14 bg-slate-900 hover:bg-slate-800 shadow-xl shadow-slate-200" asChild>
-                <Link to={`/aluno/cursos/${courseId}`}>Voltar para o Curso</Link>
+              <Button size="lg" className="flex-1 shrink-0 h-14 bg-slate-900 hover:bg-slate-800 shadow-xl shadow-slate-200 rounded-2xl font-bold" onClick={() => navigate(`/aluno/cursos/${courseId}`)}>
+                Ir para o Dashboard
               </Button>
               {!result.is_approved && result.remaining_attempts > 0 && (
-                <Button variant="outline" size="lg" className="flex-1 shrink-0 h-14 border-slate-300 shadow-sm hover:bg-slate-50 text-slate-700" onClick={() => window.location.reload()}>
+                <Button variant="outline" size="lg" className="flex-1 shrink-0 h-14 border-slate-300 shadow-sm hover:bg-slate-50 text-slate-700 rounded-2xl font-bold" onClick={() => setResult(null)}>
                   Tentar Novamente
                 </Button>
               )}
@@ -199,47 +193,43 @@ export function StudentAssessmentExecutionPage() {
   }
 
   if (!assessment || questions.length === 0) {
-    return <div className="p-12 text-center text-slate-500 font-medium border border-slate-200 rounded-2xl bg-white shadow-sm max-w-2xl mx-auto">Nenhuma questão configurada para esta avaliação no momento.</div>
+    return <div className="p-12 text-center text-slate-500 font-bold uppercase tracking-widest border border-slate-200 rounded-3xl bg-white shadow-sm max-w-2xl mx-auto mt-20">Nenhuma questão configurada para esta avaliação.</div>
   }
 
   return (
-    <div className="mx-auto max-w-4xl py-6 md:py-10 space-y-8 min-h-screen animate-in fade-in duration-500">
-      <header className="sticky top-0 z-10 -mx-6 px-6 pb-6 pt-6 bg-slate-50/90 backdrop-blur-md md:static md:bg-transparent md:p-0 md:backdrop-blur-none">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-          <div className="space-y-1">
-            <h2 className="text-2xl font-extrabold tracking-tight text-slate-900 leading-tight">{assessment.title}</h2>
-            <div className="flex items-center gap-2">
-              <span className="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-blue-700">
-                LMS Assessment
-              </span>
-              <span className="text-sm font-medium text-slate-500">Questão {currentQuestionIndex + 1} de {questions.length}</span>
-            </div>
-          </div>
-          <div className="md:text-right">
-             <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="text-slate-500 hover:text-rose-500 hover:bg-rose-50 -ml-4 md:ml-0 transition-colors">
-               <svg className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-               Sair da Prova
-             </Button>
+    <div className="mx-auto max-w-4xl p-4 sm:p-8 space-y-8 animate-in fade-in duration-500 pb-32">
+      <header className="space-y-6">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="space-y-2">
+             <div className="flex items-center gap-3 mb-1">
+                <span className="bg-blue-600 text-white px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg shadow-blue-100">
+                    AVALIAÇÃO OFICIAL
+                </span>
+                <span className="text-xs font-black text-slate-400 uppercase tracking-widest italic">
+                    {assessment.title}
+                </span>
+             </div>
+            <h2 className="text-3xl md:text-4xl font-black tracking-tight text-slate-900 leading-tight">Questão {currentQuestionIndex + 1} de {questions.length}</h2>
           </div>
         </div>
         
-        <div className="h-2 w-full overflow-hidden rounded-full bg-slate-200/60 shadow-inner">
+        <div className="h-2.5 w-full overflow-hidden rounded-full bg-slate-200/60 shadow-inner p-0.5">
           <div 
-            className="h-full bg-blue-600 transition-all duration-500 ease-out rounded-full"
+            className="h-full bg-blue-600 transition-all duration-500 ease-out rounded-full shadow-lg shadow-blue-200"
             style={{ width: `${progressPercent}%` }}
           />
         </div>
       </header>
 
       <main className="space-y-8">
-        <article className="rounded-3xl border border-slate-200 bg-white shadow-lg shadow-slate-100/50 overflow-hidden">
-          <div className="p-8 sm:p-12">
-            <div className="space-y-8">
-              <div className="space-y-4">
-                <span className="inline-block rounded-lg bg-slate-100 px-3 py-1.5 text-xs font-bold uppercase tracking-widest text-slate-500">
-                  Questão {currentQuestionIndex + 1}
+        <article className="rounded-[48px] border border-slate-200 bg-white shadow-2xl shadow-slate-200/50 overflow-hidden">
+          <div className="p-8 sm:p-14">
+            <div className="space-y-10">
+              <div className="space-y-6">
+                <span className="inline-block rounded-2xl bg-slate-100 px-4 py-2 text-xs font-black uppercase tracking-widest text-slate-500 border border-slate-200">
+                  PERGUNTA {currentQuestionIndex + 1}
                 </span>
-                <h3 className="text-2xl font-extrabold leading-snug text-slate-900 tracking-tight sm:text-3xl">
+                <h3 className="text-2xl font-black leading-snug text-slate-900 tracking-tight sm:text-4xl">
                   {currentQuestion.question_text}
                 </h3>
               </div>
@@ -251,18 +241,18 @@ export function StudentAssessmentExecutionPage() {
                     <button
                       key={option.id}
                       onClick={() => handleOptionSelect(currentQuestion.id, option.id)}
-                      className={`group relative flex items-center gap-5 rounded-2xl border-2 p-5 text-left transition-all duration-200 ${
+                      className={`group relative flex items-center gap-5 rounded-[32px] border-2 p-6 text-left transition-all duration-300 ${
                         isSelected 
-                          ? 'border-blue-600 bg-blue-50/50 shadow-md ring-4 ring-blue-600/10' 
-                          : 'border-slate-200 bg-white hover:border-blue-300 hover:bg-slate-50 hover:shadow-sm'
+                          ? 'border-blue-600 bg-blue-50/50 shadow-xl ring-8 ring-blue-600/5' 
+                          : 'border-slate-100 bg-white hover:border-blue-200 hover:bg-slate-50'
                       }`}
                     >
-                      <div className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 transition-all ${
-                        isSelected ? 'border-blue-600 bg-blue-600 text-white scale-110 shadow-sm' : 'border-slate-300 bg-slate-50 group-hover:border-blue-300 group-hover:bg-white'
+                      <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 transition-all duration-300 ${
+                        isSelected ? 'border-blue-600 bg-blue-600 text-white shadow-lg' : 'border-slate-200 bg-white group-hover:border-blue-300'
                       }`}>
-                        {isSelected && <div className="h-2.5 w-2.5 rounded-full bg-white shadow-sm" />}
+                        {isSelected && <div className="h-2.5 w-2.5 rounded-full bg-white animate-in zoom-in-50" />}
                       </div>
-                      <span className={`text-[1.05rem] sm:text-lg font-medium leading-relaxed transition-colors ${isSelected ? 'text-blue-900 font-semibold' : 'text-slate-700 group-hover:text-slate-900'}`}>
+                      <span className={`text-lg sm:text-xl font-bold leading-relaxed transition-colors ${isSelected ? 'text-blue-900' : 'text-slate-600 group-hover:text-slate-900'}`}>
                         {option.option_text}
                       </span>
                     </button>
@@ -273,44 +263,39 @@ export function StudentAssessmentExecutionPage() {
           </div>
         </article>
 
-        <footer className="flex flex-col-reverse sm:flex-row items-center justify-between gap-4">
+        <footer className="flex flex-col-reverse sm:flex-row items-center justify-between gap-4 bg-white/50 backdrop-blur-sm p-6 rounded-[32px] border border-white shadow-xl shadow-slate-100 sticky bottom-4 z-20">
           <Button
-            variant="outline"
+            variant="ghost"
             size="lg"
-            className="w-full sm:w-auto h-14 px-8 border-slate-300 text-slate-600 hover:bg-slate-50 hover:text-slate-900 font-semibold shadow-sm"
+            className="w-full sm:w-auto h-14 px-8 text-slate-500 hover:bg-slate-100 hover:text-slate-900 font-black uppercase tracking-widest text-xs rounded-2xl"
             disabled={currentQuestionIndex === 0}
             onClick={() => setCurrentQuestionIndex((i) => i - 1)}
           >
-            Anterior
+            Questão Anterior
           </Button>
 
           {isLastQuestion ? (
             <div className="w-full sm:w-auto flex flex-col items-center">
               <Button
                 size="lg"
-                className="w-full sm:w-auto h-14 px-10 bg-emerald-600 hover:bg-emerald-700 shadow-xl shadow-emerald-100 font-bold text-base transition-all"
+                className="w-full sm:w-auto h-14 px-12 bg-emerald-600 hover:bg-emerald-700 shadow-2xl shadow-emerald-200 font-black uppercase tracking-widest text-sm transition-all rounded-[24px] text-white"
                 disabled={!allQuestionsAnswered || isSubmitting}
                 onClick={handleSubmit}
               >
-                {isSubmitting ? 'Processando envio...' : 'Finalizar Prova Oficial'}
+                {isSubmitting ? 'ENVIANDO RESPOSTAS...' : 'FINALIZAR AVALIAÇÃO'}
                 {!isSubmitting && (
-                  <svg className="ml-2 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
+                   <svg className="ml-2 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
                 )}
               </Button>
-              {!allQuestionsAnswered && (
-                <p className="mt-3 text-center text-[11px] font-bold uppercase tracking-wider text-rose-500 animate-pulse">
-                  Responda todas as questões para finalizar
-                </p>
-              )}
             </div>
           ) : (
             <Button
               size="lg"
-              className="w-full sm:w-auto h-14 px-10 bg-blue-600 hover:bg-blue-700 shadow-xl shadow-blue-100 font-bold text-base transition-all"
+              className="w-full sm:w-auto h-14 px-12 bg-blue-600 hover:bg-blue-700 shadow-2xl shadow-blue-200 font-black uppercase tracking-widest text-sm transition-all rounded-[24px] text-white"
               disabled={!selectedOptions[currentQuestion.id]}
               onClick={() => setCurrentQuestionIndex((i) => i + 1)}
             >
-              Avançar Questão
+              PRÓXIMA QUESTÃO
               <svg className="ml-2 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M9 5l7 7-7 7" /></svg>
             </Button>
           )}
