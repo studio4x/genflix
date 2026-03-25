@@ -95,7 +95,7 @@ export function AdminCourseBuilderLayout() {
       }
 
       // 2. Limpeza adicional para remover escapes indesejados (como \") se virem da IA
-      const cleanData = JSON.parse(JSON.stringify(data), (key, value) => {
+      const cleanData = JSON.parse(JSON.stringify(data), (_key, value) => {
         if (typeof value === 'string') {
           return value.replace(/\\"/g, '"')
         }
