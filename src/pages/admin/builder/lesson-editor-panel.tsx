@@ -280,6 +280,8 @@ export function LessonEditorPanel() {
                       />
                     </label>
                  </div>
+               )}
+ 
                 {(form.lesson_type === 'text' || form.lesson_type === 'hybrid') && (
                    <div className="animate-in slide-in-from-top-2 duration-300 space-y-6">
                       <div className="flex items-center justify-between">
