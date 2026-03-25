@@ -1,14 +1,8 @@
 import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import ReactQuill, { Quill } from 'react-quill'
+import ReactQuill from 'react-quill'
 import 'react-quill/dist/quill.snow.css'
-import QuillBetterTable from 'quill-better-table'
-import 'quill-better-table/dist/quill-better-table.css'
-
-// Register the better-table module - use standard registration
-Quill.register('modules/better-table', QuillBetterTable)
-
 import { createLesson, deleteLesson, updateLesson, toErrorMessage } from '@/features/admin/content/api'
 import { lessonFormSchema, type LessonFormInput } from '@/features/admin/content/schemas'
 import { useCourseBuilder } from '@/app/layouts/admin-course-builder-layout'
@@ -31,25 +25,22 @@ const quillModules = {
     ['bold', 'italic', 'underline', 'strike'],
     [{ 'list': 'ordered' }, { 'list': 'bullet' }],
     ['link', 'blockquote', 'code-block'],
-    ['table'],
     ['clean']
   ],
-  table: false, // Desativa o módulo de tabela nativo
-  'better-table': {
-    operationMenu: {
-      items: {
-        unmergeCells: {
-          text: 'Desmesclar células'
-        }
-      }
-    }
+  clipboard: {
+    // Esse é o segredo para manter as tabelas: ignorar a filtragem do Quill nas tags de tabela
+    matchers: [
+      ['TABLE', (node: any, delta: any) => delta.insert({ html: node.outerHTML })],
+      ['TR', (node: any, delta: any) => delta.insert({ html: node.outerHTML })],
+      ['TD', (node: any, delta: any) => delta.insert({ html: node.outerHTML })]
+    ]
   }
 }
 
 const quillFormats = [
   'header', 'bold', 'italic', 'underline', 'strike',
   'list', 'bullet', 'link', 'blockquote', 'code-block',
-  'better-table', 'table', 'table-row', 'table-cell' // Adicionado better-table aqui
+  'table', 'table-row', 'table-cell'
 ]
 
 export function LessonEditorPanel() {
