@@ -545,6 +545,22 @@ export async function importCourseContent(courseId: string, input: any, clearExi
     throw new Error('Nenhum módulo encontrado no JSON para importar.')
   }
 
+  // Buscar a última posição para não dar conflito (se não estiver limpando tudo)
+  let startPosition = 0
+  if (!clearExisting) {
+    const { data: lastModule } = await supabase
+      .from('course_modules')
+      .select('position')
+      .eq('course_id', courseId)
+      .order('position', { ascending: false })
+      .limit(1)
+      .single()
+    
+    if (lastModule) {
+      startPosition = lastModule.position
+    }
+  }
+
   // Usar loop for tradicional para evitar problemas com .entries() em certos ambientes
   for (let mIdx = 0; mIdx < modules.length; mIdx++) {
     const mData = modules[mIdx]
@@ -556,7 +572,7 @@ export async function importCourseContent(courseId: string, input: any, clearExi
         course_id: courseId,
         title: mData.title,
         description: mData.description || null,
-        position: mIdx + 1
+        position: startPosition + mIdx + 1
       })
       .select()
       .single()
