@@ -328,8 +328,8 @@ export function StudentCourseDetailsPage() {
 
       {/* PERSISTENT PROGRESS BAR (HORIZONTAL) */}
       <section className="bg-white rounded-[32px] border border-slate-100 p-6 shadow-sm animate-in slide-in-from-top-4 duration-700 delay-300">
-         <div className="grid gap-4 lg:grid-cols-[minmax(0,1.8fr)_minmax(150px,0.8fr)_minmax(170px,0.9fr)_auto] lg:items-center">
-         <div className="flex items-center gap-4 sm:gap-6 min-w-0">
+         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+         <div className="flex min-w-0 flex-1 items-center gap-4 sm:gap-6">
             <div className="relative w-16 h-16 shrink-0">
                <svg className="w-full h-full transform -rotate-90">
                   <circle cx="32" cy="32" r="28" stroke="currentColor" strokeWidth="6" fill="transparent" className="text-slate-100" />
@@ -350,7 +350,7 @@ export function StudentCourseDetailsPage() {
             </div>
          </div>
 
-         <div className="flex min-w-0 flex-col justify-center gap-1 rounded-2xl border border-slate-100 bg-slate-50/60 px-4 py-3">
+         <div className="flex w-full min-w-0 flex-col justify-center gap-1 rounded-2xl border border-slate-100 bg-slate-50/60 px-4 py-3 lg:w-[220px] lg:shrink-0">
             <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Módulos</span>
             <div className="flex items-end gap-2">
                <span className="text-3xl font-black leading-none text-slate-900">{totalCompleted}</span>
