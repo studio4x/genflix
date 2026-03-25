@@ -2,7 +2,7 @@ import { useCourseBuilder } from '@/app/layouts/admin-course-builder-layout'
 import { Button } from '@/components/ui/button'
 import { Link, useParams } from 'react-router-dom'
 import { useState } from 'react'
-import { importAssessmentContent, createFinalAssessment, createModuleAssessment, fetchFinalAssessment, fetchModuleAssessment } from '@/features/admin/assessments/api'
+import { importAssessmentContent, deleteAssessment, createFinalAssessment, createModuleAssessment, fetchFinalAssessment, fetchModuleAssessment } from '@/features/admin/assessments/api'
 import { useAuth } from '@/app/providers/auth-provider'
 import { toErrorMessage } from '@/features/admin/assessments/api'
 
@@ -94,6 +94,21 @@ export function CourseAssessmentsPanel() {
     }
   }
 
+  async function handleDeleteAssessment(assessmentId: string) {
+    if (!window.confirm('CUIDADO: Tem certeza que deseja excluir permanentemente esta avaliação? Esta ação removerá todas as questões vinculadas e não pode ser desfeita.')) return
+    
+    setIsImporting(true)
+    try {
+      await deleteAssessment(assessmentId)
+      await refreshTree()
+    } catch (err) {
+      console.error('Erro ao deletar:', err)
+      alert('Falha ao excluir avaliação. Verifique as dependências.')
+    } finally {
+      setIsImporting(false)
+    }
+  }
+
   return (
     <>
       <div className="max-w-4xl mx-auto space-y-6 animate-in fade-in duration-500 pb-20">
@@ -141,9 +156,20 @@ export function CourseAssessmentsPanel() {
                            <p className="font-bold text-emerald-900 leading-tight">{a.title}</p>
                            <p className="text-[11px] text-emerald-600 font-medium uppercase mt-1">Quiz de Certificação • Nota mínima {a.passing_score}%</p>
                         </div>
-                        <Button variant="ghost" size="sm" className="hover:bg-emerald-100 font-bold" asChild>
-                          <Link to={`/admin/cursos/${courseId}/builder/assessments/final`}>Editar</Link>
-                        </Button>
+                        <div className="flex items-center gap-1">
+                           <Button variant="ghost" size="sm" className="hover:bg-emerald-100 font-bold" asChild>
+                             <Link to={`/admin/cursos/${courseId}/builder/assessments/final`}>Editar</Link>
+                           </Button>
+                           <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              onClick={() => handleDeleteAssessment(a.id)}
+                              className="text-slate-400 hover:text-red-500 font-bold h-8 w-8 p-0"
+                              title="Excluir Avaliação Final"
+                           >
+                              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                           </Button>
+                        </div>
                      </div>
                    ))
                  ) : (
@@ -173,11 +199,22 @@ export function CourseAssessmentsPanel() {
                        </div>
                        <div className="flex gap-2">
                           {m.assessments.length > 0 ? (
-                            m.assessments.map(a => (
-                              <Button key={a.id} variant="outline" size="sm" className="bg-white" asChild>
-                                <Link to={`/admin/cursos/${courseId}/builder/modulos/${m.id}/avaliacoes/${a.id}`}>Editar Quiz</Link>
-                              </Button>
-                            ))
+                             m.assessments.map(a => (
+                               <div key={a.id} className="flex items-center gap-1">
+                                 <Button variant="outline" size="sm" className="bg-white" asChild>
+                                   <Link to={`/admin/cursos/${courseId}/builder/modulos/${m.id}/avaliacoes/${a.id}`}>Editar Quiz</Link>
+                                 </Button>
+                                 <Button 
+                                    variant="ghost" 
+                                    size="sm" 
+                                    onClick={() => handleDeleteAssessment(a.id)}
+                                    className="text-slate-400 hover:text-red-500 font-bold h-8 w-8 p-0"
+                                    title="Excluir Quiz do Módulo"
+                                 >
+                                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                 </Button>
+                               </div>
+                             ))
                           ) : (
                              <Button variant="ghost" size="sm" className="text-blue-600 hover:bg-blue-50 font-bold" asChild>
                                 <Link to={`/admin/cursos/${courseId}/builder/modulos/${m.id}/avaliacoes/nova`}>Adicionar Quiz</Link>

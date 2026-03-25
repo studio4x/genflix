@@ -377,3 +377,14 @@ export async function importAssessmentContent(assessmentId: string, data: Import
     }
   }
 }
+
+export async function deleteAssessment(assessmentId: string) {
+  const result = await supabase
+    .from('assessments')
+    .delete()
+    .eq('id', assessmentId)
+
+  if (result.error) {
+    throw result.error
+  }
+}
