@@ -36,10 +36,6 @@ export function StudentLessonPage() {
   const [activeLessonDetails, setActiveLessonDetails] = useState<any>(null)
 
   useEffect(() => {
-    window.scrollTo(0, 0)
-  }, [lessonId])
-
-  useEffect(() => {
     let isMounted = true
     async function loadData() {
       if (!courseId) return
@@ -157,34 +153,9 @@ export function StudentLessonPage() {
         is_completed: !currentLesson.is_completed,
       })
       
-      // 1. Recarregar progresso para liberar novos itens
+      // Recarregar progresso para atualizar os checks na barra lateral
       const refreshedModules = await fetchStudentCourseContentWithProgress(courseId!)
       setModules(refreshedModules)
-      
-      // 2. Se for marcar como concluída (e não desmarcar), tentamos avançar
-      if (!currentLesson.is_completed) {
-        // Recalcular o roteiro com base no progresso novo
-        const newTimeline: string[] = []
-        const blockedMap: Record<string, boolean> = {}
-
-        for (const m of refreshedModules) {
-          for (const l of m.lessons) {
-            newTimeline.push(l.id)
-            blockedMap[l.id] = m.state === 'blocked'
-          }
-        }
-
-        const currIdx = newTimeline.indexOf(currentLesson.id)
-        if (currIdx !== -1 && currIdx < newTimeline.length - 1) {
-          const nextLessonId = newTimeline[currIdx + 1]
-          const isNextBlocked = blockedMap[nextLessonId]
-
-          // Se a próxima não estiver bloqueada, avançamos!
-          if (!isNextBlocked) {
-            navigate(`/aluno/cursos/${courseId}/aulas/${nextLessonId}`)
-          }
-        }
-      }
     } catch (err) {
       alert(toErrorMessage(err))
     } finally {
