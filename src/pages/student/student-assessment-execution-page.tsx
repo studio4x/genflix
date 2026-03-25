@@ -90,6 +90,41 @@ export function StudentAssessmentExecutionPage() {
     return moduleForAssessment.lessons.length === 0 || !moduleForAssessment.lessons.every((lesson) => lesson.is_completed)
   }, [isAdmin, moduleForAssessment])
 
+  const approvedAction = useMemo(() => {
+    if (!courseId || !studentAssessment || studentAssessment.assessment_type !== 'module' || !studentAssessment.module_id) {
+      return {
+        label: 'Ir para o Dashboard',
+        href: courseId ? `/aluno/cursos/${courseId}` : '/aluno/cursos',
+      }
+    }
+
+    const sortedModules = [...modules].sort((a, b) => a.position - b.position)
+    const currentModuleIndex = sortedModules.findIndex((module) => module.id === studentAssessment.module_id)
+    const nextModuleWithLessons = sortedModules
+      .slice(currentModuleIndex + 1)
+      .find((module) => module.lessons.length > 0)
+
+    if (nextModuleWithLessons) {
+      return {
+        label: 'Ir para o Próximo Módulo',
+        href: `/aluno/cursos/${courseId}/player/aulas/${nextModuleWithLessons.lessons[0].id}`,
+      }
+    }
+
+    const finalAssessment = assessments.find((item) => item.assessment_type === 'final')
+    if (finalAssessment) {
+      return {
+        label: 'Ir para a Prova Final',
+        href: `/aluno/cursos/${courseId}/player/avaliacoes/${finalAssessment.assessment_id}`,
+      }
+    }
+
+    return {
+      label: 'Ir para o Dashboard',
+      href: `/aluno/cursos/${courseId}`,
+    }
+  }, [assessments, courseId, modules, studentAssessment])
+
   async function handleSubmit() {
     if (!assessmentId || !courseId) return
     
@@ -264,8 +299,12 @@ export function StudentAssessmentExecutionPage() {
             </div>
 
             <div className="flex flex-col sm:flex-row gap-4 pt-4">
-              <Button size="lg" className="flex-1 shrink-0 h-14 bg-slate-900 hover:bg-slate-800 shadow-xl shadow-slate-200 rounded-2xl font-bold" onClick={() => navigate(`/aluno/cursos/${courseId}`)}>
-                Ir para o Dashboard
+              <Button
+                size="lg"
+                className="flex-1 shrink-0 h-14 rounded-2xl bg-slate-900 font-bold shadow-xl shadow-slate-200 hover:bg-slate-800"
+                onClick={() => navigate(result.is_approved ? approvedAction.href : `/aluno/cursos/${courseId}`)}
+              >
+                {result.is_approved ? approvedAction.label : 'Ir para o Dashboard'}
               </Button>
               {!result.is_approved && result.remaining_attempts > 0 && (
                 <Button 
