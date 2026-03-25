@@ -43,6 +43,16 @@ interface StudentLessonProgressRpcRow {
   completed_at: string | null
 }
 
+export interface StudentCourseStatus {
+  is_completed: boolean
+  required_modules_total: number
+  required_modules_completed: number
+  has_required_final_assessment: boolean
+  required_final_assessment_approved: boolean
+}
+
+export type StudentCourseJourneyStatus = 'in_progress' | 'final_pending' | 'completed'
+
 function toError(error: unknown): Error {
   if (error instanceof Error) {
     return error
@@ -137,6 +147,53 @@ export async function fetchStudentCourseContentWithProgress(
     progress_percent: module.progress_percent,
     lessons: lessonMap.get(module.module_id) ?? [],
   }))
+}
+
+export async function fetchStudentCourseStatus(courseId: string): Promise<StudentCourseStatus | null> {
+  const result = await supabase.rpc('get_student_course_status', { _course_id: courseId })
+
+  if (result.error) {
+    throw result.error
+  }
+
+  return (result.data?.[0] as StudentCourseStatus | undefined) ?? null
+}
+
+export async function fetchStudentCoursesStatusMap(courseIds: string[]) {
+  const uniqueCourseIds = [...new Set(courseIds.filter(Boolean))]
+
+  const entries = await Promise.all(
+    uniqueCourseIds.map(async (courseId) => {
+      const status = await fetchStudentCourseStatus(courseId)
+      return [courseId, status] as const
+    }),
+  )
+
+  return new Map<string, StudentCourseStatus | null>(entries)
+}
+
+export function getStudentCourseJourneyStatus(status: StudentCourseStatus | null): StudentCourseJourneyStatus {
+  if (!status) {
+    return 'in_progress'
+  }
+
+  if (status.is_completed) {
+    return 'completed'
+  }
+
+  const allRequiredModulesCompleted =
+    status.required_modules_total > 0 &&
+    status.required_modules_completed >= status.required_modules_total
+
+  if (
+    allRequiredModulesCompleted &&
+    status.has_required_final_assessment &&
+    !status.required_final_assessment_approved
+  ) {
+    return 'final_pending'
+  }
+
+  return 'in_progress'
 }
 
 export async function setLessonCompletion(payload: LessonCompletionInput) {

@@ -4,8 +4,10 @@ import { Link, useParams } from 'react-router-dom'
 import { useAuth } from '@/app/providers/auth-provider'
 import { Button } from '@/components/ui/button'
 import {
+  fetchStudentCourseStatus,
   fetchReleasedCourseById,
   fetchStudentCourseContentWithProgress,
+  getStudentCourseJourneyStatus,
   setLessonCompletion,
   toErrorMessage,
 } from '@/features/student/courses/api'
@@ -15,16 +17,9 @@ import {
 } from '@/features/student/assessments/api'
 import { fetchAdminCourseTree, type AdminCourseTree } from '@/features/admin/content/api'
 import { exportModuleToPdf } from '@/features/student/content/pdf-exporter'
-import { supabase } from '@/services/supabase/client'
 import type { Course, ModuleLearningState, StudentCourseModuleProgress } from '@/types/content'
 
-interface StudentCourseStatus {
-  is_completed: boolean
-  required_modules_total: number
-  required_modules_completed: number
-  has_required_final_assessment: boolean
-  required_final_assessment_approved: boolean
-}
+import type { StudentCourseStatus } from '@/features/student/courses/api'
 
 function moduleStateLabel(state: ModuleLearningState) {
   if (state === 'blocked') return 'Bloqueado'
@@ -149,13 +144,13 @@ export function StudentCourseDetailsPage() {
             fetchReleasedCourseById(courseId),
             fetchStudentCourseContentWithProgress(courseId),
             fetchStudentCourseAssessments(courseId),
-            supabase.rpc('get_student_course_status', { _course_id: courseId }),
+            fetchStudentCourseStatus(courseId),
           ])
           if (isMounted) {
             setCourse(courseResult)
             setModules(modulesResult)
             setAssessments(assessmentsResult)
-            setCourseStatus(statusResult.data?.[0] as StudentCourseStatus ?? null)
+            setCourseStatus(statusResult)
           }
         }
       } catch (loadError) {
@@ -190,11 +185,11 @@ export function StudentCourseDetailsPage() {
       const [refreshedModules, refreshedAssessments, statusResult] = await Promise.all([
         fetchStudentCourseContentWithProgress(courseId),
         fetchStudentCourseAssessments(courseId),
-        supabase.rpc('get_student_course_status', { _course_id: courseId }),
+        fetchStudentCourseStatus(courseId),
       ])
       setModules(refreshedModules)
       setAssessments(refreshedAssessments)
-      setCourseStatus(statusResult.data?.[0] as StudentCourseStatus ?? null)
+      setCourseStatus(statusResult)
     } catch (toggleError) {
       setError(toErrorMessage(toggleError))
     } finally {
@@ -238,6 +233,12 @@ export function StudentCourseDetailsPage() {
   }
 
   const finalAssessment = assessments.find((a) => a.assessment_type === 'final')
+  const courseJourneyStatus = getStudentCourseJourneyStatus(courseStatus)
+  const hasCompletedRequiredContent = Boolean(
+    courseStatus &&
+    courseStatus.required_modules_total > 0 &&
+    courseStatus.required_modules_completed >= courseStatus.required_modules_total,
+  )
   
   const totalCompleted = modules.filter(m => m.state === 'completed').length
   const totalModules = modules.length
@@ -296,7 +297,7 @@ export function StudentCourseDetailsPage() {
       </section>
 
       {/* CONGRATS ALERT */}
-      {courseStatus?.is_completed && (
+      {courseJourneyStatus === 'completed' && (
         <div className="rounded-[40px] bg-gradient-to-r from-emerald-500 to-teal-600 p-10 flex flex-col md:flex-row items-center gap-8 shadow-2xl shadow-emerald-200 animate-in zoom-in duration-700">
           <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-[32px] bg-white/20 backdrop-blur-md text-white shadow-inner">
             <svg className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
@@ -310,6 +311,29 @@ export function StudentCourseDetailsPage() {
           <Button variant="outline" className="h-14 px-8 rounded-2xl bg-white border-transparent text-emerald-700 font-black text-base hover:bg-emerald-50 shadow-lg">
              Baixar Certificado
           </Button>
+        </div>
+      )}
+
+      {courseJourneyStatus === 'final_pending' && (
+        <div className="rounded-[40px] bg-gradient-to-r from-amber-400 to-orange-500 p-10 flex flex-col md:flex-row items-center gap-8 shadow-2xl shadow-amber-200 animate-in zoom-in duration-700">
+          <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-[32px] bg-white/20 backdrop-blur-md text-white shadow-inner">
+            <svg className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 8v4m0 4h.01M9 12h6" />
+            </svg>
+          </div>
+          <div className="space-y-2 text-center md:text-left flex-1">
+            <h3 className="text-3xl font-black text-white leading-none">Conteudo Concluido</h3>
+            <p className="text-amber-50 text-lg font-medium">
+              Voce concluiu todos os modulos obrigatorios. Falta apenas realizar e ser aprovado na avaliacao final para concluir o curso.
+            </p>
+          </div>
+          {finalAssessment && (
+            <Button asChild className="h-14 px-8 rounded-2xl bg-white text-orange-600 font-black text-base hover:bg-amber-50 shadow-lg">
+              <Link to={`/aluno/cursos/${courseId}/player/avaliacoes/${finalAssessment.assessment_id}`}>
+                Fazer Prova Final
+              </Link>
+            </Button>
+          )}
         </div>
       )}
 
@@ -354,10 +378,12 @@ export function StudentCourseDetailsPage() {
                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Avaliação Final</p>
                <p className={`text-sm font-bold ${
                   finalAssessment.state === 'approved' ? 'text-emerald-600' :
-                  finalAssessment.state === 'failed_limit' ? 'text-rose-600' : 'text-slate-500'
+                  finalAssessment.state === 'failed_limit' ? 'text-rose-600' :
+                  hasCompletedRequiredContent ? 'text-amber-600' : 'text-slate-500'
                }`}>
                   {finalAssessment.state === 'approved' ? 'Aprovado ✅' :
-                   finalAssessment.state === 'failed_limit' ? 'Reprovado (sem tentativas)' : 'Pendente'}
+                   finalAssessment.state === 'failed_limit' ? 'Reprovado (sem tentativas)' :
+                   hasCompletedRequiredContent ? 'Pendente para conclusao do curso' : 'Pendente'}
                </p>
             </div>
          )}
