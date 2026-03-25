@@ -234,11 +234,6 @@ export function StudentCourseDetailsPage() {
 
   const finalAssessment = assessments.find((a) => a.assessment_type === 'final')
   const courseJourneyStatus = getStudentCourseJourneyStatus(courseStatus)
-  const hasCompletedRequiredContent = Boolean(
-    courseStatus &&
-    courseStatus.required_modules_total > 0 &&
-    courseStatus.required_modules_completed >= courseStatus.required_modules_total,
-  )
   
   const totalCompleted = modules.filter(m => m.state === 'completed').length
   const totalModules = modules.length
@@ -324,7 +319,7 @@ export function StudentCourseDetailsPage() {
           <div className="space-y-2 text-center md:text-left flex-1">
             <h3 className="text-3xl font-black text-white leading-none">Conteudo Concluido</h3>
             <p className="text-amber-50 text-lg font-medium">
-              Voce concluiu todos os modulos obrigatorios. Falta apenas realizar e ser aprovado na avaliacao final para concluir o curso.
+              Você concluiu todos os módulos obrigatórios. Falta apenas realizar e ser aprovado na avaliação final para concluir o curso.
             </p>
           </div>
           {finalAssessment && (
@@ -372,22 +367,6 @@ export function StudentCourseDetailsPage() {
                Concluídos
             </div>
          </div>
-
-         {finalAssessment && (
-            <div className="flex min-w-0 flex-col justify-center gap-1 rounded-2xl border border-slate-100 bg-slate-50/60 px-4 py-3">
-               <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Avaliação Final</p>
-               <p className={`text-sm font-bold ${
-                  finalAssessment.state === 'approved' ? 'text-emerald-600' :
-                  finalAssessment.state === 'failed_limit' ? 'text-rose-600' :
-                  hasCompletedRequiredContent ? 'text-amber-600' : 'text-slate-500'
-               }`}>
-                  {finalAssessment.state === 'approved' ? 'Aprovado ✅' :
-                   finalAssessment.state === 'failed_limit' ? 'Reprovado (sem tentativas)' :
-                   hasCompletedRequiredContent ? 'Pendente para conclusao do curso' : 'Pendente'}
-               </p>
-            </div>
-         )}
-
          {finalAssessment && (
             <div className="flex items-center lg:justify-end">
                <Button asChild disabled={finalAssessment.state === 'blocked'} size="sm" className={`h-12 min-w-[160px] px-6 rounded-xl font-black whitespace-nowrap ${
