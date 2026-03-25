@@ -12,6 +12,8 @@ import {
   toErrorMessage,
 } from '@/features/student/courses/api'
 import type { Course, StudentCourseModuleProgress, StudentLessonWithProgress } from '@/types/content'
+import { splitContent } from '@/features/admin/content/content-blocks'
+import { ContentBlocksRenderer } from '@/features/admin/content/content-blocks-renderer'
 
 // Utility to extract standard youtube ID
 function extractVideoId(url: string | null) {
@@ -331,27 +333,15 @@ export function StudentLessonPage() {
 
                {/* TEXT CONTENT AREA */}
                {(lessonType === 'text' || lessonType === 'hybrid') && textContent && (
-                <div className="w-full bg-white rounded-[40px] border border-slate-100 shadow-sm overflow-hidden animate-in slide-in-from-bottom-4 duration-700">
-                   <div className="p-8 sm:p-12">
-                      <div className="ql-container ql-snow border-none">
-                         <div 
-                            className="ql-editor !p-0 prose prose-slate prose-lg max-w-none text-slate-700 leading-relaxed"
-                            dangerouslySetInnerHTML={{ __html: textContent }}
-                         />
-                      </div>
-                   </div>
-                   
-                   <style>{`
-                      .ql-editor table { width: 100% !important; border-collapse: collapse; margin: 24px 0; font-size: 14px; }
-                      .ql-editor th { background: #f8fafc; text-align: left; padding: 12px 16px; border-bottom: 2px solid #e2e8f0; font-weight: 800; color: #2563eb; }
-                      .ql-editor td { padding: 12px 16px; border-bottom: 1px solid #f1f5f9; vertical-align: top; }
-                      .ql-editor tr:nth-child(even) { background: #fcfcfd; }
-                      .ql-editor p { margin-bottom: 1.25em; }
-                      .ql-editor h3 { color: #0f172a; font-weight: 900; margin-top: 2em; margin-bottom: 1em; }
-                      .ql-editor ul, .ql-editor ol { margin-bottom: 1.5em; }
-                   `}</style>
-                </div>
-              )}
+                  <div className="w-full bg-white rounded-[40px] border border-slate-100 shadow-sm overflow-hidden animate-in slide-in-from-bottom-4 duration-700">
+                     <div className="p-8 sm:p-12">
+                        <ContentBlocksRenderer 
+                          blocks={splitContent(textContent)} 
+                          className="min-h-[100px]"
+                        />
+                     </div>
+                  </div>
+               )}
 
               {/* FOOTER ACTIONS */}
               <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-8 border-t border-slate-200 mt-12">

@@ -6,7 +6,9 @@ import 'react-quill/dist/quill.snow.css'
 import { createLesson, deleteLesson, updateLesson, toErrorMessage } from '@/features/admin/content/api'
 import { lessonFormSchema, type LessonFormInput } from '@/features/admin/content/schemas'
 import { useCourseBuilder } from '@/app/layouts/admin-course-builder-layout'
+import { splitContent, mergeContent, type LessonContentBlock, sanitizeTableHtml } from '@/features/admin/content/content-blocks'
 import { Button } from '@/components/ui/button'
+import { Plus, Trash2, Code2, Eye } from 'lucide-react'
 
 const initialForm: LessonFormInput = {
   title: '',
@@ -26,21 +28,12 @@ const quillModules = {
     [{ 'list': 'ordered' }, { 'list': 'bullet' }],
     ['link', 'blockquote', 'code-block'],
     ['clean']
-  ],
-  clipboard: {
-    // Esse é o segredo para manter as tabelas: ignorar a filtragem do Quill nas tags de tabela
-    matchers: [
-      ['TABLE', (node: any, delta: any) => delta.insert({ html: node.outerHTML })],
-      ['TR', (node: any, delta: any) => delta.insert({ html: node.outerHTML })],
-      ['TD', (node: any, delta: any) => delta.insert({ html: node.outerHTML })]
-    ]
-  }
+  ]
 }
 
 const quillFormats = [
   'header', 'bold', 'italic', 'underline', 'strike',
-  'list', 'bullet', 'link', 'blockquote', 'code-block',
-  'table', 'table-row', 'table-cell'
+  'list', 'bullet', 'link', 'blockquote', 'code-block'
 ]
 
 export function LessonEditorPanel() {
@@ -51,19 +44,19 @@ export function LessonEditorPanel() {
   const isNew = lessonId === 'nova'
 
   const [form, setForm] = useState<LessonFormInput>(initialForm)
+  const [blocks, setBlocks] = useState<LessonContentBlock[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [editorMode, setEditorMode] = useState<'visual' | 'html'>('visual')
 
   useEffect(() => {
     if (isNew) {
       setForm(initialForm)
+      setBlocks([{ type: 'rich-text', content: '' }])
       return
     }
 
     if (courseTree && lessonId) {
-      // Find the lesson in the tree
       let found = null
       for (const m of courseTree.modules) {
         const lesson = m.lessons.find((l) => l.id === lessonId)
@@ -75,12 +68,7 @@ export function LessonEditorPanel() {
       
       if (found) {
         const textContent = found.text_content ?? ''
-        const containsTable = textContent.includes('<table')
-        
-        // Se o conteúdo tiver tabela, forçar modo HTML ANTES de setar o formulário
-        if (containsTable) {
-          setEditorMode('html')
-        }
+        setBlocks(splitContent(textContent))
 
         setForm({
           title: found.title,
@@ -94,6 +82,38 @@ export function LessonEditorPanel() {
       }
     }
   }, [isNew, lessonId, courseTree])
+
+  const updateBlock = (index: number, newContent: string) => {
+    setBlocks(prev => {
+      const next = [...prev]
+      next[index] = { ...next[index], content: newContent }
+      return next
+    })
+  }
+
+  const addBlock = (type: 'rich-text' | 'table') => {
+    setBlocks(prev => [...prev, { 
+      type, 
+      content: type === 'table' ? '<table border="1"><thead><tr><th>Cabeçalho</th></tr></thead><tbody><tr><td>Dado</td></tr></tbody></table>' : '' 
+    }])
+  }
+
+  const removeBlock = (index: number) => {
+    if (blocks.length <= 1) return
+    if (window.confirm('Excluir este bloco de conteúdo?')) {
+      setBlocks(prev => prev.filter((_, i) => i !== index))
+    }
+  }
+
+  const moveBlock = (index: number, direction: 'up' | 'down') => {
+    setBlocks(prev => {
+      const next = [...prev]
+      const targetIndex = direction === 'up' ? index - 1 : index + 1
+      if (targetIndex < 0 || targetIndex >= next.length) return prev
+      [next[index], next[targetIndex]] = [next[targetIndex], next[index]]
+      return next
+    })
+  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -109,10 +129,13 @@ export function LessonEditorPanel() {
     setError(null)
 
     try {
+      const finalHtml = mergeContent(blocks)
+      const dataToSave = { ...form, text_content: finalHtml }
+
       if (!isNew && lessonId) {
-        await updateLesson(lessonId, parsed.data)
+        await updateLesson(lessonId, dataToSave)
       } else {
-        const created = await createLesson(moduleId, parsed.data)
+        const created = await createLesson(moduleId, dataToSave)
         await refreshTree()
         navigate(`/admin/cursos/${courseId}/builder/modulos/${moduleId}/aulas/${created.id}`, { replace: true })
         return
@@ -257,51 +280,76 @@ export function LessonEditorPanel() {
                       />
                     </label>
                  </div>
-               )}
-
                 {(form.lesson_type === 'text' || form.lesson_type === 'hybrid') && (
-                  <div className="animate-in slide-in-from-top-2 duration-300 space-y-4">
-                     <div className="flex items-center justify-between">
-                        <span className="text-sm font-bold text-slate-800">Conteúdo da Aula</span>
-                        
-                        {/* EDITOR MODE TOGGLE */}
-                        <div className="flex bg-slate-100 p-1 rounded-lg gap-1 border border-slate-200 shadow-sm">
-                           <button 
-                              type="button" 
-                              onClick={() => setEditorMode('visual')}
-                              className={`px-3 py-1.5 rounded-md text-[10px] font-black uppercase tracking-wider transition-all ${editorMode === 'visual' ? 'bg-white shadow-sm text-blue-600' : 'text-slate-500 hover:text-slate-700'}`}
-                           >
-                              Visual
-                           </button>
-                           <button 
-                              type="button" 
-                              onClick={() => setEditorMode('html')}
-                              className={`px-3 py-1.5 rounded-md text-[10px] font-black uppercase tracking-wider transition-all ${editorMode === 'html' ? 'bg-white shadow-sm text-blue-600' : 'text-slate-500 hover:text-slate-700'}`}
-                           >
-                              Código HTML
-                           </button>
-                        </div>
-                     </div>
+                   <div className="animate-in slide-in-from-top-2 duration-300 space-y-6">
+                      <div className="flex items-center justify-between">
+                         <span className="text-sm font-bold text-slate-800">Estrutura do Conteúdo</span>
+                      </div>
 
-                     {editorMode === 'visual' ? (
-                        <ReactQuill
-                          theme="snow"
-                          value={form.text_content || ''}
-                          onChange={(val) => setForm(prev => ({ ...prev, text_content: val }))}
-                          modules={quillModules}
-                          formats={quillFormats}
-                          placeholder="Escreva aqui o conteúdo textual detalhado da sua aula..."
-                        />
-                     ) : (
-                        <textarea
-                          className="w-full min-h-[400px] p-6 font-mono text-[13px] bg-slate-900 text-emerald-400 rounded-xl border border-slate-800 transition-all focus:ring-4 focus:ring-blue-100 shadow-inner no-scrollbar leading-relaxed"
-                          value={form.text_content || ''}
-                          onChange={(e) => setForm(prev => ({ ...prev, text_content: e.target.value }))}
-                          placeholder="Cole ou edite seu código HTML aqui..."
-                        />
-                     )}
-                  </div>
-                )}
+                      <div className="space-y-8">
+                        {blocks.map((block, index) => (
+                           <div key={index} className="group relative bg-slate-50/50 rounded-2xl border border-slate-200 p-6 transition-all hover:bg-white hover:shadow-md">
+                              <div className="flex items-center justify-between mb-4 border-b border-slate-100 pb-3">
+                                 <div className="flex items-center gap-2">
+                                    <span className="flex h-6 w-6 items-center justify-center rounded bg-blue-100 text-[10px] font-black text-blue-700">
+                                       {index + 1}
+                                    </span>
+                                    <span className="text-[11px] font-black uppercase tracking-widest text-slate-400">
+                                       {block.type === 'table' ? 'Bloco de Tabela' : 'Bloco de Texto Rico'}
+                                    </span>
+                                 </div>
+                                 <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-blue-600" onClick={() => moveBlock(index, 'up')} disabled={index === 0}><Plus className="h-4 w-4 rotate-180" /></Button>
+                                    <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-blue-600" onClick={() => moveBlock(index, 'down')} disabled={index === blocks.length - 1}><Plus className="h-4 w-4" /></Button>
+                                    <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-rose-600" onClick={() => removeBlock(index)}><Trash2 className="h-4 w-4" /></Button>
+                                 </div>
+                              </div>
+
+                              {block.type === 'table' ? (
+                                 <div className="space-y-4">
+                                    <div className="rounded-lg border border-blue-100 bg-white p-4 shadow-inner overflow-x-auto">
+                                       <div className="mb-2 text-[10px] font-black text-blue-500 uppercase flex items-center gap-2">
+                                          <Eye className="h-3 w-3" /> Preview da Tabela
+                                       </div>
+                                       <div className="table-content min-w-full" dangerouslySetInnerHTML={{ __html: sanitizeTableHtml(block.content) }} />
+                                    </div>
+                                    <div className="space-y-2">
+                                       <div className="text-[10px] font-black text-slate-400 uppercase flex items-center gap-2">
+                                          <Code2 className="h-3 w-3" /> Editor de Código HTML
+                                       </div>
+                                       <textarea
+                                         className="w-full min-h-[150px] p-4 font-mono text-[13px] bg-slate-900 text-emerald-400 rounded-xl border border-slate-800 transition-all focus:ring-4 focus:ring-blue-100 shadow-inner leading-relaxed"
+                                         value={block.content}
+                                         onChange={(e) => updateBlock(index, e.target.value)}
+                                         placeholder="<table>...</table>"
+                                       />
+                                    </div>
+                                 </div>
+                              ) : (
+                                 <ReactQuill
+                                   theme="snow"
+                                   value={block.content}
+                                   onChange={(value) => updateBlock(index, value)}
+                                   modules={quillModules}
+                                   formats={quillFormats}
+                                   placeholder="Escreva aqui o texto da aula..."
+                                 />
+                              )}
+                           </div>
+                        ))}
+                      </div>
+
+                      <div className="flex items-center gap-4 p-4 border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50/50">
+                        <span className="text-xs font-bold text-slate-500 mr-2">Adicionar Bloco:</span>
+                        <Button type="button" variant="outline" size="sm" onClick={() => addBlock('rich-text')} className="bg-white hover:bg-blue-50 hover:text-blue-600 border-slate-200">
+                           <Plus className="h-4 w-4 mr-2" /> Bloco de Texto
+                        </Button>
+                        <Button type="button" variant="outline" size="sm" onClick={() => addBlock('table')} className="bg-white hover:bg-emerald-50 hover:text-emerald-600 border-slate-200">
+                           <Plus className="h-4 w-4 mr-2" /> Bloco de Tabela
+                        </Button>
+                      </div>
+                   </div>
+                 )}
 
                <div className="pt-4 border-t border-slate-50">
                  <label className="block space-y-2 max-w-[200px]">
