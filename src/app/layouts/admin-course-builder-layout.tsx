@@ -1,8 +1,9 @@
 import { createContext, useContext, useEffect, useState } from 'react'
-import { Link, Outlet, useLocation, useNavigate, useParams } from 'react-router-dom'
+import { Link, Outlet, useNavigate, useParams } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { fetchAdminCourseTree, toErrorMessage, importCourseContent } from '@/features/admin/content/api'
 import type { AdminCourseTree } from '@/features/admin/content/api'
+import { CourseTreeDnd } from '@/features/admin/content/components/course-tree-dnd'
 
 
 interface BuilderContextData {
@@ -23,7 +24,6 @@ export function useCourseBuilder() {
 
 export function AdminCourseBuilderLayout() {
   const { courseId } = useParams<{ courseId: string }>()
-  const location = useLocation()
   const navigate = useNavigate()
   
   const [courseTree, setCourseTree] = useState<AdminCourseTree | null>(null)
@@ -66,25 +66,20 @@ export function AdminCourseBuilderLayout() {
     setImportError(null)
     try {
       // 1. Extração robusta do JSON de blocos de código Markdown
-      // Remove qualquer texto antes do primeiro ``` e depois do último ```
       let cleanedJson = importJson.trim()
       
       const match = cleanedJson.match(/```(?:json)?\s*([\s\S]*?)\s*```/)
       if (match && match[1]) {
         cleanedJson = match[1].trim()
       } else {
-        // Se não houver blocos, apenas remove eventuais backticks soltos nas extremidades
         cleanedJson = cleanedJson.replace(/^```(json)?\s+/, '').replace(/\s+```$/, '').trim()
       }
       
       let data
       try {
-        // Tenta o parse original (mais seguro se o JSON estiver bem formatado)
         data = JSON.parse(cleanedJson)
       } catch (err1) {
         try {
-          // Se falhar, aplica a limpeza de quebras de linha literais dentro de strings
-          // O regex agora ignora caracteres estruturais do JSON ({, }, [, ], ", :, ,, números e chaves)
           const fixedJson = cleanedJson.replace(/\n(?!\s*[\{\}\[\]",:0-9\-\.tfn])/g, '\\n')
           data = JSON.parse(fixedJson)
         } catch (err2) {
@@ -94,12 +89,9 @@ export function AdminCourseBuilderLayout() {
         }
       }
 
-      // 2. Limpeza adicional para remover escapes indesejados (como \") se virem da IA
       const cleanData = JSON.parse(JSON.stringify(data), (_key, value) => {
         if (typeof value === 'string') {
-          // Remove escapes de aspas duplas: \" -> "
           let v = value.replace(/\\"/g, '"')
-          // Remove escapes simples que podem ter sobrado
           v = v.replace(/\\'/g, "'")
           return v
         }
@@ -143,8 +135,7 @@ export function AdminCourseBuilderLayout() {
   const { course, modules } = courseTree
   
   // Nav paths
-  const coursePath = `/admin/cursos/${courseId}/builder`
-  const isCourseHome = location.pathname === coursePath
+  // const coursePath = `/admin/cursos/${courseId}/builder`
 
   return (
     <BuilderContext.Provider value={{ courseTree, refreshTree, isLoading }}>
@@ -160,7 +151,7 @@ export function AdminCourseBuilderLayout() {
             <div className="h-5 border-l border-slate-200"></div>
             <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="p-1.5 rounded-md hover:bg-slate-100 text-slate-600 transition-colors">
               <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={isSidebarOpen ? "M4 6h16M4 12h16M4 18h16" : "M4 6h16M4 12h16M4 18h16"} />
+                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
               </svg>
             </button>
             <h1 className="text-sm font-bold text-slate-800 line-clamp-1 ml-1">{course.title}</h1>
@@ -183,116 +174,32 @@ export function AdminCourseBuilderLayout() {
           
           {/* SIDEBAR - COURSE TREE */}
           <aside className={`shrink-0 flex flex-col bg-white border-r border-slate-200 transition-all duration-300 ${isSidebarOpen ? 'w-80 lg:w-96' : 'w-0 overflow-hidden'}`}>
-            <div className="flex-1 overflow-y-auto w-full no-scrollbar p-3 space-y-1">
-              {/* Course Root */}
-              <Link 
-                to={coursePath} 
-                className={`group flex items-center justify-between p-2.5 rounded-lg text-sm transition-colors ${isCourseHome ? 'bg-blue-50 text-blue-700 font-semibold' : 'text-slate-700 hover:bg-slate-100'}`}
-              >
-                <div className="flex items-center gap-2.5 truncate">
-                  <div className={`p-1.5 rounded-md ${isCourseHome ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-500 group-hover:bg-white group-hover:shadow-sm'}`}>
-                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
-                  </div>
-                  <span className="truncate">Visão Geral do Curso</span>
-                </div>
-              </Link>
-              
-              {/* Modules tree */}
-              {modules.map((m, mIdx) => (
-                <div key={m.id} className="pt-2">
-                  <Link 
-                    to={`/admin/cursos/${courseId}/builder/modulos/${m.id}`}
-                    className={`group flex items-center justify-between p-2 rounded-lg text-sm transition-colors ${location.pathname.includes(`/modulos/${m.id}`) && !location.pathname.includes('/aulas/') ? 'bg-slate-100 font-bold text-slate-900 border border-slate-200 shadow-sm' : 'text-slate-800 font-medium hover:bg-slate-100/50'}`}
-                  >
-                    <div className="flex items-center gap-2 truncate">
-                      <div className="w-5 text-center text-[10px] font-extrabold text-slate-400">M{mIdx+1}</div>
-                      <span className="truncate">{m.title}</span>
-                    </div>
+            {/* Componente de Árvore com Drag and Drop */}
+            <CourseTreeDnd tree={courseTree} onRefresh={refreshTree} />
+            
+            <div className="p-3 border-t border-slate-100">
+               <div className="space-y-1">
+                  <Link to={`/admin/cursos/${courseId}/builder/settings`} className="group flex items-center gap-2.5 p-2.5 rounded-lg text-sm transition-colors text-slate-600 hover:bg-slate-100">
+                     <svg className="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                     Configurações do Curso
+                  </Link>
+                  <Link to={`/admin/cursos/${courseId}/builder/assessments`} className="group flex items-center gap-2.5 p-2.5 rounded-lg text-sm transition-colors text-slate-600 hover:bg-slate-100">
+                     <svg className="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
+                     Gerenciar Avaliações
                   </Link>
 
-                  <div className="ml-7 mt-0.5 space-y-0.5 border-l border-slate-200 pl-2">
-                    {m.lessons.map(l => {
-                      const isActiveLesson = location.pathname.includes(`/aulas/${l.id}`);
-                      return (
-                        <Link
-                          key={l.id}
-                          to={`/admin/cursos/${courseId}/builder/modulos/${m.id}/aulas/${l.id}`}
-                          className={`group flex items-center justify-between py-1.5 px-2 rounded-md text-[13px] transition-colors ${isActiveLesson ? 'bg-blue-50 text-blue-700 font-semibold' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'}`}
-                        >
-                           <div className="flex items-center gap-2 truncate">
-                             {l.lesson_type === 'video' ? (
-                               <svg className={`h-3.5 w-3.5 shrink-0 ${isActiveLesson ? 'text-blue-500' : 'text-slate-400'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
-                             ) : (
-                               <svg className={`h-3.5 w-3.5 shrink-0 ${isActiveLesson ? 'text-blue-500' : 'text-slate-400'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-                             )}
-                             <span className="truncate">{l.title}</span>
-                           </div>
-                        </Link>
-                      )
-                    })}
-
-                    {m.assessments.map(a => {
-                      const isActiveAssessment = location.pathname.includes(`/avaliacoes/${a.id}`);
-                      return (
-                        <Link
-                          key={a.id}
-                          to={`/admin/cursos/${courseId}/builder/modulos/${m.id}/avaliacoes/${a.id}`}
-                          className={`group flex items-center justify-between py-1.5 px-2 rounded-md text-[13px] transition-colors ${isActiveAssessment ? 'bg-amber-50 text-amber-700 font-semibold border border-amber-100' : 'text-slate-600 hover:text-slate-900 hover:bg-amber-50/50'}`}
-                        >
-                           <div className="flex items-center gap-2 truncate">
-                             <svg className={`h-3.5 w-3.5 shrink-0 ${isActiveAssessment ? 'text-amber-500' : 'text-slate-400'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
-                             <span className="truncate">{a.title}</span>
-                           </div>
-                        </Link>
-                      )
-                    })}
-                    
-                    {/* Add Lesson/Quiz quick actions */}
-                    <div className="flex items-center gap-1 mt-1">
-                      <Link to={`/admin/cursos/${courseId}/builder/modulos/${m.id}/aulas/nova`} className="flex-1 flex items-center gap-1.5 py-1 px-1.5 rounded-md text-[11px] font-bold text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors">
-                        <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
-                        Aula
-                      </Link>
-                      <Link to={`/admin/cursos/${courseId}/builder/modulos/${m.id}/avaliacoes/nova`} className="flex-1 flex items-center gap-1.5 py-1 px-1.5 rounded-md text-[11px] font-bold text-slate-400 hover:text-amber-600 hover:bg-amber-50 transition-colors">
-                        <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
-                        Quiz
-                      </Link>
-                    </div>
+                  <div className="pt-4 mt-4 border-t border-slate-100">
+                     <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="w-full text-[11px] font-black text-blue-600 border-blue-200 bg-blue-50/20 hover:bg-blue-600 hover:text-white transition-all h-10 gap-2 rounded-xl"
+                        onClick={() => setIsImportModalOpen(true)}
+                     >
+                        <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                        Importar Conteúdo (IA)
+                     </Button>
                   </div>
-                </div>
-              ))}
-
-              {/* Add Module Quick Action */}
-              <div className="pt-4 pb-2">
-                 <Link to={`/admin/cursos/${courseId}/builder/modulos/novo`} className="flex items-center gap-2 p-2 rounded-lg text-sm font-bold text-blue-600 border border-dashed border-blue-200 bg-blue-50/50 hover:bg-blue-50 transition-colors">
-                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
-                    Novo Módulo
-                 </Link>
-              </div>
-
-              {/* Additional nodes like Course Settings, Advanced */}
-              <div className="pt-4 border-t border-slate-100 space-y-1">
-                 <Link to={`/admin/cursos/${courseId}/builder/settings`} className="group flex items-center gap-2.5 p-2.5 rounded-lg text-sm transition-colors text-slate-600 hover:bg-slate-100">
-                    <svg className="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-                    Configurações do Curso
-                 </Link>
-                 <Link to={`/admin/cursos/${courseId}/builder/assessments`} className="group flex items-center gap-2.5 p-2.5 rounded-lg text-sm transition-colors text-slate-600 hover:bg-slate-100">
-                    <svg className="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
-                    Gerenciar Avaliações
-                 </Link>
-
-                 <div className="pt-4 mt-4 border-t border-slate-100">
-                    <Button 
-                       variant="outline" 
-                       size="sm" 
-                       className="w-full text-[11px] font-black text-blue-600 border-blue-200 bg-blue-50/20 hover:bg-blue-600 hover:text-white transition-all h-10 gap-2 rounded-xl"
-                       onClick={() => setIsImportModalOpen(true)}
-                    >
-                       <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
-                       Importar Conteúdo (IA)
-                    </Button>
-                 </div>
-              </div>
+               </div>
             </div>
           </aside>
 

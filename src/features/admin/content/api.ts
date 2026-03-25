@@ -99,6 +99,7 @@ export async function updateCourse(courseId: string, input: CourseFormInput) {
       status: input.status,
       workload_minutes: input.workload_minutes,
       thumbnail_url: input.thumbnail_url?.trim() || null,
+      has_linear_progression: input.has_linear_progression,
     })
     .eq('id', courseId)
     .select('*')
@@ -210,6 +211,19 @@ export async function moveModule(
   )
 }
 
+export async function reorderModules(_courseId: string, orderedModuleIds: string[]) {
+  const updates = orderedModuleIds.map((id, index) => 
+    supabase
+      .from('course_modules')
+      .update({ position: index + 1 })
+      .eq('id', id)
+  )
+
+  const results = await Promise.all(updates)
+  const firstError = results.find(r => r.error)?.error
+  if (firstError) throw firstError
+}
+
 export async function fetchModule(moduleId: string): Promise<CourseModule | null> {
   const result = await supabase
     .from('course_modules')
@@ -307,6 +321,19 @@ export async function moveLesson(lesson: Lesson, targetLesson: Lesson) {
     targetLesson.id,
     targetLesson.position,
   )
+}
+
+export async function reorderLessons(_moduleId: string, orderedLessonIds: string[]) {
+  const updates = orderedLessonIds.map((id, index) => 
+    supabase
+      .from('lessons')
+      .update({ position: index + 1 })
+      .eq('id', id)
+  )
+
+  const results = await Promise.all(updates)
+  const firstError = results.find(r => r.error)?.error
+  if (firstError) throw firstError
 }
 
 export async function fetchLesson(lessonId: string): Promise<Lesson | null> {
