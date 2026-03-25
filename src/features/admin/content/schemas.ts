@@ -9,6 +9,7 @@ export const courseFormSchema = z.object({
   status: z.enum(['draft', 'published', 'archived']),
   workload_minutes: z.number().int().min(0),
   thumbnail_url: z.string().optional().or(z.literal('')),
+  has_linear_progression: z.boolean().default(true),
 })
 
 export const moduleFormSchema = z.object({

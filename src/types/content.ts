@@ -8,6 +8,7 @@ export interface Course {
   status: CourseStatus
   thumbnail_url: string | null
   workload_minutes: number
+  has_linear_progression: boolean
   created_by: string | null
   created_at: string
   updated_at: string

@@ -14,7 +14,8 @@ export function CourseSettingsPanel() {
     description: '',
     status: 'draft' as 'draft' | 'published' | 'archived',
     workload_minutes: 0,
-    thumbnail_url: ''
+    thumbnail_url: '',
+    has_linear_progression: true
   })
   const [isUploadingThumbnail, setIsUploadingThumbnail] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -28,7 +29,8 @@ export function CourseSettingsPanel() {
         description: courseTree.course.description ?? '',
         status: (courseTree.course.status as any) || 'draft',
         workload_minutes: courseTree.course.workload_minutes || 0,
-        thumbnail_url: courseTree.course.thumbnail_url ?? ''
+        thumbnail_url: courseTree.course.thumbnail_url ?? '',
+        has_linear_progression: courseTree.course.has_linear_progression ?? true
       })
     }
   }, [courseTree])
@@ -192,6 +194,25 @@ export function CourseSettingsPanel() {
                         <option value="published">Publicado (Visível para Alunos)</option>
                         <option value="archived">Arquivado (Desativado)</option>
                      </select>
+                  </label>
+               </div>
+
+               <div className="pt-6 border-t border-slate-100">
+                  <label className="flex items-start gap-4 p-5 rounded-2xl border border-blue-100 bg-blue-50/20 cursor-pointer hover:bg-blue-50/40 transition-colors shadow-sm">
+                     <div className="flex items-center h-6">
+                        <input 
+                           type="checkbox"
+                           checked={form.has_linear_progression}
+                           onChange={e => setForm(f => ({ ...f, has_linear_progression: e.target.checked }))}
+                           className="h-5 w-5 rounded border-blue-300 text-blue-600 focus:ring-blue-600 shadow-sm transition-all"
+                        />
+                     </div>
+                     <div className="space-y-1">
+                        <span className="text-sm font-bold text-slate-900 block">Ativar Progressão Linear Obrigatória</span>
+                        <span className="text-[11px] text-slate-500 block leading-relaxed max-w-lg">
+                           Se ativado, o aluno deve concluir obrigatoriamente a aula atual para liberar a próxima. Módulos bloqueados só serão liberados ao concluir o módulo anterior (incluindo provas).
+                        </span>
+                     </div>
                   </label>
                </div>
             </div>
