@@ -112,7 +112,6 @@ Deno.serve(async (request) => {
         ],
         generationConfig: {
           temperature: 0.2,
-          responseMimeType: 'application/json',
         },
       }),
     })
@@ -129,7 +128,7 @@ Deno.serve(async (request) => {
       return jsonResponse({ error: 'Gemini nao retornou um payload valido.' }, 500)
     }
 
-    const parsed = JSON.parse(rawText)
+    const parsed = JSON.parse(extractJsonObject(rawText))
     return jsonResponse(parsed, 200)
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Erro inesperado ao analisar modulo com IA.'
@@ -156,7 +155,7 @@ function buildPrompt(input: {
 }) {
   return `
 Voce e um revisor pedagogico e instrucional especializado em cursos corporativos da area de saude/home care.
-Analise um modulo individual de curso e retorne apenas JSON valido.
+Analise um modulo individual de curso e retorne um unico objeto JSON valido.
 
 Objetivo:
 - validar se o modulo esta bem estruturado
@@ -167,6 +166,7 @@ Objetivo:
 Regras obrigatorias:
 - responda apenas JSON puro
 - nao use markdown
+- o retorno deve ser exatamente um objeto JSON no nivel raiz, nunca array
 - mantenha o titulo do modulo
 - preserve videos validos quando fizer sentido
 - se detectar aula sem referencia bibliografica quando as regras exigirem, aponte isso explicitamente
@@ -245,4 +245,26 @@ ${JSON.stringify(input.lessons, null, 2)}
 Quiz do modulo:
 ${JSON.stringify(input.assessments, null, 2)}
 `.trim()
+}
+
+function extractJsonObject(value: string) {
+  const trimmed = value.trim()
+
+  if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
+    return trimmed
+  }
+
+  const fencedMatch = trimmed.match(/```(?:json)?\s*([\s\S]*?)\s*```/i)
+  if (fencedMatch?.[1]) {
+    return extractJsonObject(fencedMatch[1])
+  }
+
+  const firstBrace = trimmed.indexOf('{')
+  const lastBrace = trimmed.lastIndexOf('}')
+
+  if (firstBrace >= 0 && lastBrace > firstBrace) {
+    return trimmed.slice(firstBrace, lastBrace + 1)
+  }
+
+  throw new Error('Gemini retornou texto sem um objeto JSON valido.')
 }
