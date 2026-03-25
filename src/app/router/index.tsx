@@ -93,6 +93,8 @@ export const appRouter = createBrowserRouter([
           },
         ],
       },
+    ],
+  },
   {
     element: <ProtectedRoute allowedRoles={['admin']} />,
     children: [
