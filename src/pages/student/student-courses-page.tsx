@@ -10,6 +10,21 @@ import {
 } from '@/features/student/courses/api'
 import type { Course } from '@/types/content'
 
+function formatCourseWorkload(minutes: number) {
+  const hours = Math.floor(minutes / 60)
+  const remainingMinutes = minutes % 60
+
+  if (hours === 0) {
+    return `${remainingMinutes}min`
+  }
+
+  if (remainingMinutes === 0) {
+    return `${hours}h`
+  }
+
+  return `${hours}h ${remainingMinutes}m`
+}
+
 export function StudentCoursesPage() {
   const [courses, setCourses] = useState<Course[]>([])
   const [courseStatuses, setCourseStatuses] = useState<Map<string, StudentCourseStatus | null>>(new Map())
@@ -125,11 +140,11 @@ export function StudentCoursesPage() {
 
                 <div className="absolute inset-0 z-10 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-60" />
 
-                <div className="absolute right-4 top-4 z-20 flex items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-white backdrop-blur-md">
+                <div className="absolute right-4 top-4 z-20 flex items-center gap-2 rounded-full border border-white/60 bg-slate-900/65 px-4 py-2 text-[11px] font-black uppercase tracking-widest text-white shadow-lg shadow-slate-900/20 backdrop-blur-md">
                   <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
-                  {course.workload_minutes} min
+                  {formatCourseWorkload(course.workload_minutes)}
                 </div>
 
                 <div className="pointer-events-none absolute inset-0 z-30 flex items-center justify-center bg-blue-600/90 opacity-0 transition-opacity group-hover:opacity-100">
