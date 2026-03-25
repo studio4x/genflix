@@ -81,7 +81,8 @@ export function AdminCourseBuilderLayout() {
           data = JSON.parse(fixedJson)
         } catch (err2) {
           console.error('Falha em ambos os parses:', err1, err2)
-          throw new Error('O JSON fornecido possui erros de sintaxe (como aspas faltando ou quebras de linha inesperadas).')
+          const errorMsg = err2 instanceof Error ? err2.message : String(err2)
+          throw new Error(`Erro de sintaxe no JSON: ${errorMsg}. Verifique aspas e quebras de linha.`)
         }
       }
 
