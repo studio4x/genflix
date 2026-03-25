@@ -56,7 +56,7 @@ const quillModules = {
 const quillFormats = [
   'header', 'bold', 'italic', 'underline', 'strike',
   'list', 'bullet', 'link', 'blockquote', 'code-block',
-  'table', 'table-row', 'table-cell'
+  'better-table', 'table', 'table-row', 'table-cell' // Adicionado better-table aqui
 ]
 
 export function LessonEditorPanel() {
