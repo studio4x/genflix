@@ -39,6 +39,8 @@ export function AdminCourseBuilderLayout() {
   const [isImporting, setIsImporting] = useState(false)
   const [importError, setImportError] = useState<string | null>(null)
   const [clearExisting, setClearExisting] = useState(false)
+  const [moduleIdToReplace, setModuleIdToReplace] = useState<string | null>(null)
+  const [isReplaceMode, setIsReplaceMode] = useState(false)
 
   const refreshTree = async () => {
     if (!courseId) return
@@ -92,11 +94,13 @@ export function AdminCourseBuilderLayout() {
         }
       }
 
-      await importCourseContent(courseId, data, clearExisting)
+      await importCourseContent(courseId, data, clearExisting, moduleIdToReplace || undefined)
       await refreshTree()
       setIsImportModalOpen(false)
       setImportJson('')
       setClearExisting(false)
+      setModuleIdToReplace(null)
+      setIsReplaceMode(false)
     } catch (err: any) {
       console.error('Erro no import:', err)
       const errorMessage = err?.message || (typeof err === 'string' ? err : 'Erro inesperado na importação.')
@@ -311,19 +315,61 @@ export function AdminCourseBuilderLayout() {
                         </div>
                      )}
 
-                     <label className="flex items-center gap-3 p-4 rounded-2xl bg-amber-50/50 border border-amber-100 cursor-pointer group">
+
+                     {/* Toggle Mode */}
+                     {!clearExisting && (
+                        <div className="flex bg-slate-100 p-1.5 rounded-2xl gap-2">
+                           <button 
+                              onClick={() => { setIsReplaceMode(false); setModuleIdToReplace(null); }}
+                              className={`flex-1 py-3 px-4 rounded-xl text-xs font-black transition-all ${!isReplaceMode ? 'bg-white shadow-sm text-blue-600' : 'text-slate-500 hover:text-slate-700'}`}
+                           >
+                              Adicionar Novos Módulos
+                           </button>
+                           <button 
+                              onClick={() => { setIsReplaceMode(true); }}
+                              className={`flex-1 py-3 px-4 rounded-xl text-xs font-black transition-all ${isReplaceMode ? 'bg-white shadow-sm text-blue-600' : 'text-slate-500 hover:text-slate-700'}`}
+                           >
+                              Substituir Módulo Existente
+                           </button>
+                        </div>
+                     )}
+
+                     {isReplaceMode && !clearExisting && (
+                        <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
+                           <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1 text-rose-500">Selecione o Módulo a ser APAGADO e substituído</span>
+                           <select 
+                              className="w-full h-14 px-4 bg-white border border-slate-200 rounded-2xl text-sm font-bold focus:ring-4 focus:ring-blue-100 outline-none"
+                              value={moduleIdToReplace || ''}
+                              onChange={e => setModuleIdToReplace(e.target.value || null)}
+                           >
+                              <option value="">Escolha um módulo...</option>
+                              {modules.map((m, idx) => (
+                                 <option key={m.id} value={m.id}>Módulo {idx + 1}: {m.title}</option>
+                              ))}
+                           </select>
+                           <p className="text-[11px] text-slate-400 font-medium pl-1 italic">* Todo o conteúdo do módulo selecionado (aulas/quizzes) será deletado e o novo JSON será inserido no lugar.</p>
+                        </div>
+                     )}
+
+                     <label className="flex items-center gap-3 p-4 rounded-2xl bg-amber-50/50 border border-amber-100 cursor-pointer group hover:bg-amber-50 transition-colors">
                         <input 
                            type="checkbox" 
                            checked={clearExisting}
-                           onChange={e => setClearExisting(e.target.checked)}
+                           onChange={e => {
+                              setClearExisting(e.target.checked);
+                              if (e.target.checked) {
+                                 setIsReplaceMode(false);
+                                 setModuleIdToReplace(null);
+                              }
+                           }}
                            className="h-5 w-5 rounded-lg border-amber-200 text-amber-600 focus:ring-amber-500"
                         />
                         <div className="flex-1">
                            <div className="flex items-center gap-2">
-                              <span className="text-sm font-black text-amber-900">Substituir conteúdo atual</span>
+                              <span className="text-sm font-black text-amber-900">Limpar TODO o curso primeiro</span>
                               <svg className="h-4 w-4 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
                            </div>
-                           <p className="text-[11px] text-amber-600 font-bold mt-0.5">Se marcado, todos os módulos, aulas e quizzes atuais deste curso serão apagados.</p>
+                           <p className="text-[11px] text-amber-600 font-bold mt-0.5">Apaga absolutamente todos os módulos atuais e recomeça o curso do zero.</p>
                         </div>
                      </label>
                   </div>

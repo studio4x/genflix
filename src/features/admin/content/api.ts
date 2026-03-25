@@ -517,13 +517,29 @@ export async function clearCourseContent(courseId: string) {
   if (mError) throw mError
 }
 
-export async function importCourseContent(courseId: string, input: any, clearExisting = false) {
-  // Se o input não for um array, pode ser um objeto CourseFull
-  const isFullCourse = !Array.isArray(input) && input && input.modules
-
+export async function importCourseContent(courseId: string, input: any, clearExisting: boolean = false, moduleIdToReplace?: string) {
   if (clearExisting) {
     await clearCourseContent(courseId)
+  } else if (moduleIdToReplace) {
+    // 1. Buscar a posição do módulo que será substituído
+    const { data: targetModule } = await supabase
+      .from('course_modules')
+      .select('position')
+      .eq('id', moduleIdToReplace)
+      .single()
+    
+    // 2. Deletar o módulo alvo (isso apaga aulas e avaliações em cascata)
+    if (targetModule) {
+      const { error: delError } = await supabase
+        .from('course_modules')
+        .delete()
+        .eq('id', moduleIdToReplace)
+      
+      if (delError) throw delError
+    }
   }
+  // Se o input não for um array, pode ser um objeto CourseFull
+  const isFullCourse = !Array.isArray(input) && input && input.modules
 
   // Se for um curso completo, atualizamos os metadados do curso atual também
   if (isFullCourse) {
@@ -545,27 +561,28 @@ export async function importCourseContent(courseId: string, input: any, clearExi
     throw new Error('Nenhum módulo encontrado no JSON para importar.')
   }
 
-  // Buscar a última posição para não dar conflito (se não estiver limpando tudo)
+  // 1. Cálculo da posição inicial
   let startPosition = 0
-  if (!clearExisting) {
-    const { data: lastModule } = await supabase
-      .from('course_modules')
-      .select('position')
-      .eq('course_id', courseId)
-      .order('position', { ascending: false })
-      .limit(1)
-      .single()
-    
-    if (lastModule) {
-      startPosition = lastModule.position
-    }
+  
+  // Se estiver limpando ou substituindo, o módulo antigo já não existe mais.
+  // Buscamos a maior posição atual para adicionar ao final e evitar erro 23505 (unique constraint)
+  const { data: lastModule } = await supabase
+    .from('course_modules')
+    .select('position')
+    .eq('course_id', courseId)
+    .order('position', { ascending: false })
+    .limit(1)
+    .single()
+  
+  if (lastModule) {
+    startPosition = lastModule.position
   }
 
-  // Usar loop for tradicional para evitar problemas com .entries() em certos ambientes
+  // 2. Loop de inserção
   for (let mIdx = 0; mIdx < modules.length; mIdx++) {
     const mData = modules[mIdx]
     
-    // 1. Criar Módulo
+    // Inserir Módulo
     const { data: module, error: mError } = await supabase
       .from('course_modules')
       .insert({
