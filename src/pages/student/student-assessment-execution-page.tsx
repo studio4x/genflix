@@ -12,12 +12,42 @@ import {
   submitAssessmentAttempt,
   toErrorMessage,
   type AssessmentAttemptRequest,
+  type StudentCourseAssessmentSummary,
   type StudentAssessmentQuestionWithOptions,
   type StudentAssessmentReview,
   type SubmitAssessmentAttemptResult,
 } from '@/features/student/assessments/api'
 import { fetchStudentCourseContentWithProgress } from '@/features/student/courses/api'
 import type { Assessment, AssessmentOption, StudentCourseModuleProgress } from '@/types/content'
+
+function hashShuffleKey(value: string) {
+  let hash = 0
+
+  for (let index = 0; index < value.length; index += 1) {
+    hash = (hash * 31 + value.charCodeAt(index)) >>> 0
+  }
+
+  return hash
+}
+
+function shuffleQuestionOptionsForAttempt(
+  questions: StudentAssessmentQuestionWithOptions[],
+  attemptNumber: number,
+) {
+  return questions.map((question) => ({
+    ...question,
+    options: [...question.options].sort((optionA, optionB) => {
+      const hashA = hashShuffleKey(`${question.id}:${optionA.id}:${attemptNumber}`)
+      const hashB = hashShuffleKey(`${question.id}:${optionB.id}:${attemptNumber}`)
+
+      if (hashA !== hashB) {
+        return hashA - hashB
+      }
+
+      return optionA.id.localeCompare(optionB.id)
+    }),
+  }))
+}
 
 export function StudentAssessmentExecutionPage() {
   const { courseId, assessmentId } = useParams<{ courseId: string; assessmentId: string }>()
@@ -26,9 +56,9 @@ export function StudentAssessmentExecutionPage() {
   const isAdmin = roles.includes('admin')
   const { modules, assessments, setModules, setAssessments } = useOutletContext<{
     modules: StudentCourseModuleProgress[]
-    assessments: any[]
-    setModules: (m: any) => void
-    setAssessments: (a: any) => void
+    assessments: StudentCourseAssessmentSummary[]
+    setModules: (modules: StudentCourseModuleProgress[]) => void
+    setAssessments: (assessments: StudentCourseAssessmentSummary[]) => void
   }>()
 
   const [assessment, setAssessment] = useState<Assessment | null>(null)
@@ -42,9 +72,10 @@ export function StudentAssessmentExecutionPage() {
   const [result, setResult] = useState<SubmitAssessmentAttemptResult | null>(null)
   const [review, setReview] = useState<StudentAssessmentReview | null>(null)
   const [attemptRequest, setAttemptRequest] = useState<AssessmentAttemptRequest | null>(null)
+  const [activeAttemptNumber, setActiveAttemptNumber] = useState(1)
 
   const studentAssessment = useMemo(() => {
-    return assessments?.find((item) => item.assessment_id === assessmentId || item.id === assessmentId)
+    return assessments?.find((item) => item.assessment_id === assessmentId)
   }, [assessments, assessmentId])
 
   const moduleForAssessment = useMemo(() => {
@@ -74,12 +105,18 @@ export function StudentAssessmentExecutionPage() {
           fetchOwnAssessmentAttemptRequest(assessmentId),
         ])
 
-        setAssessment(assessmentData)
-        setQuestions(questionsData)
         setReview(reviewData)
         setAttemptRequest(requestData)
         setResult(null)
         setCurrentQuestionIndex(0)
+
+        const nextAttemptNumber = reviewData.latestAttempt?.is_approved && Number(reviewData.latestAttempt.score_percent) >= 100
+          ? reviewData.latestAttempt.attempt_number
+          : (reviewData.latestAttempt?.attempt_number ?? 0) + 1
+
+        setAssessment(assessmentData)
+        setActiveAttemptNumber(nextAttemptNumber)
+        setQuestions(shuffleQuestionOptionsForAttempt(questionsData, nextAttemptNumber))
 
         if (reviewData.latestAttempt?.is_approved && Number(reviewData.latestAttempt.score_percent) >= 100) {
           const correctSelections = Object.fromEntries(
@@ -463,9 +500,12 @@ export function StudentAssessmentExecutionPage() {
                   size="lg"
                   className="h-14 flex-1 shrink-0 rounded-2xl border-slate-300 text-slate-700 shadow-sm hover:bg-slate-50"
                   onClick={() => {
+                    const nextAttemptNumber = activeAttemptNumber + 1
                     setResult(null)
                     setSelectedOptions({})
                     setCurrentQuestionIndex(0)
+                    setActiveAttemptNumber(nextAttemptNumber)
+                    setQuestions((currentQuestions) => shuffleQuestionOptionsForAttempt(currentQuestions, nextAttemptNumber))
                   }}
                 >
                   Tentar Novamente
