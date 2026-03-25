@@ -361,19 +361,6 @@ export function StudentCourseDetailsPage() {
                Concluídos
             </div>
          </div>
-         {finalAssessment && (
-            <div className="flex items-center lg:justify-end">
-               <Button asChild disabled={finalAssessment.state === 'blocked'} size="sm" className={`h-12 min-w-[160px] px-6 rounded-xl font-black whitespace-nowrap ${
-                  finalAssessment.state === 'approved' ? 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-lg shadow-emerald-100' :
-                  finalAssessment.state === 'failed_limit' ? 'bg-rose-500 hover:bg-rose-600 text-white shadow-lg shadow-rose-100' : 'bg-blue-600'
-               }`}>
-                  <Link to={`/aluno/cursos/${courseId}/player/avaliacoes/${finalAssessment.assessment_id}`}>
-                     {finalAssessment.state === 'approved' ? 'Ver Resultado' :
-                      finalAssessment.state === 'failed_limit' ? 'Ver Status' : 'Iniciar Prova'}
-                  </Link>
-               </Button>
-            </div>
-         )}
          </div>
       </section>
       
