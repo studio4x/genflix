@@ -25,6 +25,17 @@ function formatCourseWorkload(minutes: number) {
   return `${hours}h ${remainingMinutes}m`
 }
 
+function sanitizeCourseCardDescription(description: string | null) {
+  if (!description) {
+    return 'Inicie este treinamento para desenvolver novas competencias e aprimorar seus resultados.'
+  }
+
+  return description
+    .replace(/<[^>]*>?/gm, '')
+    .replace(/^descri[cç][aã]o do curso[:\s-]*/i, '')
+    .trim()
+}
+
 export function StudentCoursesPage() {
   const [courses, setCourses] = useState<Course[]>([])
   const [courseStatuses, setCourseStatuses] = useState<Map<string, StudentCourseStatus | null>>(new Map())
@@ -160,20 +171,20 @@ export function StudentCoursesPage() {
                     {course.title}
                   </h3>
                   <p className="mt-4 line-clamp-2 h-[40px] text-sm font-medium leading-relaxed text-slate-500">
-                    {course.description
-                      ? course.description.replace(/<[^>]*>?/gm, '')
-                      : 'Inicie este treinamento para desenvolver novas competencias e aprimorar seus resultados.'}
+                    {sanitizeCourseCardDescription(course.description)}
                   </p>
                 </div>
 
-                <div className="mt-auto flex items-center justify-between border-t border-slate-50 pt-6">
-                  <div className="flex items-center gap-1">
+                <div className="mt-auto flex flex-col gap-4 border-t border-slate-50 pt-6 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="flex items-start gap-1">
                     <div className={`h-2 w-2 rounded-full ${footerStatus.dotClass}`} />
-                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">{footerStatus.label}</span>
+                    <span className="max-w-[190px] text-[10px] font-black uppercase tracking-widest leading-relaxed text-slate-400">
+                      {footerStatus.label}
+                    </span>
                   </div>
                   <Link
                     to={`/aluno/cursos/${course.id}`}
-                    className="group/btn flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-blue-600 transition-colors hover:text-blue-700"
+                    className="group/btn flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-blue-600 transition-colors hover:text-blue-700 sm:self-end"
                   >
                     {footerStatus.cta}
                     <svg className="h-3 w-3 transition-transform group-hover/btn:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
