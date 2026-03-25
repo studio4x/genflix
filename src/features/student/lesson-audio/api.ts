@@ -1,3 +1,4 @@
+import { env } from '@/config/env'
 import { supabase } from '@/services/supabase/client'
 
 export interface LessonNarrationPart {
@@ -17,25 +18,42 @@ export interface LessonNarrationPayload {
 }
 
 export async function prepareLessonNarration(lessonId: string) {
-  const sessionResult = await supabase.auth.getSession()
-  const accessToken = sessionResult.data.session?.access_token
+  let sessionResult = await supabase.auth.getSession()
+  let accessToken: string | undefined = sessionResult.data.session?.access_token ?? undefined
+
+  if (!accessToken) {
+    const refreshResult = await supabase.auth.refreshSession()
+    accessToken = refreshResult.data.session?.access_token ?? undefined
+    sessionResult = await supabase.auth.getSession()
+    accessToken = accessToken ?? sessionResult.data.session?.access_token ?? undefined
+  }
 
   if (!accessToken) {
     throw new Error('Sessao expirada. Faca login novamente para gerar a narracao.')
   }
 
-  const result = await supabase.functions.invoke('generate-lesson-audio', {
+  const response = await fetch(`${env.VITE_SUPABASE_URL}/functions/v1/generate-lesson-audio`, {
+    method: 'POST',
     headers: {
+      'Content-Type': 'application/json',
+      apikey: env.VITE_SUPABASE_ANON_KEY,
       Authorization: `Bearer ${accessToken}`,
     },
-    body: {
+    body: JSON.stringify({
       lessonId,
-    },
+      access_token: accessToken,
+    }),
   })
 
-  if (result.error) {
-    throw result.error
+  const payload = await response.json().catch(() => null)
+
+  if (!response.ok) {
+    const message =
+      typeof payload?.error === 'string'
+        ? payload.error
+        : 'Falha ao gerar a narracao da aula.'
+    throw new Error(message)
   }
 
-  return result.data as LessonNarrationPayload
+  return payload as LessonNarrationPayload
 }

@@ -25,10 +25,13 @@ Deno.serve(async (request) => {
   }
 
   try {
+    const requestBody = await request.json().catch(() => ({}))
     const authHeader = request.headers.get('Authorization')
-    if (!authHeader) {
-      return jsonResponse({ error: 'Authorization header ausente.' }, 401)
-    }
+    const accessTokenFromHeader = authHeader?.replace(/^Bearer\s+/i, '').trim() ?? ''
+    const accessTokenFromBody = typeof requestBody?.access_token === 'string'
+      ? requestBody.access_token.trim()
+      : ''
+    const accessToken = accessTokenFromHeader || accessTokenFromBody
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
     const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY') ?? ''
@@ -43,10 +46,14 @@ Deno.serve(async (request) => {
       return jsonResponse({ error: 'OPENAI_API_KEY nao configurada na edge function.' }, 500)
     }
 
+    if (!accessToken) {
+      return jsonResponse({ error: 'Token ausente.' }, 401)
+    }
+
     const supabase = createClient(supabaseUrl, supabaseAnonKey, {
       global: {
         headers: {
-          Authorization: authHeader,
+          Authorization: `Bearer ${accessToken}`,
         },
       },
     })
@@ -56,13 +63,13 @@ Deno.serve(async (request) => {
     const {
       data: { user },
       error: authError,
-    } = await supabase.auth.getUser()
+    } = await adminSupabase.auth.getUser(accessToken)
 
     if (authError || !user) {
-      return jsonResponse({ error: 'Usuario nao autenticado.' }, 401)
+      return jsonResponse({ error: 'Token invalido ou usuario nao autenticado.' }, 401)
     }
 
-    const { lessonId } = await request.json()
+    const { lessonId } = requestBody
     if (!lessonId || typeof lessonId !== 'string') {
       return jsonResponse({ error: 'lessonId e obrigatorio.' }, 400)
     }
