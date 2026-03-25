@@ -126,3 +126,30 @@
   background-color: #fff !important;
 }
 
+/* Global Table Styles */
+table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 1.5rem 0;
+}
+
+th, td {
+  border: 1px solid #e2e8f0;
+  padding: 12px 16px;
+  text-align: left;
+}
+
+th {
+  background-color: #f8fafc;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+tr:nth-child(even) {
+  background-color: #fcfcfd;
+}
+
+/* Specific Quill Better Table overrides if needed */
+.quill-better-table-wrapper {
+  margin: 1rem 0;
+}

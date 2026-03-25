@@ -1,8 +1,13 @@
 import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import ReactQuill from 'react-quill'
+import ReactQuill, { Quill } from 'react-quill'
 import 'react-quill/dist/quill.snow.css'
+import QuillBetterTable from 'quill-better-table'
+import 'quill-better-table/dist/quill-better-table.css'
+
+// Register the better-table module
+Quill.register({ 'modules/better-table': QuillBetterTable }, true)
 
 import { createLesson, deleteLesson, updateLesson, toErrorMessage } from '@/features/admin/content/api'
 import { lessonFormSchema, type LessonFormInput } from '@/features/admin/content/schemas'
@@ -26,8 +31,26 @@ const quillModules = {
     ['bold', 'italic', 'underline', 'strike'],
     [{ 'list': 'ordered' }, { 'list': 'bullet' }],
     ['link', 'blockquote', 'code-block'],
+    ['table'], // O quill-better-table usa o botão padrão de tabela
     ['clean']
   ],
+  table: false, // Desativa o módulo de tabela nativo
+  'better-table': {
+    operationMenu: {
+      items: {
+        unmergeCells: {
+          text: 'Desmesclar células'
+        }
+      },
+      color: {
+        colors: ['#fff', 'red', 'rgb(0, 0, 0)'],
+        text: 'Cores de fundo'
+      }
+    }
+  },
+  keyboard: {
+    bindings: QuillBetterTable.keyboardBindings
+  }
 }
 
 const quillFormats = [
@@ -276,7 +299,7 @@ export function LessonEditorPanel() {
                         </div>
                      </div>
 
-                     {editorMode === 'visual' && !(form.text_content || '').includes('<table') ? (
+                     {editorMode === 'visual' ? (
                         <ReactQuill
                           theme="snow"
                           value={form.text_content || ''}
@@ -286,19 +309,12 @@ export function LessonEditorPanel() {
                           placeholder="Escreva aqui o conteúdo textual detalhado da sua aula..."
                         />
                      ) : (
-                        <div className="space-y-4">
-                           {(form.text_content || '').includes('<table') && editorMode === 'visual' && (
-                              <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-amber-700 text-[11px] font-bold">
-                                 ⚠️ Detetamos uma tabela. O editor visual foi desativado para proteger a estrutura. Use o modo "Código HTML" acima.
-                              </div>
-                           )}
-                           <textarea
-                             className="w-full min-h-[400px] p-6 font-mono text-[13px] bg-slate-900 text-emerald-400 rounded-xl border border-slate-800 transition-all focus:ring-4 focus:ring-blue-100 shadow-inner no-scrollbar leading-relaxed"
-                             value={form.text_content || ''}
-                             onChange={(e) => setForm(prev => ({ ...prev, text_content: e.target.value }))}
-                             placeholder="Cole ou edite seu código HTML aqui..."
-                           />
-                        </div>
+                        <textarea
+                          className="w-full min-h-[400px] p-6 font-mono text-[13px] bg-slate-900 text-emerald-400 rounded-xl border border-slate-800 transition-all focus:ring-4 focus:ring-blue-100 shadow-inner no-scrollbar leading-relaxed"
+                          value={form.text_content || ''}
+                          onChange={(e) => setForm(prev => ({ ...prev, text_content: e.target.value }))}
+                          placeholder="Cole ou edite seu código HTML aqui..."
+                        />
                      )}
                   </div>
                 )}
