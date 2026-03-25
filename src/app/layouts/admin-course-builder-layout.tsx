@@ -94,7 +94,15 @@ export function AdminCourseBuilderLayout() {
         }
       }
 
-      await importCourseContent(courseId, data, clearExisting, moduleIdToReplace || undefined)
+      // 2. Limpeza adicional para remover escapes indesejados (como \") se virem da IA
+      const cleanData = JSON.parse(JSON.stringify(data), (key, value) => {
+        if (typeof value === 'string') {
+          return value.replace(/\\"/g, '"')
+        }
+        return value
+      })
+
+      await importCourseContent(courseId, cleanData, clearExisting, moduleIdToReplace || undefined)
       await refreshTree()
       setIsImportModalOpen(false)
       setImportJson('')

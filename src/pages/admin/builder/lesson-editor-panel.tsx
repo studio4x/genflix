@@ -30,6 +30,12 @@ const quillModules = {
   ],
 }
 
+const quillFormats = [
+  'header', 'bold', 'italic', 'underline', 'strike',
+  'list', 'bullet', 'link', 'blockquote', 'code-block',
+  'table', 'table-row', 'table-cell'
+]
+
 export function LessonEditorPanel() {
   const { courseId, moduleId, lessonId } = useParams<{ courseId: string; moduleId: string; lessonId?: string }>()
   const navigate = useNavigate()
@@ -61,15 +67,21 @@ export function LessonEditorPanel() {
       }
       
       if (found) {
+        const textContent = found.text_content ?? ''
         setForm({
           title: found.title,
           description: found.description ?? '',
           is_required: found.is_required,
           lesson_type: found.lesson_type,
           youtube_url: found.youtube_url ?? '',
-          text_content: found.text_content ?? '',
+          text_content: textContent,
           estimated_minutes: found.estimated_minutes,
         })
+        
+        // Se o conteúdo tiver tabela, forçar modo HTML para não estragar
+        if (textContent.includes('<table')) {
+          setEditorMode('html')
+        }
       }
     }
   }, [isNew, lessonId, courseTree])
@@ -268,6 +280,7 @@ export function LessonEditorPanel() {
                           value={form.text_content}
                           onChange={(val) => setForm(prev => ({ ...prev, text_content: val }))}
                           modules={quillModules}
+                          formats={quillFormats}
                           placeholder="Escreva aqui o conteúdo textual detalhado da sua aula..."
                         />
                      ) : (
