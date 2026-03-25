@@ -175,12 +175,32 @@ export function AdminCoursesPage() {
     setIsImporting(true)
     setImportError(null)
     try {
-      const data = JSON.parse(importJson) as ImportCourseFullData
+      // 1. Limpeza inteligente do JSON (Remove markdown e quebras de linha que quebram o parse)
+      let cleanedJson = importJson.trim()
+      
+      // Remove blocos de código markdown (```json ... ```)
+      if (cleanedJson.startsWith('```')) {
+        const parts = cleanedJson.split('```')
+        cleanedJson = parts.length >= 3 ? parts[1].replace(/^json\s+/, '').trim() : cleanedJson
+      }
+
+      // Tentar limpar quebras de linha literais dentro de strings (problema comum com Claude/GPT)
+      cleanedJson = cleanedJson.replace(/\n(?!"\s*[}\],:])/g, '\\n')
+      
+      let data
+      try {
+        data = JSON.parse(cleanedJson)
+      } catch (parseErr) {
+        // Fallback: Tenta o parse original simples se o cleaned falhar por algum motivo
+        data = JSON.parse(importJson.trim().replace(/^```json/, '').replace(/```$/, '').trim())
+      }
+
       await importFullCourse(data, user.id)
       await loadCourses()
       setIsImportModalOpen(false)
       setImportJson('')
     } catch (err) {
+      console.error('Erro no import full:', err)
       setImportError(err instanceof Error ? err.message : 'JSON inválido ou erro na importação.')
     } finally {
       setIsImporting(false)

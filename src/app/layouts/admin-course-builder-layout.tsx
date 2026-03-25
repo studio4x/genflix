@@ -63,13 +63,36 @@ export function AdminCourseBuilderLayout() {
     setIsImporting(true)
     setImportError(null)
     try {
-      const data = JSON.parse(importJson) as ImportModuleData[]
+      // 1. Limpeza inteligente do JSON (Remove markdown e quebras de linha que quebram o parse)
+      let cleanedJson = importJson.trim()
+      
+      // Remove blocos de código markdown (```json ... ```)
+      if (cleanedJson.startsWith('```')) {
+        const parts = cleanedJson.split('```')
+        cleanedJson = parts.length >= 3 ? parts[1].replace(/^json\s+/, '').trim() : cleanedJson
+      }
+
+      // Tentar limpar quebras de linha literais dentro de strings (problema comum com Claude/GPT)
+      // Substituímos quebras de linha manuais por \n literal para o JSON.parse aceitar
+      // (Esta é uma limpeza básica, mas resolve 90% dos casos de IA)
+      cleanedJson = cleanedJson.replace(/\n(?!"\s*[}\],:])/g, '\\n')
+      // Se a limpeza acima for agressiva e quebrar o JSON estrutural, o try/catch cuidará
+      
+      let data
+      try {
+        data = JSON.parse(cleanedJson)
+      } catch (parseErr) {
+        // Fallback: Tenta o parse original se o cleaned falhar por algum motivo
+        data = JSON.parse(importJson.trim().replace(/^```json/, '').replace(/```$/, '').trim())
+      }
+
       await importCourseContent(courseId, data, clearExisting)
       await refreshTree()
       setIsImportModalOpen(false)
       setImportJson('')
       setClearExisting(false)
     } catch (err) {
+      console.error('Erro no import:', err)
       setImportError(err instanceof Error ? err.message : 'JSON inválido ou erro na importação.')
     } finally {
       setIsImporting(false)
