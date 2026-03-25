@@ -31,6 +31,7 @@ const quillModules = {
     ['bold', 'italic', 'underline', 'strike'],
     [{ 'list': 'ordered' }, { 'list': 'bullet' }],
     ['link', 'blockquote', 'code-block'],
+    ['table'],
     ['clean']
   ],
   table: false, // Desativa o módulo de tabela nativo
