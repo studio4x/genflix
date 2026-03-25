@@ -16,7 +16,11 @@ import type { Assessment, AssessmentOption } from '@/types/content'
 export function StudentAssessmentExecutionPage() {
   const { courseId, assessmentId } = useParams<{ courseId: string; assessmentId: string }>()
   const navigate = useNavigate()
-  const { setModules, setAssessments } = useOutletContext<{ setModules: (m: any) => void, setAssessments: (a: any) => void }>()
+  const { assessments, setModules, setAssessments } = useOutletContext<{ 
+    assessments: any[], 
+    setModules: (m: any) => void, 
+    setAssessments: (a: any) => void 
+  }>()
 
   const [assessment, setAssessment] = useState<Assessment | null>(null)
   const [questions, setQuestions] = useState<StudentAssessmentQuestionWithOptions[]>([])
@@ -27,6 +31,10 @@ export function StudentAssessmentExecutionPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [result, setResult] = useState<SubmitAssessmentAttemptResult | null>(null)
+
+  const studentAssessment = useMemo(() => {
+    return assessments?.find(a => a.assessment_id === assessmentId || a.id === assessmentId)
+  }, [assessments, assessmentId])
 
   useEffect(() => {
     async function loadAssessment() {
@@ -107,6 +115,43 @@ export function StudentAssessmentExecutionPage() {
       ...prev,
       [questionId]: optionId,
     }))
+  }
+
+  // Verificar se as tentativas acabaram
+  if (studentAssessment?.state === 'failed_limit' && !result) {
+    return (
+      <div className="mx-auto max-w-2xl py-12 md:py-24 animate-in fade-in zoom-in-95 duration-500 p-4">
+        <div className="overflow-hidden rounded-[40px] border border-rose-100 bg-white shadow-2xl shadow-rose-200/20">
+          <div className="p-12 text-center bg-gradient-to-b from-rose-50/50 to-white">
+            <div className="mx-auto mb-8 flex h-24 w-24 items-center justify-center rounded-full bg-rose-100 text-rose-600 shadow-lg shadow-rose-100 border-2 border-white">
+              <svg className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+            </div>
+            <h2 className="text-3xl font-black tracking-tight text-slate-900 leading-tight">Limite de Tentativas Atingido</h2>
+            <p className="mt-4 text-slate-500 font-medium leading-relaxed">
+              Você já realizou todas as tentativas permitidas para este quiz ({studentAssessment.max_attempts} de {studentAssessment.max_attempts}) e não obteve a pontuação mínima necessária.
+            </p>
+            <div className="mt-8 p-6 bg-slate-50 rounded-3xl border border-slate-100 text-left">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="w-2 h-2 rounded-full bg-rose-500"></div>
+                <span className="text-sm font-bold text-slate-700">O que acontece agora?</span>
+              </div>
+              <p className="text-xs text-slate-500 leading-relaxed">
+                O acesso a esta avaliação está bloqueado para seu usuário. Entre em contato com o suporte ou com seu gestor para solicitar uma nova oportunidade, se aplicável ao seu plano de estudos.
+              </p>
+            </div>
+            <Button 
+              size="lg" 
+              className="mt-10 w-full h-14 bg-slate-900 hover:bg-slate-800 rounded-2xl font-bold shadow-xl shadow-slate-200" 
+              onClick={() => navigate(`/aluno/cursos/${courseId}`)}
+            >
+              Voltar para o Curso
+            </Button>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   if (isLoading) {

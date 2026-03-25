@@ -239,22 +239,28 @@ export function StudentCoursePlayerLayout() {
                 {(() => {
                    const moduleQuiz = assessments.find(a => a.assessment_type === 'module' && a.module_id === m.id)
                    if (!moduleQuiz) return null
-                                       const isBlocked = m.state === 'blocked' || moduleQuiz.state === 'blocked' || moduleQuiz.state === 'failed_limit'
+                   const isLocked = m.state === 'blocked' || moduleQuiz.state === 'blocked'
+                   const isFailedLimit = moduleQuiz.state === 'failed_limit'
                    const isActive = moduleQuiz.assessment_id === assessmentId
                    const isApproved = moduleQuiz.state === 'approved'
 
                    return (
-                      <Link
-                        to={isBlocked ? '#' : `/aluno/cursos/${courseId}/player/avaliacoes/${moduleQuiz.assessment_id}`}
-                        className={`group flex items-start gap-3 rounded-lg p-2.5 transition-all text-sm border border-dashed mt-2 ${
-                          isBlocked ? 'opacity-50 cursor-not-allowed grayscale bg-slate-50' : 'hover:bg-blue-50/50 cursor-pointer border-blue-200'
-                        } ${isApproved ? 'bg-emerald-50/30 border-emerald-200' : ''} ${isActive ? 'bg-blue-50 border-solid border-blue-500 ring-1 ring-blue-500' : ''}`}
-                        onClick={(e) => {
-                          if (isBlocked) e.preventDefault()
-                        }}
+                      <Link 
+                         key={moduleQuiz.assessment_id} 
+                         to={isLocked ? '#' : `/aluno/cursos/${courseId}/player/avaliacoes/${moduleQuiz.assessment_id}`}
+                         onClick={(e) => isLocked && e.preventDefault()}
+                         className={`relative mt-2 p-3 rounded-2xl border-2 transition-all group flex items-start gap-3 ${
+                            isLocked ? 'opacity-50 cursor-not-allowed grayscale bg-slate-50 border-slate-100' :
+                            isFailedLimit ? 'border-rose-100 bg-rose-50/30 hover:border-rose-200' :
+                            isActive ? 'border-blue-600 bg-blue-50 shadow-md ring-4 ring-blue-600/5' : 
+                            isApproved ? 'border-emerald-100 bg-emerald-50/50' :
+                            'border-slate-100 bg-white hover:border-blue-200'
+                         }`}
                       >
                          <div className={`mt-0.5 shrink-0 flex h-5 w-5 items-center justify-center rounded-lg border transition-colors ${
-                           isApproved ? 'bg-emerald-500 border-emerald-500 text-white' : 'bg-white border-blue-400 text-blue-500'
+                           isApproved ? 'bg-emerald-500 border-emerald-500 text-white' : 
+                           isFailedLimit ? 'bg-rose-100 border-rose-200 text-rose-500' :
+                           'bg-white border-blue-400 text-blue-500'
                          }`}>
                            {isApproved ? (
                               <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
@@ -263,8 +269,10 @@ export function StudentCoursePlayerLayout() {
                            )}
                          </div>
                          <div className="flex-1 overflow-hidden">
-                            <p className="truncate font-black text-[10px] uppercase tracking-tighter text-blue-600">QUIZ DO MÓDULO</p>
-                            <p className={`truncate font-bold ${isApproved ? 'text-emerald-700' : 'text-slate-700'}`}>{moduleQuiz.title}</p>
+                            <p className={`truncate font-black text-[10px] uppercase tracking-tighter ${isFailedLimit ? 'text-rose-600' : 'text-blue-600'}`}>
+                               {isFailedLimit ? 'TENTATIVAS ESGOTADAS' : 'QUIZ DO MÓDULO'}
+                            </p>
+                            <p className={`truncate font-bold ${isApproved ? 'text-emerald-700' : isFailedLimit ? 'text-rose-900' : 'text-slate-700'}`}>{moduleQuiz.title}</p>
                          </div>
                       </Link>
                    )

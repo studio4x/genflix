@@ -363,12 +363,13 @@ export function StudentCourseDetailsPage() {
                          finalAssessment.state === 'failed_limit' ? 'Reprovado (Sem tentativas)' : 'Pendente'}
                      </p>
                   </div>
-                  <Button asChild disabled={finalAssessment.state === 'blocked' || finalAssessment.state === 'failed_limit'} size="sm" className={`h-12 px-6 rounded-xl font-black ${
-                     finalAssessment.state === 'approved' ? 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-lg shadow-emerald-100' : 'bg-blue-600'
+                  <Button asChild disabled={finalAssessment.state === 'blocked'} size="sm" className={`h-12 px-6 rounded-xl font-black ${
+                     finalAssessment.state === 'approved' ? 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-lg shadow-emerald-100' : 
+                     finalAssessment.state === 'failed_limit' ? 'bg-rose-500 hover:bg-rose-600 text-white shadow-lg shadow-rose-100' : 'bg-blue-600'
                   }`}>
                      <Link to={`/aluno/cursos/${courseId}/player/avaliacoes/${finalAssessment.assessment_id}`}>
                         {finalAssessment.state === 'approved' ? 'Ver Resultado' : 
-                         finalAssessment.state === 'failed_limit' ? 'Acesso Bloqueado' : 'Iniciar Prova'}
+                         finalAssessment.state === 'failed_limit' ? 'Ver Status' : 'Iniciar Prova'}
                      </Link>
                   </Button>
                </div>
@@ -492,12 +493,15 @@ export function StudentCourseDetailsPage() {
                                                     {moduleAssessment.state === 'approved' ? 'Aprovado ✅' : 
                                                      moduleAssessment.state === 'failed_limit' ? 'Tentativas Esgotadas' : 'Avaliação Obrigatória do Módulo'}</p>
                                              </div>
-                                             <Button size="sm" asChild disabled={moduleAssessment.state === 'blocked' || moduleAssessment.state === 'failed_limit'} className={`h-11 px-6 rounded-xl font-black ${moduleAssessment.state === 'approved' ? 'bg-white text-emerald-600 border-emerald-200 shadow-sm' : 'bg-blue-600'}`}>
-                                                <Link to={`/aluno/cursos/${courseId}/player/avaliacoes/${moduleAssessment.assessment_id}`}>
-                                                   {moduleAssessment.state === 'approved' ? 'Refazer Quiz' : 
-                                                     moduleAssessment.state === 'failed_limit' ? 'Acesso Bloqueado' : 'Iniciar Quiz'}
-                                                </Link>
-                                             </Button>
+                                             <Button size="sm" asChild disabled={moduleAssessment.state === 'blocked'} className={`h-11 px-6 rounded-xl font-black ${
+                                                 moduleAssessment.state === 'approved' ? 'bg-white text-emerald-600 border-emerald-200 shadow-sm' : 
+                                                 moduleAssessment.state === 'failed_limit' ? 'bg-white text-rose-600 border-rose-200 shadow-sm' : 'bg-blue-600'
+                                              }`}>
+                                                 <Link to={`/aluno/cursos/${courseId}/player/avaliacoes/${moduleAssessment.assessment_id}`}>
+                                                    {moduleAssessment.state === 'approved' ? 'Refazer Quiz' : 
+                                                     moduleAssessment.state === 'failed_limit' ? 'Ver Status' : 'Iniciar Quiz'}
+                                                 </Link>
+                                              </Button>
                                           </div>
                                        </div>
                                     )}
