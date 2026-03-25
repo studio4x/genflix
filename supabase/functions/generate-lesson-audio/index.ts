@@ -6,9 +6,11 @@ const corsHeaders = {
 }
 
 const AUDIO_BUCKET = 'lesson-audio'
-const AUDIO_MODEL = 'gpt-4o-mini-tts'
-const AUDIO_VOICE = 'coral'
-const AUDIO_FORMAT = 'mp3'
+const OPENAI_AUDIO_MODEL = 'gpt-4o-mini-tts'
+const OPENAI_AUDIO_VOICE = 'coral'
+const OPENAI_AUDIO_FORMAT = 'mp3'
+const GEMINI_AUDIO_MODEL = 'gemini-2.5-flash-preview-tts'
+const GEMINI_AUDIO_VOICE = 'Kore'
 const MAX_CHARS_PER_CHUNK = 2800
 const SIGNED_URL_EXPIRES_IN = 60 * 60
 
@@ -37,13 +39,14 @@ Deno.serve(async (request) => {
     const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY') ?? ''
     const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     const openAiApiKey = Deno.env.get('OPENAI_API_KEY') ?? ''
+    const geminiApiKey = Deno.env.get('GEMINI_API_KEY') ?? ''
 
     if (!supabaseUrl || !supabaseAnonKey || !supabaseServiceRoleKey) {
       return jsonResponse({ error: 'Variaveis do Supabase ausentes na edge function.' }, 500)
     }
 
-    if (!openAiApiKey) {
-      return jsonResponse({ error: 'OPENAI_API_KEY nao configurada na edge function.' }, 500)
+    if (!openAiApiKey && !geminiApiKey) {
+      return jsonResponse({ error: 'Nenhuma chave de TTS configurada na edge function.' }, 500)
     }
 
     if (!accessToken) {
@@ -95,42 +98,33 @@ Deno.serve(async (request) => {
     }
 
     const chunks = splitNarrationText(narrationText, MAX_CHARS_PER_CHUNK)
-    const contentHash = await sha256(`${AUDIO_MODEL}:${AUDIO_VOICE}:${narrationText}`)
+    const contentHash = await sha256(narrationText)
     const folderPath = `${lesson.id}/${contentHash}`
-    const expectedPaths = chunks.map((_, index) => buildPartPath(folderPath, index))
 
     const existingObjects = await listStoredParts(adminSupabase, folderPath)
-    const existingPaths = existingObjects.map((item) => `${folderPath}/${item.name}`)
-    const hasAllPartsCached = expectedPaths.every((path) => existingPaths.includes(path))
+    const cachedPaths = existingObjects
+      .map((item) => `${folderPath}/${item.name}`)
+      .sort((pathA, pathB) => pathA.localeCompare(pathB))
+    const hasAllPartsCached = cachedPaths.length === chunks.length
+    const generatedPaths: string[] = []
+    let providerUsed = openAiApiKey ? 'openai' : 'gemini'
 
     if (!hasAllPartsCached) {
       for (let index = 0; index < chunks.length; index += 1) {
         const chunk = chunks[index]
-        const response = await fetch('https://api.openai.com/v1/audio/speech', {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${openAiApiKey}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            model: AUDIO_MODEL,
-            voice: AUDIO_VOICE,
-            response_format: AUDIO_FORMAT,
-            input: chunk,
-            instructions: 'Narrei em portugues do Brasil com tom claro, didatico e profissional.',
-          }),
+        const audioResult = await generateAudioChunk({
+          chunk,
+          openAiApiKey,
+          geminiApiKey,
         })
+        providerUsed = audioResult.provider
 
-        if (!response.ok) {
-          const errorText = await response.text()
-          return jsonResponse({ error: `Falha ao gerar audio no OpenAI: ${errorText}` }, 500)
-        }
-
-        const bytes = new Uint8Array(await response.arrayBuffer())
+        const objectPath = buildPartPath(folderPath, index, audioResult.extension)
+        generatedPaths.push(objectPath)
         const uploadResult = await adminSupabase.storage
           .from(AUDIO_BUCKET)
-          .upload(buildPartPath(folderPath, index), bytes, {
-            contentType: 'audio/mpeg',
+          .upload(objectPath, audioResult.bytes, {
+            contentType: audioResult.contentType,
             cacheControl: '3600',
             upsert: true,
           })
@@ -141,8 +135,10 @@ Deno.serve(async (request) => {
       }
     }
 
+    const finalPaths = hasAllPartsCached ? cachedPaths : generatedPaths
+
     const signedParts = await Promise.all(
-      expectedPaths.map(async (path, index) => {
+      finalPaths.map(async (path, index) => {
         const signedUrlResult = await adminSupabase.storage
           .from(AUDIO_BUCKET)
           .createSignedUrl(path, SIGNED_URL_EXPIRES_IN)
@@ -162,8 +158,8 @@ Deno.serve(async (request) => {
     return jsonResponse({
       lessonId: lesson.id,
       contentHash,
-      model: AUDIO_MODEL,
-      voice: AUDIO_VOICE,
+      model: providerUsed === 'openai' ? OPENAI_AUDIO_MODEL : GEMINI_AUDIO_MODEL,
+      voice: providerUsed === 'openai' ? OPENAI_AUDIO_VOICE : GEMINI_AUDIO_VOICE,
       generatedNow: !hasAllPartsCached,
       parts: signedParts,
       expiresInSeconds: SIGNED_URL_EXPIRES_IN,
@@ -342,8 +338,8 @@ function splitLongSentence(sentence: string, maxChars: number) {
   return chunks
 }
 
-function buildPartPath(folderPath: string, index: number) {
-  return `${folderPath}/part-${String(index + 1).padStart(3, '0')}.mp3`
+function buildPartPath(folderPath: string, index: number, extension: 'mp3' | 'wav') {
+  return `${folderPath}/part-${String(index + 1).padStart(3, '0')}.${extension}`
 }
 
 async function listStoredParts(
@@ -361,7 +357,7 @@ async function listStoredParts(
     throw new Error(listResult.error.message)
   }
 
-  return (listResult.data ?? []).filter((item) => item.name.endsWith('.mp3'))
+  return (listResult.data ?? []).filter((item) => item.name.endsWith('.mp3') || item.name.endsWith('.wav'))
 }
 
 async function sha256(value: string) {
@@ -371,4 +367,123 @@ async function sha256(value: string) {
   return Array.from(new Uint8Array(digest))
     .map((byte) => byte.toString(16).padStart(2, '0'))
     .join('')
+}
+
+async function generateAudioChunk(input: {
+  chunk: string
+  openAiApiKey: string
+  geminiApiKey: string
+}) {
+  if (input.openAiApiKey) {
+    const openAiResult = await generateOpenAiAudioChunk(input.chunk, input.openAiApiKey)
+
+    if (openAiResult.ok) {
+      return openAiResult.data
+    }
+
+    if (openAiResult.errorCode !== 'insufficient_quota' || !input.geminiApiKey) {
+      throw new Error(`Falha ao gerar audio no OpenAI: ${openAiResult.errorText}`)
+    }
+  }
+
+  if (!input.geminiApiKey) {
+    throw new Error('Fallback Gemini indisponivel para narracao.')
+  }
+
+  return await generateGeminiAudioChunk(input.chunk, input.geminiApiKey)
+}
+
+async function generateOpenAiAudioChunk(chunk: string, apiKey: string) {
+  const response = await fetch('https://api.openai.com/v1/audio/speech', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: OPENAI_AUDIO_MODEL,
+      voice: OPENAI_AUDIO_VOICE,
+      response_format: OPENAI_AUDIO_FORMAT,
+      input: chunk,
+      instructions: 'Narrei em portugues do Brasil com tom claro, didatico e profissional.',
+    }),
+  })
+
+  if (!response.ok) {
+    const errorText = await response.text()
+    let errorCode = ''
+
+    try {
+      const payload = JSON.parse(errorText)
+      errorCode = payload?.error?.code ?? ''
+    } catch {
+      errorCode = ''
+    }
+
+    return {
+      ok: false as const,
+      errorCode,
+      errorText,
+    }
+  }
+
+  return {
+    ok: true as const,
+    data: {
+      bytes: new Uint8Array(await response.arrayBuffer()),
+      contentType: 'audio/mpeg',
+      extension: 'mp3' as const,
+      provider: 'openai' as const,
+    },
+  }
+}
+
+async function generateGeminiAudioChunk(chunk: string, apiKey: string) {
+  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_AUDIO_MODEL}:generateContent`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-goog-api-key': apiKey,
+    },
+    body: JSON.stringify({
+      contents: [
+        {
+          parts: [
+            {
+              text: `Fale em portugues do Brasil, com tom claro, didatico e profissional, narrando exatamente o texto abaixo:\n\n${chunk}`,
+            },
+          ],
+        },
+      ],
+      generationConfig: {
+        responseModalities: ['AUDIO'],
+        speechConfig: {
+          voiceConfig: {
+            prebuiltVoiceConfig: {
+              voiceName: GEMINI_AUDIO_VOICE,
+            },
+          },
+        },
+      },
+    }),
+  })
+
+  if (!response.ok) {
+    const errorText = await response.text()
+    throw new Error(`Falha ao gerar audio no Gemini: ${errorText}`)
+  }
+
+  const payload = await response.json()
+  const base64Audio = payload?.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data
+
+  if (!base64Audio || typeof base64Audio !== 'string') {
+    throw new Error('Gemini nao retornou audio valido para a narracao.')
+  }
+
+  return {
+    bytes: Uint8Array.from(atob(base64Audio), (char) => char.charCodeAt(0)),
+    contentType: 'audio/wav',
+    extension: 'wav' as const,
+    provider: 'gemini' as const,
+  }
 }
