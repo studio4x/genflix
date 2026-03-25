@@ -19,6 +19,7 @@ export function StudentCoursePlayerLayout() {
   const { courseId, lessonId, assessmentId } = useParams<{ courseId: string; lessonId?: string; assessmentId?: string }>()
   const navigate = useNavigate()
   const { roles } = useAuth()
+  const isAdmin = roles.includes('admin')
   
   const [course, setCourse] = useState<Course | null>(null)
   const [modules, setModules] = useState<StudentCourseModuleProgress[]>([])
@@ -32,7 +33,6 @@ export function StudentCoursePlayerLayout() {
     async function loadData() {
       if (!courseId) return
       setIsLoading(true)
-      const isAdmin = roles.includes('admin')
       try {
         if (isAdmin) {
           const tree: AdminCourseTree = await fetchAdminCourseTree(courseId)
@@ -239,7 +239,8 @@ export function StudentCoursePlayerLayout() {
                 {(() => {
                    const moduleQuiz = assessments.find(a => a.assessment_type === 'module' && a.module_id === m.id)
                    if (!moduleQuiz) return null
-                   const isLocked = m.state === 'blocked' || moduleQuiz.state === 'blocked'
+                   const allModuleLessonsCompleted = m.lessons.length > 0 && m.lessons.every((lesson) => lesson.is_completed)
+                   const isLocked = m.state === 'blocked' || moduleQuiz.state === 'blocked' || (!isAdmin && !allModuleLessonsCompleted)
                    const isFailedLimit = moduleQuiz.state === 'failed_limit'
                    const isActive = moduleQuiz.assessment_id === assessmentId
                    const isApproved = moduleQuiz.state === 'approved'

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+﻿import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 
 import { useAuth } from '@/app/providers/auth-provider'
@@ -28,7 +28,7 @@ interface StudentCourseStatus {
 
 function moduleStateLabel(state: ModuleLearningState) {
   if (state === 'blocked') return 'Bloqueado'
-  if (state === 'completed') return 'Concluído'
+  if (state === 'completed') return 'ConcluÃ­do'
   return 'Em Andamento'
 }
 
@@ -55,7 +55,7 @@ export function StudentCourseDetailsPage() {
 
     async function loadCourseDetails() {
       if (!courseId) {
-        setError('Curso inválido.')
+        setError('Curso invÃ¡lido.')
         setIsLoading(false)
         return
       }
@@ -63,7 +63,7 @@ export function StudentCourseDetailsPage() {
       setError(null)
       try {
         if (isAdmin) {
-          // Se for admin, buscamos a árvore completa do builder para bypassar qualquer trava de progresso no preview
+          // Se for admin, buscamos a Ã¡rvore completa do builder para bypassar qualquer trava de progresso no preview
           const tree: AdminCourseTree = await fetchAdminCourseTree(courseId)
           if (isMounted) {
             setCourse(tree.course)
@@ -102,7 +102,7 @@ export function StudentCourseDetailsPage() {
             
             setModules(mappedModules)
             
-            // Mapeamos as avaliações simplificadamente para o admin
+            // Mapeamos as avaliaÃ§Ãµes simplificadamente para o admin
             const mappedAssessments: StudentCourseAssessmentSummary[] = [
               ...tree.courseAssessments.map(a => ({
                 assessment_id: a.id,
@@ -175,7 +175,7 @@ export function StudentCourseDetailsPage() {
 
   async function handleToggleLessonCompletion(lessonId: string, isCurrentlyCompleted: boolean) {
     if (!user) {
-      setError('Usuário não autenticado.')
+      setError('UsuÃ¡rio nÃ£o autenticado.')
       return
     }
     setError(null)
@@ -227,7 +227,7 @@ export function StudentCourseDetailsPage() {
         <div className="space-y-4 max-w-md">
           <h2 className="text-3xl font-black tracking-tight text-slate-900">Acesso Restrito</h2>
           <p className="text-base text-slate-500 leading-relaxed font-medium">
-            Este conteúdo está em uma área restrita ou o curso ainda não foi liberado para você.
+            Este conteÃºdo estÃ¡ em uma Ã¡rea restrita ou o curso ainda nÃ£o foi liberado para vocÃª.
           </p>
         </div>
         <Button size="lg" className="bg-slate-900 hover:bg-slate-800 rounded-2xl h-14 px-8" asChild>
@@ -273,14 +273,14 @@ export function StudentCourseDetailsPage() {
                   </span>
                   <span className="flex items-center gap-2 text-sm font-bold text-slate-300">
                      <svg className="h-5 w-5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11v9h-2v-9H7v9H5v-9H3V9h18v2h-2z" /></svg>
-                     {totalModules} Módulos
+                     {totalModules} MÃ³dulos
                   </span>
                   <div className="h-6 w-px bg-white/10 hidden md:block" />
                   <div className="flex items-center gap-3">
                      <div className="w-32 h-2 bg-white/10 rounded-full overflow-hidden">
                         <div className="h-full bg-blue-500 transition-all duration-1000" style={{ width: `${courseProgressPercent}%` }} />
                      </div>
-                     <span className="text-sm font-black text-white">{courseProgressPercent}% <span className="text-[10px] uppercase text-white/40 ml-1">Concluído</span></span>
+                     <span className="text-sm font-black text-white">{courseProgressPercent}% <span className="text-[10px] uppercase text-white/40 ml-1">ConcluÃ­do</span></span>
                   </div>
                </div>
             </div>
@@ -302,9 +302,9 @@ export function StudentCourseDetailsPage() {
             <svg className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
           </div>
           <div className="space-y-2 text-center md:text-left flex-1">
-            <h3 className="text-3xl font-black text-white leading-none">Missão Cumprida!</h3>
+            <h3 className="text-3xl font-black text-white leading-none">MissÃ£o Cumprida!</h3>
             <p className="text-emerald-50 text-lg font-medium">
-              Você completou este curso com maestria. Seu empenho é o que define a qualidade HomeCare Match Academy.
+              VocÃª completou este curso com maestria. Seu empenho Ã© o que define a qualidade HomeCare Match Academy.
             </p>
           </div>
           <Button variant="outline" className="h-14 px-8 rounded-2xl bg-white border-transparent text-emerald-700 font-black text-base hover:bg-emerald-50 shadow-lg">
@@ -314,8 +314,8 @@ export function StudentCourseDetailsPage() {
       )}
 
       {/* PERSISTENT PROGRESS BAR (HORIZONTAL) */}
-      <section className="bg-white rounded-[32px] border border-slate-100 p-6 flex flex-col md:flex-row items-center justify-between gap-8 shadow-sm animate-in slide-in-from-top-4 duration-700 delay-300">
-         <div className="flex items-center gap-6">
+      <section className="bg-white rounded-[32px] border border-slate-100 p-6 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 shadow-sm animate-in slide-in-from-top-4 duration-700 delay-300">
+         <div className="flex items-center gap-4 sm:gap-6 w-full lg:w-auto">
             <div className="relative w-16 h-16 shrink-0">
                <svg className="w-full h-full transform -rotate-90">
                   <circle cx="32" cy="32" r="28" stroke="currentColor" strokeWidth="6" fill="transparent" className="text-slate-100" />
@@ -325,7 +325,7 @@ export function StudentCourseDetailsPage() {
                   <span className="text-xs font-black text-slate-900">{courseProgressPercent}%</span>
                </div>
             </div>
-            <div className="space-y-0.5">
+            <div className="space-y-0.5 min-w-0">
                <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] leading-none">Resumo da Jornada</h5>
                <p className="text-sm font-bold text-slate-900">Seu progresso atual neste treinamento</p>
                <div className="flex items-center gap-2">
@@ -336,34 +336,34 @@ export function StudentCourseDetailsPage() {
             </div>
          </div>
 
-         <div className="flex items-center gap-8 w-full md:w-auto">
-            <div className="flex flex-col items-center md:items-end gap-1 flex-1 md:flex-none">
-               <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Módulos</span>
+         <div className="flex flex-wrap lg:flex-nowrap items-center gap-4 lg:gap-8 w-full lg:w-auto">
+            <div className="flex flex-col items-start lg:items-end gap-1">
+               <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">MÃ³dulos</span>
                <div className="flex items-center gap-2">
                   <span className="text-lg font-black text-slate-900">{totalCompleted} <span className="text-slate-300">/</span> {totalModules}</span>
                   <div className="px-2 py-0.5 rounded-md bg-blue-50 text-[10px] font-bold text-blue-600 border border-blue-100">
-                     Concluídos
+                     ConcluÃ­dos
                   </div>
                </div>
             </div>
 
             {finalAssessment && (
-               <div className="h-10 w-px bg-slate-100 hidden md:block" />
+               <div className="h-10 w-px bg-slate-100 hidden lg:block" />
             )}
 
             {finalAssessment && (
-               <div className="flex items-center gap-4">
-                  <div className="text-right hidden sm:block">
-                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Avaliação Final</p>
+               <div className="flex items-center gap-3 sm:gap-4 w-full sm:w-auto">
+                  <div className="text-left sm:text-right hidden sm:block">
+                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">AvaliaÃ§Ã£o Final</p>
                      <p className={`text-xs font-bold ${
                         finalAssessment.state === 'approved' ? 'text-emerald-600' : 
                         finalAssessment.state === 'failed_limit' ? 'text-rose-600' : 'text-slate-400'
                      }`}>
-                        {finalAssessment.state === 'approved' ? 'Aprovado ✅' : 
+                        {finalAssessment.state === 'approved' ? 'Aprovado âœ…' : 
                          finalAssessment.state === 'failed_limit' ? 'Reprovado (Sem tentativas)' : 'Pendente'}
                      </p>
                   </div>
-                  <Button asChild disabled={finalAssessment.state === 'blocked'} size="sm" className={`h-12 px-6 rounded-xl font-black ${
+                  <Button asChild disabled={finalAssessment.state === 'blocked'} size="sm" className={`h-12 px-6 rounded-xl font-black whitespace-nowrap min-w-[144px] ${
                      finalAssessment.state === 'approved' ? 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-lg shadow-emerald-100' : 
                      finalAssessment.state === 'failed_limit' ? 'bg-rose-500 hover:bg-rose-600 text-white shadow-lg shadow-rose-100' : 'bg-blue-600'
                   }`}>
@@ -402,6 +402,9 @@ export function StudentCourseDetailsPage() {
             {modules.map((module, mIdx) => {
                const moduleAssessment = assessments.find(a => a.assessment_type === 'module' && a.module_id === module.id)
                const isBlocked = module.state === 'blocked'
+               const areAllModuleLessonsCompleted =
+                 module.lessons.length > 0 && module.lessons.every((lesson) => lesson.is_completed)
+               const moduleQuizLockedByLessons = !isAdmin && !areAllModuleLessonsCompleted
 
                return (
                   <div key={module.id} className={`group ${isBlocked ? 'opacity-50' : ''}`}>
@@ -437,7 +440,7 @@ export function StudentCourseDetailsPage() {
                                     )}
                                  </div>
                               </div>
-                              <p className="text-sm font-medium text-slate-500 leading-relaxed mb-8">{module.description || "Inicie este módulo para explorar os fundamentos e técnicas deste tópico."}</p>
+                              <p className="text-sm font-medium text-slate-500 leading-relaxed mb-8">{module.description || "Inicie este mÃ³dulo para explorar os fundamentos e tÃ©cnicas deste tÃ³pico."}</p>
 
                               {!isBlocked ? (
                                  <div className="space-y-4">
@@ -465,7 +468,7 @@ export function StudentCourseDetailsPage() {
                                              <Link to={`/aluno/cursos/${courseId}/player/aulas/${lesson.id}`} className="flex-1 flex items-center justify-between p-4 rounded-2xl bg-slate-50/50 hover:bg-blue-50/50 border border-transparent hover:border-blue-100 transition-all">
                                                 <div>
                                                    <p className={`text-sm font-bold ${lesson.is_completed ? 'text-slate-400 line-through' : 'text-slate-700'}`}>{lesson.title}</p>
-                                                   {lesson.is_required && <span className="text-[9px] font-black text-blue-400 uppercase tracking-tighter">Obrigatória</span>}
+                                                   {lesson.is_required && <span className="text-[9px] font-black text-blue-400 uppercase tracking-tighter">ObrigatÃ³ria</span>}
                                                 </div>
                                                 <svg className="h-4 w-4 text-slate-300 transition-transform group-hover/item:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
                                              </Link>
@@ -474,6 +477,7 @@ export function StudentCourseDetailsPage() {
 
                                     {moduleAssessment && (
                                        <div className={`mt-6 p-6 rounded-[24px] border border-dashed transition-all ${
+                                          moduleQuizLockedByLessons ? 'bg-amber-50/40 border-amber-200' :
                                           moduleAssessment.state === 'approved' ? 'bg-emerald-50/30 border-emerald-200' :
                                           moduleAssessment.state === 'blocked' ? 'bg-slate-50/50 border-slate-200 opacity-60' :
                                           'bg-blue-50/30 border-blue-200'
@@ -481,24 +485,25 @@ export function StudentCourseDetailsPage() {
                                           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
                                              <div className="space-y-1">
                                                 <div className="flex items-center gap-2">
-                                                   <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${moduleAssessment.state === 'approved' ? 'bg-emerald-100 text-emerald-600' : 'bg-blue-100 text-blue-600'}`}>
+                                                   <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${moduleQuizLockedByLessons ? 'Conclua todas as aulas do módulo para liberar o quiz' : moduleAssessment.state === 'approved' ? 'bg-emerald-100 text-emerald-600' : 'bg-blue-100 text-blue-600'}`}>
                                                       <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                                                    </div>
                                                    <span className="text-sm font-black text-slate-800 uppercase tracking-tight">{moduleAssessment.title}</span>
                                                 </div>
                                                 <p className={`text-xs font-bold ${
+                                                    moduleQuizLockedByLessons ? 'text-amber-600' :
                                                     moduleAssessment.state === 'approved' ? 'text-emerald-600' : 
                                                     moduleAssessment.state === 'failed_limit' ? 'text-rose-600' : 'text-slate-400'
                                                  }`}>
-                                                    {moduleAssessment.state === 'approved' ? 'Aprovado ✅' : 
-                                                     moduleAssessment.state === 'failed_limit' ? 'Tentativas Esgotadas' : 'Avaliação Obrigatória do Módulo'}</p>
+                                                    {moduleQuizLockedByLessons ? 'Conclua todas as aulas do módulo para liberar o quiz' : moduleAssessment.state === 'approved' ? 'Aprovado âœ…' : 
+                                                     moduleAssessment.state === 'failed_limit' ? 'Tentativas Esgotadas' : 'AvaliaÃ§Ã£o ObrigatÃ³ria do MÃ³dulo'}</p>
                                              </div>
-                                             <Button size="sm" asChild disabled={moduleAssessment.state === 'blocked'} className={`h-11 px-6 rounded-xl font-black ${
+                                             <Button size="sm" asChild disabled={moduleAssessment.state === 'blocked' || moduleQuizLockedByLessons} className={`h-11 px-6 rounded-xl font-black ${
                                                  moduleAssessment.state === 'approved' ? 'bg-white text-emerald-600 border-emerald-200 shadow-sm' : 
                                                  moduleAssessment.state === 'failed_limit' ? 'bg-white text-rose-600 border-rose-200 shadow-sm' : 'bg-blue-600'
                                               }`}>
                                                  <Link to={`/aluno/cursos/${courseId}/player/avaliacoes/${moduleAssessment.assessment_id}`}>
-                                                    {moduleAssessment.state === 'approved' ? 'Refazer Quiz' : 
+                                                    {moduleQuizLockedByLessons ? 'Conclua todas as aulas do módulo para liberar o quiz' : moduleAssessment.state === 'approved' ? 'Refazer Quiz' : 
                                                      moduleAssessment.state === 'failed_limit' ? 'Ver Status' : 'Iniciar Quiz'}
                                                  </Link>
                                               </Button>
@@ -509,7 +514,7 @@ export function StudentCourseDetailsPage() {
                               ) : (
                                  <div className="flex items-center gap-4 bg-slate-50 p-6 rounded-[24px] border border-slate-100 text-slate-400">
                                     <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
-                                    <span className="text-sm font-bold uppercase tracking-widest">Conteúdo Bloqueado</span>
+                                    <span className="text-sm font-bold uppercase tracking-widest">ConteÃºdo Bloqueado</span>
                                  </div>
                               )}
                            </div>
@@ -524,3 +529,5 @@ export function StudentCourseDetailsPage() {
     </div>
   )
 }
+
+

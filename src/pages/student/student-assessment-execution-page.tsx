@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo } from 'react'
 import { useNavigate, useParams, useOutletContext } from 'react-router-dom'
 
+import { useAuth } from '@/app/providers/auth-provider'
 import { Button } from '@/components/ui/button'
 import {
   fetchAssessmentForExecution,
@@ -11,12 +12,15 @@ import {
   type SubmitAssessmentAttemptResult,
 } from '@/features/student/assessments/api'
 import { fetchStudentCourseContentWithProgress } from '@/features/student/courses/api'
-import type { Assessment, AssessmentOption } from '@/types/content'
+import type { Assessment, AssessmentOption, StudentCourseModuleProgress } from '@/types/content'
 
 export function StudentAssessmentExecutionPage() {
   const { courseId, assessmentId } = useParams<{ courseId: string; assessmentId: string }>()
   const navigate = useNavigate()
-  const { assessments, setModules, setAssessments } = useOutletContext<{ 
+  const { roles } = useAuth()
+  const isAdmin = roles.includes('admin')
+  const { modules, assessments, setModules, setAssessments } = useOutletContext<{ 
+    modules: StudentCourseModuleProgress[],
     assessments: any[], 
     setModules: (m: any) => void, 
     setAssessments: (a: any) => void 
@@ -35,6 +39,11 @@ export function StudentAssessmentExecutionPage() {
   const studentAssessment = useMemo(() => {
     return assessments?.find(a => a.assessment_id === assessmentId || a.id === assessmentId)
   }, [assessments, assessmentId])
+
+  const moduleForAssessment = useMemo(() => {
+    if (!studentAssessment?.module_id) return null
+    return modules.find((module) => module.id === studentAssessment.module_id) ?? null
+  }, [studentAssessment, modules])
 
   useEffect(() => {
     async function loadAssessment() {
@@ -74,6 +83,12 @@ export function StudentAssessmentExecutionPage() {
   const allQuestionsAnswered = useMemo(() => {
     return questions.every((q) => selectedOptions[q.id])
   }, [questions, selectedOptions])
+
+  const isModuleQuizLockedByLessons = useMemo(() => {
+    if (isAdmin) return false
+    if (!moduleForAssessment) return false
+    return moduleForAssessment.lessons.length === 0 || !moduleForAssessment.lessons.every((lesson) => lesson.is_completed)
+  }, [isAdmin, moduleForAssessment])
 
   async function handleSubmit() {
     if (!assessmentId || !courseId) return
@@ -118,6 +133,33 @@ export function StudentAssessmentExecutionPage() {
   }
 
   // Verificar se as tentativas acabaram
+  if (isModuleQuizLockedByLessons && !result) {
+    return (
+      <div className="mx-auto max-w-2xl py-12 md:py-24 animate-in fade-in zoom-in-95 duration-500 p-4">
+        <div className="overflow-hidden rounded-[40px] border border-amber-100 bg-white shadow-2xl shadow-amber-200/20">
+          <div className="p-12 text-center bg-gradient-to-b from-amber-50/60 to-white">
+            <div className="mx-auto mb-8 flex h-24 w-24 items-center justify-center rounded-full bg-amber-100 text-amber-600 shadow-lg shadow-amber-100 border-2 border-white">
+              <svg className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              </svg>
+            </div>
+            <h2 className="text-3xl font-black tracking-tight text-slate-900 leading-tight">Quiz Ainda Bloqueado</h2>
+            <p className="mt-4 text-slate-500 font-medium leading-relaxed">
+              Para realizar o quiz deste mÃ³dulo, conclua todas as aulas do mÃ³dulo primeiro.
+            </p>
+            <Button
+              size="lg"
+              className="mt-10 w-full h-14 bg-slate-900 hover:bg-slate-800 rounded-2xl font-bold shadow-xl shadow-slate-200"
+              onClick={() => navigate(`/aluno/cursos/${courseId}`)}
+            >
+              Voltar para o Curso
+            </Button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   if (studentAssessment?.state === 'failed_limit' && !result) {
     return (
       <div className="mx-auto max-w-2xl py-12 md:py-24 animate-in fade-in zoom-in-95 duration-500 p-4">
