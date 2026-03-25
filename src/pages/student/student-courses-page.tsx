@@ -175,16 +175,16 @@ export function StudentCoursesPage() {
                   </p>
                 </div>
 
-                <div className="mt-auto flex flex-col gap-4 border-t border-slate-50 pt-6 sm:flex-row sm:items-start sm:justify-between">
+                <div className="mt-auto flex flex-col gap-5 border-t border-slate-50 pt-6">
                   <div className="flex items-start gap-1">
                     <div className={`h-2 w-2 rounded-full ${footerStatus.dotClass}`} />
-                    <span className="max-w-[190px] text-[10px] font-black uppercase tracking-widest leading-relaxed text-slate-400">
+                    <span className="max-w-full text-[10px] font-black uppercase tracking-widest leading-relaxed text-slate-400">
                       {footerStatus.label}
                     </span>
                   </div>
                   <Link
                     to={`/aluno/cursos/${course.id}`}
-                    className="group/btn flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-blue-600 transition-colors hover:text-blue-700 sm:self-end"
+                    className="group/btn flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-blue-600 transition-colors hover:text-blue-700"
                   >
                     {footerStatus.cta}
                     <svg className="h-3 w-3 transition-transform group-hover/btn:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
