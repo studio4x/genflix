@@ -6,8 +6,8 @@ import 'react-quill/dist/quill.snow.css'
 import QuillBetterTable from 'quill-better-table'
 import 'quill-better-table/dist/quill-better-table.css'
 
-// Register the better-table module
-Quill.register({ 'modules/better-table': QuillBetterTable }, true)
+// Register the better-table module - use standard registration
+Quill.register('modules/better-table', QuillBetterTable)
 
 import { createLesson, deleteLesson, updateLesson, toErrorMessage } from '@/features/admin/content/api'
 import { lessonFormSchema, type LessonFormInput } from '@/features/admin/content/schemas'
@@ -31,7 +31,6 @@ const quillModules = {
     ['bold', 'italic', 'underline', 'strike'],
     [{ 'list': 'ordered' }, { 'list': 'bullet' }],
     ['link', 'blockquote', 'code-block'],
-    ['table'], // O quill-better-table usa o botão padrão de tabela
     ['clean']
   ],
   table: false, // Desativa o módulo de tabela nativo
@@ -41,15 +40,8 @@ const quillModules = {
         unmergeCells: {
           text: 'Desmesclar células'
         }
-      },
-      color: {
-        colors: ['#fff', 'red', 'rgb(0, 0, 0)'],
-        text: 'Cores de fundo'
       }
     }
-  },
-  keyboard: {
-    bindings: QuillBetterTable.keyboardBindings
   }
 }
 
