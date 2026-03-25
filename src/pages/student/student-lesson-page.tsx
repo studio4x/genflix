@@ -11,6 +11,11 @@ import {
   setLessonCompletion,
   toErrorMessage,
 } from '@/features/student/courses/api'
+import {
+  fetchStudentCourseAssessments,
+  type StudentCourseAssessmentSummary,
+} from '@/features/student/assessments/api'
+import { fetchAdminCourseTree, type AdminCourseTree } from '@/features/admin/content/api'
 import type { Course, StudentCourseModuleProgress, StudentLessonWithProgress } from '@/types/content'
 import { splitContent } from '@/features/admin/content/content-blocks'
 import { ContentBlocksRenderer } from '@/features/admin/content/content-blocks-renderer'
@@ -26,10 +31,11 @@ function extractVideoId(url: string | null) {
 export function StudentLessonPage() {
   const { courseId, lessonId } = useParams<{ courseId: string; lessonId: string }>()
   const navigate = useNavigate()
-  const { user } = useAuth()
+  const { user, roles } = useAuth()
   
   const [course, setCourse] = useState<Course | null>(null)
   const [modules, setModules] = useState<StudentCourseModuleProgress[]>([])
+  const [assessments, setAssessments] = useState<StudentCourseAssessmentSummary[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [isSidebarOpen, setIsSidebarOpen] = useState(true)
@@ -42,14 +48,92 @@ export function StudentLessonPage() {
     async function loadData() {
       if (!courseId) return
       setIsLoading(true)
+      const isAdmin = roles.includes('admin')
       try {
-        const [courseResult, modulesResult] = await Promise.all([
-          fetchReleasedCourseById(courseId),
-          fetchStudentCourseContentWithProgress(courseId),
-        ])
-        if (isMounted) {
-          setCourse(courseResult)
-          setModules(modulesResult)
+        if (isAdmin) {
+          const tree: AdminCourseTree = await fetchAdminCourseTree(courseId)
+          if (isMounted) {
+            setCourse(tree.course)
+            setModules(tree.modules.map(m => ({
+              id: m.id,
+              course_id: m.course_id,
+              position: m.position,
+              title: m.title,
+              description: m.description,
+              is_required: m.is_required,
+              state: 'in_progress',
+              is_unlocked: true,
+              is_completed: false,
+              required_lessons_total: m.lessons.filter(l => l.is_required).length,
+              required_lessons_completed: 0,
+              has_required_assessment: m.assessments.some(a => a.is_required),
+              required_assessment_approved: false,
+              progress_percent: 0,
+              lessons: m.lessons.map(l => ({
+                id: l.id,
+                module_id: l.module_id,
+                position: l.position,
+                title: l.title,
+                description: l.description,
+                is_required: l.is_required,
+                lesson_type: l.lesson_type,
+                youtube_url: l.youtube_url,
+                text_content: l.text_content,
+                estimated_minutes: l.estimated_minutes,
+                is_completed: false,
+                completed_at: null
+              }))
+            })))
+            setAssessments([
+               ...tree.courseAssessments.map(a => ({
+                 assessment_id: a.id,
+                 title: a.title,
+                 assessment_type: a.assessment_type as 'module' | 'final',
+                 module_id: null,
+                 module_position: null,
+                 description: a.description,
+                 is_required: a.is_required,
+                 passing_score: a.passing_score,
+                 max_attempts: a.max_attempts,
+                 is_active: a.is_active,
+                 is_unlocked: true,
+                 attempts_used: 0,
+                 last_score: null,
+                 last_is_approved: false,
+                 remaining_attempts: a.max_attempts,
+                 state: 'available' as const
+               })),
+               ...tree.modules.flatMap(m => m.assessments.map(a => ({
+                 assessment_id: a.id,
+                 title: a.title,
+                 assessment_type: a.assessment_type as 'module' | 'final',
+                 module_id: m.id,
+                 module_position: m.position,
+                 description: a.description,
+                 is_required: a.is_required,
+                 passing_score: a.passing_score,
+                 max_attempts: a.max_attempts,
+                 is_active: a.is_active,
+                 is_unlocked: true,
+                 attempts_used: 0,
+                 last_score: null,
+                 last_is_approved: false,
+                 remaining_attempts: a.max_attempts,
+                 state: 'available' as const
+               })))
+            ])
+          }
+        } else {
+          const [courseResult, modulesResult, assessmentsResult] = await Promise.all([
+            fetchReleasedCourseById(courseId),
+            fetchStudentCourseContentWithProgress(courseId),
+            fetchStudentCourseAssessments(courseId),
+          ])
+          if (isMounted) {
+            setCourse(courseResult)
+            setModules(modulesResult)
+            setAssessments(assessmentsResult)
+          }
         }
       } catch (err) {
         if (isMounted) setError(toErrorMessage(err))
@@ -249,6 +333,40 @@ export function StudentLessonPage() {
                     </Link>
                   )
                 })}
+
+                {/* MODULAR QUIZZES IN SIDEBAR */}
+                {(() => {
+                   const moduleQuiz = assessments.find(a => a.assessment_type === 'module' && a.module_id === m.id)
+                   if (!moduleQuiz) return null
+                   const isBlocked = m.state === 'blocked' || moduleQuiz.state === 'blocked'
+                   const isApproved = moduleQuiz.state === 'approved'
+
+                   return (
+                      <Link
+                        to={isBlocked ? '#' : `/aluno/cursos/${courseId}/avaliacoes/${moduleQuiz.assessment_id}`}
+                        className={`group flex items-start gap-3 rounded-lg p-2.5 transition-all text-sm border border-dashed mt-2 ${
+                          isBlocked ? 'opacity-50 cursor-not-allowed grayscale bg-slate-50' : 'hover:bg-blue-50/50 cursor-pointer border-blue-200'
+                        } ${isApproved ? 'bg-emerald-50/30 border-emerald-200' : ''}`}
+                        onClick={(e) => {
+                          if (isBlocked) e.preventDefault()
+                        }}
+                      >
+                         <div className={`mt-0.5 shrink-0 flex h-5 w-5 items-center justify-center rounded-lg border transition-colors ${
+                           isApproved ? 'bg-emerald-500 border-emerald-500 text-white' : 'bg-white border-blue-400 text-blue-500'
+                         }`}>
+                           {isApproved ? (
+                              <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
+                           ) : (
+                              <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                           )}
+                         </div>
+                         <div className="flex-1 overflow-hidden">
+                            <p className="truncate font-black text-[10px] uppercase tracking-tighter text-blue-600">QUIZ DO MÓDULO</p>
+                            <p className={`truncate font-bold ${isApproved ? 'text-emerald-700' : 'text-slate-700'}`}>{moduleQuiz.title}</p>
+                         </div>
+                      </Link>
+                   )
+                })()}
               </div>
             </div>
           ))}
