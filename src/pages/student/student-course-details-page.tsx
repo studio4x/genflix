@@ -252,12 +252,6 @@ export function StudentCourseDetailsPage() {
          <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/60 to-transparent z-10" />
 
          <div className="relative z-20 space-y-6 max-w-4xl">
-            <nav className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-blue-400">
-              <Link to="/aluno/cursos" className="hover:text-white transition-colors">Meus Cursos</Link>
-              <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M9 5l7 7-7 7" /></svg>
-              <span className="text-white/60 truncate">{course.title}</span>
-            </nav>
-
             <div className="space-y-4">
                <h1 className="text-4xl md:text-6xl font-black text-white leading-tight tracking-tighter">
                   {course.title}
