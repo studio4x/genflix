@@ -43,7 +43,7 @@ export function StudentCoursesPage() {
       </header>
 
       {isLoading ? (
-        <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-2">
           {[1, 2, 3].map(i => (
             <div key={i} className="h-[400px] rounded-[32px] bg-slate-100/50 animate-pulse border border-slate-50 shadow-sm" />
           ))}
@@ -71,7 +71,7 @@ export function StudentCoursesPage() {
         </div>
       ) : null}
 
-      <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-2">
         {courses.map((course) => (
           <article 
             key={course.id} 
@@ -131,4 +131,3 @@ export function StudentCoursesPage() {
     </div>
   )
 }
-
