@@ -76,3 +76,10 @@ Fluxo padrao definido para Sprint 1:
 3. Bloquear reexecucao da rotina de bootstrap apos criacao inicial.
 
 Detalhes em `docs/architecture/foundation-rules.md`.
+
+## Diretriz operacional do agente
+
+Ao concluir qualquer tarefa de implementacao neste repositorio, o agente deve:
+
+1. Publicar as alteracoes no GitHub (commit + push).
+2. Publicar as alteracoes de banco no Supabase (migracoes/funcoes/policies), quando houver mudancas em `supabase/`.

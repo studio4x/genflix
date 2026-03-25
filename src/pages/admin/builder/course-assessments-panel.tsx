@@ -2,9 +2,9 @@ import { useCourseBuilder } from '@/app/layouts/admin-course-builder-layout'
 import { Button } from '@/components/ui/button'
 import { Link, useParams } from 'react-router-dom'
 import { useState } from 'react'
-import { importAssessmentContent, deleteAssessment, createFinalAssessment, createModuleAssessment, fetchFinalAssessment, fetchModuleAssessment } from '@/features/admin/assessments/api'
+import { importAssessmentContent, deleteAssessment, createFinalAssessment, createModuleAssessment, fetchFinalAssessment, fetchModuleAssessment, exportFinalAssessmentContent, toErrorMessage } from '@/features/admin/assessments/api'
 import { useAuth } from '@/app/providers/auth-provider'
-import { toErrorMessage } from '@/features/admin/assessments/api'
+import { downloadJsonFile } from '@/lib/download'
 
 export function CourseAssessmentsPanel() {
   const { courseId } = useParams<{ courseId: string }>()
@@ -15,6 +15,7 @@ export function CourseAssessmentsPanel() {
   const [importJson, setImportJson] = useState('')
   const [isImporting, setIsImporting] = useState(false)
   const [importError, setImportError] = useState<string | null>(null)
+  const [isExportingFinal, setIsExportingFinal] = useState(false)
   
   // Se estiver importando para um módulo específico
   const [targetModuleId, setTargetModuleId] = useState<string | null>(null)
@@ -111,6 +112,20 @@ export function CourseAssessmentsPanel() {
     }
   }
 
+  async function handleExportFinalAssessment() {
+    if (!courseId) return
+    setIsExportingFinal(true)
+    try {
+      const exportData = await exportFinalAssessmentContent(courseId)
+      const courseTitle = courseTree?.course.title || 'curso'
+      downloadJsonFile(`avaliacao_final_${courseTitle}`, exportData)
+    } catch (err) {
+      setImportError(toErrorMessage(err))
+    } finally {
+      setIsExportingFinal(false)
+    }
+  }
+
   return (
     <>
       <div className="max-w-4xl mx-auto space-y-6 animate-in fade-in duration-500 pb-20">
@@ -133,6 +148,16 @@ export function CourseAssessmentsPanel() {
                      </div>
                   </div>
                   <div className="flex items-center gap-2">
+                     <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => void handleExportFinalAssessment()}
+                        className="text-slate-600 hover:bg-slate-100 font-bold"
+                        disabled={isExportingFinal}
+                     >
+                        <svg className="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                        {isExportingFinal ? 'Exportando...' : 'Exportar JSON'}
+                     </Button>
                      <Button 
                         size="sm" 
                         variant="ghost" 

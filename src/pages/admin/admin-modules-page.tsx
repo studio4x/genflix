@@ -7,12 +7,14 @@ import { useLocalStorageState } from '@/hooks/use-local-storage-state'
 import {
   createModule,
   deleteModule,
+  exportModuleContent,
   fetchCourse,
   fetchModules,
   moveModule,
   toErrorMessage,
   updateModule,
 } from '@/features/admin/content/api'
+import { downloadJsonFile } from '@/lib/download'
 import {
   moduleFormSchema,
   type ModuleFormInput,
@@ -42,6 +44,7 @@ export function AdminModulesPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [exportingModuleId, setExportingModuleId] = useState<string | null>(null)
   const draftStorageKey = useMemo(
     () => `admin:modules:${courseId ?? 'unknown'}:editor-draft`,
     [courseId],
@@ -160,6 +163,19 @@ export function AdminModulesPage() {
       await loadData()
     } catch (moveError) {
       setError(toErrorMessage(moveError))
+    }
+  }
+
+  async function handleExportModule(module: CourseModule) {
+    setExportingModuleId(module.id)
+    setError(null)
+    try {
+      const exportData = await exportModuleContent(module.id)
+      downloadJsonFile(`modulo_${module.title}`, exportData)
+    } catch (err) {
+      setError(toErrorMessage(err))
+    } finally {
+      setExportingModuleId(null)
     }
   }
 
@@ -370,6 +386,16 @@ export function AdminModulesPage() {
                 </div>
 
                 <div className="bg-slate-50 border-t border-slate-100 px-4 py-3 flex flex-wrap items-center justify-end gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-8 px-4 text-xs font-semibold bg-white border-slate-200 hover:bg-slate-100 hover:text-slate-900 shadow-sm"
+                    onClick={() => void handleExportModule(module)}
+                    disabled={exportingModuleId === module.id}
+                  >
+                    {exportingModuleId === module.id ? 'Exportando...' : 'Exportar JSON'}
+                  </Button>
                   <Button type="button" variant="outline" size="sm" className="h-8 px-4 text-xs font-semibold bg-white border-slate-200 hover:bg-slate-100 hover:text-slate-900 shadow-sm" asChild>
                     <Link to={`/admin/cursos/${courseId}/builder/assessments`}>Avaliações</Link>
                   </Button>

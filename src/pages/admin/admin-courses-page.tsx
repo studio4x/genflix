@@ -10,12 +10,14 @@ import { useLocalStorageState } from '@/hooks/use-local-storage-state'
 import {
   createCourse,
   deleteCourse,
+  exportFullCourseContent,
   fetchCourses,
   updateCourse,
   uploadCourseThumbnail,
   toErrorMessage,
   importFullCourse,
 } from '@/features/admin/content/api'
+import { downloadJsonFile } from '@/lib/download'
 import {
   courseFormSchema,
   type CourseFormInput,
@@ -65,6 +67,7 @@ export function AdminCoursesPage() {
   const [importJson, setImportJson] = useState('')
   const [isImporting, setIsImporting] = useState(false)
   const [importError, setImportError] = useState<string | null>(null)
+  const [exportingCourseId, setExportingCourseId] = useState<string | null>(null)
 
   async function loadCourses() {
     setIsLoading(true)
@@ -215,6 +218,19 @@ export function AdminCoursesPage() {
     }
   }
 
+  async function handleExportCourse(course: Course) {
+    setExportingCourseId(course.id)
+    setError(null)
+    try {
+      const exportData = await exportFullCourseContent(course.id)
+      downloadJsonFile(`curso_completo_${course.title}`, exportData)
+    } catch (err) {
+      setError(toErrorMessage(err))
+    } finally {
+      setExportingCourseId(null)
+    }
+  }
+
   const metrics = useMemo(() => {
      return {
         total: courses.length,
@@ -359,6 +375,19 @@ export function AdminCoursesPage() {
                                 <svg className="h-5 w-5 opacity-50 group-hover/sub:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                                 <span className="text-[10px] font-bold uppercase tracking-tighter">Avaliações</span>
                              </Link>
+                          </Button>
+                          <Button
+                             onClick={() => void handleExportCourse(course)}
+                             variant="ghost"
+                             className="w-10 h-10 p-0 rounded-xl text-slate-300 hover:text-blue-600 hover:bg-blue-50"
+                             title="Exportar curso completo (JSON)"
+                             disabled={exportingCourseId === course.id}
+                          >
+                             {exportingCourseId === course.id ? (
+                                <span className="h-4 w-4 rounded-full border-2 border-blue-200 border-t-blue-600 animate-spin" />
+                             ) : (
+                                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                             )}
                           </Button>
                           <Button 
                              onClick={() => handleEdit(course)}

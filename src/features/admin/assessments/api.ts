@@ -324,6 +324,46 @@ export interface ImportAssessmentData {
   }[]
 }
 
+export async function exportAssessmentContent(assessmentId: string): Promise<ImportAssessmentData> {
+  const assessmentResult = await supabase
+    .from('assessments')
+    .select('*')
+    .eq('id', assessmentId)
+    .single()
+
+  if (assessmentResult.error) {
+    throw assessmentResult.error
+  }
+
+  const assessment = assessmentResult.data as Assessment
+  const questions = await fetchAssessmentQuestions(assessmentId)
+
+  return {
+    title: assessment.title,
+    description: assessment.description ?? '',
+    passing_score: assessment.passing_score,
+    max_attempts: assessment.max_attempts,
+    estimated_minutes: assessment.estimated_minutes,
+    questions: questions.map((question) => ({
+      question_text: question.question_text,
+      points: question.points,
+      is_required: question.is_required,
+      options: question.options.map((option) => ({
+        option_text: option.option_text,
+        is_correct: option.is_correct,
+      })),
+    })),
+  }
+}
+
+export async function exportFinalAssessmentContent(courseId: string): Promise<ImportAssessmentData> {
+  const finalAssessment = await fetchFinalAssessment(courseId)
+  if (!finalAssessment) {
+    throw new Error('Nenhuma avaliacao final encontrada para este curso.')
+  }
+  return exportAssessmentContent(finalAssessment.id)
+}
+
 export async function importAssessmentContent(assessmentId: string, data: ImportAssessmentData) {
   // 1. Atualizar dados básicos da avaliação
   const { error: updateError } = await supabase

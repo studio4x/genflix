@@ -1,4 +1,5 @@
 import { supabase } from '@/services/supabase/client'
+import { exportAssessmentContent, type ImportAssessmentData } from '@/features/admin/assessments/api'
 import type {
   Course,
   CourseModule,
@@ -521,6 +522,121 @@ export interface ImportModuleData {
       }[]
     }[]
   }[]
+}
+
+export interface ExportModuleData {
+  title: string
+  description?: string
+  lessons?: {
+    title: string
+    description?: string
+    lesson_type: 'video' | 'text' | 'hybrid'
+    youtube_url?: string
+    text_content?: string
+    estimated_minutes?: number
+  }[]
+  assessments?: (ImportAssessmentData & { assessment_type: 'module' })[]
+}
+
+export interface ExportCourseFullData {
+  title: string
+  description?: string
+  workload_minutes?: number
+  thumbnail_url?: string
+  status?: 'draft' | 'published' | 'archived'
+  modules: ExportModuleData[]
+}
+
+export async function exportModuleContent(moduleId: string): Promise<ExportModuleData> {
+  const moduleResult = await supabase
+    .from('course_modules')
+    .select('*')
+    .eq('id', moduleId)
+    .single()
+
+  if (moduleResult.error) {
+    throw moduleResult.error
+  }
+
+  const module = moduleResult.data as CourseModule
+
+  const [lessonsResult, assessmentsResult] = await Promise.all([
+    supabase
+      .from('lessons')
+      .select('*')
+      .eq('module_id', moduleId)
+      .order('position', { ascending: true }),
+    supabase
+      .from('assessments')
+      .select('*')
+      .eq('module_id', moduleId)
+      .eq('assessment_type', 'module')
+      .order('created_at', { ascending: true }),
+  ])
+
+  if (lessonsResult.error) {
+    throw lessonsResult.error
+  }
+
+  if (assessmentsResult.error) {
+    throw assessmentsResult.error
+  }
+
+  const lessons = (lessonsResult.data as Lesson[]) ?? []
+  const assessments = (assessmentsResult.data as Assessment[]) ?? []
+
+  const exportedAssessments = await Promise.all(
+    assessments.map(async (assessment) => ({
+      ...(await exportAssessmentContent(assessment.id)),
+      assessment_type: 'module' as const,
+    })),
+  )
+
+  return {
+    title: module.title,
+    description: module.description ?? '',
+    lessons: lessons.map((lesson) => ({
+      title: lesson.title,
+      description: lesson.description ?? '',
+      lesson_type: lesson.lesson_type,
+      youtube_url: lesson.youtube_url ?? '',
+      text_content: lesson.text_content ?? '',
+      estimated_minutes: lesson.estimated_minutes,
+    })),
+    assessments: exportedAssessments,
+  }
+}
+
+export async function exportFullCourseContent(courseId: string): Promise<ExportCourseFullData> {
+  const [courseResult, modulesResult] = await Promise.all([
+    supabase.from('courses').select('*').eq('id', courseId).single(),
+    supabase
+      .from('course_modules')
+      .select('*')
+      .eq('course_id', courseId)
+      .order('position', { ascending: true }),
+  ])
+
+  if (courseResult.error) {
+    throw courseResult.error
+  }
+
+  if (modulesResult.error) {
+    throw modulesResult.error
+  }
+
+  const course = courseResult.data as Course
+  const modules = (modulesResult.data as CourseModule[]) ?? []
+  const exportedModules = await Promise.all(modules.map((module) => exportModuleContent(module.id)))
+
+  return {
+    title: course.title,
+    description: course.description ?? '',
+    workload_minutes: course.workload_minutes,
+    thumbnail_url: course.thumbnail_url ?? '',
+    status: course.status,
+    modules: exportedModules,
+  }
 }
 
 export async function clearCourseContent(courseId: string) {
