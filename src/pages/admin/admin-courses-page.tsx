@@ -16,7 +16,6 @@ import {
   toErrorMessage,
   importFullCourse,
 } from '@/features/admin/content/api'
-import type { ImportCourseFullData } from '@/features/admin/content/api'
 import {
   courseFormSchema,
   type CourseFormInput,

@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useState } from 'react'
 import { Link, Outlet, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { fetchAdminCourseTree, toErrorMessage, importCourseContent } from '@/features/admin/content/api'
-import type { AdminCourseTree, ImportModuleData } from '@/features/admin/content/api'
+import type { AdminCourseTree } from '@/features/admin/content/api'
 
 
 interface BuilderContextData {
