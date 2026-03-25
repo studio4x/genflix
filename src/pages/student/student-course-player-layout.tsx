@@ -251,7 +251,7 @@ export function StudentCoursePlayerLayout() {
                          onClick={(e) => isLocked && e.preventDefault()}
                          className={`relative mt-2 p-3 rounded-2xl border-2 transition-all group flex items-start gap-3 ${
                             isLocked ? 'opacity-50 cursor-not-allowed grayscale bg-slate-50 border-slate-100' :
-                            isFailedLimit ? 'border-rose-100 bg-rose-50/30 hover:border-rose-200' :
+                             isFailedLimit ? 'border-rose-200 bg-rose-100 shadow-sm hover:border-rose-300' :
                             isActive ? 'border-blue-600 bg-blue-50 shadow-md ring-4 ring-blue-600/5' : 
                             isApproved ? 'border-emerald-100 bg-emerald-50/50' :
                             'border-slate-100 bg-white hover:border-blue-200'
@@ -270,7 +270,7 @@ export function StudentCoursePlayerLayout() {
                          </div>
                          <div className="flex-1 overflow-hidden">
                             <p className={`truncate font-black text-[10px] uppercase tracking-tighter ${isFailedLimit ? 'text-rose-600' : 'text-blue-600'}`}>
-                               {isFailedLimit ? 'TENTATIVAS ESGOTADAS' : 'QUIZ DO MÓDULO'}
+                                {isFailedLimit ? 'TENTATIVAS ESGOTADAS ⚠️' : 'QUIZ DO MÓDULO'}
                             </p>
                             <p className={`truncate font-bold ${isApproved ? 'text-emerald-700' : isFailedLimit ? 'text-rose-900' : 'text-slate-700'}`}>{moduleQuiz.title}</p>
                          </div>
