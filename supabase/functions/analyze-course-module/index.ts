@@ -33,14 +33,15 @@ Deno.serve(async (request) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
     const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY') ?? ''
     const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    const openAiApiKey = Deno.env.get('OPENAI_API_KEY') ?? ''
     const geminiApiKey = Deno.env.get('GEMINI_API_KEY') ?? ''
 
     if (!supabaseUrl || !supabaseAnonKey || !supabaseServiceRoleKey) {
       return jsonResponse({ error: 'Supabase env ausente na edge function.' }, 500)
     }
 
-    if (!geminiApiKey) {
-      return jsonResponse({ error: 'GEMINI_API_KEY nao configurada na edge function.' }, 500)
+    if (!openAiApiKey && !geminiApiKey) {
+      return jsonResponse({ error: 'Nenhum provedor de IA configurado na edge function.' }, 500)
     }
 
     if (!accessToken) {
@@ -98,36 +99,10 @@ Deno.serve(async (request) => {
       standards,
     })
 
-    const geminiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiApiKey}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        contents: [
-          {
-            role: 'user',
-            parts: [{ text: prompt }],
-          },
-        ],
-        generationConfig: {
-          temperature: 0.2,
-        },
-      }),
+    const rawText = await generateAnalysisJson(prompt, {
+      openAiApiKey,
+      geminiApiKey,
     })
-
-    if (!geminiResponse.ok) {
-      const geminiError = await geminiResponse.text()
-      return jsonResponse({ error: `Falha ao consultar Gemini: ${geminiError}` }, 500)
-    }
-
-    const geminiPayload = await geminiResponse.json()
-    const rawText = geminiPayload?.candidates?.[0]?.content?.parts?.[0]?.text
-
-    if (!rawText) {
-      return jsonResponse({ error: 'Gemini nao retornou um payload valido.' }, 500)
-    }
-
     const parsed = JSON.parse(extractJsonObject(rawText))
     return jsonResponse(parsed, 200)
   } catch (error) {
@@ -267,4 +242,105 @@ function extractJsonObject(value: string) {
   }
 
   throw new Error('Gemini retornou texto sem um objeto JSON valido.')
+}
+
+async function generateAnalysisJson(
+  prompt: string,
+  providers: {
+    openAiApiKey: string
+    geminiApiKey: string
+  },
+) {
+  if (providers.openAiApiKey) {
+    const openAiResult = await generateWithOpenAi(prompt, providers.openAiApiKey)
+
+    if (openAiResult.ok) {
+      return openAiResult.text
+    }
+  }
+
+  if (providers.geminiApiKey) {
+    return await generateWithGemini(prompt, providers.geminiApiKey)
+  }
+
+  throw new Error('Nenhum provedor de IA disponivel para a analise.')
+}
+
+async function generateWithOpenAi(prompt: string, apiKey: string) {
+  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: 'gpt-4o-mini',
+      temperature: 0.2,
+      response_format: {
+        type: 'json_object',
+      },
+      messages: [
+        {
+          role: 'user',
+          content: prompt,
+        },
+      ],
+    }),
+  })
+
+  if (!response.ok) {
+    return {
+      ok: false as const,
+      errorText: await response.text(),
+    }
+  }
+
+  const payload = await response.json()
+  const text = payload?.choices?.[0]?.message?.content
+
+  if (!text || typeof text !== 'string') {
+    return {
+      ok: false as const,
+      errorText: 'OpenAI nao retornou conteudo textual valido.',
+    }
+  }
+
+  return {
+    ok: true as const,
+    text,
+  }
+}
+
+async function generateWithGemini(prompt: string, apiKey: string) {
+  const geminiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      contents: [
+        {
+          role: 'user',
+          parts: [{ text: prompt }],
+        },
+      ],
+      generationConfig: {
+        temperature: 0.2,
+      },
+    }),
+  })
+
+  if (!geminiResponse.ok) {
+    const geminiError = await geminiResponse.text()
+    throw new Error(`Falha ao consultar Gemini: ${geminiError}`)
+  }
+
+  const geminiPayload = await geminiResponse.json()
+  const rawText = geminiPayload?.candidates?.[0]?.content?.parts?.[0]?.text
+
+  if (!rawText || typeof rawText !== 'string') {
+    throw new Error('Gemini nao retornou um payload valido.')
+  }
+
+  return rawText
 }
