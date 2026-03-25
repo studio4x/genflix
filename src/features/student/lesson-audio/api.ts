@@ -17,7 +17,17 @@ export interface LessonNarrationPayload {
 }
 
 export async function prepareLessonNarration(lessonId: string) {
+  const sessionResult = await supabase.auth.getSession()
+  const accessToken = sessionResult.data.session?.access_token
+
+  if (!accessToken) {
+    throw new Error('Sessao expirada. Faca login novamente para gerar a narracao.')
+  }
+
   const result = await supabase.functions.invoke('generate-lesson-audio', {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
     body: {
       lessonId,
     },
