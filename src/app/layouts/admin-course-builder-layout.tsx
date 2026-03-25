@@ -63,27 +63,26 @@ export function AdminCourseBuilderLayout() {
     setIsImporting(true)
     setImportError(null)
     try {
-      // 1. Limpeza inteligente do JSON (Remove markdown e quebras de linha que quebram o parse)
+      // 1. Limpeza inteligente dos blocos de código Markdown
       let cleanedJson = importJson.trim()
-      
-      // Remove blocos de código markdown (```json ... ```)
-      if (cleanedJson.startsWith('```')) {
-        const parts = cleanedJson.split('```')
-        cleanedJson = parts.length >= 3 ? parts[1].replace(/^json\s+/, '').trim() : cleanedJson
-      }
-
-      // Tentar limpar quebras de linha literais dentro de strings (problema comum com Claude/GPT)
-      // Substituímos quebras de linha manuais por \n literal para o JSON.parse aceitar
-      // (Esta é uma limpeza básica, mas resolve 90% dos casos de IA)
-      cleanedJson = cleanedJson.replace(/\n(?!"\s*[}\],:])/g, '\\n')
-      // Se a limpeza acima for agressiva e quebrar o JSON estrutural, o try/catch cuidará
+        .replace(/^```(json)?\s+/, '')
+        .replace(/\s+```$/, '')
+        .trim()
       
       let data
       try {
+        // Tenta o parse original (mais seguro se o JSON estiver bem formatado)
         data = JSON.parse(cleanedJson)
-      } catch (parseErr) {
-        // Fallback: Tenta o parse original se o cleaned falhar por algum motivo
-        data = JSON.parse(importJson.trim().replace(/^```json/, '').replace(/```$/, '').trim())
+      } catch (err1) {
+        try {
+          // Se falhar, aplica a limpeza de quebras de linha literais dentro de strings
+          // O regex agora ignora caracteres estruturais do JSON ({, }, [, ], ", :, ,, números e chaves)
+          const fixedJson = cleanedJson.replace(/\n(?!\s*[\{\}\[\]",:0-9\-\.tfn])/g, '\\n')
+          data = JSON.parse(fixedJson)
+        } catch (err2) {
+          console.error('Falha em ambos os parses:', err1, err2)
+          throw new Error('O JSON fornecido possui erros de sintaxe (como aspas faltando ou quebras de linha inesperadas).')
+        }
       }
 
       await importCourseContent(courseId, data, clearExisting)
