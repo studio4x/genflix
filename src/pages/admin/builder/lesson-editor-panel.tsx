@@ -55,19 +55,15 @@ export function LessonEditorPanel() {
       return
     }
 
-    if (courseTree && lessonId) {
-      // Find the lesson in the tree
-      let found = null
-      for (const m of courseTree.modules) {
-        const lesson = m.lessons.find((l) => l.id === lessonId)
-        if (lesson) {
-          found = lesson
-          break
-        }
-      }
-      
       if (found) {
         const textContent = found.text_content ?? ''
+        const containsTable = textContent.includes('<table')
+        
+        // Se o conteúdo tiver tabela, forçar modo HTML ANTES de setar o formulário
+        if (containsTable) {
+          setEditorMode('html')
+        }
+
         setForm({
           title: found.title,
           description: found.description ?? '',
@@ -77,13 +73,7 @@ export function LessonEditorPanel() {
           text_content: textContent,
           estimated_minutes: found.estimated_minutes,
         })
-        
-        // Se o conteúdo tiver tabela, forçar modo HTML para não estragar
-        if (textContent.includes('<table')) {
-          setEditorMode('html')
-        }
       }
-    }
   }, [isNew, lessonId, courseTree])
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -274,7 +264,7 @@ export function LessonEditorPanel() {
                         </div>
                      </div>
 
-                     {editorMode === 'visual' ? (
+                     {editorMode === 'visual' && !form.text_content.includes('<table') ? (
                         <ReactQuill
                           theme="snow"
                           value={form.text_content}
@@ -284,12 +274,19 @@ export function LessonEditorPanel() {
                           placeholder="Escreva aqui o conteúdo textual detalhado da sua aula..."
                         />
                      ) : (
-                        <textarea
-                          className="w-full min-h-[400px] p-6 font-mono text-[13px] bg-slate-900 text-emerald-400 rounded-xl border border-slate-800 transition-all focus:ring-4 focus:ring-blue-100 shadow-inner no-scrollbar leading-relaxed"
-                          value={form.text_content}
-                          onChange={(e) => setForm(prev => ({ ...prev, text_content: e.target.value }))}
-                          placeholder="Cole ou edite seu código HTML aqui..."
-                        />
+                        <div className="space-y-4">
+                           {form.text_content.includes('<table') && editorMode === 'visual' && (
+                              <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-amber-700 text-[11px] font-bold">
+                                 ⚠️ Detetamos uma tabela. O editor visual foi desativado para proteger a estrutura. Use o modo "Código HTML" acima.
+                              </div>
+                           )}
+                           <textarea
+                             className="w-full min-h-[400px] p-6 font-mono text-[13px] bg-slate-900 text-emerald-400 rounded-xl border border-slate-800 transition-all focus:ring-4 focus:ring-blue-100 shadow-inner no-scrollbar leading-relaxed"
+                             value={form.text_content}
+                             onChange={(e) => setForm(prev => ({ ...prev, text_content: e.target.value }))}
+                             placeholder="Cole ou edite seu código HTML aqui..."
+                           />
+                        </div>
                      )}
                   </div>
                 )}
