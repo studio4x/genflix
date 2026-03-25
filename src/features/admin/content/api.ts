@@ -583,9 +583,61 @@ export async function importCourseContent(courseId: string, input: any, clearExi
   }
 
   const modules = (Array.isArray(input) ? input : (input && Array.isArray(input.modules) ? input.modules : [])) as ImportModuleData[]
+  const isAssessmentOnly = !Array.isArray(input) && input && Array.isArray(input.questions) && !input.modules
 
-  if (modules.length === 0) {
-    throw new Error('Nenhum módulo encontrado no JSON para importar.')
+  if (modules.length === 0 && !isAssessmentOnly) {
+    throw new Error('Nenhum módulo ou conjunto de questões encontrado no JSON para importar.')
+  }
+
+  // Caso especial: Importação de Avaliação Final (sem módulos)
+  if (isAssessmentOnly) {
+    // 1. Criar ou atualizar a avaliação final do curso
+    const { data: assessment, error: aError } = await supabase
+      .from('assessments')
+      .upsert({
+        course_id: courseId,
+        module_id: null,
+        assessment_type: 'final',
+        title: input.title,
+        description: input.description || null,
+        passing_score: input.passing_score || 70,
+        is_active: true
+      }, { onConflict: 'course_id, assessment_type' })
+      .select()
+      .single()
+
+    if (aError) throw aError
+
+    // 2. Limpar questões se necessário (UPSERT em cascata seria ideal, mas fazemos manual)
+    await supabase.from('assessment_questions').delete().eq('assessment_id', assessment.id)
+
+    // 3. Inserir questões
+    for (let qIdx = 0; qIdx < input.questions.length; qIdx++) {
+      const qData = input.questions[qIdx]
+      const { data: question, error: qError } = await supabase
+        .from('assessment_questions')
+        .insert({
+          assessment_id: assessment.id,
+          question_text: qData.question_text,
+          points: qData.points || 1,
+          position: qIdx + 1
+        })
+        .select()
+        .single()
+
+      if (qError) throw qError
+
+      if (qData.options && qData.options.length > 0) {
+        const optionsToInsert = qData.options.map((o: any, oIdx: number) => ({
+          question_id: question.id,
+          option_text: o.option_text,
+          is_correct: o.is_correct,
+          position: oIdx + 1
+        }))
+        await supabase.from('assessment_options').insert(optionsToInsert)
+      }
+    }
+    return // Sucesso na importação apenas de avaliação
   }
 
   // 1. Cálculo da posição inicial
@@ -721,10 +773,8 @@ export async function importFullCourse(data: ImportCourseFullData, userId: strin
 
   if (cError) throw cError
 
-  // 2. Importar Conteúdo (Módulos/Aulas/Quizzes)
-  if (data.modules && data.modules.length > 0) {
-    await importCourseContent(course.id, data.modules, false)
-  }
+  // 2. Importar Conteúdo (Módulos/Aulas/Quizzes ou Avaliação Direta)
+  await importCourseContent(course.id, data, false)
   
   return course
 }

@@ -371,7 +371,7 @@ export function AdminModulesPage() {
 
                 <div className="bg-slate-50 border-t border-slate-100 px-4 py-3 flex flex-wrap items-center justify-end gap-2">
                   <Button type="button" variant="outline" size="sm" className="h-8 px-4 text-xs font-semibold bg-white border-slate-200 hover:bg-slate-100 hover:text-slate-900 shadow-sm" asChild>
-                    <Link to={`/admin/modulos/${module.id}/avaliacao`}>Avaliação Modular</Link>
+                    <Link to={`/admin/cursos/${courseId}/builder/assessments`}>Avaliações</Link>
                   </Button>
                   <Button type="button" variant="outline" size="sm" className="h-8 px-4 text-xs font-bold bg-white border-slate-200 text-blue-600 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-200 shadow-sm" asChild>
                     <Link to={`/admin/modulos/${module.id}/aulas`}>

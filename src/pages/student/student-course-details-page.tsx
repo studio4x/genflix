@@ -355,15 +355,20 @@ export function StudentCourseDetailsPage() {
                <div className="flex items-center gap-4">
                   <div className="text-right hidden sm:block">
                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Avaliação Final</p>
-                     <p className={`text-xs font-bold ${finalAssessment.state === 'approved' ? 'text-emerald-600' : 'text-slate-400'}`}>
-                        {finalAssessment.state === 'approved' ? 'Aprovado ✅' : 'Pendente'}
+                     <p className={`text-xs font-bold ${
+                        finalAssessment.state === 'approved' ? 'text-emerald-600' : 
+                        finalAssessment.state === 'failed_limit' ? 'text-rose-600' : 'text-slate-400'
+                     }`}>
+                        {finalAssessment.state === 'approved' ? 'Aprovado ✅' : 
+                         finalAssessment.state === 'failed_limit' ? 'Reprovado (Sem tentativas)' : 'Pendente'}
                      </p>
                   </div>
-                  <Button asChild disabled={finalAssessment.state === 'blocked'} size="sm" className={`h-12 px-6 rounded-xl font-black ${
+                  <Button asChild disabled={finalAssessment.state === 'blocked' || finalAssessment.state === 'failed_limit'} size="sm" className={`h-12 px-6 rounded-xl font-black ${
                      finalAssessment.state === 'approved' ? 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-lg shadow-emerald-100' : 'bg-blue-600'
                   }`}>
                      <Link to={`/aluno/cursos/${courseId}/player/avaliacoes/${finalAssessment.assessment_id}`}>
-                        {finalAssessment.state === 'approved' ? 'Ver Resultado' : 'Iniciar Prova'}
+                        {finalAssessment.state === 'approved' ? 'Ver Resultado' : 
+                         finalAssessment.state === 'failed_limit' ? 'Acesso Bloqueado' : 'Iniciar Prova'}
                      </Link>
                   </Button>
                </div>
@@ -480,11 +485,17 @@ export function StudentCourseDetailsPage() {
                                                    </div>
                                                    <span className="text-sm font-black text-slate-800 uppercase tracking-tight">{moduleAssessment.title}</span>
                                                 </div>
-                                                <p className="text-xs font-medium text-slate-400">Avaliação Obrigatória do Módulo</p>
+                                                <p className={`text-xs font-bold ${
+                                                    moduleAssessment.state === 'approved' ? 'text-emerald-600' : 
+                                                    moduleAssessment.state === 'failed_limit' ? 'text-rose-600' : 'text-slate-400'
+                                                 }`}>
+                                                    {moduleAssessment.state === 'approved' ? 'Aprovado ✅' : 
+                                                     moduleAssessment.state === 'failed_limit' ? 'Tentativas Esgotadas' : 'Avaliação Obrigatória do Módulo'}</p>
                                              </div>
-                                             <Button size="sm" asChild disabled={moduleAssessment.state === 'blocked'} className={`h-11 px-6 rounded-xl font-black ${moduleAssessment.state === 'approved' ? 'bg-white text-emerald-600 border-emerald-200 shadow-sm' : 'bg-blue-600'}`}>
+                                             <Button size="sm" asChild disabled={moduleAssessment.state === 'blocked' || moduleAssessment.state === 'failed_limit'} className={`h-11 px-6 rounded-xl font-black ${moduleAssessment.state === 'approved' ? 'bg-white text-emerald-600 border-emerald-200 shadow-sm' : 'bg-blue-600'}`}>
                                                 <Link to={`/aluno/cursos/${courseId}/player/avaliacoes/${moduleAssessment.assessment_id}`}>
-                                                   {moduleAssessment.state === 'approved' ? 'Refazer Quiz' : 'Iniciar Quiz'}
+                                                   {moduleAssessment.state === 'approved' ? 'Refazer Quiz' : 
+                                                     moduleAssessment.state === 'failed_limit' ? 'Acesso Bloqueado' : 'Iniciar Quiz'}
                                                 </Link>
                                              </Button>
                                           </div>

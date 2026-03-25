@@ -303,3 +303,77 @@ export async function deleteAssessmentOption(optionId: string) {
   }
 }
 
+
+export interface ImportAssessmentData {
+  title: string
+  description?: string
+  passing_score?: number
+  max_attempts?: number
+  questions: {
+    question_text: string
+    points?: number
+    is_required?: boolean
+    options: {
+      option_text: string
+      is_correct: boolean
+    }[]
+  }[]
+}
+
+export async function importAssessmentContent(assessmentId: string, data: ImportAssessmentData) {
+  // 1. Atualizar dados básicos da avaliação
+  const { error: updateError } = await supabase
+    .from('assessments')
+    .update({
+      title: data.title,
+      description: data.description || null,
+      passing_score: data.passing_score || 70,
+      max_attempts: data.max_attempts || 3,
+    })
+    .eq('id', assessmentId)
+
+  if (updateError) throw updateError
+
+  // 2. Limpar questões existentes (Opcional, mas recomendado para importação limpa)
+  // O cascade delete do banco cuidará das opções.
+  const { error: deleteError } = await supabase
+    .from('assessment_questions')
+    .delete()
+    .eq('assessment_id', assessmentId)
+
+  if (deleteError) throw deleteError
+
+  // 3. Inserir novas questões e opções
+  if (data.questions && data.questions.length > 0) {
+    for (let qIdx = 0; qIdx < data.questions.length; qIdx++) {
+      const qData = data.questions[qIdx]
+      
+      const { data: question, error: qError } = await supabase
+        .from('assessment_questions')
+        .insert({
+          assessment_id: assessmentId,
+          question_text: qData.question_text,
+          points: qData.points || 1,
+          is_required: qData.is_required ?? true,
+          position: qIdx + 1,
+          question_type: 'single_choice'
+        })
+        .select()
+        .single()
+
+      if (qError) throw qError
+
+      if (qData.options && qData.options.length > 0) {
+        const optionsToInsert = qData.options.map((o: any, oIdx: number) => ({
+          question_id: question.id,
+          option_text: o.option_text,
+          is_correct: o.is_correct,
+          position: oIdx + 1
+        }))
+
+        const { error: oError } = await supabase.from('assessment_options').insert(optionsToInsert)
+        if (oError) throw oError
+      }
+    }
+  }
+}

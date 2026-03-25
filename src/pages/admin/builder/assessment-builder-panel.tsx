@@ -16,6 +16,7 @@ import {
   updateAssessment, 
   updateAssessmentOption, 
   updateAssessmentQuestion,
+  importAssessmentContent,
   type AssessmentQuestionWithOptions
 } from '@/features/admin/assessments/api'
 import { fetchModule } from '@/features/admin/content/api'
@@ -33,6 +34,11 @@ export function AssessmentBuilderPanel() {
   
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false)
+  const [importJson, setImportJson] = useState('')
+  const [isImporting, setIsImporting] = useState(false)
+  const [importError, setImportError] = useState<string | null>(null)
 
   const isFinal = !moduleId
 
@@ -197,6 +203,66 @@ export function AssessmentBuilderPanel() {
      }
   }
 
+   async function handleImportJson() {
+      if (!user?.id) return
+      setIsImporting(true)
+      setImportError(null)
+      try {
+        let cleanedJson = importJson.trim()
+        const match = cleanedJson.match(/```(?:json)?\s*([\s\S]*?)\s*```/)
+        if (match && match[1]) {
+          cleanedJson = match[1].trim()
+        } else {
+          cleanedJson = cleanedJson.replace(/^```(json)?\s+/, '').replace(/\s+```$/, '').trim()
+        }
+        
+        let data
+        try {
+          data = JSON.parse(cleanedJson)
+        } catch (err1) {
+          const fixedJson = cleanedJson.replace(/\n(?!\s*[\{\}\[\]",:0-9\-\.tfn])/g, '\\n')
+          data = JSON.parse(fixedJson)
+        }
+
+        let targetAssessmentId = assessment?.id
+
+        if (!targetAssessmentId) {
+          // Criar o registro básico da avaliação se ele não existir
+          const initialData = {
+            title: data.title || (isFinal ? 'Avaliação Final' : `Quiz: ${module?.title || 'Novo Módulo'}`),
+            description: data.description || '',
+            is_required: true,
+            passing_score: data.passing_score || 70,
+            max_attempts: data.max_attempts || 3,
+            is_active: true
+          }
+          
+          if (!isFinal && moduleId) {
+             const newA = await createModuleAssessment(courseId!, moduleId, initialData, user.id)
+             targetAssessmentId = newA.id
+          } else if (courseId) {
+             const newA = await createFinalAssessment(courseId, initialData, user.id)
+             targetAssessmentId = newA.id
+          }
+        }
+
+        if (!targetAssessmentId) {
+          throw new Error('Não foi possível criar ou localizar a avaliação alvo.')
+        }
+
+        await importAssessmentContent(targetAssessmentId, data)
+        await loadData()
+        await refreshTree()
+        setIsImportModalOpen(false)
+        setImportJson('')
+      } catch (err: any) {
+        console.error('Erro no import assessment:', err)
+        setImportError(err?.message || 'Erro inesperado na importação.')
+      } finally {
+        setIsImporting(false)
+      }
+    }
+
   if (isLoading && !assessment) {
      return <div className="flex h-64 items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" /></div>
   }
@@ -258,6 +324,16 @@ export function AssessmentBuilderPanel() {
                   onChange={e => handleUpdateAssessment({ max_attempts: Number(e.target.value) })}
                />
             </div>
+         </div>
+         <div className="flex items-center gap-3">
+            <Button 
+               variant="outline"
+               onClick={() => setIsImportModalOpen(true)}
+               className="h-10 px-4 rounded-xl border-slate-200 text-slate-500 font-bold hover:bg-slate-50 flex items-center gap-2 group transition-all transform active:scale-95 bg-white"
+             >
+                <svg className="h-4 w-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                Importar de IA
+             </Button>
          </div>
       </div>
 
@@ -348,6 +424,58 @@ export function AssessmentBuilderPanel() {
          </button>
       </div>
 
+      {/* AI IMPORT MODAL */}
+      {isImportModalOpen && (
+         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
+            <div className="bg-white rounded-[40px] w-full max-w-2xl shadow-2xl border border-white/20 overflow-y-auto max-h-[90vh] no-scrollbar animate-in zoom-in-95 duration-300">
+               <div className="p-8 border-b border-slate-100 flex items-center justify-between">
+                  <div>
+                     <h3 className="text-xl font-black text-slate-900 tracking-tight text-left">Importar Avaliação via IA</h3>
+                     <p className="text-sm text-slate-500 mt-1 font-medium text-left">O JSON deve conter o título, nota mínima e as questões.</p>
+                  </div>
+                  <button onClick={() => setIsImportModalOpen(false)} className="h-10 w-10 flex items-center justify-center rounded-xl bg-slate-50 text-slate-400 hover:text-slate-900 transition-colors">
+                     <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                  </button>
+               </div>
+
+               <div className="p-8 space-y-6">
+                  <div className="space-y-2 text-left">
+                     <span className="text-xs font-black text-slate-400 uppercase tracking-widest pl-1 block">Código JSON Estruturado</span>
+                     <textarea 
+                        className="w-full h-80 font-mono text-xs p-6 bg-slate-900 text-emerald-400 rounded-2xl border border-slate-800 focus:ring-4 focus:ring-blue-100 transition-all no-scrollbar"
+                        placeholder='{ "title": "...", "questions": [...] }'
+                        value={importJson}
+                        onChange={e => setImportJson(e.target.value)}
+                     />
+                  </div>
+
+                  {importError && (
+                     <div className="p-4 rounded-xl bg-rose-50 border border-rose-100 text-rose-600 text-xs font-bold animate-in slide-in-from-left-2 transition-all">
+                        {importError}
+                     </div>
+                  )}
+               </div>
+
+               <div className="p-8 bg-slate-50/50 flex gap-4 border-t border-slate-100">
+                  <Button variant="ghost" onClick={() => setIsImportModalOpen(false)} className="flex-1 h-14 rounded-2xl font-bold text-slate-500">
+                     Cancelar
+                  </Button>
+                  <Button 
+                     onClick={handleImportJson}
+                     disabled={isImporting || !importJson.trim()}
+                     className="flex-[2] h-14 rounded-2xl bg-blue-600 font-black shadow-xl shadow-blue-100 text-white"
+                  >
+                     {isImporting ? (
+                        <span className="flex items-center gap-2">
+                           <svg className="animate-spin h-5 w-5 text-white" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                           Importando Conteúdo...
+                        </span>
+                     ) : 'Importar Agora'}
+                  </Button>
+               </div>
+            </div>
+         </div>
+      )}
     </div>
   )
 }

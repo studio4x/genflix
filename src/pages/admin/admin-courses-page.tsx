@@ -357,9 +357,9 @@ export function AdminCoursesPage() {
                              </Link>
                           </Button>
                           <Button variant="ghost" className="flex-1 flex flex-col items-center gap-1 h-auto py-2 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-2xl group/sub" asChild>
-                             <Link to={`/admin/cursos/${course.id}/avaliacao-final`}>
+                             <Link to={`/admin/cursos/${course.id}/builder/assessments`}>
                                 <svg className="h-5 w-5 opacity-50 group-hover/sub:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                <span className="text-[10px] font-bold uppercase tracking-tighter">Final</span>
+                                <span className="text-[10px] font-bold uppercase tracking-tighter">Avaliações</span>
                              </Link>
                           </Button>
                           <Button 

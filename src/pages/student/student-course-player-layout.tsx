@@ -239,7 +239,7 @@ export function StudentCoursePlayerLayout() {
                 {(() => {
                    const moduleQuiz = assessments.find(a => a.assessment_type === 'module' && a.module_id === m.id)
                    if (!moduleQuiz) return null
-                   const isBlocked = m.state === 'blocked' || moduleQuiz.state === 'blocked'
+                                       const isBlocked = m.state === 'blocked' || moduleQuiz.state === 'blocked' || moduleQuiz.state === 'failed_limit'
                    const isActive = moduleQuiz.assessment_id === assessmentId
                    const isApproved = moduleQuiz.state === 'approved'
 

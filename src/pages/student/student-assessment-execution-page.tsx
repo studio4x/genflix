@@ -181,7 +181,16 @@ export function StudentAssessmentExecutionPage() {
                 Ir para o Dashboard
               </Button>
               {!result.is_approved && result.remaining_attempts > 0 && (
-                <Button variant="outline" size="lg" className="flex-1 shrink-0 h-14 border-slate-300 shadow-sm hover:bg-slate-50 text-slate-700 rounded-2xl font-bold" onClick={() => setResult(null)}>
+                <Button 
+                  variant="outline" 
+                  size="lg" 
+                  className="flex-1 shrink-0 h-14 border-slate-300 shadow-sm hover:bg-slate-50 text-slate-700 rounded-2xl font-bold" 
+                  onClick={() => {
+                    setResult(null)
+                    setSelectedOptions({})
+                    setCurrentQuestionIndex(0)
+                  }}
+                >
                   Tentar Novamente
                 </Button>
               )}
