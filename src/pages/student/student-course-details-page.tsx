@@ -13,6 +13,7 @@ import {
   fetchStudentCourseAssessments,
   type StudentCourseAssessmentSummary,
 } from '@/features/student/assessments/api'
+import { fetchAdminCourseTree, type AdminCourseTree } from '@/features/admin/content/api'
 import { exportModuleToPdf } from '@/features/student/content/pdf-exporter'
 import { supabase } from '@/services/supabase/client'
 import type { Course, ModuleLearningState, StudentCourseModuleProgress } from '@/types/content'
@@ -39,7 +40,8 @@ function moduleStateClasses(state: ModuleLearningState) {
 
 export function StudentCourseDetailsPage() {
   const { courseId } = useParams<{ courseId: string }>()
-  const { user } = useAuth()
+  const { user, roles } = useAuth()
+  const isAdmin = roles.includes('admin')
   const [course, setCourse] = useState<Course | null>(null)
   const [modules, setModules] = useState<StudentCourseModuleProgress[]>([])
   const [assessments, setAssessments] = useState<StudentCourseAssessmentSummary[]>([])
@@ -60,17 +62,78 @@ export function StudentCourseDetailsPage() {
       setIsLoading(true)
       setError(null)
       try {
-        const [courseResult, modulesResult, assessmentsResult, statusResult] = await Promise.all([
-          fetchReleasedCourseById(courseId),
-          fetchStudentCourseContentWithProgress(courseId),
-          fetchStudentCourseAssessments(courseId),
-          supabase.rpc('get_student_course_status', { _course_id: courseId }),
-        ])
-        if (isMounted) {
-          setCourse(courseResult)
-          setModules(modulesResult)
-          setAssessments(assessmentsResult)
-          setCourseStatus(statusResult.data?.[0] as StudentCourseStatus ?? null)
+        if (isAdmin) {
+          // Se for admin, buscamos a árvore completa do builder para bypassar qualquer trava de progresso no preview
+          const tree: AdminCourseTree = await fetchAdminCourseTree(courseId)
+          if (isMounted) {
+            setCourse(tree.course)
+            
+            // Transformamos o formato do admin para o formato da grade do aluno
+            const mappedModules: StudentCourseModuleProgress[] = tree.modules.map(m => ({
+              id: m.id,
+              course_id: m.course_id,
+              position: m.position,
+              title: m.title,
+              description: m.description,
+              is_required: m.is_required,
+              state: 'in_progress', // Admins sempre podem ver
+              is_unlocked: true,
+              is_completed: false,
+              required_lessons_total: m.lessons.filter(l => l.is_required).length,
+              required_lessons_completed: 0,
+              has_required_assessment: m.assessments.some(a => a.is_required),
+              required_assessment_approved: false,
+              progress_percent: 0,
+              lessons: m.lessons.map(l => ({
+                id: l.id,
+                module_id: l.module_id,
+                position: l.position,
+                title: l.title,
+                description: l.description,
+                is_required: l.is_required,
+                lesson_type: l.lesson_type,
+                youtube_url: l.youtube_url,
+                text_content: l.text_content,
+                estimated_minutes: l.estimated_minutes,
+                is_completed: false,
+                completed_at: null
+              }))
+            }))
+            
+            setModules(mappedModules)
+            
+            // Mapeamos as avaliações simplificadamente para o admin
+            const mappedAssessments: StudentCourseAssessmentSummary[] = [
+              ...tree.courseAssessments.map(a => ({
+                assessment_id: a.id,
+                title: a.title,
+                assessment_type: a.assessment_type,
+                state: 'available' as const
+              })),
+              ...tree.modules.flatMap(m => m.assessments.map(a => ({
+                assessment_id: a.id,
+                title: a.title,
+                assessment_type: a.assessment_type,
+                module_id: m.id,
+                state: 'available' as const
+              })))
+            ]
+            setAssessments(mappedAssessments)
+            setCourseStatus(null) 
+          }
+        } else {
+          const [courseResult, modulesResult, assessmentsResult, statusResult] = await Promise.all([
+            fetchReleasedCourseById(courseId),
+            fetchStudentCourseContentWithProgress(courseId),
+            fetchStudentCourseAssessments(courseId),
+            supabase.rpc('get_student_course_status', { _course_id: courseId }),
+          ])
+          if (isMounted) {
+            setCourse(courseResult)
+            setModules(modulesResult)
+            setAssessments(assessmentsResult)
+            setCourseStatus(statusResult.data?.[0] as StudentCourseStatus ?? null)
+          }
         }
       } catch (loadError) {
         if (isMounted) {
