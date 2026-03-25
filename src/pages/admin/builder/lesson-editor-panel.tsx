@@ -26,10 +26,8 @@ const quillModules = {
     ['bold', 'italic', 'underline', 'strike'],
     [{ 'list': 'ordered' }, { 'list': 'bullet' }],
     ['link', 'blockquote', 'code-block'],
-    ['table'], // Adicionado suporte a tabela no toolbar
     ['clean']
   ],
-  table: true // Habilita o módulo de tabela do Quill 2.0
 }
 
 export function LessonEditorPanel() {
