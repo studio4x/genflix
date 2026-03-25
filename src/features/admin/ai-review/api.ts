@@ -85,7 +85,17 @@ export async function analyzeModuleWithAi(input: {
   courseId: string
   moduleId: string
 }) {
+  const sessionResult = await supabase.auth.getSession()
+  const accessToken = sessionResult.data.session?.access_token
+
+  if (!accessToken) {
+    throw new Error('Sessao expirada. Faca login novamente para usar a analise com IA.')
+  }
+
   const result = await supabase.functions.invoke('analyze-course-module', {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
     body: {
       courseId: input.courseId,
       moduleId: input.moduleId,
