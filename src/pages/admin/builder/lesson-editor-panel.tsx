@@ -26,8 +26,10 @@ const quillModules = {
     ['bold', 'italic', 'underline', 'strike'],
     [{ 'list': 'ordered' }, { 'list': 'bullet' }],
     ['link', 'blockquote', 'code-block'],
+    ['table'], // Adicionado suporte a tabela no toolbar
     ['clean']
   ],
+  table: true // Habilita o módulo de tabela do Quill 2.0
 }
 
 export function LessonEditorPanel() {
@@ -41,6 +43,7 @@ export function LessonEditorPanel() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [editorMode, setEditorMode] = useState<'visual' | 'html'>('visual')
 
   useEffect(() => {
     if (isNew) {
@@ -130,6 +133,11 @@ export function LessonEditorPanel() {
          .ql-editor.ql-blank::before { color: #94a3b8; font-style: normal; }
          .ql-editor h1, .ql-editor h2, .ql-editor h3 { font-weight: 800; color: #0f172a; margin-top: 1.5em; margin-bottom: 0.5em; }
          .ql-editor p { margin-bottom: 1em; }
+         
+         /* Estilos para Tabelas no Editor */
+         .ql-editor table { width: 100% !important; border-collapse: collapse; margin: 24px 0; }
+         .ql-editor th { background: #f8fafc; text-align: left; padding: 8px 12px; border: 1px solid #e2e8f0; font-weight: bold; }
+         .ql-editor td { padding: 8px 12px; border: 1px solid #e2e8f0; vertical-align: top; }
        `}</style>
 
        <div className="border-b border-slate-200 pb-5 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
@@ -232,18 +240,48 @@ export function LessonEditorPanel() {
                  </div>
                )}
 
-               {(form.lesson_type === 'text' || form.lesson_type === 'hybrid') && (
-                 <div className="animate-in slide-in-from-top-2 duration-300 space-y-2">
-                    <span className="text-sm font-bold text-slate-800 block">Conteúdo da Aula (Editor Rico)</span>
-                    <ReactQuill
-                      theme="snow"
-                      value={form.text_content}
-                      onChange={(val) => setForm(prev => ({ ...prev, text_content: val }))}
-                      modules={quillModules}
-                      placeholder="Escreva aqui o conteúdo textual detalhado da sua aula..."
-                    />
-                 </div>
-               )}
+                {(form.lesson_type === 'text' || form.lesson_type === 'hybrid') && (
+                  <div className="animate-in slide-in-from-top-2 duration-300 space-y-4">
+                     <div className="flex items-center justify-between">
+                        <span className="text-sm font-bold text-slate-800">Conteúdo da Aula</span>
+                        
+                        {/* EDITOR MODE TOGGLE */}
+                        <div className="flex bg-slate-100 p-1 rounded-lg gap-1 border border-slate-200 shadow-sm">
+                           <button 
+                              type="button" 
+                              onClick={() => setEditorMode('visual')}
+                              className={`px-3 py-1.5 rounded-md text-[10px] font-black uppercase tracking-wider transition-all ${editorMode === 'visual' ? 'bg-white shadow-sm text-blue-600' : 'text-slate-500 hover:text-slate-700'}`}
+                           >
+                              Visual
+                           </button>
+                           <button 
+                              type="button" 
+                              onClick={() => setEditorMode('html')}
+                              className={`px-3 py-1.5 rounded-md text-[10px] font-black uppercase tracking-wider transition-all ${editorMode === 'html' ? 'bg-white shadow-sm text-blue-600' : 'text-slate-500 hover:text-slate-700'}`}
+                           >
+                              Código HTML
+                           </button>
+                        </div>
+                     </div>
+
+                     {editorMode === 'visual' ? (
+                        <ReactQuill
+                          theme="snow"
+                          value={form.text_content}
+                          onChange={(val) => setForm(prev => ({ ...prev, text_content: val }))}
+                          modules={quillModules}
+                          placeholder="Escreva aqui o conteúdo textual detalhado da sua aula..."
+                        />
+                     ) : (
+                        <textarea
+                          className="w-full min-h-[400px] p-6 font-mono text-[13px] bg-slate-900 text-emerald-400 rounded-xl border border-slate-800 transition-all focus:ring-4 focus:ring-blue-100 shadow-inner no-scrollbar leading-relaxed"
+                          value={form.text_content}
+                          onChange={(e) => setForm(prev => ({ ...prev, text_content: e.target.value }))}
+                          placeholder="Cole ou edite seu código HTML aqui..."
+                        />
+                     )}
+                  </div>
+                )}
 
                <div className="pt-4 border-t border-slate-50">
                  <label className="block space-y-2 max-w-[200px]">
