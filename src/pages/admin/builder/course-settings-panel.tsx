@@ -1,13 +1,19 @@
 import { useState, useEffect } from 'react'
 import ReactQuill from 'react-quill'
+import { useAuth } from '@/app/providers/auth-provider'
 import { Button } from '@/components/ui/button'
 import { useCourseBuilder } from '@/app/layouts/admin-course-builder-layout'
+import {
+  fetchCourseAiReviewStandards,
+  upsertCourseAiReviewStandards,
+} from '@/features/admin/ai-review/api'
 import { updateCourse, uploadCourseThumbnail, toErrorMessage } from '@/features/admin/content/api'
 import { courseFormSchema } from '@/features/admin/content/schemas'
 import 'react-quill/dist/quill.snow.css'
 
 export function CourseSettingsPanel() {
   const { courseTree, refreshTree } = useCourseBuilder()
+  const { user } = useAuth()
   
   const [form, setForm] = useState({
     title: '',
@@ -18,8 +24,17 @@ export function CourseSettingsPanel() {
   })
   const [isUploadingThumbnail, setIsUploadingThumbnail] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isSavingAiStandards, setIsSavingAiStandards] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
+  const [aiStandardsSuccess, setAiStandardsSuccess] = useState(false)
+  const [aiStandards, setAiStandards] = useState({
+    ideal_course_structure: '',
+    required_elements: '',
+    bibliography_rules: '',
+    table_formatting_rules: '',
+    additional_review_rules: '',
+  })
 
   useEffect(() => {
     if (courseTree) {
@@ -31,6 +46,27 @@ export function CourseSettingsPanel() {
         has_linear_progression: courseTree.course.has_linear_progression ?? true
       })
     }
+  }, [courseTree])
+
+  useEffect(() => {
+    async function loadAiStandards() {
+      if (!courseTree) return
+
+      try {
+        const standards = await fetchCourseAiReviewStandards(courseTree.course.id)
+        setAiStandards({
+          ideal_course_structure: standards?.ideal_course_structure ?? '',
+          required_elements: standards?.required_elements ?? '',
+          bibliography_rules: standards?.bibliography_rules ?? '',
+          table_formatting_rules: standards?.table_formatting_rules ?? '',
+          additional_review_rules: standards?.additional_review_rules ?? '',
+        })
+      } catch (err) {
+        setError(toErrorMessage(err))
+      }
+    }
+
+    void loadAiStandards()
   }, [courseTree])
 
   async function handleThumbnailUpload(event: React.ChangeEvent<HTMLInputElement>) {
@@ -72,6 +108,25 @@ export function CourseSettingsPanel() {
       setError(toErrorMessage(err))
     } finally {
       setIsSubmitting(false)
+    }
+  }
+
+  async function handleSaveAiStandards(e: React.FormEvent) {
+    e.preventDefault()
+    if (!courseTree || !user) return
+
+    setError(null)
+    setAiStandardsSuccess(false)
+    setIsSavingAiStandards(true)
+
+    try {
+      await upsertCourseAiReviewStandards(courseTree.course.id, aiStandards, user.id)
+      setAiStandardsSuccess(true)
+      setTimeout(() => setAiStandardsSuccess(false), 3000)
+    } catch (err) {
+      setError(toErrorMessage(err))
+    } finally {
+      setIsSavingAiStandards(false)
     }
   }
 
@@ -215,6 +270,83 @@ export function CourseSettingsPanel() {
                   ) : 'Salvar Alterações'}
                </Button>
             </div>
+      </form>
+
+      <form onSubmit={handleSaveAiStandards} className="space-y-8">
+        {aiStandardsSuccess && (
+          <div className="rounded-2xl border border-emerald-100 bg-emerald-50 p-4 text-sm font-bold tracking-tight text-emerald-600 animate-in slide-in-from-top-2 duration-300">
+            Padrões da revisão com IA salvos com sucesso!
+          </div>
+        )}
+
+        <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm md:p-10 space-y-8">
+          <div className="border-b border-slate-100 pb-5">
+            <h3 className="text-2xl font-black text-slate-900 tracking-tight">Padrões do Curso Perfeito</h3>
+            <p className="mt-1 text-sm text-slate-500">
+              Defina aqui os critérios que a IA deve usar ao revisar cada módulo individualmente.
+            </p>
+          </div>
+
+          <label className="block space-y-2">
+            <span className="text-xs font-black uppercase tracking-widest text-slate-400 pl-1">Estrutura ideal do curso</span>
+            <textarea
+              className="min-h-[120px] w-full rounded-[20px] border border-slate-200 bg-slate-100/50 px-6 py-4 text-sm font-medium text-slate-700 transition-all focus:bg-white focus:ring-4 focus:ring-blue-100"
+              placeholder="Descreva como deve ser a sequência ideal de aulas, profundidade, carga, ritmo e coerência pedagógica."
+              value={aiStandards.ideal_course_structure}
+              onChange={(e) => setAiStandards((prev) => ({ ...prev, ideal_course_structure: e.target.value }))}
+            />
+          </label>
+
+          <label className="block space-y-2">
+            <span className="text-xs font-black uppercase tracking-widest text-slate-400 pl-1">Elementos obrigatórios por módulo</span>
+            <textarea
+              className="min-h-[120px] w-full rounded-[20px] border border-slate-200 bg-slate-100/50 px-6 py-4 text-sm font-medium text-slate-700 transition-all focus:bg-white focus:ring-4 focus:ring-blue-100"
+              placeholder="Ex: objetivo claro, exemplos práticos, quiz coerente, conclusão, linguagem profissional."
+              value={aiStandards.required_elements}
+              onChange={(e) => setAiStandards((prev) => ({ ...prev, required_elements: e.target.value }))}
+            />
+          </label>
+
+          <label className="block space-y-2">
+            <span className="text-xs font-black uppercase tracking-widest text-slate-400 pl-1">Regras de bibliografia e referências</span>
+            <textarea
+              className="min-h-[120px] w-full rounded-[20px] border border-slate-200 bg-slate-100/50 px-6 py-4 text-sm font-medium text-slate-700 transition-all focus:bg-white focus:ring-4 focus:ring-blue-100"
+              placeholder="Defina quando a aula deve conter referências, como citar e que tipo de fonte é aceitável."
+              value={aiStandards.bibliography_rules}
+              onChange={(e) => setAiStandards((prev) => ({ ...prev, bibliography_rules: e.target.value }))}
+            />
+          </label>
+
+          <label className="block space-y-2">
+            <span className="text-xs font-black uppercase tracking-widest text-slate-400 pl-1">Regras de tabelas e formatação</span>
+            <textarea
+              className="min-h-[120px] w-full rounded-[20px] border border-slate-200 bg-slate-100/50 px-6 py-4 text-sm font-medium text-slate-700 transition-all focus:bg-white focus:ring-4 focus:ring-blue-100"
+              placeholder="Ex: não deixar colunas vazias, cabeçalhos claros, consistência entre linhas, HTML válido."
+              value={aiStandards.table_formatting_rules}
+              onChange={(e) => setAiStandards((prev) => ({ ...prev, table_formatting_rules: e.target.value }))}
+            />
+          </label>
+
+          <label className="block space-y-2">
+            <span className="text-xs font-black uppercase tracking-widest text-slate-400 pl-1">Regras adicionais de revisão</span>
+            <textarea
+              className="min-h-[120px] w-full rounded-[20px] border border-slate-200 bg-slate-100/50 px-6 py-4 text-sm font-medium text-slate-700 transition-all focus:bg-white focus:ring-4 focus:ring-blue-100"
+              placeholder="Inclua qualquer outra orientação para a IA validar e corrigir o módulo."
+              value={aiStandards.additional_review_rules}
+              onChange={(e) => setAiStandards((prev) => ({ ...prev, additional_review_rules: e.target.value }))}
+            />
+          </label>
+
+          <div className="flex justify-end border-t border-slate-100 pt-8">
+            <Button
+              type="submit"
+              disabled={isSavingAiStandards}
+              className="h-14 rounded-2xl bg-slate-900 px-10 font-black shadow-xl shadow-slate-100 hover:bg-slate-800"
+            >
+              {isSavingAiStandards ? 'Salvando Padrões...' : 'Salvar Padrões da IA'}
+            </Button>
+          </div>
+        </div>
       </form>
     </div>
   )

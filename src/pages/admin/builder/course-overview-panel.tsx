@@ -1,9 +1,18 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 
 import { useCourseBuilder } from '@/app/layouts/admin-course-builder-layout'
+import { analyzeModuleWithAi, type ModuleAiReviewResult } from '@/features/admin/ai-review/api'
+import { importCourseContent, toErrorMessage } from '@/features/admin/content/api'
+import { Button } from '@/components/ui/button'
 
 export function CourseOverviewPanel() {
-  const { courseTree } = useCourseBuilder()
+  const { courseTree, refreshTree } = useCourseBuilder()
+  const [isAnalyzingModuleId, setIsAnalyzingModuleId] = useState<string | null>(null)
+  const [analysisError, setAnalysisError] = useState<string | null>(null)
+  const [analysisTarget, setAnalysisTarget] = useState<{ moduleId: string; moduleTitle: string } | null>(null)
+  const [analysisResult, setAnalysisResult] = useState<ModuleAiReviewResult | null>(null)
+  const [isApplyingFixes, setIsApplyingFixes] = useState(false)
 
   if (!courseTree) return null
   const { course, modules } = courseTree
@@ -15,14 +24,56 @@ export function CourseOverviewPanel() {
     return acc + lessonsDuration + assessmentsDuration
   }, 0) + courseTree.courseAssessments.reduce((assessmentAcc, assessment) => assessmentAcc + assessment.estimated_minutes, 0)
 
+  async function handleAnalyzeModule(moduleId: string, moduleTitle: string) {
+    setIsAnalyzingModuleId(moduleId)
+    setAnalysisError(null)
+
+    try {
+      const result = await analyzeModuleWithAi({
+        courseId: course.id,
+        moduleId,
+      })
+      setAnalysisTarget({ moduleId, moduleTitle })
+      setAnalysisResult(result)
+    } catch (err) {
+      setAnalysisError(toErrorMessage(err))
+    } finally {
+      setIsAnalyzingModuleId(null)
+    }
+  }
+
+  async function handleApplyAiFixes() {
+    if (!analysisTarget || !analysisResult?.corrected_module) return
+
+    setIsApplyingFixes(true)
+    setAnalysisError(null)
+
+    try {
+      await importCourseContent(course.id, [analysisResult.corrected_module], false, analysisTarget.moduleId)
+      await refreshTree()
+      setAnalysisResult(null)
+      setAnalysisTarget(null)
+    } catch (err) {
+      setAnalysisError(toErrorMessage(err))
+    } finally {
+      setIsApplyingFixes(false)
+    }
+  }
+
   return (
     <div className="mx-auto max-w-4xl space-y-8 pb-12 animate-in fade-in duration-500">
       <div className="border-b border-slate-200 pb-5">
-        <h2 className="text-3xl font-extrabold tracking-tight text-slate-900">Visão Geral do Curso</h2>
+        <h2 className="text-3xl font-extrabold tracking-tight text-slate-900">Visao Geral do Curso</h2>
         <p className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-500">
-          Este é o centro de controle do seu curso. Utilize o painel lateral para navegar, editar e construir a estrutura pedagógica.
+          Este e o centro de controle do seu curso. Utilize o painel lateral para navegar, editar e construir a estrutura pedagogica.
         </p>
       </div>
+
+      {analysisError && (
+        <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm font-bold text-rose-600">
+          {analysisError}
+        </div>
+      )}
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
         <div className="flex flex-col items-center justify-center space-y-2 rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-sm">
@@ -30,7 +81,7 @@ export function CourseOverviewPanel() {
             <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11v9h-2v-9H7v9H5v-9H3V9h18v2h-2z" /></svg>
           </div>
           <span className="text-3xl font-black text-slate-900">{modules.length}</span>
-          <span className="text-sm font-bold uppercase tracking-widest text-slate-500">Módulos</span>
+          <span className="text-sm font-bold uppercase tracking-widest text-slate-500">Modulos</span>
         </div>
 
         <div className="flex flex-col items-center justify-center space-y-2 rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-sm">
@@ -57,14 +108,14 @@ export function CourseOverviewPanel() {
             <p className="text-sm text-slate-500">A hierarquia atual de aprendizado.</p>
           </div>
           <Link to={`/admin/cursos/${course.id}/builder/modulos/novo`} className="inline-flex shrink-0 items-center justify-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600">
-            Adicionar Módulo
+            Adicionar Modulo
           </Link>
         </div>
 
         <div className="space-y-6 p-6">
           {modules.length === 0 ? (
             <div className="py-12 text-center">
-              <p className="text-slate-500">Nenhum módulo criado ainda. Comece estruturando o curso.</p>
+              <p className="text-slate-500">Nenhum modulo criado ainda. Comece estruturando o curso.</p>
             </div>
           ) : (
             modules.map((module, moduleIndex) => (
@@ -72,14 +123,26 @@ export function CourseOverviewPanel() {
                 <div className="mb-4 flex items-start justify-between gap-4">
                   <div>
                     <div className="mb-1 flex items-center gap-2 text-[10px] font-extrabold uppercase tracking-widest text-slate-400">
-                      <span>Módulo {moduleIndex + 1}</span>
-                      {module.is_required && <span className="rounded bg-slate-100 px-1.5 py-0.5 text-slate-500">Obrigatório</span>}
+                      <span>Modulo {moduleIndex + 1}</span>
+                      {module.is_required && <span className="rounded bg-slate-100 px-1.5 py-0.5 text-slate-500">Obrigatorio</span>}
                     </div>
                     <h4 className="text-base font-bold text-slate-900">{module.title}</h4>
                   </div>
-                  <Link to={`/admin/cursos/${course.id}/builder/modulos/${module.id}`} className="shrink-0 text-sm font-semibold text-blue-600 hover:text-blue-800">
-                    Editar Módulo
-                  </Link>
+                  <div className="flex shrink-0 items-center gap-3">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-9 rounded-xl border-blue-200 text-blue-600 hover:bg-blue-50 hover:text-blue-700"
+                      onClick={() => void handleAnalyzeModule(module.id, module.title)}
+                      disabled={isAnalyzingModuleId === module.id}
+                    >
+                      {isAnalyzingModuleId === module.id ? 'Analisando...' : 'Analisar com IA'}
+                    </Button>
+                    <Link to={`/admin/cursos/${course.id}/builder/modulos/${module.id}`} className="text-sm font-semibold text-blue-600 hover:text-blue-800">
+                      Editar Modulo
+                    </Link>
+                  </div>
                 </div>
 
                 {module.lessons.length > 0 || module.assessments.length > 0 ? (
@@ -110,7 +173,7 @@ export function CourseOverviewPanel() {
                   </div>
                 ) : (
                   <div className="mt-4 border-l-2 border-slate-100 pl-4">
-                    <p className="text-sm italic text-slate-400">Nenhuma aula ou quiz neste módulo.</p>
+                    <p className="text-sm italic text-slate-400">Nenhuma aula ou quiz neste modulo.</p>
                   </div>
                 )}
 
@@ -125,6 +188,113 @@ export function CourseOverviewPanel() {
           )}
         </div>
       </div>
+
+      {analysisTarget && analysisResult && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm animate-in fade-in duration-300">
+          <div className="max-h-[95vh] w-full max-w-5xl overflow-y-auto rounded-[32px] border border-white/20 bg-white shadow-2xl animate-in zoom-in-95 duration-300">
+            <div className="flex items-start justify-between gap-4 border-b border-slate-100 p-8">
+              <div>
+                <h3 className="text-xl font-black tracking-tight text-slate-900">Analise com IA do Modulo</h3>
+                <p className="mt-1 text-sm font-medium text-slate-500">{analysisTarget.moduleTitle}</p>
+              </div>
+              <button
+                onClick={() => {
+                  setAnalysisTarget(null)
+                  setAnalysisResult(null)
+                }}
+                className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-50 text-slate-400 transition-colors hover:text-slate-900"
+              >
+                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="space-y-6 p-8">
+              <div className="grid gap-4 md:grid-cols-[180px_1fr]">
+                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 text-center">
+                  <p className="text-xs font-black uppercase tracking-widest text-slate-400">Score de Qualidade</p>
+                  <p className="mt-3 text-5xl font-black tracking-tighter text-slate-900">{analysisResult.quality_score}</p>
+                  <p className="mt-2 text-xs font-bold text-slate-500">de 100</p>
+                </div>
+                <div className="rounded-2xl border border-slate-200 bg-white p-5">
+                  <p className="text-xs font-black uppercase tracking-widest text-slate-400">Resumo da IA</p>
+                  <p className="mt-3 text-sm leading-relaxed text-slate-600">{analysisResult.summary}</p>
+                  <div className="mt-4 inline-flex rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-widest border border-slate-200 bg-slate-50 text-slate-600">
+                    {analysisResult.ready_to_publish ? 'Pronto para publicar' : 'Requer ajustes antes de publicar'}
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <h4 className="text-sm font-black uppercase tracking-widest text-slate-500">Pontos a ajustar</h4>
+                {analysisResult.issues.length === 0 ? (
+                  <div className="rounded-2xl border border-emerald-100 bg-emerald-50 p-5 text-sm font-bold text-emerald-700">
+                    Nenhum ajuste relevante foi apontado pela IA para este modulo.
+                  </div>
+                ) : (
+                  analysisResult.issues.map((issue) => (
+                    <div key={issue.id} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className={`rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-widest ${
+                          issue.severity === 'critical'
+                            ? 'bg-rose-100 text-rose-700'
+                            : issue.severity === 'high'
+                              ? 'bg-orange-100 text-orange-700'
+                              : issue.severity === 'medium'
+                                ? 'bg-amber-100 text-amber-700'
+                                : 'bg-blue-100 text-blue-700'
+                        }`}>
+                          {issue.severity}
+                        </span>
+                        <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-black uppercase tracking-widest text-slate-500">
+                          {issue.category}
+                        </span>
+                        <span className="text-xs font-bold text-slate-400">{issue.location}</span>
+                      </div>
+                      <h5 className="mt-3 text-base font-black text-slate-900">{issue.title}</h5>
+                      <div className="mt-4 grid gap-4 lg:grid-cols-3">
+                        <div>
+                          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Como esta hoje</p>
+                          <p className="mt-2 text-sm leading-relaxed text-slate-600">{issue.current_state}</p>
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Como deve ficar</p>
+                          <p className="mt-2 text-sm leading-relaxed text-slate-600">{issue.suggested_result}</p>
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Ajuste recomendado</p>
+                          <p className="mt-2 text-sm leading-relaxed text-slate-600">{issue.recommended_fix}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-3 border-t border-slate-100 bg-slate-50/50 p-8 sm:flex-row sm:justify-end">
+              <Button
+                variant="ghost"
+                className="h-12 rounded-2xl px-8 font-bold text-slate-500"
+                onClick={() => {
+                  setAnalysisTarget(null)
+                  setAnalysisResult(null)
+                }}
+              >
+                Fechar
+              </Button>
+              <Button
+                className="h-12 rounded-2xl bg-blue-600 px-8 font-black shadow-xl shadow-blue-100 hover:bg-blue-700"
+                disabled={!analysisResult.corrected_module || isApplyingFixes}
+                onClick={() => void handleApplyAiFixes()}
+              >
+                {isApplyingFixes ? 'Aplicando Ajustes...' : 'Implementar Ajustes'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
