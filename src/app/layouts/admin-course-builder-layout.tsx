@@ -1,9 +1,11 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 import { Link, Outlet, useNavigate, useParams } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
-import { fetchAdminCourseTree, toErrorMessage, importCourseContent } from '@/features/admin/content/api'
+import { fetchAdminCourseTree, toErrorMessage, importCourseContent, exportFullCourseContent, exportModuleContent } from '@/features/admin/content/api'
 import type { AdminCourseTree } from '@/features/admin/content/api'
 import { CourseTreeDnd } from '@/features/admin/content/components/course-tree-dnd'
+import { exportFinalAssessmentContent } from '@/features/admin/assessments/api'
+import { downloadJsonFile } from '@/lib/download'
 
 
 interface BuilderContextData {
@@ -41,6 +43,10 @@ export function AdminCourseBuilderLayout() {
   const [clearExisting, setClearExisting] = useState(false)
   const [moduleIdToReplace, setModuleIdToReplace] = useState<string | null>(null)
   const [isReplaceMode, setIsReplaceMode] = useState(false)
+  const [selectedModuleIdToExport, setSelectedModuleIdToExport] = useState<string>('')
+  const [isExportingCourse, setIsExportingCourse] = useState(false)
+  const [isExportingModule, setIsExportingModule] = useState(false)
+  const [isExportingFinal, setIsExportingFinal] = useState(false)
 
   const refreshTree = async () => {
     if (!courseId) return
@@ -59,6 +65,17 @@ export function AdminCourseBuilderLayout() {
   useEffect(() => {
     void refreshTree()
   }, [courseId])
+
+  useEffect(() => {
+    if (!courseTree?.modules.length) {
+      setSelectedModuleIdToExport('')
+      return
+    }
+
+    setSelectedModuleIdToExport((prev) =>
+      prev && courseTree.modules.some((m) => m.id === prev) ? prev : courseTree.modules[0].id,
+    )
+  }, [courseTree])
 
   async function handleImport() {
     if (!courseId) return
@@ -111,6 +128,49 @@ export function AdminCourseBuilderLayout() {
       setImportError(errorMessage)
     } finally {
       setIsImporting(false)
+    }
+  }
+
+  async function handleExportCourse() {
+    if (!courseId || !courseTree) return
+    setIsExportingCourse(true)
+    setError(null)
+    try {
+      const data = await exportFullCourseContent(courseId)
+      downloadJsonFile(`curso_completo_${courseTree.course.title}`, data)
+    } catch (err) {
+      setError(toErrorMessage(err))
+    } finally {
+      setIsExportingCourse(false)
+    }
+  }
+
+  async function handleExportModule() {
+    if (!selectedModuleIdToExport || !courseTree) return
+    setIsExportingModule(true)
+    setError(null)
+    try {
+      const module = courseTree.modules.find((m) => m.id === selectedModuleIdToExport)
+      const data = await exportModuleContent(selectedModuleIdToExport)
+      downloadJsonFile(`modulo_${module?.title || 'curso'}`, data)
+    } catch (err) {
+      setError(toErrorMessage(err))
+    } finally {
+      setIsExportingModule(false)
+    }
+  }
+
+  async function handleExportFinalAssessment() {
+    if (!courseId || !courseTree) return
+    setIsExportingFinal(true)
+    setError(null)
+    try {
+      const data = await exportFinalAssessmentContent(courseId)
+      downloadJsonFile(`avaliacao_final_${courseTree.course.title}`, data)
+    } catch (err) {
+      setError(toErrorMessage(err))
+    } finally {
+      setIsExportingFinal(false)
     }
   }
 
@@ -188,7 +248,59 @@ export function AdminCourseBuilderLayout() {
                      Gerenciar Avaliações
                   </Link>
 
-                  <div className="pt-4 mt-4 border-t border-slate-100">
+                  <div className="pt-4 mt-4 border-t border-slate-100 space-y-2">
+                     <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-3 space-y-2">
+                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Exportar JSON</p>
+                        <Button
+                           variant="outline"
+                           size="sm"
+                           className="w-full h-9 justify-start text-[11px] font-bold"
+                           onClick={() => void handleExportCourse()}
+                           disabled={isExportingCourse}
+                        >
+                           <svg className="h-3.5 w-3.5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                           {isExportingCourse ? 'Exportando curso...' : 'Curso completo'}
+                        </Button>
+
+                        <div className="space-y-1">
+                           <select
+                              className="w-full h-9 rounded-lg border border-slate-200 bg-white px-2 text-[11px] font-semibold text-slate-700"
+                              value={selectedModuleIdToExport}
+                              onChange={(e) => setSelectedModuleIdToExport(e.target.value)}
+                              disabled={courseTree.modules.length === 0}
+                           >
+                              {courseTree.modules.length === 0 ? (
+                                <option value="">Sem módulos</option>
+                              ) : (
+                                courseTree.modules.map((m, idx) => (
+                                  <option key={m.id} value={m.id}>Módulo {idx + 1}: {m.title}</option>
+                                ))
+                              )}
+                           </select>
+                           <Button
+                              variant="outline"
+                              size="sm"
+                              className="w-full h-9 justify-start text-[11px] font-bold"
+                              onClick={() => void handleExportModule()}
+                              disabled={!selectedModuleIdToExport || isExportingModule}
+                           >
+                              <svg className="h-3.5 w-3.5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                              {isExportingModule ? 'Exportando módulo...' : 'Módulo selecionado'}
+                           </Button>
+                        </div>
+
+                        <Button
+                           variant="outline"
+                           size="sm"
+                           className="w-full h-9 justify-start text-[11px] font-bold"
+                           onClick={() => void handleExportFinalAssessment()}
+                           disabled={isExportingFinal}
+                        >
+                           <svg className="h-3.5 w-3.5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                           {isExportingFinal ? 'Exportando avaliação...' : 'Avaliação final'}
+                        </Button>
+                     </div>
+
                      <Button 
                         variant="outline" 
                         size="sm" 

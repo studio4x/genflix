@@ -157,7 +157,7 @@ export function StudentLessonPage() {
                 <div className="p-8 sm:p-12">
                 <ContentBlocksRenderer 
                     blocks={splitContent(textContent)} 
-                    className="min-h-[100px]"
+                    className="lesson-content-html min-h-[100px]"
                 />
                 </div>
             </div>

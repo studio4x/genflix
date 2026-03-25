@@ -153,3 +153,71 @@ tr:nth-child(even) {
 .quill-better-table-wrapper {
   margin: 1rem 0;
 }
+
+/* Student lesson rich HTML rendering */
+.lesson-content-html .lesson-rich-text {
+  color: #334155;
+  line-height: 1.8;
+  font-size: 1rem;
+}
+
+.lesson-content-html .lesson-rich-text h1,
+.lesson-content-html .lesson-rich-text h2,
+.lesson-content-html .lesson-rich-text h3 {
+  color: #0f172a;
+  font-weight: 800;
+  line-height: 1.2;
+  margin-top: 1.25rem;
+  margin-bottom: 0.75rem;
+}
+
+.lesson-content-html .lesson-rich-text h1 {
+  font-size: 1.875rem;
+}
+
+.lesson-content-html .lesson-rich-text h2 {
+  font-size: 1.5rem;
+}
+
+.lesson-content-html .lesson-rich-text h3 {
+  font-size: 1.25rem;
+}
+
+.lesson-content-html .lesson-rich-text p {
+  margin: 0 0 1rem 0;
+}
+
+.lesson-content-html .lesson-rich-text ul,
+.lesson-content-html .lesson-rich-text ol {
+  margin: 0 0 1rem 1.25rem;
+  padding: 0;
+}
+
+.lesson-content-html .lesson-rich-text li {
+  margin-bottom: 0.4rem;
+}
+
+.lesson-content-html .lesson-rich-text ul {
+  list-style: disc;
+}
+
+.lesson-content-html .lesson-rich-text ol {
+  list-style: decimal;
+}
+
+.lesson-content-html .lesson-rich-text a {
+  color: #2563eb;
+  text-decoration: underline;
+}
+
+.lesson-content-html .lesson-rich-text strong {
+  color: #0f172a;
+  font-weight: 700;
+}
+
+.lesson-content-html .lesson-rich-text blockquote {
+  border-left: 4px solid #cbd5e1;
+  padding-left: 0.875rem;
+  margin: 0 0 1rem 0;
+  color: #475569;
+}

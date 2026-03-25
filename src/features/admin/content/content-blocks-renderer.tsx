@@ -26,7 +26,7 @@ export function ContentBlocksRenderer({ blocks, className }: Props) {
         return (
           <div
             key={`rich-${index}`}
-            className="prose prose-slate max-w-none"
+            className="lesson-rich-text"
             dangerouslySetInnerHTML={{ __html: block.content }}
           />
         );
