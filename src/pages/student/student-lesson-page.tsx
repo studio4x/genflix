@@ -5,13 +5,15 @@ import { useAuth } from '@/app/providers/auth-provider'
 import { Button } from '@/components/ui/button'
 import { splitContent } from '@/features/admin/content/content-blocks'
 import { ContentBlocksRenderer } from '@/features/admin/content/content-blocks-renderer'
+import { LessonAudioPlayer } from '@/features/student/lesson-audio/lesson-audio-player'
 import {
   fetchStudentCourseContentWithProgress,
   setLessonCompletion,
   toErrorMessage,
 } from '@/features/student/courses/api'
 import { supabase } from '@/services/supabase/client'
-import type { StudentCourseModuleProgress, StudentLessonWithProgress } from '@/types/content'
+import type { StudentCourseAssessmentSummary } from '@/features/student/assessments/api'
+import type { Lesson, StudentCourseModuleProgress, StudentLessonWithProgress } from '@/types/content'
 import 'react-quill/dist/quill.snow.css'
 
 export function StudentLessonPage() {
@@ -21,11 +23,11 @@ export function StudentLessonPage() {
 
   const { modules, assessments, setModules } = useOutletContext<{
     modules: StudentCourseModuleProgress[]
-    assessments: any[]
-    setModules: (m: any) => void
+    assessments: StudentCourseAssessmentSummary[]
+    setModules: (modules: StudentCourseModuleProgress[]) => void
   }>()
   const [isTogglingCompletion, setIsTogglingCompletion] = useState(false)
-  const [activeLessonDetails, setActiveLessonDetails] = useState<any>(null)
+  const [activeLessonDetails, setActiveLessonDetails] = useState<Lesson | null>(null)
 
   useEffect(() => {
     async function loadActiveLesson() {
@@ -179,12 +181,16 @@ export function StudentLessonPage() {
       )}
 
       {(lessonType === 'text' || lessonType === 'hybrid') && textContent && (
-        <div className="w-full overflow-hidden rounded-[40px] border border-slate-100 bg-white shadow-sm animate-in slide-in-from-bottom-4 duration-700">
-          <div className="p-8 sm:p-12">
-            <ContentBlocksRenderer
-              blocks={splitContent(textContent)}
-              className="lesson-content-html min-h-[100px]"
-            />
+        <div className="space-y-6">
+          <LessonAudioPlayer lessonId={currentLesson.id} />
+
+          <div className="w-full overflow-hidden rounded-[40px] border border-slate-100 bg-white shadow-sm animate-in slide-in-from-bottom-4 duration-700">
+            <div className="p-8 sm:p-12">
+              <ContentBlocksRenderer
+                blocks={splitContent(textContent)}
+                className="lesson-content-html min-h-[100px]"
+              />
+            </div>
           </div>
         </div>
       )}
