@@ -318,7 +318,7 @@ export function LessonEditorPanel() {
                                        <div className="mb-2 text-[10px] font-black text-blue-500 uppercase flex items-center gap-2">
                                           <Eye className="h-3 w-3" /> Preview da Tabela
                                        </div>
-                                       <div className="table-content min-w-full" dangerouslySetInnerHTML={{ __html: sanitizeTableHtml(block.content) }} />
+                                       <div key={`table-preview-${index}-${block.content}`} className="table-content min-w-full" dangerouslySetInnerHTML={{ __html: sanitizeTableHtml(block.content) }} />
                                     </div>
                                     <div className="space-y-2">
                                        <div className="text-[10px] font-black text-slate-400 uppercase flex items-center gap-2">
