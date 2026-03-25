@@ -30,6 +30,13 @@ export function AssessmentBuilderPanel() {
 
   const [module, setModule] = useState<CourseModule | null>(null)
   const [assessment, setAssessment] = useState<Assessment | null>(null)
+  const [assessmentDraft, setAssessmentDraft] = useState<{
+    title: string
+    description: string
+    passing_score: number
+    max_attempts: number
+    estimated_minutes: number
+  } | null>(null)
   const [questions, setQuestions] = useState<AssessmentQuestionWithOptions[]>([])
   
   const [isLoading, setIsLoading] = useState(true)
@@ -76,6 +83,21 @@ export function AssessmentBuilderPanel() {
     void loadData()
   }, [loadData])
 
+  useEffect(() => {
+    if (!assessment) {
+      setAssessmentDraft(null)
+      return
+    }
+
+    setAssessmentDraft({
+      title: assessment.title,
+      description: assessment.description ?? '',
+      passing_score: assessment.passing_score,
+      max_attempts: assessment.max_attempts,
+      estimated_minutes: assessment.estimated_minutes,
+    })
+  }, [assessment])
+
   // --- Handlers for Assessment Settings ---
   async function handleCreateAssessment() {
      if (!user || !courseId) return
@@ -120,6 +142,25 @@ export function AssessmentBuilderPanel() {
      } catch (err) {
         setError(toErrorMessage(err))
      }
+  }
+
+  async function persistAssessmentDraft(updates: Partial<Assessment>) {
+     if (!assessmentDraft) return
+
+     if (updates.title !== undefined) {
+        const title = updates.title.trim()
+        setAssessmentDraft(prev => prev ? ({ ...prev, title }) : null)
+        if (title.length < 2) return
+        await handleUpdateAssessment({ title })
+        return
+     }
+
+     if (updates.description !== undefined) {
+        await handleUpdateAssessment({ description: updates.description })
+        return
+     }
+
+     await handleUpdateAssessment(updates)
   }
 
   // --- Handlers for Questions ---
@@ -270,7 +311,7 @@ export function AssessmentBuilderPanel() {
      return <div className="flex h-64 items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" /></div>
   }
 
-  if (!assessment) {
+  if (!assessment || !assessmentDraft) {
      return (
         <div className="max-w-2xl mx-auto py-20 text-center space-y-6 animate-in fade-in zoom-in duration-500">
            <div className="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center mx-auto border-2 border-dashed border-blue-200">
@@ -296,14 +337,16 @@ export function AssessmentBuilderPanel() {
             <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest bg-blue-50 px-2 py-0.5 rounded-full">Assessment Builder</span>
             <input 
                className="w-full text-3xl font-black text-slate-900 border-none bg-transparent p-0 focus:ring-0 placeholder:text-slate-300"
-               value={assessment.title}
-               onChange={e => handleUpdateAssessment({ title: e.target.value })}
+               value={assessmentDraft.title}
+               onChange={e => setAssessmentDraft(prev => prev ? ({ ...prev, title: e.target.value }) : prev)}
+               onBlur={() => void persistAssessmentDraft({ title: assessmentDraft.title })}
                placeholder="Título do Quiz..."
             />
             <input 
                className="w-full text-sm font-medium text-slate-500 border-none bg-transparent p-0 focus:ring-0 placeholder:text-slate-400"
-               value={assessment.description ?? ''}
-               onChange={e => handleUpdateAssessment({ description: e.target.value })}
+               value={assessmentDraft.description}
+               onChange={e => setAssessmentDraft(prev => prev ? ({ ...prev, description: e.target.value }) : prev)}
+               onBlur={() => void persistAssessmentDraft({ description: assessmentDraft.description })}
                placeholder="Breve descrição ou instruções para o aluno..."
             />
          </div>
@@ -313,8 +356,9 @@ export function AssessmentBuilderPanel() {
                <input 
                   type="number" 
                   className="w-12 text-center font-black text-blue-600 bg-transparent border-none p-0 focus:ring-0" 
-                  value={assessment.passing_score}
-                  onChange={e => handleUpdateAssessment({ passing_score: Number(e.target.value) })}
+                  value={assessmentDraft.passing_score}
+                  onChange={e => setAssessmentDraft(prev => prev ? ({ ...prev, passing_score: Number(e.target.value || 0) }) : prev)}
+                  onBlur={() => void persistAssessmentDraft({ passing_score: assessmentDraft.passing_score })}
                />
                <span className="text-xs font-bold text-blue-600">%</span>
             </div>
@@ -323,8 +367,9 @@ export function AssessmentBuilderPanel() {
                <input 
                   type="number" 
                   className="w-12 text-center font-black text-blue-600 bg-transparent border-none p-0 focus:ring-0" 
-                  value={assessment.max_attempts}
-                  onChange={e => handleUpdateAssessment({ max_attempts: Number(e.target.value) })}
+                  value={assessmentDraft.max_attempts}
+                  onChange={e => setAssessmentDraft(prev => prev ? ({ ...prev, max_attempts: Number(e.target.value || 0) }) : prev)}
+                  onBlur={() => void persistAssessmentDraft({ max_attempts: assessmentDraft.max_attempts })}
                />
             </div>
             <div className="px-3 border-l border-slate-200 text-center">
@@ -332,8 +377,9 @@ export function AssessmentBuilderPanel() {
                <input 
                   type="number" 
                   className="w-12 text-center font-black text-blue-600 bg-transparent border-none p-0 focus:ring-0" 
-                  value={assessment.estimated_minutes}
-                  onChange={e => handleUpdateAssessment({ estimated_minutes: Number(e.target.value) })}
+                  value={assessmentDraft.estimated_minutes}
+                  onChange={e => setAssessmentDraft(prev => prev ? ({ ...prev, estimated_minutes: Number(e.target.value || 0) }) : prev)}
+                  onBlur={() => void persistAssessmentDraft({ estimated_minutes: assessmentDraft.estimated_minutes })}
                />
             </div>
          </div>
