@@ -22,16 +22,20 @@ Deno.serve(async (request) => {
   }
 
   try {
+    const requestBody = await request.json().catch(() => ({}))
     const authHeader = request.headers.get('Authorization')
-    if (!authHeader) {
-      return jsonResponse({ error: 'Authorization header ausente.' }, 401)
-    }
+    const accessTokenFromHeader = authHeader?.replace(/^Bearer\s+/i, '').trim() ?? ''
+    const accessTokenFromBody = typeof requestBody?.access_token === 'string'
+      ? requestBody.access_token.trim()
+      : ''
+    const accessToken = accessTokenFromHeader || accessTokenFromBody
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
     const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY') ?? ''
+    const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     const geminiApiKey = Deno.env.get('GEMINI_API_KEY') ?? ''
 
-    if (!supabaseUrl || !supabaseAnonKey) {
+    if (!supabaseUrl || !supabaseAnonKey || !supabaseServiceRoleKey) {
       return jsonResponse({ error: 'Supabase env ausente na edge function.' }, 500)
     }
 
@@ -39,24 +43,23 @@ Deno.serve(async (request) => {
       return jsonResponse({ error: 'GEMINI_API_KEY nao configurada na edge function.' }, 500)
     }
 
-    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-      global: {
-        headers: {
-          Authorization: authHeader,
-        },
-      },
-    })
+    if (!accessToken) {
+      return jsonResponse({ error: 'Token ausente.' }, 401)
+    }
+
+    const supabase = createClient(supabaseUrl, supabaseAnonKey)
+    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceRoleKey)
 
     const {
       data: { user },
       error: authError,
-    } = await supabase.auth.getUser()
+    } = await supabaseAdmin.auth.getUser(accessToken)
 
     if (authError || !user) {
-      return jsonResponse({ error: 'Usuario nao autenticado.' }, 401)
+      return jsonResponse({ error: 'Token invalido ou usuario nao autenticado.' }, 401)
     }
 
-    const { data: isAdmin, error: roleError } = await supabase.rpc('has_role', {
+    const { data: isAdmin, error: roleError } = await supabaseAdmin.rpc('has_role', {
       _user_id: user.id,
       _role_code: 'admin',
     })
@@ -65,7 +68,7 @@ Deno.serve(async (request) => {
       return jsonResponse({ error: 'Apenas administradores podem usar esta analise.' }, 403)
     }
 
-    const { courseId, moduleId } = await request.json()
+    const { courseId, moduleId } = requestBody
     if (!courseId || !moduleId) {
       return jsonResponse({ error: 'courseId e moduleId sao obrigatorios.' }, 400)
     }

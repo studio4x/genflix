@@ -1,3 +1,4 @@
+import { env } from '@/config/env'
 import { supabase } from '@/services/supabase/client'
 
 import type { ImportModuleData } from '@/features/admin/content/api'
@@ -85,26 +86,43 @@ export async function analyzeModuleWithAi(input: {
   courseId: string
   moduleId: string
 }) {
-  const sessionResult = await supabase.auth.getSession()
-  const accessToken = sessionResult.data.session?.access_token
+  let sessionResult = await supabase.auth.getSession()
+  let accessToken: string | undefined = sessionResult.data.session?.access_token ?? undefined
+
+  if (!accessToken) {
+    const refreshResult = await supabase.auth.refreshSession()
+    accessToken = refreshResult.data.session?.access_token ?? undefined
+    sessionResult = await supabase.auth.getSession()
+    accessToken = accessToken ?? sessionResult.data.session?.access_token ?? undefined
+  }
 
   if (!accessToken) {
     throw new Error('Sessao expirada. Faca login novamente para usar a analise com IA.')
   }
 
-  const result = await supabase.functions.invoke('analyze-course-module', {
+  const response = await fetch(`${env.VITE_SUPABASE_URL}/functions/v1/analyze-course-module`, {
+    method: 'POST',
     headers: {
+      'Content-Type': 'application/json',
+      apikey: env.VITE_SUPABASE_ANON_KEY,
       Authorization: `Bearer ${accessToken}`,
     },
-    body: {
+    body: JSON.stringify({
       courseId: input.courseId,
       moduleId: input.moduleId,
-    },
+      access_token: accessToken,
+    }),
   })
 
-  if (result.error) {
-    throw result.error
+  const payload = await response.json().catch(() => null)
+
+  if (!response.ok) {
+    const message =
+      typeof payload?.error === 'string'
+        ? payload.error
+        : 'Falha ao executar a analise com IA.'
+    throw new Error(message)
   }
 
-  return result.data as ModuleAiReviewResult
+  return payload as ModuleAiReviewResult
 }
