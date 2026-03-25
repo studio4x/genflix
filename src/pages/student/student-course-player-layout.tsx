@@ -153,6 +153,7 @@ export function StudentCoursePlayerLayout() {
   const totalCompleted = modules.filter(m => m.state === 'completed').length
   const totalModules = modules.length
   const courseProgressPercent = totalModules === 0 ? 0 : Math.round((totalCompleted / totalModules) * 100)
+  const finalAssessment = assessments.find((assessment) => assessment.assessment_type === 'final')
 
   return (
     <div className="flex h-screen w-full overflow-hidden bg-slate-50 text-slate-900">
@@ -285,6 +286,82 @@ export function StudentCoursePlayerLayout() {
               </div>
             </div>
           ))}
+
+          {finalAssessment && (
+            <div className="mb-4">
+              <div className="sticky top-0 z-10 bg-white px-4 py-2">
+                <h4 className="text-xs font-extrabold uppercase tracking-widest leading-tight text-slate-800">
+                  AVALIACAO FINAL
+                </h4>
+                <p className="mt-0.5 truncate text-sm font-bold text-slate-500" title={finalAssessment.title}>
+                  {finalAssessment.title}
+                </p>
+              </div>
+
+              <div className="mt-1 space-y-0.5 px-2">
+                <Link
+                  to={finalAssessment.state === 'blocked' ? '#' : `/aluno/cursos/${courseId}/player/avaliacoes/${finalAssessment.assessment_id}`}
+                  onClick={(e) => finalAssessment.state === 'blocked' && e.preventDefault()}
+                  className={`relative mt-2 flex items-start gap-3 rounded-2xl border-2 p-3 transition-all group ${
+                    finalAssessment.state === 'blocked'
+                      ? 'cursor-not-allowed border-slate-100 bg-slate-50 opacity-50 grayscale'
+                      : finalAssessment.state === 'failed_limit'
+                        ? 'border-rose-200 bg-rose-100 shadow-sm hover:border-rose-300'
+                        : finalAssessment.assessment_id === assessmentId
+                          ? 'border-blue-600 bg-blue-50 shadow-md ring-4 ring-blue-600/5'
+                          : finalAssessment.state === 'approved'
+                            ? 'border-emerald-100 bg-emerald-50/50'
+                            : 'border-slate-100 bg-white hover:border-blue-200'
+                  }`}
+                >
+                  <div className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-lg border transition-colors ${
+                    finalAssessment.state === 'approved'
+                      ? 'border-emerald-500 bg-emerald-500 text-white'
+                      : finalAssessment.state === 'failed_limit'
+                        ? 'border-rose-200 bg-rose-100 text-rose-500'
+                        : finalAssessment.state === 'blocked'
+                          ? 'border-amber-200 bg-amber-100 text-amber-600'
+                          : 'border-blue-400 bg-white text-blue-500'
+                  }`}>
+                    {finalAssessment.state === 'approved' ? (
+                      <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                      </svg>
+                    ) : (
+                      <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                    )}
+                  </div>
+
+                  <div className="flex-1 overflow-hidden">
+                    <p className={`truncate text-[10px] font-black uppercase tracking-tighter ${
+                      finalAssessment.state === 'failed_limit'
+                        ? 'text-rose-600'
+                        : finalAssessment.state === 'blocked'
+                          ? 'text-amber-600'
+                          : 'text-blue-600'
+                    }`}>
+                      {finalAssessment.state === 'failed_limit'
+                        ? 'TENTATIVAS ESGOTADAS'
+                        : finalAssessment.state === 'blocked'
+                          ? 'PROVA BLOQUEADA'
+                          : 'PROVA FINAL'}
+                    </p>
+                    <p className={`truncate font-bold ${
+                      finalAssessment.state === 'approved'
+                        ? 'text-emerald-700'
+                        : finalAssessment.state === 'failed_limit'
+                          ? 'text-rose-900'
+                          : 'text-slate-700'
+                    }`}>
+                      {finalAssessment.title}
+                    </p>
+                  </div>
+                </Link>
+              </div>
+            </div>
+          )}
         </div>
       </aside>
 
