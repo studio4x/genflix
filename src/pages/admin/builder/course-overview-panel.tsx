@@ -36,7 +36,7 @@ export function CourseOverviewPanel() {
   const [repeatReviewPrompt, setRepeatReviewPrompt] = useState<{
     moduleId: string
     moduleTitle: string
-    latestAppliedReview: ModuleAiReviewHistoryEntry
+    latestReview: ModuleAiReviewHistoryEntry
   } | null>(null)
 
   useEffect(() => {
@@ -96,12 +96,12 @@ export function CourseOverviewPanel() {
   async function handleAnalyzeModule(moduleId: string, moduleTitle: string, forceNewReview = false) {
     if (!course) return
 
-    const latestAppliedReview = (reviewHistoryByModule[moduleId] ?? []).find((review) => Boolean(review.applied_at)) ?? null
-    if (latestAppliedReview && !forceNewReview) {
+    const latestReview = (reviewHistoryByModule[moduleId] ?? [])[0] ?? null
+    if (latestReview && !forceNewReview) {
       setRepeatReviewPrompt({
         moduleId,
         moduleTitle,
-        latestAppliedReview,
+        latestReview,
       })
       return
     }
@@ -499,29 +499,33 @@ export function CourseOverviewPanel() {
         <div className="fixed inset-0 z-[115] flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm animate-in fade-in duration-300">
           <div className="w-full max-w-2xl rounded-[32px] border border-white/20 bg-white shadow-2xl animate-in zoom-in-95 duration-300">
             <div className="border-b border-slate-100 p-8">
-              <h3 className="text-xl font-black tracking-tight text-slate-900">Este modulo ja tem ajustes realizados</h3>
+              <h3 className="text-xl font-black tracking-tight text-slate-900">Este modulo ja possui analise com IA</h3>
               <p className="mt-2 text-sm leading-relaxed text-slate-500">
-                O modulo <strong>{repeatReviewPrompt.moduleTitle}</strong> ja teve ajustes aplicados com IA. A ultima aplicacao foi em{' '}
+                O modulo <strong>{repeatReviewPrompt.moduleTitle}</strong> ja possui uma analise salva. A ultima revisao foi em{' '}
                 {new Intl.DateTimeFormat('pt-BR', {
                   dateStyle: 'short',
                   timeStyle: 'medium',
-                }).format(new Date(repeatReviewPrompt.latestAppliedReview.applied_at ?? repeatReviewPrompt.latestAppliedReview.created_at))}
-                . Revise abaixo o que foi ajustado ou inicie uma nova analise.
+                }).format(new Date(repeatReviewPrompt.latestReview.created_at))}
+                . Revise abaixo o resultado salvo ou inicie uma nova analise.
               </p>
             </div>
             <div className="space-y-4 p-8">
               <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
-                <p className="text-xs font-black uppercase tracking-widest text-slate-400">Resumo dos ultimos ajustes realizados</p>
-                <p className="mt-3 text-sm leading-relaxed text-slate-700">{repeatReviewPrompt.latestAppliedReview.summary}</p>
+                <p className="text-xs font-black uppercase tracking-widest text-slate-400">Resumo da ultima analise</p>
+                <p className="mt-3 text-sm leading-relaxed text-slate-700">{repeatReviewPrompt.latestReview.summary}</p>
                 <div className="mt-4 flex flex-wrap gap-2">
                   <span className="rounded-full bg-slate-900 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-white">
-                    Score {repeatReviewPrompt.latestAppliedReview.quality_score}
+                    Score {repeatReviewPrompt.latestReview.quality_score}
                   </span>
                   <span className="rounded-full bg-slate-100 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-slate-600">
-                    {repeatReviewPrompt.latestAppliedReview.issues.length} ajuste(s)
+                    {repeatReviewPrompt.latestReview.issues.length} ajuste(s)
                   </span>
-                  <span className="rounded-full bg-emerald-100 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-emerald-700">
-                    Aplicado
+                  <span className={`rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-widest ${
+                    repeatReviewPrompt.latestReview.applied_at
+                      ? 'bg-emerald-100 text-emerald-700'
+                      : 'bg-amber-100 text-amber-700'
+                  }`}>
+                    {repeatReviewPrompt.latestReview.applied_at ? 'Ajustes aplicados' : 'Ajustes nao aplicados'}
                   </span>
                 </div>
               </div>
