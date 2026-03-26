@@ -312,7 +312,7 @@ export function CourseTreeDnd({ tree, onRefresh }: CourseTreeDndProps) {
         {tree.courseAssessments.length > 0 ? (
           <div className="space-y-1 border-t border-slate-100 pt-3">
             <p className="px-2 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
-              Avaliacao Final
+              Avaliação Final
             </p>
             {tree.courseAssessments.map((assessment) => {
               const isActiveFinalAssessment = location.pathname === finalAssessmentPath
