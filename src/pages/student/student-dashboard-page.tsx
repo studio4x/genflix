@@ -92,6 +92,16 @@ export function StudentDashboardPage() {
     }) ?? courses[0] ?? null
   }, [courseStatuses, courses])
 
+  const recommendedCourses = useMemo(() => {
+    const prioritizedCourses = courses.filter((course) => {
+      const journeyStatus = getStudentCourseJourneyStatus(courseStatuses.get(course.id) ?? null)
+      return journeyStatus !== 'completed'
+    })
+
+    const source = prioritizedCourses.length > 0 ? prioritizedCourses : courses
+    return source.slice(0, 2)
+  }, [courseStatuses, courses])
+
   return (
     <div className="space-y-8">
       <header className="flex flex-col gap-5 border-b border-slate-100 pb-8 xl:flex-row xl:items-start xl:justify-between">
@@ -209,51 +219,59 @@ export function StudentDashboardPage() {
           <article className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
             <div>
               <p className="text-[10px] font-black uppercase tracking-[0.24em] text-slate-400">Destaque</p>
-              <h3 className="mt-2 text-2xl font-black tracking-tight text-slate-900">Próximo passo recomendado</h3>
+              <h3 className="mt-2 text-2xl font-black tracking-tight text-slate-900">Próximos cursos recomendados</h3>
             </div>
 
-            <div className="mt-5 overflow-hidden rounded-[28px] border border-slate-200 bg-slate-50">
-              {featuredCourse ? (
-                <div className="grid gap-0 lg:grid-cols-1">
-                  <div className="relative overflow-hidden bg-slate-900" style={{ aspectRatio: '4 / 3' }}>
-                    {featuredCourse.thumbnail_url ? (
-                      <img src={featuredCourse.thumbnail_url} alt={featuredCourse.title} className="h-full w-full object-cover object-center" />
-                    ) : (
-                      <div className="flex h-full items-center justify-center bg-gradient-to-br from-slate-900 to-slate-700 text-white/20">
-                        <span className="text-4xl font-black uppercase tracking-[0.3em]">LMS</span>
-                      </div>
-                    )}
-                    <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-slate-950/65 to-transparent" />
-                  </div>
-                  <div className="space-y-4 p-6 sm:p-7">
-                    <div className="inline-flex rounded-full bg-white px-3 py-1 text-[10px] font-black uppercase tracking-[0.24em] text-slate-500 shadow-sm">
-                      {getStudentCourseJourneyStatus(courseStatuses.get(featuredCourse.id) ?? null) === 'completed'
-                        ? 'Concluído'
-                        : getStudentCourseJourneyStatus(courseStatuses.get(featuredCourse.id) ?? null) === 'final_pending'
-                          ? 'Prova final pendente'
-                          : 'Em andamento'}
-                    </div>
-                    <div>
-                      <h4 className="max-w-4xl text-2xl font-black tracking-tight text-slate-900 sm:text-[2rem]">{featuredCourse.title}</h4>
-                      <p className="mt-3 line-clamp-4 max-w-4xl text-sm leading-relaxed text-slate-600 sm:text-[15px]">
-                        {sanitizeDescription(featuredCourse.description)}
-                      </p>
-                    </div>
-                    <div className="flex flex-wrap gap-3">
-                      <Link
-                        to={`/aluno/cursos/${featuredCourse.id}`}
-                        className="inline-flex h-12 items-center justify-center rounded-2xl bg-blue-600 px-5 text-sm font-black text-white transition-colors hover:bg-blue-700"
-                      >
-                        Abrir curso
-                      </Link>
-                      <Link
-                        to="/aluno/cursos"
-                        className="inline-flex h-12 items-center justify-center rounded-2xl border border-slate-200 bg-white px-5 text-sm font-black text-slate-600 transition-colors hover:text-slate-900"
-                      >
-                        Ver catálogo
-                      </Link>
-                    </div>
-                  </div>
+            <div className="mt-5">
+              {recommendedCourses.length > 0 ? (
+                <div className="grid gap-5 xl:grid-cols-2">
+                  {recommendedCourses.map((course) => {
+                    const journeyStatus = getStudentCourseJourneyStatus(courseStatuses.get(course.id) ?? null)
+
+                    return (
+                      <article key={course.id} className="overflow-hidden rounded-[28px] border border-slate-200 bg-slate-50">
+                        <div className="relative overflow-hidden bg-slate-900" style={{ aspectRatio: '4 / 3' }}>
+                          {course.thumbnail_url ? (
+                            <img src={course.thumbnail_url} alt={course.title} className="h-full w-full object-cover object-center" />
+                          ) : (
+                            <div className="flex h-full items-center justify-center bg-gradient-to-br from-slate-900 to-slate-700 text-white/20">
+                              <span className="text-4xl font-black uppercase tracking-[0.3em]">LMS</span>
+                            </div>
+                          )}
+                          <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-slate-950/65 to-transparent" />
+                        </div>
+                        <div className="space-y-4 p-5">
+                          <div className="inline-flex rounded-full bg-white px-3 py-1 text-[10px] font-black uppercase tracking-[0.24em] text-slate-500 shadow-sm">
+                            {journeyStatus === 'completed'
+                              ? 'Concluído'
+                              : journeyStatus === 'final_pending'
+                                ? 'Prova final pendente'
+                                : 'Em andamento'}
+                          </div>
+                          <div>
+                            <h4 className="line-clamp-2 text-xl font-black tracking-tight text-slate-900">{course.title}</h4>
+                            <p className="mt-3 line-clamp-3 text-sm leading-relaxed text-slate-600">
+                              {sanitizeDescription(course.description)}
+                            </p>
+                          </div>
+                          <div className="flex flex-wrap gap-3">
+                            <Link
+                              to={`/aluno/cursos/${course.id}`}
+                              className="inline-flex h-11 items-center justify-center rounded-2xl bg-blue-600 px-4 text-sm font-black text-white transition-colors hover:bg-blue-700"
+                            >
+                              Abrir curso
+                            </Link>
+                            <Link
+                              to="/aluno/cursos"
+                              className="inline-flex h-11 items-center justify-center rounded-2xl border border-slate-200 bg-white px-4 text-sm font-black text-slate-600 transition-colors hover:text-slate-900"
+                            >
+                              Ver catálogo
+                            </Link>
+                          </div>
+                        </div>
+                      </article>
+                    )
+                  })}
                 </div>
               ) : (
                 <div className="p-8 text-center">
