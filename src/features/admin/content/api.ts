@@ -658,53 +658,158 @@ export async function clearCourseContent(courseId: string) {
   if (mError) throw mError
 }
 
-export async function importCourseContent(courseId: string, input: any, clearExisting: boolean = false, moduleIdToReplace?: string) {
-  if (clearExisting) {
-    await clearCourseContent(courseId)
-  } else if (moduleIdToReplace) {
-    // 1. Buscar a posição do módulo que será substituído
-    const { data: targetModule } = await supabase
-      .from('course_modules')
-      .select('position')
-      .eq('id', moduleIdToReplace)
+async function createModuleLessons(moduleId: string, lessons: ImportModuleData['lessons']) {
+  if (!lessons || lessons.length === 0) return
+
+  const lessonsToInsert = lessons.map((lesson, index) => ({
+    module_id: moduleId,
+    title: lesson.title,
+    description: lesson.description || null,
+    lesson_type: lesson.lesson_type,
+    youtube_url: lesson.youtube_url || null,
+    text_content: lesson.text_content || null,
+    estimated_minutes: lesson.estimated_minutes || 10,
+    position: index + 1,
+  }))
+
+  const { error } = await supabase.from('lessons').insert(lessonsToInsert)
+  if (error) throw error
+}
+
+async function createModuleAssessments(courseId: string, moduleId: string, assessments: ImportModuleData['assessments']) {
+  if (!assessments || assessments.length === 0) return
+
+  for (const assessmentData of assessments) {
+    const { data: assessment, error: assessmentError } = await supabase
+      .from('assessments')
+      .insert({
+        course_id: courseId,
+        module_id: moduleId,
+        assessment_type: 'module',
+        title: assessmentData.title,
+        description: assessmentData.description || null,
+        passing_score: assessmentData.passing_score || 70,
+        is_active: true,
+      })
+      .select()
       .single()
-    
-    // 2. Deletar o módulo alvo (isso apaga aulas e avaliações em cascata)
-    if (targetModule) {
-      const { error: delError } = await supabase
-        .from('course_modules')
-        .delete()
-        .eq('id', moduleIdToReplace)
-      
-      if (delError) throw delError
+
+    if (assessmentError) throw assessmentError
+
+    if (!assessmentData.questions || assessmentData.questions.length === 0) continue
+
+    for (let questionIndex = 0; questionIndex < assessmentData.questions.length; questionIndex++) {
+      const questionData = assessmentData.questions[questionIndex]
+
+      const { data: question, error: questionError } = await supabase
+        .from('assessment_questions')
+        .insert({
+          assessment_id: assessment.id,
+          question_text: questionData.question_text,
+          points: questionData.points || 1,
+          position: questionIndex + 1,
+        })
+        .select()
+        .single()
+
+      if (questionError) throw questionError
+
+      if (!questionData.options || questionData.options.length === 0) continue
+
+      const optionsToInsert = questionData.options.map((option, optionIndex) => ({
+        question_id: question.id,
+        option_text: option.option_text,
+        is_correct: option.is_correct,
+        position: optionIndex + 1,
+      }))
+
+      const { error: optionsError } = await supabase.from('assessment_options').insert(optionsToInsert)
+      if (optionsError) throw optionsError
     }
   }
-  // Se o input não for um array, pode ser um objeto CourseFull
-  const isFullCourse = !Array.isArray(input) && input && input.modules
+}
+
+async function replaceModuleContentInPlace(courseId: string, moduleId: string, moduleData: ImportModuleData) {
+  const { error: updateModuleError } = await supabase
+    .from('course_modules')
+    .update({
+      title: moduleData.title,
+      description: moduleData.description || null,
+    })
+    .eq('id', moduleId)
+    .eq('course_id', courseId)
+
+  if (updateModuleError) throw updateModuleError
+
+  const { error: deleteAssessmentsError } = await supabase
+    .from('assessments')
+    .delete()
+    .eq('course_id', courseId)
+    .eq('module_id', moduleId)
+
+  if (deleteAssessmentsError) throw deleteAssessmentsError
+
+  const { error: deleteLessonsError } = await supabase
+    .from('lessons')
+    .delete()
+    .eq('module_id', moduleId)
+
+  if (deleteLessonsError) throw deleteLessonsError
+
+  await createModuleLessons(moduleId, moduleData.lessons)
+  await createModuleAssessments(courseId, moduleId, moduleData.assessments)
+}
+
+export async function importCourseContent(
+  courseId: string,
+  input: ImportCourseFullData | ImportModuleData[] | ImportAssessmentData,
+  clearExisting: boolean = false,
+  moduleIdToReplace?: string
+) {
+  if (clearExisting) {
+    await clearCourseContent(courseId)
+  }
+
+  const fullCourseInput = !Array.isArray(input) && 'modules' in input ? input : null
+  const assessmentOnlyInput = !Array.isArray(input) && 'questions' in input && !('modules' in input) ? input : null
 
   // Se for um curso completo, atualizamos os metadados do curso atual também
-  if (isFullCourse) {
+  if (fullCourseInput) {
     const { error: updateError } = await supabase
       .from('courses')
       .update({
-        title: input.title,
-        description: input.description || null,
-        workload_minutes: input.workload_minutes || 0
+        title: fullCourseInput.title,
+        description: fullCourseInput.description || null,
+        workload_minutes: fullCourseInput.workload_minutes || 0
       })
       .eq('id', courseId)
-    
+
     if (updateError) throw updateError
   }
 
-  const modules = (Array.isArray(input) ? input : (input && Array.isArray(input.modules) ? input.modules : [])) as ImportModuleData[]
-  const isAssessmentOnly = !Array.isArray(input) && input && Array.isArray(input.questions) && !input.modules
+  const modules = (Array.isArray(input) ? input : fullCourseInput?.modules ?? []) as ImportModuleData[]
+  const isAssessmentOnly = assessmentOnlyInput !== null
 
   if (modules.length === 0 && !isAssessmentOnly) {
     throw new Error('Nenhum módulo ou conjunto de questões encontrado no JSON para importar.')
   }
 
+  if (moduleIdToReplace && modules.length > 0) {
+    await replaceModuleContentInPlace(courseId, moduleIdToReplace, modules[0])
+
+    if (modules.length === 1) {
+      return
+    }
+  }
+
   // Caso especial: Importação de Avaliação Final (sem módulos)
   if (isAssessmentOnly) {
+    const assessmentInput = assessmentOnlyInput
+
+    if (!assessmentInput) {
+      throw new Error('Dados da avaliação final inválidos.')
+    }
+
     // 1. Criar ou atualizar a avaliação final do curso
     const { data: assessment, error: aError } = await supabase
       .from('assessments')
@@ -712,9 +817,9 @@ export async function importCourseContent(courseId: string, input: any, clearExi
         course_id: courseId,
         module_id: null,
         assessment_type: 'final',
-        title: input.title,
-        description: input.description || null,
-        passing_score: input.passing_score || 70,
+        title: assessmentInput.title,
+        description: assessmentInput.description || null,
+        passing_score: assessmentInput.passing_score || 70,
         is_active: true
       }, { onConflict: 'course_id, assessment_type' })
       .select()
@@ -726,8 +831,8 @@ export async function importCourseContent(courseId: string, input: any, clearExi
     await supabase.from('assessment_questions').delete().eq('assessment_id', assessment.id)
 
     // 3. Inserir questões
-    for (let qIdx = 0; qIdx < input.questions.length; qIdx++) {
-      const qData = input.questions[qIdx]
+    for (let qIdx = 0; qIdx < assessmentInput.questions.length; qIdx++) {
+      const qData = assessmentInput.questions[qIdx]
       const { data: question, error: qError } = await supabase
         .from('assessment_questions')
         .insert({
@@ -742,7 +847,7 @@ export async function importCourseContent(courseId: string, input: any, clearExi
       if (qError) throw qError
 
       if (qData.options && qData.options.length > 0) {
-        const optionsToInsert = qData.options.map((o: any, oIdx: number) => ({
+        const optionsToInsert = qData.options.map((o, oIdx: number) => ({
           question_id: question.id,
           option_text: o.option_text,
           is_correct: o.is_correct,
@@ -756,9 +861,7 @@ export async function importCourseContent(courseId: string, input: any, clearExi
 
   // 1. Cálculo da posição inicial
   let startPosition = 0
-  
-  // Se estiver limpando ou substituindo, o módulo antigo já não existe mais.
-  // Buscamos a maior posição atual para adicionar ao final e evitar erro 23505 (unique constraint)
+
   const { data: lastModule } = await supabase
     .from('course_modules')
     .select('position')
@@ -766,15 +869,17 @@ export async function importCourseContent(courseId: string, input: any, clearExi
     .order('position', { ascending: false })
     .limit(1)
     .single()
-  
+
   if (lastModule) {
     startPosition = lastModule.position
   }
 
+  const modulesToInsert = moduleIdToReplace ? modules.slice(1) : modules
+
   // 2. Loop de inserção
-  for (let mIdx = 0; mIdx < modules.length; mIdx++) {
-    const mData = modules[mIdx]
-    
+  for (let mIdx = 0; mIdx < modulesToInsert.length; mIdx++) {
+    const mData = modulesToInsert[mIdx]
+
     // Inserir Módulo
     const { data: module, error: mError } = await supabase
       .from('course_modules')
@@ -789,78 +894,10 @@ export async function importCourseContent(courseId: string, input: any, clearExi
 
     if (mError) throw mError
 
-    // 2. Criar Aulas do Módulo
-    if (mData.lessons && mData.lessons.length > 0) {
-      const lessonsToInsert = mData.lessons.map((l: any, idx: number) => ({
-        module_id: module.id,
-        title: l.title,
-        description: l.description || null,
-        lesson_type: l.lesson_type,
-        youtube_url: l.youtube_url || null,
-        text_content: l.text_content || null,
-        estimated_minutes: l.estimated_minutes || 10,
-        position: idx + 1
-      }))
-
-      const { error: lError } = await supabase.from('lessons').insert(lessonsToInsert)
-      if (lError) throw lError
-    }
-
-    // 3. Criar Quizzes do Módulo
-    if (mData.assessments && mData.assessments.length > 0) {
-      for (const aData of mData.assessments) {
-        const { data: assessment, error: aError } = await supabase
-          .from('assessments')
-          .insert({
-            course_id: courseId,
-            module_id: module.id,
-            assessment_type: 'module',
-            title: aData.title,
-            description: aData.description || null,
-            passing_score: aData.passing_score || 70,
-            is_active: true
-          })
-          .select()
-          .single()
-
-        if (aError) throw aError
-
-        // Criar Questões e Opções
-        if (aData.questions && aData.questions.length > 0) {
-          for (let qIdx = 0; qIdx < aData.questions.length; qIdx++) {
-            const qData = aData.questions[qIdx]
-            
-            const { data: question, error: qError } = await supabase
-              .from('assessment_questions')
-              .insert({
-                assessment_id: assessment.id,
-                question_text: qData.question_text,
-                points: qData.points || 1,
-                position: qIdx + 1
-              })
-              .select()
-              .single()
-
-            if (qError) throw qError
-
-            if (qData.options && qData.options.length > 0) {
-              const optionsToInsert = qData.options.map((o: any, oIdx: number) => ({
-                question_id: question.id,
-                option_text: o.option_text,
-                is_correct: o.is_correct,
-                position: oIdx + 1
-              }))
-
-              const { error: oError } = await supabase.from('assessment_options').insert(optionsToInsert)
-              if (oError) throw oError
-            }
-          }
-        }
-      }
-    }
+    await createModuleLessons(module.id, mData.lessons)
+    await createModuleAssessments(courseId, module.id, mData.assessments)
   }
 }
-
 export interface ImportCourseFullData {
   title: string
   description?: string
@@ -892,3 +929,4 @@ export async function importFullCourse(data: ImportCourseFullData, userId: strin
   
   return course
 }
+
