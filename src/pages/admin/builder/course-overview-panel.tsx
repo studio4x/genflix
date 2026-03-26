@@ -82,17 +82,33 @@ export function CourseOverviewPanel() {
         appliedAt: appliedAtIso,
         issuesCount: analysisResult.issues.length,
       })
-      publishBuilderNotice(
-        'success',
-        `Ajustes da IA aplicados no modulo "${analysisTarget.moduleTitle}" em ${new Intl.DateTimeFormat('pt-BR', {
-          dateStyle: 'short',
-          timeStyle: 'medium',
-        }).format(new Date(appliedAtIso))}.`,
-      )
+      publishBuilderNotice({
+        type: 'success',
+        title: 'Ajustes da IA concluidos',
+        message: `Os ajustes foram aplicados ao modulo "${analysisTarget.moduleTitle}".`,
+        details: [
+          `Modulo atualizado: ${analysisTarget.moduleTitle}`,
+          `Horario: ${new Intl.DateTimeFormat('pt-BR', {
+            dateStyle: 'short',
+            timeStyle: 'medium',
+          }).format(new Date(appliedAtIso))}`,
+          `Pontos processados: ${analysisResult.issues.length}`,
+          analysisResult.ready_to_publish ? 'Status do modulo: pronto para publicar.' : 'Status do modulo: ainda requer revisao manual.',
+        ],
+      })
     } catch (err) {
       const message = toErrorMessage(err)
       setAnalysisError(message)
-      publishBuilderNotice('error', `Falha ao aplicar ajustes da IA: ${message}`)
+      publishBuilderNotice({
+        type: 'error',
+        title: 'Falha ao aplicar ajustes da IA',
+        message: `Nao foi possivel concluir os ajustes no modulo "${analysisTarget.moduleTitle}".`,
+        details: [
+          `Modulo: ${analysisTarget.moduleTitle}`,
+          `Erro retornado: ${message}`,
+          'Nenhuma confirmacao de salvamento foi recebida.',
+        ],
+      })
     } finally {
       setIsApplyingFixes(false)
     }

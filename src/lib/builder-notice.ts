@@ -2,19 +2,28 @@ export type BuilderNoticeType = 'success' | 'error'
 
 export interface BuilderNoticePayload {
   type: BuilderNoticeType
+  title: string
   message: string
+  details?: string[]
   createdAt: string
 }
 
 const STORAGE_KEY = 'hcm_builder_notice'
 const EVENT_NAME = 'hcm:builder-notice'
 
-export function publishBuilderNotice(type: BuilderNoticeType, message: string) {
+export function publishBuilderNotice(input: {
+  type: BuilderNoticeType
+  title: string
+  message: string
+  details?: string[]
+}) {
   if (typeof window === 'undefined') return
 
   const payload: BuilderNoticePayload = {
-    type,
-    message,
+    type: input.type,
+    title: input.title,
+    message: input.message,
+    details: input.details,
     createdAt: new Date().toISOString(),
   }
 
@@ -30,7 +39,12 @@ export function readBuilderNotice() {
 
   try {
     const parsed = JSON.parse(raw) as BuilderNoticePayload
-    if (!parsed || (parsed.type !== 'success' && parsed.type !== 'error') || typeof parsed.message !== 'string') {
+    if (
+      !parsed ||
+      (parsed.type !== 'success' && parsed.type !== 'error') ||
+      typeof parsed.title !== 'string' ||
+      typeof parsed.message !== 'string'
+    ) {
       return null
     }
     return parsed

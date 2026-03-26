@@ -55,6 +55,7 @@ export function AdminCourseBuilderLayout() {
   const [isExportingModule, setIsExportingModule] = useState(false)
   const [isExportingFinal, setIsExportingFinal] = useState(false)
   const [builderNotice, setBuilderNotice] = useState<BuilderNoticePayload | null>(null)
+  const [isBuilderNoticeModalOpen, setIsBuilderNoticeModalOpen] = useState(false)
 
   const refreshTree = useCallback(async () => {
     if (!courseId) return
@@ -89,7 +90,9 @@ export function AdminCourseBuilderLayout() {
     if (typeof window === 'undefined') return
 
     const syncNotice = () => {
-      setBuilderNotice(readBuilderNotice())
+      const nextNotice = readBuilderNotice()
+      setBuilderNotice(nextNotice)
+      setIsBuilderNoticeModalOpen(Boolean(nextNotice))
     }
 
     syncNotice()
@@ -250,30 +253,6 @@ export function AdminCourseBuilderLayout() {
             </Button>
           </div>
         </header>
-        {builderNotice && (
-          <div
-            className={`shrink-0 border-b px-4 py-3 text-sm font-semibold ${
-              builderNotice.type === 'success'
-                ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
-                : 'border-rose-200 bg-rose-50 text-rose-700'
-            }`}
-          >
-            <div className="mx-auto flex w-full max-w-7xl items-center justify-between gap-3">
-              <p>{builderNotice.message}</p>
-              <button
-                type="button"
-                onClick={() => {
-                  clearBuilderNotice()
-                  setBuilderNotice(null)
-                }}
-                className="rounded-lg border border-current/20 px-3 py-1.5 text-xs font-black uppercase tracking-widest hover:bg-white/40"
-              >
-                Fechar
-              </button>
-            </div>
-          </div>
-        )}
-
         {/* WORKSPACE AREA */}
         <div className="flex flex-1 overflow-hidden">
           
@@ -504,6 +483,81 @@ export function AdminCourseBuilderLayout() {
              </div>
           </main>
         </div>
+        {builderNotice && isBuilderNoticeModalOpen && (
+          <div className="fixed inset-0 z-[140] flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm animate-in fade-in duration-300">
+            <div className="w-full max-w-2xl rounded-[32px] border border-white/20 bg-white shadow-2xl animate-in zoom-in-95 duration-300">
+              <div className="flex items-start justify-between gap-4 border-b border-slate-100 p-8">
+                <div>
+                  <div className={`inline-flex rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-widest ${
+                    builderNotice.type === 'success'
+                      ? 'bg-emerald-100 text-emerald-700'
+                      : 'bg-rose-100 text-rose-700'
+                  }`}>
+                    {builderNotice.type === 'success' ? 'Concluido' : 'Erro'}
+                  </div>
+                  <h3 className="mt-3 text-2xl font-black tracking-tight text-slate-900">{builderNotice.title}</h3>
+                  <p className="mt-2 text-sm font-medium text-slate-500">
+                    {new Intl.DateTimeFormat('pt-BR', {
+                      dateStyle: 'short',
+                      timeStyle: 'medium',
+                    }).format(new Date(builderNotice.createdAt))}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsBuilderNoticeModalOpen(false)
+                    clearBuilderNotice()
+                    setBuilderNotice(null)
+                  }}
+                  className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-50 text-slate-400 transition-colors hover:text-slate-900"
+                >
+                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              <div className="space-y-5 p-8">
+                <div className={`rounded-2xl border p-5 ${
+                  builderNotice.type === 'success'
+                    ? 'border-emerald-200 bg-emerald-50'
+                    : 'border-rose-200 bg-rose-50'
+                }`}>
+                  <p className={`text-sm font-semibold ${
+                    builderNotice.type === 'success' ? 'text-emerald-800' : 'text-rose-800'
+                  }`}>
+                    {builderNotice.message}
+                  </p>
+                </div>
+                {builderNotice.details && builderNotice.details.length > 0 && (
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+                    <p className="text-xs font-black uppercase tracking-widest text-slate-400">Resumo do processamento</p>
+                    <div className="mt-4 space-y-2">
+                      {builderNotice.details.map((detail, index) => (
+                        <div key={`${builderNotice.createdAt}-${index}`} className="rounded-xl bg-white px-4 py-3 text-sm font-medium text-slate-700 shadow-sm">
+                          {detail}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+              <div className="flex justify-end border-t border-slate-100 bg-slate-50/50 p-8">
+                <Button
+                  type="button"
+                  className="h-12 rounded-2xl bg-blue-600 px-8 font-black shadow-xl shadow-blue-100 hover:bg-blue-700"
+                  onClick={() => {
+                    setIsBuilderNoticeModalOpen(false)
+                    clearBuilderNotice()
+                    setBuilderNotice(null)
+                  }}
+                >
+                  Fechar
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </BuilderContext.Provider>
   )
