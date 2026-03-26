@@ -903,7 +903,7 @@ export function AssessmentBuilderPanel() {
       <div className="flex flex-col justify-between gap-6 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:flex-row md:items-end">
         <div className="flex-1 space-y-1">
           <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-black uppercase tracking-widest text-blue-600">
-            Assessment Builder
+            Construtor de Avaliação
           </span>
           <input
             className="w-full border-none bg-transparent p-0 text-3xl font-black text-slate-900 placeholder:text-slate-300 focus:ring-0"
