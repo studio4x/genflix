@@ -13,6 +13,18 @@ export interface CreateStudentResponse {
   message: string
 }
 
+export interface AdminStudentListItem {
+  id: string
+  email: string
+  full_name: string | null
+  timezone: string
+  locale: string
+  created_at: string
+  updated_at: string
+  enrolled_courses_count: number
+  completed_courses_count: number
+}
+
 export function toErrorMessage(error: unknown): string {
   if (error instanceof Error) {
     return error.message
@@ -46,3 +58,23 @@ export async function createStudent(
   return data as CreateStudentResponse
 }
 
+export async function fetchStudents(session: Session) {
+  const response = await fetch('/api/admin/students', {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${session.access_token}`,
+    },
+  })
+
+  const data = (await response
+    .json()
+    .catch(() => null)) as ErrorResponse | { students?: AdminStudentListItem[] } | null
+
+  if (!response.ok) {
+    throw new Error(
+      (data as ErrorResponse | null)?.error ?? 'Nao foi possivel carregar os alunos.',
+    )
+  }
+
+  return (data as { students?: AdminStudentListItem[] } | null)?.students ?? []
+}

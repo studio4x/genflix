@@ -145,6 +145,10 @@ export const appRouter = createBrowserRouter([
             element: <CourseSettingsPanel />,
           },
           {
+            path: 'releases',
+            element: <AdminCourseReleasesPage />,
+          },
+          {
             path: 'assessments',
             element: <CourseAssessmentsPanel />,
           },
