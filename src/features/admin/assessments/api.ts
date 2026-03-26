@@ -209,28 +209,36 @@ export async function fetchAssessmentQuestions(assessmentId: string) {
   })) as AssessmentQuestionWithOptions[]
 }
 
-export async function fetchAssessmentCaseStudies(assessmentId: string) {
-  const [caseStudiesResult, questions] = await Promise.all([
-    supabase
-      .from('assessment_case_studies')
-      .select('*')
-      .eq('assessment_id', assessmentId)
-      .order('position', { ascending: true }),
-    fetchAssessmentQuestions(assessmentId),
-  ])
-
-  if (caseStudiesResult.error) {
-    throw caseStudiesResult.error
-  }
-
-  const caseStudies = (caseStudiesResult.data as AssessmentCaseStudy[]) ?? []
-
+function mapCaseStudiesWithQuestions(
+  caseStudies: AssessmentCaseStudy[],
+  questions: AssessmentQuestionWithOptions[],
+) {
   return caseStudies.map((caseStudy) => ({
     ...caseStudy,
     questions: questions
       .filter((question) => question.case_study_id === caseStudy.id)
       .sort((questionA, questionB) => (questionA.case_question_position ?? 0) - (questionB.case_question_position ?? 0)),
   })) satisfies AssessmentCaseStudyWithQuestions[]
+}
+
+export async function fetchAssessmentCaseStudies(
+  assessmentId: string,
+  questionsInput?: AssessmentQuestionWithOptions[],
+) {
+  const caseStudiesResult = await supabase
+    .from('assessment_case_studies')
+    .select('*')
+    .eq('assessment_id', assessmentId)
+    .order('position', { ascending: true })
+
+  if (caseStudiesResult.error) {
+    throw caseStudiesResult.error
+  }
+
+  const caseStudies = (caseStudiesResult.data as AssessmentCaseStudy[]) ?? []
+  const questions = questionsInput ?? await fetchAssessmentQuestions(assessmentId)
+
+  return mapCaseStudiesWithQuestions(caseStudies, questions)
 }
 
 export async function createAssessmentQuestion(
@@ -486,7 +494,7 @@ export async function exportAssessmentContent(assessmentId: string): Promise<Imp
 
   const assessment = assessmentResult.data as Assessment
   const questions = await fetchAssessmentQuestions(assessmentId)
-  const caseStudies = await fetchAssessmentCaseStudies(assessmentId)
+  const caseStudies = await fetchAssessmentCaseStudies(assessmentId, questions)
 
   return {
     title: assessment.title,

@@ -32,6 +32,20 @@ import {
 import { fetchModule } from '@/features/admin/content/api'
 import type { Assessment, AssessmentQuestionType, CourseModule } from '@/types/content'
 
+function sortQuestionsByPosition(items: AssessmentQuestionWithOptions[]) {
+  return [...items].sort((questionA, questionB) => questionA.position - questionB.position)
+}
+
+function sortCaseStudiesByPosition(items: AssessmentCaseStudyWithQuestions[]) {
+  return [...items].sort((caseStudyA, caseStudyB) => caseStudyA.position - caseStudyB.position)
+}
+
+function sortCaseStudyQuestions(items: AssessmentQuestionWithOptions[]) {
+  return [...items].sort(
+    (questionA, questionB) => (questionA.case_question_position ?? 0) - (questionB.case_question_position ?? 0),
+  )
+}
+
 export function AssessmentBuilderPanel() {
   const { courseId, moduleId } = useParams<{ courseId: string; moduleId?: string }>()
   const navigate = useNavigate()
@@ -74,10 +88,8 @@ export function AssessmentBuilderPanel() {
         setAssessment(assess)
 
         if (assess) {
-          const [loadedQuestions, loadedCaseStudies] = await Promise.all([
-            fetchAssessmentQuestions(assess.id),
-            fetchAssessmentCaseStudies(assess.id),
-          ])
+          const loadedQuestions = await fetchAssessmentQuestions(assess.id)
+          const loadedCaseStudies = await fetchAssessmentCaseStudies(assess.id, loadedQuestions)
           setQuestions(loadedQuestions)
           setCaseStudies(loadedCaseStudies)
         } else {
@@ -93,10 +105,8 @@ export function AssessmentBuilderPanel() {
         setAssessment(assess)
 
         if (assess) {
-          const [loadedQuestions, loadedCaseStudies] = await Promise.all([
-            fetchAssessmentQuestions(assess.id),
-            fetchAssessmentCaseStudies(assess.id),
-          ])
+          const loadedQuestions = await fetchAssessmentQuestions(assess.id)
+          const loadedCaseStudies = await fetchAssessmentCaseStudies(assess.id, loadedQuestions)
           setQuestions(loadedQuestions)
           setCaseStudies(loadedCaseStudies)
         } else {
@@ -220,6 +230,66 @@ export function AssessmentBuilderPanel() {
     return caseStudies.find((caseStudy) => caseStudy.id === caseStudyId) ?? null
   }
 
+  function updateQuestionState(
+    questionId: string,
+    updater: (question: AssessmentQuestionWithOptions) => AssessmentQuestionWithOptions,
+  ) {
+    const standaloneQuestion = questions.find((question) => question.id === questionId)
+
+    if (standaloneQuestion) {
+      setQuestions((prev) => prev.map((question) => (
+        question.id === questionId ? updater(question) : question
+      )))
+      return
+    }
+
+    setCaseStudies((prev) => prev.map((caseStudy) => ({
+      ...caseStudy,
+      questions: caseStudy.questions.map((question) => (
+        question.id === questionId ? updater(question) : question
+      )),
+    })))
+  }
+
+  function updateOptionState(
+    optionId: string,
+    updater: (option: AssessmentQuestionWithOptions['options'][number]) => AssessmentQuestionWithOptions['options'][number],
+  ) {
+    const standaloneQuestion = questions.find((question) => question.options.some((option) => option.id === optionId))
+
+    if (standaloneQuestion) {
+      setQuestions((prev) => prev.map((question) => {
+        if (!question.options.some((option) => option.id === optionId)) {
+          return question
+        }
+
+        return {
+          ...question,
+          options: question.options.map((option) => (
+            option.id === optionId ? updater(option) : option
+          )),
+        }
+      }))
+      return
+    }
+
+    setCaseStudies((prev) => prev.map((caseStudy) => ({
+      ...caseStudy,
+      questions: caseStudy.questions.map((question) => {
+        if (!question.options.some((option) => option.id === optionId)) {
+          return question
+        }
+
+        return {
+          ...question,
+          options: question.options.map((option) => (
+            option.id === optionId ? updater(option) : option
+          )),
+        }
+      }),
+    })))
+  }
+
   const standaloneQuestions = questions.filter((question) => !question.case_study_id)
   const scoredQuestionsCount = [
     ...standaloneQuestions,
@@ -256,14 +326,17 @@ export function AssessmentBuilderPanel() {
     if (!assessment) return
 
     try {
-      await createAssessmentQuestion(assessment.id, {
+      const createdQuestion = await createAssessmentQuestion(assessment.id, {
         question_text: 'Nova Pergunta...',
         question_type: 'single_choice',
         essay_expected_answer: '',
         is_required: true,
         points: 1,
       })
-      await loadData()
+      setQuestions((prev) => sortQuestionsByPosition([
+        ...prev,
+        { ...createdQuestion, options: [] },
+      ]))
     } catch (createError) {
       setError(toErrorMessage(createError))
     }
@@ -273,11 +346,14 @@ export function AssessmentBuilderPanel() {
     if (!assessment) return
 
     try {
-      await createAssessmentCaseStudy(assessment.id, {
+      const createdCaseStudy = await createAssessmentCaseStudy(assessment.id, {
         title: 'Novo Estudo de Caso',
         case_text: 'Descreva aqui o contexto do estudo de caso, com detalhes suficientes para orientar as respostas dos alunos.',
       })
-      await loadData()
+      setCaseStudies((prev) => sortCaseStudiesByPosition([
+        ...prev,
+        { ...createdCaseStudy, questions: [] },
+      ]))
     } catch (createError) {
       setError(toErrorMessage(createError))
     }
@@ -328,7 +404,7 @@ export function AssessmentBuilderPanel() {
     const nextCasePosition = (caseStudy?.questions.length ?? 0) + 1
 
     try {
-      await createAssessmentQuestion(assessment.id, {
+      const createdQuestion = await createAssessmentQuestion(assessment.id, {
         question_text: 'Nova Pergunta do Caso...',
         question_type: questionType,
         essay_expected_answer: questionType === 'case_study_ai' ? 'Resposta correta esperada.' : '',
@@ -337,26 +413,24 @@ export function AssessmentBuilderPanel() {
         case_study_id: caseStudyId,
         case_question_position: nextCasePosition,
       })
-      await loadData()
+      setCaseStudies((prev) => prev.map((caseStudyItem) => (
+        caseStudyItem.id !== caseStudyId
+          ? caseStudyItem
+          : {
+            ...caseStudyItem,
+            questions: sortCaseStudyQuestions([
+              ...caseStudyItem.questions,
+              { ...createdQuestion, options: [] },
+            ]),
+          }
+      )))
     } catch (createError) {
       setError(toErrorMessage(createError))
     }
   }
 
   function handleQuestionTextChange(questionId: string, questionText: string) {
-    setQuestions((prev) => prev.map((question) => (
-      question.id === questionId
-        ? { ...question, question_text: questionText }
-        : question
-    )))
-    setCaseStudies((prev) => prev.map((caseStudy) => ({
-      ...caseStudy,
-      questions: caseStudy.questions.map((question) => (
-        question.id === questionId
-          ? { ...question, question_text: questionText }
-          : question
-      )),
-    })))
+    updateQuestionState(questionId, (question) => ({ ...question, question_text: questionText }))
   }
 
   async function handlePersistQuestion(questionId: string, updates: Partial<AssessmentQuestionWithOptions>) {
@@ -376,7 +450,7 @@ export function AssessmentBuilderPanel() {
         await deleteAssessmentOptionsByQuestion(questionId)
       }
 
-      const updateQuestionState = (question: AssessmentQuestionWithOptions) => (
+      const nextQuestionState = (question: AssessmentQuestionWithOptions) => (
         question.id !== questionId
           ? question
           : {
@@ -390,30 +464,14 @@ export function AssessmentBuilderPanel() {
           }
       )
 
-      setQuestions((prev) => prev.map(updateQuestionState))
-      setCaseStudies((prev) => prev.map((caseStudy) => ({
-        ...caseStudy,
-        questions: caseStudy.questions.map(updateQuestionState),
-      })))
+      updateQuestionState(questionId, nextQuestionState)
     } catch (updateError) {
       setError(toErrorMessage(updateError))
     }
   }
 
   async function handleUpdateEssayExpectedAnswer(questionId: string, expectedAnswer: string) {
-    setQuestions((prev) => prev.map((question) => (
-      question.id === questionId
-        ? { ...question, essay_expected_answer: expectedAnswer }
-        : question
-    )))
-    setCaseStudies((prev) => prev.map((caseStudy) => ({
-      ...caseStudy,
-      questions: caseStudy.questions.map((question) => (
-        question.id === questionId
-          ? { ...question, essay_expected_answer: expectedAnswer }
-          : question
-      )),
-    })))
+    updateQuestionState(questionId, (question) => ({ ...question, essay_expected_answer: expectedAnswer }))
   }
 
   async function handleDeleteQuestion(questionId: string) {
@@ -421,7 +479,13 @@ export function AssessmentBuilderPanel() {
 
     try {
       await deleteAssessmentQuestion(questionId)
-      setQuestions((prev) => prev.filter((question) => question.id !== questionId))
+      const standaloneQuestion = questions.find((question) => question.id === questionId)
+
+      if (standaloneQuestion) {
+        setQuestions((prev) => prev.filter((question) => question.id !== questionId))
+        return
+      }
+
       setCaseStudies((prev) => prev.map((caseStudy) => ({
         ...caseStudy,
         questions: caseStudy.questions.filter((question) => question.id !== questionId),
@@ -436,76 +500,60 @@ export function AssessmentBuilderPanel() {
     if (!question || (question.question_type !== 'single_choice' && question.question_type !== 'case_study_single_choice')) return
 
     try {
-      await createAssessmentOption({
+      const createdOption = await createAssessmentOption({
         question_id: questionId,
         option_text: 'Nova opcao...',
         is_correct: false,
       })
-      await loadData()
+      updateQuestionState(questionId, (questionItem) => ({
+        ...questionItem,
+        options: [...questionItem.options, createdOption],
+      }))
     } catch (createError) {
       setError(toErrorMessage(createError))
     }
   }
 
   function handleOptionTextChange(optionId: string, optionText: string) {
-    setQuestions((prev) => prev.map((question) => {
-      const hasOption = question.options.some((option) => option.id === optionId)
-      if (!hasOption) return question
-
-      return {
-        ...question,
-        options: question.options.map((option) => (
-          option.id === optionId
-            ? { ...option, option_text: optionText }
-            : option
-        )),
-      }
-    }))
-    setCaseStudies((prev) => prev.map((caseStudy) => ({
-      ...caseStudy,
-      questions: caseStudy.questions.map((question) => {
-        const hasOption = question.options.some((option) => option.id === optionId)
-        if (!hasOption) return question
-
-        return {
-          ...question,
-          options: question.options.map((option) => (
-            option.id === optionId
-              ? { ...option, option_text: optionText }
-              : option
-          )),
-        }
-      }),
-    })))
+    updateOptionState(optionId, (option) => ({ ...option, option_text: optionText }))
   }
 
   async function handleUpdateOption(optionId: string, optionText: string, isCorrect: boolean) {
     try {
       await updateAssessmentOption(optionId, { option_text: optionText, is_correct: isCorrect })
-      const updateQuestionOptions = (question: AssessmentQuestionWithOptions) => {
-        const hasOption = question.options.some((option) => option.id === optionId)
-        if (!hasOption) return question
+      const updateQuestionOptions = (question: AssessmentQuestionWithOptions) => ({
+        ...question,
+        options: question.options.map((option) => {
+          if (option.id === optionId) {
+            return { ...option, option_text: optionText, is_correct: isCorrect }
+          }
 
-        return {
-          ...question,
-          options: question.options.map((option) => {
-            if (option.id === optionId) {
-              return { ...option, option_text: optionText, is_correct: isCorrect }
-            }
+          if (isCorrect) {
+            return { ...option, is_correct: false }
+          }
 
-            if (isCorrect) {
-              return { ...option, is_correct: false }
-            }
+          return option
+        }),
+      })
 
-            return option
-          }),
-        }
+      const standaloneQuestion = questions.find((question) => question.options.some((option) => option.id === optionId))
+
+      if (standaloneQuestion) {
+        setQuestions((prev) => prev.map((question) => (
+          question.options.some((option) => option.id === optionId)
+            ? updateQuestionOptions(question)
+            : question
+        )))
+        return
       }
 
-      setQuestions((prev) => prev.map(updateQuestionOptions))
       setCaseStudies((prev) => prev.map((caseStudy) => ({
         ...caseStudy,
-        questions: caseStudy.questions.map(updateQuestionOptions),
+        questions: caseStudy.questions.map((question) => (
+          question.options.some((option) => option.id === optionId)
+            ? updateQuestionOptions(question)
+            : question
+        )),
       })))
     } catch (updateError) {
       setError(toErrorMessage(updateError))
@@ -516,16 +564,24 @@ export function AssessmentBuilderPanel() {
   async function handleDeleteOption(optionId: string) {
     try {
       await deleteAssessmentOption(optionId)
-      setQuestions((prev) => prev.map((question) => ({
-        ...question,
-        options: question.options.filter((option) => option.id !== optionId),
-      })))
+      const standaloneQuestion = questions.find((question) => question.options.some((option) => option.id === optionId))
+
+      if (standaloneQuestion) {
+        setQuestions((prev) => prev.map((question) => (
+          question.options.some((option) => option.id === optionId)
+            ? { ...question, options: question.options.filter((option) => option.id !== optionId) }
+            : question
+        )))
+        return
+      }
+
       setCaseStudies((prev) => prev.map((caseStudy) => ({
         ...caseStudy,
-        questions: caseStudy.questions.map((question) => ({
-          ...question,
-          options: question.options.filter((option) => option.id !== optionId),
-        })),
+        questions: caseStudy.questions.map((question) => (
+          question.options.some((option) => option.id === optionId)
+            ? { ...question, options: question.options.filter((option) => option.id !== optionId) }
+            : question
+        )),
       })))
     } catch (deleteError) {
       setError(toErrorMessage(deleteError))
