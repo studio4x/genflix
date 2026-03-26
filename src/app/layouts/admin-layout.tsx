@@ -6,10 +6,10 @@ import { Button } from '@/components/ui/button'
 
 const adminLinks = [
   { to: '/admin', label: 'Dashboard' },
-  { to: '/admin/cursos', label: 'Catalogo de Cursos' },
+  { to: '/admin/cursos', label: 'Catálogo de Cursos' },
   { to: '/admin/alunos', label: 'Alunos' },
   { to: '/admin/grupos', label: 'Grupos' },
-  { to: '/admin/relatorios', label: 'Relatorios' },
+  { to: '/admin/relatorios', label: 'Relatórios' },
 ]
 
 export function AdminLayout() {
@@ -57,7 +57,7 @@ export function AdminLayout() {
         <aside className="self-start lg:sticky lg:top-[92px]">
           <div className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm">
             <div className="border-b border-slate-100 px-5 py-4">
-              <p className="text-[10px] font-black uppercase tracking-[0.24em] text-slate-400">Navegacao</p>
+              <p className="text-[10px] font-black uppercase tracking-[0.24em] text-slate-400">Navegação</p>
               <h2 className="mt-1 text-lg font-black tracking-tight text-slate-900">Admin</h2>
             </div>
             <nav className="space-y-1 p-3">
