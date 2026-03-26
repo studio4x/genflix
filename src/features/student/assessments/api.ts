@@ -156,35 +156,41 @@ export async function submitAssessmentAttempt(
     throw new Error(parsed.error.issues[0]?.message ?? 'Dados invalidos.')
   }
 
-  const accessToken = await resolveAccessToken()
-  const response = await fetch(`${env.VITE_SUPABASE_URL}/functions/v1/submit-assessment-attempt`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      apikey: env.VITE_SUPABASE_ANON_KEY,
-      Authorization: `Bearer ${accessToken}`,
-    },
-    body: JSON.stringify({
-      assessment_id: parsed.data.assessment_id,
-      answers: parsed.data.answers,
-      access_token: accessToken,
-    }),
-  })
+  const maxAttempts = 2
 
-  const payload = await response.json().catch(() => null) as SubmitAssessmentAttemptResult | { error?: string } | null
-  if (!response.ok) {
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    const accessToken = await resolveAccessToken(attempt > 1)
+    const response = await fetch(`${env.VITE_SUPABASE_URL}/functions/v1/submit-assessment-attempt`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        apikey: env.VITE_SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify({
+        assessment_id: parsed.data.assessment_id,
+        answers: parsed.data.answers,
+        access_token: accessToken,
+      }),
+    })
+
+    const payload = await response.json().catch(() => null) as SubmitAssessmentAttemptResult | { error?: string } | null
+    if (response.ok && payload) {
+      return payload as SubmitAssessmentAttemptResult
+    }
+
     const errorMessage = payload && 'error' in payload && typeof payload.error === 'string'
       ? payload.error
       : 'Falha ao processar tentativa de avaliacao.'
+
+    if (response.status === 401 && attempt < maxAttempts) {
+      continue
+    }
+
     throw new Error(errorMessage)
   }
 
-  const result = payload as SubmitAssessmentAttemptResult | null
-  if (!result) {
-    throw new Error('Falha ao processar tentativa de avaliacao.')
-  }
-
-  return result
+  throw new Error('Falha ao processar tentativa de avaliacao.')
 }
 
 export async function fetchOwnAssessmentAttempts(assessmentId: string) {
@@ -259,11 +265,11 @@ export async function requestAssessmentAttemptRetry(
   return (result.data?.[0] as { request_id: string; status: AssessmentAttemptRequest['status'] } | undefined) ?? null
 }
 
-async function resolveAccessToken() {
+async function resolveAccessToken(forceRefresh = false) {
   let sessionResult = await supabase.auth.getSession()
   let accessToken: string | undefined = sessionResult.data.session?.access_token ?? undefined
 
-  if (!accessToken) {
+  if (forceRefresh || !accessToken) {
     const refreshResult = await supabase.auth.refreshSession()
     accessToken = refreshResult.data.session?.access_token ?? undefined
     sessionResult = await supabase.auth.getSession()

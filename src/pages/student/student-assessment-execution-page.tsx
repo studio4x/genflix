@@ -658,7 +658,7 @@ export function StudentAssessmentExecutionPage() {
                 </h3>
                 {currentQuestion.question_type === 'essay_ai' && (
                   <div className="rounded-2xl border border-amber-100 bg-amber-50 px-5 py-4 text-sm font-medium text-amber-900">
-                    Resposta discursiva com validacao por IA. Esta questao nao gera pontos no quiz, mas voce recebera feedback automatico.
+                    Resposta discursiva com validação por IA. Esta questão não gera pontos no quiz, mas você receberá feedback automático.
                   </div>
                 )}
               </div>
@@ -757,7 +757,7 @@ export function StudentAssessmentExecutionPage() {
                 disabled={!allQuestionsAnswered || isSubmitting}
                 onClick={handleSubmit}
               >
-                {isSubmitting ? 'ENVIANDO RESPOSTAS...' : 'FINALIZAR AVALIACAO'}
+                {isSubmitting ? 'ENVIANDO RESPOSTAS...' : 'FINALIZAR AVALIAÇÃO'}
                 {!isSubmitting && (
                   <svg className="ml-2 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
