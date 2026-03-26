@@ -214,17 +214,18 @@ export function StudentDashboardPage() {
 
             <div className="mt-5 overflow-hidden rounded-[28px] border border-slate-200 bg-slate-50">
               {featuredCourse ? (
-                <div className="grid gap-0 lg:grid-cols-[220px_minmax(0,1fr)]">
-                  <div className="relative min-h-[220px] bg-slate-900">
+                <div className="grid gap-0 lg:grid-cols-1">
+                  <div className="relative overflow-hidden bg-slate-900" style={{ aspectRatio: '4 / 3' }}>
                     {featuredCourse.thumbnail_url ? (
-                      <img src={featuredCourse.thumbnail_url} alt={featuredCourse.title} className="h-full w-full object-cover" />
+                      <img src={featuredCourse.thumbnail_url} alt={featuredCourse.title} className="h-full w-full object-cover object-center" />
                     ) : (
                       <div className="flex h-full items-center justify-center bg-gradient-to-br from-slate-900 to-slate-700 text-white/20">
                         <span className="text-4xl font-black uppercase tracking-[0.3em]">LMS</span>
                       </div>
                     )}
+                    <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-slate-950/65 to-transparent" />
                   </div>
-                  <div className="space-y-4 p-6">
+                  <div className="space-y-4 p-6 sm:p-7">
                     <div className="inline-flex rounded-full bg-white px-3 py-1 text-[10px] font-black uppercase tracking-[0.24em] text-slate-500 shadow-sm">
                       {getStudentCourseJourneyStatus(courseStatuses.get(featuredCourse.id) ?? null) === 'completed'
                         ? 'Concluido'
@@ -233,8 +234,8 @@ export function StudentDashboardPage() {
                           : 'Em andamento'}
                     </div>
                     <div>
-                      <h4 className="text-2xl font-black tracking-tight text-slate-900">{featuredCourse.title}</h4>
-                      <p className="mt-3 line-clamp-3 text-sm leading-relaxed text-slate-600">
+                      <h4 className="max-w-4xl text-2xl font-black tracking-tight text-slate-900 sm:text-[2rem]">{featuredCourse.title}</h4>
+                      <p className="mt-3 line-clamp-4 max-w-4xl text-sm leading-relaxed text-slate-600 sm:text-[15px]">
                         {sanitizeDescription(featuredCourse.description)}
                       </p>
                     </div>
