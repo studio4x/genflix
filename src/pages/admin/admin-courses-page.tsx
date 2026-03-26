@@ -46,6 +46,22 @@ const initialDraft: CourseEditorDraft = {
   isUploadingThumbnail: false
 }
 
+function formatCourseWorkload(minutes: number) {
+  const safeMinutes = Math.max(0, minutes)
+  const hours = Math.floor(safeMinutes / 60)
+  const remainingMinutes = safeMinutes % 60
+
+  if (hours === 0) {
+    return `${remainingMinutes}min`
+  }
+
+  if (remainingMinutes === 0) {
+    return `${hours}h`
+  }
+
+  return `${hours}h ${remainingMinutes}min`
+}
+
 export function AdminCoursesPage() {
   const { user } = useAuth()
   const [courses, setCourses] = useState<Course[]>([])
@@ -345,7 +361,7 @@ export function AdminCoursesPage() {
                            <div className="flex items-center gap-2 mt-2">
                               <span className="flex items-center gap-1.5 text-xs font-bold text-slate-500">
                      <svg className="h-3.5 w-3.5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                     {course.workload_minutes} min
+                     {formatCourseWorkload(course.workload_minutes)}
                   </span>            </div>
                         </div>
 
