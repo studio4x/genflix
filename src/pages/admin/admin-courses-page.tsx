@@ -358,9 +358,9 @@ export function AdminCoursesPage() {
                            <h4 className="text-lg font-black text-white leading-tight group-hover:text-blue-300 transition-colors line-clamp-2">
                              {course.title}
                            </h4>
-                           <div className="flex items-center gap-2 mt-2">
-                              <span className="flex items-center gap-1.5 text-xs font-bold text-slate-500">
-                     <svg className="h-3.5 w-3.5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                           <div className="mt-2 flex items-center gap-2">
+                              <span className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-slate-950/70 px-2.5 py-1 text-xs font-bold text-white shadow-sm backdrop-blur-sm">
+                     <svg className="h-3.5 w-3.5 text-blue-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                      {formatCourseWorkload(course.workload_minutes)}
                   </span>            </div>
                         </div>
