@@ -37,7 +37,14 @@ function sanitizeCourseCardDescription(description: string | null) {
     .trim()
 }
 
-function getLearningActionLabel(hasStartedCourse: boolean) {
+function getLearningActionLabel(
+  journeyStatus: ReturnType<typeof getStudentCourseJourneyStatus>,
+  hasStartedCourse: boolean,
+) {
+  if (journeyStatus === 'completed') {
+    return 'Revisar Aprendizado'
+  }
+
   return hasStartedCourse ? 'Continuar Aprendizado' : 'Iniciar Aprendizado'
 }
 
@@ -132,19 +139,19 @@ export function StudentCoursesPage() {
           const footerStatus = journeyStatus === 'completed'
             ? {
                 dotClass: 'bg-emerald-500',
-                label: 'Curso Concluido',
+                label: 'Curso Concluído',
                 cta: 'Ver Curso',
               }
             : journeyStatus === 'final_pending'
               ? {
                   dotClass: 'bg-amber-500',
-                  label: 'Conteudo Concluido | Prova Final Pendente',
+                  label: 'Conteúdo Concluído | Prova Final Pendente',
                   cta: 'Fazer Prova Final',
                 }
               : {
                   dotClass: hasStartedCourse ? 'bg-blue-500 animate-pulse' : 'bg-slate-400',
                   label: hasStartedCourse ? 'Em Andamento' : 'Nao Iniciado',
-                  cta: getLearningActionLabel(hasStartedCourse),
+                  cta: getLearningActionLabel(journeyStatus, hasStartedCourse),
                 }
 
           return (

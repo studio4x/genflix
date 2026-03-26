@@ -284,7 +284,11 @@ export function StudentCourseDetailsPage() {
             <div className="pt-4">
                <Button className="bg-white text-slate-900 hover:bg-slate-100 h-16 px-10 rounded-2xl font-black text-lg shadow-xl" asChild>
                   <Link to={modules[0]?.lessons[0] ? `/aluno/cursos/${courseId}/player/aulas/${modules[0].lessons[0].id}` : '#'}>
-                     {hasStartedCourse ? 'Continuar Aprendizado' : 'Iniciar Aprendizado'}
+                     {courseJourneyStatus === 'completed'
+                       ? 'Revisar Aprendizado'
+                       : hasStartedCourse
+                         ? 'Continuar Aprendizado'
+                         : 'Iniciar Aprendizado'}
                   </Link>
                </Button>
             </div>
@@ -317,7 +321,7 @@ export function StudentCourseDetailsPage() {
             </svg>
           </div>
           <div className="space-y-2 text-center md:text-left flex-1">
-            <h3 className="text-3xl font-black text-white leading-none">Conteudo Concluido</h3>
+            <h3 className="text-3xl font-black text-white leading-none">Conteúdo Concluído</h3>
             <p className="text-amber-50 text-lg font-medium">
               Você concluiu todos os módulos obrigatórios. Falta apenas realizar e ser aprovado na avaliação final para concluir o curso.
             </p>

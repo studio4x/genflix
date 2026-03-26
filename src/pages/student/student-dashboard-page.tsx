@@ -34,7 +34,14 @@ function sanitizeDescription(description: string | null) {
   return description.replace(/<[^>]*>?/gm, '').trim()
 }
 
-function getLearningActionLabel(hasStartedCourse: boolean) {
+function getLearningActionLabel(
+  journeyStatus: StudentCourseJourneyStatus,
+  hasStartedCourse: boolean,
+) {
+  if (journeyStatus === 'completed') {
+    return 'Revisar Aprendizado'
+  }
+
   return hasStartedCourse ? 'Continuar Aprendizado' : 'Iniciar Aprendizado'
 }
 
@@ -113,7 +120,12 @@ export function StudentDashboardPage() {
     return source.slice(0, 2)
   }, [courseStatuses, courses])
 
-  const featuredCourseLabel = featuredCourse ? getLearningActionLabel(startedCourseIds.has(featuredCourse.id)) : null
+  const featuredCourseLabel = featuredCourse
+    ? getLearningActionLabel(
+        getStudentCourseJourneyStatus(courseStatuses.get(featuredCourse.id) ?? null),
+        startedCourseIds.has(featuredCourse.id),
+      )
+    : null
 
   return (
     <div className="space-y-8">
@@ -240,7 +252,7 @@ export function StudentDashboardPage() {
                 <div className="grid gap-5 xl:grid-cols-2">
                   {recommendedCourses.map((course) => {
                     const journeyStatus = getStudentCourseJourneyStatus(courseStatuses.get(course.id) ?? null)
-                    const learningActionLabel = getLearningActionLabel(startedCourseIds.has(course.id))
+                    const learningActionLabel = getLearningActionLabel(journeyStatus, startedCourseIds.has(course.id))
 
                     return (
                       <article key={course.id} className="overflow-hidden rounded-[28px] border border-slate-200 bg-slate-50">

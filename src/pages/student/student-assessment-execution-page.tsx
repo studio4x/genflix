@@ -162,6 +162,25 @@ export function StudentAssessmentExecutionPage() {
   const progressPercent = questions.length > 0
     ? Math.round(((currentQuestionIndex + 1) / questions.length) * 100)
     : 0
+  const objectiveQuestionCount = useMemo(
+    () => questions.filter((question) => question.question_type === 'single_choice').length,
+    [questions],
+  )
+  const requiredCorrectAnswers = useMemo(() => {
+    if (!assessment || objectiveQuestionCount === 0) {
+      return 0
+    }
+
+    return Math.ceil((assessment.passing_score / 100) * objectiveQuestionCount)
+  }, [assessment, objectiveQuestionCount])
+  const approvalRequirementText = useMemo(() => {
+    if (!assessment || objectiveQuestionCount === 0) {
+      return null
+    }
+
+    const questionLabel = objectiveQuestionCount === 1 ? 'questão objetiva' : 'questões objetivas'
+    return `Para aprovação, você precisa acertar pelo menos ${requiredCorrectAnswers} de ${objectiveQuestionCount} ${questionLabel} (${assessment.passing_score}% de aproveitamento).`
+  }, [assessment, objectiveQuestionCount, requiredCorrectAnswers])
 
   const allQuestionsAnswered = useMemo(() => {
     return questions.every((question) => {
@@ -410,6 +429,11 @@ export function StudentAssessmentExecutionPage() {
             <p className="mt-4 font-medium leading-relaxed text-slate-500">
               Voce ja realizou todas as tentativas permitidas para este quiz ({studentAssessment.max_attempts} de {studentAssessment.max_attempts}) e nao obteve a pontuacao minima necessaria.
             </p>
+            {approvalRequirementText ? (
+              <div className="mt-6 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-left text-sm font-semibold text-amber-900">
+                {approvalRequirementText}
+              </div>
+            ) : null}
 
             <div className="mt-8 rounded-3xl border border-slate-100 bg-slate-50 p-6 text-left">
               <div className="mb-2 flex items-center gap-3">
@@ -529,7 +553,7 @@ export function StudentAssessmentExecutionPage() {
                   ? 'Resposta discursiva validada.'
                   : 'A resposta discursiva precisa de ajuste.'
                 : result.is_approved
-                  ? 'Parabens! Voce foi aprovado.'
+                  ? 'Parabéns! Você foi aprovado.'
                   : 'Nao foi desta vez.'}
             </h2>
             <div className="mt-4 flex flex-col items-center justify-center gap-1">
@@ -538,6 +562,11 @@ export function StudentAssessmentExecutionPage() {
                 {result.score_percent}%
               </span>
             </div>
+            {approvalRequirementText ? (
+              <p className="mx-auto mt-5 max-w-xl text-sm font-semibold leading-relaxed text-slate-600">
+                {approvalRequirementText}
+              </p>
+            ) : null}
           </div>
 
           <div className="space-y-8 bg-white p-8 sm:p-10">
@@ -652,6 +681,12 @@ export function StudentAssessmentExecutionPage() {
             Voce ja concluiu este quiz com 100%. As respostas corretas estao destacadas e uma nova tentativa nao e permitida.
           </div>
         )}
+
+        {approvalRequirementText ? (
+          <div className="rounded-2xl border border-blue-100 bg-blue-50 px-5 py-4 text-sm font-semibold text-blue-900">
+            {approvalRequirementText}
+          </div>
+        ) : null}
 
         <div className="h-2.5 w-full overflow-hidden rounded-full bg-slate-200/60 p-0.5 shadow-inner">
           <div
