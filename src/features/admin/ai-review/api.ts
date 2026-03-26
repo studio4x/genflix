@@ -40,6 +40,13 @@ export interface ModuleAiReviewResult {
   ready_to_publish: boolean
   issues: ModuleAiReviewIssue[]
   corrected_module: ImportModuleData | null
+  ai_provider: 'openai' | 'gemini' | null
+  ai_model: string | null
+  token_count_method: 'actual' | 'estimated' | null
+  input_tokens: number | null
+  output_tokens: number | null
+  total_tokens: number | null
+  estimated_cost_usd: number | null
 }
 
 export interface ModuleAiReviewHistoryEntry extends ModuleAiReviewResult {
@@ -119,7 +126,7 @@ export async function analyzeModuleWithAi(input: {
 
       const payload = await response.json().catch(() => null)
       if (response.ok) {
-        return payload as ModuleAiReviewResult
+        return normalizeModuleAiReviewResult(payload as ModuleAiReviewResult)
       }
 
       const message =
@@ -168,7 +175,7 @@ export async function fetchModuleAiReviewHistory(moduleIds: string[]) {
     throw result.error
   }
 
-  return (result.data as ModuleAiReviewHistoryEntry[]) ?? []
+  return ((result.data as ModuleAiReviewHistoryEntry[] | null) ?? []).map(normalizeModuleAiReviewHistoryEntry)
 }
 
 export async function createModuleAiReviewHistory(input: {
@@ -187,6 +194,13 @@ export async function createModuleAiReviewHistory(input: {
       ready_to_publish: input.result.ready_to_publish,
       issues: input.result.issues,
       corrected_module: input.result.corrected_module,
+      ai_provider: input.result.ai_provider,
+      ai_model: input.result.ai_model,
+      token_count_method: input.result.token_count_method,
+      input_tokens: input.result.input_tokens,
+      output_tokens: input.result.output_tokens,
+      total_tokens: input.result.total_tokens,
+      estimated_cost_usd: input.result.estimated_cost_usd,
       created_by: input.userId,
     })
     .select('*')
@@ -196,7 +210,34 @@ export async function createModuleAiReviewHistory(input: {
     throw insertResult.error
   }
 
-  return ((insertResult.data as ModuleAiReviewHistoryEntry[] | null) ?? [])[0] as ModuleAiReviewHistoryEntry
+  return normalizeModuleAiReviewHistoryEntry(((insertResult.data as ModuleAiReviewHistoryEntry[] | null) ?? [])[0] as ModuleAiReviewHistoryEntry)
+}
+
+export function formatAiReviewCost(costUsd: number | null) {
+  if (costUsd === null || !Number.isFinite(costUsd)) {
+    return 'Custo indisponivel'
+  }
+
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: costUsd < 0.01 ? 4 : 2,
+    maximumFractionDigits: costUsd < 0.01 ? 4 : 2,
+  }).format(costUsd)
+}
+
+export function formatAiReviewTokens(tokens: number | null) {
+  if (tokens === null || !Number.isFinite(tokens)) {
+    return 'Tokens indisponiveis'
+  }
+
+  return new Intl.NumberFormat('pt-BR').format(tokens)
+}
+
+export function getAiProviderLabel(provider: ModuleAiReviewResult['ai_provider']) {
+  if (provider === 'openai') return 'OpenAI'
+  if (provider === 'gemini') return 'Gemini'
+  return 'IA'
 }
 
 export async function markModuleAiReviewApplied(reviewId: string, userId: string) {
@@ -217,7 +258,7 @@ export async function markModuleAiReviewApplied(reviewId: string, userId: string
 
   const updatedReview = ((updateResult.data as ModuleAiReviewHistoryEntry[] | null) ?? [])[0] ?? null
   if (updatedReview) {
-    return updatedReview
+    return normalizeModuleAiReviewHistoryEntry(updatedReview)
   }
 
   const fetchResult = await supabase
@@ -236,10 +277,41 @@ export async function markModuleAiReviewApplied(reviewId: string, userId: string
   }
 
   return {
-    ...fetchedReview,
+    ...normalizeModuleAiReviewHistoryEntry(fetchedReview),
     applied_at: fetchedReview.applied_at ?? appliedAt,
     applied_by: fetchedReview.applied_by ?? userId,
   }
+}
+
+function normalizeModuleAiReviewResult(review: ModuleAiReviewResult): ModuleAiReviewResult {
+  return {
+    ...review,
+    estimated_cost_usd: normalizeNullableNumber(review.estimated_cost_usd),
+    input_tokens: normalizeNullableNumber(review.input_tokens),
+    output_tokens: normalizeNullableNumber(review.output_tokens),
+    total_tokens: normalizeNullableNumber(review.total_tokens),
+  }
+}
+
+function normalizeModuleAiReviewHistoryEntry(review: ModuleAiReviewHistoryEntry): ModuleAiReviewHistoryEntry {
+  return normalizeModuleAiReviewResult(review) as ModuleAiReviewHistoryEntry
+}
+
+function normalizeNullableNumber(value: unknown) {
+  if (value === null || value === undefined || value === '') {
+    return null
+  }
+
+  if (typeof value === 'number') {
+    return Number.isFinite(value) ? value : null
+  }
+
+  if (typeof value === 'string') {
+    const parsed = Number(value)
+    return Number.isFinite(parsed) ? parsed : null
+  }
+
+  return null
 }
 
 async function resolveAccessToken(forceRefresh: boolean) {

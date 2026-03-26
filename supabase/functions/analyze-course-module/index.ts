@@ -16,6 +16,42 @@ interface CourseAiReviewStandardsRow {
   additional_review_rules: Nullable<string>
 }
 
+type AiProvider = 'openai' | 'gemini'
+type TokenCountMethod = 'actual' | 'estimated'
+
+interface AnalysisUsageMetrics {
+  ai_provider: AiProvider
+  ai_model: string
+  token_count_method: TokenCountMethod
+  input_tokens: number
+  output_tokens: number
+  total_tokens: number
+  estimated_cost_usd: number
+}
+
+interface AnalysisGenerationResult {
+  text: string
+  usage: AnalysisUsageMetrics
+}
+
+const OPENAI_ANALYSIS_MODEL = 'gpt-4o-mini'
+const GEMINI_ANALYSIS_MODEL = 'gemini-2.5-flash'
+
+const MODEL_PRICING_USD_PER_1M: Record<AiProvider, Record<string, { input: number; output: number }>> = {
+  openai: {
+    [OPENAI_ANALYSIS_MODEL]: {
+      input: 0.15,
+      output: 0.6,
+    },
+  },
+  gemini: {
+    [GEMINI_ANALYSIS_MODEL]: {
+      input: 0.3,
+      output: 2.5,
+    },
+  },
+}
+
 Deno.serve(async (request) => {
   if (request.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
@@ -107,12 +143,15 @@ Deno.serve(async (request) => {
       standards,
     })
 
-    const rawText = await generateAnalysisJson(prompt, {
+    const analysis = await generateAnalysisJson(prompt, {
       openAiApiKey,
       geminiApiKey,
     })
-    const parsed = JSON.parse(extractJsonObject(rawText))
-    return jsonResponse(parsed, 200)
+    const parsed = JSON.parse(extractJsonObject(analysis.text))
+    return jsonResponse({
+      ...parsed,
+      ...analysis.usage,
+    }, 200)
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Erro inesperado ao analisar modulo com IA.'
     return jsonResponse({ error: message }, 500)
@@ -258,12 +297,12 @@ async function generateAnalysisJson(
     openAiApiKey: string
     geminiApiKey: string
   },
-) {
+): Promise<AnalysisGenerationResult> {
   if (providers.openAiApiKey) {
     const openAiResult = await generateWithOpenAi(prompt, providers.openAiApiKey)
 
     if (openAiResult.ok) {
-      return openAiResult.text
+      return openAiResult
     }
   }
 
@@ -282,7 +321,7 @@ async function generateWithOpenAi(prompt: string, apiKey: string) {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: 'gpt-4o-mini',
+      model: OPENAI_ANALYSIS_MODEL,
       temperature: 0.2,
       response_format: {
         type: 'json_object',
@@ -316,11 +355,20 @@ async function generateWithOpenAi(prompt: string, apiKey: string) {
   return {
     ok: true as const,
     text,
+    usage: buildUsageMetrics({
+      provider: 'openai',
+      model: OPENAI_ANALYSIS_MODEL,
+      prompt,
+      outputText: text,
+      inputTokens: payload?.usage?.prompt_tokens,
+      outputTokens: payload?.usage?.completion_tokens,
+      totalTokens: payload?.usage?.total_tokens,
+    }),
   }
 }
 
 async function generateWithGemini(prompt: string, apiKey: string) {
-  const geminiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+  const geminiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_ANALYSIS_MODEL}:generateContent?key=${apiKey}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -350,7 +398,77 @@ async function generateWithGemini(prompt: string, apiKey: string) {
     throw new Error('Gemini nao retornou um payload valido.')
   }
 
-  return rawText
+  return {
+    text: rawText,
+    usage: buildUsageMetrics({
+      provider: 'gemini',
+      model: GEMINI_ANALYSIS_MODEL,
+      prompt,
+      outputText: rawText,
+      inputTokens: geminiPayload?.usageMetadata?.promptTokenCount,
+      outputTokens: geminiPayload?.usageMetadata?.candidatesTokenCount,
+      totalTokens: geminiPayload?.usageMetadata?.totalTokenCount,
+    }),
+  }
+}
+
+function buildUsageMetrics(input: {
+  provider: AiProvider
+  model: string
+  prompt: string
+  outputText: string
+  inputTokens: unknown
+  outputTokens: unknown
+  totalTokens: unknown
+}): AnalysisUsageMetrics {
+  const hasActualCounts = isFiniteNonNegative(input.inputTokens)
+    && isFiniteNonNegative(input.outputTokens)
+    && isFiniteNonNegative(input.totalTokens)
+
+  const inputTokens = hasActualCounts ? input.inputTokens : estimateTokens(input.prompt)
+  const outputTokens = hasActualCounts ? input.outputTokens : estimateTokens(input.outputText)
+  const totalTokens = hasActualCounts ? input.totalTokens : inputTokens + outputTokens
+  const estimatedCostUsd = calculateEstimatedCostUsd({
+    provider: input.provider,
+    model: input.model,
+    inputTokens,
+    outputTokens,
+  })
+
+  return {
+    ai_provider: input.provider,
+    ai_model: input.model,
+    token_count_method: hasActualCounts ? 'actual' : 'estimated',
+    input_tokens: inputTokens,
+    output_tokens: outputTokens,
+    total_tokens: totalTokens,
+    estimated_cost_usd: estimatedCostUsd,
+  }
+}
+
+function calculateEstimatedCostUsd(input: {
+  provider: AiProvider
+  model: string
+  inputTokens: number
+  outputTokens: number
+}) {
+  const pricing = MODEL_PRICING_USD_PER_1M[input.provider]?.[input.model]
+  if (!pricing) {
+    return 0
+  }
+
+  const inputCost = (input.inputTokens / 1_000_000) * pricing.input
+  const outputCost = (input.outputTokens / 1_000_000) * pricing.output
+
+  return Number((inputCost + outputCost).toFixed(6))
+}
+
+function estimateTokens(text: string) {
+  return Math.max(1, Math.ceil(text.length / 4))
+}
+
+function isFiniteNonNegative(value: unknown): value is number {
+  return typeof value === 'number' && Number.isFinite(value) && value >= 0
 }
 
 async function buildAssessmentsWithQuestions(

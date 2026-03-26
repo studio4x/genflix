@@ -7,6 +7,9 @@ import {
   analyzeModuleWithAi,
   createModuleAiReviewHistory,
   fetchModuleAiReviewHistory,
+  formatAiReviewCost,
+  formatAiReviewTokens,
+  getAiProviderLabel,
   markModuleAiReviewApplied,
   type ModuleAiReviewHistoryEntry,
   type ModuleAiReviewResult,
@@ -14,6 +17,37 @@ import {
 import { importCourseContent, toErrorMessage } from '@/features/admin/content/api'
 import { publishBuilderNotice } from '@/lib/builder-notice'
 import { Button } from '@/components/ui/button'
+
+function AiReviewUsageSummary({ review }: {
+  review: Pick<ModuleAiReviewResult, 'ai_provider' | 'ai_model' | 'token_count_method' | 'input_tokens' | 'output_tokens' | 'total_tokens' | 'estimated_cost_usd'>
+}) {
+  return (
+    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Provedor</p>
+        <p className="mt-2 text-sm font-bold text-slate-900">{getAiProviderLabel(review.ai_provider)}</p>
+        <p className="mt-1 text-xs text-slate-500">{review.ai_model ?? 'Modelo indisponivel'}</p>
+      </div>
+      <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Entrada</p>
+        <p className="mt-2 text-sm font-bold text-slate-900">{formatAiReviewTokens(review.input_tokens)}</p>
+        <p className="mt-1 text-xs text-slate-500">tokens de prompt</p>
+      </div>
+      <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Saida</p>
+        <p className="mt-2 text-sm font-bold text-slate-900">{formatAiReviewTokens(review.output_tokens)}</p>
+        <p className="mt-1 text-xs text-slate-500">
+          {review.token_count_method === 'actual' ? 'tokens reais' : 'tokens estimados'}
+        </p>
+      </div>
+      <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Custo</p>
+        <p className="mt-2 text-sm font-bold text-slate-900">{formatAiReviewCost(review.estimated_cost_usd)}</p>
+        <p className="mt-1 text-xs text-slate-500">Total: {formatAiReviewTokens(review.total_tokens)}</p>
+      </div>
+    </div>
+  )
+}
 
 export function CourseOverviewPanel() {
   const { courseTree, refreshTree } = useCourseBuilder()
@@ -423,6 +457,7 @@ export function CourseOverviewPanel() {
                   </div>
                 </div>
               </div>
+              <AiReviewUsageSummary review={analysisResult} />
 
               <div className="space-y-3">
                 <h4 className="text-sm font-black uppercase tracking-widest text-slate-500">Pontos a ajustar</h4>
@@ -513,6 +548,9 @@ export function CourseOverviewPanel() {
               <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
                 <p className="text-xs font-black uppercase tracking-widest text-slate-400">Resumo da ultima analise</p>
                 <p className="mt-3 text-sm leading-relaxed text-slate-700">{repeatReviewPrompt.latestReview.summary}</p>
+                <div className="mt-4">
+                  <AiReviewUsageSummary review={repeatReviewPrompt.latestReview} />
+                </div>
                 <div className="mt-4 flex flex-wrap gap-2">
                   <span className="rounded-full bg-slate-900 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-white">
                     Score {repeatReviewPrompt.latestReview.quality_score}
@@ -619,6 +657,9 @@ export function CourseOverviewPanel() {
                       </span>
                     </div>
                     <p className="mt-4 text-sm leading-relaxed text-slate-700">{review.summary}</p>
+                    <div className="mt-4">
+                      <AiReviewUsageSummary review={review} />
+                    </div>
                     <div className="mt-4 space-y-3">
                       {review.issues.length === 0 ? (
                         <div className="rounded-xl border border-emerald-100 bg-emerald-50 p-4 text-sm font-semibold text-emerald-700">
