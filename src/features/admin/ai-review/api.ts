@@ -42,6 +42,16 @@ export interface ModuleAiReviewResult {
   corrected_module: ImportModuleData | null
 }
 
+export interface ModuleAiReviewHistoryEntry extends ModuleAiReviewResult {
+  id: string
+  course_id: string
+  module_id: string
+  created_at: string
+  created_by: string | null
+  applied_at: string | null
+  applied_by: string | null
+}
+
 export async function fetchCourseAiReviewStandards(courseId: string) {
   const result = await supabase
     .from('course_ai_review_standards')
@@ -141,6 +151,70 @@ export async function analyzeModuleWithAi(input: {
   }
 
   throw lastError ?? new Error('Falha ao executar a analise com IA.')
+}
+
+export async function fetchModuleAiReviewHistory(moduleIds: string[]) {
+  if (moduleIds.length === 0) {
+    return [] as ModuleAiReviewHistoryEntry[]
+  }
+
+  const result = await supabase
+    .from('course_module_ai_reviews')
+    .select('*')
+    .in('module_id', moduleIds)
+    .order('created_at', { ascending: false })
+
+  if (result.error) {
+    throw result.error
+  }
+
+  return (result.data as ModuleAiReviewHistoryEntry[]) ?? []
+}
+
+export async function createModuleAiReviewHistory(input: {
+  courseId: string
+  moduleId: string
+  userId: string
+  result: ModuleAiReviewResult
+}) {
+  const insertResult = await supabase
+    .from('course_module_ai_reviews')
+    .insert({
+      course_id: input.courseId,
+      module_id: input.moduleId,
+      summary: input.result.summary,
+      quality_score: input.result.quality_score,
+      ready_to_publish: input.result.ready_to_publish,
+      issues: input.result.issues,
+      corrected_module: input.result.corrected_module,
+      created_by: input.userId,
+    })
+    .select('*')
+    .single()
+
+  if (insertResult.error) {
+    throw insertResult.error
+  }
+
+  return insertResult.data as ModuleAiReviewHistoryEntry
+}
+
+export async function markModuleAiReviewApplied(reviewId: string, userId: string) {
+  const updateResult = await supabase
+    .from('course_module_ai_reviews')
+    .update({
+      applied_at: new Date().toISOString(),
+      applied_by: userId,
+    })
+    .eq('id', reviewId)
+    .select('*')
+    .single()
+
+  if (updateResult.error) {
+    throw updateResult.error
+  }
+
+  return updateResult.data as ModuleAiReviewHistoryEntry
 }
 
 async function resolveAccessToken(forceRefresh: boolean) {

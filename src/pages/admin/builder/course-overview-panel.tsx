@@ -2,13 +2,22 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 
 import { useCourseBuilder } from '@/app/layouts/admin-course-builder-layout'
-import { analyzeModuleWithAi, type ModuleAiReviewResult } from '@/features/admin/ai-review/api'
+import { useAuth } from '@/app/providers/auth-provider'
+import {
+  analyzeModuleWithAi,
+  createModuleAiReviewHistory,
+  fetchModuleAiReviewHistory,
+  markModuleAiReviewApplied,
+  type ModuleAiReviewHistoryEntry,
+  type ModuleAiReviewResult,
+} from '@/features/admin/ai-review/api'
 import { importCourseContent, toErrorMessage } from '@/features/admin/content/api'
 import { publishBuilderNotice } from '@/lib/builder-notice'
 import { Button } from '@/components/ui/button'
 
 export function CourseOverviewPanel() {
   const { courseTree, refreshTree } = useCourseBuilder()
+  const { user } = useAuth()
   const [isAnalyzingModuleId, setIsAnalyzingModuleId] = useState<string | null>(null)
   const [analysisError, setAnalysisError] = useState<string | null>(null)
   const [analysisTarget, setAnalysisTarget] = useState<{ moduleId: string; moduleTitle: string } | null>(null)
@@ -20,6 +29,14 @@ export function CourseOverviewPanel() {
     moduleTitle: string
     appliedAt: string
     issuesCount: number
+  } | null>(null)
+  const [currentReviewId, setCurrentReviewId] = useState<string | null>(null)
+  const [reviewHistoryByModule, setReviewHistoryByModule] = useState<Record<string, ModuleAiReviewHistoryEntry[]>>({})
+  const [historyTarget, setHistoryTarget] = useState<{ moduleId: string; moduleTitle: string } | null>(null)
+  const [repeatReviewPrompt, setRepeatReviewPrompt] = useState<{
+    moduleId: string
+    moduleTitle: string
+    latestReview: ModuleAiReviewHistoryEntry
   } | null>(null)
 
   useEffect(() => {
@@ -36,26 +53,87 @@ export function CourseOverviewPanel() {
     return () => window.removeEventListener('keydown', handleEscapeKey, true)
   }, [analysisTarget, analysisResult])
 
-  if (!courseTree) return null
-  const { course, modules } = courseTree
+  const course = courseTree?.course ?? null
+  const modules = courseTree?.modules ?? []
+
+  useEffect(() => {
+    let isActive = true
+
+    async function loadReviewHistory() {
+      try {
+        const moduleIds = (courseTree?.modules ?? []).map((module) => module.id)
+        const reviews = await fetchModuleAiReviewHistory(moduleIds)
+        if (!isActive) return
+
+        const grouped = reviews.reduce<Record<string, ModuleAiReviewHistoryEntry[]>>((acc, review) => {
+          const current = acc[review.module_id] ?? []
+          current.push(review)
+          acc[review.module_id] = current
+          return acc
+        }, {})
+
+        setReviewHistoryByModule(grouped)
+      } catch (err) {
+        if (!isActive) return
+        setAnalysisError(toErrorMessage(err))
+      }
+    }
+
+    void loadReviewHistory()
+
+    return () => {
+      isActive = false
+    }
+  }, [courseTree])
 
   const totalLessons = modules.reduce((acc, module) => acc + module.lessons.length, 0)
   const totalDuration = modules.reduce((acc, module) => {
     const lessonsDuration = module.lessons.reduce((lessonAcc, lesson) => lessonAcc + lesson.estimated_minutes, 0)
     const assessmentsDuration = module.assessments.reduce((assessmentAcc, assessment) => assessmentAcc + assessment.estimated_minutes, 0)
     return acc + lessonsDuration + assessmentsDuration
-  }, 0) + courseTree.courseAssessments.reduce((assessmentAcc, assessment) => assessmentAcc + assessment.estimated_minutes, 0)
+  }, 0) + (courseTree?.courseAssessments ?? []).reduce((assessmentAcc, assessment) => assessmentAcc + assessment.estimated_minutes, 0)
 
-  async function handleAnalyzeModule(moduleId: string, moduleTitle: string) {
+  async function handleAnalyzeModule(moduleId: string, moduleTitle: string, forceNewReview = false) {
+    if (!course) return
+
+    const latestReview = reviewHistoryByModule[moduleId]?.[0] ?? null
+    if (latestReview && !forceNewReview) {
+      setRepeatReviewPrompt({
+        moduleId,
+        moduleTitle,
+        latestReview,
+      })
+      return
+    }
+
     setIsAnalyzingModuleId(moduleId)
     setAnalysisError(null)
     setDidApplyCurrentAnalysis(false)
+    setRepeatReviewPrompt(null)
+    setCurrentReviewId(null)
 
     try {
       const result = await analyzeModuleWithAi({
         courseId: course.id,
         moduleId,
       })
+      if (user?.id) {
+        try {
+          const savedReview = await createModuleAiReviewHistory({
+            courseId: course.id,
+            moduleId,
+            userId: user.id,
+            result,
+          })
+          setCurrentReviewId(savedReview.id)
+          setReviewHistoryByModule((previous) => ({
+            ...previous,
+            [moduleId]: [savedReview, ...(previous[moduleId] ?? [])],
+          }))
+        } catch (historyError) {
+          setAnalysisError(`A analise foi concluida, mas o historico nao foi salvo: ${toErrorMessage(historyError)}`)
+        }
+      }
       setAnalysisTarget({ moduleId, moduleTitle })
       setAnalysisResult(result)
     } catch (err) {
@@ -66,7 +144,7 @@ export function CourseOverviewPanel() {
   }
 
   async function handleApplyAiFixes() {
-    if (!analysisTarget || !analysisResult?.corrected_module || didApplyCurrentAnalysis) return
+    if (!course || !analysisTarget || !analysisResult?.corrected_module || didApplyCurrentAnalysis) return
 
     setIsApplyingFixes(true)
     setAnalysisError(null)
@@ -84,6 +162,19 @@ export function CourseOverviewPanel() {
     try {
       await importCourseContent(course.id, [analysisResult.corrected_module], false, analysisTarget.moduleId)
       await refreshTree()
+      if (currentReviewId && user?.id) {
+        try {
+          const updatedReview = await markModuleAiReviewApplied(currentReviewId, user.id)
+          setReviewHistoryByModule((previous) => ({
+            ...previous,
+            [updatedReview.module_id]: (previous[updatedReview.module_id] ?? []).map((review) =>
+              review.id === updatedReview.id ? updatedReview : review,
+            ),
+          }))
+        } catch (historyError) {
+          setAnalysisError(`Os ajustes foram aplicados, mas o historico nao foi atualizado: ${toErrorMessage(historyError)}`)
+        }
+      }
       setDidApplyCurrentAnalysis(true)
       const appliedAtIso = new Date().toISOString()
       setApplyFeedback({
@@ -123,6 +214,8 @@ export function CourseOverviewPanel() {
       setIsApplyingFixes(false)
     }
   }
+
+  if (!courseTree || !course) return null
 
   return (
     <div className="mx-auto max-w-4xl space-y-8 pb-12 animate-in fade-in duration-500">
@@ -203,6 +296,17 @@ export function CourseOverviewPanel() {
                     <h4 className="text-base font-bold text-slate-900">{module.title}</h4>
                   </div>
                   <div className="flex shrink-0 items-center gap-3">
+                    {reviewHistoryByModule[module.id]?.length ? (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="h-9 rounded-xl border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                        onClick={() => setHistoryTarget({ moduleId: module.id, moduleTitle: module.title })}
+                      >
+                        Ultimas revisoes
+                      </Button>
+                    ) : null}
                     <Button
                       type="button"
                       variant="outline"
@@ -384,6 +488,163 @@ export function CourseOverviewPanel() {
                 onClick={() => void handleApplyAiFixes()}
               >
                 {isApplyingFixes ? 'Aplicando Ajustes...' : didApplyCurrentAnalysis ? 'Ajustes Aplicados' : 'Implementar Ajustes'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+      {repeatReviewPrompt && (
+        <div className="fixed inset-0 z-[115] flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm animate-in fade-in duration-300">
+          <div className="w-full max-w-2xl rounded-[32px] border border-white/20 bg-white shadow-2xl animate-in zoom-in-95 duration-300">
+            <div className="border-b border-slate-100 p-8">
+              <h3 className="text-xl font-black tracking-tight text-slate-900">Este modulo ja passou por revisao</h3>
+              <p className="mt-2 text-sm leading-relaxed text-slate-500">
+                O modulo <strong>{repeatReviewPrompt.moduleTitle}</strong> ja foi revisado com IA em{' '}
+                {new Intl.DateTimeFormat('pt-BR', {
+                  dateStyle: 'short',
+                  timeStyle: 'medium',
+                }).format(new Date(repeatReviewPrompt.latestReview.created_at))}
+                . Voce pode consultar o historico ou iniciar uma nova revisao.
+              </p>
+            </div>
+            <div className="space-y-4 p-8">
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+                <p className="text-xs font-black uppercase tracking-widest text-slate-400">Resumo da ultima revisao</p>
+                <p className="mt-3 text-sm leading-relaxed text-slate-700">{repeatReviewPrompt.latestReview.summary}</p>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <span className="rounded-full bg-slate-900 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-white">
+                    Score {repeatReviewPrompt.latestReview.quality_score}
+                  </span>
+                  <span className="rounded-full bg-slate-100 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-slate-600">
+                    {repeatReviewPrompt.latestReview.issues.length} ajuste(s)
+                  </span>
+                </div>
+              </div>
+            </div>
+            <div className="flex flex-col gap-3 border-t border-slate-100 bg-slate-50/50 p-8 sm:flex-row sm:justify-end">
+              <Button
+                type="button"
+                variant="ghost"
+                className="h-12 rounded-2xl px-8 font-black text-slate-600"
+                onClick={() => setRepeatReviewPrompt(null)}
+              >
+                Fechar
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                className="h-12 rounded-2xl border-slate-200 px-8 font-black text-slate-700"
+                onClick={() => {
+                  setHistoryTarget({
+                    moduleId: repeatReviewPrompt.moduleId,
+                    moduleTitle: repeatReviewPrompt.moduleTitle,
+                  })
+                }}
+              >
+                Ver revisoes
+              </Button>
+              <Button
+                type="button"
+                className="h-12 rounded-2xl bg-blue-600 px-8 font-black shadow-xl shadow-blue-100 hover:bg-blue-700"
+                onClick={() => void handleAnalyzeModule(repeatReviewPrompt.moduleId, repeatReviewPrompt.moduleTitle, true)}
+              >
+                Fazer nova revisao
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+      {historyTarget && (
+        <div className="fixed inset-0 z-[112] flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm animate-in fade-in duration-300">
+          <div className="max-h-[95vh] w-full max-w-4xl overflow-y-auto rounded-[32px] border border-white/20 bg-white shadow-2xl animate-in zoom-in-95 duration-300">
+            <div className="flex items-start justify-between gap-4 border-b border-slate-100 p-8">
+              <div>
+                <h3 className="text-xl font-black tracking-tight text-slate-900">Historico de revisoes com IA</h3>
+                <p className="mt-1 text-sm font-medium text-slate-500">{historyTarget.moduleTitle}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setHistoryTarget(null)}
+                className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-50 text-slate-400 transition-colors hover:text-slate-900"
+              >
+                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="space-y-4 p-8">
+              {(reviewHistoryByModule[historyTarget.moduleId] ?? []).length === 0 ? (
+                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 text-sm font-semibold text-slate-600">
+                  Nenhuma revisao anterior foi encontrada para este modulo.
+                </div>
+              ) : (
+                (reviewHistoryByModule[historyTarget.moduleId] ?? []).map((review, reviewIndex) => (
+                  <div key={review.id} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="rounded-full bg-slate-900 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-white">
+                        Revisao {reviewIndex + 1}
+                      </span>
+                      <span className="rounded-full bg-slate-100 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-slate-600">
+                        {new Intl.DateTimeFormat('pt-BR', {
+                          dateStyle: 'short',
+                          timeStyle: 'medium',
+                        }).format(new Date(review.created_at))}
+                      </span>
+                      <span className={`rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-widest ${
+                        review.ready_to_publish ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
+                      }`}>
+                        {review.ready_to_publish ? 'Pronto para publicar' : 'Requer ajustes'}
+                      </span>
+                      <span className="rounded-full bg-blue-100 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-blue-700">
+                        Score {review.quality_score}
+                      </span>
+                      <span className={`rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-widest ${
+                        review.applied_at ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600'
+                      }`}>
+                        {review.applied_at
+                          ? `Ajustes aplicados em ${new Intl.DateTimeFormat('pt-BR', {
+                            dateStyle: 'short',
+                            timeStyle: 'medium',
+                          }).format(new Date(review.applied_at))}`
+                          : 'Ajustes nao aplicados'}
+                      </span>
+                    </div>
+                    <p className="mt-4 text-sm leading-relaxed text-slate-700">{review.summary}</p>
+                    <div className="mt-4 space-y-3">
+                      {review.issues.length === 0 ? (
+                        <div className="rounded-xl border border-emerald-100 bg-emerald-50 p-4 text-sm font-semibold text-emerald-700">
+                          Nenhum ajuste foi apontado nesta revisao.
+                        </div>
+                      ) : (
+                        review.issues.map((issue) => (
+                          <div key={issue.id} className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className="rounded-full bg-slate-200 px-2.5 py-1 text-[10px] font-black uppercase tracking-widest text-slate-700">
+                                {issue.category}
+                              </span>
+                              <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-black uppercase tracking-widest text-slate-500">
+                                {issue.severity}
+                              </span>
+                              <span className="text-xs font-bold text-slate-400">{issue.location}</span>
+                            </div>
+                            <p className="mt-3 text-sm font-black text-slate-900">{issue.title}</p>
+                            <p className="mt-2 text-sm leading-relaxed text-slate-600">{issue.recommended_fix}</p>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+            <div className="flex justify-end border-t border-slate-100 bg-slate-50/50 p-8">
+              <Button
+                type="button"
+                variant="ghost"
+                className="h-12 rounded-2xl px-8 font-black text-slate-600"
+                onClick={() => setHistoryTarget(null)}
+              >
+                Fechar
               </Button>
             </div>
           </div>
