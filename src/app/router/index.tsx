@@ -16,8 +16,11 @@ import { AdminModulesPage } from '@/pages/admin/admin-modules-page'
 import { AdminReportsPage } from '@/pages/admin/admin-reports-page'
 import { AdminStudentsPage } from '@/pages/admin/admin-students-page'
 import { ForgotPasswordPage } from '@/pages/public/forgot-password-page'
+import { CookiesPage } from '@/pages/public/cookies-page'
 import { LoginPage } from '@/pages/public/login-page'
+import { PrivacyPage } from '@/pages/public/privacy-page'
 import { ResetPasswordPage } from '@/pages/public/reset-password-page'
+import { TermsOfUsePage } from '@/pages/public/terms-of-use-page'
 import { UnauthorizedPage } from '@/pages/public/unauthorized-page'
 import { StudentAssessmentExecutionPage } from '@/pages/student/student-assessment-execution-page'
 import { StudentCourseDetailsPage } from '@/pages/student/student-course-details-page'
@@ -52,6 +55,18 @@ export const appRouter = createBrowserRouter([
   {
     path: '/nao-autorizado',
     element: <UnauthorizedPage />,
+  },
+  {
+    path: '/privacidade',
+    element: <PrivacyPage />,
+  },
+  {
+    path: '/cookies',
+    element: <CookiesPage />,
+  },
+  {
+    path: '/termos-de-uso',
+    element: <TermsOfUsePage />,
   },
   {
     element: <ProtectedRoute allowedRoles={['student']} />,

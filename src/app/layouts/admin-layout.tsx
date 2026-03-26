@@ -1,7 +1,7 @@
 import { Link, Outlet, useLocation } from 'react-router-dom'
 
+import { PlatformFooter } from '@/components/layout/platform-footer'
 import { useAuth } from '@/app/providers/auth-provider'
-import { AppVersion } from '@/components/layout/AppVersion'
 import { Button } from '@/components/ui/button'
 
 export function AdminLayout() {
@@ -66,8 +66,8 @@ export function AdminLayout() {
           <Outlet />
         </section>
       </div>
-      <div className="mx-auto flex w-full max-w-7xl justify-end px-6 pb-6 lg:px-8">
-        <AppVersion className="text-xs font-black uppercase tracking-widest text-slate-400" />
+      <div className="mx-auto w-full max-w-7xl px-6 pb-6 lg:px-8">
+        <PlatformFooter className="border-t border-slate-200 pt-5" compact />
       </div>
     </main>
   )
