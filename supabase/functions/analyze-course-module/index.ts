@@ -95,13 +95,15 @@ Deno.serve(async (request) => {
     if (standardsResult.error) return jsonResponse({ error: standardsResult.error.message }, 400)
 
     const moduleAssessments = (assessmentsResult.data ?? []).filter((assessment) => assessment.assessment_type === 'module')
+    const moduleAssessmentIds = moduleAssessments.map((assessment) => assessment.id)
+    const quizWithQuestions = await buildAssessmentsWithQuestions(supabase, moduleAssessmentIds, moduleAssessments)
     const standards = (standardsResult.data as CourseAiReviewStandardsRow | null) ?? null
 
     const prompt = buildPrompt({
       course: courseResult.data,
       module: moduleResult.data,
       lessons: lessonsResult.data ?? [],
-      assessments: moduleAssessments,
+      assessments: quizWithQuestions,
       standards,
     })
 
@@ -349,4 +351,77 @@ async function generateWithGemini(prompt: string, apiKey: string) {
   }
 
   return rawText
+}
+
+async function buildAssessmentsWithQuestions(
+  supabase: ReturnType<typeof createClient>,
+  assessmentIds: string[],
+  assessments: Record<string, unknown>[],
+) {
+  if (assessmentIds.length === 0) {
+    return assessments
+  }
+
+  const questionsResult = await supabase
+    .from('assessment_questions')
+    .select('*')
+    .in('assessment_id', assessmentIds)
+    .order('position', { ascending: true })
+
+  if (questionsResult.error) {
+    throw new Error(questionsResult.error.message)
+  }
+
+  const questions = (questionsResult.data ?? []) as Record<string, unknown>[]
+  const questionIds = questions
+    .map((question) => question.id)
+    .filter((id): id is string => typeof id === 'string')
+
+  const optionsResult = questionIds.length > 0
+    ? await supabase
+      .from('assessment_options')
+      .select('*')
+      .in('question_id', questionIds)
+      .order('position', { ascending: true })
+    : { data: [], error: null }
+
+  if (optionsResult.error) {
+    throw new Error(optionsResult.error.message)
+  }
+
+  const options = (optionsResult.data ?? []) as Record<string, unknown>[]
+  const optionsByQuestion = new Map<string, Record<string, unknown>[]>()
+  for (const option of options) {
+    const questionId = option.question_id
+    if (typeof questionId !== 'string') continue
+    const current = optionsByQuestion.get(questionId) ?? []
+    current.push(option)
+    optionsByQuestion.set(questionId, current)
+  }
+
+  const questionsByAssessment = new Map<string, Record<string, unknown>[]>()
+  for (const question of questions) {
+    const assessmentId = question.assessment_id
+    const questionId = question.id
+    if (typeof assessmentId !== 'string' || typeof questionId !== 'string') continue
+
+    const current = questionsByAssessment.get(assessmentId) ?? []
+    current.push({
+      ...question,
+      options: optionsByQuestion.get(questionId) ?? [],
+    })
+    questionsByAssessment.set(assessmentId, current)
+  }
+
+  return assessments.map((assessment) => {
+    const assessmentId = assessment.id
+    if (typeof assessmentId !== 'string') {
+      return assessment
+    }
+
+    return {
+      ...assessment,
+      questions: questionsByAssessment.get(assessmentId) ?? [],
+    }
+  })
 }
