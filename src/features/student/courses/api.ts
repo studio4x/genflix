@@ -173,6 +173,26 @@ export async function fetchStudentCoursesStatusMap(courseIds: string[]) {
   return new Map<string, StudentCourseStatus | null>(entries)
 }
 
+export async function fetchStartedCourseIds(courseIds: string[]) {
+  const uniqueCourseIds = [...new Set(courseIds.filter(Boolean))]
+
+  if (uniqueCourseIds.length === 0) {
+    return new Set<string>()
+  }
+
+  const result = await supabase
+    .from('course_progress')
+    .select('course_id')
+    .in('course_id', uniqueCourseIds)
+
+  if (result.error) {
+    throw result.error
+  }
+
+  const startedIds = ((result.data as Array<{ course_id: string }> | null) ?? []).map((entry) => entry.course_id)
+  return new Set(startedIds)
+}
+
 export function getStudentCourseJourneyStatus(status: StudentCourseStatus | null): StudentCourseJourneyStatus {
   if (!status) {
     return 'in_progress'

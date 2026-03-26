@@ -234,6 +234,12 @@ export function StudentCourseDetailsPage() {
 
   const finalAssessment = assessments.find((a) => a.assessment_type === 'final')
   const courseJourneyStatus = getStudentCourseJourneyStatus(courseStatus)
+  const hasStartedCourse =
+    isAdmin ||
+    Boolean(courseStatus?.is_completed) ||
+    (courseStatus?.required_modules_completed ?? 0) > 0 ||
+    modules.some((module) => module.lessons.some((lesson) => lesson.is_completed)) ||
+    assessments.some((assessment) => assessment.attempts_used > 0 || assessment.last_score !== null || assessment.last_is_approved)
   
   const totalCompleted = modules.filter(m => m.state === 'completed').length
   const totalModules = modules.length
@@ -278,7 +284,7 @@ export function StudentCourseDetailsPage() {
             <div className="pt-4">
                <Button className="bg-white text-slate-900 hover:bg-slate-100 h-16 px-10 rounded-2xl font-black text-lg shadow-xl" asChild>
                   <Link to={modules[0]?.lessons[0] ? `/aluno/cursos/${courseId}/player/aulas/${modules[0].lessons[0].id}` : '#'}>
-                     Continuar Aprendizado
+                     {hasStartedCourse ? 'Continuar Aprendizado' : 'Iniciar Aprendizado'}
                   </Link>
                </Button>
             </div>

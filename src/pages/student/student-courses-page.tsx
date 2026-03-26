@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 
 import {
+  fetchStartedCourseIds,
   fetchReleasedCourses,
   fetchStudentCoursesStatusMap,
   getStudentCourseJourneyStatus,
@@ -36,9 +37,14 @@ function sanitizeCourseCardDescription(description: string | null) {
     .trim()
 }
 
+function getLearningActionLabel(hasStartedCourse: boolean) {
+  return hasStartedCourse ? 'Continuar Aprendizado' : 'Iniciar Aprendizado'
+}
+
 export function StudentCoursesPage() {
   const [courses, setCourses] = useState<Course[]>([])
   const [courseStatuses, setCourseStatuses] = useState<Map<string, StudentCourseStatus | null>>(new Map())
+  const [startedCourseIds, setStartedCourseIds] = useState<Set<string>>(new Set())
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -50,11 +56,16 @@ export function StudentCoursesPage() {
       setError(null)
       try {
         const data = await fetchReleasedCourses()
-        const statusMap = await fetchStudentCoursesStatusMap(data.map((course) => course.id))
+        const courseIds = data.map((course) => course.id)
+        const [statusMap, startedIds] = await Promise.all([
+          fetchStudentCoursesStatusMap(courseIds),
+          fetchStartedCourseIds(courseIds),
+        ])
 
         if (isMounted) {
           setCourses(data)
           setCourseStatuses(statusMap)
+          setStartedCourseIds(startedIds)
         }
       } catch (loadError) {
         if (isMounted) setError(toErrorMessage(loadError))
@@ -116,6 +127,7 @@ export function StudentCoursesPage() {
         {courses.map((course) => {
           const courseStatus = courseStatuses.get(course.id) ?? null
           const journeyStatus = getStudentCourseJourneyStatus(courseStatus)
+          const hasStartedCourse = startedCourseIds.has(course.id)
 
           const footerStatus = journeyStatus === 'completed'
             ? {
@@ -130,9 +142,9 @@ export function StudentCoursesPage() {
                   cta: 'Fazer Prova Final',
                 }
               : {
-                  dotClass: 'bg-blue-500 animate-pulse',
-                  label: 'Em Andamento',
-                  cta: 'Comecar Agora',
+                  dotClass: hasStartedCourse ? 'bg-blue-500 animate-pulse' : 'bg-slate-400',
+                  label: hasStartedCourse ? 'Em Andamento' : 'Nao Iniciado',
+                  cta: getLearningActionLabel(hasStartedCourse),
                 }
 
           return (

@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '@/app/providers/auth-provider'
 import { Button } from '@/components/ui/button'
 import {
+  fetchStartedCourseIds,
   fetchReleasedCourses,
   fetchStudentCoursesStatusMap,
   getStudentCourseJourneyStatus,
@@ -33,10 +34,15 @@ function sanitizeDescription(description: string | null) {
   return description.replace(/<[^>]*>?/gm, '').trim()
 }
 
+function getLearningActionLabel(hasStartedCourse: boolean) {
+  return hasStartedCourse ? 'Continuar Aprendizado' : 'Iniciar Aprendizado'
+}
+
 export function StudentDashboardPage() {
   const { profile } = useAuth()
   const [courses, setCourses] = useState<Course[]>([])
   const [courseStatuses, setCourseStatuses] = useState<Map<string, StudentCourseStatus | null>>(new Map())
+  const [startedCourseIds, setStartedCourseIds] = useState<Set<string>>(new Set())
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
@@ -45,9 +51,14 @@ export function StudentDashboardPage() {
     setError(null)
     try {
       const releasedCourses = await fetchReleasedCourses()
-      const statusMap = await fetchStudentCoursesStatusMap(releasedCourses.map((course) => course.id))
+      const courseIds = releasedCourses.map((course) => course.id)
+      const [statusMap, startedIds] = await Promise.all([
+        fetchStudentCoursesStatusMap(courseIds),
+        fetchStartedCourseIds(courseIds),
+      ])
       setCourses(releasedCourses)
       setCourseStatuses(statusMap)
+      setStartedCourseIds(startedIds)
     } catch (loadError) {
       setError(toErrorMessage(loadError))
     } finally {
@@ -101,6 +112,8 @@ export function StudentDashboardPage() {
     const source = prioritizedCourses.length > 0 ? prioritizedCourses : courses
     return source.slice(0, 2)
   }, [courseStatuses, courses])
+
+  const featuredCourseLabel = featuredCourse ? getLearningActionLabel(startedCourseIds.has(featuredCourse.id)) : null
 
   return (
     <div className="space-y-8">
@@ -204,7 +217,7 @@ export function StudentDashboardPage() {
                       </svg>
                     </div>
                     <div>
-                      <p className="text-base font-black text-slate-900">Continuar jornada</p>
+                      <p className="text-base font-black text-slate-900">{featuredCourseLabel}</p>
                       <p className="max-w-[460px] truncate text-sm font-medium text-slate-500">{featuredCourse.title}</p>
                     </div>
                   </div>
@@ -227,6 +240,7 @@ export function StudentDashboardPage() {
                 <div className="grid gap-5 xl:grid-cols-2">
                   {recommendedCourses.map((course) => {
                     const journeyStatus = getStudentCourseJourneyStatus(courseStatuses.get(course.id) ?? null)
+                    const learningActionLabel = getLearningActionLabel(startedCourseIds.has(course.id))
 
                     return (
                       <article key={course.id} className="overflow-hidden rounded-[28px] border border-slate-200 bg-slate-50">
@@ -259,7 +273,7 @@ export function StudentDashboardPage() {
                               to={`/aluno/cursos/${course.id}`}
                               className="inline-flex h-11 items-center justify-center rounded-2xl bg-blue-600 px-4 text-sm font-black text-white transition-colors hover:bg-blue-700"
                             >
-                              Abrir curso
+                              {learningActionLabel}
                             </Link>
                             <Link
                               to="/aluno/cursos"
