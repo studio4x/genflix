@@ -86,7 +86,7 @@ export async function analyzeModuleWithAi(input: {
   courseId: string
   moduleId: string
 }) {
-  const maxAttempts = 3
+  const maxAttempts = 6
   let lastError: Error | null = null
 
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
@@ -94,6 +94,7 @@ export async function analyzeModuleWithAi(input: {
       const accessToken = await resolveAccessToken(attempt > 1)
       const response = await fetch(`${env.VITE_SUPABASE_URL}/functions/v1/analyze-course-module`, {
         method: 'POST',
+        keepalive: true,
         headers: {
           'Content-Type': 'application/json',
           apikey: env.VITE_SUPABASE_ANON_KEY,
@@ -119,6 +120,7 @@ export async function analyzeModuleWithAi(input: {
       if (response.status >= 500 || response.status === 429 || response.status === 408) {
         lastError = new Error(message)
         if (attempt < maxAttempts) {
+          await waitUntilVisibleIfHidden()
           await sleep(attempt * 800)
           continue
         }
@@ -129,6 +131,7 @@ export async function analyzeModuleWithAi(input: {
       const isNetworkFailure = error instanceof TypeError
       if (isNetworkFailure && attempt < maxAttempts) {
         lastError = new Error('Falha de rede temporaria ao analisar modulo.')
+        await waitUntilVisibleIfHidden()
         await sleep(attempt * 800)
         continue
       }
@@ -160,4 +163,31 @@ async function resolveAccessToken(forceRefresh: boolean) {
 
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
+async function waitUntilVisibleIfHidden() {
+  if (typeof document === 'undefined' || !document.hidden) {
+    return
+  }
+
+  await new Promise<void>((resolve) => {
+    let settled = false
+
+    const finish = () => {
+      if (settled) return
+      settled = true
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+      clearTimeout(timeoutId)
+      resolve()
+    }
+
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        finish()
+      }
+    }
+
+    const timeoutId = window.setTimeout(finish, 30_000)
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+  })
 }
