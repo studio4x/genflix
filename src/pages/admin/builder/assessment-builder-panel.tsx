@@ -147,7 +147,7 @@ export function AssessmentBuilderPanel() {
 
     try {
       const initialData = {
-        title: isFinal ? 'Avaliacao Final' : `Quiz: ${module?.title || 'Novo Modulo'}`,
+        title: isFinal ? 'Avaliação Final' : `Quiz: ${module?.title || 'Novo Módulo'}`,
         description: '',
         is_required: true,
         passing_score: 70,
@@ -618,7 +618,7 @@ export function AssessmentBuilderPanel() {
         const initialData = {
           title: typeof data.title === 'string' && data.title.trim()
             ? data.title
-            : (isFinal ? 'Avaliacao Final' : `Quiz: ${module?.title || 'Novo Modulo'}`),
+            : (isFinal ? 'Avaliação Final' : `Quiz: ${module?.title || 'Novo Módulo'}`),
           description: typeof data.description === 'string' ? data.description : '',
           is_required: true,
           passing_score: typeof data.passing_score === 'number' ? data.passing_score : 70,
@@ -637,7 +637,7 @@ export function AssessmentBuilderPanel() {
       }
 
       if (!targetAssessmentId) {
-        throw new Error('Nao foi possivel criar ou localizar a avaliacao alvo.')
+        throw new Error('Não foi possível criar ou localizar a avaliação alvo.')
       }
 
       await importAssessmentContentStructured(targetAssessmentId, data as unknown as ImportAssessmentData)
@@ -646,7 +646,7 @@ export function AssessmentBuilderPanel() {
       setIsImportModalOpen(false)
       setImportJson('')
     } catch (importLoadError) {
-      console.error('Erro ao importar avaliacao:', importLoadError)
+      console.error('Erro ao importar avaliação:', importLoadError)
       setImportError(toErrorMessage(importLoadError))
     } finally {
       setIsImporting(false)
@@ -657,8 +657,8 @@ export function AssessmentBuilderPanel() {
     if (!assessment || !courseId) return
 
     const confirmMessage = isFinal
-      ? `CUIDADO: Excluir a avaliacao final "${assessment.title}"?\n\nTodas as questoes, estudos de caso e tentativas vinculadas serao removidos permanentemente.`
-      : `CUIDADO: Excluir o quiz "${assessment.title}"?\n\nTodas as questoes, estudos de caso e tentativas vinculadas serao removidos permanentemente.`
+      ? `CUIDADO: Excluir a avaliação final "${assessment.title}"?\n\nTodas as questões, estudos de caso e tentativas vinculadas serão removidos permanentemente.`
+      : `CUIDADO: Excluir o quiz "${assessment.title}"?\n\nTodas as questões, estudos de caso e tentativas vinculadas serão removidos permanentemente.`
 
     if (!window.confirm(confirmMessage)) {
       return
@@ -717,7 +717,7 @@ export function AssessmentBuilderPanel() {
                     : 'border border-slate-200 bg-white text-slate-500 hover:border-blue-200 hover:text-blue-600'
                 }`}
               >
-                Multipla Escolha
+                Múltipla Escolha
               </button>
               <button
                 type="button"
@@ -755,11 +755,11 @@ export function AssessmentBuilderPanel() {
         <div className="space-y-4 p-6">
           <div className="flex items-center justify-between gap-4 rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3">
             <div>
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Pontuacao</p>
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Pontuação</p>
               <p className="mt-1 text-xs font-medium text-slate-500">
                 {question.question_type === 'essay_ai'
                   ? 'Pergunta com feedback, sem nota.'
-                  : 'Esta pergunta entra no calculo de aprovacao.'}
+                  : 'Esta pergunta entra no cálculo de aprovação.'}
               </p>
             </div>
             <input
@@ -807,7 +807,7 @@ export function AssessmentBuilderPanel() {
                 value={question.essay_expected_answer ?? ''}
                 onChange={(event) => void handleUpdateEssayExpectedAnswer(question.id, event.target.value)}
                 onBlur={() => void handlePersistQuestion(question.id, { essay_expected_answer: question.essay_expected_answer ?? '' })}
-                placeholder="Descreva a resposta esperada para orientar a avaliacao da IA."
+                placeholder="Descreva a resposta esperada para orientar a avaliação da IA."
               />
             </>
           ) : (
@@ -889,7 +889,7 @@ export function AssessmentBuilderPanel() {
         </div>
         <div className="space-y-2">
           <h2 className="text-2xl font-black text-slate-800">Nenhum Quiz Encontrado</h2>
-          <p className="text-slate-500">Este modulo ainda nao possui uma avaliacao configurada.</p>
+          <p className="text-slate-500">Este módulo ainda não possui uma avaliação configurada.</p>
         </div>
         <Button onClick={() => void handleCreateAssessment()} className="h-12 bg-blue-600 px-8 font-bold text-white shadow-lg ring-4 ring-blue-50 hover:bg-blue-700">
           Criar Quiz Agora
@@ -910,20 +910,20 @@ export function AssessmentBuilderPanel() {
             value={assessmentDraft.title}
             onChange={(event) => setAssessmentDraft((prev) => (prev ? { ...prev, title: event.target.value } : prev))}
             onBlur={() => void persistAssessmentDraft({ title: assessmentDraft.title })}
-            placeholder="Titulo do quiz..."
+            placeholder="Título do quiz..."
           />
           <input
             className="w-full border-none bg-transparent p-0 text-sm font-medium text-slate-500 placeholder:text-slate-400 focus:ring-0"
             value={assessmentDraft.description}
             onChange={(event) => setAssessmentDraft((prev) => (prev ? { ...prev, description: event.target.value } : prev))}
             onBlur={() => void persistAssessmentDraft({ description: assessmentDraft.description })}
-            placeholder="Breve descricao ou instrucoes para o aluno..."
+            placeholder="Breve descrição ou instruções para o aluno..."
           />
         </div>
 
         <div className="flex items-center gap-4 rounded-2xl border border-slate-100 bg-slate-50 p-2">
           <div className="border-r border-slate-200 px-3 text-center">
-            <p className="text-[10px] font-black uppercase tracking-tighter text-slate-400">Media p/ Aprovacao</p>
+            <p className="text-[10px] font-black uppercase tracking-tighter text-slate-400">Média p/ Aprovação</p>
             <input
               type="number"
               className="w-12 border-none bg-transparent p-0 text-center font-black text-blue-600 focus:ring-0"
@@ -946,7 +946,7 @@ export function AssessmentBuilderPanel() {
           </div>
 
           <div className="border-l border-slate-200 px-3 text-center">
-            <p className="text-[10px] font-black uppercase tracking-tighter text-slate-400">Duracao (Min)</p>
+            <p className="text-[10px] font-black uppercase tracking-tighter text-slate-400">Duração (Min)</p>
             <input
               type="number"
               className="w-12 border-none bg-transparent p-0 text-center font-black text-blue-600 focus:ring-0"
@@ -967,7 +967,7 @@ export function AssessmentBuilderPanel() {
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
             </svg>
-            {isDeletingAssessment ? 'Excluindo...' : (isFinal ? 'Excluir Avaliacao' : 'Excluir Quiz')}
+            {isDeletingAssessment ? 'Excluindo...' : (isFinal ? 'Excluir Avaliação' : 'Excluir Quiz')}
           </Button>
           <Button
             variant="outline"
@@ -994,17 +994,17 @@ export function AssessmentBuilderPanel() {
       <div className="space-y-6">
         <div className="grid gap-4 rounded-3xl border border-blue-100 bg-blue-50/50 p-6 md:grid-cols-3">
           <div className="rounded-2xl border border-white/70 bg-white px-5 py-4 shadow-sm">
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Questoes Pontuaveis</p>
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Questões Pontuáveis</p>
             <p className="mt-2 text-3xl font-black text-slate-900">{scoredQuestionsCount}</p>
           </div>
           <div className="rounded-2xl border border-white/70 bg-white px-5 py-4 shadow-sm">
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Minimo de Acertos</p>
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Mínimo de Acertos</p>
             <p className="mt-2 text-3xl font-black text-blue-700">{requiredCorrectAnswers}</p>
           </div>
           <div className="rounded-2xl border border-white/70 bg-white px-5 py-4 shadow-sm">
             <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Regra Exibida ao Aluno</p>
             <p className="mt-2 text-sm font-medium leading-relaxed text-slate-600">
-              Voce precisa acertar pelo menos {requiredCorrectAnswers} de {scoredQuestionsCount} questoes pontuaveis.
+              Você precisa acertar pelo menos {requiredCorrectAnswers} de {scoredQuestionsCount} questões pontuáveis.
             </p>
           </div>
         </div>
@@ -1030,7 +1030,7 @@ export function AssessmentBuilderPanel() {
                     value={caseStudy.title ?? ''}
                     onChange={(event) => handleCaseStudyChange(caseStudy.id, { title: event.target.value })}
                     onBlur={() => void handleUpdateCaseStudy(caseStudy.id, { title: caseStudy.title ?? '' })}
-                    placeholder="Titulo do estudo de caso"
+                    placeholder="Título do estudo de caso"
                   />
 
                   <textarea
@@ -1118,7 +1118,7 @@ export function AssessmentBuilderPanel() {
           <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-[40px] border border-white/20 bg-white shadow-2xl no-scrollbar animate-in zoom-in-95 duration-300">
             <div className="flex items-center justify-between border-b border-slate-100 p-8">
               <div>
-                <h3 className="text-left text-xl font-black tracking-tight text-slate-900">Importar Avaliacao via IA</h3>
+                <h3 className="text-left text-xl font-black tracking-tight text-slate-900">Importar Avaliação via IA</h3>
                 <p className="mt-1 text-left text-sm font-medium text-slate-500">
                   O JSON pode misturar perguntas avulsas e `case_studies`, com `question_type`, `essay_expected_answer` e alternativas.
                 </p>
