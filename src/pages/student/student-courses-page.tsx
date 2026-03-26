@@ -100,7 +100,7 @@ export function StudentCoursesPage() {
       </header>
 
       {isLoading ? (
-        <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-2">
+        <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
           {[1, 2, 3].map((item) => (
             <div key={item} className="h-[400px] animate-pulse rounded-[32px] border border-slate-50 bg-slate-100/50 shadow-sm" />
           ))}
@@ -130,7 +130,7 @@ export function StudentCoursesPage() {
         </div>
       ) : null}
 
-      <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-2">
+      <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
         {courses.map((course) => {
           const courseStatus = courseStatuses.get(course.id) ?? null
           const journeyStatus = getStudentCourseJourneyStatus(courseStatus)
