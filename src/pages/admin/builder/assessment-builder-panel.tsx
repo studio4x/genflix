@@ -5,21 +5,26 @@ import { useCourseBuilder } from '@/app/layouts/admin-course-builder-layout'
 import { useAuth } from '@/app/providers/auth-provider'
 import { Button } from '@/components/ui/button'
 import {
+  createAssessmentCaseStudy,
   createAssessmentOption,
   createAssessmentQuestion,
   createFinalAssessment,
   createModuleAssessment,
+  deleteAssessmentCaseStudy,
   deleteAssessmentOption,
   deleteAssessmentOptionsByQuestion,
   deleteAssessmentQuestion,
+  fetchAssessmentCaseStudies,
   fetchAssessmentQuestions,
   fetchFinalAssessment,
   fetchModuleAssessment,
-  importAssessmentContent,
+  importAssessmentContentStructured,
   toErrorMessage,
+  updateAssessmentCaseStudy,
   updateAssessment,
   updateAssessmentOption,
   updateAssessmentQuestion,
+  type AssessmentCaseStudyWithQuestions,
   type AssessmentQuestionWithOptions,
   type ImportAssessmentData,
 } from '@/features/admin/assessments/api'
@@ -41,6 +46,7 @@ export function AssessmentBuilderPanel() {
     estimated_minutes: number
   } | null>(null)
   const [questions, setQuestions] = useState<AssessmentQuestionWithOptions[]>([])
+  const [caseStudies, setCaseStudies] = useState<AssessmentCaseStudyWithQuestions[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [isImportModalOpen, setIsImportModalOpen] = useState(false)
@@ -65,9 +71,15 @@ export function AssessmentBuilderPanel() {
         setAssessment(assess)
 
         if (assess) {
-          setQuestions(await fetchAssessmentQuestions(assess.id))
+          const [loadedQuestions, loadedCaseStudies] = await Promise.all([
+            fetchAssessmentQuestions(assess.id),
+            fetchAssessmentCaseStudies(assess.id),
+          ])
+          setQuestions(loadedQuestions)
+          setCaseStudies(loadedCaseStudies)
         } else {
           setQuestions([])
+          setCaseStudies([])
         }
 
         return
@@ -78,9 +90,15 @@ export function AssessmentBuilderPanel() {
         setAssessment(assess)
 
         if (assess) {
-          setQuestions(await fetchAssessmentQuestions(assess.id))
+          const [loadedQuestions, loadedCaseStudies] = await Promise.all([
+            fetchAssessmentQuestions(assess.id),
+            fetchAssessmentCaseStudies(assess.id),
+          ])
+          setQuestions(loadedQuestions)
+          setCaseStudies(loadedCaseStudies)
         } else {
           setQuestions([])
+          setCaseStudies([])
         }
       }
     } catch (loadError) {
@@ -180,8 +198,33 @@ export function AssessmentBuilderPanel() {
   }
 
   function findQuestion(questionId: string) {
-    return questions.find((question) => question.id === questionId) ?? null
+    const standaloneQuestion = questions.find((question) => question.id === questionId)
+    if (standaloneQuestion) {
+      return standaloneQuestion
+    }
+
+    for (const caseStudy of caseStudies) {
+      const caseQuestion = caseStudy.questions.find((question) => question.id === questionId)
+      if (caseQuestion) {
+        return caseQuestion
+      }
+    }
+
+    return null
   }
+
+  function findCaseStudy(caseStudyId: string) {
+    return caseStudies.find((caseStudy) => caseStudy.id === caseStudyId) ?? null
+  }
+
+  const standaloneQuestions = questions.filter((question) => !question.case_study_id)
+  const scoredQuestionsCount = [
+    ...standaloneQuestions,
+    ...caseStudies.flatMap((caseStudy) => caseStudy.questions),
+  ].filter((question) => question.question_type !== 'essay_ai').length
+  const requiredCorrectAnswers = assessmentDraft
+    ? Math.ceil((assessmentDraft.passing_score / 100) * scoredQuestionsCount)
+    : 0
 
   function buildQuestionPayload(
     questionId: string,
@@ -196,11 +239,13 @@ export function AssessmentBuilderPanel() {
     return {
       question_text: updates.question_text ?? question.question_text,
       question_type: questionType,
-      essay_expected_answer: questionType === 'essay_ai'
+      essay_expected_answer: questionType === 'essay_ai' || questionType === 'case_study_ai'
         ? updates.essay_expected_answer ?? question.essay_expected_answer ?? 'Resposta correta esperada.'
         : '',
       is_required: updates.is_required ?? question.is_required,
       points: questionType === 'essay_ai' ? 0 : Math.max(1, Number(updates.points ?? question.points ?? 1)),
+      case_study_id: updates.case_study_id ?? question.case_study_id ?? undefined,
+      case_question_position: updates.case_question_position ?? question.case_question_position ?? undefined,
     } as const
   }
 
@@ -221,12 +266,94 @@ export function AssessmentBuilderPanel() {
     }
   }
 
+  async function handleAddCaseStudy() {
+    if (!assessment) return
+
+    try {
+      await createAssessmentCaseStudy(assessment.id, {
+        title: 'Novo Estudo de Caso',
+        case_text: 'Descreva aqui o contexto do estudo de caso, com detalhes suficientes para orientar as respostas dos alunos.',
+      })
+      await loadData()
+    } catch (createError) {
+      setError(toErrorMessage(createError))
+    }
+  }
+
+  async function handleUpdateCaseStudy(caseStudyId: string, updates: { title?: string; case_text?: string }) {
+    const caseStudy = findCaseStudy(caseStudyId)
+    if (!caseStudy) return
+
+    try {
+      await updateAssessmentCaseStudy(caseStudyId, {
+        title: updates.title ?? caseStudy.title ?? '',
+        case_text: updates.case_text ?? caseStudy.case_text,
+      })
+    } catch (updateError) {
+      setError(toErrorMessage(updateError))
+      await loadData()
+    }
+  }
+
+  function handleCaseStudyChange(caseStudyId: string, updates: { title?: string; case_text?: string }) {
+    setCaseStudies((prev) => prev.map((caseStudy) => (
+      caseStudy.id === caseStudyId
+        ? {
+          ...caseStudy,
+          title: updates.title ?? caseStudy.title,
+          case_text: updates.case_text ?? caseStudy.case_text,
+        }
+        : caseStudy
+    )))
+  }
+
+  async function handleDeleteCaseStudy(caseStudyId: string) {
+    if (!window.confirm('Excluir este estudo de caso e todas as perguntas vinculadas?')) return
+
+    try {
+      await deleteAssessmentCaseStudy(caseStudyId)
+      setCaseStudies((prev) => prev.filter((caseStudy) => caseStudy.id !== caseStudyId))
+    } catch (deleteError) {
+      setError(toErrorMessage(deleteError))
+    }
+  }
+
+  async function handleAddCaseQuestion(caseStudyId: string, questionType: 'case_study_ai' | 'case_study_single_choice' = 'case_study_single_choice') {
+    if (!assessment) return
+
+    const caseStudy = findCaseStudy(caseStudyId)
+    const nextCasePosition = (caseStudy?.questions.length ?? 0) + 1
+
+    try {
+      await createAssessmentQuestion(assessment.id, {
+        question_text: 'Nova Pergunta do Caso...',
+        question_type: questionType,
+        essay_expected_answer: questionType === 'case_study_ai' ? 'Resposta correta esperada.' : '',
+        is_required: true,
+        points: 1,
+        case_study_id: caseStudyId,
+        case_question_position: nextCasePosition,
+      })
+      await loadData()
+    } catch (createError) {
+      setError(toErrorMessage(createError))
+    }
+  }
+
   function handleQuestionTextChange(questionId: string, questionText: string) {
     setQuestions((prev) => prev.map((question) => (
       question.id === questionId
         ? { ...question, question_text: questionText }
         : question
     )))
+    setCaseStudies((prev) => prev.map((caseStudy) => ({
+      ...caseStudy,
+      questions: caseStudy.questions.map((question) => (
+        question.id === questionId
+          ? { ...question, question_text: questionText }
+          : question
+      )),
+    })))
   }
 
   async function handlePersistQuestion(questionId: string, updates: Partial<AssessmentQuestionWithOptions>) {
@@ -242,23 +369,29 @@ export function AssessmentBuilderPanel() {
     try {
       await updateAssessmentQuestion(questionId, buildQuestionPayload(questionId, { question_type: questionType }))
 
-      if (questionType === 'essay_ai') {
+      if (questionType === 'essay_ai' || questionType === 'case_study_ai') {
         await deleteAssessmentOptionsByQuestion(questionId)
       }
 
-      setQuestions((prev) => prev.map((question) => {
-        if (question.id !== questionId) return question
+      const updateQuestionState = (question: AssessmentQuestionWithOptions) => (
+        question.id !== questionId
+          ? question
+          : {
+            ...question,
+            question_type: questionType,
+            essay_expected_answer: questionType === 'essay_ai' || questionType === 'case_study_ai'
+              ? question.essay_expected_answer ?? 'Resposta correta esperada.'
+              : null,
+            points: questionType === 'essay_ai' ? 0 : Math.max(1, Number(question.points || 1)),
+            options: questionType === 'essay_ai' || questionType === 'case_study_ai' ? [] : question.options,
+          }
+      )
 
-        return {
-          ...question,
-          question_type: questionType,
-          essay_expected_answer: questionType === 'essay_ai'
-            ? question.essay_expected_answer ?? 'Resposta correta esperada.'
-            : null,
-          points: questionType === 'essay_ai' ? 0 : Math.max(1, Number(question.points || 1)),
-          options: questionType === 'essay_ai' ? [] : question.options,
-        }
-      }))
+      setQuestions((prev) => prev.map(updateQuestionState))
+      setCaseStudies((prev) => prev.map((caseStudy) => ({
+        ...caseStudy,
+        questions: caseStudy.questions.map(updateQuestionState),
+      })))
     } catch (updateError) {
       setError(toErrorMessage(updateError))
     }
@@ -270,6 +403,14 @@ export function AssessmentBuilderPanel() {
         ? { ...question, essay_expected_answer: expectedAnswer }
         : question
     )))
+    setCaseStudies((prev) => prev.map((caseStudy) => ({
+      ...caseStudy,
+      questions: caseStudy.questions.map((question) => (
+        question.id === questionId
+          ? { ...question, essay_expected_answer: expectedAnswer }
+          : question
+      )),
+    })))
   }
 
   async function handleDeleteQuestion(questionId: string) {
@@ -278,6 +419,10 @@ export function AssessmentBuilderPanel() {
     try {
       await deleteAssessmentQuestion(questionId)
       setQuestions((prev) => prev.filter((question) => question.id !== questionId))
+      setCaseStudies((prev) => prev.map((caseStudy) => ({
+        ...caseStudy,
+        questions: caseStudy.questions.filter((question) => question.id !== questionId),
+      })))
     } catch (deleteError) {
       setError(toErrorMessage(deleteError))
     }
@@ -285,7 +430,7 @@ export function AssessmentBuilderPanel() {
 
   async function handleAddOption(questionId: string) {
     const question = findQuestion(questionId)
-    if (!question || question.question_type !== 'single_choice') return
+    if (!question || (question.question_type !== 'single_choice' && question.question_type !== 'case_study_single_choice')) return
 
     try {
       await createAssessmentOption({
@@ -313,12 +458,28 @@ export function AssessmentBuilderPanel() {
         )),
       }
     }))
+    setCaseStudies((prev) => prev.map((caseStudy) => ({
+      ...caseStudy,
+      questions: caseStudy.questions.map((question) => {
+        const hasOption = question.options.some((option) => option.id === optionId)
+        if (!hasOption) return question
+
+        return {
+          ...question,
+          options: question.options.map((option) => (
+            option.id === optionId
+              ? { ...option, option_text: optionText }
+              : option
+          )),
+        }
+      }),
+    })))
   }
 
   async function handleUpdateOption(optionId: string, optionText: string, isCorrect: boolean) {
     try {
       await updateAssessmentOption(optionId, { option_text: optionText, is_correct: isCorrect })
-      setQuestions((prev) => prev.map((question) => {
+      const updateQuestionOptions = (question: AssessmentQuestionWithOptions) => {
         const hasOption = question.options.some((option) => option.id === optionId)
         if (!hasOption) return question
 
@@ -336,7 +497,13 @@ export function AssessmentBuilderPanel() {
             return option
           }),
         }
-      }))
+      }
+
+      setQuestions((prev) => prev.map(updateQuestionOptions))
+      setCaseStudies((prev) => prev.map((caseStudy) => ({
+        ...caseStudy,
+        questions: caseStudy.questions.map(updateQuestionOptions),
+      })))
     } catch (updateError) {
       setError(toErrorMessage(updateError))
       await loadData()
@@ -349,6 +516,13 @@ export function AssessmentBuilderPanel() {
       setQuestions((prev) => prev.map((question) => ({
         ...question,
         options: question.options.filter((option) => option.id !== optionId),
+      })))
+      setCaseStudies((prev) => prev.map((caseStudy) => ({
+        ...caseStudy,
+        questions: caseStudy.questions.map((question) => ({
+          ...question,
+          options: question.options.filter((option) => option.id !== optionId),
+        })),
       })))
     } catch (deleteError) {
       setError(toErrorMessage(deleteError))
@@ -407,7 +581,7 @@ export function AssessmentBuilderPanel() {
         throw new Error('Nao foi possivel criar ou localizar a avaliacao alvo.')
       }
 
-      await importAssessmentContent(targetAssessmentId, data as unknown as ImportAssessmentData)
+      await importAssessmentContentStructured(targetAssessmentId, data as unknown as ImportAssessmentData)
       await loadData()
       await refreshTree()
       setIsImportModalOpen(false)
@@ -418,6 +592,194 @@ export function AssessmentBuilderPanel() {
     } finally {
       setIsImporting(false)
     }
+  }
+
+  function renderQuestionCard(
+    question: AssessmentQuestionWithOptions,
+    indexLabel: string,
+    context: 'standalone' | 'case-study',
+  ) {
+    const isStandalone = context === 'standalone'
+    const isEssay = question.question_type === 'essay_ai' || question.question_type === 'case_study_ai'
+    const canUseSingleChoice = isStandalone
+      ? question.question_type === 'single_choice'
+      : question.question_type === 'case_study_single_choice'
+    const canUseEssay = isStandalone
+      ? question.question_type === 'essay_ai'
+      : question.question_type === 'case_study_ai'
+
+    const setType = (type: AssessmentQuestionType) => void handleUpdateQuestionType(question.id, type)
+
+    return (
+      <div key={question.id} className="group animate-in overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm transition-all slide-in-from-bottom-4 duration-500 hover:border-blue-300">
+        <div className="flex items-start gap-4 border-b border-slate-100 bg-slate-50/50 p-6">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-100 bg-white text-lg font-black text-slate-400 shadow-sm">
+            {indexLabel}
+          </div>
+
+          <div className="flex-1 space-y-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setType(isStandalone ? 'single_choice' : 'case_study_single_choice')}
+                className={`rounded-full px-3 py-1 text-[11px] font-black uppercase tracking-widest transition-colors ${
+                  canUseSingleChoice
+                    ? 'bg-blue-600 text-white'
+                    : 'border border-slate-200 bg-white text-slate-500 hover:border-blue-200 hover:text-blue-600'
+                }`}
+              >
+                Multipla Escolha
+              </button>
+              <button
+                type="button"
+                onClick={() => setType(isStandalone ? 'essay_ai' : 'case_study_ai')}
+                className={`rounded-full px-3 py-1 text-[11px] font-black uppercase tracking-widest transition-colors ${
+                  canUseEssay
+                    ? 'bg-amber-500 text-white'
+                    : 'border border-slate-200 bg-white text-slate-500 hover:border-amber-200 hover:text-amber-700'
+                }`}
+              >
+                Discursiva com IA
+              </button>
+            </div>
+
+            <textarea
+              className="w-full resize-none border-none bg-transparent p-0 font-bold text-slate-800 placeholder:text-slate-300 focus:ring-0"
+              value={question.question_text}
+              onChange={(event) => handleQuestionTextChange(question.id, event.target.value)}
+              onBlur={() => void handlePersistQuestion(question.id, { question_text: question.question_text })}
+              placeholder="Escreva sua pergunta aqui..."
+              rows={2}
+            />
+          </div>
+
+          <button
+            onClick={() => void handleDeleteQuestion(question.id)}
+            className="rounded-lg p-2 text-slate-300 transition-colors hover:bg-rose-50 hover:text-rose-500"
+          >
+            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v2m3 4h5" />
+            </svg>
+          </button>
+        </div>
+
+        <div className="space-y-4 p-6">
+          <div className="flex items-center justify-between gap-4 rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3">
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Pontuacao</p>
+              <p className="mt-1 text-xs font-medium text-slate-500">
+                {question.question_type === 'essay_ai'
+                  ? 'Pergunta com feedback, sem nota.'
+                  : 'Esta pergunta entra no calculo de aprovacao.'}
+              </p>
+            </div>
+            <input
+              type="number"
+              min={question.question_type === 'essay_ai' ? 0 : 1}
+              className="w-20 rounded-xl border border-slate-200 bg-white px-3 py-2 text-right text-sm font-black text-slate-700 focus:border-blue-300 focus:ring-4 focus:ring-blue-100"
+              value={question.question_type === 'essay_ai' ? 0 : Number(question.points || 1)}
+              disabled={question.question_type === 'essay_ai'}
+              onChange={(event) => {
+                const points = Number(event.target.value || 0)
+                void handlePersistQuestion(question.id, { points })
+                if (question.case_study_id) {
+                  setCaseStudies((prev) => prev.map((caseStudy) => ({
+                    ...caseStudy,
+                    questions: caseStudy.questions.map((item) => (
+                      item.id === question.id
+                        ? { ...item, points }
+                        : item
+                    )),
+                  })))
+                } else {
+                  setQuestions((prev) => prev.map((item) => (
+                    item.id === question.id
+                      ? { ...item, points }
+                      : item
+                  )))
+                }
+              }}
+            />
+          </div>
+
+          {isEssay ? (
+            <>
+              <div className="rounded-2xl border border-amber-100 bg-amber-50/60 p-4">
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-700">Gabarito da IA</p>
+                <p className="mt-2 text-sm font-medium text-amber-900">
+                  {question.question_type === 'essay_ai'
+                    ? 'Informe a resposta considerada correta. A IA comparara esse texto com o que o aluno escrever e devolvera um feedback. Esta questao nao soma pontos no quiz.'
+                    : 'Informe a resposta considerada correta para esta pergunta do estudo de caso. Esta pergunta soma pontos e sera validada pela IA.'}
+                </p>
+              </div>
+
+              <textarea
+                className="min-h-[140px] w-full rounded-2xl border border-amber-100 bg-white px-4 py-4 text-sm text-slate-700 focus:border-amber-300 focus:ring-4 focus:ring-amber-100"
+                value={question.essay_expected_answer ?? ''}
+                onChange={(event) => void handleUpdateEssayExpectedAnswer(question.id, event.target.value)}
+                onBlur={() => void handlePersistQuestion(question.id, { essay_expected_answer: question.essay_expected_answer ?? '' })}
+                placeholder="Descreva a resposta esperada para orientar a avaliacao da IA."
+              />
+            </>
+          ) : (
+            <>
+              <p className="mb-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Alternativas de Resposta</p>
+              <div className="grid gap-3">
+                {question.options.map((option) => (
+                  <div key={option.id} className="group/opt flex items-center gap-3">
+                    <button
+                      onClick={() => void handleUpdateOption(option.id, option.option_text, !option.is_correct)}
+                      className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 transition-all ${
+                        option.is_correct
+                          ? 'border-emerald-500 bg-emerald-500 text-white'
+                          : 'border-slate-200 hover:border-emerald-300'
+                      }`}
+                    >
+                      {option.is_correct ? (
+                        <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                      ) : null}
+                    </button>
+
+                    <input
+                      className={`flex-1 rounded-xl border-none px-4 py-3 text-sm transition-all focus:ring-2 focus:ring-blue-100 ${
+                        option.is_correct
+                          ? 'bg-emerald-50 font-bold text-emerald-700'
+                          : 'bg-slate-50 text-slate-600'
+                      }`}
+                      value={option.option_text}
+                      onChange={(event) => handleOptionTextChange(option.id, event.target.value)}
+                      onBlur={() => void handleUpdateOption(option.id, option.option_text, option.is_correct)}
+                      placeholder="Descreva a alternativa..."
+                    />
+
+                    <button
+                      onClick={() => void handleDeleteOption(option.id)}
+                      className="p-2 text-slate-300 opacity-0 transition-all group-hover/opt:opacity-100 hover:text-rose-500"
+                    >
+                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                ))}
+              </div>
+
+              <button
+                onClick={() => void handleAddOption(question.id)}
+                className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-slate-100 py-3 text-xs font-bold text-slate-400 transition-all hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600"
+              >
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+                Adicionar Alternativa
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+    )
   }
 
   if (isLoading && !assessment) {
@@ -530,151 +892,125 @@ export function AssessmentBuilderPanel() {
       ) : null}
 
       <div className="space-y-6">
-        {questions.map((question, index) => (
-          <div key={question.id} className="group animate-in overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm transition-all slide-in-from-bottom-4 duration-500 hover:border-blue-300">
-            <div className="flex items-start gap-4 border-b border-slate-100 bg-slate-50/50 p-6">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-100 bg-white text-lg font-black text-slate-400 shadow-sm">
-                {index + 1}
-              </div>
+        <div className="grid gap-4 rounded-3xl border border-blue-100 bg-blue-50/50 p-6 md:grid-cols-3">
+          <div className="rounded-2xl border border-white/70 bg-white px-5 py-4 shadow-sm">
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Questoes Pontuaveis</p>
+            <p className="mt-2 text-3xl font-black text-slate-900">{scoredQuestionsCount}</p>
+          </div>
+          <div className="rounded-2xl border border-white/70 bg-white px-5 py-4 shadow-sm">
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Minimo de Acertos</p>
+            <p className="mt-2 text-3xl font-black text-blue-700">{requiredCorrectAnswers}</p>
+          </div>
+          <div className="rounded-2xl border border-white/70 bg-white px-5 py-4 shadow-sm">
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Regra Exibida ao Aluno</p>
+            <p className="mt-2 text-sm font-medium leading-relaxed text-slate-600">
+              Voce precisa acertar pelo menos {requiredCorrectAnswers} de {scoredQuestionsCount} questoes pontuaveis.
+            </p>
+          </div>
+        </div>
 
-              <div className="flex-1 space-y-3">
-                <div className="flex flex-wrap items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => void handleUpdateQuestionType(question.id, 'single_choice')}
-                    className={`rounded-full px-3 py-1 text-[11px] font-black uppercase tracking-widest transition-colors ${
-                      question.question_type === 'single_choice'
-                        ? 'bg-blue-600 text-white'
-                        : 'border border-slate-200 bg-white text-slate-500 hover:border-blue-200 hover:text-blue-600'
-                    }`}
-                  >
-                    Multipla Escolha
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => void handleUpdateQuestionType(question.id, 'essay_ai')}
-                    className={`rounded-full px-3 py-1 text-[11px] font-black uppercase tracking-widest transition-colors ${
-                      question.question_type === 'essay_ai'
-                        ? 'bg-amber-500 text-white'
-                        : 'border border-slate-200 bg-white text-slate-500 hover:border-amber-200 hover:text-amber-700'
-                    }`}
-                  >
-                    Discursiva com IA
-                  </button>
-                </div>
+        {standaloneQuestions.map((question, index) => renderQuestionCard(question, String(index + 1), 'standalone'))}
 
-                <textarea
-                  className="w-full resize-none border-none bg-transparent p-0 font-bold text-slate-800 placeholder:text-slate-300 focus:ring-0"
-                  value={question.question_text}
-                  onChange={(event) => handleQuestionTextChange(question.id, event.target.value)}
-                  onBlur={() => void handlePersistQuestion(question.id, { question_text: question.question_text })}
-                  placeholder="Escreva sua pergunta aqui..."
-                  rows={2}
-                />
-              </div>
-
-              <button
-                onClick={() => void handleDeleteQuestion(question.id)}
-                className="rounded-lg p-2 text-slate-300 transition-colors hover:bg-rose-50 hover:text-rose-500"
-              >
-                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v2m3 4h5" />
-                </svg>
-              </button>
-            </div>
-
-            <div className="space-y-4 p-6">
-              {question.question_type === 'essay_ai' ? (
-                <>
-                  <div className="rounded-2xl border border-amber-100 bg-amber-50/60 p-4">
-                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-700">Gabarito da IA</p>
-                    <p className="mt-2 text-sm font-medium text-amber-900">
-                      Informe a resposta considerada correta. A IA comparara esse texto com o que o aluno escrever e devolvera um feedback. Esta questao nao soma pontos no quiz.
-                    </p>
+        {caseStudies.map((caseStudy, caseStudyIndex) => (
+          <section key={caseStudy.id} className="overflow-hidden rounded-[32px] border border-amber-200 bg-white shadow-sm">
+            <div className="border-b border-amber-100 bg-amber-50/70 p-6">
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex-1 space-y-4">
+                  <div className="flex items-center gap-3">
+                    <span className="rounded-full bg-amber-500 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-white">
+                      Estudo de Caso {caseStudyIndex + 1}
+                    </span>
+                    <span className="text-xs font-black uppercase tracking-widest text-amber-700">
+                      {caseStudy.questions.length} pergunta(s)
+                    </span>
                   </div>
+
+                  <input
+                    className="w-full border-none bg-transparent p-0 text-2xl font-black text-slate-900 placeholder:text-slate-400 focus:ring-0"
+                    value={caseStudy.title ?? ''}
+                    onChange={(event) => handleCaseStudyChange(caseStudy.id, { title: event.target.value })}
+                    onBlur={() => void handleUpdateCaseStudy(caseStudy.id, { title: caseStudy.title ?? '' })}
+                    placeholder="Titulo do estudo de caso"
+                  />
 
                   <textarea
-                    className="min-h-[140px] w-full rounded-2xl border border-amber-100 bg-white px-4 py-4 text-sm text-slate-700 focus:border-amber-300 focus:ring-4 focus:ring-amber-100"
-                    value={question.essay_expected_answer ?? ''}
-                    onChange={(event) => handleUpdateEssayExpectedAnswer(question.id, event.target.value)}
-                    onBlur={() => void handlePersistQuestion(question.id, { essay_expected_answer: question.essay_expected_answer ?? '' })}
-                    placeholder="Ex.: O procedimento correto exige higienizacao das maos antes e depois do contato com o paciente."
+                    className="min-h-[180px] w-full rounded-3xl border border-amber-100 bg-white px-5 py-4 text-sm leading-relaxed text-slate-700 focus:border-amber-300 focus:ring-4 focus:ring-amber-100"
+                    value={caseStudy.case_text}
+                    onChange={(event) => handleCaseStudyChange(caseStudy.id, { case_text: event.target.value })}
+                    onBlur={() => void handleUpdateCaseStudy(caseStudy.id, { case_text: caseStudy.case_text })}
+                    placeholder="Descreva o contexto completo do caso para o aluno analisar."
                   />
-                </>
-              ) : (
-                <>
-                  <p className="mb-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Alternativas de Resposta</p>
-                  <div className="grid gap-3">
-                    {question.options.map((option) => (
-                      <div key={option.id} className="group/opt flex items-center gap-3">
-                        <button
-                          onClick={() => void handleUpdateOption(option.id, option.option_text, !option.is_correct)}
-                          className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 transition-all ${
-                            option.is_correct
-                              ? 'border-emerald-500 bg-emerald-500 text-white'
-                              : 'border-slate-200 hover:border-emerald-300'
-                          }`}
-                        >
-                          {option.is_correct ? (
-                            <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
-                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                            </svg>
-                          ) : null}
-                        </button>
+                </div>
 
-                        <input
-                          className={`flex-1 rounded-xl border-none px-4 py-3 text-sm transition-all focus:ring-2 focus:ring-blue-100 ${
-                            option.is_correct
-                              ? 'bg-emerald-50 font-bold text-emerald-700'
-                              : 'bg-slate-50 text-slate-600'
-                          }`}
-                          value={option.option_text}
-                          onChange={(event) => handleOptionTextChange(option.id, event.target.value)}
-                          onBlur={() => void handleUpdateOption(option.id, option.option_text, option.is_correct)}
-                          placeholder="Descreva a alternativa..."
-                        />
-
-                        <button
-                          onClick={() => void handleDeleteOption(option.id)}
-                          className="p-2 text-slate-300 opacity-0 transition-all group-hover/opt:opacity-100 hover:text-rose-500"
-                        >
-                          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                          </svg>
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-
-                  <button
-                    onClick={() => void handleAddOption(question.id)}
-                    className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-slate-100 py-3 text-xs font-bold text-slate-400 transition-all hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600"
-                  >
-                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                    </svg>
-                    Adicionar Alternativa
-                  </button>
-                </>
-              )}
+                <button
+                  onClick={() => void handleDeleteCaseStudy(caseStudy.id)}
+                  className="rounded-xl p-3 text-slate-300 transition-colors hover:bg-rose-50 hover:text-rose-500"
+                >
+                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v2m3 4h5" />
+                  </svg>
+                </button>
+              </div>
             </div>
-          </div>
+
+            <div className="space-y-5 p-6">
+              {caseStudy.questions.map((question, questionIndex) => renderQuestionCard(question, `${caseStudyIndex + 1}.${questionIndex + 1}`, 'case-study'))}
+
+              <div className="grid gap-3 md:grid-cols-2">
+                <button
+                  onClick={() => void handleAddCaseQuestion(caseStudy.id, 'case_study_single_choice')}
+                  className="flex items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-slate-200 py-4 text-sm font-bold text-slate-500 transition-all hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
+                >
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                  Adicionar Pergunta de Alternativa
+                </button>
+                <button
+                  onClick={() => void handleAddCaseQuestion(caseStudy.id, 'case_study_ai')}
+                  className="flex items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-amber-200 py-4 text-sm font-bold text-amber-700 transition-all hover:bg-amber-50"
+                >
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                  Adicionar Pergunta Discursiva
+                </button>
+              </div>
+            </div>
+          </section>
         ))}
 
-        <button
-          onClick={() => void handleAddQuestion()}
-          className="flex w-full flex-col items-center justify-center gap-4 rounded-3xl border-4 border-dashed border-slate-100 py-12 text-slate-400 transition-all hover:border-blue-100 hover:bg-blue-50/30 hover:text-blue-600"
-        >
-          <div className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-slate-100 bg-slate-50">
-            <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
-          </div>
-          <div className="text-center">
-            <p className="text-lg font-black uppercase tracking-widest">Nova Pergunta</p>
-            <p className="text-xs font-medium">Clique para adicionar uma nova questao ao quiz.</p>
-          </div>
-        </button>
+        <div className="grid gap-4 md:grid-cols-2">
+          <button
+            onClick={() => void handleAddQuestion()}
+            className="flex w-full flex-col items-center justify-center gap-4 rounded-3xl border-4 border-dashed border-slate-100 py-12 text-slate-400 transition-all hover:border-blue-100 hover:bg-blue-50/30 hover:text-blue-600"
+          >
+            <div className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-slate-100 bg-slate-50">
+              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+            </div>
+            <div className="text-center">
+              <p className="text-lg font-black uppercase tracking-widest">Nova Pergunta Independente</p>
+              <p className="text-xs font-medium">Adiciona uma pergunta fora do estudo de caso.</p>
+            </div>
+          </button>
+
+          <button
+            onClick={() => void handleAddCaseStudy()}
+            className="flex w-full flex-col items-center justify-center gap-4 rounded-3xl border-4 border-dashed border-amber-100 py-12 text-amber-700 transition-all hover:bg-amber-50/60"
+          >
+            <div className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-amber-200 bg-amber-50">
+              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+            </div>
+            <div className="text-center">
+              <p className="text-lg font-black uppercase tracking-widest">Novo Estudo de Caso</p>
+              <p className="text-xs font-medium">Cria um bloco com contexto compartilhado e perguntas mistas.</p>
+            </div>
+          </button>
+        </div>
       </div>
 
       {isImportModalOpen ? (
@@ -684,7 +1020,7 @@ export function AssessmentBuilderPanel() {
               <div>
                 <h3 className="text-left text-xl font-black tracking-tight text-slate-900">Importar Avaliacao via IA</h3>
                 <p className="mt-1 text-left text-sm font-medium text-slate-500">
-                  O JSON pode misturar questoes objetivas e discursivas usando `question_type` e `essay_expected_answer`.
+                  O JSON pode misturar perguntas avulsas e `case_studies`, com `question_type`, `essay_expected_answer` e alternativas.
                 </p>
               </div>
               <button onClick={() => setIsImportModalOpen(false)} className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-50 text-slate-400 transition-colors hover:text-slate-900">
@@ -699,7 +1035,7 @@ export function AssessmentBuilderPanel() {
                 <span className="block pl-1 text-xs font-black uppercase tracking-widest text-slate-400">Codigo JSON Estruturado</span>
                 <textarea
                   className="h-80 w-full rounded-2xl border border-slate-800 bg-slate-900 p-6 font-mono text-xs text-emerald-400 transition-all no-scrollbar focus:ring-4 focus:ring-blue-100"
-                  placeholder='{ "title": "...", "questions": [...] }'
+                  placeholder='{ "title": "...", "questions": [...], "case_studies": [...] }'
                   value={importJson}
                   onChange={(event) => setImportJson(event.target.value)}
                 />

@@ -4,6 +4,7 @@ import type {
   Assessment,
   AssessmentAnswer,
   AssessmentAttempt,
+  AssessmentCaseStudy,
   AssessmentOption,
   AssessmentQuestion,
 } from '@/types/content'
@@ -36,6 +37,10 @@ export interface StudentAssessmentQuestionWithOptions extends AssessmentQuestion
   options: AssessmentOption[]
 }
 
+export interface StudentAssessmentCaseStudyWithQuestions extends AssessmentCaseStudy {
+  questions: StudentAssessmentQuestionWithOptions[]
+}
+
 export interface SubmitAssessmentAttemptResult {
   attempt_id: string
   score_percent: number
@@ -44,12 +49,21 @@ export interface SubmitAssessmentAttemptResult {
   max_attempts: number
   remaining_attempts: number
   score_mode: 'objective_only' | 'essay_only'
+  correct_answers: number
+  total_questions: number
   essay_feedbacks: {
     question_id: string
     question_text: string
     answer_text: string
     is_correct: boolean
     feedback: string
+  }[]
+  choice_feedbacks: {
+    question_id: string
+    question_text: string
+    selected_option_id: string | null
+    correct_option_id: string | null
+    is_correct: boolean
   }[]
 }
 
@@ -93,7 +107,7 @@ export async function fetchStudentCourseAssessments(courseId: string) {
 }
 
 export async function fetchAssessmentForExecution(assessmentId: string) {
-  const [assessmentResult, questionsResult, optionsResult] = await Promise.all([
+  const [assessmentResult, questionsResult, optionsResult, caseStudiesResult] = await Promise.all([
     supabase
       .from('assessments')
       .select('*')
@@ -101,13 +115,18 @@ export async function fetchAssessmentForExecution(assessmentId: string) {
       .maybeSingle(),
     supabase
       .from('assessment_questions')
-      .select('id, assessment_id, question_text, question_type, position, is_required, points, created_at, updated_at')
+      .select('id, assessment_id, question_text, question_type, position, is_required, points, essay_expected_answer, case_study_id, case_question_position, created_at, updated_at')
       .eq('assessment_id', assessmentId)
       .order('position', { ascending: true }),
     supabase
       .from('assessment_options')
       .select('*, assessment_questions!inner(assessment_id)')
       .eq('assessment_questions.assessment_id', assessmentId)
+      .order('position', { ascending: true }),
+    supabase
+      .from('assessment_case_studies')
+      .select('*')
+      .eq('assessment_id', assessmentId)
       .order('position', { ascending: true }),
   ])
 
@@ -120,10 +139,14 @@ export async function fetchAssessmentForExecution(assessmentId: string) {
   if (optionsResult.error) {
     throw optionsResult.error
   }
+  if (caseStudiesResult.error) {
+    throw caseStudiesResult.error
+  }
 
   const assessment = (assessmentResult.data as Assessment | null) ?? null
   const questions = (questionsResult.data as AssessmentQuestion[]) ?? []
   const options = (optionsResult.data as AssessmentOption[]) ?? []
+  const caseStudies = (caseStudiesResult.data as AssessmentCaseStudy[]) ?? []
 
   const optionsMap = new Map<string, AssessmentOption[]>()
   for (const option of options) {
@@ -134,13 +157,19 @@ export async function fetchAssessmentForExecution(assessmentId: string) {
 
   const questionsWithOptions = questions.map((question) => ({
     ...question,
-    essay_expected_answer: null,
     options: optionsMap.get(question.id) ?? [],
   }))
 
   return {
     assessment,
-    questions: questionsWithOptions as StudentAssessmentQuestionWithOptions[],
+    questions: questionsWithOptions
+      .filter((question) => !question.case_study_id) as StudentAssessmentQuestionWithOptions[],
+    caseStudies: caseStudies.map((caseStudy) => ({
+      ...caseStudy,
+      questions: questionsWithOptions
+        .filter((question) => question.case_study_id === caseStudy.id)
+        .sort((questionA, questionB) => (questionA.case_question_position ?? 0) - (questionB.case_question_position ?? 0)),
+    })) as StudentAssessmentCaseStudyWithQuestions[],
   }
 }
 

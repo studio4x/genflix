@@ -1,8 +1,8 @@
 import { supabase } from '@/services/supabase/client'
 import {
   exportAssessmentContent,
+  importAssessmentContentStructured,
   type ImportAssessmentData,
-  type ImportAssessmentQuestionData,
 } from '@/features/admin/assessments/api'
 import type {
   Course,
@@ -544,7 +544,10 @@ export interface ImportModuleData {
     description?: string
     assessment_type: 'module'
     passing_score?: number
-    questions: ImportAssessmentQuestionData[]
+    max_attempts?: number
+    estimated_minutes?: number
+    questions?: ImportAssessmentData['questions']
+    case_studies?: ImportAssessmentData['case_studies']
   }[]
 }
 
@@ -713,6 +716,8 @@ async function createModuleAssessments(courseId: string, moduleId: string, asses
         title: assessmentData.title,
         description: assessmentData.description || null,
         passing_score: assessmentData.passing_score || 70,
+        max_attempts: assessmentData.max_attempts || 3,
+        estimated_minutes: assessmentData.estimated_minutes || 10,
         is_active: true,
       })
       .select()
@@ -720,42 +725,15 @@ async function createModuleAssessments(courseId: string, moduleId: string, asses
 
     if (assessmentError) throw assessmentError
 
-    if (!assessmentData.questions || assessmentData.questions.length === 0) continue
-
-    for (let questionIndex = 0; questionIndex < assessmentData.questions.length; questionIndex++) {
-      const questionData = assessmentData.questions[questionIndex]
-      const questionType = questionData.question_type === 'essay_ai' ? 'essay_ai' : 'single_choice'
-
-      const { data: question, error: questionError } = await supabase
-        .from('assessment_questions')
-        .insert({
-          assessment_id: assessment.id,
-          question_text: questionData.question_text,
-          points: questionType === 'essay_ai' ? 0 : (questionData.points || 1),
-          position: questionIndex + 1,
-          is_required: questionData.is_required ?? true,
-          question_type: questionType,
-          essay_expected_answer: questionType === 'essay_ai'
-            ? questionData.essay_expected_answer?.trim() || null
-            : null,
-        })
-        .select()
-        .single()
-
-      if (questionError) throw questionError
-
-      if (questionType === 'essay_ai' || !questionData.options || questionData.options.length === 0) continue
-
-      const optionsToInsert = questionData.options.map((option, optionIndex) => ({
-        question_id: question.id,
-        option_text: option.option_text,
-        is_correct: option.is_correct,
-        position: optionIndex + 1,
-      }))
-
-      const { error: optionsError } = await supabase.from('assessment_options').insert(optionsToInsert)
-      if (optionsError) throw optionsError
-    }
+    await importAssessmentContentStructured(assessment.id as string, {
+      title: assessmentData.title,
+      description: assessmentData.description,
+      passing_score: assessmentData.passing_score,
+      max_attempts: assessmentData.max_attempts,
+      estimated_minutes: assessmentData.estimated_minutes,
+      questions: assessmentData.questions,
+      case_studies: assessmentData.case_studies,
+    })
   }
 }
 
@@ -801,7 +779,7 @@ export async function importCourseContent(
   }
 
   const fullCourseInput = !Array.isArray(input) && 'modules' in input ? input : null
-  const assessmentOnlyInput = !Array.isArray(input) && 'questions' in input && !('modules' in input) ? input : null
+  const assessmentOnlyInput = !Array.isArray(input) && ('questions' in input || 'case_studies' in input) && !('modules' in input) ? input : null
 
   // Se for um curso completo, atualizamos os metadados do curso atual também
   if (fullCourseInput) {
@@ -834,11 +812,40 @@ export async function importCourseContent(
 
   // Caso especial: Importação de Avaliação Final (sem módulos)
   if (isAssessmentOnly) {
-    const assessmentInput = assessmentOnlyInput
+    const assessmentInput = assessmentOnlyInput as ImportAssessmentData | null
 
     if (!assessmentInput) {
-      throw new Error('Dados da avaliação final inválidos.')
+      throw new Error('Dados da avaliacao final invalidos.')
     }
+
+    const { data: assessment, error: assessmentError } = await supabase
+      .from('assessments')
+      .upsert({
+        course_id: courseId,
+        module_id: null,
+        assessment_type: 'final',
+        title: assessmentInput.title,
+        description: assessmentInput.description || null,
+        passing_score: assessmentInput.passing_score || 70,
+        max_attempts: assessmentInput.max_attempts || 3,
+        estimated_minutes: assessmentInput.estimated_minutes || 10,
+        is_active: true,
+      }, { onConflict: 'course_id, assessment_type' })
+      .select()
+      .single()
+
+    if (assessmentError) throw assessmentError
+
+    await importAssessmentContentStructured(assessment.id as string, assessmentInput)
+    return
+  }
+
+  if (false) {
+    const assessmentInput = assessmentOnlyInput as ImportAssessmentData
+
+    // bloco legado mantido apenas para referencia
+
+
 
     // 1. Criar ou atualizar a avaliação final do curso
     const { data: assessment, error: aError } = await supabase
@@ -850,6 +857,8 @@ export async function importCourseContent(
         title: assessmentInput.title,
         description: assessmentInput.description || null,
         passing_score: assessmentInput.passing_score || 70,
+        max_attempts: assessmentInput.max_attempts || 3,
+        estimated_minutes: assessmentInput.estimated_minutes || 10,
         is_active: true
       }, { onConflict: 'course_id, assessment_type' })
       .select()
@@ -861,8 +870,9 @@ export async function importCourseContent(
     await supabase.from('assessment_questions').delete().eq('assessment_id', assessment.id)
 
     // 3. Inserir questões
-    for (let qIdx = 0; qIdx < assessmentInput.questions.length; qIdx++) {
-      const qData = assessmentInput.questions[qIdx]
+    const legacyQuestions = assessmentInput.questions ?? []
+    for (let qIdx = 0; qIdx < legacyQuestions.length; qIdx++) {
+      const qData = legacyQuestions[qIdx]
       const questionType = qData.question_type === 'essay_ai' ? 'essay_ai' : 'single_choice'
       const { data: question, error: qError } = await supabase
         .from('assessment_questions')
@@ -882,8 +892,9 @@ export async function importCourseContent(
 
       if (qError) throw qError
 
-      if (questionType === 'single_choice' && qData.options && qData.options.length > 0) {
-        const optionsToInsert = qData.options.map((o, oIdx: number) => ({
+      const legacyOptions = qData.options ?? []
+      if (questionType === 'single_choice' && legacyOptions.length > 0) {
+        const optionsToInsert = legacyOptions.map((o, oIdx: number) => ({
           question_id: question.id,
           option_text: o.option_text,
           is_correct: o.is_correct,

@@ -13,6 +13,7 @@ import {
   toErrorMessage,
   type AssessmentAttemptRequest,
   type StudentCourseAssessmentSummary,
+  type StudentAssessmentCaseStudyWithQuestions,
   type StudentAssessmentQuestionWithOptions,
   type StudentAssessmentReview,
   type SubmitAssessmentAttemptResult,
@@ -49,6 +50,52 @@ function shuffleQuestionOptionsForAttempt(
   }))
 }
 
+type AssessmentExecutionItem =
+  | {
+    type: 'question'
+    id: string
+    position: number
+    question: StudentAssessmentQuestionWithOptions
+  }
+  | {
+    type: 'case_study'
+    id: string
+    position: number
+    caseStudy: StudentAssessmentCaseStudyWithQuestions
+  }
+
+function isEssayQuestion(question: StudentAssessmentQuestionWithOptions) {
+  return question.question_type === 'essay_ai' || question.question_type === 'case_study_ai'
+}
+
+function isScoredQuestion(question: StudentAssessmentQuestionWithOptions) {
+  return question.question_type !== 'essay_ai'
+}
+
+function getExecutionItemQuestions(item: AssessmentExecutionItem) {
+  return item.type === 'question' ? [item.question] : item.caseStudy.questions
+}
+
+function buildExecutionItems(
+  questions: StudentAssessmentQuestionWithOptions[],
+  caseStudies: StudentAssessmentCaseStudyWithQuestions[],
+) {
+  return [
+    ...questions.map((question) => ({
+      type: 'question' as const,
+      id: question.id,
+      position: question.position,
+      question,
+    })),
+    ...caseStudies.map((caseStudy) => ({
+      type: 'case_study' as const,
+      id: caseStudy.id,
+      position: caseStudy.position,
+      caseStudy,
+    })),
+  ].sort((itemA, itemB) => itemA.position - itemB.position)
+}
+
 export function StudentAssessmentExecutionPage() {
   const { courseId, assessmentId } = useParams<{ courseId: string; assessmentId: string }>()
   const navigate = useNavigate()
@@ -63,6 +110,7 @@ export function StudentAssessmentExecutionPage() {
 
   const [assessment, setAssessment] = useState<Assessment | null>(null)
   const [questions, setQuestions] = useState<StudentAssessmentQuestionWithOptions[]>([])
+  const [caseStudies, setCaseStudies] = useState<StudentAssessmentCaseStudyWithQuestions[]>([])
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
   const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>({})
   const [textAnswers, setTextAnswers] = useState<Record<string, string>>({})
@@ -82,6 +130,11 @@ export function StudentAssessmentExecutionPage() {
   const reviewAnswersByQuestion = useMemo(() => {
     return new Map(review?.answers.map((answer) => [answer.question_id, answer]) ?? [])
   }, [review])
+
+  const executionItems = useMemo(
+    () => buildExecutionItems(questions, caseStudies),
+    [caseStudies, questions],
+  )
 
   const moduleForAssessment = useMemo(() => {
     if (!studentAssessment?.module_id) return null
@@ -104,7 +157,7 @@ export function StudentAssessmentExecutionPage() {
       setError(null)
 
       try {
-        const [{ assessment: assessmentData, questions: questionsData }, reviewData, requestData] = await Promise.all([
+        const [{ assessment: assessmentData, questions: questionsData, caseStudies: caseStudiesData }, reviewData, requestData] = await Promise.all([
           fetchAssessmentForExecution(assessmentId),
           fetchOwnAssessmentReview(assessmentId),
           fetchOwnAssessmentAttemptRequest(assessmentId),
@@ -122,12 +175,16 @@ export function StudentAssessmentExecutionPage() {
         setAssessment(assessmentData)
         setActiveAttemptNumber(nextAttemptNumber)
         setQuestions(shuffleQuestionOptionsForAttempt(questionsData, nextAttemptNumber))
+        setCaseStudies(caseStudiesData.map((caseStudy) => ({
+          ...caseStudy,
+          questions: shuffleQuestionOptionsForAttempt(caseStudy.questions, nextAttemptNumber),
+        })))
 
         if (reviewData.latestAttempt?.is_approved && Number(reviewData.latestAttempt.score_percent) >= 100) {
           const correctSelections = Object.fromEntries(
-            questionsData
+            [...questionsData, ...caseStudiesData.flatMap((caseStudy) => caseStudy.questions)]
               .map((question) => {
-                const correctOption = question.question_type === 'single_choice'
+                const correctOption = question.question_type === 'single_choice' || question.question_type === 'case_study_single_choice'
                   ? question.options.find((option) => option.is_correct)
                   : null
                 return correctOption ? [question.id, correctOption.id] : null
@@ -157,14 +214,16 @@ export function StudentAssessmentExecutionPage() {
     window.scrollTo(0, 0)
   }, [assessmentId])
 
-  const currentQuestion = questions[currentQuestionIndex]
-  const isLastQuestion = currentQuestionIndex === questions.length - 1
-  const progressPercent = questions.length > 0
-    ? Math.round(((currentQuestionIndex + 1) / questions.length) * 100)
+  const currentItem = executionItems[currentQuestionIndex]
+  const currentItemQuestions = currentItem ? getExecutionItemQuestions(currentItem) : []
+  const currentQuestion = currentItem?.type === 'question' ? currentItem.question : null
+  const isLastQuestion = currentQuestionIndex === executionItems.length - 1
+  const progressPercent = executionItems.length > 0
+    ? Math.round(((currentQuestionIndex + 1) / executionItems.length) * 100)
     : 0
   const objectiveQuestionCount = useMemo(
-    () => questions.filter((question) => question.question_type === 'single_choice').length,
-    [questions],
+    () => [...questions, ...caseStudies.flatMap((caseStudy) => caseStudy.questions)].filter(isScoredQuestion).length,
+    [caseStudies, questions],
   )
   const requiredCorrectAnswers = useMemo(() => {
     if (!assessment || objectiveQuestionCount === 0) {
@@ -183,22 +242,25 @@ export function StudentAssessmentExecutionPage() {
   }, [assessment, objectiveQuestionCount, requiredCorrectAnswers])
 
   const allQuestionsAnswered = useMemo(() => {
-    return questions.every((question) => {
-      if (question.question_type === 'essay_ai') {
+    return [...questions, ...caseStudies.flatMap((caseStudy) => caseStudy.questions)].every((question) => {
+      if (isEssayQuestion(question)) {
         return Boolean(textAnswers[question.id]?.trim())
       }
 
       return Boolean(selectedOptions[question.id])
     })
-  }, [questions, selectedOptions, textAnswers])
+  }, [caseStudies, questions, selectedOptions, textAnswers])
 
   const currentQuestionAnswered = useMemo(() => {
-    if (!currentQuestion) return false
-    if (currentQuestion.question_type === 'essay_ai') {
-      return Boolean(textAnswers[currentQuestion.id]?.trim())
-    }
-    return Boolean(selectedOptions[currentQuestion.id])
-  }, [currentQuestion, selectedOptions, textAnswers])
+    if (!currentItem) return false
+
+    return currentItemQuestions.every((question) => {
+      if (isEssayQuestion(question)) {
+        return Boolean(textAnswers[question.id]?.trim())
+      }
+      return Boolean(selectedOptions[question.id])
+    })
+  }, [currentItem, currentItemQuestions, selectedOptions, textAnswers])
 
   const isModuleQuizLockedByLessons = useMemo(() => {
     if (isAdmin) return false
@@ -325,8 +387,9 @@ export function StudentAssessmentExecutionPage() {
     setError(null)
 
     try {
-      const answers = questions.map((question) => (
-        question.question_type === 'essay_ai'
+      const allQuestions = [...questions, ...caseStudies.flatMap((caseStudy) => caseStudy.questions)]
+      const answers = allQuestions.map((question) => (
+        isEssayQuestion(question)
           ? {
             question_id: question.id,
             answer_text: textAnswers[question.id]?.trim() ?? '',
@@ -639,6 +702,10 @@ export function StudentAssessmentExecutionPage() {
                     setCurrentQuestionIndex(0)
                     setActiveAttemptNumber(nextAttemptNumber)
                     setQuestions((currentQuestions) => shuffleQuestionOptionsForAttempt(currentQuestions, nextAttemptNumber))
+                    setCaseStudies((currentCaseStudies) => currentCaseStudies.map((caseStudy) => ({
+                      ...caseStudy,
+                      questions: shuffleQuestionOptionsForAttempt(caseStudy.questions, nextAttemptNumber),
+                    })))
                   }}
                 >
                   Tentar Novamente
@@ -651,7 +718,7 @@ export function StudentAssessmentExecutionPage() {
     )
   }
 
-  if (!assessment || questions.length === 0) {
+  if (!assessment || executionItems.length === 0) {
     return (
       <div className="mx-auto mt-20 max-w-2xl rounded-3xl border border-slate-200 bg-white p-12 text-center font-bold uppercase tracking-widest text-slate-500 shadow-sm">
         Nenhuma questao configurada para esta avaliacao.
@@ -666,13 +733,17 @@ export function StudentAssessmentExecutionPage() {
           <div className="space-y-2">
             <div className="mb-1 flex items-center gap-3">
               <span className="rounded-full bg-blue-600 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-white shadow-lg shadow-blue-100">
-                AVALIAÇÃO OFICIAL
+                AVALIACAO OFICIAL
               </span>
               <span className="text-xs font-black uppercase tracking-widest italic text-slate-400">
                 {assessment.title}
               </span>
             </div>
-            <h2 className="text-3xl font-black leading-tight tracking-tight text-slate-900 md:text-4xl">Questão {currentQuestionIndex + 1} de {questions.length}</h2>
+            <h2 className="text-3xl font-black leading-tight tracking-tight text-slate-900 md:text-4xl">
+              {currentItem?.type === 'case_study'
+                ? `Estudo de Caso ${currentQuestionIndex + 1} de ${executionItems.length}`
+                : `Questao ${currentQuestionIndex + 1} de ${executionItems.length}`}
+            </h2>
           </div>
         </div>
 
@@ -697,89 +768,194 @@ export function StudentAssessmentExecutionPage() {
       </header>
 
       <main className="space-y-8">
-        <article className="overflow-hidden rounded-[48px] border border-slate-200 bg-white shadow-2xl shadow-slate-200/50">
-          <div className="p-8 sm:p-14">
-            <div className="space-y-10">
-              <div className="space-y-6">
-                <span className="inline-block rounded-2xl border border-slate-200 bg-slate-100 px-4 py-2 text-xs font-black uppercase tracking-widest text-slate-500">
-                  PERGUNTA {currentQuestionIndex + 1}
-                </span>
-                <h3 className="text-2xl font-black leading-snug tracking-tight text-slate-900 sm:text-4xl">
-                  {currentQuestion.question_text}
-                </h3>
-                {currentQuestion.question_type === 'essay_ai' && (
-                  <div className="rounded-2xl border border-amber-100 bg-amber-50 px-5 py-4 text-sm font-medium text-amber-900">
-                    Resposta discursiva com validação por IA. Esta questão não gera pontos no quiz, mas você receberá feedback automático.
+        {currentItem?.type === 'case_study' ? (
+          <article className="overflow-hidden rounded-[48px] border border-slate-200 bg-white shadow-2xl shadow-slate-200/50">
+            <div className="p-8 sm:p-14">
+              <div className="space-y-10">
+                <div className="space-y-6">
+                  <span className="inline-block rounded-2xl border border-amber-200 bg-amber-50 px-4 py-2 text-xs font-black uppercase tracking-widest text-amber-700">
+                    ESTUDO DE CASO
+                  </span>
+                  <h3 className="text-2xl font-black leading-snug tracking-tight text-slate-900 sm:text-4xl">
+                    {currentItem.caseStudy.title || `Caso ${currentQuestionIndex + 1}`}
+                  </h3>
+                  <div className="rounded-[32px] border border-amber-100 bg-amber-50/60 px-6 py-6 text-base leading-relaxed text-slate-700">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-amber-700">Contexto</p>
+                    <p className="mt-3 whitespace-pre-wrap">{currentItem.caseStudy.case_text}</p>
+                  </div>
+                </div>
+
+                <div className="space-y-8">
+                  {currentItem.caseStudy.questions.map((question, index) => (
+                    <div key={question.id} className="space-y-5 rounded-[32px] border border-slate-200 bg-slate-50/40 p-6">
+                      <div className="space-y-3">
+                        <span className="inline-block rounded-2xl border border-slate-200 bg-white px-4 py-2 text-xs font-black uppercase tracking-widest text-slate-500">
+                          PERGUNTA {index + 1}
+                        </span>
+                        <h4 className="text-xl font-black leading-snug tracking-tight text-slate-900 sm:text-2xl">
+                          {question.question_text}
+                        </h4>
+                        {question.question_type === 'case_study_ai' ? (
+                          <div className="rounded-2xl border border-amber-100 bg-amber-50 px-5 py-4 text-sm font-medium text-amber-900">
+                            Resposta discursiva do estudo de caso com validacao por IA e pontuacao.
+                          </div>
+                        ) : null}
+                      </div>
+
+                      {isEssayQuestion(question) ? (
+                        <div className="space-y-4">
+                          <textarea
+                            value={textAnswers[question.id] ?? ''}
+                            onChange={(event) => handleEssayAnswerChange(question.id, event.target.value)}
+                            readOnly={isPerfectApprovedReview}
+                            className={`min-h-[180px] w-full rounded-[32px] border-2 px-6 py-6 text-lg leading-relaxed shadow-sm transition-all focus:ring-8 ${
+                              isPerfectApprovedReview
+                                ? 'border-emerald-200 bg-emerald-50 text-emerald-900 focus:ring-emerald-100'
+                                : 'border-slate-200 bg-white text-slate-700 focus:border-blue-300 focus:ring-blue-100'
+                            }`}
+                            placeholder="Escreva sua resposta com suas proprias palavras..."
+                          />
+                          {isPerfectApprovedReview && reviewAnswersByQuestion.get(question.id)?.ai_feedback ? (
+                            <div className="rounded-2xl border border-amber-100 bg-amber-50 px-5 py-4 text-sm text-amber-900">
+                              <p className="text-[10px] font-black uppercase tracking-widest text-amber-600">Feedback da IA</p>
+                              <p className="mt-2 whitespace-pre-wrap">{reviewAnswersByQuestion.get(question.id)?.ai_feedback}</p>
+                            </div>
+                          ) : null}
+                        </div>
+                      ) : (
+                        <div className="grid gap-4">
+                          {question.options.map((option: AssessmentOption) => {
+                            const isSelected = selectedOptions[question.id] === option.id
+                            const isCorrect = option.is_correct
+                            return (
+                              <button
+                                key={option.id}
+                                onClick={() => handleOptionSelect(question.id, option.id)}
+                                disabled={isPerfectApprovedReview}
+                                className={`group relative flex items-center gap-5 rounded-[32px] border-2 p-6 text-left transition-all duration-300 ${
+                                  isPerfectApprovedReview && isCorrect
+                                    ? 'border-emerald-500 bg-emerald-50 shadow-lg'
+                                    : isSelected
+                                      ? 'border-blue-600 bg-blue-50/50 shadow-xl ring-8 ring-blue-600/5'
+                                      : 'border-slate-100 bg-white hover:border-blue-200 hover:bg-slate-50'
+                                } ${isPerfectApprovedReview ? 'cursor-default' : ''}`}
+                              >
+                                <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 transition-all duration-300 ${
+                                  isPerfectApprovedReview && isCorrect
+                                    ? 'border-emerald-600 bg-emerald-600 text-white'
+                                    : isSelected
+                                      ? 'border-blue-600 bg-blue-600 text-white shadow-lg'
+                                      : 'border-slate-200 bg-white group-hover:border-blue-300'
+                                }`}>
+                                  {(isPerfectApprovedReview && isCorrect) || isSelected ? (
+                                    <div className="h-2.5 w-2.5 rounded-full bg-white" />
+                                  ) : null}
+                                </div>
+                                <span className={`text-lg font-bold leading-relaxed transition-colors sm:text-xl ${
+                                  isPerfectApprovedReview && isCorrect
+                                    ? 'text-emerald-900'
+                                    : isSelected
+                                      ? 'text-blue-900'
+                                      : 'text-slate-600 group-hover:text-slate-900'
+                                }`}>
+                                  {option.option_text}
+                                </span>
+                              </button>
+                            )
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </article>
+        ) : currentQuestion ? (
+          <article className="overflow-hidden rounded-[48px] border border-slate-200 bg-white shadow-2xl shadow-slate-200/50">
+            <div className="p-8 sm:p-14">
+              <div className="space-y-10">
+                <div className="space-y-6">
+                  <span className="inline-block rounded-2xl border border-slate-200 bg-slate-100 px-4 py-2 text-xs font-black uppercase tracking-widest text-slate-500">
+                    PERGUNTA {currentQuestionIndex + 1}
+                  </span>
+                  <h3 className="text-2xl font-black leading-snug tracking-tight text-slate-900 sm:text-4xl">
+                    {currentQuestion.question_text}
+                  </h3>
+                  {currentQuestion.question_type === 'essay_ai' && (
+                    <div className="rounded-2xl border border-amber-100 bg-amber-50 px-5 py-4 text-sm font-medium text-amber-900">
+                      Resposta discursiva com validacao por IA. Esta questao nao gera pontos no quiz, mas voce recebera feedback automatico.
+                    </div>
+                  )}
+                </div>
+
+                {currentQuestion.question_type === 'essay_ai' ? (
+                  <div className="mt-8 space-y-4">
+                    <textarea
+                      value={textAnswers[currentQuestion.id] ?? ''}
+                      onChange={(event) => handleEssayAnswerChange(currentQuestion.id, event.target.value)}
+                      readOnly={isPerfectApprovedReview}
+                      className={`min-h-[220px] w-full rounded-[32px] border-2 px-6 py-6 text-lg leading-relaxed shadow-sm transition-all focus:ring-8 ${
+                        isPerfectApprovedReview
+                          ? 'border-emerald-200 bg-emerald-50 text-emerald-900 focus:ring-emerald-100'
+                          : 'border-slate-200 bg-white text-slate-700 focus:border-blue-300 focus:ring-blue-100'
+                      }`}
+                      placeholder="Escreva sua resposta com suas proprias palavras..."
+                    />
+                    {isPerfectApprovedReview && reviewAnswersByQuestion.get(currentQuestion.id)?.ai_feedback ? (
+                      <div className="rounded-2xl border border-amber-100 bg-amber-50 px-5 py-4 text-sm text-amber-900">
+                        <p className="text-[10px] font-black uppercase tracking-widest text-amber-600">Feedback da IA</p>
+                        <p className="mt-2 whitespace-pre-wrap">{reviewAnswersByQuestion.get(currentQuestion.id)?.ai_feedback}</p>
+                      </div>
+                    ) : null}
+                  </div>
+                ) : (
+                  <div className="mt-8 grid gap-4">
+                    {currentQuestion.options.map((option: AssessmentOption) => {
+                      const isSelected = selectedOptions[currentQuestion.id] === option.id
+                      const isCorrect = option.is_correct
+                      return (
+                        <button
+                          key={option.id}
+                          onClick={() => handleOptionSelect(currentQuestion.id, option.id)}
+                          disabled={isPerfectApprovedReview}
+                          className={`group relative flex items-center gap-5 rounded-[32px] border-2 p-6 text-left transition-all duration-300 ${
+                            isPerfectApprovedReview && isCorrect
+                              ? 'border-emerald-500 bg-emerald-50 shadow-lg'
+                              : isSelected
+                                ? 'border-blue-600 bg-blue-50/50 shadow-xl ring-8 ring-blue-600/5'
+                                : 'border-slate-100 bg-white hover:border-blue-200 hover:bg-slate-50'
+                          } ${isPerfectApprovedReview ? 'cursor-default' : ''}`}
+                        >
+                          <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 transition-all duration-300 ${
+                            isPerfectApprovedReview && isCorrect
+                              ? 'border-emerald-600 bg-emerald-600 text-white'
+                              : isSelected
+                                ? 'border-blue-600 bg-blue-600 text-white shadow-lg'
+                                : 'border-slate-200 bg-white group-hover:border-blue-300'
+                          }`}>
+                            {(isPerfectApprovedReview && isCorrect) || isSelected ? (
+                              <div className="h-2.5 w-2.5 rounded-full bg-white" />
+                            ) : null}
+                          </div>
+                          <span className={`text-lg font-bold leading-relaxed transition-colors sm:text-xl ${
+                            isPerfectApprovedReview && isCorrect
+                              ? 'text-emerald-900'
+                              : isSelected
+                                ? 'text-blue-900'
+                                : 'text-slate-600 group-hover:text-slate-900'
+                          }`}>
+                            {option.option_text}
+                          </span>
+                        </button>
+                      )
+                    })}
                   </div>
                 )}
               </div>
-
-              {currentQuestion.question_type === 'essay_ai' ? (
-                <div className="mt-8 space-y-4">
-                  <textarea
-                    value={textAnswers[currentQuestion.id] ?? ''}
-                    onChange={(event) => handleEssayAnswerChange(currentQuestion.id, event.target.value)}
-                    readOnly={isPerfectApprovedReview}
-                    className={`min-h-[220px] w-full rounded-[32px] border-2 px-6 py-6 text-lg leading-relaxed shadow-sm transition-all focus:ring-8 ${
-                      isPerfectApprovedReview
-                        ? 'border-emerald-200 bg-emerald-50 text-emerald-900 focus:ring-emerald-100'
-                        : 'border-slate-200 bg-white text-slate-700 focus:border-blue-300 focus:ring-blue-100'
-                    }`}
-                    placeholder="Escreva sua resposta com suas proprias palavras..."
-                  />
-                  {isPerfectApprovedReview && reviewAnswersByQuestion.get(currentQuestion.id)?.ai_feedback ? (
-                    <div className="rounded-2xl border border-amber-100 bg-amber-50 px-5 py-4 text-sm text-amber-900">
-                      <p className="text-[10px] font-black uppercase tracking-widest text-amber-600">Feedback da IA</p>
-                      <p className="mt-2 whitespace-pre-wrap">{reviewAnswersByQuestion.get(currentQuestion.id)?.ai_feedback}</p>
-                    </div>
-                  ) : null}
-                </div>
-              ) : (
-                <div className="mt-8 grid gap-4">
-                  {currentQuestion.options.map((option: AssessmentOption) => {
-                    const isSelected = selectedOptions[currentQuestion.id] === option.id
-                    const isCorrect = option.is_correct
-                    return (
-                      <button
-                        key={option.id}
-                        onClick={() => handleOptionSelect(currentQuestion.id, option.id)}
-                        disabled={isPerfectApprovedReview}
-                        className={`group relative flex items-center gap-5 rounded-[32px] border-2 p-6 text-left transition-all duration-300 ${
-                          isPerfectApprovedReview && isCorrect
-                            ? 'border-emerald-500 bg-emerald-50 shadow-lg'
-                            : isSelected
-                              ? 'border-blue-600 bg-blue-50/50 shadow-xl ring-8 ring-blue-600/5'
-                              : 'border-slate-100 bg-white hover:border-blue-200 hover:bg-slate-50'
-                        } ${isPerfectApprovedReview ? 'cursor-default' : ''}`}
-                      >
-                        <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 transition-all duration-300 ${
-                          isPerfectApprovedReview && isCorrect
-                            ? 'border-emerald-600 bg-emerald-600 text-white'
-                            : isSelected
-                              ? 'border-blue-600 bg-blue-600 text-white shadow-lg'
-                              : 'border-slate-200 bg-white group-hover:border-blue-300'
-                        }`}>
-                          {(isPerfectApprovedReview && isCorrect) || isSelected ? (
-                            <div className="h-2.5 w-2.5 rounded-full bg-white" />
-                          ) : null}
-                        </div>
-                        <span className={`text-lg font-bold leading-relaxed transition-colors sm:text-xl ${
-                          isPerfectApprovedReview && isCorrect
-                            ? 'text-emerald-900'
-                            : isSelected
-                              ? 'text-blue-900'
-                              : 'text-slate-600 group-hover:text-slate-900'
-                        }`}>
-                          {option.option_text}
-                        </span>
-                      </button>
-                    )
-                  })}
-                </div>
-              )}
             </div>
-          </div>
-        </article>
+          </article>
+        ) : null}
 
         <footer className="sticky bottom-4 z-20 flex flex-col-reverse items-center justify-between gap-4 rounded-[32px] border border-white bg-white/50 p-6 shadow-xl shadow-slate-100 backdrop-blur-sm sm:flex-row">
           <Button

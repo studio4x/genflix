@@ -1,6 +1,10 @@
 export type CourseStatus = 'draft' | 'published' | 'archived'
 export type AssessmentType = 'module' | 'final'
-export type AssessmentQuestionType = 'single_choice' | 'essay_ai'
+export type AssessmentQuestionType =
+  | 'single_choice'
+  | 'essay_ai'
+  | 'case_study_ai'
+  | 'case_study_single_choice'
 
 export interface Course {
   id: string
@@ -106,9 +110,21 @@ export interface AssessmentQuestion {
   question_text: string
   question_type: AssessmentQuestionType
   essay_expected_answer: string | null
+  case_study_id: string | null
+  case_question_position: number | null
   position: number
   is_required: boolean
   points: number
+  created_at: string
+  updated_at: string
+}
+
+export interface AssessmentCaseStudy {
+  id: string
+  assessment_id: string
+  title: string | null
+  case_text: string
+  position: number
   created_at: string
   updated_at: string
 }

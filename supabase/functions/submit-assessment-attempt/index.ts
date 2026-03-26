@@ -5,7 +5,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-type QuestionType = 'single_choice' | 'essay_ai'
+type QuestionType = 'single_choice' | 'essay_ai' | 'case_study_ai' | 'case_study_single_choice'
 
 interface AssessmentRow {
   id: string
@@ -25,6 +25,8 @@ interface QuestionRow {
   is_required: boolean
   points: number
   essay_expected_answer: string | null
+  case_study_id: string | null
+  case_question_position: number | null
 }
 
 interface OptionRow {
@@ -33,6 +35,14 @@ interface OptionRow {
   option_text: string
   position: number
   is_correct: boolean
+}
+
+interface CaseStudyRow {
+  id: string
+  assessment_id: string
+  title: string | null
+  case_text: string
+  position: number
 }
 
 interface SubmissionAnswerInput {
@@ -47,6 +57,14 @@ interface EssayEvaluation {
   answer_text: string
   is_correct: boolean
   feedback: string
+}
+
+interface ChoiceFeedback {
+  question_id: string
+  question_text: string
+  selected_option_id: string | null
+  correct_option_id: string | null
+  is_correct: boolean
 }
 
 const OPENAI_MODEL = 'gpt-4o-mini'
@@ -197,16 +215,21 @@ Deno.serve(async (request) => {
       return jsonResponse({ error: 'Limite de tentativas atingido para esta avaliacao.' }, 400)
     }
 
-    const [questionsResult, optionsResult] = await Promise.all([
+    const [questionsResult, optionsResult, caseStudiesResult] = await Promise.all([
       supabaseAdmin
         .from('assessment_questions')
-        .select('id, assessment_id, question_text, question_type, position, is_required, points, essay_expected_answer')
+        .select('id, assessment_id, question_text, question_type, position, is_required, points, essay_expected_answer, case_study_id, case_question_position')
         .eq('assessment_id', assessmentId)
         .order('position', { ascending: true }),
       supabaseAdmin
         .from('assessment_options')
         .select('id, question_id, option_text, position, is_correct, assessment_questions!inner(assessment_id)')
         .eq('assessment_questions.assessment_id', assessmentId)
+        .order('position', { ascending: true }),
+      supabaseAdmin
+        .from('assessment_case_studies')
+        .select('id, assessment_id, title, case_text, position')
+        .eq('assessment_id', assessmentId)
         .order('position', { ascending: true }),
     ])
 
@@ -216,9 +239,13 @@ Deno.serve(async (request) => {
     if (optionsResult.error) {
       return jsonResponse({ error: optionsResult.error.message }, 400)
     }
+    if (caseStudiesResult.error) {
+      return jsonResponse({ error: caseStudiesResult.error.message }, 400)
+    }
 
     const questions = ((questionsResult.data ?? []) as QuestionRow[])
     const options = ((optionsResult.data ?? []) as OptionRow[])
+    const caseStudies = ((caseStudiesResult.data ?? []) as CaseStudyRow[])
     if (questions.length === 0) {
       return jsonResponse({ error: 'Avaliacao sem questoes cadastradas.' }, 400)
     }
@@ -230,13 +257,17 @@ Deno.serve(async (request) => {
       optionsByQuestion.set(option.question_id, current)
     }
 
-    const essayQuestions = questions.filter((question) => question.question_type === 'essay_ai')
+    const caseStudyById = new Map(caseStudies.map((caseStudy) => [caseStudy.id, caseStudy]))
+    const essayQuestions = questions.filter(
+      (question) => question.question_type === 'essay_ai' || question.question_type === 'case_study_ai',
+    )
     if (essayQuestions.length > 0 && !openAiApiKey && !geminiApiKey) {
       return jsonResponse({ error: 'Nenhum provedor de IA configurado para corrigir questoes discursivas.' }, 500)
     }
 
     let objectiveQuestionCount = 0
     let correctAnswers = 0
+    const choiceFeedbacks: ChoiceFeedback[] = []
     const answerRows: Array<{
       question_id: string
       selected_option_id: string | null
@@ -266,6 +297,9 @@ Deno.serve(async (request) => {
 
     const essayEvaluations = await Promise.all(
       essayInputs.map(({ question, answerText }) => evaluateEssayAnswer({
+        caseStudyText: question.case_study_id
+          ? (caseStudyById.get(question.case_study_id)?.case_text ?? null)
+          : null,
         questionText: question.question_text,
         expectedAnswer: question.essay_expected_answer ?? '',
         studentAnswer: answerText,
@@ -286,11 +320,18 @@ Deno.serve(async (request) => {
       const answer = answerMap.get(question.id)
       const answerText = normalizeAnswerText(answer?.answer_text)
 
-      if (question.question_type === 'essay_ai') {
+      if (question.question_type === 'essay_ai' || question.question_type === 'case_study_ai') {
         const evaluation = essayEvaluationMap.get(question.id) ?? null
 
         if (!answerText && question.is_required) {
           return jsonResponse({ error: 'Todas as questoes obrigatorias devem ser respondidas.' }, 400)
+        }
+
+        if (question.question_type === 'case_study_ai') {
+          objectiveQuestionCount += 1
+          if (evaluation?.is_correct) {
+            correctAnswers += 1
+          }
         }
 
         answerRows.push({
@@ -319,8 +360,13 @@ Deno.serve(async (request) => {
       }
 
       let isCorrect = false
+      let correctOptionId: string | null = null
+      const questionOptions = optionsByQuestion.get(question.id) ?? []
+      const correctOption = questionOptions.find((item) => item.is_correct)
+      correctOptionId = correctOption?.id ?? null
+
       if (selectedOptionId) {
-        const option = (optionsByQuestion.get(question.id) ?? []).find((item) => item.id === selectedOptionId)
+        const option = questionOptions.find((item) => item.id === selectedOptionId)
         if (!option) {
           return jsonResponse({ error: 'Opcao invalida para uma das questoes.' }, 400)
         }
@@ -338,6 +384,14 @@ Deno.serve(async (request) => {
         is_correct: isCorrect,
         ai_feedback: null,
         ai_evaluation: null,
+      })
+
+      choiceFeedbacks.push({
+        question_id: question.id,
+        question_text: question.question_text,
+        selected_option_id: selectedOptionId,
+        correct_option_id: correctOptionId,
+        is_correct: isCorrect,
       })
     }
 
@@ -359,8 +413,12 @@ Deno.serve(async (request) => {
         ? (essayApproved ? 100 : 0)
         : 0
 
+    const requiredCorrectAnswers = objectiveQuestionCount > 0
+      ? Math.ceil((Number(assessment.passing_score ?? 0) / 100) * objectiveQuestionCount)
+      : 0
+
     const isApproved = objectiveQuestionCount > 0
-      ? scorePercent >= Number(assessment.passing_score ?? 0)
+      ? correctAnswers >= requiredCorrectAnswers
       : essayOnlyAssessment
         ? essayApproved
         : false
@@ -395,7 +453,10 @@ Deno.serve(async (request) => {
       max_attempts: effectiveMaxAttempts,
       remaining_attempts: Math.max(effectiveMaxAttempts - attemptNumber, 0),
       score_mode: essayOnlyAssessment ? 'essay_only' : 'objective_only',
+      correct_answers: correctAnswers,
+      total_questions: objectiveQuestionCount,
       essay_feedbacks: essayEvaluations,
+      choice_feedbacks: choiceFeedbacks,
     }, 200)
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Erro inesperado ao enviar avaliacao.'
@@ -534,6 +595,7 @@ async function insertAttemptWithRetry(input: {
 }
 
 async function evaluateEssayAnswer(input: {
+  caseStudyText: string | null
   questionText: string
   expectedAnswer: string
   studentAnswer: string
@@ -556,6 +618,7 @@ async function evaluateEssayAnswer(input: {
 
 async function evaluateWithOpenAi(
   input: {
+    caseStudyText: string | null
     questionText: string
     expectedAnswer: string
     studentAnswer: string
@@ -607,6 +670,7 @@ async function evaluateWithOpenAi(
 
 async function evaluateWithGemini(
   input: {
+    caseStudyText: string | null
     questionText: string
     expectedAnswer: string
     studentAnswer: string
@@ -645,6 +709,7 @@ async function evaluateWithGemini(
 }
 
 function buildEssayPrompt(input: {
+  caseStudyText: string | null
   questionText: string
   expectedAnswer: string
   studentAnswer: string
@@ -664,7 +729,10 @@ Regras:
   "feedback": "string"
 }
 
-Pergunta:
+${input.caseStudyText ? `Contexto do estudo de caso:
+${input.caseStudyText}
+
+` : ''}Pergunta:
 ${input.questionText}
 
 Gabarito esperado:

@@ -26,12 +26,51 @@ export const assessmentQuestionFormSchema = z.object({
     .string()
     .trim()
     .min(2, 'Pergunta deve ter ao menos 2 caracteres.'),
-  question_type: z.enum(['single_choice', 'essay_ai']),
+  question_type: z.enum(['single_choice', 'essay_ai', 'case_study_ai', 'case_study_single_choice']),
   essay_expected_answer: z.string().trim().optional(),
+  case_study_id: z.string().uuid('Estudo de caso invalido.').nullable().optional(),
+  case_question_position: z.number().int().min(1, 'Posicao interna invalida.').nullable().optional(),
   is_required: z.boolean(),
   points: z.number().min(0, 'Pontuacao nao pode ser negativa.'),
 }).superRefine((value, ctx) => {
-  if (value.question_type === 'essay_ai') {
+  const isStandaloneEssay = value.question_type === 'essay_ai'
+  const isCaseStudyAi = value.question_type === 'case_study_ai'
+  const isCaseStudySingleChoice = value.question_type === 'case_study_single_choice'
+  const isCaseStudyQuestion = isCaseStudyAi || isCaseStudySingleChoice
+
+  if (isCaseStudyQuestion && !value.case_study_id) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['case_study_id'],
+      message: 'Informe o estudo de caso vinculado.',
+    })
+  }
+
+  if (isCaseStudyQuestion && !value.case_question_position) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['case_question_position'],
+      message: 'Informe a posicao da pergunta dentro do estudo de caso.',
+    })
+  }
+
+  if (!isCaseStudyQuestion && value.case_study_id) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['case_study_id'],
+      message: 'Perguntas independentes nao podem ser vinculadas a estudo de caso.',
+    })
+  }
+
+  if (!isCaseStudyQuestion && value.case_question_position) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['case_question_position'],
+      message: 'Perguntas independentes nao usam posicao interna de estudo de caso.',
+    })
+  }
+
+  if (isStandaloneEssay || isCaseStudyAi) {
     if ((value.essay_expected_answer?.trim().length ?? 0) < 2) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
@@ -40,11 +79,19 @@ export const assessmentQuestionFormSchema = z.object({
       })
     }
 
-    if (value.points !== 0) {
+    if (isStandaloneEssay && value.points !== 0) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ['points'],
         message: 'Questoes discursivas com IA nao geram pontos.',
+      })
+    }
+
+    if (isCaseStudyAi && value.points <= 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['points'],
+        message: 'Perguntas discursivas do estudo de caso devem ter pontuacao maior que zero.',
       })
     }
 
@@ -60,6 +107,11 @@ export const assessmentQuestionFormSchema = z.object({
   }
 })
 
+export const assessmentCaseStudyFormSchema = z.object({
+  title: z.string().trim().max(160).optional(),
+  case_text: z.string().trim().min(10, 'Descreva o caso com pelo menos 10 caracteres.'),
+})
+
 export const assessmentOptionFormSchema = z.object({
   question_id: z.string().uuid('Questao invalida.'),
   option_text: z.string().trim().min(1, 'Opcao deve ter ao menos 1 caractere.'),
@@ -71,3 +123,4 @@ export type AssessmentQuestionFormInput = z.infer<
   typeof assessmentQuestionFormSchema
 >
 export type AssessmentOptionFormInput = z.infer<typeof assessmentOptionFormSchema>
+export type AssessmentCaseStudyFormInput = z.infer<typeof assessmentCaseStudyFormSchema>
