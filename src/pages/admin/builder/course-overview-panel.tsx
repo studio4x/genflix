@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 
 import { useCourseBuilder } from '@/app/layouts/admin-course-builder-layout'
@@ -13,6 +13,20 @@ export function CourseOverviewPanel() {
   const [analysisTarget, setAnalysisTarget] = useState<{ moduleId: string; moduleTitle: string } | null>(null)
   const [analysisResult, setAnalysisResult] = useState<ModuleAiReviewResult | null>(null)
   const [isApplyingFixes, setIsApplyingFixes] = useState(false)
+
+  useEffect(() => {
+    if (!analysisTarget || !analysisResult) return
+
+    function handleEscapeKey(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        event.preventDefault()
+        event.stopPropagation()
+      }
+    }
+
+    window.addEventListener('keydown', handleEscapeKey, true)
+    return () => window.removeEventListener('keydown', handleEscapeKey, true)
+  }, [analysisTarget, analysisResult])
 
   if (!courseTree) return null
   const { course, modules } = courseTree
@@ -190,7 +204,10 @@ export function CourseOverviewPanel() {
       </div>
 
       {analysisTarget && analysisResult && (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm animate-in fade-in duration-300">
+        <div
+          className="fixed inset-0 z-[110] flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm animate-in fade-in duration-300"
+          onMouseDown={(event) => event.stopPropagation()}
+        >
           <div className="max-h-[95vh] w-full max-w-5xl overflow-y-auto rounded-[32px] border border-white/20 bg-white shadow-2xl animate-in zoom-in-95 duration-300">
             <div className="flex items-start justify-between gap-4 border-b border-slate-100 p-8">
               <div>
@@ -274,16 +291,6 @@ export function CourseOverviewPanel() {
             </div>
 
             <div className="flex flex-col gap-3 border-t border-slate-100 bg-slate-50/50 p-8 sm:flex-row sm:justify-end">
-              <Button
-                variant="ghost"
-                className="h-12 rounded-2xl px-8 font-bold text-slate-500"
-                onClick={() => {
-                  setAnalysisTarget(null)
-                  setAnalysisResult(null)
-                }}
-              >
-                Fechar
-              </Button>
               <Button
                 className="h-12 rounded-2xl bg-blue-600 px-8 font-black shadow-xl shadow-blue-100 hover:bg-blue-700"
                 disabled={!analysisResult.corrected_module || isApplyingFixes}
