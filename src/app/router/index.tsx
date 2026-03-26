@@ -25,6 +25,7 @@ import { UnauthorizedPage } from '@/pages/public/unauthorized-page'
 import { StudentAssessmentExecutionPage } from '@/pages/student/student-assessment-execution-page'
 import { StudentCourseDetailsPage } from '@/pages/student/student-course-details-page'
 import { StudentCoursesPage } from '@/pages/student/student-courses-page'
+import { StudentAccountPage } from '@/pages/student/student-account-page'
 import { StudentDashboardPage } from '@/pages/student/student-dashboard-page'
 import { StudentLessonPage } from '@/pages/student/student-lesson-page'
 import { CourseOverviewPanel } from '@/pages/admin/builder/course-overview-panel'
@@ -90,6 +91,10 @@ export const appRouter = createBrowserRouter([
           {
             path: '/aluno/cursos/:courseId',
             element: <StudentCourseDetailsPage />,
+          },
+          {
+            path: '/aluno/minha-conta',
+            element: <StudentAccountPage />,
           },
         ],
       },

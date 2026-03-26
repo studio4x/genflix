@@ -11,7 +11,7 @@ import {
 import type { AuthChangeEvent, Session, User } from '@supabase/supabase-js'
 
 import { supabase } from '@/services/supabase/client'
-import type { Profile, RoleCode } from '@/types/auth'
+import type { Profile, RoleCode, UpdateProfileInput } from '@/types/auth'
 
 interface AuthContextValue {
   isLoading: boolean
@@ -23,6 +23,8 @@ interface AuthContextValue {
   signOut: () => Promise<void>
   requestPasswordReset: (email: string) => Promise<void>
   updatePassword: (newPassword: string) => Promise<void>
+  refreshProfile: () => Promise<void>
+  updateProfile: (payload: UpdateProfileInput) => Promise<Profile>
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined)
@@ -69,6 +71,20 @@ async function loadProfileAndRoles(userId: string) {
   const roles = extractRoles((rolesResult.data as RoleRelationRow[]) ?? [])
 
   return { profile, roles }
+}
+
+async function loadProfile(userId: string) {
+  const profileResult = await supabase
+    .from('profiles')
+    .select('id, email, full_name, timezone, locale')
+    .eq('id', userId)
+    .maybeSingle()
+
+  if (profileResult.error) {
+    throw profileResult.error
+  }
+
+  return profileResult.data as Profile | null
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -192,6 +208,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
+  const refreshProfile = useCallback(async () => {
+    if (!currentUserIdRef.current) {
+      setProfile(null)
+      return
+    }
+
+    const nextProfile = await loadProfile(currentUserIdRef.current)
+    setProfile(nextProfile)
+  }, [])
+
+  const updateProfile = useCallback(async (payload: UpdateProfileInput) => {
+    if (!currentUserIdRef.current) {
+      throw new Error('Usuário não autenticado.')
+    }
+
+    const result = await supabase
+      .from('profiles')
+      .update({
+        full_name: payload.full_name,
+        timezone: payload.timezone,
+        locale: payload.locale,
+      })
+      .eq('id', currentUserIdRef.current)
+      .select('id, email, full_name, timezone, locale')
+      .single()
+
+    if (result.error) {
+      throw result.error
+    }
+
+    const nextProfile = result.data as Profile
+    setProfile(nextProfile)
+    return nextProfile
+  }, [])
+
   const value = useMemo<AuthContextValue>(
     () => ({
       isLoading,
@@ -203,8 +254,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       signOut,
       requestPasswordReset,
       updatePassword,
+      refreshProfile,
+      updateProfile,
     }),
-    [isLoading, profile, requestPasswordReset, roles, session, signIn, signOut, updatePassword, user],
+    [isLoading, profile, refreshProfile, requestPasswordReset, roles, session, signIn, signOut, updatePassword, updateProfile, user],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

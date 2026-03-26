@@ -7,3 +7,9 @@ export interface Profile {
   timezone: string
   locale: string
 }
+
+export interface UpdateProfileInput {
+  full_name: string | null
+  timezone: string
+  locale: string
+}

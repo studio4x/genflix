@@ -25,6 +25,16 @@ const studentLinks = [
       </svg>
     ),
   },
+  {
+    to: '/aluno/minha-conta',
+    label: 'Minha Conta',
+    description: 'Dados e seguranca',
+    icon: (
+      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0z" />
+      </svg>
+    ),
+  },
 ]
 
 function getStudentDisplayName(fullName: string | null | undefined, email: string | null | undefined) {
@@ -77,7 +87,14 @@ export function StudentLayout() {
           </div>
 
           <div className="flex items-center gap-3">
-            <div className="hidden items-center gap-3 rounded-full border border-slate-200 bg-white px-2 py-1.5 shadow-sm md:flex">
+            <Link
+              to="/aluno/minha-conta"
+              className={`hidden items-center gap-3 rounded-full border px-2 py-1.5 shadow-sm transition-colors md:flex ${
+                location.pathname.startsWith('/aluno/minha-conta')
+                  ? 'border-cyan-200 bg-cyan-50'
+                  : 'border-slate-200 bg-white hover:border-slate-300'
+              }`}
+            >
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-cyan-400 text-sm font-black text-white shadow-sm">
                 {firstName.slice(0, 2).toUpperCase()}
               </div>
@@ -85,7 +102,7 @@ export function StudentLayout() {
                 <p className="text-sm font-black text-slate-900">{displayName}</p>
                 <p className="text-[11px] font-medium text-slate-500">Minha Conta</p>
               </div>
-            </div>
+            </Link>
             <Button
               type="button"
               variant="outline"
