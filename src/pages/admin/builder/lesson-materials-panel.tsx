@@ -27,6 +27,7 @@ export function LessonMaterialsPanel() {
   const navigate = useNavigate()
   const { user } = useAuth()
   const { courseTree } = useCourseBuilder()
+  const uploadInputId = lessonId ? `lesson-material-upload-${lessonId}` : 'lesson-material-upload'
 
   const [lesson, setLesson] = useState<Lesson | null>(null)
   const [materials, setMaterials] = useState<LessonMaterial[]>([])
@@ -123,7 +124,10 @@ export function LessonMaterialsPanel() {
       </div>
 
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden p-6 md:p-8 space-y-8">
-        <div className="bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200 p-8 text-center space-y-4">
+        <label
+          htmlFor={uploadInputId}
+          className={`block bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200 p-8 text-center space-y-4 ${isUploading ? 'cursor-not-allowed opacity-70' : 'cursor-pointer'}`}
+        >
             <div className="p-3 bg-white rounded-full w-fit mx-auto shadow-sm border border-slate-100">
                <svg className="h-8 w-8 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>
             </div>
@@ -132,20 +136,17 @@ export function LessonMaterialsPanel() {
                <p className="text-xs text-slate-500 mt-1">Clique para selecionar ou arraste arquivos (PDF, ZIP, etc) até 50MB.</p>
             </div>
             <input
+              id={uploadInputId}
               type="file"
               onChange={handleUpload}
               disabled={isUploading}
-              className="absolute inset-0 opacity-0 cursor-pointer"
+              className="hidden"
               title=""
-              style={{ display: isUploading ? 'none' : 'block', width: '100%', height: '100%', position: 'absolute', top: 0, left: 0 }}
             />
-            <Button
-              disabled={isUploading}
-              className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-6"
-            >
+            <span className={`inline-flex rounded-md bg-blue-600 px-6 py-2 text-sm font-bold text-white ${isUploading ? 'opacity-80' : 'hover:bg-blue-700'}`}>
               {isUploading ? 'Enviando...' : 'Selecionar Arquivo'}
-            </Button>
-        </div>
+            </span>
+        </label>
 
         {error && (
           <div className="p-4 rounded-xl border border-red-200 bg-red-50 text-sm text-red-600 flex items-start gap-2">
