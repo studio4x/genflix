@@ -36,7 +36,7 @@ export function CourseOverviewPanel() {
   const [repeatReviewPrompt, setRepeatReviewPrompt] = useState<{
     moduleId: string
     moduleTitle: string
-    latestReview: ModuleAiReviewHistoryEntry
+    latestAppliedReview: ModuleAiReviewHistoryEntry
   } | null>(null)
 
   useEffect(() => {
@@ -96,12 +96,12 @@ export function CourseOverviewPanel() {
   async function handleAnalyzeModule(moduleId: string, moduleTitle: string, forceNewReview = false) {
     if (!course) return
 
-    const latestReview = reviewHistoryByModule[moduleId]?.[0] ?? null
-    if (latestReview && !forceNewReview) {
+    const latestAppliedReview = (reviewHistoryByModule[moduleId] ?? []).find((review) => Boolean(review.applied_at)) ?? null
+    if (latestAppliedReview && !forceNewReview) {
       setRepeatReviewPrompt({
         moduleId,
         moduleTitle,
-        latestReview,
+        latestAppliedReview,
       })
       return
     }
@@ -497,26 +497,29 @@ export function CourseOverviewPanel() {
         <div className="fixed inset-0 z-[115] flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm animate-in fade-in duration-300">
           <div className="w-full max-w-2xl rounded-[32px] border border-white/20 bg-white shadow-2xl animate-in zoom-in-95 duration-300">
             <div className="border-b border-slate-100 p-8">
-              <h3 className="text-xl font-black tracking-tight text-slate-900">Este modulo ja passou por revisao</h3>
+              <h3 className="text-xl font-black tracking-tight text-slate-900">Este modulo ja tem ajustes realizados</h3>
               <p className="mt-2 text-sm leading-relaxed text-slate-500">
-                O modulo <strong>{repeatReviewPrompt.moduleTitle}</strong> ja foi revisado com IA em{' '}
+                O modulo <strong>{repeatReviewPrompt.moduleTitle}</strong> ja teve ajustes aplicados com IA. A ultima aplicacao foi em{' '}
                 {new Intl.DateTimeFormat('pt-BR', {
                   dateStyle: 'short',
                   timeStyle: 'medium',
-                }).format(new Date(repeatReviewPrompt.latestReview.created_at))}
-                . Voce pode consultar o historico ou iniciar uma nova revisao.
+                }).format(new Date(repeatReviewPrompt.latestAppliedReview.applied_at ?? repeatReviewPrompt.latestAppliedReview.created_at))}
+                . Revise abaixo o que foi ajustado ou inicie uma nova analise.
               </p>
             </div>
             <div className="space-y-4 p-8">
               <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
-                <p className="text-xs font-black uppercase tracking-widest text-slate-400">Resumo da ultima revisao</p>
-                <p className="mt-3 text-sm leading-relaxed text-slate-700">{repeatReviewPrompt.latestReview.summary}</p>
+                <p className="text-xs font-black uppercase tracking-widest text-slate-400">Resumo dos ultimos ajustes realizados</p>
+                <p className="mt-3 text-sm leading-relaxed text-slate-700">{repeatReviewPrompt.latestAppliedReview.summary}</p>
                 <div className="mt-4 flex flex-wrap gap-2">
                   <span className="rounded-full bg-slate-900 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-white">
-                    Score {repeatReviewPrompt.latestReview.quality_score}
+                    Score {repeatReviewPrompt.latestAppliedReview.quality_score}
                   </span>
                   <span className="rounded-full bg-slate-100 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-slate-600">
-                    {repeatReviewPrompt.latestReview.issues.length} ajuste(s)
+                    {repeatReviewPrompt.latestAppliedReview.issues.length} ajuste(s)
+                  </span>
+                  <span className="rounded-full bg-emerald-100 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-emerald-700">
+                    Aplicado
                   </span>
                 </div>
               </div>
@@ -548,7 +551,7 @@ export function CourseOverviewPanel() {
                 className="h-12 rounded-2xl bg-blue-600 px-8 font-black shadow-xl shadow-blue-100 hover:bg-blue-700"
                 onClick={() => void handleAnalyzeModule(repeatReviewPrompt.moduleId, repeatReviewPrompt.moduleTitle, true)}
               >
-                Fazer nova revisao
+                Fazer nova analise
               </Button>
             </div>
           </div>
