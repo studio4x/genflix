@@ -8,7 +8,7 @@ import {
   useState,
   type ReactNode,
 } from 'react'
-import type { Session, User } from '@supabase/supabase-js'
+import type { AuthChangeEvent, Session, User } from '@supabase/supabase-js'
 
 import { supabase } from '@/services/supabase/client'
 import type { Profile, RoleCode } from '@/types/auth'
@@ -78,12 +78,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null)
   const [roles, setRoles] = useState<RoleCode[]>([])
   const syncVersionRef = useRef(0)
+  const currentUserIdRef = useRef<string | null>(null)
 
-  const syncAuthState = useCallback(async (nextSession: Session | null) => {
+  const syncAuthState = useCallback(async (nextSession: Session | null, event?: AuthChangeEvent) => {
     const syncVersion = ++syncVersionRef.current
-    setIsLoading(true)
+    const nextUserId = nextSession?.user?.id ?? null
+    const isTokenRefreshForSameUser =
+      event === 'TOKEN_REFRESHED' &&
+      !!nextUserId &&
+      nextUserId === currentUserIdRef.current
+
+    if (!isTokenRefreshForSameUser) {
+      setIsLoading(true)
+    }
+
     setSession(nextSession)
     setUser(nextSession?.user ?? null)
+    currentUserIdRef.current = nextUserId
+
+    if (isTokenRefreshForSameUser) {
+      return
+    }
 
     if (!nextSession?.user) {
       if (syncVersion === syncVersionRef.current) {
@@ -130,8 +145,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, nextSession) => {
-      void syncAuthState(nextSession)
+    } = supabase.auth.onAuthStateChange((event, nextSession) => {
+      void syncAuthState(nextSession, event)
     })
 
     return () => {
