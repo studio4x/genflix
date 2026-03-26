@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useState } from 'react'
 import { Link, Outlet, useNavigate, useParams } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { fetchAdminCourseTree, toErrorMessage, importCourseContent, exportFullCourseContent, exportModuleContent } from '@/features/admin/content/api'
@@ -6,6 +6,12 @@ import type { AdminCourseTree } from '@/features/admin/content/api'
 import { CourseTreeDnd } from '@/features/admin/content/components/course-tree-dnd'
 import { exportFinalAssessmentContent } from '@/features/admin/assessments/api'
 import { downloadJsonFile } from '@/lib/download'
+import {
+  BUILDER_NOTICE_EVENT,
+  clearBuilderNotice,
+  readBuilderNotice,
+  type BuilderNoticePayload,
+} from '@/lib/builder-notice'
 
 
 interface BuilderContextData {
@@ -48,8 +54,9 @@ export function AdminCourseBuilderLayout() {
   const [isExportingCourse, setIsExportingCourse] = useState(false)
   const [isExportingModule, setIsExportingModule] = useState(false)
   const [isExportingFinal, setIsExportingFinal] = useState(false)
+  const [builderNotice, setBuilderNotice] = useState<BuilderNoticePayload | null>(null)
 
-  const refreshTree = async () => {
+  const refreshTree = useCallback(async () => {
     if (!courseId) return
     setIsLoading(true)
     setError(null)
@@ -61,11 +68,11 @@ export function AdminCourseBuilderLayout() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [courseId])
 
   useEffect(() => {
     void refreshTree()
-  }, [courseId])
+  }, [refreshTree])
 
   useEffect(() => {
     if (!courseTree?.modules.length) {
@@ -77,6 +84,18 @@ export function AdminCourseBuilderLayout() {
       prev && courseTree.modules.some((m) => m.id === prev) ? prev : courseTree.modules[0].id,
     )
   }, [courseTree])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+
+    const syncNotice = () => {
+      setBuilderNotice(readBuilderNotice())
+    }
+
+    syncNotice()
+    window.addEventListener(BUILDER_NOTICE_EVENT, syncNotice as EventListener)
+    return () => window.removeEventListener(BUILDER_NOTICE_EVENT, syncNotice as EventListener)
+  }, [])
 
   async function handleImport() {
     if (!courseId) return
@@ -98,7 +117,7 @@ export function AdminCourseBuilderLayout() {
         data = JSON.parse(cleanedJson)
       } catch (err1) {
         try {
-          const fixedJson = cleanedJson.replace(/\n(?!\s*[\{\}\[\]",:0-9\-\.tfn])/g, '\\n')
+          const fixedJson = cleanedJson.replace(/\n(?!\s*[{}[\]",:0-9\-.tfn])/g, '\\n')
           data = JSON.parse(fixedJson)
         } catch (err2) {
           console.error('Falha em ambos os parses:', err1, err2)
@@ -123,9 +142,11 @@ export function AdminCourseBuilderLayout() {
       setClearExisting(false)
       setModuleIdToReplace(null)
       setIsReplaceMode(false)
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Erro no import:', err)
-      const errorMessage = err?.message || (typeof err === 'string' ? err : 'Erro inesperado na importação.')
+      const errorMessage = err instanceof Error
+        ? err.message
+        : (typeof err === 'string' ? err : 'Erro inesperado na importacao.')
       setImportError(errorMessage)
     } finally {
       setIsImporting(false)
@@ -203,7 +224,7 @@ export function AdminCourseBuilderLayout() {
       <div className="flex flex-col h-screen w-full bg-slate-50 text-slate-900 font-sans overflow-hidden">
         
         {/* TOPBAR */}
-        <header className="shrink-0 h-14 border-b border-slate-200 bg-white shadow-sm z-20 flex items-center justify-between px-4">
+         <header className="shrink-0 h-14 border-b border-slate-200 bg-white shadow-sm z-20 flex items-center justify-between px-4">
           <div className="flex items-center gap-3">
             <Button variant="ghost" size="sm" onClick={() => navigate('/admin/cursos')} className="text-slate-500 hover:text-slate-900 -ml-2">
                <svg className="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
@@ -229,6 +250,29 @@ export function AdminCourseBuilderLayout() {
             </Button>
           </div>
         </header>
+        {builderNotice && (
+          <div
+            className={`shrink-0 border-b px-4 py-3 text-sm font-semibold ${
+              builderNotice.type === 'success'
+                ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                : 'border-rose-200 bg-rose-50 text-rose-700'
+            }`}
+          >
+            <div className="mx-auto flex w-full max-w-7xl items-center justify-between gap-3">
+              <p>{builderNotice.message}</p>
+              <button
+                type="button"
+                onClick={() => {
+                  clearBuilderNotice()
+                  setBuilderNotice(null)
+                }}
+                className="rounded-lg border border-current/20 px-3 py-1.5 text-xs font-black uppercase tracking-widest hover:bg-white/40"
+              >
+                Fechar
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* WORKSPACE AREA */}
         <div className="flex flex-1 overflow-hidden">

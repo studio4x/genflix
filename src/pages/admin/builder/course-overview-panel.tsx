@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom'
 import { useCourseBuilder } from '@/app/layouts/admin-course-builder-layout'
 import { analyzeModuleWithAi, type ModuleAiReviewResult } from '@/features/admin/ai-review/api'
 import { importCourseContent, toErrorMessage } from '@/features/admin/content/api'
+import { publishBuilderNotice } from '@/lib/builder-notice'
 import { Button } from '@/components/ui/button'
 
 export function CourseOverviewPanel() {
@@ -74,14 +75,24 @@ export function CourseOverviewPanel() {
       await importCourseContent(course.id, [analysisResult.corrected_module], false, analysisTarget.moduleId)
       await refreshTree()
       setDidApplyCurrentAnalysis(true)
+      const appliedAtIso = new Date().toISOString()
       setApplyFeedback({
         moduleId: analysisTarget.moduleId,
         moduleTitle: analysisTarget.moduleTitle,
-        appliedAt: new Date().toISOString(),
+        appliedAt: appliedAtIso,
         issuesCount: analysisResult.issues.length,
       })
+      publishBuilderNotice(
+        'success',
+        `Ajustes da IA aplicados no modulo "${analysisTarget.moduleTitle}" em ${new Intl.DateTimeFormat('pt-BR', {
+          dateStyle: 'short',
+          timeStyle: 'medium',
+        }).format(new Date(appliedAtIso))}.`,
+      )
     } catch (err) {
-      setAnalysisError(toErrorMessage(err))
+      const message = toErrorMessage(err)
+      setAnalysisError(message)
+      publishBuilderNotice('error', `Falha ao aplicar ajustes da IA: ${message}`)
     } finally {
       setIsApplyingFixes(false)
     }
