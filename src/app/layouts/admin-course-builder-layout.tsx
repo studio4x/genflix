@@ -491,9 +491,11 @@ export function AdminCourseBuilderLayout() {
                   <div className={`inline-flex rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-widest ${
                     builderNotice.type === 'success'
                       ? 'bg-emerald-100 text-emerald-700'
-                      : 'bg-rose-100 text-rose-700'
+                      : builderNotice.type === 'error'
+                        ? 'bg-rose-100 text-rose-700'
+                        : 'bg-amber-100 text-amber-700'
                   }`}>
-                    {builderNotice.type === 'success' ? 'Concluido' : 'Erro'}
+                    {builderNotice.type === 'success' ? 'Concluido' : builderNotice.type === 'error' ? 'Erro' : 'Processando'}
                   </div>
                   <h3 className="mt-3 text-2xl font-black tracking-tight text-slate-900">{builderNotice.title}</h3>
                   <p className="mt-2 text-sm font-medium text-slate-500">
@@ -507,8 +509,10 @@ export function AdminCourseBuilderLayout() {
                   type="button"
                   onClick={() => {
                     setIsBuilderNoticeModalOpen(false)
-                    clearBuilderNotice()
-                    setBuilderNotice(null)
+                    if (builderNotice.type !== 'pending') {
+                      clearBuilderNotice()
+                      setBuilderNotice(null)
+                    }
                   }}
                   className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-50 text-slate-400 transition-colors hover:text-slate-900"
                 >
@@ -521,10 +525,16 @@ export function AdminCourseBuilderLayout() {
                 <div className={`rounded-2xl border p-5 ${
                   builderNotice.type === 'success'
                     ? 'border-emerald-200 bg-emerald-50'
-                    : 'border-rose-200 bg-rose-50'
+                    : builderNotice.type === 'error'
+                      ? 'border-rose-200 bg-rose-50'
+                      : 'border-amber-200 bg-amber-50'
                 }`}>
                   <p className={`text-sm font-semibold ${
-                    builderNotice.type === 'success' ? 'text-emerald-800' : 'text-rose-800'
+                    builderNotice.type === 'success'
+                      ? 'text-emerald-800'
+                      : builderNotice.type === 'error'
+                        ? 'text-rose-800'
+                        : 'text-amber-800'
                   }`}>
                     {builderNotice.message}
                   </p>
@@ -545,14 +555,20 @@ export function AdminCourseBuilderLayout() {
               <div className="flex justify-end border-t border-slate-100 bg-slate-50/50 p-8">
                 <Button
                   type="button"
-                  className="h-12 rounded-2xl bg-blue-600 px-8 font-black shadow-xl shadow-blue-100 hover:bg-blue-700"
+                  className={`h-12 rounded-2xl px-8 font-black shadow-xl ${
+                    builderNotice.type === 'pending'
+                      ? 'bg-amber-500 shadow-amber-100 hover:bg-amber-600'
+                      : 'bg-blue-600 shadow-blue-100 hover:bg-blue-700'
+                  }`}
                   onClick={() => {
                     setIsBuilderNoticeModalOpen(false)
-                    clearBuilderNotice()
-                    setBuilderNotice(null)
+                    if (builderNotice.type !== 'pending') {
+                      clearBuilderNotice()
+                      setBuilderNotice(null)
+                    }
                   }}
                 >
-                  Fechar
+                  {builderNotice.type === 'pending' ? 'Continuar acompanhando' : 'Fechar'}
                 </Button>
               </div>
             </div>

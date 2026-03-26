@@ -70,6 +70,16 @@ export function CourseOverviewPanel() {
 
     setIsApplyingFixes(true)
     setAnalysisError(null)
+    publishBuilderNotice({
+      type: 'pending',
+      title: 'Aplicando ajustes da IA',
+      message: `O modulo "${analysisTarget.moduleTitle}" esta sendo atualizado agora.`,
+      details: [
+        `Modulo em processamento: ${analysisTarget.moduleTitle}`,
+        `Pontos identificados na analise: ${analysisResult.issues.length}`,
+        'Aguarde a confirmacao final antes de sair da tela.',
+      ],
+    })
 
     try {
       await importCourseContent(course.id, [analysisResult.corrected_module], false, analysisTarget.moduleId)

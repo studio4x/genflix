@@ -1,4 +1,4 @@
-export type BuilderNoticeType = 'success' | 'error'
+export type BuilderNoticeType = 'pending' | 'success' | 'error'
 
 export interface BuilderNoticePayload {
   type: BuilderNoticeType
@@ -41,7 +41,7 @@ export function readBuilderNotice() {
     const parsed = JSON.parse(raw) as BuilderNoticePayload
     if (
       !parsed ||
-      (parsed.type !== 'success' && parsed.type !== 'error') ||
+      (parsed.type !== 'pending' && parsed.type !== 'success' && parsed.type !== 'error') ||
       typeof parsed.title !== 'string' ||
       typeof parsed.message !== 'string'
     ) {
