@@ -350,7 +350,7 @@ export function StudentCourseDetailsPage() {
             </div>
          </div>
 
-         <div className="flex w-full min-w-0 flex-col justify-center gap-1 rounded-2xl border border-slate-100 bg-slate-50/60 px-4 py-3 lg:w-[220px] lg:shrink-0 lg:self-end">
+         <div className="flex w-fit min-w-fit flex-col items-start justify-center gap-1 self-start rounded-2xl border border-slate-100 bg-slate-50/60 px-4 py-3 lg:shrink-0">
             <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Módulos</span>
             <div className="flex items-end gap-2">
                <span className="text-3xl font-black leading-none text-slate-900">{totalCompleted}</span>
