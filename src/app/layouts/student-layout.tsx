@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 const studentLinks = [
   {
     to: '/aluno/dashboard',
-    label: 'Inicio',
+    label: 'Início',
     description: 'Painel principal',
     icon: (
       <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -53,7 +53,7 @@ export function StudentLayout() {
             <Link to="/aluno/dashboard" className="flex items-center gap-3">
               <img src="/favicon.svg" alt="HomeCare Match" className="h-11 w-11 rounded-full bg-white object-contain" />
               <div className="hidden sm:block">
-                <p className="text-[10px] font-black uppercase tracking-[0.28em] text-slate-400">Area do Aluno</p>
+                <p className="text-[10px] font-black uppercase tracking-[0.28em] text-slate-400">Área do Aluno</p>
                 <h1 className="text-xl font-black tracking-tight text-slate-900">HomeCare Match Academy</h1>
               </div>
             </Link>

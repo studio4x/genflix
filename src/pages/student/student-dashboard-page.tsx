@@ -27,7 +27,7 @@ function getFirstName(fullName: string | null | undefined, email: string | null 
 
 function sanitizeDescription(description: string | null) {
   if (!description) {
-    return 'Conteudo liberado para desenvolver sua pratica profissional com mais seguranca.'
+    return 'Conteúdo liberado para desenvolver sua prática profissional com mais segurança.'
   }
 
   return description.replace(/<[^>]*>?/gm, '').trim()
@@ -103,10 +103,10 @@ export function StudentDashboardPage() {
             Painel do Aluno
           </div>
           <div className="space-y-3">
-            <h2 className="text-4xl font-black tracking-tight text-slate-900 sm:text-5xl">Ola, {firstName}!</h2>
+            <h2 className="text-4xl font-black tracking-tight text-slate-900 sm:text-5xl">Olá, {firstName}!</h2>
             <p className="text-base font-medium text-slate-500 sm:text-lg">{profile?.email}</p>
             <p className="max-w-3xl text-lg leading-relaxed text-slate-600">
-              Gerencie sua jornada de aprendizado, acompanhe sua evolucao e retome seus treinamentos com a mesma linguagem do ecossistema HomeCare Match.
+              Gerencie sua jornada de aprendizado, acompanhe sua evolução e retome seus treinamentos com a mesma linguagem do ecossistema HomeCare Match.
             </p>
           </div>
         </div>
@@ -145,7 +145,7 @@ export function StudentDashboardPage() {
           <p className="mt-3 text-4xl font-black text-amber-700">{isLoading ? '-' : journeySummary.finalPending}</p>
         </article>
         <article className="rounded-[28px] border border-emerald-100 bg-emerald-50 p-5">
-          <p className="text-[10px] font-black uppercase tracking-[0.24em] text-emerald-600">Concluidos</p>
+          <p className="text-[10px] font-black uppercase tracking-[0.24em] text-emerald-600">Concluídos</p>
           <p className="mt-3 text-4xl font-black text-emerald-700">{isLoading ? '-' : journeySummary.completed}</p>
         </article>
       </section>
@@ -155,7 +155,7 @@ export function StudentDashboardPage() {
           <article className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
             <div className="flex items-center justify-between gap-4">
               <div>
-                <p className="text-[10px] font-black uppercase tracking-[0.24em] text-slate-400">Acesso rapido</p>
+                <p className="text-[10px] font-black uppercase tracking-[0.24em] text-slate-400">Acesso rápido</p>
                 <h3 className="mt-2 text-2xl font-black tracking-tight text-slate-900">Atalhos do aluno</h3>
               </div>
             </div>
@@ -209,7 +209,7 @@ export function StudentDashboardPage() {
           <article className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
             <div>
               <p className="text-[10px] font-black uppercase tracking-[0.24em] text-slate-400">Destaque</p>
-              <h3 className="mt-2 text-2xl font-black tracking-tight text-slate-900">Proximo passo recomendado</h3>
+              <h3 className="mt-2 text-2xl font-black tracking-tight text-slate-900">Próximo passo recomendado</h3>
             </div>
 
             <div className="mt-5 overflow-hidden rounded-[28px] border border-slate-200 bg-slate-50">
@@ -228,7 +228,7 @@ export function StudentDashboardPage() {
                   <div className="space-y-4 p-6 sm:p-7">
                     <div className="inline-flex rounded-full bg-white px-3 py-1 text-[10px] font-black uppercase tracking-[0.24em] text-slate-500 shadow-sm">
                       {getStudentCourseJourneyStatus(courseStatuses.get(featuredCourse.id) ?? null) === 'completed'
-                        ? 'Concluido'
+                        ? 'Concluído'
                         : getStudentCourseJourneyStatus(courseStatuses.get(featuredCourse.id) ?? null) === 'final_pending'
                           ? 'Prova final pendente'
                           : 'Em andamento'}
@@ -250,7 +250,7 @@ export function StudentDashboardPage() {
                         to="/aluno/cursos"
                         className="inline-flex h-12 items-center justify-center rounded-2xl border border-slate-200 bg-white px-5 text-sm font-black text-slate-600 transition-colors hover:text-slate-900"
                       >
-                        Ver catalogo
+                        Ver catálogo
                       </Link>
                     </div>
                   </div>
@@ -258,7 +258,7 @@ export function StudentDashboardPage() {
               ) : (
                 <div className="p-8 text-center">
                   <p className="text-base font-semibold text-slate-600">Nenhum curso liberado no momento.</p>
-                  <p className="mt-2 text-sm text-slate-500">Assim que novos treinamentos forem atribuidos, eles aparecerao aqui.</p>
+                  <p className="mt-2 text-sm text-slate-500">Assim que novos treinamentos forem atribuídos, eles aparecerão aqui.</p>
                 </div>
               )}
             </div>
@@ -268,7 +268,7 @@ export function StudentDashboardPage() {
         <div className="space-y-6">
           <article className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
             <div>
-              <p className="text-[10px] font-black uppercase tracking-[0.24em] text-slate-400">Situacao da conta</p>
+              <p className="text-[10px] font-black uppercase tracking-[0.24em] text-slate-400">Situação da conta</p>
               <h3 className="mt-2 text-2xl font-black tracking-tight text-slate-900">Resumo do perfil</h3>
             </div>
 
@@ -282,7 +282,7 @@ export function StudentDashboardPage() {
                 <div>
                   <p className="text-lg font-black text-emerald-900">Conta ativa para aprendizagem</p>
                   <p className="mt-1 text-sm font-medium text-emerald-700">
-                    Seus treinamentos liberados estao disponiveis para acesso e continuidade.
+                    Seus treinamentos liberados estão disponíveis para acesso e continuidade.
                   </p>
                 </div>
               </div>
@@ -291,7 +291,7 @@ export function StudentDashboardPage() {
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
               <div className="rounded-[22px] border border-slate-200 bg-slate-50 p-4">
                 <p className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">Nome</p>
-                <p className="mt-2 text-sm font-bold text-slate-800">{profile?.full_name || 'Nao informado'}</p>
+                <p className="mt-2 text-sm font-bold text-slate-800">{profile?.full_name || 'Não informado'}</p>
               </div>
               <div className="rounded-[22px] border border-slate-200 bg-slate-50 p-4">
                 <p className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">E-mail</p>
@@ -302,7 +302,7 @@ export function StudentDashboardPage() {
 
           <article className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
             <div>
-              <p className="text-[10px] font-black uppercase tracking-[0.24em] text-slate-400">Leitura rapida</p>
+              <p className="text-[10px] font-black uppercase tracking-[0.24em] text-slate-400">Leitura rápida</p>
               <h3 className="mt-2 text-2xl font-black tracking-tight text-slate-900">Status da jornada</h3>
             </div>
 
@@ -320,7 +320,7 @@ export function StudentDashboardPage() {
                 </span>
               </div>
               <div className="flex items-center justify-between rounded-[22px] border border-slate-200 bg-slate-50 px-4 py-4">
-                <span className="text-sm font-bold text-slate-700">Cursos concluidos</span>
+                <span className="text-sm font-bold text-slate-700">Cursos concluídos</span>
                 <span className="rounded-full bg-emerald-500 px-3 py-1 text-xs font-black uppercase tracking-widest text-white">
                   {journeySummary.completed}
                 </span>
