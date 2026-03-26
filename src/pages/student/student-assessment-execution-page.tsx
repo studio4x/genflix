@@ -621,13 +621,13 @@ export function StudentAssessmentExecutionPage() {
           <div className="space-y-2">
             <div className="mb-1 flex items-center gap-3">
               <span className="rounded-full bg-blue-600 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-white shadow-lg shadow-blue-100">
-                AVALIACAO OFICIAL
+                AVALIAÇÃO OFICIAL
               </span>
               <span className="text-xs font-black uppercase tracking-widest italic text-slate-400">
                 {assessment.title}
               </span>
             </div>
-            <h2 className="text-3xl font-black leading-tight tracking-tight text-slate-900 md:text-4xl">Questao {currentQuestionIndex + 1} de {questions.length}</h2>
+            <h2 className="text-3xl font-black leading-tight tracking-tight text-slate-900 md:text-4xl">Questão {currentQuestionIndex + 1} de {questions.length}</h2>
           </div>
         </div>
 
@@ -738,7 +738,7 @@ export function StudentAssessmentExecutionPage() {
             disabled={currentQuestionIndex === 0}
             onClick={() => setCurrentQuestionIndex((index) => index - 1)}
           >
-            Questao Anterior
+            Questão Anterior
           </Button>
 
           {isPerfectApprovedReview ? (
@@ -772,7 +772,7 @@ export function StudentAssessmentExecutionPage() {
               disabled={!currentQuestionAnswered}
               onClick={() => setCurrentQuestionIndex((index) => index + 1)}
             >
-              PROXIMA QUESTAO
+              PRÓXIMA QUESTÃO
               <svg className="ml-2 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M9 5l7 7-7 7" />
               </svg>
