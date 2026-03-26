@@ -221,16 +221,20 @@ export function AssessmentBuilderPanel() {
     }
   }
 
-  async function handleUpdateQuestionText(questionId: string, questionText: string) {
+  function handleQuestionTextChange(questionId: string, questionText: string) {
+    setQuestions((prev) => prev.map((question) => (
+      question.id === questionId
+        ? { ...question, question_text: questionText }
+        : question
+    )))
+  }
+
+  async function handlePersistQuestion(questionId: string, updates: Partial<AssessmentQuestionWithOptions>) {
     try {
-      await updateAssessmentQuestion(questionId, buildQuestionPayload(questionId, { question_text: questionText }))
-      setQuestions((prev) => prev.map((question) => (
-        question.id === questionId
-          ? { ...question, question_text: questionText }
-          : question
-      )))
+      await updateAssessmentQuestion(questionId, buildQuestionPayload(questionId, updates))
     } catch (updateError) {
       setError(toErrorMessage(updateError))
+      await loadData()
     }
   }
 
@@ -261,16 +265,11 @@ export function AssessmentBuilderPanel() {
   }
 
   async function handleUpdateEssayExpectedAnswer(questionId: string, expectedAnswer: string) {
-    try {
-      await updateAssessmentQuestion(questionId, buildQuestionPayload(questionId, { essay_expected_answer: expectedAnswer }))
-      setQuestions((prev) => prev.map((question) => (
-        question.id === questionId
-          ? { ...question, essay_expected_answer: expectedAnswer }
-          : question
-      )))
-    } catch (updateError) {
-      setError(toErrorMessage(updateError))
-    }
+    setQuestions((prev) => prev.map((question) => (
+      question.id === questionId
+        ? { ...question, essay_expected_answer: expectedAnswer }
+        : question
+    )))
   }
 
   async function handleDeleteQuestion(questionId: string) {
@@ -300,6 +299,22 @@ export function AssessmentBuilderPanel() {
     }
   }
 
+  function handleOptionTextChange(optionId: string, optionText: string) {
+    setQuestions((prev) => prev.map((question) => {
+      const hasOption = question.options.some((option) => option.id === optionId)
+      if (!hasOption) return question
+
+      return {
+        ...question,
+        options: question.options.map((option) => (
+          option.id === optionId
+            ? { ...option, option_text: optionText }
+            : option
+        )),
+      }
+    }))
+  }
+
   async function handleUpdateOption(optionId: string, optionText: string, isCorrect: boolean) {
     try {
       await updateAssessmentOption(optionId, { option_text: optionText, is_correct: isCorrect })
@@ -324,6 +339,7 @@ export function AssessmentBuilderPanel() {
       }))
     } catch (updateError) {
       setError(toErrorMessage(updateError))
+      await loadData()
     }
   }
 
@@ -550,7 +566,8 @@ export function AssessmentBuilderPanel() {
                 <textarea
                   className="w-full resize-none border-none bg-transparent p-0 font-bold text-slate-800 placeholder:text-slate-300 focus:ring-0"
                   value={question.question_text}
-                  onChange={(event) => void handleUpdateQuestionText(question.id, event.target.value)}
+                  onChange={(event) => handleQuestionTextChange(question.id, event.target.value)}
+                  onBlur={() => void handlePersistQuestion(question.id, { question_text: question.question_text })}
                   placeholder="Escreva sua pergunta aqui..."
                   rows={2}
                 />
@@ -579,7 +596,8 @@ export function AssessmentBuilderPanel() {
                   <textarea
                     className="min-h-[140px] w-full rounded-2xl border border-amber-100 bg-white px-4 py-4 text-sm text-slate-700 focus:border-amber-300 focus:ring-4 focus:ring-amber-100"
                     value={question.essay_expected_answer ?? ''}
-                    onChange={(event) => void handleUpdateEssayExpectedAnswer(question.id, event.target.value)}
+                    onChange={(event) => handleUpdateEssayExpectedAnswer(question.id, event.target.value)}
+                    onBlur={() => void handlePersistQuestion(question.id, { essay_expected_answer: question.essay_expected_answer ?? '' })}
                     placeholder="Ex.: O procedimento correto exige higienizacao das maos antes e depois do contato com o paciente."
                   />
                 </>
@@ -611,7 +629,8 @@ export function AssessmentBuilderPanel() {
                               : 'bg-slate-50 text-slate-600'
                           }`}
                           value={option.option_text}
-                          onChange={(event) => void handleUpdateOption(option.id, event.target.value, option.is_correct)}
+                          onChange={(event) => handleOptionTextChange(option.id, event.target.value)}
+                          onBlur={() => void handleUpdateOption(option.id, option.option_text, option.is_correct)}
                           placeholder="Descreva a alternativa..."
                         />
 
