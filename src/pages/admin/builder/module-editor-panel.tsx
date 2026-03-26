@@ -189,9 +189,11 @@ export function ModuleEditorPanel() {
       if (currentReviewId && user?.id) {
         try {
           const updatedReview = await markModuleAiReviewApplied(currentReviewId, user.id)
-          setReviewHistory((previous) => previous.map((review) => (
-            review.id === updatedReview.id ? updatedReview : review
-          )))
+          if (updatedReview) {
+            setReviewHistory((previous) => previous.map((review) => (
+              review.id === updatedReview.id ? updatedReview : review
+            )))
+          }
         } catch (historyError) {
           setError(`Os ajustes foram aplicados, mas o historico nao foi atualizado: ${toErrorMessage(historyError)}`)
         }

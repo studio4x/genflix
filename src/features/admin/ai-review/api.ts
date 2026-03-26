@@ -200,21 +200,49 @@ export async function createModuleAiReviewHistory(input: {
 }
 
 export async function markModuleAiReviewApplied(reviewId: string, userId: string) {
+  const appliedAt = new Date().toISOString()
   const updateResult = await supabase
     .from('course_module_ai_reviews')
     .update({
-      applied_at: new Date().toISOString(),
+      applied_at: appliedAt,
       applied_by: userId,
     })
     .eq('id', reviewId)
     .select('*')
-    .single()
+    .maybeSingle()
 
   if (updateResult.error) {
-    throw updateResult.error
+    if (updateResult.error.code !== 'PGRST116') {
+      throw updateResult.error
+    }
   }
 
-  return updateResult.data as ModuleAiReviewHistoryEntry
+  if (updateResult.data) {
+    return updateResult.data as ModuleAiReviewHistoryEntry
+  }
+
+  const fetchResult = await supabase
+    .from('course_module_ai_reviews')
+    .select('*')
+    .eq('id', reviewId)
+    .maybeSingle()
+
+  if (fetchResult.error) {
+    if (fetchResult.error.code === 'PGRST116') {
+      return null
+    }
+    throw fetchResult.error
+  }
+
+  if (!fetchResult.data) {
+    return null
+  }
+
+  return {
+    ...(fetchResult.data as ModuleAiReviewHistoryEntry),
+    applied_at: (fetchResult.data as ModuleAiReviewHistoryEntry).applied_at ?? appliedAt,
+    applied_by: (fetchResult.data as ModuleAiReviewHistoryEntry).applied_by ?? userId,
+  }
 }
 
 async function resolveAccessToken(forceRefresh: boolean) {

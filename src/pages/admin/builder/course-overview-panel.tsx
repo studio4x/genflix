@@ -165,12 +165,14 @@ export function CourseOverviewPanel() {
       if (currentReviewId && user?.id) {
         try {
           const updatedReview = await markModuleAiReviewApplied(currentReviewId, user.id)
-          setReviewHistoryByModule((previous) => ({
-            ...previous,
-            [updatedReview.module_id]: (previous[updatedReview.module_id] ?? []).map((review) =>
-              review.id === updatedReview.id ? updatedReview : review,
-            ),
-          }))
+          if (updatedReview) {
+            setReviewHistoryByModule((previous) => ({
+              ...previous,
+              [updatedReview.module_id]: (previous[updatedReview.module_id] ?? []).map((review) =>
+                review.id === updatedReview.id ? updatedReview : review,
+              ),
+            }))
+          }
         } catch (historyError) {
           setAnalysisError(`Os ajustes foram aplicados, mas o historico nao foi atualizado: ${toErrorMessage(historyError)}`)
         }
