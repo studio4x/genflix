@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useState } from 'react'
 import { Link, Outlet, useNavigate, useParams } from 'react-router-dom'
+import { AppVersion } from '@/components/layout/AppVersion'
 import { Button } from '@/components/ui/button'
 import { fetchAdminCourseTree, toErrorMessage, importCourseContent, exportFullCourseContent, exportModuleContent } from '@/features/admin/content/api'
 import type { AdminCourseTree } from '@/features/admin/content/api'
@@ -224,7 +225,7 @@ export function AdminCourseBuilderLayout() {
 
   return (
     <BuilderContext.Provider value={{ courseTree, refreshTree, isLoading }}>
-      <div className="flex flex-col h-screen w-full bg-slate-50 text-slate-900 font-sans overflow-hidden">
+      <div className="relative flex h-screen w-full flex-col overflow-hidden bg-slate-50 font-sans text-slate-900">
         
         {/* TOPBAR */}
          <header className="shrink-0 h-14 border-b border-slate-200 bg-white shadow-sm z-20 flex items-center justify-between px-4">
@@ -574,6 +575,9 @@ export function AdminCourseBuilderLayout() {
             </div>
           </div>
         )}
+        <div className="pointer-events-none absolute bottom-4 right-6">
+          <AppVersion className="text-[10px] font-black uppercase tracking-widest text-slate-400" />
+        </div>
       </div>
     </BuilderContext.Provider>
   )

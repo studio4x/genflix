@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "node scripts/bump-build-version.mjs && tsc -b && vite build",
+    "build:dev": "node scripts/bump-build-version.mjs && tsc -b && vite build --mode development",
     "typecheck": "tsc -b --pretty false",
     "lint": "eslint .",
     "preview": "vite preview"

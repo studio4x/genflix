@@ -1,6 +1,7 @@
 import { Link, Outlet, useLocation } from 'react-router-dom'
 
 import { useAuth } from '@/app/providers/auth-provider'
+import { AppVersion } from '@/components/layout/AppVersion'
 import { Button } from '@/components/ui/button'
 
 export function AdminLayout() {
@@ -64,6 +65,9 @@ export function AdminLayout() {
         <section className="flex-1 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-100 sm:p-8">
           <Outlet />
         </section>
+      </div>
+      <div className="mx-auto flex w-full max-w-7xl justify-end px-6 pb-6 lg:px-8">
+        <AppVersion className="text-xs font-black uppercase tracking-widest text-slate-400" />
       </div>
     </main>
   )

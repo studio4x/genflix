@@ -194,7 +194,10 @@ export async function createAssessmentQuestion(
     .insert({
       assessment_id: assessmentId,
       question_text: input.question_text,
-      question_type: 'single_choice',
+      question_type: input.question_type,
+      essay_expected_answer: input.question_type === 'essay_ai'
+        ? input.essay_expected_answer?.trim() || null
+        : null,
       position: nextPosition,
       is_required: input.is_required,
       points: input.points,
@@ -217,6 +220,10 @@ export async function updateAssessmentQuestion(
     .from('assessment_questions')
     .update({
       question_text: input.question_text,
+      question_type: input.question_type,
+      essay_expected_answer: input.question_type === 'essay_ai'
+        ? input.essay_expected_answer?.trim() || null
+        : null,
       is_required: input.is_required,
       points: input.points,
     })
@@ -236,6 +243,17 @@ export async function deleteAssessmentQuestion(questionId: string) {
     .from('assessment_questions')
     .delete()
     .eq('id', questionId)
+
+  if (result.error) {
+    throw result.error
+  }
+}
+
+export async function deleteAssessmentOptionsByQuestion(questionId: string) {
+  const result = await supabase
+    .from('assessment_options')
+    .delete()
+    .eq('question_id', questionId)
 
   if (result.error) {
     throw result.error
@@ -307,21 +325,25 @@ export async function deleteAssessmentOption(optionId: string) {
 }
 
 
+export interface ImportAssessmentQuestionData {
+  question_text: string
+  question_type?: 'single_choice' | 'essay_ai'
+  points?: number
+  is_required?: boolean
+  essay_expected_answer?: string
+  options?: {
+    option_text: string
+    is_correct: boolean
+  }[]
+}
+
 export interface ImportAssessmentData {
   title: string
   description?: string
   passing_score?: number
   max_attempts?: number
   estimated_minutes?: number
-  questions: {
-    question_text: string
-    points?: number
-    is_required?: boolean
-    options: {
-      option_text: string
-      is_correct: boolean
-    }[]
-  }[]
+  questions: ImportAssessmentQuestionData[]
 }
 
 export async function exportAssessmentContent(assessmentId: string): Promise<ImportAssessmentData> {
@@ -346,12 +368,16 @@ export async function exportAssessmentContent(assessmentId: string): Promise<Imp
     estimated_minutes: assessment.estimated_minutes,
     questions: questions.map((question) => ({
       question_text: question.question_text,
+      question_type: question.question_type,
       points: question.points,
       is_required: question.is_required,
-      options: question.options.map((option) => ({
-        option_text: option.option_text,
-        is_correct: option.is_correct,
-      })),
+      essay_expected_answer: question.essay_expected_answer ?? undefined,
+      options: question.question_type === 'essay_ai'
+        ? []
+        : question.options.map((option) => ({
+          option_text: option.option_text,
+          is_correct: option.is_correct,
+        })),
     })),
   }
 }
@@ -392,27 +418,31 @@ export async function importAssessmentContent(assessmentId: string, data: Import
   if (data.questions && data.questions.length > 0) {
     for (let qIdx = 0; qIdx < data.questions.length; qIdx++) {
       const qData = data.questions[qIdx]
+      const questionType = qData.question_type === 'essay_ai' ? 'essay_ai' : 'single_choice'
       
       const { data: question, error: qError } = await supabase
         .from('assessment_questions')
         .insert({
           assessment_id: assessmentId,
           question_text: qData.question_text,
-          points: qData.points || 1,
+          points: questionType === 'essay_ai' ? 0 : (qData.points || 1),
           is_required: qData.is_required ?? true,
           position: qIdx + 1,
-          question_type: 'single_choice'
+          question_type: questionType,
+          essay_expected_answer: questionType === 'essay_ai'
+            ? qData.essay_expected_answer?.trim() || null
+            : null,
         })
         .select()
         .single()
 
       if (qError) throw qError
 
-      if (qData.options && qData.options.length > 0) {
-        const optionsToInsert = qData.options.map((o: any, oIdx: number) => ({
+      if (questionType === 'single_choice' && qData.options && qData.options.length > 0) {
+        const optionsToInsert = qData.options.map((option, oIdx: number) => ({
           question_id: question.id,
-          option_text: o.option_text,
-          is_correct: o.is_correct,
+          option_text: option.option_text,
+          is_correct: option.is_correct,
           position: oIdx + 1
         }))
 

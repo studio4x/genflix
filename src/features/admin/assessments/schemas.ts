@@ -26,8 +26,38 @@ export const assessmentQuestionFormSchema = z.object({
     .string()
     .trim()
     .min(2, 'Pergunta deve ter ao menos 2 caracteres.'),
+  question_type: z.enum(['single_choice', 'essay_ai']),
+  essay_expected_answer: z.string().trim().optional(),
   is_required: z.boolean(),
-  points: z.number().min(0.01, 'Pontuacao deve ser maior que zero.'),
+  points: z.number().min(0, 'Pontuacao nao pode ser negativa.'),
+}).superRefine((value, ctx) => {
+  if (value.question_type === 'essay_ai') {
+    if ((value.essay_expected_answer?.trim().length ?? 0) < 2) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['essay_expected_answer'],
+        message: 'Informe a resposta valida esperada para a questao discursiva.',
+      })
+    }
+
+    if (value.points !== 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['points'],
+        message: 'Questoes discursivas com IA nao geram pontos.',
+      })
+    }
+
+    return
+  }
+
+  if (value.points <= 0) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['points'],
+      message: 'Pontuacao deve ser maior que zero.',
+    })
+  }
 })
 
 export const assessmentOptionFormSchema = z.object({
@@ -41,4 +71,3 @@ export type AssessmentQuestionFormInput = z.infer<
   typeof assessmentQuestionFormSchema
 >
 export type AssessmentOptionFormInput = z.infer<typeof assessmentOptionFormSchema>
-
