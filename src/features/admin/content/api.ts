@@ -69,6 +69,7 @@ export async function fetchCourses(): Promise<Course[]> {
   const result = await supabase
     .from('courses')
     .select('*')
+    .order('display_order', { ascending: true })
     .order('created_at', { ascending: false })
   if (result.error) {
     throw result.error
@@ -77,12 +78,25 @@ export async function fetchCourses(): Promise<Course[]> {
 }
 
 export async function createCourse(input: CourseFormInput, userId: string) {
+  const positionResult = await supabase
+    .from('courses')
+    .select('display_order')
+    .order('display_order', { ascending: false })
+    .limit(1)
+
+  if (positionResult.error) {
+    throw positionResult.error
+  }
+
+  const nextDisplayOrder = (positionResult.data?.[0]?.display_order ?? 0) + 1
+
   const result = await supabase
     .from('courses')
     .insert({
       title: input.title,
       description: input.description?.trim() || null,
       status: input.status,
+      display_order: nextDisplayOrder,
       thumbnail_url: input.thumbnail_url?.trim() || null,
       created_by: userId,
     })
@@ -92,6 +106,19 @@ export async function createCourse(input: CourseFormInput, userId: string) {
     throw result.error
   }
   return result.data as Course
+}
+
+export async function updateCoursesDisplayOrder(courses: Pick<Course, 'id' | 'display_order'>[]) {
+  for (const course of courses) {
+    const result = await supabase
+      .from('courses')
+      .update({ display_order: course.display_order })
+      .eq('id', course.id)
+
+    if (result.error) {
+      throw result.error
+    }
+  }
 }
 
 export async function updateCourse(courseId: string, input: CourseFormInput) {
@@ -917,6 +944,15 @@ export interface ImportCourseFullData {
 }
 
 export async function importFullCourse(data: ImportCourseFullData, userId: string) {
+  const positionResult = await supabase
+    .from('courses')
+    .select('display_order')
+    .order('display_order', { ascending: false })
+    .limit(1)
+
+  if (positionResult.error) throw positionResult.error
+  const nextDisplayOrder = (positionResult.data?.[0]?.display_order ?? 0) + 1
+
   // 1. Criar o Curso Base
   const { data: course, error: cError } = await supabase
     .from('courses')
@@ -924,6 +960,7 @@ export async function importFullCourse(data: ImportCourseFullData, userId: strin
       title: data.title,
       description: data.description || null,
       status: data.status || 'draft',
+      display_order: nextDisplayOrder,
       workload_minutes: data.workload_minutes || 0,
       thumbnail_url: data.thumbnail_url || null,
       created_by: userId

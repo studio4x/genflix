@@ -3,6 +3,7 @@ import ReactQuill from 'react-quill'
 import 'react-quill/dist/quill.snow.css'
 import type { FormEvent } from 'react'
 import { Link } from 'react-router-dom'
+import { DragDropContext, Draggable, Droppable, type DropResult } from '@hello-pangea/dnd'
 
 import { useAuth } from '@/app/providers/auth-provider'
 import { Button } from '@/components/ui/button'
@@ -12,6 +13,7 @@ import {
   deleteCourse,
   exportFullCourseContent,
   fetchCourses,
+  updateCoursesDisplayOrder,
   updateCourse,
   uploadCourseThumbnail,
   toErrorMessage,
@@ -22,7 +24,7 @@ import {
   courseFormSchema,
   type CourseFormInput,
 } from '@/features/admin/content/schemas'
-import type { Course } from '@/types/content'
+import type { Course, CourseStatus } from '@/types/content'
 
 const initialForm: CourseFormInput = {
   title: '',
@@ -84,6 +86,7 @@ export function AdminCoursesPage() {
   const [isImporting, setIsImporting] = useState(false)
   const [importError, setImportError] = useState<string | null>(null)
   const [exportingCourseId, setExportingCourseId] = useState<string | null>(null)
+  const [isReordering, setIsReordering] = useState(false)
 
   async function loadCourses() {
     setIsLoading(true)
@@ -212,7 +215,7 @@ export function AdminCoursesPage() {
         try {
           // Se falhar, aplica a limpeza de quebras de linha literais dentro de strings
           // O regex agora ignora caracteres estruturais do JSON ({, }, [, ], ", :, ,, números e chaves)
-          const fixedJson = cleanedJson.replace(/\n(?!\s*[\{\}\[\]",:0-9\-\.tfn])/g, '\\n')
+          const fixedJson = cleanedJson.replace(/\n(?!\s*[[\]{}",:0-9.tfn-])/g, '\\n')
           data = JSON.parse(fixedJson)
         } catch (err2) {
           console.error('Falha em ambos os parses:', err1, err2)
@@ -225,9 +228,9 @@ export function AdminCoursesPage() {
       await loadCourses()
       setIsImportModalOpen(false)
       setImportJson('')
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Erro no import full:', err)
-      const errorMessage = err?.message || (typeof err === 'string' ? err : 'Erro inesperado na importação.')
+      const errorMessage = err instanceof Error ? err.message : (typeof err === 'string' ? err : 'Erro inesperado na importação.')
       setImportError(errorMessage)
     } finally {
       setIsImporting(false)
@@ -254,6 +257,39 @@ export function AdminCoursesPage() {
         draft: courses.filter(c => c.status === 'draft').length
      }
   }, [courses])
+
+  async function handleCourseDragEnd(result: DropResult) {
+    if (!result.destination || result.destination.index === result.source.index || isReordering) {
+      return
+    }
+
+    const reorderedCourses = [...courses]
+    const [movedCourse] = reorderedCourses.splice(result.source.index, 1)
+    reorderedCourses.splice(result.destination.index, 0, movedCourse)
+
+    const normalizedCourses = reorderedCourses.map((course, index) => ({
+      ...course,
+      display_order: index + 1,
+    }))
+
+    setCourses(normalizedCourses)
+    setIsReordering(true)
+    setError(null)
+
+    try {
+      await updateCoursesDisplayOrder(
+        normalizedCourses.map((course) => ({
+          id: course.id,
+          display_order: course.display_order,
+        })),
+      )
+    } catch (reorderError) {
+      setError(toErrorMessage(reorderError))
+      await loadCourses()
+    } finally {
+      setIsReordering(false)
+    }
+  }
 
   return (
     <div className="space-y-8 animate-in fade-in duration-700 pb-20 relative">
@@ -316,6 +352,76 @@ export function AdminCoursesPage() {
             </div>
          </div>
       </div>
+
+      <section className="rounded-[32px] border border-slate-100 bg-white p-6 shadow-sm">
+         <div className="flex flex-col gap-2 border-b border-slate-100 pb-4 md:flex-row md:items-center md:justify-between">
+            <div>
+               <h3 className="text-lg font-black tracking-tight text-slate-900">Ordem de Exibicao dos Cursos</h3>
+               <p className="text-sm font-medium text-slate-500">Arraste os cursos para definir como eles aparecem para o admin e para o aluno.</p>
+            </div>
+            {isReordering ? (
+              <div className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-[11px] font-black uppercase tracking-widest text-blue-600">
+                <span className="h-3 w-3 rounded-full border-2 border-blue-200 border-t-blue-600 animate-spin" />
+                Salvando ordem
+              </div>
+            ) : null}
+         </div>
+
+         <DragDropContext onDragEnd={(result) => void handleCourseDragEnd(result)}>
+            <Droppable droppableId="courses-display-order">
+               {(provided) => (
+                  <div
+                    ref={provided.innerRef}
+                    {...provided.droppableProps}
+                    className="mt-5 space-y-3"
+                  >
+                     {courses.map((course, index) => (
+                        <Draggable key={course.id} draggableId={course.id} index={index}>
+                           {(draggableProvided, snapshot) => (
+                              <div
+                                ref={draggableProvided.innerRef}
+                                {...draggableProvided.draggableProps}
+                                className={`flex items-center gap-4 rounded-2xl border px-4 py-4 transition-all ${
+                                  snapshot.isDragging
+                                    ? 'border-blue-200 bg-blue-50 shadow-xl'
+                                    : 'border-slate-100 bg-slate-50/50'
+                                }`}
+                              >
+                                 <button
+                                   type="button"
+                                   aria-label={`Mover ${course.title}`}
+                                   className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-400 hover:text-slate-700"
+                                   {...draggableProvided.dragHandleProps}
+                                 >
+                                   <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 9h.01M8 15h.01M12 9h.01M12 15h.01M16 9h.01M16 15h.01" />
+                                   </svg>
+                                 </button>
+                                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-900 text-sm font-black text-white">
+                                   {index + 1}
+                                 </div>
+                                 <div className="min-w-0 flex-1">
+                                   <p className="truncate text-sm font-black text-slate-900">{course.title}</p>
+                                   <p className="truncate text-xs font-medium text-slate-500">
+                                     {course.status === 'published' ? 'Publicado' : course.status === 'draft' ? 'Rascunho' : 'Arquivado'}
+                                   </p>
+                                 </div>
+                                 <Link
+                                   to={`/admin/cursos/${course.id}/builder`}
+                                   className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-[11px] font-black uppercase tracking-widest text-slate-500 transition-colors hover:border-blue-200 hover:text-blue-600"
+                                 >
+                                   Abrir
+                                 </Link>
+                              </div>
+                           )}
+                        </Draggable>
+                     ))}
+                     {provided.placeholder}
+                  </div>
+               )}
+            </Droppable>
+         </DragDropContext>
+      </section>
 
       {/* CURSOR GRID */}
       <section className="animate-in slide-in-from-bottom-6 duration-700 delay-200">
@@ -524,7 +630,7 @@ export function AdminCoursesPage() {
                             <select
                                className="w-full font-bold rounded-2xl border border-slate-200 bg-slate-100/50 px-6 py-4 focus:bg-white focus:ring-4 focus:ring-blue-100 transition-all appearance-none"
                                value={form.status}
-                               onChange={(event) => setDraft((p) => ({ ...p, form: { ...p.form, status: event.target.value as any } }))}
+                               onChange={(event) => setDraft((p) => ({ ...p, form: { ...p.form, status: event.target.value as CourseStatus } }))}
                             >
                                <option value="draft">🚀 Em Rascunho</option>
                                <option value="published">✅ Publicado</option>

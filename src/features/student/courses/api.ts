@@ -68,6 +68,7 @@ export async function fetchReleasedCourses(): Promise<Course[]> {
   const result = await supabase
     .from('courses')
     .select('*')
+    .order('display_order', { ascending: true })
     .order('created_at', { ascending: false })
 
   if (result.error) {

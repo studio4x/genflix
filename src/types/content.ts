@@ -7,6 +7,7 @@ export interface Course {
   title: string
   description: string | null
   status: CourseStatus
+  display_order: number
   thumbnail_url: string | null
   workload_minutes: number
   has_linear_progression: boolean
