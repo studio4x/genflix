@@ -79,16 +79,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [roles, setRoles] = useState<RoleCode[]>([])
   const syncVersionRef = useRef(0)
   const currentUserIdRef = useRef<string | null>(null)
+  const hasResolvedContextRef = useRef(false)
 
   const syncAuthState = useCallback(async (nextSession: Session | null, event?: AuthChangeEvent) => {
     const syncVersion = ++syncVersionRef.current
     const nextUserId = nextSession?.user?.id ?? null
-    const isTokenRefreshForSameUser =
-      event === 'TOKEN_REFRESHED' &&
+    const isSessionResyncForSameUser =
+      (event === 'TOKEN_REFRESHED' || event === 'SIGNED_IN' || event === 'USER_UPDATED') &&
       !!nextUserId &&
-      nextUserId === currentUserIdRef.current
+      nextUserId === currentUserIdRef.current &&
+      hasResolvedContextRef.current
 
-    if (!isTokenRefreshForSameUser) {
+    if (!isSessionResyncForSameUser) {
       setIsLoading(true)
     }
 
@@ -96,7 +98,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(nextSession?.user ?? null)
     currentUserIdRef.current = nextUserId
 
-    if (isTokenRefreshForSameUser) {
+    if (isSessionResyncForSameUser) {
       return
     }
 
@@ -104,6 +106,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (syncVersion === syncVersionRef.current) {
         setProfile(null)
         setRoles([])
+        hasResolvedContextRef.current = false
         setIsLoading(false)
       }
       return
@@ -117,11 +120,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (syncVersion === syncVersionRef.current) {
         setProfile(context.profile)
         setRoles(context.roles)
+        hasResolvedContextRef.current = true
       }
     } catch {
       if (syncVersion === syncVersionRef.current) {
         setProfile(null)
         setRoles([])
+        hasResolvedContextRef.current = false
       }
     } finally {
       if (syncVersion === syncVersionRef.current) {
