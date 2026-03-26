@@ -187,6 +187,22 @@ export function StudentAssessmentExecutionPage() {
     return moduleForAssessment.lessons.length === 0 || !moduleForAssessment.lessons.every((lesson) => lesson.is_completed)
   }, [isAdmin, moduleForAssessment])
 
+  const firstPendingLessonHref = useMemo(() => {
+    if (!courseId || !moduleForAssessment) {
+      return courseId ? `/aluno/cursos/${courseId}` : '/aluno/cursos'
+    }
+
+    const firstPendingLesson = moduleForAssessment.lessons.find((lesson) => !lesson.is_completed)
+    const fallbackLesson = moduleForAssessment.lessons[0]
+    const targetLesson = firstPendingLesson ?? fallbackLesson
+
+    if (!targetLesson) {
+      return `/aluno/cursos/${courseId}`
+    }
+
+    return `/aluno/cursos/${courseId}/player/aulas/${targetLesson.id}`
+  }, [courseId, moduleForAssessment])
+
   const approvedAction = useMemo(() => {
     if (!courseId || !studentAssessment || studentAssessment.assessment_type !== 'module' || !studentAssessment.module_id) {
       return {
@@ -367,7 +383,7 @@ export function StudentAssessmentExecutionPage() {
             <Button
               size="lg"
               className="mt-10 h-14 w-full rounded-2xl bg-slate-900 font-bold shadow-xl shadow-slate-200 hover:bg-slate-800"
-              onClick={() => navigate(`/aluno/cursos/${courseId}`)}
+              onClick={() => navigate(firstPendingLessonHref)}
             >
               Voltar para o Curso
             </Button>
