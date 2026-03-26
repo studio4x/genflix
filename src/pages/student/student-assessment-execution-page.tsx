@@ -203,7 +203,7 @@ export function StudentAssessmentExecutionPage() {
 
     if (nextModuleWithLessons) {
       return {
-        label: 'Ir para o Proximo Modulo',
+        label: 'Ir para o Próximo Módulo',
         href: `/aluno/cursos/${courseId}/player/aulas/${nextModuleWithLessons.lessons[0].id}`,
       }
     }
@@ -543,7 +543,7 @@ export function StudentAssessmentExecutionPage() {
                 <div>
                   <p className="text-xs font-black uppercase tracking-widest text-amber-700">Feedback da IA</p>
                   <p className="mt-2 text-sm font-medium text-amber-900">
-                    As questoes discursivas sao avaliadas separadamente e nao somam pontos no quiz.
+                    As questões discursivas são avaliadas separadamente e não somam pontos no quiz.
                   </p>
                 </div>
 
@@ -551,7 +551,7 @@ export function StudentAssessmentExecutionPage() {
                   {result.essay_feedbacks.map((feedback, index) => (
                     <div key={feedback.question_id} className="rounded-2xl border border-white/70 bg-white p-5 shadow-sm">
                       <div className="flex items-center justify-between gap-4">
-                        <p className="text-sm font-black uppercase tracking-widest text-slate-400">Questao {index + 1}</p>
+                        <p className="text-sm font-black uppercase tracking-widest text-slate-400">Questão {index + 1}</p>
                         <span className={`rounded-full px-3 py-1 text-[11px] font-black uppercase tracking-widest ${
                           feedback.is_correct ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'
                         }`}>
@@ -564,7 +564,7 @@ export function StudentAssessmentExecutionPage() {
                         <p className="mt-2 whitespace-pre-wrap">{feedback.answer_text}</p>
                       </div>
                       <div className="mt-4 rounded-2xl bg-amber-50 p-4 text-sm text-amber-900">
-                        <p className="text-[10px] font-black uppercase tracking-widest text-amber-600">Comentario da IA</p>
+                        <p className="text-[10px] font-black uppercase tracking-widest text-amber-600">Comentário da IA</p>
                         <p className="mt-2 whitespace-pre-wrap">{feedback.feedback}</p>
                       </div>
                     </div>
