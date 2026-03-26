@@ -14,7 +14,13 @@ import {
   type ModuleAiReviewHistoryEntry,
   type ModuleAiReviewResult,
 } from '@/features/admin/ai-review/api'
-import { importCourseContent, toErrorMessage } from '@/features/admin/content/api'
+import {
+  deleteLesson,
+  deleteModule,
+  importCourseContent,
+  toErrorMessage,
+} from '@/features/admin/content/api'
+import { deleteAssessment } from '@/features/admin/assessments/api'
 import { publishBuilderNotice } from '@/lib/builder-notice'
 import { Button } from '@/components/ui/button'
 
@@ -251,6 +257,49 @@ export function CourseOverviewPanel() {
     }
   }
 
+  async function handleDeleteModule(moduleId: string, moduleTitle: string) {
+    if (!window.confirm(`ATENCAO: Excluir o modulo "${moduleTitle}"?\n\nTodas as aulas e quizzes vinculados serao removidos permanentemente.`)) {
+      return
+    }
+
+    try {
+      await deleteModule(moduleId)
+      await refreshTree()
+    } catch (err) {
+      setAnalysisError(toErrorMessage(err))
+    }
+  }
+
+  async function handleDeleteLesson(lessonId: string, lessonTitle: string) {
+    if (!window.confirm(`ATENCAO: Excluir a aula "${lessonTitle}"?\n\nTodos os materiais vinculados serao removidos permanentemente.`)) {
+      return
+    }
+
+    try {
+      await deleteLesson(lessonId)
+      await refreshTree()
+    } catch (err) {
+      setAnalysisError(toErrorMessage(err))
+    }
+  }
+
+  async function handleDeleteAssessment(assessmentId: string, assessmentTitle: string, isFinalAssessment = false) {
+    const confirmMessage = isFinalAssessment
+      ? `CUIDADO: Excluir a avaliacao final "${assessmentTitle}"?\n\nTodas as questoes, estudos de caso e tentativas vinculadas serao removidos permanentemente.`
+      : `CUIDADO: Excluir o quiz "${assessmentTitle}"?\n\nTodas as questoes, estudos de caso e tentativas vinculadas serao removidos permanentemente.`
+
+    if (!window.confirm(confirmMessage)) {
+      return
+    }
+
+    try {
+      await deleteAssessment(assessmentId)
+      await refreshTree()
+    } catch (err) {
+      setAnalysisError(toErrorMessage(err))
+    }
+  }
+
   if (!courseTree || !course) return null
 
   return (
@@ -356,6 +405,16 @@ export function CourseOverviewPanel() {
                     <Link to={`/admin/cursos/${course.id}/builder/modulos/${module.id}`} className="text-sm font-semibold text-blue-600 hover:text-blue-800">
                       Editar Modulo
                     </Link>
+                    <button
+                      type="button"
+                      onClick={() => void handleDeleteModule(module.id, module.title)}
+                      className="rounded-xl p-2 text-slate-300 transition-colors hover:bg-rose-50 hover:text-rose-500"
+                      title="Excluir modulo"
+                    >
+                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    </button>
                   </div>
                 </div>
 
@@ -367,9 +426,21 @@ export function CourseOverviewPanel() {
                           <svg className="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                           {lesson.title}
                         </span>
-                        <Link to={`/admin/cursos/${course.id}/builder/modulos/${module.id}/aulas/${lesson.id}`} className="text-xs font-semibold text-slate-500 hover:text-blue-600">
-                          Editar
-                        </Link>
+                        <div className="flex items-center gap-2">
+                          <Link to={`/admin/cursos/${course.id}/builder/modulos/${module.id}/aulas/${lesson.id}`} className="text-xs font-semibold text-slate-500 hover:text-blue-600">
+                            Editar
+                          </Link>
+                          <button
+                            type="button"
+                            onClick={() => void handleDeleteLesson(lesson.id, lesson.title)}
+                            className="rounded-lg p-1.5 text-slate-300 transition-colors hover:bg-rose-50 hover:text-rose-500"
+                            title="Excluir aula"
+                          >
+                            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          </button>
+                        </div>
                       </div>
                     ))}
 
@@ -379,9 +450,21 @@ export function CourseOverviewPanel() {
                           <svg className="h-4 w-4 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
                           {assessment.title}
                         </span>
-                        <Link to={`/admin/cursos/${course.id}/builder/modulos/${module.id}/avaliacoes/${assessment.id}`} className="text-xs font-semibold text-amber-700 hover:text-amber-900">
-                          Editar Quiz
-                        </Link>
+                        <div className="flex items-center gap-2">
+                          <Link to={`/admin/cursos/${course.id}/builder/modulos/${module.id}/avaliacoes/${assessment.id}`} className="text-xs font-semibold text-amber-700 hover:text-amber-900">
+                            Editar Quiz
+                          </Link>
+                          <button
+                            type="button"
+                            onClick={() => void handleDeleteAssessment(assessment.id, assessment.title)}
+                            className="rounded-lg p-1.5 text-amber-300 transition-colors hover:bg-rose-50 hover:text-rose-500"
+                            title="Excluir quiz"
+                          >
+                            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          </button>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -392,13 +475,66 @@ export function CourseOverviewPanel() {
                 )}
 
                 <div className="mt-4 border-t border-slate-100 pt-4">
-                  <Link to={`/admin/cursos/${course.id}/builder/modulos/${module.id}/aulas/nova`} className="flex items-center gap-1 text-sm font-medium text-blue-600 hover:text-blue-800">
-                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
-                    Adicionar Aula
-                  </Link>
+                  <div className="flex flex-wrap items-center gap-4">
+                    <Link to={`/admin/cursos/${course.id}/builder/modulos/${module.id}/aulas/nova`} className="flex items-center gap-1 text-sm font-medium text-blue-600 hover:text-blue-800">
+                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+                      Adicionar Aula
+                    </Link>
+                    <Link to={`/admin/cursos/${course.id}/builder/modulos/${module.id}/avaliacoes/nova`} className="flex items-center gap-1 text-sm font-medium text-amber-700 hover:text-amber-900">
+                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+                      Adicionar Quiz
+                    </Link>
+                  </div>
                 </div>
               </div>
             ))
+          )}
+        </div>
+      </div>
+
+      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <div className="flex items-center justify-between gap-4 border-b border-slate-100 bg-slate-50/50 p-6">
+          <div>
+            <h3 className="text-lg font-bold text-slate-900">Avaliacao Final</h3>
+            <p className="text-sm text-slate-500">Gerencie a prova final e sua exclusao.</p>
+          </div>
+          <Link to={`/admin/cursos/${course.id}/builder/assessments/final`} className="text-sm font-semibold text-blue-600 hover:text-blue-800">
+            Editar Avaliacao
+          </Link>
+        </div>
+        <div className="p-6">
+          {courseTree.courseAssessments.length > 0 ? (
+            <div className="space-y-3">
+              {courseTree.courseAssessments.map((assessment) => (
+                <div key={assessment.id} className="flex items-center justify-between gap-4 rounded-xl border border-emerald-100 bg-emerald-50/40 p-4">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-bold text-emerald-900">{assessment.title}</p>
+                    <p className="mt-1 text-xs font-medium text-emerald-700">
+                      Nota minima {assessment.passing_score}% • {assessment.max_attempts} tentativa(s)
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Link to={`/admin/cursos/${course.id}/builder/assessments/final`} className="text-xs font-semibold text-emerald-700 hover:text-emerald-900">
+                      Editar
+                    </Link>
+                    <button
+                      type="button"
+                      onClick={() => void handleDeleteAssessment(assessment.id, assessment.title, true)}
+                      className="rounded-lg p-2 text-emerald-300 transition-colors hover:bg-rose-50 hover:text-rose-500"
+                      title="Excluir avaliacao final"
+                    >
+                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-500">
+              Nenhuma avaliacao final criada ainda.
+            </div>
           )}
         </div>
       </div>
