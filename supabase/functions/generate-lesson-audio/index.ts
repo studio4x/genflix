@@ -22,6 +22,8 @@ interface LessonRow {
   text_content: string | null
 }
 
+type NarrationMode = 'read' | 'generate' | 'regenerate'
+
 Deno.serve(async (request) => {
   if (request.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
@@ -74,6 +76,7 @@ Deno.serve(async (request) => {
     }
 
     const { lessonId } = requestBody
+    const mode = normalizeNarrationMode(requestBody?.mode)
     if (!lessonId || typeof lessonId !== 'string') {
       return jsonResponse({ error: 'lessonId e obrigatorio.' }, 400)
     }
@@ -110,7 +113,12 @@ Deno.serve(async (request) => {
     const generatedPaths: string[] = []
     let providerUsed = openAiApiKey ? 'openai' : 'gemini'
 
-    if (!hasAllPartsCached) {
+    if (mode === 'read' && !hasAllPartsCached) {
+      return jsonResponse({ error: 'NARRATION_NOT_READY' }, 404)
+    }
+
+    const shouldGenerate = mode === 'regenerate' || !hasAllPartsCached
+    if (shouldGenerate) {
       for (let index = 0; index < chunks.length; index += 1) {
         const chunk = chunks[index]
         const audioResult = await generateAudioChunk({
@@ -136,7 +144,10 @@ Deno.serve(async (request) => {
       }
     }
 
-    const finalPaths = hasAllPartsCached ? cachedPaths : generatedPaths
+    const finalPaths = shouldGenerate ? generatedPaths : cachedPaths
+    if (!shouldGenerate && finalPaths[0]?.toLowerCase().endsWith('.wav')) {
+      providerUsed = 'gemini'
+    }
 
     const signedParts = await Promise.all(
       finalPaths.map(async (path, index) => {
@@ -161,7 +172,7 @@ Deno.serve(async (request) => {
       contentHash,
       model: providerUsed === 'openai' ? OPENAI_AUDIO_MODEL : GEMINI_AUDIO_MODEL,
       voice: providerUsed === 'openai' ? OPENAI_AUDIO_VOICE : GEMINI_AUDIO_VOICE,
-      generatedNow: !hasAllPartsCached,
+      generatedNow: shouldGenerate,
       parts: signedParts,
       expiresInSeconds: SIGNED_URL_EXPIRES_IN,
     })
@@ -179,6 +190,13 @@ function jsonResponse(payload: unknown, status = 200) {
       'Content-Type': 'application/json',
     },
   })
+}
+
+function normalizeNarrationMode(value: unknown): NarrationMode {
+  if (value === 'read' || value === 'regenerate') {
+    return value
+  }
+  return 'generate'
 }
 
 function buildNarrationText(lesson: LessonRow) {

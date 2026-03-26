@@ -1,46 +1,57 @@
 import { useEffect, useMemo, useState } from 'react'
 
 import { Button } from '@/components/ui/button'
+import { useAuth } from '@/app/providers/auth-provider'
 import { fetchCourses } from '@/features/admin/content/api'
 import {
   fetchAssessmentAttemptRequests,
   fetchCompletionReport,
+  fetchLessonAudioModerationRequestsReport,
+  resolveLessonAudioModerationRequestReport,
   reviewAssessmentAttemptRequest,
   type AssessmentAttemptRequestReportItem,
   type CompletionReport,
+  type LessonAudioModerationRequestAdminItem,
 } from '@/features/admin/reports/api'
 import type { Course } from '@/types/content'
 
 type ReviewDecision = 'approved' | 'rejected'
 
 export function AdminReportsPage() {
+  const { user } = useAuth()
   const [courses, setCourses] = useState<Course[]>([])
   const [reportData, setReportData] = useState<CompletionReport[]>([])
   const [attemptRequests, setAttemptRequests] = useState<AssessmentAttemptRequestReportItem[]>([])
+  const [lessonAudioRequests, setLessonAudioRequests] = useState<LessonAudioModerationRequestAdminItem[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isReviewingRequestId, setIsReviewingRequestId] = useState<string | null>(null)
+  const [isReviewingLessonAudioRequestId, setIsReviewingLessonAudioRequestId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   const [selectedCourseId, setSelectedCourseId] = useState<string>('all')
   const [searchEmail, setSearchEmail] = useState('')
   const [requestFilter, setRequestFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('pending')
+  const [lessonAudioRequestFilter, setLessonAudioRequestFilter] = useState<'all' | 'pending' | 'resolved'>('pending')
   const [extraAttemptsByRequest, setExtraAttemptsByRequest] = useState<Record<string, string>>({})
   const [adminResponseByRequest, setAdminResponseByRequest] = useState<Record<string, string>>({})
+  const [lessonAudioAdminResponseByRequest, setLessonAudioAdminResponseByRequest] = useState<Record<string, string>>({})
 
   useEffect(() => {
     async function loadInitialData() {
       setIsLoading(true)
       setError(null)
       try {
-        const [coursesData, report, requests] = await Promise.all([
+        const [coursesData, report, requests, audioRequests] = await Promise.all([
           fetchCourses(),
           fetchCompletionReport({}),
           fetchAssessmentAttemptRequests(),
+          fetchLessonAudioModerationRequestsReport(),
         ])
 
         setCourses(coursesData)
         setReportData(report)
         setAttemptRequests(requests)
+        setLessonAudioRequests(audioRequests)
       } catch {
         setError('Erro ao carregar relatorios.')
       } finally {
@@ -73,6 +84,21 @@ export function AdminReportsPage() {
   const pendingRequestsCount = useMemo(
     () => attemptRequests.filter((item) => item.status === 'pending').length,
     [attemptRequests],
+  )
+
+  const filteredLessonAudioRequests = useMemo(() => {
+    return lessonAudioRequests.filter((item) => {
+      const matchCourse = true
+      const email = item.requester_email ?? ''
+      const matchEmail = email.toLowerCase().includes(searchEmail.toLowerCase())
+      const matchStatus = lessonAudioRequestFilter === 'all' || item.status === lessonAudioRequestFilter
+      return matchCourse && matchEmail && matchStatus
+    })
+  }, [lessonAudioRequestFilter, lessonAudioRequests, searchEmail])
+
+  const pendingLessonAudioRequestsCount = useMemo(
+    () => lessonAudioRequests.filter((item) => item.status === 'pending').length,
+    [lessonAudioRequests],
   )
 
   const handleExportCSV = () => {
@@ -120,6 +146,28 @@ export function AdminReportsPage() {
       setError('Falha ao analisar solicitacao de nova tentativa.')
     } finally {
       setIsReviewingRequestId(null)
+    }
+  }
+
+  async function handleResolveLessonAudioRequest(requestId: string) {
+    if (!user?.id) return
+
+    setIsReviewingLessonAudioRequestId(requestId)
+    setError(null)
+
+    try {
+      await resolveLessonAudioModerationRequestReport({
+        requestId,
+        adminResponse: lessonAudioAdminResponseByRequest[requestId] ?? '',
+        resolvedBy: user.id,
+      })
+
+      const refreshed = await fetchLessonAudioModerationRequestsReport()
+      setLessonAudioRequests(refreshed)
+    } catch {
+      setError('Falha ao resolver solicitação de narração.')
+    } finally {
+      setIsReviewingLessonAudioRequestId(null)
     }
   }
 
@@ -329,6 +377,117 @@ export function AdminReportsPage() {
                   <tr>
                     <td colSpan={5} className="px-6 py-12 text-center text-slate-500">
                       Nenhuma solicitacao encontrada para os filtros selecionados.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section className="space-y-3">
+        <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+          <div>
+            <h3 className="text-lg font-bold text-slate-900">Solicitações de moderação de narração</h3>
+            <p className="text-sm text-slate-600">Pedidos enviados por alunos quando há erro na geração de áudio.</p>
+          </div>
+          <div className="rounded-lg border border-blue-100 bg-blue-50 px-3 py-2">
+            <p className="text-xs font-bold uppercase text-blue-600">Pendentes</p>
+            <p className="text-xl font-black text-slate-900">{pendingLessonAudioRequestsCount}</p>
+          </div>
+        </div>
+
+        <div className="overflow-hidden rounded-xl border bg-white shadow-sm">
+          <div className="border-b bg-slate-50 px-6 py-3">
+            <label className="space-y-1">
+              <span className="text-xs font-bold uppercase text-slate-500">Filtro de status</span>
+              <select
+                className="w-48 rounded-md border border-slate-200 p-2 text-sm"
+                value={lessonAudioRequestFilter}
+                onChange={(event) => setLessonAudioRequestFilter(event.target.value as typeof lessonAudioRequestFilter)}
+              >
+                <option value="pending">Pendentes</option>
+                <option value="all">Todas</option>
+                <option value="resolved">Resolvidas</option>
+              </select>
+            </label>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm">
+              <thead className="border-b bg-slate-50 text-xs font-bold uppercase text-slate-500">
+                <tr>
+                  <th className="px-6 py-4">Aluno</th>
+                  <th className="px-6 py-4">Aula</th>
+                  <th className="px-6 py-4">Erro técnico</th>
+                  <th className="px-6 py-4">Status</th>
+                  <th className="px-6 py-4">Ação</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {filteredLessonAudioRequests.map((request) => {
+                  const isPending = request.status === 'pending'
+                  const isResolving = isReviewingLessonAudioRequestId === request.id
+
+                  return (
+                    <tr key={request.id} className="align-top hover:bg-slate-50 transition-colors">
+                      <td className="px-6 py-4">
+                        <p className="font-semibold text-slate-900">{request.requester_name ?? request.requester_email ?? '-'}</p>
+                        <p className="text-xs text-slate-500">{request.requester_email ?? '-'}</p>
+                      </td>
+                      <td className="px-6 py-4">
+                        <p className="font-semibold text-slate-900">{request.lesson_title ?? request.lesson_id}</p>
+                        <p className="text-xs text-slate-500">Solicitado em {new Date(request.created_at).toLocaleString('pt-BR')}</p>
+                      </td>
+                      <td className="px-6 py-4 text-xs text-slate-600">
+                        {request.technical_error ?? '-'}
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${
+                          isPending ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'
+                        }`}>
+                          {isPending ? 'Pendente' : 'Resolvida'}
+                        </span>
+                        {request.admin_response ? (
+                          <p className="mt-2 rounded-md bg-slate-50 p-2 text-xs text-slate-600">{request.admin_response}</p>
+                        ) : null}
+                      </td>
+                      <td className="px-6 py-4">
+                        {isPending ? (
+                          <div className="space-y-2">
+                            <textarea
+                              className="min-h-20 w-full min-w-64 rounded-md border border-slate-200 px-3 py-2 text-sm"
+                              placeholder="Resposta opcional para registrar a resolução."
+                              value={lessonAudioAdminResponseByRequest[request.id] ?? ''}
+                              onChange={(event) =>
+                                setLessonAudioAdminResponseByRequest((prev) => ({
+                                  ...prev,
+                                  [request.id]: event.target.value,
+                                }))
+                              }
+                            />
+                            <Button
+                              size="sm"
+                              className="bg-emerald-600 hover:bg-emerald-700"
+                              disabled={isResolving}
+                              onClick={() => void handleResolveLessonAudioRequest(request.id)}
+                            >
+                              Marcar como Resolvida
+                            </Button>
+                          </div>
+                        ) : (
+                          <p className="text-xs text-slate-500">
+                            Resolvida em {request.resolved_at ? new Date(request.resolved_at).toLocaleString('pt-BR') : '-'}
+                          </p>
+                        )}
+                      </td>
+                    </tr>
+                  )
+                })}
+                {filteredLessonAudioRequests.length === 0 && (
+                  <tr>
+                    <td colSpan={5} className="px-6 py-12 text-center text-slate-500">
+                      Nenhuma solicitação de narração encontrada para os filtros selecionados.
                     </td>
                   </tr>
                 )}

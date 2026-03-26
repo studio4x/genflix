@@ -6,9 +6,16 @@ import 'react-quill/dist/quill.snow.css'
 import { createLesson, deleteLesson, updateLesson, toErrorMessage } from '@/features/admin/content/api'
 import { lessonFormSchema, type LessonFormInput } from '@/features/admin/content/schemas'
 import { useCourseBuilder } from '@/app/layouts/admin-course-builder-layout'
+import { useAuth } from '@/app/providers/auth-provider'
+import {
+  fetchLessonAudioModerationRequests,
+  resolveLessonAudioModerationRequest,
+  type LessonAudioModerationRequestAdminItem,
+} from '@/features/admin/lesson-audio/api'
 import { splitContent, mergeContent, sanitizeTableHtml } from '@/features/admin/content/content-blocks'
 import type { LessonContentBlock } from '@/features/admin/content/content-blocks'
 import { Button } from '@/components/ui/button'
+import { LessonAudioPlayer } from '@/features/student/lesson-audio/lesson-audio-player'
 import { Plus, Trash2, Code2, Eye } from 'lucide-react'
 
 const initialForm: LessonFormInput = {
@@ -41,6 +48,7 @@ export function LessonEditorPanel() {
   const { courseId, moduleId, lessonId } = useParams<{ courseId: string; moduleId: string; lessonId?: string }>()
   const navigate = useNavigate()
   const { courseTree, refreshTree } = useCourseBuilder()
+  const { user } = useAuth()
 
   const isNew = lessonId === 'nova'
 
@@ -49,6 +57,10 @@ export function LessonEditorPanel() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [audioRequests, setAudioRequests] = useState<LessonAudioModerationRequestAdminItem[]>([])
+  const [isLoadingAudioRequests, setIsLoadingAudioRequests] = useState(false)
+  const [resolvingRequestId, setResolvingRequestId] = useState<string | null>(null)
+  const [audioResponseByRequest, setAudioResponseByRequest] = useState<Record<string, string>>({})
 
   useEffect(() => {
     if (isNew) {
@@ -83,6 +95,24 @@ export function LessonEditorPanel() {
       }
     }
   }, [isNew, lessonId, courseTree])
+
+  useEffect(() => {
+    async function loadAudioRequests() {
+      if (isNew || !lessonId) return
+
+      setIsLoadingAudioRequests(true)
+      try {
+        const requests = await fetchLessonAudioModerationRequests({ lessonId })
+        setAudioRequests(requests)
+      } catch (err) {
+        console.error('Erro ao buscar solicitações de narração:', err)
+      } finally {
+        setIsLoadingAudioRequests(false)
+      }
+    }
+
+    void loadAudioRequests()
+  }, [isNew, lessonId])
 
   const updateBlock = (index: number, newContent: string) => {
     setBlocks(prev => {
@@ -170,6 +200,27 @@ export function LessonEditorPanel() {
     }
   }
 
+  async function handleResolveAudioRequest(requestId: string) {
+    if (!user?.id) return
+
+    setResolvingRequestId(requestId)
+    try {
+      await resolveLessonAudioModerationRequest({
+        requestId,
+        adminResponse: audioResponseByRequest[requestId] ?? '',
+        resolvedBy: user.id,
+      })
+      if (lessonId) {
+        const requests = await fetchLessonAudioModerationRequests({ lessonId })
+        setAudioRequests(requests)
+      }
+    } catch (err) {
+      setError(toErrorMessage(err))
+    } finally {
+      setResolvingRequestId(null)
+    }
+  }
+
   return (
     <div className="max-w-4xl mx-auto space-y-6 animate-in fade-in duration-500 pb-20">
        <style>{`
@@ -203,6 +254,79 @@ export function LessonEditorPanel() {
             </Button>
           )}
        </div>
+
+       {!isNew && lessonId && (form.lesson_type === 'text' || form.lesson_type === 'hybrid') ? (
+         <div className="space-y-4">
+           <LessonAudioPlayer lessonId={lessonId} isAdmin />
+
+           <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
+             <div className="border-b border-slate-100 px-6 py-4">
+               <h3 className="text-sm font-black uppercase tracking-widest text-slate-500">
+                 Solicitações de moderação da narração
+               </h3>
+             </div>
+             <div className="space-y-4 p-6">
+               {isLoadingAudioRequests ? (
+                 <p className="text-sm text-slate-500">Carregando solicitações...</p>
+               ) : audioRequests.length === 0 ? (
+                 <p className="text-sm text-slate-500">Nenhuma solicitação registrada para esta aula.</p>
+               ) : (
+                 audioRequests.map((request) => {
+                   const isPending = request.status === 'pending'
+                   const isResolving = resolvingRequestId === request.id
+
+                   return (
+                     <div key={request.id} className="rounded-xl border border-slate-200 bg-slate-50/40 p-4">
+                       <div className="flex flex-wrap items-center justify-between gap-2">
+                         <p className="text-sm font-bold text-slate-800">
+                           {request.requester_name ?? request.requester_email ?? 'Aluno'}
+                         </p>
+                         <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${
+                           isPending ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'
+                         }`}>
+                           {isPending ? 'Pendente' : 'Resolvida'}
+                         </span>
+                       </div>
+                       <p className="mt-2 text-xs text-slate-500">
+                         Solicitação em {new Date(request.created_at).toLocaleString('pt-BR')}
+                       </p>
+                       {request.technical_error ? (
+                         <p className="mt-3 rounded-lg bg-white p-3 text-xs text-slate-600">{request.technical_error}</p>
+                       ) : null}
+
+                       {isPending ? (
+                         <div className="mt-3 space-y-2">
+                           <textarea
+                             className="min-h-20 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm"
+                             placeholder="Resposta opcional para o aluno."
+                             value={audioResponseByRequest[request.id] ?? ''}
+                             onChange={(event) =>
+                               setAudioResponseByRequest((prev) => ({
+                                 ...prev,
+                                 [request.id]: event.target.value,
+                               }))
+                             }
+                           />
+                           <Button
+                             size="sm"
+                             className="bg-emerald-600 hover:bg-emerald-700"
+                             disabled={isResolving}
+                             onClick={() => void handleResolveAudioRequest(request.id)}
+                           >
+                             {isResolving ? 'Salvando...' : 'Marcar como resolvida'}
+                           </Button>
+                         </div>
+                       ) : request.admin_response ? (
+                         <p className="mt-3 rounded-lg bg-white p-3 text-xs text-slate-600">{request.admin_response}</p>
+                       ) : null}
+                     </div>
+                   )
+                 })
+               )}
+             </div>
+           </div>
+         </div>
+       ) : null}
 
        <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
           <div className="p-6 md:p-8 space-y-10 flex-1">

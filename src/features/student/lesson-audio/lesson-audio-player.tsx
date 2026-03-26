@@ -2,18 +2,29 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 
 import { Button } from '@/components/ui/button'
 
-import { prepareLessonNarration, type LessonNarrationPayload } from './api'
+import {
+  fetchOwnLessonAudioModerationRequest,
+  prepareLessonNarration,
+  requestLessonAudioModeration,
+  type LessonAudioModerationRequest,
+  type LessonNarrationPayload,
+} from './api'
 
 interface LessonAudioPlayerProps {
   lessonId: string
+  isAdmin?: boolean
 }
 
-export function LessonAudioPlayer({ lessonId }: LessonAudioPlayerProps) {
+export function LessonAudioPlayer({ lessonId, isAdmin = false }: LessonAudioPlayerProps) {
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const [narration, setNarration] = useState<LessonNarrationPayload | null>(null)
   const [currentPartIndex, setCurrentPartIndex] = useState(0)
+  const [isLoadingNarration, setIsLoadingNarration] = useState(false)
   const [isPreparing, setIsPreparing] = useState(false)
+  const [isRequestingModeration, setIsRequestingModeration] = useState(false)
+  const [moderationRequest, setModerationRequest] = useState<LessonAudioModerationRequest | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [technicalErrorMessage, setTechnicalErrorMessage] = useState<string | null>(null)
   const [shouldAutoPlayNext, setShouldAutoPlayNext] = useState(false)
 
   const currentPart = useMemo(() => {
@@ -24,8 +35,45 @@ export function LessonAudioPlayer({ lessonId }: LessonAudioPlayerProps) {
     setNarration(null)
     setCurrentPartIndex(0)
     setError(null)
+    setTechnicalErrorMessage(null)
     setShouldAutoPlayNext(false)
   }, [lessonId])
+
+  useEffect(() => {
+    async function loadInitialNarrationState() {
+      setIsLoadingNarration(true)
+      try {
+        const [existingRequest, existingNarration] = await Promise.all([
+          fetchOwnLessonAudioModerationRequest(lessonId),
+          prepareLessonNarration(lessonId, 'read').catch((loadError) => {
+            const message = loadError instanceof Error ? loadError.message : ''
+            if (message === 'NARRATION_NOT_READY') {
+              return null
+            }
+            throw loadError
+          }),
+        ])
+
+        setModerationRequest(existingRequest)
+        if (existingNarration) {
+          setNarration(existingNarration)
+          setCurrentPartIndex(0)
+        }
+      } catch (loadError) {
+        const message = loadError instanceof Error ? loadError.message : 'Falha ao carregar a narração da aula.'
+        if (isAdmin) {
+          setError(message)
+        } else {
+          setError('Não foi possível carregar a narração desta aula no momento.')
+          setTechnicalErrorMessage(message)
+        }
+      } finally {
+        setIsLoadingNarration(false)
+      }
+    }
+
+    void loadInitialNarrationState()
+  }, [isAdmin, lessonId])
 
   useEffect(() => {
     if (!shouldAutoPlayNext || !audioRef.current) {
@@ -37,20 +85,44 @@ export function LessonAudioPlayer({ lessonId }: LessonAudioPlayerProps) {
     setShouldAutoPlayNext(false)
   }, [currentPart, shouldAutoPlayNext])
 
-  async function handlePrepareNarration() {
+  async function handlePrepareNarration(mode: 'generate' | 'regenerate') {
     setIsPreparing(true)
     setError(null)
 
     try {
-      const payload = await prepareLessonNarration(lessonId)
+      const payload = await prepareLessonNarration(lessonId, mode)
       setNarration(payload)
       setCurrentPartIndex(0)
       setError(null)
+      setTechnicalErrorMessage(null)
     } catch (prepareError) {
       const message = prepareError instanceof Error ? prepareError.message : 'Falha ao preparar a narracao da aula.'
-      setError(message)
+      if (isAdmin) {
+        setError(message)
+      } else {
+        setError('Não foi possível gerar o áudio desta aula no momento.')
+        setTechnicalErrorMessage(message)
+      }
     } finally {
       setIsPreparing(false)
+    }
+  }
+
+  async function handleRequestModeration() {
+    setIsRequestingModeration(true)
+    setError(null)
+
+    try {
+      const created = await requestLessonAudioModeration({
+        lessonId,
+        technicalError: technicalErrorMessage ?? undefined,
+      })
+      setModerationRequest(created)
+    } catch (requestError) {
+      const message = requestError instanceof Error ? requestError.message : 'Falha ao avisar a moderação.'
+      setError(message)
+    } finally {
+      setIsRequestingModeration(false)
     }
   }
 
@@ -74,6 +146,10 @@ export function LessonAudioPlayer({ lessonId }: LessonAudioPlayerProps) {
     setError('Falha ao reproduzir o audio. Gere novamente para renovar os links.')
   }
 
+  const canGenerateAsStudent = !isAdmin && !narration && !isLoadingNarration
+  const canRegenerateAsAdmin = isAdmin && !isLoadingNarration
+  const hasPendingModerationRequest = moderationRequest?.status === 'pending'
+
   return (
     <section className="overflow-hidden rounded-[32px] border border-sky-100 bg-gradient-to-br from-sky-50 via-white to-cyan-50 shadow-sm">
       <div className="space-y-5 p-6 sm:p-8">
@@ -82,20 +158,33 @@ export function LessonAudioPlayer({ lessonId }: LessonAudioPlayerProps) {
             <span className="inline-flex rounded-full bg-sky-600 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-white">
               Texto para Fala
             </span>
-            <h3 className="text-2xl font-black tracking-tight text-slate-900">Narracao em audio da aula</h3>
+            <h3 className="text-2xl font-black tracking-tight text-slate-900">Narração em áudio da aula</h3>
             <p className="max-w-2xl text-sm font-medium leading-relaxed text-slate-500">
-              O conteudo textual desta aula pode ser narrado em audio gerado por IA para escuta no player abaixo.
+              O conteúdo textual desta aula pode ser narrado em áudio gerado por IA para escuta no player abaixo.
             </p>
           </div>
 
-          <Button
-            size="lg"
-            className="h-12 rounded-2xl bg-slate-900 px-6 font-bold hover:bg-slate-800"
-            disabled={isPreparing}
-            onClick={() => void handlePrepareNarration()}
-          >
-            {isPreparing ? 'Preparando audio...' : narration ? 'Atualizar narracao' : 'Gerar narracao'}
-          </Button>
+          {canGenerateAsStudent ? (
+            <Button
+              size="lg"
+              className="h-12 rounded-2xl bg-slate-900 px-6 font-bold hover:bg-slate-800"
+              disabled={isPreparing}
+              onClick={() => void handlePrepareNarration('generate')}
+            >
+              {isPreparing ? 'Preparando áudio...' : 'Gerar Narração'}
+            </Button>
+          ) : null}
+
+          {canRegenerateAsAdmin ? (
+            <Button
+              size="lg"
+              className="h-12 rounded-2xl bg-slate-900 px-6 font-bold hover:bg-slate-800"
+              disabled={isPreparing}
+              onClick={() => void handlePrepareNarration(narration ? 'regenerate' : 'generate')}
+            >
+              {isPreparing ? 'Preparando áudio...' : narration ? 'Gerar Novamente' : 'Gerar Narração'}
+            </Button>
+          ) : null}
         </div>
 
         {narration ? (
@@ -127,7 +216,7 @@ export function LessonAudioPlayer({ lessonId }: LessonAudioPlayerProps) {
 
             {narration.parts.length > 1 ? (
               <p className="text-xs font-medium leading-relaxed text-slate-500">
-                A narracao foi dividida em partes para processar todo o conteudo da aula. O player avanca automaticamente para o proximo trecho.
+                A narração foi dividida em partes para processar todo o conteúdo da aula. O player avança automaticamente para o próximo trecho.
               </p>
             ) : null}
           </div>
@@ -136,6 +225,26 @@ export function LessonAudioPlayer({ lessonId }: LessonAudioPlayerProps) {
         {error ? (
           <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700">
             {error}
+          </div>
+        ) : null}
+
+        {!isAdmin && technicalErrorMessage ? (
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm">
+            <p className="font-medium text-amber-900">
+              Se o problema continuar, você pode solicitar revisão da equipe.
+            </p>
+            <Button
+              variant="outline"
+              className="border-amber-300 bg-white text-amber-800 hover:bg-amber-100"
+              disabled={isRequestingModeration || hasPendingModerationRequest}
+              onClick={() => void handleRequestModeration()}
+            >
+              {hasPendingModerationRequest
+                ? 'Moderação avisada'
+                : isRequestingModeration
+                  ? 'Enviando...'
+                  : 'Avisar a moderação'}
+            </Button>
           </div>
         ) : null}
       </div>

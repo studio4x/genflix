@@ -1,4 +1,9 @@
 import { supabase } from '@/services/supabase/client'
+import {
+  fetchLessonAudioModerationRequests,
+  resolveLessonAudioModerationRequest,
+  type LessonAudioModerationRequestAdminItem,
+} from '@/features/admin/lesson-audio/api'
 
 export interface CompletionReport {
   student_name: string
@@ -74,4 +79,20 @@ export async function reviewAssessmentAttemptRequest(input: {
     status: 'approved' | 'rejected'
     total_extra_attempts: number
   } | undefined) ?? null
+}
+
+export type { LessonAudioModerationRequestAdminItem }
+
+export async function fetchLessonAudioModerationRequestsReport(status?: 'pending' | 'resolved') {
+  return await fetchLessonAudioModerationRequests({
+    status,
+  })
+}
+
+export async function resolveLessonAudioModerationRequestReport(input: {
+  requestId: string
+  adminResponse?: string
+  resolvedBy: string
+}) {
+  return await resolveLessonAudioModerationRequest(input)
 }
