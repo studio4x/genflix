@@ -5,6 +5,7 @@ import { useAuth } from '@/app/providers/auth-provider'
 import { Button } from '@/components/ui/button'
 import { splitContent } from '@/features/admin/content/content-blocks'
 import { ContentBlocksRenderer } from '@/features/admin/content/content-blocks-renderer'
+import { fetchMaterials, getSignedMaterialUrl } from '@/features/admin/content/api'
 import { LessonAudioPlayer } from '@/features/student/lesson-audio/lesson-audio-player'
 import {
   fetchStudentCourseContentWithProgress,
@@ -13,8 +14,16 @@ import {
 } from '@/features/student/courses/api'
 import { supabase } from '@/services/supabase/client'
 import type { StudentCourseAssessmentSummary } from '@/features/student/assessments/api'
-import type { Lesson, StudentCourseModuleProgress, StudentLessonWithProgress } from '@/types/content'
+import type { Lesson, LessonMaterial, StudentCourseModuleProgress, StudentLessonWithProgress } from '@/types/content'
 import 'react-quill/dist/quill.snow.css'
+
+function formatBytes(value: number): string {
+  if (value === 0) return '0 B'
+  const units = ['B', 'KB', 'MB', 'GB']
+  const unitIndex = Math.min(Math.floor(Math.log(value) / Math.log(1024)), units.length - 1)
+  const normalized = value / 1024 ** unitIndex
+  return `${normalized.toFixed(unitIndex === 0 ? 0 : 1)} ${units[unitIndex]}`
+}
 
 export function StudentLessonPage() {
   const { courseId, lessonId } = useParams<{ courseId: string; lessonId: string }>()
@@ -28,20 +37,26 @@ export function StudentLessonPage() {
   }>()
   const [isTogglingCompletion, setIsTogglingCompletion] = useState(false)
   const [activeLessonDetails, setActiveLessonDetails] = useState<Lesson | null>(null)
+  const [materials, setMaterials] = useState<LessonMaterial[]>([])
+  const [isLoadingMaterials, setIsLoadingMaterials] = useState(false)
 
   useEffect(() => {
     async function loadActiveLesson() {
       if (!lessonId) return
       try {
-        const { data, error } = await supabase
-          .from('lessons')
-          .select('*')
-          .eq('id', lessonId)
-          .single()
+        const [{ data, error }, materialsResult] = await Promise.all([
+          supabase
+            .from('lessons')
+            .select('*')
+            .eq('id', lessonId)
+            .single(),
+          fetchMaterials(lessonId),
+        ])
 
         if (!error && data) {
           setActiveLessonDetails(data)
         }
+        setMaterials(materialsResult)
       } catch (err) {
         console.error('Erro ao buscar detalhes da aula:', err)
       }
@@ -146,6 +161,18 @@ export function StudentLessonPage() {
     }
   }
 
+  async function handleOpenMaterial(material: LessonMaterial) {
+    setIsLoadingMaterials(true)
+    try {
+      const signedUrl = await getSignedMaterialUrl(material.storage_path)
+      window.open(signedUrl, '_blank', 'noopener,noreferrer')
+    } catch (err) {
+      alert(toErrorMessage(err))
+    } finally {
+      setIsLoadingMaterials(false)
+    }
+  }
+
   return (
     <div className="mx-auto max-w-5xl space-y-8 p-4 pb-32 sm:p-8 animate-in fade-in duration-500">
       <div className="space-y-4 border-b border-slate-100 pb-8 pt-4">
@@ -194,6 +221,51 @@ export function StudentLessonPage() {
           </div>
         </div>
       )}
+
+      <div className="overflow-hidden rounded-[32px] border border-slate-100 bg-white shadow-sm">
+        <div className="border-b border-slate-100 px-6 py-5 sm:px-8">
+          <div className="flex items-center gap-3">
+            <span className="rounded-full border border-blue-100 bg-blue-50 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-blue-600">
+              Materiais de Apoio
+            </span>
+            <span className="text-xs font-medium text-slate-500">
+              Arquivos complementares desta aula
+            </span>
+          </div>
+        </div>
+
+        <div className="space-y-4 p-6 sm:p-8">
+          {materials.length === 0 ? (
+            <div className="rounded-[24px] border border-dashed border-slate-200 bg-slate-50 px-6 py-10 text-center">
+              <p className="text-sm font-medium text-slate-500">
+                Nenhum material de apoio vinculado a esta aula.
+              </p>
+            </div>
+          ) : (
+            <div className="grid gap-3">
+              {materials.map((material) => (
+                <article key={material.id} className="flex flex-col gap-4 rounded-[24px] border border-slate-100 bg-slate-50/60 p-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="min-w-0">
+                    <p className="truncate font-bold text-slate-900">{material.file_name}</p>
+                    <p className="mt-1 text-xs font-medium uppercase tracking-wide text-slate-500">
+                      {material.mime_type?.split('/')[1] || 'FILE'} • {formatBytes(material.file_size_bytes)}
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={isLoadingMaterials}
+                    onClick={() => void handleOpenMaterial(material)}
+                    className="rounded-xl border-slate-200 bg-white font-bold"
+                  >
+                    {isLoadingMaterials ? 'Abrindo...' : 'Abrir Material'}
+                  </Button>
+                </article>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
 
       <div className="sticky bottom-4 z-20 mt-12 flex flex-col items-center justify-between gap-4 rounded-[32px] border-t border-slate-200 bg-white/80 p-6 pt-8 shadow-xl shadow-slate-200/50 backdrop-blur-md sm:flex-row">
         <button
