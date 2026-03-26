@@ -86,10 +86,65 @@ export async function analyzeModuleWithAi(input: {
   courseId: string
   moduleId: string
 }) {
+  const maxAttempts = 3
+  let lastError: Error | null = null
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    try {
+      const accessToken = await resolveAccessToken(attempt > 1)
+      const response = await fetch(`${env.VITE_SUPABASE_URL}/functions/v1/analyze-course-module`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          apikey: env.VITE_SUPABASE_ANON_KEY,
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({
+          courseId: input.courseId,
+          moduleId: input.moduleId,
+          access_token: accessToken,
+        }),
+      })
+
+      const payload = await response.json().catch(() => null)
+      if (response.ok) {
+        return payload as ModuleAiReviewResult
+      }
+
+      const message =
+        typeof payload?.error === 'string'
+          ? payload.error
+          : 'Falha ao executar a analise com IA.'
+
+      if (response.status >= 500 || response.status === 429 || response.status === 408) {
+        lastError = new Error(message)
+        if (attempt < maxAttempts) {
+          await sleep(attempt * 800)
+          continue
+        }
+      }
+
+      throw new Error(message)
+    } catch (error) {
+      const isNetworkFailure = error instanceof TypeError
+      if (isNetworkFailure && attempt < maxAttempts) {
+        lastError = new Error('Falha de rede temporaria ao analisar modulo.')
+        await sleep(attempt * 800)
+        continue
+      }
+
+      throw error instanceof Error ? error : new Error('Falha ao executar a analise com IA.')
+    }
+  }
+
+  throw lastError ?? new Error('Falha ao executar a analise com IA.')
+}
+
+async function resolveAccessToken(forceRefresh: boolean) {
   let sessionResult = await supabase.auth.getSession()
   let accessToken: string | undefined = sessionResult.data.session?.access_token ?? undefined
 
-  if (!accessToken) {
+  if (forceRefresh || !accessToken) {
     const refreshResult = await supabase.auth.refreshSession()
     accessToken = refreshResult.data.session?.access_token ?? undefined
     sessionResult = await supabase.auth.getSession()
@@ -100,29 +155,9 @@ export async function analyzeModuleWithAi(input: {
     throw new Error('Sessao expirada. Faca login novamente para usar a analise com IA.')
   }
 
-  const response = await fetch(`${env.VITE_SUPABASE_URL}/functions/v1/analyze-course-module`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      apikey: env.VITE_SUPABASE_ANON_KEY,
-      Authorization: `Bearer ${accessToken}`,
-    },
-    body: JSON.stringify({
-      courseId: input.courseId,
-      moduleId: input.moduleId,
-      access_token: accessToken,
-    }),
-  })
+  return accessToken
+}
 
-  const payload = await response.json().catch(() => null)
-
-  if (!response.ok) {
-    const message =
-      typeof payload?.error === 'string'
-        ? payload.error
-        : 'Falha ao executar a analise com IA.'
-    throw new Error(message)
-  }
-
-  return payload as ModuleAiReviewResult
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms))
 }
