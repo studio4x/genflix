@@ -1,18 +1,18 @@
 import { PublicLegalPageShell } from '@/pages/public/public-legal-page-shell'
 
 const privacyTopics = [
-  'Os dados pessoais tratados no LMS e nos demais ambientes da HomeCare Match seguem a Politica de Privacidade da plataforma e a LGPD.',
-  'Documentos de identificacao, registros profissionais e dados eventualmente sensiveis sao utilizados para cadastro, seguranca, verificacao, cumprimento legal e operacao regular do servico.',
-  'A HomeCare Match nao vende dados pessoais. O compartilhamento ocorre apenas quando necessario para operacao, obrigacao legal, protecao contra fraude ou exercicio regular de direitos.',
-  'Informacoes de contato, como WhatsApp, podem ser liberadas apenas para usuarios logados e com interesse legitimo dentro da dinamica da plataforma.',
+  'Os dados pessoais tratados no LMS e nos demais ambientes da HomeCare Match seguem a Política de Privacidade da plataforma e a LGPD.',
+  'Documentos de identificação, registros profissionais e dados eventualmente sensíveis são utilizados para cadastro, segurança, verificação, cumprimento legal e operação regular do serviço.',
+  'A HomeCare Match não vende dados pessoais. O compartilhamento ocorre apenas quando necessário para operação, obrigação legal, proteção contra fraude ou exercício regular de direitos.',
+  'Informações de contato, como WhatsApp, podem ser liberadas apenas para usuários logados e com interesse legítimo dentro da dinâmica da plataforma.',
 ]
 
 export function PrivacyPage() {
   return (
     <PublicLegalPageShell
       eyebrow="Privacidade"
-      title="Privacidade e Protecao de Dados"
-      summary="Esta pagina resume os pontos centrais de privacidade aplicaveis ao ambiente LMS da HomeCare Match. A versao completa e a base legal detalhada permanecem regidas pela Politica de Privacidade oficial da plataforma."
+      title="Privacidade e Proteção de Dados"
+      summary="Esta página resume os pontos centrais de privacidade aplicáveis ao ambiente LMS da HomeCare Match. A versão completa e a base legal detalhada permanecem regidas pela Política de Privacidade oficial da plataforma."
       updatedAt="26/03/2026"
     >
       <section className="space-y-4">

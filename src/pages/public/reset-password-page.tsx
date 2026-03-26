@@ -27,7 +27,7 @@ export function ResetPasswordPage() {
     }
 
     if (password !== confirmPassword) {
-      setError('As senhas nao conferem.')
+      setError('As senhas não conferem.')
       return
     }
 
@@ -35,7 +35,7 @@ export function ResetPasswordPage() {
 
     try {
       await updatePassword(password)
-      setMessage('Senha atualizada com sucesso. Voce ja pode fazer login.')
+      setMessage('Senha atualizada com sucesso. Você já pode fazer login.')
       setPassword('')
       setConfirmPassword('')
     } catch (submitError) {

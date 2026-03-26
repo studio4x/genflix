@@ -21,12 +21,12 @@ export function ForgotPasswordPage() {
 
     try {
       await requestPasswordReset(email)
-      setMessage('Se o e-mail existir, enviaremos um link de recuperacao.')
+      setMessage('Se o e-mail existir, enviaremos um link de recuperação.')
     } catch (submitError) {
       const submitMessage =
         submitError instanceof Error
           ? submitError.message
-          : 'Falha ao solicitar recuperacao.'
+          : 'Falha ao solicitar recuperação.'
       setError(submitMessage)
     } finally {
       setIsSubmitting(false)
@@ -36,7 +36,7 @@ export function ForgotPasswordPage() {
   return (
     <AuthShell
       title="Recuperar senha"
-      subtitle="Informe seu e-mail para receber o link de redefinicao."
+      subtitle="Informe seu e-mail para receber o link de redefinição."
     >
       <form className="space-y-4" onSubmit={handleSubmit}>
         <label className="block space-y-1">
