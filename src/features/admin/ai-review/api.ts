@@ -57,13 +57,13 @@ export async function fetchCourseAiReviewStandards(courseId: string) {
     .from('course_ai_review_standards')
     .select('*')
     .eq('course_id', courseId)
-    .maybeSingle()
+    .limit(1)
 
   if (result.error) {
     throw result.error
   }
 
-  return (result.data as CourseAiReviewStandards | null) ?? null
+  return ((result.data as CourseAiReviewStandards[] | null) ?? [])[0] ?? null
 }
 
 export async function upsertCourseAiReviewStandards(
@@ -83,13 +83,13 @@ export async function upsertCourseAiReviewStandards(
       updated_by: userId,
     })
     .select('*')
-    .single()
+    .limit(1)
 
   if (result.error) {
     throw result.error
   }
 
-  return result.data as CourseAiReviewStandards
+  return ((result.data as CourseAiReviewStandards[] | null) ?? [])[0] as CourseAiReviewStandards
 }
 
 export async function analyzeModuleWithAi(input: {
@@ -190,13 +190,13 @@ export async function createModuleAiReviewHistory(input: {
       created_by: input.userId,
     })
     .select('*')
-    .single()
+    .limit(1)
 
   if (insertResult.error) {
     throw insertResult.error
   }
 
-  return insertResult.data as ModuleAiReviewHistoryEntry
+  return ((insertResult.data as ModuleAiReviewHistoryEntry[] | null) ?? [])[0] as ModuleAiReviewHistoryEntry
 }
 
 export async function markModuleAiReviewApplied(reviewId: string, userId: string) {
@@ -209,39 +209,36 @@ export async function markModuleAiReviewApplied(reviewId: string, userId: string
     })
     .eq('id', reviewId)
     .select('*')
-    .maybeSingle()
+    .limit(1)
 
   if (updateResult.error) {
-    if (updateResult.error.code !== 'PGRST116') {
-      throw updateResult.error
-    }
+    throw updateResult.error
   }
 
-  if (updateResult.data) {
-    return updateResult.data as ModuleAiReviewHistoryEntry
+  const updatedReview = ((updateResult.data as ModuleAiReviewHistoryEntry[] | null) ?? [])[0] ?? null
+  if (updatedReview) {
+    return updatedReview
   }
 
   const fetchResult = await supabase
     .from('course_module_ai_reviews')
     .select('*')
     .eq('id', reviewId)
-    .maybeSingle()
+    .limit(1)
 
   if (fetchResult.error) {
-    if (fetchResult.error.code === 'PGRST116') {
-      return null
-    }
     throw fetchResult.error
   }
 
-  if (!fetchResult.data) {
+  const fetchedReview = ((fetchResult.data as ModuleAiReviewHistoryEntry[] | null) ?? [])[0] ?? null
+  if (!fetchedReview) {
     return null
   }
 
   return {
-    ...(fetchResult.data as ModuleAiReviewHistoryEntry),
-    applied_at: (fetchResult.data as ModuleAiReviewHistoryEntry).applied_at ?? appliedAt,
-    applied_by: (fetchResult.data as ModuleAiReviewHistoryEntry).applied_by ?? userId,
+    ...fetchedReview,
+    applied_at: fetchedReview.applied_at ?? appliedAt,
+    applied_by: fetchedReview.applied_by ?? userId,
   }
 }
 
