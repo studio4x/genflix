@@ -87,6 +87,7 @@ export function AdminCoursesPage() {
   const [importError, setImportError] = useState<string | null>(null)
   const [exportingCourseId, setExportingCourseId] = useState<string | null>(null)
   const [isReordering, setIsReordering] = useState(false)
+  const [isDisplayOrderPanelOpen, setIsDisplayOrderPanelOpen] = useState(false)
 
   async function loadCourses() {
     setIsLoading(true)
@@ -354,73 +355,96 @@ export function AdminCoursesPage() {
       </div>
 
       <section className="rounded-[32px] border border-slate-100 bg-white p-6 shadow-sm">
-         <div className="flex flex-col gap-2 border-b border-slate-100 pb-4 md:flex-row md:items-center md:justify-between">
+         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <div>
                <h3 className="text-lg font-black tracking-tight text-slate-900">Ordem de Exibicao dos Cursos</h3>
-               <p className="text-sm font-medium text-slate-500">Arraste os cursos para definir como eles aparecem para o admin e para o aluno.</p>
+               <p className="text-sm font-medium text-slate-500">
+                 Recurso recolhido por padrao para nao ocupar a tela.
+               </p>
             </div>
-            {isReordering ? (
-              <div className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-[11px] font-black uppercase tracking-widest text-blue-600">
-                <span className="h-3 w-3 rounded-full border-2 border-blue-200 border-t-blue-600 animate-spin" />
-                Salvando ordem
-              </div>
-            ) : null}
+            <div className="flex items-center gap-3">
+              {isReordering ? (
+                <div className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-[11px] font-black uppercase tracking-widest text-blue-600">
+                  <span className="h-3 w-3 rounded-full border-2 border-blue-200 border-t-blue-600 animate-spin" />
+                  Salvando ordem
+                </div>
+              ) : null}
+              <button
+                type="button"
+                onClick={() => setIsDisplayOrderPanelOpen((current) => !current)}
+                className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2 text-[11px] font-black uppercase tracking-widest text-slate-600 transition-colors hover:border-blue-200 hover:text-blue-600"
+                aria-expanded={isDisplayOrderPanelOpen}
+              >
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={isDisplayOrderPanelOpen ? 'M19 9l-7 7-7-7' : 'M9 5l7 7-7 7'} />
+                </svg>
+                {isDisplayOrderPanelOpen ? 'Ocultar ordenacao' : 'Organizar exibicao'}
+              </button>
+            </div>
          </div>
 
-         <DragDropContext onDragEnd={(result) => void handleCourseDragEnd(result)}>
-            <Droppable droppableId="courses-display-order">
-               {(provided) => (
-                  <div
-                    ref={provided.innerRef}
-                    {...provided.droppableProps}
-                    className="mt-5 space-y-3"
-                  >
-                     {courses.map((course, index) => (
-                        <Draggable key={course.id} draggableId={course.id} index={index}>
-                           {(draggableProvided, snapshot) => (
-                              <div
-                                ref={draggableProvided.innerRef}
-                                {...draggableProvided.draggableProps}
-                                className={`flex items-center gap-4 rounded-2xl border px-4 py-4 transition-all ${
-                                  snapshot.isDragging
-                                    ? 'border-blue-200 bg-blue-50 shadow-xl'
-                                    : 'border-slate-100 bg-slate-50/50'
-                                }`}
-                              >
-                                 <button
-                                   type="button"
-                                   aria-label={`Mover ${course.title}`}
-                                   className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-400 hover:text-slate-700"
-                                   {...draggableProvided.dragHandleProps}
-                                 >
-                                   <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 9h.01M8 15h.01M12 9h.01M12 15h.01M16 9h.01M16 15h.01" />
-                                   </svg>
-                                 </button>
-                                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-900 text-sm font-black text-white">
-                                   {index + 1}
-                                 </div>
-                                 <div className="min-w-0 flex-1">
-                                   <p className="truncate text-sm font-black text-slate-900">{course.title}</p>
-                                   <p className="truncate text-xs font-medium text-slate-500">
-                                     {course.status === 'published' ? 'Publicado' : course.status === 'draft' ? 'Rascunho' : 'Arquivado'}
-                                   </p>
-                                 </div>
-                                 <Link
-                                   to={`/admin/cursos/${course.id}/builder`}
-                                   className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-[11px] font-black uppercase tracking-widest text-slate-500 transition-colors hover:border-blue-200 hover:text-blue-600"
-                                 >
-                                   Abrir
-                                 </Link>
-                              </div>
-                           )}
-                        </Draggable>
-                     ))}
-                     {provided.placeholder}
-                  </div>
-               )}
-            </Droppable>
-         </DragDropContext>
+         {isDisplayOrderPanelOpen ? (
+           <>
+             <div className="mt-4 border-t border-slate-100 pt-4">
+               <p className="text-sm font-medium text-slate-500">Arraste os cursos para definir como eles aparecem para o admin e para o aluno.</p>
+             </div>
+
+             <DragDropContext onDragEnd={(result) => void handleCourseDragEnd(result)}>
+                <Droppable droppableId="courses-display-order">
+                   {(provided) => (
+                      <div
+                        ref={provided.innerRef}
+                        {...provided.droppableProps}
+                        className="mt-5 space-y-3"
+                      >
+                         {courses.map((course, index) => (
+                            <Draggable key={course.id} draggableId={course.id} index={index}>
+                               {(draggableProvided, snapshot) => (
+                                  <div
+                                    ref={draggableProvided.innerRef}
+                                    {...draggableProvided.draggableProps}
+                                    className={`flex items-center gap-4 rounded-2xl border px-4 py-4 transition-all ${
+                                      snapshot.isDragging
+                                        ? 'border-blue-200 bg-blue-50 shadow-xl'
+                                        : 'border-slate-100 bg-slate-50/50'
+                                    }`}
+                                  >
+                                     <button
+                                       type="button"
+                                       aria-label={`Mover ${course.title}`}
+                                       className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-400 hover:text-slate-700"
+                                       {...draggableProvided.dragHandleProps}
+                                     >
+                                       <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 9h.01M8 15h.01M12 9h.01M12 15h.01M16 9h.01M16 15h.01" />
+                                       </svg>
+                                     </button>
+                                     <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-900 text-sm font-black text-white">
+                                       {index + 1}
+                                     </div>
+                                     <div className="min-w-0 flex-1">
+                                       <p className="truncate text-sm font-black text-slate-900">{course.title}</p>
+                                       <p className="truncate text-xs font-medium text-slate-500">
+                                         {course.status === 'published' ? 'Publicado' : course.status === 'draft' ? 'Rascunho' : 'Arquivado'}
+                                       </p>
+                                     </div>
+                                     <Link
+                                       to={`/admin/cursos/${course.id}/builder`}
+                                       className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-[11px] font-black uppercase tracking-widest text-slate-500 transition-colors hover:border-blue-200 hover:text-blue-600"
+                                     >
+                                       Abrir
+                                     </Link>
+                                  </div>
+                               )}
+                            </Draggable>
+                         ))}
+                         {provided.placeholder}
+                      </div>
+                   )}
+                </Droppable>
+             </DragDropContext>
+           </>
+         ) : null}
       </section>
 
       {/* CURSOR GRID */}
