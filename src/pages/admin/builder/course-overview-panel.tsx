@@ -13,6 +13,13 @@ export function CourseOverviewPanel() {
   const [analysisTarget, setAnalysisTarget] = useState<{ moduleId: string; moduleTitle: string } | null>(null)
   const [analysisResult, setAnalysisResult] = useState<ModuleAiReviewResult | null>(null)
   const [isApplyingFixes, setIsApplyingFixes] = useState(false)
+  const [didApplyCurrentAnalysis, setDidApplyCurrentAnalysis] = useState(false)
+  const [applyFeedback, setApplyFeedback] = useState<{
+    moduleId: string
+    moduleTitle: string
+    appliedAt: string
+    issuesCount: number
+  } | null>(null)
 
   useEffect(() => {
     if (!analysisTarget || !analysisResult) return
@@ -41,6 +48,7 @@ export function CourseOverviewPanel() {
   async function handleAnalyzeModule(moduleId: string, moduleTitle: string) {
     setIsAnalyzingModuleId(moduleId)
     setAnalysisError(null)
+    setDidApplyCurrentAnalysis(false)
 
     try {
       const result = await analyzeModuleWithAi({
@@ -57,7 +65,7 @@ export function CourseOverviewPanel() {
   }
 
   async function handleApplyAiFixes() {
-    if (!analysisTarget || !analysisResult?.corrected_module) return
+    if (!analysisTarget || !analysisResult?.corrected_module || didApplyCurrentAnalysis) return
 
     setIsApplyingFixes(true)
     setAnalysisError(null)
@@ -65,8 +73,13 @@ export function CourseOverviewPanel() {
     try {
       await importCourseContent(course.id, [analysisResult.corrected_module], false, analysisTarget.moduleId)
       await refreshTree()
-      setAnalysisResult(null)
-      setAnalysisTarget(null)
+      setDidApplyCurrentAnalysis(true)
+      setApplyFeedback({
+        moduleId: analysisTarget.moduleId,
+        moduleTitle: analysisTarget.moduleTitle,
+        appliedAt: new Date().toISOString(),
+        issuesCount: analysisResult.issues.length,
+      })
     } catch (err) {
       setAnalysisError(toErrorMessage(err))
     } finally {
@@ -86,6 +99,16 @@ export function CourseOverviewPanel() {
       {analysisError && (
         <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm font-bold text-rose-600">
           {analysisError}
+        </div>
+      )}
+      {applyFeedback && (
+        <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm font-semibold text-emerald-700">
+          Ajustes aplicados com sucesso no modulo <strong>{applyFeedback.moduleTitle}</strong> em{' '}
+          {new Intl.DateTimeFormat('pt-BR', {
+            dateStyle: 'short',
+            timeStyle: 'medium',
+          }).format(new Date(applyFeedback.appliedAt))}
+          . {applyFeedback.issuesCount > 0 ? `${applyFeedback.issuesCount} ponto(s) foram processados.` : 'Nenhum ponto critico foi apontado nesta analise.'}
         </div>
       )}
 
@@ -228,6 +251,21 @@ export function CourseOverviewPanel() {
             </div>
 
             <div className="space-y-6 p-8">
+              {didApplyCurrentAnalysis && analysisTarget && (
+                <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5">
+                  <p className="text-sm font-black text-emerald-700">Ajustes aplicados com sucesso neste modulo.</p>
+                  <p className="mt-2 text-sm text-emerald-700">
+                    O conteudo foi atualizado e salvo. Revise o modulo para confirmar o resultado final.
+                  </p>
+                  <Link
+                    to={`/admin/cursos/${course.id}/builder/modulos/${analysisTarget.moduleId}`}
+                    className="mt-4 inline-flex items-center rounded-xl border border-emerald-300 bg-white px-3 py-2 text-xs font-black uppercase tracking-widest text-emerald-700 hover:bg-emerald-100"
+                  >
+                    Revisar modulo atualizado
+                  </Link>
+                </div>
+              )}
+
               <div className="grid gap-4 md:grid-cols-[180px_1fr]">
                 <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 text-center">
                   <p className="text-xs font-black uppercase tracking-widest text-slate-400">Score de Qualidade</p>
@@ -292,11 +330,23 @@ export function CourseOverviewPanel() {
 
             <div className="flex flex-col gap-3 border-t border-slate-100 bg-slate-50/50 p-8 sm:flex-row sm:justify-end">
               <Button
+                type="button"
+                variant="ghost"
+                className="h-12 rounded-2xl px-8 font-black text-slate-600"
+                onClick={() => {
+                  setAnalysisTarget(null)
+                  setAnalysisResult(null)
+                  setDidApplyCurrentAnalysis(false)
+                }}
+              >
+                Fechar Analise
+              </Button>
+              <Button
                 className="h-12 rounded-2xl bg-blue-600 px-8 font-black shadow-xl shadow-blue-100 hover:bg-blue-700"
-                disabled={!analysisResult.corrected_module || isApplyingFixes}
+                disabled={!analysisResult.corrected_module || isApplyingFixes || didApplyCurrentAnalysis}
                 onClick={() => void handleApplyAiFixes()}
               >
-                {isApplyingFixes ? 'Aplicando Ajustes...' : 'Implementar Ajustes'}
+                {isApplyingFixes ? 'Aplicando Ajustes...' : didApplyCurrentAnalysis ? 'Ajustes Aplicados' : 'Implementar Ajustes'}
               </Button>
             </div>
           </div>
