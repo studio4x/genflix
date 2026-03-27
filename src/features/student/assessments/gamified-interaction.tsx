@@ -96,8 +96,8 @@ function DragDropLabelingView({
   }
 
   return (
-    <div className="grid gap-6 xl:grid-cols-[minmax(0,1.85fr)_320px] 2xl:grid-cols-[minmax(0,2.1fr)_340px]">
-      <div className="overflow-hidden rounded-[36px] border border-slate-200 bg-[#fcfdff] shadow-inner">
+    <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_280px] xl:grid-cols-[minmax(0,1.55fr)_320px] 2xl:grid-cols-[minmax(0,2.1fr)_340px]">
+      <div className="min-w-0 overflow-hidden rounded-[36px] border border-slate-200 bg-[#fcfdff] shadow-inner">
         <div className="border-b border-slate-200 bg-white/80 px-6 py-4">
           <p className="text-[10px] font-black uppercase tracking-[0.28em] text-cyan-700">Arrastar e Soltar</p>
           <p className="mt-2 text-sm font-semibold text-slate-600">{content.instruction}</p>
@@ -185,7 +185,7 @@ function DragDropLabelingView({
         </div>
       </div>
 
-      <div className="self-start rounded-[32px] border border-slate-200 bg-white p-5 shadow-xl shadow-slate-200/30 xl:sticky xl:top-6">
+      <div className="self-start rounded-[32px] border border-slate-200 bg-white p-5 shadow-xl shadow-slate-200/30 lg:sticky lg:top-6">
         <div className="flex items-center justify-between gap-3">
           <div>
             <p className="text-[10px] font-black uppercase tracking-[0.28em] text-slate-400">Banco de Itens</p>
