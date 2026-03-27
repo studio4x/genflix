@@ -199,6 +199,10 @@ function getValidationMessage(
   }
 }
 
+function formatPoints(value: number) {
+  return Number.isInteger(value) ? String(value) : value.toFixed(2).replace(/\.?0+$/, '')
+}
+
 export function GamifiedQuestionEditor({
   question,
   onDraftChange,
@@ -243,6 +247,11 @@ export function GamifiedQuestionEditor({
   }
 
   const activeInteraction = interactionContent
+  const scoringItemCount = activeInteraction.kind === 'drag_drop_labeling'
+    ? activeInteraction.targets.length
+    : activeInteraction.segments.filter((segment) => segment.type === 'blank').length
+  const questionPoints = Number(question.points || 0)
+  const pointsPerItem = scoringItemCount > 0 ? questionPoints / scoringItemCount : 0
 
   const assignedTokenBySlot = new Map(
     (answerKeyPayload?.entries ?? []).map((entry) => [entry.slot_id, entry.token_id]),
@@ -1158,12 +1167,16 @@ export function GamifiedQuestionEditor({
               {
                 value: 'partial_by_item' as const,
                 title: 'Parcial por item',
-                description: 'Cada area ou lacuna correta soma parte da nota total.',
+                description: scoringItemCount > 0
+                  ? `A nota desta pergunta sera dividida entre ${scoringItemCount} item(ns). Cada item correto vale ${formatPoints(pointsPerItem)} ponto(s).`
+                  : 'A nota desta pergunta sera dividida igualmente entre os itens corretos.',
               },
               {
                 value: 'all_or_nothing' as const,
                 title: 'Tudo ou nada',
-                description: 'A questao so pontua quando todos os itens estiverem corretos.',
+                description: scoringItemCount > 0
+                  ? `O aluno so recebe os ${formatPoints(questionPoints)} ponto(s) desta pergunta se acertar todos os ${scoringItemCount} item(ns). Se errar 1, recebe 0.`
+                  : 'O aluno so pontua se acertar todos os itens da pergunta.',
               },
             ].map((mode) => (
               <button

@@ -33,6 +33,7 @@ import {
 import {
   createAnswerKeyFromInteraction,
   createDefaultInteractionContent,
+  assessmentInteractionContentSchema,
   isGamifiedQuestionType,
 } from '@/features/assessments/gamified'
 import { fetchModule } from '@/features/admin/content/api'
@@ -71,6 +72,51 @@ function buildQuestionState(
 
 function getPointsForApproval(question: AssessmentQuestionWithOptions) {
   return question.question_type === 'essay_ai' ? 0 : Number(question.points || 0)
+}
+
+function formatPoints(value: number) {
+  return Number.isInteger(value) ? String(value) : value.toFixed(2).replace(/\.?0+$/, '')
+}
+
+function getGamifiedItemCount(question: AssessmentQuestionWithOptions) {
+  const parsed = assessmentInteractionContentSchema.safeParse(question.interaction?.content ?? null)
+  if (!parsed.success) {
+    return 0
+  }
+
+  if (parsed.data.kind === 'drag_drop_labeling') {
+    return parsed.data.targets.length
+  }
+
+  return parsed.data.segments.filter((segment) => segment.type === 'blank').length
+}
+
+function getQuestionScoringExplanation(question: AssessmentQuestionWithOptions) {
+  if (question.question_type === 'essay_ai') {
+    return 'Pergunta com feedback da IA. Ela nao soma pontos na nota final do quiz.'
+  }
+
+  const points = Number(question.points || 0)
+  const pointsText = formatPoints(points)
+
+  if (!isGamifiedQuestionType(question.question_type)) {
+    return `Esta pergunta vale ${pointsText} ponto(s) e entra normalmente no calculo da aprovacao.`
+  }
+
+  const itemCount = getGamifiedItemCount(question)
+  const itemLabel = question.question_type === 'drag_drop_labeling' ? 'área' : 'lacuna'
+  const gradingMode = question.answer_key?.grading_mode ?? 'partial_by_item'
+
+  if (itemCount === 0) {
+    return `Esta pergunta vale ${pointsText} ponto(s). Defina as ${itemLabel}s para calcular a divisao da nota.`
+  }
+
+  if (gradingMode === 'all_or_nothing') {
+    return `Esta pergunta vale ${pointsText} ponto(s). O aluno so recebe a nota se acertar todas as ${itemCount} ${itemLabel}${itemCount > 1 ? 's' : ''}. Se errar 1 item, recebe 0 nesta pergunta.`
+  }
+
+  const pointsPerItem = points / itemCount
+  return `Esta pergunta vale ${pointsText} ponto(s), divididos entre ${itemCount} ${itemLabel}${itemCount > 1 ? 's' : ''}. Cada item correto vale ${formatPoints(pointsPerItem)} ponto(s).`
 }
 
 function getDefaultGamifiedState(questionId: string, questionType: AssessmentQuestionType) {
@@ -884,11 +930,7 @@ export function AssessmentBuilderPanel() {
             <div>
               <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Pontuação</p>
               <p className="mt-1 text-xs font-medium text-slate-500">
-                {question.question_type === 'essay_ai'
-                  ? 'Pergunta com feedback, sem nota.'
-                  : isGamified
-                    ? 'Pontuacao configuravel com correcao parcial ou tudo-ou-nada.'
-                    : 'Esta pergunta entra no calculo de aprovacao.'}
+                {getQuestionScoringExplanation(question)}
               </p>
             </div>
             <input
@@ -1135,17 +1177,30 @@ export function AssessmentBuilderPanel() {
           <div className="rounded-2xl border border-white/70 bg-white px-5 py-4 shadow-sm">
             <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Questões Pontuáveis</p>
             <p className="mt-2 text-3xl font-black text-slate-900">{scoredQuestionsCount}</p>
+            <p className="mt-2 text-xs font-medium leading-relaxed text-slate-500">
+              Quantas perguntas realmente entram no calculo da nota final.
+            </p>
           </div>
           <div className="rounded-2xl border border-white/70 bg-white px-5 py-4 shadow-sm">
             <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Pontos Necessários</p>
             <p className="mt-2 text-3xl font-black text-blue-700">{requiredPoints}</p>
+            <p className="mt-2 text-xs font-medium leading-relaxed text-slate-500">
+              De um total de {formatPoints(totalPossiblePoints)} ponto(s) no quiz, o aluno precisa somar pelo menos {formatPoints(requiredPoints)}.
+            </p>
           </div>
           <div className="rounded-2xl border border-white/70 bg-white px-5 py-4 shadow-sm">
             <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Regra Exibida ao Aluno</p>
             <p className="mt-2 text-sm font-medium leading-relaxed text-slate-600">
-              O aluno precisa atingir {requiredPoints} de {totalPossiblePoints} pontos possíveis ({assessmentDraft.passing_score}%).
+              A aprovacao e pela nota total do quiz, nao pela quantidade de perguntas acertadas. Aqui, o aluno precisa atingir {formatPoints(requiredPoints)} de {formatPoints(totalPossiblePoints)} ponto(s), o que equivale a {assessmentDraft.passing_score}% de aproveitamento.
             </p>
           </div>
+        </div>
+
+        <div className="rounded-3xl border border-cyan-100 bg-cyan-50/60 px-6 py-5">
+          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-cyan-700">Leitura Rapida da Regra</p>
+          <p className="mt-3 text-sm font-medium leading-relaxed text-cyan-950">
+            A aprovacao sempre considera a nota total do quiz. Nao importa apenas quantas perguntas o aluno acertou: importa quantos pontos ele somou no conjunto. Neste quiz, a nota maxima e {formatPoints(totalPossiblePoints)} ponto(s) e a nota minima para aprovar e {formatPoints(requiredPoints)} ponto(s).
+          </p>
         </div>
 
         {standaloneQuestions.map((question, index) => renderQuestionCard(question, String(index + 1), 'standalone'))}
