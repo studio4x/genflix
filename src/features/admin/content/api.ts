@@ -17,6 +17,7 @@ import type {
   LessonFormInput,
   ModuleFormInput,
 } from './schemas'
+import type { Session } from '@supabase/supabase-js'
 
 const MATERIALS_BUCKET = 'materials'
 
@@ -138,6 +139,43 @@ export async function updateCourse(courseId: string, input: CourseFormInput) {
     throw result.error
   }
   return result.data as Course
+}
+
+export interface ResetCourseProgressResult {
+  course_id: string
+  course_title: string
+  impacted_students: number
+  deleted_counts: {
+    course_progress: number
+    lesson_progress: number
+    assessment_attempts: number
+    assessment_attempt_requests: number
+    assessment_attempt_grants: number
+  }
+  message: string
+}
+
+export async function resetCourseProgress(courseId: string, session: Session) {
+  const response = await fetch('/api/admin/courses/reset-progress', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${session.access_token}`,
+    },
+    body: JSON.stringify({ courseId }),
+  })
+
+  const payload = await response.json().catch(() => null) as { error?: string } | ResetCourseProgressResult | null
+
+  if (!response.ok) {
+    throw new Error(
+      payload && 'error' in payload && typeof payload.error === 'string'
+        ? payload.error
+        : 'Nao foi possivel renovar o progresso do curso.',
+    )
+  }
+
+  return payload as ResetCourseProgressResult
 }
 
 export async function deleteCourse(courseId: string) {
@@ -986,4 +1024,3 @@ export async function importFullCourse(data: ImportCourseFullData, userId: strin
   
   return course
 }
-

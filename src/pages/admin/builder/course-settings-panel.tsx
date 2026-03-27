@@ -7,13 +7,19 @@ import {
   fetchCourseAiReviewStandards,
   upsertCourseAiReviewStandards,
 } from '@/features/admin/ai-review/api'
-import { updateCourse, uploadCourseThumbnail, toErrorMessage } from '@/features/admin/content/api'
+import {
+  resetCourseProgress,
+  updateCourse,
+  uploadCourseThumbnail,
+  toErrorMessage,
+  type ResetCourseProgressResult,
+} from '@/features/admin/content/api'
 import { courseFormSchema } from '@/features/admin/content/schemas'
 import 'react-quill/dist/quill.snow.css'
 
 export function CourseSettingsPanel() {
   const { courseTree, refreshTree } = useCourseBuilder()
-  const { user } = useAuth()
+  const { user, session } = useAuth()
   
   const [form, setForm] = useState({
     title: '',
@@ -25,9 +31,11 @@ export function CourseSettingsPanel() {
   const [isUploadingThumbnail, setIsUploadingThumbnail] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSavingAiStandards, setIsSavingAiStandards] = useState(false)
+  const [isResettingProgress, setIsResettingProgress] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
   const [aiStandardsSuccess, setAiStandardsSuccess] = useState(false)
+  const [resetProgressSuccess, setResetProgressSuccess] = useState<ResetCourseProgressResult | null>(null)
   const [aiStandards, setAiStandards] = useState({
     ideal_course_structure: '',
     required_elements: '',
@@ -45,6 +53,7 @@ export function CourseSettingsPanel() {
         thumbnail_url: courseTree.course.thumbnail_url ?? '',
         has_linear_progression: courseTree.course.has_linear_progression ?? true
       })
+      setResetProgressSuccess(null)
     }
   }, [courseTree])
 
@@ -127,6 +136,34 @@ export function CourseSettingsPanel() {
       setError(toErrorMessage(err))
     } finally {
       setIsSavingAiStandards(false)
+    }
+  }
+
+  async function handleResetCourseProgress() {
+    if (!courseTree || !session) {
+      setError('Sessao expirada. Faca login novamente.')
+      return
+    }
+
+    const shouldContinue = window.confirm(
+      `Tem certeza que deseja renovar o progresso de todos os alunos no curso "${courseTree.course.title}"? Esta acao apaga progresso das aulas, tentativas de avaliacao, pedidos de nova tentativa e o progresso geral do curso para todos os alunos.`,
+    )
+
+    if (!shouldContinue) {
+      return
+    }
+
+    setError(null)
+    setResetProgressSuccess(null)
+    setIsResettingProgress(true)
+
+    try {
+      const result = await resetCourseProgress(courseTree.course.id, session)
+      setResetProgressSuccess(result)
+    } catch (err) {
+      setError(toErrorMessage(err))
+    } finally {
+      setIsResettingProgress(false)
     }
   }
 
@@ -348,6 +385,67 @@ export function CourseSettingsPanel() {
           </div>
         </div>
       </form>
+
+      <section className="space-y-6 rounded-[32px] border border-rose-200 bg-white p-6 shadow-sm md:p-10">
+        <div className="border-b border-rose-100 pb-5">
+          <h3 className="text-2xl font-black tracking-tight text-slate-900">Renovar Progresso do Curso</h3>
+          <p className="mt-1 text-sm text-slate-500">
+            Use esta acao quando precisar reiniciar o curso para todos os alunos e liberar um novo ciclo completo de aulas e avaliacoes.
+          </p>
+        </div>
+
+        <div className="rounded-[28px] border border-rose-100 bg-rose-50/60 p-5">
+          <p className="text-[10px] font-black uppercase tracking-[0.24em] text-rose-500">O que sera apagado</p>
+          <div className="mt-4 grid gap-3 md:grid-cols-2">
+            <div className="rounded-2xl border border-white/80 bg-white px-4 py-4 text-sm font-semibold text-slate-700">Progresso das aulas do curso</div>
+            <div className="rounded-2xl border border-white/80 bg-white px-4 py-4 text-sm font-semibold text-slate-700">Tentativas e resultados das avaliacoes</div>
+            <div className="rounded-2xl border border-white/80 bg-white px-4 py-4 text-sm font-semibold text-slate-700">Pedidos e liberacoes extras de nova tentativa</div>
+            <div className="rounded-2xl border border-white/80 bg-white px-4 py-4 text-sm font-semibold text-slate-700">Progresso geral de conclusao do curso</div>
+          </div>
+        </div>
+
+        {resetProgressSuccess ? (
+          <div className="rounded-[28px] border border-emerald-100 bg-emerald-50 p-5">
+            <p className="text-[10px] font-black uppercase tracking-[0.24em] text-emerald-600">Progresso renovado</p>
+            <p className="mt-3 text-sm font-semibold text-emerald-800">
+              {resetProgressSuccess.impacted_students} aluno(s) impactado(s) no curso {resetProgressSuccess.course_title}.
+            </p>
+            <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+              <div className="rounded-2xl border border-white/80 bg-white px-4 py-3">
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Curso</p>
+                <p className="mt-2 text-xl font-black text-slate-900">{resetProgressSuccess.deleted_counts.course_progress}</p>
+              </div>
+              <div className="rounded-2xl border border-white/80 bg-white px-4 py-3">
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Aulas</p>
+                <p className="mt-2 text-xl font-black text-slate-900">{resetProgressSuccess.deleted_counts.lesson_progress}</p>
+              </div>
+              <div className="rounded-2xl border border-white/80 bg-white px-4 py-3">
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Tentativas</p>
+                <p className="mt-2 text-xl font-black text-slate-900">{resetProgressSuccess.deleted_counts.assessment_attempts}</p>
+              </div>
+              <div className="rounded-2xl border border-white/80 bg-white px-4 py-3">
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Pedidos</p>
+                <p className="mt-2 text-xl font-black text-slate-900">{resetProgressSuccess.deleted_counts.assessment_attempt_requests}</p>
+              </div>
+              <div className="rounded-2xl border border-white/80 bg-white px-4 py-3">
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Liberacoes</p>
+                <p className="mt-2 text-xl font-black text-slate-900">{resetProgressSuccess.deleted_counts.assessment_attempt_grants}</p>
+              </div>
+            </div>
+          </div>
+        ) : null}
+
+        <div className="flex justify-end border-t border-slate-100 pt-8">
+          <Button
+            type="button"
+            disabled={isResettingProgress}
+            onClick={() => void handleResetCourseProgress()}
+            className="h-14 rounded-2xl bg-rose-600 px-10 font-black shadow-xl shadow-rose-100 hover:bg-rose-700"
+          >
+            {isResettingProgress ? 'Renovando progresso...' : 'Renovar progresso de todos os alunos'}
+          </Button>
+        </div>
+      </section>
     </div>
   )
 }
