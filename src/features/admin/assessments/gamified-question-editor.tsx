@@ -809,31 +809,13 @@ export function GamifiedQuestionEditor({
         <section className="rounded-[32px] border border-slate-200 bg-white p-5 shadow-sm">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <p className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-400">Canvas interativo</p>
+              <p className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-400">Imagem base</p>
               <p className="mt-2 text-sm font-medium text-slate-600">
-                Clique na imagem para criar novas areas. O preview do aluno usa a mesma base visual.
+                Envie ou substitua a imagem usada como base visual do exercicio.
               </p>
             </div>
 
             <div className="flex items-center gap-3">
-              <div className="hidden items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 md:flex">
-                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Zoom</span>
-                {[0.75, 1, 1.5].map((preset) => (
-                  <button
-                    key={preset}
-                    type="button"
-                    className={cn(
-                      'rounded-xl px-2 py-1 text-xs font-black transition-colors',
-                      Math.abs(canvasScale - preset) < 0.01
-                        ? 'bg-cyan-600 text-white'
-                        : 'text-slate-500 hover:bg-white hover:text-cyan-700',
-                    )}
-                    onClick={() => setCanvasScale(preset)}
-                  >
-                    {Math.round(preset * 100)}%
-                  </button>
-                ))}
-              </div>
               <input
                 ref={fileInputRef}
                 type="file"
@@ -848,7 +830,7 @@ export function GamifiedQuestionEditor({
                 onClick={() => fileInputRef.current?.click()}
                 disabled={isUploadingAsset}
               >
-                {isUploadingAsset ? 'Enviando...' : 'Enviar imagem'}
+                {isUploadingAsset ? 'Enviando...' : content.asset.signed_url ? 'Trocar imagem' : 'Enviar imagem'}
               </Button>
             </div>
           </div>
@@ -857,14 +839,29 @@ export function GamifiedQuestionEditor({
             <div className="rounded-[28px] border border-slate-200 bg-slate-50/60 p-4 shadow-sm">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <p className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-400">Escala da imagem</p>
+                  <p className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-400">Area de canvas</p>
                   <p className="mt-2 text-sm font-medium text-slate-600">
-                    Ajuste apenas a visualizacao do editor para mapear melhor as areas.
+                    Clique na imagem para criar novas areas e ajuste o zoom para posicionar melhor cada hotspot.
                   </p>
                 </div>
-                <span className="rounded-full bg-white px-3 py-1 text-xs font-black text-cyan-700 shadow-sm">
-                  {canvasScalePercent}%
-                </span>
+                <div className="hidden items-center gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-2 md:flex">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Zoom</span>
+                  {[0.75, 1, 1.5].map((preset) => (
+                    <button
+                      key={preset}
+                      type="button"
+                      className={cn(
+                        'rounded-xl px-2 py-1 text-xs font-black transition-colors',
+                        Math.abs(canvasScale - preset) < 0.01
+                          ? 'bg-cyan-600 text-white'
+                          : 'text-slate-500 hover:bg-slate-50 hover:text-cyan-700',
+                      )}
+                      onClick={() => setCanvasScale(preset)}
+                    >
+                      {Math.round(preset * 100)}%
+                    </button>
+                  ))}
+                </div>
               </div>
 
               <div className="mt-4 flex items-center gap-3">
@@ -891,6 +888,9 @@ export function GamifiedQuestionEditor({
                 >
                   +
                 </button>
+                <span className="rounded-full bg-white px-3 py-1 text-xs font-black text-cyan-700 shadow-sm">
+                  {canvasScalePercent}%
+                </span>
               </div>
             </div>
 
