@@ -177,8 +177,9 @@ function buildCoverHtml(courseTitle: string, module: ModuleRow, lessons: LessonF
   `
 }
 
-function buildLessonHtml(lesson: LessonForPdf) {
+function buildLessonHtml(lesson: LessonForPdf, index: number) {
   return `
+    ${index > 0 ? '<div class="pdf-page-break" aria-hidden="true"></div>' : ''}
     <section class="pdf-lesson">
       <div class="pdf-lesson-header">
         <h2>${escapeHtml(lesson.title)}</h2>
@@ -471,6 +472,11 @@ function buildPdfStyles() {
       orphans: 3;
       widows: 3;
     }
+    .pdf-page-break {
+      height: 0;
+      page-break-before: always;
+      break-before: page;
+    }
     .pdf-cover {
       min-height: 245mm;
       display: flex;
@@ -550,10 +556,6 @@ function buildPdfStyles() {
       color: #334155;
       font-size: 11px;
       line-height: 1.7;
-    }
-    .pdf-lesson {
-      page-break-before: always;
-      break-before: page;
     }
     .pdf-lesson-header {
       margin-bottom: 18px;
@@ -754,7 +756,7 @@ export async function exportModuleToPdf(courseTitle: string, moduleTitle: string
 
   element.innerHTML = [
     buildCoverHtml(courseTitle, module, lessons, exportDate),
-    ...lessons.map((lesson) => buildLessonHtml(lesson)),
+    ...lessons.map((lesson, index) => buildLessonHtml(lesson, index)),
   ].join('')
 
   const style = buildPdfStyles()
