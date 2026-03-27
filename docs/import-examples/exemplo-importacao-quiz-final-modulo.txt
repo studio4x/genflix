@@ -1,0 +1,249 @@
+{
+  "title": "Quiz Final - Modulo de Etica e Conduta Profissional",
+  "description": "Avaliacao final do modulo para validar os conhecimentos essenciais.",
+  "passing_score": 70,
+  "max_attempts": 3,
+  "estimated_minutes": 12,
+  "questions": [
+    {
+      "question_text": "No atendimento domiciliar, quando um paciente lucido e orientado recusa um procedimento, qual e a conduta mais adequada?",
+      "question_type": "single_choice",
+      "points": 1,
+      "is_required": true,
+      "options": [
+        {
+          "option_text": "Realizar o procedimento mesmo assim, se a familia autorizar.",
+          "is_correct": false
+        },
+        {
+          "option_text": "Respeitar a recusa, orientar sobre riscos e alternativas, avaliar capacidade decisoria e registrar a situacao.",
+          "is_correct": true
+        },
+        {
+          "option_text": "Ignorar a recusa e comunicar apenas a familia.",
+          "is_correct": false
+        },
+        {
+          "option_text": "Transferir imediatamente o paciente para outro servico sem explicacao.",
+          "is_correct": false
+        }
+      ]
+    },
+    {
+      "question_text": "Qual principio bioetico esta diretamente relacionado ao respeito pela decisao do paciente sobre seu proprio cuidado?",
+      "question_type": "single_choice",
+      "points": 1,
+      "is_required": true,
+      "options": [
+        {
+          "option_text": "Beneficencia",
+          "is_correct": false
+        },
+        {
+          "option_text": "Justica",
+          "is_correct": false
+        },
+        {
+          "option_text": "Autonomia",
+          "is_correct": true
+        },
+        {
+          "option_text": "Nao maleficencia",
+          "is_correct": false
+        }
+      ]
+    },
+    {
+      "question_text": "Em relacao ao sigilo profissional no atendimento domiciliar, e correto afirmar que:",
+      "question_type": "single_choice",
+      "points": 1,
+      "is_required": true,
+      "options": [
+        {
+          "option_text": "As informacoes clinicas podem ser compartilhadas livremente com qualquer familiar presente no domicilio.",
+          "is_correct": false
+        },
+        {
+          "option_text": "O sigilo pode ser relativizado em situacoes de risco relevante, dever legal ou notificacao compulsoria.",
+          "is_correct": true
+        },
+        {
+          "option_text": "O profissional deve evitar qualquer registro escrito para proteger a privacidade do paciente.",
+          "is_correct": false
+        },
+        {
+          "option_text": "O sigilo deixa de existir quando o atendimento ocorre em casa.",
+          "is_correct": false
+        }
+      ]
+    },
+    {
+      "question_text": "Qual das alternativas abaixo representa um exemplo claro de ultrapassagem de limite profissional?",
+      "question_type": "single_choice",
+      "points": 1,
+      "is_required": true,
+      "options": [
+        {
+          "option_text": "Explicar um procedimento com linguagem simples ao paciente.",
+          "is_correct": false
+        },
+        {
+          "option_text": "Registrar uma intercorrencia e informar a equipe responsavel.",
+          "is_correct": false
+        },
+        {
+          "option_text": "Aceitar pedidos frequentes para contato pessoal fora dos canais institucionais.",
+          "is_correct": true
+        },
+        {
+          "option_text": "Confirmar se o paciente compreendeu a orientacao dada.",
+          "is_correct": false
+        }
+      ]
+    },
+    {
+      "question_text": "Ao receber da familia um pedido fora do plano de cuidados e fora do seu escopo de atuacao, o profissional deve:",
+      "question_type": "single_choice",
+      "points": 1,
+      "is_required": true,
+      "options": [
+        {
+          "option_text": "Atender ao pedido para preservar o vinculo com a familia.",
+          "is_correct": false
+        },
+        {
+          "option_text": "Recusar com agressividade para evitar novas solicitacoes.",
+          "is_correct": false
+        },
+        {
+          "option_text": "Responder com clareza e respeito, redirecionando a demanda ao canal ou profissional adequado.",
+          "is_correct": true
+        },
+        {
+          "option_text": "Assumir a tarefa temporariamente sem necessidade de registro.",
+          "is_correct": false
+        }
+      ]
+    },
+    {
+      "question_text": "Na comunicacao com pacientes neurodivergentes ou com necessidades especificas, a postura mais adequada e:",
+      "question_type": "single_choice",
+      "points": 1,
+      "is_required": true,
+      "options": [
+        {
+          "option_text": "Manter a mesma abordagem padronizada para todos, independentemente do perfil do paciente.",
+          "is_correct": false
+        },
+        {
+          "option_text": "Adaptar linguagem, ambiente e ritmo da interacao, respeitando necessidades e singularidades.",
+          "is_correct": true
+        },
+        {
+          "option_text": "Delegar toda a comunicacao a familia.",
+          "is_correct": false
+        },
+        {
+          "option_text": "Evitar explicar detalhes tecnicos para nao gerar desconforto.",
+          "is_correct": false
+        }
+      ]
+    },
+    {
+      "question_text": "Qual conduta fortalece mais diretamente a seguranca do paciente no atendimento domiciliar?",
+      "question_type": "single_choice",
+      "points": 1,
+      "is_required": true,
+      "options": [
+        {
+          "option_text": "Improvisar adaptacoes sempre que o ambiente domestico dificultar o cuidado.",
+          "is_correct": false
+        },
+        {
+          "option_text": "Registrar de forma objetiva, confirmar orientacoes e comunicar intercorrencias relevantes.",
+          "is_correct": true
+        },
+        {
+          "option_text": "Reduzir registros para ganhar tempo durante a visita.",
+          "is_correct": false
+        },
+        {
+          "option_text": "Aceitar combinacoes verbais sem validacao institucional.",
+          "is_correct": false
+        }
+      ]
+    },
+    {
+      "question_text": "Diante de conflito entre a vontade do paciente e a pressao emocional da familia, o profissional deve priorizar:",
+      "question_type": "single_choice",
+      "points": 1,
+      "is_required": true,
+      "options": [
+        {
+          "option_text": "A opiniao do familiar mais proximo, independentemente da capacidade decisoria do paciente.",
+          "is_correct": false
+        },
+        {
+          "option_text": "A decisao do paciente, quando houver capacidade decisoria, associada a orientacao, registro e articulacao com a equipe.",
+          "is_correct": true
+        },
+        {
+          "option_text": "A solucao mais rapida para evitar desgaste relacional.",
+          "is_correct": false
+        },
+        {
+          "option_text": "A interrupcao do atendimento sempre que houver discordancia.",
+          "is_correct": false
+        }
+      ]
+    },
+    {
+      "question_text": "Qual alternativa expressa corretamente o papel da educacao permanente no home care?",
+      "question_type": "single_choice",
+      "points": 1,
+      "is_required": true,
+      "options": [
+        {
+          "option_text": "E complementar, mas nao influencia a qualidade etica da assistencia.",
+          "is_correct": false
+        },
+        {
+          "option_text": "E parte da responsabilidade profissional, pois permite revisar praticas, discutir casos e melhorar continuamente o cuidado.",
+          "is_correct": true
+        },
+        {
+          "option_text": "Serve apenas para atualizacao tecnica, sem relacao com comunicacao ou etica.",
+          "is_correct": false
+        },
+        {
+          "option_text": "Substitui a necessidade de supervisao e apoio institucional.",
+          "is_correct": false
+        }
+      ]
+    },
+    {
+      "question_text": "Ao final do modulo, um plano de acao etico para a pratica domiciliar deve incluir principalmente:",
+      "question_type": "single_choice",
+      "points": 1,
+      "is_required": true,
+      "options": [
+        {
+          "option_text": "Disponibilidade irrestrita para atender qualquer solicitacao do paciente e da familia.",
+          "is_correct": false
+        },
+        {
+          "option_text": "Metas praticas relacionadas a autonomia do paciente, sigilo, limites profissionais, seguranca do cuidado e desenvolvimento continuo.",
+          "is_correct": true
+        },
+        {
+          "option_text": "Apenas objetivos de produtividade e reducao do tempo de visita.",
+          "is_correct": false
+        },
+        {
+          "option_text": "Foco exclusivo em evitar conflitos, mesmo com prejuizo tecnico.",
+          "is_correct": false
+        }
+      ]
+    }
+  ]
+}
