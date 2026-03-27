@@ -1234,13 +1234,14 @@ export function GamifiedQuestionEditor({
     }
 
     function addPromptItem() {
+      const nextIndex = items.length + 1
       const nextItem: FillBlankBuilderItem = {
         blankId: crypto.randomUUID(),
         tokenId: crypto.randomUUID(),
         beforeText: '',
         afterText: '',
-        placeholder: '',
-        answerText: '',
+        placeholder: `lacuna ${nextIndex}`,
+        answerText: `Resposta ${nextIndex}`,
       }
       const nextItems = [...items, nextItem]
       setOpenFillBlankId(nextItem.blankId)
