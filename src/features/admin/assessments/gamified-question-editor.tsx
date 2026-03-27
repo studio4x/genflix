@@ -406,7 +406,7 @@ export function GamifiedQuestionEditor({
   const [isAssetMetadataOpen, setIsAssetMetadataOpen] = useState(false)
   const [isAdvancedAnswerToolsOpen, setIsAdvancedAnswerToolsOpen] = useState(false)
   const [isTargetsModalOpen, setIsTargetsModalOpen] = useState(false)
-  const [openFillBlankId, setOpenFillBlankId] = useState<string | null>(null)
+  const [openFillBlankId, setOpenFillBlankId] = useState<string | null | undefined>(undefined)
 
   const interactionContent = useMemo(() => {
     if (question.interaction?.content) {
@@ -1268,9 +1268,11 @@ export function GamifiedQuestionEditor({
 
   function renderFillInTheBlanksEditor(content: FillInTheBlanksInteractionContent) {
     const groups = buildFillBlankEditorGroups(content, answerKeyPayload)
-    const expandedGroupId = groups.some((group) => group.id === openFillBlankId)
-      ? openFillBlankId
-      : groups[0]?.id ?? null
+    const expandedGroupId = openFillBlankId === undefined
+      ? groups[0]?.id ?? null
+      : groups.some((group) => group.id === openFillBlankId)
+        ? openFillBlankId
+        : groups[0]?.id ?? null
 
     function updateGroupsDraft(nextGroups: FillBlankEditorGroup[]) {
       const nextBundle = buildFillBlankBundle(content.instruction, nextGroups)
