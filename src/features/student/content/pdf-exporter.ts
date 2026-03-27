@@ -509,10 +509,7 @@ export async function exportModuleToPdf(courseTitle: string, moduleTitle: string
   const exportDate = formatDate(new Date())
   const element = document.createElement('div')
   element.className = 'pdf-export-container'
-  element.style.position = 'fixed'
-  element.style.left = '-20000px'
-  element.style.top = '0'
-  element.style.zIndex = '-1'
+  element.style.width = '186mm'
 
   element.innerHTML = [
     buildCoverHtml(courseTitle, module, lessons, exportDate),
@@ -521,7 +518,6 @@ export async function exportModuleToPdf(courseTitle: string, moduleTitle: string
 
   const style = buildPdfStyles()
   element.appendChild(style)
-  document.body.appendChild(element)
 
   element.querySelectorAll<HTMLElement>('.pdf-content').forEach(attachTableWrappers)
 
@@ -555,7 +551,5 @@ export async function exportModuleToPdf(courseTitle: string, moduleTitle: string
   } catch (error) {
     console.error('Erro ao gerar PDF:', error)
     throw error
-  } finally {
-    document.body.removeChild(element)
   }
 }
