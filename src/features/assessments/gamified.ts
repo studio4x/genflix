@@ -10,7 +10,7 @@ import type {
 
 export const assessmentInteractionTokenSchema = z.object({
   id: z.string().trim().min(1, 'Identificador do item invalido.'),
-  label: z.string().trim().min(1, 'Rotulo do item obrigatorio.'),
+  label: z.string().max(160, 'Rotulo do item invalido.'),
 })
 
 export const assessmentInteractionAssetSchema = z.object({
@@ -101,7 +101,7 @@ export function createDefaultInteractionContent(questionType: AssessmentQuestion
         height: 800,
       },
       tokens: [
-        { id: crypto.randomUUID(), label: 'Rótulo 1' },
+        { id: crypto.randomUUID(), label: '' },
       ],
       targets: [
         { id: crypto.randomUUID(), x: 20, y: 20, w: 18, h: 10, label: 'Área 1' },
@@ -202,6 +202,10 @@ export function validateInteractionBundle(
 
   if (tokenIds.size === 0) {
     throw new Error('A interacao precisa ter ao menos um item no banco.')
+  }
+
+  if (parsedContent.data.tokens.some((token) => token.label.trim().length === 0)) {
+    throw new Error('Preencha o texto de todos os itens do banco de respostas.')
   }
 
   if (

@@ -124,7 +124,7 @@ function normalizeInteractionContent(
   const tokenById = new Map(content.tokens.map((token) => [token.id, token]))
   const usedTokenIds = new Set<string>()
 
-  const normalizedTokens = content.targets.map((target, index) => {
+  const normalizedTokens = content.targets.map((target) => {
     const mappedTokenId = current?.entries.find((entry) => entry.slot_id === target.id)?.token_id
     if (mappedTokenId) {
       const mappedToken = tokenById.get(mappedTokenId)
@@ -132,7 +132,7 @@ function normalizeInteractionContent(
         usedTokenIds.add(mappedToken.id)
         return {
           ...mappedToken,
-          label: mappedToken.label.trim() || `Rotulo ${index + 1}`,
+          label: mappedToken.label,
         }
       }
     }
@@ -142,13 +142,13 @@ function normalizeInteractionContent(
       usedTokenIds.add(fallbackToken.id)
       return {
         ...fallbackToken,
-        label: fallbackToken.label.trim() || `Rotulo ${index + 1}`,
+        label: fallbackToken.label,
       }
     }
 
     const nextToken = {
       id: crypto.randomUUID(),
-      label: `Rotulo ${index + 1}`,
+      label: '',
     }
     usedTokenIds.add(nextToken.id)
     return nextToken
@@ -451,7 +451,7 @@ export function GamifiedQuestionEditor({
                   })
                 }}
                 onKeyDown={(event) => event.stopPropagation()}
-                placeholder="Resposta correta exibida ao aluno. Pode ter mais de uma palavra."
+                placeholder={activeInteraction.kind === 'drag_drop_labeling' ? `Rotulo ${index + 1}` : 'Resposta correta exibida ao aluno. Pode ter mais de uma palavra.'}
               />
             </div>
           ))}
@@ -714,8 +714,10 @@ export function GamifiedQuestionEditor({
                       onChange={(event) => updateSlotAnswer(target.id, event.target.value)}
                     >
                       <option value="" disabled>Selecione um item</option>
-                      {content.tokens.map((token) => (
-                        <option key={token.id} value={token.id}>{token.label}</option>
+                      {content.tokens.map((token, tokenIndex) => (
+                        <option key={token.id} value={token.id}>
+                          {token.label.trim() || `Rotulo ${tokenIndex + 1}`}
+                        </option>
                       ))}
                     </select>
                   </label>
@@ -1144,8 +1146,10 @@ export function GamifiedQuestionEditor({
                         onChange={(event) => updateSlotAnswer(segment.id, event.target.value)}
                       >
                         <option value="" disabled>Selecione um item</option>
-                        {content.tokens.map((token) => (
-                          <option key={token.id} value={token.id}>{token.label}</option>
+                        {content.tokens.map((token, tokenIndex) => (
+                          <option key={token.id} value={token.id}>
+                            {token.label.trim() || `Resposta ${tokenIndex + 1}`}
+                          </option>
                         ))}
                       </select>
                     </label>
