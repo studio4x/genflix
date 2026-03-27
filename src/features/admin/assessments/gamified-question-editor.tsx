@@ -68,6 +68,22 @@ function syncAnswerKeyWithContent(
   current: AssessmentQuestionAnswerKeyPayload | null | undefined,
 ) {
   const normalizedContent = normalizeInteractionContent(content, current)
+  if (normalizedContent.kind === 'fill_in_the_blanks' && normalizedContent.editor_groups?.length) {
+    const slotIds = new Set(getInteractionSlotIds(normalizedContent))
+    const tokenIds = new Set(normalizedContent.tokens.map((token) => token.id))
+
+    return {
+      entries: normalizedContent.editor_groups.flatMap((group) =>
+        group.blanks
+          .filter((blank) => slotIds.has(blank.blank_id) && tokenIds.has(blank.token_id))
+          .map((blank) => ({
+            slot_id: blank.blank_id,
+            token_id: blank.token_id,
+          })),
+      ),
+    } satisfies AssessmentQuestionAnswerKeyPayload
+  }
+
   const slotIds = getInteractionSlotIds(normalizedContent)
   const tokenIds = normalizedContent.tokens.map((token) => token.id)
   const preservedEntries: AssessmentQuestionAnswerKeyPayload['entries'] = []
@@ -228,6 +244,10 @@ function buildFillBlankEditorGroups(
           placeholder: blank.placeholder ?? '',
         }
       }),
+      extra_tokens: (group.extra_tokens ?? []).map((token) => ({
+        id: token.id,
+        label: tokenById.get(token.id)?.label ?? token.label ?? '',
+      })),
     })) satisfies FillBlankEditorGroup[]
   }
 
@@ -236,9 +256,11 @@ function buildFillBlankEditorGroups(
     id: crypto.randomUUID(),
     leading_text: '',
     blanks: [],
+    extra_tokens: [],
   }
 
   let pendingText = ''
+  const usedTokenIds = new Set<string>()
 
   for (const segment of content.segments) {
     if (segment.type === 'text') {
@@ -257,6 +279,7 @@ function buildFillBlankEditorGroups(
     const tokenId = tokenIdBySlot.get(segment.id)
       ?? content.tokens[currentGroup.blanks.length]?.id
       ?? crypto.randomUUID()
+    usedTokenIds.add(tokenId)
 
     currentGroup.blanks.push({
       blank_id: segment.id,
@@ -269,6 +292,7 @@ function buildFillBlankEditorGroups(
 
   if (currentGroup.blanks.length > 0) {
     currentGroup.blanks[currentGroup.blanks.length - 1]!.trailing_text = pendingText
+    currentGroup.extra_tokens = content.tokens.filter((token) => !usedTokenIds.has(token.id))
     fallbackGroups.push(currentGroup)
   }
 
@@ -288,6 +312,7 @@ function buildFillBlankEditorGroups(
           trailing_text: '',
         },
       ],
+      extra_tokens: [],
     })
   }
 
@@ -332,6 +357,17 @@ function buildFillBlankBundle(
         })
       }
     })
+
+    for (const extraToken of group.extra_tokens ?? []) {
+      if (!extraToken.label.trim()) {
+        continue
+      }
+
+      tokens.push({
+        id: extraToken.id,
+        label: extraToken.label,
+      })
+    }
 
     if (groupIndex < groups.length - 1) {
       segments.push({
@@ -1328,6 +1364,51 @@ export function GamifiedQuestionEditor({
       void commitGroups(nextGroups)
     }
 
+    function addExtraToken(groupId: string) {
+      const nextGroups = patchGroups(groupId, (currentGroup) => ({
+        ...currentGroup,
+        extra_tokens: [
+          ...(currentGroup.extra_tokens ?? []),
+          {
+            id: crypto.randomUUID(),
+            label: '',
+          },
+        ],
+      }))
+
+      setOpenFillBlankId(groupId)
+      void commitGroups(nextGroups)
+    }
+
+    function updateExtraToken(groupId: string, tokenId: string, label: string) {
+      updateGroupsDraft(patchGroups(groupId, (currentGroup) => ({
+        ...currentGroup,
+        extra_tokens: (currentGroup.extra_tokens ?? []).map((token) => (
+          token.id === tokenId
+            ? { ...token, label }
+            : token
+        )),
+      })))
+    }
+
+    function commitExtraToken(groupId: string, tokenId: string, label: string) {
+      void commitGroups(patchGroups(groupId, (currentGroup) => ({
+        ...currentGroup,
+        extra_tokens: (currentGroup.extra_tokens ?? []).map((token) => (
+          token.id === tokenId
+            ? { ...token, label }
+            : token
+        )),
+      })))
+    }
+
+    function removeExtraToken(groupId: string, tokenId: string) {
+      void commitGroups(patchGroups(groupId, (currentGroup) => ({
+        ...currentGroup,
+        extra_tokens: (currentGroup.extra_tokens ?? []).filter((token) => token.id !== tokenId),
+      })))
+    }
+
     function removeBlank(groupId: string, blankId: string) {
       const group = groups.find((item) => item.id === groupId)
       if (!group) return
@@ -1491,6 +1572,58 @@ export function GamifiedQuestionEditor({
                     >
                       Adicionar lacuna nesta pergunta
                     </Button>
+
+                    <div className="rounded-[24px] border border-slate-200 bg-slate-50/70 p-5">
+                      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                        <div>
+                          <p className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-400">Alternativas do banco</p>
+                          <p className="mt-2 text-sm font-medium text-slate-600">
+                            Adicione palavras extras para aparecerem no banco do aluno como distratores.
+                          </p>
+                        </div>
+
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="rounded-2xl border-slate-200 bg-white text-slate-700 hover:bg-slate-100"
+                          onClick={() => addExtraToken(group.id)}
+                        >
+                          Adicionar alternativa
+                        </Button>
+                      </div>
+
+                      {(group.extra_tokens ?? []).length > 0 ? (
+                        <div className="mt-4 space-y-3">
+                          {(group.extra_tokens ?? []).map((token, tokenIndex) => (
+                            <div key={token.id} className="flex items-center gap-3 rounded-2xl border border-white bg-white p-3 shadow-sm">
+                              <span className="rounded-full bg-slate-100 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-slate-500">
+                                Alternativa {tokenIndex + 1}
+                              </span>
+                              <input
+                                className="flex-1 rounded-2xl border border-slate-200 bg-slate-50/70 px-4 py-3 text-sm font-semibold text-slate-700 focus:border-teal-300 focus:ring-4 focus:ring-teal-100"
+                                value={token.label}
+                                onChange={(event) => updateExtraToken(group.id, token.id, event.target.value)}
+                                onBlur={(event) => commitExtraToken(group.id, token.id, event.currentTarget.value)}
+                                placeholder="Ex.: azul, verde, anatomia..."
+                              />
+                              <button
+                                type="button"
+                                className="rounded-xl p-2 text-slate-300 transition-colors hover:bg-rose-50 hover:text-rose-500"
+                                onClick={() => removeExtraToken(group.id, token.id)}
+                              >
+                                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="mt-4 text-sm font-medium text-slate-500">
+                          Nenhuma alternativa extra cadastrada nesta pergunta.
+                        </p>
+                      )}
+                    </div>
 
                     <div className="rounded-[24px] border border-teal-100 bg-teal-50/60 p-5">
                       <p className="text-[10px] font-black uppercase tracking-[0.25em] text-teal-700">Preview da pergunta</p>

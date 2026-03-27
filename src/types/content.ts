@@ -62,6 +62,7 @@ export interface FillInTheBlanksEditorGroup {
   id: string
   leading_text: string
   blanks: FillInTheBlanksEditorBlank[]
+  extra_tokens?: AssessmentInteractionToken[] | null
 }
 
 export interface FillInTheBlanksInteractionContent {

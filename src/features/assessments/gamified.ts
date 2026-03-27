@@ -65,6 +65,7 @@ export const fillInTheBlanksInteractionContentSchema = z.object({
       answer_text: z.string(),
       trailing_text: z.string(),
     })).min(1, 'Adicione ao menos uma lacuna na pergunta.'),
+    extra_tokens: z.array(assessmentInteractionTokenSchema).optional().nullable(),
   })).optional().nullable(),
 })
 
@@ -147,6 +148,7 @@ export function createDefaultInteractionContent(questionType: AssessmentQuestion
               trailing_text: ' texto final.',
             },
           ],
+          extra_tokens: [],
         },
       ],
     }
@@ -168,6 +170,17 @@ export function createAnswerKeyFromInteraction(
         slot_id: target.id,
         token_id: content.tokens[index]?.id ?? content.tokens[0]?.id ?? '',
       })),
+    }
+  }
+
+  if (content.kind === 'fill_in_the_blanks' && content.editor_groups?.length) {
+    return {
+      entries: content.editor_groups.flatMap((group) =>
+        group.blanks.map((blank) => ({
+          slot_id: blank.blank_id,
+          token_id: blank.token_id,
+        })),
+      ),
     }
   }
 
