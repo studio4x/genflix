@@ -1182,16 +1182,16 @@ export function AssessmentBuilderPanel() {
             </p>
           </div>
           <div className="rounded-2xl border border-white/70 bg-white px-5 py-4 shadow-sm">
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Pontos Necessários</p>
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Nota Minima Para Aprovar</p>
             <p className="mt-2 text-3xl font-black text-blue-700">{requiredPoints}</p>
             <p className="mt-2 text-xs font-medium leading-relaxed text-slate-500">
               De um total de {formatPoints(totalPossiblePoints)} ponto(s) no quiz, o aluno precisa somar pelo menos {formatPoints(requiredPoints)}.
             </p>
           </div>
           <div className="rounded-2xl border border-white/70 bg-white px-5 py-4 shadow-sm">
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Regra Exibida ao Aluno</p>
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Como a Aprovacao Funciona</p>
             <p className="mt-2 text-sm font-medium leading-relaxed text-slate-600">
-              A aprovacao e pela nota total do quiz, nao pela quantidade de perguntas acertadas. Aqui, o aluno precisa atingir {formatPoints(requiredPoints)} de {formatPoints(totalPossiblePoints)} ponto(s), o que equivale a {assessmentDraft.passing_score}% de aproveitamento.
+              O quiz vale {formatPoints(totalPossiblePoints)} ponto(s) no total. Para ser aprovado, o aluno precisa somar pelo menos {formatPoints(requiredPoints)} ponto(s), que correspondem a {assessmentDraft.passing_score}% da nota maxima.
             </p>
           </div>
         </div>
@@ -1199,7 +1199,7 @@ export function AssessmentBuilderPanel() {
         <div className="rounded-3xl border border-cyan-100 bg-cyan-50/60 px-6 py-5">
           <p className="text-[10px] font-black uppercase tracking-[0.2em] text-cyan-700">Leitura Rapida da Regra</p>
           <p className="mt-3 text-sm font-medium leading-relaxed text-cyan-950">
-            A aprovacao sempre considera a nota total do quiz. Nao importa apenas quantas perguntas o aluno acertou: importa quantos pontos ele somou no conjunto. Neste quiz, a nota maxima e {formatPoints(totalPossiblePoints)} ponto(s) e a nota minima para aprovar e {formatPoints(requiredPoints)} ponto(s).
+            A aprovacao sempre considera a soma dos pontos do quiz inteiro. Em outras palavras: o aluno nao precisa acertar um numero fixo de perguntas, ele precisa atingir a nota minima definida para o total da avaliacao. Neste quiz, a nota maxima e {formatPoints(totalPossiblePoints)} ponto(s) e a nota minima para aprovar e {formatPoints(requiredPoints)} ponto(s).
           </p>
         </div>
 
