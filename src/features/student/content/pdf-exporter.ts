@@ -561,8 +561,6 @@ function buildPdfStyles() {
       margin-bottom: 18px;
       padding: 0 0 14px 0;
       border-bottom: 2px solid #e2e8f0;
-      break-inside: avoid;
-      page-break-inside: avoid;
     }
     .pdf-lesson-header h2 {
       margin: 0;
@@ -595,8 +593,6 @@ function buildPdfStyles() {
       font-size: 11px;
       line-height: 1.7;
       color: #334155;
-      break-inside: avoid;
-      page-break-inside: avoid;
     }
     .pdf-lesson-materials strong {
       display: block;
@@ -638,14 +634,7 @@ function buildPdfStyles() {
     }
     .pdf-content img,
     .pdf-content figure,
-    .pdf-content blockquote,
-    .pdf-content pre,
-    .pdf-content .ql-code-block-container,
-    .pdf-content .ql-video,
-    .pdf-content h1,
-    .pdf-content h2,
-    .pdf-content h3,
-    .pdf-content h4 {
+    .pdf-content .ql-video {
       break-inside: avoid;
       page-break-inside: avoid;
     }
@@ -778,7 +767,7 @@ export async function exportModuleToPdf(courseTitle: string, moduleTitle: string
     jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
     pagebreak: {
       mode: ['css', 'legacy'],
-      avoid: '.pdf-table-block, table, tr, td, th, .pdf-lesson-header, .pdf-lesson-materials, h1, h2, h3, h4, ul, ol, blockquote, pre',
+      avoid: '.pdf-table-block, table, tr, td, th, img, figure, .ql-video',
     },
   }
 
