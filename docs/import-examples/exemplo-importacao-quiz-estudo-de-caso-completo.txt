@@ -1,0 +1,125 @@
+{
+  "title": "Quiz Final - Estudo de Caso Integrado",
+  "description": "Exemplo de quiz composto integralmente por um estudo de caso, mesclando perguntas de alternativa e perguntas discursivas com correcao por IA.",
+  "passing_score": 70,
+  "max_attempts": 3,
+  "estimated_minutes": 18,
+  "case_studies": [
+    {
+      "title": "Estudo de Caso - Descompensacao no Atendimento Domiciliar",
+      "case_text": "Durante um atendimento domiciliar no periodo da tarde, a tecnica de enfermagem observa que a paciente de 78 anos, com historico de insuficiencia cardiaca e diabetes, apresenta cansaco acima do habitual, edema em membros inferiores, menor aceitacao alimentar e dificuldade para completar frases longas. A filha informa que nas ultimas 24 horas a paciente ficou mais sonolenta, urinou menos e recusou parte das medicacoes por nauseas. O ambiente esta organizado, mas a familia demonstra inseguranca sobre quando acionar a equipe responsavel e quais sinais realmente indicam piora clinica.",
+      "questions": [
+        {
+          "question_text": "Qual deve ser a primeira conduta da profissional ao identificar a mudanca no quadro da paciente?",
+          "question_type": "case_study_single_choice",
+          "points": 1,
+          "is_required": true,
+          "options": [
+            {
+              "option_text": "Aguardar algumas horas para verificar se a paciente melhora espontaneamente antes de registrar qualquer informacao.",
+              "is_correct": false
+            },
+            {
+              "option_text": "Avaliar os sinais observados, registrar objetivamente a intercorrencia e acionar o fluxo assistencial previsto pela equipe.",
+              "is_correct": true
+            },
+            {
+              "option_text": "Orientar a familia a buscar informacoes na internet e decidir sozinha se deve ligar para o medico.",
+              "is_correct": false
+            },
+            {
+              "option_text": "Suspender medicacoes por conta propria ate a paciente voltar ao estado habitual.",
+              "is_correct": false
+            }
+          ]
+        },
+        {
+          "question_text": "Qual aspecto do relato familiar reforca mais diretamente a necessidade de escalonamento rapido para a equipe responsavel?",
+          "question_type": "case_study_single_choice",
+          "points": 1,
+          "is_required": true,
+          "options": [
+            {
+              "option_text": "A casa estar organizada para o atendimento.",
+              "is_correct": false
+            },
+            {
+              "option_text": "A paciente ter recusado parte da alimentacao em apenas uma refeicao isolada.",
+              "is_correct": false
+            },
+            {
+              "option_text": "A associacao entre sonolencia aumentada, menor diurese, cansaco e dificuldade para falar frases longas.",
+              "is_correct": true
+            },
+            {
+              "option_text": "A familia se sentir insegura para lidar com a rotina do cuidado.",
+              "is_correct": false
+            }
+          ]
+        },
+        {
+          "question_text": "Descreva como voce comunicaria a situacao para a familia naquele momento, de forma tecnica e acolhedora.",
+          "question_type": "case_study_ai",
+          "points": 1,
+          "is_required": true,
+          "essay_expected_answer": "A resposta deve mencionar comunicacao calma e clara, explicacao objetiva dos sinais de alerta observados, orientacao sobre proximos passos, reforco de seguranca para a familia e evitacao de alarmismo desnecessario."
+        },
+        {
+          "question_text": "Ao registrar essa intercorrencia, qual alternativa representa a melhor pratica profissional?",
+          "question_type": "case_study_single_choice",
+          "points": 1,
+          "is_required": true,
+          "options": [
+            {
+              "option_text": "Registrar apenas que a paciente estava mal, sem detalhar observacoes para ganhar tempo.",
+              "is_correct": false
+            },
+            {
+              "option_text": "Descrever os sinais observados, horario, relato da familia, condutas adotadas e acionamentos realizados.",
+              "is_correct": true
+            },
+            {
+              "option_text": "Anotar somente depois que a equipe medica der um parecer definitivo.",
+              "is_correct": false
+            },
+            {
+              "option_text": "Evitar o registro formal para preservar a privacidade da paciente.",
+              "is_correct": false
+            }
+          ]
+        },
+        {
+          "question_text": "Explique quais sinais do caso sugerem risco de agravamento e por que eles merecem monitoramento imediato.",
+          "question_type": "case_study_ai",
+          "points": 1,
+          "is_required": true,
+          "essay_expected_answer": "A resposta deve citar cansaco aumentado, edema, menor aceitacao alimentar, sonolencia, menor diurese, nausea com recusa medicamentosa e dificuldade para completar frases, relacionando esses achados a possivel descompensacao clinica e necessidade de avaliacao rapida."
+        },
+        {
+          "question_text": "Qual orientacao abaixo e a mais adequada para alinhar a participacao da familia apos o acionamento da equipe?",
+          "question_type": "case_study_single_choice",
+          "points": 1,
+          "is_required": true,
+          "options": [
+            {
+              "option_text": "Pedir que a familia observe a paciente e evite novo contato para nao sobrecarregar a equipe.",
+              "is_correct": false
+            },
+            {
+              "option_text": "Orientar a familia sobre sinais de alerta, reforcar quando comunicar piora e manter os registros e combinados do plano de cuidado.",
+              "is_correct": true
+            },
+            {
+              "option_text": "Delegar integralmente a decisao clinica a um unico familiar, sem compartilhar informacoes com os demais responsaveis.",
+              "is_correct": false
+            },
+            {
+              "option_text": "Sugerir mudancas nas medicacoes conforme a percepcao da familia sobre os sintomas.",
+              "is_correct": false
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
