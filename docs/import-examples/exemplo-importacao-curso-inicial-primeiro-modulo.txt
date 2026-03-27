@@ -1,0 +1,88 @@
+{
+  "title": "Curso de Etica e Conduta Profissional no Atendimento Domiciliar",
+  "description": "Curso introdutorio com foco em postura profissional, comunicacao e seguranca no atendimento home care.",
+  "workload_minutes": 120,
+  "status": "draft",
+  "modules": [
+    {
+      "title": "Modulo 1 - Fundamentos da Etica no Atendimento Domiciliar",
+      "description": "Apresenta os principios essenciais da etica, da autonomia do paciente e dos limites profissionais no ambiente domiciliar.",
+      "lessons": [
+        {
+          "title": "Aula 1.1 - Introducao a Etica Profissional",
+          "description": "Conceitos iniciais sobre etica, conduta e responsabilidade no atendimento domiciliar.",
+          "lesson_type": "video",
+          "youtube_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+          "estimated_minutes": 12
+        },
+        {
+          "title": "Aula 1.2 - Autonomia, Sigilo e Limites",
+          "description": "Entenda como respeitar o paciente, proteger informacoes e manter limites profissionais saudaveis.",
+          "lesson_type": "text",
+          "text_content": "<h2>Autonomia e sigilo</h2><p>O atendimento domiciliar exige respeito a decisao do paciente, postura profissional e registro adequado das orientacoes prestadas.</p><p>O profissional deve comunicar riscos, acolher duvidas e seguir os fluxos institucionais sem ultrapassar seu escopo de atuacao.</p>",
+          "estimated_minutes": 15
+        }
+      ],
+      "assessments": [
+        {
+          "title": "Quiz de Fixacao - Modulo 1",
+          "description": "Verifique a compreensao dos conceitos introdutorios do primeiro modulo.",
+          "assessment_type": "module",
+          "passing_score": 70,
+          "max_attempts": 3,
+          "estimated_minutes": 10,
+          "questions": [
+            {
+              "question_text": "Qual principio bioetico esta relacionado ao respeito pela decisao do paciente sobre seu proprio cuidado?",
+              "question_type": "single_choice",
+              "points": 1,
+              "is_required": true,
+              "options": [
+                {
+                  "option_text": "Beneficencia",
+                  "is_correct": false
+                },
+                {
+                  "option_text": "Justica",
+                  "is_correct": false
+                },
+                {
+                  "option_text": "Autonomia",
+                  "is_correct": true
+                },
+                {
+                  "option_text": "Nao maleficencia",
+                  "is_correct": false
+                }
+              ]
+            },
+            {
+              "question_text": "Em relacao ao sigilo profissional no atendimento domiciliar, e correto afirmar que:",
+              "question_type": "single_choice",
+              "points": 1,
+              "is_required": true,
+              "options": [
+                {
+                  "option_text": "As informacoes clinicas podem ser compartilhadas livremente com qualquer familiar presente no domicilio.",
+                  "is_correct": false
+                },
+                {
+                  "option_text": "O sigilo pode ser relativizado em situacoes de risco relevante, dever legal ou notificacao compulsoria.",
+                  "is_correct": true
+                },
+                {
+                  "option_text": "O profissional deve evitar qualquer registro escrito para proteger a privacidade do paciente.",
+                  "is_correct": false
+                },
+                {
+                  "option_text": "O sigilo deixa de existir quando o atendimento ocorre em casa.",
+                  "is_correct": false
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
