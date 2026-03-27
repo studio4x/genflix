@@ -80,23 +80,23 @@ function DragDropLabelingView({
   }
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[minmax(0,1.4fr)_320px]">
+    <div className="grid gap-6 2xl:grid-cols-[minmax(0,2.1fr)_340px]">
       <div className="overflow-hidden rounded-[36px] border border-slate-200 bg-[#fcfdff] shadow-inner">
         <div className="border-b border-slate-200 bg-white/80 px-6 py-4">
           <p className="text-[10px] font-black uppercase tracking-[0.28em] text-cyan-700">Arrastar e Soltar</p>
           <p className="mt-2 text-sm font-semibold text-slate-600">{content.instruction}</p>
         </div>
 
-        <div className="p-4 sm:p-6">
+        <div className="p-4 sm:p-6 lg:p-8">
           <div
-            className="relative overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-lg"
+            className="relative mx-auto overflow-hidden rounded-[32px] border border-slate-200 bg-white shadow-lg 2xl:mx-0"
             style={{ aspectRatio: `${content.asset.width} / ${content.asset.height}` }}
           >
             {stageUrl ? (
               <img
                 src={stageUrl}
                 alt={content.asset.alt}
-                className="h-full w-full object-cover"
+                className="h-full w-full object-contain"
                 draggable={false}
               />
             ) : (
@@ -137,7 +137,6 @@ function DragDropLabelingView({
                     top: `${target.y}%`,
                     width: `${target.w}%`,
                     height: `${target.h}%`,
-                    transform: 'translate(-50%, -50%)',
                   }}
                 >
                   <span className="line-clamp-2">
@@ -150,7 +149,7 @@ function DragDropLabelingView({
         </div>
       </div>
 
-      <div className="rounded-[32px] border border-slate-200 bg-white p-5 shadow-xl shadow-slate-200/30">
+      <div className="rounded-[32px] border border-slate-200 bg-white p-5 shadow-xl shadow-slate-200/30 2xl:sticky 2xl:top-6">
         <div className="flex items-center justify-between gap-3">
           <div>
             <p className="text-[10px] font-black uppercase tracking-[0.28em] text-slate-400">Banco de Itens</p>
@@ -256,7 +255,7 @@ function FillInTheBlanksView({
         <p className="mt-2 text-sm font-semibold text-slate-600">{content.instruction}</p>
       </div>
 
-      <div className="grid gap-6 p-6 lg:grid-cols-[minmax(0,1.5fr)_300px]">
+      <div className="grid gap-6 p-6 xl:grid-cols-[minmax(0,1.75fr)_320px]">
         <div className="rounded-[30px] border border-slate-200 bg-[#fcfdff] px-6 py-6 text-lg leading-[2.2] text-slate-800">
           {content.segments.map((segment, index) => {
             if (segment.type === 'text') {

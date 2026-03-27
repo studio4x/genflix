@@ -977,7 +977,7 @@ export function StudentAssessmentExecutionPage() {
   }
 
   return (
-    <div className="mx-auto max-w-5xl animate-in fade-in space-y-8 p-4 pb-32 duration-500 sm:p-8">
+    <div className="mx-auto max-w-[1440px] animate-in fade-in space-y-8 p-4 pb-32 duration-500 sm:p-8">
       <header className="space-y-6">
         <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
           <div className="space-y-2">
@@ -1020,7 +1020,7 @@ export function StudentAssessmentExecutionPage() {
       <main className="space-y-8">
         {currentItem?.type === 'case_study' ? (
           <article className="overflow-hidden rounded-[48px] border border-slate-200 bg-white shadow-2xl shadow-slate-200/50">
-            <div className="p-8 sm:p-14">
+            <div className="p-8 sm:p-14 xl:p-16">
               <div className="space-y-10">
                 <div className="space-y-6">
                   <span className="inline-block rounded-2xl border border-amber-200 bg-amber-50 px-4 py-2 text-xs font-black uppercase tracking-widest text-amber-700">
@@ -1061,7 +1061,7 @@ export function StudentAssessmentExecutionPage() {
           </article>
         ) : currentQuestion ? (
           <article className="overflow-hidden rounded-[48px] border border-slate-200 bg-white shadow-2xl shadow-slate-200/50">
-            <div className="p-8 sm:p-14">
+            <div className="p-8 sm:p-14 xl:p-16">
               <div className="space-y-10">
                 <div className="space-y-6">
                   <span className="inline-block rounded-2xl border border-slate-200 bg-slate-100 px-4 py-2 text-xs font-black uppercase tracking-widest text-slate-500">

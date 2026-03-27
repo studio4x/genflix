@@ -207,7 +207,7 @@ export function StudentLessonPage() {
   }
 
   return (
-    <div className="mx-auto max-w-5xl animate-in fade-in space-y-8 p-4 pb-32 duration-500 sm:p-8">
+    <div className="mx-auto max-w-[1440px] animate-in fade-in space-y-8 p-4 pb-32 duration-500 sm:p-8">
       <div className="space-y-4 border-b border-slate-100 pb-8 pt-4">
         <div className="mb-2 flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap items-center gap-3">
@@ -239,7 +239,7 @@ export function StudentLessonPage() {
         </h1>
 
         {(activeLessonDetails?.description || currentLesson.description) && (
-          <div className="max-w-3xl text-lg font-medium leading-relaxed text-slate-500">
+          <div className="max-w-5xl text-lg font-medium leading-relaxed text-slate-500">
             {activeLessonDetails?.description || currentLesson.description}
           </div>
         )}
@@ -263,7 +263,7 @@ export function StudentLessonPage() {
           <LessonAudioPlayer lessonId={currentLesson.id} />
 
           <div className="w-full animate-in slide-in-from-bottom-4 overflow-hidden rounded-[40px] border border-slate-100 bg-white shadow-sm duration-700">
-            <div className="p-8 sm:p-12">
+            <div className="p-8 sm:p-12 xl:p-16">
               <ContentBlocksRenderer
                 blocks={splitContent(textContent)}
                 className="lesson-content-html min-h-[100px]"
