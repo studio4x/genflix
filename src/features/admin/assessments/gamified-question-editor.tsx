@@ -215,6 +215,7 @@ export function GamifiedQuestionEditor({
   const [selectedTargetId, setSelectedTargetId] = useState<string | null>(null)
   const [draggingTargetId, setDraggingTargetId] = useState<string | null>(null)
   const [canvasScale, setCanvasScale] = useState(1)
+  const [isAssetMetadataOpen, setIsAssetMetadataOpen] = useState(false)
   const [isTargetsModalOpen, setIsTargetsModalOpen] = useState(false)
 
   const interactionContent = useMemo(() => {
@@ -846,36 +847,63 @@ export function GamifiedQuestionEditor({
             </div>
 
             <div className="rounded-[28px] border border-slate-200 bg-slate-50/70 p-4">
-              <p className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-400">Metadados do asset</p>
-              <div className="mt-4 space-y-4">
-                <label className="block space-y-2">
-                  <span className="text-xs font-black uppercase tracking-widest text-slate-500">Texto alternativo</span>
-                  <input
-                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 focus:border-cyan-300 focus:ring-4 focus:ring-cyan-100"
-                    value={content.asset.alt}
-                    onChange={(event) => updateDraft({
-                      ...content,
-                      asset: {
-                        ...content.asset,
-                        alt: event.target.value,
-                      },
-                    })}
-                    onBlur={() => void commit(content)}
-                    placeholder="Descreva a ilustracao para acessibilidade"
-                  />
-                </label>
+              <button
+                type="button"
+                className="flex w-full items-center justify-between gap-4 rounded-2xl text-left"
+                onClick={() => setIsAssetMetadataOpen((current) => !current)}
+              >
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-400">Metadados do asset</p>
+                  <p className="mt-2 text-sm font-medium text-slate-600">
+                    {isAssetMetadataOpen
+                      ? 'Edite texto alternativo e confira as dimensoes da imagem.'
+                      : 'Clique para abrir texto alternativo, largura e altura.'}
+                  </p>
+                </div>
+                <span className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-[11px] font-black uppercase tracking-widest text-slate-600">
+                  {isAssetMetadataOpen ? 'Fechar' : 'Abrir'}
+                  <svg
+                    className={cn('h-4 w-4 transition-transform', isAssetMetadataOpen ? 'rotate-180' : '')}
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </span>
+              </button>
 
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="rounded-2xl border border-white bg-white px-4 py-3">
-                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Largura</p>
-                    <p className="mt-2 text-lg font-black text-slate-900">{content.asset.width}px</p>
-                  </div>
-                  <div className="rounded-2xl border border-white bg-white px-4 py-3">
-                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Altura</p>
-                    <p className="mt-2 text-lg font-black text-slate-900">{content.asset.height}px</p>
+              {isAssetMetadataOpen ? (
+                <div className="mt-4 space-y-4">
+                  <label className="block space-y-2">
+                    <span className="text-xs font-black uppercase tracking-widest text-slate-500">Texto alternativo</span>
+                    <input
+                      className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 focus:border-cyan-300 focus:ring-4 focus:ring-cyan-100"
+                      value={content.asset.alt}
+                      onChange={(event) => updateDraft({
+                        ...content,
+                        asset: {
+                          ...content.asset,
+                          alt: event.target.value,
+                        },
+                      })}
+                      onBlur={() => void commit(content)}
+                      placeholder="Descreva a ilustracao para acessibilidade"
+                    />
+                  </label>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="rounded-2xl border border-white bg-white px-4 py-3">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Largura</p>
+                      <p className="mt-2 text-lg font-black text-slate-900">{content.asset.width}px</p>
+                    </div>
+                    <div className="rounded-2xl border border-white bg-white px-4 py-3">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Altura</p>
+                      <p className="mt-2 text-lg font-black text-slate-900">{content.asset.height}px</p>
+                    </div>
                   </div>
                 </div>
-              </div>
+              ) : null}
             </div>
           </div>
         </section>
