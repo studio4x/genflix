@@ -394,7 +394,7 @@ export function StudentCoursePlayerLayout() {
         </header>
 
         <div className="no-scrollbar flex-1 overflow-y-auto w-full">
-          <Outlet context={{ modules, assessments, setModules, setAssessments }} />
+          <Outlet context={{ course, modules, assessments, setModules, setAssessments }} />
         </div>
       </main>
     </div>
