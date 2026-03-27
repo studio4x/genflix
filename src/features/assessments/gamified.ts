@@ -136,7 +136,7 @@ export function createAnswerKeyFromInteraction(
 
   if (content.kind === 'drag_drop_labeling') {
     return {
-      entries: content.targets.slice(0, 1).map((target, index) => ({
+      entries: content.targets.map((target, index) => ({
         slot_id: target.id,
         token_id: content.tokens[index]?.id ?? content.tokens[0]?.id ?? '',
       })),
@@ -145,7 +145,7 @@ export function createAnswerKeyFromInteraction(
 
   const blanks = content.segments.filter((segment): segment is Extract<FillInTheBlanksInteractionContent['segments'][number], { type: 'blank' }> => segment.type === 'blank')
   return {
-    entries: blanks.slice(0, 1).map((blank, index) => ({
+    entries: blanks.map((blank, index) => ({
       slot_id: blank.id,
       token_id: content.tokens[index]?.id ?? content.tokens[0]?.id ?? '',
     })),
@@ -202,6 +202,13 @@ export function validateInteractionBundle(
 
   if (tokenIds.size === 0) {
     throw new Error('A interacao precisa ter ao menos um item no banco.')
+  }
+
+  if (
+    parsedContent.data.kind === 'drag_drop_labeling'
+    && parsedContent.data.tokens.length !== parsedContent.data.targets.length
+  ) {
+    throw new Error('No arrastar e soltar, o banco de respostas deve ter exatamente um item para cada area.')
   }
 
   const usedSlots = new Set<string>()

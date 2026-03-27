@@ -67,8 +67,9 @@ function syncAnswerKeyWithContent(
   content: AssessmentInteractionContent,
   current: AssessmentQuestionAnswerKeyPayload | null | undefined,
 ) {
-  const slotIds = getInteractionSlotIds(content)
-  const tokenIds = content.tokens.map((token) => token.id)
+  const normalizedContent = normalizeInteractionContent(content, current)
+  const slotIds = getInteractionSlotIds(normalizedContent)
+  const tokenIds = normalizedContent.tokens.map((token) => token.id)
   const preservedEntries: AssessmentQuestionAnswerKeyPayload['entries'] = []
   const usedSlots = new Set<string>()
   const usedTokens = new Set<string>()
@@ -110,6 +111,53 @@ function syncAnswerKeyWithContent(
   return {
     entries: preservedEntries,
   } satisfies AssessmentQuestionAnswerKeyPayload
+}
+
+function normalizeInteractionContent(
+  content: AssessmentInteractionContent,
+  current: AssessmentQuestionAnswerKeyPayload | null | undefined,
+) {
+  if (content.kind !== 'drag_drop_labeling') {
+    return content
+  }
+
+  const tokenById = new Map(content.tokens.map((token) => [token.id, token]))
+  const usedTokenIds = new Set<string>()
+
+  const normalizedTokens = content.targets.map((target, index) => {
+    const mappedTokenId = current?.entries.find((entry) => entry.slot_id === target.id)?.token_id
+    if (mappedTokenId) {
+      const mappedToken = tokenById.get(mappedTokenId)
+      if (mappedToken && !usedTokenIds.has(mappedToken.id)) {
+        usedTokenIds.add(mappedToken.id)
+        return {
+          ...mappedToken,
+          label: mappedToken.label.trim() || `Rotulo ${index + 1}`,
+        }
+      }
+    }
+
+    const fallbackToken = content.tokens.find((token) => !usedTokenIds.has(token.id))
+    if (fallbackToken) {
+      usedTokenIds.add(fallbackToken.id)
+      return {
+        ...fallbackToken,
+        label: fallbackToken.label.trim() || `Rotulo ${index + 1}`,
+      }
+    }
+
+    const nextToken = {
+      id: crypto.randomUUID(),
+      label: `Rotulo ${index + 1}`,
+    }
+    usedTokenIds.add(nextToken.id)
+    return nextToken
+  })
+
+  return {
+    ...content,
+    tokens: normalizedTokens,
+  } satisfies DragDropLabelingInteractionContent
 }
 
 function readImageDimensions(file: File) {
@@ -167,11 +215,14 @@ export function GamifiedQuestionEditor({
 
   const interactionContent = useMemo(() => {
     if (question.interaction?.content) {
-      return question.interaction.content
+      return normalizeInteractionContent(
+        question.interaction.content,
+        question.answer_key?.answer_key,
+      )
     }
 
     return createDefaultInteractionContent(question.question_type)
-  }, [question.interaction, question.question_type])
+  }, [question.answer_key?.answer_key, question.interaction, question.question_type])
 
   const gradingMode = question.answer_key?.grading_mode ?? 'partial_by_item'
   const answerKeyPayload = useMemo(() => {
@@ -202,9 +253,11 @@ export function GamifiedQuestionEditor({
     answerKey = syncAnswerKeyWithContent(content, answerKeyPayload),
     nextGradingMode = gradingMode,
   ) {
+    const normalizedContent = normalizeInteractionContent(content, answerKey)
+    const normalizedAnswerKey = syncAnswerKeyWithContent(normalizedContent, answerKey)
     const patch: Partial<AssessmentQuestionWithOptions> = {
-      interaction: createInteractionRecord(question, content),
-      answer_key: createAnswerKeyRecord(question, answerKey, nextGradingMode),
+      interaction: createInteractionRecord(question, normalizedContent),
+      answer_key: createAnswerKeyRecord(question, normalizedAnswerKey, nextGradingMode),
     }
 
     onDraftChange(patch)
@@ -216,9 +269,11 @@ export function GamifiedQuestionEditor({
     answerKey = syncAnswerKeyWithContent(content, answerKeyPayload),
     nextGradingMode = gradingMode,
   ) {
+    const normalizedContent = normalizeInteractionContent(content, answerKey)
+    const normalizedAnswerKey = syncAnswerKeyWithContent(normalizedContent, answerKey)
     onDraftChange({
-      interaction: createInteractionRecord(question, content),
-      answer_key: createAnswerKeyRecord(question, answerKey, nextGradingMode),
+      interaction: createInteractionRecord(question, normalizedContent),
+      answer_key: createAnswerKeyRecord(question, normalizedAnswerKey, nextGradingMode),
     })
   }
 
@@ -236,15 +291,18 @@ export function GamifiedQuestionEditor({
   }
 
   function addToken() {
+    if (activeInteraction.kind === 'drag_drop_labeling') {
+      onError('No arrastar e soltar, o banco de respostas acompanha automaticamente a quantidade de areas.')
+      return
+    }
+
     const nextContent = {
       ...activeInteraction,
       tokens: [
         ...activeInteraction.tokens,
         {
           id: crypto.randomUUID(),
-          label: activeInteraction.kind === 'drag_drop_labeling'
-            ? `Rotulo ${activeInteraction.tokens.length + 1}`
-            : `Resposta ${activeInteraction.tokens.length + 1}`,
+          label: `Resposta ${activeInteraction.tokens.length + 1}`,
         },
       ],
     } satisfies AssessmentInteractionContent
@@ -253,6 +311,11 @@ export function GamifiedQuestionEditor({
   }
 
   function deleteToken(tokenId: string) {
+    if (activeInteraction.kind === 'drag_drop_labeling') {
+      onError('Remova ou adicione areas para sincronizar o banco de respostas deste exercicio.')
+      return
+    }
+
     if (activeInteraction.tokens.length === 1) {
       onError('Mantenha ao menos um item no banco de respostas.')
       return
@@ -322,18 +385,22 @@ export function GamifiedQuestionEditor({
           <div>
             <p className="text-[10px] font-black uppercase tracking-[0.25em] text-cyan-700">Banco de respostas</p>
             <p className="mt-2 text-sm font-medium text-cyan-950">
-              Cada item do banco deve ser associado a uma unica area ou lacuna nesta v1.
+              {activeInteraction.kind === 'drag_drop_labeling'
+                ? 'No arrastar e soltar, cada area cria automaticamente um campo correspondente no banco de respostas.'
+                : 'Cada item do banco deve ser associado a uma unica area ou lacuna nesta v1.'}
             </p>
           </div>
 
-          <Button
-            type="button"
-            variant="outline"
-            className="rounded-2xl border-cyan-200 bg-white text-cyan-700 hover:bg-cyan-100"
-            onClick={addToken}
-          >
-            Adicionar item
-          </Button>
+          {activeInteraction.kind !== 'drag_drop_labeling' ? (
+            <Button
+              type="button"
+              variant="outline"
+              className="rounded-2xl border-cyan-200 bg-white text-cyan-700 hover:bg-cyan-100"
+              onClick={addToken}
+            >
+              Adicionar item
+            </Button>
+          ) : null}
         </div>
 
         <div className="mt-5 grid gap-3 md:grid-cols-2">
@@ -341,17 +408,19 @@ export function GamifiedQuestionEditor({
             <div key={token.id} className="rounded-2xl border border-white/80 bg-white p-4 shadow-sm">
               <div className="flex items-center justify-between gap-3">
                 <span className="rounded-full bg-cyan-100 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-cyan-700">
-                  Item {index + 1}
+                  {activeInteraction.kind === 'drag_drop_labeling' ? `Area ${index + 1}` : `Item ${index + 1}`}
                 </span>
-                <button
-                  type="button"
-                  className="rounded-xl p-2 text-slate-300 transition-colors hover:bg-rose-50 hover:text-rose-500"
-                  onClick={() => deleteToken(token.id)}
-                >
-                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
+                {activeInteraction.kind !== 'drag_drop_labeling' ? (
+                  <button
+                    type="button"
+                    className="rounded-xl p-2 text-slate-300 transition-colors hover:bg-rose-50 hover:text-rose-500"
+                    onClick={() => deleteToken(token.id)}
+                  >
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                ) : null}
               </div>
 
               <input
@@ -396,14 +465,8 @@ export function GamifiedQuestionEditor({
     }
 
     function addTargetAt(x: number, y: number) {
-      const nextToken = {
-        id: crypto.randomUUID(),
-        label: `Rotulo ${content.tokens.length + 1}`,
-      }
-
       const nextContent: DragDropLabelingInteractionContent = {
         ...content,
-        tokens: [...content.tokens, nextToken],
         targets: [
           ...content.targets,
           {
