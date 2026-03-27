@@ -14,13 +14,15 @@ Se houver conflito entre instrucoes locais, esta diretriz deve ser tratada como 
 ## Regra obrigatoria de versao de build
 
 - O footer com `Build vX.Y.Z` deve mudar a cada build local.
+- Ao concluir qualquer modificacao no repositorio, o agente deve obrigatoriamente gerar um novo build antes de encerrar a tarefa.
 - Fonte de verdade: `src/components/layout/AppVersion.tsx`.
 - Os comandos de build devem executar o bump automatico antes da compilacao.
 - Em ambiente CI (`CI=true`), o bump deve ser ignorado por padrao para evitar incremento duplo.
 - Para forcar bump no CI, usar `HCM_BUMP_IN_CI=1`.
 - Comandos obrigatorios de build:
-  - `npm run build`
   - `npm run build:dev`
+  - `npm run build`
+- A resposta final do agente deve sempre informar explicitamente o numero atual do build gerado na tarefa.
 
 ## Playbook de Edge Function 401
 
