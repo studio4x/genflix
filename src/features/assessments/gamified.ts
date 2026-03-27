@@ -14,7 +14,7 @@ export const assessmentInteractionTokenSchema = z.object({
 })
 
 export const assessmentInteractionAssetSchema = z.object({
-  storage_path: z.string().trim().min(1, 'Asset obrigatorio.'),
+  storage_path: z.string().trim(),
   signed_url: z.string().trim().url().nullable().optional(),
   alt: z.string().trim().min(1, 'Texto alternativo obrigatorio.'),
   width: z.number().positive('Largura invalida.'),
