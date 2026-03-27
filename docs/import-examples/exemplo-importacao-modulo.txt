@@ -1,0 +1,89 @@
+[
+  {
+    "title": "Modulo Exemplo - Cuidado Humanizado",
+    "description": "Modulo isolado para importar no builder.",
+    "lessons": [
+      {
+        "title": "Aula 1 - Escuta ativa",
+        "description": "Como ouvir o paciente e identificar necessidades.",
+        "lesson_type": "text",
+        "text_content": "<h2>Escuta ativa</h2><p>Exemplo de conteudo da aula em HTML.</p>",
+        "estimated_minutes": 14
+      },
+      {
+        "title": "Aula 2 - Comunicacao com a familia",
+        "description": "Alinhamento de informacoes e postura profissional.",
+        "lesson_type": "video",
+        "youtube_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+        "estimated_minutes": 16
+      }
+    ],
+    "assessments": [
+      {
+        "title": "Quiz de Fixacao - Cuidado Humanizado",
+        "description": "Quiz do modulo com questoes mistas.",
+        "assessment_type": "module",
+        "passing_score": 70,
+        "max_attempts": 3,
+        "estimated_minutes": 12,
+        "questions": [
+          {
+            "question_text": "Qual comportamento fortalece a confianca do paciente?",
+            "question_type": "single_choice",
+            "points": 1,
+            "is_required": true,
+            "options": [
+              {
+                "option_text": "Interromper o paciente para economizar tempo",
+                "is_correct": false
+              },
+              {
+                "option_text": "Manter tom respeitoso e escuta ativa",
+                "is_correct": true
+              },
+              {
+                "option_text": "Evitar explicar procedimentos",
+                "is_correct": false
+              }
+            ]
+          }
+        ],
+        "case_studies": [
+          {
+            "title": "Caso - Conversa com familiar resistente",
+            "case_text": "Durante a visita, um familiar demonstra resistencia a seguir as orientacoes de cuidado e interrompe o profissional com frequencia.",
+            "questions": [
+              {
+                "question_text": "Qual postura inicial e mais adequada?",
+                "question_type": "case_study_single_choice",
+                "points": 1,
+                "is_required": true,
+                "options": [
+                  {
+                    "option_text": "Confrontar diretamente o familiar",
+                    "is_correct": false
+                  },
+                  {
+                    "option_text": "Acolher a preocupacao, ouvir e reorganizar a conversa com calma",
+                    "is_correct": true
+                  },
+                  {
+                    "option_text": "Encerrar o atendimento imediatamente",
+                    "is_correct": false
+                  }
+                ]
+              },
+              {
+                "question_text": "Descreva como voce conduziria esse dialogo mantendo a autoridade tecnica e o respeito.",
+                "question_type": "case_study_ai",
+                "points": 1,
+                "is_required": true,
+                "essay_expected_answer": "A resposta deve mencionar escuta, acolhimento, comunicacao objetiva, explicacao tecnica simples e combinacao de proximo passo."
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+]

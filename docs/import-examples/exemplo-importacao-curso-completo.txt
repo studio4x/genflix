@@ -1,0 +1,141 @@
+{
+  "title": "Curso Exemplo de Home Care",
+  "description": "Curso completo com modulos, aulas e quizzes com estudos de caso.",
+  "workload_minutes": 360,
+  "status": "draft",
+  "modules": [
+    {
+      "title": "Modulo 1 - Fundamentos do Atendimento",
+      "description": "Base inicial do curso.",
+      "lessons": [
+        {
+          "title": "Aula 1.1 - Introducao ao Atendimento",
+          "description": "Visao geral do papel do profissional.",
+          "lesson_type": "video",
+          "youtube_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+          "estimated_minutes": 18
+        },
+        {
+          "title": "Aula 1.2 - Postura e Comunicacao",
+          "description": "Boas praticas de relacionamento com o paciente.",
+          "lesson_type": "text",
+          "text_content": "<h2>Postura profissional</h2><p>Exemplo de conteudo textual da aula.</p>",
+          "estimated_minutes": 15
+        }
+      ],
+      "assessments": [
+        {
+          "title": "Quiz de Fixacao - Modulo 1",
+          "description": "Quiz com perguntas avulsas e estudo de caso.",
+          "assessment_type": "module",
+          "passing_score": 70,
+          "max_attempts": 3,
+          "estimated_minutes": 12,
+          "questions": [
+            {
+              "question_text": "Qual atitude demonstra empatia no atendimento domiciliar?",
+              "question_type": "single_choice",
+              "points": 1,
+              "is_required": true,
+              "options": [
+                {
+                  "option_text": "Ignorar duvidas do paciente para agilizar a rotina",
+                  "is_correct": false
+                },
+                {
+                  "option_text": "Ouvir com atencao e responder com clareza",
+                  "is_correct": true
+                },
+                {
+                  "option_text": "Falar apenas com a familia, sem envolver o paciente",
+                  "is_correct": false
+                }
+              ]
+            }
+          ],
+          "case_studies": [
+            {
+              "title": "Caso 1 - Primeira visita ao domicilio",
+              "case_text": "Ao chegar a casa do paciente, o cuidador percebe ansiedade na familia e duvidas sobre a rotina de medicamentos.",
+              "questions": [
+                {
+                  "question_text": "Qual deve ser a primeira conduta do profissional nesse contexto?",
+                  "question_type": "case_study_single_choice",
+                  "points": 1,
+                  "is_required": true,
+                  "options": [
+                    {
+                      "option_text": "Pedir silencio e iniciar a rotina sem explicacoes",
+                      "is_correct": false
+                    },
+                    {
+                      "option_text": "Acolher a familia, explicar o plano e alinhar expectativas",
+                      "is_correct": true
+                    },
+                    {
+                      "option_text": "Adiar o atendimento para outro dia",
+                      "is_correct": false
+                    }
+                  ]
+                },
+                {
+                  "question_text": "Explique como voce comunicaria a rotina de medicacao com seguranca.",
+                  "question_type": "case_study_ai",
+                  "points": 1,
+                  "is_required": true,
+                  "essay_expected_answer": "A resposta deve mencionar comunicacao clara, confirmacao de horarios, registro da orientacao e verificacao de entendimento da familia."
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Modulo 2 - Seguranca e Boas Praticas",
+      "description": "Cuidados essenciais na execucao das atividades.",
+      "lessons": [
+        {
+          "title": "Aula 2.1 - Higiene e Prevencao",
+          "description": "Rotinas basicas para reduzir riscos.",
+          "lesson_type": "hybrid",
+          "youtube_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+          "text_content": "<p>Checklist de higiene, limpeza e organizacao do ambiente.</p>",
+          "estimated_minutes": 22
+        }
+      ],
+      "assessments": [
+        {
+          "title": "Quiz de Fixacao - Modulo 2",
+          "description": "Avaliacao objetiva do modulo.",
+          "assessment_type": "module",
+          "passing_score": 70,
+          "max_attempts": 3,
+          "estimated_minutes": 10,
+          "questions": [
+            {
+              "question_text": "Qual item deve ser higienizado antes e depois do atendimento?",
+              "question_type": "single_choice",
+              "points": 1,
+              "is_required": true,
+              "options": [
+                {
+                  "option_text": "Apenas o celular do profissional",
+                  "is_correct": false
+                },
+                {
+                  "option_text": "As maos e os materiais de uso frequente",
+                  "is_correct": true
+                },
+                {
+                  "option_text": "Somente o uniforme no fim do turno",
+                  "is_correct": false
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

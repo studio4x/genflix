@@ -1,0 +1,71 @@
+{
+  "title": "Avaliacao Final - Home Care",
+  "description": "Exemplo de avaliacao final com perguntas avulsas e estudo de caso.",
+  "passing_score": 70,
+  "max_attempts": 3,
+  "estimated_minutes": 20,
+  "questions": [
+    {
+      "question_text": "Qual documento ajuda a registrar a evolucao do atendimento?",
+      "question_type": "single_choice",
+      "points": 1,
+      "is_required": true,
+      "options": [
+        {
+          "option_text": "Registro de acompanhamento do paciente",
+          "is_correct": true
+        },
+        {
+          "option_text": "Apenas mensagens informais no celular",
+          "is_correct": false
+        },
+        {
+          "option_text": "Memoria verbal da equipe",
+          "is_correct": false
+        }
+      ]
+    },
+    {
+      "question_text": "Explique por que a comunicacao clara reduz riscos assistenciais.",
+      "question_type": "essay_ai",
+      "points": 0,
+      "is_required": true,
+      "essay_expected_answer": "A resposta deve citar alinhamento de informacoes, prevencao de erros, registro adequado e melhor coordenacao entre profissionais e familia."
+    }
+  ],
+  "case_studies": [
+    {
+      "title": "Caso Final - Mudanca no quadro do paciente",
+      "case_text": "Durante o plantao, o paciente apresenta cansaco acima do habitual, recusa alimentacao e a familia demonstra preocupacao com a evolucao nas ultimas horas.",
+      "questions": [
+        {
+          "question_text": "Qual acao inicial e mais apropriada diante da mudanca de quadro?",
+          "question_type": "case_study_single_choice",
+          "points": 1,
+          "is_required": true,
+          "options": [
+            {
+              "option_text": "Ignorar o relato da familia e manter a rotina normal",
+              "is_correct": false
+            },
+            {
+              "option_text": "Avaliar sinais, registrar a intercorrencia e acionar o fluxo previsto",
+              "is_correct": true
+            },
+            {
+              "option_text": "Esperar o fim do turno para comunicar a equipe",
+              "is_correct": false
+            }
+          ]
+        },
+        {
+          "question_text": "Descreva como voce comunicaria a situacao para a familia e para a equipe responsavel.",
+          "question_type": "case_study_ai",
+          "points": 1,
+          "is_required": true,
+          "essay_expected_answer": "A resposta deve mencionar observacao objetiva, comunicacao calma, registro, acionamento da equipe e orientacao segura para a familia."
+        }
+      ]
+    }
+  ]
+}
