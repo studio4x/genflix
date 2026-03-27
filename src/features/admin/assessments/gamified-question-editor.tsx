@@ -161,6 +161,7 @@ export function GamifiedQuestionEditor({
   const [isUploadingAsset, setIsUploadingAsset] = useState(false)
   const [selectedTargetId, setSelectedTargetId] = useState<string | null>(null)
   const [canvasScale, setCanvasScale] = useState(1)
+  const [isTargetsModalOpen, setIsTargetsModalOpen] = useState(false)
 
   const interactionContent = useMemo(() => {
     if (question.interaction?.content) {
@@ -445,8 +446,98 @@ export function GamifiedQuestionEditor({
       void commit(nextContent)
     }
 
+    function renderTargetsPanel() {
+      return (
+        <section className="space-y-4">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-400">Areas e gabarito</p>
+              <p className="mt-2 text-sm font-medium text-slate-600">
+                Edite posicao, tamanho e a resposta correta de cada hotspot.
+              </p>
+            </div>
+            <span className="rounded-full bg-cyan-100 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-cyan-700">
+              {content.targets.length} area(s)
+            </span>
+          </div>
+
+          <div className="space-y-4">
+            {content.targets.map((target, index) => (
+              <div
+                key={target.id}
+                className={cn(
+                  'rounded-[28px] border bg-white p-4 shadow-sm transition-all',
+                  selectedTargetId === target.id ? 'border-cyan-300 shadow-cyan-100/80' : 'border-slate-200',
+                )}
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <span className="rounded-full bg-slate-100 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-slate-500">
+                    Area {index + 1}
+                  </span>
+                  <button
+                    type="button"
+                    className="rounded-xl p-2 text-slate-300 transition-colors hover:bg-rose-50 hover:text-rose-500"
+                    onClick={() => removeTarget(target.id)}
+                  >
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+
+                <div className="mt-4 space-y-3">
+                  <label className="block space-y-2">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Nome interno</span>
+                    <input
+                      className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 focus:border-cyan-300 focus:ring-4 focus:ring-cyan-100"
+                      value={target.label ?? ''}
+                      onChange={(event) => updateTarget(target.id, 'label', event.target.value)}
+                      onBlur={() => void commit(content)}
+                      placeholder="Ex.: Mitocondria"
+                    />
+                  </label>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    {(['x', 'y', 'w', 'h'] as const).map((field) => (
+                      <label key={field} className="block space-y-2">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">{field}%</span>
+                        <input
+                          type="number"
+                          min={0}
+                          max={100}
+                          step={0.1}
+                          className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 focus:border-cyan-300 focus:ring-4 focus:ring-cyan-100"
+                          value={target[field]}
+                          onChange={(event) => updateTarget(target.id, field, Number(event.target.value || 0))}
+                          onBlur={() => void commit(content)}
+                        />
+                      </label>
+                    ))}
+                  </div>
+
+                  <label className="block space-y-2">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Resposta correta</span>
+                    <select
+                      className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 focus:border-cyan-300 focus:ring-4 focus:ring-cyan-100"
+                      value={assignedTokenBySlot.get(target.id) ?? ''}
+                      onChange={(event) => updateSlotAnswer(target.id, event.target.value)}
+                    >
+                      <option value="" disabled>Selecione um item</option>
+                      {content.tokens.map((token) => (
+                        <option key={token.id} value={token.id}>{token.label}</option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )
+    }
+
     return (
-      <div className="grid gap-6 xl:grid-cols-[1.4fr_1fr]">
+      <div className="space-y-6">
         <section className="rounded-[32px] border border-slate-200 bg-white p-5 shadow-sm">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
@@ -490,6 +581,13 @@ export function GamifiedQuestionEditor({
                 disabled={isUploadingAsset}
               >
                 {isUploadingAsset ? 'Enviando...' : 'Enviar imagem'}
+              </Button>
+              <Button
+                type="button"
+                className="rounded-2xl bg-slate-900 hover:bg-slate-800"
+                onClick={() => setIsTargetsModalOpen(true)}
+              >
+                Abrir areas e gabarito
               </Button>
             </div>
           </div>
@@ -641,89 +739,62 @@ export function GamifiedQuestionEditor({
             </div>
           </div>
         </section>
-
-        <section className="rounded-[32px] border border-slate-200 bg-slate-50/70 p-5">
-          <div className="flex items-center justify-between gap-3">
+        <div className="rounded-[28px] border border-slate-200 bg-slate-50/70 px-5 py-4 shadow-sm">
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <div>
               <p className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-400">Areas e gabarito</p>
               <p className="mt-2 text-sm font-medium text-slate-600">
-                Edite posicao, tamanho e a resposta correta de cada hotspot.
+                Abra o modal dedicado para editar hotspots, coordenadas e respostas corretas.
               </p>
             </div>
+            <Button
+              type="button"
+              variant="outline"
+              className="rounded-2xl border-cyan-200 bg-white text-cyan-700 hover:bg-cyan-50"
+              onClick={() => setIsTargetsModalOpen(true)}
+            >
+              Editar {content.targets.length} area(s)
+            </Button>
           </div>
+        </div>
 
-          <div className="mt-5 space-y-4">
-            {content.targets.map((target, index) => (
-              <div
-                key={target.id}
-                className={cn(
-                  'rounded-[28px] border bg-white p-4 shadow-sm transition-all',
-                  selectedTargetId === target.id ? 'border-cyan-300 shadow-cyan-100/80' : 'border-slate-200',
-                )}
-              >
-                <div className="flex items-center justify-between gap-3">
-                  <span className="rounded-full bg-slate-100 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-slate-500">
-                    Area {index + 1}
-                  </span>
-                  <button
-                    type="button"
-                    className="rounded-xl p-2 text-slate-300 transition-colors hover:bg-rose-50 hover:text-rose-500"
-                    onClick={() => removeTarget(target.id)}
-                  >
-                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
+        {isTargetsModalOpen ? (
+          <div className="fixed inset-0 z-[130] flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm animate-in fade-in duration-300">
+            <div className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-[40px] border border-white/20 bg-white shadow-2xl animate-in zoom-in-95 duration-300">
+              <div className="flex items-center justify-between border-b border-slate-100 p-8">
+                <div>
+                  <h3 className="text-left text-xl font-black tracking-tight text-slate-900">Areas e Gabarito</h3>
+                  <p className="mt-1 text-left text-sm font-medium text-slate-500">
+                    Ajuste cada hotspot sem comprimir o canvas principal.
+                  </p>
                 </div>
-
-                <div className="mt-4 space-y-3">
-                  <label className="block space-y-2">
-                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Nome interno</span>
-                    <input
-                      className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 focus:border-cyan-300 focus:ring-4 focus:ring-cyan-100"
-                      value={target.label ?? ''}
-                      onChange={(event) => updateTarget(target.id, 'label', event.target.value)}
-                      onBlur={() => void commit(content)}
-                      placeholder="Ex.: Mitocondria"
-                    />
-                  </label>
-
-                  <div className="grid grid-cols-2 gap-3">
-                    {(['x', 'y', 'w', 'h'] as const).map((field) => (
-                      <label key={field} className="block space-y-2">
-                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">{field}%</span>
-                        <input
-                          type="number"
-                          min={0}
-                          max={100}
-                          step={0.1}
-                          className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 focus:border-cyan-300 focus:ring-4 focus:ring-cyan-100"
-                          value={target[field]}
-                          onChange={(event) => updateTarget(target.id, field, Number(event.target.value || 0))}
-                          onBlur={() => void commit(content)}
-                        />
-                      </label>
-                    ))}
-                  </div>
-
-                  <label className="block space-y-2">
-                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Resposta correta</span>
-                    <select
-                      className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 focus:border-cyan-300 focus:ring-4 focus:ring-cyan-100"
-                      value={assignedTokenBySlot.get(target.id) ?? ''}
-                      onChange={(event) => updateSlotAnswer(target.id, event.target.value)}
-                    >
-                      <option value="" disabled>Selecione um item</option>
-                      {content.tokens.map((token) => (
-                        <option key={token.id} value={token.id}>{token.label}</option>
-                      ))}
-                    </select>
-                  </label>
-                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsTargetsModalOpen(false)}
+                  className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-50 text-slate-400 transition-colors hover:text-slate-900"
+                >
+                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
               </div>
-            ))}
+
+              <div className="space-y-6 p-8">
+                {renderTargetsPanel()}
+              </div>
+
+              <div className="border-t border-slate-100 bg-slate-50/60 p-8">
+                <Button
+                  type="button"
+                  className="h-12 rounded-2xl bg-slate-900 px-6 font-black text-white hover:bg-slate-800"
+                  onClick={() => setIsTargetsModalOpen(false)}
+                >
+                  Fechar
+                </Button>
+              </div>
+            </div>
           </div>
-        </section>
+        ) : null}
       </div>
     )
   }
