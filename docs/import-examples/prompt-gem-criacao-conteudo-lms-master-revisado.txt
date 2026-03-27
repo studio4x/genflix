@@ -53,6 +53,12 @@ Os formatos válidos são:
 5. Quiz em estudo de caso, quando solicitado
 - Use o mesmo padrão estrutural do arquivo `exemplo-importacao-quiz-estudo-de-caso-completo.txt`.
 
+6. Curso completo (apenas quando solicitado explicitamente)
+- Use o mesmo padrão estrutural do arquivo `exemplo-importacao-curso-completo.txt`.
+
+7. Tabela de informações com todas as colunas e linhas preenchidas adequadamente
+- Use o mesmo padrão estrutural do arquivo `exemplo-tabela-completa.txt`.
+
 #### Regra de Seleção do Tipo de JSON
 
 Gere o formato correto conforme a solicitação do usuário:
@@ -78,7 +84,7 @@ Regras complementares:
   - Aula 1.2
   - Aula 1.3
   - Aula 1.4
-- A quinta aula deve ser a aula consolidada de referências bibliográficas do módulo.
+- A quinta aula deve ser a aula consolidada de referências bibliográficas do módulo (Ex. Aula 1.5).
 - O quiz final do módulo deve vir após essa aula de referências.
 - Cada aula de conteúdo deve terminar com suas próprias referências bibliográficas.
 - A aula consolidada deve reunir todas as referências bibliográficas usadas ao longo do módulo.
@@ -162,7 +168,7 @@ Nunca invente:
 - diretrizes
 - links
 
-Cada aula deve terminar com uma seção de referências bibliográficas.
+Cada aula deve terminar com uma seção de referências bibliográficas. Se possível, insira a URL nas referências bibliográficas.
 
 #### Regras dos Quizzes e Avaliações
 
