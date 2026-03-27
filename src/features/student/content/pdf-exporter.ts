@@ -776,7 +776,6 @@ export async function exportModuleToPdf(courseTitle: string, moduleTitle: string
     jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
     pagebreak: {
       mode: ['css', 'legacy'],
-      before: '.pdf-lesson',
       avoid: '.pdf-table-block, table, tr, td, th, .pdf-lesson-header, .pdf-lesson-materials, h1, h2, h3, h4, ul, ol, blockquote, pre',
     },
   }
