@@ -1286,47 +1286,45 @@ export function GamifiedQuestionEditor({
 
             return (
               <div key={item.blankId} className="overflow-hidden rounded-[28px] border border-slate-200 bg-slate-50/70">
-                <button
-                  type="button"
-                  className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left transition-colors hover:bg-white/60"
-                  onClick={() => setOpenFillBlankId((current) => current === item.blankId ? null : item.blankId)}
-                >
-                  <div className="min-w-0">
-                    <div className="flex flex-wrap items-center gap-3">
-                      <span className="rounded-full bg-teal-100 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-teal-700">
-                        Pergunta {index + 1}
-                      </span>
-                      <span className="truncate text-sm font-semibold text-slate-700">
-                        {previewLabel}
-                      </span>
+                <div className="flex items-center gap-2 px-5 py-4">
+                  <button
+                    type="button"
+                    className="flex min-w-0 flex-1 items-center justify-between gap-4 text-left transition-colors hover:text-teal-700"
+                    onClick={() => setOpenFillBlankId((current) => current === item.blankId ? null : item.blankId)}
+                  >
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-3">
+                        <span className="rounded-full bg-teal-100 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-teal-700">
+                          Pergunta {index + 1}
+                        </span>
+                        <span className="truncate text-sm font-semibold text-slate-700">
+                          {previewLabel}
+                        </span>
+                      </div>
+                      <p className="mt-2 text-xs font-medium text-slate-500">
+                        {item.beforeText.trim() || item.afterText.trim()
+                          ? 'Texto configurado'
+                          : 'Clique para escrever a frase e definir a lacuna.'}
+                      </p>
                     </div>
-                    <p className="mt-2 text-xs font-medium text-slate-500">
-                      {item.beforeText.trim() || item.afterText.trim()
-                        ? 'Texto configurado'
-                        : 'Clique para escrever a frase e definir a lacuna.'}
-                    </p>
-                  </div>
 
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      className="rounded-xl p-2 text-slate-300 transition-colors hover:bg-rose-50 hover:text-rose-500"
-                      onClick={(event) => {
-                        event.stopPropagation()
-                        removePromptItem(item.blankId)
-                      }}
-                    >
-                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                    </button>
                     <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-500 shadow-sm">
                       <svg className={cn('h-4 w-4 transition-transform', isOpen ? 'rotate-180' : '')} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                       </svg>
                     </span>
-                  </div>
-                </button>
+                  </button>
+
+                  <button
+                    type="button"
+                    className="rounded-xl p-2 text-slate-300 transition-colors hover:bg-rose-50 hover:text-rose-500"
+                    onClick={() => removePromptItem(item.blankId)}
+                  >
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
 
                 {isOpen ? (
                   <div className="space-y-5 border-t border-slate-200 bg-white px-5 py-5">
