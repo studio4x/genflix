@@ -6,9 +6,11 @@ import { Button } from '@/components/ui/button'
 import {
   createStudent,
   fetchStudents,
+  resetStudentPassword,
   toErrorMessage,
   type AdminStudentListItem,
   type CreateStudentResponse,
+  type ResetStudentPasswordResponse,
 } from '@/features/admin/students/api'
 import { createStudentFormSchema } from '@/features/admin/students/schemas'
 
@@ -16,6 +18,10 @@ interface StudentFormState {
   email: string
   fullName: string
   password: string
+}
+
+interface PasswordResetFeedback extends ResetStudentPasswordResponse {
+  copied: boolean
 }
 
 const STUDENTS_PER_PAGE = 10
@@ -63,6 +69,8 @@ export function AdminStudentsPage() {
   const [error, setError] = useState<string | null>(null)
   const [listError, setListError] = useState<string | null>(null)
   const [created, setCreated] = useState<CreateStudentResponse | null>(null)
+  const [passwordResetFeedback, setPasswordResetFeedback] = useState<PasswordResetFeedback | null>(null)
+  const [resettingStudentId, setResettingStudentId] = useState<string | null>(null)
 
   useEffect(() => {
     async function loadStudents() {
@@ -155,6 +163,7 @@ export function AdminStudentsPage() {
     setIsSubmitting(true)
     setError(null)
     setCreated(null)
+    setPasswordResetFeedback(null)
 
     try {
       const result = await createStudent(parsed.data, session)
@@ -173,6 +182,46 @@ export function AdminStudentsPage() {
     setCreated(null)
     setForm(initialForm)
     setError(null)
+  }
+
+  async function handleResetStudentPassword(student: AdminStudentListItem) {
+    if (!session) {
+      setListError('Sessao expirada. Faca login novamente.')
+      return
+    }
+
+    const shouldContinue = window.confirm(
+      `Redefinir a senha de ${student.full_name?.trim() || student.email || 'este aluno'}? Uma nova senha temporaria sera gerada e a senha anterior deixara de funcionar.`,
+    )
+
+    if (!shouldContinue) {
+      return
+    }
+
+    setResettingStudentId(student.id)
+    setListError(null)
+
+    try {
+      const result = await resetStudentPassword(student.id, session)
+      setPasswordResetFeedback({ ...result, copied: false })
+    } catch (resetError) {
+      setListError(toErrorMessage(resetError))
+    } finally {
+      setResettingStudentId(null)
+    }
+  }
+
+  async function handleCopyTemporaryPassword() {
+    if (!passwordResetFeedback) {
+      return
+    }
+
+    try {
+      await navigator.clipboard.writeText(passwordResetFeedback.temporary_password)
+      setPasswordResetFeedback((previous) => (previous ? { ...previous, copied: true } : previous))
+    } catch {
+      setListError('Nao foi possivel copiar a senha automaticamente. Copie manualmente.')
+    }
   }
 
   return (
@@ -321,6 +370,41 @@ export function AdminStudentsPage() {
           </div>
         ) : null}
 
+        {passwordResetFeedback ? (
+          <div className="rounded-[28px] border border-amber-200 bg-amber-50 p-5 shadow-sm">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+              <div className="space-y-2">
+                <p className="text-[10px] font-black uppercase tracking-[0.24em] text-amber-600">Nova senha temporaria</p>
+                <h4 className="text-xl font-black tracking-tight text-amber-950">Senha redefinida com sucesso</h4>
+                <p className="text-sm font-medium text-amber-800">
+                  Use esta senha para o aluno <span className="font-black">{passwordResetFeedback.email}</span>. Ao entrar, ele ja pode trocar a senha na conta.
+                </p>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setPasswordResetFeedback(null)}
+                className="rounded-2xl border-amber-300 bg-white text-amber-800 hover:bg-amber-100"
+              >
+                Fechar
+              </Button>
+            </div>
+
+            <div className="mt-4 flex flex-col gap-3 rounded-2xl border border-white/80 bg-white p-4 sm:flex-row sm:items-center sm:justify-between">
+              <code className="overflow-x-auto rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 font-mono text-sm font-black text-amber-700">
+                {passwordResetFeedback.temporary_password}
+              </code>
+              <Button
+                type="button"
+                onClick={() => void handleCopyTemporaryPassword()}
+                className="rounded-2xl bg-amber-600 hover:bg-amber-700"
+              >
+                {passwordResetFeedback.copied ? 'Senha copiada' : 'Copiar senha'}
+              </Button>
+            </div>
+          </div>
+        ) : null}
+
         {isLoadingStudents ? (
           <div className="flex h-40 items-center justify-center rounded-2xl border border-slate-200 bg-slate-50">
             <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent" />
@@ -343,6 +427,7 @@ export function AdminStudentsPage() {
                       <th className="px-4 py-3 text-center text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Finalizados</th>
                       <th className="px-4 py-3 text-left text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Criado em</th>
                       <th className="px-4 py-3 text-left text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Atualizado em</th>
+                      <th className="px-4 py-3 text-right text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Acoes</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 bg-white">
@@ -382,6 +467,20 @@ export function AdminStudentsPage() {
                         </td>
                         <td className="px-4 py-4 text-sm font-semibold text-slate-700">
                           {formatDateTime(student.updated_at)}
+                        </td>
+                        <td className="px-4 py-4">
+                          <div className="flex min-w-[180px] justify-end">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => void handleResetStudentPassword(student)}
+                              disabled={resettingStudentId === student.id}
+                              className="rounded-2xl border-amber-200 text-amber-700 hover:bg-amber-50 hover:text-amber-800"
+                            >
+                              {resettingStudentId === student.id ? 'Redefinindo...' : 'Redefinir senha'}
+                            </Button>
+                          </div>
                         </td>
                       </tr>
                     ))}

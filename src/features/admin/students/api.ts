@@ -13,6 +13,13 @@ export interface CreateStudentResponse {
   message: string
 }
 
+export interface ResetStudentPasswordResponse {
+  user_id: string
+  email: string
+  temporary_password: string
+  message: string
+}
+
 export interface AdminStudentListItem {
   id: string
   email: string
@@ -77,4 +84,27 @@ export async function fetchStudents(session: Session) {
   }
 
   return (data as { students?: AdminStudentListItem[] } | null)?.students ?? []
+}
+
+export async function resetStudentPassword(studentId: string, session: Session) {
+  const response = await fetch('/api/admin/students', {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${session.access_token}`,
+    },
+    body: JSON.stringify({ studentId }),
+  })
+
+  const data = (await response
+    .json()
+    .catch(() => null)) as ErrorResponse | ResetStudentPasswordResponse | null
+
+  if (!response.ok) {
+    throw new Error(
+      (data as ErrorResponse | null)?.error ?? 'Nao foi possivel redefinir a senha do aluno.',
+    )
+  }
+
+  return data as ResetStudentPasswordResponse
 }

@@ -67,6 +67,10 @@ const createStudentSchema = z.object({
   password: providedPasswordSchema.optional(),
 })
 
+const resetStudentPasswordSchema = z.object({
+  studentId: z.string().uuid('Aluno invalido.'),
+})
+
 function getHeaderValue(value: string | string[] | undefined) {
   if (typeof value === 'string') {
     return value
@@ -419,6 +423,68 @@ async function handleCreateStudent(req: ApiRequest, res: ApiResponse) {
   })
 }
 
+async function handleResetStudentPassword(req: ApiRequest, res: ApiResponse) {
+  const adminClient = await createAdminClient(req, res)
+  if (!adminClient) {
+    return
+  }
+
+  const parsedBody = parseBody(req.body)
+  if (!parsedBody) {
+    res.status(400).json({ error: 'Body invalido.' })
+    return
+  }
+
+  const validationResult = resetStudentPasswordSchema.safeParse({
+    studentId: typeof parsedBody.studentId === 'string' ? parsedBody.studentId.trim() : undefined,
+  })
+
+  if (!validationResult.success) {
+    res.status(400).json({ error: validationResult.error.issues[0]?.message ?? 'Dados invalidos.' })
+    return
+  }
+
+  const { studentId } = validationResult.data
+
+  const studentRoleResult = await adminClient
+    .from('user_roles')
+    .select('user_id, roles!inner(code)')
+    .eq('user_id', studentId)
+    .eq('roles.code', 'student')
+    .maybeSingle()
+
+  if (studentRoleResult.error) {
+    res.status(500).json({ error: 'Nao foi possivel validar o aluno informado.' })
+    return
+  }
+
+  if (!studentRoleResult.data) {
+    res.status(404).json({ error: 'Aluno nao encontrado.' })
+    return
+  }
+
+  const newTemporaryPassword = createTemporaryPassword()
+  const updatedUserResult = await adminClient.auth.admin.updateUserById(studentId, {
+    password: newTemporaryPassword,
+  })
+
+  if (updatedUserResult.error || !updatedUserResult.data.user) {
+    res.status(400).json({
+      error: updatedUserResult.error?.message ?? 'Nao foi possivel redefinir a senha do aluno.',
+    })
+    return
+  }
+
+  const updatedUser = updatedUserResult.data.user
+
+  res.status(200).json({
+    user_id: updatedUser.id,
+    email: updatedUser.email ?? '',
+    temporary_password: newTemporaryPassword,
+    message: 'Senha do aluno redefinida com sucesso.',
+  })
+}
+
 export default async function handler(req: ApiRequest, res: ApiResponse) {
   if (req.method === 'GET') {
     await handleListStudents(req, res)
@@ -430,6 +496,11 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
     return
   }
 
-  res.setHeader('Allow', 'GET, POST')
+  if (req.method === 'PATCH') {
+    await handleResetStudentPassword(req, res)
+    return
+  }
+
+  res.setHeader('Allow', 'GET, POST, PATCH')
   res.status(405).json({ error: 'Metodo nao permitido.' })
 }
