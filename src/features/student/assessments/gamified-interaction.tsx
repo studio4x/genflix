@@ -79,6 +79,22 @@ function DragDropLabelingView({
     setArmedTokenId(null)
   }
 
+  function clearSlot(slotId: string) {
+    if (readOnly) return
+    onChange(slotId, null)
+  }
+
+  function clearAllAssignments() {
+    if (readOnly) return
+    setArmedTokenId(null)
+
+    for (const target of content.targets) {
+      if (value[target.id]) {
+        onChange(target.id, null)
+      }
+    }
+  }
+
   return (
     <div className="grid gap-6 2xl:grid-cols-[minmax(0,2.1fr)_340px]">
       <div className="overflow-hidden rounded-[36px] border border-slate-200 bg-[#fcfdff] shadow-inner">
@@ -108,30 +124,9 @@ function DragDropLabelingView({
             {content.targets.map((target) => {
               const assignedToken = value[target.id] ? tokenById.get(value[target.id] ?? '') : null
               return (
-                <button
+                <div
                   key={target.id}
-                  type="button"
-                  disabled={readOnly}
-                  onClick={() => handleSlotClick(target.id)}
-                  onDragOver={(event) => {
-                    if (!readOnly) event.preventDefault()
-                  }}
-                  onDrop={(event) => {
-                    if (readOnly) return
-                    event.preventDefault()
-                    const tokenId = event.dataTransfer.getData('text/plain')
-                    if (tokenId) {
-                      onChange(target.id, tokenId)
-                      setArmedTokenId(null)
-                    }
-                  }}
-                  className={`absolute flex items-center justify-center rounded-2xl border-2 px-3 py-2 text-center text-xs font-black shadow-lg backdrop-blur transition-all ${
-                    assignedToken
-                      ? 'border-cyan-500 bg-cyan-500/90 text-white'
-                      : armedTokenId
-                        ? 'border-cyan-400 bg-white/90 text-cyan-700'
-                        : 'border-rose-300 bg-white/85 text-rose-500'
-                  } ${readOnly ? 'cursor-default' : 'hover:scale-[1.02]'}`}
+                  className="absolute"
                   style={{
                     left: `${target.x}%`,
                     top: `${target.y}%`,
@@ -139,10 +134,51 @@ function DragDropLabelingView({
                     height: `${target.h}%`,
                   }}
                 >
-                  <span className="line-clamp-2">
-                    {assignedToken?.label ?? target.label ?? 'Solte aqui'}
-                  </span>
-                </button>
+                  <button
+                    type="button"
+                    disabled={readOnly}
+                    onClick={() => handleSlotClick(target.id)}
+                    onDragOver={(event) => {
+                      if (!readOnly) event.preventDefault()
+                    }}
+                    onDrop={(event) => {
+                      if (readOnly) return
+                      event.preventDefault()
+                      const tokenId = event.dataTransfer.getData('text/plain')
+                      if (tokenId) {
+                        onChange(target.id, tokenId)
+                        setArmedTokenId(null)
+                      }
+                    }}
+                    className={`flex h-full w-full items-center justify-center rounded-2xl border-2 px-3 py-2 pr-8 text-center text-xs font-black shadow-lg backdrop-blur transition-all ${
+                      assignedToken
+                        ? 'border-cyan-500 bg-cyan-500/90 text-white'
+                        : armedTokenId
+                          ? 'border-cyan-400 bg-white/90 text-cyan-700'
+                          : 'border-rose-300 bg-white/85 text-rose-500'
+                    } ${readOnly ? 'cursor-default' : 'hover:scale-[1.02]'}`}
+                  >
+                    <span className="line-clamp-2">
+                      {assignedToken?.label ?? target.label ?? 'Solte aqui'}
+                    </span>
+                  </button>
+
+                  {assignedToken && !readOnly ? (
+                    <button
+                      type="button"
+                      onClick={(event) => {
+                        event.stopPropagation()
+                        clearSlot(target.id)
+                      }}
+                      className="absolute right-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-full border border-white/70 bg-slate-950/20 text-white transition-colors hover:bg-slate-950/35"
+                      aria-label={`Remover ${assignedToken.label}`}
+                    >
+                      <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.4} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  ) : null}
+                </div>
               )
             })}
           </div>
@@ -160,7 +196,7 @@ function DragDropLabelingView({
           {!readOnly && (
             <button
               type="button"
-              onClick={() => setArmedTokenId(null)}
+              onClick={clearAllAssignments}
               className="rounded-xl border border-slate-200 px-3 py-2 text-[11px] font-black uppercase tracking-wider text-slate-500 hover:bg-slate-50"
             >
               Limpar seleção
