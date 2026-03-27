@@ -216,6 +216,7 @@ export function GamifiedQuestionEditor({
   const [draggingTargetId, setDraggingTargetId] = useState<string | null>(null)
   const [canvasScale, setCanvasScale] = useState(1)
   const [isAssetMetadataOpen, setIsAssetMetadataOpen] = useState(false)
+  const [isAdvancedAnswerToolsOpen, setIsAdvancedAnswerToolsOpen] = useState(false)
   const [isTargetsModalOpen, setIsTargetsModalOpen] = useState(false)
 
   const interactionContent = useMemo(() => {
@@ -434,22 +435,74 @@ export function GamifiedQuestionEditor({
               </div>
 
               <input
+                type="text"
                 className="mt-3 w-full rounded-2xl border border-cyan-100 bg-cyan-50/40 px-4 py-3 text-sm font-semibold text-slate-800 focus:border-cyan-300 focus:ring-4 focus:ring-cyan-100"
                 value={token.label}
                 onChange={(event) => updateTokenLabel(token.id, event.target.value)}
-                onBlur={() => void commit({
-                  ...activeInteraction,
-                  tokens: activeInteraction.tokens.map((item) => (
-                    item.id === token.id
-                      ? { ...item, label: token.label }
-                      : item
-                  )),
-                })}
-                placeholder="Rotulo exibido ao aluno"
+                onBlur={(event) => {
+                  const nextLabel = event.currentTarget.value
+                  void commit({
+                    ...activeInteraction,
+                    tokens: activeInteraction.tokens.map((item) => (
+                      item.id === token.id
+                        ? { ...item, label: nextLabel }
+                        : item
+                    )),
+                  })
+                }}
+                onKeyDown={(event) => event.stopPropagation()}
+                placeholder="Resposta correta exibida ao aluno. Pode ter mais de uma palavra."
               />
             </div>
           ))}
         </div>
+
+        {activeInteraction.kind === 'drag_drop_labeling' ? (
+          <div className="mt-5 rounded-2xl border border-cyan-100/80 bg-white/70 p-4">
+            <button
+              type="button"
+              className="flex w-full items-center justify-between gap-4 text-left"
+              onClick={() => setIsAdvancedAnswerToolsOpen((current) => !current)}
+            >
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-400">Ajuste avancado</p>
+                <p className="mt-2 text-sm font-medium text-slate-600">
+                  Abra apenas se quiser refinar coordenadas, tamanho das areas ou revisar o gabarito manualmente.
+                </p>
+              </div>
+              <span className="inline-flex items-center gap-2 rounded-full border border-cyan-100 bg-cyan-50 px-3 py-2 text-[11px] font-black uppercase tracking-widest text-cyan-700">
+                {isAdvancedAnswerToolsOpen ? 'Fechar' : 'Abrir'}
+                <svg
+                  className={cn('h-4 w-4 transition-transform', isAdvancedAnswerToolsOpen ? 'rotate-180' : '')}
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </span>
+            </button>
+
+            {isAdvancedAnswerToolsOpen ? (
+              <div className="mt-4 flex flex-col gap-3 rounded-2xl border border-slate-100 bg-slate-50/70 p-4 md:flex-row md:items-center md:justify-between">
+                <div>
+                  <p className="text-sm font-black text-slate-900">Areas e gabarito</p>
+                  <p className="mt-1 text-sm font-medium text-slate-600">
+                    Edite hotspots, coordenadas, tamanhos e a associacao final de cada area.
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="rounded-2xl border-cyan-200 bg-white text-cyan-700 hover:bg-cyan-50"
+                  onClick={() => setIsTargetsModalOpen(true)}
+                >
+                  Editar {activeInteraction.targets.length} area(s)
+                </Button>
+              </div>
+            ) : null}
+          </div>
+        ) : null}
       </section>
     )
   }
@@ -720,13 +773,6 @@ export function GamifiedQuestionEditor({
               >
                 {isUploadingAsset ? 'Enviando...' : 'Enviar imagem'}
               </Button>
-              <Button
-                type="button"
-                className="rounded-2xl bg-slate-900 hover:bg-slate-800"
-                onClick={() => setIsTargetsModalOpen(true)}
-              >
-                Abrir areas e gabarito
-              </Button>
             </div>
           </div>
 
@@ -907,25 +953,6 @@ export function GamifiedQuestionEditor({
             </div>
           </div>
         </section>
-        <div className="rounded-[28px] border border-slate-200 bg-slate-50/70 px-5 py-4 shadow-sm">
-          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-            <div>
-              <p className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-400">Areas e gabarito</p>
-              <p className="mt-2 text-sm font-medium text-slate-600">
-                Abra o modal dedicado para editar hotspots, coordenadas e respostas corretas.
-              </p>
-            </div>
-            <Button
-              type="button"
-              variant="outline"
-              className="rounded-2xl border-cyan-200 bg-white text-cyan-700 hover:bg-cyan-50"
-              onClick={() => setIsTargetsModalOpen(true)}
-            >
-              Editar {content.targets.length} area(s)
-            </Button>
-          </div>
-        </div>
-
         {isTargetsModalOpen ? (
           <div className="fixed inset-0 z-[130] flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm animate-in fade-in duration-300">
             <div className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-[40px] border border-white/20 bg-white shadow-2xl animate-in zoom-in-95 duration-300">
