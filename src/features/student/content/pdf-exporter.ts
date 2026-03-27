@@ -476,8 +476,6 @@ function buildPdfStyles() {
       display: flex;
       align-items: center;
       justify-content: center;
-      page-break-after: always;
-      break-after: page;
     }
     .pdf-cover-inner {
       border: 1px solid #dbeafe;
@@ -779,7 +777,6 @@ export async function exportModuleToPdf(courseTitle: string, moduleTitle: string
     pagebreak: {
       mode: ['css', 'legacy'],
       before: '.pdf-lesson',
-      after: '.pdf-cover',
       avoid: '.pdf-table-block, table, tr, td, th, .pdf-lesson-header, .pdf-lesson-materials, h1, h2, h3, h4, ul, ol, blockquote, pre',
     },
   }
