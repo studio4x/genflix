@@ -374,9 +374,11 @@ function applyPdfFinishing(
   const pageWidth = pdf.internal.pageSize.getWidth()
   const pageHeight = pdf.internal.pageSize.getHeight()
   const headerBottomY = 15
-  const footerTopY = pageHeight - 14
+  const footerTopY = pageHeight - 16
   const headerCenterY = 8.2
-  const footerCenterY = pageHeight - 7.2
+  const footerPageNumberY = pageHeight - 8
+  const footerCourseY = footerTopY + 4.2
+  const footerNoticeY = footerTopY + 8.4
 
   const watermarkBounds = fitImageWithin(
     watermark.width,
@@ -428,23 +430,22 @@ function applyPdfFinishing(
       baseline: 'middle',
     })
 
-    const footerLegalFontSize = getFittedFontSize(pdf, FOOTER_NOTICE, pageWidth - 92, 5.8, 4.4)
-    pdf.setFontSize(footerLegalFontSize)
-    pdf.setTextColor(100, 116, 139)
-    pdf.text(FOOTER_NOTICE, pageWidth / 2, footerCenterY, {
-      align: 'center',
+    pdf.setFontSize(5.6)
+    const truncatedCourseTitle = truncateTextToWidth(pdf, courseTitle, pageWidth - 58)
+    pdf.text(truncatedCourseTitle, 12, footerCourseY, {
+      align: 'left',
       baseline: 'middle',
     })
 
-    pdf.setFontSize(5.6)
-    const truncatedCourseTitle = truncateTextToWidth(pdf, courseTitle, 42)
-    pdf.text(truncatedCourseTitle, 12, footerCenterY, {
+    const footerLegalFontSize = getFittedFontSize(pdf, FOOTER_NOTICE, pageWidth - 58, 5.6, 4.2)
+    pdf.setFontSize(footerLegalFontSize)
+    pdf.text(FOOTER_NOTICE, 12, footerNoticeY, {
       align: 'left',
       baseline: 'middle',
     })
 
     pdf.setFontSize(6.8)
-    pdf.text(`pagina ${page} de ${totalPages}`, pageWidth - 12, footerCenterY, {
+    pdf.text(`pagina ${page} de ${totalPages}`, pageWidth - 12, footerPageNumberY, {
       align: 'right',
       baseline: 'middle',
     })
