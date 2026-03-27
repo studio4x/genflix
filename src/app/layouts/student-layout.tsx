@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button'
 const studentLinks = [
   {
     to: '/aluno/dashboard',
-    label: 'Inicio',
+    label: 'Início',
     description: 'Painel principal',
     icon: (
       <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -29,7 +29,7 @@ const studentLinks = [
   {
     to: '/aluno/minha-conta',
     label: 'Minha Conta',
-    description: 'Dados e seguranca',
+    description: 'Dados e segurança',
     icon: (
       <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -60,20 +60,15 @@ export function StudentLayout() {
     <main className="min-h-screen bg-[#f4f7fb] text-slate-900">
       <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/95 backdrop-blur-md">
         <div className="px-4 py-3 sm:px-6 lg:px-8">
-          <div className="relative flex min-h-[60px] items-center justify-between gap-4">
-            <div className="flex min-w-0 items-center gap-4">
-              <Link to="/aluno/dashboard" className="flex min-w-0 items-center gap-3">
-                <img
-                  src={homeCareMatchLogoUrl}
-                  alt="HomeCare Match"
-                  className="h-12 w-12 rounded-full bg-white object-contain shadow-sm"
-                />
-                <div className="min-w-0">
-                  <h1 className="truncate text-xl font-black tracking-tight text-slate-900">HomeCare Match</h1>
-                  <p className="text-sm font-bold uppercase tracking-[0.18em] text-blue-600">Academy</p>
-                </div>
-              </Link>
-            </div>
+          <div className="relative flex min-h-[68px] items-center justify-between gap-4">
+            <Link to="/aluno/dashboard" className="flex min-w-0 items-center gap-4">
+              <img
+                src={homeCareMatchLogoUrl}
+                alt="HomeCare Match"
+                className="h-16 w-auto object-contain sm:h-20"
+              />
+              <p className="text-base font-bold uppercase tracking-[0.22em] text-blue-600 sm:text-lg">Academy</p>
+            </Link>
 
             <div className="pointer-events-none absolute left-1/2 top-1/2 hidden -translate-x-1/2 -translate-y-1/2 md:block">
               <p className="whitespace-nowrap text-sm font-black uppercase tracking-[0.28em] text-slate-400">
@@ -110,27 +105,8 @@ export function StudentLayout() {
             </div>
           </div>
 
-          <div className="mt-3 flex items-center justify-center md:hidden">
+          <div className="mt-2 flex items-center justify-center md:hidden">
             <p className="text-[10px] font-black uppercase tracking-[0.28em] text-slate-400">Área do Aluno</p>
-          </div>
-
-          <div className="mt-3 flex justify-center">
-            <nav className="hidden items-center gap-1 rounded-full border border-slate-200 bg-slate-50 p-1 lg:flex">
-              {studentLinks.map((link) => {
-                const isActive = location.pathname.startsWith(link.to)
-                return (
-                  <Link
-                    key={link.to}
-                    to={link.to}
-                    className={`rounded-full px-4 py-2 text-sm font-bold transition-all ${
-                      isActive ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-900'
-                    }`}
-                  >
-                    {link.label}
-                  </Link>
-                )
-              })}
-            </nav>
           </div>
         </div>
       </header>
