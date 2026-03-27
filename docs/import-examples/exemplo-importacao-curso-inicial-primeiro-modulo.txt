@@ -1,31 +1,54 @@
 {
   "title": "Curso de Etica e Conduta Profissional no Atendimento Domiciliar",
-  "description": "Curso introdutorio com foco em postura profissional, comunicacao e seguranca no atendimento home care.",
-  "workload_minutes": 120,
+  "description": "Curso introdutorio com foco em postura profissional, comunicacao, seguranca e etica no home care.",
+  "workload_minutes": 140,
   "status": "draft",
   "modules": [
     {
       "title": "Modulo 1 - Fundamentos da Etica no Atendimento Domiciliar",
-      "description": "Apresenta os principios essenciais da etica, da autonomia do paciente e dos limites profissionais no ambiente domiciliar.",
+      "description": "Primeiro modulo estruturado no padrao oficial: 4 aulas de conteudo, 1 aula de referencias e 1 quiz final.",
       "lessons": [
         {
           "title": "Aula 1.1 - Introducao a Etica Profissional",
           "description": "Conceitos iniciais sobre etica, conduta e responsabilidade no atendimento domiciliar.",
-          "lesson_type": "video",
+          "lesson_type": "hybrid",
           "youtube_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-          "estimated_minutes": 12
+          "text_content": "<h2>Etica profissional</h2><p>O cuidado domiciliar exige postura tecnica, responsabilidade e respeito ao paciente e a familia.</p><h3>Referencias bibliograficas</h3><ul><li>Codigo de Etica da categoria profissional correspondente.</li><li>BRASIL. Ministerio da Saude. Atencao domiciliar.</li></ul>",
+          "estimated_minutes": 14
         },
         {
-          "title": "Aula 1.2 - Autonomia, Sigilo e Limites",
-          "description": "Entenda como respeitar o paciente, proteger informacoes e manter limites profissionais saudaveis.",
+          "title": "Aula 1.2 - Autonomia do Paciente",
+          "description": "Como respeitar a decisao do paciente no contexto assistencial.",
           "lesson_type": "text",
-          "text_content": "<h2>Autonomia e sigilo</h2><p>O atendimento domiciliar exige respeito a decisao do paciente, postura profissional e registro adequado das orientacoes prestadas.</p><p>O profissional deve comunicar riscos, acolher duvidas e seguir os fluxos institucionais sem ultrapassar seu escopo de atuacao.</p>",
+          "text_content": "<h2>Autonomia</h2><p>Pacientes com capacidade decisoria devem ser ouvidos, orientados e ter suas escolhas registradas adequadamente.</p><h3>Referencias bibliograficas</h3><ul><li>Principios de bioetica aplicada.</li><li>Literatura tecnica sobre autonomia no cuidado em saude.</li></ul>",
           "estimated_minutes": 15
+        },
+        {
+          "title": "Aula 1.3 - Sigilo e Comunicacao Profissional",
+          "description": "Protecao de informacoes e compartilhamento responsavel de dados clinicos.",
+          "lesson_type": "text",
+          "text_content": "<h2>Sigilo profissional</h2><p>O profissional deve proteger informacoes sensiveis, comunicando apenas o necessario dentro dos fluxos corretos.</p><h3>Referencias bibliograficas</h3><ul><li>Codigo de Etica da categoria profissional correspondente.</li><li>Normativas sobre sigilo e protecao de dados em saude.</li></ul>",
+          "estimated_minutes": 15
+        },
+        {
+          "title": "Aula 1.4 - Limites Profissionais e Seguranca",
+          "description": "Como manter limites claros e prevenir riscos no ambiente domiciliar.",
+          "lesson_type": "hybrid",
+          "youtube_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+          "text_content": "<h2>Limites profissionais</h2><p>Manter limites adequados e registrar intercorrencias fortalece a seguranca do cuidado e reduz exposicoes desnecessarias.</p><h3>Referencias bibliograficas</h3><ul><li>ANVISA. Seguranca do paciente.</li><li>Material institucional sobre limites profissionais no home care.</li></ul>",
+          "estimated_minutes": 18
+        },
+        {
+          "title": "Aula 1.5 - Referencias Bibliograficas do Modulo 1",
+          "description": "Consolidacao das referencias utilizadas em todo o modulo.",
+          "lesson_type": "text",
+          "text_content": "<h2>Referencias bibliograficas consolidadas</h2><ul><li>Codigo de Etica da categoria profissional correspondente.</li><li>BRASIL. Ministerio da Saude. Atencao domiciliar.</li><li>Principios de bioetica aplicada.</li><li>Literatura tecnica sobre autonomia no cuidado em saude.</li><li>Normativas sobre sigilo e protecao de dados em saude.</li><li>ANVISA. Seguranca do paciente.</li></ul>",
+          "estimated_minutes": 8
         }
       ],
       "assessments": [
         {
-          "title": "Quiz de Fixacao - Modulo 1",
+          "title": "Quiz Final - Modulo 1",
           "description": "Verifique a compreensao dos conceitos introdutorios do primeiro modulo.",
           "assessment_type": "module",
           "passing_score": 70,

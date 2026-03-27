@@ -1,32 +1,55 @@
 {
   "title": "Curso Exemplo de Home Care",
-  "description": "Curso completo com modulos, aulas e quizzes com estudos de caso.",
-  "workload_minutes": 360,
+  "description": "Curso completo com dois modulos, cada um seguindo a estrutura padrao de 4 aulas de conteudo, 1 aula de referencias e 1 quiz final.",
+  "workload_minutes": 420,
   "status": "draft",
   "modules": [
     {
-      "title": "Modulo 1 - Fundamentos do Atendimento",
-      "description": "Base inicial do curso.",
+      "title": "Modulo 1 - Fundamentos do Atendimento Domiciliar",
+      "description": "Base inicial do curso com conceitos essenciais sobre postura, comunicacao, seguranca e etica.",
       "lessons": [
         {
-          "title": "Aula 1.1 - Introducao ao Atendimento",
-          "description": "Visao geral do papel do profissional.",
-          "lesson_type": "video",
+          "title": "Aula 1.1 - Introducao ao Atendimento Domiciliar",
+          "description": "Visao geral sobre o papel do profissional no ambiente domiciliar.",
+          "lesson_type": "hybrid",
           "youtube_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+          "text_content": "<h2>Introducao</h2><p>O atendimento domiciliar exige postura profissional, empatia e observacao constante do contexto do paciente.</p><h3>Referencias bibliograficas</h3><ul><li>BRASIL. Ministerio da Saude. Atencao domiciliar no SUS.</li><li>ANVISA. Seguranca do paciente em servicos de saude.</li></ul>",
           "estimated_minutes": 18
         },
         {
-          "title": "Aula 1.2 - Postura e Comunicacao",
-          "description": "Boas praticas de relacionamento com o paciente.",
+          "title": "Aula 1.2 - Comunicacao com Paciente e Familia",
+          "description": "Como alinhar expectativas e transmitir orientacoes com clareza.",
           "lesson_type": "text",
-          "text_content": "<h2>Postura profissional</h2><p>Exemplo de conteudo textual da aula.</p>",
+          "text_content": "<h2>Comunicacao clara</h2><p>A escuta ativa e a linguagem acessivel reduzem erros e fortalecem a confianca da familia e do paciente.</p><h3>Referencias bibliograficas</h3><ul><li>OMS. Comunicacao efetiva para seguranca do paciente.</li><li>COFEN. Boas praticas de comunicacao assistencial.</li></ul>",
+          "estimated_minutes": 16
+        },
+        {
+          "title": "Aula 1.3 - Limites Profissionais e Etica",
+          "description": "Postura adequada, escopo de atuacao e respeito aos limites profissionais.",
+          "lesson_type": "text",
+          "text_content": "<h2>Etica na pratica</h2><p>O profissional deve respeitar o escopo de atuacao, manter registros adequados e evitar extrapolar limites na relacao com a familia.</p><h3>Referencias bibliograficas</h3><ul><li>Codigo de Etica da categoria profissional correspondente.</li><li>Conselho Federal de Enfermagem. Etica e conduta profissional.</li></ul>",
           "estimated_minutes": 15
+        },
+        {
+          "title": "Aula 1.4 - Seguranca no Ambiente Domiciliar",
+          "description": "Identificacao de riscos e organizacao do atendimento com seguranca.",
+          "lesson_type": "hybrid",
+          "youtube_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+          "text_content": "<h2>Seguranca do cuidado</h2><p>A avaliacao do ambiente, a confirmacao de orientacoes e o registro de intercorrencias sao partes essenciais da rotina segura.</p><h3>Referencias bibliograficas</h3><ul><li>ANVISA. Medidas de seguranca do paciente.</li><li>OMS. Patient safety curriculum guide.</li></ul>",
+          "estimated_minutes": 20
+        },
+        {
+          "title": "Aula 1.5 - Referencias Bibliograficas do Modulo 1",
+          "description": "Consolidacao de todas as referencias utilizadas ao longo do modulo.",
+          "lesson_type": "text",
+          "text_content": "<h2>Referencias bibliograficas consolidadas</h2><ul><li>BRASIL. Ministerio da Saude. Atencao domiciliar no SUS.</li><li>ANVISA. Seguranca do paciente em servicos de saude.</li><li>OMS. Comunicacao efetiva para seguranca do paciente.</li><li>COFEN. Boas praticas de comunicacao assistencial.</li><li>Codigo de Etica da categoria profissional correspondente.</li><li>OMS. Patient safety curriculum guide.</li></ul>",
+          "estimated_minutes": 8
         }
       ],
       "assessments": [
         {
-          "title": "Quiz de Fixacao - Modulo 1",
-          "description": "Quiz com perguntas avulsas e estudo de caso.",
+          "title": "Quiz Final - Modulo 1",
+          "description": "Quiz final do primeiro modulo.",
           "assessment_type": "module",
           "passing_score": 70,
           "max_attempts": 3,
@@ -92,22 +115,51 @@
       ]
     },
     {
-      "title": "Modulo 2 - Seguranca e Boas Praticas",
-      "description": "Cuidados essenciais na execucao das atividades.",
+      "title": "Modulo 2 - Seguranca e Boas Praticas Assistenciais",
+      "description": "Aprofunda higiene, prevencao, registro, observacao clinica e integracao com a equipe.",
       "lessons": [
         {
           "title": "Aula 2.1 - Higiene e Prevencao",
-          "description": "Rotinas basicas para reduzir riscos.",
+          "description": "Rotinas basicas para reduzir riscos durante o cuidado.",
           "lesson_type": "hybrid",
           "youtube_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-          "text_content": "<p>Checklist de higiene, limpeza e organizacao do ambiente.</p>",
-          "estimated_minutes": 22
+          "text_content": "<h2>Prevencao de riscos</h2><p>A higiene correta das maos e dos materiais reduz a transmissao de infeccoes e fortalece a seguranca do paciente.</p><h3>Referencias bibliograficas</h3><ul><li>ANVISA. Higienizacao das maos em servicos de saude.</li><li>OMS. Guidelines on hand hygiene.</li></ul>",
+          "estimated_minutes": 20
+        },
+        {
+          "title": "Aula 2.2 - Observacao Clinica no Domicilio",
+          "description": "Como identificar alteracoes importantes no estado do paciente.",
+          "lesson_type": "text",
+          "text_content": "<h2>Observacao sistematica</h2><p>O profissional deve observar sinais, comportamento, queixas e resposta ao cuidado, registrando mudancas relevantes.</p><h3>Referencias bibliograficas</h3><ul><li>BRASIL. Linha de cuidado domiciliar.</li><li>Literatura tecnica sobre sinais de alerta em home care.</li></ul>",
+          "estimated_minutes": 16
+        },
+        {
+          "title": "Aula 2.3 - Registro e Comunicacao de Intercorrencias",
+          "description": "Importancia do registro objetivo e do acionamento correto da equipe.",
+          "lesson_type": "text",
+          "text_content": "<h2>Registros seguros</h2><p>O registro preciso e a comunicacao tempestiva de intercorrencias apoiam a continuidade e a seguranca da assistencia.</p><h3>Referencias bibliograficas</h3><ul><li>COREN. Registros de enfermagem e seguranca assistencial.</li><li>ANVISA. Seguranca do paciente.</li></ul>",
+          "estimated_minutes": 14
+        },
+        {
+          "title": "Aula 2.4 - Trabalho Integrado com a Equipe",
+          "description": "Fluxos de comunicacao e redirecionamento adequado das demandas.",
+          "lesson_type": "hybrid",
+          "youtube_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+          "text_content": "<h2>Integracao assistencial</h2><p>A articulacao entre profissionais, familia e servico e essencial para garantir continuidade do plano de cuidados.</p><h3>Referencias bibliograficas</h3><ul><li>Ministerio da Saude. Atencao multiprofissional no cuidado domiciliar.</li><li>OMS. Framework on integrated people-centred health services.</li></ul>",
+          "estimated_minutes": 18
+        },
+        {
+          "title": "Aula 2.5 - Referencias Bibliograficas do Modulo 2",
+          "description": "Consolidacao de todas as referencias utilizadas ao longo do modulo.",
+          "lesson_type": "text",
+          "text_content": "<h2>Referencias bibliograficas consolidadas</h2><ul><li>ANVISA. Higienizacao das maos em servicos de saude.</li><li>OMS. Guidelines on hand hygiene.</li><li>BRASIL. Linha de cuidado domiciliar.</li><li>COREN. Registros de enfermagem e seguranca assistencial.</li><li>Ministerio da Saude. Atencao multiprofissional no cuidado domiciliar.</li><li>OMS. Framework on integrated people-centred health services.</li></ul>",
+          "estimated_minutes": 8
         }
       ],
       "assessments": [
         {
-          "title": "Quiz de Fixacao - Modulo 2",
-          "description": "Avaliacao objetiva do modulo.",
+          "title": "Quiz Final - Modulo 2",
+          "description": "Quiz final do segundo modulo.",
           "assessment_type": "module",
           "passing_score": 70,
           "max_attempts": 3,

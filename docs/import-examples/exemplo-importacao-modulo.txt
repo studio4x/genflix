@@ -1,27 +1,49 @@
 [
   {
     "title": "Modulo Exemplo - Cuidado Humanizado",
-    "description": "Modulo isolado para importar no builder.",
+    "description": "Modulo isolado seguindo o padrao de 4 aulas de conteudo, 1 aula de referencias bibliograficas e 1 quiz final.",
     "lessons": [
       {
         "title": "Aula 1 - Escuta ativa",
         "description": "Como ouvir o paciente e identificar necessidades.",
         "lesson_type": "text",
-        "text_content": "<h2>Escuta ativa</h2><p>Exemplo de conteudo da aula em HTML.</p>",
+        "text_content": "<h2>Escuta ativa</h2><p>A escuta ativa ajuda o profissional a compreender necessidades e responder de forma acolhedora.</p><h3>Referencias bibliograficas</h3><ul><li>OMS. Comunicacao centrada na pessoa.</li><li>Literatura tecnica sobre humanizacao do cuidado.</li></ul>",
         "estimated_minutes": 14
       },
       {
         "title": "Aula 2 - Comunicacao com a familia",
         "description": "Alinhamento de informacoes e postura profissional.",
-        "lesson_type": "video",
+        "lesson_type": "hybrid",
         "youtube_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+        "text_content": "<h2>Comunicacao no domicilio</h2><p>Alinhar expectativas e explicar o plano de cuidados reduz conflitos e melhora a adesao da familia.</p><h3>Referencias bibliograficas</h3><ul><li>OMS. Effective communication in care settings.</li><li>COFEN. Boas praticas de comunicacao assistencial.</li></ul>",
         "estimated_minutes": 16
+      },
+      {
+        "title": "Aula 3 - Limites e postura profissional",
+        "description": "Como manter relacoes profissionais seguras e respeitosas.",
+        "lesson_type": "text",
+        "text_content": "<h2>Postura profissional</h2><p>O profissional deve manter limites claros, respeitar o escopo e registrar intercorrencias relevantes.</p><h3>Referencias bibliograficas</h3><ul><li>Codigo de Etica da categoria profissional correspondente.</li><li>Material institucional sobre limites profissionais no home care.</li></ul>",
+        "estimated_minutes": 15
+      },
+      {
+        "title": "Aula 4 - Registro e continuidade do cuidado",
+        "description": "Como registrar informacoes relevantes e articular os proximos passos.",
+        "lesson_type": "text",
+        "text_content": "<h2>Registro objetivo</h2><p>O registro assistencial deve ser claro, objetivo e util para a continuidade do cuidado pela equipe.</p><h3>Referencias bibliograficas</h3><ul><li>COREN. Registros de enfermagem.</li><li>ANVISA. Seguranca do paciente e comunicacao.</li></ul>",
+        "estimated_minutes": 14
+      },
+      {
+        "title": "Aula 5 - Referencias Bibliograficas do Modulo",
+        "description": "Consolidacao das referencias utilizadas nas quatro aulas do modulo.",
+        "lesson_type": "text",
+        "text_content": "<h2>Referencias bibliograficas consolidadas</h2><ul><li>OMS. Comunicacao centrada na pessoa.</li><li>OMS. Effective communication in care settings.</li><li>COFEN. Boas praticas de comunicacao assistencial.</li><li>Codigo de Etica da categoria profissional correspondente.</li><li>COREN. Registros de enfermagem.</li><li>ANVISA. Seguranca do paciente e comunicacao.</li></ul>",
+        "estimated_minutes": 8
       }
     ],
     "assessments": [
       {
-        "title": "Quiz de Fixacao - Cuidado Humanizado",
-        "description": "Quiz do modulo com questoes mistas.",
+        "title": "Quiz Final - Cuidado Humanizado",
+        "description": "Quiz final do modulo com questoes mistas.",
         "assessment_type": "module",
         "passing_score": 70,
         "max_attempts": 3,
