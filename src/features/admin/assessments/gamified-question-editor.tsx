@@ -203,6 +203,133 @@ function formatPoints(value: number) {
   return Number.isInteger(value) ? String(value) : value.toFixed(2).replace(/\.?0+$/, '')
 }
 
+interface FillBlankBuilderItem {
+  blankId: string
+  tokenId: string
+  beforeText: string
+  afterText: string
+  placeholder: string
+  answerText: string
+}
+
+function buildFillBlankBuilderItems(
+  content: FillInTheBlanksInteractionContent,
+  answerKey: AssessmentQuestionAnswerKeyPayload | null,
+) {
+  const tokenById = new Map(content.tokens.map((token) => [token.id, token]))
+  const tokenIdBySlot = new Map((answerKey?.entries ?? []).map((entry) => [entry.slot_id, entry.token_id]))
+  const items: FillBlankBuilderItem[] = []
+
+  let pendingBeforeText = ''
+  let index = 0
+
+  while (index < content.segments.length) {
+    const currentSegment = content.segments[index]
+
+    if (currentSegment.type === 'text') {
+      pendingBeforeText += currentSegment.text
+      index += 1
+      continue
+    }
+
+    let afterText = ''
+    let nextIndex = index + 1
+    while (nextIndex < content.segments.length) {
+      const nextSegment = content.segments[nextIndex]
+      if (nextSegment?.type !== 'text') {
+        break
+      }
+
+      afterText += nextSegment.text
+      nextIndex += 1
+    }
+
+    const tokenId = tokenIdBySlot.get(currentSegment.id)
+      ?? content.tokens[items.length]?.id
+      ?? crypto.randomUUID()
+
+    items.push({
+      blankId: currentSegment.id,
+      tokenId,
+      beforeText: pendingBeforeText,
+      afterText,
+      placeholder: currentSegment.placeholder ?? '',
+      answerText: tokenById.get(tokenId)?.label ?? '',
+    })
+
+    pendingBeforeText = ''
+    index = nextIndex
+  }
+
+  if (items.length === 0) {
+    const fallbackToken = content.tokens[0]
+    const preservedText = content.segments
+      .filter((segment): segment is Extract<FillInTheBlanksInteractionContent['segments'][number], { type: 'text' }> => segment.type === 'text')
+      .map((segment) => segment.text)
+      .join('')
+
+    items.push({
+      blankId: crypto.randomUUID(),
+      tokenId: fallbackToken?.id ?? crypto.randomUUID(),
+      beforeText: preservedText,
+      afterText: '',
+      placeholder: '',
+      answerText: fallbackToken?.label ?? '',
+    })
+  }
+
+  return items
+}
+
+function buildFillBlankBundle(
+  instruction: string,
+  items: FillBlankBuilderItem[],
+) {
+  const tokens = items.map((item) => ({
+    id: item.tokenId,
+    label: item.answerText,
+  }))
+
+  const segments: FillInTheBlanksInteractionContent['segments'] = []
+
+  items.forEach((item) => {
+    if (item.beforeText.length > 0) {
+      segments.push({
+        type: 'text',
+        text: item.beforeText,
+      })
+    }
+
+    segments.push({
+      type: 'blank',
+      id: item.blankId,
+      placeholder: item.placeholder || undefined,
+    })
+
+    if (item.afterText.length > 0) {
+      segments.push({
+        type: 'text',
+        text: item.afterText,
+      })
+    }
+  })
+
+  return {
+    content: {
+      kind: 'fill_in_the_blanks',
+      instruction,
+      segments: segments.length > 0 ? segments : [{ type: 'text', text: '' }],
+      tokens,
+    } satisfies FillInTheBlanksInteractionContent,
+    answerKey: {
+      entries: items.map((item) => ({
+        slot_id: item.blankId,
+        token_id: item.tokenId,
+      })),
+    } satisfies AssessmentQuestionAnswerKeyPayload,
+  }
+}
+
 export function GamifiedQuestionEditor({
   question,
   onDraftChange,
@@ -218,6 +345,7 @@ export function GamifiedQuestionEditor({
   const [isAssetMetadataOpen, setIsAssetMetadataOpen] = useState(false)
   const [isAdvancedAnswerToolsOpen, setIsAdvancedAnswerToolsOpen] = useState(false)
   const [isTargetsModalOpen, setIsTargetsModalOpen] = useState(false)
+  const [openFillBlankId, setOpenFillBlankId] = useState<string | null>(null)
 
   const interactionContent = useMemo(() => {
     if (question.interaction?.content) {
@@ -1078,208 +1206,194 @@ export function GamifiedQuestionEditor({
   }
 
   function renderFillInTheBlanksEditor(content: FillInTheBlanksInteractionContent) {
-    const blanks = content.segments.filter((segment): segment is Extract<FillInTheBlanksInteractionContent['segments'][number], { type: 'blank' }> => segment.type === 'blank')
+    const items = buildFillBlankBuilderItems(content, answerKeyPayload)
+    const expandedItemId = items.some((item) => item.blankId === openFillBlankId)
+      ? openFillBlankId
+      : items[0]?.blankId ?? null
 
-    function updateSegmentText(index: number, text: string) {
-      const nextContent: FillInTheBlanksInteractionContent = {
-        ...content,
-        segments: content.segments.map((segment, segmentIndex) => (
-          segmentIndex === index && segment.type === 'text'
-            ? { ...segment, text }
-            : segment
-        )),
-      }
-
-      updateDraft(nextContent)
+    function updateItemsDraft(nextItems: FillBlankBuilderItem[]) {
+      const nextBundle = buildFillBlankBundle(content.instruction, nextItems)
+      updateDraft(nextBundle.content, nextBundle.answerKey)
     }
 
-    function updateBlank(blankId: string, placeholder: string) {
-      const nextContent: FillInTheBlanksInteractionContent = {
-        ...content,
-        segments: content.segments.map((segment) => (
-          segment.type === 'blank' && segment.id === blankId
-            ? { ...segment, placeholder }
-            : segment
-        )),
-      }
-
-      updateDraft(nextContent)
+    function commitItems(nextItems: FillBlankBuilderItem[]) {
+      const nextBundle = buildFillBlankBundle(content.instruction, nextItems)
+      return commit(nextBundle.content, nextBundle.answerKey)
     }
 
-    function addTextSegment() {
-      const nextContent: FillInTheBlanksInteractionContent = {
-        ...content,
-        segments: [...content.segments, { type: 'text', text: 'Novo trecho de texto. ' }],
-      }
-
-      void commit(nextContent)
+    function patchItems(blankId: string, updates: Partial<FillBlankBuilderItem>) {
+      return items.map((item) => (
+        item.blankId === blankId
+          ? { ...item, ...updates }
+          : item
+      ))
     }
 
-    function addBlankSegment() {
-      const nextToken = {
-        id: crypto.randomUUID(),
-        label: `Resposta ${content.tokens.length + 1}`,
-      }
-      const nextContent: FillInTheBlanksInteractionContent = {
-        ...content,
-        tokens: [...content.tokens, nextToken],
-        segments: [
-          ...content.segments,
-          { type: 'blank', id: crypto.randomUUID(), placeholder: 'lacuna' },
-        ],
-      }
-
-      void commit(nextContent)
+    function updateItem(blankId: string, updates: Partial<FillBlankBuilderItem>) {
+      updateItemsDraft(patchItems(blankId, updates))
     }
 
-    function removeSegment(index: number) {
-      if (content.segments.length === 1) {
-        onError('Mantenha ao menos um segmento de texto ou lacuna.')
+    function addPromptItem() {
+      const nextItem: FillBlankBuilderItem = {
+        blankId: crypto.randomUUID(),
+        tokenId: crypto.randomUUID(),
+        beforeText: '',
+        afterText: '',
+        placeholder: '',
+        answerText: '',
+      }
+      const nextItems = [...items, nextItem]
+      setOpenFillBlankId(nextItem.blankId)
+      void commitItems(nextItems)
+    }
+
+    function removePromptItem(blankId: string) {
+      if (items.length === 1) {
+        onError('Mantenha ao menos uma pergunta com lacuna neste exercicio.')
         return
       }
 
-      const removedSegment = content.segments[index]
-      const nextContent: FillInTheBlanksInteractionContent = {
-        ...content,
-        segments: content.segments.filter((_, segmentIndex) => segmentIndex !== index),
-      }
-
-      let nextAnswerKey = answerKeyPayload
-      if (removedSegment?.type === 'blank') {
-        nextAnswerKey = {
-          entries: (answerKeyPayload?.entries ?? []).filter((entry) => entry.slot_id !== removedSegment.id),
-        }
-      }
-
-      void commit(nextContent, syncAnswerKeyWithContent(nextContent, nextAnswerKey))
+      const nextItems = items.filter((item) => item.blankId !== blankId)
+      const fallbackOpenId = nextItems[0]?.blankId ?? null
+      setOpenFillBlankId((current) => (current === blankId ? fallbackOpenId : current))
+      void commitItems(nextItems)
     }
 
     return (
-      <div className="grid gap-6 xl:grid-cols-[1.3fr_1fr]">
-        <section className="rounded-[32px] border border-slate-200 bg-white p-5 shadow-sm">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <p className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-400">Construtor de texto</p>
-              <p className="mt-2 text-sm font-medium text-slate-600">
-                Monte o enunciado em segmentos. Cada lacuna recebe uma resposta correta do banco.
-              </p>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <Button type="button" variant="outline" className="rounded-2xl" onClick={addTextSegment}>
-                Adicionar texto
-              </Button>
-              <Button type="button" className="rounded-2xl bg-cyan-600 hover:bg-cyan-700" onClick={addBlankSegment}>
-                Inserir lacuna
-              </Button>
-            </div>
-          </div>
-
-          <div className="mt-5 space-y-4">
-            {content.segments.map((segment, index) => (
-              <div key={segment.type === 'blank' ? segment.id : `text-${index}`} className="rounded-[28px] border border-slate-200 bg-slate-50/70 p-4">
-                <div className="flex items-center justify-between gap-3">
-                  <span className={cn(
-                    'rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-widest',
-                    segment.type === 'blank'
-                      ? 'bg-cyan-100 text-cyan-700'
-                      : 'bg-slate-200 text-slate-500',
-                  )}>
-                    {segment.type === 'blank' ? 'Lacuna' : 'Texto'}
-                  </span>
-                  <button
-                    type="button"
-                    className="rounded-xl p-2 text-slate-300 transition-colors hover:bg-rose-50 hover:text-rose-500"
-                    onClick={() => removeSegment(index)}
-                  >
-                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                </div>
-
-                {segment.type === 'text' ? (
-                  <textarea
-                    className="mt-4 min-h-[110px] w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 focus:border-cyan-300 focus:ring-4 focus:ring-cyan-100"
-                    value={segment.text}
-                    onChange={(event) => updateSegmentText(index, event.target.value)}
-                    onBlur={() => void commit(content)}
-                    placeholder="Trecho antes, entre ou depois das lacunas."
-                  />
-                ) : (
-                  <div className="mt-4 grid gap-4 md:grid-cols-2">
-                    <label className="block space-y-2">
-                      <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Placeholder</span>
-                      <input
-                        className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 focus:border-cyan-300 focus:ring-4 focus:ring-cyan-100"
-                        value={segment.placeholder ?? ''}
-                        onChange={(event) => updateBlank(segment.id, event.target.value)}
-                        onBlur={() => void commit(content)}
-                        placeholder="Ex.: termo principal"
-                      />
-                    </label>
-
-                    <label className="block space-y-2">
-                      <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Resposta correta</span>
-                      <select
-                        className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 focus:border-cyan-300 focus:ring-4 focus:ring-cyan-100"
-                        value={assignedTokenBySlot.get(segment.id) ?? ''}
-                        onChange={(event) => updateSlotAnswer(segment.id, event.target.value)}
-                      >
-                        <option value="" disabled>Selecione um item</option>
-                        {content.tokens.map((token, tokenIndex) => (
-                          <option key={token.id} value={token.id}>
-                            {token.label.trim() || `Resposta ${tokenIndex + 1}`}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        </section>
-
-        <section className="rounded-[32px] border border-slate-200 bg-[linear-gradient(180deg,_rgba(236,254,255,0.8),_rgba(255,255,255,1))] p-5 shadow-sm">
-          <p className="text-[10px] font-black uppercase tracking-[0.25em] text-cyan-700">Preview do aluno</p>
-          <div className="mt-4 rounded-[28px] border border-white bg-white p-6 shadow-sm">
-            <p className="text-base leading-8 text-slate-700">
-              {content.segments.map((segment, index) => (
-                segment.type === 'text' ? (
-                  <span key={`text-${index}`}>{segment.text}</span>
-                ) : (
-                  <span
-                    key={segment.id}
-                    className="mx-1 inline-flex min-w-[120px] items-center justify-center rounded-2xl border border-cyan-200 bg-cyan-50 px-4 py-2 text-sm font-black text-cyan-700 shadow-sm"
-                  >
-                    {content.tokens.find((token) => token.id === assignedTokenBySlot.get(segment.id))?.label
-                      ?? segment.placeholder
-                      ?? 'lacuna'}
-                  </span>
-                )
-              ))}
+      <section className="rounded-[32px] border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="flex flex-col gap-4 border-b border-slate-100 pb-5 md:flex-row md:items-center md:justify-between">
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-400">Perguntas com lacunas</p>
+            <p className="mt-2 text-sm font-medium text-slate-600">
+              Cada card representa uma frase com uma lacuna. Abra, preencha os campos e defina a resposta correta no mesmo lugar.
             </p>
           </div>
 
-          <div className="mt-5 rounded-[28px] border border-cyan-100 bg-cyan-50/60 p-5">
-            <p className="text-[10px] font-black uppercase tracking-[0.25em] text-cyan-700">Mapa de lacunas</p>
-            <div className="mt-4 space-y-3">
-              {blanks.map((blank, index) => (
-                <div key={blank.id} className="flex items-center justify-between gap-4 rounded-2xl border border-white bg-white px-4 py-3 shadow-sm">
-                  <div>
-                    <p className="text-xs font-black uppercase tracking-widest text-slate-400">Lacuna {index + 1}</p>
-                    <p className="mt-1 text-sm font-semibold text-slate-700">{blank.placeholder || 'Sem placeholder'}</p>
+          <Button
+            type="button"
+            className="rounded-2xl bg-teal-600 px-5 hover:bg-teal-700"
+            onClick={addPromptItem}
+          >
+            Adicionar nova pergunta
+          </Button>
+        </div>
+
+        <div className="mt-5 space-y-4">
+          {items.map((item, index) => {
+            const isOpen = expandedItemId === item.blankId
+            const previewLabel = item.answerText.trim() || item.placeholder.trim() || 'Sem resposta definida'
+
+            return (
+              <div key={item.blankId} className="overflow-hidden rounded-[28px] border border-slate-200 bg-slate-50/70">
+                <button
+                  type="button"
+                  className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left transition-colors hover:bg-white/60"
+                  onClick={() => setOpenFillBlankId((current) => current === item.blankId ? null : item.blankId)}
+                >
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-3">
+                      <span className="rounded-full bg-teal-100 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-teal-700">
+                        Pergunta {index + 1}
+                      </span>
+                      <span className="truncate text-sm font-semibold text-slate-700">
+                        {previewLabel}
+                      </span>
+                    </div>
+                    <p className="mt-2 text-xs font-medium text-slate-500">
+                      {item.beforeText.trim() || item.afterText.trim()
+                        ? 'Texto configurado'
+                        : 'Clique para escrever a frase e definir a lacuna.'}
+                    </p>
                   </div>
-                  <span className="rounded-full bg-cyan-100 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-cyan-700">
-                    {content.tokens.find((token) => token.id === assignedTokenBySlot.get(blank.id))?.label ?? 'Sem resposta'}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-      </div>
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      className="rounded-xl p-2 text-slate-300 transition-colors hover:bg-rose-50 hover:text-rose-500"
+                      onClick={(event) => {
+                        event.stopPropagation()
+                        removePromptItem(item.blankId)
+                      }}
+                    >
+                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                    <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-500 shadow-sm">
+                      <svg className={cn('h-4 w-4 transition-transform', isOpen ? 'rotate-180' : '')} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </span>
+                  </div>
+                </button>
+
+                {isOpen ? (
+                  <div className="space-y-5 border-t border-slate-200 bg-white px-5 py-5">
+                    <div className="grid gap-4 xl:grid-cols-2">
+                      <label className="block space-y-2">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Texto antes da lacuna</span>
+                        <textarea
+                          className="min-h-[120px] w-full rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3 text-sm text-slate-700 focus:border-teal-300 focus:ring-4 focus:ring-teal-100"
+                          value={item.beforeText}
+                          onChange={(event) => updateItem(item.blankId, { beforeText: event.target.value })}
+                          onBlur={(event) => void commitItems(patchItems(item.blankId, { beforeText: event.currentTarget.value }))}
+                          placeholder="Ex.: A fisiologia é a ciência que estuda..."
+                        />
+                      </label>
+
+                      <label className="block space-y-2">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Texto depois da lacuna</span>
+                        <textarea
+                          className="min-h-[120px] w-full rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3 text-sm text-slate-700 focus:border-teal-300 focus:ring-4 focus:ring-teal-100"
+                          value={item.afterText}
+                          onChange={(event) => updateItem(item.blankId, { afterText: event.target.value })}
+                          onBlur={(event) => void commitItems(patchItems(item.blankId, { afterText: event.currentTarget.value }))}
+                          placeholder="Ex.: ...dos seres vivos."
+                        />
+                      </label>
+                    </div>
+
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <label className="block space-y-2">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Placeholder da lacuna</span>
+                        <input
+                          className="w-full rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3 text-sm font-semibold text-slate-700 focus:border-teal-300 focus:ring-4 focus:ring-teal-100"
+                          value={item.placeholder}
+                          onChange={(event) => updateItem(item.blankId, { placeholder: event.target.value })}
+                          onBlur={(event) => void commitItems(patchItems(item.blankId, { placeholder: event.currentTarget.value }))}
+                          placeholder="Ex.: termo principal"
+                        />
+                      </label>
+
+                      <label className="block space-y-2">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Resposta correta</span>
+                        <input
+                          className="w-full rounded-2xl border border-teal-200 bg-teal-50/60 px-4 py-3 text-sm font-semibold text-slate-800 focus:border-teal-300 focus:ring-4 focus:ring-teal-100"
+                          value={item.answerText}
+                          onChange={(event) => updateItem(item.blankId, { answerText: event.target.value })}
+                          onBlur={(event) => void commitItems(patchItems(item.blankId, { answerText: event.currentTarget.value }))}
+                          placeholder="Digite a resposta correta completa"
+                        />
+                      </label>
+                    </div>
+
+                    <div className="rounded-[24px] border border-teal-100 bg-teal-50/60 p-5">
+                      <p className="text-[10px] font-black uppercase tracking-[0.25em] text-teal-700">Preview da pergunta</p>
+                      <p className="mt-4 text-base leading-8 text-slate-700">
+                        {item.beforeText || <span className="text-slate-400">Texto antes da lacuna</span>}
+                        <span className="mx-2 inline-flex min-w-[140px] items-center justify-center rounded-2xl border border-teal-200 bg-white px-4 py-2 text-sm font-black text-teal-700 shadow-sm">
+                          {item.answerText || item.placeholder || 'Lacuna'}
+                        </span>
+                        {item.afterText || <span className="text-slate-400">Texto depois da lacuna</span>}
+                      </p>
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+            )
+          })}
+        </div>
+      </section>
     )
   }
 
@@ -1346,7 +1460,7 @@ export function GamifiedQuestionEditor({
         ? renderDragDropEditor(activeInteraction)
         : renderFillInTheBlanksEditor(activeInteraction)}
 
-      {renderTokenBank()}
+      {activeInteraction.kind === 'drag_drop_labeling' ? renderTokenBank() : null}
 
       <div className={cn(
         'rounded-[28px] border px-5 py-4 text-sm font-semibold',
