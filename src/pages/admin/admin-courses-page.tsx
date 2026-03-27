@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import ReactQuill from 'react-quill'
 import 'react-quill/dist/quill.snow.css'
 import type { FormEvent } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { DragDropContext, Draggable, Droppable, type DropResult } from '@hello-pangea/dnd'
 
 import { useAuth } from '@/app/providers/auth-provider'
@@ -65,6 +65,7 @@ function formatCourseWorkload(minutes: number) {
 }
 
 export function AdminCoursesPage() {
+  const navigate = useNavigate()
   const { user } = useAuth()
   const [courses, setCourses] = useState<Course[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -146,11 +147,13 @@ export function AdminCoursesPage() {
     try {
       if (editingCourseId) {
         await updateCourse(editingCourseId, parsed.data)
+        await loadCourses()
+        resetForm()
       } else {
-        await createCourse(parsed.data, user.id)
+        const createdCourse = await createCourse(parsed.data, user.id)
+        resetForm()
+        navigate(`/admin/cursos/${createdCourse.id}/builder`)
       }
-      await loadCourses()
-      resetForm()
     } catch (submitError) {
       setError(toErrorMessage(submitError))
     } finally {
