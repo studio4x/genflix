@@ -160,6 +160,7 @@ export function GamifiedQuestionEditor({
   const fileInputRef = useRef<HTMLInputElement | null>(null)
   const [isUploadingAsset, setIsUploadingAsset] = useState(false)
   const [selectedTargetId, setSelectedTargetId] = useState<string | null>(null)
+  const [canvasScale, setCanvasScale] = useState(1)
 
   const interactionContent = useMemo(() => {
     if (question.interaction?.content) {
@@ -372,6 +373,8 @@ export function GamifiedQuestionEditor({
   }
 
   function renderDragDropEditor(content: DragDropLabelingInteractionContent) {
+    const canvasScalePercent = Math.round(canvasScale * 100)
+
     function updateTarget(
       targetId: string,
       field: keyof DragDropLabelingInteractionContent['targets'][number],
@@ -454,6 +457,24 @@ export function GamifiedQuestionEditor({
             </div>
 
             <div className="flex items-center gap-3">
+              <div className="hidden items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 md:flex">
+                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Zoom</span>
+                {[0.75, 1, 1.5].map((preset) => (
+                  <button
+                    key={preset}
+                    type="button"
+                    className={cn(
+                      'rounded-xl px-2 py-1 text-xs font-black transition-colors',
+                      Math.abs(canvasScale - preset) < 0.01
+                        ? 'bg-cyan-600 text-white'
+                        : 'text-slate-500 hover:bg-white hover:text-cyan-700',
+                    )}
+                    onClick={() => setCanvasScale(preset)}
+                  >
+                    {Math.round(preset * 100)}%
+                  </button>
+                ))}
+              </div>
               <input
                 ref={fileInputRef}
                 type="file"
@@ -474,66 +495,118 @@ export function GamifiedQuestionEditor({
           </div>
 
           <div className="mt-5 grid gap-4 md:grid-cols-[1fr_280px]">
-            <div
-              role="button"
-              tabIndex={0}
-              onClick={handleStageClick}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter' || event.key === ' ') {
-                  event.preventDefault()
-                }
-              }}
-              className={cn(
-                'relative overflow-hidden rounded-[28px] border border-slate-200 bg-[radial-gradient(circle_at_top_left,_rgba(6,182,212,0.18),_transparent_38%),linear-gradient(135deg,_#f8fafc,_#eef2ff)]',
-                !content.asset.signed_url && 'flex min-h-[380px] items-center justify-center',
-              )}
-              style={{
-                aspectRatio: `${content.asset.width || 1200} / ${content.asset.height || 800}`,
-              }}
-            >
-              {content.asset.signed_url ? (
-                <img
-                  src={content.asset.signed_url}
-                  alt={content.asset.alt}
-                  className="h-full w-full object-cover"
-                />
-              ) : (
-                <div className="flex max-w-sm flex-col items-center gap-3 px-8 text-center text-slate-500">
-                  <div className="rounded-full border border-cyan-200 bg-white p-4 text-cyan-600 shadow-sm">
-                    <svg className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.7} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2 1.586-1.586a2 2 0 012.828 0L20 14m-6-10h6a2 2 0 012 2v6M4 8V6a2 2 0 012-2h6" />
-                    </svg>
+            <div className="space-y-4">
+              <div className="rounded-[28px] border border-slate-200 bg-slate-50/60 p-4 shadow-sm">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-400">Escala da imagem</p>
+                    <p className="mt-2 text-sm font-medium text-slate-600">
+                      Ajuste apenas a visualizacao do editor para mapear melhor as areas.
+                    </p>
                   </div>
-                  <p className="text-sm font-semibold">
-                    Envie uma imagem anatomica, esquema ou ilustracao para posicionar os hotspots.
-                  </p>
+                  <span className="rounded-full bg-white px-3 py-1 text-xs font-black text-cyan-700 shadow-sm">
+                    {canvasScalePercent}%
+                  </span>
                 </div>
-              )}
 
-              {content.targets.map((target, index) => (
-                <button
-                  key={target.id}
-                  type="button"
-                  className={cn(
-                    'absolute rounded-2xl border-2 border-dashed bg-white/70 text-[11px] font-black uppercase tracking-widest text-slate-700 shadow-lg backdrop-blur-sm transition-all',
-                    selectedTargetId === target.id
-                      ? 'border-cyan-500 ring-4 ring-cyan-100'
-                      : 'border-cyan-200 hover:border-cyan-400',
-                  )}
+                <div className="mt-4 flex items-center gap-3">
+                  <button
+                    type="button"
+                    className="rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-black text-slate-600 transition-colors hover:border-cyan-200 hover:text-cyan-700"
+                    onClick={() => setCanvasScale((value) => Math.max(0.6, Math.round((value - 0.1) * 100) / 100))}
+                  >
+                    -
+                  </button>
+                  <input
+                    type="range"
+                    min={0.6}
+                    max={2.4}
+                    step={0.05}
+                    value={canvasScale}
+                    onChange={(event) => setCanvasScale(Number(event.target.value))}
+                    className="h-2 w-full cursor-pointer appearance-none rounded-full bg-slate-200 accent-cyan-600"
+                  />
+                  <button
+                    type="button"
+                    className="rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-black text-slate-600 transition-colors hover:border-cyan-200 hover:text-cyan-700"
+                    onClick={() => setCanvasScale((value) => Math.min(2.4, Math.round((value + 0.1) * 100) / 100))}
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+
+              <div className="overflow-auto rounded-[28px] border border-slate-200 bg-slate-50/30 p-3">
+                <div
+                  className="mx-auto transition-[width] duration-200"
                   style={{
-                    left: `${target.x}%`,
-                    top: `${target.y}%`,
-                    width: `${target.w}%`,
-                    height: `${target.h}%`,
-                  }}
-                  onClick={(event) => {
-                    event.stopPropagation()
-                    setSelectedTargetId(target.id)
+                    width: `${canvasScalePercent}%`,
+                    minWidth: canvasScale > 1 ? `${canvasScalePercent}%` : '320px',
                   }}
                 >
-                  {target.label?.trim() || `Area ${index + 1}`}
-                </button>
-              ))}
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    onClick={handleStageClick}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault()
+                      }
+                    }}
+                    className={cn(
+                      'relative overflow-hidden rounded-[28px] border border-slate-200 bg-[radial-gradient(circle_at_top_left,_rgba(6,182,212,0.18),_transparent_38%),linear-gradient(135deg,_#f8fafc,_#eef2ff)]',
+                      !content.asset.signed_url && 'flex min-h-[380px] items-center justify-center',
+                    )}
+                    style={{
+                      aspectRatio: `${content.asset.width || 1200} / ${content.asset.height || 800}`,
+                    }}
+                  >
+                    {content.asset.signed_url ? (
+                      <img
+                        src={content.asset.signed_url}
+                        alt={content.asset.alt}
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <div className="flex max-w-sm flex-col items-center gap-3 px-8 text-center text-slate-500">
+                        <div className="rounded-full border border-cyan-200 bg-white p-4 text-cyan-600 shadow-sm">
+                          <svg className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.7} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2 1.586-1.586a2 2 0 012.828 0L20 14m-6-10h6a2 2 0 012 2v6M4 8V6a2 2 0 012-2h6" />
+                          </svg>
+                        </div>
+                        <p className="text-sm font-semibold">
+                          Envie uma imagem anatomica, esquema ou ilustracao para posicionar os hotspots.
+                        </p>
+                      </div>
+                    )}
+
+                    {content.targets.map((target, index) => (
+                      <button
+                        key={target.id}
+                        type="button"
+                        className={cn(
+                          'absolute rounded-2xl border-2 border-dashed bg-white/70 text-[11px] font-black uppercase tracking-widest text-slate-700 shadow-lg backdrop-blur-sm transition-all',
+                          selectedTargetId === target.id
+                            ? 'border-cyan-500 ring-4 ring-cyan-100'
+                            : 'border-cyan-200 hover:border-cyan-400',
+                        )}
+                        style={{
+                          left: `${target.x}%`,
+                          top: `${target.y}%`,
+                          width: `${target.w}%`,
+                          height: `${target.h}%`,
+                        }}
+                        onClick={(event) => {
+                          event.stopPropagation()
+                          setSelectedTargetId(target.id)
+                        }}
+                      >
+                        {target.label?.trim() || `Area ${index + 1}`}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
             </div>
 
             <div className="rounded-[28px] border border-slate-200 bg-slate-50/70 p-4">
