@@ -157,6 +157,44 @@ function buildInteractionAnswerState(review: StudentAssessmentReview | null) {
   ) as Record<string, Record<string, string | null>>
 }
 
+function buildInteractionFeedbackLookup(question: StudentAssessmentQuestionWithOptions) {
+  const parsed = assessmentInteractionContentSchema.safeParse(question.interaction?.content ?? null)
+  if (!parsed.success) {
+    return {
+      slotLabels: new Map<string, string>(),
+      tokenLabels: new Map<string, string>(),
+    }
+  }
+
+  const tokenLabels = new Map(parsed.data.tokens.map((token) => [token.id, token.label]))
+
+  if (parsed.data.kind === 'drag_drop_labeling') {
+    return {
+      slotLabels: new Map(
+        parsed.data.targets.map((target, index) => [
+          target.id,
+          target.label?.trim() || `Area ${index + 1}`,
+        ]),
+      ),
+      tokenLabels,
+    }
+  }
+
+  const blanks = parsed.data.segments.filter(
+    (segment): segment is Extract<typeof parsed.data.segments[number], { type: 'blank' }> => segment.type === 'blank',
+  )
+
+  return {
+    slotLabels: new Map(
+      blanks.map((blank, index) => [
+        blank.id,
+        blank.placeholder?.trim() || `Lacuna ${index + 1}`,
+      ]),
+    ),
+    tokenLabels,
+  }
+}
+
 export function StudentAssessmentExecutionPage() {
   const { courseId, assessmentId } = useParams<{ courseId: string; assessmentId: string }>()
   const navigate = useNavigate()
@@ -283,6 +321,16 @@ export function StudentAssessmentExecutionPage() {
     () => [...questions, ...caseStudies.flatMap((caseStudy) => caseStudy.questions)].filter(isScoredQuestion),
     [caseStudies, questions],
   )
+
+  const interactionFeedbackLookup = useMemo(() => {
+    const allQuestions = [...questions, ...caseStudies.flatMap((caseStudy) => caseStudy.questions)]
+    return new Map(
+      allQuestions.map((question) => [
+        question.id,
+        buildInteractionFeedbackLookup(question),
+      ]),
+    )
+  }, [caseStudies, questions])
 
   const possiblePoints = useMemo(
     () => scoredQuestions.reduce((total, question) => total + getQuestionPossiblePoints(question), 0),
@@ -884,7 +932,7 @@ export function StudentAssessmentExecutionPage() {
                       </div>
                       <h3 className="mt-3 text-lg font-black text-slate-900">{feedback.question_text}</h3>
                       <div className="mt-4 grid gap-3">
-                        {feedback.entries.map((entry) => (
+                        {feedback.entries.map((entry, entryIndex) => (
                           <div
                             key={`${feedback.question_id}-${entry.slot_id}`}
                             className={`rounded-2xl border px-4 py-3 text-sm ${
@@ -894,11 +942,21 @@ export function StudentAssessmentExecutionPage() {
                             }`}
                           >
                             <p className="font-black uppercase tracking-widest text-[10px]">
-                              Slot {entry.slot_id}
+                              {interactionFeedbackLookup.get(feedback.question_id)?.slotLabels.get(entry.slot_id) ?? `Item ${entryIndex + 1}`}
                             </p>
-                            <p className="mt-2 font-semibold">
+                            <p className="hidden">
                               Sua resposta: {entry.submitted_token_id ?? 'não preenchida'}
                             </p>
+                            <p className="mt-2 font-semibold">
+                              Sua resposta: {entry.submitted_token_id
+                                ? (interactionFeedbackLookup.get(feedback.question_id)?.tokenLabels.get(entry.submitted_token_id) ?? 'Item selecionado')
+                                : 'não preenchida'}
+                            </p>
+                            {!entry.is_correct ? (
+                              <p className="mt-1 font-medium">
+                                Resposta correta: {interactionFeedbackLookup.get(feedback.question_id)?.tokenLabels.get(entry.expected_token_id) ?? 'Resposta correta'}
+                              </p>
+                            ) : null}
                           </div>
                         ))}
                       </div>

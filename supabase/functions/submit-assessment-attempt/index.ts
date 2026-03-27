@@ -62,6 +62,11 @@ interface AnswerKeyRow {
   } | null
 }
 
+interface InteractionRow {
+  question_id: string
+  content: Record<string, unknown> | null
+}
+
 interface SubmissionAnswerInput {
   question_id: string
   option_id?: string | null
@@ -266,7 +271,7 @@ Deno.serve(async (request) => {
 
     const questionIds = (questionIdsResult.data ?? []).map((question) => question.id as string)
 
-    const [questionsResult, optionsResult, caseStudiesResult, answerKeysResult] = await Promise.all([
+    const [questionsResult, optionsResult, caseStudiesResult, answerKeysResult, interactionsResult] = await Promise.all([
       supabaseAdmin
         .from('assessment_questions')
         .select('id, assessment_id, question_text, question_type, position, is_required, points, essay_expected_answer, case_study_id, case_question_position')
@@ -288,6 +293,12 @@ Deno.serve(async (request) => {
           .from('assessment_question_answer_keys')
           .select('question_id, grading_mode, answer_key')
           .in('question_id', questionIds),
+      questionIds.length === 0
+        ? Promise.resolve({ data: [], error: null })
+        : supabaseAdmin
+          .from('assessment_question_interactions')
+          .select('question_id, content')
+          .in('question_id', questionIds),
     ])
 
     if (questionsResult.error) {
@@ -306,10 +317,15 @@ Deno.serve(async (request) => {
       return jsonResponse({ error: answerKeysResult.error.message }, 400)
     }
 
+    if (interactionsResult.error) {
+      return jsonResponse({ error: interactionsResult.error.message }, 400)
+    }
+
     const questions = ((questionsResult.data ?? []) as QuestionRow[])
     const options = ((optionsResult.data ?? []) as OptionRow[])
     const caseStudies = ((caseStudiesResult.data ?? []) as CaseStudyRow[])
     const answerKeys = ((answerKeysResult.data ?? []) as AnswerKeyRow[])
+    const interactions = ((interactionsResult.data ?? []) as InteractionRow[])
 
     if (questions.length === 0) {
       return jsonResponse({ error: 'Avaliacao sem questoes cadastradas.' }, 400)
@@ -325,6 +341,11 @@ Deno.serve(async (request) => {
     const answerKeysByQuestion = new Map<string, AnswerKeyRow>()
     for (const answerKey of answerKeys) {
       answerKeysByQuestion.set(answerKey.question_id, answerKey)
+    }
+
+    const interactionsByQuestion = new Map<string, InteractionRow>()
+    for (const interaction of interactions) {
+      interactionsByQuestion.set(interaction.question_id, interaction)
     }
 
     const caseStudyById = new Map(caseStudies.map((caseStudy) => [caseStudy.id, caseStudy]))
@@ -494,6 +515,7 @@ Deno.serve(async (request) => {
 
       const grading = scoreInteractionAnswer({
         question,
+        interaction: interactionsByQuestion.get(question.id) ?? null,
         answer,
         answerKey: answerKeysByQuestion.get(question.id) ?? null,
       })
@@ -657,18 +679,15 @@ function normalizeResponsePayload(payload: SubmissionAnswerInput['response_paylo
 
 function scoreInteractionAnswer(input: {
   question: QuestionRow
+  interaction: InteractionRow | null
   answer: SubmissionAnswerInput | undefined
   answerKey: AnswerKeyRow | null
 }) {
   const normalizedPayload = normalizeResponsePayload(input.answer?.response_payload)
-  const answerEntries = Array.isArray(input.answerKey?.answer_key?.entries)
-    ? input.answerKey?.answer_key?.entries
-        .map((entry) => ({
-          slot_id: typeof entry.slot_id === 'string' ? entry.slot_id.trim() : '',
-          token_id: typeof entry.token_id === 'string' ? entry.token_id.trim() : '',
-        }))
-        .filter((entry) => entry.slot_id && entry.token_id)
-    : []
+  const answerEntries = normalizeInteractionAnswerKeyEntries(
+    input.interaction?.content ?? null,
+    Array.isArray(input.answerKey?.answer_key?.entries) ? input.answerKey?.answer_key?.entries : [],
+  )
 
   if (answerEntries.length === 0) {
     throw new Error('Questao gamificada sem gabarito configurado.')
@@ -703,6 +722,103 @@ function scoreInteractionAnswer(input: {
 
 function roundToTwo(value: number) {
   return Math.round(value * 100) / 100
+}
+
+function normalizeInteractionAnswerKeyEntries(
+  content: Record<string, unknown> | null,
+  rawEntries: Array<{ slot_id?: string; token_id?: string }>,
+) {
+  const slotIds = getInteractionSlotIds(content)
+  const tokenIds = getInteractionTokenIds(content)
+  const preservedEntries: Array<{ slot_id: string; token_id: string }> = []
+  const usedSlots = new Set<string>()
+  const usedTokens = new Set<string>()
+
+  for (const rawEntry of rawEntries) {
+    const slotId = typeof rawEntry.slot_id === 'string' ? rawEntry.slot_id.trim() : ''
+    const tokenId = typeof rawEntry.token_id === 'string' ? rawEntry.token_id.trim() : ''
+
+    if (!slotIds.includes(slotId) || !tokenIds.includes(tokenId)) {
+      continue
+    }
+
+    if (usedSlots.has(slotId) || usedTokens.has(tokenId)) {
+      continue
+    }
+
+    preservedEntries.push({ slot_id: slotId, token_id: tokenId })
+    usedSlots.add(slotId)
+    usedTokens.add(tokenId)
+  }
+
+  const availableTokenIds = tokenIds.filter((tokenId) => !usedTokens.has(tokenId))
+
+  for (const slotId of slotIds) {
+    if (usedSlots.has(slotId)) {
+      continue
+    }
+
+    const nextTokenId = availableTokenIds.shift()
+    if (!nextTokenId) {
+      continue
+    }
+
+    preservedEntries.push({
+      slot_id: slotId,
+      token_id: nextTokenId,
+    })
+    usedSlots.add(slotId)
+    usedTokens.add(nextTokenId)
+  }
+
+  return preservedEntries
+}
+
+function getInteractionSlotIds(content: Record<string, unknown> | null) {
+  if (!content || typeof content !== 'object') {
+    return []
+  }
+
+  if (content.kind === 'drag_drop_labeling') {
+    const targets = Array.isArray(content.targets) ? content.targets : []
+    return targets
+      .map((target) => (
+        target && typeof target === 'object' && typeof target.id === 'string'
+          ? target.id.trim()
+          : ''
+      ))
+      .filter(Boolean)
+  }
+
+  if (content.kind === 'fill_in_the_blanks') {
+    const segments = Array.isArray(content.segments) ? content.segments : []
+    return segments
+      .map((segment) => (
+        segment
+        && typeof segment === 'object'
+        && segment.type === 'blank'
+        && typeof segment.id === 'string'
+          ? segment.id.trim()
+          : ''
+      ))
+      .filter(Boolean)
+  }
+
+  return []
+}
+
+function getInteractionTokenIds(content: Record<string, unknown> | null) {
+  if (!content || typeof content !== 'object' || !Array.isArray(content.tokens)) {
+    return []
+  }
+
+  return content.tokens
+    .map((token) => (
+      token && typeof token === 'object' && typeof token.id === 'string'
+        ? token.id.trim()
+        : ''
+    ))
+    .filter(Boolean)
 }
 
 async function insertAttemptWithRetry(input: {
