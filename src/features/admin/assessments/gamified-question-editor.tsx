@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState, type ChangeEvent, type MouseEvent } from 'react'
+import { useMemo, useRef, useState, type ChangeEvent, type MouseEvent, type PointerEvent as ReactPointerEvent } from 'react'
 
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
@@ -158,8 +158,10 @@ export function GamifiedQuestionEditor({
   onError,
 }: GamifiedQuestionEditorProps) {
   const fileInputRef = useRef<HTMLInputElement | null>(null)
+  const stageRef = useRef<HTMLDivElement | null>(null)
   const [isUploadingAsset, setIsUploadingAsset] = useState(false)
   const [selectedTargetId, setSelectedTargetId] = useState<string | null>(null)
+  const [draggingTargetId, setDraggingTargetId] = useState<string | null>(null)
   const [canvasScale, setCanvasScale] = useState(1)
   const [isTargetsModalOpen, setIsTargetsModalOpen] = useState(false)
 
@@ -446,6 +448,69 @@ export function GamifiedQuestionEditor({
       void commit(nextContent)
     }
 
+    function startTargetDrag(
+      event: ReactPointerEvent<HTMLButtonElement>,
+      target: DragDropLabelingInteractionContent['targets'][number],
+    ) {
+      const stageElement = stageRef.current
+      if (!stageElement) {
+        return
+      }
+
+      event.preventDefault()
+      event.stopPropagation()
+      setSelectedTargetId(target.id)
+      setDraggingTargetId(target.id)
+
+      const rect = stageElement.getBoundingClientRect()
+      const offsetXPercent = ((event.clientX - rect.left) / rect.width) * 100 - target.x
+      const offsetYPercent = ((event.clientY - rect.top) / rect.height) * 100 - target.y
+
+      let currentContent = content
+
+      const handlePointerMove = (moveEvent: PointerEvent) => {
+        const currentStage = stageRef.current
+        if (!currentStage) {
+          return
+        }
+
+        const currentRect = currentStage.getBoundingClientRect()
+        const x = Math.max(
+          0,
+          Math.min(100 - target.w, ((moveEvent.clientX - currentRect.left) / currentRect.width) * 100 - offsetXPercent),
+        )
+        const y = Math.max(
+          0,
+          Math.min(100 - target.h, ((moveEvent.clientY - currentRect.top) / currentRect.height) * 100 - offsetYPercent),
+        )
+
+        currentContent = {
+          ...currentContent,
+          targets: currentContent.targets.map((item) => (
+            item.id === target.id
+              ? {
+                ...item,
+                x: Math.round(x * 100) / 100,
+                y: Math.round(y * 100) / 100,
+              }
+              : item
+          )),
+        }
+
+        updateDraft(currentContent)
+      }
+
+      const handlePointerUp = () => {
+        window.removeEventListener('pointermove', handlePointerMove)
+        window.removeEventListener('pointerup', handlePointerUp)
+        setDraggingTargetId(null)
+        void commit(currentContent)
+      }
+
+      window.addEventListener('pointermove', handlePointerMove)
+      window.addEventListener('pointerup', handlePointerUp, { once: true })
+    }
+
     function renderTargetsPanel() {
       return (
         <section className="space-y-4">
@@ -642,6 +707,7 @@ export function GamifiedQuestionEditor({
                 }}
               >
                 <div
+                  ref={stageRef}
                   role="button"
                   tabIndex={0}
                   onClick={handleStageClick}
@@ -683,6 +749,7 @@ export function GamifiedQuestionEditor({
                       type="button"
                       className={cn(
                         'absolute rounded-2xl border-2 border-dashed bg-white/70 text-[11px] font-black uppercase tracking-widest text-slate-700 shadow-lg backdrop-blur-sm transition-all',
+                        draggingTargetId === target.id ? 'cursor-grabbing' : 'cursor-grab',
                         selectedTargetId === target.id
                           ? 'border-cyan-500 ring-4 ring-cyan-100'
                           : 'border-cyan-200 hover:border-cyan-400',
@@ -697,6 +764,7 @@ export function GamifiedQuestionEditor({
                         event.stopPropagation()
                         setSelectedTargetId(target.id)
                       }}
+                      onPointerDown={(event) => startTargetDrag(event, target)}
                     >
                       {target.label?.trim() || `Area ${index + 1}`}
                     </button>
