@@ -1,5 +1,6 @@
 import { Link, Outlet, useLocation } from 'react-router-dom'
 
+import homeCareMatchLogoUrl from '@/assets/homecare-match-logo.jpg'
 import { useAuth } from '@/app/providers/auth-provider'
 import { PlatformFooter } from '@/components/layout/platform-footer'
 import { Button } from '@/components/ui/button'
@@ -7,7 +8,7 @@ import { Button } from '@/components/ui/button'
 const studentLinks = [
   {
     to: '/aluno/dashboard',
-    label: 'Início',
+    label: 'Inicio',
     description: 'Painel principal',
     icon: (
       <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -58,16 +59,62 @@ export function StudentLayout() {
   return (
     <main className="min-h-screen bg-[#f4f7fb] text-slate-900">
       <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/95 backdrop-blur-md">
-        <div className="flex w-full items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
-          <div className="flex items-center gap-4">
-            <Link to="/aluno/dashboard" className="flex items-center gap-3">
-              <img src="/favicon.svg" alt="HomeCare Match" className="h-11 w-11 rounded-full bg-white object-contain" />
-              <div className="hidden sm:block">
-                <p className="text-[10px] font-black uppercase tracking-[0.28em] text-slate-400">Área do Aluno</p>
-                <h1 className="text-xl font-black tracking-tight text-slate-900">HomeCare Match Academy</h1>
-              </div>
-            </Link>
+        <div className="px-4 py-3 sm:px-6 lg:px-8">
+          <div className="relative flex min-h-[60px] items-center justify-between gap-4">
+            <div className="flex min-w-0 items-center gap-4">
+              <Link to="/aluno/dashboard" className="flex min-w-0 items-center gap-3">
+                <img
+                  src={homeCareMatchLogoUrl}
+                  alt="HomeCare Match"
+                  className="h-12 w-12 rounded-full bg-white object-contain shadow-sm"
+                />
+                <div className="min-w-0">
+                  <h1 className="truncate text-xl font-black tracking-tight text-slate-900">HomeCare Match</h1>
+                  <p className="text-sm font-bold uppercase tracking-[0.18em] text-blue-600">Academy</p>
+                </div>
+              </Link>
+            </div>
 
+            <div className="pointer-events-none absolute left-1/2 top-1/2 hidden -translate-x-1/2 -translate-y-1/2 md:block">
+              <p className="whitespace-nowrap text-sm font-black uppercase tracking-[0.28em] text-slate-400">
+                Área do Aluno
+              </p>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <Link
+                to="/aluno/minha-conta"
+                className={`hidden items-center gap-3 rounded-full border px-2 py-1.5 shadow-sm transition-colors md:flex ${
+                  location.pathname.startsWith('/aluno/minha-conta')
+                    ? 'border-cyan-200 bg-cyan-50'
+                    : 'border-slate-200 bg-white hover:border-slate-300'
+                }`}
+              >
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-cyan-400 text-sm font-black text-white shadow-sm">
+                  {firstName.slice(0, 2).toUpperCase()}
+                </div>
+                <div className="pr-2">
+                  <p className="text-sm font-black text-slate-900">{displayName}</p>
+                  <p className="text-[11px] font-medium text-slate-500">Minha Conta</p>
+                </div>
+              </Link>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => void signOut()}
+                className="rounded-xl border-slate-200 bg-white font-bold text-slate-600 hover:text-slate-900"
+              >
+                Sair
+              </Button>
+            </div>
+          </div>
+
+          <div className="mt-3 flex items-center justify-center md:hidden">
+            <p className="text-[10px] font-black uppercase tracking-[0.28em] text-slate-400">Área do Aluno</p>
+          </div>
+
+          <div className="mt-3 flex justify-center">
             <nav className="hidden items-center gap-1 rounded-full border border-slate-200 bg-slate-50 p-1 lg:flex">
               {studentLinks.map((link) => {
                 const isActive = location.pathname.startsWith(link.to)
@@ -85,39 +132,11 @@ export function StudentLayout() {
               })}
             </nav>
           </div>
-
-          <div className="flex items-center gap-3">
-            <Link
-              to="/aluno/minha-conta"
-              className={`hidden items-center gap-3 rounded-full border px-2 py-1.5 shadow-sm transition-colors md:flex ${
-                location.pathname.startsWith('/aluno/minha-conta')
-                  ? 'border-cyan-200 bg-cyan-50'
-                  : 'border-slate-200 bg-white hover:border-slate-300'
-              }`}
-            >
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-cyan-400 text-sm font-black text-white shadow-sm">
-                {firstName.slice(0, 2).toUpperCase()}
-              </div>
-              <div className="pr-2">
-                <p className="text-sm font-black text-slate-900">{displayName}</p>
-                <p className="text-[11px] font-medium text-slate-500">Minha Conta</p>
-              </div>
-            </Link>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => void signOut()}
-              className="rounded-xl border-slate-200 bg-white font-bold text-slate-600 hover:text-slate-900"
-            >
-              Sair
-            </Button>
-          </div>
         </div>
       </header>
 
       <div className="grid min-h-[calc(100vh-73px)] grid-cols-1 gap-6 px-4 py-5 sm:px-6 lg:grid-cols-[280px_minmax(0,1fr)] lg:px-8">
-        <aside className="self-start lg:sticky lg:top-[92px]">
+        <aside className="self-start lg:sticky lg:top-[120px]">
           <div className="overflow-hidden rounded-[30px] border border-slate-200 bg-white shadow-sm">
             <div className="border-b border-slate-100 p-5">
               <div className="flex items-start gap-4">
