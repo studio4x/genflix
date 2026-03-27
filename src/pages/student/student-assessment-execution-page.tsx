@@ -245,6 +245,9 @@ export function StudentAssessmentExecutionPage() {
     return Boolean(review?.latestAttempt?.is_approved && Number(review.latestAttempt.score_percent) >= 100)
   }, [review])
 
+  const hasPendingRetryRequest = attemptRequest?.status === 'pending'
+  const isRejectedRetryRequest = attemptRequest?.status === 'rejected'
+
   useEffect(() => {
     async function loadAssessment() {
       if (!assessmentId) {
@@ -736,9 +739,6 @@ export function StudentAssessmentExecutionPage() {
   }
 
   if (studentAssessment?.state === 'failed_limit' && !result) {
-    const hasPendingRequest = attemptRequest?.status === 'pending'
-    const isRejectedRequest = attemptRequest?.status === 'rejected'
-
     return (
       <div className="mx-auto max-w-2xl animate-in fade-in zoom-in-95 p-4 py-12 duration-500 md:py-24">
         <div className="overflow-hidden rounded-[40px] border border-rose-100 bg-white shadow-2xl shadow-rose-200/20">
@@ -764,9 +764,9 @@ export function StudentAssessmentExecutionPage() {
                 <span className="text-sm font-bold text-slate-700">Proximo passo</span>
               </div>
               <p className="text-xs leading-relaxed text-slate-500">
-                {hasPendingRequest
+                {hasPendingRetryRequest
                   ? 'Sua solicitacao de nova tentativa ja foi enviada e esta aguardando analise do administrador.'
-                  : isRejectedRequest
+                  : isRejectedRetryRequest
                     ? 'Sua ultima solicitacao foi recusada. Se necessario, envie um novo pedido para que a equipe analise outra liberacao.'
                     : 'Voce pode enviar uma solicitacao de nova tentativa para analise do administrador diretamente por esta tela.'}
               </p>
@@ -790,10 +790,10 @@ export function StudentAssessmentExecutionPage() {
                 size="lg"
                 variant="outline"
                 className="h-14 flex-1 rounded-2xl border-slate-300 font-bold text-slate-700 hover:bg-slate-50"
-                disabled={hasPendingRequest || isRequestingRetry}
+                disabled={hasPendingRetryRequest || isRequestingRetry}
                 onClick={() => void handleRequestRetry()}
               >
-                {hasPendingRequest ? 'Solicitacao Enviada' : isRequestingRetry ? 'Enviando...' : 'Solicitar Nova Tentativa'}
+                {hasPendingRetryRequest ? 'Solicitacao Enviada' : isRequestingRetry ? 'Enviando...' : 'Solicitar Nova Tentativa'}
               </Button>
             </div>
             {error ? <p className="mt-4 text-sm font-medium text-rose-600">{error}</p> : null}
@@ -998,6 +998,43 @@ export function StudentAssessmentExecutionPage() {
                     </div>
                   ))}
                 </div>
+              </div>
+            )}
+
+            {!result.is_approved && result.remaining_attempts === 0 && (
+              <div className="space-y-4 rounded-3xl border border-rose-100 bg-rose-50/50 p-6">
+                <div>
+                  <p className="text-xs font-black uppercase tracking-widest text-rose-700">Limite de Tentativas Atingido</p>
+                  <p className="mt-2 text-sm font-medium text-rose-900">
+                    Voce utilizou {result.max_attempts} de {result.max_attempts} tentativas e pode solicitar uma nova liberacao para analise do administrador.
+                  </p>
+                </div>
+
+                <div className="rounded-2xl border border-white/70 bg-white p-5 text-sm text-slate-600 shadow-sm">
+                  <p className="font-semibold leading-relaxed">
+                    {hasPendingRetryRequest
+                      ? 'Sua solicitacao de nova tentativa ja foi enviada e esta aguardando analise.'
+                      : isRejectedRetryRequest
+                        ? 'Sua ultima solicitacao foi recusada. Se precisar, voce pode enviar um novo pedido por esta tela.'
+                        : 'Se desejar, envie agora uma solicitacao de nova tentativa.'}
+                  </p>
+                  {attemptRequest?.admin_response ? (
+                    <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Retorno do administrador</p>
+                      <p className="mt-2 leading-relaxed">{attemptRequest.admin_response}</p>
+                    </div>
+                  ) : null}
+                </div>
+
+                <Button
+                  variant="outline"
+                  size="lg"
+                  className="h-14 rounded-2xl border-slate-300 text-slate-700 shadow-sm hover:bg-white"
+                  disabled={hasPendingRetryRequest || isRequestingRetry}
+                  onClick={() => void handleRequestRetry()}
+                >
+                  {hasPendingRetryRequest ? 'Solicitacao Enviada' : isRequestingRetry ? 'Enviando...' : 'Solicitar Nova Tentativa'}
+                </Button>
               </div>
             )}
 
