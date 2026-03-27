@@ -203,113 +203,140 @@ function formatPoints(value: number) {
   return Number.isInteger(value) ? String(value) : value.toFixed(2).replace(/\.?0+$/, '')
 }
 
-interface FillBlankBuilderItem {
-  blankId: string
-  tokenId: string
-  beforeText: string
-  afterText: string
-  placeholder: string
-  answerText: string
-}
+type FillBlankEditorGroup = NonNullable<FillInTheBlanksInteractionContent['editor_groups']>[number]
+type FillBlankEditorBlank = FillBlankEditorGroup['blanks'][number]
 
-function buildFillBlankBuilderItems(
+function buildFillBlankEditorGroups(
   content: FillInTheBlanksInteractionContent,
   answerKey: AssessmentQuestionAnswerKeyPayload | null,
 ) {
   const tokenById = new Map(content.tokens.map((token) => [token.id, token]))
   const tokenIdBySlot = new Map((answerKey?.entries ?? []).map((entry) => [entry.slot_id, entry.token_id]))
-  const items: FillBlankBuilderItem[] = []
+  const storedGroups = content.editor_groups?.filter((group) => group.blanks.length > 0) ?? []
 
-  let pendingBeforeText = ''
-  let index = 0
+  if (storedGroups.length > 0) {
+    return storedGroups.map((group) => ({
+      id: group.id,
+      leading_text: group.leading_text,
+      blanks: group.blanks.map((blank) => {
+        const resolvedTokenId = tokenIdBySlot.get(blank.blank_id) ?? blank.token_id
+        return {
+          ...blank,
+          token_id: resolvedTokenId,
+          answer_text: tokenById.get(resolvedTokenId)?.label ?? blank.answer_text,
+          trailing_text: blank.trailing_text ?? '',
+          placeholder: blank.placeholder ?? '',
+        }
+      }),
+    })) satisfies FillBlankEditorGroup[]
+  }
 
-  while (index < content.segments.length) {
-    const currentSegment = content.segments[index]
+  const fallbackGroups: FillBlankEditorGroup[] = []
+  let currentGroup: FillBlankEditorGroup = {
+    id: crypto.randomUUID(),
+    leading_text: '',
+    blanks: [],
+  }
 
-    if (currentSegment.type === 'text') {
-      pendingBeforeText += currentSegment.text
-      index += 1
+  let pendingText = ''
+
+  for (const segment of content.segments) {
+    if (segment.type === 'text') {
+      pendingText += segment.text
       continue
     }
 
-    let afterText = ''
-    let nextIndex = index + 1
-    while (nextIndex < content.segments.length) {
-      const nextSegment = content.segments[nextIndex]
-      if (nextSegment?.type !== 'text') {
-        break
-      }
-
-      afterText += nextSegment.text
-      nextIndex += 1
+    if (currentGroup.blanks.length === 0) {
+      currentGroup.leading_text = pendingText
+    } else {
+      currentGroup.blanks[currentGroup.blanks.length - 1]!.trailing_text = pendingText
     }
 
-    const tokenId = tokenIdBySlot.get(currentSegment.id)
-      ?? content.tokens[items.length]?.id
+    pendingText = ''
+
+    const tokenId = tokenIdBySlot.get(segment.id)
+      ?? content.tokens[currentGroup.blanks.length]?.id
       ?? crypto.randomUUID()
 
-    items.push({
-      blankId: currentSegment.id,
-      tokenId,
-      beforeText: pendingBeforeText,
-      afterText,
-      placeholder: currentSegment.placeholder ?? '',
-      answerText: tokenById.get(tokenId)?.label ?? '',
-    })
-
-    pendingBeforeText = ''
-    index = nextIndex
-  }
-
-  if (items.length === 0) {
-    const fallbackToken = content.tokens[0]
-    const preservedText = content.segments
-      .filter((segment): segment is Extract<FillInTheBlanksInteractionContent['segments'][number], { type: 'text' }> => segment.type === 'text')
-      .map((segment) => segment.text)
-      .join('')
-
-    items.push({
-      blankId: crypto.randomUUID(),
-      tokenId: fallbackToken?.id ?? crypto.randomUUID(),
-      beforeText: preservedText,
-      afterText: '',
-      placeholder: '',
-      answerText: fallbackToken?.label ?? '',
+    currentGroup.blanks.push({
+      blank_id: segment.id,
+      token_id: tokenId,
+      placeholder: segment.placeholder ?? '',
+      answer_text: tokenById.get(tokenId)?.label ?? '',
+      trailing_text: '',
     })
   }
 
-  return items
+  if (currentGroup.blanks.length > 0) {
+    currentGroup.blanks[currentGroup.blanks.length - 1]!.trailing_text = pendingText
+    fallbackGroups.push(currentGroup)
+  }
+
+  if (fallbackGroups.length === 0) {
+    fallbackGroups.push({
+      id: crypto.randomUUID(),
+      leading_text: content.segments
+        .filter((segment): segment is Extract<FillInTheBlanksInteractionContent['segments'][number], { type: 'text' }> => segment.type === 'text')
+        .map((segment) => segment.text)
+        .join(''),
+      blanks: [
+        {
+          blank_id: crypto.randomUUID(),
+          token_id: content.tokens[0]?.id ?? crypto.randomUUID(),
+          placeholder: '',
+          answer_text: content.tokens[0]?.label ?? '',
+          trailing_text: '',
+        },
+      ],
+    })
+  }
+
+  return fallbackGroups
 }
 
 function buildFillBlankBundle(
   instruction: string,
-  items: FillBlankBuilderItem[],
+  groups: FillBlankEditorGroup[],
 ) {
-  const tokens = items.map((item) => ({
-    id: item.tokenId,
-    label: item.answerText,
-  }))
-
+  const tokens: FillInTheBlanksInteractionContent['tokens'] = []
   const segments: FillInTheBlanksInteractionContent['segments'] = []
+  const entries: AssessmentQuestionAnswerKeyPayload['entries'] = []
 
-  items.forEach((item) => {
-    if (item.beforeText.length > 0) {
+  groups.forEach((group, groupIndex) => {
+    if (group.leading_text.length > 0) {
       segments.push({
         type: 'text',
-        text: item.beforeText,
+        text: group.leading_text,
       })
     }
 
-    segments.push({
-      type: 'blank',
-      id: item.blankId,
-      placeholder: item.placeholder || undefined,
+    group.blanks.forEach((blank) => {
+      tokens.push({
+        id: blank.token_id,
+        label: blank.answer_text,
+      })
+      segments.push({
+        type: 'blank',
+        id: blank.blank_id,
+        placeholder: blank.placeholder || undefined,
+      })
+      entries.push({
+        slot_id: blank.blank_id,
+        token_id: blank.token_id,
+      })
+
+      if (blank.trailing_text.length > 0) {
+        segments.push({
+          type: 'text',
+          text: blank.trailing_text,
+        })
+      }
     })
 
-    if (item.afterText.length > 0) {
+    if (groupIndex < groups.length - 1) {
       segments.push({
         type: 'text',
-        text: item.afterText,
+        text: '\n\n',
       })
     }
   })
@@ -320,12 +347,10 @@ function buildFillBlankBundle(
       instruction,
       segments: segments.length > 0 ? segments : [{ type: 'text', text: '' }],
       tokens,
+      editor_groups: groups,
     } satisfies FillInTheBlanksInteractionContent,
     answerKey: {
-      entries: items.map((item) => ({
-        slot_id: item.blankId,
-        token_id: item.tokenId,
-      })),
+      entries,
     } satisfies AssessmentQuestionAnswerKeyPayload,
   }
 }
@@ -1206,58 +1231,116 @@ export function GamifiedQuestionEditor({
   }
 
   function renderFillInTheBlanksEditor(content: FillInTheBlanksInteractionContent) {
-    const items = buildFillBlankBuilderItems(content, answerKeyPayload)
-    const expandedItemId = items.some((item) => item.blankId === openFillBlankId)
+    const groups = buildFillBlankEditorGroups(content, answerKeyPayload)
+    const expandedGroupId = groups.some((group) => group.id === openFillBlankId)
       ? openFillBlankId
-      : items[0]?.blankId ?? null
+      : groups[0]?.id ?? null
 
-    function updateItemsDraft(nextItems: FillBlankBuilderItem[]) {
-      const nextBundle = buildFillBlankBundle(content.instruction, nextItems)
+    function updateGroupsDraft(nextGroups: FillBlankEditorGroup[]) {
+      const nextBundle = buildFillBlankBundle(content.instruction, nextGroups)
       updateDraft(nextBundle.content, nextBundle.answerKey)
     }
 
-    function commitItems(nextItems: FillBlankBuilderItem[]) {
-      const nextBundle = buildFillBlankBundle(content.instruction, nextItems)
+    function commitGroups(nextGroups: FillBlankEditorGroup[]) {
+      const nextBundle = buildFillBlankBundle(content.instruction, nextGroups)
       return commit(nextBundle.content, nextBundle.answerKey)
     }
 
-    function patchItems(blankId: string, updates: Partial<FillBlankBuilderItem>) {
-      return items.map((item) => (
-        item.blankId === blankId
-          ? { ...item, ...updates }
-          : item
+    function patchGroups(groupId: string, updater: (group: FillBlankEditorGroup) => FillBlankEditorGroup) {
+      return groups.map((group) => (
+        group.id === groupId
+          ? updater(group)
+          : group
       ))
     }
 
-    function updateItem(blankId: string, updates: Partial<FillBlankBuilderItem>) {
-      updateItemsDraft(patchItems(blankId, updates))
+    function updateGroup(groupId: string, updates: Partial<FillBlankEditorGroup>) {
+      updateGroupsDraft(patchGroups(groupId, (group) => ({ ...group, ...updates })))
+    }
+
+    function patchBlank(groupId: string, blankId: string, updates: Partial<FillBlankEditorBlank>) {
+      return patchGroups(groupId, (group) => ({
+        ...group,
+        blanks: group.blanks.map((blank) => (
+          blank.blank_id === blankId
+            ? { ...blank, ...updates }
+            : blank
+        )),
+      }))
+    }
+
+    function updateBlank(groupId: string, blankId: string, updates: Partial<FillBlankEditorBlank>) {
+      updateGroupsDraft(patchBlank(groupId, blankId, updates))
     }
 
     function addPromptItem() {
-      const nextIndex = items.length + 1
-      const nextItem: FillBlankBuilderItem = {
-        blankId: crypto.randomUUID(),
-        tokenId: crypto.randomUUID(),
-        beforeText: '',
-        afterText: '',
-        placeholder: `lacuna ${nextIndex}`,
-        answerText: `Resposta ${nextIndex}`,
+      const nextGroupIndex = groups.length + 1
+      const nextGroup: FillBlankEditorGroup = {
+        id: crypto.randomUUID(),
+        leading_text: '',
+        blanks: [
+          {
+            blank_id: crypto.randomUUID(),
+            token_id: crypto.randomUUID(),
+            placeholder: `lacuna ${nextGroupIndex}.1`,
+            answer_text: `Resposta ${nextGroupIndex}.1`,
+            trailing_text: '',
+          },
+        ],
       }
-      const nextItems = [...items, nextItem]
-      setOpenFillBlankId(nextItem.blankId)
-      void commitItems(nextItems)
+
+      setOpenFillBlankId(nextGroup.id)
+      void commitGroups([...groups, nextGroup])
     }
 
-    function removePromptItem(blankId: string) {
-      if (items.length === 1) {
+    function removePromptItem(groupId: string) {
+      if (groups.length === 1) {
         onError('Mantenha ao menos uma pergunta com lacuna neste exercicio.')
         return
       }
 
-      const nextItems = items.filter((item) => item.blankId !== blankId)
-      const fallbackOpenId = nextItems[0]?.blankId ?? null
-      setOpenFillBlankId((current) => (current === blankId ? fallbackOpenId : current))
-      void commitItems(nextItems)
+      const nextGroups = groups.filter((group) => group.id !== groupId)
+      setOpenFillBlankId((current) => (current === groupId ? nextGroups[0]?.id ?? null : current))
+      void commitGroups(nextGroups)
+    }
+
+    function addBlankToGroup(groupId: string) {
+      const groupIndex = groups.findIndex((group) => group.id === groupId)
+      const group = groups[groupIndex]
+      if (!group) return
+
+      const nextBlankIndex = group.blanks.length + 1
+      const nextGroups = patchGroups(groupId, (currentGroup) => ({
+        ...currentGroup,
+        blanks: [
+          ...currentGroup.blanks,
+          {
+            blank_id: crypto.randomUUID(),
+            token_id: crypto.randomUUID(),
+            placeholder: `lacuna ${groupIndex + 1}.${nextBlankIndex}`,
+            answer_text: `Resposta ${groupIndex + 1}.${nextBlankIndex}`,
+            trailing_text: '',
+          },
+        ],
+      }))
+
+      setOpenFillBlankId(groupId)
+      void commitGroups(nextGroups)
+    }
+
+    function removeBlank(groupId: string, blankId: string) {
+      const group = groups.find((item) => item.id === groupId)
+      if (!group) return
+
+      if (group.blanks.length === 1) {
+        onError('Cada pergunta precisa manter ao menos uma lacuna.')
+        return
+      }
+
+      void commitGroups(patchGroups(groupId, (currentGroup) => ({
+        ...currentGroup,
+        blanks: currentGroup.blanks.filter((blank) => blank.blank_id !== blankId),
+      })))
     }
 
     return (
@@ -1266,7 +1349,7 @@ export function GamifiedQuestionEditor({
           <div>
             <p className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-400">Perguntas com lacunas</p>
             <p className="mt-2 text-sm font-medium text-slate-600">
-              Cada card representa uma frase com uma lacuna. Abra, preencha os campos e defina a resposta correta no mesmo lugar.
+              Cada card representa uma pergunta. Dentro dela voce pode escrever o texto inicial e adicionar uma ou varias lacunas.
             </p>
           </div>
 
@@ -1280,17 +1363,19 @@ export function GamifiedQuestionEditor({
         </div>
 
         <div className="mt-5 space-y-4">
-          {items.map((item, index) => {
-            const isOpen = expandedItemId === item.blankId
-            const previewLabel = item.answerText.trim() || item.placeholder.trim() || 'Sem resposta definida'
+          {groups.map((group, index) => {
+            const isOpen = expandedGroupId === group.id
+            const previewLabel = group.blanks
+              .map((blank) => blank.answer_text.trim() || blank.placeholder?.trim() || 'lacuna')
+              .join(' • ')
 
             return (
-              <div key={item.blankId} className="overflow-hidden rounded-[28px] border border-slate-200 bg-slate-50/70">
+              <div key={group.id} className="overflow-hidden rounded-[28px] border border-slate-200 bg-slate-50/70">
                 <div className="flex items-center gap-2 px-5 py-4">
                   <button
                     type="button"
                     className="flex min-w-0 flex-1 items-center justify-between gap-4 text-left transition-colors hover:text-teal-700"
-                    onClick={() => setOpenFillBlankId((current) => current === item.blankId ? null : item.blankId)}
+                    onClick={() => setOpenFillBlankId((current) => current === group.id ? null : group.id)}
                   >
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-3">
@@ -1302,9 +1387,9 @@ export function GamifiedQuestionEditor({
                         </span>
                       </div>
                       <p className="mt-2 text-xs font-medium text-slate-500">
-                        {item.beforeText.trim() || item.afterText.trim()
-                          ? 'Texto configurado'
-                          : 'Clique para escrever a frase e definir a lacuna.'}
+                        {group.leading_text.trim() || group.blanks.some((blank) => blank.trailing_text.trim().length > 0)
+                          ? `${group.blanks.length} lacuna(s) nesta pergunta`
+                          : 'Clique para escrever a frase e definir as lacunas.'}
                       </p>
                     </div>
 
@@ -1318,7 +1403,7 @@ export function GamifiedQuestionEditor({
                   <button
                     type="button"
                     className="rounded-xl p-2 text-slate-300 transition-colors hover:bg-rose-50 hover:text-rose-500"
-                    onClick={() => removePromptItem(item.blankId)}
+                    onClick={() => removePromptItem(group.id)}
                   >
                     <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -1328,62 +1413,97 @@ export function GamifiedQuestionEditor({
 
                 {isOpen ? (
                   <div className="space-y-5 border-t border-slate-200 bg-white px-5 py-5">
-                    <div className="grid gap-4 xl:grid-cols-2">
-                      <label className="block space-y-2">
-                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Texto antes da lacuna</span>
-                        <textarea
-                          className="min-h-[120px] w-full rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3 text-sm text-slate-700 focus:border-teal-300 focus:ring-4 focus:ring-teal-100"
-                          value={item.beforeText}
-                          onChange={(event) => updateItem(item.blankId, { beforeText: event.target.value })}
-                          onBlur={(event) => void commitItems(patchItems(item.blankId, { beforeText: event.currentTarget.value }))}
-                          placeholder="Ex.: A fisiologia é a ciência que estuda..."
-                        />
-                      </label>
+                    <label className="block space-y-2">
+                      <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Texto inicial da pergunta</span>
+                      <textarea
+                        className="min-h-[120px] w-full rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3 text-sm text-slate-700 focus:border-teal-300 focus:ring-4 focus:ring-teal-100"
+                        value={group.leading_text}
+                        onChange={(event) => updateGroup(group.id, { leading_text: event.target.value })}
+                        onBlur={(event) => void commitGroups(patchGroups(group.id, (currentGroup) => ({
+                          ...currentGroup,
+                          leading_text: event.currentTarget.value,
+                        })))}
+                        placeholder="Ex.: A fisiologia e a ciencia que estuda..."
+                      />
+                    </label>
 
-                      <label className="block space-y-2">
-                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Texto depois da lacuna</span>
-                        <textarea
-                          className="min-h-[120px] w-full rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3 text-sm text-slate-700 focus:border-teal-300 focus:ring-4 focus:ring-teal-100"
-                          value={item.afterText}
-                          onChange={(event) => updateItem(item.blankId, { afterText: event.target.value })}
-                          onBlur={(event) => void commitItems(patchItems(item.blankId, { afterText: event.currentTarget.value }))}
-                          placeholder="Ex.: ...dos seres vivos."
-                        />
-                      </label>
+                    <div className="space-y-4">
+                      {group.blanks.map((blank, blankIndex) => (
+                        <div key={blank.blank_id} className="rounded-[24px] border border-teal-100 bg-teal-50/40 p-4">
+                          <div className="flex items-center justify-between gap-3">
+                            <span className="rounded-full bg-white px-3 py-1 text-[10px] font-black uppercase tracking-widest text-teal-700 shadow-sm">
+                              Lacuna {blankIndex + 1}
+                            </span>
+                            <button
+                              type="button"
+                              className="rounded-xl p-2 text-slate-300 transition-colors hover:bg-rose-50 hover:text-rose-500"
+                              onClick={() => removeBlank(group.id, blank.blank_id)}
+                            >
+                              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                              </svg>
+                            </button>
+                          </div>
+
+                          <div className="mt-4 grid gap-4 md:grid-cols-2">
+                            <label className="block space-y-2">
+                              <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Placeholder da lacuna</span>
+                              <input
+                                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 focus:border-teal-300 focus:ring-4 focus:ring-teal-100"
+                                value={blank.placeholder ?? ''}
+                                onChange={(event) => updateBlank(group.id, blank.blank_id, { placeholder: event.target.value })}
+                                onBlur={(event) => void commitGroups(patchBlank(group.id, blank.blank_id, { placeholder: event.currentTarget.value }))}
+                                placeholder="Ex.: termo principal"
+                              />
+                            </label>
+
+                            <label className="block space-y-2">
+                              <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Resposta correta</span>
+                              <input
+                                className="w-full rounded-2xl border border-teal-200 bg-white px-4 py-3 text-sm font-semibold text-slate-800 focus:border-teal-300 focus:ring-4 focus:ring-teal-100"
+                                value={blank.answer_text}
+                                onChange={(event) => updateBlank(group.id, blank.blank_id, { answer_text: event.target.value })}
+                                onBlur={(event) => void commitGroups(patchBlank(group.id, blank.blank_id, { answer_text: event.currentTarget.value }))}
+                                placeholder="Digite a resposta correta completa"
+                              />
+                            </label>
+                          </div>
+
+                          <label className="mt-4 block space-y-2">
+                            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Texto depois desta lacuna</span>
+                            <textarea
+                              className="min-h-[110px] w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 focus:border-teal-300 focus:ring-4 focus:ring-teal-100"
+                              value={blank.trailing_text}
+                              onChange={(event) => updateBlank(group.id, blank.blank_id, { trailing_text: event.target.value })}
+                              onBlur={(event) => void commitGroups(patchBlank(group.id, blank.blank_id, { trailing_text: event.currentTarget.value }))}
+                              placeholder="Texto que continua depois desta lacuna."
+                            />
+                          </label>
+                        </div>
+                      ))}
                     </div>
 
-                    <div className="grid gap-4 md:grid-cols-2">
-                      <label className="block space-y-2">
-                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Placeholder da lacuna</span>
-                        <input
-                          className="w-full rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3 text-sm font-semibold text-slate-700 focus:border-teal-300 focus:ring-4 focus:ring-teal-100"
-                          value={item.placeholder}
-                          onChange={(event) => updateItem(item.blankId, { placeholder: event.target.value })}
-                          onBlur={(event) => void commitItems(patchItems(item.blankId, { placeholder: event.currentTarget.value }))}
-                          placeholder="Ex.: termo principal"
-                        />
-                      </label>
-
-                      <label className="block space-y-2">
-                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Resposta correta</span>
-                        <input
-                          className="w-full rounded-2xl border border-teal-200 bg-teal-50/60 px-4 py-3 text-sm font-semibold text-slate-800 focus:border-teal-300 focus:ring-4 focus:ring-teal-100"
-                          value={item.answerText}
-                          onChange={(event) => updateItem(item.blankId, { answerText: event.target.value })}
-                          onBlur={(event) => void commitItems(patchItems(item.blankId, { answerText: event.currentTarget.value }))}
-                          placeholder="Digite a resposta correta completa"
-                        />
-                      </label>
-                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="rounded-2xl border-teal-200 bg-white text-teal-700 hover:bg-teal-50"
+                      onClick={() => addBlankToGroup(group.id)}
+                    >
+                      Adicionar lacuna nesta pergunta
+                    </Button>
 
                     <div className="rounded-[24px] border border-teal-100 bg-teal-50/60 p-5">
                       <p className="text-[10px] font-black uppercase tracking-[0.25em] text-teal-700">Preview da pergunta</p>
                       <p className="mt-4 text-base leading-8 text-slate-700">
-                        {item.beforeText || <span className="text-slate-400">Texto antes da lacuna</span>}
-                        <span className="mx-2 inline-flex min-w-[140px] items-center justify-center rounded-2xl border border-teal-200 bg-white px-4 py-2 text-sm font-black text-teal-700 shadow-sm">
-                          {item.answerText || item.placeholder || 'Lacuna'}
-                        </span>
-                        {item.afterText || <span className="text-slate-400">Texto depois da lacuna</span>}
+                        {group.leading_text || <span className="text-slate-400">Texto inicial da pergunta</span>}
+                        {group.blanks.map((blank) => (
+                          <span key={blank.blank_id}>
+                            <span className="mx-2 inline-flex min-w-[140px] items-center justify-center rounded-2xl border border-teal-200 bg-white px-4 py-2 text-sm font-black text-teal-700 shadow-sm">
+                              {blank.answer_text || blank.placeholder || 'Lacuna'}
+                            </span>
+                            {blank.trailing_text || <span className="text-slate-400"> texto depois desta lacuna</span>}
+                          </span>
+                        ))}
                       </p>
                     </div>
                   </div>

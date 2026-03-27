@@ -50,11 +50,26 @@ export type FillInTheBlanksSegment =
     placeholder?: string | null
   }
 
+export interface FillInTheBlanksEditorBlank {
+  blank_id: string
+  token_id: string
+  placeholder?: string | null
+  answer_text: string
+  trailing_text: string
+}
+
+export interface FillInTheBlanksEditorGroup {
+  id: string
+  leading_text: string
+  blanks: FillInTheBlanksEditorBlank[]
+}
+
 export interface FillInTheBlanksInteractionContent {
   kind: 'fill_in_the_blanks'
   instruction: string
   segments: FillInTheBlanksSegment[]
   tokens: AssessmentInteractionToken[]
+  editor_groups?: FillInTheBlanksEditorGroup[] | null
 }
 
 export type AssessmentInteractionContent =

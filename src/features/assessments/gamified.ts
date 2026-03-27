@@ -55,6 +55,17 @@ export const fillInTheBlanksInteractionContentSchema = z.object({
   instruction: z.string().trim().min(2, 'Instrucao obrigatoria.'),
   segments: z.array(fillInTheBlanksSegmentSchema).min(1, 'Adicione texto ou lacunas.'),
   tokens: z.array(assessmentInteractionTokenSchema).min(1, 'Adicione ao menos um item do banco.'),
+  editor_groups: z.array(z.object({
+    id: z.string().trim().min(1, 'Identificador da pergunta obrigatorio.'),
+    leading_text: z.string(),
+    blanks: z.array(z.object({
+      blank_id: z.string().trim().min(1, 'Identificador da lacuna obrigatorio.'),
+      token_id: z.string().trim().min(1, 'Identificador da resposta obrigatorio.'),
+      placeholder: z.string().trim().max(120).nullable().optional(),
+      answer_text: z.string(),
+      trailing_text: z.string(),
+    })).min(1, 'Adicione ao menos uma lacuna na pergunta.'),
+  })).optional().nullable(),
 })
 
 export const assessmentInteractionContentSchema = z.discriminatedUnion('kind', [
@@ -110,16 +121,33 @@ export function createDefaultInteractionContent(questionType: AssessmentQuestion
   }
 
   if (questionType === 'fill_in_the_blanks') {
+    const blankId = crypto.randomUUID()
+    const tokenId = crypto.randomUUID()
     return {
       kind: 'fill_in_the_blanks',
       instruction: 'Arraste os itens para preencher as lacunas.',
       segments: [
         { type: 'text', text: 'Texto inicial ' },
-        { type: 'blank', id: crypto.randomUUID(), placeholder: 'lacuna' },
+        { type: 'blank', id: blankId, placeholder: 'lacuna' },
         { type: 'text', text: ' texto final.' },
       ],
       tokens: [
-        { id: crypto.randomUUID(), label: 'Resposta 1' },
+        { id: tokenId, label: 'Resposta 1' },
+      ],
+      editor_groups: [
+        {
+          id: crypto.randomUUID(),
+          leading_text: 'Texto inicial ',
+          blanks: [
+            {
+              blank_id: blankId,
+              token_id: tokenId,
+              placeholder: 'lacuna',
+              answer_text: 'Resposta 1',
+              trailing_text: ' texto final.',
+            },
+          ],
+        },
       ],
     }
   }
