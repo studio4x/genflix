@@ -2,9 +2,21 @@ import { supabase } from '@/services/supabase/client'
 import type {
   Assessment,
   AssessmentCaseStudy,
+  AssessmentGradingMode,
+  AssessmentInteractionContent,
   AssessmentOption,
   AssessmentQuestion,
+  AssessmentQuestionAnswerKey,
+  AssessmentQuestionAnswerKeyPayload,
+  AssessmentQuestionInteraction,
 } from '@/types/content'
+
+import {
+  isChoiceQuestionType,
+  isEssayQuestionType,
+  isGamifiedQuestionType,
+  validateInteractionBundle,
+} from '@/features/assessments/gamified'
 
 import type {
   AssessmentCaseStudyFormInput,
@@ -13,23 +25,116 @@ import type {
   AssessmentQuestionFormInput,
 } from './schemas'
 
+const ASSESSMENT_ASSETS_BUCKET = 'assessment-assets'
+
+type RawInteractionRow = Omit<AssessmentQuestionInteraction, 'content'> & {
+  content: unknown
+}
+
+type RawAnswerKeyRow = Omit<AssessmentQuestionAnswerKey, 'answer_key'> & {
+  answer_key: unknown
+}
+
 export interface AssessmentQuestionWithOptions extends AssessmentQuestion {
   options: AssessmentOption[]
+  interaction: AssessmentQuestionInteraction | null
+  answer_key: AssessmentQuestionAnswerKey | null
 }
 
 export interface AssessmentCaseStudyWithQuestions extends AssessmentCaseStudy {
   questions: AssessmentQuestionWithOptions[]
 }
 
+export interface ImportAssessmentQuestionData {
+  question_text: string
+  question_type?: AssessmentQuestion['question_type']
+  points?: number
+  is_required?: boolean
+  essay_expected_answer?: string
+  options?: {
+    option_text: string
+    is_correct: boolean
+  }[]
+  interaction?: AssessmentInteractionContent
+  grading?: {
+    mode?: AssessmentGradingMode
+    answer_key: AssessmentQuestionAnswerKeyPayload
+  }
+}
+
+export interface ImportAssessmentCaseStudyData {
+  title?: string
+  case_text: string
+  questions: ImportAssessmentQuestionData[]
+}
+
+export interface ImportAssessmentData {
+  title: string
+  description?: string
+  passing_score?: number
+  max_attempts?: number
+  estimated_minutes?: number
+  questions?: ImportAssessmentQuestionData[]
+  case_studies?: ImportAssessmentCaseStudyData[]
+}
+
 function normalizeError(error: unknown): Error {
   if (error instanceof Error) {
     return error
   }
+
   return new Error('Erro inesperado.')
 }
 
 export function toErrorMessage(error: unknown): string {
   return normalizeError(error).message
+}
+
+function mapInteractionRow(row: RawInteractionRow): AssessmentQuestionInteraction {
+  return {
+    question_id: row.question_id,
+    content: row.content as AssessmentInteractionContent,
+    version: row.version,
+    created_at: row.created_at,
+    updated_at: row.updated_at,
+  }
+}
+
+async function hydrateInteractionAsset(interaction: AssessmentQuestionInteraction) {
+  if (interaction.content.kind !== 'drag_drop_labeling') {
+    return interaction
+  }
+
+  const storagePath = interaction.content.asset.storage_path?.trim()
+  if (!storagePath) {
+    return interaction
+  }
+
+  try {
+    const signedUrl = await getSignedAssessmentAssetUrl(storagePath)
+    return {
+      ...interaction,
+      content: {
+        ...interaction.content,
+        asset: {
+          ...interaction.content.asset,
+          signed_url: signedUrl,
+        },
+      },
+    } satisfies AssessmentQuestionInteraction
+  } catch {
+    return interaction
+  }
+}
+
+function mapAnswerKeyRow(row: RawAnswerKeyRow): AssessmentQuestionAnswerKey {
+  return {
+    question_id: row.question_id,
+    grading_mode: row.grading_mode,
+    answer_key: row.answer_key as AssessmentQuestionAnswerKeyPayload,
+    created_at: row.created_at,
+    updated_at: row.updated_at,
+  }
 }
 
 async function getNextAssessmentItemPosition(assessmentId: string) {
@@ -63,6 +168,120 @@ async function getNextAssessmentItemPosition(assessmentId: string) {
   ) + 1
 }
 
+async function syncQuestionInteractionData(input: {
+  questionId: string
+  questionType: AssessmentQuestion['question_type']
+  interactionContent?: AssessmentInteractionContent | null
+  gradingMode?: AssessmentGradingMode | null
+  answerKey?: AssessmentQuestionAnswerKeyPayload | null
+}) {
+  if (!isGamifiedQuestionType(input.questionType)) {
+    const [deleteInteractionResult, deleteAnswerKeyResult] = await Promise.all([
+      supabase.from('assessment_question_interactions').delete().eq('question_id', input.questionId),
+      supabase.from('assessment_question_answer_keys').delete().eq('question_id', input.questionId),
+    ])
+
+    if (deleteInteractionResult.error) {
+      throw deleteInteractionResult.error
+    }
+
+    if (deleteAnswerKeyResult.error) {
+      throw deleteAnswerKeyResult.error
+    }
+
+    return
+  }
+
+  validateInteractionBundle(
+    input.questionType,
+    input.interactionContent ?? null,
+    input.answerKey ?? null,
+  )
+
+  const [interactionResult, answerKeyResult] = await Promise.all([
+    supabase
+      .from('assessment_question_interactions')
+      .upsert({
+        question_id: input.questionId,
+        content: input.interactionContent,
+        version: 1,
+      }, { onConflict: 'question_id' }),
+    supabase
+      .from('assessment_question_answer_keys')
+      .upsert({
+        question_id: input.questionId,
+        grading_mode: input.gradingMode ?? 'partial_by_item',
+        answer_key: input.answerKey,
+      }, { onConflict: 'question_id' }),
+  ])
+
+  if (interactionResult.error) {
+    throw interactionResult.error
+  }
+
+  if (answerKeyResult.error) {
+    throw answerKeyResult.error
+  }
+}
+
+function buildQuestionPayload(input: AssessmentQuestionFormInput) {
+  return {
+    question_text: input.question_text,
+    question_type: input.question_type,
+    essay_expected_answer: isEssayQuestionType(input.question_type)
+      ? input.essay_expected_answer?.trim() || null
+      : null,
+    case_study_id: input.case_study_id ?? null,
+    case_question_position: input.case_question_position ?? null,
+    is_required: input.is_required,
+    points: input.points,
+  }
+}
+
+function mapQuestionsWithRelations(
+  questions: AssessmentQuestion[],
+  options: AssessmentOption[],
+  interactions: AssessmentQuestionInteraction[],
+  answerKeys: AssessmentQuestionAnswerKey[],
+) {
+  const optionsMap = new Map<string, AssessmentOption[]>()
+  const interactionMap = new Map<string, AssessmentQuestionInteraction>()
+  const answerKeyMap = new Map<string, AssessmentQuestionAnswerKey>()
+
+  for (const option of options) {
+    const current = optionsMap.get(option.question_id) ?? []
+    current.push(option)
+    optionsMap.set(option.question_id, current)
+  }
+
+  for (const interaction of interactions) {
+    interactionMap.set(interaction.question_id, interaction)
+  }
+
+  for (const answerKey of answerKeys) {
+    answerKeyMap.set(answerKey.question_id, answerKey)
+  }
+
+  return questions.map((question) => ({
+    ...question,
+    options: optionsMap.get(question.id) ?? [],
+    interaction: interactionMap.get(question.id) ?? null,
+    answer_key: answerKeyMap.get(question.id) ?? null,
+  })) satisfies AssessmentQuestionWithOptions[]
+}
+
+function mapCaseStudiesWithQuestions(
+  caseStudies: AssessmentCaseStudy[],
+  questions: AssessmentQuestionWithOptions[],
+) {
+  return caseStudies.map((caseStudy) => ({
+    ...caseStudy,
+    questions: questions
+      .filter((question) => question.case_study_id === caseStudy.id)
+      .sort((questionA, questionB) => (questionA.case_question_position ?? 0) - (questionB.case_question_position ?? 0)),
+  })) satisfies AssessmentCaseStudyWithQuestions[]
+}
+
 export async function fetchModuleAssessment(moduleId: string) {
   const result = await supabase
     .from('assessments')
@@ -74,6 +293,7 @@ export async function fetchModuleAssessment(moduleId: string) {
   if (result.error) {
     throw result.error
   }
+
   return (result.data as Assessment | null) ?? null
 }
 
@@ -88,6 +308,7 @@ export async function fetchFinalAssessment(courseId: string) {
   if (result.error) {
     throw result.error
   }
+
   return (result.data as Assessment | null) ?? null
 }
 
@@ -118,6 +339,7 @@ export async function createModuleAssessment(
   if (result.error) {
     throw result.error
   }
+
   return result.data as Assessment
 }
 
@@ -147,6 +369,7 @@ export async function createFinalAssessment(
   if (result.error) {
     throw result.error
   }
+
   return result.data as Assessment
 }
 
@@ -169,56 +392,64 @@ export async function updateAssessment(assessmentId: string, input: AssessmentFo
   if (result.error) {
     throw result.error
   }
+
   return result.data as Assessment
 }
 
 export async function fetchAssessmentQuestions(assessmentId: string) {
-  const [questionsResult, optionsResult] = await Promise.all([
-    supabase
-      .from('assessment_questions')
-      .select('*')
-      .eq('assessment_id', assessmentId)
-      .order('position', { ascending: true }),
+  const questionsResult = await supabase
+    .from('assessment_questions')
+    .select('*')
+    .eq('assessment_id', assessmentId)
+    .order('position', { ascending: true })
+
+  if (questionsResult.error) {
+    throw questionsResult.error
+  }
+
+  const questions = (questionsResult.data as AssessmentQuestion[]) ?? []
+  const questionIds = questions.map((question) => question.id)
+
+  if (questionIds.length === 0) {
+    return [] satisfies AssessmentQuestionWithOptions[]
+  }
+
+  const [optionsResult, interactionsResult, answerKeysResult] = await Promise.all([
     supabase
       .from('assessment_options')
       .select('*, assessment_questions!inner(assessment_id)')
       .eq('assessment_questions.assessment_id', assessmentId)
       .order('position', { ascending: true }),
+    supabase
+      .from('assessment_question_interactions')
+      .select('*')
+      .in('question_id', questionIds),
+    supabase
+      .from('assessment_question_answer_keys')
+      .select('*')
+      .in('question_id', questionIds),
   ])
 
-  if (questionsResult.error) {
-    throw questionsResult.error
-  }
   if (optionsResult.error) {
     throw optionsResult.error
   }
 
-  const questions = (questionsResult.data as AssessmentQuestion[]) ?? []
-  const options = (optionsResult.data as AssessmentOption[]) ?? []
-  const optionsMap = new Map<string, AssessmentOption[]>()
-
-  for (const option of options) {
-    const current = optionsMap.get(option.question_id) ?? []
-    current.push(option)
-    optionsMap.set(option.question_id, current)
+  if (interactionsResult.error) {
+    throw interactionsResult.error
   }
 
-  return questions.map((question) => ({
-    ...question,
-    options: optionsMap.get(question.id) ?? [],
-  })) as AssessmentQuestionWithOptions[]
-}
+  if (answerKeysResult.error) {
+    throw answerKeysResult.error
+  }
 
-function mapCaseStudiesWithQuestions(
-  caseStudies: AssessmentCaseStudy[],
-  questions: AssessmentQuestionWithOptions[],
-) {
-  return caseStudies.map((caseStudy) => ({
-    ...caseStudy,
-    questions: questions
-      .filter((question) => question.case_study_id === caseStudy.id)
-      .sort((questionA, questionB) => (questionA.case_question_position ?? 0) - (questionB.case_question_position ?? 0)),
-  })) satisfies AssessmentCaseStudyWithQuestions[]
+  return mapQuestionsWithRelations(
+    questions,
+    (optionsResult.data as AssessmentOption[]) ?? [],
+    await Promise.all(
+      (((interactionsResult.data as RawInteractionRow[]) ?? []).map(mapInteractionRow)).map(hydrateInteractionAsset),
+    ),
+    ((answerKeysResult.data as RawAnswerKeyRow[]) ?? []).map(mapAnswerKeyRow),
+  )
 }
 
 export async function fetchAssessmentCaseStudies(
@@ -261,16 +492,8 @@ export async function createAssessmentQuestion(
     .from('assessment_questions')
     .insert({
       assessment_id: assessmentId,
-      question_text: input.question_text,
-      question_type: input.question_type,
-      essay_expected_answer: input.question_type === 'essay_ai' || input.question_type === 'case_study_ai'
-        ? input.essay_expected_answer?.trim() || null
-        : null,
-      case_study_id: input.case_study_id ?? null,
-      case_question_position: input.case_question_position ?? null,
       position: nextPosition,
-      is_required: input.is_required,
-      points: input.points,
+      ...buildQuestionPayload(input),
     })
     .select('*')
     .single()
@@ -279,7 +502,16 @@ export async function createAssessmentQuestion(
     throw result.error
   }
 
-  return result.data as AssessmentQuestion
+  const question = result.data as AssessmentQuestion
+  await syncQuestionInteractionData({
+    questionId: question.id,
+    questionType: input.question_type,
+    interactionContent: input.interaction_content ?? null,
+    gradingMode: input.grading_mode ?? 'partial_by_item',
+    answerKey: input.answer_key ?? null,
+  })
+
+  return question
 }
 
 export async function updateAssessmentQuestion(
@@ -288,17 +520,7 @@ export async function updateAssessmentQuestion(
 ) {
   const result = await supabase
     .from('assessment_questions')
-    .update({
-      question_text: input.question_text,
-      question_type: input.question_type,
-      essay_expected_answer: input.question_type === 'essay_ai' || input.question_type === 'case_study_ai'
-        ? input.essay_expected_answer?.trim() || null
-        : null,
-      case_study_id: input.case_study_id ?? null,
-      case_question_position: input.case_question_position ?? null,
-      is_required: input.is_required,
-      points: input.points,
-    })
+    .update(buildQuestionPayload(input))
     .eq('id', questionId)
     .select('*')
     .single()
@@ -307,7 +529,16 @@ export async function updateAssessmentQuestion(
     throw result.error
   }
 
-  return result.data as AssessmentQuestion
+  const question = result.data as AssessmentQuestion
+  await syncQuestionInteractionData({
+    questionId,
+    questionType: input.question_type,
+    interactionContent: input.interaction_content ?? null,
+    gradingMode: input.grading_mode ?? 'partial_by_item',
+    answerKey: input.answer_key ?? null,
+  })
+
+  return question
 }
 
 export async function deleteAssessmentQuestion(questionId: string) {
@@ -452,33 +683,70 @@ export async function deleteAssessmentOption(optionId: string) {
   }
 }
 
+export async function uploadAssessmentAsset(file: File) {
+  const objectPath = `${crypto.randomUUID()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, '-')}`
+  const uploadResult = await supabase.storage
+    .from(ASSESSMENT_ASSETS_BUCKET)
+    .upload(objectPath, file, {
+      cacheControl: '3600',
+      upsert: false,
+      contentType: file.type || undefined,
+    })
 
-export interface ImportAssessmentQuestionData {
-  question_text: string
-  question_type?: 'single_choice' | 'essay_ai' | 'case_study_ai' | 'case_study_single_choice'
-  points?: number
-  is_required?: boolean
-  essay_expected_answer?: string
-  options?: {
-    option_text: string
-    is_correct: boolean
-  }[]
+  if (uploadResult.error) {
+    throw uploadResult.error
+  }
+
+  const signedUrl = await getSignedAssessmentAssetUrl(objectPath)
+  return {
+    storage_path: objectPath,
+    signed_url: signedUrl,
+  }
 }
 
-export interface ImportAssessmentCaseStudyData {
-  title?: string
-  case_text: string
-  questions: ImportAssessmentQuestionData[]
+export async function getSignedAssessmentAssetUrl(storagePath: string) {
+  const result = await supabase.storage
+    .from(ASSESSMENT_ASSETS_BUCKET)
+    .createSignedUrl(storagePath, 60 * 60)
+
+  if (result.error) {
+    throw result.error
+  }
+
+  return result.data.signedUrl
 }
 
-export interface ImportAssessmentData {
-  title: string
-  description?: string
-  passing_score?: number
-  max_attempts?: number
-  estimated_minutes?: number
-  questions?: ImportAssessmentQuestionData[]
-  case_studies?: ImportAssessmentCaseStudyData[]
+export async function deleteAssessmentAsset(storagePath: string) {
+  const result = await supabase.storage
+    .from(ASSESSMENT_ASSETS_BUCKET)
+    .remove([storagePath])
+
+  if (result.error) {
+    throw result.error
+  }
+}
+
+function mapExportQuestion(question: AssessmentQuestionWithOptions): ImportAssessmentQuestionData {
+  return {
+    question_text: question.question_text,
+    question_type: question.question_type,
+    points: question.points,
+    is_required: question.is_required,
+    essay_expected_answer: question.essay_expected_answer ?? undefined,
+    options: isChoiceQuestionType(question.question_type)
+      ? question.options.map((option) => ({
+        option_text: option.option_text,
+        is_correct: option.is_correct,
+      }))
+      : [],
+    interaction: question.interaction?.content,
+    grading: question.answer_key
+      ? {
+        mode: question.answer_key.grading_mode,
+        answer_key: question.answer_key.answer_key,
+      }
+      : undefined,
+  }
 }
 
 export async function exportAssessmentContent(assessmentId: string): Promise<ImportAssessmentData> {
@@ -504,35 +772,11 @@ export async function exportAssessmentContent(assessmentId: string): Promise<Imp
     estimated_minutes: assessment.estimated_minutes,
     questions: questions
       .filter((question) => !question.case_study_id)
-      .map((question) => ({
-        question_text: question.question_text,
-        question_type: question.question_type,
-        points: question.points,
-        is_required: question.is_required,
-        essay_expected_answer: question.essay_expected_answer ?? undefined,
-        options: question.question_type === 'essay_ai' || question.question_type === 'case_study_ai'
-          ? []
-          : question.options.map((option) => ({
-            option_text: option.option_text,
-            is_correct: option.is_correct,
-          })),
-      })),
+      .map(mapExportQuestion),
     case_studies: caseStudies.map((caseStudy) => ({
       title: caseStudy.title ?? undefined,
       case_text: caseStudy.case_text,
-      questions: caseStudy.questions.map((question) => ({
-        question_text: question.question_text,
-        question_type: question.question_type,
-        points: question.points,
-        is_required: question.is_required,
-        essay_expected_answer: question.essay_expected_answer ?? undefined,
-        options: question.question_type === 'case_study_ai'
-          ? []
-          : question.options.map((option) => ({
-            option_text: option.option_text,
-            is_correct: option.is_correct,
-          })),
-      })),
+      questions: caseStudy.questions.map(mapExportQuestion),
     })),
   }
 }
@@ -542,70 +786,12 @@ export async function exportFinalAssessmentContent(courseId: string): Promise<Im
   if (!finalAssessment) {
     throw new Error('Nenhuma avaliacao final encontrada para este curso.')
   }
+
   return exportAssessmentContent(finalAssessment.id)
 }
 
 export async function importAssessmentContent(assessmentId: string, data: ImportAssessmentData) {
-  // 1. Atualizar dados básicos da avaliação
-  const { error: updateError } = await supabase
-    .from('assessments')
-    .update({
-      title: data.title,
-      description: data.description || null,
-      passing_score: data.passing_score || 70,
-      max_attempts: data.max_attempts || 3,
-      estimated_minutes: data.estimated_minutes || 10,
-    })
-    .eq('id', assessmentId)
-
-  if (updateError) throw updateError
-
-  // 2. Limpar questões existentes (Opcional, mas recomendado para importação limpa)
-  // O cascade delete do banco cuidará das opções.
-  const { error: deleteError } = await supabase
-    .from('assessment_questions')
-    .delete()
-    .eq('assessment_id', assessmentId)
-
-  if (deleteError) throw deleteError
-
-  // 3. Inserir novas questões e opções
-  if (data.questions && data.questions.length > 0) {
-    for (let qIdx = 0; qIdx < data.questions.length; qIdx++) {
-      const qData = data.questions[qIdx]
-      const questionType = qData.question_type === 'essay_ai' ? 'essay_ai' : 'single_choice'
-      
-      const { data: question, error: qError } = await supabase
-        .from('assessment_questions')
-        .insert({
-          assessment_id: assessmentId,
-          question_text: qData.question_text,
-          points: questionType === 'essay_ai' ? 0 : (qData.points || 1),
-          is_required: qData.is_required ?? true,
-          position: qIdx + 1,
-          question_type: questionType,
-          essay_expected_answer: questionType === 'essay_ai'
-            ? qData.essay_expected_answer?.trim() || null
-            : null,
-        })
-        .select()
-        .single()
-
-      if (qError) throw qError
-
-      if (questionType === 'single_choice' && qData.options && qData.options.length > 0) {
-        const optionsToInsert = qData.options.map((option, oIdx: number) => ({
-          question_id: question.id,
-          option_text: option.option_text,
-          is_correct: option.is_correct,
-          position: oIdx + 1
-        }))
-
-        const { error: oError } = await supabase.from('assessment_options').insert(optionsToInsert)
-        if (oError) throw oError
-      }
-    }
-  }
+  await importAssessmentContentStructured(assessmentId, data)
 }
 
 export async function importAssessmentContentStructured(assessmentId: string, data: ImportAssessmentData) {
@@ -620,21 +806,27 @@ export async function importAssessmentContentStructured(assessmentId: string, da
     })
     .eq('id', assessmentId)
 
-  if (updateError) throw updateError
+  if (updateError) {
+    throw updateError
+  }
 
   const { error: deleteCaseStudiesError } = await supabase
     .from('assessment_case_studies')
     .delete()
     .eq('assessment_id', assessmentId)
 
-  if (deleteCaseStudiesError) throw deleteCaseStudiesError
+  if (deleteCaseStudiesError) {
+    throw deleteCaseStudiesError
+  }
 
   const { error: deleteQuestionsError } = await supabase
     .from('assessment_questions')
     .delete()
     .eq('assessment_id', assessmentId)
 
-  if (deleteQuestionsError) throw deleteQuestionsError
+  if (deleteQuestionsError) {
+    throw deleteQuestionsError
+  }
 
   const standaloneQuestions = data.questions ?? []
   const caseStudies = data.case_studies ?? []
@@ -652,6 +844,13 @@ export async function importAssessmentContentStructured(assessmentId: string, da
     })
 
     await insertImportedOptions(question.id, questionType, questionInput.options)
+    await syncQuestionInteractionData({
+      questionId: question.id,
+      questionType,
+      interactionContent: questionInput.interaction ?? null,
+      gradingMode: questionInput.grading?.mode ?? 'partial_by_item',
+      answerKey: questionInput.grading?.answer_key ?? null,
+    })
     nextPosition += 1
   }
 
@@ -686,6 +885,13 @@ export async function importAssessmentContentStructured(assessmentId: string, da
       })
 
       await insertImportedOptions(question.id, questionType, questionInput.options)
+      await syncQuestionInteractionData({
+        questionId: question.id,
+        questionType,
+        interactionContent: questionInput.interaction ?? null,
+        gradingMode: questionInput.grading?.mode ?? 'partial_by_item',
+        answerKey: questionInput.grading?.answer_key ?? null,
+      })
     }
 
     nextPosition += 1
@@ -702,7 +908,15 @@ function normalizeImportQuestionType(
       : 'case_study_single_choice'
   }
 
-  return questionType === 'essay_ai' ? 'essay_ai' : 'single_choice'
+  if (
+    questionType === 'essay_ai'
+    || questionType === 'drag_drop_labeling'
+    || questionType === 'fill_in_the_blanks'
+  ) {
+    return questionType
+  }
+
+  return 'single_choice'
 }
 
 async function insertImportedQuestion(input: {
@@ -722,7 +936,7 @@ async function insertImportedQuestion(input: {
       is_required: input.input.is_required ?? true,
       position: input.position,
       question_type: input.questionType,
-      essay_expected_answer: input.questionType === 'essay_ai' || input.questionType === 'case_study_ai'
+      essay_expected_answer: isEssayQuestionType(input.questionType)
         ? input.input.essay_expected_answer?.trim() || null
         : null,
       case_study_id: input.caseStudyId,
@@ -743,7 +957,7 @@ async function insertImportedOptions(
   questionType: AssessmentQuestion['question_type'],
   options: ImportAssessmentQuestionData['options'],
 ) {
-  if (questionType === 'essay_ai' || questionType === 'case_study_ai' || !options?.length) {
+  if (!isChoiceQuestionType(questionType) || !options?.length) {
     return
   }
 

@@ -1,14 +1,18 @@
 import { z } from 'zod'
 
+import { assessmentInteractionResponsePayloadSchema } from '@/features/assessments/gamified'
+
 export const assessmentAnswerSchema = z.object({
   question_id: z.string().uuid('Questao invalida.'),
   option_id: z.string().uuid('Opcao invalida.').nullable().optional(),
   answer_text: z.string().trim().max(5000, 'Resposta discursiva muito longa.').nullable().optional(),
+  response_payload: assessmentInteractionResponsePayloadSchema.nullable().optional(),
 }).superRefine((value, ctx) => {
   const hasOption = Boolean(value.option_id)
   const hasText = Boolean(value.answer_text?.trim())
+  const hasInteractionPayload = (value.response_payload?.entries.length ?? 0) > 0
 
-  if (!hasOption && !hasText) {
+  if (!hasOption && !hasText && !hasInteractionPayload) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
       path: ['option_id'],

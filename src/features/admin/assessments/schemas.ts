@@ -1,5 +1,12 @@
 import { z } from 'zod'
 
+import {
+  assessmentInteractionContentSchema,
+  assessmentQuestionAnswerKeyPayloadSchema,
+  isGamifiedQuestionType,
+  validateInteractionBundle,
+} from '@/features/assessments/gamified'
+
 export const assessmentFormSchema = z.object({
   title: z.string().trim().min(2, 'Titulo deve ter ao menos 2 caracteres.'),
   description: z.string().trim().max(2000).optional(),
@@ -26,10 +33,20 @@ export const assessmentQuestionFormSchema = z.object({
     .string()
     .trim()
     .min(2, 'Pergunta deve ter ao menos 2 caracteres.'),
-  question_type: z.enum(['single_choice', 'essay_ai', 'case_study_ai', 'case_study_single_choice']),
+  question_type: z.enum([
+    'single_choice',
+    'essay_ai',
+    'case_study_ai',
+    'case_study_single_choice',
+    'drag_drop_labeling',
+    'fill_in_the_blanks',
+  ]),
   essay_expected_answer: z.string().trim().optional(),
   case_study_id: z.string().uuid('Estudo de caso invalido.').nullable().optional(),
   case_question_position: z.number().int().min(1, 'Posicao interna invalida.').nullable().optional(),
+  interaction_content: assessmentInteractionContentSchema.nullable().optional(),
+  grading_mode: z.enum(['partial_by_item', 'all_or_nothing']).optional(),
+  answer_key: assessmentQuestionAnswerKeyPayloadSchema.nullable().optional(),
   is_required: z.boolean(),
   points: z.number().min(0, 'Pontuacao nao pode ser negativa.'),
 }).superRefine((value, ctx) => {
@@ -37,6 +54,7 @@ export const assessmentQuestionFormSchema = z.object({
   const isCaseStudyAi = value.question_type === 'case_study_ai'
   const isCaseStudySingleChoice = value.question_type === 'case_study_single_choice'
   const isCaseStudyQuestion = isCaseStudyAi || isCaseStudySingleChoice
+  const isGamified = isGamifiedQuestionType(value.question_type)
 
   if (isCaseStudyQuestion && !value.case_study_id) {
     ctx.addIssue({
@@ -92,6 +110,40 @@ export const assessmentQuestionFormSchema = z.object({
         code: z.ZodIssueCode.custom,
         path: ['points'],
         message: 'Perguntas discursivas do estudo de caso devem ter pontuacao maior que zero.',
+      })
+    }
+
+    return
+  }
+
+  if (isGamified) {
+    if (value.case_study_id || value.case_question_position) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['question_type'],
+        message: 'Questoes gamificadas nao podem ficar dentro de estudo de caso na v1.',
+      })
+    }
+
+    if (value.points <= 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['points'],
+        message: 'Pontuacao deve ser maior que zero.',
+      })
+    }
+
+    try {
+      validateInteractionBundle(
+        value.question_type,
+        value.interaction_content ?? null,
+        value.answer_key ?? null,
+      )
+    } catch (error) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['interaction_content'],
+        message: error instanceof Error ? error.message : 'Interacao gamificada invalida.',
       })
     }
 

@@ -3,7 +3,9 @@ import { useNavigate, useOutletContext, useParams } from 'react-router-dom'
 
 import { useAuth } from '@/app/providers/auth-provider'
 import { Button } from '@/components/ui/button'
+import { assessmentInteractionContentSchema } from '@/features/assessments/gamified'
 import {
+  buildInteractionAnswerPayload,
   fetchAssessmentForExecution,
   fetchOwnAssessmentAttemptRequest,
   fetchOwnAssessmentReview,
@@ -12,14 +14,16 @@ import {
   submitAssessmentAttempt,
   toErrorMessage,
   type AssessmentAttemptRequest,
-  type StudentCourseAssessmentSummary,
   type StudentAssessmentCaseStudyWithQuestions,
+  type StudentAssessmentOption,
   type StudentAssessmentQuestionWithOptions,
   type StudentAssessmentReview,
+  type StudentCourseAssessmentSummary,
   type SubmitAssessmentAttemptResult,
 } from '@/features/student/assessments/api'
+import { GamifiedInteraction } from '@/features/student/assessments/gamified-interaction'
 import { fetchStudentCourseContentWithProgress } from '@/features/student/courses/api'
-import type { Assessment, AssessmentOption, StudentCourseModuleProgress } from '@/types/content'
+import type { Assessment, StudentCourseModuleProgress } from '@/types/content'
 
 function hashShuffleKey(value: string) {
   let hash = 0
@@ -35,19 +39,25 @@ function shuffleQuestionOptionsForAttempt(
   questions: StudentAssessmentQuestionWithOptions[],
   attemptNumber: number,
 ) {
-  return questions.map((question) => ({
-    ...question,
-    options: [...question.options].sort((optionA, optionB) => {
-      const hashA = hashShuffleKey(`${question.id}:${optionA.id}:${attemptNumber}`)
-      const hashB = hashShuffleKey(`${question.id}:${optionB.id}:${attemptNumber}`)
+  return questions.map((question) => {
+    if (question.question_type !== 'single_choice' && question.question_type !== 'case_study_single_choice') {
+      return question
+    }
 
-      if (hashA !== hashB) {
-        return hashA - hashB
-      }
+    return {
+      ...question,
+      options: [...question.options].sort((optionA, optionB) => {
+        const hashA = hashShuffleKey(`${question.id}:${optionA.id}:${attemptNumber}`)
+        const hashB = hashShuffleKey(`${question.id}:${optionB.id}:${attemptNumber}`)
 
-      return optionA.id.localeCompare(optionB.id)
-    }),
-  }))
+        if (hashA !== hashB) {
+          return hashA - hashB
+        }
+
+        return optionA.id.localeCompare(optionB.id)
+      }),
+    }
+  })
 }
 
 type AssessmentExecutionItem =
@@ -68,8 +78,16 @@ function isEssayQuestion(question: StudentAssessmentQuestionWithOptions) {
   return question.question_type === 'essay_ai' || question.question_type === 'case_study_ai'
 }
 
+function isChoiceQuestion(question: StudentAssessmentQuestionWithOptions) {
+  return question.question_type === 'single_choice' || question.question_type === 'case_study_single_choice'
+}
+
 function isScoredQuestion(question: StudentAssessmentQuestionWithOptions) {
   return question.question_type !== 'essay_ai'
+}
+
+function getQuestionPossiblePoints(question: StudentAssessmentQuestionWithOptions) {
+  return isScoredQuestion(question) ? Number(question.points || 0) : 0
 }
 
 function getExecutionItemQuestions(item: AssessmentExecutionItem) {
@@ -96,6 +114,49 @@ function buildExecutionItems(
   ].sort((itemA, itemB) => itemA.position - itemB.position)
 }
 
+function getInteractionSlotIds(question: StudentAssessmentQuestionWithOptions) {
+  const parsed = assessmentInteractionContentSchema.safeParse(question.interaction?.content ?? null)
+  if (!parsed.success) {
+    return []
+  }
+
+  if (parsed.data.kind === 'drag_drop_labeling') {
+    return parsed.data.targets.map((target) => target.id)
+  }
+
+  return parsed.data.segments
+    .filter((segment): segment is Extract<typeof parsed.data.segments[number], { type: 'blank' }> => segment.type === 'blank')
+    .map((segment) => segment.id)
+}
+
+function isInteractionAnswered(
+  question: StudentAssessmentQuestionWithOptions,
+  interactionAnswers: Record<string, Record<string, string | null>>,
+) {
+  const slotIds = getInteractionSlotIds(question)
+  if (slotIds.length === 0) {
+    return false
+  }
+
+  const questionAnswers = interactionAnswers[question.id] ?? {}
+  return slotIds.every((slotId) => Boolean(questionAnswers[slotId]))
+}
+
+function buildInteractionAnswerState(review: StudentAssessmentReview | null) {
+  return Object.fromEntries(
+    (review?.answers ?? [])
+      .filter((answer) => Array.isArray(answer.response_payload?.entries))
+      .map((answer) => [
+        answer.question_id,
+        Object.fromEntries(
+          (answer.response_payload?.entries ?? [])
+            .filter((entry) => entry.slot_id)
+            .map((entry) => [entry.slot_id, entry.token_id ?? null]),
+        ),
+      ]),
+  ) as Record<string, Record<string, string | null>>
+}
+
 export function StudentAssessmentExecutionPage() {
   const { courseId, assessmentId } = useParams<{ courseId: string; assessmentId: string }>()
   const navigate = useNavigate()
@@ -114,6 +175,7 @@ export function StudentAssessmentExecutionPage() {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
   const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>({})
   const [textAnswers, setTextAnswers] = useState<Record<string, string>>({})
+  const [interactionAnswers, setInteractionAnswers] = useState<Record<string, Record<string, string | null>>>({})
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isRequestingRetry, setIsRequestingRetry] = useState(false)
@@ -157,7 +219,11 @@ export function StudentAssessmentExecutionPage() {
       setError(null)
 
       try {
-        const [{ assessment: assessmentData, questions: questionsData, caseStudies: caseStudiesData }, reviewData, requestData] = await Promise.all([
+        const [
+          { assessment: assessmentData, questions: questionsData, caseStudies: caseStudiesData },
+          reviewData,
+          requestData,
+        ] = await Promise.all([
           fetchAssessmentForExecution(assessmentId),
           fetchOwnAssessmentReview(assessmentId),
           fetchOwnAssessmentAttemptRequest(assessmentId),
@@ -179,30 +245,21 @@ export function StudentAssessmentExecutionPage() {
           ...caseStudy,
           questions: shuffleQuestionOptionsForAttempt(caseStudy.questions, nextAttemptNumber),
         })))
-
-        if (reviewData.latestAttempt?.is_approved && Number(reviewData.latestAttempt.score_percent) >= 100) {
-          const correctSelections = Object.fromEntries(
-            [...questionsData, ...caseStudiesData.flatMap((caseStudy) => caseStudy.questions)]
-              .map((question) => {
-                const correctOption = question.question_type === 'single_choice' || question.question_type === 'case_study_single_choice'
-                  ? question.options.find((option) => option.is_correct)
-                  : null
-                return correctOption ? [question.id, correctOption.id] : null
-              })
-              .filter((entry): entry is [string, string] => Boolean(entry)),
-          )
-          setSelectedOptions(correctSelections)
-          setTextAnswers(
-            Object.fromEntries(
-              reviewData.answers
-                .filter((answer) => Boolean(answer.answer_text))
-                .map((answer) => [answer.question_id, answer.answer_text ?? '']),
-            ),
-          )
-        } else {
-          setSelectedOptions({})
-          setTextAnswers({})
-        }
+        setSelectedOptions(
+          Object.fromEntries(
+            reviewData.answers
+              .filter((answer) => Boolean(answer.selected_option_id))
+              .map((answer) => [answer.question_id, answer.selected_option_id ?? '']),
+          ),
+        )
+        setTextAnswers(
+          Object.fromEntries(
+            reviewData.answers
+              .filter((answer) => Boolean(answer.answer_text))
+              .map((answer) => [answer.question_id, answer.answer_text ?? '']),
+          ),
+        )
+        setInteractionAnswers(buildInteractionAnswerState(reviewData))
       } catch (loadError) {
         setError(toErrorMessage(loadError))
       } finally {
@@ -221,25 +278,32 @@ export function StudentAssessmentExecutionPage() {
   const progressPercent = executionItems.length > 0
     ? Math.round(((currentQuestionIndex + 1) / executionItems.length) * 100)
     : 0
-  const objectiveQuestionCount = useMemo(
-    () => [...questions, ...caseStudies.flatMap((caseStudy) => caseStudy.questions)].filter(isScoredQuestion).length,
+
+  const scoredQuestions = useMemo(
+    () => [...questions, ...caseStudies.flatMap((caseStudy) => caseStudy.questions)].filter(isScoredQuestion),
     [caseStudies, questions],
   )
-  const requiredCorrectAnswers = useMemo(() => {
-    if (!assessment || objectiveQuestionCount === 0) {
+
+  const possiblePoints = useMemo(
+    () => scoredQuestions.reduce((total, question) => total + getQuestionPossiblePoints(question), 0),
+    [scoredQuestions],
+  )
+
+  const requiredPoints = useMemo(() => {
+    if (!assessment || possiblePoints === 0) {
       return 0
     }
 
-    return Math.ceil((assessment.passing_score / 100) * objectiveQuestionCount)
-  }, [assessment, objectiveQuestionCount])
+    return Math.round(((assessment.passing_score / 100) * possiblePoints) * 100) / 100
+  }, [assessment, possiblePoints])
+
   const approvalRequirementText = useMemo(() => {
-    if (!assessment || objectiveQuestionCount === 0) {
+    if (!assessment || possiblePoints === 0) {
       return null
     }
 
-    const questionLabel = objectiveQuestionCount === 1 ? 'questão objetiva' : 'questões objetivas'
-    return `Para aprovação, você precisa acertar pelo menos ${requiredCorrectAnswers} de ${objectiveQuestionCount} ${questionLabel} (${assessment.passing_score}% de aproveitamento).`
-  }, [assessment, objectiveQuestionCount, requiredCorrectAnswers])
+    return `Para aprovação, você precisa atingir pelo menos ${requiredPoints} de ${possiblePoints} pontos possíveis (${assessment.passing_score}% de aproveitamento).`
+  }, [assessment, possiblePoints, requiredPoints])
 
   const allQuestionsAnswered = useMemo(() => {
     return [...questions, ...caseStudies.flatMap((caseStudy) => caseStudy.questions)].every((question) => {
@@ -247,9 +311,13 @@ export function StudentAssessmentExecutionPage() {
         return Boolean(textAnswers[question.id]?.trim())
       }
 
-      return Boolean(selectedOptions[question.id])
+      if (isChoiceQuestion(question)) {
+        return Boolean(selectedOptions[question.id])
+      }
+
+      return isInteractionAnswered(question, interactionAnswers)
     })
-  }, [caseStudies, questions, selectedOptions, textAnswers])
+  }, [caseStudies, interactionAnswers, questions, selectedOptions, textAnswers])
 
   const currentQuestionAnswered = useMemo(() => {
     if (!currentItem) return false
@@ -258,9 +326,14 @@ export function StudentAssessmentExecutionPage() {
       if (isEssayQuestion(question)) {
         return Boolean(textAnswers[question.id]?.trim())
       }
-      return Boolean(selectedOptions[question.id])
+
+      if (isChoiceQuestion(question)) {
+        return Boolean(selectedOptions[question.id])
+      }
+
+      return isInteractionAnswered(question, interactionAnswers)
     })
-  }, [currentItem, currentItemQuestions, selectedOptions, textAnswers])
+  }, [currentItem, currentItemQuestions, interactionAnswers, selectedOptions, textAnswers])
 
   const isModuleQuizLockedByLessons = useMemo(() => {
     if (isAdmin) return false
@@ -340,9 +413,9 @@ export function StudentAssessmentExecutionPage() {
 
     const blockingQuiz = assessments.find(
       (item) =>
-        item.assessment_type === 'module' &&
-        item.module_id === incompleteModule.id &&
-        item.is_required,
+        item.assessment_type === 'module'
+        && item.module_id === incompleteModule.id
+        && item.is_required,
     )
 
     if (blockingQuiz?.state === 'failed_limit') {
@@ -388,19 +461,32 @@ export function StudentAssessmentExecutionPage() {
 
     try {
       const allQuestions = [...questions, ...caseStudies.flatMap((caseStudy) => caseStudy.questions)]
-      const answers = allQuestions.map((question) => (
-        isEssayQuestion(question)
-          ? {
+      const answers = allQuestions.map((question) => {
+        if (isEssayQuestion(question)) {
+          return {
             question_id: question.id,
             answer_text: textAnswers[question.id]?.trim() ?? '',
             option_id: null,
+            response_payload: null,
           }
-          : {
+        }
+
+        if (isChoiceQuestion(question)) {
+          return {
             question_id: question.id,
             option_id: selectedOptions[question.id] ?? null,
             answer_text: null,
+            response_payload: null,
           }
-      ))
+        }
+
+        return {
+          question_id: question.id,
+          option_id: null,
+          answer_text: null,
+          response_payload: buildInteractionAnswerPayload(interactionAnswers[question.id] ?? {}),
+        }
+      })
 
       const submissionResult = await submitAssessmentAttempt(assessmentId, answers)
       setResult(submissionResult)
@@ -434,6 +520,7 @@ export function StudentAssessmentExecutionPage() {
 
   function handleOptionSelect(questionId: string, optionId: string) {
     if (isPerfectApprovedReview) return
+
     setSelectedOptions((prev) => ({
       ...prev,
       [questionId]: optionId,
@@ -442,10 +529,135 @@ export function StudentAssessmentExecutionPage() {
 
   function handleEssayAnswerChange(questionId: string, answerText: string) {
     if (isPerfectApprovedReview) return
+
     setTextAnswers((prev) => ({
       ...prev,
       [questionId]: answerText,
     }))
+  }
+
+  function handleInteractionChange(questionId: string, slotId: string, tokenId: string | null) {
+    if (isPerfectApprovedReview) return
+
+    setInteractionAnswers((prev) => {
+      const questionState = { ...(prev[questionId] ?? {}) }
+
+      if (tokenId) {
+        for (const [currentSlotId, currentTokenId] of Object.entries(questionState)) {
+          if (currentSlotId !== slotId && currentTokenId === tokenId) {
+            questionState[currentSlotId] = null
+          }
+        }
+      }
+
+      questionState[slotId] = tokenId
+
+      return {
+        ...prev,
+        [questionId]: questionState,
+      }
+    })
+  }
+
+  function resetAttemptState(nextAttemptNumber: number) {
+    setResult(null)
+    setSelectedOptions({})
+    setTextAnswers({})
+    setInteractionAnswers({})
+    setCurrentQuestionIndex(0)
+    setActiveAttemptNumber(nextAttemptNumber)
+    setQuestions((currentQuestions) => shuffleQuestionOptionsForAttempt(currentQuestions, nextAttemptNumber))
+    setCaseStudies((currentCaseStudies) => currentCaseStudies.map((caseStudy) => ({
+      ...caseStudy,
+      questions: shuffleQuestionOptionsForAttempt(caseStudy.questions, nextAttemptNumber),
+    })))
+  }
+
+  function renderChoiceOptions(question: StudentAssessmentQuestionWithOptions) {
+    const reviewAnswer = reviewAnswersByQuestion.get(question.id)
+
+    return (
+      <div className="grid gap-4">
+        {question.options.map((option: StudentAssessmentOption) => {
+          const isSelected = selectedOptions[question.id] === option.id
+          const isCorrectInReview = Boolean(isPerfectApprovedReview && reviewAnswer?.selected_option_id === option.id && reviewAnswer?.is_correct)
+          return (
+            <button
+              key={option.id}
+              onClick={() => handleOptionSelect(question.id, option.id)}
+              disabled={isPerfectApprovedReview}
+              className={`group relative flex items-center gap-5 rounded-[32px] border-2 p-6 text-left transition-all duration-300 ${
+                isCorrectInReview
+                  ? 'border-emerald-500 bg-emerald-50 shadow-lg'
+                  : isSelected
+                    ? 'border-blue-600 bg-blue-50/50 shadow-xl ring-8 ring-blue-600/5'
+                    : 'border-slate-100 bg-white hover:border-blue-200 hover:bg-slate-50'
+              } ${isPerfectApprovedReview ? 'cursor-default' : ''}`}
+            >
+              <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 transition-all duration-300 ${
+                isCorrectInReview
+                  ? 'border-emerald-600 bg-emerald-600 text-white'
+                  : isSelected
+                    ? 'border-blue-600 bg-blue-600 text-white shadow-lg'
+                    : 'border-slate-200 bg-white group-hover:border-blue-300'
+              }`}>
+                {(isCorrectInReview || isSelected) ? (
+                  <div className="h-2.5 w-2.5 rounded-full bg-white" />
+                ) : null}
+              </div>
+              <span className={`text-lg font-bold leading-relaxed transition-colors sm:text-xl ${
+                isCorrectInReview
+                  ? 'text-emerald-900'
+                  : isSelected
+                    ? 'text-blue-900'
+                    : 'text-slate-600 group-hover:text-slate-900'
+              }`}>
+                {option.option_text}
+              </span>
+            </button>
+          )
+        })}
+      </div>
+    )
+  }
+
+  function renderQuestionBody(question: StudentAssessmentQuestionWithOptions) {
+    if (isEssayQuestion(question)) {
+      return (
+        <div className="space-y-4">
+          <textarea
+            value={textAnswers[question.id] ?? ''}
+            onChange={(event) => handleEssayAnswerChange(question.id, event.target.value)}
+            readOnly={isPerfectApprovedReview}
+            className={`min-h-[180px] w-full rounded-[32px] border-2 px-6 py-6 text-lg leading-relaxed shadow-sm transition-all focus:ring-8 ${
+              isPerfectApprovedReview
+                ? 'border-emerald-200 bg-emerald-50 text-emerald-900 focus:ring-emerald-100'
+                : 'border-slate-200 bg-white text-slate-700 focus:border-blue-300 focus:ring-blue-100'
+            }`}
+            placeholder="Escreva sua resposta com suas proprias palavras..."
+          />
+          {isPerfectApprovedReview && reviewAnswersByQuestion.get(question.id)?.ai_feedback ? (
+            <div className="rounded-2xl border border-amber-100 bg-amber-50 px-5 py-4 text-sm text-amber-900">
+              <p className="text-[10px] font-black uppercase tracking-widest text-amber-600">Feedback da IA</p>
+              <p className="mt-2 whitespace-pre-wrap">{reviewAnswersByQuestion.get(question.id)?.ai_feedback}</p>
+            </div>
+          ) : null}
+        </div>
+      )
+    }
+
+    if (isChoiceQuestion(question)) {
+      return renderChoiceOptions(question)
+    }
+
+    return (
+      <GamifiedInteraction
+        question={question}
+        value={interactionAnswers[question.id] ?? {}}
+        onChange={(slotId, tokenId) => handleInteractionChange(question.id, slotId, tokenId)}
+        readOnly={isPerfectApprovedReview}
+      />
+    )
   }
 
   if (isModuleQuizLockedByLessons && !result) {
@@ -594,7 +806,7 @@ export function StudentAssessmentExecutionPage() {
 
   if (result) {
     return (
-      <div className="mx-auto max-w-2xl animate-in fade-in zoom-in-95 p-4 py-8 duration-500 md:py-16">
+      <div className="mx-auto max-w-3xl animate-in fade-in zoom-in-95 p-4 py-8 duration-500 md:py-16">
         <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl shadow-slate-200/50">
           <div className={`p-10 text-center ${result.is_approved ? 'bg-gradient-to-b from-emerald-50 to-white' : 'bg-gradient-to-b from-rose-50 to-white'}`}>
             <div className={`mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-full border shadow-sm ${
@@ -620,7 +832,7 @@ export function StudentAssessmentExecutionPage() {
                   : 'Nao foi desta vez.'}
             </h2>
             <div className="mt-4 flex flex-col items-center justify-center gap-1">
-              <span className="text-sm font-bold uppercase tracking-widest text-slate-400">Nota Final</span>
+              <span className="text-sm font-bold uppercase tracking-widest text-slate-400">Aproveitamento</span>
               <span className={`text-6xl font-black tracking-tighter ${result.is_approved ? 'text-emerald-600' : 'text-rose-600'}`}>
                 {result.score_percent}%
               </span>
@@ -633,10 +845,14 @@ export function StudentAssessmentExecutionPage() {
           </div>
 
           <div className="space-y-8 bg-white p-8 sm:p-10">
-            <div className="grid grid-cols-2 gap-6">
+            <div className="grid gap-6 md:grid-cols-3">
               <div className="rounded-2xl border border-slate-100 bg-slate-50/50 p-5 text-center shadow-sm">
                 <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Tentativa</p>
                 <p className="mt-1 text-3xl font-extrabold text-slate-900">{result.attempt_number}<span className="text-xl text-slate-400">/{result.max_attempts}</span></p>
+              </div>
+              <div className="rounded-2xl border border-slate-100 bg-slate-50/50 p-5 text-center shadow-sm">
+                <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Pontos</p>
+                <p className="mt-1 text-3xl font-extrabold text-slate-900">{result.earned_points}<span className="text-xl text-slate-400">/{result.possible_points}</span></p>
               </div>
               <div className="rounded-2xl border border-slate-100 bg-slate-50/50 p-5 text-center shadow-sm">
                 <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Saldo Restante</p>
@@ -646,12 +862,58 @@ export function StudentAssessmentExecutionPage() {
               </div>
             </div>
 
+            {result.interaction_feedbacks.length > 0 && (
+              <div className="space-y-4 rounded-3xl border border-cyan-100 bg-cyan-50/50 p-6">
+                <div>
+                  <p className="text-xs font-black uppercase tracking-widest text-cyan-700">Feedback dos Exercícios Gamificados</p>
+                  <p className="mt-2 text-sm font-medium text-cyan-900">
+                    Cada área ou lacuna vale parte da pontuação da questão.
+                  </p>
+                </div>
+
+                <div className="space-y-3">
+                  {result.interaction_feedbacks.map((feedback, index) => (
+                    <div key={feedback.question_id} className="rounded-2xl border border-white/70 bg-white p-5 shadow-sm">
+                      <div className="flex items-center justify-between gap-4">
+                        <p className="text-sm font-black uppercase tracking-widest text-slate-400">Questão {index + 1}</p>
+                        <span className={`rounded-full px-3 py-1 text-[11px] font-black uppercase tracking-widest ${
+                          feedback.is_correct ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
+                        }`}>
+                          {feedback.earned_points}/{feedback.possible_points} pontos
+                        </span>
+                      </div>
+                      <h3 className="mt-3 text-lg font-black text-slate-900">{feedback.question_text}</h3>
+                      <div className="mt-4 grid gap-3">
+                        {feedback.entries.map((entry) => (
+                          <div
+                            key={`${feedback.question_id}-${entry.slot_id}`}
+                            className={`rounded-2xl border px-4 py-3 text-sm ${
+                              entry.is_correct
+                                ? 'border-emerald-200 bg-emerald-50 text-emerald-900'
+                                : 'border-amber-200 bg-amber-50 text-amber-900'
+                            }`}
+                          >
+                            <p className="font-black uppercase tracking-widest text-[10px]">
+                              Slot {entry.slot_id}
+                            </p>
+                            <p className="mt-2 font-semibold">
+                              Sua resposta: {entry.submitted_token_id ?? 'não preenchida'}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {result.essay_feedbacks.length > 0 && (
               <div className="space-y-4 rounded-3xl border border-amber-100 bg-amber-50/50 p-6">
                 <div>
                   <p className="text-xs font-black uppercase tracking-widest text-amber-700">Feedback da IA</p>
                   <p className="mt-2 text-sm font-medium text-amber-900">
-                    As questões discursivas são avaliadas separadamente e não somam pontos no quiz.
+                    As questões discursivas são avaliadas separadamente e não somam pontos no quiz quando forem `essay_ai`.
                   </p>
                 </div>
 
@@ -694,19 +956,7 @@ export function StudentAssessmentExecutionPage() {
                   variant="outline"
                   size="lg"
                   className="h-14 flex-1 shrink-0 rounded-2xl border-slate-300 text-slate-700 shadow-sm hover:bg-slate-50"
-                  onClick={() => {
-                    const nextAttemptNumber = activeAttemptNumber + 1
-                    setResult(null)
-                    setSelectedOptions({})
-                    setTextAnswers({})
-                    setCurrentQuestionIndex(0)
-                    setActiveAttemptNumber(nextAttemptNumber)
-                    setQuestions((currentQuestions) => shuffleQuestionOptionsForAttempt(currentQuestions, nextAttemptNumber))
-                    setCaseStudies((currentCaseStudies) => currentCaseStudies.map((caseStudy) => ({
-                      ...caseStudy,
-                      questions: shuffleQuestionOptionsForAttempt(caseStudy.questions, nextAttemptNumber),
-                    })))
-                  }}
+                  onClick={() => resetAttemptState(activeAttemptNumber + 1)}
                 >
                   Tentar Novamente
                 </Button>
@@ -727,7 +977,7 @@ export function StudentAssessmentExecutionPage() {
   }
 
   return (
-    <div className="mx-auto max-w-4xl animate-in fade-in space-y-8 p-4 pb-32 duration-500 sm:p-8">
+    <div className="mx-auto max-w-5xl animate-in fade-in space-y-8 p-4 pb-32 duration-500 sm:p-8">
       <header className="space-y-6">
         <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
           <div className="space-y-2">
@@ -749,7 +999,7 @@ export function StudentAssessmentExecutionPage() {
 
         {isPerfectApprovedReview && (
           <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm font-bold text-emerald-700">
-            Voce ja concluiu este quiz com 100%. As respostas corretas estao destacadas e uma nova tentativa nao e permitida.
+            Voce ja concluiu este quiz com 100%. Suas respostas ficaram registradas e uma nova tentativa nao e permitida.
           </div>
         )}
 
@@ -802,69 +1052,7 @@ export function StudentAssessmentExecutionPage() {
                         ) : null}
                       </div>
 
-                      {isEssayQuestion(question) ? (
-                        <div className="space-y-4">
-                          <textarea
-                            value={textAnswers[question.id] ?? ''}
-                            onChange={(event) => handleEssayAnswerChange(question.id, event.target.value)}
-                            readOnly={isPerfectApprovedReview}
-                            className={`min-h-[180px] w-full rounded-[32px] border-2 px-6 py-6 text-lg leading-relaxed shadow-sm transition-all focus:ring-8 ${
-                              isPerfectApprovedReview
-                                ? 'border-emerald-200 bg-emerald-50 text-emerald-900 focus:ring-emerald-100'
-                                : 'border-slate-200 bg-white text-slate-700 focus:border-blue-300 focus:ring-blue-100'
-                            }`}
-                            placeholder="Escreva sua resposta com suas proprias palavras..."
-                          />
-                          {isPerfectApprovedReview && reviewAnswersByQuestion.get(question.id)?.ai_feedback ? (
-                            <div className="rounded-2xl border border-amber-100 bg-amber-50 px-5 py-4 text-sm text-amber-900">
-                              <p className="text-[10px] font-black uppercase tracking-widest text-amber-600">Feedback da IA</p>
-                              <p className="mt-2 whitespace-pre-wrap">{reviewAnswersByQuestion.get(question.id)?.ai_feedback}</p>
-                            </div>
-                          ) : null}
-                        </div>
-                      ) : (
-                        <div className="grid gap-4">
-                          {question.options.map((option: AssessmentOption) => {
-                            const isSelected = selectedOptions[question.id] === option.id
-                            const isCorrect = option.is_correct
-                            return (
-                              <button
-                                key={option.id}
-                                onClick={() => handleOptionSelect(question.id, option.id)}
-                                disabled={isPerfectApprovedReview}
-                                className={`group relative flex items-center gap-5 rounded-[32px] border-2 p-6 text-left transition-all duration-300 ${
-                                  isPerfectApprovedReview && isCorrect
-                                    ? 'border-emerald-500 bg-emerald-50 shadow-lg'
-                                    : isSelected
-                                      ? 'border-blue-600 bg-blue-50/50 shadow-xl ring-8 ring-blue-600/5'
-                                      : 'border-slate-100 bg-white hover:border-blue-200 hover:bg-slate-50'
-                                } ${isPerfectApprovedReview ? 'cursor-default' : ''}`}
-                              >
-                                <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 transition-all duration-300 ${
-                                  isPerfectApprovedReview && isCorrect
-                                    ? 'border-emerald-600 bg-emerald-600 text-white'
-                                    : isSelected
-                                      ? 'border-blue-600 bg-blue-600 text-white shadow-lg'
-                                      : 'border-slate-200 bg-white group-hover:border-blue-300'
-                                }`}>
-                                  {(isPerfectApprovedReview && isCorrect) || isSelected ? (
-                                    <div className="h-2.5 w-2.5 rounded-full bg-white" />
-                                  ) : null}
-                                </div>
-                                <span className={`text-lg font-bold leading-relaxed transition-colors sm:text-xl ${
-                                  isPerfectApprovedReview && isCorrect
-                                    ? 'text-emerald-900'
-                                    : isSelected
-                                      ? 'text-blue-900'
-                                      : 'text-slate-600 group-hover:text-slate-900'
-                                }`}>
-                                  {option.option_text}
-                                </span>
-                              </button>
-                            )
-                          })}
-                        </div>
-                      )}
+                      {renderQuestionBody(question)}
                     </div>
                   ))}
                 </div>
@@ -889,69 +1077,7 @@ export function StudentAssessmentExecutionPage() {
                   )}
                 </div>
 
-                {currentQuestion.question_type === 'essay_ai' ? (
-                  <div className="mt-8 space-y-4">
-                    <textarea
-                      value={textAnswers[currentQuestion.id] ?? ''}
-                      onChange={(event) => handleEssayAnswerChange(currentQuestion.id, event.target.value)}
-                      readOnly={isPerfectApprovedReview}
-                      className={`min-h-[220px] w-full rounded-[32px] border-2 px-6 py-6 text-lg leading-relaxed shadow-sm transition-all focus:ring-8 ${
-                        isPerfectApprovedReview
-                          ? 'border-emerald-200 bg-emerald-50 text-emerald-900 focus:ring-emerald-100'
-                          : 'border-slate-200 bg-white text-slate-700 focus:border-blue-300 focus:ring-blue-100'
-                      }`}
-                      placeholder="Escreva sua resposta com suas proprias palavras..."
-                    />
-                    {isPerfectApprovedReview && reviewAnswersByQuestion.get(currentQuestion.id)?.ai_feedback ? (
-                      <div className="rounded-2xl border border-amber-100 bg-amber-50 px-5 py-4 text-sm text-amber-900">
-                        <p className="text-[10px] font-black uppercase tracking-widest text-amber-600">Feedback da IA</p>
-                        <p className="mt-2 whitespace-pre-wrap">{reviewAnswersByQuestion.get(currentQuestion.id)?.ai_feedback}</p>
-                      </div>
-                    ) : null}
-                  </div>
-                ) : (
-                  <div className="mt-8 grid gap-4">
-                    {currentQuestion.options.map((option: AssessmentOption) => {
-                      const isSelected = selectedOptions[currentQuestion.id] === option.id
-                      const isCorrect = option.is_correct
-                      return (
-                        <button
-                          key={option.id}
-                          onClick={() => handleOptionSelect(currentQuestion.id, option.id)}
-                          disabled={isPerfectApprovedReview}
-                          className={`group relative flex items-center gap-5 rounded-[32px] border-2 p-6 text-left transition-all duration-300 ${
-                            isPerfectApprovedReview && isCorrect
-                              ? 'border-emerald-500 bg-emerald-50 shadow-lg'
-                              : isSelected
-                                ? 'border-blue-600 bg-blue-50/50 shadow-xl ring-8 ring-blue-600/5'
-                                : 'border-slate-100 bg-white hover:border-blue-200 hover:bg-slate-50'
-                          } ${isPerfectApprovedReview ? 'cursor-default' : ''}`}
-                        >
-                          <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 transition-all duration-300 ${
-                            isPerfectApprovedReview && isCorrect
-                              ? 'border-emerald-600 bg-emerald-600 text-white'
-                              : isSelected
-                                ? 'border-blue-600 bg-blue-600 text-white shadow-lg'
-                                : 'border-slate-200 bg-white group-hover:border-blue-300'
-                          }`}>
-                            {(isPerfectApprovedReview && isCorrect) || isSelected ? (
-                              <div className="h-2.5 w-2.5 rounded-full bg-white" />
-                            ) : null}
-                          </div>
-                          <span className={`text-lg font-bold leading-relaxed transition-colors sm:text-xl ${
-                            isPerfectApprovedReview && isCorrect
-                              ? 'text-emerald-900'
-                              : isSelected
-                                ? 'text-blue-900'
-                                : 'text-slate-600 group-hover:text-slate-900'
-                          }`}>
-                            {option.option_text}
-                          </span>
-                        </button>
-                      )
-                    })}
-                  </div>
-                )}
+                {renderQuestionBody(currentQuestion)}
               </div>
             </div>
           </article>
@@ -965,7 +1091,7 @@ export function StudentAssessmentExecutionPage() {
             disabled={currentQuestionIndex === 0}
             onClick={() => setCurrentQuestionIndex((index) => index - 1)}
           >
-            Questão Anterior
+            Questao Anterior
           </Button>
 
           {isPerfectApprovedReview ? (
@@ -984,12 +1110,7 @@ export function StudentAssessmentExecutionPage() {
                 disabled={!allQuestionsAnswered || isSubmitting}
                 onClick={handleSubmit}
               >
-                {isSubmitting ? 'ENVIANDO RESPOSTAS...' : 'FINALIZAR AVALIAÇÃO'}
-                {!isSubmitting && (
-                  <svg className="ml-2 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                  </svg>
-                )}
+                {isSubmitting ? 'ENVIANDO RESPOSTAS...' : 'FINALIZAR AVALIACAO'}
               </Button>
             </div>
           ) : (
@@ -999,10 +1120,7 @@ export function StudentAssessmentExecutionPage() {
               disabled={!currentQuestionAnswered}
               onClick={() => setCurrentQuestionIndex((index) => index + 1)}
             >
-              PRÓXIMA QUESTÃO
-              <svg className="ml-2 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M9 5l7 7-7 7" />
-              </svg>
+              PROXIMA QUESTAO
             </Button>
           )}
         </footer>

@@ -5,7 +5,7 @@ import type {
   AssessmentAnswer,
   AssessmentAttempt,
   AssessmentCaseStudy,
-  AssessmentOption,
+  AssessmentInteractionResponsePayload,
   AssessmentQuestion,
 } from '@/types/content'
 
@@ -33,8 +33,24 @@ export interface StudentCourseAssessmentSummary {
   state: 'blocked' | 'available' | 'approved' | 'failed_limit'
 }
 
+export interface StudentAssessmentOption {
+  id: string
+  question_id: string
+  option_text: string
+  position: number
+}
+
+export interface StudentAssessmentInteraction {
+  question_id: string
+  content: AssessmentQuestion['question_type'] extends never ? never : Record<string, unknown>
+  version: number
+  created_at: string
+  updated_at: string
+}
+
 export interface StudentAssessmentQuestionWithOptions extends AssessmentQuestion {
-  options: AssessmentOption[]
+  options: StudentAssessmentOption[]
+  interaction: StudentAssessmentInteraction | null
 }
 
 export interface StudentAssessmentCaseStudyWithQuestions extends AssessmentCaseStudy {
@@ -44,6 +60,8 @@ export interface StudentAssessmentCaseStudyWithQuestions extends AssessmentCaseS
 export interface SubmitAssessmentAttemptResult {
   attempt_id: string
   score_percent: number
+  earned_points: number
+  possible_points: number
   is_approved: boolean
   attempt_number: number
   max_attempts: number
@@ -64,6 +82,21 @@ export interface SubmitAssessmentAttemptResult {
     selected_option_id: string | null
     correct_option_id: string | null
     is_correct: boolean
+    earned_points: number
+    possible_points: number
+  }[]
+  interaction_feedbacks: {
+    question_id: string
+    question_text: string
+    is_correct: boolean
+    earned_points: number
+    possible_points: number
+    entries: {
+      slot_id: string
+      submitted_token_id: string | null
+      expected_token_id: string
+      is_correct: boolean
+    }[]
   }[]
 }
 
@@ -88,6 +121,7 @@ function toError(error: unknown): Error {
   if (error instanceof Error) {
     return error
   }
+
   return new Error('Erro inesperado.')
 }
 
@@ -103,73 +137,44 @@ export async function fetchStudentCourseAssessments(courseId: string) {
   if (result.error) {
     throw result.error
   }
+
   return (result.data as StudentCourseAssessmentSummary[]) ?? []
 }
 
 export async function fetchAssessmentForExecution(assessmentId: string) {
-  const [assessmentResult, questionsResult, optionsResult, caseStudiesResult] = await Promise.all([
-    supabase
-      .from('assessments')
-      .select('*')
-      .eq('id', assessmentId)
-      .maybeSingle(),
-    supabase
-      .from('assessment_questions')
-      .select('id, assessment_id, question_text, question_type, position, is_required, points, essay_expected_answer, case_study_id, case_question_position, created_at, updated_at')
-      .eq('assessment_id', assessmentId)
-      .order('position', { ascending: true }),
-    supabase
-      .from('assessment_options')
-      .select('*, assessment_questions!inner(assessment_id)')
-      .eq('assessment_questions.assessment_id', assessmentId)
-      .order('position', { ascending: true }),
-    supabase
-      .from('assessment_case_studies')
-      .select('*')
-      .eq('assessment_id', assessmentId)
-      .order('position', { ascending: true }),
-  ])
+  const accessToken = await resolveAccessToken()
+  const response = await fetch(`${env.VITE_SUPABASE_URL}/functions/v1/get-assessment-execution`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      apikey: env.VITE_SUPABASE_ANON_KEY,
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify({
+      assessment_id: assessmentId,
+      access_token: accessToken,
+    }),
+  })
 
-  if (assessmentResult.error) {
-    throw assessmentResult.error
-  }
-  if (questionsResult.error) {
-    throw questionsResult.error
-  }
-  if (optionsResult.error) {
-    throw optionsResult.error
-  }
-  if (caseStudiesResult.error) {
-    throw caseStudiesResult.error
-  }
+  const payload = await response.json().catch(() => null) as
+    | {
+      assessment?: Assessment | null
+      questions?: StudentAssessmentQuestionWithOptions[]
+      caseStudies?: StudentAssessmentCaseStudyWithQuestions[]
+      error?: string
+    }
+    | null
 
-  const assessment = (assessmentResult.data as Assessment | null) ?? null
-  const questions = (questionsResult.data as AssessmentQuestion[]) ?? []
-  const options = (optionsResult.data as AssessmentOption[]) ?? []
-  const caseStudies = (caseStudiesResult.data as AssessmentCaseStudy[]) ?? []
-
-  const optionsMap = new Map<string, AssessmentOption[]>()
-  for (const option of options) {
-    const current = optionsMap.get(option.question_id) ?? []
-    current.push(option)
-    optionsMap.set(option.question_id, current)
+  if (!response.ok) {
+    throw new Error(payload && 'error' in payload && typeof payload.error === 'string'
+      ? payload.error
+      : 'Falha ao carregar avaliacao.')
   }
-
-  const questionsWithOptions = questions.map((question) => ({
-    ...question,
-    options: optionsMap.get(question.id) ?? [],
-  }))
 
   return {
-    assessment,
-    questions: questionsWithOptions
-      .filter((question) => !question.case_study_id) as StudentAssessmentQuestionWithOptions[],
-    caseStudies: caseStudies.map((caseStudy) => ({
-      ...caseStudy,
-      questions: questionsWithOptions
-        .filter((question) => question.case_study_id === caseStudy.id)
-        .sort((questionA, questionB) => (questionA.case_question_position ?? 0) - (questionB.case_question_position ?? 0)),
-    })) as StudentAssessmentCaseStudyWithQuestions[],
+    assessment: (payload?.assessment as Assessment | null) ?? null,
+    questions: (payload?.questions as StudentAssessmentQuestionWithOptions[]) ?? [],
+    caseStudies: (payload?.caseStudies as StudentAssessmentCaseStudyWithQuestions[]) ?? [],
   }
 }
 
@@ -181,6 +186,7 @@ export async function submitAssessmentAttempt(
     assessment_id: assessmentId,
     answers,
   })
+
   if (!parsed.success) {
     throw new Error(parsed.error.issues[0]?.message ?? 'Dados invalidos.')
   }
@@ -292,6 +298,15 @@ export async function requestAssessmentAttemptRetry(
   }
 
   return (result.data?.[0] as { request_id: string; status: AssessmentAttemptRequest['status'] } | undefined) ?? null
+}
+
+export function buildInteractionAnswerPayload(entries: Record<string, string | null>): AssessmentInteractionResponsePayload {
+  return {
+    entries: Object.entries(entries).map(([slotId, tokenId]) => ({
+      slot_id: slotId,
+      token_id: tokenId,
+    })),
+  }
 }
 
 async function resolveAccessToken(forceRefresh = false) {

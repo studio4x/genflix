@@ -4,6 +4,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { useCourseBuilder } from '@/app/layouts/admin-course-builder-layout'
 import { useAuth } from '@/app/providers/auth-provider'
 import { Button } from '@/components/ui/button'
+import { GamifiedQuestionEditor } from '@/features/admin/assessments/gamified-question-editor'
 import {
   createAssessmentCaseStudy,
   createAssessmentOption,
@@ -29,8 +30,18 @@ import {
   type AssessmentQuestionWithOptions,
   type ImportAssessmentData,
 } from '@/features/admin/assessments/api'
+import {
+  createAnswerKeyFromInteraction,
+  createDefaultInteractionContent,
+  isGamifiedQuestionType,
+} from '@/features/assessments/gamified'
 import { fetchModule } from '@/features/admin/content/api'
-import type { Assessment, AssessmentQuestionType, CourseModule } from '@/types/content'
+import type {
+  Assessment,
+  AssessmentGradingMode,
+  AssessmentQuestionType,
+  CourseModule,
+} from '@/types/content'
 
 function sortQuestionsByPosition(items: AssessmentQuestionWithOptions[]) {
   return [...items].sort((questionA, questionB) => questionA.position - questionB.position)
@@ -44,6 +55,52 @@ function sortCaseStudyQuestions(items: AssessmentQuestionWithOptions[]) {
   return [...items].sort(
     (questionA, questionB) => (questionA.case_question_position ?? 0) - (questionB.case_question_position ?? 0),
   )
+}
+
+function buildQuestionState(
+  question: Omit<AssessmentQuestionWithOptions, 'options' | 'interaction' | 'answer_key'>,
+  overrides?: Partial<AssessmentQuestionWithOptions>,
+): AssessmentQuestionWithOptions {
+  return {
+    ...question,
+    options: overrides?.options ?? [],
+    interaction: overrides?.interaction ?? null,
+    answer_key: overrides?.answer_key ?? null,
+  }
+}
+
+function getPointsForApproval(question: AssessmentQuestionWithOptions) {
+  return question.question_type === 'essay_ai' ? 0 : Number(question.points || 0)
+}
+
+function getDefaultGamifiedState(questionId: string, questionType: AssessmentQuestionType) {
+  const interactionContent = createDefaultInteractionContent(questionType)
+  const answerKey = createAnswerKeyFromInteraction(interactionContent)
+  const timestamp = new Date().toISOString()
+
+  if (!interactionContent || !answerKey) {
+    return {
+      interaction: null,
+      answer_key: null,
+    }
+  }
+
+  return {
+    interaction: {
+      question_id: questionId,
+      content: interactionContent,
+      version: 1,
+      created_at: timestamp,
+      updated_at: timestamp,
+    },
+    answer_key: {
+      question_id: questionId,
+      grading_mode: 'partial_by_item' as AssessmentGradingMode,
+      answer_key: answerKey,
+      created_at: timestamp,
+      updated_at: timestamp,
+    },
+  }
 }
 
 export function AssessmentBuilderPanel() {
@@ -291,12 +348,14 @@ export function AssessmentBuilderPanel() {
   }
 
   const standaloneQuestions = questions.filter((question) => !question.case_study_id)
-  const scoredQuestionsCount = [
+  const scoredQuestions = [
     ...standaloneQuestions,
     ...caseStudies.flatMap((caseStudy) => caseStudy.questions),
-  ].filter((question) => question.question_type !== 'essay_ai').length
-  const requiredCorrectAnswers = assessmentDraft
-    ? Math.ceil((assessmentDraft.passing_score / 100) * scoredQuestionsCount)
+  ].filter((question) => question.question_type !== 'essay_ai')
+  const scoredQuestionsCount = scoredQuestions.length
+  const totalPossiblePoints = scoredQuestions.reduce((total, question) => total + getPointsForApproval(question), 0)
+  const requiredPoints = assessmentDraft
+    ? Math.round(((assessmentDraft.passing_score / 100) * totalPossiblePoints) * 100) / 100
     : 0
 
   function buildQuestionPayload(
@@ -309,6 +368,16 @@ export function AssessmentBuilderPanel() {
     }
 
     const questionType = updates.question_type ?? question.question_type
+    const interactionContent = updates.interaction?.content
+      ?? question.interaction?.content
+      ?? null
+    const gradingMode = updates.answer_key?.grading_mode
+      ?? question.answer_key?.grading_mode
+      ?? 'partial_by_item'
+    const answerKey = updates.answer_key?.answer_key
+      ?? question.answer_key?.answer_key
+      ?? null
+
     return {
       question_text: updates.question_text ?? question.question_text,
       question_type: questionType,
@@ -319,23 +388,34 @@ export function AssessmentBuilderPanel() {
       points: questionType === 'essay_ai' ? 0 : Math.max(1, Number(updates.points ?? question.points ?? 1)),
       case_study_id: updates.case_study_id ?? question.case_study_id ?? undefined,
       case_question_position: updates.case_question_position ?? question.case_question_position ?? undefined,
+      interaction_content: isGamifiedQuestionType(questionType) ? interactionContent : null,
+      grading_mode: isGamifiedQuestionType(questionType) ? gradingMode : undefined,
+      answer_key: isGamifiedQuestionType(questionType) ? answerKey : null,
     } as const
   }
 
-  async function handleAddQuestion() {
+  async function handleAddQuestion(questionType: AssessmentQuestionType = 'single_choice') {
     if (!assessment) return
 
     try {
+      const defaultGamified = isGamifiedQuestionType(questionType)
+        ? getDefaultGamifiedState('pending', questionType)
+        : { interaction: null, answer_key: null }
       const createdQuestion = await createAssessmentQuestion(assessment.id, {
         question_text: 'Nova Pergunta...',
-        question_type: 'single_choice',
-        essay_expected_answer: '',
+        question_type: questionType,
+        essay_expected_answer: questionType === 'essay_ai' ? 'Resposta correta esperada.' : '',
         is_required: true,
-        points: 1,
+        points: questionType === 'essay_ai' ? 0 : 1,
+        interaction_content: defaultGamified.interaction?.content,
+        grading_mode: defaultGamified.answer_key?.grading_mode,
+        answer_key: defaultGamified.answer_key?.answer_key,
       })
       setQuestions((prev) => sortQuestionsByPosition([
         ...prev,
-        { ...createdQuestion, options: [] },
+        buildQuestionState(createdQuestion, isGamifiedQuestionType(questionType)
+          ? getDefaultGamifiedState(createdQuestion.id, questionType)
+          : undefined),
       ]))
     } catch (createError) {
       setError(toErrorMessage(createError))
@@ -420,7 +500,7 @@ export function AssessmentBuilderPanel() {
             ...caseStudyItem,
             questions: sortCaseStudyQuestions([
               ...caseStudyItem.questions,
-              { ...createdQuestion, options: [] },
+              buildQuestionState(createdQuestion),
             ]),
           }
       )))
@@ -443,8 +523,24 @@ export function AssessmentBuilderPanel() {
   }
 
   async function handleUpdateQuestionType(questionId: string, questionType: AssessmentQuestionType) {
+    const currentQuestion = findQuestion(questionId)
+    if (!currentQuestion) return
+
+    if (currentQuestion.case_study_id && isGamifiedQuestionType(questionType)) {
+      setError('Questoes gamificadas ficam apenas como perguntas independentes nesta v1.')
+      return
+    }
+
     try {
-      await updateAssessmentQuestion(questionId, buildQuestionPayload(questionId, { question_type: questionType }))
+      const defaultGamifiedState = isGamifiedQuestionType(questionType)
+        ? getDefaultGamifiedState(questionId, questionType)
+        : { interaction: null, answer_key: null }
+
+      await updateAssessmentQuestion(questionId, buildQuestionPayload(questionId, {
+        question_type: questionType,
+        interaction: defaultGamifiedState.interaction,
+        answer_key: defaultGamifiedState.answer_key,
+      }))
 
       if (questionType === 'essay_ai' || questionType === 'case_study_ai') {
         await deleteAssessmentOptionsByQuestion(questionId)
@@ -461,6 +557,8 @@ export function AssessmentBuilderPanel() {
               : null,
             points: questionType === 'essay_ai' ? 0 : Math.max(1, Number(question.points || 1)),
             options: questionType === 'essay_ai' || questionType === 'case_study_ai' ? [] : question.options,
+            interaction: defaultGamifiedState.interaction,
+            answer_key: defaultGamifiedState.answer_key,
           }
       )
 
@@ -690,12 +788,15 @@ export function AssessmentBuilderPanel() {
   ) {
     const isStandalone = context === 'standalone'
     const isEssay = question.question_type === 'essay_ai' || question.question_type === 'case_study_ai'
+    const isGamified = isGamifiedQuestionType(question.question_type)
     const canUseSingleChoice = isStandalone
       ? question.question_type === 'single_choice'
       : question.question_type === 'case_study_single_choice'
     const canUseEssay = isStandalone
       ? question.question_type === 'essay_ai'
       : question.question_type === 'case_study_ai'
+    const canUseDragDrop = isStandalone && question.question_type === 'drag_drop_labeling'
+    const canUseFillInTheBlanks = isStandalone && question.question_type === 'fill_in_the_blanks'
 
     const setType = (type: AssessmentQuestionType) => void handleUpdateQuestionType(question.id, type)
 
@@ -730,6 +831,32 @@ export function AssessmentBuilderPanel() {
               >
                 Discursiva com IA
               </button>
+              {isStandalone ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setType('drag_drop_labeling')}
+                    className={`rounded-full px-3 py-1 text-[11px] font-black uppercase tracking-widest transition-colors ${
+                      canUseDragDrop
+                        ? 'bg-cyan-600 text-white'
+                        : 'border border-slate-200 bg-white text-slate-500 hover:border-cyan-200 hover:text-cyan-700'
+                    }`}
+                  >
+                    Arrastar e Soltar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setType('fill_in_the_blanks')}
+                    className={`rounded-full px-3 py-1 text-[11px] font-black uppercase tracking-widest transition-colors ${
+                      canUseFillInTheBlanks
+                        ? 'bg-teal-600 text-white'
+                        : 'border border-slate-200 bg-white text-slate-500 hover:border-teal-200 hover:text-teal-700'
+                    }`}
+                  >
+                    Preencher Lacunas
+                  </button>
+                </>
+              ) : null}
             </div>
 
             <textarea
@@ -759,7 +886,9 @@ export function AssessmentBuilderPanel() {
               <p className="mt-1 text-xs font-medium text-slate-500">
                 {question.question_type === 'essay_ai'
                   ? 'Pergunta com feedback, sem nota.'
-                  : 'Esta pergunta entra no cálculo de aprovação.'}
+                  : isGamified
+                    ? 'Pontuacao configuravel com correcao parcial ou tudo-ou-nada.'
+                    : 'Esta pergunta entra no calculo de aprovacao.'}
               </p>
             </div>
             <input
@@ -810,6 +939,16 @@ export function AssessmentBuilderPanel() {
                 placeholder="Descreva a resposta esperada para orientar a avaliação da IA."
               />
             </>
+          ) : isGamified ? (
+            <GamifiedQuestionEditor
+              question={question}
+              onDraftChange={(updates) => updateQuestionState(question.id, (currentQuestion) => ({
+                ...currentQuestion,
+                ...updates,
+              }))}
+              onPersist={(updates) => handlePersistQuestion(question.id, updates)}
+              onError={setError}
+            />
           ) : (
             <>
               <p className="mb-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Alternativas de Resposta</p>
@@ -998,13 +1137,13 @@ export function AssessmentBuilderPanel() {
             <p className="mt-2 text-3xl font-black text-slate-900">{scoredQuestionsCount}</p>
           </div>
           <div className="rounded-2xl border border-white/70 bg-white px-5 py-4 shadow-sm">
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Mínimo de Acertos</p>
-            <p className="mt-2 text-3xl font-black text-blue-700">{requiredCorrectAnswers}</p>
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Pontos Necessários</p>
+            <p className="mt-2 text-3xl font-black text-blue-700">{requiredPoints}</p>
           </div>
           <div className="rounded-2xl border border-white/70 bg-white px-5 py-4 shadow-sm">
             <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Regra Exibida ao Aluno</p>
             <p className="mt-2 text-sm font-medium leading-relaxed text-slate-600">
-              Você precisa acertar pelo menos {requiredCorrectAnswers} de {scoredQuestionsCount} questões pontuáveis.
+              O aluno precisa atingir {requiredPoints} de {totalPossiblePoints} pontos possíveis ({assessmentDraft.passing_score}%).
             </p>
           </div>
         </div>
@@ -1080,36 +1219,53 @@ export function AssessmentBuilderPanel() {
           </section>
         ))}
 
-        <div className="grid gap-4 md:grid-cols-2">
-          <button
-            onClick={() => void handleAddQuestion()}
-            className="flex w-full flex-col items-center justify-center gap-4 rounded-3xl border-4 border-dashed border-slate-100 py-12 text-slate-400 transition-all hover:border-blue-100 hover:bg-blue-50/30 hover:text-blue-600"
-          >
-            <div className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-slate-100 bg-slate-50">
-              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-              </svg>
-            </div>
-            <div className="text-center">
-              <p className="text-lg font-black uppercase tracking-widest">Nova Pergunta Independente</p>
-              <p className="text-xs font-medium">Adiciona uma pergunta fora do estudo de caso.</p>
-            </div>
-          </button>
-
-          <button
-            onClick={() => void handleAddCaseStudy()}
-            className="flex w-full flex-col items-center justify-center gap-4 rounded-3xl border-4 border-dashed border-amber-100 py-12 text-amber-700 transition-all hover:bg-amber-50/60"
-          >
-            <div className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-amber-200 bg-amber-50">
-              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-              </svg>
-            </div>
-            <div className="text-center">
-              <p className="text-lg font-black uppercase tracking-widest">Novo Estudo de Caso</p>
-              <p className="text-xs font-medium">Cria um bloco com contexto compartilhado e perguntas mistas.</p>
-            </div>
-          </button>
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          {[
+            {
+              title: 'Multipla Escolha',
+              description: 'Pergunta independente com alternativas tradicionais.',
+              className: 'border-slate-100 text-slate-400 hover:border-blue-100 hover:bg-blue-50/30 hover:text-blue-600',
+              iconClassName: 'border-slate-100 bg-slate-50',
+              onClick: () => void handleAddQuestion('single_choice'),
+            },
+            {
+              title: 'Arrastar e Soltar',
+              description: 'Imagem com hotspots e banco de rotulos avaliavel.',
+              className: 'border-cyan-100 text-cyan-700 hover:bg-cyan-50/70',
+              iconClassName: 'border-cyan-200 bg-cyan-50',
+              onClick: () => void handleAddQuestion('drag_drop_labeling'),
+            },
+            {
+              title: 'Preencher Lacunas',
+              description: 'Texto com lacunas e banco de respostas arrastavel.',
+              className: 'border-teal-100 text-teal-700 hover:bg-teal-50/70',
+              iconClassName: 'border-teal-200 bg-teal-50',
+              onClick: () => void handleAddQuestion('fill_in_the_blanks'),
+            },
+            {
+              title: 'Novo Estudo de Caso',
+              description: 'Bloco com contexto compartilhado e perguntas mistas.',
+              className: 'border-amber-100 text-amber-700 hover:bg-amber-50/60',
+              iconClassName: 'border-amber-200 bg-amber-50',
+              onClick: () => void handleAddCaseStudy(),
+            },
+          ].map((card) => (
+            <button
+              key={card.title}
+              onClick={card.onClick}
+              className={`flex w-full flex-col items-center justify-center gap-4 rounded-3xl border-4 border-dashed py-12 transition-all ${card.className}`}
+            >
+              <div className={`flex h-12 w-12 items-center justify-center rounded-full border-2 ${card.iconClassName}`}>
+                <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+              </div>
+              <div className="text-center">
+                <p className="text-lg font-black uppercase tracking-widest">{card.title}</p>
+                <p className="text-xs font-medium">{card.description}</p>
+              </div>
+            </button>
+          ))}
         </div>
       </div>
 
@@ -1120,7 +1276,7 @@ export function AssessmentBuilderPanel() {
               <div>
                 <h3 className="text-left text-xl font-black tracking-tight text-slate-900">Importar Avaliação via IA</h3>
                 <p className="mt-1 text-left text-sm font-medium text-slate-500">
-                  O JSON pode misturar perguntas avulsas e `case_studies`, com `question_type`, `essay_expected_answer` e alternativas.
+                  O JSON pode misturar perguntas avulsas e `case_studies`, incluindo `interaction` e `grading` para exercicios gamificados.
                 </p>
               </div>
               <button onClick={() => setIsImportModalOpen(false)} className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-50 text-slate-400 transition-colors hover:text-slate-900">

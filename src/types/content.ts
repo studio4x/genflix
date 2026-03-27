@@ -1,10 +1,99 @@
 export type CourseStatus = 'draft' | 'published' | 'archived'
 export type AssessmentType = 'module' | 'final'
+export type AssessmentGradingMode = 'partial_by_item' | 'all_or_nothing'
 export type AssessmentQuestionType =
   | 'single_choice'
   | 'essay_ai'
   | 'case_study_ai'
   | 'case_study_single_choice'
+  | 'drag_drop_labeling'
+  | 'fill_in_the_blanks'
+
+export interface AssessmentInteractionToken {
+  id: string
+  label: string
+}
+
+export interface AssessmentInteractionAsset {
+  storage_path: string
+  signed_url?: string | null
+  alt: string
+  width: number
+  height: number
+}
+
+export interface DragDropLabelingTarget {
+  id: string
+  x: number
+  y: number
+  w: number
+  h: number
+  label?: string | null
+}
+
+export interface DragDropLabelingInteractionContent {
+  kind: 'drag_drop_labeling'
+  instruction: string
+  asset: AssessmentInteractionAsset
+  tokens: AssessmentInteractionToken[]
+  targets: DragDropLabelingTarget[]
+}
+
+export type FillInTheBlanksSegment =
+  | {
+    type: 'text'
+    text: string
+  }
+  | {
+    type: 'blank'
+    id: string
+    placeholder?: string | null
+  }
+
+export interface FillInTheBlanksInteractionContent {
+  kind: 'fill_in_the_blanks'
+  instruction: string
+  segments: FillInTheBlanksSegment[]
+  tokens: AssessmentInteractionToken[]
+}
+
+export type AssessmentInteractionContent =
+  | DragDropLabelingInteractionContent
+  | FillInTheBlanksInteractionContent
+
+export interface AssessmentQuestionAnswerKeyEntry {
+  slot_id: string
+  token_id: string
+}
+
+export interface AssessmentQuestionAnswerKeyPayload {
+  entries: AssessmentQuestionAnswerKeyEntry[]
+}
+
+export interface AssessmentQuestionInteraction {
+  question_id: string
+  content: AssessmentInteractionContent
+  version: number
+  created_at: string
+  updated_at: string
+}
+
+export interface AssessmentQuestionAnswerKey {
+  question_id: string
+  grading_mode: AssessmentGradingMode
+  answer_key: AssessmentQuestionAnswerKeyPayload
+  created_at: string
+  updated_at: string
+}
+
+export interface AssessmentInteractionResponseEntry {
+  slot_id: string
+  token_id: string | null
+}
+
+export interface AssessmentInteractionResponsePayload {
+  entries: AssessmentInteractionResponseEntry[]
+}
 
 export interface Course {
   id: string
@@ -119,6 +208,11 @@ export interface AssessmentQuestion {
   updated_at: string
 }
 
+export interface AssessmentQuestionWithInteraction extends AssessmentQuestion {
+  interaction: AssessmentQuestionInteraction | null
+  answer_key: AssessmentQuestionAnswerKey | null
+}
+
 export interface AssessmentCaseStudy {
   id: string
   assessment_id: string
@@ -145,6 +239,8 @@ export interface AssessmentAttempt {
   attempt_number: number
   status: 'submitted'
   score_percent: number
+  earned_points: number
+  possible_points: number
   correct_answers: number
   total_questions: number
   is_approved: boolean
@@ -159,6 +255,8 @@ export interface AssessmentAnswer {
   question_id: string
   selected_option_id: string | null
   answer_text: string | null
+  response_payload: AssessmentInteractionResponsePayload | null
+  earned_points: number
   is_correct: boolean
   ai_feedback: string | null
   ai_evaluation: Record<string, unknown> | null

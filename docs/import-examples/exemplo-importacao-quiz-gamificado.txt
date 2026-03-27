@@ -1,0 +1,77 @@
+Exemplo de importacao de quiz com exercicios gamificados (v1)
+
+{
+  "title": "Quiz Gamificado de Fisiologia",
+  "description": "Exemplo com arrastar e soltar e preencher lacunas.",
+  "passing_score": 70,
+  "max_attempts": 3,
+  "estimated_minutes": 15,
+  "questions": [
+    {
+      "question_text": "Associe cada estrutura celular ao ponto correto da imagem.",
+      "question_type": "drag_drop_labeling",
+      "points": 4,
+      "interaction": {
+        "kind": "drag_drop_labeling",
+        "instruction": "Arraste os rotulos para as areas corretas.",
+        "asset": {
+          "storage_path": "example-assets/celula-animal.png",
+          "signed_url": "https://example.invalid/celula-animal.png",
+          "alt": "Ilustracao de uma celula animal",
+          "width": 1400,
+          "height": 900
+        },
+        "tokens": [
+          { "id": "tok-mito", "label": "Mitocondria" },
+          { "id": "tok-golgi", "label": "Complexo de Golgi" },
+          { "id": "tok-membrana", "label": "Membrana plasmatica" }
+        ],
+        "targets": [
+          { "id": "slot-mito", "x": 18.5, "y": 62.0, "w": 18.0, "h": 9.0, "label": "Area 1" },
+          { "id": "slot-golgi", "x": 63.0, "y": 57.5, "w": 18.0, "h": 9.0, "label": "Area 2" },
+          { "id": "slot-membrana", "x": 71.0, "y": 18.0, "w": 18.0, "h": 9.0, "label": "Area 3" }
+        ]
+      },
+      "grading": {
+        "mode": "partial_by_item",
+        "answer_key": {
+          "entries": [
+            { "slot_id": "slot-mito", "token_id": "tok-mito" },
+            { "slot_id": "slot-golgi", "token_id": "tok-golgi" },
+            { "slot_id": "slot-membrana", "token_id": "tok-membrana" }
+          ]
+        }
+      }
+    },
+    {
+      "question_text": "Complete o texto com os conceitos corretos.",
+      "question_type": "fill_in_the_blanks",
+      "points": 4,
+      "interaction": {
+        "kind": "fill_in_the_blanks",
+        "instruction": "Arraste as palavras do banco para as lacunas.",
+        "segments": [
+          { "type": "text", "text": "A fisiologia estuda o funcionamento dos " },
+          { "type": "blank", "id": "blank-seres", "placeholder": "grupo 1" },
+          { "type": "text", "text": " vivos, tanto " },
+          { "type": "blank", "id": "blank-animais", "placeholder": "grupo 2" },
+          { "type": "text", "text": " quanto vegetais." }
+        ],
+        "tokens": [
+          { "id": "tok-seres", "label": "seres" },
+          { "id": "tok-animais", "label": "animais" }
+        ]
+      },
+      "grading": {
+        "mode": "all_or_nothing",
+        "answer_key": {
+          "entries": [
+            { "slot_id": "blank-seres", "token_id": "tok-seres" },
+            { "slot_id": "blank-animais", "token_id": "tok-animais" }
+          ]
+        }
+      }
+    }
+  ],
+  "case_studies": []
+}

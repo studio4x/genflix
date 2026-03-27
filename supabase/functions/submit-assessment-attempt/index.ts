@@ -5,7 +5,13 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-type QuestionType = 'single_choice' | 'essay_ai' | 'case_study_ai' | 'case_study_single_choice'
+type QuestionType =
+  | 'single_choice'
+  | 'essay_ai'
+  | 'case_study_ai'
+  | 'case_study_single_choice'
+  | 'drag_drop_labeling'
+  | 'fill_in_the_blanks'
 
 interface AssessmentRow {
   id: string
@@ -45,10 +51,27 @@ interface CaseStudyRow {
   position: number
 }
 
+interface AnswerKeyRow {
+  question_id: string
+  grading_mode: 'partial_by_item' | 'all_or_nothing'
+  answer_key: {
+    entries?: Array<{
+      slot_id?: string
+      token_id?: string
+    }>
+  } | null
+}
+
 interface SubmissionAnswerInput {
   question_id: string
   option_id?: string | null
   answer_text?: string | null
+  response_payload?: {
+    entries?: Array<{
+      slot_id?: string
+      token_id?: string | null
+    }>
+  } | null
 }
 
 interface EssayEvaluation {
@@ -65,6 +88,22 @@ interface ChoiceFeedback {
   selected_option_id: string | null
   correct_option_id: string | null
   is_correct: boolean
+  earned_points: number
+  possible_points: number
+}
+
+interface InteractionFeedback {
+  question_id: string
+  question_text: string
+  is_correct: boolean
+  earned_points: number
+  possible_points: number
+  entries: Array<{
+    slot_id: string
+    submitted_token_id: string | null
+    expected_token_id: string
+    is_correct: boolean
+  }>
 }
 
 const OPENAI_MODEL = 'gpt-4o-mini'
@@ -153,6 +192,7 @@ Deno.serve(async (request) => {
       _user_id: user.id,
       _course_id: assessment.course_id,
     })
+
     if (releaseError || !isReleased) {
       return jsonResponse({ error: 'Avaliacao nao liberada para o usuario.' }, 403)
     }
@@ -215,7 +255,18 @@ Deno.serve(async (request) => {
       return jsonResponse({ error: 'Limite de tentativas atingido para esta avaliacao.' }, 400)
     }
 
-    const [questionsResult, optionsResult, caseStudiesResult] = await Promise.all([
+    const questionIdsResult = await supabaseAdmin
+      .from('assessment_questions')
+      .select('id')
+      .eq('assessment_id', assessmentId)
+
+    if (questionIdsResult.error) {
+      return jsonResponse({ error: questionIdsResult.error.message }, 400)
+    }
+
+    const questionIds = (questionIdsResult.data ?? []).map((question) => question.id as string)
+
+    const [questionsResult, optionsResult, caseStudiesResult, answerKeysResult] = await Promise.all([
       supabaseAdmin
         .from('assessment_questions')
         .select('id, assessment_id, question_text, question_type, position, is_required, points, essay_expected_answer, case_study_id, case_question_position')
@@ -231,21 +282,35 @@ Deno.serve(async (request) => {
         .select('id, assessment_id, title, case_text, position')
         .eq('assessment_id', assessmentId)
         .order('position', { ascending: true }),
+      questionIds.length === 0
+        ? Promise.resolve({ data: [], error: null })
+        : supabaseAdmin
+          .from('assessment_question_answer_keys')
+          .select('question_id, grading_mode, answer_key')
+          .in('question_id', questionIds),
     ])
 
     if (questionsResult.error) {
       return jsonResponse({ error: questionsResult.error.message }, 400)
     }
+
     if (optionsResult.error) {
       return jsonResponse({ error: optionsResult.error.message }, 400)
     }
+
     if (caseStudiesResult.error) {
       return jsonResponse({ error: caseStudiesResult.error.message }, 400)
+    }
+
+    if (answerKeysResult.error) {
+      return jsonResponse({ error: answerKeysResult.error.message }, 400)
     }
 
     const questions = ((questionsResult.data ?? []) as QuestionRow[])
     const options = ((optionsResult.data ?? []) as OptionRow[])
     const caseStudies = ((caseStudiesResult.data ?? []) as CaseStudyRow[])
+    const answerKeys = ((answerKeysResult.data ?? []) as AnswerKeyRow[])
+
     if (questions.length === 0) {
       return jsonResponse({ error: 'Avaliacao sem questoes cadastradas.' }, 400)
     }
@@ -257,25 +322,19 @@ Deno.serve(async (request) => {
       optionsByQuestion.set(option.question_id, current)
     }
 
+    const answerKeysByQuestion = new Map<string, AnswerKeyRow>()
+    for (const answerKey of answerKeys) {
+      answerKeysByQuestion.set(answerKey.question_id, answerKey)
+    }
+
     const caseStudyById = new Map(caseStudies.map((caseStudy) => [caseStudy.id, caseStudy]))
-    const essayQuestions = questions.filter(
-      (question) => question.question_type === 'essay_ai' || question.question_type === 'case_study_ai',
+    const essayQuestions = questions.filter((question) =>
+      question.question_type === 'essay_ai' || question.question_type === 'case_study_ai'
     )
+
     if (essayQuestions.length > 0 && !openAiApiKey && !geminiApiKey) {
       return jsonResponse({ error: 'Nenhum provedor de IA configurado para corrigir questoes discursivas.' }, 500)
     }
-
-    let objectiveQuestionCount = 0
-    let correctAnswers = 0
-    const choiceFeedbacks: ChoiceFeedback[] = []
-    const answerRows: Array<{
-      question_id: string
-      selected_option_id: string | null
-      answer_text: string | null
-      is_correct: boolean
-      ai_feedback: string | null
-      ai_evaluation: Record<string, unknown> | null
-    }> = []
 
     const essayInputs = essayQuestions
       .map((question) => {
@@ -287,10 +346,7 @@ Deno.serve(async (request) => {
         }
 
         return answerText
-          ? {
-            question,
-            answerText,
-          }
+          ? { question, answerText }
           : null
       })
       .filter((item): item is { question: QuestionRow; answerText: string } => Boolean(item))
@@ -315,6 +371,23 @@ Deno.serve(async (request) => {
     )
 
     const essayEvaluationMap = new Map(essayEvaluations.map((evaluation) => [evaluation.question_id, evaluation]))
+    const choiceFeedbacks: ChoiceFeedback[] = []
+    const interactionFeedbacks: InteractionFeedback[] = []
+    const answerRows: Array<{
+      question_id: string
+      selected_option_id: string | null
+      answer_text: string | null
+      response_payload: Record<string, unknown> | null
+      is_correct: boolean
+      earned_points: number
+      ai_feedback: string | null
+      ai_evaluation: Record<string, unknown> | null
+    }> = []
+
+    let correctAnswers = 0
+    let totalQuestions = 0
+    let earnedPoints = 0
+    let possiblePoints = 0
 
     for (const question of questions) {
       const answer = answerMap.get(question.id)
@@ -327,9 +400,15 @@ Deno.serve(async (request) => {
           return jsonResponse({ error: 'Todas as questoes obrigatorias devem ser respondidas.' }, 400)
         }
 
-        if (question.question_type === 'case_study_ai') {
-          objectiveQuestionCount += 1
-          if (evaluation?.is_correct) {
+        const questionPossiblePoints = question.question_type === 'case_study_ai' ? Number(question.points || 0) : 0
+        const questionEarnedPoints = evaluation?.is_correct ? questionPossiblePoints : 0
+        const isCorrect = Boolean(evaluation?.is_correct)
+
+        if (questionPossiblePoints > 0) {
+          possiblePoints += questionPossiblePoints
+          totalQuestions += 1
+          earnedPoints += questionEarnedPoints
+          if (isCorrect) {
             correctAnswers += 1
           }
         }
@@ -338,7 +417,9 @@ Deno.serve(async (request) => {
           question_id: question.id,
           selected_option_id: null,
           answer_text: answerText,
-          is_correct: evaluation?.is_correct ?? false,
+          response_payload: null,
+          is_correct: isCorrect,
+          earned_points: questionEarnedPoints,
           ai_feedback: evaluation?.feedback ?? null,
           ai_evaluation: evaluation
             ? {
@@ -350,52 +431,100 @@ Deno.serve(async (request) => {
         continue
       }
 
-      objectiveQuestionCount += 1
-      const selectedOptionId = typeof answer?.option_id === 'string' && answer.option_id.trim()
-        ? answer.option_id.trim()
-        : null
+      if (question.question_type === 'single_choice' || question.question_type === 'case_study_single_choice') {
+        totalQuestions += 1
+        const questionPossiblePoints = Number(question.points || 0)
+        possiblePoints += questionPossiblePoints
 
-      if (!selectedOptionId && question.is_required) {
-        return jsonResponse({ error: 'Todas as questoes obrigatorias devem ser respondidas.' }, 400)
-      }
+        const selectedOptionId = typeof answer?.option_id === 'string' && answer.option_id.trim()
+          ? answer.option_id.trim()
+          : null
 
-      let isCorrect = false
-      let correctOptionId: string | null = null
-      const questionOptions = optionsByQuestion.get(question.id) ?? []
-      const correctOption = questionOptions.find((item) => item.is_correct)
-      correctOptionId = correctOption?.id ?? null
-
-      if (selectedOptionId) {
-        const option = questionOptions.find((item) => item.id === selectedOptionId)
-        if (!option) {
-          return jsonResponse({ error: 'Opcao invalida para uma das questoes.' }, 400)
+        if (!selectedOptionId && question.is_required) {
+          return jsonResponse({ error: 'Todas as questoes obrigatorias devem ser respondidas.' }, 400)
         }
-        isCorrect = option.is_correct
+
+        let isCorrect = false
+        let correctOptionId: string | null = null
+        const questionOptions = optionsByQuestion.get(question.id) ?? []
+        const correctOption = questionOptions.find((item) => item.is_correct)
+        correctOptionId = correctOption?.id ?? null
+
+        if (selectedOptionId) {
+          const option = questionOptions.find((item) => item.id === selectedOptionId)
+          if (!option) {
+            return jsonResponse({ error: 'Opcao invalida para uma das questoes.' }, 400)
+          }
+          isCorrect = option.is_correct
+        }
+
+        const questionEarnedPoints = isCorrect ? questionPossiblePoints : 0
+        earnedPoints += questionEarnedPoints
+
+        if (isCorrect) {
+          correctAnswers += 1
+        }
+
+        answerRows.push({
+          question_id: question.id,
+          selected_option_id: selectedOptionId,
+          answer_text: null,
+          response_payload: null,
+          is_correct: isCorrect,
+          earned_points: questionEarnedPoints,
+          ai_feedback: null,
+          ai_evaluation: null,
+        })
+
+        choiceFeedbacks.push({
+          question_id: question.id,
+          question_text: question.question_text,
+          selected_option_id: selectedOptionId,
+          correct_option_id: correctOptionId,
+          is_correct: isCorrect,
+          earned_points: questionEarnedPoints,
+          possible_points: questionPossiblePoints,
+        })
+        continue
       }
 
-      if (isCorrect) {
+      totalQuestions += 1
+      const questionPossiblePoints = Number(question.points || 0)
+      possiblePoints += questionPossiblePoints
+
+      const grading = scoreInteractionAnswer({
+        question,
+        answer,
+        answerKey: answerKeysByQuestion.get(question.id) ?? null,
+      })
+
+      earnedPoints += grading.earnedPoints
+      if (grading.isCorrect) {
         correctAnswers += 1
       }
 
       answerRows.push({
         question_id: question.id,
-        selected_option_id: selectedOptionId,
+        selected_option_id: null,
         answer_text: null,
-        is_correct: isCorrect,
+        response_payload: grading.responsePayload,
+        is_correct: grading.isCorrect,
+        earned_points: grading.earnedPoints,
         ai_feedback: null,
         ai_evaluation: null,
       })
 
-      choiceFeedbacks.push({
+      interactionFeedbacks.push({
         question_id: question.id,
         question_text: question.question_text,
-        selected_option_id: selectedOptionId,
-        correct_option_id: correctOptionId,
-        is_correct: isCorrect,
+        is_correct: grading.isCorrect,
+        earned_points: grading.earnedPoints,
+        possible_points: questionPossiblePoints,
+        entries: grading.entries,
       })
     }
 
-    const essayOnlyAssessment = objectiveQuestionCount === 0 && essayQuestions.length > 0
+    const essayOnlyAssessment = possiblePoints === 0 && essayQuestions.length > 0
     const essayApproved = essayOnlyAssessment
       ? answerRows
         .filter((row) => questions.find((question) => question.id === row.question_id)?.question_type === 'essay_ai')
@@ -407,18 +536,14 @@ Deno.serve(async (request) => {
         })
       : false
 
-    const scorePercent = objectiveQuestionCount > 0
-      ? roundToTwo((correctAnswers * 100) / objectiveQuestionCount)
+    const scorePercent = possiblePoints > 0
+      ? roundToTwo((earnedPoints * 100) / possiblePoints)
       : essayOnlyAssessment
         ? (essayApproved ? 100 : 0)
         : 0
 
-    const requiredCorrectAnswers = objectiveQuestionCount > 0
-      ? Math.ceil((Number(assessment.passing_score ?? 0) / 100) * objectiveQuestionCount)
-      : 0
-
-    const isApproved = objectiveQuestionCount > 0
-      ? correctAnswers >= requiredCorrectAnswers
+    const isApproved = possiblePoints > 0
+      ? scorePercent >= Number(assessment.passing_score ?? 0)
       : essayOnlyAssessment
         ? essayApproved
         : false
@@ -430,8 +555,10 @@ Deno.serve(async (request) => {
       userId: user.id,
       attemptNumber,
       scorePercent,
+      earnedPoints,
+      possiblePoints,
       correctAnswers,
-      totalQuestions: objectiveQuestionCount,
+      totalQuestions,
       isApproved,
       answerRows,
     })
@@ -448,15 +575,18 @@ Deno.serve(async (request) => {
     return jsonResponse({
       attempt_id: attemptId,
       score_percent: scorePercent,
+      earned_points: roundToTwo(earnedPoints),
+      possible_points: roundToTwo(possiblePoints),
       is_approved: isApproved,
       attempt_number: attemptNumber,
       max_attempts: effectiveMaxAttempts,
       remaining_attempts: Math.max(effectiveMaxAttempts - attemptNumber, 0),
       score_mode: essayOnlyAssessment ? 'essay_only' : 'objective_only',
       correct_answers: correctAnswers,
-      total_questions: objectiveQuestionCount,
+      total_questions: totalQuestions,
       essay_feedbacks: essayEvaluations,
       choice_feedbacks: choiceFeedbacks,
+      interaction_feedbacks: interactionFeedbacks,
     }, 200)
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Erro inesperado ao enviar avaliacao.'
@@ -484,6 +614,9 @@ function normalizeAnswers(rawAnswers: unknown[]): SubmissionAnswerInput[] {
     const questionId = typeof answer.question_id === 'string' ? answer.question_id.trim() : ''
     const optionId = typeof answer.option_id === 'string' ? answer.option_id.trim() : null
     const answerText = typeof answer.answer_text === 'string' ? answer.answer_text : null
+    const responsePayload = answer.response_payload && typeof answer.response_payload === 'object'
+      ? answer.response_payload as SubmissionAnswerInput['response_payload']
+      : null
 
     if (!questionId) {
       throw new Error('Questao invalida.')
@@ -493,6 +626,7 @@ function normalizeAnswers(rawAnswers: unknown[]): SubmissionAnswerInput[] {
       question_id: questionId,
       option_id: optionId,
       answer_text: answerText,
+      response_payload: responsePayload,
     }
   })
 }
@@ -501,6 +635,70 @@ function normalizeAnswerText(value: string | null | undefined) {
   if (!value) return null
   const normalized = value.replace(/\r/g, '').trim()
   return normalized.length > 0 ? normalized.slice(0, 5000) : null
+}
+
+function normalizeResponsePayload(payload: SubmissionAnswerInput['response_payload']) {
+  const entries = Array.isArray(payload?.entries)
+    ? payload.entries
+      .filter((entry) => entry && typeof entry === 'object')
+      .map((entry) => ({
+        slot_id: typeof entry.slot_id === 'string' ? entry.slot_id.trim() : '',
+        token_id: typeof entry.token_id === 'string' && entry.token_id.trim()
+          ? entry.token_id.trim()
+          : null,
+      }))
+      .filter((entry) => entry.slot_id)
+    : []
+
+  return {
+    entries,
+  }
+}
+
+function scoreInteractionAnswer(input: {
+  question: QuestionRow
+  answer: SubmissionAnswerInput | undefined
+  answerKey: AnswerKeyRow | null
+}) {
+  const normalizedPayload = normalizeResponsePayload(input.answer?.response_payload)
+  const answerEntries = Array.isArray(input.answerKey?.answer_key?.entries)
+    ? input.answerKey?.answer_key?.entries
+        .map((entry) => ({
+          slot_id: typeof entry.slot_id === 'string' ? entry.slot_id.trim() : '',
+          token_id: typeof entry.token_id === 'string' ? entry.token_id.trim() : '',
+        }))
+        .filter((entry) => entry.slot_id && entry.token_id)
+    : []
+
+  if (answerEntries.length === 0) {
+    throw new Error('Questao gamificada sem gabarito configurado.')
+  }
+
+  if (normalizedPayload.entries.length === 0 && input.question.is_required) {
+    throw new Error('Todas as questoes obrigatorias devem ser respondidas.')
+  }
+
+  const responseMap = new Map(normalizedPayload.entries.map((entry) => [entry.slot_id, entry.token_id]))
+  const entryFeedback = answerEntries.map((entry) => ({
+    slot_id: entry.slot_id,
+    submitted_token_id: responseMap.get(entry.slot_id) ?? null,
+    expected_token_id: entry.token_id,
+    is_correct: (responseMap.get(entry.slot_id) ?? null) === entry.token_id,
+  }))
+  const correctEntries = entryFeedback.filter((entry) => entry.is_correct).length
+  const isCorrect = correctEntries === answerEntries.length
+  const possiblePoints = Number(input.question.points || 0)
+
+  const earnedPoints = input.answerKey?.grading_mode === 'all_or_nothing'
+    ? (isCorrect ? possiblePoints : 0)
+    : roundToTwo(possiblePoints * (correctEntries / answerEntries.length))
+
+  return {
+    isCorrect,
+    earnedPoints,
+    entries: entryFeedback,
+    responsePayload: normalizedPayload as Record<string, unknown>,
+  }
 }
 
 function roundToTwo(value: number) {
@@ -513,6 +711,8 @@ async function insertAttemptWithRetry(input: {
   userId: string
   attemptNumber: number
   scorePercent: number
+  earnedPoints: number
+  possiblePoints: number
   correctAnswers: number
   totalQuestions: number
   isApproved: boolean
@@ -520,7 +720,9 @@ async function insertAttemptWithRetry(input: {
     question_id: string
     selected_option_id: string | null
     answer_text: string | null
+    response_payload: Record<string, unknown> | null
     is_correct: boolean
+    earned_points: number
     ai_feedback: string | null
     ai_evaluation: Record<string, unknown> | null
   }>
@@ -536,6 +738,8 @@ async function insertAttemptWithRetry(input: {
         attempt_number: nextAttemptNumber,
         status: 'submitted',
         score_percent: input.scorePercent,
+        earned_points: input.earnedPoints,
+        possible_points: input.possiblePoints,
         correct_answers: input.correctAnswers,
         total_questions: input.totalQuestions,
         is_approved: input.isApproved,
@@ -574,6 +778,8 @@ async function insertAttemptWithRetry(input: {
         question_id: row.question_id,
         selected_option_id: row.selected_option_id,
         answer_text: row.answer_text,
+        response_payload: row.response_payload,
+        earned_points: row.earned_points,
         is_correct: row.is_correct,
         ai_feedback: row.ai_feedback,
         ai_evaluation: row.ai_evaluation,
@@ -702,7 +908,7 @@ async function evaluateWithGemini(
   const payload = await response.json()
   const rawText = payload?.candidates?.[0]?.content?.parts?.[0]?.text
   if (typeof rawText !== 'string') {
-    throw new Error('Gemini nao retornou um payload valido para a correção.')
+    throw new Error('Gemini nao retornou um payload valido para a correcao.')
   }
 
   return normalizeEssayEvaluation(extractJsonObject(rawText))
@@ -761,7 +967,7 @@ function extractJsonObject(value: string) {
     return trimmed.slice(firstBrace, lastBrace + 1)
   }
 
-  throw new Error('A IA nao retornou um JSON valido para a correção.')
+  throw new Error('A IA nao retornou um JSON valido para a correcao.')
 }
 
 function normalizeEssayEvaluation(rawJson: string) {
