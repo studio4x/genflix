@@ -288,6 +288,22 @@ export async function fetchModuleAssessment(moduleId: string) {
     .select('*')
     .eq('assessment_type', 'module')
     .eq('module_id', moduleId)
+    .order('created_at', { ascending: true })
+    .limit(1)
+    .maybeSingle()
+
+  if (result.error) {
+    throw result.error
+  }
+
+  return (result.data as Assessment | null) ?? null
+}
+
+export async function fetchAssessmentById(assessmentId: string) {
+  const result = await supabase
+    .from('assessments')
+    .select('*')
+    .eq('id', assessmentId)
     .maybeSingle()
 
   if (result.error) {

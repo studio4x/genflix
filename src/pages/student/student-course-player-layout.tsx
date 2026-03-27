@@ -235,18 +235,22 @@ export function StudentCoursePlayerLayout() {
                 })}
 
                 {(() => {
-                  const moduleQuiz = assessments.find(a => a.assessment_type === 'module' && a.module_id === m.id)
-                  if (!moduleQuiz) return null
+                  const moduleQuizzes = assessments
+                    .filter((assessment) => assessment.assessment_type === 'module' && assessment.module_id === m.id)
+                    .sort((assessmentA, assessmentB) => assessmentA.title.localeCompare(assessmentB.title, 'pt-BR'))
+                  if (moduleQuizzes.length === 0) return null
 
                   const allModuleLessonsCompleted = m.lessons.length > 0 && m.lessons.every((lesson) => lesson.is_completed)
                   const isLockedByLessons = !isAdmin && !allModuleLessonsCompleted
-                  const isLocked = m.state === 'blocked' || moduleQuiz.state === 'blocked' || isLockedByLessons
-                  const isFailedLimit = moduleQuiz.state === 'failed_limit'
-                  const isActive = moduleQuiz.assessment_id === assessmentId
-                  const isApproved = moduleQuiz.state === 'approved'
 
-                  return (
-                    <Link
+                  return moduleQuizzes.map((moduleQuiz) => {
+                    const isLocked = m.state === 'blocked' || moduleQuiz.state === 'blocked' || isLockedByLessons
+                    const isFailedLimit = moduleQuiz.state === 'failed_limit'
+                    const isActive = moduleQuiz.assessment_id === assessmentId
+                    const isApproved = moduleQuiz.state === 'approved'
+
+                    return (
+                      <Link
                       key={moduleQuiz.assessment_id}
                       to={isLocked ? '#' : `/aluno/cursos/${courseId}/player/avaliacoes/${moduleQuiz.assessment_id}`}
                       onClick={(e) => isLocked && e.preventDefault()}
@@ -274,14 +278,15 @@ export function StudentCoursePlayerLayout() {
                         <p className={`truncate text-[10px] font-black uppercase tracking-tighter ${
                           isFailedLimit ? 'text-rose-600' : isLockedByLessons ? 'text-amber-600' : 'text-blue-600'
                         }`}>
-                          {isFailedLimit ? 'TENTATIVAS ESGOTADAS ⚠️' : isLockedByLessons ? 'QUIZ BLOQUEADO' : 'QUIZ DO MÓDULO'}
+                          {isFailedLimit ? 'TENTATIVAS ESGOTADAS' : isLockedByLessons ? 'QUIZ BLOQUEADO' : 'QUIZ DO MÓDULO'}
                         </p>
                         <p className={`truncate font-bold ${isApproved ? 'text-emerald-700' : isFailedLimit ? 'text-rose-900' : 'text-slate-700'}`}>
                           {moduleQuiz.title}
                         </p>
                       </div>
-                    </Link>
-                  )
+                      </Link>
+                    )
+                  })
                 })()}
               </div>
             </div>

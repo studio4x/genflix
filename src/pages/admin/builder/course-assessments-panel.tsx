@@ -1,9 +1,18 @@
-import { useCourseBuilder } from '@/app/layouts/admin-course-builder-layout'
-import { Button } from '@/components/ui/button'
-import { Link, useParams } from 'react-router-dom'
 import { useState } from 'react'
-import { importAssessmentContent, deleteAssessment, createFinalAssessment, createModuleAssessment, fetchFinalAssessment, fetchModuleAssessment, exportFinalAssessmentContent, toErrorMessage } from '@/features/admin/assessments/api'
+import { Link, useParams } from 'react-router-dom'
+
+import { useCourseBuilder } from '@/app/layouts/admin-course-builder-layout'
 import { useAuth } from '@/app/providers/auth-provider'
+import { Button } from '@/components/ui/button'
+import {
+  createFinalAssessment,
+  createModuleAssessment,
+  deleteAssessment,
+  exportFinalAssessmentContent,
+  fetchFinalAssessment,
+  importAssessmentContent,
+  toErrorMessage,
+} from '@/features/admin/assessments/api'
 import { downloadJsonFile } from '@/lib/download'
 
 export function CourseAssessmentsPanel() {
@@ -16,96 +25,94 @@ export function CourseAssessmentsPanel() {
   const [isImporting, setIsImporting] = useState(false)
   const [importError, setImportError] = useState<string | null>(null)
   const [isExportingFinal, setIsExportingFinal] = useState(false)
-  
-  // Se estiver importando para um módulo específico
   const [targetModuleId, setTargetModuleId] = useState<string | null>(null)
 
   if (!courseTree) return null
+  const tree = courseTree
 
   async function handleImportJson() {
     if (!user?.id || !courseId) return
+
     setIsImporting(true)
     setImportError(null)
+
     try {
       let cleanedJson = importJson.trim()
       const match = cleanedJson.match(/```(?:json)?\s*([\s\S]*?)\s*```/)
-      if (match && match[1]) {
+      if (match?.[1]) {
         cleanedJson = match[1].trim()
       } else {
         cleanedJson = cleanedJson.replace(/^```(json)?\s+/, '').replace(/\s+```$/, '').trim()
       }
-      
+
       let data
       try {
         data = JSON.parse(cleanedJson)
-      } catch (err1) {
+      } catch {
         const fixedJson = cleanedJson.replace(/\n(?!\s*[\{\}\[\]",:0-9\-\.tfn])/g, '\\n')
         data = JSON.parse(fixedJson)
       }
 
-      let assessmentId = null
+      let assessmentId: string | null = null
 
       if (targetModuleId) {
-        // Importar para módulo
-        const existing = await fetchModuleAssessment(targetModuleId)
-        if (existing) {
-          assessmentId = existing.id
-        } else {
-          const mod = courseTree?.modules.find(m => m.id === targetModuleId)
-          const newA = await createModuleAssessment(courseId, targetModuleId, {
-            title: data.title || `Quiz: ${mod?.title || 'Módulo'}`,
-            description: data.description || '',
-            is_active: true,
-            is_required: true,
-            max_attempts: data.max_attempts || 3,
-            passing_score: data.passing_score || 70,
-            estimated_minutes: data.estimated_minutes || 10
-          }, user.id)
-          assessmentId = newA.id
-        }
+        const moduleItem = tree.modules.find((module) => module.id === targetModuleId)
+        const newAssessment = await createModuleAssessment(courseId, targetModuleId, {
+          title: data.title || `Quiz: ${moduleItem?.title || 'Módulo'}`,
+          description: data.description || '',
+          is_active: true,
+          is_required: true,
+          max_attempts: data.max_attempts || 3,
+          passing_score: data.passing_score || 70,
+          estimated_minutes: data.estimated_minutes || 10,
+        }, user.id)
+        assessmentId = newAssessment.id
       } else {
-        // Importar para Avaliação Final
         const existing = await fetchFinalAssessment(courseId)
         if (existing) {
           assessmentId = existing.id
         } else {
-          const newA = await createFinalAssessment(courseId, {
+          const newAssessment = await createFinalAssessment(courseId, {
             title: data.title || 'Avaliação Final',
             description: data.description || '',
             is_active: true,
             is_required: true,
             max_attempts: data.max_attempts || 3,
             passing_score: data.passing_score || 70,
-            estimated_minutes: data.estimated_minutes || 10
+            estimated_minutes: data.estimated_minutes || 10,
           }, user.id)
-          assessmentId = newA.id
+          assessmentId = newAssessment.id
         }
       }
 
-      if (!assessmentId) throw new Error('Falha ao identificar avaliação de destino.')
+      if (!assessmentId) {
+        throw new Error('Falha ao identificar avaliação de destino.')
+      }
 
       await importAssessmentContent(assessmentId, data)
       await refreshTree()
       setIsImportModalOpen(false)
       setImportJson('')
       setTargetModuleId(null)
-    } catch (err: any) {
-      console.error('Erro no import:', err)
-      setImportError(toErrorMessage(err))
+    } catch (error) {
+      console.error('Erro no import:', error)
+      setImportError(toErrorMessage(error))
     } finally {
       setIsImporting(false)
     }
   }
 
   async function handleDeleteAssessment(assessmentId: string) {
-    if (!window.confirm('CUIDADO: Tem certeza que deseja excluir permanentemente esta avaliação? Esta ação removerá todas as questões vinculadas e não pode ser desfeita.')) return
-    
+    if (!window.confirm('CUIDADO: Tem certeza que deseja excluir permanentemente esta avaliação? Esta ação removerá todas as questões vinculadas e não pode ser desfeita.')) {
+      return
+    }
+
     setIsImporting(true)
     try {
       await deleteAssessment(assessmentId)
       await refreshTree()
-    } catch (err) {
-      console.error('Erro ao deletar:', err)
+    } catch (error) {
+      console.error('Erro ao deletar:', error)
       alert('Falha ao excluir avaliação. Verifique as dependências.')
     } finally {
       setIsImporting(false)
@@ -114,13 +121,14 @@ export function CourseAssessmentsPanel() {
 
   async function handleExportFinalAssessment() {
     if (!courseId) return
+
     setIsExportingFinal(true)
     try {
       const exportData = await exportFinalAssessmentContent(courseId)
-      const courseTitle = courseTree?.course.title || 'curso'
+      const courseTitle = tree.course.title || 'curso'
       downloadJsonFile(`avaliacao_final_${courseTitle}`, exportData)
-    } catch (err) {
-      setImportError(toErrorMessage(err))
+    } catch (error) {
+      setImportError(toErrorMessage(error))
     } finally {
       setIsExportingFinal(false)
     }
@@ -128,196 +136,230 @@ export function CourseAssessmentsPanel() {
 
   return (
     <>
-      <div className="max-w-4xl mx-auto space-y-6 animate-in fade-in duration-500 pb-20">
+      <div className="mx-auto max-w-4xl animate-in space-y-6 pb-20 fade-in duration-500">
         <div className="border-b border-slate-200 pb-5">
-          <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">Gestão de Avaliações</h2>
-          <p className="text-sm text-slate-500 mt-1">Veja todos os quizzes e avaliações finais do curso em um só lugar.</p>
+          <h2 className="text-2xl font-extrabold tracking-tight text-slate-900">Gestão de Avaliações</h2>
+          <p className="mt-1 text-sm text-slate-500">Veja todos os quizzes e avaliações finais do curso em um só lugar.</p>
         </div>
 
         <div className="grid gap-6">
-           {/* Course Final Assessment Section */}
-           <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-              <div className="p-5 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
-                 <div className="flex items-center gap-3">
-                    <div className="p-2 bg-white rounded-lg border border-slate-100 shadow-sm">
-                       <svg className="h-5 w-5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
-                    </div>
-                     <div>
-                       <h3 className="text-sm font-bold text-slate-800">Avaliação Final do Curso</h3>
-                       <p className="text-xs text-slate-500">Exibida ao fim de todos os módulos para certificação.</p>
-                     </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                     <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => void handleExportFinalAssessment()}
-                        className="text-slate-600 hover:bg-slate-100 font-bold"
-                        disabled={isExportingFinal}
-                     >
-                        <svg className="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-                        {isExportingFinal ? 'Exportando...' : 'Exportar JSON'}
-                     </Button>
-                     <Button 
-                        size="sm" 
-                        variant="ghost" 
-                        onClick={() => { setTargetModuleId(null); setIsImportModalOpen(true); }}
-                        className="text-blue-600 hover:bg-blue-50 font-bold"
-                     >
-                        <svg className="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
-                        Importar IA
-                     </Button>
-                     <Button size="sm" variant="outline" className="bg-white" asChild>
-                        <Link to={`/admin/cursos/${courseId}/builder/assessments/final`}>
-                          Configurar Final
-                        </Link>
-                     </Button>
-                  </div>
-               </div>
-              
-              <div className="p-6">
-                 {courseTree.courseAssessments.length > 0 ? (
-                   courseTree.courseAssessments.map(a => (
-                     <div key={a.id} className="flex items-center justify-between p-4 rounded-xl border border-emerald-100 bg-emerald-50/20">
-                        <div>
-                           <p className="font-bold text-emerald-900 leading-tight">{a.title}</p>
-                           <p className="text-[11px] text-emerald-600 font-medium uppercase mt-1">Quiz de Certificação • Nota mínima {a.passing_score}%</p>
-                        </div>
-                        <div className="flex items-center gap-1">
-                           <Button variant="ghost" size="sm" className="hover:bg-emerald-100 font-bold" asChild>
-                             <Link to={`/admin/cursos/${courseId}/builder/assessments/final`}>Editar</Link>
-                           </Button>
-                           <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              onClick={() => handleDeleteAssessment(a.id)}
-                              className="text-slate-400 hover:text-red-500 font-bold h-8 w-8 p-0"
-                              title="Excluir Avaliação Final"
-                           >
-                              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                           </Button>
-                        </div>
-                     </div>
-                   ))
-                 ) : (
-                   <div className="py-8 text-center bg-slate-50/50 rounded-2xl border border-slate-100">
-                      <p className="text-sm text-slate-400">Nenhuma avaliação final configurada.</p>
-                      <Button variant="link" size="sm" className="mt-2 font-bold" asChild>
-                        <Link to={`/admin/cursos/${courseId}/builder/assessments/final`}>Criar Prova Final</Link>
-                      </Button>
-                   </div>
-                 )}
+          <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+            <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50/50 p-5">
+              <div className="flex items-center gap-3">
+                <div className="rounded-lg border border-slate-100 bg-white p-2 shadow-sm">
+                  <svg className="h-5 w-5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-slate-800">Avaliação Final do Curso</h3>
+                  <p className="text-xs text-slate-500">Exibida ao fim de todos os módulos para certificação.</p>
+                </div>
               </div>
-           </div>
 
-           {/* Module Quizzes List */}
-           <div className="space-y-4">
-              <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 pb-3">Quizzes por Módulo</h3>
-              
-              <div className="grid gap-4">
-                 {courseTree.modules.map(m => (
-                    <div key={m.id} className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 flex items-center justify-between">
-                       <div className="flex items-center gap-4">
-                          <div className="w-10 text-center text-xs font-black text-slate-300">M{courseTree.modules.findIndex(mod => mod.id === m.id) + 1}</div>
-                          <div>
-                             <p className="font-bold text-slate-900 leading-tight">{m.title}</p>
-                             <p className="text-xs text-slate-500 mt-1">{m.assessments.length === 0 ? 'Sem quiz associado' : `${m.assessments.length} quiz(zes)`}</p>
-                          </div>
-                       </div>
-                       <div className="flex gap-2">
-                          {m.assessments.length > 0 ? (
-                             m.assessments.map(a => (
-                               <div key={a.id} className="flex items-center gap-1">
-                                 <Button variant="outline" size="sm" className="bg-white" asChild>
-                                   <Link to={`/admin/cursos/${courseId}/builder/modulos/${m.id}/avaliacoes/${a.id}`}>Editar Quiz</Link>
-                                 </Button>
-                                 <Button 
-                                    variant="ghost" 
-                                    size="sm" 
-                                    onClick={() => handleDeleteAssessment(a.id)}
-                                    className="text-slate-400 hover:text-red-500 font-bold h-8 w-8 p-0"
-                                    title="Excluir Quiz do Módulo"
-                                 >
-                                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                                 </Button>
-                               </div>
-                             ))
-                          ) : (
-                             <Button variant="ghost" size="sm" className="text-blue-600 hover:bg-blue-50 font-bold" asChild>
-                                <Link to={`/admin/cursos/${courseId}/builder/modulos/${m.id}/avaliacoes/nova`}>Adicionar Quiz</Link>
-                             </Button>
-                          )}
-                          <Button 
-                             variant="ghost" 
-                             size="sm" 
-                             onClick={() => { setTargetModuleId(m.id); setIsImportModalOpen(true); }}
-                             className="text-slate-400 hover:text-blue-600 font-bold h-8 w-8 p-0"
-                             title="Importar de IA para este módulo"
-                          >
-                             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
-                          </Button>
-                       </div>
-                    </div>
-                 ))}
+              <div className="flex items-center gap-2">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => void handleExportFinalAssessment()}
+                  className="font-bold text-slate-600 hover:bg-slate-100"
+                  disabled={isExportingFinal}
+                >
+                  <svg className="mr-1.5 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                  </svg>
+                  {isExportingFinal ? 'Exportando...' : 'Exportar JSON'}
+                </Button>
+
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => {
+                    setTargetModuleId(null)
+                    setIsImportModalOpen(true)
+                  }}
+                  className="font-bold text-blue-600 hover:bg-blue-50"
+                >
+                  <svg className="mr-1.5 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                  </svg>
+                  Importar IA
+                </Button>
+
+                <Button size="sm" variant="outline" className="bg-white" asChild>
+                  <Link to={`/admin/cursos/${courseId}/builder/assessments/final`}>
+                    Configurar Final
+                  </Link>
+                </Button>
               </div>
-           </div>
+            </div>
+
+            <div className="p-6">
+              {courseTree.courseAssessments.length > 0 ? (
+                courseTree.courseAssessments.map((assessment) => (
+                  <div key={assessment.id} className="flex items-center justify-between rounded-xl border border-emerald-100 bg-emerald-50/20 p-4">
+                    <div>
+                      <p className="font-bold leading-tight text-emerald-900">{assessment.title}</p>
+                      <p className="mt-1 text-[11px] font-medium uppercase text-emerald-600">
+                        Quiz de certificação • Nota mínima {assessment.passing_score}%
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-1">
+                      <Button variant="ghost" size="sm" className="font-bold hover:bg-emerald-100" asChild>
+                        <Link to={`/admin/cursos/${courseId}/builder/assessments/final`}>Editar</Link>
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => void handleDeleteAssessment(assessment.id)}
+                        className="h-8 w-8 p-0 font-bold text-slate-400 hover:text-red-500"
+                        title="Excluir Avaliação Final"
+                      >
+                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      </Button>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="rounded-2xl border border-slate-100 bg-slate-50/50 py-8 text-center">
+                  <p className="text-sm text-slate-400">Nenhuma avaliação final configurada.</p>
+                  <Button variant="link" size="sm" className="mt-2 font-bold" asChild>
+                    <Link to={`/admin/cursos/${courseId}/builder/assessments/final`}>Criar Prova Final</Link>
+                  </Button>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <h3 className="border-b border-slate-100 pb-3 text-sm font-black uppercase tracking-widest text-slate-400">
+              Quizzes por Módulo
+            </h3>
+
+            <div className="grid gap-4">
+              {courseTree.modules.map((module, index) => (
+                <div key={module.id} className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 text-center text-xs font-black text-slate-300">M{index + 1}</div>
+                    <div>
+                      <p className="font-bold leading-tight text-slate-900">{module.title}</p>
+                      <p className="mt-1 text-xs text-slate-500">
+                        {module.assessments.length === 0 ? 'Sem quiz associado' : `${module.assessments.length} quiz(zes)`}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap items-center justify-end gap-2">
+                    <Button variant="ghost" size="sm" className="font-bold text-blue-600 hover:bg-blue-50" asChild>
+                      <Link to={`/admin/cursos/${courseId}/builder/modulos/${module.id}/avaliacoes/nova`}>Adicionar Quiz</Link>
+                    </Button>
+
+                    {module.assessments.map((assessment) => (
+                      <div key={assessment.id} className="flex items-center gap-1">
+                        <Button variant="outline" size="sm" className="bg-white" asChild>
+                          <Link to={`/admin/cursos/${courseId}/builder/modulos/${module.id}/avaliacoes/${assessment.id}`}>Editar Quiz</Link>
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => void handleDeleteAssessment(assessment.id)}
+                          className="h-8 w-8 p-0 font-bold text-slate-400 hover:text-red-500"
+                          title="Excluir Quiz do Módulo"
+                        >
+                          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        </Button>
+                      </div>
+                    ))}
+
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setTargetModuleId(module.id)
+                        setIsImportModalOpen(true)
+                      }}
+                      className="h-8 w-8 p-0 font-bold text-slate-400 hover:text-blue-600"
+                      title="Importar de IA para este módulo"
+                    >
+                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                      </svg>
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* AI IMPORT MODAL */}
-        {isImportModalOpen && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
-             <div className="bg-white rounded-[32px] w-full max-w-2xl shadow-2xl border border-white/20 overflow-y-auto max-h-[90vh] no-scrollbar animate-in zoom-in-95 duration-300">
-                <div className="p-8 border-b border-slate-100 flex items-center justify-between">
-                   <div>
-                      <h3 className="text-xl font-black text-slate-900 tracking-tight">Importar Avaliação (IA)</h3>
-                      <p className="text-sm text-slate-500 mt-1 font-medium">
-                        {targetModuleId ? 'Importando para um quiz de módulo.' : 'Importando para a Avaliação Final.'}
-                      </p>
-                   </div>
-                   <button onClick={() => setIsImportModalOpen(false)} className="h-10 w-10 flex items-center justify-center rounded-xl bg-slate-50 text-slate-400 hover:text-slate-900 transition-colors">
-                      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                   </button>
-                </div>
+      {isImportModalOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm animate-in fade-in duration-300">
+          <div className="no-scrollbar max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-[32px] border border-white/20 bg-white shadow-2xl animate-in zoom-in-95 duration-300">
+            <div className="flex items-center justify-between border-b border-slate-100 p-8">
+              <div>
+                <h3 className="text-xl font-black tracking-tight text-slate-900">Importar Avaliação (IA)</h3>
+                <p className="mt-1 text-sm font-medium text-slate-500">
+                  {targetModuleId ? 'Importando para um novo quiz de módulo.' : 'Importando para a Avaliação Final.'}
+                </p>
+              </div>
 
-                <div className="p-8 space-y-6">
-                   <div className="space-y-2">
-                      <span className="text-xs font-black text-slate-400 uppercase tracking-widest pl-1">Código JSON Estruturado</span>
-                      <textarea 
-                         className="w-full h-80 font-mono text-xs p-6 bg-slate-900 text-emerald-400 rounded-2xl border border-slate-800 focus:ring-4 focus:ring-blue-100 transition-all no-scrollbar"
-                         placeholder='{ "title": "...", "passing_score": 75, "questions": [...] }'
-                         value={importJson}
-                         onChange={e => setImportJson(e.target.value)}
-                      />
-                   </div>
+              <button
+                onClick={() => setIsImportModalOpen(false)}
+                className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-50 text-slate-400 transition-colors hover:text-slate-900"
+              >
+                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
 
-                   {importError && (
-                      <div className="p-4 rounded-xl bg-rose-50 border border-rose-100 text-rose-600 text-xs font-bold animate-in slide-in-from-left-2 transition-all">
-                         {importError}
-                      </div>
-                   )}
-                </div>
+            <div className="space-y-6 p-8">
+              <div className="space-y-2">
+                <span className="pl-1 text-xs font-black uppercase tracking-widest text-slate-400">Código JSON Estruturado</span>
+                <textarea
+                  className="no-scrollbar h-80 w-full rounded-2xl border border-slate-800 bg-slate-900 p-6 font-mono text-xs text-emerald-400 transition-all focus:ring-4 focus:ring-blue-100"
+                  placeholder='{ "title": "...", "passing_score": 75, "questions": [...] }'
+                  value={importJson}
+                  onChange={(event) => setImportJson(event.target.value)}
+                />
+              </div>
 
-                <div className="p-8 bg-slate-50/50 flex gap-4 border-t border-slate-100">
-                   <Button variant="ghost" onClick={() => setIsImportModalOpen(false)} className="flex-1 h-14 rounded-2xl font-bold text-slate-500">
-                      Cancelar
-                   </Button>
-                   <Button 
-                      onClick={handleImportJson}
-                      disabled={isImporting || !importJson.trim()}
-                      className="flex-[2] h-14 rounded-2xl bg-blue-600 font-black shadow-xl shadow-blue-100"
-                   >
-                      {isImporting ? (
-                         <span className="flex items-center gap-2">
-                            <svg className="animate-spin h-5 w-5 text-white" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                            Importando...
-                         </span>
-                      ) : 'Importar Agora'}
-                   </Button>
+              {importError && (
+                <div className="animate-in rounded-xl border border-rose-100 bg-rose-50 p-4 text-xs font-bold text-rose-600 slide-in-from-left-2 transition-all">
+                  {importError}
                 </div>
-             </div>
+              )}
+            </div>
+
+            <div className="flex gap-4 border-t border-slate-100 bg-slate-50/50 p-8">
+              <Button variant="ghost" onClick={() => setIsImportModalOpen(false)} className="h-14 flex-1 rounded-2xl font-bold text-slate-500">
+                Cancelar
+              </Button>
+              <Button
+                onClick={() => void handleImportJson()}
+                disabled={isImporting || !importJson.trim()}
+                className="h-14 flex-[2] rounded-2xl bg-blue-600 font-black shadow-xl shadow-blue-100"
+              >
+                {isImporting ? (
+                  <span className="flex items-center gap-2">
+                    <svg className="h-5 w-5 animate-spin text-white" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                    Importando...
+                  </span>
+                ) : 'Importar Agora'}
+              </Button>
+            </div>
           </div>
-        )}
+        </div>
+      )}
     </>
   )
 }

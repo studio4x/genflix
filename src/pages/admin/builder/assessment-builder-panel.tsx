@@ -16,10 +16,10 @@ import {
   deleteAssessmentOption,
   deleteAssessmentOptionsByQuestion,
   deleteAssessmentQuestion,
+  fetchAssessmentById,
   fetchAssessmentCaseStudies,
   fetchAssessmentQuestions,
   fetchFinalAssessment,
-  fetchModuleAssessment,
   importAssessmentContentStructured,
   toErrorMessage,
   updateAssessmentCaseStudy,
@@ -150,7 +150,11 @@ function getDefaultGamifiedState(questionId: string, questionType: AssessmentQue
 }
 
 export function AssessmentBuilderPanel() {
-  const { courseId, moduleId } = useParams<{ courseId: string; moduleId?: string }>()
+  const { courseId, moduleId, assessmentId } = useParams<{
+    courseId: string
+    moduleId?: string
+    assessmentId?: string
+  }>()
   const navigate = useNavigate()
   const { user } = useAuth()
   const { refreshTree } = useCourseBuilder()
@@ -175,6 +179,7 @@ export function AssessmentBuilderPanel() {
   const [importError, setImportError] = useState<string | null>(null)
 
   const isFinal = !moduleId
+  const isNewModuleAssessment = !isFinal && assessmentId === 'nova'
 
   const loadData = useCallback(async () => {
     setIsLoading(true)
@@ -182,23 +187,30 @@ export function AssessmentBuilderPanel() {
 
     try {
       if (!isFinal && moduleId) {
-        const [mod, assess] = await Promise.all([
-          fetchModule(moduleId),
-          fetchModuleAssessment(moduleId),
-        ])
-
+        const mod = await fetchModule(moduleId)
         setModule(mod)
-        setAssessment(assess)
 
-        if (assess) {
-          const loadedQuestions = await fetchAssessmentQuestions(assess.id)
-          const loadedCaseStudies = await fetchAssessmentCaseStudies(assess.id, loadedQuestions)
-          setQuestions(loadedQuestions)
-          setCaseStudies(loadedCaseStudies)
-        } else {
+        if (isNewModuleAssessment) {
+          setAssessment(null)
           setQuestions([])
           setCaseStudies([])
+          return
         }
+
+        if (!assessmentId) {
+          throw new Error('Quiz invalido.')
+        }
+
+        const assess = await fetchAssessmentById(assessmentId)
+        if (!assess || assess.assessment_type !== 'module' || assess.module_id !== moduleId) {
+          throw new Error('Quiz nao encontrado para este modulo.')
+        }
+
+        setAssessment(assess)
+        const loadedQuestions = await fetchAssessmentQuestions(assess.id)
+        const loadedCaseStudies = await fetchAssessmentCaseStudies(assess.id, loadedQuestions)
+        setQuestions(loadedQuestions)
+        setCaseStudies(loadedCaseStudies)
 
         return
       }
@@ -222,7 +234,7 @@ export function AssessmentBuilderPanel() {
     } finally {
       setIsLoading(false)
     }
-  }, [courseId, isFinal, moduleId])
+  }, [assessmentId, courseId, isFinal, isNewModuleAssessment, moduleId])
 
   useEffect(() => {
     void loadData()
@@ -260,13 +272,14 @@ export function AssessmentBuilderPanel() {
       }
 
       if (!isFinal && moduleId) {
-        await createModuleAssessment(courseId, moduleId, initialData, user.id)
+        const createdAssessment = await createModuleAssessment(courseId, moduleId, initialData, user.id)
+        await refreshTree()
+        navigate(`/admin/cursos/${courseId}/builder/modulos/${moduleId}/avaliacoes/${createdAssessment.id}`)
       } else {
         await createFinalAssessment(courseId, initialData, user.id)
+        await loadData()
+        await refreshTree()
       }
-
-      await loadData()
-      await refreshTree()
     } catch (createError) {
       setError(toErrorMessage(createError))
     } finally {
@@ -1070,7 +1083,11 @@ export function AssessmentBuilderPanel() {
         </div>
         <div className="space-y-2">
           <h2 className="text-2xl font-black text-slate-800">Nenhum Quiz Encontrado</h2>
-          <p className="text-slate-500">Este módulo ainda não possui uma avaliação configurada.</p>
+          <p className="text-slate-500">
+            {isFinal
+              ? 'A avaliação final ainda não foi criada.'
+              : 'Crie um novo quiz para este módulo.'}
+          </p>
         </div>
         <Button onClick={() => void handleCreateAssessment()} className="h-12 bg-blue-600 px-8 font-bold text-white shadow-lg ring-4 ring-blue-50 hover:bg-blue-700">
           Criar Quiz Agora

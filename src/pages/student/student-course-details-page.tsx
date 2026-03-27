@@ -397,7 +397,9 @@ export function StudentCourseDetailsPage() {
 
          <div className="space-y-8">
             {modules.map((module, mIdx) => {
-               const moduleAssessment = assessments.find(a => a.assessment_type === 'module' && a.module_id === module.id)
+               const moduleAssessments = assessments
+                 .filter((assessment) => assessment.assessment_type === 'module' && assessment.module_id === module.id)
+                 .sort((assessmentA, assessmentB) => assessmentA.title.localeCompare(assessmentB.title, 'pt-BR'))
                const isBlocked = module.state === 'blocked'
                const areAllModuleLessonsCompleted =
                  module.lessons.length > 0 && module.lessons.every((lesson) => lesson.is_completed)
@@ -472,13 +474,16 @@ export function StudentCourseDetailsPage() {
                                           </div>
                                        ))}
 
-                                    {moduleAssessment && (
-                                       <div className={`mt-6 p-6 rounded-[24px] border border-dashed transition-all ${
-                                          moduleQuizLockedByLessons ? 'bg-amber-50/40 border-amber-200' :
-                                          moduleAssessment.state === 'approved' ? 'bg-emerald-50/30 border-emerald-200' :
-                                          moduleAssessment.state === 'blocked' ? 'bg-slate-50/50 border-slate-200 opacity-60' :
-                                          'bg-blue-50/30 border-blue-200'
-                                       }`}>
+                                    {moduleAssessments.map((moduleAssessment) => (
+                                       <div
+                                          key={moduleAssessment.assessment_id}
+                                          className={`mt-6 p-6 rounded-[24px] border border-dashed transition-all ${
+                                             moduleQuizLockedByLessons ? 'bg-amber-50/40 border-amber-200' :
+                                             moduleAssessment.state === 'approved' ? 'bg-emerald-50/30 border-emerald-200' :
+                                             moduleAssessment.state === 'blocked' ? 'bg-slate-50/50 border-slate-200 opacity-60' :
+                                             'bg-blue-50/30 border-blue-200'
+                                          }`}
+                                       >
                                           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
                                              <div className="space-y-1">
                                                 <div className="flex items-center gap-2">
@@ -496,25 +501,26 @@ export function StudentCourseDetailsPage() {
                                                    <span className="text-sm font-black text-slate-800 uppercase tracking-tight">{moduleAssessment.title}</span>
                                                 </div>
                                                 <p className={`text-xs font-bold ${
-                                                    moduleQuizLockedByLessons ? 'text-amber-600' :
-                                                    moduleAssessment.state === 'approved' ? 'text-emerald-600' : 
-                                                    moduleAssessment.state === 'failed_limit' ? 'text-rose-600' : 'text-slate-400'
-                                                 }`}>
-                                                    {moduleQuizLockedByLessons ? 'Conclua todas as aulas do módulo para liberar o quiz' : moduleAssessment.state === 'approved' ? 'Aprovado ✅' :
-                                                     moduleAssessment.state === 'failed_limit' ? 'Tentativas Esgotadas' : 'Avaliação Obrigatória do Módulo'}</p>
+                                                   moduleQuizLockedByLessons ? 'text-amber-600' :
+                                                   moduleAssessment.state === 'approved' ? 'text-emerald-600' :
+                                                   moduleAssessment.state === 'failed_limit' ? 'text-rose-600' : 'text-slate-400'
+                                                }`}>
+                                                   {moduleQuizLockedByLessons ? 'Conclua todas as aulas do módulo para liberar o quiz' : moduleAssessment.state === 'approved' ? 'Aprovado ✅' :
+                                                    moduleAssessment.state === 'failed_limit' ? 'Tentativas Esgotadas' : 'Avaliação Obrigatória do Módulo'}
+                                                </p>
                                              </div>
                                              <Button size="sm" asChild disabled={moduleAssessment.state === 'blocked' || moduleQuizLockedByLessons} className={`h-11 px-6 rounded-xl font-black ${
-                                                 moduleAssessment.state === 'approved' ? 'bg-white text-emerald-600 border-emerald-200 shadow-sm' : 
-                                                 moduleAssessment.state === 'failed_limit' ? 'bg-white text-rose-600 border-rose-200 shadow-sm' : 'bg-blue-600'
-                                              }`}>
-                                                 <Link to={`/aluno/cursos/${courseId}/player/avaliacoes/${moduleAssessment.assessment_id}`}>
-                                                    {moduleQuizLockedByLessons ? 'Conclua todas as aulas do módulo para liberar o quiz' : moduleAssessment.state === 'approved' ? 'Refazer Quiz' : 
-                                                     moduleAssessment.state === 'failed_limit' ? 'Ver Status' : 'Iniciar Quiz'}
-                                                 </Link>
-                                              </Button>
+                                                moduleAssessment.state === 'approved' ? 'bg-white text-emerald-600 border-emerald-200 shadow-sm' :
+                                                moduleAssessment.state === 'failed_limit' ? 'bg-white text-rose-600 border-rose-200 shadow-sm' : 'bg-blue-600'
+                                             }`}>
+                                                <Link to={`/aluno/cursos/${courseId}/player/avaliacoes/${moduleAssessment.assessment_id}`}>
+                                                   {moduleQuizLockedByLessons ? 'Conclua todas as aulas do módulo para liberar o quiz' : moduleAssessment.state === 'approved' ? 'Refazer Quiz' :
+                                                    moduleAssessment.state === 'failed_limit' ? 'Ver Status' : 'Iniciar Quiz'}
+                                                </Link>
+                                             </Button>
                                           </div>
                                        </div>
-                                    )}
+                                    ))}
                                  </div>
                               ) : (
                                  <div className="flex items-center gap-4 bg-slate-50 p-6 rounded-[24px] border border-slate-100 text-slate-400">

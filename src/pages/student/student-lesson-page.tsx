@@ -124,7 +124,12 @@ export function StudentLessonPage() {
     currentModule.lessons[currentModule.lessons.length - 1]?.id === currentLesson?.id,
   )
   const nextModuleQuiz = currentModule
-    ? assessments.find((assessment) => assessment.assessment_type === 'module' && assessment.module_id === currentModule.id) ?? null
+    ? (
+      assessments
+        .filter((assessment) => assessment.assessment_type === 'module' && assessment.module_id === currentModule.id)
+        .sort((assessmentA, assessmentB) => assessmentA.title.localeCompare(assessmentB.title, 'pt-BR'))
+        [0] ?? null
+    )
     : null
 
   const nextAction = isLastLessonOfModule && nextModuleQuiz

@@ -1186,7 +1186,7 @@ export function StudentAssessmentExecutionPage() {
             disabled={currentQuestionIndex === 0}
             onClick={() => setCurrentQuestionIndex((index) => index - 1)}
           >
-            Questao Anterior
+            QUESTÃO ANTERIOR
           </Button>
 
           {isPerfectApprovedReview ? (
@@ -1205,7 +1205,7 @@ export function StudentAssessmentExecutionPage() {
                 disabled={!allQuestionsAnswered || isSubmitting}
                 onClick={handleSubmit}
               >
-                {isSubmitting ? 'ENVIANDO RESPOSTAS...' : 'FINALIZAR AVALIACAO'}
+                {isSubmitting ? 'ENVIANDO RESPOSTAS...' : 'FINALIZAR AVALIAÇÃO'}
               </Button>
             </div>
           ) : (
