@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 
 import { assessmentInteractionContentSchema } from '@/features/assessments/gamified'
 import type {
+  AssessmentInteractionToken,
   DragDropLabelingInteractionContent,
   FillInTheBlanksInteractionContent,
 } from '@/types/content'
@@ -26,7 +27,7 @@ export function GamifiedInteraction({
   if (!parsed.success) {
     return (
       <div className="rounded-[32px] border border-rose-200 bg-rose-50 px-6 py-5 text-sm font-semibold text-rose-700">
-        A interação desta questão está inválida ou incompleta.
+        A interacao desta questao esta invalida ou incompleta.
       </div>
     )
   }
@@ -117,7 +118,7 @@ function DragDropLabelingView({
               />
             ) : (
               <div className="flex h-full items-center justify-center bg-slate-100 text-sm font-bold text-slate-400">
-                Imagem do exercício não disponível
+                Imagem do exercicio nao disponivel
               </div>
             )}
 
@@ -190,18 +191,18 @@ function DragDropLabelingView({
           <div>
             <p className="text-[10px] font-black uppercase tracking-[0.28em] text-slate-400">Banco de Itens</p>
             <p className="mt-2 text-sm font-semibold text-slate-600">
-              Arraste ou toque em um item e depois escolha a área correspondente.
+              Arraste ou toque em um item e depois escolha a area correspondente.
             </p>
           </div>
-          {!readOnly && (
+          {!readOnly ? (
             <button
               type="button"
               onClick={clearAllAssignments}
               className="rounded-xl border border-slate-200 px-3 py-2 text-[11px] font-black uppercase tracking-wider text-slate-500 hover:bg-slate-50"
             >
-              Limpar seleção
+              Limpar selecao
             </button>
-          )}
+          ) : null}
         </div>
 
         <div className="mt-5 grid gap-3">
@@ -234,7 +235,7 @@ function DragDropLabelingView({
           })}
         </div>
 
-        {availableTokens.length < content.tokens.length && (
+        {availableTokens.length < content.tokens.length ? (
           <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
             <p className="text-[10px] font-black uppercase tracking-[0.28em] text-slate-400">Itens posicionados</p>
             <div className="mt-3 flex flex-wrap gap-2">
@@ -253,7 +254,7 @@ function DragDropLabelingView({
                 ))}
             </div>
           </div>
-        )}
+        ) : null}
       </div>
     </div>
   )
@@ -270,18 +271,93 @@ function FillInTheBlanksView({
   onChange: (slotId: string, tokenId: string | null) => void
   readOnly: boolean
 }) {
-  const [armedTokenId, setArmedTokenId] = useState<string | null>(null)
+  const [armedSelection, setArmedSelection] = useState<{ tokenId: string; groupId: string } | null>(null)
   const tokenById = useMemo(
     () => new Map(content.tokens.map((token) => [token.id, token])),
     [content.tokens],
   )
 
-  const assignedTokenIds = new Set(Object.values(value).filter((tokenId): tokenId is string => Boolean(tokenId)))
+  const groups = useMemo(() => {
+    if (content.editor_groups?.length) {
+      return content.editor_groups.map((group) => {
+        const segments: Array<
+          | { type: 'text'; text: string }
+          | { type: 'blank'; id: string; placeholder?: string | null }
+        > = []
+        const tokens: AssessmentInteractionToken[] = []
+        const seenTokenIds = new Set<string>()
 
-  function handleBlankClick(blankId: string) {
-    if (readOnly || !armedTokenId) return
-    onChange(blankId, armedTokenId)
-    setArmedTokenId(null)
+        if (group.leading_text) {
+          segments.push({ type: 'text', text: group.leading_text })
+        }
+
+        for (const blank of group.blanks) {
+          segments.push({
+            type: 'blank',
+            id: blank.blank_id,
+            placeholder: blank.placeholder,
+          })
+
+          if (!seenTokenIds.has(blank.token_id)) {
+            tokens.push({
+              id: blank.token_id,
+              label: tokenById.get(blank.token_id)?.label ?? blank.answer_text,
+            })
+            seenTokenIds.add(blank.token_id)
+          }
+
+          if (blank.trailing_text) {
+            segments.push({ type: 'text', text: blank.trailing_text })
+          }
+        }
+
+        for (const extraToken of group.extra_tokens ?? []) {
+          if (seenTokenIds.has(extraToken.id)) continue
+          tokens.push({
+            id: extraToken.id,
+            label: tokenById.get(extraToken.id)?.label ?? extraToken.label,
+          })
+          seenTokenIds.add(extraToken.id)
+        }
+
+        return {
+          id: group.id,
+          segments,
+          tokens,
+          blankIds: group.blanks.map((blank) => blank.blank_id),
+        }
+      })
+    }
+
+    return [
+      {
+        id: 'group-1',
+        segments: content.segments,
+        tokens: content.tokens,
+        blankIds: content.segments
+          .filter((segment): segment is Extract<FillInTheBlanksInteractionContent['segments'][number], { type: 'blank' }> => segment.type === 'blank')
+          .map((segment) => segment.id),
+      },
+    ]
+  }, [content.editor_groups, content.segments, content.tokens, tokenById])
+
+  function handleBlankClick(groupId: string, blankId: string) {
+    if (readOnly || !armedSelection || armedSelection.groupId !== groupId) return
+    onChange(blankId, armedSelection.tokenId)
+    setArmedSelection(null)
+  }
+
+  function clearGroupAssignments(groupId: string, blankIds: string[]) {
+    if (readOnly) return
+    if (armedSelection?.groupId === groupId) {
+      setArmedSelection(null)
+    }
+
+    for (const blankId of blankIds) {
+      if (value[blankId]) {
+        onChange(blankId, null)
+      }
+    }
   }
 
   return (
@@ -291,119 +367,145 @@ function FillInTheBlanksView({
         <p className="mt-2 text-sm font-semibold text-slate-600">{content.instruction}</p>
       </div>
 
-      <div className="grid gap-6 p-6 xl:grid-cols-[minmax(0,1.75fr)_320px]">
-        <div className="rounded-[30px] border border-slate-200 bg-[#fcfdff] px-6 py-6 text-lg leading-[2.2] text-slate-800">
-          {content.segments.map((segment, index) => {
-            if (segment.type === 'text') {
-              return (
-                <span key={`text-${index}`} className="whitespace-pre-wrap">
-                  {segment.text}
+      <div className="space-y-6 p-6">
+        {groups.map((group, groupIndex) => {
+          const assignedTokenIds = new Set(
+            group.blankIds
+              .map((blankId) => value[blankId])
+              .filter((tokenId): tokenId is string => Boolean(tokenId)),
+          )
+          const availableTokens = group.tokens.filter((token) => !assignedTokenIds.has(token.id))
+          const isGroupArmed = armedSelection?.groupId === group.id
+
+          return (
+            <section key={group.id} className="rounded-[32px] border border-slate-200 bg-slate-50/50 p-5 shadow-sm">
+              <div className="mb-4 flex items-center gap-3">
+                <span className="rounded-full bg-white px-4 py-1.5 text-[10px] font-black uppercase tracking-[0.28em] text-cyan-700 shadow-sm">
+                  Pergunta {groupIndex + 1}
                 </span>
-              )
-            }
-
-            const assignedToken = value[segment.id] ? tokenById.get(value[segment.id] ?? '') : null
-            return (
-              <button
-                key={segment.id}
-                type="button"
-                disabled={readOnly}
-                onClick={() => handleBlankClick(segment.id)}
-                onDragOver={(event) => {
-                  if (!readOnly) event.preventDefault()
-                }}
-                onDrop={(event) => {
-                  if (readOnly) return
-                  event.preventDefault()
-                  const tokenId = event.dataTransfer.getData('text/plain')
-                  if (tokenId) {
-                    onChange(segment.id, tokenId)
-                    setArmedTokenId(null)
-                  }
-                }}
-                className={`mx-1 inline-flex min-w-[140px] items-center justify-center rounded-2xl border-2 px-3 py-1.5 align-middle text-base font-black transition-all ${
-                  assignedToken
-                    ? 'border-cyan-500 bg-cyan-500 text-white shadow-lg shadow-cyan-100'
-                    : armedTokenId
-                      ? 'border-cyan-400 bg-cyan-50 text-cyan-700'
-                      : 'border-slate-300 bg-slate-100 text-slate-400'
-                }`}
-              >
-                {assignedToken?.label ?? segment.placeholder ?? 'lacuna'}
-              </button>
-            )
-          })}
-        </div>
-
-        <div className="rounded-[28px] border border-slate-200 bg-slate-50/70 p-5">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <p className="text-[10px] font-black uppercase tracking-[0.28em] text-slate-400">Banco de Palavras</p>
-              <p className="mt-2 text-sm font-semibold text-slate-600">Arraste ou toque em um item e depois toque na lacuna.</p>
-            </div>
-            {!readOnly && (
-              <button
-                type="button"
-                onClick={() => setArmedTokenId(null)}
-                className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-[11px] font-black uppercase tracking-wider text-slate-500 hover:bg-slate-50"
-              >
-                Limpar seleção
-              </button>
-            )}
-          </div>
-
-          <div className="mt-5 flex flex-wrap gap-3">
-            {content.tokens.map((token) => {
-              const isAssigned = assignedTokenIds.has(token.id)
-              const isArmed = armedTokenId === token.id
-
-              return (
-                <button
-                  key={token.id}
-                  type="button"
-                  disabled={readOnly || isAssigned}
-                  draggable={!readOnly && !isAssigned}
-                  onDragStart={(event) => event.dataTransfer.setData('text/plain', token.id)}
-                  onClick={() => {
-                    if (readOnly || isAssigned) return
-                    setArmedTokenId((current) => current === token.id ? null : token.id)
-                  }}
-                  className={`rounded-2xl border px-4 py-2.5 text-sm font-black transition-all ${
-                    isAssigned
-                      ? 'cursor-not-allowed border-slate-200 bg-slate-100 text-slate-300'
-                      : isArmed
-                        ? 'border-cyan-500 bg-cyan-50 text-cyan-800 shadow-lg shadow-cyan-100'
-                        : 'border-white bg-white text-slate-700 hover:border-cyan-200 hover:bg-cyan-50/60'
-                  }`}
-                >
-                  {token.label}
-                </button>
-              )
-            })}
-          </div>
-
-          {Object.values(value).some(Boolean) && (
-            <div className="mt-6 rounded-2xl border border-white bg-white px-4 py-4">
-              <p className="text-[10px] font-black uppercase tracking-[0.28em] text-slate-400">Itens usados</p>
-              <div className="mt-3 flex flex-wrap gap-2">
-                {content.segments
-                  .filter((segment): segment is Extract<FillInTheBlanksInteractionContent['segments'][number], { type: 'blank' }> => segment.type === 'blank')
-                  .filter((segment) => Boolean(value[segment.id]))
-                  .map((segment) => (
-                    <button
-                      key={segment.id}
-                      type="button"
-                      disabled={readOnly}
-                      onClick={() => !readOnly && onChange(segment.id, null)}
-                      className="rounded-full border border-cyan-200 bg-cyan-50 px-3 py-1.5 text-xs font-black text-cyan-700 hover:bg-cyan-100"
-                    >
-                      {tokenById.get(value[segment.id] ?? '')?.label ?? 'Item'}
-                    </button>
-                  ))}
               </div>
-            </div>
-          )}
-        </div>
+
+              <div className="grid gap-6 xl:grid-cols-[minmax(0,1.75fr)_320px]">
+                <div className="rounded-[30px] border border-slate-200 bg-[#fcfdff] px-6 py-6 text-lg leading-[2.2] text-slate-800">
+                  {group.segments.map((segment, index) => {
+                    if (segment.type === 'text') {
+                      return (
+                        <span key={`${group.id}-text-${index}`} className="whitespace-pre-wrap">
+                          {segment.text}
+                        </span>
+                      )
+                    }
+
+                    const assignedToken = value[segment.id] ? tokenById.get(value[segment.id] ?? '') : null
+                    return (
+                      <button
+                        key={segment.id}
+                        type="button"
+                        disabled={readOnly}
+                        onClick={() => handleBlankClick(group.id, segment.id)}
+                        onDragOver={(event) => {
+                          if (!readOnly) event.preventDefault()
+                        }}
+                        onDrop={(event) => {
+                          if (readOnly) return
+                          event.preventDefault()
+                          const tokenId = event.dataTransfer.getData('text/plain')
+                          if (!tokenId || !group.tokens.some((token) => token.id === tokenId)) {
+                            return
+                          }
+                          onChange(segment.id, tokenId)
+                          setArmedSelection(null)
+                        }}
+                        className={`mx-1 inline-flex min-w-[140px] items-center justify-center rounded-2xl border-2 px-3 py-1.5 align-middle text-base font-black transition-all ${
+                          assignedToken
+                            ? 'border-cyan-500 bg-cyan-500 text-white shadow-lg shadow-cyan-100'
+                            : isGroupArmed
+                              ? 'border-cyan-400 bg-cyan-50 text-cyan-700'
+                              : 'border-slate-300 bg-slate-100 text-slate-400'
+                        }`}
+                      >
+                        {assignedToken?.label ?? segment.placeholder ?? 'lacuna'}
+                      </button>
+                    )
+                  })}
+                </div>
+
+                <div className="rounded-[28px] border border-slate-200 bg-white p-5">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-[10px] font-black uppercase tracking-[0.28em] text-slate-400">Banco de Palavras</p>
+                      <p className="mt-2 text-sm font-semibold text-slate-600">Escolha um item desta pergunta e depois toque na lacuna correspondente.</p>
+                    </div>
+                    {!readOnly ? (
+                      <button
+                        type="button"
+                        onClick={() => clearGroupAssignments(group.id, group.blankIds)}
+                        className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-[11px] font-black uppercase tracking-wider text-slate-500 hover:bg-slate-50"
+                      >
+                        Limpar selecao
+                      </button>
+                    ) : null}
+                  </div>
+
+                  <div className="mt-5 flex flex-wrap gap-3">
+                    {group.tokens.map((token) => {
+                      const isAssigned = assignedTokenIds.has(token.id)
+                      const isArmed = armedSelection?.tokenId === token.id && armedSelection.groupId === group.id
+
+                      return (
+                        <button
+                          key={token.id}
+                          type="button"
+                          disabled={readOnly || isAssigned}
+                          draggable={!readOnly && !isAssigned}
+                          onDragStart={(event) => event.dataTransfer.setData('text/plain', token.id)}
+                          onClick={() => {
+                            if (readOnly || isAssigned) return
+                            setArmedSelection((current) => (
+                              current?.tokenId === token.id && current.groupId === group.id
+                                ? null
+                                : { tokenId: token.id, groupId: group.id }
+                            ))
+                          }}
+                          className={`rounded-2xl border px-4 py-2.5 text-sm font-black transition-all ${
+                            isAssigned
+                              ? 'cursor-not-allowed border-slate-200 bg-slate-100 text-slate-300'
+                              : isArmed
+                                ? 'border-cyan-500 bg-cyan-50 text-cyan-800 shadow-lg shadow-cyan-100'
+                                : 'border-slate-200 bg-slate-50 text-slate-700 hover:border-cyan-200 hover:bg-cyan-50/60'
+                          }`}
+                        >
+                          {token.label}
+                        </button>
+                      )
+                    })}
+                  </div>
+
+                  {availableTokens.length < group.tokens.length ? (
+                    <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
+                      <p className="text-[10px] font-black uppercase tracking-[0.28em] text-slate-400">Itens usados nesta pergunta</p>
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {group.blankIds
+                          .filter((blankId) => Boolean(value[blankId]))
+                          .map((blankId) => (
+                            <button
+                              key={blankId}
+                              type="button"
+                              disabled={readOnly}
+                              onClick={() => !readOnly && onChange(blankId, null)}
+                              className="rounded-full border border-cyan-200 bg-cyan-50 px-3 py-1.5 text-xs font-black text-cyan-700 hover:bg-cyan-100"
+                            >
+                              {tokenById.get(value[blankId] ?? '')?.label ?? 'Item'}
+                            </button>
+                          ))}
+                      </div>
+                    </div>
+                  ) : null}
+                </div>
+              </div>
+            </section>
+          )
+        })}
       </div>
     </div>
   )
