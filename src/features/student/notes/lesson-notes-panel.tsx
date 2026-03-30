@@ -154,7 +154,7 @@ export function LessonNotesPanel({
               ) : null}
             </div>
             <p className="mt-3 text-sm font-medium text-slate-500">
-              Registre insights, pontos de revisao e observacoes desta aula.
+              Registre insights, pontos de revisão e observações desta aula.
             </p>
           </div>
 
@@ -196,9 +196,9 @@ export function LessonNotesPanel({
                       ? 'Salvando anotacao automaticamente...'
                       : status === 'saved'
                         ? 'Anotacao salva automaticamente.'
-                        : draft.trim().length === 0
+                      : draft.trim().length === 0
                           ? 'Digite para criar sua anotacao. O salvamento acontece automaticamente.'
-                          : 'As alteracoes serao salvas automaticamente em instantes.'}
+                          : 'As alterações serão salvas automaticamente em instantes.'}
                   </p>
                   {error ? <p className="font-bold text-rose-600">{error}</p> : null}
                 </div>
