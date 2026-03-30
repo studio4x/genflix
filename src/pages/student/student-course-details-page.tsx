@@ -17,7 +17,8 @@ import {
 } from '@/features/student/assessments/api'
 import { fetchAdminCourseTree, type AdminCourseTree } from '@/features/admin/content/api'
 import { exportModuleToPdf } from '@/features/student/content/pdf-exporter'
-import type { Course, ModuleLearningState, StudentCourseModuleProgress } from '@/types/content'
+import { deleteLessonNote, fetchLessonNotes } from '@/features/student/notes/api'
+import type { Course, LessonNote, ModuleLearningState, StudentCourseModuleProgress } from '@/types/content'
 
 import type { StudentCourseStatus } from '@/features/student/courses/api'
 
@@ -43,6 +44,10 @@ export function StudentCourseDetailsPage() {
   const [courseStatus, setCourseStatus] = useState<StudentCourseStatus | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isSavingLessonId, setIsSavingLessonId] = useState<string | null>(null)
+  const [lessonNotes, setLessonNotes] = useState<LessonNote[]>([])
+  const [isLoadingNotes, setIsLoadingNotes] = useState(false)
+  const [deletingLessonNoteId, setDeletingLessonNoteId] = useState<string | null>(null)
+  const [notesError, setNotesError] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -197,6 +202,60 @@ export function StudentCourseDetailsPage() {
     }
   }
 
+  useEffect(() => {
+    let isMounted = true
+
+    async function loadLessonNotes() {
+      if (!user) return
+
+      const lessonIds = modules.flatMap((module) => module.lessons.map((lesson) => lesson.id))
+      if (lessonIds.length === 0) {
+        if (isMounted) {
+          setLessonNotes([])
+        }
+        return
+      }
+
+      setIsLoadingNotes(true)
+      setNotesError(null)
+      try {
+        const notes = await fetchLessonNotes(lessonIds)
+        if (isMounted) {
+          setLessonNotes(notes)
+        }
+      } catch (notesError) {
+        if (isMounted) {
+          setNotesError(toErrorMessage(notesError))
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoadingNotes(false)
+        }
+      }
+    }
+
+    void loadLessonNotes()
+    return () => { isMounted = false }
+  }, [modules, user])
+
+  async function handleDeleteLessonNote(lessonId: string) {
+    if (!user) return
+
+    setDeletingLessonNoteId(lessonId)
+    setNotesError(null)
+    try {
+      await deleteLessonNote({
+        user_id: user.id,
+        lesson_id: lessonId,
+      })
+      setLessonNotes((current) => current.filter((note) => note.lesson_id !== lessonId))
+    } catch (deleteError) {
+      setNotesError(toErrorMessage(deleteError))
+    } finally {
+      setDeletingLessonNoteId(null)
+    }
+  }
+
   if (isLoading) {
     return (
       <div className="flex min-h-[400px] flex-col items-center justify-center space-y-6">
@@ -244,6 +303,15 @@ export function StudentCourseDetailsPage() {
   const totalCompleted = modules.filter(m => m.state === 'completed').length
   const totalModules = modules.length
   const courseProgressPercent = totalModules === 0 ? 0 : Math.round((totalCompleted / totalModules) * 100)
+  const lessonMetaById = new Map(
+    modules.flatMap((module) => module.lessons.map((lesson) => [
+      lesson.id,
+      {
+        lessonTitle: lesson.title,
+        moduleTitle: module.title,
+      },
+    ] as const)),
+  )
 
   return (
     <div className="space-y-12 pb-24 animate-in fade-in duration-700">
@@ -536,6 +604,89 @@ export function StudentCourseDetailsPage() {
             })}
          </div>
       </div>
+
+      <section className="space-y-6">
+         <div className="flex items-center gap-4">
+            <h3 className="text-3xl font-black text-slate-900 tracking-tight">Minhas Anotações</h3>
+            <div className="h-px flex-1 bg-slate-100" />
+         </div>
+
+         <div className="rounded-[32px] border border-slate-100 bg-white p-6 shadow-sm sm:p-8">
+            {notesError ? (
+               <div className="rounded-[24px] border border-rose-100 bg-rose-50 px-6 py-6 text-sm font-medium text-rose-600">
+                  {notesError}
+               </div>
+            ) : isLoadingNotes ? (
+               <div className="rounded-[24px] border border-dashed border-slate-200 bg-slate-50 px-6 py-10 text-center text-sm font-medium text-slate-500">
+                  Carregando suas anotações...
+               </div>
+            ) : lessonNotes.length === 0 ? (
+               <div className="rounded-[24px] border border-dashed border-slate-200 bg-slate-50 px-6 py-10 text-center">
+                  <p className="text-sm font-medium text-slate-500">
+                     Você ainda não criou anotações neste curso. Abra uma aula e use o bloco de notas ao final da página.
+                  </p>
+               </div>
+            ) : (
+               <div className="grid gap-4">
+                  {lessonNotes.map((note) => {
+                     const lessonMeta = lessonMetaById.get(note.lesson_id)
+                     const updatedAt = new Intl.DateTimeFormat('pt-BR', {
+                        dateStyle: 'short',
+                        timeStyle: 'short',
+                     }).format(new Date(note.updated_at))
+
+                     return (
+                        <article
+                           key={note.id}
+                           className="rounded-[24px] border border-slate-100 bg-slate-50/70 p-5"
+                        >
+                           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                              <div className="min-w-0 flex-1">
+                                 <div className="flex flex-wrap items-center gap-2">
+                                    <span className="rounded-full border border-blue-100 bg-blue-50 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-blue-600">
+                                       {lessonMeta?.moduleTitle ?? 'Módulo'}
+                                    </span>
+                                    <span className="text-xs font-medium text-slate-500">
+                                       Atualizada em {updatedAt}
+                                    </span>
+                                 </div>
+
+                                 <h4 className="mt-3 text-lg font-black tracking-tight text-slate-900">
+                                    {lessonMeta?.lessonTitle ?? 'Aula'}
+                                 </h4>
+                                 <p className="mt-3 whitespace-pre-wrap text-sm font-medium leading-7 text-slate-600">
+                                    {note.note_text}
+                                 </p>
+                              </div>
+
+                              <div className="flex flex-wrap gap-3">
+                                 <Button
+                                    asChild
+                                    variant="outline"
+                                    className="rounded-xl border-slate-200 bg-white font-bold text-slate-700"
+                                 >
+                                    <Link to={`/aluno/cursos/${courseId}/player/aulas/${note.lesson_id}`}>
+                                       Abrir aula
+                                    </Link>
+                                 </Button>
+                                 <Button
+                                    type="button"
+                                    variant="outline"
+                                    disabled={deletingLessonNoteId === note.lesson_id}
+                                    onClick={() => void handleDeleteLessonNote(note.lesson_id)}
+                                    className="rounded-xl border-rose-200 bg-white font-bold text-rose-600 hover:bg-rose-50"
+                                 >
+                                    {deletingLessonNoteId === note.lesson_id ? 'Excluindo...' : 'Excluir nota'}
+                                 </Button>
+                              </div>
+                           </div>
+                        </article>
+                     )
+                  })}
+               </div>
+            )}
+         </div>
+      </section>
 
     </div>
   )

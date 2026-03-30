@@ -9,6 +9,7 @@ import { fetchMaterials, getSignedMaterialUrl } from '@/features/admin/content/a
 import type { StudentCourseAssessmentSummary } from '@/features/student/assessments/api'
 import { exportModuleToPdf } from '@/features/student/content/pdf-exporter'
 import { LessonAudioPlayer } from '@/features/student/lesson-audio/lesson-audio-player'
+import { LessonNotesPanel } from '@/features/student/notes/lesson-notes-panel'
 import {
   fetchStudentCourseContentWithProgress,
   setLessonCompletion,
@@ -325,6 +326,13 @@ export function StudentLessonPage() {
           )}
         </div>
       </div>
+
+      {user ? (
+        <LessonNotesPanel
+          lessonId={currentLesson.id}
+          userId={user.id}
+        />
+      ) : null}
 
       <div className="sticky bottom-4 z-20 mt-12 flex flex-col items-center justify-between gap-4 rounded-[32px] border-t border-slate-200 bg-white/80 p-6 pt-8 shadow-xl shadow-slate-200/50 backdrop-blur-md sm:flex-row">
         <button

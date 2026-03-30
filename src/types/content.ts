@@ -162,6 +162,15 @@ export interface LessonMaterial {
   created_at: string
 }
 
+export interface LessonNote {
+  id: string
+  user_id: string
+  lesson_id: string
+  note_text: string
+  created_at: string
+  updated_at: string
+}
+
 export interface AccessGroup {
   id: string
   name: string
