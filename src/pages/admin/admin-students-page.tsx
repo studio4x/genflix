@@ -24,7 +24,8 @@ interface PasswordResetFeedback extends ResetStudentPasswordResponse {
   copied: boolean
 }
 
-const STUDENTS_PER_PAGE = 10
+const DEFAULT_STUDENTS_PER_PAGE = 10
+const STUDENTS_PER_PAGE_OPTIONS = [10, 20, 50, 100]
 
 const initialForm: StudentFormState = {
   email: '',
@@ -64,6 +65,7 @@ export function AdminStudentsPage() {
   const [form, setForm] = useState<StudentFormState>(initialForm)
   const [students, setStudents] = useState<AdminStudentListItem[]>([])
   const [currentPage, setCurrentPage] = useState(1)
+  const [studentsPerPage, setStudentsPerPage] = useState(DEFAULT_STUDENTS_PER_PAGE)
   const [isLoadingStudents, setIsLoadingStudents] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -111,16 +113,16 @@ export function AdminStudentsPage() {
     )
   }, [students])
 
-  const totalPages = Math.max(1, Math.ceil(students.length / STUDENTS_PER_PAGE))
+  const totalPages = Math.max(1, Math.ceil(students.length / studentsPerPage))
 
   useEffect(() => {
     setCurrentPage((page) => Math.min(page, totalPages))
   }, [totalPages])
 
   const paginatedStudents = useMemo(() => {
-    const startIndex = (currentPage - 1) * STUDENTS_PER_PAGE
-    return students.slice(startIndex, startIndex + STUDENTS_PER_PAGE)
-  }, [currentPage, students])
+    const startIndex = (currentPage - 1) * studentsPerPage
+    return students.slice(startIndex, startIndex + studentsPerPage)
+  }, [currentPage, students, studentsPerPage])
 
   const pageButtons = useMemo(() => buildPagination(currentPage, totalPages), [currentPage, totalPages])
 
@@ -351,10 +353,28 @@ export function AdminStudentsPage() {
           <div>
             <h3 className="text-2xl font-black tracking-tight text-slate-900">Alunos cadastrados</h3>
             <p className="text-sm font-medium text-slate-500">
-              Visualizacao em lista com todas as informacoes do aluno. Maximo de 10 registros por pagina.
+              Visualizacao em lista com todas as informacoes do aluno. Escolha quantos registros deseja exibir por pagina.
             </p>
           </div>
           <div className="flex items-center gap-3">
+            <label className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-2 text-xs font-black uppercase tracking-[0.2em] text-slate-500">
+              <span>Por pagina</span>
+              <select
+                value={studentsPerPage}
+                onChange={(event) => {
+                  const nextPageSize = Number(event.target.value)
+                  setStudentsPerPage(nextPageSize)
+                  setCurrentPage(1)
+                }}
+                className="rounded-xl border border-slate-200 bg-slate-50 px-2 py-1 text-xs font-black text-slate-700 outline-none transition-colors focus:border-blue-300"
+              >
+                {STUDENTS_PER_PAGE_OPTIONS.map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </select>
+            </label>
             <div className="rounded-full bg-slate-100 px-4 py-2 text-xs font-black uppercase tracking-[0.2em] text-slate-500">
               {students.length} aluno(s)
             </div>
@@ -491,7 +511,7 @@ export function AdminStudentsPage() {
 
             <div className="flex flex-col gap-3 border-t border-slate-100 pt-4 sm:flex-row sm:items-center sm:justify-between">
               <p className="text-sm font-medium text-slate-500">
-                Exibindo {(currentPage - 1) * STUDENTS_PER_PAGE + 1} a {Math.min(currentPage * STUDENTS_PER_PAGE, students.length)} de {students.length} aluno(s)
+                Exibindo {(currentPage - 1) * studentsPerPage + 1} a {Math.min(currentPage * studentsPerPage, students.length)} de {students.length} aluno(s)
               </p>
               <div className="flex flex-wrap items-center gap-2">
                 <Button
