@@ -37,43 +37,61 @@ export function LoginPage() {
 
   return (
     <AuthShell
-      title="Entrar"
-      subtitle="Acesse sua conta para entrar na plataforma LMS."
+      title="Portal de Acesso"
+      subtitle="Entre com sua conta para acessar a plataforma de cursos da HomeCare Match."
     >
-      <form className="space-y-4" onSubmit={handleSubmit}>
+      <form className="space-y-5" onSubmit={handleSubmit}>
         <label className="block space-y-1">
-          <span className="text-sm text-slate-700">E-mail</span>
+          <span className="text-sm font-bold text-slate-800">E-mail</span>
           <input
-            className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500"
+            className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-base text-slate-900 outline-none transition focus:border-[#1473ff] focus:bg-white focus:ring-4 focus:ring-blue-100"
             type="email"
             value={email}
             onChange={(event) => setEmail(event.target.value)}
+            placeholder="seu@email.com"
+            autoComplete="email"
             required
           />
         </label>
 
         <label className="block space-y-1">
-          <span className="text-sm text-slate-700">Senha</span>
+          <div className="flex items-center justify-between gap-4">
+            <span className="text-sm font-bold text-slate-800">Senha</span>
+            <Link
+              className="text-sm font-medium text-[#1473ff] transition-colors hover:text-[#1067e6]"
+              to="/recuperar-senha"
+            >
+              Esqueceu a senha?
+            </Link>
+          </div>
           <input
-            className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500"
+            className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-base text-slate-900 outline-none transition focus:border-[#1473ff] focus:bg-white focus:ring-4 focus:ring-blue-100"
             type="password"
             value={password}
             onChange={(event) => setPassword(event.target.value)}
+            placeholder="Digite sua senha"
+            autoComplete="current-password"
             required
           />
         </label>
 
-        {error ? <p className="text-sm text-red-600">{error}</p> : null}
+        {error ? (
+          <p className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700">
+            {error}
+          </p>
+        ) : null}
 
-        <Button className="w-full" type="submit" disabled={isSubmitting}>
+        <Button
+          className="h-14 w-full rounded-2xl bg-[#1473ff] text-base font-black text-white shadow-[0_16px_35px_rgba(20,115,255,0.24)] hover:bg-[#1067e6]"
+          type="submit"
+          disabled={isSubmitting}
+        >
           {isSubmitting ? 'Entrando...' : 'Entrar'}
         </Button>
       </form>
 
-      <div className="mt-4 text-sm text-slate-600">
-        <Link className="text-slate-900 underline" to="/recuperar-senha">
-          Esqueci minha senha
-        </Link>
+      <div className="mt-8 text-center text-sm font-medium text-slate-500">
+        Acesso exclusivo para profissionais cadastrados na HomeCare Match.
       </div>
     </AuthShell>
   )
