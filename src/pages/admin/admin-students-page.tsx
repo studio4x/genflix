@@ -35,12 +35,12 @@ const initialForm: StudentFormState = {
 
 function formatDateTime(value: string) {
   if (!value) {
-    return 'Nao informado'
+    return 'Não informado'
   }
 
   const parsed = new Date(value)
   if (Number.isNaN(parsed.getTime())) {
-    return 'Nao informado'
+    return 'Não informado'
   }
 
   return new Intl.DateTimeFormat('pt-BR', {
@@ -79,7 +79,7 @@ export function AdminStudentsPage() {
       if (!session) {
         setStudents([])
         setIsLoadingStudents(false)
-        setListError('Sessao expirada. Faca login novamente.')
+        setListError('Sessão expirada. Faça login novamente.')
         return
       }
 
@@ -128,7 +128,7 @@ export function AdminStudentsPage() {
 
   async function reloadStudents() {
     if (!session) {
-      setListError('Sessao expirada. Faca login novamente.')
+      setListError('Sessão expirada. Faça login novamente.')
       return
     }
 
@@ -147,7 +147,7 @@ export function AdminStudentsPage() {
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (!session) {
-      setError('Sessao expirada. Faca login novamente.')
+      setError('Sessão expirada. Faça login novamente.')
       return
     }
 
@@ -188,12 +188,12 @@ export function AdminStudentsPage() {
 
   async function handleResetStudentPassword(student: AdminStudentListItem) {
     if (!session) {
-      setListError('Sessao expirada. Faca login novamente.')
+      setListError('Sessão expirada. Faça login novamente.')
       return
     }
 
     const shouldContinue = window.confirm(
-      `Redefinir a senha de ${student.full_name?.trim() || student.email || 'este aluno'}? Uma nova senha temporaria sera gerada e a senha anterior deixara de funcionar.`,
+      `Redefinir a senha de ${student.full_name?.trim() || student.email || 'este aluno'}? Uma nova senha temporária será gerada e a senha anterior deixará de funcionar.`,
     )
 
     if (!shouldContinue) {
@@ -222,16 +222,16 @@ export function AdminStudentsPage() {
       await navigator.clipboard.writeText(passwordResetFeedback.temporary_password)
       setPasswordResetFeedback((previous) => (previous ? { ...previous, copied: true } : previous))
     } catch {
-      setListError('Nao foi possivel copiar a senha automaticamente. Copie manualmente.')
+      setListError('Não foi possível copiar a senha automaticamente. Copie manualmente.')
     }
   }
 
   return (
     <div className="space-y-8 pb-10">
       <header className="flex flex-col gap-2 border-b border-slate-100 pb-6">
-        <h2 className="text-3xl font-black tracking-tight text-slate-900">Gestao de Alunos</h2>
+        <h2 className="text-3xl font-black tracking-tight text-slate-900">Gestão de Alunos</h2>
         <p className="max-w-3xl text-sm font-medium text-slate-500 sm:text-base">
-          Cadastre novos alunos e acompanhe a base em uma listagem paginada, com metricas de matricula e conclusao por conta.
+          Cadastre novos alunos e acompanhe a base em uma listagem paginada, com métricas de matrícula e conclusão por conta.
         </p>
       </header>
 
@@ -309,7 +309,7 @@ export function AdminStudentsPage() {
                 <input
                   className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 shadow-sm outline-none transition-all placeholder:text-slate-400 focus:border-blue-300 focus:ring-4 focus:ring-blue-100"
                   type="text"
-                  placeholder="Ex: Joao da Silva"
+                  placeholder="Ex: João da Silva"
                   value={form.fullName}
                   onChange={(event) => setForm((previous) => ({ ...previous, fullName: event.target.value }))}
                   maxLength={120}
@@ -353,12 +353,12 @@ export function AdminStudentsPage() {
           <div>
             <h3 className="text-2xl font-black tracking-tight text-slate-900">Alunos cadastrados</h3>
             <p className="text-sm font-medium text-slate-500">
-              Visualizacao em lista com todas as informacoes do aluno. Escolha quantos registros deseja exibir por pagina.
+              Visualização em lista com todas as informações do aluno. Escolha quantos registros deseja exibir por página.
             </p>
           </div>
           <div className="flex items-center gap-3">
             <label className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-2 text-xs font-black uppercase tracking-[0.2em] text-slate-500">
-              <span>Por pagina</span>
+              <span>Por página</span>
               <select
                 value={studentsPerPage}
                 onChange={(event) => {
@@ -394,10 +394,10 @@ export function AdminStudentsPage() {
           <div className="rounded-[28px] border border-amber-200 bg-amber-50 p-5 shadow-sm">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
               <div className="space-y-2">
-                <p className="text-[10px] font-black uppercase tracking-[0.24em] text-amber-600">Nova senha temporaria</p>
+                <p className="text-[10px] font-black uppercase tracking-[0.24em] text-amber-600">Nova senha temporária</p>
                 <h4 className="text-xl font-black tracking-tight text-amber-950">Senha redefinida com sucesso</h4>
                 <p className="text-sm font-medium text-amber-800">
-                  Use esta senha para o aluno <span className="font-black">{passwordResetFeedback.email}</span>. Ao entrar, ele ja pode trocar a senha na conta.
+                  Use esta senha para o aluno <span className="font-black">{passwordResetFeedback.email}</span>. Ao entrar, ele já pode trocar a senha na conta.
                 </p>
               </div>
               <Button
@@ -458,7 +458,7 @@ export function AdminStudentsPage() {
                             <p className="text-sm font-black text-slate-900">
                               {student.full_name?.trim() || 'Aluno sem nome informado'}
                             </p>
-                            <p className="mt-1 text-sm font-medium text-slate-600">{student.email || 'E-mail nao informado'}</p>
+                            <p className="mt-1 text-sm font-medium text-slate-600">{student.email || 'E-mail não informado'}</p>
                           </div>
                         </td>
                         <td className="px-4 py-4">

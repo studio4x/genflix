@@ -28,7 +28,7 @@ function formatCourseWorkload(minutes: number) {
 
 function sanitizeCourseDescription(description: string | null) {
   if (!description) {
-    return 'Treinamento disponivel para fortalecer sua atuacao profissional dentro do ecossistema HomeCare Match.'
+    return 'Treinamento disponível para fortalecer sua atuação profissional dentro do ecossistema HomeCare Match.'
   }
 
   return description
@@ -115,7 +115,7 @@ export function PublicHomePage() {
 
             <nav className="hidden items-center gap-9 text-[15px] font-medium text-slate-700 lg:flex">
               {[
-                { label: 'Inicio', href: '#inicio' },
+                { label: 'Início', href: '#inicio' },
                 { label: 'Como Funciona', href: '#como-funciona' },
                 { label: 'Cursos', href: '#cursos' },
                 { label: 'Acesso', href: '#acesso' },
@@ -161,7 +161,7 @@ export function PublicHomePage() {
           <div className="mx-auto flex max-w-[980px] flex-col items-center pb-4 pt-16 text-center sm:pt-20 lg:pt-24">
             <div className="inline-flex items-center gap-3 rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-medium text-slate-700 shadow-sm">
               <span className="h-2.5 w-2.5 rounded-full bg-[#1473ff]" />
-              Home Care Match Academy para profissionais da area da saude
+              Home Care Match Academy para profissionais da área da saúde
             </div>
 
             <h1 className="mt-8 max-w-[980px] text-5xl font-black leading-[0.96] tracking-tight text-slate-900 md:text-6xl lg:text-[4.7rem]">
@@ -171,18 +171,18 @@ export function PublicHomePage() {
             <div className="mt-8 max-w-[860px] space-y-4 text-xl font-medium leading-9 text-slate-600">
               <p>
                 A plataforma de cursos da HomeCare Match concentra treinamentos para profissionais cadastrados na rede,
-                com aulas, avaliacoes e trilhas de desenvolvimento ligadas a rotina real do atendimento domiciliar.
+                com aulas, avaliações e trilhas de desenvolvimento ligadas à rotina real do atendimento domiciliar.
               </p>
               <p>
-                Estude no seu ritmo, acompanhe seu progresso e avance com mais seguranca dentro do ecossistema HomeCare Match.
+                Estude no seu ritmo, acompanhe seu progresso e avance com mais segurança dentro do ecossistema HomeCare Match.
               </p>
             </div>
 
             <div className="mt-10 grid w-full max-w-[760px] gap-x-12 gap-y-5 text-left text-[15px] font-medium text-slate-700 sm:grid-cols-2">
               {[
-                'Cursos e avaliacoes liberados conforme sua jornada profissional',
-                'Conteudo alinhado a operacoes, protocolos e boas praticas',
-                'Progresso, revisoes e anotacoes dentro da propria plataforma',
+                'Cursos e avaliações liberados conforme sua jornada profissional',
+                'Conteúdo alinhado a operações, protocolos e boas práticas',
+                'Progresso, revisões e anotações dentro da própria plataforma',
                 'Acesso exclusivo para profissionais cadastrados na HomeCare Match',
               ].map((item) => (
                 <div key={item} className="flex items-start gap-3">
@@ -219,7 +219,7 @@ export function PublicHomePage() {
             </div>
 
             <p className="mt-4 text-sm font-medium text-slate-500">
-              Explore os cursos disponiveis e descubra como a Academy funciona para a rede HomeCare Match.
+              Explore os cursos disponíveis e descubra como a Academy funciona para a rede HomeCare Match.
             </p>
 
             <div className="mt-12 grid w-full gap-4 sm:grid-cols-3">
@@ -247,26 +247,26 @@ export function PublicHomePage() {
               Contexto institucional
             </div>
             <h2 className="text-3xl font-black tracking-tight text-slate-900 md:text-4xl">
-              A Academy existe para apoiar a atuacao pratica do profissional dentro da HomeCare Match.
+              A Academy existe para apoiar a atuação prática do profissional dentro da HomeCare Match.
             </h2>
           </div>
           <div className="grid gap-4 md:grid-cols-2">
             {[
               {
                 title: 'Plataforma principal',
-                description: 'A HomeCare Match conecta profissionais da saude as melhores oportunidades em home care e organiza a relacao com o ecossistema da assistencia domiciliar.',
+                description: 'A HomeCare Match conecta profissionais da saúde às melhores oportunidades em home care e organiza a relação com o ecossistema da assistência domiciliar.',
               },
               {
                 title: 'Plataforma de cursos',
-                description: 'A Academy concentra capacitacao, padronizacao operacional, revisao tecnica e atualizacao profissional para os usuarios cadastrados.',
+                description: 'A Academy concentra capacitação, padronização operacional, revisão técnica e atualização profissional para os usuários cadastrados.',
               },
               {
                 title: 'Acesso controlado',
-                description: 'Os cursos nao sao de acesso aberto. O conteudo e direcionado aos profissionais que ja fazem parte da rede HomeCare Match.',
+                description: 'Os cursos não são de acesso aberto. O conteúdo é direcionado aos profissionais que já fazem parte da rede HomeCare Match.',
               },
               {
-                title: 'Aprendizado aplicavel',
-                description: 'O foco e transformar treinamento em pratica: aulas, avaliacoes, progresso por trilha e materiais complementares dentro da rotina do profissional.',
+                title: 'Aprendizado aplicável',
+                description: 'O foco é transformar treinamento em prática: aulas, avaliações, progresso por trilha e materiais complementares dentro da rotina do profissional.',
               },
             ].map((item) => (
               <article
@@ -282,11 +282,11 @@ export function PublicHomePage() {
 
         <section id="cursos" className="space-y-6">
           <div className="flex items-center gap-4">
-            <h2 className="text-3xl font-black tracking-tight text-slate-900">Cursos disponiveis</h2>
+            <h2 className="text-3xl font-black tracking-tight text-slate-900">Cursos disponíveis</h2>
             <div className="h-px flex-1 bg-slate-200" />
           </div>
           <p className="max-w-3xl text-base font-medium leading-relaxed text-slate-500">
-            Esta vitrine apresenta os cursos publicados na plataforma. Para acessar qualquer conteudo, e necessario ser profissional cadastrado na HomeCare Match e possuir liberacao adequada.
+            Esta vitrine apresenta os cursos publicados na plataforma. Para acessar qualquer conteúdo, é necessário ser profissional cadastrado na HomeCare Match e possuir liberação adequada.
           </p>
 
           {coursesError ? (
@@ -307,7 +307,7 @@ export function PublicHomePage() {
             <div className="rounded-[32px] border border-dashed border-slate-200 bg-white p-12 text-center">
               <p className="text-lg font-black tracking-tight text-slate-900">Nenhum curso publicado neste momento.</p>
               <p className="mt-3 text-sm font-medium text-slate-500">
-                Quando novos treinamentos forem publicados, eles aparecerao aqui para consulta.
+                Quando novos treinamentos forem publicados, eles aparecerão aqui para consulta.
               </p>
             </div>
           ) : null}
@@ -339,7 +339,7 @@ export function PublicHomePage() {
                   </div>
                   <div className="absolute inset-x-0 bottom-0 p-5">
                     <div className="inline-flex items-center gap-2 rounded-full border border-cyan-300/30 bg-cyan-300/15 px-3 py-1 text-[10px] font-black uppercase tracking-[0.24em] text-cyan-100">
-                      Disponivel para profissionais cadastrados
+                      Disponível para profissionais cadastrados
                     </div>
                   </div>
                 </div>
@@ -358,7 +358,7 @@ export function PublicHomePage() {
                       HomeCare Match Academy
                     </div>
                     <span className="text-sm font-black text-blue-700">
-                      Ver condicoes de acesso
+                      Ver condições de acesso
                     </span>
                   </div>
                 </div>
@@ -374,10 +374,10 @@ export function PublicHomePage() {
                 Quero acessar os cursos
               </div>
               <h2 className="text-3xl font-black tracking-tight md:text-4xl">
-                O acesso a Academy e liberado para profissionais cadastrados na HomeCare Match.
+                O acesso à Academy é liberado para profissionais cadastrados na HomeCare Match.
               </h2>
               <p className="max-w-3xl text-base font-medium leading-8 text-white/72">
-                Se voce ainda nao faz parte da plataforma principal, comece por la. Depois do cadastro e da liberacao adequada, os cursos poderao ser disponibilizados em sua jornada profissional.
+                Se você ainda não faz parte da plataforma principal, comece por lá. Depois do cadastro e da liberação adequada, os cursos poderão ser disponibilizados em sua jornada profissional.
               </p>
             </div>
 
@@ -395,7 +395,7 @@ export function PublicHomePage() {
                 variant="outline"
                 className="h-14 rounded-2xl border-white/12 bg-white/5 px-8 font-black text-white hover:bg-white/10"
               >
-                <Link to="/login">Ja tenho acesso</Link>
+                <Link to="/login">Já tenho acesso</Link>
               </Button>
             </div>
           </div>
@@ -430,18 +430,18 @@ export function PublicHomePage() {
             <div className="space-y-5 px-6 py-6 sm:px-8 sm:py-8">
               <div className="rounded-[24px] border border-amber-200 bg-amber-50 px-5 py-4">
                 <p className="text-sm font-bold leading-7 text-amber-900">
-                  Este curso esta disponivel somente para profissionais cadastrados na plataforma HomeCare Match.
+                  Este curso está disponível somente para profissionais cadastrados na plataforma HomeCare Match.
                 </p>
               </div>
 
               <p className="text-sm font-medium leading-7 text-slate-600">
-                Para acessar os conteudos da Academy, e necessario fazer parte da base de profissionais da HomeCare Match e possuir a liberacao correspondente para a trilha de treinamento.
+                Para acessar os conteúdos da Academy, é necessário fazer parte da base de profissionais da HomeCare Match e possuir a liberação correspondente para a trilha de treinamento.
               </p>
 
               <div className="rounded-[24px] border border-slate-100 bg-slate-50 px-5 py-4">
-                <p className="text-[10px] font-black uppercase tracking-[0.24em] text-slate-400">Proximo passo</p>
+                <p className="text-[10px] font-black uppercase tracking-[0.24em] text-slate-400">Próximo passo</p>
                 <p className="mt-2 text-sm font-medium leading-7 text-slate-600">
-                  Se voce ainda nao tem cadastro, acesse a HomeCare Match para conhecer a plataforma principal e iniciar seu processo.
+                  Se você ainda não tem cadastro, acesse a HomeCare Match para conhecer a plataforma principal e iniciar seu processo.
                 </p>
               </div>
             </div>

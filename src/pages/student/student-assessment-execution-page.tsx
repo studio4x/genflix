@@ -251,7 +251,7 @@ export function StudentAssessmentExecutionPage() {
   useEffect(() => {
     async function loadAssessment() {
       if (!assessmentId) {
-        setError('Avaliacao nao encontrada.')
+        setError('Avaliação não encontrada.')
         setIsLoading(false)
         return
       }
@@ -472,7 +472,7 @@ export function StudentAssessmentExecutionPage() {
     if (blockingQuiz?.state === 'failed_limit') {
       return {
         title: 'Prova Final Bloqueada por Quiz Pendente',
-        description: `A prova final ainda nao pode ser aberta porque o quiz "${blockingQuiz.title}" do modulo "${incompleteModule.title}" esta com o limite de tentativas atingido e ainda nao foi aprovado.`,
+        description: `A prova final ainda não pode ser aberta porque o quiz "${blockingQuiz.title}" do módulo "${incompleteModule.title}" está com o limite de tentativas atingido e ainda não foi aprovado.`,
       }
     }
 
@@ -485,7 +485,7 @@ export function StudentAssessmentExecutionPage() {
 
     return {
       title: 'Prova Final Bloqueada por Modulo Incompleto',
-      description: `A prova final ainda nao pode ser aberta porque o modulo "${incompleteModule.title}" nao foi concluido por completo.`,
+      description: `A prova final ainda não pode ser aberta porque o módulo "${incompleteModule.title}" não foi concluído por completo.`,
     }
   }, [assessments, modules, studentAssessment])
 
@@ -750,7 +750,7 @@ export function StudentAssessmentExecutionPage() {
             </div>
             <h2 className="text-3xl font-black leading-tight tracking-tight text-slate-900">Limite de Tentativas Atingido</h2>
             <p className="mt-4 font-medium leading-relaxed text-slate-500">
-              Voce ja realizou todas as tentativas permitidas para este quiz ({studentAssessment.max_attempts} de {studentAssessment.max_attempts}) e nao obteve a pontuacao minima necessaria.
+              Você já realizou todas as tentativas permitidas para este quiz ({studentAssessment.max_attempts} de {studentAssessment.max_attempts}) e não obteve a pontuação mínima necessária.
             </p>
             {approvalRequirementText ? (
               <div className="mt-6 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-left text-sm font-semibold text-amber-900">
@@ -761,14 +761,14 @@ export function StudentAssessmentExecutionPage() {
             <div className="mt-8 rounded-3xl border border-slate-100 bg-slate-50 p-6 text-left">
               <div className="mb-2 flex items-center gap-3">
                 <div className="h-2 w-2 rounded-full bg-rose-500" />
-                <span className="text-sm font-bold text-slate-700">Proximo passo</span>
+                <span className="text-sm font-bold text-slate-700">Próximo passo</span>
               </div>
               <p className="text-xs leading-relaxed text-slate-500">
                 {hasPendingRetryRequest
-                  ? 'Sua solicitacao de nova tentativa ja foi enviada e esta aguardando analise do administrador.'
+                  ? 'Sua solicitação de nova tentativa já foi enviada e está aguardando análise do administrador.'
                   : isRejectedRetryRequest
-                    ? 'Sua ultima solicitacao foi recusada. Se necessario, envie um novo pedido para que a equipe analise outra liberacao.'
-                    : 'Voce pode enviar uma solicitacao de nova tentativa para analise do administrador diretamente por esta tela.'}
+                    ? 'Sua última solicitação foi recusada. Se necessário, envie um novo pedido para que a equipe analise outra liberação.'
+                    : 'Você pode enviar uma solicitação de nova tentativa para análise do administrador diretamente por esta tela.'}
               </p>
               {attemptRequest?.admin_response ? (
                 <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-4 text-xs text-slate-600">
@@ -793,7 +793,7 @@ export function StudentAssessmentExecutionPage() {
                 disabled={hasPendingRetryRequest || isRequestingRetry}
                 onClick={() => void handleRequestRetry()}
               >
-                {hasPendingRetryRequest ? 'Solicitacao Enviada' : isRequestingRetry ? 'Enviando...' : 'Solicitar Nova Tentativa'}
+                {hasPendingRetryRequest ? 'Solicitação Enviada' : isRequestingRetry ? 'Enviando...' : 'Solicitar Nova Tentativa'}
               </Button>
             </div>
             {error ? <p className="mt-4 text-sm font-medium text-rose-600">{error}</p> : null}
@@ -877,7 +877,7 @@ export function StudentAssessmentExecutionPage() {
                   : 'A resposta discursiva precisa de ajuste.'
                 : result.is_approved
                   ? 'Parabéns! Você foi aprovado.'
-                  : 'Nao foi desta vez.'}
+                  : 'Não foi desta vez.'}
             </h2>
             <div className="mt-4 flex flex-col items-center justify-center gap-1">
               <span className="text-sm font-bold uppercase tracking-widest text-slate-400">Aproveitamento</span>
@@ -1006,17 +1006,17 @@ export function StudentAssessmentExecutionPage() {
                 <div>
                   <p className="text-xs font-black uppercase tracking-widest text-rose-700">Limite de Tentativas Atingido</p>
                   <p className="mt-2 text-sm font-medium text-rose-900">
-                    Voce utilizou {result.max_attempts} de {result.max_attempts} tentativas e pode solicitar uma nova liberacao para analise do administrador.
+                    Você utilizou {result.max_attempts} de {result.max_attempts} tentativas e pode solicitar uma nova liberação para análise do administrador.
                   </p>
                 </div>
 
                 <div className="rounded-2xl border border-white/70 bg-white p-5 text-sm text-slate-600 shadow-sm">
                   <p className="font-semibold leading-relaxed">
                     {hasPendingRetryRequest
-                      ? 'Sua solicitacao de nova tentativa ja foi enviada e esta aguardando analise.'
+                      ? 'Sua solicitação de nova tentativa já foi enviada e está aguardando análise.'
                       : isRejectedRetryRequest
-                        ? 'Sua ultima solicitacao foi recusada. Se precisar, voce pode enviar um novo pedido por esta tela.'
-                        : 'Se desejar, envie agora uma solicitacao de nova tentativa.'}
+                        ? 'Sua última solicitação foi recusada. Se precisar, você pode enviar um novo pedido por esta tela.'
+                        : 'Se desejar, envie agora uma solicitação de nova tentativa.'}
                   </p>
                   {attemptRequest?.admin_response ? (
                     <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
@@ -1033,7 +1033,7 @@ export function StudentAssessmentExecutionPage() {
                   disabled={hasPendingRetryRequest || isRequestingRetry}
                   onClick={() => void handleRequestRetry()}
                 >
-                  {hasPendingRetryRequest ? 'Solicitacao Enviada' : isRequestingRetry ? 'Enviando...' : 'Solicitar Nova Tentativa'}
+                  {hasPendingRetryRequest ? 'Solicitação Enviada' : isRequestingRetry ? 'Enviando...' : 'Solicitar Nova Tentativa'}
                 </Button>
               </div>
             )}
@@ -1066,7 +1066,7 @@ export function StudentAssessmentExecutionPage() {
   if (!assessment || executionItems.length === 0) {
     return (
       <div className="mx-auto mt-20 max-w-2xl rounded-3xl border border-slate-200 bg-white p-12 text-center font-bold uppercase tracking-widest text-slate-500 shadow-sm">
-        Nenhuma questao configurada para esta avaliacao.
+        Nenhuma questão configurada para esta avaliação.
       </div>
     )
   }
@@ -1078,7 +1078,7 @@ export function StudentAssessmentExecutionPage() {
           <div className="space-y-2">
             <div className="mb-1 flex items-center gap-3">
               <span className="rounded-full bg-blue-600 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-white shadow-lg shadow-blue-100">
-                AVALIACAO OFICIAL
+                AVALIAÇÃO OFICIAL
               </span>
               <span className="text-xs font-black uppercase tracking-widest italic text-slate-400">
                 {assessment.title}
@@ -1087,14 +1087,14 @@ export function StudentAssessmentExecutionPage() {
             <h2 className="text-3xl font-black leading-tight tracking-tight text-slate-900 md:text-4xl">
               {currentItem?.type === 'case_study'
                 ? `Estudo de Caso ${currentQuestionIndex + 1} de ${executionItems.length}`
-                : `Questao ${currentQuestionIndex + 1} de ${executionItems.length}`}
+                : `Questão ${currentQuestionIndex + 1} de ${executionItems.length}`}
             </h2>
           </div>
         </div>
 
         {isPerfectApprovedReview && (
           <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm font-bold text-emerald-700">
-            Voce ja concluiu este quiz com 100%. Suas respostas ficaram registradas e uma nova tentativa nao e permitida.
+            Você já concluiu este quiz com 100%. Suas respostas ficaram registradas e uma nova tentativa não é permitida.
           </div>
         )}
 
@@ -1142,7 +1142,7 @@ export function StudentAssessmentExecutionPage() {
                         </h4>
                         {question.question_type === 'case_study_ai' ? (
                           <div className="rounded-2xl border border-amber-100 bg-amber-50 px-5 py-4 text-sm font-medium text-amber-900">
-                            Resposta discursiva do estudo de caso com validacao por IA e pontuacao.
+                            Resposta discursiva do estudo de caso com validação por IA e pontuação.
                           </div>
                         ) : null}
                       </div>
@@ -1167,7 +1167,7 @@ export function StudentAssessmentExecutionPage() {
                   </h3>
                   {currentQuestion.question_type === 'essay_ai' && (
                     <div className="rounded-2xl border border-amber-100 bg-amber-50 px-5 py-4 text-sm font-medium text-amber-900">
-                      Resposta discursiva com validacao por IA. Esta questao nao gera pontos no quiz, mas voce recebera feedback automatico.
+                      Resposta discursiva com validação por IA. Esta questão não gera pontos no quiz, mas você receberá feedback automático.
                     </div>
                   )}
                 </div>

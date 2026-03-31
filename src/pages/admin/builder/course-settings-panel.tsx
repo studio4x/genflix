@@ -141,12 +141,12 @@ export function CourseSettingsPanel() {
 
   async function handleResetCourseProgress() {
     if (!courseTree || !session) {
-      setError('Sessao expirada. Faca login novamente.')
+      setError('Sessão expirada. Faça login novamente.')
       return
     }
 
     const shouldContinue = window.confirm(
-      `Tem certeza que deseja renovar o progresso de todos os alunos no curso "${courseTree.course.title}"? Esta acao apaga progresso das aulas, tentativas de avaliacao, pedidos de nova tentativa e o progresso geral do curso para todos os alunos.`,
+      `Tem certeza que deseja renovar o progresso de todos os alunos no curso "${courseTree.course.title}"? Esta ação apaga progresso das aulas, tentativas de avaliação, pedidos de nova tentativa e o progresso geral do curso para todos os alunos.`,
     )
 
     if (!shouldContinue) {
@@ -390,7 +390,7 @@ export function CourseSettingsPanel() {
         <div className="border-b border-rose-100 pb-5">
           <h3 className="text-2xl font-black tracking-tight text-slate-900">Renovar Progresso do Curso</h3>
           <p className="mt-1 text-sm text-slate-500">
-            Use esta acao quando precisar reiniciar o curso para todos os alunos e liberar um novo ciclo completo de aulas e avaliacoes.
+            Use esta ação quando precisar reiniciar o curso para todos os alunos e liberar um novo ciclo completo de aulas e avaliações.
           </p>
         </div>
 
@@ -398,9 +398,9 @@ export function CourseSettingsPanel() {
           <p className="text-[10px] font-black uppercase tracking-[0.24em] text-rose-500">O que sera apagado</p>
           <div className="mt-4 grid gap-3 md:grid-cols-2">
             <div className="rounded-2xl border border-white/80 bg-white px-4 py-4 text-sm font-semibold text-slate-700">Progresso das aulas do curso</div>
-            <div className="rounded-2xl border border-white/80 bg-white px-4 py-4 text-sm font-semibold text-slate-700">Tentativas e resultados das avaliacoes</div>
-            <div className="rounded-2xl border border-white/80 bg-white px-4 py-4 text-sm font-semibold text-slate-700">Pedidos e liberacoes extras de nova tentativa</div>
-            <div className="rounded-2xl border border-white/80 bg-white px-4 py-4 text-sm font-semibold text-slate-700">Progresso geral de conclusao do curso</div>
+            <div className="rounded-2xl border border-white/80 bg-white px-4 py-4 text-sm font-semibold text-slate-700">Tentativas e resultados das avaliações</div>
+            <div className="rounded-2xl border border-white/80 bg-white px-4 py-4 text-sm font-semibold text-slate-700">Pedidos e liberações extras de nova tentativa</div>
+            <div className="rounded-2xl border border-white/80 bg-white px-4 py-4 text-sm font-semibold text-slate-700">Progresso geral de conclusão do curso</div>
           </div>
         </div>
 

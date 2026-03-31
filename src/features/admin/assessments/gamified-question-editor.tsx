@@ -191,7 +191,7 @@ function readImageDimensions(file: File) {
 
     image.onerror = () => {
       URL.revokeObjectURL(objectUrl)
-      reject(new Error('Nao foi possivel ler a imagem selecionada.'))
+      reject(new Error('Não foi possível ler a imagem selecionada.'))
     }
 
     image.src = objectUrl
@@ -204,14 +204,14 @@ function getValidationMessage(
   answerKey: AssessmentQuestionAnswerKeyPayload | null,
 ) {
   if (!content || !answerKey) {
-    return 'Configure a interacao e o gabarito para habilitar a correcao automatica.'
+    return 'Configure a interação e o gabarito para habilitar a correção automática.'
   }
 
   try {
     validateInteractionBundle(questionType, content, answerKey)
     return null
   } catch (error) {
-    return error instanceof Error ? error.message : 'Interacao invalida.'
+    return error instanceof Error ? error.message : 'Interação inválida.'
   }
 }
 
@@ -492,7 +492,7 @@ export function GamifiedQuestionEditor({
 
   function addToken() {
     if (activeInteraction.kind === 'drag_drop_labeling') {
-      onError('No arrastar e soltar, o banco de respostas acompanha automaticamente a quantidade de areas.')
+      onError('No arrastar e soltar, o banco de respostas acompanha automaticamente a quantidade de áreas.')
       return
     }
 
@@ -512,7 +512,7 @@ export function GamifiedQuestionEditor({
 
   function deleteToken(tokenId: string) {
     if (activeInteraction.kind === 'drag_drop_labeling') {
-      onError('Remova ou adicione areas para sincronizar o banco de respostas deste exercicio.')
+      onError('Remova ou adicione áreas para sincronizar o banco de respostas deste exercício.')
       return
     }
 
@@ -569,7 +569,7 @@ export function GamifiedQuestionEditor({
         void deleteAssessmentAsset(previousStoragePath).catch(() => null)
       }
     } catch (error) {
-      onError(error instanceof Error ? error.message : 'Falha ao enviar a imagem do exercicio.')
+      onError(error instanceof Error ? error.message : 'Falha ao enviar a imagem do exercício.')
     } finally {
       setIsUploadingAsset(false)
       if (event.target) {
@@ -586,8 +586,8 @@ export function GamifiedQuestionEditor({
             <p className="text-[10px] font-black uppercase tracking-[0.25em] text-cyan-700">Banco de respostas</p>
             <p className="mt-2 text-sm font-medium text-cyan-950">
               {activeInteraction.kind === 'drag_drop_labeling'
-                ? 'No arrastar e soltar, cada area cria automaticamente um campo correspondente no banco de respostas.'
-                : 'Cada item do banco deve ser associado a uma unica area ou lacuna nesta v1.'}
+                ? 'No arrastar e soltar, cada área cria automaticamente um campo correspondente no banco de respostas.'
+                : 'Cada item do banco deve ser associado a uma única área ou lacuna nesta v1.'}
             </p>
           </div>
 
@@ -640,7 +640,7 @@ export function GamifiedQuestionEditor({
                   })
                 }}
                 onKeyDown={(event) => event.stopPropagation()}
-                placeholder={activeInteraction.kind === 'drag_drop_labeling' ? `Rotulo ${index + 1}` : 'Resposta correta exibida ao aluno. Pode ter mais de uma palavra.'}
+                placeholder={activeInteraction.kind === 'drag_drop_labeling' ? `Rótulo ${index + 1}` : 'Resposta correta exibida ao aluno. Pode ter mais de uma palavra.'}
               />
             </div>
           ))}
@@ -654,9 +654,9 @@ export function GamifiedQuestionEditor({
               onClick={() => setIsAdvancedAnswerToolsOpen((current) => !current)}
             >
               <div>
-                <p className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-400">Ajuste avancado</p>
+                <p className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-400">Ajuste avançado</p>
                 <p className="mt-2 text-sm font-medium text-slate-600">
-                  Abra apenas se quiser refinar coordenadas, tamanho das areas ou revisar o gabarito manualmente.
+                  Abra apenas se quiser refinar coordenadas, tamanho das áreas ou revisar o gabarito manualmente.
                 </p>
               </div>
               <span className="inline-flex items-center gap-2 rounded-full border border-cyan-100 bg-cyan-50 px-3 py-2 text-[11px] font-black uppercase tracking-widest text-cyan-700">
@@ -677,7 +677,7 @@ export function GamifiedQuestionEditor({
                 <div>
                   <p className="text-sm font-black text-slate-900">Areas e gabarito</p>
                   <p className="mt-1 text-sm font-medium text-slate-600">
-                    Edite hotspots, coordenadas, tamanhos e a associacao final de cada area.
+                    Edite hotspots, coordenadas, tamanhos e a associação final de cada área.
                   </p>
                 </div>
                 <Button
@@ -686,7 +686,7 @@ export function GamifiedQuestionEditor({
                   className="rounded-2xl border-cyan-200 bg-white text-cyan-700 hover:bg-cyan-50"
                   onClick={() => setIsTargetsModalOpen(true)}
                 >
-                  Editar {activeInteraction.targets.length} area(s)
+                  Editar {activeInteraction.targets.length} área(s)
                 </Button>
               </div>
             ) : null}
@@ -739,7 +739,7 @@ export function GamifiedQuestionEditor({
 
     function handleStageClick(event: MouseEvent<HTMLDivElement>) {
       if (!content.asset.signed_url) {
-        onError('Envie uma imagem primeiro para posicionar as areas.')
+        onError('Envie uma imagem primeiro para posicionar as áreas.')
         return
       }
 
@@ -751,7 +751,7 @@ export function GamifiedQuestionEditor({
 
     function removeTarget(targetId: string) {
       if (content.targets.length === 1) {
-        onError('Mantenha ao menos uma area de encaixe.')
+        onError('Mantenha ao menos uma área de encaixe.')
         return
       }
 
@@ -837,7 +837,7 @@ export function GamifiedQuestionEditor({
               </p>
             </div>
             <span className="rounded-full bg-cyan-100 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-cyan-700">
-              {content.targets.length} area(s)
+              {content.targets.length} área(s)
             </span>
           </div>
 
@@ -905,7 +905,7 @@ export function GamifiedQuestionEditor({
                       <option value="" disabled>Selecione um item</option>
                       {content.tokens.map((token, tokenIndex) => (
                         <option key={token.id} value={token.id}>
-                          {token.label.trim() || `Rotulo ${tokenIndex + 1}`}
+                          {token.label.trim() || `Rótulo ${tokenIndex + 1}`}
                         </option>
                       ))}
                     </select>
@@ -925,7 +925,7 @@ export function GamifiedQuestionEditor({
             <div>
               <p className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-400">Areas no canvas</p>
               <p className="mt-2 text-sm font-medium text-slate-600">
-                Selecione uma area para destacar no canvas ou abrir o ajuste detalhado.
+                Selecione uma área para destacar no canvas ou abrir o ajuste detalhado.
               </p>
             </div>
             <span className="rounded-full bg-white px-3 py-1 text-[10px] font-black uppercase tracking-widest text-cyan-700 shadow-sm">
@@ -941,7 +941,7 @@ export function GamifiedQuestionEditor({
               onClick={() => setSelectedTargetId(null)}
               disabled={!selectedTargetId}
             >
-              Limpar selecao
+              Limpar seleção
             </Button>
             <Button
               type="button"
@@ -983,7 +983,7 @@ export function GamifiedQuestionEditor({
                     {target.label?.trim() || `Area ${index + 1}`}
                   </p>
                   <p className="mt-2 text-xs font-semibold text-slate-500">
-                    Resposta: {assignedToken?.label.trim() || `Rotulo ${index + 1}`}
+                    Resposta: {assignedToken?.label.trim() || `Rótulo ${index + 1}`}
                   </p>
                 </button>
               )
@@ -1000,7 +1000,7 @@ export function GamifiedQuestionEditor({
             <div>
               <p className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-400">Imagem base</p>
               <p className="mt-2 text-sm font-medium text-slate-600">
-                Envie ou substitua a imagem usada como base visual do exercicio.
+                Envie ou substitua a imagem usada como base visual do exercício.
               </p>
             </div>
 
@@ -1030,7 +1030,7 @@ export function GamifiedQuestionEditor({
                 <div>
                   <p className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-400">Area de canvas</p>
                   <p className="mt-2 text-sm font-medium text-slate-600">
-                    Clique na imagem para criar novas areas e ajuste o zoom para posicionar melhor cada hotspot.
+                    Clique na imagem para criar novas áreas e ajuste o zoom para posicionar melhor cada hotspot.
                   </p>
                 </div>
                 <div className="hidden items-center gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-2 md:flex">
@@ -1333,7 +1333,7 @@ export function GamifiedQuestionEditor({
 
     function removePromptItem(groupId: string) {
       if (groups.length === 1) {
-        onError('Mantenha ao menos uma pergunta com lacuna neste exercicio.')
+        onError('Mantenha ao menos uma pergunta com lacuna neste exercício.')
         return
       }
 
@@ -1506,7 +1506,7 @@ export function GamifiedQuestionEditor({
                           ...currentGroup,
                           leading_text: event.currentTarget.value,
                         })))}
-                        placeholder="Ex.: A fisiologia e a ciencia que estuda..."
+                        placeholder="Ex.: A fisiologia é a ciência que estuda..."
                       />
                     </label>
 
@@ -1655,7 +1655,7 @@ export function GamifiedQuestionEditor({
     <div className="space-y-6 rounded-[32px] border border-cyan-200 bg-[linear-gradient(180deg,_rgba(236,254,255,0.55),_rgba(255,255,255,1))] p-6">
       <div className="grid gap-6 xl:grid-cols-[1fr_260px]">
         <div className="space-y-2">
-          <p className="text-[10px] font-black uppercase tracking-[0.25em] text-cyan-700">Instrucao ao aluno</p>
+          <p className="text-[10px] font-black uppercase tracking-[0.25em] text-cyan-700">Instrução ao aluno</p>
           <textarea
             className="min-h-[110px] w-full rounded-[28px] border border-cyan-100 bg-white px-5 py-4 text-sm font-medium text-slate-700 shadow-sm focus:border-cyan-300 focus:ring-4 focus:ring-cyan-100"
             value={activeInteraction.instruction}
@@ -1664,12 +1664,12 @@ export function GamifiedQuestionEditor({
               instruction: event.target.value,
             })}
             onBlur={() => void commit(activeInteraction)}
-            placeholder="Explique como o aluno deve interagir com o exercicio."
+            placeholder="Explique como o aluno deve interagir com o exercício."
           />
         </div>
 
         <div className="rounded-[28px] border border-white bg-white p-5 shadow-sm">
-          <p className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-400">Modo de correcao</p>
+          <p className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-400">Modo de correção</p>
           <div className="mt-4 grid gap-3">
             {[
               {
@@ -1722,7 +1722,7 @@ export function GamifiedQuestionEditor({
           ? 'border-amber-200 bg-amber-50 text-amber-900'
           : 'border-emerald-200 bg-emerald-50 text-emerald-900',
       )}>
-        {validationMessage ?? 'Interacao valida. O backend ja possui o gabarito necessario para corrigir esta questao.'}
+        {validationMessage ?? 'Interação válida. O backend já possui o gabarito necessário para corrigir esta questão.'}
       </div>
     </div>
   )
