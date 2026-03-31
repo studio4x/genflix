@@ -9,6 +9,7 @@ import { AdminCourseReleasesPage } from '@/pages/admin/admin-course-releases-pag
 import { AdminCoursesPage } from '@/pages/admin/admin-courses-page'
 import { AdminDashboardPage } from '@/pages/admin/admin-dashboard-page'
 import { AdminGroupsPage } from '@/pages/admin/admin-groups-page'
+import { AdminIntegrationsPage } from '@/pages/admin/admin-integrations-page'
 import { AdminLessonsPage } from '@/pages/admin/admin-lessons-page'
 import { AdminMaterialsPage } from '@/pages/admin/admin-materials-page'
 import { AdminModulesPage } from '@/pages/admin/admin-modules-page'
@@ -33,6 +34,7 @@ import { CourseOverviewPanel } from '@/pages/admin/builder/course-overview-panel
 import { ModuleEditorPanel } from '@/pages/admin/builder/module-editor-panel'
 import { LessonEditorPanel } from '@/pages/admin/builder/lesson-editor-panel'
 import { LessonMaterialsPanel } from '@/pages/admin/builder/lesson-materials-panel'
+import { CourseIntegrationPanel } from '@/pages/admin/builder/course-integration-panel'
 import { CourseSettingsPanel } from '@/pages/admin/builder/course-settings-panel'
 import { CourseAssessmentsPanel } from '@/pages/admin/builder/course-assessments-panel'
 import { AssessmentBuilderPanel } from '@/pages/admin/builder/assessment-builder-panel'
@@ -155,6 +157,10 @@ export const appRouter = createBrowserRouter([
             element: <CourseSettingsPanel />,
           },
           {
+            path: 'integration',
+            element: <CourseIntegrationPanel />,
+          },
+          {
             path: 'releases',
             element: <AdminCourseReleasesPage />,
           },
@@ -203,6 +209,10 @@ export const appRouter = createBrowserRouter([
           {
             path: '/admin/relatorios',
             element: <AdminReportsPage />,
+          },
+          {
+            path: '/admin/integracoes',
+            element: <AdminIntegrationsPage />,
           },
         ],
       },

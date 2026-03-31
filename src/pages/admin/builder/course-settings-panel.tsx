@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import ReactQuill from 'react-quill'
+import { Link } from 'react-router-dom'
 import { useAuth } from '@/app/providers/auth-provider'
 import { Button } from '@/components/ui/button'
 import { useCourseBuilder } from '@/app/layouts/admin-course-builder-layout'
@@ -276,6 +277,11 @@ export function CourseSettingsPanel() {
                   <p className="text-xs font-medium leading-6 text-slate-500">
                      Esse identificador sera usado pela plataforma principal para sincronizar liberacao, revogacao e acesso direto ao curso.
                   </p>
+                  {courseTree ? (
+                    <Button variant="outline" size="sm" asChild className="mt-2">
+                      <Link to={`/admin/cursos/${courseTree.course.id}/builder/integration`}>Abrir painel da integracao</Link>
+                    </Button>
+                  ) : null}
                </label>
 
                <div className="block space-y-2">
