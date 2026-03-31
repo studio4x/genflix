@@ -123,12 +123,13 @@ Deno.serve(async (request) => {
 
   const cronSecret = settings.get('hcm_edge_cron_secret') ?? ''
   const webhookUrl = settings.get('hcm_events_webhook_url') ?? ''
-  const outboundSecret = settings.get('hcm_outbound_signing_secret') ?? ''
+  const outboundSecretFromSecretStore = Deno.env.get('HCM_OUTBOUND_SIGNING_SECRET') ?? ''
+  const outboundSecret = outboundSecretFromSecretStore || (settings.get('hcm_outbound_signing_secret') ?? '')
   const sourceSystem = settings.get('hcm_source_system') ?? 'homecare_match'
   const providedAuthorization = request.headers.get('Authorization')?.replace(/^Bearer\s+/i, '').trim() ?? ''
 
   if (!cronSecret || !webhookUrl || !outboundSecret) {
-    return new Response(JSON.stringify({ error: 'Configuracao ausente em integration_runtime_settings.' }), {
+    return new Response(JSON.stringify({ error: 'Configuracao outbound ausente no Secret Store ou integration_runtime_settings.' }), {
       status: 500,
       headers: {
         ...corsHeaders,
