@@ -16,6 +16,7 @@ import { AdminReportsPage } from '@/pages/admin/admin-reports-page'
 import { AdminStudentsPage } from '@/pages/admin/admin-students-page'
 import { ForgotPasswordPage } from '@/pages/public/forgot-password-page'
 import { CookiesPage } from '@/pages/public/cookies-page'
+import { HcmAccessPage } from '@/pages/public/hcm-access-page'
 import { LoginPage } from '@/pages/public/login-page'
 import { PrivacyPage } from '@/pages/public/privacy-page'
 import { PublicHomePage } from '@/pages/public/public-home-page'
@@ -44,6 +45,10 @@ export const appRouter = createBrowserRouter([
   {
     path: '/login',
     element: <LoginPage />,
+  },
+  {
+    path: '/auth/hcm-access',
+    element: <HcmAccessPage />,
   },
   {
     path: '/recuperar-senha',

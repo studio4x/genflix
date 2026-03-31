@@ -8,7 +8,9 @@ import {
   upsertCourseAiReviewStandards,
 } from '@/features/admin/ai-review/api'
 import {
+  fetchCourseExternalMapping,
   resetCourseProgress,
+  upsertCourseExternalMapping,
   updateCourse,
   uploadCourseThumbnail,
   toErrorMessage,
@@ -28,6 +30,7 @@ export function CourseSettingsPanel() {
     thumbnail_url: '',
     has_linear_progression: true
   })
+  const [externalCourseId, setExternalCourseId] = useState('')
   const [isUploadingThumbnail, setIsUploadingThumbnail] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSavingAiStandards, setIsSavingAiStandards] = useState(false)
@@ -53,8 +56,24 @@ export function CourseSettingsPanel() {
         thumbnail_url: courseTree.course.thumbnail_url ?? '',
         has_linear_progression: courseTree.course.has_linear_progression ?? true
       })
+      setExternalCourseId('')
       setResetProgressSuccess(null)
     }
+  }, [courseTree])
+
+  useEffect(() => {
+    async function loadExternalMapping() {
+      if (!courseTree) return
+
+      try {
+        const mapping = await fetchCourseExternalMapping(courseTree.course.id)
+        setExternalCourseId(mapping?.external_course_id ?? '')
+      } catch (err) {
+        setError(toErrorMessage(err))
+      }
+    }
+
+    void loadExternalMapping()
   }, [courseTree])
 
   useEffect(() => {
@@ -110,6 +129,7 @@ export function CourseSettingsPanel() {
       }
 
       await updateCourse(courseTree.course.id, parsed.data)
+      await upsertCourseExternalMapping(courseTree.course.id, externalCourseId)
       await refreshTree()
       setSuccess(true)
       setTimeout(() => setSuccess(false), 3000)
@@ -243,6 +263,19 @@ export function CourseSettingsPanel() {
                      onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
                      required
                   />
+               </label>
+
+               <label className="block space-y-2">
+                  <span className="text-xs font-black text-slate-400 uppercase tracking-widest pl-1">ID do Curso na HomeCare Match</span>
+                  <input
+                     className="w-full font-bold rounded-[20px] border border-slate-200 bg-slate-100/50 px-6 py-4 placeholder:text-slate-300 focus:bg-white focus:ring-4 focus:ring-blue-100 transition-all"
+                     placeholder="Ex: hcm-curso-suporte-ventilatorio"
+                     value={externalCourseId}
+                     onChange={e => setExternalCourseId(e.target.value)}
+                  />
+                  <p className="text-xs font-medium leading-6 text-slate-500">
+                     Esse identificador sera usado pela plataforma principal para sincronizar liberacao, revogacao e acesso direto ao curso.
+                  </p>
                </label>
 
                <div className="block space-y-2">
