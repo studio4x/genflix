@@ -96,18 +96,16 @@ export function PublicHomePage() {
 
   return (
     <main className="min-h-screen bg-[#f7f9fc] text-slate-900">
-      <section className="relative overflow-hidden border-b border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#f5f9ff_70%,#f7f9fc_100%)]">
+      <section
+        id="inicio"
+        className="relative overflow-hidden border-b border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#f5f9ff_70%,#f7f9fc_100%)]"
+      >
         <div className="absolute -left-24 bottom-0 h-56 w-56 rounded-full bg-cyan-100/60 blur-3xl" />
         <div className="absolute -right-16 top-16 h-56 w-56 rounded-full bg-blue-100/70 blur-3xl" />
 
         <div className="relative mx-auto max-w-[1380px] px-6 pb-20 pt-5 sm:px-8 lg:px-10">
           <header className="flex items-center justify-between gap-6 border-b border-slate-200/80 pb-5">
-            <a
-              href="https://homecarematch.com.br"
-              target="_blank"
-              rel="noreferrer"
-              className="shrink-0"
-            >
+            <a href="#inicio" className="shrink-0">
               <img
                 src={homeCareMatchLogoUrl}
                 alt="HomeCare Match"
@@ -117,21 +115,17 @@ export function PublicHomePage() {
 
             <nav className="hidden items-center gap-9 text-[15px] font-medium text-slate-700 lg:flex">
               {[
-                'Para Profissionais',
-                'Para Empresas',
-                'Para Familias',
-                'O Problema',
-                'Funcionalidades',
-                'Blog',
+                { label: 'Inicio', href: '#inicio' },
+                { label: 'Como Funciona', href: '#como-funciona' },
+                { label: 'Cursos', href: '#cursos' },
+                { label: 'Acesso', href: '#acesso' },
               ].map((item, index) => (
                 <a
-                  key={item}
-                  href="https://homecarematch.com.br"
-                  target="_blank"
-                  rel="noreferrer"
+                  key={item.label}
+                  href={item.href}
                   className={index === 0 ? 'text-[#1473ff]' : 'transition-colors hover:text-[#1473ff]'}
                 >
-                  {item}
+                  {item.label}
                 </a>
               ))}
             </nav>
@@ -142,9 +136,18 @@ export function PublicHomePage() {
                 variant="outline"
                 className="hidden rounded-2xl border-slate-200 bg-white px-5 font-bold text-slate-700 shadow-sm hover:bg-slate-50 md:inline-flex"
               >
-                <a href="https://homecarematch.com.br" target="_blank" rel="noreferrer">
-                  Minha Conta
+                <a href="#cursos">
+                  Ver Cursos
                 </a>
+              </Button>
+              <Button
+                asChild
+                variant="outline"
+                className="hidden rounded-2xl border-slate-200 bg-white px-5 font-bold text-slate-700 shadow-sm hover:bg-slate-50 xl:inline-flex"
+              >
+                <Link to="/login">
+                  Minha Conta
+                </Link>
               </Button>
               <Button
                 asChild
@@ -238,7 +241,7 @@ export function PublicHomePage() {
       </section>
 
       <section className="mx-auto max-w-[1380px] space-y-16 px-6 py-16 sm:px-8 lg:px-10">
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,0.7fr)_minmax(0,1.3fr)]">
+        <div id="como-funciona" className="grid gap-6 lg:grid-cols-[minmax(0,0.7fr)_minmax(0,1.3fr)]">
           <div className="space-y-4">
             <div className="inline-flex rounded-full border border-blue-100 bg-blue-50 px-4 py-2 text-[10px] font-black uppercase tracking-[0.28em] text-blue-700">
               Contexto institucional
@@ -277,7 +280,7 @@ export function PublicHomePage() {
           </div>
         </div>
 
-        <section className="space-y-6">
+        <section id="cursos" className="space-y-6">
           <div className="flex items-center gap-4">
             <h2 className="text-3xl font-black tracking-tight text-slate-900">Cursos disponiveis</h2>
             <div className="h-px flex-1 bg-slate-200" />
@@ -364,7 +367,7 @@ export function PublicHomePage() {
           </div>
         </section>
 
-        <section className="overflow-hidden rounded-[40px] bg-[linear-gradient(135deg,#0f172a,#111827)] p-8 text-white shadow-2xl shadow-slate-200 md:p-12">
+        <section id="acesso" className="overflow-hidden rounded-[40px] bg-[linear-gradient(135deg,#0f172a,#111827)] p-8 text-white shadow-2xl shadow-slate-200 md:p-12">
           <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
             <div className="space-y-4">
               <div className="inline-flex rounded-full border border-white/12 bg-white/5 px-4 py-2 text-[10px] font-black uppercase tracking-[0.28em] text-cyan-200">
