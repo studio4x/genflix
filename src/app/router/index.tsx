@@ -4,7 +4,6 @@ import { AdminLayout } from '@/app/layouts/admin-layout'
 import { AdminCourseBuilderLayout } from '@/app/layouts/admin-course-builder-layout'
 import { StudentLayout } from '@/app/layouts/student-layout'
 import { StudentCoursePlayerLayout } from '@/pages/student/student-course-player-layout'
-import { DefaultRedirect } from '@/app/router/default-redirect'
 import { ProtectedRoute } from '@/app/router/protected-route'
 import { AdminCourseReleasesPage } from '@/pages/admin/admin-course-releases-page'
 import { AdminCoursesPage } from '@/pages/admin/admin-courses-page'
@@ -19,6 +18,7 @@ import { ForgotPasswordPage } from '@/pages/public/forgot-password-page'
 import { CookiesPage } from '@/pages/public/cookies-page'
 import { LoginPage } from '@/pages/public/login-page'
 import { PrivacyPage } from '@/pages/public/privacy-page'
+import { PublicHomePage } from '@/pages/public/public-home-page'
 import { ResetPasswordPage } from '@/pages/public/reset-password-page'
 import { TermsOfUsePage } from '@/pages/public/terms-of-use-page'
 import { UnauthorizedPage } from '@/pages/public/unauthorized-page'
@@ -39,7 +39,7 @@ import { AssessmentBuilderPanel } from '@/pages/admin/builder/assessment-builder
 export const appRouter = createBrowserRouter([
   {
     path: '/',
-    element: <DefaultRedirect />,
+    element: <PublicHomePage />,
   },
   {
     path: '/login',
