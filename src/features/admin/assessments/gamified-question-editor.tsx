@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState, type ChangeEvent, type MouseEvent, type PointerEvent as ReactPointerEvent } from 'react'
+import { useEffect, useMemo, useRef, useState, type ChangeEvent, type MouseEvent, type PointerEvent as ReactPointerEvent } from 'react'
 
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
@@ -11,14 +11,23 @@ import type {
   ColoringInteractionContent,
   DragDropLabelingInteractionContent,
   FillInTheBlanksInteractionContent,
+  LegacyColoringInteractionContent,
 } from '@/types/content'
 
 import {
   createAnswerKeyFromInteraction,
   createDefaultInteractionContent,
+  getColoringRenderMode,
+  getColoringSlotIds,
   getInteractionSlotIds,
   validateInteractionBundle,
 } from '@/features/assessments/gamified'
+import {
+  applyColoringSvgRuntimeState,
+  getColoringSvgRegionIdFromEventTarget,
+  isSvgFile,
+  parseColoringSvgFile,
+} from '@/features/assessments/coloring-svg'
 
 import {
   deleteAssessmentAsset,
@@ -33,7 +42,7 @@ interface GamifiedQuestionEditorProps {
   onError: (message: string | null) => void
 }
 
-type CanvasInteractionContent = DragDropLabelingInteractionContent | ColoringInteractionContent
+type CanvasInteractionContent = DragDropLabelingInteractionContent | LegacyColoringInteractionContent
 
 function createInteractionRecord(
   question: AssessmentQuestionWithOptions,
@@ -144,8 +153,9 @@ function normalizeInteractionContent(
   const usedTokenIds = new Set<string>()
 
   if (content.kind === 'coloring') {
-    const normalizedTokens: ColoringInteractionContent['tokens'] = content.targets.map((target, index) => {
-      const mappedTokenId = current?.entries.find((entry) => entry.slot_id === target.id)?.token_id
+    const coloringSlotIds = getColoringSlotIds(content)
+    const normalizedTokens: ColoringInteractionContent['tokens'] = coloringSlotIds.map((slotId, index) => {
+      const mappedTokenId = current?.entries.find((entry) => entry.slot_id === slotId)?.token_id
       if (mappedTokenId) {
         const mappedToken = tokenById.get(mappedTokenId)
         if (mappedToken && !usedTokenIds.has(mappedToken.id) && 'hex' in mappedToken) {
@@ -180,7 +190,7 @@ function normalizeInteractionContent(
     return {
       ...content,
       tokens: normalizedTokens,
-    }
+    } satisfies ColoringInteractionContent
   }
 
   const normalizedTokens: DragDropLabelingInteractionContent['tokens'] = content.targets.map((target, index) => {
@@ -442,6 +452,7 @@ export function GamifiedQuestionEditor({
 }: GamifiedQuestionEditorProps) {
   const fileInputRef = useRef<HTMLInputElement | null>(null)
   const stageRef = useRef<HTMLDivElement | null>(null)
+  const svgStageRef = useRef<HTMLDivElement | null>(null)
   const [isUploadingAsset, setIsUploadingAsset] = useState(false)
   const [selectedTargetId, setSelectedTargetId] = useState<string | null>(null)
   const [draggingTargetId, setDraggingTargetId] = useState<string | null>(null)
@@ -482,7 +493,7 @@ export function GamifiedQuestionEditor({
 
   const activeInteraction = interactionContent
   const scoringItemCount = activeInteraction.kind === 'drag_drop_labeling' || activeInteraction.kind === 'coloring'
-    ? activeInteraction.targets.length
+    ? getInteractionSlotIds(activeInteraction).length
     : activeInteraction.segments.filter((segment) => segment.type === 'blank').length
   const questionPoints = Number(question.points || 0)
   const pointsPerItem = scoringItemCount > 0 ? questionPoints / scoringItemCount : 0
@@ -492,9 +503,38 @@ export function GamifiedQuestionEditor({
   )
   const latestInteractionRef = useRef<AssessmentInteractionContent>(interactionContent)
   const latestAnswerKeyRef = useRef<AssessmentQuestionAnswerKeyPayload | null>(answerKeyPayload)
+  const activeColoringSvgInteraction = activeInteraction.kind === 'coloring' && 'regions' in activeInteraction
+    ? activeInteraction
+    : null
+  const isColoringSvgMode = Boolean(activeColoringSvgInteraction)
 
   latestInteractionRef.current = interactionContent
   latestAnswerKeyRef.current = answerKeyPayload
+
+  useEffect(() => {
+    if (!isColoringSvgMode) {
+      return
+    }
+
+    if (selectedTargetId && activeColoringSvgInteraction?.regions.some((region) => region.region_id === selectedTargetId)) {
+      return
+    }
+
+    setSelectedTargetId(activeColoringSvgInteraction?.regions[0]?.region_id ?? null)
+  }, [activeColoringSvgInteraction, isColoringSvgMode, selectedTargetId])
+
+  useEffect(() => {
+    if (!activeColoringSvgInteraction) {
+      return
+    }
+
+    applyColoringSvgRuntimeState(svgStageRef.current, {
+      regionAssignments: Object.fromEntries(assignedTokenBySlot),
+      colorHexByTokenId: new Map(activeColoringSvgInteraction.tokens.map((token) => [token.id, token.hex])),
+      selectedRegionId: selectedTargetId,
+      interactive: true,
+    })
+  }, [activeColoringSvgInteraction, assignedTokenBySlot, selectedTargetId])
 
   async function commit(
     content: AssessmentInteractionContent,
@@ -635,18 +675,41 @@ export function GamifiedQuestionEditor({
     onError(null)
 
     try {
-      const dimensions = await readImageDimensions(file)
       const previousStoragePath = activeInteraction.asset.storage_path
       const uploaded = await uploadAssessmentAsset(file)
-      const nextContent: CanvasInteractionContent = {
-        ...activeInteraction,
-        asset: {
-          storage_path: uploaded.storage_path,
-          signed_url: uploaded.signed_url,
-          alt: activeInteraction.asset.alt || file.name,
-          width: dimensions.width,
-          height: dimensions.height,
-        },
+      let nextContent: AssessmentInteractionContent
+
+      if (activeInteraction.kind === 'coloring' && isSvgFile(file)) {
+        const svgAsset = await parseColoringSvgFile(file)
+        nextContent = {
+          ...activeInteraction,
+          render_mode: 'svg_regions',
+          svg_markup: svgAsset.svgMarkup,
+          regions: svgAsset.regions,
+          asset: {
+            storage_path: uploaded.storage_path,
+            signed_url: uploaded.signed_url,
+            alt: activeInteraction.asset.alt || file.name,
+            width: svgAsset.width,
+            height: svgAsset.height,
+          },
+        } satisfies ColoringInteractionContent
+      } else {
+        if (activeInteraction.kind === 'coloring' && getColoringRenderMode(activeInteraction) === 'svg_regions') {
+          throw new Error('No modo de colorir por regioes, envie um arquivo SVG preparado com ids nas pecas.')
+        }
+
+        const dimensions = await readImageDimensions(file)
+        nextContent = {
+          ...(activeInteraction as CanvasInteractionContent),
+          asset: {
+            storage_path: uploaded.storage_path,
+            signed_url: uploaded.signed_url,
+            alt: activeInteraction.asset.alt || file.name,
+            width: dimensions.width,
+            height: dimensions.height,
+          },
+        }
       }
 
       await commit(nextContent)
@@ -665,6 +728,10 @@ export function GamifiedQuestionEditor({
   }
 
   function renderTokenBank() {
+    const coloringSlotIds = activeInteraction.kind === 'coloring'
+      ? getColoringSlotIds(activeInteraction)
+      : []
+
     return (
       <section className="rounded-[28px] border border-cyan-100 bg-cyan-50/70 p-5">
         <div className="flex items-center justify-between gap-4">
@@ -694,7 +761,11 @@ export function GamifiedQuestionEditor({
             <div key={token.id} className="rounded-2xl border border-white/80 bg-white p-4 shadow-sm">
               <div className="flex items-center justify-between gap-3">
                 <span className="rounded-full bg-cyan-100 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-cyan-700">
-                  {activeInteraction.kind === 'drag_drop_labeling' || activeInteraction.kind === 'coloring' ? `Area ${index + 1}` : `Item ${index + 1}`}
+                  {activeInteraction.kind === 'drag_drop_labeling'
+                    ? `Area ${index + 1}`
+                    : activeInteraction.kind === 'coloring'
+                      ? `${isColoringSvgMode ? 'Regiao' : 'Area'} ${index + 1}`
+                      : `Item ${index + 1}`}
                 </span>
                 {activeInteraction.kind !== 'drag_drop_labeling' && activeInteraction.kind !== 'coloring' ? (
                   <button
@@ -766,7 +837,7 @@ export function GamifiedQuestionEditor({
           ))}
         </div>
 
-        {activeInteraction.kind === 'drag_drop_labeling' || activeInteraction.kind === 'coloring' ? (
+        {activeInteraction.kind === 'drag_drop_labeling' || (activeInteraction.kind === 'coloring' && !isColoringSvgMode) ? (
           <div className="mt-5 rounded-2xl border border-cyan-100/80 bg-white/70 p-4">
             <button
               type="button"
@@ -806,13 +877,253 @@ export function GamifiedQuestionEditor({
                   className="rounded-2xl border-cyan-200 bg-white text-cyan-700 hover:bg-cyan-50"
                   onClick={() => setIsTargetsModalOpen(true)}
                 >
-                  Editar {activeInteraction.targets.length} área(s)
+                  Editar {activeInteraction.kind === 'drag_drop_labeling' ? activeInteraction.targets.length : coloringSlotIds.length} area(s)
                 </Button>
               </div>
             ) : null}
           </div>
         ) : null}
       </section>
+    )
+  }
+
+  function renderColoringSvgEditor(content: Extract<ColoringInteractionContent, { render_mode: 'svg_regions' }>) {
+    function updateRegion(regionId: string, updates: Partial<(typeof content.regions)[number]>) {
+      updateDraft({
+        ...content,
+        regions: content.regions.map((region) => (
+          region.region_id === regionId
+            ? { ...region, ...updates }
+            : region
+        )),
+      })
+    }
+
+    function commitRegion(regionId: string, updates: Partial<(typeof content.regions)[number]>) {
+      void commit({
+        ...content,
+        regions: content.regions.map((region) => (
+          region.region_id === regionId
+            ? { ...region, ...updates }
+            : region
+        )),
+      })
+    }
+
+    const selectedRegion = content.regions.find((region) => region.region_id === selectedTargetId) ?? content.regions[0] ?? null
+
+    return (
+      <div className="space-y-6">
+        <section className="rounded-[32px] border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-400">SVG base</p>
+              <p className="mt-2 text-sm font-medium text-slate-600">
+                Envie um SVG preparado com `id` ou `data-region-id` em cada peca pintavel.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".svg,image/svg+xml"
+                className="hidden"
+                onChange={(event) => void handleAssetSelected(event)}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                className="rounded-2xl border-slate-200 bg-white"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isUploadingAsset}
+              >
+                {isUploadingAsset ? 'Enviando...' : content.asset.storage_path ? 'Trocar SVG' : 'Enviar SVG'}
+              </Button>
+            </div>
+          </div>
+
+          <div className="mt-5 rounded-[28px] border border-slate-200 bg-slate-50/60 p-4 shadow-sm">
+            <p className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-400">Modo recomendado</p>
+            <p className="mt-2 text-sm font-medium text-slate-600">
+              O preenchimento real das pecas acontece apenas com SVG preparado fora do sistema. O editor detecta as regioes e voce so define nome interno e cor correta.
+            </p>
+          </div>
+
+          <div className="mt-5 grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
+            <div className="space-y-4">
+              <div className="overflow-hidden rounded-[28px] border border-slate-200 bg-[radial-gradient(circle_at_top_left,_rgba(6,182,212,0.18),_transparent_38%),linear-gradient(135deg,_#f8fafc,_#eef2ff)] p-3">
+                <div
+                  ref={svgStageRef}
+                  className="relative overflow-hidden rounded-[24px] border border-slate-200 bg-white [&>svg]:h-full [&>svg]:w-full"
+                  style={{ aspectRatio: `${content.asset.width || 1200} / ${content.asset.height || 800}` }}
+                  dangerouslySetInnerHTML={{ __html: content.svg_markup }}
+                  onClick={(event) => {
+                    const regionId = getColoringSvgRegionIdFromEventTarget(event.target)
+                    if (regionId) {
+                      setSelectedTargetId(regionId)
+                    }
+                  }}
+                />
+              </div>
+
+              <div className="rounded-[28px] border border-slate-200 bg-slate-50/70 p-4">
+                <button
+                  type="button"
+                  className="flex w-full items-center justify-between gap-4 rounded-2xl text-left"
+                  onClick={() => setIsAssetMetadataOpen((current) => !current)}
+                >
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-400">Metadados do asset</p>
+                    <p className="mt-2 text-sm font-medium text-slate-600">
+                      {isAssetMetadataOpen
+                        ? 'Edite texto alternativo e confira as dimensoes do SVG.'
+                        : 'Clique para abrir texto alternativo, largura e altura.'}
+                    </p>
+                  </div>
+                  <span className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-[11px] font-black uppercase tracking-widest text-slate-600">
+                    {isAssetMetadataOpen ? 'Fechar' : 'Abrir'}
+                    <svg
+                      className={cn('h-4 w-4 transition-transform', isAssetMetadataOpen ? 'rotate-180' : '')}
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </span>
+                </button>
+
+                {isAssetMetadataOpen ? (
+                  <div className="mt-4 space-y-4">
+                    <label className="block space-y-2">
+                      <span className="text-xs font-black uppercase tracking-widest text-slate-500">Texto alternativo</span>
+                      <input
+                        className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 focus:border-cyan-300 focus:ring-4 focus:ring-cyan-100"
+                        value={content.asset.alt}
+                        onChange={(event) => updateDraft({
+                          ...content,
+                          asset: {
+                            ...content.asset,
+                            alt: event.target.value,
+                          },
+                        })}
+                        onBlur={() => void commitLatestDraft()}
+                        placeholder="Descreva a ilustracao para acessibilidade"
+                      />
+                    </label>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="rounded-2xl border border-white bg-white px-4 py-3">
+                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Largura</p>
+                        <p className="mt-2 text-lg font-black text-slate-900">{content.asset.width}px</p>
+                      </div>
+                      <div className="rounded-2xl border border-white bg-white px-4 py-3">
+                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Altura</p>
+                        <p className="mt-2 text-lg font-black text-slate-900">{content.asset.height}px</p>
+                      </div>
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+            </div>
+
+            <aside className="self-start rounded-[28px] border border-slate-200 bg-slate-50/70 p-4 shadow-sm">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-400">Regioes detectadas</p>
+                  <p className="mt-2 text-sm font-medium text-slate-600">
+                    Clique em uma regiao para destacar no preview e ajustar o nome interno ou a cor correta.
+                  </p>
+                </div>
+                <span className="rounded-full bg-white px-3 py-1 text-[10px] font-black uppercase tracking-widest text-cyan-700 shadow-sm">
+                  {content.regions.length}
+                </span>
+              </div>
+
+              <div className="mt-4 space-y-3">
+                {content.regions.map((region, index) => {
+                  const assignedTokenId = assignedTokenBySlot.get(region.region_id) ?? ''
+                  const assignedToken = content.tokens.find((token) => token.id === assignedTokenId) ?? null
+                  const isSelected = selectedRegion?.region_id === region.region_id
+
+                  return (
+                    <div
+                      key={region.region_id}
+                      className={cn(
+                        'rounded-[24px] border bg-white p-4 text-left shadow-sm transition-all',
+                        isSelected
+                          ? 'border-cyan-300 shadow-cyan-100/80 ring-4 ring-cyan-100'
+                          : 'border-slate-200',
+                      )}
+                    >
+                      <button
+                        type="button"
+                        className="flex w-full items-start justify-between gap-3 text-left"
+                        onClick={() => setSelectedTargetId(region.region_id)}
+                      >
+                        <div>
+                          <span className="rounded-full bg-slate-100 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-slate-500">
+                            Regiao {index + 1}
+                          </span>
+                          <p className="mt-3 text-sm font-black text-slate-900">
+                            {region.label?.trim() || `Regiao ${index + 1}`}
+                          </p>
+                        </div>
+                        <span className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[10px] font-black uppercase tracking-widest text-slate-500">
+                          {region.region_id}
+                        </span>
+                      </button>
+
+                      <div className="mt-4 space-y-3">
+                        <label className="block space-y-2">
+                          <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Nome interno</span>
+                          <input
+                            className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 focus:border-cyan-300 focus:ring-4 focus:ring-cyan-100"
+                            value={region.label ?? ''}
+                            onChange={(event) => updateRegion(region.region_id, { label: event.target.value })}
+                            onBlur={(event) => commitRegion(region.region_id, { label: event.currentTarget.value })}
+                            placeholder={`Regiao ${index + 1}`}
+                          />
+                        </label>
+
+                        <label className="block space-y-2">
+                          <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Cor correta</span>
+                          <select
+                            className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 focus:border-cyan-300 focus:ring-4 focus:ring-cyan-100"
+                            value={assignedTokenId}
+                            onChange={(event) => updateSlotAnswer(region.region_id, event.target.value)}
+                          >
+                            <option value="" disabled>Selecione uma cor</option>
+                            {content.tokens.map((token, tokenIndex) => (
+                              <option key={token.id} value={token.id}>
+                                {token.label.trim() || `Cor ${tokenIndex + 1}`}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+
+                        <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                          <span
+                            className="h-9 w-9 rounded-full border border-white shadow-sm"
+                            style={{ backgroundColor: assignedToken?.hex ?? '#E2E8F0' }}
+                          />
+                          <div>
+                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Preview</p>
+                            <p className="mt-1 text-sm font-semibold text-slate-700">
+                              {assignedToken?.label?.trim() || 'Nenhuma cor associada'}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </aside>
+          </div>
+        </section>
+      </div>
     )
   }
 
@@ -1840,9 +2151,12 @@ export function GamifiedQuestionEditor({
       </div>
 
       {activeInteraction.kind === 'drag_drop_labeling'
-      || activeInteraction.kind === 'coloring'
         ? renderDragDropEditor(activeInteraction)
-        : renderFillInTheBlanksEditor(activeInteraction)}
+        : activeInteraction.kind === 'coloring'
+          ? activeColoringSvgInteraction
+            ? renderColoringSvgEditor(activeColoringSvgInteraction)
+            : renderDragDropEditor(activeInteraction as CanvasInteractionContent)
+          : renderFillInTheBlanksEditor(activeInteraction)}
 
       {activeInteraction.kind === 'drag_drop_labeling' || activeInteraction.kind === 'coloring' ? renderTokenBank() : null}
 

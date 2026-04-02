@@ -1,6 +1,13 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 
-import { assessmentInteractionContentSchema } from '@/features/assessments/gamified'
+import {
+  applyColoringSvgRuntimeState,
+  getColoringSvgRegionIdFromEventTarget,
+} from '@/features/assessments/coloring-svg'
+import {
+  assessmentInteractionContentSchema,
+  getColoringSlotIds,
+} from '@/features/assessments/gamified'
 import type {
   AssessmentInteractionToken,
   ColoringInteractionContent,
@@ -78,23 +85,57 @@ function ColoringView({
 }) {
   const ERASER_TOOL_ID = '__eraser__'
   const [armedColorId, setArmedColorId] = useState<string | null>(content.tokens[0]?.id ?? null)
+  const [selectedRegionId, setSelectedRegionId] = useState<string | null>(
+    'regions' in content
+      ? content.regions[0]?.region_id ?? null
+      : null,
+  )
+  const svgPreviewRef = useRef<HTMLDivElement | null>(null)
   const colorById = useMemo(
     () => new Map(content.tokens.map((token) => [token.id, token])),
     [content.tokens],
   )
   const stageUrl = content.asset.signed_url || content.asset.storage_path
+  const svgContent = 'regions' in content ? content : null
+  const isSvgMode = Boolean(svgContent)
+  const slotIds = getColoringSlotIds(content)
   const selectedColor = armedColorId && armedColorId !== ERASER_TOOL_ID
     ? colorById.get(armedColorId) ?? null
     : null
-  const coloredTargetsCount = content.targets.filter((target) => Boolean(value[target.id])).length
+  const coloredTargetsCount = slotIds.filter((slotId) => Boolean(value[slotId])).length
+
+  useEffect(() => {
+    if (!isSvgMode) {
+      return
+    }
+
+    applyColoringSvgRuntimeState(svgPreviewRef.current, {
+      regionAssignments: value,
+      colorHexByTokenId: new Map(content.tokens.map((token) => [token.id, token.hex])),
+      selectedRegionId,
+      interactive: !readOnly,
+    })
+  }, [content, isSvgMode, readOnly, selectedRegionId, value])
+
+  useEffect(() => {
+    if (!isSvgMode) {
+      return
+    }
+
+    if (selectedRegionId && svgContent?.regions.some((region) => region.region_id === selectedRegionId)) {
+      return
+    }
+
+    setSelectedRegionId(svgContent?.regions[0]?.region_id ?? null)
+  }, [isSvgMode, selectedRegionId, svgContent])
 
   function clearAllAssignments() {
     if (readOnly) return
     setArmedColorId(content.tokens[0]?.id ?? null)
 
-    for (const target of content.targets) {
-      if (value[target.id]) {
-        onChange(target.id, null)
+    for (const slotId of slotIds) {
+      if (value[slotId]) {
+        onChange(slotId, null)
       }
     }
   }
@@ -202,16 +243,47 @@ function ColoringView({
             <div className="flex items-center justify-between gap-3">
               <span className="text-[10px] font-black uppercase tracking-[0.28em] text-slate-400">Progresso</span>
               <span className="text-sm font-black text-cyan-700">
-                {coloredTargetsCount}/{content.targets.length}
+                {coloredTargetsCount}/{slotIds.length}
               </span>
             </div>
             <div className="mt-3 h-2 rounded-full bg-slate-200">
               <div
                 className="h-2 rounded-full bg-cyan-500 transition-all"
-                style={{ width: `${content.targets.length ? (coloredTargetsCount / content.targets.length) * 100 : 0}%` }}
+                style={{ width: `${slotIds.length ? (coloredTargetsCount / slotIds.length) * 100 : 0}%` }}
               />
             </div>
           </div>
+
+          {isSvgMode ? (
+            <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-[10px] font-black uppercase tracking-[0.28em] text-slate-400">Regioes</span>
+                <span className="text-xs font-black text-slate-500">{svgContent?.regions.length ?? 0}</span>
+              </div>
+              <div className="mt-4 flex max-h-[240px] flex-wrap gap-2 overflow-auto">
+                {svgContent?.regions.map((region, index) => {
+                  const isSelected = selectedRegionId === region.region_id
+                  const isPainted = Boolean(value[region.region_id])
+                  return (
+                    <button
+                      key={region.region_id}
+                      type="button"
+                      onClick={() => setSelectedRegionId(region.region_id)}
+                      className={`rounded-full border px-3 py-1.5 text-xs font-black transition-all ${
+                        isSelected
+                          ? 'border-cyan-400 bg-cyan-50 text-cyan-800'
+                          : isPainted
+                            ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                            : 'border-slate-200 bg-white text-slate-600 hover:border-cyan-200'
+                      }`}
+                    >
+                      {region.label?.trim() || `Regiao ${index + 1}`}
+                    </button>
+                  )
+                }) ?? null}
+              </div>
+            </div>
+          ) : null}
         </div>
       </div>
 
@@ -226,7 +298,40 @@ function ColoringView({
             className="relative mx-auto overflow-hidden rounded-[32px] border border-slate-200 bg-white shadow-lg"
             style={{ aspectRatio: `${content.asset.width} / ${content.asset.height}` }}
           >
-            {stageUrl ? (
+            {isSvgMode ? (
+              svgContent?.svg_markup ? (
+                <div
+                  ref={svgPreviewRef}
+                  className="h-full w-full [&>svg]:h-full [&>svg]:w-full"
+                  aria-label={content.asset.alt}
+                  role="img"
+                  dangerouslySetInnerHTML={{ __html: svgContent.svg_markup }}
+                  onClick={(event) => {
+                    const regionId = getColoringSvgRegionIdFromEventTarget(event.target)
+                    if (!regionId) {
+                      return
+                    }
+
+                    setSelectedRegionId(regionId)
+
+                    if (readOnly || !armedColorId) {
+                      return
+                    }
+
+                    if (armedColorId === ERASER_TOOL_ID) {
+                      onChange(regionId, null)
+                      return
+                    }
+
+                    onChange(regionId, armedColorId)
+                  }}
+                />
+              ) : (
+                <div className="flex h-full items-center justify-center bg-slate-100 text-sm font-bold text-slate-400">
+                  SVG para colorir indisponivel
+                </div>
+              )
+            ) : stageUrl ? (
               <img src={stageUrl} alt={content.asset.alt} className="h-full w-full object-contain" draggable={false} />
             ) : (
               <div className="flex h-full items-center justify-center bg-slate-100 text-sm font-bold text-slate-400">
@@ -234,7 +339,7 @@ function ColoringView({
               </div>
             )}
 
-            {content.targets.map((target) => {
+            {'targets' in content ? content.targets.map((target) => {
               const paintedColor = value[target.id] ? colorById.get(value[target.id] ?? '') : null
 
               return (
@@ -265,7 +370,7 @@ function ColoringView({
                   <span className="sr-only">{target.label ?? 'Area para colorir'}</span>
                 </button>
               )
-            })}
+            }) : null}
           </div>
         </div>
       </div>

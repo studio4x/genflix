@@ -792,6 +792,17 @@ function getInteractionSlotIds(content: Record<string, unknown> | null) {
   }
 
   if (content.kind === 'coloring') {
+    if (content.render_mode === 'svg_regions') {
+      const regions = Array.isArray(content.regions) ? content.regions : []
+      return regions
+        .map((region) => (
+          region && typeof region === 'object' && typeof region.region_id === 'string'
+            ? region.region_id.trim()
+            : ''
+        ))
+        .filter(Boolean)
+    }
+
     const targets = Array.isArray(content.targets) ? content.targets : []
     return targets
       .map((target) => (

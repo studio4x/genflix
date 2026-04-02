@@ -1,11 +1,13 @@
 import { z } from 'zod'
 
+import { createDefaultColoringSvgAsset } from '@/features/assessments/coloring-svg'
 import type {
   AssessmentInteractionContent,
   AssessmentInteractionResponsePayload,
   AssessmentQuestionAnswerKeyPayload,
   AssessmentQuestionType,
   ColoringInteractionContent,
+  ColoringRenderMode,
   FillInTheBlanksInteractionContent,
 } from '@/types/content'
 
@@ -54,13 +56,33 @@ export const coloringPaletteColorSchema = z.object({
   hex: z.string().trim().regex(/^#([0-9a-fA-F]{6})$/, 'Cor invalida.'),
 })
 
-export const coloringInteractionContentSchema = z.object({
+export const coloringSvgRegionSchema = z.object({
+  region_id: z.string().trim().min(1, 'Identificador da regiao obrigatorio.'),
+  label: z.string().trim().max(160).nullable().optional(),
+})
+
+const coloringBaseInteractionContentSchema = z.object({
   kind: z.literal('coloring'),
   instruction: z.string().trim().min(2, 'Instrucao obrigatoria.'),
   asset: assessmentInteractionAssetSchema,
   tokens: z.array(coloringPaletteColorSchema).min(1, 'Adicione ao menos uma cor.'),
+})
+
+export const coloringLegacyInteractionContentSchema = coloringBaseInteractionContentSchema.extend({
+  render_mode: z.literal('legacy_rect').optional(),
   targets: z.array(coloringAreaSchema).min(1, 'Adicione ao menos uma area para colorir.'),
 })
+
+export const coloringSvgInteractionContentSchema = coloringBaseInteractionContentSchema.extend({
+  render_mode: z.literal('svg_regions'),
+  svg_markup: z.string().trim().min(1, 'Envie um SVG valido para o quiz de colorir.'),
+  regions: z.array(coloringSvgRegionSchema).min(1, 'Adicione ao menos uma regiao no SVG.'),
+})
+
+export const coloringInteractionContentSchema = z.union([
+  coloringLegacyInteractionContentSchema,
+  coloringSvgInteractionContentSchema,
+])
 
 export const fillInTheBlanksSegmentSchema = z.discriminatedUnion('type', [
   z.object({
@@ -93,10 +115,11 @@ export const fillInTheBlanksInteractionContentSchema = z.object({
   })).optional().nullable(),
 })
 
-export const assessmentInteractionContentSchema = z.discriminatedUnion('kind', [
+export const assessmentInteractionContentSchema = z.union([
   dragDropLabelingInteractionContentSchema,
   fillInTheBlanksInteractionContentSchema,
-  coloringInteractionContentSchema,
+  coloringLegacyInteractionContentSchema,
+  coloringSvgInteractionContentSchema,
 ])
 
 export const assessmentQuestionAnswerKeyPayloadSchema = z.object({
@@ -180,22 +203,27 @@ export function createDefaultInteractionContent(questionType: AssessmentQuestion
   }
 
   if (questionType === 'coloring') {
+    const defaultSvgAsset = createDefaultColoringSvgAsset()
     return {
       kind: 'coloring',
+      render_mode: 'svg_regions',
       instruction: 'Selecione uma cor e pinte cada area com a cor correta.',
       asset: {
         storage_path: '',
         signed_url: null,
         alt: 'Imagem para colorir',
-        width: 1200,
-        height: 800,
+        width: defaultSvgAsset.width,
+        height: defaultSvgAsset.height,
       },
+      svg_markup: defaultSvgAsset.svgMarkup,
       tokens: [
         { id: crypto.randomUUID(), label: 'Azul', hex: '#2563eb' },
-        { id: crypto.randomUUID(), label: 'Verde', hex: '#16a34a' },
       ],
-      targets: [
-        { id: crypto.randomUUID(), x: 20, y: 20, w: 18, h: 12, label: 'Area 1' },
+      regions: [
+        {
+          region_id: defaultSvgAsset.regions[0]?.region_id ?? 'region-1',
+          label: defaultSvgAsset.regions[0]?.label ?? 'Regiao 1',
+        },
       ],
     } satisfies ColoringInteractionContent
   }
@@ -232,8 +260,8 @@ export function createAnswerKeyFromInteraction(
 
   if (content.kind === 'coloring') {
     return {
-      entries: content.targets.map((target, index) => ({
-        slot_id: target.id,
+      entries: getColoringSlotIds(content).map((slotId, index) => ({
+        slot_id: slotId,
         token_id: content.tokens[index]?.id ?? content.tokens[0]?.id ?? '',
       })),
     }
@@ -258,7 +286,7 @@ export function getInteractionSlotIds(content: AssessmentInteractionContent | nu
   }
 
   if (content.kind === 'coloring') {
-    return content.targets.map((target) => target.id)
+    return getColoringSlotIds(content)
   }
 
   return content.segments
@@ -322,6 +350,14 @@ export function validateInteractionBundle(
     throw new Error('Cada cor da paleta precisa usar um codigo hexadecimal valido.')
   }
 
+  if (
+    parsedContent.data.kind === 'coloring'
+    && parsedContent.data.render_mode === 'svg_regions'
+    && parsedContent.data.regions.some((region) => region.region_id.trim().length === 0)
+  ) {
+    throw new Error('Cada regiao do SVG precisa ter um identificador valido.')
+  }
+
   const usedSlots = new Set<string>()
   const usedTokens = new Set<string>()
 
@@ -349,6 +385,18 @@ export function validateInteractionBundle(
   if (usedSlots.size !== slotIds.size) {
     throw new Error('Defina uma resposta correta para cada area/lacuna.')
   }
+}
+
+export function getColoringRenderMode(content: ColoringInteractionContent): ColoringRenderMode {
+  return content.render_mode === 'svg_regions' ? 'svg_regions' : 'legacy_rect'
+}
+
+export function getColoringSlotIds(content: ColoringInteractionContent) {
+  if ('regions' in content) {
+    return content.regions.map((region) => region.region_id)
+  }
+
+  return content.targets.map((target) => target.id)
 }
 
 export function normalizeResponsePayload(

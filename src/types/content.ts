@@ -19,6 +19,8 @@ export interface ColoringPaletteColor extends AssessmentInteractionToken {
   hex: string
 }
 
+export type ColoringRenderMode = 'legacy_rect' | 'svg_regions'
+
 export interface AssessmentInteractionAsset {
   storage_path: string
   signed_url?: string | null
@@ -87,13 +89,32 @@ export interface ColoringArea {
   label?: string | null
 }
 
-export interface ColoringInteractionContent {
+export interface ColoringSvgRegion {
+  region_id: string
+  label?: string | null
+}
+
+interface ColoringInteractionContentBase {
   kind: 'coloring'
   instruction: string
   asset: AssessmentInteractionAsset
   tokens: ColoringPaletteColor[]
+}
+
+export interface LegacyColoringInteractionContent extends ColoringInteractionContentBase {
+  render_mode?: 'legacy_rect'
   targets: ColoringArea[]
 }
+
+export interface SvgColoringInteractionContent extends ColoringInteractionContentBase {
+  render_mode: 'svg_regions'
+  svg_markup: string
+  regions: ColoringSvgRegion[]
+}
+
+export type ColoringInteractionContent =
+  | LegacyColoringInteractionContent
+  | SvgColoringInteractionContent
 
 export type AssessmentInteractionContent =
   | DragDropLabelingInteractionContent

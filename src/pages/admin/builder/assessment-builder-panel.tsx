@@ -34,6 +34,7 @@ import {
   createAnswerKeyFromInteraction,
   createDefaultInteractionContent,
   assessmentInteractionContentSchema,
+  getInteractionSlotIds,
   isGamifiedQuestionType,
 } from '@/features/assessments/gamified'
 import { fetchModule } from '@/features/admin/content/api'
@@ -84,15 +85,7 @@ function getGamifiedItemCount(question: AssessmentQuestionWithOptions) {
     return 0
   }
 
-  if (parsed.data.kind === 'drag_drop_labeling') {
-    return parsed.data.targets.length
-  }
-
-  if (parsed.data.kind === 'coloring') {
-    return parsed.data.targets.length
-  }
-
-  return parsed.data.segments.filter((segment) => segment.type === 'blank').length
+  return getInteractionSlotIds(parsed.data).length
 }
 
 function getQuestionScoringExplanation(question: AssessmentQuestionWithOptions) {

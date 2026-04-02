@@ -3,7 +3,10 @@ import { useNavigate, useOutletContext, useParams } from 'react-router-dom'
 
 import { useAuth } from '@/app/providers/auth-provider'
 import { Button } from '@/components/ui/button'
-import { assessmentInteractionContentSchema } from '@/features/assessments/gamified'
+import {
+  assessmentInteractionContentSchema,
+  getColoringSlotIds as getColoringInteractionSlotIds,
+} from '@/features/assessments/gamified'
 import {
   buildInteractionAnswerPayload,
   fetchAssessmentForExecution,
@@ -125,7 +128,7 @@ function getInteractionSlotIds(question: StudentAssessmentQuestionWithOptions) {
   }
 
   if (parsed.data.kind === 'coloring') {
-    return parsed.data.targets.map((target) => target.id)
+    return getColoringInteractionSlotIds(parsed.data)
   }
 
   return parsed.data.segments
@@ -178,6 +181,18 @@ function buildInteractionFeedbackLookup(question: StudentAssessmentQuestionWithO
         parsed.data.targets.map((target, index) => [
           target.id,
           target.label?.trim() || `Area ${index + 1}`,
+        ]),
+      ),
+      tokenLabels,
+    }
+  }
+
+  if (parsed.data.kind === 'coloring' && parsed.data.render_mode === 'svg_regions') {
+    return {
+      slotLabels: new Map(
+        parsed.data.regions.map((region, index) => [
+          region.region_id,
+          region.label?.trim() || `Area ${index + 1}`,
         ]),
       ),
       tokenLabels,
