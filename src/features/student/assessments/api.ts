@@ -142,61 +142,73 @@ export async function fetchStudentCourseAssessments(courseId: string) {
 }
 
 export async function fetchAssessmentForExecution(assessmentId: string) {
-  const accessToken = await resolveAccessToken()
-  const response = await fetch(`${env.VITE_SUPABASE_URL}/functions/v1/get-assessment-execution`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      apikey: env.VITE_SUPABASE_ANON_KEY,
-      Authorization: `Bearer ${accessToken}`,
-    },
-    body: JSON.stringify({
-      assessment_id: assessmentId,
-      access_token: accessToken,
-    }),
-  })
+  const maxAttempts = 2
 
-  const responseText = await response.text()
-  let payload:
-    | {
-      assessment?: Assessment | null
-      questions?: StudentAssessmentQuestionWithOptions[]
-      caseStudies?: StudentAssessmentCaseStudyWithQuestions[]
-      error?: string
-    }
-    | null = null
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    const accessToken = await resolveAccessToken(attempt > 1)
+    const response = await fetch(`${env.VITE_SUPABASE_URL}/functions/v1/get-assessment-execution`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        apikey: env.VITE_SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify({
+        assessment_id: assessmentId,
+        access_token: accessToken,
+      }),
+    })
 
-  if (responseText) {
-    try {
-      payload = JSON.parse(responseText) as {
+    const responseText = await response.text()
+    let payload:
+      | {
         assessment?: Assessment | null
         questions?: StudentAssessmentQuestionWithOptions[]
         caseStudies?: StudentAssessmentCaseStudyWithQuestions[]
         error?: string
       }
-    } catch {
-      payload = null
-    }
-  }
+      | null = null
 
-  if (!response.ok) {
+    if (responseText) {
+      try {
+        payload = JSON.parse(responseText) as {
+          assessment?: Assessment | null
+          questions?: StudentAssessmentQuestionWithOptions[]
+          caseStudies?: StudentAssessmentCaseStudyWithQuestions[]
+          error?: string
+        }
+      } catch {
+        payload = null
+      }
+    }
+
+    if (response.ok) {
+      return {
+        assessment: (payload?.assessment as Assessment | null) ?? null,
+        questions: (payload?.questions as StudentAssessmentQuestionWithOptions[]) ?? [],
+        caseStudies: (payload?.caseStudies as StudentAssessmentCaseStudyWithQuestions[]) ?? [],
+      }
+    }
+
     const fallbackMessage = responseText.trim() || `Falha ao carregar avaliacao (${response.status}).`
     console.error('Falha ao carregar avaliacao para execucao:', {
       assessmentId,
+      attempt,
       status: response.status,
       payload,
       responseText,
     })
+
+    if (response.status === 401 && attempt < maxAttempts) {
+      continue
+    }
+
     throw new Error(payload && 'error' in payload && typeof payload.error === 'string'
       ? payload.error
       : fallbackMessage)
   }
 
-  return {
-    assessment: (payload?.assessment as Assessment | null) ?? null,
-    questions: (payload?.questions as StudentAssessmentQuestionWithOptions[]) ?? [],
-    caseStudies: (payload?.caseStudies as StudentAssessmentCaseStudyWithQuestions[]) ?? [],
-  }
+  throw new Error('Falha ao carregar avaliacao.')
 }
 
 export async function submitAssessmentAttempt(
