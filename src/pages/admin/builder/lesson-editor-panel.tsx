@@ -553,7 +553,7 @@ export function LessonEditorPanel() {
                </label>
 
                <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                 <p className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">Liberacao Programada</p>
+                 <p className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">Liberação Programada</p>
                  <div className="mt-4 grid gap-4 md:grid-cols-2">
                    <label className="block space-y-2">
                      <span className="text-sm font-bold text-slate-800">Liberar em</span>

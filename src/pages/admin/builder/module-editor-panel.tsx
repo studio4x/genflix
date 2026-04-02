@@ -440,7 +440,7 @@ export function ModuleEditorPanel() {
             </label>
 
             <div className="rounded-[24px] border border-slate-200 bg-slate-50/50 p-5">
-              <p className="text-xs font-black uppercase tracking-[0.22em] text-slate-400">Liberacao Programada</p>
+              <p className="text-xs font-black uppercase tracking-[0.22em] text-slate-400">Liberação Programada</p>
               <div className="mt-4 grid gap-4 md:grid-cols-2">
                 <label className="block space-y-2">
                   <span className="text-sm font-bold text-slate-700">Liberar em</span>
@@ -461,20 +461,30 @@ export function ModuleEditorPanel() {
                   />
                 </label>
               </div>
-              <label className="mt-4 block space-y-2">
-                <span className="text-sm font-bold text-slate-700">Liberar apos X dias da inscricao no curso</span>
-                <input
-                  type="number"
-                  min={0}
-                  step={1}
-                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm md:max-w-xs"
-                  value={form.release_days_after_enrollment ?? ''}
-                  onChange={(event) => setForm((prev) => ({ ...prev, release_days_after_enrollment: event.target.value }))}
-                  placeholder="Ex: 7"
-                />
-              </label>
+              <div className="mt-4 rounded-2xl border border-blue-100 bg-blue-50/50 p-4">
+                <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+                  <div className="space-y-1">
+                    <span className="block text-sm font-bold text-slate-800">Liberar após X dias da inscrição no curso</span>
+                    <p className="text-xs leading-relaxed text-slate-500">
+                      Use esta opção para liberar o módulo automaticamente após um período contado desde a inscrição do aluno.
+                    </p>
+                  </div>
+                  <label className="block space-y-2 md:min-w-[220px]">
+                    <span className="text-xs font-black uppercase tracking-[0.18em] text-blue-700">Quantidade de dias</span>
+                    <input
+                      type="number"
+                      min={0}
+                      step={1}
+                      className="w-full rounded-xl border border-blue-200 bg-white px-4 py-3 text-sm shadow-sm focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+                      value={form.release_days_after_enrollment ?? ''}
+                      onChange={(event) => setForm((prev) => ({ ...prev, release_days_after_enrollment: event.target.value }))}
+                      placeholder="Ex.: 7"
+                    />
+                  </label>
+                </div>
+              </div>
               <p className="mt-3 text-xs text-slate-500">
-                Se preencher uma data e tambem um numero de dias, as duas regras serao cumulativas. O modulo so libera quando ambas forem atendidas.
+                Se preencher uma data e também um número de dias, as duas regras serão cumulativas. O módulo só libera quando ambas forem atendidas.
               </p>
             </div>
 
@@ -487,7 +497,7 @@ export function ModuleEditorPanel() {
                       {currentModule?.module_pdf_file_name ?? 'Nenhum PDF enviado'}
                     </h4>
                     <p className="mt-1 text-sm text-slate-500">
-                      O aluno recebera uma copia licenciada com marca d&apos;agua e identificacao individual.
+                      O aluno receberá uma cópia licenciada com marca d&apos;água e identificação individual.
                     </p>
                   </div>
 
