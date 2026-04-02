@@ -21,6 +21,11 @@ import {
 import { splitContent, mergeContent, sanitizeTableHtml } from '@/features/admin/content/content-blocks'
 import type { LessonContentBlock } from '@/features/admin/content/content-blocks'
 import { Button } from '@/components/ui/button'
+import {
+  getLessonFooterActionIconName,
+  getLessonFooterButtonClassName,
+  renderButtonTemplateIcon,
+} from '@/features/admin/content/button-template-icons'
 import { LessonAudioPlayer } from '@/features/student/lesson-audio/lesson-audio-player'
 import { Plus, Trash2, Code2, Eye } from 'lucide-react'
 import type { LessonFooterAction } from '@/types/content'
@@ -617,12 +622,19 @@ export function LessonEditorPanel() {
                            <span className="rounded-full bg-blue-100 px-2.5 py-1 text-[10px] font-black uppercase tracking-widest text-blue-700">
                              {index + 1}
                            </span>
-                           <span className="text-sm font-bold text-slate-900">
-                             {action.label?.trim() || action.template?.default_label || action.file_name || 'Botao sem rotulo'}
-                           </span>
                            <span className="rounded-full bg-white px-2.5 py-1 text-[10px] font-black uppercase tracking-widest text-slate-500">
                              {action.action_type === 'file' ? 'Arquivo' : 'URL'}
                            </span>
+                         </div>
+                         <div className="mt-3">
+                           <Button
+                             type="button"
+                             variant="outline"
+                             className={getLessonFooterButtonClassName(action.template)}
+                           >
+                             {renderButtonTemplateIcon(getLessonFooterActionIconName(action))}
+                             {action.label?.trim() || action.template?.default_label || action.file_name || 'Botao sem rotulo'}
+                           </Button>
                          </div>
                        </div>
                      ))}

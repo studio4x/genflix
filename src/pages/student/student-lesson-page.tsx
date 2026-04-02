@@ -6,6 +6,11 @@ import { Button } from '@/components/ui/button'
 import { splitContent } from '@/features/admin/content/content-blocks'
 import { ContentBlocksRenderer } from '@/features/admin/content/content-blocks-renderer'
 import {
+  getLessonFooterActionIconName,
+  getLessonFooterButtonClassName,
+  renderButtonTemplateIcon,
+} from '@/features/admin/content/button-template-icons'
+import {
   fetchLessonFooterActions,
   getSignedLessonFooterActionUrl,
 } from '@/features/admin/content/api'
@@ -29,14 +34,6 @@ import type {
   StudentLessonWithProgress,
 } from '@/types/content'
 import 'react-quill/dist/quill.snow.css'
-
-function formatBytes(value: number): string {
-  if (value === 0) return '0 B'
-  const units = ['B', 'KB', 'MB', 'GB']
-  const unitIndex = Math.min(Math.floor(Math.log(value) / Math.log(1024)), units.length - 1)
-  const normalized = value / 1024 ** unitIndex
-  return `${normalized.toFixed(unitIndex === 0 ? 0 : 1)} ${units[unitIndex]}`
-}
 
 function extractVideoId(url: string | null) {
   if (!url) return null
@@ -316,32 +313,19 @@ export function StudentLessonPage() {
               </p>
             </div>
           ) : (
-            <div className="grid gap-3">
+            <div className="flex flex-wrap gap-3">
               {footerActions.map((action) => (
-                <article
+                <Button
                   key={action.id}
-                  className="flex flex-col gap-4 rounded-[24px] border border-slate-100 bg-slate-50/60 p-4 sm:flex-row sm:items-center sm:justify-between"
+                  type="button"
+                  variant="outline"
+                  disabled={isLoadingFooterActions}
+                  onClick={() => void handleOpenFooterAction(action)}
+                  className={getLessonFooterButtonClassName(action.template)}
                 >
-                  <div className="min-w-0">
-                    <p className="truncate font-bold text-slate-900">
-                      {action.label ?? action.file_name ?? action.template?.default_label ?? 'Recurso'}
-                    </p>
-                    <p className="mt-1 text-xs font-medium uppercase tracking-wide text-slate-500">
-                      {action.action_type === 'file'
-                        ? `${action.mime_type?.split('/')[1] || 'FILE'} • ${formatBytes(action.file_size_bytes)}`
-                        : action.url ?? 'URL'}
-                    </p>
-                  </div>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    disabled={isLoadingFooterActions}
-                    onClick={() => void handleOpenFooterAction(action)}
-                    className="rounded-xl border-slate-200 bg-white font-bold"
-                  >
-                    {isLoadingFooterActions ? 'Abrindo...' : action.action_type === 'file' ? 'Abrir Arquivo' : 'Abrir Link'}
-                  </Button>
-                </article>
+                  {renderButtonTemplateIcon(getLessonFooterActionIconName(action))}
+                  {action.label ?? action.file_name ?? action.template?.default_label ?? 'Recurso'}
+                </Button>
               ))}
             </div>
           )}
@@ -389,8 +373,9 @@ export function StudentLessonPage() {
                 key={action.id}
                 variant="outline"
                 onClick={() => void handleOpenFooterAction(action)}
-                className="rounded-xl border-slate-200 bg-white font-bold"
+                className={getLessonFooterButtonClassName(action.template)}
               >
+                {renderButtonTemplateIcon(getLessonFooterActionIconName(action))}
                 {action.label ?? action.file_name ?? action.template?.default_label ?? 'Abrir'}
               </Button>
             ))}

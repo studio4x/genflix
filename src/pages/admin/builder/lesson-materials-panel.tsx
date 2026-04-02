@@ -5,6 +5,11 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '@/app/providers/auth-provider'
 import { Button } from '@/components/ui/button'
 import {
+  getLessonFooterActionIconName,
+  getLessonFooterButtonClassName,
+  renderButtonTemplateIcon,
+} from '@/features/admin/content/button-template-icons'
+import {
   createLessonFooterAction,
   deleteLessonFooterAction,
   fetchButtonTemplates,
@@ -219,6 +224,29 @@ export function LessonMaterialsPanel() {
             </select>
           </label>
 
+          {selectedTemplateId ? (
+            <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-4">
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Preview do botao</p>
+              <div className="mt-3">
+                {(() => {
+                  const selectedTemplate = activeTemplates.find((template) => template.id === selectedTemplateId) ?? null
+                  if (!selectedTemplate) return null
+
+                  return (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className={getLessonFooterButtonClassName(selectedTemplate)}
+                    >
+                      {renderButtonTemplateIcon(selectedTemplate.icon)}
+                      {selectedTemplate.default_label}
+                    </Button>
+                  )
+                })()}
+              </div>
+            </div>
+          ) : null}
+
           <label className={`block rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50 p-6 text-center ${isUploading ? 'opacity-70' : 'cursor-pointer'}`}>
             <input type="file" className="hidden" onChange={handleUpload} disabled={isUploading} />
             <p className="text-sm font-black text-slate-900">Enviar arquivo para virar botao</p>
@@ -280,9 +308,16 @@ export function LessonMaterialsPanel() {
                           </span>
                         ) : null}
                       </div>
-                      <h3 className="mt-3 text-lg font-black text-slate-900 break-words">
-                        {action.label ?? action.file_name ?? action.template?.default_label ?? 'Botao sem titulo'}
-                      </h3>
+                      <div className="mt-3">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className={getLessonFooterButtonClassName(action.template)}
+                        >
+                          {renderButtonTemplateIcon(getLessonFooterActionIconName(action))}
+                          {action.label ?? action.file_name ?? action.template?.default_label ?? 'Botao sem titulo'}
+                        </Button>
+                      </div>
                       <p className="mt-1 text-sm text-slate-500 break-all">
                         {action.action_type === 'url'
                           ? action.url

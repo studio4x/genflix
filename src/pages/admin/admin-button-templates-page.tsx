@@ -2,6 +2,11 @@ import { useEffect, useState } from 'react'
 
 import { Button } from '@/components/ui/button'
 import {
+  BUTTON_ICON_OPTIONS,
+  getLessonFooterButtonClassName,
+  renderButtonTemplateIcon,
+} from '@/features/admin/content/button-template-icons'
+import {
   createButtonTemplate,
   deleteButtonTemplate,
   fetchButtonTemplates,
@@ -144,13 +149,28 @@ export function AdminButtonTemplatesPage() {
             </label>
 
             <label className="block space-y-2">
-              <span className="text-sm font-bold text-slate-700">Icone</span>
-              <input
-                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm"
-                value={form.icon}
-                onChange={(event) => setForm((prev) => ({ ...prev, icon: event.target.value }))}
-                placeholder="download, external-link, book-open..."
-              />
+              <span className="text-sm font-bold text-slate-700">Biblioteca de icones</span>
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                {BUTTON_ICON_OPTIONS.map((iconOption) => {
+                  const isSelected = form.icon === iconOption.value
+
+                  return (
+                    <button
+                      key={iconOption.value}
+                      type="button"
+                      onClick={() => setForm((prev) => ({ ...prev, icon: iconOption.value }))}
+                      className={`flex items-center gap-2 rounded-2xl border px-3 py-3 text-left text-xs font-bold transition-all ${
+                        isSelected
+                          ? 'border-blue-300 bg-blue-50 text-blue-700 shadow-sm'
+                          : 'border-slate-200 bg-white text-slate-600 hover:border-blue-200 hover:bg-blue-50/50'
+                      }`}
+                    >
+                      {renderButtonTemplateIcon(iconOption.value)}
+                      <span>{iconOption.label}</span>
+                    </button>
+                  )
+                })}
+              </div>
             </label>
 
             <label className="block space-y-2">
@@ -205,6 +225,23 @@ export function AdminButtonTemplatesPage() {
               </Button>
             ) : null}
           </div>
+
+          <div className="mt-6 rounded-[24px] border border-slate-200 bg-white p-4">
+            <p className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">Preview do botao</p>
+            <div className="mt-4">
+              <Button
+                type="button"
+                variant="outline"
+                className={getLessonFooterButtonClassName({
+                  variant: form.variant,
+                  theme: form.theme,
+                })}
+              >
+                {renderButtonTemplateIcon(form.icon)}
+                {form.default_label || 'Nome do Botao'}
+              </Button>
+            </div>
+          </div>
         </section>
 
         <section className="rounded-[28px] border border-slate-200 bg-white p-6">
@@ -230,7 +267,16 @@ export function AdminButtonTemplatesPage() {
                           {template.is_active ? 'Ativo' : 'Inativo'}
                         </span>
                       </div>
-                      <p className="mt-2 text-sm font-semibold text-slate-600">{template.default_label}</p>
+                      <div className="mt-3">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className={getLessonFooterButtonClassName(template)}
+                        >
+                          {renderButtonTemplateIcon(template.icon)}
+                          {template.default_label}
+                        </Button>
+                      </div>
                       <p className="mt-1 text-xs uppercase tracking-wider text-slate-400">
                         {template.variant} • {template.theme} • {template.icon}
                       </p>
