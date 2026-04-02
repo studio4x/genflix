@@ -5,9 +5,15 @@ import { useAuth } from '@/app/providers/auth-provider'
 import { Button } from '@/components/ui/button'
 import { splitContent } from '@/features/admin/content/content-blocks'
 import { ContentBlocksRenderer } from '@/features/admin/content/content-blocks-renderer'
-import { fetchMaterials, getSignedMaterialUrl } from '@/features/admin/content/api'
+import {
+  fetchLessonFooterActions,
+  getSignedLessonFooterActionUrl,
+} from '@/features/admin/content/api'
 import type { StudentCourseAssessmentSummary } from '@/features/student/assessments/api'
-import { exportModuleToPdf } from '@/features/student/content/pdf-exporter'
+import {
+  exportLicensedModulePdf,
+  exportModuleToPdf,
+} from '@/features/student/content/pdf-exporter'
 import { LessonAudioPlayer } from '@/features/student/lesson-audio/lesson-audio-player'
 import { LessonNotesPanel } from '@/features/student/notes/lesson-notes-panel'
 import {
@@ -18,7 +24,7 @@ import {
 import { supabase } from '@/services/supabase/client'
 import type {
   Lesson,
-  LessonMaterial,
+  LessonFooterAction,
   StudentCourseModuleProgress,
   StudentLessonWithProgress,
 } from '@/types/content'
@@ -53,8 +59,8 @@ export function StudentLessonPage() {
 
   const [isTogglingCompletion, setIsTogglingCompletion] = useState(false)
   const [activeLessonDetails, setActiveLessonDetails] = useState<Lesson | null>(null)
-  const [materials, setMaterials] = useState<LessonMaterial[]>([])
-  const [isLoadingMaterials, setIsLoadingMaterials] = useState(false)
+  const [footerActions, setFooterActions] = useState<LessonFooterAction[]>([])
+  const [isLoadingFooterActions, setIsLoadingFooterActions] = useState(false)
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false)
 
   useEffect(() => {
@@ -62,20 +68,20 @@ export function StudentLessonPage() {
       if (!lessonId) return
 
       try {
-        const [{ data, error }, materialsResult] = await Promise.all([
+        const [{ data, error }, footerActionsResult] = await Promise.all([
           supabase
             .from('lessons')
             .select('*')
             .eq('id', lessonId)
             .single(),
-          fetchMaterials(lessonId),
+          fetchLessonFooterActions(lessonId),
         ])
 
         if (!error && data) {
           setActiveLessonDetails(data)
         }
 
-        setMaterials(materialsResult)
+        setFooterActions(footerActionsResult.filter((action) => action.is_active))
       } catch (err) {
         console.error('Erro ao buscar detalhes da aula:', err)
       }
@@ -103,7 +109,7 @@ export function StudentLessonPage() {
         moduleId: module.id,
         lessonId: lesson.id,
         type: 'lesson',
-        isBlocked: module.state === 'blocked',
+        isBlocked: module.state === 'blocked' || module.state === 'blocked_by_schedule',
         title: lesson.title,
         is_completed: lesson.is_completed,
       })
@@ -135,15 +141,15 @@ export function StudentLessonPage() {
 
   const nextAction = isLastLessonOfModule && nextModuleQuiz
     ? {
-        label: 'Ir para o Quiz do Módulo',
-        disabled: false,
-        onClick: () => navigate(`/aluno/cursos/${courseId}/player/avaliacoes/${nextModuleQuiz.assessment_id}`),
-      }
+      label: 'Ir para o Quiz do Modulo',
+      disabled: false,
+      onClick: () => navigate(`/aluno/cursos/${courseId}/player/avaliacoes/${nextModuleQuiz.assessment_id}`),
+    }
     : {
-        label: 'Próxima Aula',
-        disabled: !nextItem || nextItem.isBlocked,
-        onClick: () => navigate(`/aluno/cursos/${courseId}/player/aulas/${nextItem!.lessonId}`),
-      }
+      label: 'Proxima Aula',
+      disabled: !nextItem || nextItem.isBlocked,
+      onClick: () => navigate(`/aluno/cursos/${courseId}/player/aulas/${nextItem!.lessonId}`),
+    }
 
   if (!currentLesson) {
     return (
@@ -153,8 +159,8 @@ export function StudentLessonPage() {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
         </div>
-        <h2 className="text-xl font-black text-slate-900">Aula não encontrada</h2>
-        <p className="mt-2 text-slate-500">O conteúdo solicitado pode ter sido movido ou excluído.</p>
+        <h2 className="text-xl font-black text-slate-900">Aula nao encontrada</h2>
+        <p className="mt-2 text-slate-500">O conteudo solicitado pode ter sido movido, expirado ou ainda nao foi liberado.</p>
         <Button onClick={() => navigate(`/aluno/cursos/${courseId}`)} className="mt-8 rounded-2xl">
           Voltar ao curso
         </Button>
@@ -187,15 +193,22 @@ export function StudentLessonPage() {
     }
   }
 
-  async function handleOpenMaterial(material: LessonMaterial) {
-    setIsLoadingMaterials(true)
+  async function handleOpenFooterAction(action: LessonFooterAction) {
+    setIsLoadingFooterActions(true)
     try {
-      const signedUrl = await getSignedMaterialUrl(material.storage_path)
-      window.open(signedUrl, '_blank', 'noopener,noreferrer')
+      if (action.action_type === 'url' && action.url) {
+        window.open(action.url, '_blank', 'noopener,noreferrer')
+        return
+      }
+
+      if (action.storage_path) {
+        const signedUrl = await getSignedLessonFooterActionUrl(action.storage_path)
+        window.open(signedUrl, '_blank', 'noopener,noreferrer')
+      }
     } catch (err) {
       alert(toErrorMessage(err))
     } finally {
-      setIsLoadingMaterials(false)
+      setIsLoadingFooterActions(false)
     }
   }
 
@@ -204,7 +217,11 @@ export function StudentLessonPage() {
 
     setIsGeneratingPdf(true)
     try {
-      await exportModuleToPdf(course.title, currentModule.title, currentModule.id)
+      if (currentModule.module_pdf_storage_path) {
+        await exportLicensedModulePdf(currentModule.title, currentModule.module_pdf_storage_path)
+      } else {
+        await exportModuleToPdf(course.title, currentModule.title, currentModule.id)
+      }
     } catch (err) {
       alert(toErrorMessage(err))
     } finally {
@@ -222,7 +239,7 @@ export function StudentLessonPage() {
             </span>
             {lessonType === 'hybrid' && (
               <span className="rounded-full border border-emerald-100 bg-emerald-50 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-emerald-600">
-                Vídeo + Texto
+                Video + Texto
               </span>
             )}
           </div>
@@ -235,7 +252,7 @@ export function StudentLessonPage() {
               onClick={() => void handleDownloadModulePdf()}
               className="rounded-xl border-slate-200 bg-white font-bold text-slate-600 hover:text-slate-900"
             >
-              {isGeneratingPdf ? 'Gerando PDF...' : 'Baixar PDF do Módulo'}
+              {isGeneratingPdf ? 'Gerando PDF...' : 'Baixar PDF do Modulo'}
             </Button>
           ) : null}
         </div>
@@ -283,42 +300,46 @@ export function StudentLessonPage() {
         <div className="border-b border-slate-100 px-6 py-5 sm:px-8">
           <div className="flex items-center gap-3">
             <span className="rounded-full border border-blue-100 bg-blue-50 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-blue-600">
-              Materiais de Apoio
+              Botoes e Recursos
             </span>
             <span className="text-xs font-medium text-slate-500">
-              Arquivos complementares desta aula
+              Arquivos e links extras desta aula
             </span>
           </div>
         </div>
 
         <div className="space-y-4 p-6 sm:p-8">
-          {materials.length === 0 ? (
+          {footerActions.length === 0 ? (
             <div className="rounded-[24px] border border-dashed border-slate-200 bg-slate-50 px-6 py-10 text-center">
               <p className="text-sm font-medium text-slate-500">
-                Nenhum material de apoio vinculado a esta aula.
+                Nenhum recurso adicional configurado para esta aula.
               </p>
             </div>
           ) : (
             <div className="grid gap-3">
-              {materials.map((material) => (
+              {footerActions.map((action) => (
                 <article
-                  key={material.id}
+                  key={action.id}
                   className="flex flex-col gap-4 rounded-[24px] border border-slate-100 bg-slate-50/60 p-4 sm:flex-row sm:items-center sm:justify-between"
                 >
                   <div className="min-w-0">
-                    <p className="truncate font-bold text-slate-900">{material.file_name}</p>
+                    <p className="truncate font-bold text-slate-900">
+                      {action.label ?? action.file_name ?? action.template?.default_label ?? 'Recurso'}
+                    </p>
                     <p className="mt-1 text-xs font-medium uppercase tracking-wide text-slate-500">
-                      {material.mime_type?.split('/')[1] || 'FILE'} • {formatBytes(material.file_size_bytes)}
+                      {action.action_type === 'file'
+                        ? `${action.mime_type?.split('/')[1] || 'FILE'} • ${formatBytes(action.file_size_bytes)}`
+                        : action.url ?? 'URL'}
                     </p>
                   </div>
                   <Button
                     type="button"
                     variant="outline"
-                    disabled={isLoadingMaterials}
-                    onClick={() => void handleOpenMaterial(material)}
+                    disabled={isLoadingFooterActions}
+                    onClick={() => void handleOpenFooterAction(action)}
                     className="rounded-xl border-slate-200 bg-white font-bold"
                   >
-                    {isLoadingMaterials ? 'Abrindo...' : 'Abrir Material'}
+                    {isLoadingFooterActions ? 'Abrindo...' : action.action_type === 'file' ? 'Abrir Arquivo' : 'Abrir Link'}
                   </Button>
                 </article>
               ))}
@@ -334,55 +355,70 @@ export function StudentLessonPage() {
         />
       ) : null}
 
-      <div className="sticky bottom-4 z-20 mt-12 flex flex-col items-center justify-between gap-4 rounded-[32px] border-t border-slate-200 bg-white/80 p-6 pt-8 shadow-xl shadow-slate-200/50 backdrop-blur-md sm:flex-row">
-        <button
-          disabled={isTogglingCompletion}
-          onClick={handleToggleCompletion}
-          className={`flex items-center gap-2 rounded-xl px-6 py-3 font-bold transition-all ${
-            currentLesson.is_completed
-              ? 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200 hover:bg-emerald-100'
-              : 'bg-emerald-600 text-white shadow-lg shadow-emerald-100 hover:bg-emerald-700'
-          }`}
-        >
-          {isTogglingCompletion ? (
-            <svg className="h-5 w-5 animate-spin" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-            </svg>
-          ) : currentLesson.is_completed ? (
-            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-            </svg>
-          ) : (
-            <svg className="h-5 w-5 text-emerald-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          )}
-          {currentLesson.is_completed ? 'Aula Concluída' : 'Marcar como Concluída'}
-        </button>
+      <div className="sticky bottom-4 z-20 mt-12 flex flex-col gap-4 rounded-[32px] border-t border-slate-200 bg-white/80 p-6 pt-8 shadow-xl shadow-slate-200/50 backdrop-blur-md">
+        <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+          <div className="flex flex-wrap items-center gap-3">
+            <button
+              disabled={isTogglingCompletion}
+              onClick={handleToggleCompletion}
+              className={`flex items-center gap-2 rounded-xl px-6 py-3 font-bold transition-all ${
+                currentLesson.is_completed
+                  ? 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200 hover:bg-emerald-100'
+                  : 'bg-emerald-600 text-white shadow-lg shadow-emerald-100 hover:bg-emerald-700'
+              }`}
+            >
+              {isTogglingCompletion ? (
+                <svg className="h-5 w-5 animate-spin" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                </svg>
+              ) : currentLesson.is_completed ? (
+                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              ) : (
+                <svg className="h-5 w-5 text-emerald-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              )}
+              {currentLesson.is_completed ? 'Aula Concluida' : 'Marcar como Concluida'}
+            </button>
 
-        <div className="flex w-full items-center gap-3 sm:w-auto">
-          <Button
-            variant="outline"
-            disabled={!prevItem || prevItem.isBlocked}
-            onClick={() => navigate(`/aluno/cursos/${courseId}/player/aulas/${prevItem!.lessonId}`)}
-            className="h-12 flex-1 rounded-xl sm:flex-none"
-          >
-            <svg className="mr-1 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-            Anterior
-          </Button>
-          <Button
-            className="h-12 flex-1 rounded-xl bg-slate-900 text-base text-white shadow-sm hover:bg-slate-800 sm:flex-none"
-            disabled={nextAction.disabled}
-            onClick={nextAction.onClick}
-          >
-            {nextAction.label}
-            <svg className="ml-1 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
-          </Button>
+            {footerActions.map((action) => (
+              <Button
+                key={action.id}
+                variant="outline"
+                onClick={() => void handleOpenFooterAction(action)}
+                className="rounded-xl border-slate-200 bg-white font-bold"
+              >
+                {action.label ?? action.file_name ?? action.template?.default_label ?? 'Abrir'}
+              </Button>
+            ))}
+          </div>
+
+          <div className="flex w-full items-center gap-3 xl:w-auto">
+            <Button
+              variant="outline"
+              disabled={!prevItem || prevItem.isBlocked}
+              onClick={() => navigate(`/aluno/cursos/${courseId}/player/aulas/${prevItem!.lessonId}`)}
+              className="h-12 flex-1 rounded-xl sm:flex-none"
+            >
+              <svg className="mr-1 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+              Anterior
+            </Button>
+            <Button
+              className="h-12 flex-1 rounded-xl bg-slate-900 text-base text-white shadow-sm hover:bg-slate-800 sm:flex-none"
+              disabled={nextAction.disabled}
+              onClick={nextAction.onClick}
+            >
+              {nextAction.label}
+              <svg className="ml-1 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </Button>
+          </div>
         </div>
       </div>
     </div>

@@ -5,22 +5,29 @@ import {
   type ImportAssessmentData,
 } from '@/features/admin/assessments/api'
 import type {
+  ButtonTemplate,
   Course,
   CourseModule,
   ExternalCourseMapping,
   Lesson,
+  LessonFooterAction,
   LessonMaterial,
+  ModulePdfAsset,
   Assessment,
 } from '@/types/content'
 
 import type {
+  ButtonTemplateFormInput,
   CourseFormInput,
   LessonFormInput,
+  LessonFooterActionFormInput,
   ModuleFormInput,
 } from './schemas'
 import type { Session } from '@supabase/supabase-js'
 
 const MATERIALS_BUCKET = 'materials'
+const MODULE_PDFS_BUCKET = 'module-pdfs'
+const LESSON_FOOTER_ASSETS_BUCKET = 'lesson-footer-assets'
 
 function normalizeSupabaseError(error: unknown): Error {
   if (error instanceof Error) {
@@ -317,6 +324,8 @@ export async function createModule(courseId: string, input: ModuleFormInput) {
       title: input.title,
       description: input.description?.trim() || null,
       is_required: input.is_required,
+      starts_at: input.starts_at?.trim() || null,
+      ends_at: input.ends_at?.trim() || null,
       position: nextPosition,
     })
     .select('*')
@@ -335,6 +344,8 @@ export async function updateModule(moduleId: string, input: ModuleFormInput) {
       title: input.title,
       description: input.description?.trim() || null,
       is_required: input.is_required,
+      starts_at: input.starts_at?.trim() || null,
+      ends_at: input.ends_at?.trim() || null,
     })
     .eq('id', moduleId)
     .select('*')
@@ -428,6 +439,8 @@ export async function createLesson(moduleId: string, input: LessonFormInput) {
       youtube_url: input.youtube_url?.trim() || null,
       text_content: input.text_content?.trim() || null,
       estimated_minutes: input.estimated_minutes,
+      starts_at: input.starts_at?.trim() || null,
+      ends_at: input.ends_at?.trim() || null,
       position: nextPosition,
     })
     .select('*')
@@ -450,6 +463,8 @@ export async function updateLesson(lessonId: string, input: LessonFormInput) {
       youtube_url: input.youtube_url?.trim() || null,
       text_content: input.text_content?.trim() || null,
       estimated_minutes: input.estimated_minutes,
+      starts_at: input.starts_at?.trim() || null,
+      ends_at: input.ends_at?.trim() || null,
     })
     .eq('id', lessonId)
     .select('*')
@@ -575,6 +590,320 @@ export async function deleteMaterial(material: LessonMaterial) {
 export async function getSignedMaterialUrl(storagePath: string) {
   const result = await supabase.storage
     .from(MATERIALS_BUCKET)
+    .createSignedUrl(storagePath, 60 * 10)
+
+  if (result.error) {
+    throw result.error
+  }
+
+  return result.data.signedUrl
+}
+
+export async function uploadModulePdf(
+  moduleId: string,
+  file: File,
+) {
+  const objectPath = `${moduleId}/${crypto.randomUUID()}-${sanitizeFileName(file.name)}`
+  const uploadResult = await supabase.storage
+    .from(MODULE_PDFS_BUCKET)
+    .upload(objectPath, file, {
+      cacheControl: '3600',
+      upsert: false,
+      contentType: file.type || 'application/pdf',
+    })
+
+  if (uploadResult.error) {
+    throw uploadResult.error
+  }
+
+  const metadataResult = await supabase
+    .from('course_modules')
+    .update({
+      module_pdf_storage_path: objectPath,
+      module_pdf_file_name: file.name,
+      module_pdf_uploaded_at: new Date().toISOString(),
+    })
+    .eq('id', moduleId)
+    .select('module_pdf_storage_path, module_pdf_file_name, module_pdf_uploaded_at')
+    .single()
+
+  if (metadataResult.error) {
+    await supabase.storage.from(MODULE_PDFS_BUCKET).remove([objectPath])
+    throw metadataResult.error
+  }
+
+  const row = metadataResult.data as {
+    module_pdf_storage_path: string
+    module_pdf_file_name: string
+    module_pdf_uploaded_at: string | null
+  }
+
+  return {
+    storage_path: row.module_pdf_storage_path,
+    file_name: row.module_pdf_file_name,
+    uploaded_at: row.module_pdf_uploaded_at,
+  } satisfies ModulePdfAsset
+}
+
+export async function deleteModulePdf(module: Pick<CourseModule, 'id' | 'module_pdf_storage_path'>) {
+  if (module.module_pdf_storage_path) {
+    const removeResult = await supabase.storage
+      .from(MODULE_PDFS_BUCKET)
+      .remove([module.module_pdf_storage_path])
+
+    if (removeResult.error) {
+      throw removeResult.error
+    }
+  }
+
+  const result = await supabase
+    .from('course_modules')
+    .update({
+      module_pdf_storage_path: null,
+      module_pdf_file_name: null,
+      module_pdf_uploaded_at: null,
+    })
+    .eq('id', module.id)
+
+  if (result.error) {
+    throw result.error
+  }
+}
+
+export async function getSignedModulePdfUrl(storagePath: string) {
+  const result = await supabase.storage
+    .from(MODULE_PDFS_BUCKET)
+    .createSignedUrl(storagePath, 60 * 10)
+
+  if (result.error) {
+    throw result.error
+  }
+
+  return result.data.signedUrl
+}
+
+export async function fetchButtonTemplates() {
+  const result = await supabase
+    .from('button_templates')
+    .select('*')
+    .order('name', { ascending: true })
+
+  if (result.error) {
+    throw result.error
+  }
+
+  return (result.data as ButtonTemplate[]) ?? []
+}
+
+export async function createButtonTemplate(input: ButtonTemplateFormInput) {
+  const result = await supabase
+    .from('button_templates')
+    .insert(input)
+    .select('*')
+    .single()
+
+  if (result.error) {
+    throw result.error
+  }
+
+  return result.data as ButtonTemplate
+}
+
+export async function updateButtonTemplate(templateId: string, input: ButtonTemplateFormInput) {
+  const result = await supabase
+    .from('button_templates')
+    .update(input)
+    .eq('id', templateId)
+    .select('*')
+    .single()
+
+  if (result.error) {
+    throw result.error
+  }
+
+  return result.data as ButtonTemplate
+}
+
+export async function deleteButtonTemplate(templateId: string) {
+  const result = await supabase
+    .from('button_templates')
+    .delete()
+    .eq('id', templateId)
+
+  if (result.error) {
+    throw result.error
+  }
+}
+
+export async function fetchLessonFooterActions(lessonId: string) {
+  const result = await supabase
+    .from('lesson_footer_actions')
+    .select('*, template:button_templates(*)')
+    .eq('lesson_id', lessonId)
+    .order('position', { ascending: true })
+
+  if (result.error) {
+    throw result.error
+  }
+
+  return (result.data as LessonFooterAction[]) ?? []
+}
+
+export async function createLessonFooterAction(
+  lessonId: string,
+  input: LessonFooterActionFormInput,
+  userId: string,
+  file?: File | null,
+) {
+  let storagePath: string | null = null
+  let fileName: string | null = null
+  let mimeType: string | null = null
+  let fileSizeBytes = 0
+
+  if (input.action_type === 'file' && file) {
+    storagePath = `${lessonId}/${crypto.randomUUID()}-${sanitizeFileName(file.name)}`
+    const uploadResult = await supabase.storage
+      .from(LESSON_FOOTER_ASSETS_BUCKET)
+      .upload(storagePath, file, {
+        cacheControl: '3600',
+        upsert: false,
+        contentType: file.type || undefined,
+      })
+
+    if (uploadResult.error) {
+      throw uploadResult.error
+    }
+
+    fileName = file.name
+    mimeType = file.type || null
+    fileSizeBytes = file.size
+  }
+
+  const result = await supabase
+    .from('lesson_footer_actions')
+    .insert({
+      lesson_id: lessonId,
+      template_id: input.template_id ?? null,
+      action_type: input.action_type,
+      label: input.label?.trim() || null,
+      url: input.action_type === 'url' ? input.url?.trim() || null : null,
+      storage_path: storagePath,
+      file_name: fileName,
+      mime_type: mimeType,
+      file_size_bytes: fileSizeBytes,
+      position: input.position,
+      open_in_new_tab: input.open_in_new_tab,
+      is_active: input.is_active,
+      created_by: userId,
+    })
+    .select('*, template:button_templates(*)')
+    .single()
+
+  if (result.error) {
+    if (storagePath) {
+      await supabase.storage.from(LESSON_FOOTER_ASSETS_BUCKET).remove([storagePath])
+    }
+    throw result.error
+  }
+
+  return result.data as LessonFooterAction
+}
+
+export async function updateLessonFooterAction(
+  actionId: string,
+  input: LessonFooterActionFormInput,
+  file?: File | null,
+) {
+  const currentResult = await supabase
+    .from('lesson_footer_actions')
+    .select('*')
+    .eq('id', actionId)
+    .single()
+
+  if (currentResult.error) {
+    throw currentResult.error
+  }
+
+  const current = currentResult.data as LessonFooterAction
+  let storagePath = current.storage_path
+  let fileName = current.file_name
+  let mimeType = current.mime_type
+  let fileSizeBytes = current.file_size_bytes
+
+  if (input.action_type === 'file' && file) {
+    const nextStoragePath = `${current.lesson_id}/${crypto.randomUUID()}-${sanitizeFileName(file.name)}`
+    const uploadResult = await supabase.storage
+      .from(LESSON_FOOTER_ASSETS_BUCKET)
+      .upload(nextStoragePath, file, {
+        cacheControl: '3600',
+        upsert: false,
+        contentType: file.type || undefined,
+      })
+
+    if (uploadResult.error) {
+      throw uploadResult.error
+    }
+
+    if (current.storage_path) {
+      await supabase.storage.from(LESSON_FOOTER_ASSETS_BUCKET).remove([current.storage_path])
+    }
+
+    storagePath = nextStoragePath
+    fileName = file.name
+    mimeType = file.type || null
+    fileSizeBytes = file.size
+  }
+
+  const result = await supabase
+    .from('lesson_footer_actions')
+    .update({
+      template_id: input.template_id ?? null,
+      action_type: input.action_type,
+      label: input.label?.trim() || null,
+      url: input.action_type === 'url' ? input.url?.trim() || null : null,
+      storage_path: input.action_type === 'file' ? storagePath : null,
+      file_name: input.action_type === 'file' ? fileName : null,
+      mime_type: input.action_type === 'file' ? mimeType : null,
+      file_size_bytes: input.action_type === 'file' ? fileSizeBytes : 0,
+      position: input.position,
+      open_in_new_tab: input.open_in_new_tab,
+      is_active: input.is_active,
+    })
+    .eq('id', actionId)
+    .select('*, template:button_templates(*)')
+    .single()
+
+  if (result.error) {
+    throw result.error
+  }
+
+  return result.data as LessonFooterAction
+}
+
+export async function deleteLessonFooterAction(action: LessonFooterAction) {
+  if (action.storage_path) {
+    const storageDeleteResult = await supabase.storage
+      .from(LESSON_FOOTER_ASSETS_BUCKET)
+      .remove([action.storage_path])
+
+    if (storageDeleteResult.error) {
+      throw storageDeleteResult.error
+    }
+  }
+
+  const result = await supabase
+    .from('lesson_footer_actions')
+    .delete()
+    .eq('id', action.id)
+
+  if (result.error) {
+    throw result.error
+  }
+}
+
+export async function getSignedLessonFooterActionUrl(storagePath: string) {
+  const result = await supabase.storage
+    .from(LESSON_FOOTER_ASSETS_BUCKET)
     .createSignedUrl(storagePath, 60 * 10)
 
   if (result.error) {

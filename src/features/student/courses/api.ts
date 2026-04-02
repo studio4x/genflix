@@ -25,6 +25,10 @@ interface StudentModuleProgressRpcRow {
   has_required_assessment: boolean
   required_assessment_approved: boolean
   progress_percent: number
+  starts_at: string | null
+  ends_at: string | null
+  module_pdf_file_name: string | null
+  module_pdf_storage_path: string | null
 }
 
 interface StudentLessonProgressRpcRow {
@@ -41,6 +45,8 @@ interface StudentLessonProgressRpcRow {
   estimated_minutes: number
   is_completed: boolean
   completed_at: string | null
+  starts_at: string | null
+  ends_at: string | null
 }
 
 export interface StudentCourseStatus {
@@ -129,6 +135,8 @@ export async function fetchStudentCourseContentWithProgress(
       estimated_minutes: lesson.estimated_minutes,
       is_completed: lesson.is_completed,
       completed_at: lesson.completed_at,
+      starts_at: lesson.starts_at,
+      ends_at: lesson.ends_at,
     })
     lessonMap.set(lesson.module_id, current)
   }
@@ -148,6 +156,10 @@ export async function fetchStudentCourseContentWithProgress(
     has_required_assessment: module.has_required_assessment,
     required_assessment_approved: module.required_assessment_approved,
     progress_percent: module.progress_percent,
+    starts_at: module.starts_at,
+    ends_at: module.ends_at,
+    module_pdf_file_name: module.module_pdf_file_name,
+    module_pdf_storage_path: module.module_pdf_storage_path,
     lessons: lessonMap.get(module.module_id) ?? [],
   }))
 }

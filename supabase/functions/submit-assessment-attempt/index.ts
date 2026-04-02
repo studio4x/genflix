@@ -12,6 +12,7 @@ type QuestionType =
   | 'case_study_single_choice'
   | 'drag_drop_labeling'
   | 'fill_in_the_blanks'
+  | 'coloring'
 
 interface AssessmentRow {
   id: string
@@ -780,6 +781,17 @@ function getInteractionSlotIds(content: Record<string, unknown> | null) {
   }
 
   if (content.kind === 'drag_drop_labeling') {
+    const targets = Array.isArray(content.targets) ? content.targets : []
+    return targets
+      .map((target) => (
+        target && typeof target === 'object' && typeof target.id === 'string'
+          ? target.id.trim()
+          : ''
+      ))
+      .filter(Boolean)
+  }
+
+  if (content.kind === 'coloring') {
     const targets = Array.isArray(content.targets) ? content.targets : []
     return targets
       .map((target) => (

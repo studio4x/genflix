@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 const adminLinks = [
   { to: '/admin', label: 'Dashboard' },
   { to: '/admin/cursos', label: 'Catalogo de Cursos' },
+  { to: '/admin/botoes-aula', label: 'Botoes de Aula' },
   { to: '/admin/alunos', label: 'Alunos' },
   { to: '/admin/grupos', label: 'Grupos' },
   { to: '/admin/integracoes', label: 'Integracoes' },

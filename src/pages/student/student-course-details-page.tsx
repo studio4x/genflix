@@ -84,6 +84,10 @@ export function StudentCourseDetailsPage() {
               has_required_assessment: m.assessments.some(a => a.is_required),
               required_assessment_approved: false,
               progress_percent: 0,
+              starts_at: m.starts_at,
+              ends_at: m.ends_at,
+              module_pdf_file_name: m.module_pdf_file_name,
+              module_pdf_storage_path: m.module_pdf_storage_path,
               lessons: m.lessons.map(l => ({
                 id: l.id,
                 module_id: l.module_id,
@@ -95,6 +99,8 @@ export function StudentCourseDetailsPage() {
                 youtube_url: l.youtube_url,
                 text_content: l.text_content,
                 estimated_minutes: l.estimated_minutes,
+                starts_at: l.starts_at,
+                ends_at: l.ends_at,
                 is_completed: false,
                 completed_at: null
               }))

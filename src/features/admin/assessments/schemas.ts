@@ -40,6 +40,7 @@ export const assessmentQuestionFormSchema = z.object({
     'case_study_single_choice',
     'drag_drop_labeling',
     'fill_in_the_blanks',
+    'coloring',
   ]),
   essay_expected_answer: z.string().trim().optional(),
   case_study_id: z.string().uuid('Estudo de caso invalido.').nullable().optional(),

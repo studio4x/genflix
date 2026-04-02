@@ -88,6 +88,10 @@ function getGamifiedItemCount(question: AssessmentQuestionWithOptions) {
     return parsed.data.targets.length
   }
 
+  if (parsed.data.kind === 'coloring') {
+    return parsed.data.targets.length
+  }
+
   return parsed.data.segments.filter((segment) => segment.type === 'blank').length
 }
 
@@ -104,7 +108,9 @@ function getQuestionScoringExplanation(question: AssessmentQuestionWithOptions) 
   }
 
   const itemCount = getGamifiedItemCount(question)
-  const itemLabel = question.question_type === 'drag_drop_labeling' ? 'área' : 'lacuna'
+  const itemLabel = question.question_type === 'drag_drop_labeling' || question.question_type === 'coloring'
+    ? 'area'
+    : 'lacuna'
   const gradingMode = question.answer_key?.grading_mode ?? 'partial_by_item'
 
   if (itemCount === 0) {
@@ -856,6 +862,7 @@ export function AssessmentBuilderPanel() {
       : question.question_type === 'case_study_ai'
     const canUseDragDrop = isStandalone && question.question_type === 'drag_drop_labeling'
     const canUseFillInTheBlanks = isStandalone && question.question_type === 'fill_in_the_blanks'
+    const canUseColoring = isStandalone && question.question_type === 'coloring'
 
     const setType = (type: AssessmentQuestionType) => void handleUpdateQuestionType(question.id, type)
 
@@ -913,6 +920,17 @@ export function AssessmentBuilderPanel() {
                     }`}
                   >
                     Preencher Lacunas
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setType('coloring')}
+                    className={`rounded-full px-3 py-1 text-[11px] font-black uppercase tracking-widest transition-colors ${
+                      canUseColoring
+                        ? 'bg-fuchsia-600 text-white'
+                        : 'border border-slate-200 bg-white text-slate-500 hover:border-fuchsia-200 hover:text-fuchsia-700'
+                    }`}
+                  >
+                    Quiz de Colorir
                   </button>
                 </>
               ) : null}
@@ -1313,6 +1331,13 @@ export function AssessmentBuilderPanel() {
               className: 'border-teal-100 text-teal-700 hover:bg-teal-50/70',
               iconClassName: 'border-teal-200 bg-teal-50',
               onClick: () => void handleAddQuestion('fill_in_the_blanks'),
+            },
+            {
+              title: 'Quiz de Colorir',
+              description: 'Imagem com areas pintaveis e checklist de cores por area.',
+              className: 'border-fuchsia-100 text-fuchsia-700 hover:bg-fuchsia-50/70',
+              iconClassName: 'border-fuchsia-200 bg-fuchsia-50',
+              onClick: () => void handleAddQuestion('coloring'),
             },
             {
               title: 'Novo Estudo de Caso',

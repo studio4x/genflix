@@ -15,6 +15,7 @@ import { AdminMaterialsPage } from '@/pages/admin/admin-materials-page'
 import { AdminModulesPage } from '@/pages/admin/admin-modules-page'
 import { AdminReportsPage } from '@/pages/admin/admin-reports-page'
 import { AdminStudentsPage } from '@/pages/admin/admin-students-page'
+import { AdminButtonTemplatesPage } from '@/pages/admin/admin-button-templates-page'
 import { ForgotPasswordPage } from '@/pages/public/forgot-password-page'
 import { CookiesPage } from '@/pages/public/cookies-page'
 import { HcmAccessPage } from '@/pages/public/hcm-access-page'
@@ -205,6 +206,10 @@ export const appRouter = createBrowserRouter([
           {
             path: '/admin/alunos',
             element: <AdminStudentsPage />,
+          },
+          {
+            path: '/admin/botoes-aula',
+            element: <AdminButtonTemplatesPage />,
           },
           {
             path: '/admin/relatorios',

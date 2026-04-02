@@ -3,6 +3,7 @@ import { useMemo, useState } from 'react'
 import { assessmentInteractionContentSchema } from '@/features/assessments/gamified'
 import type {
   AssessmentInteractionToken,
+  ColoringInteractionContent,
   DragDropLabelingInteractionContent,
   FillInTheBlanksInteractionContent,
 } from '@/types/content'
@@ -43,6 +44,17 @@ export function GamifiedInteraction({
     )
   }
 
+  if (parsed.data.kind === 'coloring') {
+    return (
+      <ColoringView
+        content={parsed.data}
+        value={value}
+        onChange={onChange}
+        readOnly={readOnly}
+      />
+    )
+  }
+
   return (
     <FillInTheBlanksView
       content={parsed.data}
@@ -50,6 +62,134 @@ export function GamifiedInteraction({
       onChange={onChange}
       readOnly={readOnly}
     />
+  )
+}
+
+function ColoringView({
+  content,
+  value,
+  onChange,
+  readOnly,
+}: {
+  content: ColoringInteractionContent
+  value: Record<string, string | null>
+  onChange: (slotId: string, tokenId: string | null) => void
+  readOnly: boolean
+}) {
+  const [armedColorId, setArmedColorId] = useState<string | null>(null)
+  const colorById = useMemo(
+    () => new Map(content.tokens.map((token) => [token.id, token])),
+    [content.tokens],
+  )
+  const stageUrl = content.asset.signed_url || content.asset.storage_path
+
+  function clearAllAssignments() {
+    if (readOnly) return
+    setArmedColorId(null)
+
+    for (const target of content.targets) {
+      if (value[target.id]) {
+        onChange(target.id, null)
+      }
+    }
+  }
+
+  return (
+    <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_300px]">
+      <div className="min-w-0 overflow-hidden rounded-[36px] border border-slate-200 bg-[#fcfdff] shadow-inner">
+        <div className="border-b border-slate-200 bg-white/80 px-6 py-4">
+          <p className="text-[10px] font-black uppercase tracking-[0.28em] text-cyan-700">Quiz de Colorir</p>
+          <p className="mt-2 text-sm font-semibold text-slate-600">{content.instruction}</p>
+        </div>
+
+        <div className="p-4 sm:p-6 lg:p-8">
+          <div
+            className="relative mx-auto overflow-hidden rounded-[32px] border border-slate-200 bg-white shadow-lg"
+            style={{ aspectRatio: `${content.asset.width} / ${content.asset.height}` }}
+          >
+            {stageUrl ? (
+              <img src={stageUrl} alt={content.asset.alt} className="h-full w-full object-contain" draggable={false} />
+            ) : (
+              <div className="flex h-full items-center justify-center bg-slate-100 text-sm font-bold text-slate-400">
+                Imagem para colorir indisponivel
+              </div>
+            )}
+
+            {content.targets.map((target) => {
+              const selectedColor = value[target.id] ? colorById.get(value[target.id] ?? '') : null
+
+              return (
+                <button
+                  key={target.id}
+                  type="button"
+                  disabled={readOnly}
+                  onClick={() => {
+                    if (readOnly || !armedColorId) return
+                    onChange(target.id, armedColorId)
+                  }}
+                  className="absolute rounded-2xl border-2 border-white/80 shadow-lg transition-transform hover:scale-[1.02]"
+                  style={{
+                    left: `${target.x}%`,
+                    top: `${target.y}%`,
+                    width: `${target.w}%`,
+                    height: `${target.h}%`,
+                    backgroundColor: selectedColor?.hex ?? 'rgba(255,255,255,0.18)',
+                  }}
+                  title={target.label ?? 'Area'}
+                >
+                  <span className="sr-only">{target.label ?? 'Area para colorir'}</span>
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      </div>
+
+      <div className="self-start rounded-[32px] border border-slate-200 bg-white p-5 shadow-xl shadow-slate-200/30 lg:sticky lg:top-6">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-[0.28em] text-slate-400">Paleta</p>
+            <p className="mt-2 text-sm font-semibold text-slate-600">
+              Escolha uma cor e clique nas areas da imagem para preencher.
+            </p>
+          </div>
+          {!readOnly ? (
+            <button
+              type="button"
+              onClick={clearAllAssignments}
+              className="rounded-xl border border-slate-200 px-3 py-2 text-[11px] font-black uppercase tracking-wider text-slate-500 hover:bg-slate-50"
+            >
+              Limpar
+            </button>
+          ) : null}
+        </div>
+
+        <div className="mt-5 grid gap-3">
+          {content.tokens.map((token) => {
+            const isArmed = armedColorId === token.id
+            return (
+              <button
+                key={token.id}
+                type="button"
+                disabled={readOnly}
+                onClick={() => {
+                  if (readOnly) return
+                  setArmedColorId((current) => current === token.id ? null : token.id)
+                }}
+                className={`flex items-center gap-3 rounded-2xl border px-4 py-3 text-left text-sm font-black transition-all ${
+                  isArmed
+                    ? 'border-cyan-500 bg-cyan-50 text-cyan-800 shadow-lg shadow-cyan-100'
+                    : 'border-slate-200 bg-white text-slate-700 hover:border-cyan-300 hover:bg-cyan-50/60'
+                }`}
+              >
+                <span className="h-8 w-8 rounded-full border border-slate-200" style={{ backgroundColor: token.hex }} />
+                <span>{token.label}</span>
+              </button>
+            )
+          })}
+        </div>
+      </div>
+    </div>
   )
 }
 

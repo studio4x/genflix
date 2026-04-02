@@ -12,6 +12,7 @@ type QuestionType =
   | 'case_study_single_choice'
   | 'drag_drop_labeling'
   | 'fill_in_the_blanks'
+  | 'coloring'
 
 interface AssessmentRow {
   id: string
@@ -276,7 +277,7 @@ async function withSignedAssetUrl(
 ) {
   const content = structuredClone(interaction.content)
 
-  if (content?.kind !== 'drag_drop_labeling') {
+  if (content?.kind !== 'drag_drop_labeling' && content?.kind !== 'coloring') {
     return interaction
   }
 

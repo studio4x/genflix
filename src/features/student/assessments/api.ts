@@ -30,7 +30,7 @@ export interface StudentCourseAssessmentSummary {
   last_score: number | null
   last_is_approved: boolean
   remaining_attempts: number
-  state: 'blocked' | 'available' | 'approved' | 'failed_limit'
+  state: 'blocked' | 'blocked_by_schedule' | 'available' | 'approved' | 'failed_limit'
 }
 
 export interface StudentAssessmentOption {

@@ -5,6 +5,7 @@ import type {
   AssessmentInteractionResponsePayload,
   AssessmentQuestionAnswerKeyPayload,
   AssessmentQuestionType,
+  ColoringInteractionContent,
   FillInTheBlanksInteractionContent,
 } from '@/types/content'
 
@@ -36,6 +37,29 @@ export const dragDropLabelingInteractionContentSchema = z.object({
   asset: assessmentInteractionAssetSchema,
   tokens: z.array(assessmentInteractionTokenSchema).min(1, 'Adicione ao menos um rotulo.'),
   targets: z.array(dragDropLabelingTargetSchema).min(1, 'Adicione ao menos uma area de encaixe.'),
+})
+
+export const coloringAreaSchema = z.object({
+  id: z.string().trim().min(1, 'Identificador da area obrigatorio.'),
+  x: z.number().min(0).max(100),
+  y: z.number().min(0).max(100),
+  w: z.number().positive().max(100),
+  h: z.number().positive().max(100),
+  label: z.string().trim().max(160).nullable().optional(),
+})
+
+export const coloringPaletteColorSchema = z.object({
+  id: z.string().trim().min(1, 'Identificador da cor obrigatorio.'),
+  label: z.string().trim().min(1, 'Rotulo da cor obrigatorio.'),
+  hex: z.string().trim().regex(/^#([0-9a-fA-F]{6})$/, 'Cor invalida.'),
+})
+
+export const coloringInteractionContentSchema = z.object({
+  kind: z.literal('coloring'),
+  instruction: z.string().trim().min(2, 'Instrucao obrigatoria.'),
+  asset: assessmentInteractionAssetSchema,
+  tokens: z.array(coloringPaletteColorSchema).min(1, 'Adicione ao menos uma cor.'),
+  targets: z.array(coloringAreaSchema).min(1, 'Adicione ao menos uma area para colorir.'),
 })
 
 export const fillInTheBlanksSegmentSchema = z.discriminatedUnion('type', [
@@ -72,6 +96,7 @@ export const fillInTheBlanksInteractionContentSchema = z.object({
 export const assessmentInteractionContentSchema = z.discriminatedUnion('kind', [
   dragDropLabelingInteractionContentSchema,
   fillInTheBlanksInteractionContentSchema,
+  coloringInteractionContentSchema,
 ])
 
 export const assessmentQuestionAnswerKeyPayloadSchema = z.object({
@@ -89,7 +114,7 @@ export const assessmentInteractionResponsePayloadSchema = z.object({
 })
 
 export function isGamifiedQuestionType(questionType: AssessmentQuestionType) {
-  return questionType === 'drag_drop_labeling' || questionType === 'fill_in_the_blanks'
+  return questionType === 'drag_drop_labeling' || questionType === 'fill_in_the_blanks' || questionType === 'coloring'
 }
 
 export function isEssayQuestionType(questionType: AssessmentQuestionType) {
@@ -154,6 +179,27 @@ export function createDefaultInteractionContent(questionType: AssessmentQuestion
     }
   }
 
+  if (questionType === 'coloring') {
+    return {
+      kind: 'coloring',
+      instruction: 'Selecione uma cor e pinte cada area com a cor correta.',
+      asset: {
+        storage_path: '',
+        signed_url: null,
+        alt: 'Imagem para colorir',
+        width: 1200,
+        height: 800,
+      },
+      tokens: [
+        { id: crypto.randomUUID(), label: 'Azul', hex: '#2563eb' },
+        { id: crypto.randomUUID(), label: 'Verde', hex: '#16a34a' },
+      ],
+      targets: [
+        { id: crypto.randomUUID(), x: 20, y: 20, w: 18, h: 12, label: 'Area 1' },
+      ],
+    } satisfies ColoringInteractionContent
+  }
+
   return null
 }
 
@@ -184,6 +230,15 @@ export function createAnswerKeyFromInteraction(
     }
   }
 
+  if (content.kind === 'coloring') {
+    return {
+      entries: content.targets.map((target, index) => ({
+        slot_id: target.id,
+        token_id: content.tokens[index]?.id ?? content.tokens[0]?.id ?? '',
+      })),
+    }
+  }
+
   const blanks = content.segments.filter((segment): segment is Extract<FillInTheBlanksInteractionContent['segments'][number], { type: 'blank' }> => segment.type === 'blank')
   return {
     entries: blanks.map((blank, index) => ({
@@ -199,6 +254,10 @@ export function getInteractionSlotIds(content: AssessmentInteractionContent | nu
   }
 
   if (content.kind === 'drag_drop_labeling') {
+    return content.targets.map((target) => target.id)
+  }
+
+  if (content.kind === 'coloring') {
     return content.targets.map((target) => target.id)
   }
 
@@ -254,6 +313,13 @@ export function validateInteractionBundle(
     && parsedContent.data.tokens.length !== parsedContent.data.targets.length
   ) {
     throw new Error('No arrastar e soltar, o banco de respostas deve ter exatamente um item para cada area.')
+  }
+
+  if (
+    parsedContent.data.kind === 'coloring'
+    && parsedContent.data.tokens.some((token) => !/^#([0-9a-fA-F]{6})$/.test(token.hex))
+  ) {
+    throw new Error('Cada cor da paleta precisa usar um codigo hexadecimal valido.')
   }
 
   const usedSlots = new Set<string>()

@@ -101,7 +101,7 @@ function mapInteractionRow(row: RawInteractionRow): AssessmentQuestionInteractio
 }
 
 async function hydrateInteractionAsset(interaction: AssessmentQuestionInteraction) {
-  if (interaction.content.kind !== 'drag_drop_labeling') {
+  if (interaction.content.kind !== 'drag_drop_labeling' && interaction.content.kind !== 'coloring') {
     return interaction
   }
 
@@ -928,6 +928,7 @@ function normalizeImportQuestionType(
     questionType === 'essay_ai'
     || questionType === 'drag_drop_labeling'
     || questionType === 'fill_in_the_blanks'
+    || questionType === 'coloring'
   ) {
     return questionType
   }

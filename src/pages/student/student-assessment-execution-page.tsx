@@ -124,6 +124,10 @@ function getInteractionSlotIds(question: StudentAssessmentQuestionWithOptions) {
     return parsed.data.targets.map((target) => target.id)
   }
 
+  if (parsed.data.kind === 'coloring') {
+    return parsed.data.targets.map((target) => target.id)
+  }
+
   return parsed.data.segments
     .filter((segment): segment is Extract<typeof parsed.data.segments[number], { type: 'blank' }> => segment.type === 'blank')
     .map((segment) => segment.id)
@@ -174,6 +178,18 @@ function buildInteractionFeedbackLookup(question: StudentAssessmentQuestionWithO
         parsed.data.targets.map((target, index) => [
           target.id,
           target.label?.trim() || `Area ${index + 1}`,
+        ]),
+      ),
+      tokenLabels,
+    }
+  }
+
+  if (parsed.data.kind === 'coloring') {
+    return {
+      slotLabels: new Map(
+        parsed.data.targets.map((target, index) => [
+          target.id,
+          target.label?.trim() || `Área ${index + 1}`,
         ]),
       ),
       tokenLabels,

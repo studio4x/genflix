@@ -13,7 +13,15 @@ import {
   type ModuleAiReviewHistoryEntry,
   type ModuleAiReviewResult,
 } from '@/features/admin/ai-review/api'
-import { createModule, deleteModule, importCourseContent, updateModule, toErrorMessage } from '@/features/admin/content/api'
+import {
+  createModule,
+  deleteModule,
+  deleteModulePdf,
+  importCourseContent,
+  toErrorMessage,
+  updateModule,
+  uploadModulePdf,
+} from '@/features/admin/content/api'
 import { moduleFormSchema, type ModuleFormInput } from '@/features/admin/content/schemas'
 import { useCourseBuilder } from '@/app/layouts/admin-course-builder-layout'
 import { publishBuilderNotice } from '@/lib/builder-notice'
@@ -23,6 +31,8 @@ const initialForm: ModuleFormInput = {
   title: '',
   description: '',
   is_required: true,
+  starts_at: '',
+  ends_at: '',
 }
 
 function AiReviewUsageSummary({ review }: {
@@ -93,6 +103,8 @@ export function ModuleEditorPanel() {
           title: module.title,
           description: module.description ?? '',
           is_required: module.is_required,
+          starts_at: module.starts_at ? module.starts_at.slice(0, 16) : '',
+          ends_at: module.ends_at ? module.ends_at.slice(0, 16) : '',
         })
       }
     }
@@ -313,6 +325,29 @@ export function ModuleEditorPanel() {
     }
   }
 
+  async function handleModulePdfUpload(file: File) {
+    if (!moduleId) return
+
+    try {
+      await uploadModulePdf(moduleId, file)
+      await refreshTree()
+    } catch (err) {
+      setError(toErrorMessage(err))
+    }
+  }
+
+  async function handleDeleteModulePdf() {
+    if (!currentModule) return
+    if (!window.confirm('Remover o PDF base deste modulo?')) return
+
+    try {
+      await deleteModulePdf(currentModule)
+      await refreshTree()
+    } catch (err) {
+      setError(toErrorMessage(err))
+    }
+  }
+
   return (
     <div className="max-w-3xl mx-auto space-y-6 animate-in fade-in duration-500">
        <div className="border-b border-slate-200 pb-5">
@@ -399,6 +434,78 @@ export function ModuleEditorPanel() {
                 <span className="text-xs text-slate-500 mt-0.5 block">Se marcado, o aluno deverá concluir todas as aulas atreladas a este módulo para avançar no progresso total.</span>
               </div>
             </label>
+
+            <div className="rounded-[24px] border border-slate-200 bg-slate-50/50 p-5">
+              <p className="text-xs font-black uppercase tracking-[0.22em] text-slate-400">Liberacao Programada</p>
+              <div className="mt-4 grid gap-4 md:grid-cols-2">
+                <label className="block space-y-2">
+                  <span className="text-sm font-bold text-slate-700">Liberar em</span>
+                  <input
+                    type="datetime-local"
+                    className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm"
+                    value={form.starts_at ?? ''}
+                    onChange={(event) => setForm((prev) => ({ ...prev, starts_at: event.target.value }))}
+                  />
+                </label>
+                <label className="block space-y-2">
+                  <span className="text-sm font-bold text-slate-700">Expirar em</span>
+                  <input
+                    type="datetime-local"
+                    className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm"
+                    value={form.ends_at ?? ''}
+                    onChange={(event) => setForm((prev) => ({ ...prev, ends_at: event.target.value }))}
+                  />
+                </label>
+              </div>
+              <p className="mt-3 text-xs text-slate-500">
+                Quando houver agenda no modulo e na aula, a regra mais restritiva sera aplicada para o aluno.
+              </p>
+            </div>
+
+            {!isNew ? (
+              <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
+                <div className="flex flex-wrap items-start justify-between gap-4">
+                  <div>
+                    <p className="text-xs font-black uppercase tracking-[0.22em] text-slate-400">PDF Base do Modulo</p>
+                    <h4 className="mt-2 text-lg font-black text-slate-900">
+                      {currentModule?.module_pdf_file_name ?? 'Nenhum PDF enviado'}
+                    </h4>
+                    <p className="mt-1 text-sm text-slate-500">
+                      O aluno recebera uma copia licenciada com marca d&apos;agua e identificacao individual.
+                    </p>
+                  </div>
+
+                  <label className="inline-flex cursor-pointer items-center rounded-2xl bg-blue-600 px-5 py-3 text-sm font-black text-white hover:bg-blue-700">
+                    Enviar PDF
+                    <input
+                      type="file"
+                      accept="application/pdf"
+                      className="hidden"
+                      onChange={(event) => {
+                        const file = event.target.files?.[0]
+                        if (file) {
+                          void handleModulePdfUpload(file)
+                        }
+                        event.target.value = ''
+                      }}
+                    />
+                  </label>
+                </div>
+
+                {currentModule?.module_pdf_storage_path ? (
+                  <div className="mt-4 flex gap-3">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="rounded-2xl border-rose-200 text-rose-600 hover:bg-rose-50"
+                      onClick={() => void handleDeleteModulePdf()}
+                    >
+                      Remover PDF
+                    </Button>
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
          </div>
 
          {error && (

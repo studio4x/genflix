@@ -26,6 +26,8 @@ const initialForm: LessonFormInput = {
   youtube_url: '',
   text_content: '',
   estimated_minutes: 0,
+  starts_at: '',
+  ends_at: '',
 }
 
 // Custom toolbar for ReactQuill
@@ -91,6 +93,8 @@ export function LessonEditorPanel() {
           youtube_url: found.youtube_url ?? '',
           text_content: textContent,
           estimated_minutes: found.estimated_minutes,
+          starts_at: found.starts_at ? found.starts_at.slice(0, 16) : '',
+          ends_at: found.ends_at ? found.ends_at.slice(0, 16) : '',
         })
       }
     }
@@ -517,6 +521,33 @@ export function LessonEditorPanel() {
                    <span className="text-[11px] text-slate-500 mt-1 block leading-relaxed">Se ativado, esta aula deve ser visualizada/lida para que o aluno receba o certificado de conclusão do curso.</span>
                  </div>
                </label>
+
+               <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                 <p className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">Liberacao Programada</p>
+                 <div className="mt-4 grid gap-4 md:grid-cols-2">
+                   <label className="block space-y-2">
+                     <span className="text-sm font-bold text-slate-800">Liberar em</span>
+                     <input
+                       type="datetime-local"
+                       className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-3 text-sm shadow-inner"
+                       value={form.starts_at ?? ''}
+                       onChange={(e) => setForm((prev) => ({ ...prev, starts_at: e.target.value }))}
+                     />
+                   </label>
+                   <label className="block space-y-2">
+                     <span className="text-sm font-bold text-slate-800">Expirar em</span>
+                     <input
+                       type="datetime-local"
+                       className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-3 text-sm shadow-inner"
+                       value={form.ends_at ?? ''}
+                       onChange={(e) => setForm((prev) => ({ ...prev, ends_at: e.target.value }))}
+                     />
+                   </label>
+                 </div>
+                 <p className="mt-3 text-[11px] text-slate-500">
+                   A aula so libera quando o modulo tambem estiver dentro da janela configurada.
+                 </p>
+               </div>
              </fieldset>
 
           </div>

@@ -15,6 +15,16 @@ export const moduleFormSchema = z.object({
   title: z.string().trim().min(2, 'Titulo deve ter ao menos 2 caracteres'),
   description: z.string().trim().max(2000).optional(),
   is_required: z.boolean(),
+  starts_at: z.string().optional().or(z.literal('')),
+  ends_at: z.string().optional().or(z.literal('')),
+}).superRefine((value, ctx) => {
+  if (value.starts_at && value.ends_at && new Date(value.ends_at) < new Date(value.starts_at)) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['ends_at'],
+      message: 'A data final do modulo deve ser posterior ao inicio.',
+    })
+  }
 })
 
 export const lessonFormSchema = z.object({
@@ -31,8 +41,47 @@ export const lessonFormSchema = z.object({
       message: 'URL do YouTube invalida',
     }),
   estimated_minutes: z.number().int().min(0),
+  starts_at: z.string().optional().or(z.literal('')),
+  ends_at: z.string().optional().or(z.literal('')),
+}).superRefine((value, ctx) => {
+  if (value.starts_at && value.ends_at && new Date(value.ends_at) < new Date(value.starts_at)) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['ends_at'],
+      message: 'A data final da aula deve ser posterior ao inicio.',
+    })
+  }
+})
+
+export const buttonTemplateFormSchema = z.object({
+  name: z.string().trim().min(2, 'Nome do padrao obrigatorio.'),
+  default_label: z.string().trim().min(2, 'Rotulo padrao obrigatorio.'),
+  variant: z.enum(['primary', 'secondary', 'outline', 'ghost', 'link']),
+  theme: z.enum(['blue', 'emerald', 'amber', 'rose', 'slate', 'violet']),
+  icon: z.string().trim().min(2, 'Icone obrigatorio.'),
+  is_active: z.boolean().default(true),
+})
+
+export const lessonFooterActionFormSchema = z.object({
+  template_id: z.string().uuid().nullable().optional(),
+  action_type: z.enum(['file', 'url']),
+  label: z.string().trim().optional().or(z.literal('')),
+  url: z.string().trim().url('URL invalida').optional().or(z.literal('')),
+  position: z.number().int().min(1),
+  open_in_new_tab: z.boolean().default(true),
+  is_active: z.boolean().default(true),
+}).superRefine((value, ctx) => {
+  if (value.action_type === 'url' && !value.url) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['url'],
+      message: 'Informe a URL do botao.',
+    })
+  }
 })
 
 export type CourseFormInput = z.infer<typeof courseFormSchema>
 export type ModuleFormInput = z.infer<typeof moduleFormSchema>
 export type LessonFormInput = z.infer<typeof lessonFormSchema>
+export type ButtonTemplateFormInput = z.infer<typeof buttonTemplateFormSchema>
+export type LessonFooterActionFormInput = z.infer<typeof lessonFooterActionFormSchema>

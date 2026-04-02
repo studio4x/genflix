@@ -8,6 +8,7 @@ import type {
   AssessmentQuestionInteraction,
   AssessmentInteractionContent,
   AssessmentQuestionType,
+  ColoringInteractionContent,
   DragDropLabelingInteractionContent,
   FillInTheBlanksInteractionContent,
 } from '@/types/content'
@@ -31,6 +32,8 @@ interface GamifiedQuestionEditorProps {
   onPersist: (updates: Partial<AssessmentQuestionWithOptions>) => Promise<void> | void
   onError: (message: string | null) => void
 }
+
+type CanvasInteractionContent = DragDropLabelingInteractionContent | ColoringInteractionContent
 
 function createInteractionRecord(
   question: AssessmentQuestionWithOptions,
@@ -132,22 +135,62 @@ function syncAnswerKeyWithContent(
 function normalizeInteractionContent(
   content: AssessmentInteractionContent,
   current: AssessmentQuestionAnswerKeyPayload | null | undefined,
-) {
-  if (content.kind !== 'drag_drop_labeling') {
+) : AssessmentInteractionContent {
+  if (content.kind !== 'drag_drop_labeling' && content.kind !== 'coloring') {
     return content
   }
 
   const tokenById = new Map(content.tokens.map((token) => [token.id, token]))
   const usedTokenIds = new Set<string>()
 
-  const normalizedTokens = content.targets.map((target) => {
+  if (content.kind === 'coloring') {
+    const normalizedTokens: ColoringInteractionContent['tokens'] = content.targets.map((target) => {
+      const mappedTokenId = current?.entries.find((entry) => entry.slot_id === target.id)?.token_id
+      if (mappedTokenId) {
+        const mappedToken = tokenById.get(mappedTokenId)
+        if (mappedToken && !usedTokenIds.has(mappedToken.id) && 'hex' in mappedToken) {
+          usedTokenIds.add(mappedToken.id)
+          return {
+            id: mappedToken.id,
+            label: mappedToken.label,
+            hex: mappedToken.hex,
+          }
+        }
+      }
+
+      const fallbackToken = content.tokens.find((token) => !usedTokenIds.has(token.id))
+      if (fallbackToken) {
+        usedTokenIds.add(fallbackToken.id)
+        return {
+          id: fallbackToken.id,
+          label: fallbackToken.label,
+          hex: fallbackToken.hex,
+        }
+      }
+
+      const nextToken = {
+        id: crypto.randomUUID(),
+        label: '',
+        hex: '#2563eb',
+      }
+      usedTokenIds.add(nextToken.id)
+      return nextToken
+    })
+
+    return {
+      ...content,
+      tokens: normalizedTokens,
+    }
+  }
+
+  const normalizedTokens: DragDropLabelingInteractionContent['tokens'] = content.targets.map((target) => {
     const mappedTokenId = current?.entries.find((entry) => entry.slot_id === target.id)?.token_id
     if (mappedTokenId) {
       const mappedToken = tokenById.get(mappedTokenId)
       if (mappedToken && !usedTokenIds.has(mappedToken.id)) {
         usedTokenIds.add(mappedToken.id)
         return {
-          ...mappedToken,
+          id: mappedToken.id,
           label: mappedToken.label,
         }
       }
@@ -157,7 +200,7 @@ function normalizeInteractionContent(
     if (fallbackToken) {
       usedTokenIds.add(fallbackToken.id)
       return {
-        ...fallbackToken,
+        id: fallbackToken.id,
         label: fallbackToken.label,
       }
     }
@@ -173,7 +216,7 @@ function normalizeInteractionContent(
   return {
     ...content,
     tokens: normalizedTokens,
-  } satisfies DragDropLabelingInteractionContent
+  }
 }
 
 function readImageDimensions(file: File) {
@@ -438,7 +481,7 @@ export function GamifiedQuestionEditor({
   }
 
   const activeInteraction = interactionContent
-  const scoringItemCount = activeInteraction.kind === 'drag_drop_labeling'
+  const scoringItemCount = activeInteraction.kind === 'drag_drop_labeling' || activeInteraction.kind === 'coloring'
     ? activeInteraction.targets.length
     : activeInteraction.segments.filter((segment) => segment.type === 'blank').length
   const questionPoints = Number(question.points || 0)
@@ -478,25 +521,51 @@ export function GamifiedQuestionEditor({
   }
 
   function updateTokenLabel(tokenId: string, label: string) {
-    const nextContent = {
+    const nextContent: AssessmentInteractionContent = activeInteraction.kind === 'coloring'
+      ? {
+        ...activeInteraction,
+        tokens: activeInteraction.tokens.map((token) => (
+          token.id === tokenId
+            ? { ...token, label }
+            : token
+        )),
+      }
+      : {
+        ...activeInteraction,
+        tokens: activeInteraction.tokens.map((token) => (
+          token.id === tokenId
+            ? { ...token, label }
+            : token
+        )),
+      }
+
+    updateDraft(nextContent)
+  }
+
+  function updateColorHex(tokenId: string, hex: string) {
+    if (activeInteraction.kind !== 'coloring') {
+      return
+    }
+
+    const nextContent: ColoringInteractionContent = {
       ...activeInteraction,
       tokens: activeInteraction.tokens.map((token) => (
         token.id === tokenId
-          ? { ...token, label }
+          ? { ...token, hex }
           : token
       )),
-    } satisfies AssessmentInteractionContent
+    }
 
     updateDraft(nextContent)
   }
 
   function addToken() {
-    if (activeInteraction.kind === 'drag_drop_labeling') {
+    if (activeInteraction.kind !== 'fill_in_the_blanks') {
       onError('No arrastar e soltar, o banco de respostas acompanha automaticamente a quantidade de áreas.')
       return
     }
 
-    const nextContent = {
+    const nextContent: FillInTheBlanksInteractionContent = {
       ...activeInteraction,
       tokens: [
         ...activeInteraction.tokens,
@@ -505,13 +574,13 @@ export function GamifiedQuestionEditor({
           label: `Resposta ${activeInteraction.tokens.length + 1}`,
         },
       ],
-    } satisfies AssessmentInteractionContent
+    }
 
     void commit(nextContent)
   }
 
   function deleteToken(tokenId: string) {
-    if (activeInteraction.kind === 'drag_drop_labeling') {
+    if (activeInteraction.kind !== 'fill_in_the_blanks') {
       onError('Remova ou adicione áreas para sincronizar o banco de respostas deste exercício.')
       return
     }
@@ -521,10 +590,10 @@ export function GamifiedQuestionEditor({
       return
     }
 
-    const nextContent = {
+    const nextContent: FillInTheBlanksInteractionContent = {
       ...activeInteraction,
       tokens: activeInteraction.tokens.filter((token) => token.id !== tokenId),
-    } satisfies AssessmentInteractionContent
+    }
 
     void commit(nextContent)
   }
@@ -541,7 +610,7 @@ export function GamifiedQuestionEditor({
 
   async function handleAssetSelected(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0]
-    if (!file || activeInteraction.kind !== 'drag_drop_labeling') {
+    if (!file || (activeInteraction.kind !== 'drag_drop_labeling' && activeInteraction.kind !== 'coloring')) {
       return
     }
 
@@ -552,7 +621,7 @@ export function GamifiedQuestionEditor({
       const dimensions = await readImageDimensions(file)
       const previousStoragePath = activeInteraction.asset.storage_path
       const uploaded = await uploadAssessmentAsset(file)
-      const nextContent: DragDropLabelingInteractionContent = {
+      const nextContent: CanvasInteractionContent = {
         ...activeInteraction,
         asset: {
           storage_path: uploaded.storage_path,
@@ -591,7 +660,7 @@ export function GamifiedQuestionEditor({
             </p>
           </div>
 
-          {activeInteraction.kind !== 'drag_drop_labeling' ? (
+          {activeInteraction.kind !== 'drag_drop_labeling' && activeInteraction.kind !== 'coloring' ? (
             <Button
               type="button"
               variant="outline"
@@ -608,9 +677,9 @@ export function GamifiedQuestionEditor({
             <div key={token.id} className="rounded-2xl border border-white/80 bg-white p-4 shadow-sm">
               <div className="flex items-center justify-between gap-3">
                 <span className="rounded-full bg-cyan-100 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-cyan-700">
-                  {activeInteraction.kind === 'drag_drop_labeling' ? `Area ${index + 1}` : `Item ${index + 1}`}
+                  {activeInteraction.kind === 'drag_drop_labeling' || activeInteraction.kind === 'coloring' ? `Area ${index + 1}` : `Item ${index + 1}`}
                 </span>
-                {activeInteraction.kind !== 'drag_drop_labeling' ? (
+                {activeInteraction.kind !== 'drag_drop_labeling' && activeInteraction.kind !== 'coloring' ? (
                   <button
                     type="button"
                     className="rounded-xl p-2 text-slate-300 transition-colors hover:bg-rose-50 hover:text-rose-500"
@@ -630,6 +699,18 @@ export function GamifiedQuestionEditor({
                 onChange={(event) => updateTokenLabel(token.id, event.target.value)}
                 onBlur={(event) => {
                   const nextLabel = event.currentTarget.value
+                  if (activeInteraction.kind === 'coloring') {
+                    void commit({
+                      ...activeInteraction,
+                      tokens: activeInteraction.tokens.map((item) => (
+                        item.id === token.id
+                          ? { ...item, label: nextLabel }
+                          : item
+                      )),
+                    })
+                    return
+                  }
+
                   void commit({
                     ...activeInteraction,
                     tokens: activeInteraction.tokens.map((item) => (
@@ -640,13 +721,35 @@ export function GamifiedQuestionEditor({
                   })
                 }}
                 onKeyDown={(event) => event.stopPropagation()}
-                placeholder={activeInteraction.kind === 'drag_drop_labeling' ? `Rótulo ${index + 1}` : 'Resposta correta exibida ao aluno. Pode ter mais de uma palavra.'}
+                placeholder={activeInteraction.kind === 'drag_drop_labeling' ? `Rótulo ${index + 1}` : activeInteraction.kind === 'coloring' ? `Cor ${index + 1}` : 'Resposta correta exibida ao aluno. Pode ter mais de uma palavra.'}
               />
+              {activeInteraction.kind === 'coloring' ? (
+                <label className="mt-3 flex items-center gap-3 rounded-2xl border border-cyan-100 bg-cyan-50/40 px-4 py-3">
+                  <input
+                    type="color"
+                    className="h-10 w-12 cursor-pointer rounded-xl border border-slate-200 bg-white"
+                    value={'hex' in token ? token.hex : '#2563eb'}
+                    onChange={(event) => updateColorHex(token.id, event.target.value)}
+                    onBlur={(event) => {
+                      const nextHex = event.currentTarget.value
+                      void commit({
+                        ...activeInteraction,
+                        tokens: activeInteraction.tokens.map((item) => (
+                          item.id === token.id
+                            ? { ...item, hex: nextHex }
+                            : item
+                        )),
+                      })
+                    }}
+                  />
+                  <span className="text-sm font-semibold text-slate-700">{'hex' in token ? token.hex : '#2563eb'}</span>
+                </label>
+              ) : null}
             </div>
           ))}
         </div>
 
-        {activeInteraction.kind === 'drag_drop_labeling' ? (
+        {activeInteraction.kind === 'drag_drop_labeling' || activeInteraction.kind === 'coloring' ? (
           <div className="mt-5 rounded-2xl border border-cyan-100/80 bg-white/70 p-4">
             <button
               type="button"
@@ -696,15 +799,15 @@ export function GamifiedQuestionEditor({
     )
   }
 
-  function renderDragDropEditor(content: DragDropLabelingInteractionContent) {
+  function renderDragDropEditor(content: CanvasInteractionContent) {
     const canvasScalePercent = Math.round(canvasScale * 100)
 
     function updateTarget(
       targetId: string,
-      field: keyof DragDropLabelingInteractionContent['targets'][number],
+      field: keyof CanvasInteractionContent['targets'][number],
       value: string | number,
     ) {
-      const nextContent: DragDropLabelingInteractionContent = {
+      const nextContent: CanvasInteractionContent = {
         ...content,
         targets: content.targets.map((target) => (
           target.id === targetId
@@ -717,7 +820,7 @@ export function GamifiedQuestionEditor({
     }
 
     function addTargetAt(x: number, y: number) {
-      const nextContent: DragDropLabelingInteractionContent = {
+      const nextContent: CanvasInteractionContent = {
         ...content,
         targets: [
           ...content.targets,
@@ -755,7 +858,7 @@ export function GamifiedQuestionEditor({
         return
       }
 
-      const nextContent: DragDropLabelingInteractionContent = {
+      const nextContent: CanvasInteractionContent = {
         ...content,
         targets: content.targets.filter((target) => target.id !== targetId),
       }
@@ -765,7 +868,7 @@ export function GamifiedQuestionEditor({
 
     function startTargetDrag(
       event: ReactPointerEvent<HTMLButtonElement>,
-      target: DragDropLabelingInteractionContent['targets'][number],
+      target: CanvasInteractionContent['targets'][number],
     ) {
       const stageElement = stageRef.current
       if (!stageElement) {
@@ -896,7 +999,7 @@ export function GamifiedQuestionEditor({
                   </div>
 
                   <label className="block space-y-2">
-                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Resposta correta</span>
+                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">{content.kind === 'coloring' ? 'Cor correta' : 'Resposta correta'}</span>
                     <select
                       className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 focus:border-cyan-300 focus:ring-4 focus:ring-cyan-100"
                       value={assignedTokenBySlot.get(target.id) ?? ''}
@@ -983,7 +1086,7 @@ export function GamifiedQuestionEditor({
                     {target.label?.trim() || `Area ${index + 1}`}
                   </p>
                   <p className="mt-2 text-xs font-semibold text-slate-500">
-                    Resposta: {assignedToken?.label.trim() || `Rótulo ${index + 1}`}
+                    {content.kind === 'coloring' ? 'Cor' : 'Resposta'}: {assignedToken?.label.trim() || `Rótulo ${index + 1}`}
                   </p>
                 </button>
               )
@@ -1146,6 +1249,9 @@ export function GamifiedQuestionEditor({
                             top: `${target.y}%`,
                             width: `${target.w}%`,
                             height: `${target.h}%`,
+                            backgroundColor: content.kind === 'coloring'
+                              ? `${content.tokens.find((token) => token.id === assignedTokenBySlot.get(target.id))?.hex ?? 'rgba(255,255,255,0.18)'}`
+                              : undefined,
                           }}
                           onClick={(event) => {
                             event.stopPropagation()
@@ -1711,10 +1817,11 @@ export function GamifiedQuestionEditor({
       </div>
 
       {activeInteraction.kind === 'drag_drop_labeling'
+      || activeInteraction.kind === 'coloring'
         ? renderDragDropEditor(activeInteraction)
         : renderFillInTheBlanksEditor(activeInteraction)}
 
-      {activeInteraction.kind === 'drag_drop_labeling' ? renderTokenBank() : null}
+      {activeInteraction.kind === 'drag_drop_labeling' || activeInteraction.kind === 'coloring' ? renderTokenBank() : null}
 
       <div className={cn(
         'rounded-[28px] border px-5 py-4 text-sm font-semibold',

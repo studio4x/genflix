@@ -8,10 +8,15 @@ export type AssessmentQuestionType =
   | 'case_study_single_choice'
   | 'drag_drop_labeling'
   | 'fill_in_the_blanks'
+  | 'coloring'
 
 export interface AssessmentInteractionToken {
   id: string
   label: string
+}
+
+export interface ColoringPaletteColor extends AssessmentInteractionToken {
+  hex: string
 }
 
 export interface AssessmentInteractionAsset {
@@ -73,9 +78,27 @@ export interface FillInTheBlanksInteractionContent {
   editor_groups?: FillInTheBlanksEditorGroup[] | null
 }
 
+export interface ColoringArea {
+  id: string
+  x: number
+  y: number
+  w: number
+  h: number
+  label?: string | null
+}
+
+export interface ColoringInteractionContent {
+  kind: 'coloring'
+  instruction: string
+  asset: AssessmentInteractionAsset
+  tokens: ColoringPaletteColor[]
+  targets: ColoringArea[]
+}
+
 export type AssessmentInteractionContent =
   | DragDropLabelingInteractionContent
   | FillInTheBlanksInteractionContent
+  | ColoringInteractionContent
 
 export interface AssessmentQuestionAnswerKeyEntry {
   slot_id: string
@@ -143,6 +166,11 @@ export interface CourseModule {
   description: string | null
   position: number
   is_required: boolean
+  starts_at: string | null
+  ends_at: string | null
+  module_pdf_storage_path: string | null
+  module_pdf_file_name: string | null
+  module_pdf_uploaded_at: string | null
   created_at: string
   updated_at: string
 }
@@ -158,8 +186,16 @@ export interface Lesson {
   youtube_url: string | null
   text_content: string | null
   estimated_minutes: number
+  starts_at: string | null
+  ends_at: string | null
   created_at: string
   updated_at: string
+}
+
+export interface ModulePdfAsset {
+  storage_path: string
+  file_name: string
+  uploaded_at: string | null
 }
 
 export interface LessonMaterial {
@@ -171,6 +207,38 @@ export interface LessonMaterial {
   file_size_bytes: number
   created_by: string | null
   created_at: string
+}
+
+export interface ButtonTemplate {
+  id: string
+  name: string
+  default_label: string
+  variant: 'primary' | 'secondary' | 'outline' | 'ghost' | 'link'
+  theme: 'blue' | 'emerald' | 'amber' | 'rose' | 'slate' | 'violet'
+  icon: string
+  is_active: boolean
+  created_at: string
+  updated_at: string
+}
+
+export interface LessonFooterAction {
+  id: string
+  lesson_id: string
+  template_id: string | null
+  action_type: 'file' | 'url'
+  label: string | null
+  url: string | null
+  storage_path: string | null
+  file_name: string | null
+  mime_type: string | null
+  file_size_bytes: number
+  position: number
+  open_in_new_tab: boolean
+  is_active: boolean
+  created_by: string | null
+  created_at: string
+  updated_at: string
+  template?: ButtonTemplate | null
 }
 
 export interface LessonNote {
@@ -317,7 +385,7 @@ export interface CourseProgress {
   updated_at: string
 }
 
-export type ModuleLearningState = 'blocked' | 'in_progress' | 'completed'
+export type ModuleLearningState = 'blocked' | 'blocked_by_schedule' | 'in_progress' | 'completed'
 
 export interface StudentLessonWithProgress {
   id: string
@@ -332,6 +400,8 @@ export interface StudentLessonWithProgress {
   estimated_minutes: number
   is_completed: boolean
   completed_at: string | null
+  starts_at: string | null
+  ends_at: string | null
 }
 
 export interface StudentCourseModuleProgress {
@@ -349,5 +419,9 @@ export interface StudentCourseModuleProgress {
   has_required_assessment: boolean
   required_assessment_approved: boolean
   progress_percent: number
+  starts_at: string | null
+  ends_at: string | null
+  module_pdf_file_name: string | null
+  module_pdf_storage_path: string | null
   lessons: StudentLessonWithProgress[]
 }

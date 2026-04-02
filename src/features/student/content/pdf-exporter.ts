@@ -1,5 +1,6 @@
 import homeCareMatchLogoUrl from '@/assets/homecare-match-logo.jpg'
 import { supabase } from '@/services/supabase/client'
+import { PDFDocument, StandardFonts, degrees, rgb } from 'pdf-lib'
 // @ts-ignore - html2pdf doesn't have official types easily available
 import html2pdf from 'html2pdf.js'
 
@@ -49,6 +50,7 @@ type PreparedImage = {
 
 type LicenseContext = {
   studentDisplayName: string
+  studentEmail: string
   userCode: string
   releaseCode: string
 }
@@ -339,6 +341,7 @@ async function fetchLicenseContext(): Promise<LicenseContext> {
   if (!user) {
     return {
       studentDisplayName: 'Aluno',
+      studentEmail: 'email-nao-informado',
       userCode: 'USUARIO',
       releaseCode: `HCM-${crypto.randomUUID().replaceAll('-', '').slice(0, 12).toUpperCase()}`,
     }
@@ -359,9 +362,105 @@ async function fetchLicenseContext(): Promise<LicenseContext> {
 
   return {
     studentDisplayName: getDisplayName(profile?.full_name, profile?.email ?? user.email ?? null),
+    studentEmail: profile?.email ?? user.email ?? 'email-nao-informado',
     userCode,
     releaseCode: `HCM-${userCode}-${crypto.randomUUID().replaceAll('-', '').slice(0, 10).toUpperCase()}`,
   }
+}
+
+function sanitizeForFileName(value: string) {
+  return value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-zA-Z0-9-_]+/g, '_')
+    .replace(/^_+|_+$/g, '')
+    .toLowerCase()
+}
+
+function downloadPdfBytes(fileName: string, bytes: Uint8Array) {
+  const safeBytes = Uint8Array.from(bytes)
+  const blob = new Blob([safeBytes], { type: 'application/pdf' })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = fileName
+  link.click()
+  URL.revokeObjectURL(url)
+}
+
+export async function exportLicensedModulePdf(moduleTitle: string, storagePath: string) {
+  const [licenseContext, signedUrl] = await Promise.all([
+    fetchLicenseContext(),
+    supabase.storage
+      .from('module-pdfs')
+      .createSignedUrl(storagePath, 60 * 10)
+      .then((result) => {
+        if (result.error) throw result.error
+        return result.data.signedUrl
+      }),
+  ])
+
+  const response = await fetch(signedUrl)
+  if (!response.ok) {
+    throw new Error('Nao foi possivel baixar o PDF base do modulo.')
+  }
+
+  const sourceBytes = new Uint8Array(await response.arrayBuffer())
+  const pdfDoc = await PDFDocument.load(sourceBytes)
+  const font = await pdfDoc.embedFont(StandardFonts.Helvetica)
+  const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold)
+  const pages = pdfDoc.getPages()
+  const issueDate = formatDate(new Date())
+  const licenseLine = `${licenseContext.studentDisplayName} | ${licenseContext.studentEmail} | ID ${licenseContext.userCode}`
+  const footerLine = `Licenca ${licenseContext.releaseCode} | Emissao ${issueDate}`
+
+  pages.forEach((page, index) => {
+    const { width, height } = page.getSize()
+
+    for (let row = -1; row < 4; row += 1) {
+      for (let col = -1; col < 3; col += 1) {
+        page.drawText(licenseLine, {
+          x: 40 + col * 210,
+          y: 120 + row * 170,
+          size: 20,
+          font,
+          color: rgb(0.75, 0.79, 0.87),
+          opacity: 0.18,
+          rotate: degrees(35),
+        })
+      }
+    }
+
+    page.drawText('HomeCare Match Academy', {
+      x: 32,
+      y: height - 28,
+      size: 10,
+      font: boldFont,
+      color: rgb(0.12, 0.25, 0.53),
+    })
+
+    page.drawText(footerLine, {
+      x: 32,
+      y: 22,
+      size: 9,
+      font,
+      color: rgb(0.38, 0.45, 0.55),
+    })
+
+    page.drawText(`pagina ${index + 1} de ${pages.length}`, {
+      x: width - 110,
+      y: 22,
+      size: 9,
+      font,
+      color: rgb(0.38, 0.45, 0.55),
+    })
+  })
+
+  const bytes = await pdfDoc.save()
+  downloadPdfBytes(
+    `${PDF_FILENAME_PREFIX}_${sanitizeForFileName(moduleTitle || 'modulo') || 'modulo'}.pdf`,
+    bytes,
+  )
 }
 
 function applyPdfFinishing(
