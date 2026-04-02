@@ -326,6 +326,9 @@ export async function createModule(courseId: string, input: ModuleFormInput) {
       is_required: input.is_required,
       starts_at: input.starts_at?.trim() || null,
       ends_at: input.ends_at?.trim() || null,
+      release_days_after_enrollment: input.release_days_after_enrollment?.trim()
+        ? Number(input.release_days_after_enrollment.trim())
+        : null,
       position: nextPosition,
     })
     .select('*')
@@ -346,6 +349,9 @@ export async function updateModule(moduleId: string, input: ModuleFormInput) {
       is_required: input.is_required,
       starts_at: input.starts_at?.trim() || null,
       ends_at: input.ends_at?.trim() || null,
+      release_days_after_enrollment: input.release_days_after_enrollment?.trim()
+        ? Number(input.release_days_after_enrollment.trim())
+        : null,
     })
     .eq('id', moduleId)
     .select('*')

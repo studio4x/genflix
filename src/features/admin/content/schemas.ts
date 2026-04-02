@@ -17,6 +17,12 @@ export const moduleFormSchema = z.object({
   is_required: z.boolean(),
   starts_at: z.string().optional().or(z.literal('')),
   ends_at: z.string().optional().or(z.literal('')),
+  release_days_after_enrollment: z.string().optional().or(z.literal('')).refine((value) => {
+    if (!value) return true
+    return /^\d+$/.test(value.trim())
+  }, {
+    message: 'Informe um numero inteiro de dias igual ou maior que zero.',
+  }),
 }).superRefine((value, ctx) => {
   if (value.starts_at && value.ends_at && new Date(value.ends_at) < new Date(value.starts_at)) {
     ctx.addIssue({

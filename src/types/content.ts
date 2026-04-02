@@ -168,6 +168,7 @@ export interface CourseModule {
   is_required: boolean
   starts_at: string | null
   ends_at: string | null
+  release_days_after_enrollment: number | null
   module_pdf_storage_path: string | null
   module_pdf_file_name: string | null
   module_pdf_uploaded_at: string | null

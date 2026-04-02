@@ -33,6 +33,7 @@ const initialForm: ModuleFormInput = {
   is_required: true,
   starts_at: '',
   ends_at: '',
+  release_days_after_enrollment: '',
 }
 
 function AiReviewUsageSummary({ review }: {
@@ -105,6 +106,9 @@ export function ModuleEditorPanel() {
           is_required: module.is_required,
           starts_at: module.starts_at ? module.starts_at.slice(0, 16) : '',
           ends_at: module.ends_at ? module.ends_at.slice(0, 16) : '',
+          release_days_after_enrollment: module.release_days_after_enrollment != null
+            ? String(module.release_days_after_enrollment)
+            : '',
         })
       }
     }
@@ -457,8 +461,20 @@ export function ModuleEditorPanel() {
                   />
                 </label>
               </div>
+              <label className="mt-4 block space-y-2">
+                <span className="text-sm font-bold text-slate-700">Liberar apos X dias da inscricao no curso</span>
+                <input
+                  type="number"
+                  min={0}
+                  step={1}
+                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm md:max-w-xs"
+                  value={form.release_days_after_enrollment ?? ''}
+                  onChange={(event) => setForm((prev) => ({ ...prev, release_days_after_enrollment: event.target.value }))}
+                  placeholder="Ex: 7"
+                />
+              </label>
               <p className="mt-3 text-xs text-slate-500">
-                Quando houver agenda no modulo e na aula, a regra mais restritiva sera aplicada para o aluno.
+                Se preencher uma data e tambem um numero de dias, as duas regras serao cumulativas. O modulo so libera quando ambas forem atendidas.
               </p>
             </div>
 

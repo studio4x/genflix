@@ -3,7 +3,13 @@ import type { FormEvent } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import ReactQuill from 'react-quill'
 import 'react-quill/dist/quill.snow.css'
-import { createLesson, deleteLesson, updateLesson, toErrorMessage } from '@/features/admin/content/api'
+import {
+  createLesson,
+  deleteLesson,
+  fetchLessonFooterActions,
+  updateLesson,
+  toErrorMessage,
+} from '@/features/admin/content/api'
 import { lessonFormSchema, type LessonFormInput } from '@/features/admin/content/schemas'
 import { useCourseBuilder } from '@/app/layouts/admin-course-builder-layout'
 import { useAuth } from '@/app/providers/auth-provider'
@@ -17,6 +23,7 @@ import type { LessonContentBlock } from '@/features/admin/content/content-blocks
 import { Button } from '@/components/ui/button'
 import { LessonAudioPlayer } from '@/features/student/lesson-audio/lesson-audio-player'
 import { Plus, Trash2, Code2, Eye } from 'lucide-react'
+import type { LessonFooterAction } from '@/types/content'
 
 const initialForm: LessonFormInput = {
   title: '',
@@ -60,7 +67,9 @@ export function LessonEditorPanel() {
   const [isDeleting, setIsDeleting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [audioRequests, setAudioRequests] = useState<LessonAudioModerationRequestAdminItem[]>([])
+  const [footerActions, setFooterActions] = useState<LessonFooterAction[]>([])
   const [isLoadingAudioRequests, setIsLoadingAudioRequests] = useState(false)
+  const [isLoadingFooterActions, setIsLoadingFooterActions] = useState(false)
   const [resolvingRequestId, setResolvingRequestId] = useState<string | null>(null)
   const [audioResponseByRequest, setAudioResponseByRequest] = useState<Record<string, string>>({})
 
@@ -116,6 +125,27 @@ export function LessonEditorPanel() {
     }
 
     void loadAudioRequests()
+  }, [isNew, lessonId])
+
+  useEffect(() => {
+    async function loadFooterActions() {
+      if (isNew || !lessonId) {
+        setFooterActions([])
+        return
+      }
+
+      setIsLoadingFooterActions(true)
+      try {
+        const actions = await fetchLessonFooterActions(lessonId)
+        setFooterActions(actions)
+      } catch (err) {
+        console.error('Erro ao buscar botoes da aula:', err)
+      } finally {
+        setIsLoadingFooterActions(false)
+      }
+    }
+
+    void loadFooterActions()
   }, [isNew, lessonId])
 
   const updateBlock = (index: number, newContent: string) => {
@@ -254,7 +284,7 @@ export function LessonEditorPanel() {
           {!isNew && (
             <Button variant="outline" size="sm" className="bg-white px-4 h-10 font-bold border-slate-200" onClick={() => navigate(`/admin/cursos/${courseId}/builder/modulos/${moduleId}/aulas/${lessonId}/materiais`)}>
               <svg className="h-4 w-4 mr-2 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" /></svg>
-              Materiais de Apoio
+              Botoes e URLs da Aula
             </Button>
           )}
        </div>
@@ -547,6 +577,57 @@ export function LessonEditorPanel() {
                  <p className="mt-3 text-[11px] text-slate-500">
                    A aula so libera quando o modulo tambem estiver dentro da janela configurada.
                  </p>
+               </div>
+
+               <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                 <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                   <div>
+                     <p className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">Botoes no Rodape da Aula</p>
+                     <p className="mt-2 text-sm text-slate-500">
+                       Configure arquivos e links que aparecem como botoes no rodape do player do aluno.
+                     </p>
+                   </div>
+                   {!isNew ? (
+                     <Button
+                       type="button"
+                       variant="outline"
+                       className="border-slate-200 bg-white"
+                       onClick={() => navigate(`/admin/cursos/${courseId}/builder/modulos/${moduleId}/aulas/${lessonId}/materiais`)}
+                     >
+                       Gerenciar botoes
+                     </Button>
+                   ) : null}
+                 </div>
+
+                 {isNew ? (
+                   <p className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                     Salve a aula primeiro para cadastrar botoes, materiais e URLs do rodape.
+                   </p>
+                 ) : isLoadingFooterActions ? (
+                   <p className="mt-4 text-sm text-slate-500">Carregando botoes configurados...</p>
+                 ) : footerActions.length === 0 ? (
+                   <p className="mt-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+                     Nenhum botao configurado ainda para esta aula.
+                   </p>
+                 ) : (
+                   <div className="mt-4 grid gap-3">
+                     {footerActions.map((action, index) => (
+                       <div key={action.id} className="rounded-xl border border-slate-200 bg-slate-50/70 px-4 py-3">
+                         <div className="flex flex-wrap items-center gap-2">
+                           <span className="rounded-full bg-blue-100 px-2.5 py-1 text-[10px] font-black uppercase tracking-widest text-blue-700">
+                             {index + 1}
+                           </span>
+                           <span className="text-sm font-bold text-slate-900">
+                             {action.label?.trim() || action.template?.default_label || action.file_name || 'Botao sem rotulo'}
+                           </span>
+                           <span className="rounded-full bg-white px-2.5 py-1 text-[10px] font-black uppercase tracking-widest text-slate-500">
+                             {action.action_type === 'file' ? 'Arquivo' : 'URL'}
+                           </span>
+                         </div>
+                       </div>
+                     ))}
+                   </div>
+                 )}
                </div>
              </fieldset>
 
