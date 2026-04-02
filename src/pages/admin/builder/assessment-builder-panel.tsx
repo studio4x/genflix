@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 
 import { useCourseBuilder } from '@/app/layouts/admin-course-builder-layout'
@@ -183,6 +183,7 @@ export function AssessmentBuilderPanel() {
   const [isImporting, setIsImporting] = useState(false)
   const [isDeletingAssessment, setIsDeletingAssessment] = useState(false)
   const [importError, setImportError] = useState<string | null>(null)
+  const questionPersistQueueRef = useRef<Record<string, Promise<void>>>({})
 
   const isFinal = !moduleId
   const isNewModuleAssessment = !isFinal && assessmentId === 'nova'
@@ -579,12 +580,21 @@ export function AssessmentBuilderPanel() {
   }
 
   async function handlePersistQuestion(questionId: string, updates: Partial<AssessmentQuestionWithOptions>) {
-    try {
-      await updateAssessmentQuestion(questionId, buildQuestionPayload(questionId, updates))
-    } catch (updateError) {
-      setError(toErrorMessage(updateError))
-      await loadData()
-    }
+    const payload = buildQuestionPayload(questionId, updates)
+    const previous = questionPersistQueueRef.current[questionId] ?? Promise.resolve()
+    const next = previous
+      .catch(() => undefined)
+      .then(async () => {
+        try {
+          await updateAssessmentQuestion(questionId, payload)
+        } catch (updateError) {
+          setError(toErrorMessage(updateError))
+          await loadData()
+        }
+      })
+
+    questionPersistQueueRef.current[questionId] = next
+    await next
   }
 
   async function handleUpdateQuestionType(questionId: string, questionType: AssessmentQuestionType) {
