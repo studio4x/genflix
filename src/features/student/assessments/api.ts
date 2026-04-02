@@ -156,19 +156,40 @@ export async function fetchAssessmentForExecution(assessmentId: string) {
     }),
   })
 
-  const payload = await response.json().catch(() => null) as
+  const responseText = await response.text()
+  let payload:
     | {
       assessment?: Assessment | null
       questions?: StudentAssessmentQuestionWithOptions[]
       caseStudies?: StudentAssessmentCaseStudyWithQuestions[]
       error?: string
     }
-    | null
+    | null = null
+
+  if (responseText) {
+    try {
+      payload = JSON.parse(responseText) as {
+        assessment?: Assessment | null
+        questions?: StudentAssessmentQuestionWithOptions[]
+        caseStudies?: StudentAssessmentCaseStudyWithQuestions[]
+        error?: string
+      }
+    } catch {
+      payload = null
+    }
+  }
 
   if (!response.ok) {
+    const fallbackMessage = responseText.trim() || `Falha ao carregar avaliacao (${response.status}).`
+    console.error('Falha ao carregar avaliacao para execucao:', {
+      assessmentId,
+      status: response.status,
+      payload,
+      responseText,
+    })
     throw new Error(payload && 'error' in payload && typeof payload.error === 'string'
       ? payload.error
-      : 'Falha ao carregar avaliacao.')
+      : fallbackMessage)
   }
 
   return {
