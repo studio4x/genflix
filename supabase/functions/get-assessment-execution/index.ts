@@ -80,7 +80,7 @@ Deno.serve(async (request) => {
     const accessTokenFromBody = typeof requestBody?.access_token === 'string'
       ? requestBody.access_token.trim()
       : ''
-    const accessToken = accessTokenFromHeader || accessTokenFromBody
+    const accessToken = accessTokenFromBody || accessTokenFromHeader
 
     const assessmentId = typeof requestBody?.assessment_id === 'string'
       ? requestBody.assessment_id.trim()

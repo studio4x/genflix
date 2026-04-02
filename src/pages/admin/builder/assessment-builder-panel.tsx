@@ -184,6 +184,8 @@ export function AssessmentBuilderPanel() {
   const [isDeletingAssessment, setIsDeletingAssessment] = useState(false)
   const [importError, setImportError] = useState<string | null>(null)
   const questionPersistQueueRef = useRef<Record<string, Promise<void>>>({})
+  const questionsRef = useRef<AssessmentQuestionWithOptions[]>([])
+  const caseStudiesRef = useRef<AssessmentCaseStudyWithQuestions[]>([])
 
   const isFinal = !moduleId
   const isNewModuleAssessment = !isFinal && assessmentId === 'nova'
@@ -262,6 +264,14 @@ export function AssessmentBuilderPanel() {
     })
   }, [assessment])
 
+  useEffect(() => {
+    questionsRef.current = questions
+  }, [questions])
+
+  useEffect(() => {
+    caseStudiesRef.current = caseStudies
+  }, [caseStudies])
+
   async function handleCreateAssessment() {
     if (!user || !courseId) return
 
@@ -334,12 +344,12 @@ export function AssessmentBuilderPanel() {
   }
 
   function findQuestion(questionId: string) {
-    const standaloneQuestion = questions.find((question) => question.id === questionId)
+    const standaloneQuestion = questionsRef.current.find((question) => question.id === questionId)
     if (standaloneQuestion) {
       return standaloneQuestion
     }
 
-    for (const caseStudy of caseStudies) {
+    for (const caseStudy of caseStudiesRef.current) {
       const caseQuestion = caseStudy.questions.find((question) => question.id === questionId)
       if (caseQuestion) {
         return caseQuestion
@@ -350,22 +360,33 @@ export function AssessmentBuilderPanel() {
   }
 
   function findCaseStudy(caseStudyId: string) {
-    return caseStudies.find((caseStudy) => caseStudy.id === caseStudyId) ?? null
+    return caseStudiesRef.current.find((caseStudy) => caseStudy.id === caseStudyId) ?? null
   }
 
   function updateQuestionState(
     questionId: string,
     updater: (question: AssessmentQuestionWithOptions) => AssessmentQuestionWithOptions,
   ) {
-    const standaloneQuestion = questions.find((question) => question.id === questionId)
+    const standaloneQuestion = questionsRef.current.find((question) => question.id === questionId)
 
     if (standaloneQuestion) {
+      const nextQuestions = questionsRef.current.map((question) => (
+        question.id === questionId ? updater(question) : question
+      ))
+      questionsRef.current = nextQuestions
       setQuestions((prev) => prev.map((question) => (
         question.id === questionId ? updater(question) : question
       )))
       return
     }
 
+    const nextCaseStudies = caseStudiesRef.current.map((caseStudy) => ({
+      ...caseStudy,
+      questions: caseStudy.questions.map((question) => (
+        question.id === questionId ? updater(question) : question
+      )),
+    }))
+    caseStudiesRef.current = nextCaseStudies
     setCaseStudies((prev) => prev.map((caseStudy) => ({
       ...caseStudy,
       questions: caseStudy.questions.map((question) => (

@@ -371,6 +371,12 @@ verify_jwt = false
 [functions.submit-assessment-attempt]
 verify_jwt = false
 
+[functions.get-assessment-execution-v2]
+verify_jwt = false
+
+[functions.submit-assessment-attempt-v2]
+verify_jwt = false
+
 # [edge_runtime.secrets]
 # secret_key = "env(SECRET_VALUE)"
 

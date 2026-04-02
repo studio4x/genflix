@@ -146,12 +146,12 @@ export async function fetchAssessmentForExecution(assessmentId: string) {
 
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
     const accessToken = await resolveAccessToken(attempt > 1)
-    const response = await fetch(`${env.VITE_SUPABASE_URL}/functions/v1/get-assessment-execution`, {
+    const response = await fetch(`${env.VITE_SUPABASE_URL}/functions/v1/get-assessment-execution-v2`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         apikey: env.VITE_SUPABASE_ANON_KEY,
-        Authorization: `Bearer ${accessToken}`,
+        Authorization: `Bearer ${env.VITE_SUPABASE_ANON_KEY}`,
       },
       body: JSON.stringify({
         assessment_id: assessmentId,
@@ -228,12 +228,12 @@ export async function submitAssessmentAttempt(
 
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
     const accessToken = await resolveAccessToken(attempt > 1)
-    const response = await fetch(`${env.VITE_SUPABASE_URL}/functions/v1/submit-assessment-attempt`, {
+    const response = await fetch(`${env.VITE_SUPABASE_URL}/functions/v1/submit-assessment-attempt-v2`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         apikey: env.VITE_SUPABASE_ANON_KEY,
-        Authorization: `Bearer ${accessToken}`,
+        Authorization: `Bearer ${env.VITE_SUPABASE_ANON_KEY}`,
       },
       body: JSON.stringify({
         assessment_id: parsed.data.assessment_id,

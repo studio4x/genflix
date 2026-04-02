@@ -127,7 +127,7 @@ Deno.serve(async (request) => {
     const accessTokenFromBody = typeof requestBody?.access_token === 'string'
       ? requestBody.access_token.trim()
       : ''
-    const accessToken = accessTokenFromHeader || accessTokenFromBody
+    const accessToken = accessTokenFromBody || accessTokenFromHeader
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
     const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
