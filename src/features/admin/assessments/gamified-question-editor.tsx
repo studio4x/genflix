@@ -1238,20 +1238,17 @@ export function GamifiedQuestionEditor({
                           key={target.id}
                           type="button"
                           className={cn(
-                            'absolute rounded-2xl border-2 border-dashed bg-white/70 text-[11px] font-black uppercase tracking-widest text-slate-700 shadow-lg backdrop-blur-sm transition-all',
+                            'absolute bg-transparent transition-all',
                             draggingTargetId === target.id ? 'cursor-grabbing' : 'cursor-grab',
                             selectedTargetId === target.id
-                              ? 'border-cyan-500 ring-4 ring-cyan-100'
-                              : 'border-cyan-200 hover:border-cyan-400',
+                              ? 'rounded-2xl border-2 border-dashed border-cyan-500'
+                              : 'border border-transparent',
                           )}
                           style={{
                             left: `${target.x}%`,
                             top: `${target.y}%`,
                             width: `${target.w}%`,
                             height: `${target.h}%`,
-                            backgroundColor: content.kind === 'coloring'
-                              ? `${content.tokens.find((token) => token.id === assignedTokenBySlot.get(target.id))?.hex ?? 'rgba(255,255,255,0.18)'}`
-                              : undefined,
                           }}
                           onClick={(event) => {
                             event.stopPropagation()
@@ -1259,7 +1256,16 @@ export function GamifiedQuestionEditor({
                           }}
                           onPointerDown={(event) => startTargetDrag(event, target)}
                         >
-                          {target.label?.trim() || `Area ${index + 1}`}
+                          <span
+                            className={cn(
+                              'absolute left-1/2 top-1/2 flex h-7 w-7 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border text-[11px] font-black text-slate-700 shadow-lg transition-all',
+                              selectedTargetId === target.id
+                                ? 'border-cyan-500 bg-cyan-500 text-white ring-4 ring-cyan-100'
+                                : 'border-white bg-white/95 hover:border-cyan-300 hover:text-cyan-700',
+                            )}
+                          >
+                            {index + 1}
+                          </span>
                         </button>
                       ))}
                     </div>
