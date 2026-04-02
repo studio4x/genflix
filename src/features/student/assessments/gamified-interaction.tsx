@@ -76,16 +76,21 @@ function ColoringView({
   onChange: (slotId: string, tokenId: string | null) => void
   readOnly: boolean
 }) {
-  const [armedColorId, setArmedColorId] = useState<string | null>(null)
+  const ERASER_TOOL_ID = '__eraser__'
+  const [armedColorId, setArmedColorId] = useState<string | null>(content.tokens[0]?.id ?? null)
   const colorById = useMemo(
     () => new Map(content.tokens.map((token) => [token.id, token])),
     [content.tokens],
   )
   const stageUrl = content.asset.signed_url || content.asset.storage_path
+  const selectedColor = armedColorId && armedColorId !== ERASER_TOOL_ID
+    ? colorById.get(armedColorId) ?? null
+    : null
+  const coloredTargetsCount = content.targets.filter((target) => Boolean(value[target.id])).length
 
   function clearAllAssignments() {
     if (readOnly) return
-    setArmedColorId(null)
+    setArmedColorId(content.tokens[0]?.id ?? null)
 
     for (const target of content.targets) {
       if (value[target.id]) {
@@ -95,7 +100,121 @@ function ColoringView({
   }
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_300px]">
+    <div className="grid gap-6 xl:grid-cols-[280px_minmax(0,1fr)]">
+      <div className="self-start rounded-[32px] border border-slate-200 bg-white p-5 shadow-xl shadow-slate-200/30 xl:sticky xl:top-6">
+        <div className="rounded-[28px] border border-slate-200 bg-slate-50/70 p-4">
+          <p className="text-[10px] font-black uppercase tracking-[0.28em] text-slate-400">Ferramentas</p>
+          <div className="mt-4 grid gap-3">
+            <button
+              type="button"
+              disabled={readOnly}
+              onClick={() => !readOnly && setArmedColorId(selectedColor?.id ?? content.tokens[0]?.id ?? null)}
+              className={`flex items-center gap-3 rounded-2xl border px-4 py-3 text-left transition-all ${
+                selectedColor
+                  ? 'border-cyan-400 bg-cyan-50 shadow-lg shadow-cyan-100'
+                  : 'border-slate-200 bg-white'
+              } ${readOnly ? 'cursor-default' : 'hover:border-cyan-300'}`}
+            >
+              <span
+                className="h-10 w-10 rounded-full border border-slate-300 shadow-sm"
+                style={{ backgroundColor: selectedColor?.hex ?? '#e2e8f0' }}
+              />
+              <span>
+                <span className="block text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Selecionada</span>
+                <span className="mt-1 block text-sm font-black text-slate-800">
+                  {selectedColor?.label ?? 'Nenhuma cor'}
+                </span>
+              </span>
+            </button>
+
+            <button
+              type="button"
+              disabled={readOnly}
+              onClick={() => !readOnly && setArmedColorId(ERASER_TOOL_ID)}
+              className={`flex items-center gap-3 rounded-2xl border px-4 py-3 text-left transition-all ${
+                armedColorId === ERASER_TOOL_ID
+                  ? 'border-cyan-400 bg-cyan-50 text-cyan-800 shadow-lg shadow-cyan-100'
+                  : 'border-slate-200 bg-white text-slate-700 hover:border-cyan-300'
+              } ${readOnly ? 'cursor-default' : ''}`}
+            >
+              <span className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-300 bg-[linear-gradient(180deg,_#ffffff,_#e2e8f0)] shadow-sm">
+                <svg className="h-5 w-5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 20H7L4 17m0 0l9.586-9.586a2 2 0 112.828 2.828L7 20m-3-3l5.586-5.586" />
+                </svg>
+              </span>
+              <span>
+                <span className="block text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Ferramenta</span>
+                <span className="mt-1 block text-sm font-black">Borracha</span>
+              </span>
+            </button>
+          </div>
+        </div>
+
+        <div className="mt-4 rounded-[28px] border border-slate-200 bg-white p-4">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-[0.28em] text-slate-400">Paleta</p>
+              <p className="mt-2 text-sm font-semibold text-slate-600">
+                Escolha uma cor e clique nas areas para pintar.
+              </p>
+            </div>
+            {!readOnly ? (
+              <button
+                type="button"
+                onClick={clearAllAssignments}
+                className="rounded-xl border border-slate-200 px-3 py-2 text-[11px] font-black uppercase tracking-wider text-slate-500 hover:bg-slate-50"
+              >
+                Limpar
+              </button>
+            ) : null}
+          </div>
+
+          <div className="mt-5 grid grid-cols-5 gap-3">
+            {content.tokens.map((token) => {
+              const isArmed = armedColorId === token.id
+              return (
+                <button
+                  key={token.id}
+                  type="button"
+                  disabled={readOnly}
+                  title={token.label}
+                  onClick={() => {
+                    if (readOnly) return
+                    setArmedColorId(token.id)
+                  }}
+                  className={`group flex h-11 w-11 items-center justify-center rounded-full border-2 transition-all ${
+                    isArmed
+                      ? 'scale-110 border-cyan-500 shadow-lg shadow-cyan-100'
+                      : 'border-white shadow-sm hover:scale-105 hover:border-cyan-200'
+                  }`}
+                  style={{ backgroundColor: token.hex }}
+                >
+                  <span className="sr-only">{token.label}</span>
+                  {isArmed ? (
+                    <span className="h-3 w-3 rounded-full border border-white/70 bg-white/80" />
+                  ) : null}
+                </button>
+              )
+            })}
+          </div>
+
+          <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-[10px] font-black uppercase tracking-[0.28em] text-slate-400">Progresso</span>
+              <span className="text-sm font-black text-cyan-700">
+                {coloredTargetsCount}/{content.targets.length}
+              </span>
+            </div>
+            <div className="mt-3 h-2 rounded-full bg-slate-200">
+              <div
+                className="h-2 rounded-full bg-cyan-500 transition-all"
+                style={{ width: `${content.targets.length ? (coloredTargetsCount / content.targets.length) * 100 : 0}%` }}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div className="min-w-0 overflow-hidden rounded-[36px] border border-slate-200 bg-[#fcfdff] shadow-inner">
         <div className="border-b border-slate-200 bg-white/80 px-6 py-4">
           <p className="text-[10px] font-black uppercase tracking-[0.28em] text-cyan-700">Quiz de Colorir</p>
@@ -116,7 +235,7 @@ function ColoringView({
             )}
 
             {content.targets.map((target) => {
-              const selectedColor = value[target.id] ? colorById.get(value[target.id] ?? '') : null
+              const paintedColor = value[target.id] ? colorById.get(value[target.id] ?? '') : null
 
               return (
                 <button
@@ -125,6 +244,12 @@ function ColoringView({
                   disabled={readOnly}
                   onClick={() => {
                     if (readOnly || !armedColorId) return
+
+                    if (armedColorId === ERASER_TOOL_ID) {
+                      onChange(target.id, null)
+                      return
+                    }
+
                     onChange(target.id, armedColorId)
                   }}
                   className="absolute rounded-2xl border-2 border-white/80 shadow-lg transition-transform hover:scale-[1.02]"
@@ -133,7 +258,7 @@ function ColoringView({
                     top: `${target.y}%`,
                     width: `${target.w}%`,
                     height: `${target.h}%`,
-                    backgroundColor: selectedColor?.hex ?? 'rgba(255,255,255,0.18)',
+                    backgroundColor: paintedColor?.hex ?? 'rgba(255,255,255,0.14)',
                   }}
                   title={target.label ?? 'Area'}
                 >
@@ -142,51 +267,6 @@ function ColoringView({
               )
             })}
           </div>
-        </div>
-      </div>
-
-      <div className="self-start rounded-[32px] border border-slate-200 bg-white p-5 shadow-xl shadow-slate-200/30 lg:sticky lg:top-6">
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <p className="text-[10px] font-black uppercase tracking-[0.28em] text-slate-400">Paleta</p>
-            <p className="mt-2 text-sm font-semibold text-slate-600">
-              Escolha uma cor e clique nas areas da imagem para preencher.
-            </p>
-          </div>
-          {!readOnly ? (
-            <button
-              type="button"
-              onClick={clearAllAssignments}
-              className="rounded-xl border border-slate-200 px-3 py-2 text-[11px] font-black uppercase tracking-wider text-slate-500 hover:bg-slate-50"
-            >
-              Limpar
-            </button>
-          ) : null}
-        </div>
-
-        <div className="mt-5 grid gap-3">
-          {content.tokens.map((token) => {
-            const isArmed = armedColorId === token.id
-            return (
-              <button
-                key={token.id}
-                type="button"
-                disabled={readOnly}
-                onClick={() => {
-                  if (readOnly) return
-                  setArmedColorId((current) => current === token.id ? null : token.id)
-                }}
-                className={`flex items-center gap-3 rounded-2xl border px-4 py-3 text-left text-sm font-black transition-all ${
-                  isArmed
-                    ? 'border-cyan-500 bg-cyan-50 text-cyan-800 shadow-lg shadow-cyan-100'
-                    : 'border-slate-200 bg-white text-slate-700 hover:border-cyan-300 hover:bg-cyan-50/60'
-                }`}
-              >
-                <span className="h-8 w-8 rounded-full border border-slate-200" style={{ backgroundColor: token.hex }} />
-                <span>{token.label}</span>
-              </button>
-            )
-          })}
         </div>
       </div>
     </div>
