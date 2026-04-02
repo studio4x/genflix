@@ -144,7 +144,7 @@ function normalizeInteractionContent(
   const usedTokenIds = new Set<string>()
 
   if (content.kind === 'coloring') {
-    const normalizedTokens: ColoringInteractionContent['tokens'] = content.targets.map((target) => {
+    const normalizedTokens: ColoringInteractionContent['tokens'] = content.targets.map((target, index) => {
       const mappedTokenId = current?.entries.find((entry) => entry.slot_id === target.id)?.token_id
       if (mappedTokenId) {
         const mappedToken = tokenById.get(mappedTokenId)
@@ -170,8 +170,8 @@ function normalizeInteractionContent(
 
       const nextToken = {
         id: crypto.randomUUID(),
-        label: '',
-        hex: '#2563eb',
+        label: `Cor ${index + 1}`,
+        hex: ['#2563eb', '#16a34a', '#dc2626', '#ca8a04', '#7c3aed', '#db2777'][index % 6],
       }
       usedTokenIds.add(nextToken.id)
       return nextToken
@@ -183,7 +183,7 @@ function normalizeInteractionContent(
     }
   }
 
-  const normalizedTokens: DragDropLabelingInteractionContent['tokens'] = content.targets.map((target) => {
+  const normalizedTokens: DragDropLabelingInteractionContent['tokens'] = content.targets.map((target, index) => {
     const mappedTokenId = current?.entries.find((entry) => entry.slot_id === target.id)?.token_id
     if (mappedTokenId) {
       const mappedToken = tokenById.get(mappedTokenId)
@@ -207,7 +207,7 @@ function normalizeInteractionContent(
 
     const nextToken = {
       id: crypto.randomUUID(),
-      label: '',
+      label: `Rotulo ${index + 1}`,
     }
     usedTokenIds.add(nextToken.id)
     return nextToken
