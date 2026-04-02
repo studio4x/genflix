@@ -490,6 +490,11 @@ export function GamifiedQuestionEditor({
   const assignedTokenBySlot = new Map(
     (answerKeyPayload?.entries ?? []).map((entry) => [entry.slot_id, entry.token_id]),
   )
+  const latestInteractionRef = useRef<AssessmentInteractionContent>(interactionContent)
+  const latestAnswerKeyRef = useRef<AssessmentQuestionAnswerKeyPayload | null>(answerKeyPayload)
+
+  latestInteractionRef.current = interactionContent
+  latestAnswerKeyRef.current = answerKeyPayload
 
   async function commit(
     content: AssessmentInteractionContent,
@@ -498,6 +503,8 @@ export function GamifiedQuestionEditor({
   ) {
     const normalizedContent = normalizeInteractionContent(content, answerKey)
     const normalizedAnswerKey = syncAnswerKeyWithContent(normalizedContent, answerKey)
+    latestInteractionRef.current = normalizedContent
+    latestAnswerKeyRef.current = normalizedAnswerKey
     const patch: Partial<AssessmentQuestionWithOptions> = {
       interaction: createInteractionRecord(question, normalizedContent),
       answer_key: createAnswerKeyRecord(question, normalizedAnswerKey, nextGradingMode),
@@ -514,10 +521,20 @@ export function GamifiedQuestionEditor({
   ) {
     const normalizedContent = normalizeInteractionContent(content, answerKey)
     const normalizedAnswerKey = syncAnswerKeyWithContent(normalizedContent, answerKey)
+    latestInteractionRef.current = normalizedContent
+    latestAnswerKeyRef.current = normalizedAnswerKey
     onDraftChange({
       interaction: createInteractionRecord(question, normalizedContent),
       answer_key: createAnswerKeyRecord(question, normalizedAnswerKey, nextGradingMode),
     })
+  }
+
+  function commitLatestDraft(nextGradingMode = gradingMode) {
+    return commit(
+      latestInteractionRef.current,
+      latestAnswerKeyRef.current ?? syncAnswerKeyWithContent(latestInteractionRef.current, answerKeyPayload),
+      nextGradingMode,
+    )
   }
 
   function updateTokenLabel(tokenId: string, label: string) {
@@ -975,7 +992,7 @@ export function GamifiedQuestionEditor({
                       className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 focus:border-cyan-300 focus:ring-4 focus:ring-cyan-100"
                       value={target.label ?? ''}
                       onChange={(event) => updateTarget(target.id, 'label', event.target.value)}
-                      onBlur={() => void commit(content)}
+                      onBlur={() => void commitLatestDraft()}
                       placeholder="Ex.: Mitocondria"
                     />
                   </label>
@@ -992,7 +1009,7 @@ export function GamifiedQuestionEditor({
                           className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 focus:border-cyan-300 focus:ring-4 focus:ring-cyan-100"
                           value={target[field]}
                           onChange={(event) => updateTarget(target.id, field, Number(event.target.value || 0))}
-                          onBlur={() => void commit(content)}
+                          onBlur={() => void commitLatestDraft()}
                         />
                       </label>
                     ))}
@@ -1313,7 +1330,7 @@ export function GamifiedQuestionEditor({
                               alt: event.target.value,
                             },
                           })}
-                          onBlur={() => void commit(content)}
+                          onBlur={() => void commitLatestDraft()}
                           placeholder="Descreva a ilustracao para acessibilidade"
                         />
                       </label>
@@ -1775,7 +1792,7 @@ export function GamifiedQuestionEditor({
               ...activeInteraction,
               instruction: event.target.value,
             })}
-            onBlur={() => void commit(activeInteraction)}
+            onBlur={() => void commitLatestDraft()}
             placeholder="Explique como o aluno deve interagir com o exercício."
           />
         </div>
