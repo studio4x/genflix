@@ -64,6 +64,35 @@ function isSvgElementTag(element: Element, tagNames: string[]) {
   return tagNames.includes(element.tagName.toLowerCase())
 }
 
+function getInlineStyleValue(element: Element, propertyName: string) {
+  const styleValue = element.getAttribute('style') ?? ''
+  if (!styleValue.trim()) {
+    return ''
+  }
+
+  for (const declaration of styleValue.split(';')) {
+    const [rawProperty, rawValue] = declaration.split(':')
+    if (!rawProperty || !rawValue) {
+      continue
+    }
+
+    if (rawProperty.trim().toLowerCase() === propertyName.toLowerCase()) {
+      return rawValue.trim()
+    }
+  }
+
+  return ''
+}
+
+function getPresentationValue(element: Element, attributeName: string) {
+  const directValue = element.getAttribute(attributeName)?.trim() ?? ''
+  if (directValue) {
+    return directValue
+  }
+
+  return getInlineStyleValue(element, attributeName)
+}
+
 function isForbiddenSvgElement(element: Element) {
   return SVG_FORBIDDEN_TAGS.has(element.tagName.toLowerCase())
 }
@@ -118,33 +147,45 @@ function getColorableNodesForRegion(element: Element) {
 }
 
 function isPaintableShape(element: Element) {
-  const explicitFill = (element.getAttribute('fill') ?? '').trim().toLowerCase()
-  const stroke = (element.getAttribute('stroke') ?? '').trim().toLowerCase()
+  const explicitFill = getPresentationValue(element, 'fill').toLowerCase()
+  const stroke = getPresentationValue(element, 'stroke').toLowerCase()
+  const tagName = element.tagName.toLowerCase()
 
-  if (explicitFill === 'none') {
-    return false
+  if (tagName === 'polyline') {
+    return explicitFill !== 'none'
   }
 
-  if (!explicitFill && stroke && stroke !== 'none') {
-    return false
+  if (tagName === 'path') {
+    const pathData = (element.getAttribute('d') ?? '').trim()
+    return pathData.length > 0
   }
 
-  return true
+  if (['rect', 'circle', 'ellipse', 'polygon'].includes(tagName)) {
+    return true
+  }
+
+  if (explicitFill === 'none' && stroke && stroke !== 'none') {
+    return true
+  }
+
+  return Boolean(explicitFill || stroke || isSvgElementTag(element, SVG_PAINTABLE_TAGS))
 }
 
 function ensureDefaultPaintState(element: Element) {
-  const fill = element.getAttribute('fill')
-  const stroke = element.getAttribute('stroke')
-  const strokeWidth = element.getAttribute('stroke-width')
+  const fill = getPresentationValue(element, 'fill')
+  const stroke = getPresentationValue(element, 'stroke')
+  const strokeWidth = getPresentationValue(element, 'stroke-width')
 
   element.setAttribute(SVG_FILLABLE_ATTR, 'true')
   element.setAttribute(SVG_ORIGINAL_FILL_ATTR, fill ?? '')
   element.setAttribute(SVG_ORIGINAL_STROKE_ATTR, stroke ?? '')
   element.setAttribute(SVG_ORIGINAL_STROKE_WIDTH_ATTR, strokeWidth ?? '')
 
-  if (!fill || fill.trim().toLowerCase() === 'currentcolor') {
+  if (!fill || fill.trim().toLowerCase() === 'currentcolor' || fill.trim().toLowerCase() === 'none') {
     element.setAttribute('fill', DEFAULT_EMPTY_FILL)
   }
+
+  element.setAttribute('pointer-events', 'all')
 }
 
 function parseSvgDimensions(svg: Element) {
@@ -251,7 +292,7 @@ export function parseColoringSvgMarkup(svgText: string): ParsedColoringSvgAsset 
   }
 
   if (regions.length === 0) {
-    throw new Error('O SVG precisa ter ao menos uma regiao com id ou data-region-id em um shape valido.')
+    throw new Error('Nao encontramos regioes utilizaveis no SVG. Use ids ou data-region-id nas pecas pintaveis, mesmo quando elas estiverem com fill:none.')
   }
 
   const serializer = new XMLSerializer()
@@ -279,7 +320,7 @@ function restorePaintNode(node: Element) {
   const originalStroke = node.getAttribute(SVG_ORIGINAL_STROKE_ATTR) ?? ''
   const originalStrokeWidth = node.getAttribute(SVG_ORIGINAL_STROKE_WIDTH_ATTR) ?? ''
 
-  if (originalFill) {
+  if (originalFill && originalFill.trim().toLowerCase() !== 'none') {
     node.setAttribute('fill', originalFill)
   } else {
     node.setAttribute('fill', DEFAULT_EMPTY_FILL)
