@@ -52,6 +52,16 @@ const SVG_COLORING_EXAMPLE = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0
   </g>
 </svg>`
 
+function shouldOpenSvgInstructions(message: string) {
+  const normalizedMessage = message.toLowerCase()
+
+  return normalizedMessage.includes('regioes utilizaveis no svg')
+    || normalizedMessage.includes('como preparar svg')
+    || normalizedMessage.includes('modo de colorir por regioes')
+    || normalizedMessage.includes('data-region-id')
+    || normalizedMessage.includes('pecas pintaveis')
+}
+
 function createInteractionRecord(
   question: AssessmentQuestionWithOptions,
   content: AssessmentInteractionContent,
@@ -727,7 +737,11 @@ export function GamifiedQuestionEditor({
         void deleteAssessmentAsset(previousStoragePath).catch(() => null)
       }
     } catch (error) {
-      onError(error instanceof Error ? error.message : 'Falha ao enviar a imagem do exercício.')
+      const message = error instanceof Error ? error.message : 'Falha ao enviar a imagem do exercicio.'
+      if (shouldOpenSvgInstructions(message)) {
+        setIsSvgInstructionsModalOpen(true)
+      }
+      onError(message)
     } finally {
       setIsUploadingAsset(false)
       if (event.target) {
@@ -930,6 +944,9 @@ export function GamifiedQuestionEditor({
               <p className="mt-2 text-sm font-medium text-slate-600">
                 Envie um SVG preparado com `id` ou `data-region-id` em cada peca pintavel.
               </p>
+              <p className="mt-3 text-xs font-semibold text-slate-500">
+                Precisa de ajuda para montar o arquivo? Abra o guia em modal e veja um exemplo pronto.
+              </p>
             </div>
 
             <div className="flex items-center gap-3">
@@ -956,28 +973,6 @@ export function GamifiedQuestionEditor({
                 onClick={() => setIsSvgInstructionsModalOpen(true)}
               >
                 Como preparar SVG
-              </Button>
-            </div>
-          </div>
-
-          <div className="mt-5 rounded-[28px] border border-cyan-100 bg-cyan-50/70 p-4 shadow-sm">
-            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-              <div>
-                <p className="text-[10px] font-black uppercase tracking-[0.25em] text-cyan-700">Modo recomendado</p>
-                <p className="mt-2 text-sm font-medium text-cyan-950">
-                  O preenchimento real das pecas acontece apenas com SVG preparado fora do sistema. O editor detecta as regioes e voce so define nome interno e cor correta.
-                </p>
-                <p className="mt-3 text-sm font-medium text-cyan-900">
-                  Resumo rapido: cada peca pintavel precisa ter `id` ou `data-region-id`, e o ideal e que sejam formas fechadas.
-                </p>
-              </div>
-              <Button
-                type="button"
-                variant="outline"
-                className="rounded-2xl border-cyan-200 bg-white text-cyan-700 hover:bg-cyan-50"
-                onClick={() => setIsSvgInstructionsModalOpen(true)}
-              >
-                Ver checklist
               </Button>
             </div>
           </div>
@@ -1735,8 +1730,14 @@ export function GamifiedQuestionEditor({
           </div>
         ) : null}
         {isSvgInstructionsModalOpen ? (
-          <div className="fixed inset-0 z-[135] flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm animate-in fade-in duration-300">
-            <div className="max-h-[92vh] w-full max-w-5xl overflow-y-auto rounded-[40px] border border-white/20 bg-white shadow-2xl animate-in zoom-in-95 duration-300">
+          <div
+            className="fixed inset-0 z-[135] flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm animate-in fade-in duration-300"
+            onClick={() => setIsSvgInstructionsModalOpen(false)}
+          >
+            <div
+              className="max-h-[92vh] w-full max-w-5xl overflow-y-auto rounded-[40px] border border-white/20 bg-white shadow-2xl animate-in zoom-in-95 duration-300"
+              onClick={(event) => event.stopPropagation()}
+            >
               <div className="flex items-center justify-between border-b border-slate-100 p-8">
                 <div>
                   <h3 className="text-left text-xl font-black tracking-tight text-slate-900">Como preparar o SVG para colorir</h3>
@@ -1756,6 +1757,21 @@ export function GamifiedQuestionEditor({
               </div>
 
               <div className="space-y-6 p-8">
+                <section className="grid gap-3 md:grid-cols-3">
+                  <div className="rounded-[24px] border border-slate-200 bg-slate-50/70 p-5">
+                    <p className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-500">Passo 1</p>
+                    <p className="mt-3 text-sm font-semibold text-slate-900">Separe cada peca em uma regiao propria.</p>
+                  </div>
+                  <div className="rounded-[24px] border border-slate-200 bg-slate-50/70 p-5">
+                    <p className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-500">Passo 2</p>
+                    <p className="mt-3 text-sm font-semibold text-slate-900">Defina `id` ou `data-region-id` em cada regiao.</p>
+                  </div>
+                  <div className="rounded-[24px] border border-slate-200 bg-slate-50/70 p-5">
+                    <p className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-500">Passo 3</p>
+                    <p className="mt-3 text-sm font-semibold text-slate-900">Exporte em SVG e envie o arquivo no quiz.</p>
+                  </div>
+                </section>
+
                 <div className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
                   <section className="rounded-[28px] border border-cyan-100 bg-cyan-50/70 p-6">
                     <p className="text-[10px] font-black uppercase tracking-[0.25em] text-cyan-700">Checklist</p>
