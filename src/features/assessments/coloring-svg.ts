@@ -292,7 +292,7 @@ export function parseColoringSvgMarkup(svgText: string): ParsedColoringSvgAsset 
   }
 
   if (regions.length === 0) {
-    throw new Error('Nao encontramos regioes utilizaveis no SVG. Use ids ou data-region-id nas pecas pintaveis, mesmo quando elas estiverem com fill:none.')
+    throw new Error('Nao encontramos regioes utilizaveis no SVG. Use ids ou data-region-id nas pecas pintaveis, mesmo quando elas estiverem com fill:none. Se precisar, abra o guia "Como preparar SVG" no editor.')
   }
 
   const serializer = new XMLSerializer()
