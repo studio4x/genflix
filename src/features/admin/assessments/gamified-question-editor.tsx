@@ -304,6 +304,19 @@ function formatPoints(value: number) {
   return Number.isInteger(value) ? String(value) : value.toFixed(2).replace(/\.?0+$/, '')
 }
 
+function getPointBadgeTextColor(hex?: string | null) {
+  if (!hex || !/^#([0-9a-fA-F]{6})$/.test(hex)) {
+    return '#0f172a'
+  }
+
+  const red = Number.parseInt(hex.slice(1, 3), 16)
+  const green = Number.parseInt(hex.slice(3, 5), 16)
+  const blue = Number.parseInt(hex.slice(5, 7), 16)
+  const luminance = ((0.299 * red) + (0.587 * green) + (0.114 * blue)) / 255
+
+  return luminance > 0.7 ? '#0f172a' : '#ffffff'
+}
+
 function getCanvasTargetTemplate(content: CanvasInteractionContent, index: number) {
   if (content.kind === 'coloring') {
     return {
@@ -1832,48 +1845,58 @@ export function GamifiedQuestionEditor({
                         </div>
                       )}
 
-                      {content.targets.map((target, index) => (
-                        <button
-                          key={target.id}
-                          type="button"
-                          className={cn(
-                            'absolute bg-transparent transition-all',
-                            draggingTargetId === target.id ? 'cursor-grabbing' : 'cursor-grab',
-                            isColoringPointMode
-                              ? selectedTargetId === target.id
-                                ? 'rounded-full'
-                                : ''
-                              : selectedTargetId === target.id
-                                ? 'rounded-2xl border-2 border-dashed border-cyan-500'
-                                : 'border border-transparent',
-                          )}
-                          style={{
-                            left: `${target.x}%`,
-                            top: `${target.y}%`,
-                            width: `${target.w}%`,
-                            height: `${target.h}%`,
-                          }}
-                          onClick={(event) => {
-                            event.stopPropagation()
-                            setSelectedTargetId(target.id)
-                          }}
-                          onPointerDown={(event) => startTargetDrag(event, target)}
-                        >
-                          <span
+                      {content.targets.map((target, index) => {
+                        const assignedToken = content.kind === 'coloring'
+                          ? content.tokens.find((token) => token.id === assignedTokenBySlot.get(target.id)) ?? null
+                          : null
+                        const pointColor = assignedToken?.hex ?? '#ffffff'
+
+                        return (
+                          <button
+                            key={target.id}
+                            type="button"
                             className={cn(
-                              'absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border font-black text-slate-700 shadow-lg transition-all',
-                              isColoringPointMode ? 'h-3.5 w-3.5 text-[7px]' : 'h-7 w-7 text-[11px]',
-                              selectedTargetId === target.id
-                                ? isColoringPointMode
-                                  ? 'border-cyan-500 bg-cyan-500 text-white ring-2 ring-cyan-100'
-                                  : 'border-cyan-500 bg-cyan-500 text-white ring-4 ring-cyan-100'
-                                : 'border-white bg-white/95 hover:border-cyan-300 hover:text-cyan-700',
+                              'absolute bg-transparent transition-all',
+                              draggingTargetId === target.id ? 'cursor-grabbing' : 'cursor-grab',
+                              isColoringPointMode
+                                ? selectedTargetId === target.id
+                                  ? 'rounded-full'
+                                  : ''
+                                : selectedTargetId === target.id
+                                  ? 'rounded-2xl border-2 border-dashed border-cyan-500'
+                                  : 'border border-transparent',
                             )}
+                            style={{
+                              left: `${target.x}%`,
+                              top: `${target.y}%`,
+                              width: `${target.w}%`,
+                              height: `${target.h}%`,
+                            }}
+                            onClick={(event) => {
+                              event.stopPropagation()
+                              setSelectedTargetId(target.id)
+                            }}
+                            onPointerDown={(event) => startTargetDrag(event, target)}
                           >
-                            {index + 1}
-                          </span>
-                        </button>
-                      ))}
+                            <span
+                              className={cn(
+                                'absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border font-black shadow-lg transition-all',
+                                isColoringPointMode ? 'h-3.5 w-3.5 text-[7px] border-slate-700/70' : 'h-7 w-7 text-[11px]',
+                                selectedTargetId === target.id
+                                  ? isColoringPointMode
+                                    ? 'ring-2 ring-cyan-100 shadow-[0_0_0_4px_rgba(34,211,238,0.18),0_4px_12px_rgba(15,23,42,0.28)]'
+                                    : 'border-cyan-500 bg-cyan-500 text-white ring-4 ring-cyan-100'
+                                  : isColoringPointMode
+                                    ? 'shadow-[0_3px_10px_rgba(15,23,42,0.18)]'
+                                    : 'border-white bg-white/95 hover:border-cyan-300 hover:text-cyan-700',
+                              )}
+                              style={isColoringPointMode ? { backgroundColor: pointColor, color: getPointBadgeTextColor(pointColor) } : undefined}
+                            >
+                              {index + 1}
+                            </span>
+                          </button>
+                        )
+                      })}
                     </div>
                   </div>
                 </div>
