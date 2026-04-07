@@ -6,6 +6,7 @@ const SVG_FILLABLE_ATTR = 'data-hcm-fillable'
 const SVG_ORIGINAL_FILL_ATTR = 'data-hcm-original-fill'
 const SVG_ORIGINAL_STROKE_ATTR = 'data-hcm-original-stroke'
 const SVG_ORIGINAL_STROKE_WIDTH_ATTR = 'data-hcm-original-stroke-width'
+const SVG_PAINT_LAYER_ATTR = 'data-hcm-paint-layer'
 const SVG_PAINTABLE_TAGS = ['path', 'polygon', 'polyline', 'rect', 'circle', 'ellipse']
 const SVG_CANDIDATE_TAGS = [...SVG_PAINTABLE_TAGS, 'g']
 const SVG_FORBIDDEN_TAGS = new Set([
@@ -20,6 +21,7 @@ const SVG_FORBIDDEN_TAGS = new Set([
   'link',
 ])
 const DEFAULT_EMPTY_FILL = '#ffffff'
+const runtimePaintLayerByNode = new WeakMap<Element, Element>()
 
 export interface ParsedColoringSvgAsset {
   width: number
@@ -335,6 +337,53 @@ function getPaintNodesForRuntime(regionElement: Element) {
   return regionElement.getAttribute(SVG_FILLABLE_ATTR) === 'true' ? [regionElement] : []
 }
 
+function shouldUseDedicatedPaintLayer(node: Element) {
+  const tagName = node.tagName.toLowerCase()
+  if (tagName === 'polyline') {
+    return false
+  }
+
+  const originalFill = (node.getAttribute(SVG_ORIGINAL_FILL_ATTR) ?? getPresentationValue(node, 'fill') ?? '')
+    .trim()
+    .toLowerCase()
+
+  return !originalFill || originalFill === 'none' || originalFill === 'currentcolor'
+}
+
+function ensureRuntimePaintLayer(node: Element) {
+  if (!shouldUseDedicatedPaintLayer(node)) {
+    return null
+  }
+
+  const existingLayer = runtimePaintLayerByNode.get(node)
+  if (existingLayer?.isConnected) {
+    return existingLayer
+  }
+
+  const paintLayer = node.cloneNode(true) as Element
+  paintLayer.removeAttribute('id')
+  paintLayer.removeAttribute(SVG_FILLABLE_ATTR)
+  paintLayer.removeAttribute(SVG_REGION_ATTR)
+  paintLayer.removeAttribute(SVG_REGION_LABEL_ATTR)
+  paintLayer.removeAttribute(SVG_ORIGINAL_FILL_ATTR)
+  paintLayer.removeAttribute(SVG_ORIGINAL_STROKE_ATTR)
+  paintLayer.removeAttribute(SVG_ORIGINAL_STROKE_WIDTH_ATTR)
+  paintLayer.setAttribute(SVG_PAINT_LAYER_ATTR, 'true')
+  paintLayer.setAttribute('pointer-events', 'none')
+  setRuntimePresentationValue(paintLayer, 'fill', DEFAULT_EMPTY_FILL)
+  setRuntimePresentationValue(paintLayer, 'stroke', 'none')
+  setRuntimePresentationValue(paintLayer, 'stroke-width', null)
+
+  if (paintLayer instanceof SVGElement) {
+    paintLayer.style.setProperty('fill-opacity', '1')
+    paintLayer.style.setProperty('opacity', '1')
+  }
+
+  node.parentNode?.insertBefore(paintLayer, node)
+  runtimePaintLayerByNode.set(node, paintLayer)
+  return paintLayer
+}
+
 function setRuntimePresentationValue(
   node: Element,
   propertyName: 'fill' | 'stroke' | 'stroke-width',
@@ -358,6 +407,18 @@ function setRuntimePresentationValue(
 }
 
 function restorePaintNode(node: Element) {
+  if (node.getAttribute(SVG_PAINT_LAYER_ATTR) === 'true') {
+    setRuntimePresentationValue(node, 'fill', DEFAULT_EMPTY_FILL)
+    setRuntimePresentationValue(node, 'stroke', 'none')
+    setRuntimePresentationValue(node, 'stroke-width', null)
+
+    if (node instanceof SVGElement) {
+      node.style.setProperty('fill-opacity', '1')
+      node.style.setProperty('opacity', '1')
+    }
+    return
+  }
+
   const originalFill = node.getAttribute(SVG_ORIGINAL_FILL_ATTR) ?? ''
   const originalStroke = node.getAttribute(SVG_ORIGINAL_STROKE_ATTR) ?? ''
   const originalStrokeWidth = node.getAttribute(SVG_ORIGINAL_STROKE_WIDTH_ATTR) ?? ''
@@ -402,10 +463,15 @@ export function applyColoringSvgRuntimeState(
     const isSelected = Boolean(options.selectedRegionId && options.selectedRegionId === regionId)
 
     for (const node of paintNodes) {
+      const paintNode = ensureRuntimePaintLayer(node) ?? node
+
       restorePaintNode(node)
+      if (paintNode !== node) {
+        restorePaintNode(paintNode)
+      }
 
       if (hex) {
-        setRuntimePresentationValue(node, 'fill', hex)
+        setRuntimePresentationValue(paintNode, 'fill', hex)
       }
 
       if (isSelected) {
