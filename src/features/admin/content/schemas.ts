@@ -1,7 +1,34 @@
 import { z } from 'zod'
 
+import { DEFAULT_COURSE_QUIZ_TYPE_SETTINGS } from '@/features/assessments/course-quiz-type-settings'
+
 const youtubeRegex =
   /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/[^\s]+$/i
+
+export const courseQuizTypeSettingsSchema = z.object({
+  single_choice: z.boolean().default(DEFAULT_COURSE_QUIZ_TYPE_SETTINGS.single_choice),
+  essay_ai: z.boolean().default(DEFAULT_COURSE_QUIZ_TYPE_SETTINGS.essay_ai),
+  drag_drop_labeling: z.boolean().default(DEFAULT_COURSE_QUIZ_TYPE_SETTINGS.drag_drop_labeling),
+  fill_in_the_blanks: z.boolean().default(DEFAULT_COURSE_QUIZ_TYPE_SETTINGS.fill_in_the_blanks),
+  coloring: z.boolean().default(DEFAULT_COURSE_QUIZ_TYPE_SETTINGS.coloring),
+  case_study: z.boolean().default(DEFAULT_COURSE_QUIZ_TYPE_SETTINGS.case_study),
+}).superRefine((value, ctx) => {
+  if (!Object.values(value).some(Boolean)) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'Ative ao menos um tipo de quiz para este curso.',
+      path: [],
+    })
+  }
+
+  if (value.case_study && !value.single_choice && !value.essay_ai) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'Para habilitar estudo de caso, deixe Multipla Escolha ou Discursiva com IA ativos.',
+      path: ['case_study'],
+    })
+  }
+})
 
 export const courseFormSchema = z.object({
   title: z.string().trim().min(3, 'Titulo deve ter ao menos 3 caracteres'),
@@ -9,6 +36,7 @@ export const courseFormSchema = z.object({
   status: z.enum(['draft', 'published', 'archived']),
   thumbnail_url: z.string().optional().or(z.literal('')),
   has_linear_progression: z.boolean().default(true),
+  quiz_type_settings: courseQuizTypeSettingsSchema.default({ ...DEFAULT_COURSE_QUIZ_TYPE_SETTINGS }),
 })
 
 export const moduleFormSchema = z.object({

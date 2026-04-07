@@ -37,6 +37,11 @@ import {
   getInteractionSlotIds,
   isGamifiedQuestionType,
 } from '@/features/assessments/gamified'
+import {
+  canCourseUseCaseStudies,
+  isCourseQuestionTypeEnabled,
+  normalizeCourseQuizTypeSettings,
+} from '@/features/assessments/course-quiz-type-settings'
 import { fetchModule } from '@/features/admin/content/api'
 import type {
   Assessment,
@@ -148,6 +153,47 @@ function getDefaultGamifiedState(questionId: string, questionType: AssessmentQue
   }
 }
 
+function getQuestionTypeDisplayLabel(questionType: AssessmentQuestionType | 'case_study') {
+  switch (questionType) {
+    case 'single_choice':
+    case 'case_study_single_choice':
+      return 'Multipla Escolha'
+    case 'essay_ai':
+    case 'case_study_ai':
+      return 'Discursiva com IA'
+    case 'drag_drop_labeling':
+      return 'Arrastar e Soltar'
+    case 'fill_in_the_blanks':
+      return 'Preencher Lacunas'
+    case 'coloring':
+      return 'Quiz de Colorir'
+    case 'case_study':
+      return 'Estudo de Caso'
+    default:
+      return 'Tipo de Quiz'
+  }
+}
+
+function collectImportedQuestionTypes(data: ImportAssessmentData) {
+  const importedTypes = new Set<AssessmentQuestionType>()
+
+  for (const question of data.questions ?? []) {
+    importedTypes.add(question.question_type ?? 'single_choice')
+  }
+
+  for (const caseStudy of data.case_studies ?? []) {
+    for (const question of caseStudy.questions ?? []) {
+      importedTypes.add(
+        question.question_type === 'case_study_ai' || question.question_type === 'case_study_single_choice'
+          ? question.question_type
+          : 'case_study_single_choice',
+      )
+    }
+  }
+
+  return [...importedTypes]
+}
+
 export function AssessmentBuilderPanel() {
   const { courseId, moduleId, assessmentId } = useParams<{
     courseId: string
@@ -156,7 +202,7 @@ export function AssessmentBuilderPanel() {
   }>()
   const navigate = useNavigate()
   const { user } = useAuth()
-  const { refreshTree } = useCourseBuilder()
+  const { refreshTree, courseTree } = useCourseBuilder()
 
   const [module, setModule] = useState<CourseModule | null>(null)
   const [assessment, setAssessment] = useState<Assessment | null>(null)
@@ -182,6 +228,26 @@ export function AssessmentBuilderPanel() {
 
   const isFinal = !moduleId
   const isNewModuleAssessment = !isFinal && assessmentId === 'nova'
+  const quizTypeSettings = normalizeCourseQuizTypeSettings(courseTree?.course.quiz_type_settings)
+  const canUseCaseStudies = canCourseUseCaseStudies(quizTypeSettings)
+
+  function ensureQuestionTypeEnabled(questionType: AssessmentQuestionType | 'case_study') {
+    if (questionType === 'case_study') {
+      if (!canUseCaseStudies) {
+        setError('Estudo de caso esta desativado nas configuracoes do curso.')
+        return false
+      }
+
+      return true
+    }
+
+    if (!isCourseQuestionTypeEnabled(quizTypeSettings, questionType)) {
+      setError(`${getQuestionTypeDisplayLabel(questionType)} esta desativado nas configuracoes do curso.`)
+      return false
+    }
+
+    return true
+  }
 
   const loadData = useCallback(async () => {
     setIsLoading(true)
@@ -437,6 +503,48 @@ export function AssessmentBuilderPanel() {
   const requiredPoints = assessmentDraft
     ? Math.round(((assessmentDraft.passing_score / 100) * totalPossiblePoints) * 100) / 100
     : 0
+  const availableAddCards = [
+    {
+      title: 'Multipla Escolha',
+      description: 'Pergunta independente com alternativas tradicionais.',
+      className: 'border-slate-100 text-slate-400 hover:border-blue-100 hover:bg-blue-50/30 hover:text-blue-600',
+      iconClassName: 'border-slate-100 bg-slate-50',
+      onClick: () => void handleAddQuestion('single_choice'),
+      isVisible: isCourseQuestionTypeEnabled(quizTypeSettings, 'single_choice'),
+    },
+    {
+      title: 'Arrastar e Soltar',
+      description: 'Imagem com hotspots e banco de rotulos avaliavel.',
+      className: 'border-cyan-100 text-cyan-700 hover:bg-cyan-50/70',
+      iconClassName: 'border-cyan-200 bg-cyan-50',
+      onClick: () => void handleAddQuestion('drag_drop_labeling'),
+      isVisible: isCourseQuestionTypeEnabled(quizTypeSettings, 'drag_drop_labeling'),
+    },
+    {
+      title: 'Preencher Lacunas',
+      description: 'Texto com lacunas e banco de respostas arrastavel.',
+      className: 'border-teal-100 text-teal-700 hover:bg-teal-50/70',
+      iconClassName: 'border-teal-200 bg-teal-50',
+      onClick: () => void handleAddQuestion('fill_in_the_blanks'),
+      isVisible: isCourseQuestionTypeEnabled(quizTypeSettings, 'fill_in_the_blanks'),
+    },
+    {
+      title: 'Quiz de Colorir',
+      description: 'Imagem com areas pintaveis e checklist de cores por area.',
+      className: 'border-fuchsia-100 text-fuchsia-700 hover:bg-fuchsia-50/70',
+      iconClassName: 'border-fuchsia-200 bg-fuchsia-50',
+      onClick: () => void handleAddQuestion('coloring'),
+      isVisible: isCourseQuestionTypeEnabled(quizTypeSettings, 'coloring'),
+    },
+    {
+      title: 'Novo Estudo de Caso',
+      description: 'Bloco com contexto compartilhado e perguntas mistas.',
+      className: 'border-amber-100 text-amber-700 hover:bg-amber-50/60',
+      iconClassName: 'border-amber-200 bg-amber-50',
+      onClick: () => void handleAddCaseStudy(),
+      isVisible: canUseCaseStudies,
+    },
+  ].filter((card) => card.isVisible)
 
   function buildQuestionPayload(
     questionId: string,
@@ -476,6 +584,7 @@ export function AssessmentBuilderPanel() {
 
   async function handleAddQuestion(questionType: AssessmentQuestionType = 'single_choice') {
     if (!assessment) return
+    if (!ensureQuestionTypeEnabled(questionType)) return
 
     try {
       const defaultGamified = isGamifiedQuestionType(questionType)
@@ -504,6 +613,7 @@ export function AssessmentBuilderPanel() {
 
   async function handleAddCaseStudy() {
     if (!assessment) return
+    if (!ensureQuestionTypeEnabled('case_study')) return
 
     try {
       const createdCaseStudy = await createAssessmentCaseStudy(assessment.id, {
@@ -559,6 +669,7 @@ export function AssessmentBuilderPanel() {
 
   async function handleAddCaseQuestion(caseStudyId: string, questionType: 'case_study_ai' | 'case_study_single_choice' = 'case_study_single_choice') {
     if (!assessment) return
+    if (!ensureQuestionTypeEnabled(questionType)) return
 
     const caseStudy = findCaseStudy(caseStudyId)
     const nextCasePosition = (caseStudy?.questions.length ?? 0) + 1
@@ -614,6 +725,7 @@ export function AssessmentBuilderPanel() {
   async function handleUpdateQuestionType(questionId: string, questionType: AssessmentQuestionType) {
     const currentQuestion = findQuestion(questionId)
     if (!currentQuestion) return
+    if (!ensureQuestionTypeEnabled(questionType)) return
 
     if (currentQuestion.case_study_id && isGamifiedQuestionType(questionType)) {
       setError('Questoes gamificadas ficam apenas como perguntas independentes nesta v1.')
@@ -799,6 +911,18 @@ export function AssessmentBuilderPanel() {
       }
 
       const data = parsedData as Record<string, unknown>
+      const importData = data as unknown as ImportAssessmentData
+      const importedTypes = collectImportedQuestionTypes(importData)
+      const firstDisabledImportedType = importedTypes.find((questionType) => !isCourseQuestionTypeEnabled(quizTypeSettings, questionType))
+
+      if (firstDisabledImportedType) {
+        throw new Error(`${getQuestionTypeDisplayLabel(firstDisabledImportedType)} esta desativado nas configuracoes do curso.`)
+      }
+
+      if ((importData.case_studies?.length ?? 0) > 0 && !canUseCaseStudies) {
+        throw new Error('Estudo de caso esta desativado nas configuracoes do curso.')
+      }
+
       let targetAssessmentId = assessment?.id
 
       if (!targetAssessmentId) {
@@ -827,7 +951,7 @@ export function AssessmentBuilderPanel() {
         throw new Error('Não foi possível criar ou localizar a avaliação alvo.')
       }
 
-      await importAssessmentContentStructured(targetAssessmentId, data as unknown as ImportAssessmentData)
+      await importAssessmentContentStructured(targetAssessmentId, importData)
       await loadData()
       await refreshTree()
       setIsImportModalOpen(false)
@@ -887,8 +1011,51 @@ export function AssessmentBuilderPanel() {
     const canUseDragDrop = isStandalone && question.question_type === 'drag_drop_labeling'
     const canUseFillInTheBlanks = isStandalone && question.question_type === 'fill_in_the_blanks'
     const canUseColoring = isStandalone && question.question_type === 'coloring'
-
+    const isCurrentTypeDisabled = !isCourseQuestionTypeEnabled(quizTypeSettings, question.question_type)
     const setType = (type: AssessmentQuestionType) => void handleUpdateQuestionType(question.id, type)
+    const typeButtons: Array<{
+      type: AssessmentQuestionType
+      label: string
+      activeClassName: string
+      idleClassName: string
+    }> = [
+      {
+        type: (isStandalone ? 'single_choice' : 'case_study_single_choice') as AssessmentQuestionType,
+        label: 'Multipla Escolha',
+        activeClassName: 'bg-blue-600 text-white',
+        idleClassName: 'border border-slate-200 bg-white text-slate-500 hover:border-blue-200 hover:text-blue-600',
+      },
+      {
+        type: (isStandalone ? 'essay_ai' : 'case_study_ai') as AssessmentQuestionType,
+        label: 'Discursiva com IA',
+        activeClassName: 'bg-amber-500 text-white',
+        idleClassName: 'border border-slate-200 bg-white text-slate-500 hover:border-amber-200 hover:text-amber-700',
+      },
+      ...(isStandalone
+        ? [
+            {
+              type: 'drag_drop_labeling' as const,
+              label: 'Arrastar e Soltar',
+              activeClassName: 'bg-cyan-600 text-white',
+              idleClassName: 'border border-slate-200 bg-white text-slate-500 hover:border-cyan-200 hover:text-cyan-700',
+            },
+            {
+              type: 'fill_in_the_blanks' as const,
+              label: 'Preencher Lacunas',
+              activeClassName: 'bg-teal-600 text-white',
+              idleClassName: 'border border-slate-200 bg-white text-slate-500 hover:border-teal-200 hover:text-teal-700',
+            },
+            {
+              type: 'coloring' as const,
+              label: 'Quiz de Colorir',
+              activeClassName: 'bg-fuchsia-600 text-white',
+              idleClassName: 'border border-slate-200 bg-white text-slate-500 hover:border-fuchsia-200 hover:text-fuchsia-700',
+            },
+          ]
+        : []),
+    ].filter((button) => (
+      isCourseQuestionTypeEnabled(quizTypeSettings, button.type) || question.question_type === button.type
+    ))
 
     return (
       <div key={question.id} className="group animate-in overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm transition-all slide-in-from-bottom-4 duration-500 hover:border-blue-300">
@@ -898,6 +1065,35 @@ export function AssessmentBuilderPanel() {
           </div>
 
           <div className="flex-1 space-y-3">
+            <div className="flex flex-wrap items-center gap-2">
+              {typeButtons.map((button) => {
+                const isActive = question.question_type === button.type
+                const isEnabled = isCourseQuestionTypeEnabled(quizTypeSettings, button.type)
+
+                return (
+                  <button
+                    key={button.type}
+                    type="button"
+                    onClick={() => setType(button.type)}
+                    disabled={!isEnabled}
+                    className={`rounded-full px-3 py-1 text-[11px] font-black uppercase tracking-widest transition-colors disabled:cursor-not-allowed disabled:opacity-70 ${
+                      isActive ? button.activeClassName : button.idleClassName
+                    }`}
+                    title={!isEnabled ? 'Tipo desativado nas configuracoes do curso.' : undefined}
+                  >
+                    {button.label}
+                  </button>
+                )
+              })}
+            </div>
+
+            {isCurrentTypeDisabled ? (
+              <div className="rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3 text-xs font-semibold text-amber-800">
+                Este tipo foi desativado nas configuracoes do curso. A pergunta continua disponivel aqui para revisao, mas nao pode mais ser usada em novas criacoes.
+              </div>
+            ) : null}
+
+            {false ? (
             <div className="flex flex-wrap items-center gap-2">
               <button
                 type="button"
@@ -959,6 +1155,7 @@ export function AssessmentBuilderPanel() {
                 </>
               ) : null}
             </div>
+            ) : null}
 
             <textarea
               className="w-full resize-none border-none bg-transparent p-0 font-bold text-slate-800 placeholder:text-slate-300 focus:ring-0"
@@ -1310,67 +1507,57 @@ export function AssessmentBuilderPanel() {
               {caseStudy.questions.map((question, questionIndex) => renderQuestionCard(question, `${caseStudyIndex + 1}.${questionIndex + 1}`, 'case-study'))}
 
               <div className="grid gap-3 md:grid-cols-2">
-                <button
-                  onClick={() => void handleAddCaseQuestion(caseStudy.id, 'case_study_single_choice')}
-                  className="flex items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-slate-200 py-4 text-sm font-bold text-slate-500 transition-all hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
-                >
-                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                  </svg>
-                  Adicionar Pergunta de Alternativa
-                </button>
-                <button
-                  onClick={() => void handleAddCaseQuestion(caseStudy.id, 'case_study_ai')}
-                  className="flex items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-amber-200 py-4 text-sm font-bold text-amber-700 transition-all hover:bg-amber-50"
-                >
-                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                  </svg>
-                  Adicionar Pergunta Discursiva
-                </button>
+                {isCourseQuestionTypeEnabled(quizTypeSettings, 'case_study_single_choice') ? (
+                  <button
+                    onClick={() => void handleAddCaseQuestion(caseStudy.id, 'case_study_single_choice')}
+                    className="flex items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-slate-200 py-4 text-sm font-bold text-slate-500 transition-all hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
+                  >
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                    </svg>
+                    Adicionar Pergunta de Alternativa
+                  </button>
+                ) : null}
+                {isCourseQuestionTypeEnabled(quizTypeSettings, 'case_study_ai') ? (
+                  <button
+                    onClick={() => void handleAddCaseQuestion(caseStudy.id, 'case_study_ai')}
+                    className="flex items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-amber-200 py-4 text-sm font-bold text-amber-700 transition-all hover:bg-amber-50"
+                  >
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                    </svg>
+                    Adicionar Pergunta Discursiva
+                  </button>
+                ) : null}
               </div>
+
+              {!isCourseQuestionTypeEnabled(quizTypeSettings, 'case_study_single_choice') && !isCourseQuestionTypeEnabled(quizTypeSettings, 'case_study_ai') ? (
+                <div className="rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">
+                  Este curso esta com as perguntas internas de estudo de caso desativadas nas configuracoes.
+                </div>
+              ) : null}
             </div>
           </section>
         ))}
 
+        {availableAddCards.length === 0 ? (
+          <div className="rounded-3xl border border-amber-100 bg-amber-50/70 px-6 py-8 text-center">
+            <p className="text-sm font-black uppercase tracking-[0.24em] text-amber-700">Nenhum tipo de quiz ativo</p>
+            <p className="mt-3 text-sm font-medium text-amber-900">
+              Ative pelo menos um formato em Configuracoes do Curso para voltar a criar perguntas e estudos de caso.
+            </p>
+            <Button
+              type="button"
+              variant="outline"
+              className="mt-5 rounded-2xl border-amber-200 bg-white text-amber-700 hover:bg-amber-100"
+              onClick={() => navigate(`/admin/cursos/${courseId}/builder/settings`)}
+            >
+              Abrir Configuracoes do Curso
+            </Button>
+          </div>
+        ) : (
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          {[
-            {
-              title: 'Multipla Escolha',
-              description: 'Pergunta independente com alternativas tradicionais.',
-              className: 'border-slate-100 text-slate-400 hover:border-blue-100 hover:bg-blue-50/30 hover:text-blue-600',
-              iconClassName: 'border-slate-100 bg-slate-50',
-              onClick: () => void handleAddQuestion('single_choice'),
-            },
-            {
-              title: 'Arrastar e Soltar',
-              description: 'Imagem com hotspots e banco de rotulos avaliavel.',
-              className: 'border-cyan-100 text-cyan-700 hover:bg-cyan-50/70',
-              iconClassName: 'border-cyan-200 bg-cyan-50',
-              onClick: () => void handleAddQuestion('drag_drop_labeling'),
-            },
-            {
-              title: 'Preencher Lacunas',
-              description: 'Texto com lacunas e banco de respostas arrastavel.',
-              className: 'border-teal-100 text-teal-700 hover:bg-teal-50/70',
-              iconClassName: 'border-teal-200 bg-teal-50',
-              onClick: () => void handleAddQuestion('fill_in_the_blanks'),
-            },
-            {
-              title: 'Quiz de Colorir',
-              description: 'Imagem com areas pintaveis e checklist de cores por area.',
-              className: 'border-fuchsia-100 text-fuchsia-700 hover:bg-fuchsia-50/70',
-              iconClassName: 'border-fuchsia-200 bg-fuchsia-50',
-              onClick: () => void handleAddQuestion('coloring'),
-            },
-            {
-              title: 'Novo Estudo de Caso',
-              description: 'Bloco com contexto compartilhado e perguntas mistas.',
-              className: 'border-amber-100 text-amber-700 hover:bg-amber-50/60',
-              iconClassName: 'border-amber-200 bg-amber-50',
-              onClick: () => void handleAddCaseStudy(),
-            },
-          ].map((card) => (
+          {availableAddCards.map((card) => (
             <button
               key={card.title}
               onClick={card.onClick}
@@ -1388,6 +1575,7 @@ export function AssessmentBuilderPanel() {
             </button>
           ))}
         </div>
+        )}
       </div>
 
       {isImportModalOpen ? (

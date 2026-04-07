@@ -21,6 +21,10 @@ import {
 } from '@/features/admin/content/api'
 import { downloadJsonFile } from '@/lib/download'
 import {
+  DEFAULT_COURSE_QUIZ_TYPE_SETTINGS,
+  normalizeCourseQuizTypeSettings,
+} from '@/features/assessments/course-quiz-type-settings'
+import {
   courseFormSchema,
   type CourseFormInput,
 } from '@/features/admin/content/schemas'
@@ -32,6 +36,7 @@ const initialForm: CourseFormInput = {
   status: 'draft',
   thumbnail_url: '',
   has_linear_progression: true,
+  quiz_type_settings: { ...DEFAULT_COURSE_QUIZ_TYPE_SETTINGS },
 }
 
 interface CourseEditorDraft {
@@ -166,14 +171,15 @@ export function AdminCoursesPage() {
       ...p,
       isFormOpen: true,
       editingCourseId: course.id,
-      form: {
-        title: course.title,
-        description: course.description ?? '',
-        status: course.status,
-        thumbnail_url: course.thumbnail_url ?? '',
-        has_linear_progression: course.has_linear_progression ?? true,
-      },
-    }))
+        form: {
+          title: course.title,
+          description: course.description ?? '',
+          status: course.status,
+          thumbnail_url: course.thumbnail_url ?? '',
+          has_linear_progression: course.has_linear_progression ?? true,
+          quiz_type_settings: normalizeCourseQuizTypeSettings(course.quiz_type_settings),
+        },
+      }))
     setError(null)
   }
 

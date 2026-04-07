@@ -10,6 +10,15 @@ export type AssessmentQuestionType =
   | 'fill_in_the_blanks'
   | 'coloring'
 
+export interface CourseQuizTypeSettings {
+  single_choice: boolean
+  essay_ai: boolean
+  drag_drop_labeling: boolean
+  fill_in_the_blanks: boolean
+  coloring: boolean
+  case_study: boolean
+}
+
 export interface AssessmentInteractionToken {
   id: string
   label: string
@@ -164,6 +173,7 @@ export interface Course {
   thumbnail_url: string | null
   workload_minutes: number
   has_linear_progression: boolean
+  quiz_type_settings: CourseQuizTypeSettings
   created_by: string | null
   created_at: string
   updated_at: string

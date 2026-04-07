@@ -4,9 +4,11 @@ import {
   importAssessmentContentStructured,
   type ImportAssessmentData,
 } from '@/features/admin/assessments/api'
+import { normalizeCourseQuizTypeSettings } from '@/features/assessments/course-quiz-type-settings'
 import type {
   ButtonTemplate,
   Course,
+  CourseQuizTypeSettings,
   CourseModule,
   ExternalCourseMapping,
   Lesson,
@@ -107,6 +109,7 @@ export async function createCourse(input: CourseFormInput, userId: string) {
       status: input.status,
       display_order: nextDisplayOrder,
       thumbnail_url: input.thumbnail_url?.trim() || null,
+      quiz_type_settings: normalizeCourseQuizTypeSettings(input.quiz_type_settings),
       created_by: userId,
     })
     .select('*')
@@ -139,6 +142,7 @@ export async function updateCourse(courseId: string, input: CourseFormInput) {
       status: input.status,
       thumbnail_url: input.thumbnail_url?.trim() || null,
       has_linear_progression: input.has_linear_progression,
+      quiz_type_settings: normalizeCourseQuizTypeSettings(input.quiz_type_settings),
     })
     .eq('id', courseId)
     .select('*')
@@ -1031,6 +1035,7 @@ export interface ExportCourseFullData {
   workload_minutes?: number
   thumbnail_url?: string
   status?: 'draft' | 'published' | 'archived'
+  quiz_type_settings?: CourseQuizTypeSettings
   modules: ExportModuleData[]
 }
 
@@ -1122,6 +1127,7 @@ export async function exportFullCourseContent(courseId: string): Promise<ExportC
     workload_minutes: course.workload_minutes,
     thumbnail_url: course.thumbnail_url ?? '',
     status: course.status,
+    quiz_type_settings: normalizeCourseQuizTypeSettings(course.quiz_type_settings),
     modules: exportedModules,
   }
 }
@@ -1248,7 +1254,8 @@ export async function importCourseContent(
       .update({
         title: fullCourseInput.title,
         description: fullCourseInput.description || null,
-        workload_minutes: fullCourseInput.workload_minutes || 0
+        workload_minutes: fullCourseInput.workload_minutes || 0,
+        quiz_type_settings: normalizeCourseQuizTypeSettings(fullCourseInput.quiz_type_settings),
       })
       .eq('id', courseId)
 
@@ -1411,6 +1418,7 @@ export interface ImportCourseFullData {
   workload_minutes?: number
   thumbnail_url?: string
   status?: 'draft' | 'published'
+  quiz_type_settings?: CourseQuizTypeSettings
   modules: ImportModuleData[]
 }
 
@@ -1434,6 +1442,7 @@ export async function importFullCourse(data: ImportCourseFullData, userId: strin
       display_order: nextDisplayOrder,
       workload_minutes: data.workload_minutes || 0,
       thumbnail_url: data.thumbnail_url || null,
+      quiz_type_settings: normalizeCourseQuizTypeSettings(data.quiz_type_settings),
       created_by: userId
     })
     .select()

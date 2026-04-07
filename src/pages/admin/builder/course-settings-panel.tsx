@@ -18,6 +18,12 @@ import {
   type ResetCourseProgressResult,
 } from '@/features/admin/content/api'
 import { courseFormSchema } from '@/features/admin/content/schemas'
+import {
+  canCourseUseCaseStudies,
+  COURSE_QUIZ_TYPE_OPTIONS,
+  DEFAULT_COURSE_QUIZ_TYPE_SETTINGS,
+  normalizeCourseQuizTypeSettings,
+} from '@/features/assessments/course-quiz-type-settings'
 import 'react-quill/dist/quill.snow.css'
 
 export function CourseSettingsPanel() {
@@ -29,7 +35,8 @@ export function CourseSettingsPanel() {
     description: '',
     status: 'draft' as 'draft' | 'published' | 'archived',
     thumbnail_url: '',
-    has_linear_progression: true
+    has_linear_progression: true,
+    quiz_type_settings: { ...DEFAULT_COURSE_QUIZ_TYPE_SETTINGS },
   })
   const [externalCourseId, setExternalCourseId] = useState('')
   const [isUploadingThumbnail, setIsUploadingThumbnail] = useState(false)
@@ -55,7 +62,8 @@ export function CourseSettingsPanel() {
         description: courseTree.course.description ?? '',
         status: (courseTree.course.status as any) || 'draft',
         thumbnail_url: courseTree.course.thumbnail_url ?? '',
-        has_linear_progression: courseTree.course.has_linear_progression ?? true
+        has_linear_progression: courseTree.course.has_linear_progression ?? true,
+        quiz_type_settings: normalizeCourseQuizTypeSettings(courseTree.course.quiz_type_settings),
       })
       setExternalCourseId('')
       setResetProgressSuccess(null)
@@ -197,6 +205,9 @@ export function CourseSettingsPanel() {
     ],
   }
 
+  const enabledQuizTypeCount = Object.values(form.quiz_type_settings).filter(Boolean).length
+  const canUseCaseStudies = canCourseUseCaseStudies(form.quiz_type_settings)
+
   return (
     <div className="max-w-4xl mx-auto space-y-6 animate-in fade-in duration-500 pb-24">
       <div className="border-b border-slate-200 pb-5">
@@ -329,6 +340,69 @@ export function CourseSettingsPanel() {
                         </span>
                      </div>
                   </label>
+               </div>
+
+               <div className="pt-6 border-t border-slate-100 space-y-5">
+                  <div className="flex flex-wrap items-start justify-between gap-4">
+                     <div>
+                        <span className="text-xs font-black text-slate-400 uppercase tracking-widest pl-1">Tipos de Quiz Disponiveis</span>
+                        <p className="mt-2 max-w-3xl text-sm font-medium text-slate-500">
+                           Ative ou desative quais formatos de pergunta podem ser usados neste curso. O builder de avaliacoes passa a respeitar essa configuracao.
+                        </p>
+                     </div>
+                     <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-right shadow-sm">
+                        <p className="text-[10px] font-black uppercase tracking-[0.24em] text-slate-400">Ativos agora</p>
+                        <p className="mt-2 text-2xl font-black text-slate-900">{enabledQuizTypeCount}</p>
+                     </div>
+                  </div>
+
+                  <div className="rounded-[28px] border border-slate-200 bg-slate-50/60 p-5">
+                     <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                        {COURSE_QUIZ_TYPE_OPTIONS.map((option) => {
+                          const isEnabled = form.quiz_type_settings[option.key]
+
+                          return (
+                            <label
+                              key={option.key}
+                              className={`block rounded-[24px] border p-5 shadow-sm transition-all ${isEnabled ? option.accentClassName : 'border-slate-200 bg-white text-slate-500'}`}
+                            >
+                              <div className="flex items-start justify-between gap-4">
+                                <div className="space-y-3">
+                                  <span className={`inline-flex rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-[0.24em] ${isEnabled ? option.badgeClassName : 'bg-slate-200 text-slate-600'}`}>
+                                    {isEnabled ? 'Ativo' : 'Desativado'}
+                                  </span>
+                                  <div>
+                                    <p className="text-base font-black tracking-tight text-slate-900">{option.title}</p>
+                                    <p className="mt-2 text-sm font-medium leading-relaxed text-slate-600">{option.description}</p>
+                                  </div>
+                                </div>
+                                <input
+                                  type="checkbox"
+                                  checked={isEnabled}
+                                  onChange={(event) => setForm((current) => ({
+                                    ...current,
+                                    quiz_type_settings: {
+                                      ...current.quiz_type_settings,
+                                      [option.key]: event.target.checked,
+                                    },
+                                  }))}
+                                  className="mt-1 h-5 w-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                                />
+                              </div>
+                              <p className="mt-4 text-xs font-semibold leading-relaxed text-slate-500">
+                                {option.helper}
+                              </p>
+                            </label>
+                          )
+                        })}
+                     </div>
+                  </div>
+
+                  <div className={`rounded-[24px] border px-5 py-4 text-sm font-semibold ${canUseCaseStudies ? 'border-violet-100 bg-violet-50/70 text-violet-800' : 'border-amber-100 bg-amber-50/80 text-amber-800'}`}>
+                     {canUseCaseStudies
+                       ? 'Estudo de caso esta pronto para uso no builder, porque pelo menos um tipo de pergunta interna esta ativo.'
+                       : 'Estudo de caso exige Multipla Escolha ou Discursiva com IA ativos para aparecer como opcao no builder.'}
+                  </div>
                </div>
             </div>
 
