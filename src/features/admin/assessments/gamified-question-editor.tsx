@@ -27,6 +27,7 @@ import {
   getColoringSvgRegionIdFromEventTarget,
   isSvgFile,
   parseColoringSvgFile,
+  parseColoringSvgMarkup,
 } from '@/features/assessments/coloring-svg'
 
 import {
@@ -663,6 +664,10 @@ export function GamifiedQuestionEditor({
   const [isAdvancedAnswerToolsOpen, setIsAdvancedAnswerToolsOpen] = useState(false)
   const [isTargetsModalOpen, setIsTargetsModalOpen] = useState(false)
   const [isSvgInstructionsModalOpen, setIsSvgInstructionsModalOpen] = useState(false)
+  const [isSvgMarkupModalOpen, setIsSvgMarkupModalOpen] = useState(false)
+  const [svgMarkupDraft, setSvgMarkupDraft] = useState('')
+  const [svgMarkupError, setSvgMarkupError] = useState<string | null>(null)
+  const [isImportingSvgMarkup, setIsImportingSvgMarkup] = useState(false)
   const [assetError, setAssetError] = useState<string | null>(null)
   const [openFillBlankId, setOpenFillBlankId] = useState<string | null | undefined>(undefined)
 
@@ -985,6 +990,76 @@ export function GamifiedQuestionEditor({
     setSelectedTargetId(nextContent.targets[0]?.id ?? null)
   }
 
+  function openSvgMarkupModal() {
+    if (activeInteraction.kind !== 'coloring' || getColoringRenderMode(activeInteraction) !== 'svg_regions' || !('regions' in activeInteraction)) {
+      return
+    }
+
+    setSvgMarkupDraft(activeInteraction.svg_markup || '')
+    setSvgMarkupError(null)
+    setIsSvgMarkupModalOpen(true)
+  }
+
+  async function handleSvgMarkupImport() {
+    if (activeInteraction.kind !== 'coloring' || getColoringRenderMode(activeInteraction) !== 'svg_regions' || !('regions' in activeInteraction)) {
+      return
+    }
+
+    const rawMarkup = svgMarkupDraft.trim()
+    if (!rawMarkup) {
+      setSvgMarkupError('Cole o codigo SVG/XML completo para importar.')
+      return
+    }
+
+    setIsImportingSvgMarkup(true)
+    setSvgMarkupError(null)
+    setAssetError(null)
+    onError(null)
+
+    try {
+      const previousStoragePath = activeInteraction.asset.storage_path
+      const svgAsset = parseColoringSvgMarkup(rawMarkup)
+      const svgFile = new File(
+        [svgAsset.svgMarkup],
+        `quiz-colorir-${question.id}.svg`,
+        { type: 'image/svg+xml' },
+      )
+      const uploaded = await uploadAssessmentAsset(svgFile)
+      const nextContent = {
+        ...activeInteraction,
+        render_mode: 'svg_regions',
+        svg_markup: svgAsset.svgMarkup,
+        regions: svgAsset.regions,
+        asset: {
+          storage_path: uploaded.storage_path,
+          signed_url: uploaded.signed_url,
+          alt: activeInteraction.asset.alt || question.question_text || 'SVG do quiz de colorir',
+          width: svgAsset.width,
+          height: svgAsset.height,
+        },
+      } satisfies ColoringInteractionContent
+
+      await commit(nextContent)
+      setSelectedTargetId(svgAsset.regions[0]?.region_id ?? null)
+      setIsSvgMarkupModalOpen(false)
+      setSvgMarkupError(null)
+      setAssetError(null)
+
+      if (previousStoragePath && previousStoragePath !== uploaded.storage_path) {
+        void deleteAssessmentAsset(previousStoragePath).catch(() => null)
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Falha ao importar o codigo SVG/XML.'
+      if (shouldOpenSvgInstructions(message)) {
+        setIsSvgInstructionsModalOpen(true)
+      }
+      setSvgMarkupError(message)
+      setAssetError(message)
+    } finally {
+      setIsImportingSvgMarkup(false)
+    }
+  }
+
   function renderAssetError() {
     if (!assetError) {
       return null
@@ -1153,6 +1228,103 @@ export function GamifiedQuestionEditor({
             >
               Fechar guia
             </Button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  function renderSvgMarkupModal() {
+    if (!isSvgMarkupModalOpen) {
+      return null
+    }
+
+    return (
+      <div
+        className="fixed inset-0 z-[136] flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm animate-in fade-in duration-300"
+        onClick={() => setIsSvgMarkupModalOpen(false)}
+      >
+        <div
+          className="max-h-[92vh] w-full max-w-4xl overflow-y-auto rounded-[40px] border border-white/20 bg-white shadow-2xl animate-in zoom-in-95 duration-300"
+          onClick={(event) => event.stopPropagation()}
+        >
+          <div className="flex items-center justify-between border-b border-slate-100 p-8">
+            <div>
+              <h3 className="text-left text-xl font-black tracking-tight text-slate-900">Importar SVG por codigo</h3>
+              <p className="mt-1 text-left text-sm font-medium text-slate-500">
+                Cole o codigo XML/SVG completo. O editor vai validar as regioes e importar como asset do quiz.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setIsSvgMarkupModalOpen(false)}
+              className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-50 text-slate-400 transition-colors hover:text-slate-900"
+            >
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+
+          <div className="space-y-5 p-8">
+            <div className="rounded-[24px] border border-cyan-100 bg-cyan-50/70 px-5 py-4 text-sm font-medium leading-relaxed text-cyan-950">
+              Cole aqui um `&lt;svg ...&gt;...&lt;/svg&gt;` completo. O sistema aceita SVG puro com `id` ou `data-region-id` nas pecas pintaveis.
+            </div>
+
+            <label className="block space-y-2">
+              <span className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-500">Codigo SVG/XML</span>
+              <textarea
+                value={svgMarkupDraft}
+                onChange={(event) => {
+                  setSvgMarkupDraft(event.target.value)
+                  if (svgMarkupError) {
+                    setSvgMarkupError(null)
+                  }
+                }}
+                placeholder={`<?xml version="1.0" encoding="UTF-8"?>\n${SVG_COLORING_EXAMPLE}`}
+                className="min-h-[360px] w-full rounded-[28px] border border-slate-200 bg-slate-50 px-5 py-4 font-mono text-[13px] leading-6 text-slate-800 shadow-inner focus:border-cyan-300 focus:bg-white focus:ring-4 focus:ring-cyan-100"
+                spellCheck={false}
+              />
+            </label>
+
+            {svgMarkupError ? (
+              <div className="rounded-[24px] border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold leading-relaxed text-rose-700">
+                {svgMarkupError}
+              </div>
+            ) : null}
+
+            <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <button
+                type="button"
+                className="text-sm font-black text-cyan-700 transition-colors hover:text-cyan-900"
+                onClick={() => {
+                  setIsSvgMarkupModalOpen(false)
+                  setIsSvgInstructionsModalOpen(true)
+                }}
+              >
+                Ver guia de preparo do SVG
+              </button>
+
+              <div className="flex flex-col-reverse gap-3 sm:flex-row">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="rounded-2xl text-slate-500"
+                  onClick={() => setIsSvgMarkupModalOpen(false)}
+                  disabled={isImportingSvgMarkup}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  type="button"
+                  className="rounded-2xl bg-cyan-600 text-white hover:bg-cyan-700"
+                  onClick={() => void handleSvgMarkupImport()}
+                  disabled={isImportingSvgMarkup}
+                >
+                  {isImportingSvgMarkup ? 'Importando...' : 'Importar SVG/XML'}
+                </Button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -1375,6 +1547,15 @@ export function GamifiedQuestionEditor({
                 disabled={isUploadingAsset}
               >
                 {isUploadingAsset ? 'Enviando...' : content.asset.storage_path ? 'Trocar SVG' : 'Enviar SVG'}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                className="rounded-2xl border-slate-200 bg-white"
+                onClick={openSvgMarkupModal}
+                disabled={isUploadingAsset}
+              >
+                Colar SVG/XML
               </Button>
               <Button
                 type="button"
@@ -2767,6 +2948,7 @@ export function GamifiedQuestionEditor({
           : renderFillInTheBlanksEditor(activeInteraction)}
 
       {activeInteraction.kind === 'coloring' && isColoringSvgMode ? renderSvgInstructionsModal() : null}
+      {activeInteraction.kind === 'coloring' && isColoringSvgMode ? renderSvgMarkupModal() : null}
 
       {activeInteraction.kind === 'drag_drop_labeling' || activeInteraction.kind === 'coloring' ? renderTokenBank() : null}
 
