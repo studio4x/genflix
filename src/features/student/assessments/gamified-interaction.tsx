@@ -367,7 +367,7 @@ function ColoringView({
                   title={target.label ?? 'Ponto'}
                 >
                   <span
-                    className="absolute left-1/2 top-1/2 flex h-5 w-5 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-white text-[9px] font-black text-slate-700 shadow-lg"
+                    className="absolute left-1/2 top-1/2 flex h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-white text-[7px] font-black text-slate-700 shadow-lg"
                     style={{ backgroundColor: paintedColor?.hex ?? '#ffffff' }}
                   />
                   <span className="sr-only">{target.label ?? 'Ponto para colorir'}</span>

@@ -43,7 +43,7 @@ interface GamifiedQuestionEditorProps {
 }
 
 type CanvasInteractionContent = DragDropLabelingInteractionContent | LegacyColoringInteractionContent
-const COLORING_POINT_SIZE_PERCENT = 2.4
+const COLORING_POINT_SIZE_PERCENT = 1.4
 
 const SVG_COLORING_EXAMPLE = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" fill="none">
   <path id="teto" d="M318 206L514 166H742L880 218L786 260H360L318 206Z" fill="none" stroke="#111827" stroke-width="8"/>
@@ -1841,7 +1841,7 @@ export function GamifiedQuestionEditor({
                             draggingTargetId === target.id ? 'cursor-grabbing' : 'cursor-grab',
                             isColoringPointMode
                               ? selectedTargetId === target.id
-                                ? 'rounded-full ring-4 ring-cyan-100'
+                                ? 'rounded-full'
                                 : ''
                               : selectedTargetId === target.id
                                 ? 'rounded-2xl border-2 border-dashed border-cyan-500'
@@ -1862,9 +1862,11 @@ export function GamifiedQuestionEditor({
                           <span
                             className={cn(
                               'absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border font-black text-slate-700 shadow-lg transition-all',
-                              isColoringPointMode ? 'h-5 w-5 text-[9px]' : 'h-7 w-7 text-[11px]',
+                              isColoringPointMode ? 'h-3.5 w-3.5 text-[7px]' : 'h-7 w-7 text-[11px]',
                               selectedTargetId === target.id
-                                ? 'border-cyan-500 bg-cyan-500 text-white ring-4 ring-cyan-100'
+                                ? isColoringPointMode
+                                  ? 'border-cyan-500 bg-cyan-500 text-white ring-2 ring-cyan-100'
+                                  : 'border-cyan-500 bg-cyan-500 text-white ring-4 ring-cyan-100'
                                 : 'border-white bg-white/95 hover:border-cyan-300 hover:text-cyan-700',
                             )}
                           >
