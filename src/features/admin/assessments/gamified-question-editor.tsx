@@ -44,6 +44,27 @@ interface GamifiedQuestionEditorProps {
 
 type CanvasInteractionContent = DragDropLabelingInteractionContent | LegacyColoringInteractionContent
 const COLORING_POINT_SIZE_PERCENT = 1.4
+const COLOR_NAME_SUGGESTIONS = [
+  { label: 'Branco', hex: '#ffffff' },
+  { label: 'Preto', hex: '#111827' },
+  { label: 'Cinza', hex: '#94a3b8' },
+  { label: 'Azul', hex: '#2563eb' },
+  { label: 'Azul Claro', hex: '#38bdf8' },
+  { label: 'Azul Escuro', hex: '#1d4ed8' },
+  { label: 'Verde', hex: '#16a34a' },
+  { label: 'Verde Claro', hex: '#22c55e' },
+  { label: 'Verde Escuro', hex: '#166534' },
+  { label: 'Vermelho', hex: '#dc2626' },
+  { label: 'Laranja', hex: '#f97316' },
+  { label: 'Amarelo', hex: '#facc15' },
+  { label: 'Dourado', hex: '#ca8a04' },
+  { label: 'Roxo', hex: '#7c3aed' },
+  { label: 'Rosa', hex: '#db2777' },
+  { label: 'Marrom', hex: '#8b5e3c' },
+  { label: 'Bege', hex: '#d6b48a' },
+  { label: 'Ciano', hex: '#06b6d4' },
+  { label: 'Turquesa', hex: '#14b8a6' },
+] as const
 
 const SVG_COLORING_EXAMPLE = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" fill="none">
   <path id="teto" d="M318 206L514 166H742L880 218L786 260H360L318 206Z" fill="none" stroke="#111827" stroke-width="8"/>
@@ -194,7 +215,7 @@ function normalizeInteractionContent(
           usedTokenIds.add(mappedToken.id)
           return {
             id: mappedToken.id,
-            label: mappedToken.label,
+            label: resolveColorTokenLabel(mappedToken.label, mappedToken.hex, index),
             hex: mappedToken.hex,
           }
         }
@@ -205,14 +226,14 @@ function normalizeInteractionContent(
         usedTokenIds.add(fallbackToken.id)
         return {
           id: fallbackToken.id,
-          label: fallbackToken.label,
+          label: resolveColorTokenLabel(fallbackToken.label, fallbackToken.hex, index),
           hex: fallbackToken.hex,
         }
       }
 
       const nextToken = {
         id: crypto.randomUUID(),
-        label: `Cor ${index + 1}`,
+        label: getSuggestedColorLabel(['#2563eb', '#16a34a', '#dc2626', '#ca8a04', '#7c3aed', '#db2777'][index % 6]!),
         hex: ['#2563eb', '#16a34a', '#dc2626', '#ca8a04', '#7c3aed', '#db2777'][index % 6],
       }
       usedTokenIds.add(nextToken.id)
@@ -302,6 +323,59 @@ function getValidationMessage(
 
 function formatPoints(value: number) {
   return Number.isInteger(value) ? String(value) : value.toFixed(2).replace(/\.?0+$/, '')
+}
+
+function hexToRgb(hex: string) {
+  const normalized = hex.trim().toLowerCase()
+  const match = normalized.match(/^#([0-9a-f]{6})$/)
+  if (!match) {
+    return null
+  }
+
+  return {
+    r: Number.parseInt(normalized.slice(1, 3), 16),
+    g: Number.parseInt(normalized.slice(3, 5), 16),
+    b: Number.parseInt(normalized.slice(5, 7), 16),
+  }
+}
+
+function getSuggestedColorLabel(hex: string) {
+  const rgb = hexToRgb(hex)
+  if (!rgb) {
+    return 'Cor'
+  }
+
+  let bestMatch: string = COLOR_NAME_SUGGESTIONS[0]?.label ?? 'Cor'
+  let bestDistance = Number.POSITIVE_INFINITY
+
+  for (const suggestion of COLOR_NAME_SUGGESTIONS) {
+    const suggestionRgb = hexToRgb(suggestion.hex)
+    if (!suggestionRgb) {
+      continue
+    }
+
+    const distance = Math.sqrt(
+      ((rgb.r - suggestionRgb.r) ** 2)
+      + ((rgb.g - suggestionRgb.g) ** 2)
+      + ((rgb.b - suggestionRgb.b) ** 2),
+    )
+
+    if (distance < bestDistance) {
+      bestDistance = distance
+      bestMatch = suggestion.label
+    }
+  }
+
+  return bestMatch
+}
+
+function isGenericColorLabel(label: string, index: number) {
+  const normalized = label.trim().toLowerCase()
+  return normalized.length === 0 || normalized === `cor ${index + 1}` || /^cor\s+\d+$/i.test(normalized)
+}
+
+function resolveColorTokenLabel(label: string, hex: string, index: number) {
+  return isGenericColorLabel(label, index) ? getSuggestedColorLabel(hex) : label
 }
 
 function getPointBadgeTextColor(hex?: string | null) {
@@ -729,19 +803,36 @@ export function GamifiedQuestionEditor({
     updateDraft(nextContent)
   }
 
+  function applyColorHexToContent(content: ColoringInteractionContent, tokenId: string, hex: string) {
+    return {
+      ...content,
+      tokens: content.tokens.map((token, index) => {
+        if (token.id !== tokenId) {
+          return token
+        }
+
+        const nextLabel = (
+          isGenericColorLabel(token.label, index)
+          || token.label.trim().toLowerCase() === getSuggestedColorLabel(token.hex).toLowerCase()
+        )
+          ? getSuggestedColorLabel(hex)
+          : token.label
+
+        return {
+          ...token,
+          hex,
+          label: nextLabel,
+        }
+      }),
+    } satisfies ColoringInteractionContent
+  }
+
   function updateColorHex(tokenId: string, hex: string) {
     if (activeInteraction.kind !== 'coloring') {
       return
     }
 
-    const nextContent: ColoringInteractionContent = {
-      ...activeInteraction,
-      tokens: activeInteraction.tokens.map((token) => (
-        token.id === tokenId
-          ? { ...token, hex }
-          : token
-      )),
-    }
+    const nextContent = applyColorHexToContent(activeInteraction, tokenId, hex)
 
     updateDraft(nextContent)
   }
@@ -1009,6 +1100,21 @@ export function GamifiedQuestionEditor({
                 ) : null}
               </div>
 
+              {activeInteraction.kind === 'coloring' ? (
+                <label className="mt-3 flex items-center gap-3 rounded-2xl border border-cyan-100 bg-cyan-50/40 px-4 py-3">
+                  <input
+                    type="color"
+                    className="h-10 w-12 cursor-pointer rounded-xl border border-slate-200 bg-white"
+                    value={'hex' in token ? token.hex : '#2563eb'}
+                    onChange={(event) => updateColorHex(token.id, event.target.value)}
+                    onBlur={(event) => {
+                      const nextHex = event.currentTarget.value
+                      void commit(applyColorHexToContent(activeInteraction, token.id, nextHex))
+                    }}
+                  />
+                  <span className="text-sm font-semibold text-slate-700">{'hex' in token ? token.hex : '#2563eb'}</span>
+                </label>
+              ) : null}
               <input
                 type="text"
                 className="mt-3 w-full rounded-2xl border border-cyan-100 bg-cyan-50/40 px-4 py-3 text-sm font-semibold text-slate-800 focus:border-cyan-300 focus:ring-4 focus:ring-cyan-100"
@@ -1038,30 +1144,8 @@ export function GamifiedQuestionEditor({
                   })
                 }}
                 onKeyDown={(event) => event.stopPropagation()}
-                placeholder={activeInteraction.kind === 'drag_drop_labeling' ? `Rótulo ${index + 1}` : activeInteraction.kind === 'coloring' ? `Cor ${index + 1}` : 'Resposta correta exibida ao aluno. Pode ter mais de uma palavra.'}
+                placeholder={activeInteraction.kind === 'drag_drop_labeling' ? `Rótulo ${index + 1}` : activeInteraction.kind === 'coloring' ? 'Nome da cor' : 'Resposta correta exibida ao aluno. Pode ter mais de uma palavra.'}
               />
-              {activeInteraction.kind === 'coloring' ? (
-                <label className="mt-3 flex items-center gap-3 rounded-2xl border border-cyan-100 bg-cyan-50/40 px-4 py-3">
-                  <input
-                    type="color"
-                    className="h-10 w-12 cursor-pointer rounded-xl border border-slate-200 bg-white"
-                    value={'hex' in token ? token.hex : '#2563eb'}
-                    onChange={(event) => updateColorHex(token.id, event.target.value)}
-                    onBlur={(event) => {
-                      const nextHex = event.currentTarget.value
-                      void commit({
-                        ...activeInteraction,
-                        tokens: activeInteraction.tokens.map((item) => (
-                          item.id === token.id
-                            ? { ...item, hex: nextHex }
-                            : item
-                        )),
-                      })
-                    }}
-                  />
-                  <span className="text-sm font-semibold text-slate-700">{'hex' in token ? token.hex : '#2563eb'}</span>
-                </label>
-              ) : null}
             </div>
           ))}
         </div>
