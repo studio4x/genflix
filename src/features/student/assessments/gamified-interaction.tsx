@@ -17,6 +17,19 @@ import type {
 
 import type { StudentAssessmentQuestionWithOptions } from './api'
 
+function getPointBadgeTextColor(hex?: string | null) {
+  if (!hex || !/^#([0-9a-fA-F]{6})$/.test(hex)) {
+    return '#0f172a'
+  }
+
+  const red = Number.parseInt(hex.slice(1, 3), 16)
+  const green = Number.parseInt(hex.slice(3, 5), 16)
+  const blue = Number.parseInt(hex.slice(5, 7), 16)
+  const luminance = ((0.299 * red) + (0.587 * green) + (0.114 * blue)) / 255
+
+  return luminance > 0.7 ? '#0f172a' : '#ffffff'
+}
+
 interface GamifiedInteractionProps {
   question: StudentAssessmentQuestionWithOptions
   value: Record<string, string | null>
@@ -339,8 +352,9 @@ function ColoringView({
               </div>
             )}
 
-            {'targets' in content ? content.targets.map((target) => {
+            {'targets' in content ? content.targets.map((target, index) => {
               const paintedColor = value[target.id] ? colorById.get(value[target.id] ?? '') : null
+              const pointColor = paintedColor?.hex ?? 'rgba(255,255,255,0.96)'
 
               return (
                 <button
@@ -367,9 +381,14 @@ function ColoringView({
                   title={target.label ?? 'Ponto'}
                 >
                   <span
-                    className="absolute left-1/2 top-1/2 flex h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-white text-[7px] font-black text-slate-700 shadow-lg"
-                    style={{ backgroundColor: paintedColor?.hex ?? '#ffffff' }}
-                  />
+                    className="absolute left-1/2 top-1/2 flex h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-slate-700/70 text-[7px] font-black shadow-[0_3px_10px_rgba(15,23,42,0.22)]"
+                    style={{
+                      backgroundColor: pointColor,
+                      color: paintedColor ? getPointBadgeTextColor(pointColor) : '#0f172a',
+                    }}
+                  >
+                    {index + 1}
+                  </span>
                   <span className="sr-only">{target.label ?? 'Ponto para colorir'}</span>
                 </button>
               )
