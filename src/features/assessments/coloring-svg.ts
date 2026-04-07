@@ -335,24 +335,40 @@ function getPaintNodesForRuntime(regionElement: Element) {
   return regionElement.getAttribute(SVG_FILLABLE_ATTR) === 'true' ? [regionElement] : []
 }
 
+function setRuntimePresentationValue(
+  node: Element,
+  propertyName: 'fill' | 'stroke' | 'stroke-width',
+  value: string | null,
+) {
+  const normalizedValue = value?.trim() ?? ''
+
+  if (normalizedValue) {
+    node.setAttribute(propertyName, normalizedValue)
+  } else {
+    node.removeAttribute(propertyName)
+  }
+
+  if (node instanceof SVGElement) {
+    if (normalizedValue) {
+      node.style.setProperty(propertyName, normalizedValue)
+    } else {
+      node.style.removeProperty(propertyName)
+    }
+  }
+}
+
 function restorePaintNode(node: Element) {
   const originalFill = node.getAttribute(SVG_ORIGINAL_FILL_ATTR) ?? ''
   const originalStroke = node.getAttribute(SVG_ORIGINAL_STROKE_ATTR) ?? ''
   const originalStrokeWidth = node.getAttribute(SVG_ORIGINAL_STROKE_WIDTH_ATTR) ?? ''
 
-  if (originalFill && originalFill.trim().toLowerCase() !== 'none') {
-    node.setAttribute('fill', originalFill)
-  } else {
-    node.setAttribute('fill', DEFAULT_EMPTY_FILL)
-  }
-
-  if (originalStroke) {
-    node.setAttribute('stroke', originalStroke)
-  }
-
-  if (originalStrokeWidth) {
-    node.setAttribute('stroke-width', originalStrokeWidth)
-  }
+  setRuntimePresentationValue(
+    node,
+    'fill',
+    originalFill && originalFill.trim().toLowerCase() !== 'none' ? originalFill : DEFAULT_EMPTY_FILL,
+  )
+  setRuntimePresentationValue(node, 'stroke', originalStroke || null)
+  setRuntimePresentationValue(node, 'stroke-width', originalStrokeWidth || null)
 }
 
 export function applyColoringSvgRuntimeState(
@@ -389,12 +405,12 @@ export function applyColoringSvgRuntimeState(
       restorePaintNode(node)
 
       if (hex) {
-        node.setAttribute('fill', hex)
+        setRuntimePresentationValue(node, 'fill', hex)
       }
 
       if (isSelected) {
-        node.setAttribute('stroke', '#0ea5e9')
-        node.setAttribute('stroke-width', '4')
+        setRuntimePresentationValue(node, 'stroke', '#0ea5e9')
+        setRuntimePresentationValue(node, 'stroke-width', '4')
       }
     }
 
