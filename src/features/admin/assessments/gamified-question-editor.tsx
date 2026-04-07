@@ -1390,7 +1390,7 @@ export function GamifiedQuestionEditor({
           {renderAssetError()}
 
           <div className="mt-5 grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
-            <div className="space-y-4">
+            <div className="space-y-4 self-start xl:sticky xl:top-[92px]">
               <div className="overflow-hidden rounded-[28px] border border-slate-200 bg-[radial-gradient(circle_at_top_left,_rgba(6,182,212,0.18),_transparent_38%),linear-gradient(135deg,_#f8fafc,_#eef2ff)] p-3">
                 <div
                   ref={svgStageRef}
@@ -1993,7 +1993,7 @@ export function GamifiedQuestionEditor({
             </div>
 
             <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">
-              <div className="space-y-4">
+              <div className="space-y-4 self-start xl:sticky xl:top-[92px]">
                 <div className="overflow-auto rounded-[28px] border border-slate-200 bg-slate-50/30 p-3">
                   <div
                     className="mx-auto transition-[width] duration-200"
