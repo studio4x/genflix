@@ -204,7 +204,7 @@ function buildInteractionFeedbackLookup(question: StudentAssessmentQuestionWithO
       slotLabels: new Map(
         parsed.data.targets.map((target, index) => [
           target.id,
-          target.label?.trim() || `Área ${index + 1}`,
+          target.label?.trim() || `Ponto ${index + 1}`,
         ]),
       ),
       tokenLabels,

@@ -43,6 +43,7 @@ interface GamifiedQuestionEditorProps {
 }
 
 type CanvasInteractionContent = DragDropLabelingInteractionContent | LegacyColoringInteractionContent
+const COLORING_POINT_SIZE_PERCENT = 2.4
 
 const SVG_COLORING_EXAMPLE = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" fill="none">
   <path id="teto" d="M318 206L514 166H742L880 218L786 260H360L318 206Z" fill="none" stroke="#111827" stroke-width="8"/>
@@ -167,6 +168,19 @@ function normalizeInteractionContent(
     return content
   }
 
+  if (content.kind === 'coloring' && 'targets' in content) {
+    content = {
+      ...content,
+      render_mode: 'legacy_rect',
+      targets: content.targets.map((target, index) => ({
+        ...target,
+        w: COLORING_POINT_SIZE_PERCENT,
+        h: COLORING_POINT_SIZE_PERCENT,
+        label: target.label?.trim() || `Ponto ${index + 1}`,
+      })),
+    } satisfies LegacyColoringInteractionContent
+  }
+
   const tokenById = new Map(content.tokens.map((token) => [token.id, token]))
   const usedTokenIds = new Set<string>()
 
@@ -288,6 +302,89 @@ function getValidationMessage(
 
 function formatPoints(value: number) {
   return Number.isInteger(value) ? String(value) : value.toFixed(2).replace(/\.?0+$/, '')
+}
+
+function getCanvasTargetTemplate(content: CanvasInteractionContent, index: number) {
+  if (content.kind === 'coloring') {
+    return {
+      w: COLORING_POINT_SIZE_PERCENT,
+      h: COLORING_POINT_SIZE_PERCENT,
+      label: `Ponto ${index + 1}`,
+    }
+  }
+
+  return {
+    w: 18,
+    h: 10,
+    label: `Area ${index + 1}`,
+  }
+}
+
+function buildColoringPointTargetsFromRegions(
+  content: Extract<ColoringInteractionContent, { render_mode: 'svg_regions' }>,
+): LegacyColoringInteractionContent['targets'] {
+  const count = Math.max(content.regions.length, 1)
+  const columns = Math.min(4, Math.max(1, Math.ceil(Math.sqrt(count))))
+  const rows = Math.max(1, Math.ceil(count / columns))
+
+  return content.regions.map((region, index) => {
+    const column = index % columns
+    const row = Math.floor(index / columns)
+    const centerX = columns === 1 ? 50 : 14 + (column * (72 / Math.max(columns - 1, 1)))
+    const centerY = rows === 1 ? 50 : 18 + (row * (60 / Math.max(rows - 1, 1)))
+
+    return {
+      id: crypto.randomUUID(),
+      x: Math.max(0, Math.min(100 - COLORING_POINT_SIZE_PERCENT, Math.round((centerX - (COLORING_POINT_SIZE_PERCENT / 2)) * 100) / 100)),
+      y: Math.max(0, Math.min(100 - COLORING_POINT_SIZE_PERCENT, Math.round((centerY - (COLORING_POINT_SIZE_PERCENT / 2)) * 100) / 100)),
+      w: COLORING_POINT_SIZE_PERCENT,
+      h: COLORING_POINT_SIZE_PERCENT,
+      label: region.label?.trim() || `Ponto ${index + 1}`,
+    }
+  })
+}
+
+function createColoringPointsContent(source: ColoringInteractionContent): LegacyColoringInteractionContent {
+  if ('targets' in source) {
+    return {
+      ...source,
+      render_mode: 'legacy_rect',
+      targets: source.targets.map((target, index) => ({
+        ...target,
+        w: COLORING_POINT_SIZE_PERCENT,
+        h: COLORING_POINT_SIZE_PERCENT,
+        label: target.label?.trim() || `Ponto ${index + 1}`,
+      })),
+    }
+  }
+
+  return {
+    kind: 'coloring',
+    render_mode: 'legacy_rect',
+    instruction: source.instruction,
+    asset: source.asset,
+    tokens: source.tokens,
+    targets: buildColoringPointTargetsFromRegions(source),
+  }
+}
+
+function createSvgColoringPlaceholderContent(source: ColoringInteractionContent) {
+  const defaultContent = createDefaultInteractionContent('coloring')
+  if (!defaultContent || defaultContent.kind !== 'coloring' || !('regions' in defaultContent)) {
+    return null
+  }
+
+  const fallbackToken = source.tokens[0] ?? defaultContent.tokens[0]
+
+  return {
+    ...defaultContent,
+    instruction: source.instruction,
+    asset: {
+      ...defaultContent.asset,
+      alt: source.asset.alt || defaultContent.asset.alt,
+    },
+    tokens: fallbackToken ? [{ ...fallbackToken }] : defaultContent.tokens,
+  } satisfies Extract<ColoringInteractionContent, { render_mode: 'svg_regions' }>
 }
 
 type FillBlankEditorGroup = NonNullable<FillInTheBlanksInteractionContent['editor_groups']>[number]
@@ -479,6 +576,7 @@ export function GamifiedQuestionEditor({
   const [isAdvancedAnswerToolsOpen, setIsAdvancedAnswerToolsOpen] = useState(false)
   const [isTargetsModalOpen, setIsTargetsModalOpen] = useState(false)
   const [isSvgInstructionsModalOpen, setIsSvgInstructionsModalOpen] = useState(false)
+  const [assetError, setAssetError] = useState<string | null>(null)
   const [openFillBlankId, setOpenFillBlankId] = useState<string | null | undefined>(undefined)
 
   const interactionContent = useMemo(() => {
@@ -691,6 +789,7 @@ export function GamifiedQuestionEditor({
     }
 
     setIsUploadingAsset(true)
+    setAssetError(null)
     onError(null)
 
     try {
@@ -698,7 +797,11 @@ export function GamifiedQuestionEditor({
       const uploaded = await uploadAssessmentAsset(file)
       let nextContent: AssessmentInteractionContent
 
-      if (activeInteraction.kind === 'coloring' && isSvgFile(file)) {
+      if (activeInteraction.kind === 'coloring' && getColoringRenderMode(activeInteraction) === 'svg_regions') {
+        if (!isSvgFile(file)) {
+          throw new Error('No modo SVG, envie um arquivo .svg com id ou data-region-id nas pecas pintaveis.')
+        }
+
         const svgAsset = await parseColoringSvgFile(file)
         nextContent = {
           ...activeInteraction,
@@ -714,10 +817,6 @@ export function GamifiedQuestionEditor({
           },
         } satisfies ColoringInteractionContent
       } else {
-        if (activeInteraction.kind === 'coloring' && getColoringRenderMode(activeInteraction) === 'svg_regions') {
-          throw new Error('No modo de colorir por regioes, envie um arquivo SVG preparado com ids nas pecas.')
-        }
-
         const dimensions = await readImageDimensions(file)
         nextContent = {
           ...(activeInteraction as CanvasInteractionContent),
@@ -732,6 +831,7 @@ export function GamifiedQuestionEditor({
       }
 
       await commit(nextContent)
+      setAssetError(null)
 
       if (previousStoragePath && previousStoragePath !== uploaded.storage_path) {
         void deleteAssessmentAsset(previousStoragePath).catch(() => null)
@@ -741,13 +841,106 @@ export function GamifiedQuestionEditor({
       if (shouldOpenSvgInstructions(message)) {
         setIsSvgInstructionsModalOpen(true)
       }
-      onError(message)
+      setAssetError(message)
     } finally {
       setIsUploadingAsset(false)
       if (event.target) {
         event.target.value = ''
       }
     }
+  }
+
+  async function switchColoringMode(nextMode: 'svg_regions' | 'legacy_rect') {
+    if (activeInteraction.kind !== 'coloring') {
+      return
+    }
+
+    const currentMode = getColoringRenderMode(activeInteraction)
+    if (currentMode === nextMode) {
+      return
+    }
+
+    setAssetError(null)
+    setSelectedTargetId(null)
+    onError(null)
+
+    if (nextMode === 'svg_regions') {
+      const nextContent = createSvgColoringPlaceholderContent(activeInteraction)
+      if (!nextContent) {
+        onError('Nao foi possivel preparar o modo SVG do quiz de colorir.')
+        return
+      }
+
+      await commit(nextContent)
+      setSelectedTargetId(nextContent.regions[0]?.region_id ?? null)
+      return
+    }
+
+    const nextContent = createColoringPointsContent(activeInteraction)
+    await commit(nextContent)
+    setSelectedTargetId(nextContent.targets[0]?.id ?? null)
+  }
+
+  function renderAssetError() {
+    if (!assetError) {
+      return null
+    }
+
+    return (
+      <div className="mt-4 rounded-[24px] border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold leading-relaxed text-rose-700">
+        {assetError}
+      </div>
+    )
+  }
+
+  function renderColoringModeSelector() {
+    if (activeInteraction.kind !== 'coloring') {
+      return null
+    }
+
+    const currentMode = getColoringRenderMode(activeInteraction)
+
+    return (
+      <section className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-400">Tipo de imagem</p>
+            <p className="mt-2 text-sm font-medium text-slate-600">
+              Escolha entre um SVG com regioes identificadas ou uma imagem comum para posicionar pontos pequenos.
+            </p>
+          </div>
+          <div className="grid w-full gap-3 lg:max-w-2xl lg:grid-cols-2">
+            {[
+              {
+                value: 'svg_regions' as const,
+                title: 'SVG com regioes',
+                description: 'Use SVG com id ou data-region-id em cada peca pintavel para preencher a forma real.',
+              },
+              {
+                value: 'legacy_rect' as const,
+                title: 'Imagem normal com pontos',
+                description: 'Use PNG, JPG ou SVG comum para posicionar um ponto pequeno indicando o local da cor.',
+              },
+            ].map((mode) => (
+              <button
+                key={mode.value}
+                type="button"
+                className={cn(
+                  'rounded-[24px] border px-4 py-4 text-left transition-all',
+                  currentMode === mode.value
+                    ? 'border-cyan-300 bg-cyan-50 text-cyan-900 shadow-sm'
+                    : 'border-slate-200 bg-slate-50 text-slate-600 hover:border-cyan-200 hover:bg-cyan-50/60',
+                )}
+                onClick={() => void switchColoringMode(mode.value)}
+              >
+                <p className="text-sm font-black">{mode.title}</p>
+                <p className="mt-2 text-xs font-medium leading-relaxed">{mode.description}</p>
+              </button>
+            ))}
+          </div>
+        </div>
+      </section>
+    )
   }
 
   function renderTokenBank() {
@@ -787,7 +980,7 @@ export function GamifiedQuestionEditor({
                   {activeInteraction.kind === 'drag_drop_labeling'
                     ? `Area ${index + 1}`
                     : activeInteraction.kind === 'coloring'
-                      ? `${isColoringSvgMode ? 'Regiao' : 'Area'} ${index + 1}`
+                      ? `${isColoringSvgMode ? 'Regiao' : 'Ponto'} ${index + 1}`
                       : `Item ${index + 1}`}
                 </span>
                 {activeInteraction.kind !== 'drag_drop_labeling' && activeInteraction.kind !== 'coloring' ? (
@@ -867,12 +1060,16 @@ export function GamifiedQuestionEditor({
               className="flex w-full items-center justify-between gap-4 text-left"
               onClick={() => setIsAdvancedAnswerToolsOpen((current) => !current)}
             >
-              <div>
-                <p className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-400">Ajuste avançado</p>
-                <p className="mt-2 text-sm font-medium text-slate-600">
-                  Abra apenas se quiser refinar coordenadas, tamanho das áreas ou revisar o gabarito manualmente.
-                </p>
-              </div>
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-400">Ajuste avançado</p>
+                  <p className="mt-2 text-sm font-medium text-slate-600">
+                    {isColoringSvgMode
+                      ? 'Abra apenas se quiser revisar o gabarito das regioes detectadas.'
+                      : activeInteraction.kind === 'coloring'
+                        ? 'Abra apenas se quiser refinar coordenadas dos pontos ou revisar o gabarito manualmente.'
+                        : 'Abra apenas se quiser refinar coordenadas, tamanho das areas ou revisar o gabarito manualmente.'}
+                  </p>
+                </div>
               <span className="inline-flex items-center gap-2 rounded-full border border-cyan-100 bg-cyan-50 px-3 py-2 text-[11px] font-black uppercase tracking-widest text-cyan-700">
                 {isAdvancedAnswerToolsOpen ? 'Fechar' : 'Abrir'}
                 <svg
@@ -889,9 +1086,13 @@ export function GamifiedQuestionEditor({
             {isAdvancedAnswerToolsOpen ? (
               <div className="mt-4 flex flex-col gap-3 rounded-2xl border border-slate-100 bg-slate-50/70 p-4 md:flex-row md:items-center md:justify-between">
                 <div>
-                  <p className="text-sm font-black text-slate-900">Areas e gabarito</p>
+                  <p className="text-sm font-black text-slate-900">
+                    {activeInteraction.kind === 'coloring' ? 'Pontos e gabarito' : 'Areas e gabarito'}
+                  </p>
                   <p className="mt-1 text-sm font-medium text-slate-600">
-                    Edite hotspots, coordenadas, tamanhos e a associação final de cada área.
+                    {activeInteraction.kind === 'coloring'
+                      ? 'Edite coordenadas dos pontos e a associacao final de cada cor.'
+                      : 'Edite hotspots, coordenadas, tamanhos e a associacao final de cada area.'}
                   </p>
                 </div>
                 <Button
@@ -900,7 +1101,7 @@ export function GamifiedQuestionEditor({
                   className="rounded-2xl border-cyan-200 bg-white text-cyan-700 hover:bg-cyan-50"
                   onClick={() => setIsTargetsModalOpen(true)}
                 >
-                  Editar {activeInteraction.kind === 'drag_drop_labeling' ? activeInteraction.targets.length : coloringSlotIds.length} area(s)
+                  Editar {activeInteraction.kind === 'drag_drop_labeling' ? activeInteraction.targets.length : coloringSlotIds.length} {activeInteraction.kind === 'drag_drop_labeling' ? 'area(s)' : isColoringSvgMode ? 'regiao(s)' : 'ponto(s)'}
                 </Button>
               </div>
             ) : null}
@@ -976,6 +1177,8 @@ export function GamifiedQuestionEditor({
               </Button>
             </div>
           </div>
+
+          {renderAssetError()}
 
           <div className="mt-5 grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
             <div className="space-y-4">
@@ -1156,6 +1359,11 @@ export function GamifiedQuestionEditor({
 
   function renderDragDropEditor(content: CanvasInteractionContent) {
     const canvasScalePercent = Math.round(canvasScale * 100)
+    const isColoringPointMode = content.kind === 'coloring'
+    const targetNoun = isColoringPointMode ? 'ponto' : 'area'
+    const targetLabelPrefix = isColoringPointMode ? 'Ponto' : 'Area'
+    const answerLabel = isColoringPointMode ? 'Cor correta' : 'Resposta correta'
+    const editableTargetFields: Array<'x' | 'y' | 'w' | 'h'> = isColoringPointMode ? ['x', 'y'] : ['x', 'y', 'w', 'h']
 
     function updateTarget(
       targetId: string,
@@ -1175,6 +1383,7 @@ export function GamifiedQuestionEditor({
     }
 
     function addTargetAt(x: number, y: number) {
+      const targetTemplate = getCanvasTargetTemplate(content, content.targets.length)
       const nextContent: CanvasInteractionContent = {
         ...content,
         targets: [
@@ -1183,9 +1392,9 @@ export function GamifiedQuestionEditor({
             id: crypto.randomUUID(),
             x,
             y,
-            w: 18,
-            h: 10,
-            label: `Area ${content.targets.length + 1}`,
+            w: targetTemplate.w,
+            h: targetTemplate.h,
+            label: targetTemplate.label,
           },
         ],
       }
@@ -1197,19 +1406,30 @@ export function GamifiedQuestionEditor({
 
     function handleStageClick(event: MouseEvent<HTMLDivElement>) {
       if (!content.asset.signed_url) {
-        onError('Envie uma imagem primeiro para posicionar as áreas.')
+        setAssetError(
+          isColoringPointMode
+            ? 'Envie uma imagem primeiro para posicionar os pontos de cor.'
+            : 'Envie uma imagem primeiro para posicionar as areas.',
+        )
         return
       }
 
       const rect = event.currentTarget.getBoundingClientRect()
-      const x = Math.max(0, Math.min(100, ((event.clientX - rect.left) / rect.width) * 100 - 9))
-      const y = Math.max(0, Math.min(100, ((event.clientY - rect.top) / rect.height) * 100 - 5))
+      const targetTemplate = getCanvasTargetTemplate(content, content.targets.length)
+      const x = Math.max(
+        0,
+        Math.min(100 - targetTemplate.w, ((event.clientX - rect.left) / rect.width) * 100 - (targetTemplate.w / 2)),
+      )
+      const y = Math.max(
+        0,
+        Math.min(100 - targetTemplate.h, ((event.clientY - rect.top) / rect.height) * 100 - (targetTemplate.h / 2)),
+      )
       addTargetAt(Math.round(x * 100) / 100, Math.round(y * 100) / 100)
-    }
+      }
 
     function removeTarget(targetId: string) {
       if (content.targets.length === 1) {
-        onError('Mantenha ao menos uma área de encaixe.')
+        onError(isColoringPointMode ? 'Mantenha ao menos um ponto de cor.' : 'Mantenha ao menos uma área de encaixe.')
         return
       }
 
@@ -1289,13 +1509,17 @@ export function GamifiedQuestionEditor({
         <section className="space-y-4">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <p className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-400">Areas e gabarito</p>
+              <p className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-400">
+                {isColoringPointMode ? 'Pontos e gabarito' : 'Areas e gabarito'}
+              </p>
               <p className="mt-2 text-sm font-medium text-slate-600">
-                Edite posicao, tamanho e a resposta correta de cada hotspot.
+                {isColoringPointMode
+                  ? 'Edite a posicao de cada ponto e associe a cor correta.'
+                  : 'Edite posicao, tamanho e a resposta correta de cada hotspot.'}
               </p>
             </div>
             <span className="rounded-full bg-cyan-100 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-cyan-700">
-              {content.targets.length} área(s)
+              {content.targets.length} {targetNoun}(s)
             </span>
           </div>
 
@@ -1310,7 +1534,7 @@ export function GamifiedQuestionEditor({
               >
                 <div className="flex items-center justify-between gap-3">
                   <span className="rounded-full bg-slate-100 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-slate-500">
-                    Area {index + 1}
+                    {targetLabelPrefix} {index + 1}
                   </span>
                   <button
                     type="button"
@@ -1336,7 +1560,7 @@ export function GamifiedQuestionEditor({
                   </label>
 
                   <div className="grid grid-cols-2 gap-3">
-                    {(['x', 'y', 'w', 'h'] as const).map((field) => (
+                    {editableTargetFields.map((field) => (
                       <label key={field} className="block space-y-2">
                         <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">{field}%</span>
                         <input
@@ -1353,8 +1577,14 @@ export function GamifiedQuestionEditor({
                     ))}
                   </div>
 
+                  {isColoringPointMode ? (
+                    <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs font-semibold text-slate-500">
+                      O marcador do quiz de colorir usa tamanho fixo para manter apenas um ponto pequeno na imagem.
+                    </div>
+                  ) : null}
+
                   <label className="block space-y-2">
-                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">{content.kind === 'coloring' ? 'Cor correta' : 'Resposta correta'}</span>
+                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">{answerLabel}</span>
                     <select
                       className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 focus:border-cyan-300 focus:ring-4 focus:ring-cyan-100"
                       value={assignedTokenBySlot.get(target.id) ?? ''}
@@ -1363,7 +1593,7 @@ export function GamifiedQuestionEditor({
                       <option value="" disabled>Selecione um item</option>
                       {content.tokens.map((token, tokenIndex) => (
                         <option key={token.id} value={token.id}>
-                          {token.label.trim() || `Rótulo ${tokenIndex + 1}`}
+                          {token.label.trim() || `${isColoringPointMode ? 'Cor' : 'Rotulo'} ${tokenIndex + 1}`}
                         </option>
                       ))}
                     </select>
@@ -1381,9 +1611,13 @@ export function GamifiedQuestionEditor({
         <aside className="self-start rounded-[28px] border border-slate-200 bg-slate-50/70 p-4 shadow-sm">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <p className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-400">Areas no canvas</p>
+              <p className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-400">
+                {isColoringPointMode ? 'Pontos na imagem' : 'Areas no canvas'}
+              </p>
               <p className="mt-2 text-sm font-medium text-slate-600">
-                Selecione uma área para destacar no canvas ou abrir o ajuste detalhado.
+                {isColoringPointMode
+                  ? 'Selecione um ponto para destacar na imagem ou abrir o ajuste detalhado.'
+                  : 'Selecione uma area para destacar no canvas ou abrir o ajuste detalhado.'}
               </p>
             </div>
             <span className="rounded-full bg-white px-3 py-1 text-[10px] font-black uppercase tracking-widest text-cyan-700 shadow-sm">
@@ -1430,7 +1664,7 @@ export function GamifiedQuestionEditor({
                 >
                   <div className="flex items-center justify-between gap-3">
                     <span className="rounded-full bg-slate-100 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-slate-500">
-                      Area {index + 1}
+                      {targetLabelPrefix} {index + 1}
                     </span>
                     <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">
                       {Math.round(target.x)}% / {Math.round(target.y)}%
@@ -1438,10 +1672,10 @@ export function GamifiedQuestionEditor({
                   </div>
 
                   <p className="mt-3 text-sm font-black text-slate-900">
-                    {target.label?.trim() || `Area ${index + 1}`}
+                    {target.label?.trim() || `${targetLabelPrefix} ${index + 1}`}
                   </p>
                   <p className="mt-2 text-xs font-semibold text-slate-500">
-                    {content.kind === 'coloring' ? 'Cor' : 'Resposta'}: {assignedToken?.label.trim() || `Rótulo ${index + 1}`}
+                    {content.kind === 'coloring' ? 'Cor' : 'Resposta'}: {assignedToken?.label.trim() || `${isColoringPointMode ? 'Cor' : 'Rotulo'} ${index + 1}`}
                   </p>
                 </button>
               )
@@ -1458,7 +1692,9 @@ export function GamifiedQuestionEditor({
             <div>
               <p className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-400">Imagem base</p>
               <p className="mt-2 text-sm font-medium text-slate-600">
-                Envie ou substitua a imagem usada como base visual do exercício.
+                {isColoringPointMode
+                  ? 'Envie uma imagem comum para posicionar um ponto pequeno em cada local da cor.'
+                  : 'Envie ou substitua a imagem usada como base visual do exercicio.'}
               </p>
             </div>
 
@@ -1482,13 +1718,19 @@ export function GamifiedQuestionEditor({
             </div>
           </div>
 
+          {renderAssetError()}
+
           <div className="mt-5 space-y-4">
             <div className="rounded-[28px] border border-slate-200 bg-slate-50/60 p-4 shadow-sm">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <p className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-400">Area de canvas</p>
+                  <p className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-400">
+                    {isColoringPointMode ? 'Area da imagem' : 'Area de canvas'}
+                  </p>
                   <p className="mt-2 text-sm font-medium text-slate-600">
-                    Clique na imagem para criar novas áreas e ajuste o zoom para posicionar melhor cada hotspot.
+                    {isColoringPointMode
+                      ? 'Clique na imagem para criar novos pontos e ajuste o zoom para posicionar cada marcador com precisao.'
+                      : 'Clique na imagem para criar novas areas e ajuste o zoom para posicionar melhor cada hotspot.'}
                   </p>
                 </div>
                 <div className="hidden items-center gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-2 md:flex">
@@ -1583,7 +1825,9 @@ export function GamifiedQuestionEditor({
                             </svg>
                           </div>
                           <p className="text-sm font-semibold">
-                            Envie uma imagem anatomica, esquema ou ilustracao para posicionar os hotspots.
+                            {isColoringPointMode
+                              ? 'Envie uma imagem, foto, esquema ou SVG comum para posicionar os pontos de cor.'
+                              : 'Envie uma imagem anatomica, esquema ou ilustracao para posicionar os hotspots.'}
                           </p>
                         </div>
                       )}
@@ -1595,9 +1839,13 @@ export function GamifiedQuestionEditor({
                           className={cn(
                             'absolute bg-transparent transition-all',
                             draggingTargetId === target.id ? 'cursor-grabbing' : 'cursor-grab',
-                            selectedTargetId === target.id
-                              ? 'rounded-2xl border-2 border-dashed border-cyan-500'
-                              : 'border border-transparent',
+                            isColoringPointMode
+                              ? selectedTargetId === target.id
+                                ? 'rounded-full ring-4 ring-cyan-100'
+                                : ''
+                              : selectedTargetId === target.id
+                                ? 'rounded-2xl border-2 border-dashed border-cyan-500'
+                                : 'border border-transparent',
                           )}
                           style={{
                             left: `${target.x}%`,
@@ -1613,7 +1861,8 @@ export function GamifiedQuestionEditor({
                         >
                           <span
                             className={cn(
-                              'absolute left-1/2 top-1/2 flex h-7 w-7 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border text-[11px] font-black text-slate-700 shadow-lg transition-all',
+                              'absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border font-black text-slate-700 shadow-lg transition-all',
+                              isColoringPointMode ? 'h-5 w-5 text-[9px]' : 'h-7 w-7 text-[11px]',
                               selectedTargetId === target.id
                                 ? 'border-cyan-500 bg-cyan-500 text-white ring-4 ring-cyan-100'
                                 : 'border-white bg-white/95 hover:border-cyan-300 hover:text-cyan-700',
@@ -1697,9 +1946,13 @@ export function GamifiedQuestionEditor({
             <div className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-[40px] border border-white/20 bg-white shadow-2xl animate-in zoom-in-95 duration-300">
               <div className="flex items-center justify-between border-b border-slate-100 p-8">
                 <div>
-                  <h3 className="text-left text-xl font-black tracking-tight text-slate-900">Areas e Gabarito</h3>
+                  <h3 className="text-left text-xl font-black tracking-tight text-slate-900">
+                    {isColoringPointMode ? 'Pontos e Gabarito' : 'Areas e Gabarito'}
+                  </h3>
                   <p className="mt-1 text-left text-sm font-medium text-slate-500">
-                    Ajuste cada hotspot sem comprimir o canvas principal.
+                    {isColoringPointMode
+                      ? 'Ajuste cada ponto sem comprimir a imagem principal.'
+                      : 'Ajuste cada hotspot sem comprimir o canvas principal.'}
                   </p>
                 </div>
                 <button
@@ -2281,6 +2534,8 @@ export function GamifiedQuestionEditor({
           </div>
         </div>
       </div>
+
+      {activeInteraction.kind === 'coloring' ? renderColoringModeSelector() : null}
 
       {activeInteraction.kind === 'drag_drop_labeling'
         ? renderDragDropEditor(activeInteraction)

@@ -357,17 +357,20 @@ function ColoringView({
 
                     onChange(target.id, armedColorId)
                   }}
-                  className="absolute rounded-2xl border-2 border-white/80 shadow-lg transition-transform hover:scale-[1.02]"
+                  className="absolute bg-transparent transition-transform hover:scale-[1.02]"
                   style={{
                     left: `${target.x}%`,
                     top: `${target.y}%`,
                     width: `${target.w}%`,
                     height: `${target.h}%`,
-                    backgroundColor: paintedColor?.hex ?? 'rgba(255,255,255,0.14)',
                   }}
-                  title={target.label ?? 'Area'}
+                  title={target.label ?? 'Ponto'}
                 >
-                  <span className="sr-only">{target.label ?? 'Area para colorir'}</span>
+                  <span
+                    className="absolute left-1/2 top-1/2 flex h-5 w-5 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-white text-[9px] font-black text-slate-700 shadow-lg"
+                    style={{ backgroundColor: paintedColor?.hex ?? '#ffffff' }}
+                  />
+                  <span className="sr-only">{target.label ?? 'Ponto para colorir'}</span>
                 </button>
               )
             }) : null}
