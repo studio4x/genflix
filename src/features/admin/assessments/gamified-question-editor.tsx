@@ -1047,6 +1047,118 @@ export function GamifiedQuestionEditor({
     )
   }
 
+  function renderSvgInstructionsModal() {
+    if (!isSvgInstructionsModalOpen) {
+      return null
+    }
+
+    return (
+      <div
+        className="fixed inset-0 z-[135] flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm animate-in fade-in duration-300"
+        onClick={() => setIsSvgInstructionsModalOpen(false)}
+      >
+        <div
+          className="max-h-[92vh] w-full max-w-5xl overflow-y-auto rounded-[40px] border border-white/20 bg-white shadow-2xl animate-in zoom-in-95 duration-300"
+          onClick={(event) => event.stopPropagation()}
+        >
+          <div className="flex items-center justify-between border-b border-slate-100 p-8">
+            <div>
+              <h3 className="text-left text-xl font-black tracking-tight text-slate-900">Como preparar o SVG para colorir</h3>
+              <p className="mt-1 text-left text-sm font-medium text-slate-500">
+                Guia rapido para criar regioes detectaveis no quiz com preenchimento real.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setIsSvgInstructionsModalOpen(false)}
+              className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-50 text-slate-400 transition-colors hover:text-slate-900"
+            >
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+
+          <div className="space-y-6 p-8">
+            <section className="grid gap-3 md:grid-cols-3">
+              <div className="rounded-[24px] border border-slate-200 bg-slate-50/70 p-5">
+                <p className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-500">Passo 1</p>
+                <p className="mt-3 text-sm font-semibold text-slate-900">Separe cada peca em uma regiao propria.</p>
+              </div>
+              <div className="rounded-[24px] border border-slate-200 bg-slate-50/70 p-5">
+                <p className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-500">Passo 2</p>
+                <p className="mt-3 text-sm font-semibold text-slate-900">Defina `id` ou `data-region-id` em cada regiao.</p>
+              </div>
+              <div className="rounded-[24px] border border-slate-200 bg-slate-50/70 p-5">
+                <p className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-500">Passo 3</p>
+                <p className="mt-3 text-sm font-semibold text-slate-900">Exporte em SVG e envie o arquivo no quiz.</p>
+              </div>
+            </section>
+
+            <div className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
+              <section className="rounded-[28px] border border-cyan-100 bg-cyan-50/70 p-6">
+                <p className="text-[10px] font-black uppercase tracking-[0.25em] text-cyan-700">Checklist</p>
+                <div className="mt-4 space-y-4 text-sm font-medium leading-relaxed text-cyan-950">
+                  <p><strong>1.</strong> O arquivo precisa ser realmente `SVG`, nao PNG, PDF ou imagem vetorizada exportada de forma errada.</p>
+                  <p><strong>2.</strong> Cada peca pintavel deve ter um `id` proprio ou `data-region-id`.</p>
+                  <p><strong>3.</strong> As pecas devem ser formas fechadas. `path`, `polygon`, `rect`, `circle` e `ellipse` funcionam melhor.</p>
+                  <p><strong>4.</strong> `fill=\"none\"` pode ser usado. O sistema injeta o preenchimento durante a interacao do aluno.</p>
+                  <p><strong>5.</strong> Se usar {'<g>'}, o grupo tambem pode ter `data-region-id`, desde que os shapes internos pertençam a uma unica peca.</p>
+                </div>
+              </section>
+
+              <section className="rounded-[28px] border border-amber-100 bg-amber-50/70 p-6">
+                <p className="text-[10px] font-black uppercase tracking-[0.25em] text-amber-700">Evite</p>
+                <div className="mt-4 space-y-4 text-sm font-medium leading-relaxed text-amber-950">
+                  <p><strong>1.</strong> Linhas soltas com {'<line>'} ou paths abertos sem area interna para preencher.</p>
+                  <p><strong>2.</strong> Deixar varias pecas diferentes dentro da mesma regiao quando o aluno precisa colori-las separadamente.</p>
+                  <p><strong>3.</strong> Confiar apenas em nomes visuais da camada no editor grafico sem exportar o `id` no SVG final.</p>
+                  <p><strong>4.</strong> SVGs com tudo achatado em um unico path sem divisao por partes do desenho.</p>
+                </div>
+              </section>
+            </div>
+
+            <section className="rounded-[28px] border border-slate-200 bg-slate-50/70 p-6">
+              <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-500">Exemplo minimo</p>
+                  <p className="mt-2 text-sm font-medium text-slate-600">
+                    Este formato ja pode ser detectado pelo editor.
+                  </p>
+                </div>
+                <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-[10px] font-black uppercase tracking-widest text-slate-500">
+                  id ou data-region-id
+                </span>
+              </div>
+
+              <pre className="mt-5 overflow-x-auto rounded-[24px] border border-slate-200 bg-slate-950 px-5 py-5 text-xs leading-6 text-slate-100">
+                <code>{SVG_COLORING_EXAMPLE}</code>
+              </pre>
+            </section>
+
+            <section className="rounded-[28px] border border-slate-200 bg-white p-6">
+              <p className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-500">Ferramentas externas</p>
+              <div className="mt-4 space-y-4 text-sm font-medium leading-relaxed text-slate-700">
+                <p>No Illustrator, Figma, Inkscape ou Corel, o ponto principal e garantir que cada peca exportada tenha identificador unico no SVG final.</p>
+                <p>Se quiser, eu posso no proximo passo adicionar um validador visual no upload, mostrando quais ids o sistema encontrou antes de salvar.</p>
+              </div>
+            </section>
+          </div>
+
+          <div className="border-t border-slate-100 bg-slate-50/60 p-8">
+            <Button
+              type="button"
+              className="h-12 rounded-2xl bg-slate-900 px-6 font-black text-white hover:bg-slate-800"
+              onClick={() => setIsSvgInstructionsModalOpen(false)}
+            >
+              Fechar guia
+            </Button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   function renderTokenBank() {
     const coloringSlotIds = activeInteraction.kind === 'coloring'
       ? getColoringSlotIds(activeInteraction)
@@ -2653,6 +2765,8 @@ export function GamifiedQuestionEditor({
             ? renderColoringSvgEditor(activeColoringSvgInteraction)
             : renderDragDropEditor(activeInteraction as CanvasInteractionContent)
           : renderFillInTheBlanksEditor(activeInteraction)}
+
+      {activeInteraction.kind === 'coloring' && isColoringSvgMode ? renderSvgInstructionsModal() : null}
 
       {activeInteraction.kind === 'drag_drop_labeling' || activeInteraction.kind === 'coloring' ? renderTokenBank() : null}
 
