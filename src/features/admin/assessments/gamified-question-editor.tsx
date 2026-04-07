@@ -1531,7 +1531,7 @@ export function GamifiedQuestionEditor({
               </p>
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center justify-end gap-3">
               <input
                 ref={fileInputRef}
                 type="file"
@@ -1566,6 +1566,21 @@ export function GamifiedQuestionEditor({
                 Como preparar SVG
               </Button>
             </div>
+          </div>
+
+          <div className="mt-4 flex flex-wrap items-center gap-3 rounded-[24px] border border-dashed border-cyan-200 bg-cyan-50/70 px-4 py-3">
+            <p className="text-sm font-semibold text-cyan-950">
+              Tem o codigo pronto? Cole o SVG/XML direto no editor.
+            </p>
+            <Button
+              type="button"
+              variant="outline"
+              className="rounded-2xl border-cyan-200 bg-white text-cyan-900 hover:bg-cyan-100"
+              onClick={openSvgMarkupModal}
+              disabled={isUploadingAsset}
+            >
+              Colar SVG/XML
+            </Button>
           </div>
 
           {renderAssetError()}
