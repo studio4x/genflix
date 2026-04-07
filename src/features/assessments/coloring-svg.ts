@@ -217,13 +217,33 @@ function buildDefaultPlaceholderSvg(regionId: string) {
   return `
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" fill="none">
       <rect width="1200" height="800" rx="40" fill="#F8FAFC" />
-      <path d="M220 210C220 176.863 246.863 150 280 150H920C953.137 150 980 176.863 980 210V590C980 623.137 953.137 650 920 650H280C246.863 650 220 623.137 220 590V210Z" fill="#ffffff" stroke="#0F172A" stroke-width="18"/>
-      <path id="${regionId}" d="M330 270C330 247.909 347.909 230 370 230H830C852.091 230 870 247.909 870 270V530C870 552.091 852.091 570 830 570H370C347.909 570 330 552.091 330 530V270Z" fill="#ffffff" stroke="#0F172A" stroke-width="12"/>
-      <path d="M460 338H742" stroke="#94A3B8" stroke-width="12" stroke-linecap="round"/>
-      <path d="M460 402H650" stroke="#CBD5E1" stroke-width="12" stroke-linecap="round"/>
-      <path d="M460 466H700" stroke="#CBD5E1" stroke-width="12" stroke-linecap="round"/>
-      <text x="600" y="170" text-anchor="middle" fill="#0F172A" font-size="34" font-family="Arial, sans-serif" font-weight="700">Envie um SVG preparado para o quiz de colorir</text>
-      <text x="600" y="628" text-anchor="middle" fill="#475569" font-size="26" font-family="Arial, sans-serif">Cada regiao precisa ter id ou data-region-id proprio</text>
+      <rect x="170" y="118" width="860" height="564" rx="42" fill="#FFFFFF" stroke="#D9E6F2" stroke-width="8"/>
+      <rect x="224" y="172" width="752" height="456" rx="32" fill="#F8FBFF" stroke="#BFE7F7" stroke-width="6" stroke-dasharray="18 16"/>
+
+      <circle cx="600" cy="244" r="34" fill="#ECFEFF" stroke="#67E8F9" stroke-width="6"/>
+      <path d="M583 244h34M600 227v34" stroke="#0891B2" stroke-width="8" stroke-linecap="round"/>
+
+      <text x="600" y="320" text-anchor="middle" fill="#0F172A" font-size="38" font-family="Arial, sans-serif" font-weight="700">
+        Envie um SVG preparado
+      </text>
+      <text x="600" y="360" text-anchor="middle" fill="#334155" font-size="24" font-family="Arial, sans-serif" font-weight="600">
+        com id ou data-region-id nas pecas pintaveis
+      </text>
+
+      <rect x="372" y="420" width="456" height="118" rx="28" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="4"/>
+      <rect id="${regionId}" x="404" y="446" width="166" height="66" rx="22" fill="#DBEAFE" stroke="#2563EB" stroke-width="6"/>
+      <path d="M618 462H772" stroke="#94A3B8" stroke-width="10" stroke-linecap="round"/>
+      <path d="M618 494H736" stroke="#CBD5E1" stroke-width="10" stroke-linecap="round"/>
+      <text x="487" y="487" text-anchor="middle" fill="#1D4ED8" font-size="22" font-family="Arial, sans-serif" font-weight="700">
+        Regiao Exemplo
+      </text>
+
+      <rect x="336" y="576" width="154" height="40" rx="20" fill="#EFF6FF" stroke="#BFDBFE" stroke-width="3"/>
+      <text x="413" y="602" text-anchor="middle" fill="#1D4ED8" font-size="18" font-family="Arial, sans-serif" font-weight="700">id="teto"</text>
+      <rect x="522" y="576" width="192" height="40" rx="20" fill="#F0FDFA" stroke="#99F6E4" stroke-width="3"/>
+      <text x="618" y="602" text-anchor="middle" fill="#0F766E" font-size="18" font-family="Arial, sans-serif" font-weight="700">data-region-id="porta"</text>
+      <rect x="746" y="576" width="118" height="40" rx="20" fill="#FEF3C7" stroke="#FCD34D" stroke-width="3"/>
+      <text x="805" y="602" text-anchor="middle" fill="#B45309" font-size="18" font-family="Arial, sans-serif" font-weight="700">fechado</text>
     </svg>
   `.trim()
 }
