@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { Check, Star, X } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
 import type { ImageHotspotInteractionContent, ImageHotspotResponsePayload } from '@/types/content'
@@ -16,6 +17,10 @@ function getDefaultFeedbackTone(isCorrect: boolean) {
   return isCorrect ? 'success' : 'error'
 }
 
+function clamp(value: number, min: number, max: number) {
+  return Math.min(Math.max(value, min), max)
+}
+
 export function ImageHotspotInteraction({
   content,
   value,
@@ -24,6 +29,7 @@ export function ImageHotspotInteraction({
 }: ImageHotspotInteractionProps) {
   const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null)
   const [feedbackTone, setFeedbackTone] = useState<FeedbackTone>('neutral')
+  const [feedbackTargetId, setFeedbackTargetId] = useState<string | null>(null)
 
   const stageUrl = content.asset.signed_url || content.asset.storage_path
   const correctTargetIds = useMemo(
@@ -36,10 +42,28 @@ export function ImageHotspotInteraction({
     && Boolean(value.selected_target_id || value.outside_click_count > 0)
   const correctCount = correctTargetIds.length
   const foundCount = value.found_target_ids.filter((targetId) => correctTargetIds.includes(targetId)).length
+  const activeFeedbackTarget = feedbackTargetId
+    ? content.targets.find((target) => target.id === feedbackTargetId) ?? null
+    : null
+  const popupPlacement = activeFeedbackTarget
+    ? (() => {
+      const centerX = activeFeedbackTarget.x + (activeFeedbackTarget.w / 2)
+      const centerY = activeFeedbackTarget.y + (activeFeedbackTarget.h / 2)
+      const placeLeft = centerX > 56
+      return {
+        left: placeLeft
+          ? clamp(activeFeedbackTarget.x - 1, 12, 94)
+          : clamp(activeFeedbackTarget.x + activeFeedbackTarget.w + 2, 6, 88),
+        top: clamp(centerY, 18, 82),
+        placeLeft,
+      }
+    })()
+    : null
 
-  function emitFeedback(message: string | null, tone: FeedbackTone) {
+  function emitFeedback(message: string | null, tone: FeedbackTone, targetId: string | null = null) {
     setFeedbackMessage(message)
     setFeedbackTone(tone)
+    setFeedbackTargetId(targetId)
   }
 
   function handleRetry() {
@@ -81,6 +105,7 @@ export function ImageHotspotInteraction({
     emitFeedback(
       content.outside_click_feedback?.trim() || 'Nenhum hotspot valido foi encontrado nesse clique.',
       'error',
+      null,
     )
     onChange(nextPayload)
   }
@@ -96,7 +121,7 @@ export function ImageHotspotInteraction({
     }
 
     if (content.mode === 'find_all' && target.is_correct && foundTargetIds.has(target.id)) {
-      emitFeedback(target.feedback_text?.trim() || 'Esse hotspot correto ja foi encontrado.', 'success')
+      emitFeedback(target.feedback_text?.trim() || 'Esse hotspot correto ja foi encontrado.', 'success', target.id)
       return
     }
 
@@ -124,6 +149,7 @@ export function ImageHotspotInteraction({
     emitFeedback(
       target.feedback_text?.trim() || (isCorrect ? 'Correto!' : 'Esse hotspot nao e o esperado.'),
       getDefaultFeedbackTone(isCorrect),
+      target.id,
     )
     onChange(nextPayload)
   }
@@ -249,12 +275,12 @@ export function ImageHotspotInteraction({
                   aria-label={target.label?.trim() || 'Hotspot'}
                 >
                   {isCorrectFound ? (
-                    <span className="absolute -top-3 left-2 rounded-full bg-emerald-600 px-2 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-white shadow-sm">
-                      OK
+                    <span className="absolute -top-3 right-2 inline-flex size-7 items-center justify-center rounded-full border-2 border-white bg-emerald-500 text-white shadow-lg shadow-emerald-500/30">
+                      <Check className="size-4" />
                     </span>
                   ) : isIncorrectMarked ? (
-                    <span className="absolute -top-3 left-2 rounded-full bg-rose-600 px-2 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-white shadow-sm">
-                      X
+                    <span className="absolute -top-3 right-2 inline-flex size-7 items-center justify-center rounded-full border-2 border-white bg-rose-500 text-white shadow-lg shadow-rose-500/30">
+                      <X className="size-4" />
                     </span>
                   ) : null}
                 </button>
@@ -262,18 +288,71 @@ export function ImageHotspotInteraction({
             })}
 
             {content.show_feedback_as_popup && feedbackMessage ? (
-              <div className="pointer-events-none absolute inset-x-6 top-6 flex justify-center">
-                <div className={cn(
-                  'max-w-xl rounded-2xl border px-5 py-4 text-center text-sm font-semibold shadow-xl',
-                  feedbackTone === 'success'
-                    ? 'border-emerald-200 bg-emerald-50 text-emerald-900'
-                    : feedbackTone === 'error'
+              feedbackTone === 'success' && popupPlacement && activeFeedbackTarget ? (
+                <div
+                  className="absolute z-20"
+                  style={{
+                    left: `${popupPlacement.left}%`,
+                    top: `${popupPlacement.top}%`,
+                    transform: popupPlacement.placeLeft ? 'translate(-100%, -50%)' : 'translateY(-50%)',
+                  }}
+                >
+                  <div className={cn(
+                    'mb-3 flex',
+                    popupPlacement.placeLeft ? 'justify-end pr-4' : 'justify-start pl-4',
+                  )}>
+                    <div className="inline-flex size-10 items-center justify-center rounded-full border-4 border-white bg-emerald-500 text-white shadow-xl shadow-emerald-500/35">
+                      <Check className="size-5" />
+                    </div>
+                  </div>
+
+                  <div className="w-[320px] max-w-[calc(100vw-4rem)] rounded-[26px] border border-slate-200 bg-white px-5 py-4 shadow-[0_30px_80px_rgba(15,23,42,0.24)]">
+                    <div className="flex items-start gap-3">
+                      <div className="min-w-0 flex-1 text-[15px] font-black leading-7 text-[#2b74dc]">
+                        {feedbackMessage}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => emitFeedback(null, 'neutral', null)}
+                        className="inline-flex size-8 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
+                        aria-label="Fechar feedback"
+                      >
+                        <X className="size-5" />
+                      </button>
+                    </div>
+
+                    <div className="mt-4 inline-flex items-center gap-3 rounded-full border border-slate-200 bg-slate-50 px-3 py-2 shadow-inner">
+                      <div className="h-4 w-20 overflow-hidden rounded-full bg-emerald-100">
+                        <div
+                          className="h-full rounded-full bg-emerald-500"
+                          style={{
+                            width: `${content.mode === 'single_attempt'
+                              ? 100
+                              : (correctCount ? (foundCount / correctCount) * 100 : 0)}%`,
+                          }}
+                        />
+                      </div>
+                      <div className="inline-flex size-9 items-center justify-center rounded-full bg-[#fff4c2] text-amber-500 shadow-sm">
+                        <Star className="size-5 fill-current" />
+                      </div>
+                      <span className="text-2xl font-black text-slate-700">
+                        {content.mode === 'single_attempt' ? '1/1' : `${foundCount}/${correctCount}`}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="absolute inset-x-6 top-6 z-20 flex justify-center">
+                  <div className={cn(
+                    'max-w-xl rounded-2xl border px-5 py-4 text-center text-sm font-semibold shadow-xl',
+                    feedbackTone === 'error'
                       ? 'border-rose-200 bg-rose-50 text-rose-900'
                       : 'border-slate-200 bg-white text-slate-700',
-                )}>
-                  {feedbackMessage}
+                  )}>
+                    {feedbackMessage}
+                  </div>
                 </div>
-              </div>
+              )
             ) : null}
           </div>
 
