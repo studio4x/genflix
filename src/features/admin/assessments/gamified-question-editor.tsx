@@ -943,7 +943,7 @@ export function GamifiedQuestionEditor({
 
       if (activeInteraction.kind === 'coloring' && getColoringRenderMode(activeInteraction) === 'svg_regions') {
         if (!isSvgFile(file)) {
-          throw new Error('No modo SVG, envie um arquivo .svg com id ou data-region-id nas pecas pintaveis.')
+          throw new Error('No modo SVG, envie um arquivo `.svg` com `id` ou `data-region-id` nas peças pintáveis.')
         }
 
         const svgAsset = await parseColoringSvgFile(file)
@@ -1011,7 +1011,7 @@ export function GamifiedQuestionEditor({
     if (nextMode === 'svg_regions') {
       const nextContent = createSvgColoringPlaceholderContent(activeInteraction)
       if (!nextContent) {
-        onError('Nao foi possivel preparar o modo SVG do quiz de colorir.')
+        onError('Não foi possível preparar o modo SVG do quiz de colorir.')
         return
       }
 
@@ -1042,7 +1042,7 @@ export function GamifiedQuestionEditor({
 
     const rawMarkup = svgMarkupDraft.trim()
     if (!rawMarkup) {
-      setSvgMarkupError('Cole o codigo SVG/XML completo para importar.')
+      setSvgMarkupError('Cole o código SVG/XML completo para importar.')
       return
     }
 
@@ -1084,7 +1084,7 @@ export function GamifiedQuestionEditor({
         void deleteAssessmentAsset(previousStoragePath).catch(() => null)
       }
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Falha ao importar o codigo SVG/XML.'
+      const message = error instanceof Error ? error.message : 'Falha ao importar o código SVG/XML.'
       if (shouldOpenSvgInstructions(message)) {
         setIsSvgInstructionsModalOpen(true)
       }
@@ -1120,15 +1120,15 @@ export function GamifiedQuestionEditor({
           <div>
             <p className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-400">Tipo de imagem</p>
             <p className="mt-2 text-sm font-medium text-slate-600">
-              Escolha entre um SVG com regioes identificadas ou uma imagem comum para posicionar pontos pequenos.
+              Escolha entre um SVG com regiões identificadas ou uma imagem comum para posicionar pontos pequenos.
             </p>
           </div>
           <div className="grid w-full gap-3 lg:max-w-2xl lg:grid-cols-2">
             {[
               {
                 value: 'svg_regions' as const,
-                title: 'SVG com regioes',
-                description: 'Use SVG com id ou data-region-id em cada peca pintavel para preencher a forma real.',
+                title: 'SVG com regiões',
+                description: 'Use SVG com `id` ou `data-region-id` em cada peça pintável para preencher a forma real.',
               },
               {
                 value: 'legacy_rect' as const,
@@ -1175,7 +1175,7 @@ export function GamifiedQuestionEditor({
             <div>
               <h3 className="text-left text-xl font-black tracking-tight text-slate-900">Como preparar o SVG para colorir</h3>
               <p className="mt-1 text-left text-sm font-medium text-slate-500">
-                Fluxo recomendado para imagens reais, como anatomia, mapas e ilustracoes com referencia colorida.
+                Fluxo recomendado para imagens reais, como anatomia, mapas e ilustrações com referência colorida.
               </p>
             </div>
             <button
@@ -1193,11 +1193,11 @@ export function GamifiedQuestionEditor({
             <section className="grid gap-3 md:grid-cols-3">
               <div className="rounded-[24px] border border-slate-200 bg-slate-50/70 p-5">
                 <p className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-500">Passo 1</p>
-                <p className="mt-3 text-sm font-semibold text-slate-900">Use a imagem sem cor como base e a imagem colorida apenas como referencia.</p>
+                <p className="mt-3 text-sm font-semibold text-slate-900">Use a imagem sem cor como base e a imagem colorida apenas como referência.</p>
               </div>
               <div className="rounded-[24px] border border-slate-200 bg-slate-50/70 p-5">
                 <p className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-500">Passo 2</p>
-                <p className="mt-3 text-sm font-semibold text-slate-900">Desenhe manualmente cada regiao fechada por cima da imagem em vetor.</p>
+                <p className="mt-3 text-sm font-semibold text-slate-900">Desenhe manualmente cada região fechada por cima da imagem em vetor.</p>
               </div>
               <div className="rounded-[24px] border border-slate-200 bg-slate-50/70 p-5">
                 <p className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-500">Passo 3</p>
@@ -1209,10 +1209,10 @@ export function GamifiedQuestionEditor({
               <section className="rounded-[28px] border border-cyan-100 bg-cyan-50/70 p-6">
                 <p className="text-[10px] font-black uppercase tracking-[0.25em] text-cyan-700">Checklist</p>
                 <div className="mt-4 space-y-4 text-sm font-medium leading-relaxed text-cyan-950">
-                  <p><strong>1.</strong> Trave a imagem sem cor em uma camada de base e deixe a imagem colorida acima com opacidade baixa, so como guia.</p>
-                  <p><strong>2.</strong> Cada osso, peca ou area que o aluno vai pintar deve virar uma shape vetorial fechada propria.</p>
-                  <p><strong>3.</strong> Use nomes semanticos no `id` ou `data-region-id`, como `frontal`, `maxila`, `zigomatico-esquerdo` ou `janela-traseira`.</p>
-                  <p><strong>4.</strong> Se usar {'<g>'}, o grupo precisa representar apenas uma peca. Nunca misture varias regioes diferentes no mesmo grupo.</p>
+                  <p><strong>1.</strong> Trave a imagem sem cor em uma camada de base e deixe a imagem colorida acima com opacidade baixa, só como guia.</p>
+                  <p><strong>2.</strong> Cada osso, peça ou área que o aluno vai pintar deve virar uma shape vetorial fechada própria.</p>
+                  <p><strong>3.</strong> Use nomes semânticos no `id` ou `data-region-id`, como `frontal`, `maxila`, `zigomatico-esquerdo` ou `janela-traseira`.</p>
+                  <p><strong>4.</strong> Se usar {'<g>'}, o grupo precisa representar apenas uma peça. Nunca misture várias regiões diferentes no mesmo grupo.</p>
                   <p><strong>5.</strong> Deixe as shapes de pintura em `regioes-pintaveis` com `fill="#ffffff"` ou neutro e mantenha os contornos pretos no grupo `contornos` por cima.</p>
                 </div>
               </section>
@@ -1220,11 +1220,11 @@ export function GamifiedQuestionEditor({
               <section className="rounded-[28px] border border-amber-100 bg-amber-50/70 p-6">
                 <p className="text-[10px] font-black uppercase tracking-[0.25em] text-amber-700">Evite</p>
                 <div className="mt-4 space-y-4 text-sm font-medium leading-relaxed text-amber-950">
-                  <p><strong>1.</strong> Pedir para uma IA gerar o `path d` final direto de um PNG ou JPG. Para anatomia e ilustracoes complexas, isso costuma sair errado.</p>
-                  <p><strong>2.</strong> Vetorizar automaticamente uma imagem com textura, sombra ou degrade e usar esse resultado cru como SVG final.</p>
-                  <p><strong>3.</strong> Deixar varias partes diferentes dentro da mesma regiao quando o aluno precisa colori-las separadamente.</p>
-                  <p><strong>4.</strong> Usar paths abertos, mascaras, `clipPath`, filtros ou efeitos que escondem a area real de preenchimento.</p>
-                  <p><strong>5.</strong> Colocar o `id` em grupos gigantes que tambem carregam linhas ou formas de outras pecas.</p>
+                  <p><strong>1.</strong> Pedir para uma IA gerar o `path d` final direto de um PNG ou JPG. Para anatomia e ilustrações complexas, isso costuma sair errado.</p>
+                  <p><strong>2.</strong> Vetorizar automaticamente uma imagem com textura, sombra ou degradê e usar esse resultado cru como SVG final.</p>
+                  <p><strong>3.</strong> Deixar várias partes diferentes dentro da mesma região quando o aluno precisa colori-las separadamente.</p>
+                  <p><strong>4.</strong> Usar paths abertos, máscaras, `clipPath`, filtros ou efeitos que escondem a área real de preenchimento.</p>
+                  <p><strong>5.</strong> Colocar o `id` em grupos gigantes que também carregam linhas ou formas de outras peças.</p>
                 </div>
               </section>
             </div>
@@ -1234,7 +1234,7 @@ export function GamifiedQuestionEditor({
                 <div>
                   <p className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-500">Estrutura recomendada</p>
                   <p className="mt-2 text-sm font-medium text-slate-600">
-                    Este e o tipo de organizacao que funciona melhor para o quiz e evita vazamento de cor.
+                    Este é o tipo de organização que funciona melhor para o quiz e evita vazamento de cor.
                   </p>
                 </div>
                 <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-[10px] font-black uppercase tracking-widest text-slate-500">
@@ -1250,8 +1250,8 @@ export function GamifiedQuestionEditor({
             <section className="rounded-[28px] border border-slate-200 bg-white p-6">
               <p className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-500">Fluxo recomendado</p>
               <div className="mt-4 space-y-4 text-sm font-medium leading-relaxed text-slate-700">
-                <p>Para imagens como cranio, mapas, diagramas tecnicos e desenhos com referencia colorida, o melhor resultado costuma vir de Inkscape ou Illustrator: imagem sem cor travada, referencia colorida com baixa opacidade e redesenho manual das regioes vetoriais.</p>
-                <p>Gemini e GPT podem ajudar a revisar nomes e estrutura, mas raramente geram um SVG final confiavel para preencher exatamente dentro dos contornos. Se a cor vazar, o problema quase sempre esta no SVG, nao no quiz.</p>
+                <p>Para imagens como crânio, mapas, diagramas técnicos e desenhos com referência colorida, o melhor resultado costuma vir de Inkscape ou Illustrator: imagem sem cor travada, referência colorida com baixa opacidade e redesenho manual das regiões vetoriais.</p>
+                <p>Gemini e GPT podem ajudar a revisar nomes e estrutura, mas raramente geram um SVG final confiável para preencher exatamente dentro dos contornos. Se a cor vazar, o problema quase sempre está no SVG, não no quiz.</p>
               </div>
             </section>
           </div>
@@ -1286,9 +1286,9 @@ export function GamifiedQuestionEditor({
         >
           <div className="flex items-center justify-between border-b border-slate-100 p-8">
             <div>
-              <h3 className="text-left text-xl font-black tracking-tight text-slate-900">Importar SVG por codigo</h3>
+              <h3 className="text-left text-xl font-black tracking-tight text-slate-900">Importar SVG por código</h3>
               <p className="mt-1 text-left text-sm font-medium text-slate-500">
-                Cole o codigo XML/SVG completo. O editor vai validar as regioes e importar como asset do quiz.
+                Cole o código XML/SVG completo. O editor vai validar as regiões e importar como asset do quiz.
               </p>
             </div>
             <button
@@ -1304,11 +1304,11 @@ export function GamifiedQuestionEditor({
 
           <div className="space-y-5 p-8">
             <div className="rounded-[24px] border border-cyan-100 bg-cyan-50/70 px-5 py-4 text-sm font-medium leading-relaxed text-cyan-950">
-              Cole aqui um `&lt;svg ...&gt;...&lt;/svg&gt;` completo. O sistema aceita SVG puro com `id` ou `data-region-id` nas pecas pintaveis.
+              Cole aqui um `&lt;svg ...&gt;...&lt;/svg&gt;` completo. O sistema aceita SVG puro com `id` ou `data-region-id` nas peças pintáveis.
             </div>
 
             <label className="block space-y-2">
-              <span className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-500">Codigo SVG/XML</span>
+              <span className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-500">Código SVG/XML</span>
               <textarea
                 value={svgMarkupDraft}
                 onChange={(event) => {
@@ -1407,9 +1407,9 @@ export function GamifiedQuestionEditor({
               <div className="flex items-center justify-between gap-3">
                 <span className="rounded-full bg-cyan-100 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-cyan-700">
                   {activeInteraction.kind === 'drag_drop_labeling'
-                    ? `Area ${index + 1}`
+                    ? `Área ${index + 1}`
                     : activeInteraction.kind === 'coloring'
-                      ? `${isColoringSvgMode ? 'Regiao' : 'Ponto'} ${index + 1}`
+                      ? `${isColoringSvgMode ? 'Região' : 'Ponto'} ${index + 1}`
                       : `Item ${index + 1}`}
                 </span>
                 {activeInteraction.kind !== 'drag_drop_labeling' && activeInteraction.kind !== 'coloring' ? (
@@ -1486,10 +1486,10 @@ export function GamifiedQuestionEditor({
                   <p className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-400">Ajuste avançado</p>
                   <p className="mt-2 text-sm font-medium text-slate-600">
                     {isColoringSvgMode
-                      ? 'Abra apenas se quiser revisar o gabarito das regioes detectadas.'
+                      ? 'Abra apenas se quiser revisar o gabarito das regiões detectadas.'
                       : activeInteraction.kind === 'coloring'
                         ? 'Abra apenas se quiser refinar coordenadas dos pontos ou revisar o gabarito manualmente.'
-                        : 'Abra apenas se quiser refinar coordenadas, tamanho das areas ou revisar o gabarito manualmente.'}
+                        : 'Abra apenas se quiser refinar coordenadas, tamanho das áreas ou revisar o gabarito manualmente.'}
                   </p>
                 </div>
               <span className="inline-flex items-center gap-2 rounded-full border border-cyan-100 bg-cyan-50 px-3 py-2 text-[11px] font-black uppercase tracking-widest text-cyan-700">
@@ -1513,8 +1513,8 @@ export function GamifiedQuestionEditor({
                   </p>
                   <p className="mt-1 text-sm font-medium text-slate-600">
                     {activeInteraction.kind === 'coloring'
-                      ? 'Edite coordenadas dos pontos e a associacao final de cada cor.'
-                      : 'Edite hotspots, coordenadas, tamanhos e a associacao final de cada area.'}
+                      ? 'Edite coordenadas dos pontos e a associação final de cada cor.'
+                      : 'Edite hotspots, coordenadas, tamanhos e a associação final de cada área.'}
                   </p>
                 </div>
                 <Button
@@ -1523,7 +1523,7 @@ export function GamifiedQuestionEditor({
                   className="rounded-2xl border-cyan-200 bg-white text-cyan-700 hover:bg-cyan-50"
                   onClick={() => setIsTargetsModalOpen(true)}
                 >
-                  Editar {activeInteraction.kind === 'drag_drop_labeling' ? activeInteraction.targets.length : coloringSlotIds.length} {activeInteraction.kind === 'drag_drop_labeling' ? 'area(s)' : isColoringSvgMode ? 'regiao(s)' : 'ponto(s)'}
+                  Editar {activeInteraction.kind === 'drag_drop_labeling' ? activeInteraction.targets.length : coloringSlotIds.length} {activeInteraction.kind === 'drag_drop_labeling' ? 'área(s)' : isColoringSvgMode ? 'região(ões)' : 'ponto(s)'}
                 </Button>
               </div>
             ) : null}
@@ -1565,7 +1565,7 @@ export function GamifiedQuestionEditor({
             <div>
               <p className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-400">SVG base</p>
               <p className="mt-2 text-sm font-medium text-slate-600">
-                Envie um SVG preparado com `id` ou `data-region-id` em cada peca pintavel.
+                Envie um SVG preparado com `id` ou `data-region-id` em cada peça pintável.
               </p>
               <p className="mt-3 text-xs font-semibold text-slate-500">
                 Precisa de ajuda para montar o arquivo? Abra o guia em modal e veja um exemplo pronto.
@@ -1611,7 +1611,7 @@ export function GamifiedQuestionEditor({
 
           <div className="mt-4 flex flex-wrap items-center gap-3 rounded-[24px] border border-dashed border-cyan-200 bg-cyan-50/70 px-4 py-3">
             <p className="text-sm font-semibold text-cyan-950">
-              Tem o codigo pronto? Cole o SVG/XML direto no editor.
+              Tem o código pronto? Cole o SVG/XML direto no editor.
             </p>
             <Button
               type="button"
@@ -1653,7 +1653,7 @@ export function GamifiedQuestionEditor({
                     <p className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-400">Metadados do asset</p>
                     <p className="mt-2 text-sm font-medium text-slate-600">
                       {isAssetMetadataOpen
-                        ? 'Edite texto alternativo e confira as dimensoes do SVG.'
+                        ? 'Edite texto alternativo e confira as dimensões do SVG.'
                         : 'Clique para abrir texto alternativo, largura e altura.'}
                     </p>
                   </div>
@@ -1685,7 +1685,7 @@ export function GamifiedQuestionEditor({
                           },
                         })}
                         onBlur={() => void commitLatestDraft()}
-                        placeholder="Descreva a ilustracao para acessibilidade"
+                        placeholder="Descreva a ilustração para acessibilidade"
                       />
                     </label>
 
@@ -1707,9 +1707,9 @@ export function GamifiedQuestionEditor({
             <aside className="self-start rounded-[28px] border border-slate-200 bg-slate-50/70 p-4 shadow-sm">
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <p className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-400">Regioes detectadas</p>
+                  <p className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-400">Regiões detectadas</p>
                   <p className="mt-2 text-sm font-medium text-slate-600">
-                    Clique em uma regiao para destacar no preview e ajustar o nome interno ou a cor correta.
+                    Clique em uma região para destacar no preview e ajustar o nome interno ou a cor correta.
                   </p>
                 </div>
                 <span className="rounded-full bg-white px-3 py-1 text-[10px] font-black uppercase tracking-widest text-cyan-700 shadow-sm">
@@ -1740,10 +1740,10 @@ export function GamifiedQuestionEditor({
                       >
                         <div>
                           <span className="rounded-full bg-slate-100 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-slate-500">
-                            Regiao {index + 1}
+                            Região {index + 1}
                           </span>
                           <p className="mt-3 text-sm font-black text-slate-900">
-                            {region.label?.trim() || `Regiao ${index + 1}`}
+                            {region.label?.trim() || `Região ${index + 1}`}
                           </p>
                         </div>
                         <span className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[10px] font-black uppercase tracking-widest text-slate-500">
@@ -1759,7 +1759,7 @@ export function GamifiedQuestionEditor({
                             value={region.label ?? ''}
                             onChange={(event) => updateRegion(region.region_id, { label: event.target.value })}
                             onBlur={(event) => commitRegion(region.region_id, { label: event.currentTarget.value })}
-                            placeholder={`Regiao ${index + 1}`}
+                            placeholder={`Região ${index + 1}`}
                           />
                         </label>
 
@@ -1806,8 +1806,8 @@ export function GamifiedQuestionEditor({
   function renderDragDropEditor(content: CanvasInteractionContent) {
     const canvasScalePercent = Math.round(canvasScale * 100)
     const isColoringPointMode = content.kind === 'coloring'
-    const targetNoun = isColoringPointMode ? 'ponto' : 'area'
-    const targetLabelPrefix = isColoringPointMode ? 'Ponto' : 'Area'
+    const targetNoun = isColoringPointMode ? 'ponto' : 'área'
+    const targetLabelPrefix = isColoringPointMode ? 'Ponto' : 'Área'
     const answerLabel = isColoringPointMode ? 'Cor correta' : 'Resposta correta'
     const editableTargetFields: Array<'x' | 'y' | 'w' | 'h'> = isColoringPointMode ? ['x', 'y'] : ['x', 'y', 'w', 'h']
 
@@ -1855,7 +1855,7 @@ export function GamifiedQuestionEditor({
         setAssetError(
           isColoringPointMode
             ? 'Envie uma imagem primeiro para posicionar os pontos de cor.'
-            : 'Envie uma imagem primeiro para posicionar as areas.',
+            : 'Envie uma imagem primeiro para posicionar as áreas.',
         )
         return
       }
@@ -2061,9 +2061,9 @@ export function GamifiedQuestionEditor({
                 {isColoringPointMode ? 'Pontos na imagem' : 'Areas no canvas'}
               </p>
               <p className="mt-2 text-sm font-medium text-slate-600">
-                {isColoringPointMode
-                  ? 'Selecione um ponto para destacar na imagem ou abrir o ajuste detalhado.'
-                  : 'Selecione uma area para destacar no canvas ou abrir o ajuste detalhado.'}
+                    {isColoringPointMode
+                      ? 'Selecione um ponto para destacar na imagem ou abrir o ajuste detalhado.'
+                      : 'Selecione uma área para destacar no canvas ou abrir o ajuste detalhado.'}
               </p>
             </div>
             <span className="rounded-full bg-white px-3 py-1 text-[10px] font-black uppercase tracking-widest text-cyan-700 shadow-sm">
@@ -2175,8 +2175,8 @@ export function GamifiedQuestionEditor({
                   </p>
                   <p className="mt-2 text-sm font-medium text-slate-600">
                     {isColoringPointMode
-                      ? 'Clique na imagem para criar novos pontos e ajuste o zoom para posicionar cada marcador com precisao.'
-                      : 'Clique na imagem para criar novas areas e ajuste o zoom para posicionar melhor cada hotspot.'}
+                      ? 'Clique na imagem para criar novos pontos e ajuste o zoom para posicionar cada marcador com precisão.'
+                      : 'Clique na imagem para criar novas áreas e ajuste o zoom para posicionar melhor cada hotspot.'}
                   </p>
                 </div>
                 <div className="hidden items-center gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-2 md:flex">
@@ -2273,7 +2273,7 @@ export function GamifiedQuestionEditor({
                           <p className="text-sm font-semibold">
                             {isColoringPointMode
                               ? 'Envie uma imagem, foto, esquema ou SVG comum para posicionar os pontos de cor.'
-                              : 'Envie uma imagem anatomica, esquema ou ilustracao para posicionar os hotspots.'}
+                              : 'Envie uma imagem anatômica, esquema ou ilustração para posicionar os hotspots.'}
                           </p>
                         </div>
                       )}
@@ -2344,7 +2344,7 @@ export function GamifiedQuestionEditor({
                       <p className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-400">Metadados do asset</p>
                       <p className="mt-2 text-sm font-medium text-slate-600">
                         {isAssetMetadataOpen
-                          ? 'Edite texto alternativo e confira as dimensoes da imagem.'
+                          ? 'Edite texto alternativo e confira as dimensões da imagem.'
                           : 'Clique para abrir texto alternativo, largura e altura.'}
                       </p>
                     </div>
@@ -2376,7 +2376,7 @@ export function GamifiedQuestionEditor({
                             },
                           })}
                           onBlur={() => void commitLatestDraft()}
-                          placeholder="Descreva a ilustracao para acessibilidade"
+                          placeholder="Descreva a ilustração para acessibilidade"
                         />
                       </label>
 
@@ -2405,7 +2405,7 @@ export function GamifiedQuestionEditor({
               <div className="flex items-center justify-between border-b border-slate-100 p-8">
                 <div>
                   <h3 className="text-left text-xl font-black tracking-tight text-slate-900">
-                    {isColoringPointMode ? 'Pontos e Gabarito' : 'Areas e Gabarito'}
+                    {isColoringPointMode ? 'Pontos e Gabarito' : 'Áreas e Gabarito'}
                   </h3>
                   <p className="mt-1 text-left text-sm font-medium text-slate-500">
                     {isColoringPointMode

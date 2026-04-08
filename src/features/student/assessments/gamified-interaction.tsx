@@ -48,7 +48,7 @@ export function GamifiedInteraction({
   if (!parsed.success) {
     return (
       <div className="rounded-[32px] border border-rose-200 bg-rose-50 px-6 py-5 text-sm font-semibold text-rose-700">
-        A interacao desta questao esta invalida ou incompleta.
+        A interação desta questão está inválida ou incompleta.
       </div>
     )
   }
@@ -78,7 +78,7 @@ export function GamifiedInteraction({
   if (parsed.data.kind === 'image_hotspot') {
     return (
       <div className="rounded-[32px] border border-amber-200 bg-amber-50 px-6 py-5 text-sm font-semibold text-amber-700">
-        Este tipo de questao usa um player especifico de hotspot.
+        Este tipo de questão usa um player específico de hotspot.
       </div>
     )
   }
@@ -217,7 +217,7 @@ function ColoringView({
             <div>
               <p className="text-[10px] font-black uppercase tracking-[0.28em] text-slate-400">Paleta</p>
               <p className="mt-2 text-sm font-semibold text-slate-600">
-                Escolha uma cor e clique nas areas para pintar.
+                Escolha uma cor e clique nas áreas para pintar.
               </p>
             </div>
             {!readOnly ? (
@@ -278,7 +278,7 @@ function ColoringView({
           {isSvgMode ? (
             <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
               <div className="flex items-center justify-between gap-3">
-                <span className="text-[10px] font-black uppercase tracking-[0.28em] text-slate-400">Regioes</span>
+                <span className="text-[10px] font-black uppercase tracking-[0.28em] text-slate-400">Regiões</span>
                 <span className="text-xs font-black text-slate-500">{svgContent?.regions.length ?? 0}</span>
               </div>
               <div className="mt-4 flex max-h-[240px] flex-wrap gap-2 overflow-auto">
@@ -298,7 +298,7 @@ function ColoringView({
                             : 'border-slate-200 bg-white text-slate-600 hover:border-cyan-200'
                       }`}
                     >
-                      {region.label?.trim() || `Regiao ${index + 1}`}
+                      {region.label?.trim() || `Região ${index + 1}`}
                     </button>
                   )
                 }) ?? null}
@@ -349,14 +349,14 @@ function ColoringView({
                 />
               ) : (
                 <div className="flex h-full items-center justify-center bg-slate-100 text-sm font-bold text-slate-400">
-                  SVG para colorir indisponivel
+                  SVG para colorir indisponível
                 </div>
               )
             ) : stageUrl ? (
               <img src={stageUrl} alt={content.asset.alt} className="h-full w-full object-contain" draggable={false} />
             ) : (
               <div className="flex h-full items-center justify-center bg-slate-100 text-sm font-bold text-slate-400">
-                Imagem para colorir indisponivel
+                Imagem para colorir indisponível
               </div>
             )}
 
@@ -473,7 +473,7 @@ function DragDropLabelingView({
               />
             ) : (
               <div className="flex h-full items-center justify-center bg-slate-100 text-sm font-bold text-slate-400">
-                Imagem do exercicio nao disponivel
+                Imagem do exercício não disponível
               </div>
             )}
 
@@ -546,7 +546,7 @@ function DragDropLabelingView({
           <div>
             <p className="text-[10px] font-black uppercase tracking-[0.28em] text-slate-400">Banco de Itens</p>
             <p className="mt-2 text-sm font-semibold text-slate-600">
-              Arraste ou toque em um item e depois escolha a area correspondente.
+              Arraste ou toque em um item e depois escolha a área correspondente.
             </p>
           </div>
           {!readOnly ? (

@@ -16,20 +16,20 @@ import type {
 } from '@/types/content'
 
 export const assessmentInteractionTokenSchema = z.object({
-  id: z.string().trim().min(1, 'Identificador do item invalido.'),
-  label: z.string().max(160, 'Rotulo do item invalido.'),
+  id: z.string().trim().min(1, 'Identificador do item inválido.'),
+  label: z.string().max(160, 'Rótulo do item inválido.'),
 })
 
 export const assessmentInteractionAssetSchema = z.object({
   storage_path: z.string().trim(),
   signed_url: z.string().trim().url().nullable().optional(),
-  alt: z.string().trim().min(1, 'Texto alternativo obrigatorio.'),
-  width: z.number().positive('Largura invalida.'),
-  height: z.number().positive('Altura invalida.'),
+  alt: z.string().trim().min(1, 'Texto alternativo obrigatório.'),
+  width: z.number().positive('Largura inválida.'),
+  height: z.number().positive('Altura inválida.'),
 })
 
 export const dragDropLabelingTargetSchema = z.object({
-  id: z.string().trim().min(1, 'Identificador da area obrigatorio.'),
+  id: z.string().trim().min(1, 'Identificador da área obrigatório.'),
   x: z.number().min(0).max(100),
   y: z.number().min(0).max(100),
   w: z.number().positive().max(100),
@@ -39,14 +39,14 @@ export const dragDropLabelingTargetSchema = z.object({
 
 export const dragDropLabelingInteractionContentSchema = z.object({
   kind: z.literal('drag_drop_labeling'),
-  instruction: z.string().trim().min(2, 'Instrucao obrigatoria.'),
+  instruction: z.string().trim().min(2, 'Instrução obrigatória.'),
   asset: assessmentInteractionAssetSchema,
-  tokens: z.array(assessmentInteractionTokenSchema).min(1, 'Adicione ao menos um rotulo.'),
-  targets: z.array(dragDropLabelingTargetSchema).min(1, 'Adicione ao menos uma area de encaixe.'),
+  tokens: z.array(assessmentInteractionTokenSchema).min(1, 'Adicione ao menos um rótulo.'),
+  targets: z.array(dragDropLabelingTargetSchema).min(1, 'Adicione ao menos uma área de encaixe.'),
 })
 
 export const imageHotspotTargetSchema = z.object({
-  id: z.string().trim().min(1, 'Identificador do hotspot obrigatorio.'),
+  id: z.string().trim().min(1, 'Identificador do hotspot obrigatório.'),
   x: z.number().min(0).max(100),
   y: z.number().min(0).max(100),
   w: z.number().positive().max(100),
@@ -59,7 +59,7 @@ export const imageHotspotTargetSchema = z.object({
 export const imageHotspotInteractionContentSchema = z.object({
   kind: z.literal('image_hotspot'),
   mode: z.enum(['single_attempt', 'find_all']),
-  instruction: z.string().trim().min(2, 'Instrucao obrigatoria.'),
+  instruction: z.string().trim().min(2, 'Instrução obrigatória.'),
   asset: assessmentInteractionAssetSchema,
   targets: z.array(imageHotspotTargetSchema).min(1, 'Adicione ao menos um hotspot.'),
   outside_click_feedback: z.string().trim().max(1000).nullable().optional(),
@@ -67,7 +67,7 @@ export const imageHotspotInteractionContentSchema = z.object({
 })
 
 export const coloringAreaSchema = z.object({
-  id: z.string().trim().min(1, 'Identificador da area obrigatorio.'),
+  id: z.string().trim().min(1, 'Identificador da área obrigatório.'),
   x: z.number().min(0).max(100),
   y: z.number().min(0).max(100),
   w: z.number().positive().max(100),
@@ -76,32 +76,32 @@ export const coloringAreaSchema = z.object({
 })
 
 export const coloringPaletteColorSchema = z.object({
-  id: z.string().trim().min(1, 'Identificador da cor obrigatorio.'),
-  label: z.string().trim().min(1, 'Rotulo da cor obrigatorio.'),
-  hex: z.string().trim().regex(/^#([0-9a-fA-F]{6})$/, 'Cor invalida.'),
+  id: z.string().trim().min(1, 'Identificador da cor obrigatório.'),
+  label: z.string().trim().min(1, 'Rótulo da cor obrigatório.'),
+  hex: z.string().trim().regex(/^#([0-9a-fA-F]{6})$/, 'Cor inválida.'),
 })
 
 export const coloringSvgRegionSchema = z.object({
-  region_id: z.string().trim().min(1, 'Identificador da regiao obrigatorio.'),
+  region_id: z.string().trim().min(1, 'Identificador da região obrigatório.'),
   label: z.string().trim().max(160).nullable().optional(),
 })
 
 const coloringBaseInteractionContentSchema = z.object({
   kind: z.literal('coloring'),
-  instruction: z.string().trim().min(2, 'Instrucao obrigatoria.'),
+  instruction: z.string().trim().min(2, 'Instrução obrigatória.'),
   asset: assessmentInteractionAssetSchema,
   tokens: z.array(coloringPaletteColorSchema).min(1, 'Adicione ao menos uma cor.'),
 })
 
 export const coloringLegacyInteractionContentSchema = coloringBaseInteractionContentSchema.extend({
   render_mode: z.literal('legacy_rect').optional(),
-  targets: z.array(coloringAreaSchema).min(1, 'Adicione ao menos uma area para colorir.'),
+  targets: z.array(coloringAreaSchema).min(1, 'Adicione ao menos uma área para colorir.'),
 })
 
 export const coloringSvgInteractionContentSchema = coloringBaseInteractionContentSchema.extend({
   render_mode: z.literal('svg_regions'),
-  svg_markup: z.string().trim().min(1, 'Envie um SVG valido para o quiz de colorir.'),
-  regions: z.array(coloringSvgRegionSchema).min(1, 'Adicione ao menos uma regiao no SVG.'),
+  svg_markup: z.string().trim().min(1, 'Envie um SVG válido para o quiz de colorir.'),
+  regions: z.array(coloringSvgRegionSchema).min(1, 'Adicione ao menos uma região no SVG.'),
 })
 
 export const coloringInteractionContentSchema = z.union([
@@ -116,22 +116,22 @@ export const fillInTheBlanksSegmentSchema = z.discriminatedUnion('type', [
   }),
   z.object({
     type: z.literal('blank'),
-    id: z.string().trim().min(1, 'Identificador da lacuna obrigatorio.'),
+    id: z.string().trim().min(1, 'Identificador da lacuna obrigatório.'),
     placeholder: z.string().trim().max(120).nullable().optional(),
   }),
 ])
 
 export const fillInTheBlanksInteractionContentSchema = z.object({
   kind: z.literal('fill_in_the_blanks'),
-  instruction: z.string().trim().min(2, 'Instrucao obrigatoria.'),
+  instruction: z.string().trim().min(2, 'Instrução obrigatória.'),
   segments: z.array(fillInTheBlanksSegmentSchema).min(1, 'Adicione texto ou lacunas.'),
   tokens: z.array(assessmentInteractionTokenSchema).min(1, 'Adicione ao menos um item do banco.'),
   editor_groups: z.array(z.object({
-    id: z.string().trim().min(1, 'Identificador da pergunta obrigatorio.'),
+    id: z.string().trim().min(1, 'Identificador da pergunta obrigatório.'),
     leading_text: z.string(),
     blanks: z.array(z.object({
-      blank_id: z.string().trim().min(1, 'Identificador da lacuna obrigatorio.'),
-      token_id: z.string().trim().min(1, 'Identificador da resposta obrigatorio.'),
+      blank_id: z.string().trim().min(1, 'Identificador da lacuna obrigatório.'),
+      token_id: z.string().trim().min(1, 'Identificador da resposta obrigatório.'),
       placeholder: z.string().trim().max(120).nullable().optional(),
       answer_text: z.string(),
       trailing_text: z.string(),
@@ -150,9 +150,9 @@ export const assessmentInteractionContentSchema = z.union([
 
 export const tokenMappingAnswerKeyPayloadSchema = z.object({
   entries: z.array(z.object({
-    slot_id: z.string().trim().min(1, 'Slot invalido.'),
-    token_id: z.string().trim().min(1, 'Token invalido.'),
-  })).min(1, 'Defina ao menos uma correspondencia correta.'),
+    slot_id: z.string().trim().min(1, 'Slot inválido.'),
+    token_id: z.string().trim().min(1, 'Token inválido.'),
+  })).min(1, 'Defina ao menos uma correspondência correta.'),
 })
 
 export const imageHotspotAnswerKeyPayloadSchema = z.object({
@@ -167,7 +167,7 @@ export const assessmentQuestionAnswerKeyPayloadSchema = z.union([
 
 export const tokenMappingResponsePayloadSchema = z.object({
   entries: z.array(z.object({
-    slot_id: z.string().trim().min(1, 'Slot invalido.'),
+    slot_id: z.string().trim().min(1, 'Slot inválido.'),
     token_id: z.string().trim().nullable(),
   })),
 })
@@ -232,11 +232,11 @@ export function createDefaultInteractionContent(
   if (questionType === 'drag_drop_labeling') {
     return {
       kind: 'drag_drop_labeling',
-      instruction: 'Arraste os rotulos para as areas corretas.',
+      instruction: 'Arraste os rótulos para as áreas corretas.',
       asset: {
         storage_path: '',
         signed_url: null,
-        alt: 'Imagem do exercicio',
+        alt: 'Imagem do exercício',
         width: 1200,
         height: 800,
       },
@@ -244,7 +244,7 @@ export function createDefaultInteractionContent(
         { id: crypto.randomUUID(), label: '' },
       ],
       targets: [
-        { id: crypto.randomUUID(), x: 20, y: 20, w: 18, h: 10, label: 'Area 1' },
+        { id: crypto.randomUUID(), x: 20, y: 20, w: 18, h: 10, label: 'Área 1' },
       ],
     }
   }
@@ -316,7 +316,7 @@ export function createDefaultInteractionContent(
     return {
       kind: 'coloring',
       render_mode: 'svg_regions',
-      instruction: 'Selecione uma cor e pinte cada area com a cor correta.',
+      instruction: 'Selecione uma cor e pinte cada área com a cor correta.',
       asset: {
         storage_path: '',
         signed_url: null,
@@ -331,7 +331,7 @@ export function createDefaultInteractionContent(
       regions: [
         {
           region_id: defaultSvgAsset.regions[0]?.region_id ?? 'region-1',
-          label: defaultSvgAsset.regions[0]?.label ?? 'Regiao 1',
+          label: defaultSvgAsset.regions[0]?.label ?? 'Região 1',
         },
       ],
     } satisfies ColoringInteractionContent
@@ -431,7 +431,7 @@ export function validateInteractionBundle(
 
   const parsedContent = assessmentInteractionContentSchema.safeParse(content)
   if (!parsedContent.success) {
-    throw new Error(parsedContent.error.issues[0]?.message ?? 'Interacao invalida.')
+    throw new Error(parsedContent.error.issues[0]?.message ?? 'Interação inválida.')
   }
 
   const parsedAnswerKey = assessmentQuestionAnswerKeyPayloadSchema.safeParse(answerKey)
@@ -485,7 +485,7 @@ export function validateInteractionBundle(
   const tokenIds = new Set(getInteractionTokenIds(parsedContent.data))
 
   if (tokenIds.size === 0) {
-    throw new Error('A interacao precisa ter ao menos um item no banco.')
+    throw new Error('A interação precisa ter ao menos um item no banco.')
   }
 
   if (!isTokenMappingAnswerKeyPayload(parsedAnswerKey.data)) {
@@ -500,14 +500,14 @@ export function validateInteractionBundle(
     parsedContent.data.kind === 'drag_drop_labeling'
     && parsedContent.data.tokens.length !== parsedContent.data.targets.length
   ) {
-    throw new Error('No arrastar e soltar, o banco de respostas deve ter exatamente um item para cada area.')
+    throw new Error('No arrastar e soltar, o banco de respostas deve ter exatamente um item para cada área.')
   }
 
   if (
     parsedContent.data.kind === 'coloring'
     && parsedContent.data.tokens.some((token) => !/^#([0-9a-fA-F]{6})$/.test(token.hex))
   ) {
-    throw new Error('Cada cor da paleta precisa usar um codigo hexadecimal valido.')
+    throw new Error('Cada cor da paleta precisa usar um código hexadecimal válido.')
   }
 
   if (
@@ -515,7 +515,7 @@ export function validateInteractionBundle(
     && parsedContent.data.render_mode === 'svg_regions'
     && parsedContent.data.regions.some((region) => region.region_id.trim().length === 0)
   ) {
-    throw new Error('Cada regiao do SVG precisa ter um identificador valido.')
+    throw new Error('Cada região do SVG precisa ter um identificador válido.')
   }
 
   const usedSlots = new Set<string>()
@@ -523,7 +523,7 @@ export function validateInteractionBundle(
 
   for (const entry of parsedAnswerKey.data.entries) {
     if (!slotIds.has(entry.slot_id)) {
-      throw new Error('O gabarito referencia uma area/lacuna inexistente.')
+      throw new Error('O gabarito referencia uma área/lacuna inexistente.')
     }
 
     if (!tokenIds.has(entry.token_id)) {
@@ -531,11 +531,11 @@ export function validateInteractionBundle(
     }
 
     if (usedSlots.has(entry.slot_id)) {
-      throw new Error('Cada area/lacuna deve possuir apenas uma resposta correta.')
+      throw new Error('Cada área/lacuna deve possuir apenas uma resposta correta.')
     }
 
     if (usedTokens.has(entry.token_id)) {
-      throw new Error('Cada item do banco deve ser usado no maximo uma vez na v1.')
+      throw new Error('Cada item do banco deve ser usado no máximo uma vez na v1.')
     }
 
     usedSlots.add(entry.slot_id)
@@ -543,7 +543,7 @@ export function validateInteractionBundle(
   }
 
   if (usedSlots.size !== slotIds.size) {
-    throw new Error('Defina uma resposta correta para cada area/lacuna.')
+    throw new Error('Defina uma resposta correta para cada área/lacuna.')
   }
 }
 

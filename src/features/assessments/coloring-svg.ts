@@ -53,7 +53,7 @@ function normalizeRegionLabel(regionId: string) {
     .trim()
 
   if (!normalized) {
-    return 'Regiao'
+    return 'Região'
   }
 
   return normalized
@@ -229,7 +229,7 @@ function buildDefaultPlaceholderSvg(regionId: string) {
         Envie um SVG preparado
       </text>
       <text x="600" y="360" text-anchor="middle" fill="#334155" font-size="24" font-family="Arial, sans-serif" font-weight="600">
-        com id ou data-region-id nas pecas pintaveis
+        com id ou data-region-id nas peças pintáveis
       </text>
 
       <rect x="372" y="420" width="456" height="118" rx="28" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="4"/>
@@ -237,7 +237,7 @@ function buildDefaultPlaceholderSvg(regionId: string) {
       <path d="M618 462H772" stroke="#94A3B8" stroke-width="10" stroke-linecap="round"/>
       <path d="M618 494H736" stroke="#CBD5E1" stroke-width="10" stroke-linecap="round"/>
       <text x="487" y="487" text-anchor="middle" fill="#1D4ED8" font-size="22" font-family="Arial, sans-serif" font-weight="700">
-        Regiao Exemplo
+        Região Exemplo
       </text>
 
       <rect x="336" y="576" width="154" height="40" rx="20" fill="#EFF6FF" stroke="#BFDBFE" stroke-width="3"/>
@@ -270,12 +270,12 @@ export function parseColoringSvgMarkup(svgText: string): ParsedColoringSvgAsset 
   const parserError = documentNode.querySelector('parsererror')
 
   if (parserError) {
-    throw new Error('O SVG enviado esta invalido. Corrija o arquivo e tente novamente.')
+    throw new Error('O SVG enviado está inválido. Corrija o arquivo e tente novamente.')
   }
 
   const svg = documentNode.documentElement
   if (!svg || svg.tagName.toLowerCase() !== 'svg') {
-    throw new Error('Envie um arquivo SVG valido para o modo de colorir por regioes.')
+    throw new Error('Envie um arquivo SVG válido para o modo de colorir por regiões.')
   }
 
   sanitizeSvgTree(svg)
@@ -314,7 +314,7 @@ export function parseColoringSvgMarkup(svgText: string): ParsedColoringSvgAsset 
   }
 
   if (regions.length === 0) {
-    throw new Error('Nao encontramos regioes utilizaveis no SVG. Use ids ou data-region-id nas pecas pintaveis, mesmo quando elas estiverem com fill:none. Se precisar, abra o guia "Como preparar SVG" no editor.')
+    throw new Error('Não encontramos regiões utilizáveis no SVG. Use `id` ou `data-region-id` nas peças pintáveis, mesmo quando elas estiverem com `fill:none`. Se precisar, abra o guia "Como preparar SVG" no editor.')
   }
 
   const serializer = new XMLSerializer()

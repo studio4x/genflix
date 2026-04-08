@@ -233,7 +233,7 @@ function buildInteractionFeedbackLookup(question: StudentAssessmentQuestionWithO
       slotLabels: new Map(
         parsed.data.targets.map((target, index) => [
           target.id,
-          target.label?.trim() || `Area ${index + 1}`,
+          target.label?.trim() || `Área ${index + 1}`,
         ]),
       ),
       tokenLabels,
@@ -257,7 +257,7 @@ function buildInteractionFeedbackLookup(question: StudentAssessmentQuestionWithO
       slotLabels: new Map(
         parsed.data.regions.map((region, index) => [
           region.region_id,
-          region.label?.trim() || `Area ${index + 1}`,
+          region.label?.trim() || `Área ${index + 1}`,
         ]),
       ),
       tokenLabels,
