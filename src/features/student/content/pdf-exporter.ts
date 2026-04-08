@@ -1,4 +1,6 @@
 import homeCareMatchLogoUrl from '@/assets/homecare-match-logo.jpg'
+import { getSignedLessonContentAssetUrl } from '@/features/admin/content/api'
+import { parseLessonImageHotspotsBlockElement } from '@/features/admin/content/content-blocks'
 import { supabase } from '@/services/supabase/client'
 import { PDFDocument, StandardFonts, degrees, rgb } from 'pdf-lib'
 // @ts-ignore - html2pdf doesn't have official types easily available
@@ -191,6 +193,80 @@ function buildLessonHtml(lesson: LessonForPdf) {
       </div>
     </section>
   `
+}
+
+function buildPdfImageHotspotsFallbackHtml(
+  imageUrl: string | null,
+  imageAlt: string,
+  hotspots: Array<{ title: string; bodyHtml: string }>,
+) {
+  const hotspotsHtml = hotspots.length > 0
+    ? hotspots.map((hotspot, index) => `
+      <article class="pdf-image-hotspots-item">
+        <div class="pdf-image-hotspots-item-index">${index + 1}</div>
+        <div class="pdf-image-hotspots-item-content">
+          <h4>${escapeHtml(hotspot.title)}</h4>
+          <div class="pdf-image-hotspots-item-body">${hotspot.bodyHtml}</div>
+        </div>
+      </article>
+    `).join('')
+    : '<p class="pdf-image-hotspots-empty">Nenhum hotspot interativo foi configurado neste bloco.</p>'
+
+  return `
+    <section class="pdf-image-hotspots-block">
+      ${imageUrl ? `
+        <figure class="pdf-image-hotspots-figure">
+          <img src="${escapeHtml(imageUrl)}" alt="${escapeHtml(imageAlt)}" />
+        </figure>
+      ` : ''}
+      <div class="pdf-image-hotspots-panel">
+        <div class="pdf-image-hotspots-eyebrow">Imagem interativa</div>
+        <div class="pdf-image-hotspots-items">
+          ${hotspotsHtml}
+        </div>
+      </div>
+    </section>
+  `
+}
+
+async function hydrateInteractiveLessonContent(textContent: string | null) {
+  const source = textContent || DEFAULT_LESSON_CONTENT
+  const parser = new DOMParser()
+  const doc = parser.parseFromString(source, 'text/html')
+  const hotspotBlocks = Array.from(doc.querySelectorAll('[data-hcm-block="image-hotspots"]'))
+
+  if (hotspotBlocks.length === 0) {
+    return source
+  }
+
+  await Promise.all(hotspotBlocks.map(async (block) => {
+    const parsed = parseLessonImageHotspotsBlockElement(block)
+    if (!parsed) {
+      return
+    }
+
+    let signedUrl: string | null = null
+    if (parsed.asset.storage_path) {
+      try {
+        signedUrl = await getSignedLessonContentAssetUrl(parsed.asset.storage_path)
+      } catch {
+        signedUrl = null
+      }
+    }
+
+    const wrapper = doc.createElement('div')
+    wrapper.innerHTML = buildPdfImageHotspotsFallbackHtml(
+      signedUrl,
+      parsed.asset.alt,
+      parsed.hotspots.map((hotspot) => ({
+        title: hotspot.title,
+        bodyHtml: hotspot.body_html,
+      })),
+    )
+    block.replaceWith(...Array.from(wrapper.childNodes))
+  }))
+
+  return doc.body.innerHTML || source
 }
 
 function attachTableWrappers(root: HTMLElement) {
@@ -701,6 +777,89 @@ function buildPdfStyles() {
       margin: 0;
       padding-left: 18px;
     }
+    .pdf-image-hotspots-block {
+      margin: 20px 0;
+      border: 1px solid #dbeafe;
+      border-radius: 20px;
+      overflow: hidden;
+      background: #f8fbff;
+      break-inside: avoid;
+      page-break-inside: avoid;
+    }
+    .pdf-image-hotspots-figure {
+      margin: 0;
+      background: #ffffff;
+      border-bottom: 1px solid #dbeafe;
+    }
+    .pdf-image-hotspots-figure img {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+    .pdf-image-hotspots-panel {
+      padding: 16px 18px;
+    }
+    .pdf-image-hotspots-eyebrow {
+      margin-bottom: 12px;
+      font-size: 10px;
+      font-weight: 900;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: #1d4ed8;
+    }
+    .pdf-image-hotspots-items {
+      display: grid;
+      gap: 12px;
+    }
+    .pdf-image-hotspots-item {
+      display: flex;
+      gap: 12px;
+      padding: 12px 14px;
+      border-radius: 14px;
+      background: #ffffff;
+      border: 1px solid #dbeafe;
+      break-inside: avoid;
+      page-break-inside: avoid;
+    }
+    .pdf-image-hotspots-item-index {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      min-width: 28px;
+      height: 28px;
+      border-radius: 999px;
+      background: #0f172a;
+      color: #ffffff;
+      font-size: 11px;
+      font-weight: 900;
+    }
+    .pdf-image-hotspots-item-content h4 {
+      margin: 0 0 8px 0;
+      font-size: 14px;
+      font-weight: 800;
+      color: #0f172a;
+    }
+    .pdf-image-hotspots-item-body {
+      font-size: 12px;
+      line-height: 1.7;
+      color: #334155;
+    }
+    .pdf-image-hotspots-item-body p,
+    .pdf-image-hotspots-item-body ul,
+    .pdf-image-hotspots-item-body ol,
+    .pdf-image-hotspots-item-body blockquote {
+      margin-bottom: 10px;
+    }
+    .pdf-image-hotspots-item-body ul,
+    .pdf-image-hotspots-item-body ol {
+      padding-left: 18px;
+    }
+    .pdf-image-hotspots-empty {
+      margin: 0;
+      font-size: 12px;
+      color: #64748b;
+    }
     .pdf-content {
       font-size: 13.5px;
       line-height: 1.8;
@@ -825,10 +984,13 @@ export async function exportModuleToPdf(courseTitle: string, moduleTitle: string
   if (lessonsResult.error) throw lessonsResult.error
   if (moduleResult.error) throw moduleResult.error
 
-  const lessons = ((lessonsResult.data as LessonRow[]) ?? []).map((lesson) => ({
-    ...lesson,
-    materials: materialsMap.get(lesson.id) ?? [],
-  })) satisfies LessonForPdf[]
+  const lessons = await Promise.all(
+    (((lessonsResult.data as LessonRow[]) ?? []).map(async (lesson) => ({
+      ...lesson,
+      text_content: await hydrateInteractiveLessonContent(lesson.text_content),
+      materials: materialsMap.get(lesson.id) ?? [],
+    }))),
+  ) satisfies LessonForPdf[]
 
   const module = (moduleResult.data as ModuleRow | null) ?? {
     title: moduleTitle,

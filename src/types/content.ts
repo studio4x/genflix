@@ -40,6 +40,27 @@ export interface AssessmentInteractionAsset {
   height: number
 }
 
+export interface LessonImageHotspotsAsset {
+  storage_path: string
+  signed_url?: string | null
+  alt: string
+  width: number
+  height: number
+}
+
+export interface LessonImageHotspotItem {
+  id: string
+  x: number
+  y: number
+  title: string
+  body_html: string
+}
+
+export interface LessonImageHotspotsBlockContent {
+  asset: LessonImageHotspotsAsset
+  hotspots: LessonImageHotspotItem[]
+}
+
 export interface DragDropLabelingTarget {
   id: string
   x: number

@@ -30,6 +30,7 @@ import type { Session } from '@supabase/supabase-js'
 const MATERIALS_BUCKET = 'materials'
 const MODULE_PDFS_BUCKET = 'module-pdfs'
 const LESSON_FOOTER_ASSETS_BUCKET = 'lesson-footer-assets'
+const LESSON_CONTENT_ASSETS_BUCKET = 'lesson-content-assets'
 
 function normalizeSupabaseError(error: unknown): Error {
   if (error instanceof Error) {
@@ -684,6 +685,49 @@ export async function getSignedModulePdfUrl(storagePath: string) {
   const result = await supabase.storage
     .from(MODULE_PDFS_BUCKET)
     .createSignedUrl(storagePath, 60 * 10)
+
+  if (result.error) {
+    throw result.error
+  }
+
+  return result.data.signedUrl
+}
+
+export async function uploadLessonContentAsset(file: File) {
+  const objectPath = `${crypto.randomUUID()}-${sanitizeFileName(file.name)}`
+  const uploadResult = await supabase.storage
+    .from(LESSON_CONTENT_ASSETS_BUCKET)
+    .upload(objectPath, file, {
+      cacheControl: '3600',
+      upsert: false,
+      contentType: file.type || undefined,
+    })
+
+  if (uploadResult.error) {
+    throw uploadResult.error
+  }
+
+  const signedUrl = await getSignedLessonContentAssetUrl(objectPath)
+  return {
+    storage_path: objectPath,
+    signed_url: signedUrl,
+  }
+}
+
+export async function deleteLessonContentAsset(storagePath: string) {
+  const result = await supabase.storage
+    .from(LESSON_CONTENT_ASSETS_BUCKET)
+    .remove([storagePath])
+
+  if (result.error) {
+    throw result.error
+  }
+}
+
+export async function getSignedLessonContentAssetUrl(storagePath: string) {
+  const result = await supabase.storage
+    .from(LESSON_CONTENT_ASSETS_BUCKET)
+    .createSignedUrl(storagePath, 60 * 60)
 
   if (result.error) {
     throw result.error

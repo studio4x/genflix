@@ -5,6 +5,7 @@ import ReactQuill from 'react-quill'
 import 'react-quill/dist/quill.snow.css'
 import {
   createLesson,
+  deleteLessonContentAsset,
   deleteLesson,
   fetchLessonFooterActions,
   updateLesson,
@@ -18,7 +19,12 @@ import {
   resolveLessonAudioModerationRequest,
   type LessonAudioModerationRequestAdminItem,
 } from '@/features/admin/lesson-audio/api'
-import { splitContent, mergeContent, sanitizeTableHtml } from '@/features/admin/content/content-blocks'
+import {
+  createEmptyLessonImageHotspotsBlockContent,
+  splitContent,
+  mergeContent,
+  sanitizeTableHtml,
+} from '@/features/admin/content/content-blocks'
 import type { LessonContentBlock } from '@/features/admin/content/content-blocks'
 import { Button } from '@/components/ui/button'
 import {
@@ -26,6 +32,7 @@ import {
   getLessonFooterButtonClassName,
   renderButtonTemplateIcon,
 } from '@/features/admin/content/button-template-icons'
+import { LessonImageHotspotsBlockEditor } from '@/features/admin/content/lesson-image-hotspots-block'
 import { LessonAudioPlayer } from '@/features/student/lesson-audio/lesson-audio-player'
 import { Plus, Trash2, Code2, Eye } from 'lucide-react'
 import type { LessonFooterAction } from '@/types/content'
@@ -153,26 +160,48 @@ export function LessonEditorPanel() {
     void loadFooterActions()
   }, [isNew, lessonId])
 
-  const updateBlock = (index: number, newContent: string) => {
+  const updateBlock = (index: number, nextBlock: LessonContentBlock) => {
     setBlocks(prev => {
       const next = [...prev]
-      next[index] = { ...next[index], content: newContent }
+      next[index] = nextBlock
       return next
     })
   }
 
-  const addBlock = (type: 'rich-text' | 'table') => {
+  const addBlock = (type: 'rich-text' | 'table' | 'image-hotspots') => {
+    if (type === 'image-hotspots') {
+      setBlocks(prev => [...prev, {
+        type,
+        content: createEmptyLessonImageHotspotsBlockContent(),
+      }])
+      return
+    }
+
     setBlocks(prev => [...prev, { 
       type, 
       content: type === 'table' ? '<table border="1"><thead><tr><th>Cabeçalho</th></tr></thead><tbody><tr><td>Dado</td></tr></tbody></table>' : '' 
     }])
   }
 
-  const removeBlock = (index: number) => {
+  const removeBlock = async (index: number) => {
     if (blocks.length <= 1) return
     if (window.confirm('Excluir este bloco de conteúdo?')) {
+      const blockToRemove = blocks[index]
+      if (blockToRemove?.type === 'image-hotspots' && blockToRemove.content.asset.storage_path) {
+        try {
+          await deleteLessonContentAsset(blockToRemove.content.asset.storage_path)
+        } catch (err) {
+          console.error('Erro ao remover asset do bloco interativo:', err)
+        }
+      }
       setBlocks(prev => prev.filter((_, i) => i !== index))
     }
+  }
+
+  function getBlockLabel(block: LessonContentBlock) {
+    if (block.type === 'table') return 'Bloco de Tabela'
+    if (block.type === 'image-hotspots') return 'Bloco de Hotspots'
+    return 'Bloco de Texto Rico'
   }
 
   const moveBlock = (index: number, direction: 'up' | 'down') => {
@@ -465,13 +494,13 @@ export function LessonEditorPanel() {
                                        {index + 1}
                                     </span>
                                     <span className="text-[11px] font-black uppercase tracking-widest text-slate-400">
-                                       {block.type === 'table' ? 'Bloco de Tabela' : 'Bloco de Texto Rico'}
+                                       {getBlockLabel(block)}
                                     </span>
                                  </div>
                                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                     <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-blue-600" onClick={() => moveBlock(index, 'up')} disabled={index === 0}><Plus className="h-4 w-4 rotate-180" /></Button>
                                     <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-blue-600" onClick={() => moveBlock(index, 'down')} disabled={index === blocks.length - 1}><Plus className="h-4 w-4" /></Button>
-                                    <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-rose-600" onClick={() => removeBlock(index)}><Trash2 className="h-4 w-4" /></Button>
+                                    <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-rose-600" onClick={() => void removeBlock(index)}><Trash2 className="h-4 w-4" /></Button>
                                  </div>
                               </div>
 
@@ -490,16 +519,22 @@ export function LessonEditorPanel() {
                                        <textarea
                                          className="w-full min-h-[150px] p-4 font-mono text-[13px] bg-slate-900 text-emerald-400 rounded-xl border border-slate-800 transition-all focus:ring-4 focus:ring-blue-100 shadow-inner leading-relaxed"
                                          value={block.content}
-                                         onChange={(e) => updateBlock(index, e.target.value)}
+                                         onChange={(e) => updateBlock(index, { ...block, content: e.target.value })}
                                          placeholder="<table>...</table>"
                                        />
                                     </div>
                                  </div>
+                              ) : block.type === 'image-hotspots' ? (
+                                 <LessonImageHotspotsBlockEditor
+                                   content={block.content}
+                                   onChange={(nextContent) => updateBlock(index, { ...block, content: nextContent })}
+                                   onError={setError}
+                                 />
                               ) : (
                                  <ReactQuill
                                    theme="snow"
                                    value={block.content}
-                                   onChange={(value) => updateBlock(index, value)}
+                                   onChange={(value) => updateBlock(index, { ...block, content: value })}
                                    modules={quillModules}
                                    formats={quillFormats}
                                    placeholder="Escreva aqui o texto da aula..."
@@ -516,6 +551,9 @@ export function LessonEditorPanel() {
                         </Button>
                         <Button type="button" variant="outline" size="sm" onClick={() => addBlock('table')} className="bg-white hover:bg-emerald-50 hover:text-emerald-600 border-slate-200">
                            <Plus className="h-4 w-4 mr-2" /> Bloco de Tabela
+                        </Button>
+                        <Button type="button" variant="outline" size="sm" onClick={() => addBlock('image-hotspots')} className="bg-white hover:bg-violet-50 hover:text-violet-600 border-slate-200">
+                           <Plus className="h-4 w-4 mr-2" /> Bloco de Hotspots
                         </Button>
                       </div>
                    </div>

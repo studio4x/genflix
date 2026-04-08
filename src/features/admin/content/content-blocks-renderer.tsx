@@ -1,4 +1,5 @@
 import type { LessonContentBlock } from "./content-blocks";
+import { LessonImageHotspotsBlockRenderer } from './lesson-image-hotspots-block'
 
 type Props = {
   blocks: LessonContentBlock[];
@@ -21,6 +22,15 @@ export function ContentBlocksRenderer({ blocks, className }: Props) {
               />
             </div>
           );
+        }
+
+        if (block.type === 'image-hotspots') {
+          return (
+            <LessonImageHotspotsBlockRenderer
+              key={`image-hotspots-${index}`}
+              content={block.content}
+            />
+          )
         }
 
         return (

@@ -237,3 +237,58 @@ tr:nth-child(even) {
   margin: 0 0 1rem 0;
   color: #475569;
 }
+
+.lesson-hotspots-body {
+  color: #334155;
+  line-height: 1.8;
+  font-size: 1rem;
+}
+
+.lesson-hotspots-body h1,
+.lesson-hotspots-body h2,
+.lesson-hotspots-body h3 {
+  color: #0f172a;
+  font-weight: 800;
+  line-height: 1.2;
+  margin-top: 0;
+  margin-bottom: 0.75rem;
+}
+
+.lesson-hotspots-body p {
+  margin: 0 0 1rem 0;
+}
+
+.lesson-hotspots-body ul,
+.lesson-hotspots-body ol {
+  margin: 0 0 1rem 1.25rem;
+  padding: 0;
+}
+
+.lesson-hotspots-body li {
+  margin-bottom: 0.4rem;
+}
+
+.lesson-hotspots-body ul {
+  list-style: disc;
+}
+
+.lesson-hotspots-body ol {
+  list-style: decimal;
+}
+
+.lesson-hotspots-body a {
+  color: #2563eb;
+  text-decoration: underline;
+}
+
+.lesson-hotspots-body strong {
+  color: #0f172a;
+  font-weight: 700;
+}
+
+.lesson-hotspots-body blockquote {
+  border-left: 4px solid #cbd5e1;
+  padding-left: 0.875rem;
+  margin: 0 0 1rem 0;
+  color: #475569;
+}
