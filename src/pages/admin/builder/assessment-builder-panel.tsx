@@ -4,6 +4,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { useCourseBuilder } from '@/app/layouts/admin-course-builder-layout'
 import { useAuth } from '@/app/providers/auth-provider'
 import { Button } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
 import { GamifiedQuestionEditor } from '@/features/admin/assessments/gamified-question-editor'
 import {
   createAssessmentCaseStudy,
@@ -1086,7 +1087,13 @@ export function AssessmentBuilderPanel() {
     ))
 
     return (
-      <div key={question.id} className="group animate-in overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm transition-all slide-in-from-bottom-4 duration-500 hover:border-blue-300">
+      <div
+        key={question.id}
+        className={cn(
+          'group animate-in rounded-3xl border border-slate-200 bg-white shadow-sm transition-all slide-in-from-bottom-4 duration-500 hover:border-blue-300',
+          isGamified ? 'overflow-visible' : 'overflow-hidden',
+        )}
+      >
         <div className="flex items-start gap-4 border-b border-slate-100 bg-slate-50/50 p-6">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-100 bg-white text-lg font-black text-slate-400 shadow-sm">
             {indexLabel}
