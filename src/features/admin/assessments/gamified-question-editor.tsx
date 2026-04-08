@@ -67,11 +67,16 @@ const COLOR_NAME_SUGGESTIONS = [
   { label: 'Turquesa', hex: '#14b8a6' },
 ] as const
 
-const SVG_COLORING_EXAMPLE = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" fill="none">
-  <path id="teto" d="M318 206L514 166H742L880 218L786 260H360L318 206Z" fill="none" stroke="#111827" stroke-width="8"/>
-  <path id="porta-esquerda" d="M392 312H520V560H392Z" fill="none" stroke="#111827" stroke-width="8"/>
-  <g data-region-id="capo">
-    <path d="M650 318H926L892 468H650V318Z" fill="none" stroke="#111827" stroke-width="8"/>
+const SVG_COLORING_EXAMPLE = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 1000">
+  <g id="regioes-pintaveis">
+    <path id="frontal" data-region-id="frontal" fill="#ffffff" d="M214 112C286 70 392 52 492 66C586 78 670 122 708 188C734 232 742 280 736 338H182C178 272 188 224 214 188C214 188 214 188 214 188Z" />
+    <path id="zigomatico-esquerdo" data-region-id="zigomatico-esquerdo" fill="#ffffff" d="M170 430C206 390 246 372 292 372C302 430 306 480 296 532C254 556 218 560 186 544C166 506 160 468 170 430Z" />
+    <path id="zigomatico-direito" data-region-id="zigomatico-direito" fill="#ffffff" d="M630 430C594 390 554 372 508 372C498 430 494 480 504 532C546 556 582 560 614 544C634 506 640 468 630 430Z" />
+    <path id="maxila" data-region-id="maxila" fill="#ffffff" d="M252 556C334 526 466 522 548 556C574 612 572 676 554 736H246C228 676 226 612 252 556Z" />
+  </g>
+  <g id="contornos" fill="none" stroke="#111827" stroke-width="8" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M214 188C286 98 544 70 662 146C724 186 752 256 736 338C718 442 692 540 676 646C662 728 664 828 648 924C604 1002 516 1052 400 1058C284 1052 196 1002 152 924C136 828 138 728 124 646C108 540 82 442 64 338C48 256 76 186 138 146C160 132 186 120 214 112" />
+    <path d="M182 338H736M292 372C306 430 306 486 296 532M508 372C494 430 494 486 504 532M252 556C334 526 466 522 548 556M246 736H554" />
   </g>
 </svg>`
 
@@ -1140,7 +1145,7 @@ export function GamifiedQuestionEditor({
             <div>
               <h3 className="text-left text-xl font-black tracking-tight text-slate-900">Como preparar o SVG para colorir</h3>
               <p className="mt-1 text-left text-sm font-medium text-slate-500">
-                Guia rapido para criar regioes detectaveis no quiz com preenchimento real.
+                Fluxo recomendado para imagens reais, como anatomia, mapas e ilustracoes com referencia colorida.
               </p>
             </div>
             <button
@@ -1158,15 +1163,15 @@ export function GamifiedQuestionEditor({
             <section className="grid gap-3 md:grid-cols-3">
               <div className="rounded-[24px] border border-slate-200 bg-slate-50/70 p-5">
                 <p className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-500">Passo 1</p>
-                <p className="mt-3 text-sm font-semibold text-slate-900">Separe cada peca em uma regiao propria.</p>
+                <p className="mt-3 text-sm font-semibold text-slate-900">Use a imagem sem cor como base e a imagem colorida apenas como referencia.</p>
               </div>
               <div className="rounded-[24px] border border-slate-200 bg-slate-50/70 p-5">
                 <p className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-500">Passo 2</p>
-                <p className="mt-3 text-sm font-semibold text-slate-900">Defina `id` ou `data-region-id` em cada regiao.</p>
+                <p className="mt-3 text-sm font-semibold text-slate-900">Desenhe manualmente cada regiao fechada por cima da imagem em vetor.</p>
               </div>
               <div className="rounded-[24px] border border-slate-200 bg-slate-50/70 p-5">
                 <p className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-500">Passo 3</p>
-                <p className="mt-3 text-sm font-semibold text-slate-900">Exporte em SVG e envie o arquivo no quiz.</p>
+                <p className="mt-3 text-sm font-semibold text-slate-900">Exporte um SVG limpo com `regioes-pintaveis` e `contornos` separados.</p>
               </div>
             </section>
 
@@ -1174,21 +1179,22 @@ export function GamifiedQuestionEditor({
               <section className="rounded-[28px] border border-cyan-100 bg-cyan-50/70 p-6">
                 <p className="text-[10px] font-black uppercase tracking-[0.25em] text-cyan-700">Checklist</p>
                 <div className="mt-4 space-y-4 text-sm font-medium leading-relaxed text-cyan-950">
-                  <p><strong>1.</strong> O arquivo precisa ser realmente `SVG`, nao PNG, PDF ou imagem vetorizada exportada de forma errada.</p>
-                  <p><strong>2.</strong> Cada peca pintavel deve ter um `id` proprio ou `data-region-id`.</p>
-                  <p><strong>3.</strong> As pecas devem ser formas fechadas. `path`, `polygon`, `rect`, `circle` e `ellipse` funcionam melhor.</p>
-                  <p><strong>4.</strong> `fill=\"none\"` pode ser usado. O sistema injeta o preenchimento durante a interacao do aluno.</p>
-                  <p><strong>5.</strong> Se usar {'<g>'}, o grupo tambem pode ter `data-region-id`, desde que os shapes internos pertençam a uma unica peca.</p>
+                  <p><strong>1.</strong> Trave a imagem sem cor em uma camada de base e deixe a imagem colorida acima com opacidade baixa, so como guia.</p>
+                  <p><strong>2.</strong> Cada osso, peca ou area que o aluno vai pintar deve virar uma shape vetorial fechada propria.</p>
+                  <p><strong>3.</strong> Use nomes semanticos no `id` ou `data-region-id`, como `frontal`, `maxila`, `zigomatico-esquerdo` ou `janela-traseira`.</p>
+                  <p><strong>4.</strong> Se usar {'<g>'}, o grupo precisa representar apenas uma peca. Nunca misture varias regioes diferentes no mesmo grupo.</p>
+                  <p><strong>5.</strong> Deixe as shapes de pintura em `regioes-pintaveis` com `fill="#ffffff"` ou neutro e mantenha os contornos pretos no grupo `contornos` por cima.</p>
                 </div>
               </section>
 
               <section className="rounded-[28px] border border-amber-100 bg-amber-50/70 p-6">
                 <p className="text-[10px] font-black uppercase tracking-[0.25em] text-amber-700">Evite</p>
                 <div className="mt-4 space-y-4 text-sm font-medium leading-relaxed text-amber-950">
-                  <p><strong>1.</strong> Linhas soltas com {'<line>'} ou paths abertos sem area interna para preencher.</p>
-                  <p><strong>2.</strong> Deixar varias pecas diferentes dentro da mesma regiao quando o aluno precisa colori-las separadamente.</p>
-                  <p><strong>3.</strong> Confiar apenas em nomes visuais da camada no editor grafico sem exportar o `id` no SVG final.</p>
-                  <p><strong>4.</strong> SVGs com tudo achatado em um unico path sem divisao por partes do desenho.</p>
+                  <p><strong>1.</strong> Pedir para uma IA gerar o `path d` final direto de um PNG ou JPG. Para anatomia e ilustracoes complexas, isso costuma sair errado.</p>
+                  <p><strong>2.</strong> Vetorizar automaticamente uma imagem com textura, sombra ou degrade e usar esse resultado cru como SVG final.</p>
+                  <p><strong>3.</strong> Deixar varias partes diferentes dentro da mesma regiao quando o aluno precisa colori-las separadamente.</p>
+                  <p><strong>4.</strong> Usar paths abertos, mascaras, `clipPath`, filtros ou efeitos que escondem a area real de preenchimento.</p>
+                  <p><strong>5.</strong> Colocar o `id` em grupos gigantes que tambem carregam linhas ou formas de outras pecas.</p>
                 </div>
               </section>
             </div>
@@ -1196,13 +1202,13 @@ export function GamifiedQuestionEditor({
             <section className="rounded-[28px] border border-slate-200 bg-slate-50/70 p-6">
               <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                 <div>
-                  <p className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-500">Exemplo minimo</p>
+                  <p className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-500">Estrutura recomendada</p>
                   <p className="mt-2 text-sm font-medium text-slate-600">
-                    Este formato ja pode ser detectado pelo editor.
+                    Este e o tipo de organizacao que funciona melhor para o quiz e evita vazamento de cor.
                   </p>
                 </div>
                 <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-[10px] font-black uppercase tracking-widest text-slate-500">
-                  id ou data-region-id
+                  regioes-pintaveis + contornos
                 </span>
               </div>
 
@@ -1212,10 +1218,10 @@ export function GamifiedQuestionEditor({
             </section>
 
             <section className="rounded-[28px] border border-slate-200 bg-white p-6">
-              <p className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-500">Ferramentas externas</p>
+              <p className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-500">Fluxo recomendado</p>
               <div className="mt-4 space-y-4 text-sm font-medium leading-relaxed text-slate-700">
-                <p>No Illustrator, Figma, Inkscape ou Corel, o ponto principal e garantir que cada peca exportada tenha identificador unico no SVG final.</p>
-                <p>Se quiser, eu posso no proximo passo adicionar um validador visual no upload, mostrando quais ids o sistema encontrou antes de salvar.</p>
+                <p>Para imagens como cranio, mapas, diagramas tecnicos e desenhos com referencia colorida, o melhor resultado costuma vir de Inkscape ou Illustrator: imagem sem cor travada, referencia colorida com baixa opacidade e redesenho manual das regioes vetoriais.</p>
+                <p>Gemini e GPT podem ajudar a revisar nomes e estrutura, mas raramente geram um SVG final confiavel para preencher exatamente dentro dos contornos. Se a cor vazar, o problema quase sempre esta no SVG, nao no quiz.</p>
               </div>
             </section>
           </div>
@@ -2399,7 +2405,7 @@ export function GamifiedQuestionEditor({
             </div>
           </div>
         ) : null}
-        {isSvgInstructionsModalOpen ? (
+        {false && isSvgInstructionsModalOpen ? (
           <div
             className="fixed inset-0 z-[135] flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm animate-in fade-in duration-300"
             onClick={() => setIsSvgInstructionsModalOpen(false)}
