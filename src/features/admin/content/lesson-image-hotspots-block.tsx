@@ -632,13 +632,24 @@ export function LessonImageHotspotsBlockRenderer({
     }
   }, [content.asset.signed_url, content.asset.storage_path])
 
-  const popupPlacement = activeHotspot
-    ? {
-      left: activeHotspot.x > 56 ? 'auto' : '52%',
-      right: activeHotspot.x > 56 ? '4%' : 'auto',
-      top: `${clamp(activeHotspot.y, 16, 80)}%`,
-      transform: 'translateY(-50%)',
-    }
+  const desktopPopupPlacement = activeHotspot
+    ? activeHotspot.x > 50
+      ? {
+        side: 'left' as const,
+        style: {
+          right: `calc(${clamp(100 - activeHotspot.x, 10, 60)}% + 44px)`,
+          top: `${clamp(activeHotspot.y, 18, 82)}%`,
+          transform: 'translateY(-50%)',
+        },
+      }
+      : {
+        side: 'right' as const,
+        style: {
+          left: `calc(${clamp(activeHotspot.x, 10, 60)}% + 44px)`,
+          top: `${clamp(activeHotspot.y, 18, 82)}%`,
+          transform: 'translateY(-50%)',
+        },
+      }
     : null
 
   return (
@@ -704,7 +715,7 @@ export function LessonImageHotspotsBlockRenderer({
           {activeHotspot ? (
             <>
               <div
-                className="absolute inset-x-3 bottom-3 z-30 rounded-[28px] border border-slate-200 bg-white p-5 shadow-[0_24px_60px_rgba(15,23,42,0.26)] md:hidden"
+                className="absolute inset-x-3 bottom-3 z-30 rounded-[28px] border border-slate-200 bg-white p-5 shadow-[0_24px_60px_rgba(15,23,42,0.26)] lg:hidden"
                 onClick={(event) => event.stopPropagation()}
               >
                 <div className="flex items-start justify-between gap-3">
@@ -727,10 +738,25 @@ export function LessonImageHotspotsBlockRenderer({
               </div>
 
               <div
-                className="absolute z-30 hidden w-[min(46%,520px)] rounded-[30px] border border-slate-200 bg-white p-6 shadow-[0_28px_70px_rgba(15,23,42,0.28)] md:block"
-                style={popupPlacement ?? undefined}
+                className="absolute z-30 hidden rounded-[30px] border border-slate-200 bg-white p-6 shadow-[0_28px_70px_rgba(15,23,42,0.28)] lg:block"
+                style={{
+                  ...(desktopPopupPlacement?.style ?? {}),
+                  width: 'min(24rem, calc(100% - 4rem))',
+                }}
                 onClick={(event) => event.stopPropagation()}
               >
+                <div
+                  className={cn(
+                    'absolute top-1/2 h-[3px] w-7 -translate-y-1/2 rounded-full bg-white/95 shadow-[0_0_0_1px_rgba(226,232,240,0.92)]',
+                    desktopPopupPlacement?.side === 'left' ? '-right-7' : '-left-7',
+                  )}
+                />
+                <div
+                  className={cn(
+                    'absolute top-1/2 h-4 w-4 -translate-y-1/2 rotate-45 border border-slate-200 bg-white',
+                    desktopPopupPlacement?.side === 'left' ? '-right-2' : '-left-2',
+                  )}
+                />
                 <div className="flex items-start justify-between gap-4">
                   <div className="min-w-0">
                     <h4 className="text-2xl font-black text-slate-900">{activeHotspot.title}</h4>
