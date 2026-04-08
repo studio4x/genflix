@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Check, Star, X } from 'lucide-react'
+import { Check, RotateCcw, Star, X } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
 import type { ImageHotspotInteractionContent, ImageHotspotResponsePayload } from '@/types/content'
@@ -288,7 +288,7 @@ export function ImageHotspotInteraction({
             })}
 
             {content.show_feedback_as_popup && feedbackMessage ? (
-              feedbackTone === 'success' && popupPlacement && activeFeedbackTarget ? (
+              (feedbackTone === 'success' || feedbackTone === 'error') && popupPlacement && activeFeedbackTarget ? (
                 <div
                   className="absolute z-20"
                   style={{
@@ -301,8 +301,13 @@ export function ImageHotspotInteraction({
                     'mb-3 flex',
                     popupPlacement.placeLeft ? 'justify-end pr-4' : 'justify-start pl-4',
                   )}>
-                    <div className="inline-flex size-10 items-center justify-center rounded-full border-4 border-white bg-emerald-500 text-white shadow-xl shadow-emerald-500/35">
-                      <Check className="size-5" />
+                    <div className={cn(
+                      'inline-flex size-10 items-center justify-center rounded-full border-4 border-white text-white shadow-xl',
+                      feedbackTone === 'success'
+                        ? 'bg-emerald-500 shadow-emerald-500/35'
+                        : 'bg-rose-500 shadow-rose-500/35',
+                    )}>
+                      {feedbackTone === 'success' ? <Check className="size-5" /> : <X className="size-5" />}
                     </div>
                   </div>
 
@@ -311,33 +316,60 @@ export function ImageHotspotInteraction({
                       <div className="min-w-0 flex-1 text-[15px] font-black leading-7 text-[#2b74dc]">
                         {feedbackMessage}
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => emitFeedback(null, 'neutral', null)}
-                        className="inline-flex size-8 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
-                        aria-label="Fechar feedback"
-                      >
-                        <X className="size-5" />
-                      </button>
                     </div>
 
-                    <div className="mt-4 inline-flex items-center gap-3 rounded-full border border-slate-200 bg-slate-50 px-3 py-2 shadow-inner">
-                      <div className="h-4 w-20 overflow-hidden rounded-full bg-emerald-100">
-                        <div
-                          className="h-full rounded-full bg-emerald-500"
-                          style={{
-                            width: `${content.mode === 'single_attempt'
-                              ? 100
-                              : (correctCount ? (foundCount / correctCount) * 100 : 0)}%`,
-                          }}
-                        />
+                    <div className="mt-4 flex items-center gap-3">
+                      <div className="inline-flex items-center gap-3 rounded-full border border-slate-200 bg-slate-50 px-3 py-2 shadow-inner">
+                        <div className={cn(
+                          'h-4 w-20 overflow-hidden rounded-full',
+                          feedbackTone === 'success' ? 'bg-emerald-100' : 'bg-slate-200',
+                        )}>
+                          <div
+                            className={cn(
+                              'h-full rounded-full',
+                              feedbackTone === 'success' ? 'bg-emerald-500' : 'bg-slate-400',
+                            )}
+                            style={{
+                              width: `${content.mode === 'single_attempt'
+                                ? (feedbackTone === 'success' ? 100 : 0)
+                                : (correctCount ? (foundCount / correctCount) * 100 : 0)}%`,
+                            }}
+                          />
+                        </div>
+                        <div className={cn(
+                          'inline-flex size-9 items-center justify-center rounded-full shadow-sm',
+                          feedbackTone === 'success'
+                            ? 'bg-[#fff4c2] text-amber-500'
+                            : 'bg-white text-slate-300',
+                        )}>
+                          <Star className="size-5 fill-current" />
+                        </div>
+                        <span className="text-2xl font-black text-slate-700">
+                          {content.mode === 'single_attempt'
+                            ? (feedbackTone === 'success' ? '1/1' : '0/1')
+                            : `${foundCount}/${correctCount}`}
+                        </span>
                       </div>
-                      <div className="inline-flex size-9 items-center justify-center rounded-full bg-[#fff4c2] text-amber-500 shadow-sm">
-                        <Star className="size-5 fill-current" />
-                      </div>
-                      <span className="text-2xl font-black text-slate-700">
-                        {content.mode === 'single_attempt' ? '1/1' : `${foundCount}/${correctCount}`}
-                      </span>
+
+                      {feedbackTone === 'error' && content.mode === 'single_attempt' && !readOnly ? (
+                        <button
+                          type="button"
+                          onClick={handleRetry}
+                          className="inline-flex size-12 items-center justify-center rounded-full bg-[#2b74dc] text-white shadow-lg shadow-[#2b74dc]/30 transition hover:scale-[1.03] hover:bg-[#1f63c5]"
+                          aria-label="Tentar novamente"
+                        >
+                          <RotateCcw className="size-5" />
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => emitFeedback(null, 'neutral', null)}
+                          className="inline-flex size-12 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-400 shadow-sm transition hover:bg-slate-50 hover:text-slate-600"
+                          aria-label="Fechar feedback"
+                        >
+                          <X className="size-5" />
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>
