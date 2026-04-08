@@ -1625,7 +1625,7 @@ export function AssessmentBuilderPanel() {
                 <p className="text-[11px] font-black uppercase tracking-[0.28em] text-sky-600">Quiz de Hotspot</p>
                 <h3 className="mt-2 text-2xl font-black tracking-tight text-slate-900">Escolha a modalidade inicial</h3>
                 <p className="mt-3 text-sm font-medium leading-relaxed text-slate-600">
-                  Voce pode trocar depois no editor, mas a logica de resposta do aluno muda conforme a modalidade.
+                  Você pode trocar depois no editor, mas a lógica de resposta do aluno muda conforme a modalidade.
                 </p>
               </div>
               <button
@@ -1646,10 +1646,10 @@ export function AssessmentBuilderPanel() {
                 }}
                 className="rounded-[28px] border border-sky-200 bg-sky-50/70 p-5 text-left transition-all hover:-translate-y-0.5 hover:border-sky-300 hover:bg-sky-50"
               >
-                <p className="text-sm font-black uppercase tracking-widest text-sky-700">Clique unico</p>
+                <p className="text-sm font-black uppercase tracking-widest text-sky-700">Clique único</p>
                 <p className="mt-3 text-lg font-black text-slate-900">Encerra no primeiro clique</p>
                 <p className="mt-2 text-sm font-medium leading-relaxed text-slate-600">
-                  Ideal para perguntas no estilo H5P, com acerto ou erro imediato e opcao de retry antes do envio final.
+                  Ideal para perguntas no estilo H5P, com acerto ou erro imediato e opção de retry antes do envio final.
                 </p>
               </button>
 
@@ -1664,7 +1664,7 @@ export function AssessmentBuilderPanel() {
                 <p className="text-sm font-black uppercase tracking-widest text-emerald-700">Encontrar todos</p>
                 <p className="mt-3 text-lg font-black text-slate-900">Procura todos os hotspots corretos</p>
                 <p className="mt-2 text-sm font-medium leading-relaxed text-slate-600">
-                  O aluno continua clicando na imagem ate localizar todas as regioes corretas, com progresso parcial durante a tentativa.
+                  O aluno continua clicando na imagem até localizar todas as regiões corretas, com progresso parcial durante a tentativa.
                 </p>
               </button>
             </div>

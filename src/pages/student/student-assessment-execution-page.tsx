@@ -1073,7 +1073,7 @@ export function StudentAssessmentExecutionPage() {
                             <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
                               <p className="font-black uppercase tracking-widest text-[10px] text-slate-400">Modalidade</p>
                               <p className="mt-2 font-semibold">
-                                {feedback.mode === 'single_attempt' ? 'Clique unico' : 'Encontrar todos'}
+                                {feedback.mode === 'single_attempt' ? 'Clique único' : 'Encontrar todos'}
                               </p>
                             </div>
                             <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">

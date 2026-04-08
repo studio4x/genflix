@@ -103,7 +103,7 @@ export function ImageHotspotInteraction({
       }
 
     emitFeedback(
-      content.outside_click_feedback?.trim() || 'Nenhum hotspot valido foi encontrado nesse clique.',
+      content.outside_click_feedback?.trim() || 'Nenhum hotspot válido foi encontrado nesse clique.',
       'error',
       null,
     )
@@ -121,7 +121,7 @@ export function ImageHotspotInteraction({
     }
 
     if (content.mode === 'find_all' && target.is_correct && foundTargetIds.has(target.id)) {
-      emitFeedback(target.feedback_text?.trim() || 'Esse hotspot correto ja foi encontrado.', 'success', target.id)
+      emitFeedback(target.feedback_text?.trim() || 'Esse hotspot correto já foi encontrado.', 'success', target.id)
       return
     }
 
@@ -147,7 +147,7 @@ export function ImageHotspotInteraction({
       }
 
     emitFeedback(
-      target.feedback_text?.trim() || (isCorrect ? 'Correto!' : 'Esse hotspot nao e o esperado.'),
+      target.feedback_text?.trim() || (isCorrect ? 'Correto!' : 'Esse hotspot não é o esperado.'),
       getDefaultFeedbackTone(isCorrect),
       target.id,
     )
@@ -160,7 +160,7 @@ export function ImageHotspotInteraction({
         <div className="rounded-[28px] border border-slate-200 bg-slate-50/70 p-4">
           <p className="text-[10px] font-black uppercase tracking-[0.28em] text-slate-400">Modo</p>
           <p className="mt-2 text-lg font-black text-slate-900">
-            {content.mode === 'single_attempt' ? 'Clique unico' : 'Encontrar todos'}
+            {content.mode === 'single_attempt' ? 'Clique único' : 'Encontrar todos'}
           </p>
           <p className="mt-2 text-sm font-medium leading-relaxed text-slate-600">{content.instruction}</p>
         </div>
@@ -171,8 +171,8 @@ export function ImageHotspotInteraction({
               <p className="text-[10px] font-black uppercase tracking-[0.28em] text-slate-400">Progresso</p>
               <p className="mt-2 text-sm font-semibold text-slate-600">
                 {content.mode === 'single_attempt'
-                  ? 'A questao encerra no primeiro clique valido.'
-                  : 'Continue clicando ate encontrar todos os hotspots corretos.'}
+                  ? 'A questão encerra no primeiro clique válido.'
+                  : 'Continue clicando até encontrar todos os hotspots corretos.'}
               </p>
             </div>
             <span className="text-lg font-black text-cyan-700">
@@ -197,7 +197,7 @@ export function ImageHotspotInteraction({
             <div>
               <p className="text-[10px] font-black uppercase tracking-[0.28em] text-slate-400">Hotspots corretos</p>
               <p className="mt-2 text-sm font-semibold text-slate-600">
-                {correctCount} area(s) configurada(s) como correta(s).
+                {correctCount} área(s) configurada(s) como correta(s).
               </p>
             </div>
             <span className="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-black uppercase tracking-widest text-slate-500">
@@ -240,7 +240,7 @@ export function ImageHotspotInteraction({
               />
             ) : (
               <div className="flex h-full w-full items-center justify-center px-8 text-center text-sm font-semibold text-slate-500">
-                A imagem desta questao ainda nao foi configurada.
+                A imagem desta questão ainda não foi configurada.
               </div>
             )}
 

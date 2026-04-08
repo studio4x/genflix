@@ -157,7 +157,7 @@ export const tokenMappingAnswerKeyPayloadSchema = z.object({
 
 export const imageHotspotAnswerKeyPayloadSchema = z.object({
   kind: z.literal('image_hotspot'),
-  correct_target_ids: z.array(z.string().trim().min(1, 'Hotspot invalido.')).min(1, 'Defina ao menos um hotspot correto.'),
+  correct_target_ids: z.array(z.string().trim().min(1, 'Hotspot inválido.')).min(1, 'Defina ao menos um hotspot correto.'),
 })
 
 export const assessmentQuestionAnswerKeyPayloadSchema = z.union([
@@ -175,9 +175,9 @@ export const tokenMappingResponsePayloadSchema = z.object({
 export const imageHotspotResponsePayloadSchema = z.object({
   kind: z.literal('image_hotspot'),
   mode: z.enum(['single_attempt', 'find_all']),
-  selected_target_id: z.string().trim().min(1, 'Hotspot invalido.').nullable(),
-  found_target_ids: z.array(z.string().trim().min(1, 'Hotspot invalido.')),
-  incorrect_target_ids: z.array(z.string().trim().min(1, 'Hotspot invalido.')),
+  selected_target_id: z.string().trim().min(1, 'Hotspot inválido.').nullable(),
+  found_target_ids: z.array(z.string().trim().min(1, 'Hotspot inválido.')),
+  incorrect_target_ids: z.array(z.string().trim().min(1, 'Hotspot inválido.')),
   outside_click_count: z.number().int().min(0),
 })
 
@@ -303,10 +303,10 @@ export function createDefaultInteractionContent(
           h: 12,
           label: 'Hotspot 1',
           is_correct: true,
-          feedback_text: 'Correto! Voce clicou na area esperada.',
+          feedback_text: 'Correto! Você clicou na área esperada.',
         },
       ],
-      outside_click_feedback: 'Clique em uma das areas destacadas na imagem.',
+      outside_click_feedback: 'Clique em uma das áreas destacadas na imagem.',
       show_feedback_as_popup: true,
     }
   }
@@ -436,22 +436,22 @@ export function validateInteractionBundle(
 
   const parsedAnswerKey = assessmentQuestionAnswerKeyPayloadSchema.safeParse(answerKey)
   if (!parsedAnswerKey.success) {
-    throw new Error(parsedAnswerKey.error.issues[0]?.message ?? 'Gabarito da interacao invalido.')
+    throw new Error(parsedAnswerKey.error.issues[0]?.message ?? 'Gabarito da interação inválido.')
   }
 
   if (parsedContent.data.kind !== questionType) {
-    throw new Error('O tipo da interacao nao corresponde ao tipo da pergunta.')
+    throw new Error('O tipo da interação não corresponde ao tipo da pergunta.')
   }
 
   const slotIds = new Set(getInteractionSlotIds(parsedContent.data))
 
   if (slotIds.size === 0) {
-    throw new Error('A interacao precisa ter ao menos uma area ou lacuna.')
+    throw new Error('A interação precisa ter ao menos uma área ou lacuna.')
   }
 
   if (parsedContent.data.kind === 'image_hotspot') {
     if (!isImageHotspotAnswerKeyPayload(parsedAnswerKey.data)) {
-      throw new Error('O gabarito do hotspot esta invalido.')
+      throw new Error('O gabarito do hotspot está inválido.')
     }
 
     const correctTargetIds = parsedContent.data.targets
@@ -465,7 +465,7 @@ export function validateInteractionBundle(
     const answerKeyIds = new Set<string>()
     for (const targetId of parsedAnswerKey.data.correct_target_ids) {
       if (!slotIds.has(targetId)) {
-        throw new Error('O gabarito referencia um hotspot inexistente.')
+        throw new Error('O gabarito referência um hotspot inexistente.')
       }
 
       answerKeyIds.add(targetId)
@@ -489,7 +489,7 @@ export function validateInteractionBundle(
   }
 
   if (!isTokenMappingAnswerKeyPayload(parsedAnswerKey.data)) {
-    throw new Error('O gabarito da interacao esta invalido.')
+    throw new Error('O gabarito da interação está inválido.')
   }
 
   if (parsedContent.data.tokens.some((token) => token.label.trim().length === 0)) {

@@ -242,8 +242,8 @@ export function ImageHotspotQuestionEditor({
 
     const confirmed = window.confirm(
       nextMode === 'single_attempt'
-        ? 'Trocar para "Clique unico"? O aluno passara a encerrar a questao no primeiro clique valido.'
-        : 'Trocar para "Encontrar todos"? O aluno passara a precisar localizar todos os hotspots corretos.',
+        ? 'Trocar para "Clique único"? O aluno passará a encerrar a questão no primeiro clique válido.'
+        : 'Trocar para "Encontrar todos"? O aluno passará a precisar localizar todos os hotspots corretos.',
     )
 
     if (!confirmed) {
@@ -285,7 +285,7 @@ export function ImageHotspotQuestionEditor({
             <div>
               <p className="text-[10px] font-black uppercase tracking-[0.28em] text-sky-700">Imagem Base</p>
               <p className="mt-2 text-sm font-semibold text-slate-600">
-                Envie uma imagem e clique para criar hotspots retangulares sobre as areas desejadas.
+                Envie uma imagem e clique para criar hotspots retangulares sobre as áreas desejadas.
               </p>
             </div>
             <div className="flex flex-wrap gap-3">
@@ -303,9 +303,9 @@ export function ImageHotspotQuestionEditor({
 
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 bg-slate-50/50 px-6 py-4">
             <div className="min-w-[240px] flex-1">
-              <p className="text-[10px] font-black uppercase tracking-[0.28em] text-slate-400">Area de trabalho</p>
+              <p className="text-[10px] font-black uppercase tracking-[0.28em] text-slate-400">Área de trabalho</p>
               <p className="mt-2 text-sm font-semibold text-slate-600">
-                Clique na imagem para criar um hotspot e arraste o retangulo para ajustar a area clicavel.
+                Clique na imagem para criar um hotspot e arraste o retângulo para ajustar a área clicável.
               </p>
             </div>
 
@@ -365,7 +365,7 @@ export function ImageHotspotQuestionEditor({
                       <p className="text-[11px] font-black uppercase tracking-[0.28em] text-sky-700">Imagem base</p>
                       <p className="mt-4 text-lg font-black text-slate-900">Envie uma imagem para posicionar os hotspots</p>
                       <p className="mt-3 text-sm font-medium leading-relaxed text-slate-600">
-                        Depois do upload, clique sobre a imagem para criar areas retangulares e marque quais sao corretas.
+                        Depois do upload, clique sobre a imagem para criar áreas retangulares e marque quais são corretas.
                       </p>
                     </div>
                   </div>
@@ -418,7 +418,7 @@ export function ImageHotspotQuestionEditor({
 
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="rounded-[24px] border border-slate-200 bg-white px-4 py-4 shadow-sm">
-            <p className="text-[10px] font-black uppercase tracking-[0.28em] text-slate-400">Resumo rapido</p>
+            <p className="text-[10px] font-black uppercase tracking-[0.28em] text-slate-400">Resumo rápido</p>
             <div className="mt-3 grid grid-cols-2 gap-3">
               <div className="rounded-2xl bg-slate-50 px-3 py-3">
                 <p className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">Hotspots</p>
@@ -434,12 +434,12 @@ export function ImageHotspotQuestionEditor({
           <div className="rounded-[24px] border border-slate-200 bg-white px-4 py-4 shadow-sm">
             <p className="text-[10px] font-black uppercase tracking-[0.28em] text-slate-400">Fluxo do aluno</p>
             <p className="mt-2 text-base font-black text-slate-900">
-              {content.mode === 'single_attempt' ? 'Clique unico' : 'Encontrar todos'}
+              {content.mode === 'single_attempt' ? 'Clique único' : 'Encontrar todos'}
             </p>
             <p className="mt-2 text-xs font-medium leading-relaxed text-slate-600">
               {content.mode === 'single_attempt'
-                ? 'A pergunta encerra no primeiro clique valido do aluno.'
-                : 'O aluno continua clicando ate localizar todos os hotspots corretos.'}
+                ? 'A pergunta encerra no primeiro clique válido do aluno.'
+                : 'O aluno continua clicando até localizar todos os hotspots corretos.'}
             </p>
           </div>
         </div>
@@ -449,7 +449,7 @@ export function ImageHotspotQuestionEditor({
         <div className="rounded-[32px] border border-slate-200 bg-white p-5 shadow-sm">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
-              <p className="text-[10px] font-black uppercase tracking-[0.28em] text-slate-400">Configuracao da questao</p>
+              <p className="text-[10px] font-black uppercase tracking-[0.28em] text-slate-400">Configuração da questão</p>
               <p className="mt-2 text-sm font-semibold text-slate-600">
                 Ajuste a modalidade, o feedback geral e o formato de retorno exibido para o aluno.
               </p>
@@ -484,9 +484,9 @@ export function ImageHotspotQuestionEditor({
                 )}
               >
                 <p className="text-[11px] font-black uppercase tracking-[0.22em] text-slate-400">Modalidade</p>
-                <p className="mt-2 text-base font-black">Clique unico</p>
+                <p className="mt-2 text-base font-black">Clique único</p>
                 <p className="mt-2 text-xs font-medium leading-relaxed">
-                  Encerra a questao no primeiro clique valido do aluno.
+                  Encerra a questão no primeiro clique válido do aluno.
                 </p>
               </button>
 
@@ -503,7 +503,7 @@ export function ImageHotspotQuestionEditor({
                 <p className="text-[11px] font-black uppercase tracking-[0.22em] text-slate-400">Modalidade</p>
                 <p className="mt-2 text-base font-black">Encontrar todos</p>
                 <p className="mt-2 text-xs font-medium leading-relaxed">
-                  O aluno continua clicando ate encontrar todos os hotspots corretos.
+                  O aluno continua clicando até encontrar todos os hotspots corretos.
                 </p>
               </button>
             </div>
@@ -526,10 +526,10 @@ export function ImageHotspotQuestionEditor({
             <div className="rounded-[24px] border border-slate-200 bg-slate-50/70 px-4 py-4">
               <p className="text-[10px] font-black uppercase tracking-[0.28em] text-slate-400">Feedback imediato</p>
               <p className="mt-2 text-base font-black text-slate-900">
-                {content.show_feedback_as_popup ? 'Exibir como popup' : 'Exibir no card da questao'}
+                {content.show_feedback_as_popup ? 'Exibir como popup' : 'Exibir no card da questão'}
               </p>
               <p className="mt-2 text-xs font-medium leading-relaxed text-slate-600">
-                Define se o retorno do clique aparece em popup destacado ou na propria area da pergunta.
+                Define se o retorno do clique aparece em popup destacado ou na própria área da pergunta.
               </p>
             </div>
           </div>
@@ -620,7 +620,7 @@ export function ImageHotspotQuestionEditor({
                   onChange={(event) => updateTarget(selectedTarget.id, { label: event.target.value })}
                   onBlur={() => void onPersist(content)}
                   className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-700 outline-none transition focus:border-sky-300 focus:ring-4 focus:ring-sky-100"
-                  placeholder="Ex.: area do cranio, osso frontal, hotspot 1..."
+                  placeholder="Ex.: área do crânio, osso frontal, hotspot 1..."
                 />
               </label>
 
@@ -650,7 +650,7 @@ export function ImageHotspotQuestionEditor({
                   )}
                 >
                   <p className="text-sm font-black">Hotspot incorreto</p>
-                  <p className="mt-2 text-xs font-medium leading-relaxed">Mostra feedback, mas nao conta como acerto.</p>
+                  <p className="mt-2 text-xs font-medium leading-relaxed">Mostra feedback, mas não conta como acerto.</p>
                 </button>
               </div>
 
