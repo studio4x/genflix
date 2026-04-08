@@ -278,8 +278,8 @@ export function ImageHotspotQuestionEditor({
   const stageUrl = content.asset.signed_url || content.asset.storage_path
 
   return (
-    <div className="grid gap-6 xl:grid-cols-[minmax(0,1.2fr)_380px] xl:items-start">
-      <div className="xl:sticky xl:top-6">
+    <div className="grid gap-6 xl:grid-cols-[minmax(0,1.35fr)_380px] xl:items-start">
+      <div className="space-y-4 xl:sticky xl:top-6">
         <div className="overflow-hidden rounded-[36px] border border-slate-200 bg-white shadow-sm">
           <div className="flex flex-wrap items-start justify-between gap-4 border-b border-slate-100 px-6 py-5">
             <div>
@@ -301,44 +301,17 @@ export function ImageHotspotQuestionEditor({
             </div>
           </div>
 
-          <div className="border-b border-slate-100 bg-slate-50/50 px-6 py-5">
-            <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
-              <div className="grid gap-3 sm:grid-cols-2">
-                <button
-                  type="button"
-                  onClick={() => handleModeChange('single_attempt')}
-                  className={cn(
-                    'rounded-2xl border px-4 py-4 text-left transition-all',
-                    content.mode === 'single_attempt'
-                      ? 'border-sky-300 bg-sky-50 text-sky-900 shadow-sm'
-                      : 'border-slate-200 bg-white text-slate-600 hover:border-sky-200 hover:bg-sky-50/50',
-                  )}
-                >
-                  <p className="text-sm font-black">Clique unico</p>
-                  <p className="mt-2 text-xs font-medium leading-relaxed">
-                    Encerra a questao no primeiro clique valido do aluno.
-                  </p>
-                </button>
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 bg-slate-50/50 px-6 py-4">
+            <div className="min-w-[240px] flex-1">
+              <p className="text-[10px] font-black uppercase tracking-[0.28em] text-slate-400">Area de trabalho</p>
+              <p className="mt-2 text-sm font-semibold text-slate-600">
+                Clique na imagem para criar um hotspot e arraste o retangulo para ajustar a area clicavel.
+              </p>
+            </div>
 
-                <button
-                  type="button"
-                  onClick={() => handleModeChange('find_all')}
-                  className={cn(
-                    'rounded-2xl border px-4 py-4 text-left transition-all',
-                    content.mode === 'find_all'
-                      ? 'border-emerald-300 bg-emerald-50 text-emerald-900 shadow-sm'
-                      : 'border-slate-200 bg-white text-slate-600 hover:border-emerald-200 hover:bg-emerald-50/50',
-                  )}
-                >
-                  <p className="text-sm font-black">Encontrar todos</p>
-                  <p className="mt-2 text-xs font-medium leading-relaxed">
-                    O aluno continua clicando ate encontrar todos os hotspots corretos.
-                  </p>
-                </button>
-              </div>
-
-              <div className="flex items-center gap-3 rounded-full border border-slate-200 bg-white px-3 py-2 shadow-sm">
-                <span className="text-[10px] font-black uppercase tracking-[0.28em] text-slate-400">Zoom</span>
+            <div className="flex items-center gap-3 rounded-full border border-slate-200 bg-white px-3 py-2 shadow-sm">
+              <span className="text-[10px] font-black uppercase tracking-[0.28em] text-slate-400">Zoom</span>
+              <div className="flex items-center gap-1">
                 {[75, 100, 150].map((preset) => (
                   <button
                     key={preset}
@@ -355,43 +328,6 @@ export function ImageHotspotQuestionEditor({
                   </button>
                 ))}
               </div>
-            </div>
-
-            <div className="mt-4 grid gap-4 md:grid-cols-[minmax(0,1fr)_220px]">
-              <label className="block">
-                <span className="mb-2 block text-[10px] font-black uppercase tracking-[0.28em] text-slate-400">Feedback ao clicar fora</span>
-                <textarea
-                  value={content.outside_click_feedback ?? ''}
-                  onChange={(event) => emit({
-                    ...content,
-                    outside_click_feedback: event.target.value,
-                  })}
-                  onBlur={() => void onPersist(content)}
-                  rows={3}
-                  className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 outline-none transition focus:border-sky-300 focus:ring-4 focus:ring-sky-100"
-                  placeholder="Mensagem exibida quando o aluno clicar fora dos hotspots."
-                />
-              </label>
-
-              <button
-                type="button"
-                onClick={() => emit({
-                  ...content,
-                  show_feedback_as_popup: !content.show_feedback_as_popup,
-                }, true)}
-                className={cn(
-                  'rounded-[28px] border px-4 py-4 text-left transition-all',
-                  content.show_feedback_as_popup
-                    ? 'border-sky-300 bg-sky-50 text-sky-900 shadow-sm'
-                    : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300',
-                )}
-              >
-                <p className="text-[10px] font-black uppercase tracking-[0.28em] text-slate-400">Feedback imediato</p>
-                <p className="mt-3 text-base font-black">{content.show_feedback_as_popup ? 'Exibir como popup' : 'Exibir no card da questao'}</p>
-                <p className="mt-2 text-xs font-medium leading-relaxed">
-                  Define se o retorno do clique aparece em popup destacado ou na propria area da pergunta.
-                </p>
-              </button>
             </div>
           </div>
 
@@ -479,11 +415,128 @@ export function ImageHotspotQuestionEditor({
             ) : null}
           </div>
         </div>
+
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div className="rounded-[24px] border border-slate-200 bg-white px-4 py-4 shadow-sm">
+            <p className="text-[10px] font-black uppercase tracking-[0.28em] text-slate-400">Resumo rapido</p>
+            <div className="mt-3 grid grid-cols-2 gap-3">
+              <div className="rounded-2xl bg-slate-50 px-3 py-3">
+                <p className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">Hotspots</p>
+                <p className="mt-1 text-lg font-black text-slate-900">{content.targets.length}</p>
+              </div>
+              <div className="rounded-2xl bg-slate-50 px-3 py-3">
+                <p className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">Corretos</p>
+                <p className="mt-1 text-lg font-black text-emerald-700">{correctTargetsCount}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-[24px] border border-slate-200 bg-white px-4 py-4 shadow-sm">
+            <p className="text-[10px] font-black uppercase tracking-[0.28em] text-slate-400">Fluxo do aluno</p>
+            <p className="mt-2 text-base font-black text-slate-900">
+              {content.mode === 'single_attempt' ? 'Clique unico' : 'Encontrar todos'}
+            </p>
+            <p className="mt-2 text-xs font-medium leading-relaxed text-slate-600">
+              {content.mode === 'single_attempt'
+                ? 'A pergunta encerra no primeiro clique valido do aluno.'
+                : 'O aluno continua clicando ate localizar todos os hotspots corretos.'}
+            </p>
+          </div>
+        </div>
       </div>
 
       <div className="space-y-6">
         <div className="rounded-[32px] border border-slate-200 bg-white p-5 shadow-sm">
-          <div className="flex items-center justify-between gap-3">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-[0.28em] text-slate-400">Configuracao da questao</p>
+              <p className="mt-2 text-sm font-semibold text-slate-600">
+                Ajuste a modalidade, o feedback geral e o formato de retorno exibido para o aluno.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => emit({
+                ...content,
+                show_feedback_as_popup: !content.show_feedback_as_popup,
+              }, true)}
+              className={cn(
+                'rounded-full px-3 py-1.5 text-[11px] font-black uppercase tracking-widest transition-all',
+                content.show_feedback_as_popup
+                  ? 'border border-sky-300 bg-sky-50 text-sky-800'
+                  : 'border border-slate-200 bg-slate-50 text-slate-600 hover:border-slate-300',
+              )}
+            >
+              {content.show_feedback_as_popup ? 'Popup ativo' : 'Feedback no card'}
+            </button>
+          </div>
+
+          <div className="mt-5 grid gap-4">
+            <div className="grid gap-3 sm:grid-cols-2">
+              <button
+                type="button"
+                onClick={() => handleModeChange('single_attempt')}
+                className={cn(
+                  'rounded-[24px] border px-4 py-4 text-left transition-all',
+                  content.mode === 'single_attempt'
+                    ? 'border-sky-300 bg-sky-50 text-sky-900 shadow-sm'
+                    : 'border-slate-200 bg-white text-slate-600 hover:border-sky-200 hover:bg-sky-50/50',
+                )}
+              >
+                <p className="text-[11px] font-black uppercase tracking-[0.22em] text-slate-400">Modalidade</p>
+                <p className="mt-2 text-base font-black">Clique unico</p>
+                <p className="mt-2 text-xs font-medium leading-relaxed">
+                  Encerra a questao no primeiro clique valido do aluno.
+                </p>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleModeChange('find_all')}
+                className={cn(
+                  'rounded-[24px] border px-4 py-4 text-left transition-all',
+                  content.mode === 'find_all'
+                    ? 'border-emerald-300 bg-emerald-50 text-emerald-900 shadow-sm'
+                    : 'border-slate-200 bg-white text-slate-600 hover:border-emerald-200 hover:bg-emerald-50/50',
+                )}
+              >
+                <p className="text-[11px] font-black uppercase tracking-[0.22em] text-slate-400">Modalidade</p>
+                <p className="mt-2 text-base font-black">Encontrar todos</p>
+                <p className="mt-2 text-xs font-medium leading-relaxed">
+                  O aluno continua clicando ate encontrar todos os hotspots corretos.
+                </p>
+              </button>
+            </div>
+
+            <label className="block">
+              <span className="mb-2 block text-[10px] font-black uppercase tracking-[0.28em] text-slate-400">Feedback ao clicar fora</span>
+              <textarea
+                value={content.outside_click_feedback ?? ''}
+                onChange={(event) => emit({
+                  ...content,
+                  outside_click_feedback: event.target.value,
+                })}
+                onBlur={() => void onPersist(content)}
+                rows={4}
+                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 outline-none transition focus:border-sky-300 focus:ring-4 focus:ring-sky-100"
+                placeholder="Mensagem exibida quando o aluno clicar fora dos hotspots."
+              />
+            </label>
+
+            <div className="rounded-[24px] border border-slate-200 bg-slate-50/70 px-4 py-4">
+              <p className="text-[10px] font-black uppercase tracking-[0.28em] text-slate-400">Feedback imediato</p>
+              <p className="mt-2 text-base font-black text-slate-900">
+                {content.show_feedback_as_popup ? 'Exibir como popup' : 'Exibir no card da questao'}
+              </p>
+              <p className="mt-2 text-xs font-medium leading-relaxed text-slate-600">
+                Define se o retorno do clique aparece em popup destacado ou na propria area da pergunta.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="rounded-[32px] border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <p className="text-[10px] font-black uppercase tracking-[0.28em] text-slate-400">Hotspots</p>
               <p className="mt-2 text-sm font-semibold text-slate-600">
@@ -501,7 +554,7 @@ export function ImageHotspotQuestionEditor({
             </Button>
           </div>
 
-          <div className="mt-5 space-y-3">
+          <div className="mt-5 grid max-h-[340px] gap-3 overflow-auto pr-1">
             {content.targets.map((target, index) => {
               const isSelected = target.id === selectedTargetId
               return (
@@ -534,17 +587,28 @@ export function ImageHotspotQuestionEditor({
 
         {selectedTarget ? (
           <div className="rounded-[32px] border border-slate-200 bg-white p-5 shadow-sm">
-            <div className="flex items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <p className="text-[10px] font-black uppercase tracking-[0.28em] text-slate-400">Ajuste detalhado</p>
                 <p className="mt-2 text-lg font-black text-slate-900">{selectedTarget.label?.trim() || 'Hotspot selecionado'}</p>
               </div>
-              <span className={cn(
-                'rounded-full px-3 py-1 text-[11px] font-black uppercase tracking-widest',
-                selectedTarget.is_correct ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700',
-              )}>
-                {selectedTarget.is_correct ? 'Correto' : 'Incorreto'}
-              </span>
+              <div className="flex items-center gap-2">
+                <span className={cn(
+                  'rounded-full px-3 py-1 text-[11px] font-black uppercase tracking-widest',
+                  selectedTarget.is_correct ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700',
+                )}>
+                  {selectedTarget.is_correct ? 'Correto' : 'Incorreto'}
+                </span>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="rounded-full"
+                  onClick={deleteSelectedTarget}
+                  disabled={content.targets.length === 1}
+                >
+                  Remover
+                </Button>
+              </div>
             </div>
 
             <div className="mt-5 space-y-4">
