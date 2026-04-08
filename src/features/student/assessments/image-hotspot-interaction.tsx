@@ -232,13 +232,13 @@ export function ImageHotspotInteraction({
                     handleTargetClick(target.id)
                   }}
                   className={cn(
-                    'absolute rounded-[18px] border-2 transition-all',
+                    'absolute cursor-pointer rounded-[18px] border-2 outline-none transition-all',
                     isCorrectFound
                       ? 'border-emerald-500 bg-emerald-400/22'
                       : isIncorrectMarked
                         ? 'border-rose-500 bg-rose-400/18'
-                        : 'border-transparent bg-transparent hover:border-cyan-300/70 hover:bg-cyan-300/8',
-                    isHighlighted ? 'shadow-[0_0_0_4px_rgba(34,211,238,0.18)]' : '',
+                        : 'border-transparent bg-transparent focus-visible:border-cyan-300/70 focus-visible:bg-cyan-300/8',
+                    isHighlighted ? 'shadow-[0_0_0_4px_rgba(34,211,238,0.18)]' : 'shadow-none',
                   )}
                   style={{
                     left: `${target.x}%`,
