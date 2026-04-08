@@ -40,6 +40,7 @@ export const assessmentQuestionFormSchema = z.object({
     'case_study_single_choice',
     'drag_drop_labeling',
     'fill_in_the_blanks',
+    'image_hotspot',
     'coloring',
   ]),
   essay_expected_answer: z.string().trim().optional(),

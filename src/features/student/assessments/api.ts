@@ -6,6 +6,7 @@ import type {
   AssessmentAttempt,
   AssessmentCaseStudy,
   AssessmentInteractionResponsePayload,
+  ImageHotspotResponsePayload,
   AssessmentQuestion,
 } from '@/types/content'
 
@@ -91,12 +92,18 @@ export interface SubmitAssessmentAttemptResult {
     is_correct: boolean
     earned_points: number
     possible_points: number
-    entries: {
+    mode?: 'single_attempt' | 'find_all'
+    kind?: 'image_hotspot'
+    entries?: {
       slot_id: string
       submitted_token_id: string | null
       expected_token_id: string
       is_correct: boolean
     }[]
+    expected_correct_target_ids?: string[]
+    found_target_ids?: string[]
+    incorrect_target_ids?: string[]
+    outside_click_count?: number
   }[]
 }
 
@@ -339,6 +346,19 @@ export function buildInteractionAnswerPayload(entries: Record<string, string | n
       slot_id: slotId,
       token_id: tokenId,
     })),
+  }
+}
+
+export function createStudentImageHotspotAnswerPayload(
+  mode: ImageHotspotResponsePayload['mode'],
+): ImageHotspotResponsePayload {
+  return {
+    kind: 'image_hotspot',
+    mode,
+    selected_target_id: null,
+    found_target_ids: [],
+    incorrect_target_ids: [],
+    outside_click_count: 0,
   }
 }
 

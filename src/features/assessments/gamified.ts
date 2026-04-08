@@ -9,6 +9,10 @@ import type {
   ColoringInteractionContent,
   ColoringRenderMode,
   FillInTheBlanksInteractionContent,
+  ImageHotspotAnswerKeyPayload,
+  ImageHotspotInteractionContent,
+  ImageHotspotResponsePayload,
+  TokenMappingAnswerKeyPayload,
 } from '@/types/content'
 
 export const assessmentInteractionTokenSchema = z.object({
@@ -39,6 +43,27 @@ export const dragDropLabelingInteractionContentSchema = z.object({
   asset: assessmentInteractionAssetSchema,
   tokens: z.array(assessmentInteractionTokenSchema).min(1, 'Adicione ao menos um rotulo.'),
   targets: z.array(dragDropLabelingTargetSchema).min(1, 'Adicione ao menos uma area de encaixe.'),
+})
+
+export const imageHotspotTargetSchema = z.object({
+  id: z.string().trim().min(1, 'Identificador do hotspot obrigatorio.'),
+  x: z.number().min(0).max(100),
+  y: z.number().min(0).max(100),
+  w: z.number().positive().max(100),
+  h: z.number().positive().max(100),
+  label: z.string().trim().max(160).nullable().optional(),
+  is_correct: z.boolean(),
+  feedback_text: z.string().trim().max(1000).nullable().optional(),
+})
+
+export const imageHotspotInteractionContentSchema = z.object({
+  kind: z.literal('image_hotspot'),
+  mode: z.enum(['single_attempt', 'find_all']),
+  instruction: z.string().trim().min(2, 'Instrucao obrigatoria.'),
+  asset: assessmentInteractionAssetSchema,
+  targets: z.array(imageHotspotTargetSchema).min(1, 'Adicione ao menos um hotspot.'),
+  outside_click_feedback: z.string().trim().max(1000).nullable().optional(),
+  show_feedback_as_popup: z.boolean().default(true),
 })
 
 export const coloringAreaSchema = z.object({
@@ -118,26 +143,54 @@ export const fillInTheBlanksInteractionContentSchema = z.object({
 export const assessmentInteractionContentSchema = z.union([
   dragDropLabelingInteractionContentSchema,
   fillInTheBlanksInteractionContentSchema,
+  imageHotspotInteractionContentSchema,
   coloringLegacyInteractionContentSchema,
   coloringSvgInteractionContentSchema,
 ])
 
-export const assessmentQuestionAnswerKeyPayloadSchema = z.object({
+export const tokenMappingAnswerKeyPayloadSchema = z.object({
   entries: z.array(z.object({
     slot_id: z.string().trim().min(1, 'Slot invalido.'),
     token_id: z.string().trim().min(1, 'Token invalido.'),
   })).min(1, 'Defina ao menos uma correspondencia correta.'),
 })
 
-export const assessmentInteractionResponsePayloadSchema = z.object({
+export const imageHotspotAnswerKeyPayloadSchema = z.object({
+  kind: z.literal('image_hotspot'),
+  correct_target_ids: z.array(z.string().trim().min(1, 'Hotspot invalido.')).min(1, 'Defina ao menos um hotspot correto.'),
+})
+
+export const assessmentQuestionAnswerKeyPayloadSchema = z.union([
+  tokenMappingAnswerKeyPayloadSchema,
+  imageHotspotAnswerKeyPayloadSchema,
+])
+
+export const tokenMappingResponsePayloadSchema = z.object({
   entries: z.array(z.object({
     slot_id: z.string().trim().min(1, 'Slot invalido.'),
     token_id: z.string().trim().nullable(),
   })),
 })
 
+export const imageHotspotResponsePayloadSchema = z.object({
+  kind: z.literal('image_hotspot'),
+  mode: z.enum(['single_attempt', 'find_all']),
+  selected_target_id: z.string().trim().min(1, 'Hotspot invalido.').nullable(),
+  found_target_ids: z.array(z.string().trim().min(1, 'Hotspot invalido.')),
+  incorrect_target_ids: z.array(z.string().trim().min(1, 'Hotspot invalido.')),
+  outside_click_count: z.number().int().min(0),
+})
+
+export const assessmentInteractionResponsePayloadSchema = z.union([
+  tokenMappingResponsePayloadSchema,
+  imageHotspotResponsePayloadSchema,
+])
+
 export function isGamifiedQuestionType(questionType: AssessmentQuestionType) {
-  return questionType === 'drag_drop_labeling' || questionType === 'fill_in_the_blanks' || questionType === 'coloring'
+  return questionType === 'drag_drop_labeling'
+    || questionType === 'fill_in_the_blanks'
+    || questionType === 'image_hotspot'
+    || questionType === 'coloring'
 }
 
 export function isEssayQuestionType(questionType: AssessmentQuestionType) {
@@ -148,15 +201,42 @@ export function isChoiceQuestionType(questionType: AssessmentQuestionType) {
   return questionType === 'single_choice' || questionType === 'case_study_single_choice'
 }
 
-export function createDefaultInteractionContent(questionType: AssessmentQuestionType): AssessmentInteractionContent | null {
+export function isImageHotspotInteractionContent(
+  content: AssessmentInteractionContent | null | undefined,
+): content is ImageHotspotInteractionContent {
+  return content?.kind === 'image_hotspot'
+}
+
+export function isImageHotspotAnswerKeyPayload(
+  payload: AssessmentQuestionAnswerKeyPayload | null | undefined,
+): payload is ImageHotspotAnswerKeyPayload {
+  return Boolean(payload && 'kind' in payload && payload.kind === 'image_hotspot')
+}
+
+export function isImageHotspotResponsePayload(
+  payload: AssessmentInteractionResponsePayload | null | undefined,
+): payload is ImageHotspotResponsePayload {
+  return Boolean(payload && 'kind' in payload && payload.kind === 'image_hotspot')
+}
+
+export function isTokenMappingAnswerKeyPayload(
+  payload: AssessmentQuestionAnswerKeyPayload | null | undefined,
+): payload is TokenMappingAnswerKeyPayload {
+  return Boolean(payload && 'entries' in payload)
+}
+
+export function createDefaultInteractionContent(
+  questionType: AssessmentQuestionType,
+  options?: { hotspotMode?: ImageHotspotInteractionContent['mode'] },
+): AssessmentInteractionContent | null {
   if (questionType === 'drag_drop_labeling') {
     return {
       kind: 'drag_drop_labeling',
-      instruction: 'Arraste os rótulos para as áreas corretas.',
+      instruction: 'Arraste os rotulos para as areas corretas.',
       asset: {
         storage_path: '',
         signed_url: null,
-        alt: 'Imagem do exercício',
+        alt: 'Imagem do exercicio',
         width: 1200,
         height: 800,
       },
@@ -164,7 +244,7 @@ export function createDefaultInteractionContent(questionType: AssessmentQuestion
         { id: crypto.randomUUID(), label: '' },
       ],
       targets: [
-        { id: crypto.randomUUID(), x: 20, y: 20, w: 18, h: 10, label: 'Área 1' },
+        { id: crypto.randomUUID(), x: 20, y: 20, w: 18, h: 10, label: 'Area 1' },
       ],
     }
   }
@@ -199,6 +279,35 @@ export function createDefaultInteractionContent(questionType: AssessmentQuestion
           extra_tokens: [],
         },
       ],
+    }
+  }
+
+  if (questionType === 'image_hotspot') {
+    return {
+      kind: 'image_hotspot',
+      mode: options?.hotspotMode ?? 'single_attempt',
+      instruction: 'Clique na imagem para selecionar o hotspot correto.',
+      asset: {
+        storage_path: '',
+        signed_url: null,
+        alt: 'Imagem do quiz de hotspot',
+        width: 1200,
+        height: 800,
+      },
+      targets: [
+        {
+          id: crypto.randomUUID(),
+          x: 20,
+          y: 20,
+          w: 18,
+          h: 12,
+          label: 'Hotspot 1',
+          is_correct: true,
+          feedback_text: 'Correto! Voce clicou na area esperada.',
+        },
+      ],
+      outside_click_feedback: 'Clique em uma das areas destacadas na imagem.',
+      show_feedback_as_popup: true,
     }
   }
 
@@ -258,6 +367,15 @@ export function createAnswerKeyFromInteraction(
     }
   }
 
+  if (content.kind === 'image_hotspot') {
+    return {
+      kind: 'image_hotspot',
+      correct_target_ids: content.targets
+        .filter((target) => target.is_correct)
+        .map((target) => target.id),
+    }
+  }
+
   if (content.kind === 'coloring') {
     return {
       entries: getColoringSlotIds(content).map((slotId, index) => ({
@@ -281,7 +399,7 @@ export function getInteractionSlotIds(content: AssessmentInteractionContent | nu
     return []
   }
 
-  if (content.kind === 'drag_drop_labeling') {
+  if (content.kind === 'drag_drop_labeling' || content.kind === 'image_hotspot') {
     return content.targets.map((target) => target.id)
   }
 
@@ -295,7 +413,11 @@ export function getInteractionSlotIds(content: AssessmentInteractionContent | nu
 }
 
 export function getInteractionTokenIds(content: AssessmentInteractionContent | null) {
-  return content?.tokens.map((token) => token.id) ?? []
+  if (!content || content.kind === 'image_hotspot') {
+    return []
+  }
+
+  return content.tokens.map((token) => token.id)
 }
 
 export function validateInteractionBundle(
@@ -322,14 +444,52 @@ export function validateInteractionBundle(
   }
 
   const slotIds = new Set(getInteractionSlotIds(parsedContent.data))
-  const tokenIds = new Set(getInteractionTokenIds(parsedContent.data))
 
   if (slotIds.size === 0) {
     throw new Error('A interacao precisa ter ao menos uma area ou lacuna.')
   }
 
+  if (parsedContent.data.kind === 'image_hotspot') {
+    if (!isImageHotspotAnswerKeyPayload(parsedAnswerKey.data)) {
+      throw new Error('O gabarito do hotspot esta invalido.')
+    }
+
+    const correctTargetIds = parsedContent.data.targets
+      .filter((target) => target.is_correct)
+      .map((target) => target.id)
+
+    if (correctTargetIds.length === 0) {
+      throw new Error('Defina ao menos um hotspot correto.')
+    }
+
+    const answerKeyIds = new Set<string>()
+    for (const targetId of parsedAnswerKey.data.correct_target_ids) {
+      if (!slotIds.has(targetId)) {
+        throw new Error('O gabarito referencia um hotspot inexistente.')
+      }
+
+      answerKeyIds.add(targetId)
+    }
+
+    if (answerKeyIds.size === 0) {
+      throw new Error('Defina ao menos um hotspot correto.')
+    }
+
+    if (answerKeyIds.size !== correctTargetIds.length || correctTargetIds.some((targetId) => !answerKeyIds.has(targetId))) {
+      throw new Error('Sincronize os hotspots corretos antes de salvar.')
+    }
+
+    return
+  }
+
+  const tokenIds = new Set(getInteractionTokenIds(parsedContent.data))
+
   if (tokenIds.size === 0) {
     throw new Error('A interacao precisa ter ao menos um item no banco.')
+  }
+
+  if (!isTokenMappingAnswerKeyPayload(parsedAnswerKey.data)) {
+    throw new Error('O gabarito da interacao esta invalido.')
   }
 
   if (parsedContent.data.tokens.some((token) => token.label.trim().length === 0)) {
@@ -403,4 +563,17 @@ export function normalizeResponsePayload(
   payload: AssessmentInteractionResponsePayload | null | undefined,
 ) {
   return assessmentInteractionResponsePayloadSchema.parse(payload ?? { entries: [] })
+}
+
+export function createDefaultImageHotspotResponsePayload(
+  mode: ImageHotspotInteractionContent['mode'],
+): ImageHotspotResponsePayload {
+  return {
+    kind: 'image_hotspot',
+    mode,
+    selected_target_id: null,
+    found_target_ids: [],
+    incorrect_target_ids: [],
+    outside_click_count: 0,
+  }
 }

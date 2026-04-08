@@ -48,6 +48,7 @@ import type {
   AssessmentGradingMode,
   AssessmentQuestionType,
   CourseModule,
+  ImageHotspotMode,
 } from '@/types/content'
 
 function sortQuestionsByPosition(items: AssessmentQuestionWithOptions[]) {
@@ -106,9 +107,11 @@ function getQuestionScoringExplanation(question: AssessmentQuestionWithOptions) 
   }
 
   const itemCount = getGamifiedItemCount(question)
-  const itemLabel = question.question_type === 'drag_drop_labeling' || question.question_type === 'coloring'
-    ? 'area'
-    : 'lacuna'
+  const itemLabel = question.question_type === 'fill_in_the_blanks'
+    ? 'lacuna'
+    : question.question_type === 'image_hotspot'
+      ? 'hotspot'
+      : 'area'
   const gradingMode = question.answer_key?.grading_mode ?? 'partial_by_item'
 
   if (itemCount === 0) {
@@ -123,8 +126,12 @@ function getQuestionScoringExplanation(question: AssessmentQuestionWithOptions) 
   return `Esta pergunta vale ${pointsText} ponto(s), divididos entre ${itemCount} ${itemLabel}${itemCount > 1 ? 's' : ''}. Cada item correto vale ${formatPoints(pointsPerItem)} ponto(s).`
 }
 
-function getDefaultGamifiedState(questionId: string, questionType: AssessmentQuestionType) {
-  const interactionContent = createDefaultInteractionContent(questionType)
+function getDefaultGamifiedState(
+  questionId: string,
+  questionType: AssessmentQuestionType,
+  options?: { hotspotMode?: ImageHotspotMode },
+) {
+  const interactionContent = createDefaultInteractionContent(questionType, options)
   const answerKey = createAnswerKeyFromInteraction(interactionContent)
   const timestamp = new Date().toISOString()
 
@@ -165,6 +172,8 @@ function getQuestionTypeDisplayLabel(questionType: AssessmentQuestionType | 'cas
       return 'Arrastar e Soltar'
     case 'fill_in_the_blanks':
       return 'Preencher Lacunas'
+    case 'image_hotspot':
+      return 'Quiz de Hotspot'
     case 'coloring':
       return 'Quiz de Colorir'
     case 'case_study':
@@ -222,6 +231,7 @@ export function AssessmentBuilderPanel() {
   const [isImporting, setIsImporting] = useState(false)
   const [isDeletingAssessment, setIsDeletingAssessment] = useState(false)
   const [importError, setImportError] = useState<string | null>(null)
+  const [isHotspotModeModalOpen, setIsHotspotModeModalOpen] = useState(false)
   const questionPersistQueueRef = useRef<Record<string, Promise<void>>>({})
   const questionsRef = useRef<AssessmentQuestionWithOptions[]>([])
   const caseStudiesRef = useRef<AssessmentCaseStudyWithQuestions[]>([])
@@ -529,6 +539,14 @@ export function AssessmentBuilderPanel() {
       isVisible: isCourseQuestionTypeEnabled(quizTypeSettings, 'fill_in_the_blanks'),
     },
     {
+      title: 'Quiz de Hotspot',
+      description: 'Imagem com hotspots corretos/incorretos e feedback imediato.',
+      className: 'border-sky-100 text-sky-700 hover:bg-sky-50/70',
+      iconClassName: 'border-sky-200 bg-sky-50',
+      onClick: () => setIsHotspotModeModalOpen(true),
+      isVisible: isCourseQuestionTypeEnabled(quizTypeSettings, 'image_hotspot'),
+    },
+    {
       title: 'Quiz de Colorir',
       description: 'Imagem com areas pintaveis e checklist de cores por area.',
       className: 'border-fuchsia-100 text-fuchsia-700 hover:bg-fuchsia-50/70',
@@ -582,13 +600,16 @@ export function AssessmentBuilderPanel() {
     } as const
   }
 
-  async function handleAddQuestion(questionType: AssessmentQuestionType = 'single_choice') {
+  async function handleAddQuestion(
+    questionType: AssessmentQuestionType = 'single_choice',
+    options?: { hotspotMode?: ImageHotspotMode },
+  ) {
     if (!assessment) return
     if (!ensureQuestionTypeEnabled(questionType)) return
 
     try {
       const defaultGamified = isGamifiedQuestionType(questionType)
-        ? getDefaultGamifiedState('pending', questionType)
+        ? getDefaultGamifiedState('pending', questionType, options)
         : { interaction: null, answer_key: null }
       const createdQuestion = await createAssessmentQuestion(assessment.id, {
         question_text: 'Nova Pergunta...',
@@ -603,7 +624,7 @@ export function AssessmentBuilderPanel() {
       setQuestions((prev) => sortQuestionsByPosition([
         ...prev,
         buildQuestionState(createdQuestion, isGamifiedQuestionType(questionType)
-          ? getDefaultGamifiedState(createdQuestion.id, questionType)
+          ? getDefaultGamifiedState(createdQuestion.id, questionType, options)
           : undefined),
       ]))
     } catch (createError) {
@@ -1010,6 +1031,7 @@ export function AssessmentBuilderPanel() {
       : question.question_type === 'case_study_ai'
     const canUseDragDrop = isStandalone && question.question_type === 'drag_drop_labeling'
     const canUseFillInTheBlanks = isStandalone && question.question_type === 'fill_in_the_blanks'
+    const canUseImageHotspot = isStandalone && question.question_type === 'image_hotspot'
     const canUseColoring = isStandalone && question.question_type === 'coloring'
     const isCurrentTypeDisabled = !isCourseQuestionTypeEnabled(quizTypeSettings, question.question_type)
     const setType = (type: AssessmentQuestionType) => void handleUpdateQuestionType(question.id, type)
@@ -1044,6 +1066,12 @@ export function AssessmentBuilderPanel() {
               label: 'Preencher Lacunas',
               activeClassName: 'bg-teal-600 text-white',
               idleClassName: 'border border-slate-200 bg-white text-slate-500 hover:border-teal-200 hover:text-teal-700',
+            },
+            {
+              type: 'image_hotspot' as const,
+              label: 'Quiz de Hotspot',
+              activeClassName: 'bg-sky-600 text-white',
+              idleClassName: 'border border-slate-200 bg-white text-slate-500 hover:border-sky-200 hover:text-sky-700',
             },
             {
               type: 'coloring' as const,
@@ -1140,6 +1168,17 @@ export function AssessmentBuilderPanel() {
                     }`}
                   >
                     Preencher Lacunas
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setType('image_hotspot')}
+                    className={`rounded-full px-3 py-1 text-[11px] font-black uppercase tracking-widest transition-colors ${
+                      canUseImageHotspot
+                        ? 'bg-sky-600 text-white'
+                        : 'border border-slate-200 bg-white text-slate-500 hover:border-sky-200 hover:text-sky-700'
+                    }`}
+                  >
+                    Quiz de Hotspot
                   </button>
                   <button
                     type="button"
@@ -1577,6 +1616,61 @@ export function AssessmentBuilderPanel() {
         </div>
         )}
       </div>
+
+      {isHotspotModeModalOpen ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4">
+          <div className="w-full max-w-xl rounded-[32px] border border-slate-200 bg-white p-6 shadow-2xl shadow-slate-900/20">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-[11px] font-black uppercase tracking-[0.28em] text-sky-600">Quiz de Hotspot</p>
+                <h3 className="mt-2 text-2xl font-black tracking-tight text-slate-900">Escolha a modalidade inicial</h3>
+                <p className="mt-3 text-sm font-medium leading-relaxed text-slate-600">
+                  Voce pode trocar depois no editor, mas a logica de resposta do aluno muda conforme a modalidade.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsHotspotModeModalOpen(false)}
+                className="rounded-full border border-slate-200 px-3 py-1 text-xs font-black uppercase tracking-widest text-slate-500 hover:bg-slate-50"
+              >
+                Fechar
+              </button>
+            </div>
+
+            <div className="mt-6 grid gap-4 md:grid-cols-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsHotspotModeModalOpen(false)
+                  void handleAddQuestion('image_hotspot', { hotspotMode: 'single_attempt' })
+                }}
+                className="rounded-[28px] border border-sky-200 bg-sky-50/70 p-5 text-left transition-all hover:-translate-y-0.5 hover:border-sky-300 hover:bg-sky-50"
+              >
+                <p className="text-sm font-black uppercase tracking-widest text-sky-700">Clique unico</p>
+                <p className="mt-3 text-lg font-black text-slate-900">Encerra no primeiro clique</p>
+                <p className="mt-2 text-sm font-medium leading-relaxed text-slate-600">
+                  Ideal para perguntas no estilo H5P, com acerto ou erro imediato e opcao de retry antes do envio final.
+                </p>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setIsHotspotModeModalOpen(false)
+                  void handleAddQuestion('image_hotspot', { hotspotMode: 'find_all' })
+                }}
+                className="rounded-[28px] border border-emerald-200 bg-emerald-50/70 p-5 text-left transition-all hover:-translate-y-0.5 hover:border-emerald-300 hover:bg-emerald-50"
+              >
+                <p className="text-sm font-black uppercase tracking-widest text-emerald-700">Encontrar todos</p>
+                <p className="mt-3 text-lg font-black text-slate-900">Procura todos os hotspots corretos</p>
+                <p className="mt-2 text-sm font-medium leading-relaxed text-slate-600">
+                  O aluno continua clicando na imagem ate localizar todas as regioes corretas, com progresso parcial durante a tentativa.
+                </p>
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {isImportModalOpen ? (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm animate-in fade-in duration-300">

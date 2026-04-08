@@ -5,10 +5,13 @@ import { useAuth } from '@/app/providers/auth-provider'
 import { Button } from '@/components/ui/button'
 import {
   assessmentInteractionContentSchema,
+  createDefaultImageHotspotResponsePayload,
   getColoringSlotIds as getColoringInteractionSlotIds,
+  isImageHotspotResponsePayload,
 } from '@/features/assessments/gamified'
 import {
   buildInteractionAnswerPayload,
+  createStudentImageHotspotAnswerPayload,
   fetchAssessmentForExecution,
   fetchOwnAssessmentAttemptRequest,
   fetchOwnAssessmentReview,
@@ -25,8 +28,9 @@ import {
   type SubmitAssessmentAttemptResult,
 } from '@/features/student/assessments/api'
 import { GamifiedInteraction } from '@/features/student/assessments/gamified-interaction'
+import { ImageHotspotInteraction } from '@/features/student/assessments/image-hotspot-interaction'
 import { fetchStudentCourseContentWithProgress } from '@/features/student/courses/api'
-import type { Assessment, StudentCourseModuleProgress } from '@/types/content'
+import type { Assessment, ImageHotspotResponsePayload, StudentCourseModuleProgress } from '@/types/content'
 
 function hashShuffleKey(value: string) {
   let hash = 0
@@ -85,6 +89,16 @@ function isChoiceQuestion(question: StudentAssessmentQuestionWithOptions) {
   return question.question_type === 'single_choice' || question.question_type === 'case_study_single_choice'
 }
 
+function isImageHotspotQuestion(question: StudentAssessmentQuestionWithOptions) {
+  const parsed = assessmentInteractionContentSchema.safeParse(question.interaction?.content ?? null)
+  return parsed.success && parsed.data.kind === 'image_hotspot'
+}
+
+function getImageHotspotContent(question: StudentAssessmentQuestionWithOptions) {
+  const parsed = assessmentInteractionContentSchema.safeParse(question.interaction?.content ?? null)
+  return parsed.success && parsed.data.kind === 'image_hotspot' ? parsed.data : null
+}
+
 function isScoredQuestion(question: StudentAssessmentQuestionWithOptions) {
   return question.question_type !== 'essay_ai'
 }
@@ -127,6 +141,10 @@ function getInteractionSlotIds(question: StudentAssessmentQuestionWithOptions) {
     return parsed.data.targets.map((target) => target.id)
   }
 
+  if (parsed.data.kind === 'image_hotspot') {
+    return parsed.data.targets.map((target) => target.id)
+  }
+
   if (parsed.data.kind === 'coloring') {
     return getColoringInteractionSlotIds(parsed.data)
   }
@@ -149,19 +167,52 @@ function isInteractionAnswered(
   return slotIds.every((slotId) => Boolean(questionAnswers[slotId]))
 }
 
+function isImageHotspotAnswered(
+  question: StudentAssessmentQuestionWithOptions,
+  hotspotAnswers: Record<string, ImageHotspotResponsePayload>,
+) {
+  const parsed = assessmentInteractionContentSchema.safeParse(question.interaction?.content ?? null)
+  if (!parsed.success || parsed.data.kind !== 'image_hotspot') {
+    return false
+  }
+
+  const payload = hotspotAnswers[question.id]
+  if (!payload) {
+    return false
+  }
+
+  if (parsed.data.mode === 'single_attempt') {
+    return Boolean(payload.selected_target_id || payload.outside_click_count > 0)
+  }
+
+  const correctTargetIds = parsed.data.targets.filter((target) => target.is_correct).map((target) => target.id)
+  return correctTargetIds.length > 0 && correctTargetIds.every((targetId) => payload.found_target_ids.includes(targetId))
+}
+
 function buildInteractionAnswerState(review: StudentAssessmentReview | null) {
   return Object.fromEntries(
     (review?.answers ?? [])
-      .filter((answer) => Array.isArray(answer.response_payload?.entries))
+      .filter((answer) => Boolean(answer.response_payload && 'entries' in answer.response_payload && Array.isArray(answer.response_payload.entries)))
       .map((answer) => [
         answer.question_id,
         Object.fromEntries(
-          (answer.response_payload?.entries ?? [])
+          (answer.response_payload && 'entries' in answer.response_payload ? answer.response_payload.entries : [])
             .filter((entry) => entry.slot_id)
             .map((entry) => [entry.slot_id, entry.token_id ?? null]),
         ),
       ]),
   ) as Record<string, Record<string, string | null>>
+}
+
+function buildHotspotAnswerState(review: StudentAssessmentReview | null) {
+  return Object.fromEntries(
+    (review?.answers ?? [])
+      .filter((answer) => isImageHotspotResponsePayload(answer.response_payload))
+      .map((answer) => [
+        answer.question_id,
+        answer.response_payload,
+      ]),
+  ) as Record<string, ImageHotspotResponsePayload>
 }
 
 function buildInteractionFeedbackLookup(question: StudentAssessmentQuestionWithOptions) {
@@ -173,7 +224,9 @@ function buildInteractionFeedbackLookup(question: StudentAssessmentQuestionWithO
     }
   }
 
-  const tokenLabels = new Map(parsed.data.tokens.map((token) => [token.id, token.label]))
+  const tokenLabels = new Map(
+    ('tokens' in parsed.data ? parsed.data.tokens : []).map((token) => [token.id, token.label]),
+  )
 
   if (parsed.data.kind === 'drag_drop_labeling') {
     return {
@@ -181,6 +234,18 @@ function buildInteractionFeedbackLookup(question: StudentAssessmentQuestionWithO
         parsed.data.targets.map((target, index) => [
           target.id,
           target.label?.trim() || `Area ${index + 1}`,
+        ]),
+      ),
+      tokenLabels,
+    }
+  }
+
+  if (parsed.data.kind === 'image_hotspot') {
+    return {
+      slotLabels: new Map(
+        parsed.data.targets.map((target, index) => [
+          target.id,
+          target.label?.trim() || `Hotspot ${index + 1}`,
         ]),
       ),
       tokenLabels,
@@ -245,6 +310,7 @@ export function StudentAssessmentExecutionPage() {
   const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>({})
   const [textAnswers, setTextAnswers] = useState<Record<string, string>>({})
   const [interactionAnswers, setInteractionAnswers] = useState<Record<string, Record<string, string | null>>>({})
+  const [hotspotAnswers, setHotspotAnswers] = useState<Record<string, ImageHotspotResponsePayload>>({})
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isRequestingRetry, setIsRequestingRetry] = useState(false)
@@ -332,6 +398,7 @@ export function StudentAssessmentExecutionPage() {
           ),
         )
         setInteractionAnswers(buildInteractionAnswerState(reviewData))
+        setHotspotAnswers(buildHotspotAnswerState(reviewData))
       } catch (loadError) {
         setError(toErrorMessage(loadError))
       } finally {
@@ -397,9 +464,13 @@ export function StudentAssessmentExecutionPage() {
         return Boolean(selectedOptions[question.id])
       }
 
+      if (isImageHotspotQuestion(question)) {
+        return isImageHotspotAnswered(question, hotspotAnswers)
+      }
+
       return isInteractionAnswered(question, interactionAnswers)
     })
-  }, [caseStudies, interactionAnswers, questions, selectedOptions, textAnswers])
+  }, [caseStudies, hotspotAnswers, interactionAnswers, questions, selectedOptions, textAnswers])
 
   const currentQuestionAnswered = useMemo(() => {
     if (!currentItem) return false
@@ -413,9 +484,13 @@ export function StudentAssessmentExecutionPage() {
         return Boolean(selectedOptions[question.id])
       }
 
+      if (isImageHotspotQuestion(question)) {
+        return isImageHotspotAnswered(question, hotspotAnswers)
+      }
+
       return isInteractionAnswered(question, interactionAnswers)
     })
-  }, [currentItem, currentItemQuestions, interactionAnswers, selectedOptions, textAnswers])
+  }, [currentItem, currentItemQuestions, hotspotAnswers, interactionAnswers, selectedOptions, textAnswers])
 
   const isModuleQuizLockedByLessons = useMemo(() => {
     if (isAdmin) return false
@@ -566,7 +641,12 @@ export function StudentAssessmentExecutionPage() {
           question_id: question.id,
           option_id: null,
           answer_text: null,
-          response_payload: buildInteractionAnswerPayload(interactionAnswers[question.id] ?? {}),
+          response_payload: isImageHotspotQuestion(question)
+            ? (hotspotAnswers[question.id]
+              ?? createStudentImageHotspotAnswerPayload(
+                getImageHotspotContent(question)?.mode ?? 'single_attempt',
+              ))
+            : buildInteractionAnswerPayload(interactionAnswers[question.id] ?? {}),
         }
       })
 
@@ -641,11 +721,21 @@ export function StudentAssessmentExecutionPage() {
     })
   }
 
+  function handleHotspotChange(questionId: string, payload: ImageHotspotResponsePayload) {
+    if (isPerfectApprovedReview) return
+
+    setHotspotAnswers((prev) => ({
+      ...prev,
+      [questionId]: payload,
+    }))
+  }
+
   function resetAttemptState(nextAttemptNumber: number) {
     setResult(null)
     setSelectedOptions({})
     setTextAnswers({})
     setInteractionAnswers({})
+    setHotspotAnswers({})
     setCurrentQuestionIndex(0)
     setActiveAttemptNumber(nextAttemptNumber)
     setQuestions((currentQuestions) => shuffleQuestionOptionsForAttempt(currentQuestions, nextAttemptNumber))
@@ -730,6 +820,21 @@ export function StudentAssessmentExecutionPage() {
 
     if (isChoiceQuestion(question)) {
       return renderChoiceOptions(question)
+    }
+
+    if (isImageHotspotQuestion(question)) {
+      const hotspotContent = getImageHotspotContent(question)
+      if (!hotspotContent) {
+        return null
+      }
+      return (
+        <ImageHotspotInteraction
+          content={hotspotContent}
+          value={hotspotAnswers[question.id] ?? createDefaultImageHotspotResponsePayload(hotspotContent.mode)}
+          onChange={(payload) => handleHotspotChange(question.id, payload)}
+          readOnly={isPerfectApprovedReview}
+        />
+      )
     }
 
     return (
@@ -963,7 +1068,42 @@ export function StudentAssessmentExecutionPage() {
                       </div>
                       <h3 className="mt-3 text-lg font-black text-slate-900">{feedback.question_text}</h3>
                       <div className="mt-4 grid gap-3">
-                        {feedback.entries.map((entry, entryIndex) => (
+                        {feedback.kind === 'image_hotspot' ? (
+                          <>
+                            <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
+                              <p className="font-black uppercase tracking-widest text-[10px] text-slate-400">Modalidade</p>
+                              <p className="mt-2 font-semibold">
+                                {feedback.mode === 'single_attempt' ? 'Clique unico' : 'Encontrar todos'}
+                              </p>
+                            </div>
+                            <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
+                              <p className="font-black uppercase tracking-widest text-[10px] text-slate-400">Hotspots corretos encontrados</p>
+                              <p className="mt-2 font-semibold">
+                                {(feedback.found_target_ids ?? []).length > 0
+                                  ? (feedback.found_target_ids ?? [])
+                                    .map((targetId) => interactionFeedbackLookup.get(feedback.question_id)?.slotLabels.get(targetId) ?? 'Hotspot encontrado')
+                                    .join(', ')
+                                  : 'Nenhum hotspot correto encontrado'}
+                              </p>
+                            </div>
+                            {(feedback.incorrect_target_ids?.length ?? 0) > 0 ? (
+                              <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                                <p className="font-black uppercase tracking-widest text-[10px]">Cliques incorretos</p>
+                                <p className="mt-2 font-semibold">
+                                  {(feedback.incorrect_target_ids ?? [])
+                                    .map((targetId) => interactionFeedbackLookup.get(feedback.question_id)?.slotLabels.get(targetId) ?? 'Hotspot incorreto')
+                                    .join(', ')}
+                                </p>
+                              </div>
+                            ) : null}
+                            {(feedback.outside_click_count ?? 0) > 0 ? (
+                              <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                                <p className="font-black uppercase tracking-widest text-[10px]">Cliques fora</p>
+                                <p className="mt-2 font-semibold">{feedback.outside_click_count} clique(s) fora dos hotspots.</p>
+                              </div>
+                            ) : null}
+                          </>
+                        ) : feedback.entries?.map((entry, entryIndex) => (
                           <div
                             key={`${feedback.question_id}-${entry.slot_id}`}
                             className={`rounded-2xl border px-4 py-3 text-sm ${

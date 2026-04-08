@@ -16,6 +16,7 @@ export const DEFAULT_COURSE_QUIZ_TYPE_SETTINGS: CourseQuizTypeSettings = {
   essay_ai: true,
   drag_drop_labeling: true,
   fill_in_the_blanks: true,
+  image_hotspot: true,
   coloring: true,
   case_study: true,
 }
@@ -54,6 +55,14 @@ export const COURSE_QUIZ_TYPE_OPTIONS: CourseQuizTypeOption[] = [
     badgeClassName: 'bg-teal-600 text-white',
   },
   {
+    key: 'image_hotspot',
+    title: 'Quiz de Hotspot',
+    description: 'Imagem com hotspots corretos/incorretos e feedback por clique.',
+    helper: 'Disponivel apenas como pergunta independente nesta versao.',
+    accentClassName: 'border-sky-200 bg-sky-50/60 text-sky-700',
+    badgeClassName: 'bg-sky-600 text-white',
+  },
+  {
     key: 'coloring',
     title: 'Quiz de Colorir',
     description: 'Areas pintaveis com cor correta por item ou por regiao SVG.',
@@ -79,6 +88,7 @@ export function normalizeCourseQuizTypeSettings(
     essay_ai: value?.essay_ai ?? DEFAULT_COURSE_QUIZ_TYPE_SETTINGS.essay_ai,
     drag_drop_labeling: value?.drag_drop_labeling ?? DEFAULT_COURSE_QUIZ_TYPE_SETTINGS.drag_drop_labeling,
     fill_in_the_blanks: value?.fill_in_the_blanks ?? DEFAULT_COURSE_QUIZ_TYPE_SETTINGS.fill_in_the_blanks,
+    image_hotspot: value?.image_hotspot ?? DEFAULT_COURSE_QUIZ_TYPE_SETTINGS.image_hotspot,
     coloring: value?.coloring ?? DEFAULT_COURSE_QUIZ_TYPE_SETTINGS.coloring,
     case_study: value?.case_study ?? DEFAULT_COURSE_QUIZ_TYPE_SETTINGS.case_study,
   }
@@ -106,6 +116,8 @@ export function isCourseQuestionTypeEnabled(
       return normalizedSettings.drag_drop_labeling
     case 'fill_in_the_blanks':
       return normalizedSettings.fill_in_the_blanks
+    case 'image_hotspot':
+      return normalizedSettings.image_hotspot
     case 'coloring':
       return normalizedSettings.coloring
     case 'case_study_single_choice':

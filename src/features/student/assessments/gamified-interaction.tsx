@@ -75,6 +75,14 @@ export function GamifiedInteraction({
     )
   }
 
+  if (parsed.data.kind === 'image_hotspot') {
+    return (
+      <div className="rounded-[32px] border border-amber-200 bg-amber-50 px-6 py-5 text-sm font-semibold text-amber-700">
+        Este tipo de questao usa um player especifico de hotspot.
+      </div>
+    )
+  }
+
   return (
     <FillInTheBlanksView
       content={parsed.data}

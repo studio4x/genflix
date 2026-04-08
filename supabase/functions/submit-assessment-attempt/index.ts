@@ -12,6 +12,7 @@ type QuestionType =
   | 'case_study_single_choice'
   | 'drag_drop_labeling'
   | 'fill_in_the_blanks'
+  | 'image_hotspot'
   | 'coloring'
 
 interface AssessmentRow {
@@ -60,6 +61,8 @@ interface AnswerKeyRow {
       slot_id?: string
       token_id?: string
     }>
+    kind?: 'image_hotspot'
+    correct_target_ids?: string[]
   } | null
 }
 
@@ -77,6 +80,12 @@ interface SubmissionAnswerInput {
       slot_id?: string
       token_id?: string | null
     }>
+    kind?: 'image_hotspot'
+    mode?: 'single_attempt' | 'find_all'
+    selected_target_id?: string | null
+    found_target_ids?: string[]
+    incorrect_target_ids?: string[]
+    outside_click_count?: number
   } | null
 }
 
@@ -98,7 +107,7 @@ interface ChoiceFeedback {
   possible_points: number
 }
 
-interface InteractionFeedback {
+interface TokenMappingInteractionFeedback {
   question_id: string
   question_text: string
   is_correct: boolean
@@ -111,6 +120,24 @@ interface InteractionFeedback {
     is_correct: boolean
   }>
 }
+
+interface ImageHotspotInteractionFeedback {
+  question_id: string
+  question_text: string
+  kind: 'image_hotspot'
+  mode: 'single_attempt' | 'find_all'
+  is_correct: boolean
+  earned_points: number
+  possible_points: number
+  expected_correct_target_ids: string[]
+  found_target_ids: string[]
+  incorrect_target_ids: string[]
+  outside_click_count: number
+}
+
+type InteractionFeedback =
+  | TokenMappingInteractionFeedback
+  | ImageHotspotInteractionFeedback
 
 const OPENAI_MODEL = 'gpt-4o-mini'
 const GEMINI_MODEL = 'gemini-2.5-flash'
@@ -543,7 +570,7 @@ Deno.serve(async (request) => {
         is_correct: grading.isCorrect,
         earned_points: grading.earnedPoints,
         possible_points: questionPossiblePoints,
-        entries: grading.entries,
+        ...grading.feedback,
       })
     }
 
@@ -661,6 +688,27 @@ function normalizeAnswerText(value: string | null | undefined) {
 }
 
 function normalizeResponsePayload(payload: SubmissionAnswerInput['response_payload']) {
+  if (payload?.kind === 'image_hotspot') {
+    const normalizeTargetIds = (value: unknown) => Array.isArray(value)
+      ? value
+        .map((item) => typeof item === 'string' ? item.trim() : '')
+        .filter(Boolean)
+      : []
+
+    return {
+      kind: 'image_hotspot' as const,
+      mode: payload.mode === 'find_all' ? 'find_all' : 'single_attempt',
+      selected_target_id: typeof payload.selected_target_id === 'string' && payload.selected_target_id.trim()
+        ? payload.selected_target_id.trim()
+        : null,
+      found_target_ids: normalizeTargetIds(payload.found_target_ids),
+      incorrect_target_ids: normalizeTargetIds(payload.incorrect_target_ids),
+      outside_click_count: Number.isFinite(payload.outside_click_count)
+        ? Math.max(0, Math.trunc(Number(payload.outside_click_count)))
+        : 0,
+    }
+  }
+
   const entries = Array.isArray(payload?.entries)
     ? payload.entries
       .filter((entry) => entry && typeof entry === 'object')
@@ -678,6 +726,43 @@ function normalizeResponsePayload(payload: SubmissionAnswerInput['response_paylo
   }
 }
 
+function getImageHotspotTargets(content: Record<string, unknown> | null) {
+  if (!content || typeof content !== 'object' || content.kind !== 'image_hotspot') {
+    return []
+  }
+
+  return (Array.isArray(content.targets) ? content.targets : [])
+    .filter((target) => target && typeof target === 'object')
+    .map((target) => {
+      const record = target as Record<string, unknown>
+      return {
+        id: typeof record.id === 'string' ? record.id.trim() : '',
+        is_correct: Boolean(record.is_correct),
+      }
+    })
+    .filter((target) => target.id)
+}
+
+function normalizeImageHotspotAnswerKey(
+  content: Record<string, unknown> | null,
+  answerKey: AnswerKeyRow['answer_key'],
+) {
+  const targetIds = new Set(getImageHotspotTargets(content).map((target) => target.id))
+  const answerKeyIds = Array.isArray(answerKey?.correct_target_ids)
+    ? answerKey.correct_target_ids
+      .map((targetId) => typeof targetId === 'string' ? targetId.trim() : '')
+      .filter((targetId) => targetId && targetIds.has(targetId))
+    : []
+
+  if (answerKeyIds.length > 0) {
+    return Array.from(new Set(answerKeyIds))
+  }
+
+  return getImageHotspotTargets(content)
+    .filter((target) => target.is_correct)
+    .map((target) => target.id)
+}
+
 function scoreInteractionAnswer(input: {
   question: QuestionRow
   interaction: InteractionRow | null
@@ -685,6 +770,90 @@ function scoreInteractionAnswer(input: {
   answerKey: AnswerKeyRow | null
 }) {
   const normalizedPayload = normalizeResponsePayload(input.answer?.response_payload)
+
+  if (normalizedPayload.kind === 'image_hotspot') {
+    const targetIds = new Set(getInteractionSlotIds(input.interaction?.content ?? null))
+    const correctTargetIds = normalizeImageHotspotAnswerKey(
+      input.interaction?.content ?? null,
+      input.answerKey?.answer_key ?? null,
+    )
+
+    if (correctTargetIds.length === 0) {
+      throw new Error('Questao de hotspot sem gabarito configurado.')
+    }
+
+    const foundTargetIds = Array.from(new Set(
+      normalizedPayload.found_target_ids.filter((targetId) => targetIds.has(targetId) && correctTargetIds.includes(targetId)),
+    ))
+    const incorrectTargetIds = Array.from(new Set(
+      normalizedPayload.incorrect_target_ids.filter((targetId) => targetIds.has(targetId) && !correctTargetIds.includes(targetId)),
+    ))
+    const selectedTargetId = normalizedPayload.selected_target_id && targetIds.has(normalizedPayload.selected_target_id)
+      ? normalizedPayload.selected_target_id
+      : null
+    const outsideClickCount = Math.max(0, normalizedPayload.outside_click_count)
+
+    const hasAnswered = Boolean(selectedTargetId || foundTargetIds.length > 0 || incorrectTargetIds.length > 0 || outsideClickCount > 0)
+    if (!hasAnswered && input.question.is_required) {
+      throw new Error('Todas as questoes obrigatorias devem ser respondidas.')
+    }
+
+    const possiblePoints = Number(input.question.points || 0)
+
+    if (normalizedPayload.mode === 'single_attempt') {
+      const isCorrect = Boolean(selectedTargetId && correctTargetIds.includes(selectedTargetId))
+      return {
+        isCorrect,
+        earnedPoints: isCorrect ? possiblePoints : 0,
+        responsePayload: {
+          kind: 'image_hotspot',
+          mode: 'single_attempt',
+          selected_target_id: selectedTargetId,
+          found_target_ids: isCorrect && selectedTargetId ? [selectedTargetId] : [],
+          incorrect_target_ids: !isCorrect && selectedTargetId ? [selectedTargetId] : [],
+          outside_click_count: selectedTargetId ? 0 : outsideClickCount,
+        } satisfies Record<string, unknown>,
+        feedback: {
+          kind: 'image_hotspot' as const,
+          mode: 'single_attempt' as const,
+          expected_correct_target_ids: correctTargetIds,
+          found_target_ids: isCorrect && selectedTargetId ? [selectedTargetId] : [],
+          incorrect_target_ids: !isCorrect && selectedTargetId ? [selectedTargetId] : [],
+          outside_click_count: selectedTargetId ? 0 : outsideClickCount,
+        },
+      }
+    }
+
+    const correctFoundCount = foundTargetIds.length
+    const allCorrectFound = correctTargetIds.every((targetId) => foundTargetIds.includes(targetId))
+    const hasPenalty = incorrectTargetIds.length > 0 || outsideClickCount > 0
+    const isCorrect = allCorrectFound && !hasPenalty
+    const earnedPoints = input.answerKey?.grading_mode === 'all_or_nothing'
+      ? (isCorrect ? possiblePoints : 0)
+      : roundToTwo(possiblePoints * (correctFoundCount / correctTargetIds.length))
+
+    return {
+      isCorrect,
+      earnedPoints,
+      responsePayload: {
+        kind: 'image_hotspot',
+        mode: 'find_all',
+        selected_target_id: selectedTargetId,
+        found_target_ids: foundTargetIds,
+        incorrect_target_ids: incorrectTargetIds,
+        outside_click_count: outsideClickCount,
+      } satisfies Record<string, unknown>,
+      feedback: {
+        kind: 'image_hotspot' as const,
+        mode: 'find_all' as const,
+        expected_correct_target_ids: correctTargetIds,
+        found_target_ids: foundTargetIds,
+        incorrect_target_ids: incorrectTargetIds,
+        outside_click_count: outsideClickCount,
+      },
+    }
+  }
+
   const answerEntries = normalizeInteractionAnswerKeyEntries(
     input.interaction?.content ?? null,
     Array.isArray(input.answerKey?.answer_key?.entries) ? input.answerKey?.answer_key?.entries : [],
@@ -716,8 +885,10 @@ function scoreInteractionAnswer(input: {
   return {
     isCorrect,
     earnedPoints,
-    entries: entryFeedback,
     responsePayload: normalizedPayload as Record<string, unknown>,
+    feedback: {
+      entries: entryFeedback,
+    },
   }
 }
 
@@ -781,6 +952,17 @@ function getInteractionSlotIds(content: Record<string, unknown> | null) {
   }
 
   if (content.kind === 'drag_drop_labeling') {
+    const targets = Array.isArray(content.targets) ? content.targets : []
+    return targets
+      .map((target) => (
+        target && typeof target === 'object' && typeof target.id === 'string'
+          ? target.id.trim()
+          : ''
+      ))
+      .filter(Boolean)
+  }
+
+  if (content.kind === 'image_hotspot') {
     const targets = Array.isArray(content.targets) ? content.targets : []
     return targets
       .map((target) => (

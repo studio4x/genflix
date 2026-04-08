@@ -35,6 +35,7 @@ import {
   uploadAssessmentAsset,
   type AssessmentQuestionWithOptions,
 } from './api'
+import { ImageHotspotQuestionEditor } from './image-hotspot-question-editor'
 
 interface GamifiedQuestionEditorProps {
   question: AssessmentQuestionWithOptions
@@ -126,6 +127,15 @@ function syncAnswerKeyWithContent(
   current: AssessmentQuestionAnswerKeyPayload | null | undefined,
 ) {
   const normalizedContent = normalizeInteractionContent(content, current)
+  if (normalizedContent.kind === 'image_hotspot') {
+    return {
+      kind: 'image_hotspot',
+      correct_target_ids: normalizedContent.targets
+        .filter((target) => target.is_correct)
+        .map((target) => target.id),
+    } satisfies AssessmentQuestionAnswerKeyPayload
+  }
+
   if (normalizedContent.kind === 'fill_in_the_blanks' && normalizedContent.editor_groups?.length) {
     const slotIds = new Set(getInteractionSlotIds(normalizedContent))
     const tokenIds = new Set(normalizedContent.tokens.map((token) => token.id))
@@ -144,11 +154,12 @@ function syncAnswerKeyWithContent(
 
   const slotIds = getInteractionSlotIds(normalizedContent)
   const tokenIds = normalizedContent.tokens.map((token) => token.id)
-  const preservedEntries: AssessmentQuestionAnswerKeyPayload['entries'] = []
+  const preservedEntries: Array<{ slot_id: string; token_id: string }> = []
   const usedSlots = new Set<string>()
   const usedTokens = new Set<string>()
+  const currentEntries = current && 'entries' in current ? current.entries : []
 
-  for (const entry of current?.entries ?? []) {
+  for (const entry of currentEntries) {
     if (!slotIds.includes(entry.slot_id) || !tokenIds.includes(entry.token_id)) {
       continue
     }
@@ -210,11 +221,12 @@ function normalizeInteractionContent(
 
   const tokenById = new Map(content.tokens.map((token) => [token.id, token]))
   const usedTokenIds = new Set<string>()
+  const currentEntries = current && 'entries' in current ? current.entries : []
 
   if (content.kind === 'coloring') {
     const coloringSlotIds = getColoringSlotIds(content)
     const normalizedTokens: ColoringInteractionContent['tokens'] = coloringSlotIds.map((slotId, index) => {
-      const mappedTokenId = current?.entries.find((entry) => entry.slot_id === slotId)?.token_id
+      const mappedTokenId = currentEntries.find((entry) => entry.slot_id === slotId)?.token_id
       if (mappedTokenId) {
         const mappedToken = tokenById.get(mappedTokenId)
         if (mappedToken && !usedTokenIds.has(mappedToken.id) && 'hex' in mappedToken) {
@@ -253,7 +265,7 @@ function normalizeInteractionContent(
   }
 
   const normalizedTokens: DragDropLabelingInteractionContent['tokens'] = content.targets.map((target, index) => {
-    const mappedTokenId = current?.entries.find((entry) => entry.slot_id === target.id)?.token_id
+    const mappedTokenId = currentEntries.find((entry) => entry.slot_id === target.id)?.token_id
     if (mappedTokenId) {
       const mappedToken = tokenById.get(mappedTokenId)
       if (mappedToken && !usedTokenIds.has(mappedToken.id)) {
@@ -488,7 +500,10 @@ function buildFillBlankEditorGroups(
   answerKey: AssessmentQuestionAnswerKeyPayload | null,
 ) {
   const tokenById = new Map(content.tokens.map((token) => [token.id, token]))
-  const tokenIdBySlot = new Map((answerKey?.entries ?? []).map((entry) => [entry.slot_id, entry.token_id]))
+  const answerKeyEntries: Array<{ slot_id: string; token_id: string }> = answerKey && 'entries' in answerKey
+    ? (answerKey.entries ?? [])
+    : []
+  const tokenIdBySlot = new Map(answerKeyEntries.map((entry) => [entry.slot_id, entry.token_id]))
   const storedGroups = content.editor_groups?.filter((group) => group.blanks.length > 0) ?? []
 
   if (storedGroups.length > 0) {
@@ -586,7 +601,7 @@ function buildFillBlankBundle(
 ) {
   const tokens: FillInTheBlanksInteractionContent['tokens'] = []
   const segments: FillInTheBlanksInteractionContent['segments'] = []
-  const entries: AssessmentQuestionAnswerKeyPayload['entries'] = []
+  const entries: Array<{ slot_id: string; token_id: string }> = []
 
   groups.forEach((group, groupIndex) => {
     if (group.leading_text.length > 0) {
@@ -706,14 +721,19 @@ export function GamifiedQuestionEditor({
   }
 
   const activeInteraction = interactionContent
-  const scoringItemCount = activeInteraction.kind === 'drag_drop_labeling' || activeInteraction.kind === 'coloring'
+  const scoringItemCount = activeInteraction.kind === 'drag_drop_labeling'
+    || activeInteraction.kind === 'image_hotspot'
+    || activeInteraction.kind === 'coloring'
     ? getInteractionSlotIds(activeInteraction).length
     : activeInteraction.segments.filter((segment) => segment.type === 'blank').length
   const questionPoints = Number(question.points || 0)
   const pointsPerItem = scoringItemCount > 0 ? questionPoints / scoringItemCount : 0
 
+  const answerKeyEntries: Array<{ slot_id: string; token_id: string }> = answerKeyPayload && 'entries' in answerKeyPayload
+    ? (answerKeyPayload.entries ?? [])
+    : []
   const assignedTokenBySlot = new Map(
-    (answerKeyPayload?.entries ?? []).map((entry) => [entry.slot_id, entry.token_id]),
+    answerKeyEntries.map((entry) => [entry.slot_id, entry.token_id]),
   )
   const latestInteractionRef = useRef<AssessmentInteractionContent>(interactionContent)
   const latestAnswerKeyRef = useRef<AssessmentQuestionAnswerKeyPayload | null>(answerKeyPayload)
@@ -792,8 +812,8 @@ export function GamifiedQuestionEditor({
   }
 
   function updateTokenLabel(tokenId: string, label: string) {
-    const nextContent: AssessmentInteractionContent = activeInteraction.kind === 'coloring'
-      ? {
+    if (activeInteraction.kind === 'coloring') {
+      const nextContent: ColoringInteractionContent = {
         ...activeInteraction,
         tokens: activeInteraction.tokens.map((token) => (
           token.id === tokenId
@@ -801,14 +821,23 @@ export function GamifiedQuestionEditor({
             : token
         )),
       }
-      : {
-        ...activeInteraction,
-        tokens: activeInteraction.tokens.map((token) => (
-          token.id === tokenId
-            ? { ...token, label }
-            : token
-        )),
-      }
+
+      updateDraft(nextContent)
+      return
+    }
+
+    if (!('tokens' in activeInteraction)) {
+      return
+    }
+
+    const nextContent: AssessmentInteractionContent = {
+      ...activeInteraction,
+      tokens: activeInteraction.tokens.map((token) => (
+        token.id === tokenId
+          ? { ...token, label }
+          : token
+      )),
+    }
 
     updateDraft(nextContent)
   }
@@ -887,7 +916,8 @@ export function GamifiedQuestionEditor({
   }
 
   function updateSlotAnswer(slotId: string, tokenId: string) {
-    const nextEntries = (answerKeyPayload?.entries ?? []).filter((entry) => entry.slot_id !== slotId && entry.token_id !== tokenId)
+    const nextEntries = (answerKeyPayload && 'entries' in answerKeyPayload ? (answerKeyPayload.entries ?? []) : [])
+      .filter((entry) => entry.slot_id !== slotId && entry.token_id !== tokenId)
     nextEntries.push({
       slot_id: slotId,
       token_id: tokenId,
@@ -1338,6 +1368,11 @@ export function GamifiedQuestionEditor({
   }
 
   function renderTokenBank() {
+    if (!('tokens' in activeInteraction)) {
+      return null
+    }
+
+    const tokenInteraction = activeInteraction
     const coloringSlotIds = activeInteraction.kind === 'coloring'
       ? getColoringSlotIds(activeInteraction)
       : []
@@ -1367,7 +1402,7 @@ export function GamifiedQuestionEditor({
         </div>
 
         <div className="mt-5 grid gap-3 md:grid-cols-2">
-          {activeInteraction.tokens.map((token, index) => (
+          {tokenInteraction.tokens.map((token, index) => (
             <div key={token.id} className="rounded-2xl border border-white/80 bg-white p-4 shadow-sm">
               <div className="flex items-center justify-between gap-3">
                 <span className="rounded-full bg-cyan-100 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-cyan-700">
@@ -1426,7 +1461,7 @@ export function GamifiedQuestionEditor({
 
                   void commit({
                     ...activeInteraction,
-                    tokens: activeInteraction.tokens.map((item) => (
+                    tokens: tokenInteraction.tokens.map((item) => (
                       item.id === token.id
                         ? { ...item, label: nextLabel }
                         : item
@@ -2946,7 +2981,11 @@ export function GamifiedQuestionEditor({
                 )}
                 onClick={() => void commit(
                   activeInteraction,
-                  answerKeyPayload ?? createAnswerKeyFromInteraction(activeInteraction) ?? { entries: [] },
+                  answerKeyPayload
+                  ?? createAnswerKeyFromInteraction(activeInteraction)
+                  ?? (activeInteraction.kind === 'image_hotspot'
+                    ? { kind: 'image_hotspot', correct_target_ids: [] }
+                    : { entries: [] }),
                   mode.value,
                 )}
               >
@@ -2962,6 +3001,15 @@ export function GamifiedQuestionEditor({
 
       {activeInteraction.kind === 'drag_drop_labeling'
         ? renderDragDropEditor(activeInteraction)
+        : activeInteraction.kind === 'image_hotspot'
+          ? (
+            <ImageHotspotQuestionEditor
+              content={activeInteraction}
+              onDraftChange={updateDraft}
+              onPersist={(nextContent) => commit(nextContent)}
+              onError={onError}
+            />
+          )
         : activeInteraction.kind === 'coloring'
           ? activeColoringSvgInteraction
             ? renderColoringSvgEditor(activeColoringSvgInteraction)

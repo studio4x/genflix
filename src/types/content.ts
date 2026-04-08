@@ -8,6 +8,7 @@ export type AssessmentQuestionType =
   | 'case_study_single_choice'
   | 'drag_drop_labeling'
   | 'fill_in_the_blanks'
+  | 'image_hotspot'
   | 'coloring'
 
 export interface CourseQuizTypeSettings {
@@ -15,6 +16,7 @@ export interface CourseQuizTypeSettings {
   essay_ai: boolean
   drag_drop_labeling: boolean
   fill_in_the_blanks: boolean
+  image_hotspot: boolean
   coloring: boolean
   case_study: boolean
 }
@@ -53,6 +55,29 @@ export interface DragDropLabelingInteractionContent {
   asset: AssessmentInteractionAsset
   tokens: AssessmentInteractionToken[]
   targets: DragDropLabelingTarget[]
+}
+
+export type ImageHotspotMode = 'single_attempt' | 'find_all'
+
+export interface ImageHotspotTarget {
+  id: string
+  x: number
+  y: number
+  w: number
+  h: number
+  label?: string | null
+  is_correct: boolean
+  feedback_text?: string | null
+}
+
+export interface ImageHotspotInteractionContent {
+  kind: 'image_hotspot'
+  mode: ImageHotspotMode
+  instruction: string
+  asset: AssessmentInteractionAsset
+  targets: ImageHotspotTarget[]
+  outside_click_feedback?: string | null
+  show_feedback_as_popup: boolean
 }
 
 export type FillInTheBlanksSegment =
@@ -128,6 +153,7 @@ export type ColoringInteractionContent =
 export type AssessmentInteractionContent =
   | DragDropLabelingInteractionContent
   | FillInTheBlanksInteractionContent
+  | ImageHotspotInteractionContent
   | ColoringInteractionContent
 
 export interface AssessmentQuestionAnswerKeyEntry {
@@ -135,9 +161,18 @@ export interface AssessmentQuestionAnswerKeyEntry {
   token_id: string
 }
 
-export interface AssessmentQuestionAnswerKeyPayload {
+export interface TokenMappingAnswerKeyPayload {
   entries: AssessmentQuestionAnswerKeyEntry[]
 }
+
+export interface ImageHotspotAnswerKeyPayload {
+  kind: 'image_hotspot'
+  correct_target_ids: string[]
+}
+
+export type AssessmentQuestionAnswerKeyPayload =
+  | TokenMappingAnswerKeyPayload
+  | ImageHotspotAnswerKeyPayload
 
 export interface AssessmentQuestionInteraction {
   question_id: string
@@ -160,9 +195,22 @@ export interface AssessmentInteractionResponseEntry {
   token_id: string | null
 }
 
-export interface AssessmentInteractionResponsePayload {
+export interface TokenMappingResponsePayload {
   entries: AssessmentInteractionResponseEntry[]
 }
+
+export interface ImageHotspotResponsePayload {
+  kind: 'image_hotspot'
+  mode: ImageHotspotMode
+  selected_target_id: string | null
+  found_target_ids: string[]
+  incorrect_target_ids: string[]
+  outside_click_count: number
+}
+
+export type AssessmentInteractionResponsePayload =
+  | TokenMappingResponsePayload
+  | ImageHotspotResponsePayload
 
 export interface Course {
   id: string

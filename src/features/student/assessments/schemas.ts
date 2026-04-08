@@ -10,7 +10,16 @@ export const assessmentAnswerSchema = z.object({
 }).superRefine((value, ctx) => {
   const hasOption = Boolean(value.option_id)
   const hasText = Boolean(value.answer_text?.trim())
-  const hasInteractionPayload = (value.response_payload?.entries.length ?? 0) > 0
+  const hasInteractionPayload = value.response_payload
+    ? ('entries' in value.response_payload
+      ? value.response_payload.entries.length > 0
+      : Boolean(
+        value.response_payload.selected_target_id
+        || value.response_payload.found_target_ids.length
+        || value.response_payload.incorrect_target_ids.length
+        || value.response_payload.outside_click_count > 0,
+      ))
+    : false
 
   if (!hasOption && !hasText && !hasInteractionPayload) {
     ctx.addIssue({
