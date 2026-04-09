@@ -1,4 +1,7 @@
 import { spawnSync } from 'node:child_process'
+import fs from 'node:fs'
+import os from 'node:os'
+import path from 'node:path'
 
 const npxCommand = process.platform === 'win32' ? 'npx.cmd' : 'npx'
 const isWindows = process.platform === 'win32'
@@ -10,7 +13,7 @@ function quoteArg(value) {
 function run(command, args, options = {}) {
   const sharedOptions = {
     stdio: options.captureOutput ? 'pipe' : 'inherit',
-    cwd: process.cwd(),
+    cwd: options.cwd ?? process.cwd(),
     env: {
       ...process.env,
       ...options.env,
@@ -62,5 +65,16 @@ run(npxCommand, ['vercel', 'build', '--prod'], {
   },
 })
 
-process.stdout.write('Publicando output prebuilt em producao na Vercel...\n')
-run(npxCommand, ['vercel', 'deploy', '--prebuilt', '--prod', '--yes'])
+const deployWorkspace = path.join(os.tmpdir(), 'hcm-vercel-prebuilt')
+const tempOutputDir = path.join(deployWorkspace, '.vercel', 'output')
+const tempProjectFile = path.join(deployWorkspace, '.vercel', 'project.json')
+
+fs.rmSync(deployWorkspace, { recursive: true, force: true })
+fs.mkdirSync(tempOutputDir, { recursive: true })
+fs.cpSync(path.resolve('.vercel', 'output'), tempOutputDir, { recursive: true })
+fs.copyFileSync(path.resolve('.vercel', 'project.json'), tempProjectFile)
+
+process.stdout.write('Publicando output prebuilt em producao na Vercel a partir de workspace temporario sem metadados do git...\n')
+run(npxCommand, ['vercel', 'deploy', '--prebuilt', '--prod', '--yes'], {
+  cwd: deployWorkspace,
+})

@@ -33,7 +33,8 @@ Se houver conflito entre instrucoes locais, esta diretriz deve ser tratada como 
 - Antes de rodar esse comando, o repositorio deve estar com `commit` e `push` concluidos, sem modificacoes pendentes no `git status`.
 - Esse script deve:
   - gerar `.vercel/output` com `vercel build --prod` usando `CI=true`, para preservar o build version ja commitado;
-  - publicar com `vercel deploy --prebuilt --prod --yes`.
+  - copiar o output prebuilt para um workspace temporario sem `.git`;
+  - publicar com `vercel deploy --prebuilt --prod --yes` a partir desse workspace temporario.
 - Ao diagnosticar build em producao desatualizado, verificar:
   - se o dominio ainda aponta para um deploy antigo;
   - se os ultimos deploys Git estao falhando com `TEAM_ACCESS_REQUIRED`;
