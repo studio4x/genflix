@@ -136,7 +136,7 @@ export function CourseAssessmentsPanel() {
 
   return (
     <>
-      <div className="mx-auto w-full max-w-[1380px] animate-in space-y-6 pb-20 fade-in duration-500">
+      <div className="w-full animate-in space-y-6 pb-20 fade-in duration-500">
         <div className="border-b border-slate-200 pb-5">
           <h2 className="text-2xl font-extrabold tracking-tight text-slate-900">Gestão de Avaliações</h2>
           <p className="mt-1 text-sm text-slate-500">Veja todos os quizzes e avaliações finais do curso em um só lugar.</p>

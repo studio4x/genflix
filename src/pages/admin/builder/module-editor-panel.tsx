@@ -353,7 +353,7 @@ export function ModuleEditorPanel() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-[1380px] space-y-6 animate-in fade-in duration-500">
+    <div className="w-full space-y-6 animate-in fade-in duration-500">
        <div className="border-b border-slate-200 pb-5">
          <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">
            {isNew ? 'Criar Novo Módulo' : 'Configurações do Módulo'}

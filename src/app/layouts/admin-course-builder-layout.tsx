@@ -258,7 +258,7 @@ export function AdminCourseBuilderLayout() {
         <div className="flex flex-1 overflow-hidden">
           
           {/* SIDEBAR - COURSE TREE */}
-          <aside className={`shrink-0 flex flex-col bg-white border-r border-slate-200 transition-all duration-300 ${isSidebarOpen ? 'w-80 lg:w-96' : 'w-0 overflow-hidden'}`}>
+          <aside className={`shrink-0 flex flex-col bg-white border-r border-slate-200 transition-all duration-300 ${isSidebarOpen ? 'w-[252px]' : 'w-0 overflow-hidden'}`}>
             {/* Componente de Árvore com Drag and Drop */}
             <CourseTreeDnd tree={courseTree} onRefresh={refreshTree} />
             
@@ -483,7 +483,7 @@ export function AdminCourseBuilderLayout() {
 
           {/* MAIN CANVAS */}
           <main className="flex-1 h-full bg-slate-50/50 relative overflow-y-auto w-full border-t border-slate-100 shadow-inner">
-             <div className="absolute inset-0 p-4 md:px-6 md:py-8 xl:px-7">
+             <div className="absolute inset-0 p-4 sm:px-6 sm:py-6 lg:px-8 lg:py-7">
                <Outlet />
              </div>
           </main>

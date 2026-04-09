@@ -303,7 +303,7 @@ export function CourseOverviewPanel() {
   if (!courseTree || !course) return null
 
   return (
-    <div className="mx-auto w-full max-w-[1380px] space-y-8 pb-12 animate-in fade-in duration-500">
+    <div className="w-full space-y-8 pb-12 animate-in fade-in duration-500">
       <div className="border-b border-slate-200 pb-5">
         <h2 className="text-3xl font-extrabold tracking-tight text-slate-900">Visao Geral do Curso</h2>
         <p className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-500">

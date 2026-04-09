@@ -1382,7 +1382,7 @@ export function AssessmentBuilderPanel() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-[1380px] animate-in space-y-8 pb-24 fade-in duration-500">
+    <div className="w-full animate-in space-y-8 pb-24 fade-in duration-500">
       <div className="flex flex-col justify-between gap-6 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:flex-row md:items-end">
         <div className="flex-1 space-y-1">
           <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-black uppercase tracking-widest text-blue-600">

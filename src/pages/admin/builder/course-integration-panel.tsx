@@ -69,7 +69,7 @@ export function CourseIntegrationPanel() {
   const revokedIntegrationReleases = snapshot?.releases.filter((release) => release.release_status === 'revoked') ?? []
 
   return (
-    <div className="mx-auto w-full max-w-[1380px] space-y-6 animate-in fade-in duration-500 pb-24">
+    <div className="w-full space-y-6 animate-in fade-in duration-500 pb-24">
       <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm md:p-8">
         <div className="flex flex-wrap items-start justify-between gap-4 border-b border-slate-100 pb-5">
           <div>

@@ -176,7 +176,7 @@ export function LessonMaterialsPanel() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-[1380px] space-y-6 animate-in fade-in duration-500 pb-20">
+    <div className="w-full space-y-6 animate-in fade-in duration-500 pb-20">
       <div className="border-b border-slate-200 pb-5 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 mb-1">

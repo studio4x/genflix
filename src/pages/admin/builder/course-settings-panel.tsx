@@ -209,7 +209,7 @@ export function CourseSettingsPanel() {
   const canUseCaseStudies = canCourseUseCaseStudies(form.quiz_type_settings)
 
   return (
-    <div className="mx-auto w-full max-w-[1380px] space-y-6 animate-in fade-in duration-500 pb-24">
+    <div className="w-full space-y-6 animate-in fade-in duration-500 pb-24">
       <div className="border-b border-slate-200 pb-5">
         <h2 className="text-2xl font-black text-slate-900 tracking-tight">Detalhes Principais</h2>
         <p className="text-sm text-slate-500 mt-1">Essas informações definem como os alunos verão seu curso no catálogo.</p>
