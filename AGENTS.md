@@ -24,6 +24,21 @@ Se houver conflito entre instrucoes locais, esta diretriz deve ser tratada como 
   - `npm run build`
 - A resposta final do agente deve sempre informar explicitamente o numero atual do build gerado na tarefa.
 
+## Playbook de deploy Vercel
+
+- O auto-deploy via Git pode ser bloqueado pela Vercel quando o commit author do GitHub nao estiver atribuido corretamente ao usuario do time.
+- Nesses casos, o deploy correto do frontend deve usar output prebuilt local em vez de depender apenas do deploy automatico por commit.
+- Padrao obrigatorio para publicar o frontend:
+  - `npm run deploy:vercel`
+- Antes de rodar esse comando, o repositorio deve estar com `commit` e `push` concluidos, sem modificacoes pendentes no `git status`.
+- Esse script deve:
+  - gerar `.vercel/output` com `vercel build --prod` usando `CI=true`, para preservar o build version ja commitado;
+  - publicar com `vercel deploy --prebuilt --prod --yes`.
+- Ao diagnosticar build em producao desatualizado, verificar:
+  - se o dominio ainda aponta para um deploy antigo;
+  - se os ultimos deploys Git estao falhando com `TEAM_ACCESS_REQUIRED`;
+  - se um deploy CLI `prebuilt` foi promovido com alias para o dominio principal.
+
 ## Playbook de Edge Function 401
 
 Quando uma Edge Function acionada pelo frontend retornar `401` em `functions/v1/...`, seguir este fluxo:
