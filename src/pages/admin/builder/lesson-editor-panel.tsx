@@ -290,7 +290,7 @@ export function LessonEditorPanel() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6 animate-in fade-in duration-500 pb-20">
+    <div className="mx-auto w-full max-w-[1380px] space-y-6 animate-in fade-in duration-500 pb-20">
        <style>{`
          .quill { background: white; border-radius: 12px; overflow: hidden; border: 1px solid #e2e8f0 !important; }
          .ql-toolbar { border: none !important; border-bottom: 1px solid #f1f5f9 !important; background: #f8fafc; }

@@ -483,7 +483,7 @@ export function AdminCourseBuilderLayout() {
 
           {/* MAIN CANVAS */}
           <main className="flex-1 h-full bg-slate-50/50 relative overflow-y-auto w-full border-t border-slate-100 shadow-inner">
-             <div className="absolute inset-0 p-4 md:p-8">
+             <div className="absolute inset-0 p-4 md:px-6 md:py-8 xl:px-7">
                <Outlet />
              </div>
           </main>
