@@ -8,6 +8,7 @@
     "build": "node scripts/bump-build-version.mjs && tsc -b && vite build",
     "build:dev": "node scripts/bump-build-version.mjs && tsc -b && vite build --mode development",
     "deploy:vercel": "node scripts/deploy-vercel-production.mjs",
+    "spin-off:create": "node scripts/create-spin-off.mjs",
     "typecheck": "tsc -b --pretty false",
     "lint": "eslint .",
     "preview": "vite preview"
