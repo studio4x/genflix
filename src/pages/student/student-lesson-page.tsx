@@ -132,7 +132,7 @@ export function StudentLessonPage() {
       assessments
         .filter((assessment) => assessment.assessment_type === 'module' && assessment.module_id === currentModule.id)
         .sort((assessmentA, assessmentB) => assessmentA.title.localeCompare(assessmentB.title, 'pt-BR'))
-        [0] ?? null
+        .at(0) ?? null
     )
     : null
 
