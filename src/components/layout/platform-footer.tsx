@@ -20,7 +20,7 @@ export function PlatformFooter({
     >
       <LegalLinksNav className={linksClassName} />
       <AppVersion
-        className={`text-[11px] font-black uppercase tracking-[0.24em] text-slate-400 ${versionClassName}`.trim()}
+        className={`text-[10px] font-medium tracking-[0.06em] text-slate-400/90 ${versionClassName}`.trim()}
       />
     </footer>
   )
