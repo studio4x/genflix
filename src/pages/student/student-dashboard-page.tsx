@@ -141,7 +141,7 @@ export function StudentDashboardPage() {
             <h2 className="text-4xl font-black tracking-tight text-slate-900 sm:text-5xl">Olá, {firstName}!</h2>
             <p className="text-base font-medium text-slate-500 sm:text-lg">{profile?.email}</p>
             <p className="max-w-3xl text-lg leading-relaxed text-slate-600">
-              Gerencie sua jornada de aprendizado, acompanhe sua evolução e retome seus treinamentos com a mesma linguagem do ecossistema HomeCare Match.
+              Gerencie sua jornada de aprendizado, acompanhe sua evolução e retome seus treinamentos com a linguagem da GenFlix.
             </p>
           </div>
         </div>

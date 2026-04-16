@@ -33,7 +33,6 @@ import type {
   StudentCourseModuleProgress,
   StudentLessonWithProgress,
 } from '@/types/content'
-import 'react-quill/dist/quill.snow.css'
 
 function extractVideoId(url: string | null) {
   if (!url) return null

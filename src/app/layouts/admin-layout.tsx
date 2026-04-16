@@ -25,12 +25,12 @@ export function AdminLayout() {
       <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/90 backdrop-blur-md">
         <div className="flex w-full items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
           <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-600 text-white shadow-[0_8px_24px_rgba(37,99,235,0.28)]">
-              <span className="text-lg font-black leading-none">HM</span>
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-[#1398B7] to-[#0A3640] text-white shadow-[0_8px_24px_rgba(10,54,64,0.24)]">
+              <span className="text-lg font-black leading-none">GF</span>
             </div>
             <div>
               <p className="text-[10px] font-black uppercase tracking-[0.24em] text-slate-400">Painel Admin</p>
-              <h1 className="text-xl font-black tracking-tight text-slate-900">HomeCare Match Academy</h1>
+              <h1 className="text-xl font-black tracking-tight text-slate-900">GenFlix Admin</h1>
             </div>
           </div>
 

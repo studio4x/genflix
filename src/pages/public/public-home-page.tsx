@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 
-import homeCareMatchLogoUrl from '@/assets/homecare-match-logo.jpg'
+import genflixWordmarkUrl from '@/assets/genflix-wordmark.svg'
 import { useAuth } from '@/app/providers/auth-provider'
 import { PlatformFooter } from '@/components/layout/platform-footer'
 import { Button } from '@/components/ui/button'
@@ -27,13 +27,10 @@ function formatCourseWorkload(minutes: number) {
 
 function sanitizeCourseDescription(description: string | null) {
   if (!description) {
-    return 'Treinamento disponível para fortalecer sua atuação profissional dentro do ecossistema HomeCare Match.'
+    return 'Treinamento disponível para fortalecer sua atuação profissional dentro do ecossistema GenFlix.'
   }
 
-  return description
-    .replace(/<[^>]*>?/gm, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
+  return description.replace(/<[^>]*>?/gm, ' ').replace(/\s+/g, ' ').trim()
 }
 
 export function PublicHomePage() {
@@ -69,6 +66,7 @@ export function PublicHomePage() {
     }
 
     void loadCourses()
+
     return () => {
       isMounted = false
     }
@@ -100,8 +98,8 @@ export function PublicHomePage() {
           <header className="flex items-center justify-between gap-6 border-b border-slate-200/80 pb-5">
             <a href="#inicio" className="shrink-0">
               <img
-                src={homeCareMatchLogoUrl}
-                alt="HomeCare Match"
+                src={genflixWordmarkUrl}
+                alt="GenFlix"
                 className="h-16 w-auto rounded-2xl object-contain sm:h-20"
               />
             </a>
@@ -150,29 +148,29 @@ export function PublicHomePage() {
           <div className="mx-auto flex max-w-[980px] flex-col items-center pb-4 pt-16 text-center sm:pt-20 lg:pt-24">
             <div className="inline-flex items-center gap-3 rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-medium text-slate-700 shadow-sm">
               <span className="h-2.5 w-2.5 rounded-full bg-[#1473ff]" />
-              Home Care Match Academy para profissionais da área da saúde
+              GenFlix Academy para profissionais da área da saúde
             </div>
 
             <h1 className="mt-8 max-w-[980px] text-5xl font-black leading-[0.96] tracking-tight text-slate-900 md:text-6xl lg:text-[4.7rem]">
-              Desenvolva sua carreira com os cursos oficiais da HomeCare Match
+              Desenvolva sua carreira com os cursos oficiais da GenFlix
             </h1>
 
             <div className="mt-8 max-w-[860px] space-y-4 text-xl font-medium leading-9 text-slate-600">
               <p>
-                A plataforma de cursos da HomeCare Match concentra treinamentos para profissionais cadastrados na rede,
-                com aulas, avaliações e trilhas de desenvolvimento ligadas à rotina real do atendimento domiciliar.
+                A plataforma de cursos da GenFlix concentra treinamentos para profissionais cadastrados, com aulas,
+                avaliações e trilhas de desenvolvimento ligadas à rotina real do aprendizado digital.
               </p>
               <p>
-                Estude no seu ritmo, acompanhe seu progresso e avance com mais segurança dentro do ecossistema HomeCare Match.
+                Estude no seu ritmo, acompanhe seu progresso e avance com mais segurança dentro do ecossistema GenFlix.
               </p>
             </div>
 
             <div className="mt-10 grid w-full max-w-[760px] gap-x-12 gap-y-5 text-left text-[15px] font-medium text-slate-700 sm:grid-cols-2">
               {[
-                'Cursos e avaliações liberados conforme sua jornada profissional',
+                'Cursos e avaliações liberados conforme sua jornada de estudos',
                 'Conteúdo alinhado a operações, protocolos e boas práticas',
                 'Progresso, revisões e anotações dentro da própria plataforma',
-                'Acesso exclusivo para profissionais cadastrados na HomeCare Match',
+                'Acesso exclusivo para usuários cadastrados na GenFlix',
               ].map((item) => (
                 <div key={item} className="flex items-start gap-3">
                   <span className="mt-1 h-2.5 w-2.5 rounded-full bg-[#1473ff]" />
@@ -193,14 +191,12 @@ export function PublicHomePage() {
                 variant="outline"
                 className="h-14 rounded-2xl border-slate-200 bg-white px-8 text-base font-black text-slate-800 shadow-sm hover:bg-slate-50"
               >
-                <a href="https://homecarematch.com.br" target="_blank" rel="noreferrer">
-                  Ver como funciona
-                </a>
+                <Link to="/#como-funciona">Ver como funciona</Link>
               </Button>
             </div>
 
             <p className="mt-4 text-sm font-medium text-slate-500">
-              Explore os cursos disponíveis e descubra como a Academy funciona para a rede HomeCare Match.
+              Explore os cursos disponíveis e descubra como a GenFlix funciona para sua jornada de aprendizado.
             </p>
 
             <div className="mt-12 grid w-full gap-4 sm:grid-cols-3">
@@ -228,32 +224,33 @@ export function PublicHomePage() {
               Contexto institucional
             </div>
             <h2 className="text-3xl font-black tracking-tight text-slate-900 md:text-4xl">
-              A Academy existe para apoiar a atuação prática do profissional dentro da HomeCare Match.
+              A GenFlix existe para apoiar a evolução prática do usuário dentro do ambiente de cursos.
             </h2>
           </div>
           <div className="grid gap-4 md:grid-cols-2">
             {[
               {
                 title: 'Plataforma principal',
-                description: 'A HomeCare Match conecta profissionais da saúde às melhores oportunidades em home care e organiza a relação com o ecossistema da assistência domiciliar.',
+                description:
+                  'A GenFlix organiza cursos, trilhas e conteúdos para apoiar a evolução profissional e acadêmica dos usuários.',
               },
               {
                 title: 'Plataforma de cursos',
-                description: 'A Academy concentra capacitação, padronização operacional, revisão técnica e atualização profissional para os usuários cadastrados.',
+                description:
+                  'A plataforma concentra capacitação, padronização operacional, revisão técnica e atualização profissional.',
               },
               {
                 title: 'Acesso controlado',
-                description: 'Os cursos não são de acesso aberto. O conteúdo é direcionado aos profissionais que já fazem parte da rede HomeCare Match.',
+                description:
+                  'Os cursos não são de acesso aberto. O conteúdo é direcionado aos usuários que possuem matrícula, compra ou liberação ativa.',
               },
               {
                 title: 'Aprendizado aplicável',
-                description: 'O foco é transformar treinamento em prática: aulas, avaliações, progresso por trilha e materiais complementares dentro da rotina do profissional.',
+                description:
+                  'O foco é transformar treinamento em prática: aulas, avaliações, progresso por trilha e materiais complementares dentro da rotina do usuário.',
               },
             ].map((item) => (
-              <article
-                key={item.title}
-                className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-sm"
-              >
+              <article key={item.title} className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-sm">
                 <p className="text-base font-black tracking-tight text-slate-900">{item.title}</p>
                 <p className="mt-3 text-sm font-medium leading-7 text-slate-600">{item.description}</p>
               </article>
@@ -267,7 +264,7 @@ export function PublicHomePage() {
             <div className="h-px flex-1 bg-slate-200" />
           </div>
           <p className="max-w-3xl text-base font-medium leading-relaxed text-slate-500">
-            Esta vitrine apresenta os cursos publicados na plataforma. Para acessar qualquer conteúdo, é necessário ser profissional cadastrado na HomeCare Match e possuir liberação adequada.
+            Esta vitrine apresenta os cursos publicados na plataforma. Para acessar qualquer conteúdo, é necessário ter acesso liberado e conta autenticada.
           </p>
 
           {coursesError ? (
@@ -310,7 +307,7 @@ export function PublicHomePage() {
                     />
                   ) : (
                     <div className="flex h-full w-full items-center justify-center bg-[linear-gradient(135deg,#0f172a,#1e3a8a)]">
-                      <span className="text-4xl font-black uppercase tracking-[0.28em] text-white/12">Academy</span>
+                      <span className="text-4xl font-black uppercase tracking-[0.28em] text-white/12">GenFlix</span>
                     </div>
                   )}
 
@@ -336,7 +333,7 @@ export function PublicHomePage() {
                   <div className="mt-6 flex items-center justify-between border-t border-slate-100 pt-5">
                     <div className="flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.22em] text-slate-400">
                       <span className="h-2 w-2 rounded-full bg-amber-400" />
-                      HomeCare Match Academy
+                      GenFlix Academy
                     </div>
                     <span className="text-sm font-black text-blue-700">
                       {formatCurrencyFromCents(course.price_cents, course.currency)}
@@ -355,7 +352,7 @@ export function PublicHomePage() {
                 Quero acessar os cursos
               </div>
               <h2 className="text-3xl font-black tracking-tight md:text-4xl">
-                O acesso à Academy é liberado após a confirmação da compra.
+                O acesso à GenFlix é liberado após a confirmação da compra.
               </h2>
               <p className="max-w-3xl text-base font-medium leading-8 text-white/72">
                 Escolha um curso, conclua o pagamento no checkout do Asaas e o acesso será liberado automaticamente quando a compra for confirmada.
@@ -363,20 +360,11 @@ export function PublicHomePage() {
             </div>
 
             <div className="flex flex-col gap-3 sm:flex-row lg:flex-col">
-              <Button
-                asChild
-                className="h-14 rounded-2xl bg-cyan-400 px-8 font-black text-slate-950 hover:bg-cyan-300"
-              >
+              <Button asChild className="h-14 rounded-2xl bg-cyan-400 px-8 font-black text-slate-950 hover:bg-cyan-300">
                 <Link to={user ? dashboardPath : '/login'}>{user ? 'Ir para meu painel' : 'Entrar para comprar'}</Link>
               </Button>
-              <Button
-                asChild
-                variant="outline"
-                className="h-14 rounded-2xl border-white/12 bg-white/5 px-8 font-black text-white hover:bg-white/10"
-              >
-                <a href="https://homecarematch.com.br" target="_blank" rel="noreferrer">
-                  Ir para HomeCare Match
-                </a>
+              <Button asChild variant="outline" className="h-14 rounded-2xl border-white/12 bg-white/5 px-8 font-black text-white hover:bg-white/10">
+                <Link to="/#inicio">Ir para a GenFlix</Link>
               </Button>
             </div>
           </div>
@@ -393,9 +381,7 @@ export function PublicHomePage() {
             <div className="flex items-start justify-between gap-4 border-b border-slate-100 px-6 py-5 sm:px-8">
               <div>
                 <p className="text-[10px] font-black uppercase tracking-[0.24em] text-blue-600">Oferta do curso</p>
-                <h3 className="mt-2 text-2xl font-black tracking-tight text-slate-900">
-                  {selectedCourse.title}
-                </h3>
+                <h3 className="mt-2 text-2xl font-black tracking-tight text-slate-900">{selectedCourse.title}</h3>
               </div>
               <button
                 type="button"

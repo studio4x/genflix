@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ChangeEvent, type PointerEvent as ReactPointerEvent } from 'react'
-import ReactQuill from 'react-quill'
+import ReactQuill from '@/components/forms/react-quill'
 import { Plus, X } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
@@ -571,7 +571,7 @@ export function LessonImageHotspotsBlockEditor({
                   <ReactQuill
                     theme="snow"
                     value={selectedHotspot.body_html}
-                    onChange={(value) => updateHotspot(selectedHotspot.id, { body_html: value })}
+                    onChange={(value: string) => updateHotspot(selectedHotspot.id, { body_html: value })}
                     modules={HOTSPOT_BODY_QUILL_MODULES}
                     formats={HOTSPOT_BODY_QUILL_FORMATS}
                     placeholder="Escreva o conteúdo que será exibido ao clicar neste hotspot..."

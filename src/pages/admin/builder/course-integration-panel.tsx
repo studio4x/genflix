@@ -74,7 +74,7 @@ export function CourseIntegrationPanel() {
         <div className="flex flex-wrap items-start justify-between gap-4 border-b border-slate-100 pb-5">
           <div>
             <p className="text-[10px] font-black uppercase tracking-[0.24em] text-slate-400">Integracao</p>
-            <h2 className="mt-2 text-3xl font-black tracking-tight text-slate-900">HomeCare Match</h2>
+            <h2 className="mt-2 text-3xl font-black tracking-tight text-slate-900">GenFlix</h2>
             <p className="mt-2 max-w-3xl text-sm text-slate-500">
               Aqui voce acompanha o que ja esta ativo para este curso: mapeamento externo, liberacoes gerenciadas pela
               integracao, logs recentes e eventos que retornam progresso para a plataforma principal.
@@ -100,7 +100,7 @@ export function CourseIntegrationPanel() {
             <p className="mt-2 text-sm text-slate-600">
               {snapshot?.mapping
                 ? 'Este curso ja pode ser encontrado pela integracao da plataforma principal.'
-                : 'Sem esse mapeamento, a HomeCare Match nao consegue sincronizar compra, inscricao ou acesso direto.'}
+                : 'Sem esse mapeamento, a plataforma não consegue sincronizar compra, inscrição ou acesso direto.'}
             </p>
           </article>
 
@@ -117,7 +117,7 @@ export function CourseIntegrationPanel() {
             <p className="mt-3 text-4xl font-black tracking-tight text-rose-700">
               {isLoading ? '...' : revokedIntegrationReleases.length}
             </p>
-            <p className="mt-2 text-sm text-rose-700/80">Acessos que vieram da HomeCare Match e ja foram revogados ou expiraram.</p>
+            <p className="mt-2 text-sm text-rose-700/80">Acessos que vieram da integração e já foram revogados ou expiraram.</p>
           </article>
         </div>
 
@@ -127,8 +127,8 @@ export function CourseIntegrationPanel() {
               <p className="text-[10px] font-black uppercase tracking-[0.24em] text-slate-400">Prontidao do acesso direto</p>
               <p className="mt-2 text-sm font-semibold text-slate-700">
                 {snapshot?.mapping
-                  ? `A HomeCare Match ja pode apontar o acesso direto para o curso "${courseTree?.course.title ?? ''}".`
-                  : 'Ainda falta preencher o ID do Curso na HomeCare Match nas configuracoes do curso.'}
+                  ? `A plataforma já pode apontar o acesso direto para o curso "${courseTree?.course.title ?? ''}".`
+                  : 'Ainda falta preencher o ID do curso nas configurações do curso.'}
               </p>
             </div>
             <Button variant="outline" asChild>
@@ -142,7 +142,7 @@ export function CourseIntegrationPanel() {
         <section className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm md:p-8">
           <div className="border-b border-slate-100 pb-5">
             <h3 className="text-xl font-black tracking-tight text-slate-900">Liberacoes gerenciadas pela integracao</h3>
-            <p className="mt-1 text-sm text-slate-500">Somente as liberacoes que vieram da HomeCare Match aparecem aqui.</p>
+            <p className="mt-1 text-sm text-slate-500">Somente as liberações que vieram da integração aparecem aqui.</p>
           </div>
 
           <div className="mt-5 space-y-3">
@@ -224,7 +224,7 @@ export function CourseIntegrationPanel() {
 
           <section className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm md:p-8">
             <div className="border-b border-slate-100 pb-5">
-              <h3 className="text-xl font-black tracking-tight text-slate-900">Eventos de retorno para a HomeCare Match</h3>
+              <h3 className="text-xl font-black tracking-tight text-slate-900">Eventos de retorno da integração</h3>
               <p className="mt-1 text-sm text-slate-500">Fila de progresso, conclusao e aprovacao deste curso.</p>
             </div>
 

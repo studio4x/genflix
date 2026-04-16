@@ -30,3 +30,4 @@ dist-ssr
 supabase/.temp
 
 .vercel
+.figma/

@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 
-import homeCareMatchLogoUrl from '@/assets/homecare-match-logo.jpg'
+import genflixWordmarkUrl from '@/assets/genflix-wordmark.svg'
 import { PlatformFooter } from '@/components/layout/platform-footer'
 import { Button } from '@/components/ui/button'
 
@@ -22,8 +22,8 @@ export function AuthShell({ title, subtitle, children }: AuthShellProps) {
           <header className="flex items-center justify-between gap-6 border-b border-slate-200/80 pb-5">
             <Link to="/" className="shrink-0">
               <img
-                src={homeCareMatchLogoUrl}
-                alt="HomeCare Match"
+                src={genflixWordmarkUrl}
+                alt="GenFlix"
                 className="h-16 w-auto rounded-2xl object-contain sm:h-20"
               />
             </Link>
@@ -66,8 +66,8 @@ export function AuthShell({ title, subtitle, children }: AuthShellProps) {
             <section className="w-full max-w-[540px] rounded-[34px] border border-slate-200 bg-white/95 p-7 shadow-[0_32px_80px_rgba(15,23,42,0.08)] backdrop-blur sm:p-10">
               <div className="flex justify-center">
                 <img
-                  src={homeCareMatchLogoUrl}
-                  alt="HomeCare Match"
+                  src={genflixWordmarkUrl}
+                  alt="GenFlix"
                   className="h-24 w-auto object-contain sm:h-28"
                 />
               </div>

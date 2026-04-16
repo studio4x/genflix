@@ -23,8 +23,8 @@ export function PublicLegalPageShell({
       <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col px-6 py-8 lg:px-8">
         <header className="flex flex-col gap-4 border-b border-slate-200 pb-6 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex items-center gap-4">
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-600 text-lg font-black text-white shadow-[0_10px_30px_rgba(37,99,235,0.22)]">
-              HM
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-[#1398B7] to-[#0A3640] text-lg font-black text-white shadow-[0_10px_30px_rgba(10,54,64,0.18)]">
+              GF
             </div>
             <div className="space-y-1">
               <p className="text-[11px] font-black uppercase tracking-[0.3em] text-blue-600">

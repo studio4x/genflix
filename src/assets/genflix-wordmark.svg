@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 160" role="img" aria-labelledby="title desc">
+  <title id="title">GenFlix</title>
+  <desc id="desc">Wordmark da plataforma GenFlix com degradê em azul e verde-escuro.</desc>
+  <defs>
+    <linearGradient id="brandGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1398B7" />
+      <stop offset="100%" stop-color="#0A3640" />
+    </linearGradient>
+  </defs>
+  <rect x="0" y="0" width="520" height="160" rx="28" fill="url(#brandGradient)" />
+  <circle cx="82" cy="80" r="36" fill="#ffffff" fill-opacity="0.14" />
+  <path d="M82 46c-18 0-32 14-32 32s14 32 32 32 32-14 32-32-14-32-32-32Zm0 14a18 18 0 1 1 0 36 18 18 0 0 1 0-36Z" fill="#ffffff" fill-opacity="0.94"/>
+  <text x="144" y="88" fill="#ffffff" font-family="Manrope, Arial, sans-serif" font-size="54" font-weight="800" letter-spacing="-1.5">
+    Gen<tspan font-weight="900">Flix</tspan>
+  </text>
+  <text x="146" y="118" fill="#d8eef2" font-family="Manrope, Arial, sans-serif" font-size="18" font-weight="700" letter-spacing="2.4">
+    PLATAFORMA DE CONTEÚDO
+  </text>
+</svg>

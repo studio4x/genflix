@@ -59,7 +59,7 @@ export function HcmAccessPage() {
 
       const accessToken = sessionResult.data.session?.access_token
       if (!accessToken) {
-        throw new Error('Sua sessao no LMS nao foi criada. Gere um novo acesso pela HomeCare Match.')
+        throw new Error('Sua sessão no LMS não foi criada. Gere um novo acesso pela GenFlix.')
       }
 
       const response = await fetch('/api/integrations/hcm/access/finalize', {
@@ -115,7 +115,7 @@ export function HcmAccessPage() {
   return (
     <AuthShell
       title="Acesso ao Curso"
-      subtitle="Estamos conectando sua sessao da HomeCare Match com a plataforma de cursos."
+      subtitle="Estamos conectando sua sessão da GenFlix com a plataforma de cursos."
     >
       <div className="space-y-6 text-center">
         <div className="flex justify-center">
@@ -153,7 +153,7 @@ export function HcmAccessPage() {
               Voltar para a plataforma
             </Link>
             <p className="text-sm font-medium text-slate-500">
-              Se o problema persistir, gere um novo acesso na HomeCare Match.
+              Se o problema persistir, gere um novo acesso na GenFlix.
             </p>
           </div>
         ) : null}

@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import ReactQuill from 'react-quill'
-import 'react-quill/dist/quill.snow.css'
+import ReactQuill from '@/components/forms/react-quill'
 import type { FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { DragDropContext, Draggable, Droppable, type DropResult } from '@hello-pangea/dnd'
@@ -755,8 +754,8 @@ export function AdminCoursesPage() {
                           <div className="rich-editor-container mini">
                              <ReactQuill 
                                 theme="snow"
-                                value={form.description}
-                                onChange={val => setDraft((p) => ({ ...p, form: { ...p.form, description: val } }))}
+                                value={form.description ?? ''}
+                                onChange={(val: string) => setDraft((p) => ({ ...p, form: { ...p.form, description: val } }))}
                                 modules={{
                                    toolbar: [
                                       ['bold', 'italic', 'underline'],

@@ -378,7 +378,7 @@ export function StudentCourseDetailsPage() {
           <div className="space-y-2 text-center md:text-left flex-1">
             <h3 className="text-3xl font-black text-white leading-none">Missão Cumprida!</h3>
             <p className="text-emerald-50 text-lg font-medium">
-              Você completou este curso com maestria. Seu empenho é o que define a qualidade HomeCare Match Academy.
+              Você completou este curso com maestria. Seu empenho é o que define a qualidade da GenFlix Academy.
             </p>
           </div>
           <Button variant="outline" className="h-14 px-8 rounded-2xl bg-white border-transparent text-emerald-700 font-black text-base hover:bg-emerald-50 shadow-lg">

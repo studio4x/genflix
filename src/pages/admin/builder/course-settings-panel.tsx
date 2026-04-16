@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import ReactQuill from 'react-quill'
+import ReactQuill from '@/components/forms/react-quill'
 import { Link } from 'react-router-dom'
 import { useAuth } from '@/app/providers/auth-provider'
 import { Button } from '@/components/ui/button'
@@ -28,7 +28,6 @@ import {
 } from '@/features/assessments/course-quiz-type-settings'
 import { fetchGlobalQuizTypeSettings } from '@/features/admin/quiz-types/api'
 import type { Course, CourseQuizTypeSettings } from '@/types/content'
-import 'react-quill/dist/quill.snow.css'
 
 type CourseSettingsFormState = {
   title: string
@@ -332,7 +331,7 @@ export function CourseSettingsPanel() {
                </label>
 
                <label className="block space-y-2">
-                  <span className="text-xs font-black text-slate-400 uppercase tracking-widest pl-1">ID do Curso na HomeCare Match</span>
+                  <span className="text-xs font-black text-slate-400 uppercase tracking-widest pl-1">ID do Curso na integração</span>
                   <input
                      className="w-full font-bold rounded-[20px] border border-slate-200 bg-slate-100/50 px-6 py-4 placeholder:text-slate-300 focus:bg-white focus:ring-4 focus:ring-blue-100 transition-all"
                      placeholder="Ex: hcm-curso-suporte-ventilatorio"
@@ -421,7 +420,7 @@ export function CourseSettingsPanel() {
                      <ReactQuill 
                         theme="snow"
                         value={form.description}
-                        onChange={val => setForm(f => ({ ...f, description: val }))}
+                        onChange={(val: string) => setForm(f => ({ ...f, description: val }))}
                         modules={quillModules}
                         placeholder="Fale sobre os objetivos e o público-alvo do curso..."
                         className="bg-slate-100/50 rounded-[24px] overflow-hidden border border-slate-200 focus-within:ring-4 focus-within:ring-blue-100 focus-within:bg-white transition-all"

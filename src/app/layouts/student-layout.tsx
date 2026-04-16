@@ -1,6 +1,6 @@
 import { Link, Outlet, useLocation } from 'react-router-dom'
 
-import homeCareMatchLogoUrl from '@/assets/homecare-match-logo.jpg'
+import genflixWordmarkUrl from '@/assets/genflix-wordmark.svg'
 import { useAuth } from '@/app/providers/auth-provider'
 import { PlatformFooter } from '@/components/layout/platform-footer'
 import { Button } from '@/components/ui/button'
@@ -63,8 +63,8 @@ export function StudentLayout() {
           <div className="relative flex min-h-[68px] items-center justify-between gap-4">
             <Link to="/aluno/dashboard" className="flex min-w-0 items-center gap-4">
               <img
-                src={homeCareMatchLogoUrl}
-                alt="HomeCare Match"
+                src={genflixWordmarkUrl}
+                alt="GenFlix"
                 className="h-16 w-auto object-contain sm:h-20"
               />
               <p className="text-base font-bold uppercase tracking-[0.22em] text-blue-600 sm:text-lg">Academy</p>

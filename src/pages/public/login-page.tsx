@@ -38,7 +38,7 @@ export function LoginPage() {
   return (
     <AuthShell
       title="Portal de Acesso"
-      subtitle="Entre com sua conta para acessar a plataforma de cursos da HomeCare Match."
+      subtitle="Entre com sua conta para acessar a plataforma de cursos da GenFlix."
     >
       <form className="space-y-5" onSubmit={handleSubmit}>
         <label className="block space-y-1">
@@ -91,7 +91,7 @@ export function LoginPage() {
       </form>
 
       <div className="mt-8 text-center text-sm font-medium text-slate-500">
-        Acesso exclusivo para profissionais cadastrados na HomeCare Match.
+        Acesso exclusivo para usuários cadastrados na GenFlix.
       </div>
     </AuthShell>
   )

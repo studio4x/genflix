@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import ReactQuill from 'react-quill'
-import 'react-quill/dist/quill.snow.css'
+import ReactQuill from '@/components/forms/react-quill'
 import {
   createLesson,
   deleteLessonContentAsset,
@@ -534,7 +533,7 @@ export function LessonEditorPanel() {
                                  <ReactQuill
                                    theme="snow"
                                    value={block.content}
-                                   onChange={(value) => updateBlock(index, { ...block, content: value })}
+                                   onChange={(value: string) => updateBlock(index, { ...block, content: value })}
                                    modules={quillModules}
                                    formats={quillFormats}
                                    placeholder="Escreva aqui o texto da aula..."

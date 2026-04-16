@@ -95,7 +95,7 @@ export function AdminIntegrationsPage() {
           <div>
             <h2 className="text-3xl font-extrabold tracking-tight text-slate-900">Integracoes</h2>
             <p className="mt-1 max-w-3xl text-sm text-slate-500">
-              Acompanhe o estado da integracao com a HomeCare Match: mapeamentos de cursos, logs de sincronizacao,
+              Acompanhe o estado da integração com a GenFlix: mapeamentos de cursos, logs de sincronização,
               fila de eventos de progresso e entregas que exigem atencao.
             </p>
           </div>
@@ -121,7 +121,7 @@ export function AdminIntegrationsPage() {
           <p className="mt-3 text-4xl font-black tracking-tight text-slate-900">
             {isLoading ? '...' : snapshot?.mapping_count ?? 0}
           </p>
-          <p className="mt-2 text-sm text-slate-500">Cursos do LMS ja vinculados ao identificador da HomeCare Match.</p>
+          <p className="mt-2 text-sm text-slate-500">Cursos do LMS já vinculados ao identificador da plataforma.</p>
         </article>
 
         <article className="rounded-[28px] border border-rose-100 bg-rose-50/70 p-6 shadow-sm">
@@ -154,7 +154,7 @@ export function AdminIntegrationsPage() {
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-5">
             <div>
               <h3 className="text-xl font-black tracking-tight text-slate-900">Logs recentes da integracao</h3>
-              <p className="mt-1 text-sm text-slate-500">Inbound, outbound e diagnosticos internos associados a HomeCare Match.</p>
+              <p className="mt-1 text-sm text-slate-500">Inbound, outbound e diagnósticos internos associados à integração.</p>
             </div>
             <div className="flex rounded-2xl bg-slate-100 p-1">
               <button

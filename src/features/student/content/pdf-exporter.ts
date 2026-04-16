@@ -1,9 +1,8 @@
-import homeCareMatchLogoUrl from '@/assets/homecare-match-logo.jpg'
+import genflixWordmarkUrl from '@/assets/genflix-wordmark.svg'
 import { getSignedLessonContentAssetUrl } from '@/features/admin/content/api'
 import { parseLessonImageHotspotsBlockElement } from '@/features/admin/content/content-blocks'
 import { supabase } from '@/services/supabase/client'
 import { PDFDocument, StandardFonts, degrees, rgb } from 'pdf-lib'
-// @ts-ignore - html2pdf doesn't have official types easily available
 import html2pdf from 'html2pdf.js'
 
 const PDF_FILENAME_PREFIX = 'Material'
@@ -11,7 +10,7 @@ const MATERIALS_BUCKET = 'materials'
 const MATERIAL_URL_TTL_SECONDS = 60 * 60 * 24 * 30
 const DEFAULT_LESSON_CONTENT = '<p>Conte\u00fado em v\u00eddeo ou material complementar.</p>'
 const FOOTER_NOTICE =
-  'Proibida a divulga\u00e7\u00e3o, reprodu\u00e7\u00e3o ou compartilhamento deste material com terceiros sem autoriza\u00e7\u00e3o expressa da HomeCare Match.'
+  'Proibida a divulga\u00e7\u00e3o, reprodu\u00e7\u00e3o ou compartilhamento deste material com terceiros sem autoriza\u00e7\u00e3o expressa da GenFlix.'
 
 type LessonRow = {
   id: string
@@ -507,7 +506,7 @@ export async function exportLicensedModulePdf(moduleTitle: string, storagePath: 
       }
     }
 
-    page.drawText('HomeCare Match Academy', {
+    page.drawText('GenFlix Academy', {
       x: 32,
       y: height - 28,
       size: 10,
@@ -566,7 +565,7 @@ function applyPdfFinishing(
 
   const licenseText =
     `Este documento foi licenciado para ${licenseContext.studentDisplayName} - ${licenseContext.userCode} ` +
-    `atraves da plataforma HomeCare Match - Academy. Codigo de liberacao: ${licenseContext.releaseCode}`
+    `atraves da plataforma GenFlix Academy. Codigo de liberacao: ${licenseContext.releaseCode}`
 
   let headerFontSize = 5.4
   let headerLines = pdf.splitTextToSize(licenseText, pageWidth - 28)
@@ -1032,7 +1031,7 @@ export async function exportModuleToPdf(courseTitle: string, moduleTitle: string
   }
 
   try {
-    const watermark = await createTransparentImage(homeCareMatchLogoUrl, 0.08)
+    const watermark = await createTransparentImage(genflixWordmarkUrl, 0.08)
     const worker = (html2pdf() as any).set(opt).from(element).toPdf()
     const pdf = await worker.get('pdf')
 
