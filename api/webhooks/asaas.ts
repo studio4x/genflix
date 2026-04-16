@@ -1,9 +1,9 @@
-import { createClient } from '@supabase/supabase-js'
+import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 
 import {
   fetchPaymentGatewayConfiguration,
   getHeaderValue,
-} from '../_shared/asaas'
+} from '../_shared/asaas.js'
 
 type ApiRequest = {
   method?: string
@@ -44,7 +44,7 @@ function jsonResponse(res: ApiResponse, statusCode: number, payload: unknown) {
 }
 
 async function findSessionByKeys(
-  adminClient: ReturnType<typeof createClient>,
+  adminClient: SupabaseClient,
   checkoutId: string | null,
   externalReference: string | null,
 ) {

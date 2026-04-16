@@ -8,7 +8,7 @@ import {
   getBearerToken,
   getHeaderValue,
   getRequestOrigin,
-} from '../../_shared/asaas'
+} from '../../_shared/asaas.js'
 
 type ApiRequest = {
   method?: string
