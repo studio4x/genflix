@@ -94,18 +94,46 @@ export function normalizeCourseQuizTypeSettings(
   }
 }
 
+export function getVisibleCourseQuizTypeOptions(
+  globalSettings: Partial<CourseQuizTypeSettings> | null | undefined,
+) {
+  const normalizedGlobalSettings = normalizeCourseQuizTypeSettings(globalSettings)
+
+  return COURSE_QUIZ_TYPE_OPTIONS.filter((option) => normalizedGlobalSettings[option.key])
+}
+
+export function getEffectiveCourseQuizTypeSettings(
+  settings: Partial<CourseQuizTypeSettings> | null | undefined,
+  globalSettings?: Partial<CourseQuizTypeSettings> | null | undefined,
+): CourseQuizTypeSettings {
+  const normalizedCourseSettings = normalizeCourseQuizTypeSettings(settings)
+  const normalizedGlobalSettings = normalizeCourseQuizTypeSettings(globalSettings)
+
+  return {
+    single_choice: normalizedCourseSettings.single_choice && normalizedGlobalSettings.single_choice,
+    essay_ai: normalizedCourseSettings.essay_ai && normalizedGlobalSettings.essay_ai,
+    drag_drop_labeling: normalizedCourseSettings.drag_drop_labeling && normalizedGlobalSettings.drag_drop_labeling,
+    fill_in_the_blanks: normalizedCourseSettings.fill_in_the_blanks && normalizedGlobalSettings.fill_in_the_blanks,
+    image_hotspot: normalizedCourseSettings.image_hotspot && normalizedGlobalSettings.image_hotspot,
+    coloring: normalizedCourseSettings.coloring && normalizedGlobalSettings.coloring,
+    case_study: normalizedCourseSettings.case_study && normalizedGlobalSettings.case_study,
+  }
+}
+
 export function isCourseQuizSettingEnabled(
   settings: Partial<CourseQuizTypeSettings> | null | undefined,
   key: CourseQuizTypeSettingKey,
+  globalSettings?: Partial<CourseQuizTypeSettings> | null | undefined,
 ) {
-  return normalizeCourseQuizTypeSettings(settings)[key]
+  return getEffectiveCourseQuizTypeSettings(settings, globalSettings)[key]
 }
 
 export function isCourseQuestionTypeEnabled(
   settings: Partial<CourseQuizTypeSettings> | null | undefined,
   questionType: AssessmentQuestionType,
+  globalSettings?: Partial<CourseQuizTypeSettings> | null | undefined,
 ) {
-  const normalizedSettings = normalizeCourseQuizTypeSettings(settings)
+  const normalizedSettings = getEffectiveCourseQuizTypeSettings(settings, globalSettings)
 
   switch (questionType) {
     case 'single_choice':
@@ -129,12 +157,18 @@ export function isCourseQuestionTypeEnabled(
   }
 }
 
-export function canCourseUseCaseStudies(settings: Partial<CourseQuizTypeSettings> | null | undefined) {
-  const normalizedSettings = normalizeCourseQuizTypeSettings(settings)
+export function canCourseUseCaseStudies(
+  settings: Partial<CourseQuizTypeSettings> | null | undefined,
+  globalSettings?: Partial<CourseQuizTypeSettings> | null | undefined,
+) {
+  const normalizedSettings = getEffectiveCourseQuizTypeSettings(settings, globalSettings)
   return normalizedSettings.case_study && (normalizedSettings.single_choice || normalizedSettings.essay_ai)
 }
 
-export function hasAnyCourseQuizTypeEnabled(settings: Partial<CourseQuizTypeSettings> | null | undefined) {
-  const normalizedSettings = normalizeCourseQuizTypeSettings(settings)
+export function hasAnyCourseQuizTypeEnabled(
+  settings: Partial<CourseQuizTypeSettings> | null | undefined,
+  globalSettings?: Partial<CourseQuizTypeSettings> | null | undefined,
+) {
+  const normalizedSettings = getEffectiveCourseQuizTypeSettings(settings, globalSettings)
   return Object.values(normalizedSettings).some(Boolean)
 }

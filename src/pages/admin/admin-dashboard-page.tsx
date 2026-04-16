@@ -14,7 +14,7 @@ export function AdminDashboardPage() {
         </p>
       </header>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
         <div className="flex flex-col justify-between rounded-2xl border border-blue-100 bg-blue-50/50 p-6 shadow-sm">
           <div className="flex items-center gap-4 mb-4">
             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-600 text-white shadow-sm">
@@ -29,6 +29,23 @@ export function AdminDashboardPage() {
           <p className="text-sm text-slate-600 mb-6">Acesse e gerencie todos os cursos, módulos e aulas disponíveis.</p>
           <Button className="w-full bg-blue-600 hover:bg-blue-700 shadow-sm" asChild>
             <Link to="/admin/cursos">Ir para Cursos</Link>
+          </Button>
+        </div>
+
+        <div className="flex flex-col justify-between rounded-2xl border border-sky-100 bg-sky-50/50 p-6 shadow-sm">
+          <div className="mb-4 flex items-center gap-4">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-sky-600 text-white shadow-sm">
+              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </div>
+            <div>
+              <p className="text-sm font-semibold uppercase tracking-wider text-sky-700/80">Tipos Globais</p>
+            </div>
+          </div>
+          <p className="mb-6 text-sm text-slate-600">Ative ou desative os formatos de quiz que poderão existir em qualquer curso.</p>
+          <Button variant="outline" className="w-full border-sky-200 text-sky-800 hover:bg-sky-100 hover:text-sky-900 shadow-sm" asChild>
+            <Link to="/admin/tipos-quiz">Acessar Tipos de Quiz</Link>
           </Button>
         </div>
 

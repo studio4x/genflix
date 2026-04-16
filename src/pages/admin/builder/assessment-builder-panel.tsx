@@ -43,6 +43,7 @@ import {
   isCourseQuestionTypeEnabled,
   normalizeCourseQuizTypeSettings,
 } from '@/features/assessments/course-quiz-type-settings'
+import { fetchGlobalQuizTypeSettings } from '@/features/admin/quiz-types/api'
 import { fetchModule } from '@/features/admin/content/api'
 import type {
   Assessment,
@@ -233,6 +234,9 @@ export function AssessmentBuilderPanel() {
   const [isDeletingAssessment, setIsDeletingAssessment] = useState(false)
   const [importError, setImportError] = useState<string | null>(null)
   const [isHotspotModeModalOpen, setIsHotspotModeModalOpen] = useState(false)
+  const [globalQuizTypeSettings, setGlobalQuizTypeSettings] = useState(() =>
+    normalizeCourseQuizTypeSettings(null),
+  )
   const questionPersistQueueRef = useRef<Record<string, Promise<void>>>({})
   const questionsRef = useRef<AssessmentQuestionWithOptions[]>([])
   const caseStudiesRef = useRef<AssessmentCaseStudyWithQuestions[]>([])
@@ -240,20 +244,20 @@ export function AssessmentBuilderPanel() {
   const isFinal = !moduleId
   const isNewModuleAssessment = !isFinal && assessmentId === 'nova'
   const quizTypeSettings = normalizeCourseQuizTypeSettings(courseTree?.course.quiz_type_settings)
-  const canUseCaseStudies = canCourseUseCaseStudies(quizTypeSettings)
+  const canUseCaseStudies = canCourseUseCaseStudies(quizTypeSettings, globalQuizTypeSettings)
 
   function ensureQuestionTypeEnabled(questionType: AssessmentQuestionType | 'case_study') {
     if (questionType === 'case_study') {
       if (!canUseCaseStudies) {
-        setError('Estudo de caso esta desativado nas configuracoes do curso.')
+        setError('Estudo de caso esta desativado nas configuracoes globais ou do curso.')
         return false
       }
 
       return true
     }
 
-    if (!isCourseQuestionTypeEnabled(quizTypeSettings, questionType)) {
-      setError(`${getQuestionTypeDisplayLabel(questionType)} esta desativado nas configuracoes do curso.`)
+    if (!isCourseQuestionTypeEnabled(quizTypeSettings, questionType, globalQuizTypeSettings)) {
+      setError(`${getQuestionTypeDisplayLabel(questionType)} esta desativado nas configuracoes globais ou do curso.`)
       return false
     }
 
@@ -341,6 +345,29 @@ export function AssessmentBuilderPanel() {
   useEffect(() => {
     caseStudiesRef.current = caseStudies
   }, [caseStudies])
+
+  useEffect(() => {
+    let isMounted = true
+
+    async function loadGlobalQuizTypeSettings() {
+      try {
+        const loadedSettings = await fetchGlobalQuizTypeSettings()
+        if (isMounted) {
+          setGlobalQuizTypeSettings(loadedSettings)
+        }
+      } catch {
+        if (isMounted) {
+          setGlobalQuizTypeSettings(normalizeCourseQuizTypeSettings(null))
+        }
+      }
+    }
+
+    void loadGlobalQuizTypeSettings()
+
+    return () => {
+      isMounted = false
+    }
+  }, [])
 
   async function handleCreateAssessment() {
     if (!user || !courseId) return
@@ -521,7 +548,7 @@ export function AssessmentBuilderPanel() {
       className: 'border-slate-100 text-slate-400 hover:border-blue-100 hover:bg-blue-50/30 hover:text-blue-600',
       iconClassName: 'border-slate-100 bg-slate-50',
       onClick: () => void handleAddQuestion('single_choice'),
-      isVisible: isCourseQuestionTypeEnabled(quizTypeSettings, 'single_choice'),
+      isVisible: isCourseQuestionTypeEnabled(quizTypeSettings, 'single_choice', globalQuizTypeSettings),
     },
     {
       title: 'Arrastar e Soltar',
@@ -529,7 +556,7 @@ export function AssessmentBuilderPanel() {
       className: 'border-cyan-100 text-cyan-700 hover:bg-cyan-50/70',
       iconClassName: 'border-cyan-200 bg-cyan-50',
       onClick: () => void handleAddQuestion('drag_drop_labeling'),
-      isVisible: isCourseQuestionTypeEnabled(quizTypeSettings, 'drag_drop_labeling'),
+      isVisible: isCourseQuestionTypeEnabled(quizTypeSettings, 'drag_drop_labeling', globalQuizTypeSettings),
     },
     {
       title: 'Preencher Lacunas',
@@ -537,7 +564,7 @@ export function AssessmentBuilderPanel() {
       className: 'border-teal-100 text-teal-700 hover:bg-teal-50/70',
       iconClassName: 'border-teal-200 bg-teal-50',
       onClick: () => void handleAddQuestion('fill_in_the_blanks'),
-      isVisible: isCourseQuestionTypeEnabled(quizTypeSettings, 'fill_in_the_blanks'),
+      isVisible: isCourseQuestionTypeEnabled(quizTypeSettings, 'fill_in_the_blanks', globalQuizTypeSettings),
     },
     {
       title: 'Quiz de Hotspot',
@@ -545,7 +572,7 @@ export function AssessmentBuilderPanel() {
       className: 'border-sky-100 text-sky-700 hover:bg-sky-50/70',
       iconClassName: 'border-sky-200 bg-sky-50',
       onClick: () => setIsHotspotModeModalOpen(true),
-      isVisible: isCourseQuestionTypeEnabled(quizTypeSettings, 'image_hotspot'),
+      isVisible: isCourseQuestionTypeEnabled(quizTypeSettings, 'image_hotspot', globalQuizTypeSettings),
     },
     {
       title: 'Quiz de Colorir',
@@ -553,7 +580,7 @@ export function AssessmentBuilderPanel() {
       className: 'border-fuchsia-100 text-fuchsia-700 hover:bg-fuchsia-50/70',
       iconClassName: 'border-fuchsia-200 bg-fuchsia-50',
       onClick: () => void handleAddQuestion('coloring'),
-      isVisible: isCourseQuestionTypeEnabled(quizTypeSettings, 'coloring'),
+      isVisible: isCourseQuestionTypeEnabled(quizTypeSettings, 'coloring', globalQuizTypeSettings),
     },
     {
       title: 'Novo Estudo de Caso',
@@ -935,14 +962,18 @@ export function AssessmentBuilderPanel() {
       const data = parsedData as Record<string, unknown>
       const importData = data as unknown as ImportAssessmentData
       const importedTypes = collectImportedQuestionTypes(importData)
-      const firstDisabledImportedType = importedTypes.find((questionType) => !isCourseQuestionTypeEnabled(quizTypeSettings, questionType))
+      const firstDisabledImportedType = importedTypes.find(
+        (questionType) => !isCourseQuestionTypeEnabled(quizTypeSettings, questionType, globalQuizTypeSettings),
+      )
 
       if (firstDisabledImportedType) {
-        throw new Error(`${getQuestionTypeDisplayLabel(firstDisabledImportedType)} esta desativado nas configuracoes do curso.`)
+        throw new Error(
+          `${getQuestionTypeDisplayLabel(firstDisabledImportedType)} esta desativado nas configuracoes globais ou do curso.`,
+        )
       }
 
       if ((importData.case_studies?.length ?? 0) > 0 && !canUseCaseStudies) {
-        throw new Error('Estudo de caso esta desativado nas configuracoes do curso.')
+        throw new Error('Estudo de caso esta desativado nas configuracoes globais ou do curso.')
       }
 
       let targetAssessmentId = assessment?.id
@@ -1034,7 +1065,12 @@ export function AssessmentBuilderPanel() {
     const canUseFillInTheBlanks = isStandalone && question.question_type === 'fill_in_the_blanks'
     const canUseImageHotspot = isStandalone && question.question_type === 'image_hotspot'
     const canUseColoring = isStandalone && question.question_type === 'coloring'
-    const isCurrentTypeDisabled = !isCourseQuestionTypeEnabled(quizTypeSettings, question.question_type)
+    const showLegacyControls = Boolean(0)
+    const isCurrentTypeDisabled = !isCourseQuestionTypeEnabled(
+      quizTypeSettings,
+      question.question_type,
+      globalQuizTypeSettings,
+    )
     const setType = (type: AssessmentQuestionType) => void handleUpdateQuestionType(question.id, type)
     const typeButtons: Array<{
       type: AssessmentQuestionType
@@ -1083,7 +1119,8 @@ export function AssessmentBuilderPanel() {
           ]
         : []),
     ].filter((button) => (
-      isCourseQuestionTypeEnabled(quizTypeSettings, button.type) || question.question_type === button.type
+      isCourseQuestionTypeEnabled(quizTypeSettings, button.type, globalQuizTypeSettings) ||
+      question.question_type === button.type
     ))
 
     return (
@@ -1103,7 +1140,11 @@ export function AssessmentBuilderPanel() {
             <div className="flex flex-wrap items-center gap-2">
               {typeButtons.map((button) => {
                 const isActive = question.question_type === button.type
-                const isEnabled = isCourseQuestionTypeEnabled(quizTypeSettings, button.type)
+                const isEnabled = isCourseQuestionTypeEnabled(
+                  quizTypeSettings,
+                  button.type,
+                  globalQuizTypeSettings,
+                )
 
                 return (
                   <button
@@ -1114,7 +1155,7 @@ export function AssessmentBuilderPanel() {
                     className={`rounded-full px-3 py-1 text-[11px] font-black uppercase tracking-widest transition-colors disabled:cursor-not-allowed disabled:opacity-70 ${
                       isActive ? button.activeClassName : button.idleClassName
                     }`}
-                    title={!isEnabled ? 'Tipo desativado nas configuracoes do curso.' : undefined}
+                    title={!isEnabled ? 'Tipo desativado nas configuracoes globais ou do curso.' : undefined}
                   >
                     {button.label}
                   </button>
@@ -1124,11 +1165,11 @@ export function AssessmentBuilderPanel() {
 
             {isCurrentTypeDisabled ? (
               <div className="rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3 text-xs font-semibold text-amber-800">
-                Este tipo foi desativado nas configuracoes do curso. A pergunta continua disponivel aqui para revisao, mas nao pode mais ser usada em novas criacoes.
+                Este tipo foi desativado nas configuracoes globais ou do curso. A pergunta continua disponivel aqui para revisao, mas nao pode mais ser usada em novas criacoes.
               </div>
             ) : null}
 
-            {false ? (
+            {showLegacyControls ? (
             <div className="flex flex-wrap items-center gap-2">
               <button
                 type="button"
@@ -1553,7 +1594,11 @@ export function AssessmentBuilderPanel() {
               {caseStudy.questions.map((question, questionIndex) => renderQuestionCard(question, `${caseStudyIndex + 1}.${questionIndex + 1}`, 'case-study'))}
 
               <div className="grid gap-3 md:grid-cols-2">
-                {isCourseQuestionTypeEnabled(quizTypeSettings, 'case_study_single_choice') ? (
+                {isCourseQuestionTypeEnabled(
+                  quizTypeSettings,
+                  'case_study_single_choice',
+                  globalQuizTypeSettings,
+                ) ? (
                   <button
                     onClick={() => void handleAddCaseQuestion(caseStudy.id, 'case_study_single_choice')}
                     className="flex items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-slate-200 py-4 text-sm font-bold text-slate-500 transition-all hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
@@ -1564,7 +1609,7 @@ export function AssessmentBuilderPanel() {
                     Adicionar Pergunta de Alternativa
                   </button>
                 ) : null}
-                {isCourseQuestionTypeEnabled(quizTypeSettings, 'case_study_ai') ? (
+                {isCourseQuestionTypeEnabled(quizTypeSettings, 'case_study_ai', globalQuizTypeSettings) ? (
                   <button
                     onClick={() => void handleAddCaseQuestion(caseStudy.id, 'case_study_ai')}
                     className="flex items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-amber-200 py-4 text-sm font-bold text-amber-700 transition-all hover:bg-amber-50"
@@ -1577,9 +1622,10 @@ export function AssessmentBuilderPanel() {
                 ) : null}
               </div>
 
-              {!isCourseQuestionTypeEnabled(quizTypeSettings, 'case_study_single_choice') && !isCourseQuestionTypeEnabled(quizTypeSettings, 'case_study_ai') ? (
+              {!isCourseQuestionTypeEnabled(quizTypeSettings, 'case_study_single_choice', globalQuizTypeSettings) &&
+              !isCourseQuestionTypeEnabled(quizTypeSettings, 'case_study_ai', globalQuizTypeSettings) ? (
                 <div className="rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">
-                  Este curso esta com as perguntas internas de estudo de caso desativadas nas configuracoes.
+                  Este curso esta com as perguntas internas de estudo de caso desativadas nas configuracoes globais ou do curso.
                 </div>
               ) : null}
             </div>

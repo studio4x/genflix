@@ -22,8 +22,10 @@ import {
   canCourseUseCaseStudies,
   COURSE_QUIZ_TYPE_OPTIONS,
   DEFAULT_COURSE_QUIZ_TYPE_SETTINGS,
+  getVisibleCourseQuizTypeOptions,
   normalizeCourseQuizTypeSettings,
 } from '@/features/assessments/course-quiz-type-settings'
+import { fetchGlobalQuizTypeSettings } from '@/features/admin/quiz-types/api'
 import 'react-quill/dist/quill.snow.css'
 
 export function CourseSettingsPanel() {
@@ -47,6 +49,7 @@ export function CourseSettingsPanel() {
   const [success, setSuccess] = useState(false)
   const [aiStandardsSuccess, setAiStandardsSuccess] = useState(false)
   const [resetProgressSuccess, setResetProgressSuccess] = useState<ResetCourseProgressResult | null>(null)
+  const [globalQuizTypeSettings, setGlobalQuizTypeSettings] = useState({ ...DEFAULT_COURSE_QUIZ_TYPE_SETTINGS })
   const [aiStandards, setAiStandards] = useState({
     ideal_course_structure: '',
     required_elements: '',
@@ -60,7 +63,7 @@ export function CourseSettingsPanel() {
       setForm({
         title: courseTree.course.title || '',
         description: courseTree.course.description ?? '',
-        status: (courseTree.course.status as any) || 'draft',
+        status: (courseTree.course.status as 'draft' | 'published' | 'archived') || 'draft',
         thumbnail_url: courseTree.course.thumbnail_url ?? '',
         has_linear_progression: courseTree.course.has_linear_progression ?? true,
         quiz_type_settings: normalizeCourseQuizTypeSettings(courseTree.course.quiz_type_settings),
@@ -106,6 +109,29 @@ export function CourseSettingsPanel() {
     void loadAiStandards()
   }, [courseTree])
 
+  useEffect(() => {
+    let isMounted = true
+
+    async function loadGlobalQuizTypeSettings() {
+      try {
+        const loadedSettings = await fetchGlobalQuizTypeSettings()
+        if (isMounted) {
+          setGlobalQuizTypeSettings(loadedSettings)
+        }
+      } catch {
+        if (isMounted) {
+          setGlobalQuizTypeSettings({ ...DEFAULT_COURSE_QUIZ_TYPE_SETTINGS })
+        }
+      }
+    }
+
+    void loadGlobalQuizTypeSettings()
+
+    return () => {
+      isMounted = false
+    }
+  }, [])
+
   async function handleThumbnailUpload(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0]
     if (!file) return
@@ -116,7 +142,7 @@ export function CourseSettingsPanel() {
     try {
       const url = await uploadCourseThumbnail(file)
       setForm(f => ({ ...f, thumbnail_url: url }))
-    } catch (err) {
+    } catch {
       setError('Falha ao subir imagem. Tente novamente.')
     } finally {
       setIsUploadingThumbnail(false)
@@ -205,8 +231,10 @@ export function CourseSettingsPanel() {
     ],
   }
 
-  const enabledQuizTypeCount = Object.values(form.quiz_type_settings).filter(Boolean).length
-  const canUseCaseStudies = canCourseUseCaseStudies(form.quiz_type_settings)
+  const visibleQuizTypeOptions = getVisibleCourseQuizTypeOptions(globalQuizTypeSettings)
+  const enabledQuizTypeCount = visibleQuizTypeOptions.filter((option) => form.quiz_type_settings[option.key]).length
+  const hiddenQuizTypeCount = COURSE_QUIZ_TYPE_OPTIONS.length - visibleQuizTypeOptions.length
+  const canUseCaseStudies = canCourseUseCaseStudies(form.quiz_type_settings, globalQuizTypeSettings)
 
   return (
     <div className="w-full space-y-6 animate-in fade-in duration-500 pb-24">
@@ -314,7 +342,7 @@ export function CourseSettingsPanel() {
                      <select 
                         className="w-full font-bold rounded-[20px] border border-slate-200 bg-slate-100/50 px-6 py-4 focus:bg-white focus:ring-4 focus:ring-blue-100 transition-all appearance-none cursor-pointer"
                         value={form.status}
-                        onChange={e => setForm(f => ({ ...f, status: e.target.value as any }))}
+                        onChange={e => setForm(f => ({ ...f, status: e.target.value as 'draft' | 'published' | 'archived' }))}
                      >
                         <option value="draft">Rascunho (Privado)</option>
                         <option value="published">Publicado (Visível para Alunos)</option>
@@ -349,6 +377,11 @@ export function CourseSettingsPanel() {
                         <p className="mt-2 max-w-3xl text-sm font-medium text-slate-500">
                            Ative ou desative quais formatos de pergunta podem ser usados neste curso. O builder de avaliacoes passa a respeitar essa configuracao.
                         </p>
+                        {hiddenQuizTypeCount > 0 ? (
+                          <p className="mt-2 max-w-3xl text-xs font-semibold leading-5 text-amber-700">
+                            {hiddenQuizTypeCount} tipo(s) de quiz estao desativados globalmente e nao aparecem nesta tela.
+                          </p>
+                        ) : null}
                      </div>
                      <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-right shadow-sm">
                         <p className="text-[10px] font-black uppercase tracking-[0.24em] text-slate-400">Ativos agora</p>
@@ -357,8 +390,13 @@ export function CourseSettingsPanel() {
                   </div>
 
                   <div className="rounded-[28px] border border-slate-200 bg-slate-50/60 p-5">
-                     <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                        {COURSE_QUIZ_TYPE_OPTIONS.map((option) => {
+                     {visibleQuizTypeOptions.length === 0 ? (
+                       <div className="rounded-[24px] border border-dashed border-amber-200 bg-amber-50/70 px-5 py-6 text-sm font-semibold text-amber-800">
+                         Nenhum tipo de quiz esta habilitado globalmente no momento. Ative um tipo na configuracao global para liberá-lo neste curso.
+                       </div>
+                     ) : (
+                       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                        {visibleQuizTypeOptions.map((option) => {
                           const isEnabled = form.quiz_type_settings[option.key]
 
                           return (
@@ -395,7 +433,8 @@ export function CourseSettingsPanel() {
                             </label>
                           )
                         })}
-                     </div>
+                       </div>
+                     )}
                   </div>
 
                   <div className={`rounded-[24px] border px-5 py-4 text-sm font-semibold ${canUseCaseStudies ? 'border-violet-100 bg-violet-50/70 text-violet-800' : 'border-amber-100 bg-amber-50/80 text-amber-800'}`}>

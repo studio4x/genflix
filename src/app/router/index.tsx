@@ -12,6 +12,7 @@ import { AdminGroupsPage } from '@/pages/admin/admin-groups-page'
 import { AdminIntegrationsPage } from '@/pages/admin/admin-integrations-page'
 import { AdminLessonsPage } from '@/pages/admin/admin-lessons-page'
 import { AdminMaterialsPage } from '@/pages/admin/admin-materials-page'
+import { AdminQuizTypesPage } from '@/pages/admin/admin-quiz-types-page'
 import { AdminModulesPage } from '@/pages/admin/admin-modules-page'
 import { AdminReportsPage } from '@/pages/admin/admin-reports-page'
 import { AdminStudentsPage } from '@/pages/admin/admin-students-page'
@@ -210,6 +211,10 @@ export const appRouter = createBrowserRouter([
           {
             path: '/admin/botoes-aula',
             element: <AdminButtonTemplatesPage />,
+          },
+          {
+            path: '/admin/tipos-quiz',
+            element: <AdminQuizTypesPage />,
           },
           {
             path: '/admin/relatorios',
