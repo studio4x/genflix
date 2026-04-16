@@ -1,98 +1,226 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { Link, Navigate, useNavigate } from 'react-router-dom'
+import { ArrowRight, KeyRound, MailCheck } from 'lucide-react'
 
 import { useAuth } from '@/app/providers/auth-provider'
-import { Button } from '@/components/ui/button'
-import { AuthShell } from '@/pages/public/auth-shell'
+import { GenflixAuthLayout } from '@/components/public/genflix-auth-layout'
+import { getDashboardPathForRoles } from '@/features/auth/dashboard-path'
+import { genflixHeroImage } from '@/features/public/genflix-site-content'
+
+type LoginMode = 'magic-link' | 'password'
 
 export function LoginPage() {
   const navigate = useNavigate()
-  const { user, signIn, isLoading } = useAuth()
+  const { user, signIn, signInWithMagicLink, isLoading, roles } = useAuth()
+  const [mode, setMode] = useState<LoginMode>('magic-link')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
+  const [message, setMessage] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const waitingRoleResolution = !!user && roles.length === 0
 
-  if (!isLoading && user) {
-    return <Navigate to="/" replace />
+  if (isLoading || waitingRoleResolution) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-[#10242b] p-6 font-manrope">
+        <p className="text-sm font-extrabold uppercase tracking-[0.28em] text-white/72">Carregando GenFlix...</p>
+      </main>
+    )
   }
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  if (user) {
+    return <Navigate to={getDashboardPathForRoles(roles)} replace />
+  }
+
+  async function handlePasswordSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setError(null)
+    setMessage(null)
     setIsSubmitting(true)
 
     try {
       await signIn(email, password)
       navigate('/', { replace: true })
     } catch (submitError) {
-      const message =
-        submitError instanceof Error ? submitError.message : 'Falha no login'
-      setError(message)
+      setError(submitError instanceof Error ? submitError.message : 'Falha no login.')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  async function handleMagicLinkSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    setError(null)
+    setMessage(null)
+    setIsSubmitting(true)
+
+    try {
+      await signInWithMagicLink(email)
+      setMessage(`Enviamos um link de acesso para ${email}. Abra seu e-mail para entrar na GenFlix.`)
+    } catch (submitError) {
+      setError(submitError instanceof Error ? submitError.message : 'Não foi possível enviar o link de acesso.')
     } finally {
       setIsSubmitting(false)
     }
   }
 
   return (
-    <AuthShell
-      title="Portal de Acesso"
-      subtitle="Entre com sua conta para acessar a plataforma de cursos da GenFlix."
+    <GenflixAuthLayout
+      title="Bem-vindo de volta"
+      subtitle={mode === 'magic-link' ? 'Entre sem senha usando um link mágico.' : 'Continue de onde parou.'}
+      imageUrl={genflixHeroImage}
     >
-      <form className="space-y-5" onSubmit={handleSubmit}>
-        <label className="block space-y-1">
-          <span className="text-sm font-bold text-slate-800">E-mail</span>
-          <input
-            className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-base text-slate-900 outline-none transition focus:border-[#1473ff] focus:bg-white focus:ring-4 focus:ring-blue-100"
-            type="email"
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-            placeholder="seu@email.com"
-            autoComplete="email"
-            required
-          />
-        </label>
+      <div className="border-b border-[#D8E6EB]">
+        <div className="flex items-center gap-6 text-sm font-medium">
+          <Link
+            to="/login"
+            className="border-b-2 border-[#1398B7] pb-3 text-[#1398B7]"
+          >
+            Entrar
+          </Link>
+          <Link
+            to="/criar-conta"
+            className="pb-3 text-[#8BA0A7] transition-colors hover:text-[#5F7077]"
+          >
+            Criar conta
+          </Link>
+        </div>
+      </div>
 
-        <label className="block space-y-1">
-          <div className="flex items-center justify-between gap-4">
-            <span className="text-sm font-bold text-slate-800">Senha</span>
+      <div className="mt-8 grid grid-cols-2 gap-2 rounded-[18px] border border-[#D8E6EB] bg-[#F2F7F9] p-1">
+        <button
+          type="button"
+          onClick={() => {
+            setMode('magic-link')
+            setError(null)
+            setMessage(null)
+          }}
+          className={`inline-flex h-11 items-center justify-center gap-2 rounded-[14px] text-sm font-bold transition ${
+            mode === 'magic-link'
+              ? 'bg-[#1398B7] text-white shadow-sm'
+              : 'text-[#6d7f84] hover:bg-white'
+          }`}
+        >
+          <MailCheck className="h-4 w-4" />
+          Link mágico
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setMode('password')
+            setError(null)
+            setMessage(null)
+          }}
+          className={`inline-flex h-11 items-center justify-center gap-2 rounded-[14px] text-sm font-bold transition ${
+            mode === 'password'
+              ? 'bg-[#1398B7] text-white shadow-sm'
+              : 'text-[#6d7f84] hover:bg-white'
+          }`}
+        >
+          <KeyRound className="h-4 w-4" />
+          Senha
+        </button>
+      </div>
+
+      {mode === 'magic-link' ? (
+        <form className="mt-6 space-y-5" onSubmit={handleMagicLinkSubmit}>
+          <label className="block space-y-2">
+            <span className="text-sm font-medium text-[#4f656c]">E-mail:</span>
+            <input
+              className="h-12 w-full rounded-[12px] border border-[#D8E6EB] bg-[#EDF4F6] px-4 text-sm text-[#183139] outline-none transition-colors placeholder:text-[#8BA0A7] focus:border-[#1398B7] focus:bg-white"
+              type="email"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              placeholder="seu@email.com"
+              autoComplete="email"
+              required
+            />
+          </label>
+
+          {message ? (
+            <p className="rounded-[14px] border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700">
+              {message}
+            </p>
+          ) : null}
+
+          {error ? (
+            <p className="rounded-[14px] border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700">
+              {error}
+            </p>
+          ) : null}
+
+          <button
+            className="inline-flex h-12 w-full items-center justify-center rounded-full bg-[#1398B7] px-5 font-readex text-sm font-medium text-white shadow-[0_14px_30px_rgba(10,54,64,0.22)] transition-colors hover:bg-[#0A3640] disabled:cursor-not-allowed disabled:opacity-70"
+            type="submit"
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? 'Enviando...' : 'Enviar link de acesso'}
+          </button>
+
+          <p className="text-center text-xs font-medium leading-5 text-[#8a9aa0]">
+            O link expira em cerca de 1 hora. Se não encontrar, verifique spam ou promoções.
+          </p>
+        </form>
+      ) : (
+        <form className="mt-6 space-y-5" onSubmit={handlePasswordSubmit}>
+          <label className="block space-y-2">
+            <span className="text-sm font-medium text-[#4f656c]">E-mail:</span>
+            <input
+              className="h-12 w-full rounded-[12px] border border-[#D8E6EB] bg-[#EDF4F6] px-4 text-sm text-[#183139] outline-none transition-colors placeholder:text-[#8BA0A7] focus:border-[#1398B7] focus:bg-white"
+              type="email"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              placeholder="seu@email.com"
+              autoComplete="email"
+              required
+            />
+          </label>
+
+          <label className="block space-y-2">
+            <span className="text-sm font-medium text-[#4f656c]">Senha:</span>
+            <input
+              className="h-12 w-full rounded-[12px] border border-[#D8E6EB] bg-[#EDF4F6] px-4 text-sm text-[#183139] outline-none transition-colors placeholder:text-[#8BA0A7] focus:border-[#1398B7] focus:bg-white"
+              type="password"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              placeholder="Digite sua senha"
+              autoComplete="current-password"
+              required
+            />
+          </label>
+
+          <div className="flex justify-end">
             <Link
-              className="text-sm font-medium text-[#1473ff] transition-colors hover:text-[#1067e6]"
+              className="text-xs font-medium text-[#1398B7] transition-colors hover:text-[#1398B7] sm:text-sm"
               to="/recuperar-senha"
             >
               Esqueceu a senha?
             </Link>
           </div>
-          <input
-            className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-base text-slate-900 outline-none transition focus:border-[#1473ff] focus:bg-white focus:ring-4 focus:ring-blue-100"
-            type="password"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            placeholder="Digite sua senha"
-            autoComplete="current-password"
-            required
-          />
-        </label>
 
-        {error ? (
-          <p className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700">
-            {error}
-          </p>
-        ) : null}
+          {error ? (
+            <p className="rounded-[14px] border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700">
+              {error}
+            </p>
+          ) : null}
 
-        <Button
-          className="h-14 w-full rounded-2xl bg-[#1473ff] text-base font-black text-white shadow-[0_16px_35px_rgba(20,115,255,0.24)] hover:bg-[#1067e6]"
-          type="submit"
-          disabled={isSubmitting}
-        >
-          {isSubmitting ? 'Entrando...' : 'Entrar'}
-        </Button>
-      </form>
+          <button
+            className="inline-flex h-12 w-full items-center justify-center rounded-full bg-[#1398B7] px-5 font-readex text-sm font-medium text-white shadow-[0_14px_30px_rgba(10,54,64,0.22)] transition-colors hover:bg-[#0A3640] disabled:cursor-not-allowed disabled:opacity-70"
+            type="submit"
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? 'Entrando...' : 'Entrar com senha'}
+          </button>
+        </form>
+      )}
 
-      <div className="mt-8 text-center text-sm font-medium text-slate-500">
-        Acesso exclusivo para usuários cadastrados na GenFlix.
+      <div className="mt-6 text-center text-sm text-[#5F7077]">
+        Ainda não tem conta?{' '}
+        <Link to="/criar-conta" className="font-semibold text-[#1398B7] transition-colors hover:text-[#1398B7]">
+          Criar conta <ArrowRight className="inline h-3.5 w-3.5" />
+        </Link>
       </div>
-    </AuthShell>
+    </GenflixAuthLayout>
   )
 }

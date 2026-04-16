@@ -175,7 +175,7 @@ export async function updateCourse(courseId: string, input: CourseFormInput) {
 
 export async function fetchCourseExternalMapping(
   courseId: string,
-  sourceSystem = 'homecare_match',
+  sourceSystem = 'genflix',
 ) {
   const result = await supabase
     .from('external_course_mappings')
@@ -194,7 +194,7 @@ export async function fetchCourseExternalMapping(
 export async function upsertCourseExternalMapping(
   courseId: string,
   externalCourseId: string,
-  sourceSystem = 'homecare_match',
+  sourceSystem = 'genflix',
 ) {
   const trimmedExternalCourseId = externalCourseId.trim()
 

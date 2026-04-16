@@ -2,6 +2,7 @@ import { Navigate, createBrowserRouter } from 'react-router-dom'
 
 import { AdminLayout } from '@/app/layouts/admin-layout'
 import { AdminCourseBuilderLayout } from '@/app/layouts/admin-course-builder-layout'
+import { CreatorLayout } from '@/app/layouts/creator-layout'
 import { StudentLayout } from '@/app/layouts/student-layout'
 import { StudentCoursePlayerLayout } from '@/pages/student/student-course-player-layout'
 import { ProtectedRoute } from '@/app/router/protected-route'
@@ -9,21 +10,31 @@ import { AdminCourseReleasesPage } from '@/pages/admin/admin-course-releases-pag
 import { AdminCoursesPage } from '@/pages/admin/admin-courses-page'
 import { AdminDashboardPage } from '@/pages/admin/admin-dashboard-page'
 import { AdminGroupsPage } from '@/pages/admin/admin-groups-page'
-import { AdminIntegrationsPage } from '@/pages/admin/admin-integrations-page'
 import { AdminLessonsPage } from '@/pages/admin/admin-lessons-page'
 import { AdminMaterialsPage } from '@/pages/admin/admin-materials-page'
-import { AdminPaymentSettingsPage } from '@/pages/admin/admin-payment-settings-page'
-import { AdminQuizTypesPage } from '@/pages/admin/admin-quiz-types-page'
 import { AdminModulesPage } from '@/pages/admin/admin-modules-page'
 import { AdminReportsPage } from '@/pages/admin/admin-reports-page'
-import { AdminStudentsPage } from '@/pages/admin/admin-students-page'
+import { AdminUsersPage } from '@/pages/admin/admin-users-page'
+import { AdminAccountPage } from '@/pages/admin/admin-account-page'
 import { AdminButtonTemplatesPage } from '@/pages/admin/admin-button-templates-page'
+import { AdminPublicFormsPage } from '@/pages/admin/admin-public-forms-page'
+import { AdminPaymentSettingsPage } from '@/pages/admin/admin-payment-settings-page'
+import { AdminQuizTypesPage } from '@/pages/admin/admin-quiz-types-page'
 import { ForgotPasswordPage } from '@/pages/public/forgot-password-page'
+import { AuthCallbackPage } from '@/pages/public/auth-callback-page'
 import { CookiesPage } from '@/pages/public/cookies-page'
-import { HcmAccessPage } from '@/pages/public/hcm-access-page'
+import { PublicBlogPage } from '@/pages/public/public-blog-page'
+import { PublicBlogPostPage } from '@/pages/public/public-blog-post-page'
+import { PublicCommunityPage } from '@/pages/public/public-community-page'
+import { PublicContactPage } from '@/pages/public/public-contact-page'
+import { PublicCourseDetailsPage } from '@/pages/public/public-course-details-page'
+import { PublicAboutPage } from '@/pages/public/public-about-page'
 import { LoginPage } from '@/pages/public/login-page'
+import { SignUpPage } from '@/pages/public/sign-up-page'
 import { PrivacyPage } from '@/pages/public/privacy-page'
+import { PublicCoursesPage } from '@/pages/public/public-courses-page'
 import { PublicHomePage } from '@/pages/public/public-home-page'
+import { PublicResourcesPage } from '@/pages/public/public-resources-page'
 import { ResetPasswordPage } from '@/pages/public/reset-password-page'
 import { TermsOfUsePage } from '@/pages/public/terms-of-use-page'
 import { UnauthorizedPage } from '@/pages/public/unauthorized-page'
@@ -33,11 +44,12 @@ import { StudentCoursesPage } from '@/pages/student/student-courses-page'
 import { StudentAccountPage } from '@/pages/student/student-account-page'
 import { StudentDashboardPage } from '@/pages/student/student-dashboard-page'
 import { StudentLessonPage } from '@/pages/student/student-lesson-page'
+import { CreatorProfilePage } from '@/pages/creator/creator-profile-page'
+import { CreatorReportsPage } from '@/pages/creator/creator-reports-page'
 import { CourseOverviewPanel } from '@/pages/admin/builder/course-overview-panel'
 import { ModuleEditorPanel } from '@/pages/admin/builder/module-editor-panel'
 import { LessonEditorPanel } from '@/pages/admin/builder/lesson-editor-panel'
 import { LessonMaterialsPanel } from '@/pages/admin/builder/lesson-materials-panel'
-import { CourseIntegrationPanel } from '@/pages/admin/builder/course-integration-panel'
 import { CourseSettingsPanel } from '@/pages/admin/builder/course-settings-panel'
 import { CourseAssessmentsPanel } from '@/pages/admin/builder/course-assessments-panel'
 import { AssessmentBuilderPanel } from '@/pages/admin/builder/assessment-builder-panel'
@@ -48,12 +60,48 @@ export const appRouter = createBrowserRouter([
     element: <PublicHomePage />,
   },
   {
+    path: '/cursos',
+    element: <PublicCoursesPage />,
+  },
+  {
+    path: '/cursos/:slug',
+    element: <PublicCourseDetailsPage />,
+  },
+  {
+    path: '/sobre',
+    element: <PublicAboutPage />,
+  },
+  {
+    path: '/blog',
+    element: <PublicBlogPage />,
+  },
+  {
+    path: '/blog/:slug',
+    element: <PublicBlogPostPage />,
+  },
+  {
+    path: '/contato',
+    element: <PublicContactPage />,
+  },
+  {
+    path: '/comunidade',
+    element: <PublicCommunityPage />,
+  },
+  {
+    path: '/recursos',
+    element: <PublicResourcesPage />,
+  },
+  {
     path: '/login',
     element: <LoginPage />,
   },
   {
-    path: '/auth/hcm-access',
-    element: <HcmAccessPage />,
+    path: '/auth/callback',
+    element: <AuthCallbackPage />,
+  },
+  {
+    path: '/criar-conta',
+    element: <SignUpPage />,
   },
   {
     path: '/recuperar-senha',
@@ -80,7 +128,7 @@ export const appRouter = createBrowserRouter([
     element: <TermsOfUsePage />,
   },
   {
-    element: <ProtectedRoute allowedRoles={['student']} />,
+    element: <ProtectedRoute allowedRoles={['student', 'aluno']} />,
     children: [
       {
         path: '/aluno',
@@ -125,6 +173,29 @@ export const appRouter = createBrowserRouter([
     ],
   },
   {
+    element: <ProtectedRoute allowedRoles={['criador', 'professor']} />,
+    children: [
+      {
+        path: '/criador',
+        element: <CreatorLayout />,
+        children: [
+          {
+            index: true,
+            element: <Navigate to="/criador/relatorios" replace />,
+          },
+          {
+            path: '/criador/relatorios',
+            element: <CreatorReportsPage />,
+          },
+          {
+            path: '/criador/perfil',
+            element: <CreatorProfilePage />,
+          },
+        ],
+      },
+    ],
+  },
+  {
     element: <ProtectedRoute allowedRoles={['admin']} />,
     children: [
       {
@@ -158,10 +229,6 @@ export const appRouter = createBrowserRouter([
           {
             path: 'settings',
             element: <CourseSettingsPanel />,
-          },
-          {
-            path: 'integration',
-            element: <CourseIntegrationPanel />,
           },
           {
             path: 'releases',
@@ -207,27 +274,39 @@ export const appRouter = createBrowserRouter([
           },
           {
             path: '/admin/alunos',
-            element: <AdminStudentsPage />,
+            element: <Navigate to="/admin/usuarios" replace />,
+          },
+          {
+            path: '/admin/usuarios',
+            element: <AdminUsersPage />,
+          },
+          {
+            path: '/admin/minha-conta',
+            element: <AdminAccountPage />,
           },
           {
             path: '/admin/botoes-aula',
             element: <AdminButtonTemplatesPage />,
           },
           {
-            path: '/admin/tipos-quiz',
-            element: <AdminQuizTypesPage />,
-          },
-          {
-            path: '/admin/pagamento',
-            element: <AdminPaymentSettingsPage />,
-          },
-          {
             path: '/admin/relatorios',
             element: <AdminReportsPage />,
           },
           {
-            path: '/admin/integracoes',
-            element: <AdminIntegrationsPage />,
+            path: '/admin/formularios',
+            element: <AdminPublicFormsPage />,
+          },
+          {
+            path: '/admin/pagamentos',
+            element: <AdminPaymentSettingsPage />,
+          },
+          {
+            path: '/admin/pagamento',
+            element: <Navigate to="/admin/pagamentos" replace />,
+          },
+          {
+            path: '/admin/tipos-quiz',
+            element: <AdminQuizTypesPage />,
           },
         ],
       },

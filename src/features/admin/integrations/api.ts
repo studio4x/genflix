@@ -190,33 +190,33 @@ export async function fetchIntegrationDashboardSnapshot(): Promise<IntegrationDa
       supabase
         .from('external_course_mappings')
         .select('id', { count: 'exact', head: true })
-        .eq('source_system', 'homecare_match')
+        .eq('source_system', 'genflix')
         .eq('is_active', true),
       supabase
         .from('integration_logs')
         .select('id', { count: 'exact', head: true })
-        .eq('source_system', 'homecare_match')
+        .eq('source_system', 'genflix')
         .eq('status', 'failed'),
       supabase
         .from('integration_logs')
         .select('id', { count: 'exact', head: true })
-        .eq('source_system', 'homecare_match')
+        .eq('source_system', 'genflix')
         .eq('status', 'processed'),
       supabase
         .from('integration_event_outbox')
         .select('id', { count: 'exact', head: true })
-        .eq('source_system', 'homecare_match')
+        .eq('source_system', 'genflix')
         .in('delivery_status', ['pending', 'processing', 'failed', 'dead_letter']),
       supabase
         .from('integration_logs')
         .select('*')
-        .eq('source_system', 'homecare_match')
+        .eq('source_system', 'genflix')
         .order('created_at', { ascending: false })
         .limit(24),
       supabase
         .from('integration_event_outbox')
         .select('*')
-        .eq('source_system', 'homecare_match')
+        .eq('source_system', 'genflix')
         .order('created_at', { ascending: false })
         .limit(24),
     ])
@@ -247,7 +247,7 @@ export async function fetchCourseIntegrationSnapshot(courseId: string): Promise<
       .from('external_course_mappings')
       .select('*')
       .eq('course_id', courseId)
-      .eq('source_system', 'homecare_match')
+      .eq('source_system', 'genflix')
       .maybeSingle(),
     supabase
       .from('course_releases')
@@ -260,14 +260,14 @@ export async function fetchCourseIntegrationSnapshot(courseId: string): Promise<
       .from('integration_logs')
       .select('*')
       .eq('course_id', courseId)
-      .eq('source_system', 'homecare_match')
+      .eq('source_system', 'genflix')
       .order('created_at', { ascending: false })
       .limit(20),
     supabase
       .from('integration_event_outbox')
       .select('*')
       .eq('course_id', courseId)
-      .eq('source_system', 'homecare_match')
+      .eq('source_system', 'genflix')
       .order('created_at', { ascending: false })
       .limit(20),
   ])

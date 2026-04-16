@@ -409,7 +409,7 @@ export function LessonEditorPanel() {
                  <span className="text-sm font-bold text-slate-800">Título da Aula <span className="text-rose-500">*</span></span>
                  <input
                    className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-3 text-sm shadow-inner transition-all focus:border-blue-500 focus:ring-2 focus:ring-blue-100 focus:bg-white placeholder:text-slate-400"
-                   placeholder="Ex: Princípios de Atendimento Home Care"
+                   placeholder="Ex: Princípios do módulo"
                    value={form.title}
                    onChange={(e) => setForm((prev) => ({ ...prev, title: e.target.value }))}
                    required

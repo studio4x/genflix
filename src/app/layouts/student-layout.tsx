@@ -1,8 +1,8 @@
 import { Link, Outlet, useLocation } from 'react-router-dom'
 
-import genflixWordmarkUrl from '@/assets/genflix-wordmark.svg'
 import { useAuth } from '@/app/providers/auth-provider'
 import { PlatformFooter } from '@/components/layout/platform-footer'
+import { GenflixLogo } from '@/components/public/genflix-logo'
 import { Button } from '@/components/ui/button'
 
 const studentLinks = [
@@ -57,22 +57,20 @@ export function StudentLayout() {
   const firstName = displayName.split(' ')[0] ?? displayName
 
   return (
-    <main className="min-h-screen bg-[#f4f7fb] text-slate-900">
-      <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/95 backdrop-blur-md">
+    <main className="min-h-screen bg-[#F2F7F9] font-manrope text-[#163138]">
+      <header className="sticky top-0 z-40 border-b border-[#D8E6EB] bg-[#F2F7F9]/95 backdrop-blur-md">
         <div className="px-4 py-3 sm:px-6 lg:px-8">
           <div className="relative flex min-h-[68px] items-center justify-between gap-4">
             <Link to="/aluno/dashboard" className="flex min-w-0 items-center gap-4">
-              <img
-                src={genflixWordmarkUrl}
-                alt="GenFlix"
-                className="h-16 w-auto object-contain sm:h-20"
-              />
-              <p className="text-base font-bold uppercase tracking-[0.22em] text-blue-600 sm:text-lg">Academy</p>
+              <GenflixLogo />
+              <p className="hidden rounded-full border border-[#D8E6EB] bg-white px-3 py-1 text-[10px] font-extrabold uppercase tracking-[0.22em] text-[#1398B7] sm:block">
+                Área do aluno
+              </p>
             </Link>
 
             <div className="pointer-events-none absolute left-1/2 top-1/2 hidden -translate-x-1/2 -translate-y-1/2 md:block">
-              <p className="whitespace-nowrap text-sm font-black uppercase tracking-[0.28em] text-slate-400">
-                Área do Aluno
+              <p className="whitespace-nowrap text-sm font-extrabold uppercase tracking-[0.28em] text-[#5F7077]">
+                Meu aprendizado
               </p>
             </div>
 
@@ -81,16 +79,16 @@ export function StudentLayout() {
                 to="/aluno/minha-conta"
                 className={`hidden items-center gap-3 rounded-full border px-2 py-1.5 shadow-sm transition-colors md:flex ${
                   location.pathname.startsWith('/aluno/minha-conta')
-                    ? 'border-cyan-200 bg-cyan-50'
-                    : 'border-slate-200 bg-white hover:border-slate-300'
+                    ? 'border-[#1398B7]/30 bg-[#E8F6FA]'
+                    : 'border-[#D8E6EB] bg-white hover:border-[#1398B7]/40'
                 }`}
               >
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-cyan-400 text-sm font-black text-white shadow-sm">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-[#1398B7] to-[#0A3640] text-sm font-black text-white shadow-sm">
                   {firstName.slice(0, 2).toUpperCase()}
                 </div>
                 <div className="pr-2">
-                  <p className="text-sm font-black text-slate-900">{displayName}</p>
-                  <p className="text-[11px] font-medium text-slate-500">Minha Conta</p>
+                  <p className="text-sm font-black text-[#163138]">{displayName}</p>
+                  <p className="text-[11px] font-medium text-[#5F7077]">Minha conta</p>
                 </div>
               </Link>
               <Button
@@ -98,7 +96,7 @@ export function StudentLayout() {
                 variant="outline"
                 size="sm"
                 onClick={() => void signOut()}
-                className="rounded-xl border-slate-200 bg-white font-bold text-slate-600 hover:text-slate-900"
+                className="rounded-xl border-[#D8E6EB] bg-white font-bold text-[#5f7077] hover:border-[#1398B7]/40 hover:text-[#163138]"
               >
                 Sair
               </Button>
@@ -106,23 +104,23 @@ export function StudentLayout() {
           </div>
 
           <div className="mt-2 flex items-center justify-center md:hidden">
-            <p className="text-[10px] font-black uppercase tracking-[0.28em] text-slate-400">Área do Aluno</p>
+            <p className="text-[10px] font-black uppercase tracking-[0.28em] text-[#5F7077]">Área do aluno</p>
           </div>
         </div>
       </header>
 
       <div className="grid min-h-[calc(100vh-73px)] grid-cols-1 gap-6 px-4 py-5 sm:px-6 lg:grid-cols-[280px_minmax(0,1fr)] lg:px-8">
         <aside className="self-start lg:sticky lg:top-[120px]">
-          <div className="overflow-hidden rounded-[30px] border border-slate-200 bg-white shadow-sm">
-            <div className="border-b border-slate-100 p-5">
+          <div className="overflow-hidden rounded-[30px] border border-[#D8E6EB] bg-white shadow-[0_20px_50px_rgba(22,49,56,0.05)]">
+            <div className="border-b border-[#D8E6EB] p-5">
               <div className="flex items-start gap-4">
-                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-cyan-400 text-base font-black text-white shadow-sm">
+                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-[#1398B7] to-[#0A3640] text-base font-black text-white shadow-sm">
                   {firstName.slice(0, 2).toUpperCase()}
                 </div>
                 <div className="min-w-0">
-                  <p className="truncate text-lg font-black tracking-tight text-slate-900">{displayName}</p>
-                  <p className="mt-1 text-[11px] font-black uppercase tracking-[0.22em] text-blue-600">Aluno</p>
-                  <p className="mt-2 truncate text-sm font-medium text-slate-500">{profile?.email}</p>
+                  <p className="truncate text-lg font-black tracking-tight text-[#163138]">{displayName}</p>
+                  <p className="mt-1 text-[11px] font-black uppercase tracking-[0.22em] text-[#1398B7]">Aluno</p>
+                  <p className="mt-2 truncate text-sm font-medium text-[#6d7f84]">{profile?.email}</p>
                 </div>
               </div>
             </div>
@@ -136,14 +134,14 @@ export function StudentLayout() {
                     to={link.to}
                     className={`flex items-center gap-3 rounded-2xl px-4 py-3 transition-all ${
                       isActive
-                        ? 'bg-blue-600 text-white shadow-lg shadow-blue-100'
-                        : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                        ? 'bg-[#1398B7] text-white shadow-lg shadow-[#1398B7]/20'
+                        : 'text-[#5f7077] hover:bg-[#F2F7F9] hover:text-[#163138]'
                     }`}
                   >
-                    <span className={isActive ? 'text-white' : 'text-slate-400'}>{link.icon}</span>
+                    <span className={isActive ? 'text-white' : 'text-[#8BA0A7]'}>{link.icon}</span>
                     <span className="min-w-0">
                       <span className="block text-sm font-black">{link.label}</span>
-                      <span className={`block text-[11px] font-medium ${isActive ? 'text-blue-100' : 'text-slate-400'}`}>
+                      <span className={`block text-[11px] font-medium ${isActive ? 'text-white/78' : 'text-[#5F7077]'}`}>
                         {link.description}
                       </span>
                     </span>
@@ -152,24 +150,29 @@ export function StudentLayout() {
               })}
             </nav>
 
-            <div className="border-t border-slate-100 p-4">
+            <div className="border-t border-[#D8E6EB] p-4">
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => void signOut()}
-                className="h-12 w-full rounded-2xl border-slate-200 font-bold text-slate-600 hover:text-slate-900"
+                className="h-12 w-full rounded-2xl border-[#D8E6EB] font-bold text-[#5f7077] hover:border-[#1398B7]/40 hover:text-[#163138]"
               >
-                Sair da Conta
+                Sair da conta
               </Button>
             </div>
           </div>
         </aside>
 
         <div className="min-w-0 space-y-5">
-          <section className="rounded-[34px] border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
+          <section className="rounded-[34px] border border-[#D8E6EB] bg-white p-5 shadow-[0_20px_50px_rgba(22,49,56,0.04)] sm:p-7">
             <Outlet />
           </section>
-          <PlatformFooter className="rounded-[28px] border border-slate-200 bg-white px-5 py-5 shadow-sm" compact />
+          <PlatformFooter
+            className="rounded-[28px] border border-[#D8E6EB] bg-white px-5 py-5 shadow-sm"
+            linksClassName="text-[#5F7077]"
+            versionClassName="text-[#5F7077]"
+            compact
+          />
         </div>
       </div>
     </main>

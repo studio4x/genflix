@@ -1,20 +1,44 @@
 import { useMemo, useState } from 'react'
 import type { FormEvent } from 'react'
-import { Link } from 'react-router-dom'
+import { ArrowRight, CheckCircle2, LockKeyhole } from 'lucide-react'
+import { Link, Navigate, useNavigate } from 'react-router-dom'
 
 import { useAuth } from '@/app/providers/auth-provider'
-import { Button } from '@/components/ui/button'
-import { AuthShell } from '@/pages/public/auth-shell'
+import { GenflixAuthLayout } from '@/components/public/genflix-auth-layout'
+import { getDashboardPathForRoles } from '@/features/auth/dashboard-path'
+import { hasPasswordRecoveryUrl } from '@/features/auth/password-recovery-state'
+import { genflixHeroImage } from '@/features/public/genflix-site-content'
 
 export function ResetPasswordPage() {
-  const { updatePassword } = useAuth()
+  const navigate = useNavigate()
+  const {
+    completePasswordRecovery,
+    isPasswordRecoverySession,
+    user,
+    roles,
+    isLoading,
+  } = useAuth()
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
-  const hasMinimumLength = useMemo(() => password.length >= 8, [password])
+  const waitingRoleResolution = !!user && roles.length === 0
+  const hasMinimumLength = useMemo(() => password.length >= 6, [password])
+  const hasRecoveryContext = isPasswordRecoverySession || hasPasswordRecoveryUrl()
+
+  if (isLoading || waitingRoleResolution) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-[#10242b] p-6 font-manrope">
+        <p className="text-sm font-extrabold uppercase tracking-[0.28em] text-white/72">Carregando GenFlix...</p>
+      </main>
+    )
+  }
+
+  if (user && !hasRecoveryContext) {
+    return <Navigate to={getDashboardPathForRoles(roles)} replace />
+  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -22,74 +46,133 @@ export function ResetPasswordPage() {
     setError(null)
 
     if (!hasMinimumLength) {
-      setError('A senha precisa ter pelo menos 8 caracteres.')
+      setError('A nova senha deve ter pelo menos 6 caracteres.')
       return
     }
 
     if (password !== confirmPassword) {
-      setError('As senhas não conferem.')
+      setError('As senhas não coincidem.')
       return
     }
 
     setIsSubmitting(true)
 
     try {
-      await updatePassword(password)
-      setMessage('Senha atualizada com sucesso. Você já pode fazer login.')
+      await completePasswordRecovery(password)
+      setMessage('Senha redefinida com sucesso!')
       setPassword('')
       setConfirmPassword('')
+      window.setTimeout(() => {
+        navigate(getDashboardPathForRoles(roles), { replace: true })
+      }, 900)
     } catch (submitError) {
-      const submitMessage =
-        submitError instanceof Error
-          ? submitError.message
-          : 'Falha ao redefinir senha.'
-      setError(submitMessage)
+      setError(submitError instanceof Error ? submitError.message : 'Falha ao redefinir senha.')
     } finally {
       setIsSubmitting(false)
     }
   }
 
   return (
-    <AuthShell
+    <GenflixAuthLayout
       title="Redefinir senha"
-      subtitle="Defina sua nova senha para continuar."
+      subtitle="Finalize a recuperação para acessar sua conta GenFlix."
+      imageUrl={genflixHeroImage}
     >
-      <form className="space-y-4" onSubmit={handleSubmit}>
-        <label className="block space-y-1">
-          <span className="text-sm text-slate-700">Nova senha</span>
-          <input
-            className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500"
-            type="password"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            required
-          />
-        </label>
+      {!user ? (
+        <div className="rounded-[28px] border border-cyan-200 bg-cyan-50 px-5 py-5 text-[#0A3640]">
+          <h2 className="font-readex text-xl font-semibold text-[#15323b]">Link inválido ou expirado</h2>
+          <p className="mt-3 text-sm font-medium leading-6">
+            Abra o link mais recente enviado ao seu e-mail ou solicite uma nova recuperação de senha.
+          </p>
+          <Link
+            to="/recuperar-senha"
+            className="mt-5 inline-flex rounded-full bg-[#1398B7] px-5 py-3 font-readex text-sm font-medium text-white"
+          >
+            Solicitar novo link
+          </Link>
+        </div>
+      ) : (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#10242b]/72 p-4 backdrop-blur-sm">
+          <form
+            className="w-full max-w-[520px] rounded-[34px] border border-[#D8E6EB] bg-[#F2F7F9] p-6 shadow-[0_28px_90px_rgba(16,36,43,0.32)] sm:p-8"
+            onSubmit={handleSubmit}
+          >
+            <div className="flex items-start gap-4">
+              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-[#E8F6FA] text-[#1398B7]">
+                {message ? <CheckCircle2 className="h-7 w-7" /> : <LockKeyhole className="h-7 w-7" />}
+              </div>
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-[0.26em] text-[#1398B7]">GenFlix</p>
+                <h2 className="mt-1 font-readex text-2xl font-semibold tracking-tight text-[#15323b]">
+                  Crie sua nova senha
+                </h2>
+                <p className="mt-2 text-sm font-medium leading-6 text-[#5f7077]">
+                  Insira uma senha segura. Ao salvar, seu acesso será concluído automaticamente.
+                </p>
+              </div>
+            </div>
 
-        <label className="block space-y-1">
-          <span className="text-sm text-slate-700">Confirmar senha</span>
-          <input
-            className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-500"
-            type="password"
-            value={confirmPassword}
-            onChange={(event) => setConfirmPassword(event.target.value)}
-            required
-          />
-        </label>
+            <div className="mt-7 space-y-4">
+              <label className="block space-y-2">
+                <span className="text-sm font-bold text-[#4f656c]">Nova senha</span>
+                <input
+                  className="h-12 w-full rounded-[16px] border border-[#D8E6EB] bg-white px-4 text-sm font-semibold text-[#183139] outline-none transition placeholder:text-[#8BA0A7] focus:border-[#1398B7] focus:ring-4 focus:ring-[#E8F6FA]"
+                  type="password"
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  placeholder="Digite a nova senha"
+                  autoComplete="new-password"
+                  required
+                />
+              </label>
 
-        {message ? <p className="text-sm text-emerald-700">{message}</p> : null}
-        {error ? <p className="text-sm text-red-600">{error}</p> : null}
+              <label className="block space-y-2">
+                <span className="text-sm font-bold text-[#4f656c]">Confirmar senha</span>
+                <input
+                  className="h-12 w-full rounded-[16px] border border-[#D8E6EB] bg-white px-4 text-sm font-semibold text-[#183139] outline-none transition placeholder:text-[#8BA0A7] focus:border-[#1398B7] focus:ring-4 focus:ring-[#E8F6FA]"
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(event) => setConfirmPassword(event.target.value)}
+                  placeholder="Repita a nova senha"
+                  autoComplete="new-password"
+                  required
+                />
+              </label>
+            </div>
 
-        <Button className="w-full" type="submit" disabled={isSubmitting}>
-          {isSubmitting ? 'Atualizando...' : 'Atualizar senha'}
-        </Button>
-      </form>
+            <p className="mt-4 text-sm leading-6 text-[#7a8a90]">
+              Use pelo menos 6 caracteres para proteger sua conta.
+            </p>
 
-      <div className="mt-4 text-sm text-slate-600">
-        <Link className="text-slate-900 underline" to="/login">
-          Voltar para login
-        </Link>
-      </div>
-    </AuthShell>
+            {message ? (
+              <p className="mt-5 rounded-[18px] border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-700">
+                {message}
+              </p>
+            ) : null}
+
+            {error ? (
+              <p className="mt-5 rounded-[18px] border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-bold text-rose-700">
+                {error}
+              </p>
+            ) : null}
+
+            <button
+              className="mt-6 inline-flex w-full items-center justify-center rounded-full bg-[#1398B7] px-5 py-4 font-readex text-sm font-medium text-white shadow-[0_14px_30px_rgba(10,54,64,0.22)] transition-colors hover:bg-[#0A3640] disabled:cursor-not-allowed disabled:opacity-70"
+              type="submit"
+              disabled={isSubmitting || Boolean(message)}
+            >
+              {isSubmitting ? 'Atualizando...' : 'Salvar nova senha'}
+            </button>
+
+            <div className="mt-5 text-center text-sm text-[#5F7077]">
+              Precisa voltar?{' '}
+              <Link to="/login" className="font-semibold text-[#1398B7] transition-colors hover:text-[#1398B7]">
+                Ir para login <ArrowRight className="inline h-3.5 w-3.5" />
+              </Link>
+            </div>
+          </form>
+        </div>
+      )}
+    </GenflixAuthLayout>
   )
 }

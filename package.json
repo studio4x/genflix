@@ -15,6 +15,8 @@
   },
   "dependencies": {
     "@fontsource-variable/geist": "^5.2.8",
+    "@fontsource/manrope": "^5.2.8",
+    "@fontsource/readex-pro": "^5.2.11",
     "@hello-pangea/dnd": "^18.0.1",
     "@supabase/supabase-js": "^2.99.3",
     "class-variance-authority": "^0.7.1",
