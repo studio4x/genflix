@@ -36,6 +36,11 @@ export const courseFormSchema = z.object({
   description: z.string().trim().max(2000).optional(),
   status: z.enum(['draft', 'published', 'archived']),
   thumbnail_url: z.string().optional().or(z.literal('')),
+  slug: z.string().trim().optional().or(z.literal('')),
+  launch_date: z.string().optional().or(z.literal('')),
+  price_cents: z.number().int().min(0).default(0),
+  currency: z.enum(['BRL']).default('BRL'),
+  is_public: z.boolean().default(true),
   has_linear_progression: z.boolean().default(true),
   quiz_type_settings: courseQuizTypeSettingsSchema.default({ ...DEFAULT_COURSE_QUIZ_TYPE_SETTINGS }),
 })

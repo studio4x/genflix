@@ -240,6 +240,11 @@ export interface Course {
   status: CourseStatus
   display_order: number
   thumbnail_url: string | null
+  slug: string | null
+  launch_date: string | null
+  price_cents: number | null
+  currency: string
+  is_public: boolean
   workload_minutes: number
   has_linear_progression: boolean
   quiz_type_settings: CourseQuizTypeSettings

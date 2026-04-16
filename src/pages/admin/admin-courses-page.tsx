@@ -20,6 +20,7 @@ import {
   importFullCourse,
 } from '@/features/admin/content/api'
 import { downloadJsonFile } from '@/lib/download'
+import { formatCurrencyInputFromCents, parseCurrencyInputToCents } from '@/lib/currency'
 import {
   DEFAULT_COURSE_QUIZ_TYPE_SETTINGS,
   normalizeCourseQuizTypeSettings,
@@ -35,6 +36,11 @@ const initialForm: CourseFormInput = {
   description: '',
   status: 'draft',
   thumbnail_url: '',
+  slug: '',
+  launch_date: '',
+  price_cents: 0,
+  currency: 'BRL',
+  is_public: true,
   has_linear_progression: true,
   quiz_type_settings: { ...DEFAULT_COURSE_QUIZ_TYPE_SETTINGS },
 }
@@ -171,15 +177,20 @@ export function AdminCoursesPage() {
       ...p,
       isFormOpen: true,
       editingCourseId: course.id,
-        form: {
-          title: course.title,
-          description: course.description ?? '',
-          status: course.status,
-          thumbnail_url: course.thumbnail_url ?? '',
-          has_linear_progression: course.has_linear_progression ?? true,
-          quiz_type_settings: normalizeCourseQuizTypeSettings(course.quiz_type_settings),
-        },
-      }))
+          form: {
+            title: course.title,
+            description: course.description ?? '',
+            status: course.status,
+            thumbnail_url: course.thumbnail_url ?? '',
+            slug: course.slug ?? '',
+            launch_date: course.launch_date ?? '',
+            price_cents: course.price_cents ?? 0,
+            currency: (course.currency ?? 'BRL') as 'BRL',
+            is_public: course.is_public ?? true,
+            has_linear_progression: course.has_linear_progression ?? true,
+            quiz_type_settings: normalizeCourseQuizTypeSettings(course.quiz_type_settings),
+          },
+        }))
     setError(null)
   }
 
@@ -669,6 +680,73 @@ export function AdminCoursesPage() {
                                <option value="published">✅ Publicado</option>
                                <option value="archived">📦 Arquivado</option>
                             </select>
+                         </label>
+                      </div>
+
+                      <div className="rounded-[28px] border border-cyan-100 bg-cyan-50/60 p-6 space-y-5">
+                         <div>
+                            <span className="text-xs font-black text-cyan-700 uppercase tracking-widest">Vendas e acesso</span>
+                            <p className="mt-1 text-sm font-medium text-slate-600">
+                              Configure os dados comerciais do curso para o checkout e para a liberação automática após a compra.
+                            </p>
+                         </div>
+
+                         <div className="grid gap-4 md:grid-cols-2">
+                            <label className="block space-y-2">
+                               <span className="text-xs font-black text-slate-400 uppercase tracking-widest pl-1">Slug público</span>
+                               <input
+                                  className="w-full rounded-2xl border border-slate-200 bg-white px-6 py-4 text-sm font-semibold focus:ring-4 focus:ring-cyan-100 transition-all"
+                                  placeholder="ex: curso-avan-1"
+                                  value={form.slug ?? ''}
+                                  onChange={(event) => setDraft((p) => ({ ...p, form: { ...p.form, slug: event.target.value } }))}
+                               />
+                            </label>
+
+                            <label className="block space-y-2">
+                               <span className="text-xs font-black text-slate-400 uppercase tracking-widest pl-1">Data de lançamento</span>
+                               <input
+                                  type="date"
+                                  className="w-full rounded-2xl border border-slate-200 bg-white px-6 py-4 text-sm font-semibold focus:ring-4 focus:ring-cyan-100 transition-all"
+                                  value={form.launch_date ?? ''}
+                                  onChange={(event) => setDraft((p) => ({ ...p, form: { ...p.form, launch_date: event.target.value } }))}
+                               />
+                            </label>
+
+                            <label className="block space-y-2">
+                               <span className="text-xs font-black text-slate-400 uppercase tracking-widest pl-1">Valor de venda</span>
+                               <input
+                                  className="w-full rounded-2xl border border-slate-200 bg-white px-6 py-4 text-sm font-semibold focus:ring-4 focus:ring-cyan-100 transition-all"
+                                  placeholder="297,00"
+                                  value={formatCurrencyInputFromCents(form.price_cents)}
+                                  onChange={(event) => setDraft((p) => ({
+                                    ...p,
+                                    form: { ...p.form, price_cents: parseCurrencyInputToCents(event.target.value) },
+                                  }))}
+                               />
+                            </label>
+
+                            <label className="block space-y-2">
+                               <span className="text-xs font-black text-slate-400 uppercase tracking-widest pl-1">Moeda</span>
+                               <select
+                                  className="w-full font-bold rounded-2xl border border-slate-200 bg-white px-6 py-4 focus:ring-4 focus:ring-cyan-100 transition-all appearance-none"
+                                  value={form.currency}
+                                  onChange={(event) => setDraft((p) => ({ ...p, form: { ...p.form, currency: event.target.value as 'BRL' } }))}
+                               >
+                                  <option value="BRL">BRL - Real</option>
+                               </select>
+                            </label>
+                         </div>
+
+                         <label className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-5 py-4">
+                            <input
+                               type="checkbox"
+                               checked={form.is_public}
+                               onChange={(event) => setDraft((p) => ({ ...p, form: { ...p.form, is_public: event.target.checked } }))}
+                            />
+                            <div>
+                               <p className="text-sm font-black text-slate-800">Exibir curso no catálogo público</p>
+                               <p className="text-xs font-medium text-slate-500">Se desativado, o curso continua no admin mas não aparece para o público.</p>
+                            </div>
                          </label>
                       </div>
 

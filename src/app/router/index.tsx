@@ -12,6 +12,7 @@ import { AdminGroupsPage } from '@/pages/admin/admin-groups-page'
 import { AdminIntegrationsPage } from '@/pages/admin/admin-integrations-page'
 import { AdminLessonsPage } from '@/pages/admin/admin-lessons-page'
 import { AdminMaterialsPage } from '@/pages/admin/admin-materials-page'
+import { AdminPaymentSettingsPage } from '@/pages/admin/admin-payment-settings-page'
 import { AdminQuizTypesPage } from '@/pages/admin/admin-quiz-types-page'
 import { AdminModulesPage } from '@/pages/admin/admin-modules-page'
 import { AdminReportsPage } from '@/pages/admin/admin-reports-page'
@@ -215,6 +216,10 @@ export const appRouter = createBrowserRouter([
           {
             path: '/admin/tipos-quiz',
             element: <AdminQuizTypesPage />,
+          },
+          {
+            path: '/admin/pagamento',
+            element: <AdminPaymentSettingsPage />,
           },
           {
             path: '/admin/relatorios',

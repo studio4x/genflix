@@ -87,6 +87,23 @@ export function AdminDashboardPage() {
             <Link to="/admin/relatorios">Acessar Relatórios</Link>
           </Button>
         </div>
+
+        <div className="flex flex-col justify-between rounded-2xl border border-cyan-100 bg-cyan-50/60 p-6 shadow-sm">
+          <div className="flex items-center gap-4 mb-4">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-cyan-600 text-white shadow-sm">
+              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+              </svg>
+            </div>
+            <div>
+              <p className="text-sm font-semibold uppercase tracking-wider text-cyan-700/80">Pagamento</p>
+            </div>
+          </div>
+          <p className="text-sm text-slate-600 mb-6">Configure o gateway Asaas, ambiente de teste e URL do webhook.</p>
+          <Button variant="outline" className="w-full border-cyan-200 text-cyan-800 hover:bg-cyan-100 hover:text-cyan-900 shadow-sm" asChild>
+            <Link to="/admin/pagamento">Abrir Configurações</Link>
+          </Button>
+        </div>
       </div>
     </div>
   )

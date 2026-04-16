@@ -18,6 +18,7 @@ import {
   type ResetCourseProgressResult,
 } from '@/features/admin/content/api'
 import { courseFormSchema } from '@/features/admin/content/schemas'
+import { formatCurrencyInputFromCents, parseCurrencyInputToCents } from '@/lib/currency'
 import {
   canCourseUseCaseStudies,
   COURSE_QUIZ_TYPE_OPTIONS,
@@ -26,17 +27,37 @@ import {
   normalizeCourseQuizTypeSettings,
 } from '@/features/assessments/course-quiz-type-settings'
 import { fetchGlobalQuizTypeSettings } from '@/features/admin/quiz-types/api'
+import type { Course, CourseQuizTypeSettings } from '@/types/content'
 import 'react-quill/dist/quill.snow.css'
+
+type CourseSettingsFormState = {
+  title: string
+  description: string
+  status: Course['status']
+  thumbnail_url: string
+  slug: string
+  launch_date: string
+  price_cents: number
+  currency: Course['currency']
+  is_public: boolean
+  has_linear_progression: boolean
+  quiz_type_settings: CourseQuizTypeSettings
+}
 
 export function CourseSettingsPanel() {
   const { courseTree, refreshTree } = useCourseBuilder()
   const { user, session } = useAuth()
   
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<CourseSettingsFormState>({
     title: '',
     description: '',
-    status: 'draft' as 'draft' | 'published' | 'archived',
+    status: 'draft',
     thumbnail_url: '',
+    slug: '',
+    launch_date: '',
+    price_cents: 0,
+    currency: 'BRL',
+    is_public: true,
     has_linear_progression: true,
     quiz_type_settings: { ...DEFAULT_COURSE_QUIZ_TYPE_SETTINGS },
   })
@@ -63,8 +84,13 @@ export function CourseSettingsPanel() {
       setForm({
         title: courseTree.course.title || '',
         description: courseTree.course.description ?? '',
-        status: (courseTree.course.status as 'draft' | 'published' | 'archived') || 'draft',
+        status: courseTree.course.status || 'draft',
         thumbnail_url: courseTree.course.thumbnail_url ?? '',
+        slug: courseTree.course.slug ?? '',
+        launch_date: courseTree.course.launch_date ?? '',
+        price_cents: courseTree.course.price_cents ?? 0,
+        currency: (courseTree.course.currency as CourseSettingsFormState['currency']) ?? 'BRL',
+        is_public: courseTree.course.is_public ?? true,
         has_linear_progression: courseTree.course.has_linear_progression ?? true,
         quiz_type_settings: normalizeCourseQuizTypeSettings(courseTree.course.quiz_type_settings),
       })
@@ -322,6 +348,72 @@ export function CourseSettingsPanel() {
                     </Button>
                   ) : null}
                </label>
+
+               <section className="rounded-[28px] border border-cyan-100 bg-cyan-50/60 p-6 space-y-5">
+                  <div>
+                     <p className="text-[10px] font-black uppercase tracking-[0.24em] text-cyan-700">Vendas e acesso</p>
+                     <h3 className="mt-2 text-xl font-black tracking-tight text-slate-900">Configure o checkout do curso</h3>
+                     <p className="mt-2 text-sm font-medium text-slate-600">
+                        Os dados abaixo alimentam o checkout do Asaas e a liberação automática do acesso após a compra.
+                     </p>
+                  </div>
+
+                  <div className="grid gap-4 md:grid-cols-2">
+                     <label className="space-y-2">
+                        <span className="text-xs font-black uppercase tracking-widest text-slate-400">Slug público</span>
+                        <input
+                           className="w-full rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold focus:ring-4 focus:ring-cyan-100"
+                           placeholder="ex: curso-residencia-medica"
+                           value={form.slug}
+                           onChange={(event) => setForm((current) => ({ ...current, slug: event.target.value }))}
+                        />
+                     </label>
+
+                     <label className="space-y-2">
+                        <span className="text-xs font-black uppercase tracking-widest text-slate-400">Data de lançamento</span>
+                        <input
+                           type="date"
+                           className="w-full rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold focus:ring-4 focus:ring-cyan-100"
+                           value={form.launch_date}
+                           onChange={(event) => setForm((current) => ({ ...current, launch_date: event.target.value }))}
+                        />
+                     </label>
+
+                     <label className="space-y-2">
+                        <span className="text-xs font-black uppercase tracking-widest text-slate-400">Valor de venda</span>
+                        <input
+                           className="w-full rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold focus:ring-4 focus:ring-cyan-100"
+                           value={formatCurrencyInputFromCents(form.price_cents)}
+                           onChange={(event) =>
+                             setForm((current) => ({ ...current, price_cents: parseCurrencyInputToCents(event.target.value) }))
+                           }
+                        />
+                     </label>
+
+                     <label className="space-y-2">
+                        <span className="text-xs font-black uppercase tracking-widest text-slate-400">Moeda</span>
+                        <select
+                           className="w-full rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold focus:ring-4 focus:ring-cyan-100"
+                           value={form.currency}
+                           onChange={(event) => setForm((current) => ({ ...current, currency: event.target.value as 'BRL' }))}
+                        >
+                           <option value="BRL">BRL - Real</option>
+                        </select>
+                     </label>
+                  </div>
+
+                  <label className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-5 py-4">
+                     <input
+                        type="checkbox"
+                        checked={form.is_public}
+                        onChange={(event) => setForm((current) => ({ ...current, is_public: event.target.checked }))}
+                     />
+                     <div>
+                        <p className="text-sm font-black text-slate-800">Exibir curso no catálogo público</p>
+                        <p className="text-xs font-medium text-slate-500">Se desativado, o curso continua no admin mas não aparece para o público.</p>
+                     </div>
+                  </label>
+               </section>
 
                <div className="block space-y-2">
                   <span className="text-xs font-black text-slate-400 uppercase tracking-widest pl-1">Descrição Detalhada</span>

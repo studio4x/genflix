@@ -1,14 +1,13 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link, Navigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 
 import homeCareMatchLogoUrl from '@/assets/homecare-match-logo.jpg'
 import { useAuth } from '@/app/providers/auth-provider'
 import { PlatformFooter } from '@/components/layout/platform-footer'
 import { Button } from '@/components/ui/button'
-import {
-  fetchReleasedCourses,
-  toErrorMessage,
-} from '@/features/student/courses/api'
+import { formatCurrencyFromCents } from '@/lib/currency'
+import { fetchPublicCatalogCourses, startCourseCheckout } from '@/features/public/courses/api'
+import { toErrorMessage } from '@/features/student/courses/api'
 import type { Course } from '@/types/content'
 
 function formatCourseWorkload(minutes: number) {
@@ -38,12 +37,14 @@ function sanitizeCourseDescription(description: string | null) {
 }
 
 export function PublicHomePage() {
-  const { isLoading, user, roles } = useAuth()
+  const { isLoading, user, roles, session } = useAuth()
   const waitingRoleResolution = !!user && roles.length === 0
   const [courses, setCourses] = useState<Course[]>([])
   const [isLoadingCourses, setIsLoadingCourses] = useState(true)
   const [coursesError, setCoursesError] = useState<string | null>(null)
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null)
+  const [isStartingCheckout, setIsStartingCheckout] = useState(false)
+  const dashboardPath = roles.includes('admin') ? '/admin' : '/aluno'
 
   useEffect(() => {
     let isMounted = true
@@ -52,7 +53,7 @@ export function PublicHomePage() {
       setIsLoadingCourses(true)
       setCoursesError(null)
       try {
-        const data = await fetchReleasedCourses()
+        const data = await fetchPublicCatalogCourses()
         if (isMounted) {
           setCourses(data)
         }
@@ -84,14 +85,6 @@ export function PublicHomePage() {
         <p className="text-sm font-black uppercase tracking-[0.28em] text-white/70">Carregando plataforma...</p>
       </main>
     )
-  }
-
-  if (user && roles.includes('admin')) {
-    return <Navigate to="/admin" replace />
-  }
-
-  if (user) {
-    return <Navigate to="/aluno" replace />
   }
 
   return (
@@ -136,24 +129,20 @@ export function PublicHomePage() {
                 variant="outline"
                 className="hidden rounded-2xl border-slate-200 bg-white px-5 font-bold text-slate-700 shadow-sm hover:bg-slate-50 md:inline-flex"
               >
-                <a href="#cursos">
-                  Ver Cursos
-                </a>
+                <a href="#cursos">Ver Cursos</a>
               </Button>
               <Button
                 asChild
                 variant="outline"
                 className="hidden rounded-2xl border-slate-200 bg-white px-5 font-bold text-slate-700 shadow-sm hover:bg-slate-50 xl:inline-flex"
               >
-                <Link to="/login">
-                  Minha Conta
-                </Link>
+                <Link to={user ? dashboardPath : '/login'}>{user ? 'Acessar painel' : 'Minha Conta'}</Link>
               </Button>
               <Button
                 asChild
                 className="rounded-2xl bg-[#1473ff] px-5 font-bold text-white shadow-[0_12px_30px_rgba(20,115,255,0.22)] hover:bg-[#1067e6]"
               >
-                <Link to="/login">Entrar</Link>
+                <Link to={user ? dashboardPath : '/login'}>{user ? 'Acessar painel' : 'Entrar'}</Link>
               </Button>
             </div>
           </header>
@@ -197,7 +186,7 @@ export function PublicHomePage() {
                 asChild
                 className="h-14 rounded-2xl bg-[#1473ff] px-8 text-base font-black text-white shadow-[0_14px_35px_rgba(20,115,255,0.24)] hover:bg-[#1067e6]"
               >
-                <Link to="/login">Ir para meu painel</Link>
+                <Link to={user ? dashboardPath : '/login'}>{user ? 'Ir para meu painel' : 'Entrar e continuar'}</Link>
               </Button>
               <Button
                 asChild
@@ -206,14 +195,6 @@ export function PublicHomePage() {
               >
                 <a href="https://homecarematch.com.br" target="_blank" rel="noreferrer">
                   Ver como funciona
-                </a>
-              </Button>
-              <Button
-                asChild
-                className="h-14 rounded-2xl bg-[#16a34a] px-8 text-base font-black text-white shadow-[0_14px_35px_rgba(22,163,74,0.24)] hover:bg-[#148a3f]"
-              >
-                <a href="https://homecarematch.com.br" target="_blank" rel="noreferrer">
-                  Ir para HomeCare Match
                 </a>
               </Button>
             </div>
@@ -233,7 +214,7 @@ export function PublicHomePage() {
               </article>
               <article className="rounded-[28px] border border-white bg-white/90 p-6 shadow-sm shadow-slate-200/70">
                 <p className="text-[10px] font-black uppercase tracking-[0.26em] text-slate-400">Acesso</p>
-                <p className="mt-3 text-base font-black uppercase tracking-[0.16em] text-slate-900">Exclusivo para cadastrados</p>
+                <p className="mt-3 text-base font-black uppercase tracking-[0.16em] text-slate-900">Somente após compra</p>
               </article>
             </div>
           </div>
@@ -339,7 +320,7 @@ export function PublicHomePage() {
                   </div>
                   <div className="absolute inset-x-0 bottom-0 p-5">
                     <div className="inline-flex items-center gap-2 rounded-full border border-cyan-300/30 bg-cyan-300/15 px-3 py-1 text-[10px] font-black uppercase tracking-[0.24em] text-cyan-100">
-                      Disponível para profissionais cadastrados
+                      {course.price_cents && course.price_cents > 0 ? 'Disponível para compra' : 'Disponível gratuitamente'}
                     </div>
                   </div>
                 </div>
@@ -358,7 +339,7 @@ export function PublicHomePage() {
                       HomeCare Match Academy
                     </div>
                     <span className="text-sm font-black text-blue-700">
-                      Ver condições de acesso
+                      {formatCurrencyFromCents(course.price_cents, course.currency)}
                     </span>
                   </div>
                 </div>
@@ -374,10 +355,10 @@ export function PublicHomePage() {
                 Quero acessar os cursos
               </div>
               <h2 className="text-3xl font-black tracking-tight md:text-4xl">
-                O acesso à Academy é liberado para profissionais cadastrados na HomeCare Match.
+                O acesso à Academy é liberado após a confirmação da compra.
               </h2>
               <p className="max-w-3xl text-base font-medium leading-8 text-white/72">
-                Se você ainda não faz parte da plataforma principal, comece por lá. Depois do cadastro e da liberação adequada, os cursos poderão ser disponibilizados em sua jornada profissional.
+                Escolha um curso, conclua o pagamento no checkout do Asaas e o acesso será liberado automaticamente quando a compra for confirmada.
               </p>
             </div>
 
@@ -386,16 +367,16 @@ export function PublicHomePage() {
                 asChild
                 className="h-14 rounded-2xl bg-cyan-400 px-8 font-black text-slate-950 hover:bg-cyan-300"
               >
-                <a href="https://homecarematch.com.br" target="_blank" rel="noreferrer">
-                  Ir para HomeCare Match
-                </a>
+                <Link to={user ? dashboardPath : '/login'}>{user ? 'Ir para meu painel' : 'Entrar para comprar'}</Link>
               </Button>
               <Button
                 asChild
                 variant="outline"
                 className="h-14 rounded-2xl border-white/12 bg-white/5 px-8 font-black text-white hover:bg-white/10"
               >
-                <Link to="/login">Já tenho acesso</Link>
+                <a href="https://homecarematch.com.br" target="_blank" rel="noreferrer">
+                  Ir para HomeCare Match
+                </a>
               </Button>
             </div>
           </div>
@@ -411,7 +392,7 @@ export function PublicHomePage() {
           <div className="w-full max-w-2xl overflow-hidden rounded-[32px] border border-white/10 bg-white shadow-2xl">
             <div className="flex items-start justify-between gap-4 border-b border-slate-100 px-6 py-5 sm:px-8">
               <div>
-                <p className="text-[10px] font-black uppercase tracking-[0.24em] text-blue-600">Acesso restrito</p>
+                <p className="text-[10px] font-black uppercase tracking-[0.24em] text-blue-600">Oferta do curso</p>
                 <h3 className="mt-2 text-2xl font-black tracking-tight text-slate-900">
                   {selectedCourse.title}
                 </h3>
@@ -428,20 +409,22 @@ export function PublicHomePage() {
             </div>
 
             <div className="space-y-5 px-6 py-6 sm:px-8 sm:py-8">
-              <div className="rounded-[24px] border border-amber-200 bg-amber-50 px-5 py-4">
-                <p className="text-sm font-bold leading-7 text-amber-900">
-                  Este curso está disponível somente para profissionais cadastrados na plataforma HomeCare Match.
+              <div className="rounded-[24px] border border-blue-200 bg-blue-50 px-5 py-4">
+                <p className="text-sm font-bold leading-7 text-blue-900">
+                  {formatCurrencyFromCents(selectedCourse.price_cents, selectedCourse.currency)}
                 </p>
               </div>
 
               <p className="text-sm font-medium leading-7 text-slate-600">
-                Para acessar os conteúdos da Academy, é necessário fazer parte da base de profissionais da HomeCare Match e possuir a liberação correspondente para a trilha de treinamento.
+                O acesso a este curso é liberado após a confirmação da compra. Depois do pagamento aprovado, o curso será liberado automaticamente para o seu usuário.
               </p>
 
               <div className="rounded-[24px] border border-slate-100 bg-slate-50 px-5 py-4">
                 <p className="text-[10px] font-black uppercase tracking-[0.24em] text-slate-400">Próximo passo</p>
                 <p className="mt-2 text-sm font-medium leading-7 text-slate-600">
-                  Se você ainda não tem cadastro, acesse a HomeCare Match para conhecer a plataforma principal e iniciar seu processo.
+                  {user
+                    ? 'Clique em comprar para gerar o checkout do Asaas com os dados da sua conta.'
+                    : 'Entre na plataforma para gerar o checkout com sua conta autenticada.'}
                 </p>
               </div>
             </div>
@@ -455,14 +438,34 @@ export function PublicHomePage() {
               >
                 Fechar
               </Button>
-              <Button
-                asChild
-                className="h-12 rounded-2xl bg-slate-900 px-6 font-black text-white hover:bg-slate-800"
-              >
-                <a href="https://homecarematch.com.br" target="_blank" rel="noreferrer">
-                  Ir para HomeCare Match
-                </a>
-              </Button>
+              {user ? (
+                <Button
+                  type="button"
+                  disabled={isStartingCheckout}
+                  className="h-12 rounded-2xl bg-slate-900 px-6 font-black text-white hover:bg-slate-800"
+                  onClick={async () => {
+                    if (!session?.access_token) {
+                      return
+                    }
+
+                    setIsStartingCheckout(true)
+                    try {
+                      const checkoutUrl = await startCourseCheckout(selectedCourse.id, session.access_token)
+                      window.location.assign(checkoutUrl)
+                    } catch (checkoutError) {
+                      setCoursesError(toErrorMessage(checkoutError))
+                    } finally {
+                      setIsStartingCheckout(false)
+                    }
+                  }}
+                >
+                  {isStartingCheckout ? 'Abrindo checkout...' : 'Comprar agora'}
+                </Button>
+              ) : (
+                <Button asChild className="h-12 rounded-2xl bg-slate-900 px-6 font-black text-white hover:bg-slate-800">
+                  <Link to="/login">Entrar para comprar</Link>
+                </Button>
+              )}
             </div>
           </div>
         </div>

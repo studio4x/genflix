@@ -9,6 +9,7 @@ const adminLinks = [
   { to: '/admin/cursos', label: 'Catalogo de Cursos' },
   { to: '/admin/botoes-aula', label: 'Botoes de Aula' },
   { to: '/admin/tipos-quiz', label: 'Tipos de Quiz' },
+  { to: '/admin/pagamento', label: 'Pagamento' },
   { to: '/admin/alunos', label: 'Alunos' },
   { to: '/admin/grupos', label: 'Grupos' },
   { to: '/admin/integracoes', label: 'Integracoes' },

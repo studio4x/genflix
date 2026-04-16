@@ -1,4 +1,4 @@
-import { supabase } from '@/services/supabase/client'
+﻿import { supabase } from '@/services/supabase/client'
 import {
   exportAssessmentContent,
   importAssessmentContentStructured,
@@ -41,6 +41,15 @@ function normalizeSupabaseError(error: unknown): Error {
 
 function sanitizeFileName(fileName: string): string {
   return fileName.replace(/[^a-zA-Z0-9._-]/g, '-')
+}
+
+function slugify(value: string) {
+  return value
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
 }
 
 async function swapPositions(
@@ -110,6 +119,11 @@ export async function createCourse(input: CourseFormInput, userId: string) {
       status: input.status,
       display_order: nextDisplayOrder,
       thumbnail_url: input.thumbnail_url?.trim() || null,
+      slug: input.slug?.trim() || slugify(input.title),
+      launch_date: input.launch_date?.trim() || null,
+      price_cents: input.price_cents ?? 0,
+      currency: input.currency,
+      is_public: input.is_public,
       quiz_type_settings: normalizeCourseQuizTypeSettings(input.quiz_type_settings),
       created_by: userId,
     })
@@ -142,6 +156,11 @@ export async function updateCourse(courseId: string, input: CourseFormInput) {
       description: input.description?.trim() || null,
       status: input.status,
       thumbnail_url: input.thumbnail_url?.trim() || null,
+      slug: input.slug?.trim() || slugify(input.title),
+      launch_date: input.launch_date?.trim() || null,
+      price_cents: input.price_cents ?? 0,
+      currency: input.currency,
+      is_public: input.is_public,
       has_linear_progression: input.has_linear_progression,
       quiz_type_settings: normalizeCourseQuizTypeSettings(input.quiz_type_settings),
     })
@@ -1351,72 +1370,6 @@ export async function importCourseContent(
     return
   }
 
-  if (false) {
-    const assessmentInput = assessmentOnlyInput as ImportAssessmentData
-
-    // bloco legado mantido apenas para referencia
-
-
-
-    // 1. Criar ou atualizar a avaliação final do curso
-    const { data: assessment, error: aError } = await supabase
-      .from('assessments')
-      .upsert({
-        course_id: courseId,
-        module_id: null,
-        assessment_type: 'final',
-        title: assessmentInput.title,
-        description: assessmentInput.description || null,
-        passing_score: assessmentInput.passing_score || 70,
-        max_attempts: assessmentInput.max_attempts || 3,
-        estimated_minutes: assessmentInput.estimated_minutes || 10,
-        is_active: true
-      }, { onConflict: 'course_id, assessment_type' })
-      .select()
-      .single()
-
-    if (aError) throw aError
-
-    // 2. Limpar questões se necessário (UPSERT em cascata seria ideal, mas fazemos manual)
-    await supabase.from('assessment_questions').delete().eq('assessment_id', assessment.id)
-
-    // 3. Inserir questões
-    const legacyQuestions = assessmentInput.questions ?? []
-    for (let qIdx = 0; qIdx < legacyQuestions.length; qIdx++) {
-      const qData = legacyQuestions[qIdx]
-      const questionType = qData.question_type === 'essay_ai' ? 'essay_ai' : 'single_choice'
-      const { data: question, error: qError } = await supabase
-        .from('assessment_questions')
-        .insert({
-          assessment_id: assessment.id,
-          question_text: qData.question_text,
-          points: questionType === 'essay_ai' ? 0 : (qData.points || 1),
-          position: qIdx + 1,
-          is_required: qData.is_required ?? true,
-          question_type: questionType,
-          essay_expected_answer: questionType === 'essay_ai'
-            ? qData.essay_expected_answer?.trim() || null
-            : null,
-        })
-        .select()
-        .single()
-
-      if (qError) throw qError
-
-      const legacyOptions = qData.options ?? []
-      if (questionType === 'single_choice' && legacyOptions.length > 0) {
-        const optionsToInsert = legacyOptions.map((o, oIdx: number) => ({
-          question_id: question.id,
-          option_text: o.option_text,
-          is_correct: o.is_correct,
-          position: oIdx + 1
-        }))
-        await supabase.from('assessment_options').insert(optionsToInsert)
-      }
-    }
-    return // Sucesso na importação apenas de avaliação
-  }
-
   // 1. Cálculo da posição inicial
   let startPosition = 0
 
@@ -1499,3 +1452,4 @@ export async function importFullCourse(data: ImportCourseFullData, userId: strin
   
   return course
 }
+
