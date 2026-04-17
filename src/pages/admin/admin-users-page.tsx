@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { useAuth } from '@/app/providers/auth-provider'
 import { Button } from '@/components/ui/button'
 import {
+  deleteAdminUser,
   createAdminUser,
   fetchAdminUsers,
   toErrorMessage,
@@ -134,6 +135,7 @@ export function AdminUsersPage() {
   const [editingRoleUser, setEditingRoleUser] = useState<AdminUserListItem | null>(null)
   const [roleEditCode, setRoleEditCode] = useState<AdminAssignableRoleCode>('aluno')
   const [resettingUserId, setResettingUserId] = useState<string | null>(null)
+  const [deletingUserId, setDeletingUserId] = useState<string | null>(null)
   const [updatingRoleUserId, setUpdatingRoleUserId] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -276,6 +278,37 @@ export function AdminUsersPage() {
       setError(toErrorMessage(toTranslatedAuthError(resetError, 'Não foi possível enviar a redefinição de senha.')))
     } finally {
       setResettingUserId(null)
+    }
+  }
+
+  async function handleDeleteUser(user: AdminUserListItem) {
+    if (!session) {
+      setError('Sessao expirada. Faca login novamente.')
+      return
+    }
+
+    const confirmed = window.confirm(
+      `Excluir o usuario "${user.full_name?.trim() || user.email || user.id}"?\n\nEssa acao remove o acesso e os dados vinculados de forma permanente.`,
+    )
+
+    if (!confirmed) {
+      return
+    }
+
+    setDeletingUserId(user.id)
+    setError(null)
+    setPasswordResetFeedback(null)
+
+    try {
+      await deleteAdminUser(user.id, session)
+      if (editingRoleUser?.id === user.id) {
+        setEditingRoleUser(null)
+      }
+      await loadUsers()
+    } catch (deleteError) {
+      setError(toErrorMessage(deleteError))
+    } finally {
+      setDeletingUserId(null)
     }
   }
 
@@ -690,6 +723,16 @@ export function AdminUsersPage() {
                           className="rounded-2xl border-cyan-200 text-cyan-700 hover:bg-cyan-50 hover:text-cyan-800"
                         >
                           {resettingUserId === user.id ? 'Redefinindo...' : 'Redefinir senha'}
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => void handleDeleteUser(user)}
+                          disabled={deletingUserId === user.id}
+                          className="rounded-2xl"
+                        >
+                          {deletingUserId === user.id ? 'Excluindo...' : 'Excluir'}
                         </Button>
                       </div>
                     </td>

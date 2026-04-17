@@ -61,6 +61,10 @@ const resetPasswordSchema = z.object({
   userId: z.string().uuid('Usuario invalido.'),
 })
 
+const deleteUserSchema = z.object({
+  userId: z.string().uuid('Usuario invalido.'),
+})
+
 function getHeaderValue(value: string | string[] | undefined) {
   if (typeof value === 'string') {
     return value
@@ -170,7 +174,10 @@ async function createAdminClient(req: ApiRequest, res: ApiResponse) {
     return null
   }
 
-  return adminClient
+  return {
+    adminClient,
+    requesterId: requesterResult.data.user.id,
+  }
 }
 
 function normalizeAssignableRoleCode(roleCode: AssignableRoleCode) {
@@ -222,10 +229,11 @@ function sortRolesByPriority(roleA: { code: string }, roleB: { code: string }) {
 }
 
 async function handleListUsers(req: ApiRequest, res: ApiResponse) {
-  const adminClient = await createAdminClient(req, res)
-  if (!adminClient) {
+  const context = await createAdminClient(req, res)
+  if (!context) {
     return
   }
+  const { adminClient } = context
 
   const [profilesResult, rolesResult] = await Promise.all([
     adminClient
@@ -335,10 +343,11 @@ async function ensureRoleAssignment(
 }
 
 async function handleCreateUser(req: ApiRequest, res: ApiResponse) {
-  const adminClient = await createAdminClient(req, res)
-  if (!adminClient) {
+  const context = await createAdminClient(req, res)
+  if (!context) {
     return
   }
+  const { adminClient } = context
 
   const parsedBody = parseBody(req.body)
   if (!parsedBody) {
@@ -413,10 +422,11 @@ async function handleCreateUser(req: ApiRequest, res: ApiResponse) {
 }
 
 async function handleUpdateUserRole(req: ApiRequest, res: ApiResponse) {
-  const adminClient = await createAdminClient(req, res)
-  if (!adminClient) {
+  const context = await createAdminClient(req, res)
+  if (!context) {
     return
   }
+  const { adminClient } = context
 
   const parsedBody = parseBody(req.body)
   if (!parsedBody) {
@@ -472,10 +482,11 @@ async function handleUpdateUserRole(req: ApiRequest, res: ApiResponse) {
 }
 
 async function handleResetUserPassword(req: ApiRequest, res: ApiResponse) {
-  const adminClient = await createAdminClient(req, res)
-  if (!adminClient) {
+  const context = await createAdminClient(req, res)
+  if (!context) {
     return
   }
+  const { adminClient } = context
 
   const parsedBody = parseBody(req.body)
   if (!parsedBody) {
@@ -520,6 +531,103 @@ async function handleResetUserPassword(req: ApiRequest, res: ApiResponse) {
   })
 }
 
+async function handleDeleteUser(req: ApiRequest, res: ApiResponse) {
+  const context = await createAdminClient(req, res)
+  if (!context) {
+    return
+  }
+
+  const { adminClient, requesterId } = context
+  const parsedBody = parseBody(req.body)
+  if (!parsedBody) {
+    jsonResponse(res, 400, { error: 'Body invalido.' })
+    return
+  }
+
+  const validationResult = deleteUserSchema.safeParse({
+    userId: typeof parsedBody.userId === 'string' ? parsedBody.userId.trim() : undefined,
+  })
+
+  if (!validationResult.success) {
+    jsonResponse(res, 400, { error: validationResult.error.issues[0]?.message ?? 'Dados invalidos.' })
+    return
+  }
+
+  const { userId } = validationResult.data
+
+  if (userId === requesterId) {
+    jsonResponse(res, 400, { error: 'Voce nao pode excluir seu proprio usuario.' })
+    return
+  }
+
+  const userResult = await adminClient
+    .from('profiles')
+    .select('id, email, full_name')
+    .eq('id', userId)
+    .maybeSingle()
+
+  if (userResult.error) {
+    jsonResponse(res, 500, { error: 'Nao foi possivel localizar o usuario.' })
+    return
+  }
+
+  if (!userResult.data) {
+    jsonResponse(res, 404, { error: 'Usuario nao encontrado.' })
+    return
+  }
+
+  const userRolesResult = await adminClient
+    .from('user_roles')
+    .select('roles(code)')
+    .eq('user_id', userId)
+
+  if (userRolesResult.error) {
+    jsonResponse(res, 500, { error: 'Nao foi possivel validar as roles do usuario.' })
+    return
+  }
+
+  const userRoleCodes = ((userRolesResult.data as Array<{ roles: { code: string } | { code: string }[] | null }> | null) ?? [])
+    .flatMap((relation) => {
+      if (!relation.roles) {
+        return []
+      }
+      return Array.isArray(relation.roles) ? relation.roles : [relation.roles]
+    })
+    .map((role) => role.code)
+
+  if (userRoleCodes.includes('admin')) {
+    const adminCountResult = await adminClient
+      .from('user_roles')
+      .select('user_id, roles!inner(code)', { count: 'exact', head: true })
+      .eq('roles.code', 'admin')
+
+    if (adminCountResult.error) {
+      jsonResponse(res, 500, { error: 'Nao foi possivel validar os administradores restantes.' })
+      return
+    }
+
+    const remainingAdmins = adminCountResult.count ?? 0
+    if (remainingAdmins <= 1) {
+      jsonResponse(res, 400, { error: 'Nao e possivel excluir o ultimo administrador.' })
+      return
+    }
+  }
+
+  const deleteAuthResult = await adminClient.auth.admin.deleteUser(userId)
+  if (deleteAuthResult.error) {
+    jsonResponse(res, 400, {
+      error: deleteAuthResult.error.message ?? 'Nao foi possivel excluir o usuario.',
+    })
+    return
+  }
+
+  jsonResponse(res, 200, {
+    user_id: userId,
+    email: userResult.data.email,
+    message: 'Usuario excluido com sucesso.',
+  })
+}
+
 export default async function handler(req: ApiRequest, res: ApiResponse) {
   if (req.method === 'GET') {
     await handleListUsers(req, res)
@@ -541,6 +649,11 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
     return
   }
 
-  res.setHeader('Allow', 'GET, POST, PUT, PATCH')
+  if (req.method === 'DELETE') {
+    await handleDeleteUser(req, res)
+    return
+  }
+
+  res.setHeader('Allow', 'GET, POST, PUT, PATCH, DELETE')
   res.status(405).json({ error: 'Metodo nao permitido.' })
 }

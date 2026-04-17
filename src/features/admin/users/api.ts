@@ -50,6 +50,12 @@ export interface UpdateAdminUserRoleResponse {
   message: string
 }
 
+export interface DeleteAdminUserResponse {
+  user_id: string
+  email: string
+  message: string
+}
+
 export function toErrorMessage(error: unknown): string {
   if (error instanceof Error) {
     return error.message
@@ -152,4 +158,27 @@ export async function updateAdminUserRole(
   }
 
   return data as UpdateAdminUserRoleResponse
+}
+
+export async function deleteAdminUser(userId: string, session: Session) {
+  const response = await fetch('/api/admin/users', {
+    method: 'DELETE',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${session.access_token}`,
+    },
+    body: JSON.stringify({ userId }),
+  })
+
+  const data = (await response
+    .json()
+    .catch(() => null)) as ErrorResponse | DeleteAdminUserResponse | null
+
+  if (!response.ok) {
+    throw new Error(
+      (data as ErrorResponse | null)?.error ?? 'Nao foi possivel excluir o usuario.',
+    )
+  }
+
+  return data as DeleteAdminUserResponse
 }
