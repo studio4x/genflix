@@ -293,13 +293,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const requestPasswordReset = useCallback(async (email: string) => {
-    const redirectTo = `${window.location.origin}/redefinir-senha`
-    const result = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo,
+    const response = await fetch('/api/auth/password-reset', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email }),
     })
 
-    if (result.error) {
-      throw toTranslatedAuthError(result.error, 'Não foi possível enviar o e-mail de recuperação.')
+    const payload = (await response.json().catch(() => null)) as { error?: string } | null
+
+    if (!response.ok) {
+      throw new Error(payload?.error ?? 'Não foi possível enviar o e-mail de recuperação.')
     }
   }, [])
 

@@ -39,7 +39,7 @@ export interface CreateAdminUserResponse {
 export interface ResetAdminUserPasswordResponse {
   user_id: string
   email: string
-  temporary_password: string
+  temporary_password: string | null
   message: string
 }
 

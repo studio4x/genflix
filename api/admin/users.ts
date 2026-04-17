@@ -2,6 +2,8 @@ import { randomBytes } from 'node:crypto'
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import { z } from 'zod'
 
+import { sendPasswordResetEmail } from '../_shared/email.js'
+
 type ApiRequest = {
   method?: string
   headers: Record<string, string | string[] | undefined>
@@ -32,6 +34,12 @@ type ProfileRow = {
   full_name: string | null
   created_at: string
   updated_at: string
+}
+
+type RecoveryLinkData = {
+  properties?: {
+    action_link?: string
+  } | null
 }
 
 const assignableRoleCodes = ['aluno', 'criador', 'admin'] as const
@@ -113,6 +121,22 @@ function parseBody(rawBody: unknown) {
 function createTemporaryPassword() {
   const token = randomBytes(9).toString('base64url')
   return `Genflix#${token}9a`
+}
+
+function getRequestOrigin(req: ApiRequest) {
+  const origin = getHeaderValue(req.headers.origin)
+  if (origin) {
+    return origin
+  }
+
+  const host = getHeaderValue(req.headers['x-forwarded-host']) ?? getHeaderValue(req.headers.host)
+  const protocol = getHeaderValue(req.headers['x-forwarded-proto']) ?? 'https'
+
+  if (!host) {
+    return process.env.APP_PUBLIC_URL ?? 'https://genflix-omega.vercel.app'
+  }
+
+  return `${protocol}://${host}`
 }
 
 function jsonResponse(res: ApiResponse, statusCode: number, payload: unknown) {
@@ -504,30 +528,71 @@ async function handleResetUserPassword(req: ApiRequest, res: ApiResponse) {
   }
 
   const { userId } = validationResult.data
-  const newTemporaryPassword = createTemporaryPassword()
 
-  const updatedUserResult = await adminClient.auth.admin.updateUserById(userId, {
-    password: newTemporaryPassword,
-  })
-
-  if (updatedUserResult.error || !updatedUserResult.data.user) {
-    jsonResponse(res, 400, {
-      error: updatedUserResult.error?.message ?? 'Nao foi possivel redefinir a senha do usuario.',
-    })
+  const authUserResult = await adminClient.auth.admin.getUserById(userId)
+  if (authUserResult.error || !authUserResult.data.user?.email) {
+    jsonResponse(res, 404, { error: 'Usuario nao encontrado ou sem e-mail cadastrado.' })
     return
   }
 
-  const userResult = await adminClient
+  const profileResult = await adminClient
     .from('profiles')
     .select('id, email, full_name, created_at, updated_at')
     .eq('id', userId)
     .maybeSingle()
 
+  if (profileResult.error) {
+    jsonResponse(res, 500, { error: 'Nao foi possivel localizar o perfil do usuario.' })
+    return
+  }
+
+  const email = profileResult.data?.email ?? authUserResult.data.user.email
+  const linkResult = await adminClient.auth.admin.generateLink({
+    type: 'recovery',
+    email,
+    options: {
+      redirectTo: `${getRequestOrigin(req)}/redefinir-senha`,
+    },
+  })
+
+  if (linkResult.error) {
+    jsonResponse(res, 400, {
+      error: linkResult.error.message ?? 'Nao foi possivel gerar o link de redefinicao.',
+    })
+    return
+  }
+
+  const linkData = linkResult.data as RecoveryLinkData
+  const actionLink = linkData.properties?.action_link
+
+  if (!actionLink) {
+    jsonResponse(res, 500, { error: 'O Supabase nao retornou um link de redefinicao valido.' })
+    return
+  }
+
+  const metadataFullName =
+    typeof authUserResult.data.user.user_metadata?.full_name === 'string'
+      ? authUserResult.data.user.user_metadata.full_name
+      : null
+
+  try {
+    await sendPasswordResetEmail({
+      to: email,
+      fullName: profileResult.data?.full_name ?? metadataFullName,
+      actionLink,
+    })
+  } catch (emailError) {
+    jsonResponse(res, 500, {
+      error: emailError instanceof Error ? emailError.message : 'Nao foi possivel enviar o e-mail de redefinicao.',
+    })
+    return
+  }
+
   jsonResponse(res, 200, {
-    user_id: updatedUserResult.data.user.id,
-    email: userResult.data?.email ?? updatedUserResult.data.user.email ?? '',
-    temporary_password: newTemporaryPassword,
-    message: 'Senha do usuario redefinida com sucesso.',
+    user_id: userId,
+    email,
+    temporary_password: null,
+    message: 'E-mail de redefinicao enviado com sucesso.',
   })
 }
 

@@ -6,6 +6,7 @@ import {
   deleteAdminUser,
   createAdminUser,
   fetchAdminUsers,
+  resetAdminUserPassword,
   toErrorMessage,
   updateAdminUserRole,
   type AdminAssignableRoleCode,
@@ -14,8 +15,6 @@ import {
   type CreateAdminUserResponse,
 } from '@/features/admin/users/api'
 import { createAdminUserFormSchema } from '@/features/admin/users/schemas'
-import { toTranslatedAuthError } from '@/features/auth/auth-error-messages'
-import { supabase } from '@/services/supabase/client'
 
 type RoleFilter = 'all' | AdminAssignableRoleCode | 'without-role'
 
@@ -267,15 +266,10 @@ export function AdminUsersPage() {
     setPasswordResetFeedback(null)
 
     try {
-      const result = await supabase.auth.resetPasswordForEmail(user.email, {
-        redirectTo: `${window.location.origin}/redefinir-senha`,
-      })
-      if (result.error) {
-        throw result.error
-      }
+      await resetAdminUserPassword(user.id, session)
       setPasswordResetFeedback({ email: user.email })
     } catch (resetError) {
-      setError(toErrorMessage(toTranslatedAuthError(resetError, 'Não foi possível enviar a redefinição de senha.')))
+      setError(toErrorMessage(resetError))
     } finally {
       setResettingUserId(null)
     }
