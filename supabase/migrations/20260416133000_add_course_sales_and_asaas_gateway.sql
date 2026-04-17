@@ -66,11 +66,35 @@ create table if not exists public.commerce_checkout_sessions (
   updated_at timestamptz not null default timezone('utc', now())
 );
 
+alter table public.commerce_checkout_sessions
+  add column if not exists course_id uuid references public.courses (id) on delete cascade,
+  add column if not exists user_id uuid references auth.users (id) on delete set null,
+  add column if not exists buyer_name text,
+  add column if not exists buyer_email text,
+  add column if not exists buyer_document text,
+  add column if not exists gateway_code text not null default 'asaas',
+  add column if not exists gateway_environment text not null default 'sandbox',
+  add column if not exists external_reference text,
+  add column if not exists external_checkout_id text,
+  add column if not exists checkout_url text,
+  add column if not exists external_customer_id text,
+  add column if not exists external_payment_id text,
+  add column if not exists status text not null default 'created',
+  add column if not exists raw_request jsonb not null default '{}'::jsonb,
+  add column if not exists raw_response jsonb not null default '{}'::jsonb,
+  add column if not exists released_at timestamptz,
+  add column if not exists created_at timestamptz not null default timezone('utc', now()),
+  add column if not exists updated_at timestamptz not null default timezone('utc', now());
+
 create index if not exists commerce_checkout_sessions_course_id_idx
   on public.commerce_checkout_sessions (course_id);
 
 create index if not exists commerce_checkout_sessions_user_id_idx
   on public.commerce_checkout_sessions (user_id);
+
+create unique index if not exists commerce_checkout_sessions_external_reference_unique_idx
+  on public.commerce_checkout_sessions (external_reference)
+  where external_reference is not null;
 
 create index if not exists commerce_checkout_sessions_external_checkout_id_idx
   on public.commerce_checkout_sessions (external_checkout_id);
@@ -91,8 +115,26 @@ create table if not exists public.commerce_events (
   received_at timestamptz not null default timezone('utc', now())
 );
 
+alter table public.commerce_events
+  add column if not exists gateway_code text not null default 'asaas',
+  add column if not exists gateway_environment text not null default 'sandbox',
+  add column if not exists external_event_id text,
+  add column if not exists event_type text,
+  add column if not exists course_id uuid references public.courses (id) on delete set null,
+  add column if not exists user_id uuid references auth.users (id) on delete set null,
+  add column if not exists checkout_session_id uuid references public.commerce_checkout_sessions (id) on delete set null,
+  add column if not exists external_checkout_id text,
+  add column if not exists external_payment_id text,
+  add column if not exists status text not null default 'received',
+  add column if not exists payload jsonb not null default '{}'::jsonb,
+  add column if not exists received_at timestamptz not null default timezone('utc', now());
+
 create index if not exists commerce_events_checkout_session_id_idx
   on public.commerce_events (checkout_session_id);
+
+create unique index if not exists commerce_events_external_event_id_unique_idx
+  on public.commerce_events (external_event_id)
+  where external_event_id is not null;
 
 create index if not exists commerce_events_external_checkout_id_idx
   on public.commerce_events (external_checkout_id);

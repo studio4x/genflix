@@ -588,18 +588,21 @@ Variáveis recomendadas:
 `payment_gateway_settings`:
 
 - Define gateway ativo, ambiente e metadados.
+- Deve sempre ter o registro singleton `id = 1`.
 
 `commerce_checkout_sessions`:
 
 - Guarda a sessão de checkout.
 - Vincula curso, usuário, comprador e referência externa.
 - Status: `created`, `active`, `paid`, `canceled`, `expired`, `failed`.
+- Deve aceitar migração idempotente para bancos que já tenham uma versão parcial da tabela, garantindo colunas como `external_checkout_id`, `external_payment_id`, `gateway_environment`, `checkout_url` e `released_at`.
 
 `commerce_events`:
 
 - Guarda eventos recebidos do gateway.
 - Permite idempotência.
 - Status: `received`, `processed`, `ignored`, `failed`.
+- Deve aceitar migração idempotente para bancos parciais, garantindo `external_event_id`, `external_checkout_id`, `external_payment_id`, `gateway_environment`, `status` e `received_at`.
 
 ### Fluxo de Curso Gratuito
 
@@ -867,4 +870,3 @@ Segurança:
 - Quizzes são parte do domínio acadêmico, mas respeitam configurações globais e por curso.
 - Gateway de pagamento deve ser substituível por adapter.
 - Player do aluno nunca deve confiar apenas em estado local para liberar conteúdo.
-

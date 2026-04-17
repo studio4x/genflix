@@ -37,7 +37,7 @@ export function AdminPaymentSettingsPage() {
         }
       } catch (loadError) {
         if (isMounted) {
-          setError(loadError instanceof Error ? loadError.message : 'Nao foi possivel carregar as configuracoes.')
+          setError(loadError instanceof Error ? loadError.message : 'Não foi possível carregar as configurações.')
         }
       } finally {
         if (isMounted) {
@@ -66,7 +66,7 @@ export function AdminPaymentSettingsPage() {
       await updatePaymentGatewaySettings(nextEnvironment, user.id)
       setEnvironment(nextEnvironment)
     } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : 'Nao foi possivel salvar as configuracoes.')
+      setError(saveError instanceof Error ? saveError.message : 'Não foi possível salvar as configurações.')
     } finally {
       setIsSaving(false)
     }
