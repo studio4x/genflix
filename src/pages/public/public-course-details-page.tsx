@@ -14,6 +14,7 @@ import {
 } from '@/features/public/genflix-site-content'
 import { fetchPublicCourseDetailFromSupabase } from '@/features/public/genflix-public-content-api'
 import { startCourseCheckout } from '@/features/public/courses/api'
+import { CourseReviewsSection } from '@/features/reviews/course-reviews-section'
 import { cn } from '@/lib/utils'
 
 export function PublicCourseDetailsPage() {
@@ -302,6 +303,8 @@ export function PublicCourseDetailsPage() {
           </div>
         </div>
       </section>
+
+      <CourseReviewsSection courseId={detail.id} courseTitle={detail.title} />
 
       <section className="bg-[#F2F7F9] py-16">
         <div className="mx-auto max-w-[1320px] px-6 lg:px-10">

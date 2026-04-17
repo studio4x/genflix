@@ -19,6 +19,7 @@ O módulo de curso é responsável por:
 - Catálogo público e página pública de venda do curso.
 - Checkout e matrícula automática.
 - Relatórios e rastreabilidade mínima de vendas.
+- Avaliações/reviews públicas dos cursos.
 - Exportação/importação de conteúdo quando aplicável.
 
 O módulo não deve concentrar lógica de identidade visual, autenticação global, gateway de pagamento específico ou regras editoriais do produto. Essas partes devem ser acopladas por configuração, serviços e adapters.
@@ -55,6 +56,7 @@ Pode:
 - Acessar cursos liberados.
 - Consumir aulas, materiais e avaliações.
 - Acompanhar progresso.
+- Avaliar cursos publicados e votar se reviews foram úteis.
 
 ## 4. Modelo de Domínio
 
@@ -199,6 +201,35 @@ Regras:
 - Liberação administrativa pode existir sem compra.
 - Cancelamento antes de pagamento não libera acesso.
 - Reversão de compra paga deve ser tratada explicitamente por regra de negócio do gateway.
+
+### CourseReview
+
+Representa uma avaliação pública feita por um usuário em um curso.
+
+Campos principais:
+
+- `id`: UUID.
+- `author_id`: usuário que avaliou.
+- `author_display_name`: nome exibido publicamente.
+- `target_type`: `course`.
+- `target_resource_id`: ID do curso.
+- `rating`: nota de 1 a 5.
+- `title`: título curto da avaliação.
+- `content`: comentário da avaliação.
+- `is_verified_purchase`: indica se o usuário possui liberação ativa do curso no momento da avaliação.
+- `moderation_status`: `pending`, `approved` ou `rejected`.
+- `helpful_count` e `unhelpful_count`.
+- `deleted_at`, `created_at` e `updated_at`.
+
+Regras:
+
+- Apenas reviews aprovados e não removidos aparecem no site público.
+- Um usuário pode ter apenas um review ativo por curso.
+- Ao reenviar uma avaliação para o mesmo curso, o sistema atualiza a avaliação existente.
+- Compra verificada é derivada de `course_releases` ativo, não de input do usuário.
+- A v1 publica automaticamente como `approved`, mantendo a estrutura pronta para moderação administrativa posterior.
+- Votos de útil/não útil ficam em `review_helpful_votes` e atualizam contadores do review.
+- `review_stats` mantém cache de média, total e distribuição por estrelas.
 
 ## 5. Construção no Admin
 
@@ -690,7 +721,67 @@ Extensões recomendadas:
 - Payout automático via PIX pode ser adicionado por adapter separado, consumindo comissões elegíveis.
 - Compra de curso já liberado redireciona para o curso sem novo checkout.
 
-## 10. Storage e Arquivos
+## 10. Reviews e Prova Social
+
+### Página Pública do Curso
+
+A página pública do curso deve exibir uma seção de avaliações com:
+
+- Média geral de estrelas.
+- Total de avaliações.
+- Distribuição por nota de 1 a 5.
+- Lista de reviews aprovados.
+- Badge de compra verificada quando `is_verified_purchase = true`.
+- Formulário para usuário autenticado publicar ou atualizar sua avaliação.
+- CTA para login quando visitante não autenticado quiser avaliar.
+
+### Tabelas
+
+`reviews`:
+
+- Guarda avaliações de cursos e outros alvos reutilizáveis.
+- Para cursos, usar `target_type = 'course'` e `target_resource_id = courses.id`.
+- Deve ter índice único parcial para impedir múltiplas avaliações ativas do mesmo autor no mesmo curso.
+
+`review_helpful_votes`:
+
+- Guarda voto de útil/não útil por usuário.
+- Deve permitir apenas um voto por usuário em cada review.
+
+`review_moderation_reports`:
+
+- Guarda denúncias e histórico de moderação.
+- A v1 pode registrar a estrutura sem expor toda a UI de moderação.
+
+`review_stats`:
+
+- Cache por alvo com `total_reviews`, `avg_rating` e `rating_distribution`.
+- Deve ser atualizado por trigger/função sempre que reviews aprovados mudarem.
+
+### Funções
+
+`submit_course_review`:
+
+- Valida usuário autenticado.
+- Valida curso publicado e público.
+- Valida nota, título e comentário.
+- Calcula `is_verified_purchase` a partir de `course_releases`.
+- Insere ou atualiza o review ativo do usuário para o curso.
+
+`vote_review_helpful`:
+
+- Valida usuário autenticado.
+- Registra ou atualiza voto de utilidade.
+- Atualiza contadores do review.
+
+### Segurança
+
+- `anon` pode ler apenas reviews aprovados e estatísticas agregadas.
+- Usuário autenticado pode inserir/editar o próprio review.
+- Admin pode consultar e moderar reviews.
+- Service role pode operar todas as tabelas para rotinas administrativas.
+
+## 11. Storage e Arquivos
 
 Buckets recomendados:
 
@@ -706,7 +797,7 @@ Regras:
 - Aluno acessa via signed URL.
 - URLs assinadas não devem ser persistidas como fonte definitiva.
 
-## 11. APIs e Serviços
+## 12. APIs e Serviços
 
 ### Admin Content API
 
@@ -746,7 +837,17 @@ Responsável por:
 - Atualizar sessão.
 - Criar ou alterar liberação.
 
-## 12. Segurança
+### Reviews API
+
+Responsável por:
+
+- Listar reviews aprovados do curso.
+- Carregar estatísticas agregadas.
+- Enviar ou atualizar avaliação do usuário autenticado.
+- Registrar votos de útil/não útil.
+- Separar leitura pública de ações autenticadas.
+
+## 13. Segurança
 
 Regras mínimas:
 
@@ -759,7 +860,7 @@ Regras mínimas:
 - Arquivos privados usam signed URL.
 - RLS deve permitir leitura pública apenas de cursos publicados e públicos.
 
-## 13. Estados e UX
+## 14. Estados e UX
 
 Estados de curso:
 
@@ -791,13 +892,16 @@ UX recomendada:
 - Em pagamento pendente, informar que acesso depende da confirmação.
 - Em aulas com materiais, mostrar botões simples no rodapé.
 
-## 14. Estrutura de Código Recomendada
+## 15. Estrutura de Código Recomendada
 
 ```text
 src/
   types/
     content.ts
   features/
+    reviews/
+      api.ts
+      course-reviews-section.tsx
     admin/
       content/
         api.ts
@@ -831,7 +935,7 @@ supabase/
   migrations/
 ```
 
-## 15. Migrations Necessárias
+## 16. Migrations Necessárias
 
 Para reutilizar o módulo, separar migrations por domínio:
 
@@ -844,8 +948,9 @@ Para reutilizar o módulo, separar migrations por domínio:
 - Tipos de quiz: configuração global e por curso.
 - Blocos interativos: bucket de assets de aula.
 - Comércio: campos comerciais do curso, gateway, checkout sessions e eventos.
+- Reviews: avaliações públicas, votos de utilidade, denúncias/moderação e estatísticas agregadas.
 
-## 16. Critérios de Aceite
+## 17. Critérios de Aceite
 
 Admin:
 
@@ -860,6 +965,8 @@ Aluno:
 
 - Comprar curso pago e receber acesso após webhook.
 - Entrar em curso gratuito sem pagamento.
+- Enviar ou atualizar review de curso publicado.
+- Votar se reviews de outros alunos foram úteis.
 - Consumir aula no player.
 - Marcar aula como concluída.
 - Ver bloqueios corretos.
@@ -880,8 +987,9 @@ Segurança:
 - Arquivos privados não ficam públicos.
 - Chaves do gateway não aparecem no frontend.
 - Admin e aluno respeitam roles.
+- Visitante lê apenas reviews aprovados e estatísticas públicas.
 
-## 17. Checklist para Reutilizar em Outro Projeto
+## 18. Checklist para Reutilizar em Outro Projeto
 
 1. Copiar tipos de domínio de curso, módulo, aula, avaliações e releases.
 2. Aplicar migrations em ordem por domínio.
@@ -895,8 +1003,9 @@ Segurança:
 10. Validar fluxo gratuito e pago.
 11. Adaptar identidade visual.
 12. Renomear atributos legados de bloco para prefixo neutro do novo produto.
+13. Ativar reviews públicos com RLS e moderação compatível com a operação.
 
-## 18. Decisões Arquiteturais
+## 19. Decisões Arquiteturais
 
 - Curso é o centro acadêmico e comercial.
 - O acesso é sempre derivado de releases, não apenas de compra.
@@ -904,5 +1013,6 @@ Segurança:
 - Agenda e progressão são camadas adicionais sobre a liberação.
 - Conteúdo de aula usa blocos serializados para preservar ordem e flexibilidade.
 - Quizzes são parte do domínio acadêmico, mas respeitam configurações globais e por curso.
+- Reviews são prova social pública, mas ações de escrita exigem autenticação.
 - Gateway de pagamento deve ser substituível por adapter.
 - Player do aluno nunca deve confiar apenas em estado local para liberar conteúdo.
