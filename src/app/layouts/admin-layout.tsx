@@ -4,6 +4,7 @@ import { useAuth } from '@/app/providers/auth-provider'
 import { PlatformFooter } from '@/components/layout/platform-footer'
 import { GenflixLogo } from '@/components/public/genflix-logo'
 import { Button } from '@/components/ui/button'
+import { NotificationCenter } from '@/features/notifications/notification-center'
 
 const adminLinks = [
   { to: '/admin', label: 'Dashboard' },
@@ -12,6 +13,7 @@ const adminLinks = [
   { to: '/admin/usuarios', label: 'Usuários' },
   { to: '/admin/grupos', label: 'Grupos' },
   { to: '/admin/formularios', label: 'Formulários' },
+  { to: '/admin/notificacoes', label: 'Notificações' },
   { to: '/admin/pagamentos', label: 'Pagamentos' },
   { to: '/admin/tipos-quiz', label: 'Tipos de Quiz' },
   { to: '/admin/minha-conta', label: 'Minha Conta' },
@@ -35,6 +37,7 @@ export function AdminLayout() {
           </div>
 
           <div className="flex items-center gap-3">
+            <NotificationCenter compact />
             <div className="hidden items-center gap-3 rounded-full border border-[#D8E6EB] bg-white px-2 py-1.5 shadow-sm md:flex">
               <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#E8F6FA] text-xs font-black text-[#1398B7]">
                 {profile?.email?.[0].toUpperCase() || 'U'}

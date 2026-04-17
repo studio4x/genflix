@@ -20,6 +20,7 @@ import { AdminButtonTemplatesPage } from '@/pages/admin/admin-button-templates-p
 import { AdminPublicFormsPage } from '@/pages/admin/admin-public-forms-page'
 import { AdminPaymentSettingsPage } from '@/pages/admin/admin-payment-settings-page'
 import { AdminQuizTypesPage } from '@/pages/admin/admin-quiz-types-page'
+import { AdminNotificationsPage } from '@/pages/admin/admin-notifications-page'
 import { ForgotPasswordPage } from '@/pages/public/forgot-password-page'
 import { AuthCallbackPage } from '@/pages/public/auth-callback-page'
 import { CookiesPage } from '@/pages/public/cookies-page'
@@ -295,6 +296,10 @@ export const appRouter = createBrowserRouter([
           {
             path: '/admin/formularios',
             element: <AdminPublicFormsPage />,
+          },
+          {
+            path: '/admin/notificacoes',
+            element: <AdminNotificationsPage />,
           },
           {
             path: '/admin/pagamentos',

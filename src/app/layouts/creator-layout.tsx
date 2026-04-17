@@ -4,6 +4,7 @@ import { useAuth } from '@/app/providers/auth-provider'
 import { PlatformFooter } from '@/components/layout/platform-footer'
 import { GenflixLogo } from '@/components/public/genflix-logo'
 import { Button } from '@/components/ui/button'
+import { NotificationCenter } from '@/features/notifications/notification-center'
 
 const creatorLinks = [
   { to: '/criador/relatorios', label: 'Meus relatorios', description: 'Vendas e cancelamentos' },
@@ -46,6 +47,7 @@ export function CreatorLayout() {
           </Link>
 
           <div className="flex items-center gap-3">
+            <NotificationCenter compact />
             <div className="hidden items-center gap-3 rounded-full border border-[#D8E6EB] bg-white px-2 py-1.5 shadow-sm md:flex">
               <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-[#1398B7] to-[#0A3640] text-xs font-black text-white">
                 {initials || 'CR'}

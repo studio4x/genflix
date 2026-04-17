@@ -4,6 +4,7 @@ import { useAuth } from '@/app/providers/auth-provider'
 import { PlatformFooter } from '@/components/layout/platform-footer'
 import { GenflixLogo } from '@/components/public/genflix-logo'
 import { Button } from '@/components/ui/button'
+import { NotificationCenter } from '@/features/notifications/notification-center'
 
 const studentLinks = [
   {
@@ -75,6 +76,7 @@ export function StudentLayout() {
             </div>
 
             <div className="flex items-center gap-3">
+              <NotificationCenter compact />
               <Link
                 to="/aluno/minha-conta"
                 className={`hidden items-center gap-3 rounded-full border px-2 py-1.5 shadow-sm transition-colors md:flex ${
