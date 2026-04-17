@@ -87,6 +87,7 @@ Regras:
 - Curso gratuito usa `price_cents = 0`.
 - Curso pago exige checkout antes da liberação.
 - `slug` deve ser único quando usado em rota pública.
+- Catálogo e detalhes públicos devem consultar o banco como visitante/anon, mesmo quando houver usuário logado, para não misturar regras públicas com RLS de cursos liberados do aluno.
 
 ### CourseModule
 
@@ -247,6 +248,7 @@ Regras:
 - Tipos de quiz desativados globalmente não aparecem no curso.
 - Um tipo desativado no curso não deve aparecer como card de criação no builder.
 - Alterações comerciais devem refletir na página pública de curso.
+- Em plataformas independentes, o editor de curso não deve exigir campos de mapeamento externo, como `external_course_mappings`; integrações devem ficar isoladas em adapters opcionais.
 
 ### Módulos
 

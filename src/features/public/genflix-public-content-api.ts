@@ -1,4 +1,3 @@
-import { supabase } from '@/services/supabase/client'
 import type {
   GenflixBlogPost,
   GenflixCourseDetail,
@@ -40,6 +39,31 @@ interface PublicBlogPostRow {
 }
 
 const defaultCourseImage = '/images/genflix/home/featured-1.jpg'
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined
+const publicCourseSelect =
+  'id, slug, title, description, category, thumbnail_url, cover_image_url, marketing_title, marketing_description, mentor_name, mentor_role, mentor_bio, mentor_initials, price_label, secondary_price_label, price_cents, currency, display_order'
+const publicBlogPostSelect =
+  'slug, title, category, excerpt, image_url, read_time, author, published_at, content, featured'
+
+async function fetchPublicRows<T>(path: string, searchParams: URLSearchParams): Promise<T[]> {
+  if (!supabaseUrl || !supabaseAnonKey) {
+    throw new Error('Configuração pública do Supabase ausente.')
+  }
+
+  const response = await fetch(`${supabaseUrl}/rest/v1/${path}?${searchParams.toString()}`, {
+    headers: {
+      apikey: supabaseAnonKey,
+    },
+  })
+
+  if (!response.ok) {
+    const message = await response.text()
+    throw new Error(message || 'Não foi possível carregar o conteúdo público.')
+  }
+
+  return (await response.json()) as T[]
+}
 
 function formatPrice(row: PublicCourseRow) {
   if (row.price_label?.trim()) {
@@ -187,62 +211,49 @@ function toBlogPost(row: PublicBlogPostRow): GenflixBlogPost {
 }
 
 export async function fetchPublicCoursesFromSupabase() {
-  const result = await supabase
-    .from('courses')
-    .select('id, slug, title, description, category, thumbnail_url, cover_image_url, marketing_title, marketing_description, mentor_name, mentor_role, mentor_bio, mentor_initials, price_label, secondary_price_label, price_cents, currency, display_order')
-    .eq('status', 'published')
-    .eq('is_public', true)
-    .order('display_order', { ascending: true })
+  const params = new URLSearchParams({
+    select: publicCourseSelect,
+    status: 'eq.published',
+    is_public: 'eq.true',
+    order: 'display_order.asc',
+  })
+  const rows = await fetchPublicRows<PublicCourseRow>('courses', params)
 
-  if (result.error) {
-    throw result.error
-  }
-
-  return ((result.data ?? []) as PublicCourseRow[]).map(toCourseItem)
+  return rows.map(toCourseItem)
 }
 
 export async function fetchPublicCourseDetailFromSupabase(slug: string) {
-  const result = await supabase
-    .from('courses')
-    .select('id, slug, title, description, category, thumbnail_url, cover_image_url, marketing_title, marketing_description, mentor_name, mentor_role, mentor_bio, mentor_initials, price_label, secondary_price_label, price_cents, currency, display_order')
-    .eq('status', 'published')
-    .eq('is_public', true)
-    .eq('slug', slug)
-    .maybeSingle()
+  const params = new URLSearchParams({
+    select: publicCourseSelect,
+    status: 'eq.published',
+    is_public: 'eq.true',
+    slug: `eq.${slug}`,
+    limit: '1',
+  })
+  const [row] = await fetchPublicRows<PublicCourseRow>('courses', params)
 
-  if (result.error) {
-    throw result.error
-  }
-
-  return result.data ? toCourseDetail(result.data as PublicCourseRow) : null
+  return row ? toCourseDetail(row) : null
 }
 
 export async function fetchPublicBlogPostsFromSupabase() {
-  const result = await supabase
-    .from('blog_posts')
-    .select('slug, title, category, excerpt, image_url, read_time, author, published_at, content, featured')
-    .eq('status', 'published')
-    .order('display_order', { ascending: true })
-    .order('published_at', { ascending: false })
+  const params = new URLSearchParams({
+    select: publicBlogPostSelect,
+    status: 'eq.published',
+    order: 'display_order.asc,published_at.desc',
+  })
+  const rows = await fetchPublicRows<PublicBlogPostRow>('blog_posts', params)
 
-  if (result.error) {
-    throw result.error
-  }
-
-  return ((result.data ?? []) as PublicBlogPostRow[]).map(toBlogPost)
+  return rows.map(toBlogPost)
 }
 
 export async function fetchPublicBlogPostFromSupabase(slug: string) {
-  const result = await supabase
-    .from('blog_posts')
-    .select('slug, title, category, excerpt, image_url, read_time, author, published_at, content, featured')
-    .eq('status', 'published')
-    .eq('slug', slug)
-    .maybeSingle()
+  const params = new URLSearchParams({
+    select: publicBlogPostSelect,
+    status: 'eq.published',
+    slug: `eq.${slug}`,
+    limit: '1',
+  })
+  const [row] = await fetchPublicRows<PublicBlogPostRow>('blog_posts', params)
 
-  if (result.error) {
-    throw result.error
-  }
-
-  return result.data ? toBlogPost(result.data as PublicBlogPostRow) : null
+  return row ? toBlogPost(row) : null
 }

@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
 import ReactQuill from '@/components/forms/react-quill'
-import { Link } from 'react-router-dom'
 import { useAuth } from '@/app/providers/auth-provider'
 import { Button } from '@/components/ui/button'
 import { useCourseBuilder } from '@/app/layouts/admin-course-builder-layout'
@@ -9,9 +8,7 @@ import {
   upsertCourseAiReviewStandards,
 } from '@/features/admin/ai-review/api'
 import {
-  fetchCourseExternalMapping,
   resetCourseProgress,
-  upsertCourseExternalMapping,
   updateCourse,
   uploadCourseThumbnail,
   toErrorMessage,
@@ -60,7 +57,6 @@ export function CourseSettingsPanel() {
     has_linear_progression: true,
     quiz_type_settings: { ...DEFAULT_COURSE_QUIZ_TYPE_SETTINGS },
   })
-  const [externalCourseId, setExternalCourseId] = useState('')
   const [isUploadingThumbnail, setIsUploadingThumbnail] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSavingAiStandards, setIsSavingAiStandards] = useState(false)
@@ -93,24 +89,8 @@ export function CourseSettingsPanel() {
         has_linear_progression: courseTree.course.has_linear_progression ?? true,
         quiz_type_settings: normalizeCourseQuizTypeSettings(courseTree.course.quiz_type_settings),
       })
-      setExternalCourseId('')
       setResetProgressSuccess(null)
     }
-  }, [courseTree])
-
-  useEffect(() => {
-    async function loadExternalMapping() {
-      if (!courseTree) return
-
-      try {
-        const mapping = await fetchCourseExternalMapping(courseTree.course.id)
-        setExternalCourseId(mapping?.external_course_id ?? '')
-      } catch (err) {
-        setError(toErrorMessage(err))
-      }
-    }
-
-    void loadExternalMapping()
   }, [courseTree])
 
   useEffect(() => {
@@ -189,7 +169,6 @@ export function CourseSettingsPanel() {
       }
 
       await updateCourse(courseTree.course.id, parsed.data)
-      await upsertCourseExternalMapping(courseTree.course.id, externalCourseId)
       await refreshTree()
       setSuccess(true)
       setTimeout(() => setSuccess(false), 3000)
@@ -328,24 +307,6 @@ export function CourseSettingsPanel() {
                      onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
                      required
                   />
-               </label>
-
-               <label className="block space-y-2">
-                  <span className="text-xs font-black text-slate-400 uppercase tracking-widest pl-1">ID do Curso na integração</span>
-                  <input
-                     className="w-full font-bold rounded-[20px] border border-slate-200 bg-slate-100/50 px-6 py-4 placeholder:text-slate-300 focus:bg-white focus:ring-4 focus:ring-blue-100 transition-all"
-                     placeholder="Ex: hcm-curso-suporte-ventilatorio"
-                     value={externalCourseId}
-                     onChange={e => setExternalCourseId(e.target.value)}
-                  />
-                  <p className="text-xs font-medium leading-6 text-slate-500">
-                     Esse identificador sera usado pela plataforma principal para sincronizar liberacao, revogacao e acesso direto ao curso.
-                  </p>
-                  {courseTree ? (
-                    <Button variant="outline" size="sm" asChild className="mt-2">
-                      <Link to={`/admin/cursos/${courseTree.course.id}/builder/integration`}>Abrir painel da integracao</Link>
-                    </Button>
-                  ) : null}
                </label>
 
                <section className="rounded-[28px] border border-cyan-100 bg-cyan-50/60 p-6 space-y-5">
