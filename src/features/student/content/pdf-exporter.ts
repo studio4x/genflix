@@ -12,6 +12,49 @@ const DEFAULT_LESSON_CONTENT = '<p>Conte\u00fado em v\u00eddeo ou material compl
 const FOOTER_NOTICE =
   'Proibida a divulga\u00e7\u00e3o, reprodu\u00e7\u00e3o ou compartilhamento deste material com terceiros sem autoriza\u00e7\u00e3o expressa da GenFlix.'
 
+type JsPdfDocument = {
+  internal: {
+    getNumberOfPages: () => number
+    pageSize: {
+      getWidth: () => number
+      getHeight: () => number
+    }
+  }
+  setFontSize: (size: number) => void
+  getTextWidth: (text: string) => number
+  setFont: (fontName: string, fontStyle: string) => void
+  splitTextToSize: (text: string, maxWidth: number) => string[]
+  setPage: (page: number) => void
+  addImage: (
+    dataUrl: string,
+    format: string,
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+    alias?: string,
+    compression?: string,
+  ) => void
+  setDrawColor: (red: number, green: number, blue: number) => void
+  setLineWidth: (width: number) => void
+  line: (x1: number, y1: number, x2: number, y2: number) => void
+  setTextColor: (red: number, green: number, blue: number) => void
+  text: (
+    text: string | string[],
+    x: number,
+    y: number,
+    options?: { align?: 'left' | 'center' | 'right'; baseline?: 'top' | 'middle' | 'bottom' },
+  ) => void
+}
+
+type Html2PdfWorker = {
+  set: (options: unknown) => Html2PdfWorker
+  from: (element: HTMLElement) => Html2PdfWorker
+  toPdf: () => Html2PdfWorker
+  get: (target: 'pdf') => Promise<JsPdfDocument>
+  save: () => Promise<void>
+}
+
 type LessonRow = {
   id: string
   title: string
@@ -328,7 +371,7 @@ function fitImageWithin(
   }
 }
 
-function getFittedFontSize(pdf: any, text: string, maxWidth: number, preferredSize: number, minSize: number) {
+function getFittedFontSize(pdf: JsPdfDocument, text: string, maxWidth: number, preferredSize: number, minSize: number) {
   let currentSize = preferredSize
 
   while (currentSize > minSize) {
@@ -342,7 +385,7 @@ function getFittedFontSize(pdf: any, text: string, maxWidth: number, preferredSi
   return minSize
 }
 
-function truncateTextToWidth(pdf: any, text: string, maxWidth: number) {
+function truncateTextToWidth(pdf: JsPdfDocument, text: string, maxWidth: number) {
   pdf.setFont('helvetica', 'normal')
   if (pdf.getTextWidth(text) <= maxWidth) {
     return text
@@ -539,7 +582,7 @@ export async function exportLicensedModulePdf(moduleTitle: string, storagePath: 
 }
 
 function applyPdfFinishing(
-  pdf: any,
+  pdf: JsPdfDocument,
   watermark: PreparedImage,
   courseTitle: string,
   licenseContext: LicenseContext,
@@ -1032,7 +1075,7 @@ export async function exportModuleToPdf(courseTitle: string, moduleTitle: string
 
   try {
     const watermark = await createTransparentImage(genflixWordmarkUrl, 0.08)
-    const worker = (html2pdf() as any).set(opt).from(element).toPdf()
+    const worker = (html2pdf() as Html2PdfWorker).set(opt).from(element).toPdf()
     const pdf = await worker.get('pdf')
 
     applyPdfFinishing(pdf, watermark, courseTitle, licenseContext)

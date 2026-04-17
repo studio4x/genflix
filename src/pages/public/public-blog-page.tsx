@@ -71,21 +71,12 @@ export function PublicBlogPage() {
   const featuredPost = filteredPosts.find((post) => post.featured) ?? filteredPosts[0] ?? genflixFeaturedBlogPost
   const listingPosts = filteredPosts.filter((post) => post.slug !== featuredPost.slug)
   const pageCount = Math.max(1, Math.ceil(listingPosts.length / POSTS_PER_PAGE))
-
-  useEffect(() => {
-    setCurrentPage(1)
-  }, [query, selectedFilter])
-
-  useEffect(() => {
-    if (currentPage > pageCount) {
-      setCurrentPage(pageCount)
-    }
-  }, [currentPage, pageCount])
+  const visibleCurrentPage = Math.min(currentPage, pageCount)
 
   const paginatedPosts = useMemo(() => {
-    const start = (currentPage - 1) * POSTS_PER_PAGE
+    const start = (visibleCurrentPage - 1) * POSTS_PER_PAGE
     return listingPosts.slice(start, start + POSTS_PER_PAGE)
-  }, [currentPage, listingPosts])
+  }, [visibleCurrentPage, listingPosts])
 
   if (isLoading || waitingRoleResolution) {
     return (
@@ -118,7 +109,10 @@ export function PublicBlogPage() {
                 <Search className="pointer-events-none absolute left-5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#1398B7]" />
                 <input
                   value={query}
-                  onChange={(event) => setQuery(event.target.value)}
+                  onChange={(event) => {
+                    setQuery(event.target.value)
+                    setCurrentPage(1)
+                  }}
                   placeholder="Buscar curso, área ou instrutor..."
                   className="h-14 w-full rounded-full border border-[#BEE3EA] bg-white pl-12 pr-5 text-sm text-[#183139] shadow-sm outline-none transition-colors placeholder:text-[#96a8ae] focus:border-[#1398B7]"
                 />
@@ -180,7 +174,10 @@ export function PublicBlogPage() {
               <button
                 key={filter}
                 type="button"
-                onClick={() => setSelectedFilter(filter)}
+                onClick={() => {
+                  setSelectedFilter(filter)
+                  setCurrentPage(1)
+                }}
                 className={cn(
                   'rounded-full border px-4 py-2 text-sm font-medium transition-colors',
                   selectedFilter === filter
@@ -237,7 +234,7 @@ export function PublicBlogPage() {
             <button
               type="button"
               onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
-              disabled={currentPage === 1}
+              disabled={visibleCurrentPage === 1}
               className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#D8E6EB] bg-white text-[#0A3640] transition-colors hover:bg-[#E8F6FA] disabled:cursor-not-allowed disabled:opacity-40"
             >
               <ChevronLeft className="h-4 w-4" />
@@ -250,7 +247,7 @@ export function PublicBlogPage() {
                 onClick={() => setCurrentPage(page)}
                 className={cn(
                   'inline-flex h-10 w-10 items-center justify-center rounded-full border text-sm font-semibold transition-colors',
-                  currentPage === page
+                  visibleCurrentPage === page
                     ? 'border-[#1398B7] bg-[#1398B7] text-white'
                     : 'border-[#D8E6EB] bg-white text-[#6d7f85] hover:bg-[#E8F6FA] hover:text-[#183139]',
                 )}
@@ -262,7 +259,7 @@ export function PublicBlogPage() {
             <button
               type="button"
               onClick={() => setCurrentPage((page) => Math.min(pageCount, page + 1))}
-              disabled={currentPage === pageCount}
+              disabled={visibleCurrentPage === pageCount}
               className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#D8E6EB] bg-white text-[#0A3640] transition-colors hover:bg-[#E8F6FA] disabled:cursor-not-allowed disabled:opacity-40"
             >
               <ChevronRight className="h-4 w-4" />

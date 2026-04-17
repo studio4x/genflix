@@ -124,6 +124,8 @@ export async function createCourse(input: CourseFormInput, userId: string) {
       price_cents: input.price_cents ?? 0,
       currency: input.currency,
       is_public: input.is_public,
+      creator_id: input.creator_id || null,
+      creator_commission_percent: input.creator_commission_percent ?? 0,
       quiz_type_settings: normalizeCourseQuizTypeSettings(input.quiz_type_settings),
       created_by: userId,
     })
@@ -161,6 +163,8 @@ export async function updateCourse(courseId: string, input: CourseFormInput) {
       price_cents: input.price_cents ?? 0,
       currency: input.currency,
       is_public: input.is_public,
+      creator_id: input.creator_id || null,
+      creator_commission_percent: input.creator_commission_percent ?? 0,
       has_linear_progression: input.has_linear_progression,
       quiz_type_settings: normalizeCourseQuizTypeSettings(input.quiz_type_settings),
     })

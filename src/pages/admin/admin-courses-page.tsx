@@ -40,6 +40,8 @@ const initialForm: CourseFormInput = {
   price_cents: 0,
   currency: 'BRL',
   is_public: true,
+  creator_id: '',
+  creator_commission_percent: 0,
   has_linear_progression: true,
   quiz_type_settings: { ...DEFAULT_COURSE_QUIZ_TYPE_SETTINGS },
 }
@@ -186,6 +188,8 @@ export function AdminCoursesPage() {
             price_cents: course.price_cents ?? 0,
             currency: (course.currency ?? 'BRL') as 'BRL',
             is_public: course.is_public ?? true,
+            creator_id: course.creator_id ?? '',
+            creator_commission_percent: course.creator_commission_percent ?? 0,
             has_linear_progression: course.has_linear_progression ?? true,
             quiz_type_settings: normalizeCourseQuizTypeSettings(course.quiz_type_settings),
           },

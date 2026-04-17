@@ -12,6 +12,25 @@ export interface PaymentGatewaySettings {
   updated_at: string
 }
 
+export interface CommerceCheckoutSessionSummary {
+  id: string
+  buyer_email: string
+  status: string
+  checkout_url: string | null
+  created_at: string
+  courses?: {
+    title?: string | null
+  } | null
+}
+
+export interface CommerceEventSummary {
+  id: string
+  event_type: string
+  status: string
+  created_at?: string
+  received_at: string
+}
+
 export async function fetchPaymentGatewaySettings(): Promise<PaymentGatewaySettings> {
   const result = await supabase
     .from('payment_gateway_settings')
@@ -60,6 +79,34 @@ export async function updatePaymentGatewaySettings(
   }
 
   return result.data as PaymentGatewaySettings
+}
+
+export async function fetchCommerceDashboardSummaries() {
+  const [sessionsResult, eventsResult] = await Promise.all([
+    supabase
+      .from('commerce_checkout_sessions')
+      .select('id, buyer_email, status, checkout_url, created_at, courses(title)')
+      .order('created_at', { ascending: false })
+      .limit(5),
+    supabase
+      .from('commerce_events')
+      .select('id, event_type, status, received_at')
+      .order('received_at', { ascending: false })
+      .limit(5),
+  ])
+
+  if (sessionsResult.error) {
+    throw sessionsResult.error
+  }
+
+  if (eventsResult.error) {
+    throw eventsResult.error
+  }
+
+  return {
+    sessions: (sessionsResult.data ?? []) as CommerceCheckoutSessionSummary[],
+    events: (eventsResult.data ?? []) as CommerceEventSummary[],
+  }
 }
 
 export async function fetchPublicCatalogCourses() {

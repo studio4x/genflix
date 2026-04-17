@@ -24,6 +24,7 @@ import {
   normalizeCourseQuizTypeSettings,
 } from '@/features/assessments/course-quiz-type-settings'
 import { fetchGlobalQuizTypeSettings } from '@/features/admin/quiz-types/api'
+import { fetchAdminUsers, type AdminUserListItem } from '@/features/admin/users/api'
 import type { Course, CourseQuizTypeSettings } from '@/types/content'
 
 type CourseSettingsFormState = {
@@ -36,6 +37,8 @@ type CourseSettingsFormState = {
   price_cents: number
   currency: Course['currency']
   is_public: boolean
+  creator_id: string
+  creator_commission_percent: number
   has_linear_progression: boolean
   quiz_type_settings: CourseQuizTypeSettings
 }
@@ -54,6 +57,8 @@ export function CourseSettingsPanel() {
     price_cents: 0,
     currency: 'BRL',
     is_public: true,
+    creator_id: '',
+    creator_commission_percent: 0,
     has_linear_progression: true,
     quiz_type_settings: { ...DEFAULT_COURSE_QUIZ_TYPE_SETTINGS },
   })
@@ -66,6 +71,7 @@ export function CourseSettingsPanel() {
   const [aiStandardsSuccess, setAiStandardsSuccess] = useState(false)
   const [resetProgressSuccess, setResetProgressSuccess] = useState<ResetCourseProgressResult | null>(null)
   const [globalQuizTypeSettings, setGlobalQuizTypeSettings] = useState({ ...DEFAULT_COURSE_QUIZ_TYPE_SETTINGS })
+  const [creatorUsers, setCreatorUsers] = useState<AdminUserListItem[]>([])
   const [aiStandards, setAiStandards] = useState({
     ideal_course_structure: '',
     required_elements: '',
@@ -86,6 +92,8 @@ export function CourseSettingsPanel() {
         price_cents: courseTree.course.price_cents ?? 0,
         currency: (courseTree.course.currency as CourseSettingsFormState['currency']) ?? 'BRL',
         is_public: courseTree.course.is_public ?? true,
+        creator_id: courseTree.course.creator_id ?? '',
+        creator_commission_percent: courseTree.course.creator_commission_percent ?? 0,
         has_linear_progression: courseTree.course.has_linear_progression ?? true,
         quiz_type_settings: normalizeCourseQuizTypeSettings(courseTree.course.quiz_type_settings),
       })
@@ -117,11 +125,17 @@ export function CourseSettingsPanel() {
   useEffect(() => {
     let isMounted = true
 
-    async function loadGlobalQuizTypeSettings() {
+    async function loadSettings() {
       try {
-        const loadedSettings = await fetchGlobalQuizTypeSettings()
+        const [loadedSettings, users] = await Promise.all([
+          fetchGlobalQuizTypeSettings(),
+          session ? fetchAdminUsers(session) : Promise.resolve([]),
+        ])
         if (isMounted) {
           setGlobalQuizTypeSettings(loadedSettings)
+          setCreatorUsers(users.filter((candidate) =>
+            candidate.roles.some((role) => role.code === 'criador' || role.code === 'professor'),
+          ))
         }
       } catch {
         if (isMounted) {
@@ -130,12 +144,12 @@ export function CourseSettingsPanel() {
       }
     }
 
-    void loadGlobalQuizTypeSettings()
+    void loadSettings()
 
     return () => {
       isMounted = false
     }
-  }, [])
+  }, [session])
 
   async function handleThumbnailUpload(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0]
@@ -359,6 +373,44 @@ export function CourseSettingsPanel() {
                         >
                            <option value="BRL">BRL - Real</option>
                         </select>
+                     </label>
+
+                     <label className="space-y-2">
+                        <span className="text-xs font-black uppercase tracking-widest text-slate-400">Criador vinculado</span>
+                        <select
+                           className="w-full rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold focus:ring-4 focus:ring-cyan-100"
+                           value={form.creator_id}
+                           onChange={(event) => setForm((current) => ({ ...current, creator_id: event.target.value }))}
+                        >
+                           <option value="">Sem criador vinculado</option>
+                           {creatorUsers.map((creator) => (
+                             <option key={creator.id} value={creator.id}>
+                               {creator.full_name || creator.email}
+                             </option>
+                           ))}
+                        </select>
+                        <p className="text-xs font-medium text-slate-500">
+                           O criador verá relatórios e comissões deste curso quando a venda for confirmada.
+                        </p>
+                     </label>
+
+                     <label className="space-y-2">
+                        <span className="text-xs font-black uppercase tracking-widest text-slate-400">Comissão do criador (%)</span>
+                        <input
+                           type="number"
+                           min={0}
+                           max={100}
+                           step={0.01}
+                           className="w-full rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold focus:ring-4 focus:ring-cyan-100"
+                           value={form.creator_commission_percent}
+                           onChange={(event) => setForm((current) => ({
+                             ...current,
+                             creator_commission_percent: Number(event.target.value || 0),
+                           }))}
+                        />
+                        <p className="text-xs font-medium text-slate-500">
+                           A comissão fica pendente e se torna elegível para repasse em até 30 dias após a venda.
+                        </p>
                      </label>
                   </div>
 

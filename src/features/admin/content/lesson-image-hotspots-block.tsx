@@ -109,13 +109,7 @@ export function LessonImageHotspotsBlockEditor({
   useEffect(() => {
     const storagePath = content.asset.storage_path?.trim()
 
-    if (!storagePath) {
-      setResolvedAssetUrl(null)
-      return
-    }
-
-    if (content.asset.signed_url?.trim()) {
-      setResolvedAssetUrl(content.asset.signed_url)
+    if (!storagePath || content.asset.signed_url?.trim()) {
       return
     }
 
@@ -136,6 +130,9 @@ export function LessonImageHotspotsBlockEditor({
       isMounted = false
     }
   }, [content.asset.signed_url, content.asset.storage_path])
+
+  const assetUrl = content.asset.signed_url?.trim()
+    || (content.asset.storage_path?.trim() ? resolvedAssetUrl : null)
 
   useEffect(() => {
     function handlePointerMove(event: PointerEvent) {
@@ -296,7 +293,7 @@ export function LessonImageHotspotsBlockEditor({
     })
   }
 
-  const stageUrl = resolvedAssetUrl || content.asset.signed_url || null
+  const stageUrl = assetUrl
 
   return (
     <div className="grid gap-6 xl:grid-cols-[minmax(0,1.2fr)_360px] xl:items-start">
@@ -604,13 +601,7 @@ export function LessonImageHotspotsBlockRenderer({
   useEffect(() => {
     const storagePath = content.asset.storage_path?.trim()
 
-    if (!storagePath) {
-      setResolvedAssetUrl(null)
-      return
-    }
-
-    if (content.asset.signed_url?.trim()) {
-      setResolvedAssetUrl(content.asset.signed_url)
+    if (!storagePath || content.asset.signed_url?.trim()) {
       return
     }
 
@@ -631,6 +622,9 @@ export function LessonImageHotspotsBlockRenderer({
       isMounted = false
     }
   }, [content.asset.signed_url, content.asset.storage_path])
+
+  const assetUrl = content.asset.signed_url?.trim()
+    || (content.asset.storage_path?.trim() ? resolvedAssetUrl : null)
 
   const desktopPopupPlacement = activeHotspot
     ? activeHotspot.x > 50
@@ -666,9 +660,9 @@ export function LessonImageHotspotsBlockRenderer({
           className="relative mx-auto overflow-hidden rounded-[28px] border border-slate-200 bg-slate-50 shadow-inner"
           style={{ aspectRatio: `${content.asset.width} / ${content.asset.height}` }}
         >
-          {resolvedAssetUrl ? (
+          {assetUrl ? (
             <img
-              src={resolvedAssetUrl}
+              src={assetUrl}
               alt={content.asset.alt}
               className="h-full w-full object-contain"
               draggable={false}

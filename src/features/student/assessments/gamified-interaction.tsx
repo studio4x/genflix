@@ -119,6 +119,9 @@ function ColoringView({
   const stageUrl = content.asset.signed_url || content.asset.storage_path
   const svgContent = 'regions' in content ? content : null
   const isSvgMode = Boolean(svgContent)
+  const effectiveSelectedRegionId = selectedRegionId && svgContent?.regions.some((region) => region.region_id === selectedRegionId)
+    ? selectedRegionId
+    : svgContent?.regions[0]?.region_id ?? null
   const slotIds = getColoringSlotIds(content)
   const selectedColor = armedColorId && armedColorId !== ERASER_TOOL_ID
     ? colorById.get(armedColorId) ?? null
@@ -133,22 +136,10 @@ function ColoringView({
     applyColoringSvgRuntimeState(svgPreviewRef.current, {
       regionAssignments: value,
       colorHexByTokenId: new Map(content.tokens.map((token) => [token.id, token.hex])),
-      selectedRegionId,
+      selectedRegionId: effectiveSelectedRegionId,
       interactive: !readOnly,
     })
-  }, [content, isSvgMode, readOnly, selectedRegionId, value])
-
-  useEffect(() => {
-    if (!isSvgMode) {
-      return
-    }
-
-    if (selectedRegionId && svgContent?.regions.some((region) => region.region_id === selectedRegionId)) {
-      return
-    }
-
-    setSelectedRegionId(svgContent?.regions[0]?.region_id ?? null)
-  }, [isSvgMode, selectedRegionId, svgContent])
+  }, [content, effectiveSelectedRegionId, isSvgMode, readOnly, value])
 
   function clearAllAssignments() {
     if (readOnly) return
@@ -283,7 +274,7 @@ function ColoringView({
               </div>
               <div className="mt-4 flex max-h-[240px] flex-wrap gap-2 overflow-auto">
                 {svgContent?.regions.map((region, index) => {
-                  const isSelected = selectedRegionId === region.region_id
+                  const isSelected = effectiveSelectedRegionId === region.region_id
                   const isPainted = Boolean(value[region.region_id])
                   return (
                     <button

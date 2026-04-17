@@ -528,7 +528,7 @@ function buildFillBlankEditorGroups(
   }
 
   const fallbackGroups: FillBlankEditorGroup[] = []
-  let currentGroup: FillBlankEditorGroup = {
+  const currentGroup: FillBlankEditorGroup = {
     id: crypto.randomUUID(),
     leading_text: '',
     blanks: [],
@@ -716,29 +716,24 @@ export function GamifiedQuestionEditor({
 
   const validationMessage = getValidationMessage(question.question_type, interactionContent, answerKeyPayload)
 
-  if (!interactionContent) {
-    return null
-  }
-
-  const activeInteraction = interactionContent
-  const scoringItemCount = activeInteraction.kind === 'drag_drop_labeling'
-    || activeInteraction.kind === 'image_hotspot'
-    || activeInteraction.kind === 'coloring'
-    ? getInteractionSlotIds(activeInteraction).length
-    : activeInteraction.segments.filter((segment) => segment.type === 'blank').length
-  const questionPoints = Number(question.points || 0)
-  const pointsPerItem = scoringItemCount > 0 ? questionPoints / scoringItemCount : 0
-
-  const answerKeyEntries: Array<{ slot_id: string; token_id: string }> = answerKeyPayload && 'entries' in answerKeyPayload
-    ? (answerKeyPayload.entries ?? [])
-    : []
-  const assignedTokenBySlot = new Map(
-    answerKeyEntries.map((entry) => [entry.slot_id, entry.token_id]),
+  const answerKeyEntries: Array<{ slot_id: string; token_id: string }> = useMemo(
+    () => answerKeyPayload && 'entries' in answerKeyPayload
+      ? (answerKeyPayload.entries ?? [])
+      : [],
+    [answerKeyPayload],
   )
-  const latestInteractionRef = useRef<AssessmentInteractionContent>(interactionContent)
+  const assignedTokenBySlot = useMemo(
+    () => new Map(answerKeyEntries.map((entry) => [entry.slot_id, entry.token_id])),
+    [answerKeyEntries],
+  )
+  const assignedTokenBySlotObject = useMemo(
+    () => Object.fromEntries(assignedTokenBySlot),
+    [assignedTokenBySlot],
+  )
+  const latestInteractionRef = useRef<AssessmentInteractionContent | null>(interactionContent)
   const latestAnswerKeyRef = useRef<AssessmentQuestionAnswerKeyPayload | null>(answerKeyPayload)
-  const activeColoringSvgInteraction = activeInteraction.kind === 'coloring' && 'regions' in activeInteraction
-    ? activeInteraction
+  const activeColoringSvgInteraction = interactionContent?.kind === 'coloring' && 'regions' in interactionContent
+    ? interactionContent
     : null
   const isColoringSvgMode = Boolean(activeColoringSvgInteraction)
 
@@ -763,12 +758,25 @@ export function GamifiedQuestionEditor({
     }
 
     applyColoringSvgRuntimeState(svgStageRef.current, {
-      regionAssignments: Object.fromEntries(assignedTokenBySlot),
+      regionAssignments: assignedTokenBySlotObject,
       colorHexByTokenId: new Map(activeColoringSvgInteraction.tokens.map((token) => [token.id, token.hex])),
       selectedRegionId: selectedTargetId,
       interactive: true,
     })
-  }, [activeColoringSvgInteraction, assignedTokenBySlot, selectedTargetId])
+  }, [activeColoringSvgInteraction, assignedTokenBySlotObject, selectedTargetId])
+
+  if (!interactionContent) {
+    return null
+  }
+
+  const activeInteraction = interactionContent
+  const scoringItemCount = activeInteraction.kind === 'drag_drop_labeling'
+    || activeInteraction.kind === 'image_hotspot'
+    || activeInteraction.kind === 'coloring'
+    ? getInteractionSlotIds(activeInteraction).length
+    : activeInteraction.segments.filter((segment) => segment.type === 'blank').length
+  const questionPoints = Number(question.points || 0)
+  const pointsPerItem = scoringItemCount > 0 ? questionPoints / scoringItemCount : 0
 
   async function commit(
     content: AssessmentInteractionContent,
@@ -804,9 +812,14 @@ export function GamifiedQuestionEditor({
   }
 
   function commitLatestDraft(nextGradingMode = gradingMode) {
+    if (!latestInteractionRef.current) {
+      return Promise.resolve()
+    }
+
+    const latestInteraction = latestInteractionRef.current
     return commit(
-      latestInteractionRef.current,
-      latestAnswerKeyRef.current ?? syncAnswerKeyWithContent(latestInteractionRef.current, answerKeyPayload),
+      latestInteraction,
+      latestAnswerKeyRef.current ?? syncAnswerKeyWithContent(latestInteraction, answerKeyPayload),
       nextGradingMode,
     )
   }
@@ -2440,7 +2453,7 @@ export function GamifiedQuestionEditor({
             </div>
           </div>
         ) : null}
-        {false && isSvgInstructionsModalOpen ? (
+        {isSvgInstructionsModalOpen ? (
           <div
             className="fixed inset-0 z-[135] flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm animate-in fade-in duration-300"
             onClick={() => setIsSvgInstructionsModalOpen(false)}

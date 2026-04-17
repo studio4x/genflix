@@ -14,6 +14,26 @@ export interface CreatorSalesReportRow {
   cancellations_amount_cents: number
 }
 
+export interface CreatorCommissionRow {
+  id: string
+  course_id: string
+  creator_id: string
+  checkout_session_id: string | null
+  external_payment_id: string | null
+  gross_amount_cents: number
+  commission_rate: number
+  commission_amount_cents: number
+  status: 'pending' | 'eligible' | 'scheduled' | 'paid' | 'canceled' | 'refunded' | 'failed'
+  sale_paid_at: string
+  eligible_at: string
+  paid_at: string | null
+  canceled_at: string | null
+  refunded_at: string | null
+  courses?: {
+    title?: string | null
+  } | null
+}
+
 interface CreatorSalesReportFilters {
   creatorId?: string | null
   courseId?: string | null
@@ -30,6 +50,20 @@ export async function fetchCreatorSalesReport(filters: CreatorSalesReportFilters
   }
 
   return (data ?? []) as CreatorSalesReportRow[]
+}
+
+export async function fetchCreatorCommissions() {
+  const { data, error } = await supabase
+    .from('creator_commissions')
+    .select('*, courses(title)')
+    .order('sale_paid_at', { ascending: false })
+    .limit(20)
+
+  if (error) {
+    throw error
+  }
+
+  return (data ?? []) as CreatorCommissionRow[]
 }
 
 export function formatMoneyFromCents(valueInCents: number) {

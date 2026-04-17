@@ -75,6 +75,8 @@ Campos principais:
 - `price_cents`: preço em centavos.
 - `currency`: moeda, padrão `BRL`.
 - `is_public`: controla aparição no catálogo público.
+- `creator_id`: criador responsável pelo curso, usado para relatórios e comissões.
+- `creator_commission_percent`: percentual de comissão específico do curso.
 - `workload_minutes`: carga horária total.
 - `has_linear_progression`: ativa bloqueio sequencial.
 - `quiz_type_settings`: tipos de quiz permitidos no curso.
@@ -557,12 +559,16 @@ Campos mínimos no curso:
 - `is_public`.
 - `slug`.
 - `launch_date`.
+- `creator_id`.
+- `creator_commission_percent`.
 
 Regras:
 
 - `price_cents = 0` representa curso gratuito.
 - Curso gratuito pode gerar liberação direta.
 - Curso pago exige checkout aprovado.
+- Se houver `creator_id` e comissão maior que zero, uma venda paga gera comissão pendente para o criador.
+- O percentual do curso tem prioridade sobre o percentual padrão cadastrado no perfil do criador.
 
 ### Gateway de Pagamento
 
@@ -596,7 +602,7 @@ Variáveis recomendadas:
 
 - Guarda a sessão de checkout.
 - Vincula curso, usuário, comprador e referência externa.
-- Status: `created`, `active`, `paid`, `canceled`, `expired`, `failed`.
+- Status: `created`, `active`, `paid`, `canceled`, `expired`, `failed`, `refunded`, `chargeback`.
 - Deve aceitar migração idempotente para bancos que já tenham uma versão parcial da tabela, garantindo colunas como `external_checkout_id`, `external_payment_id`, `gateway_environment`, `checkout_url` e `released_at`.
 
 `commerce_events`:
@@ -605,6 +611,33 @@ Variáveis recomendadas:
 - Permite idempotência.
 - Status: `received`, `processed`, `ignored`, `failed`.
 - Deve aceitar migração idempotente para bancos parciais, garantindo `external_event_id`, `external_checkout_id`, `external_payment_id`, `gateway_environment`, `status` e `received_at`.
+
+### Tabelas de Criadores e Comissões
+
+`creator_profiles`:
+
+- Guarda dados financeiros do criador.
+- Campos principais: `user_id`, `payout_name`, `document`, `pix_key_type`, `pix_key`, `default_commission_percent`, `payout_hold_days`, `is_payout_enabled`.
+- `payout_hold_days` deve começar com 30 dias por padrão.
+- O criador pode editar os próprios dados PIX; admin pode consultar e manter os dados quando necessário.
+
+`creator_commissions`:
+
+- Representa uma comissão derivada de uma venda paga.
+- Vincula `course_id`, `creator_id` e `checkout_session_id`.
+- Guarda `gross_amount_cents`, `commission_rate`, `commission_amount_cents`, `sale_paid_at` e `eligible_at`.
+- Status: `pending`, `eligible`, `scheduled`, `paid`, `canceled`, `refunded`, `failed`.
+- Deve ter unicidade por `checkout_session_id` para garantir idempotência do webhook.
+- A comissão nasce como `pending` e se torna elegível para repasse após o prazo configurado, inicialmente até 30 dias após a venda.
+- Se a compra for cancelada, estornada ou entrar em chargeback antes do repasse, a comissão deve ser cancelada.
+- Se uma comissão já paga precisar ser revertida, ela deve ser marcada como `refunded` para auditoria e ajuste financeiro posterior.
+
+`creator_payouts` e `creator_payout_items`:
+
+- Representam lotes de repasse via PIX.
+- `creator_payouts` guarda criador, valor total, status, dados PIX usados no momento do repasse e data agendada/paga.
+- `creator_payout_items` vincula cada comissão ao lote de repasse.
+- A v1 registra e controla o ciclo de repasse; a execução bancária automática pode ser tratada em fase posterior ou por processo operacional.
 
 ### Fluxo de Curso Gratuito
 
@@ -626,7 +659,8 @@ Variáveis recomendadas:
 9. Asaas chama webhook.
 10. Webhook persiste evento idempotente.
 11. Em pagamento confirmado, webhook cria `course_releases`.
-12. Aluno acessa o curso.
+12. Se o curso tiver criador e comissão configurada, webhook cria `creator_commissions`.
+13. Aluno acessa o curso.
 
 ### Webhook
 
@@ -649,11 +683,11 @@ Eventos mínimos:
 - Pagamento confirmado: libera curso.
 - Checkout cancelado: marca sessão como cancelada se ainda não paga.
 - Checkout expirado: marca sessão como expirada se ainda não paga.
+- Reembolso/chargeback: marca sessão como `refunded` ou `chargeback`, revoga liberação gerenciada pelo Asaas e cancela/estorna comissão do criador.
 
 Extensões recomendadas:
 
-- Reembolso confirmado revoga liberação gerenciada pelo gateway.
-- Chargeback bloqueia acesso e sinaliza revisão administrativa.
+- Payout automático via PIX pode ser adicionado por adapter separado, consumindo comissões elegíveis.
 - Compra de curso já liberado redireciona para o curso sem novo checkout.
 
 ## 10. Storage e Arquivos

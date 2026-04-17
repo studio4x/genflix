@@ -49,7 +49,7 @@ export function CourseAssessmentsPanel() {
       try {
         data = JSON.parse(cleanedJson)
       } catch {
-        const fixedJson = cleanedJson.replace(/\n(?!\s*[\{\}\[\]",:0-9\-\.tfn])/g, '\\n')
+        const fixedJson = cleanedJson.replace(/\n(?!\s*(?:\{|\}|\[|\]|"|,|:|[0-9]|-|\.|t|f|n))/g, '\\n')
         data = JSON.parse(fixedJson)
       }
 

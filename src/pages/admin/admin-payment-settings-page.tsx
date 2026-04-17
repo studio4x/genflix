@@ -3,8 +3,11 @@ import { useEffect, useMemo, useState } from 'react'
 import { useAuth } from '@/app/providers/auth-provider'
 import { Button } from '@/components/ui/button'
 import {
+  fetchCommerceDashboardSummaries,
   fetchPaymentGatewaySettings,
   updatePaymentGatewaySettings,
+  type CommerceCheckoutSessionSummary,
+  type CommerceEventSummary,
   type PaymentGatewayEnvironment,
 } from '@/features/admin/commerce/api'
 
@@ -23,6 +26,8 @@ export function AdminPaymentSettingsPage() {
   const [isSaving, setIsSaving] = useState(false)
   const [copySuccess, setCopySuccess] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [recentSessions, setRecentSessions] = useState<CommerceCheckoutSessionSummary[]>([])
+  const [recentEvents, setRecentEvents] = useState<CommerceEventSummary[]>([])
 
   useEffect(() => {
     let isMounted = true
@@ -31,9 +36,14 @@ export function AdminPaymentSettingsPage() {
       setIsLoading(true)
       setError(null)
       try {
-        const settings = await fetchPaymentGatewaySettings()
+        const [settings, summaries] = await Promise.all([
+          fetchPaymentGatewaySettings(),
+          fetchCommerceDashboardSummaries(),
+        ])
         if (isMounted) {
           setEnvironment(settings.environment)
+          setRecentSessions(summaries.sessions)
+          setRecentEvents(summaries.events)
         }
       } catch (loadError) {
         if (isMounted) {
@@ -143,6 +153,26 @@ export function AdminPaymentSettingsPage() {
               Ambiente atual: <span className="font-black text-slate-900">{environment}</span>
             </p>
           </article>
+
+          <article className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
+            <p className="text-[10px] font-black uppercase tracking-[0.24em] text-slate-400">Últimos checkouts</p>
+            <h3 className="mt-2 text-xl font-black tracking-tight text-slate-900">Sessões recentes</h3>
+            <div className="mt-5 space-y-3">
+              {recentSessions.length === 0 ? (
+                <p className="text-sm font-medium text-slate-500">Nenhum checkout registrado ainda.</p>
+              ) : (
+                recentSessions.map((session) => (
+                  <div key={session.id} className="border border-slate-200 bg-slate-50 px-4 py-3">
+                    <p className="text-sm font-black text-slate-900">{session.courses?.title ?? 'Curso'}</p>
+                    <p className="mt-1 text-xs font-semibold text-slate-500">{session.buyer_email}</p>
+                    <span className="mt-2 inline-flex bg-cyan-50 px-2.5 py-1 text-[10px] font-black uppercase tracking-widest text-cyan-700">
+                      {session.status}
+                    </span>
+                  </div>
+                ))
+              )}
+            </div>
+          </article>
         </div>
 
         <div className="space-y-6">
@@ -178,6 +208,33 @@ export function AdminPaymentSettingsPage() {
               <li><span className="font-black text-slate-900">ASAAS_ACCESS_TOKEN_PRODUCTION</span> para produção.</li>
               <li><span className="font-black text-slate-900">ASAAS_WEBHOOK_SECRET</span> se você quiser validar a assinatura do webhook.</li>
             </ul>
+          </article>
+
+          <article className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
+            <p className="text-[10px] font-black uppercase tracking-[0.24em] text-slate-400">Eventos recentes</p>
+            <h3 className="mt-2 text-xl font-black tracking-tight text-slate-900">Webhook Asaas</h3>
+            <div className="mt-5 space-y-3">
+              {recentEvents.length === 0 ? (
+                <p className="text-sm font-medium text-slate-500">Nenhum evento recebido ainda.</p>
+              ) : (
+                recentEvents.map((event) => (
+                  <div key={event.id} className="border border-slate-200 bg-slate-50 px-4 py-3">
+                    <p className="text-sm font-black text-slate-900">{event.event_type}</p>
+                    <div className="mt-2 flex flex-wrap items-center gap-2">
+                      <span className="inline-flex bg-cyan-50 px-2.5 py-1 text-[10px] font-black uppercase tracking-widest text-cyan-700">
+                        {event.status}
+                      </span>
+                      <span className="text-xs font-semibold text-slate-500">
+                        {new Intl.DateTimeFormat('pt-BR', {
+                          dateStyle: 'short',
+                          timeStyle: 'short',
+                        }).format(new Date(event.received_at))}
+                      </span>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
           </article>
         </div>
       </section>

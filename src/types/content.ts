@@ -245,6 +245,8 @@ export interface Course {
   price_cents: number | null
   currency: string
   is_public: boolean
+  creator_id: string | null
+  creator_commission_percent: number
   workload_minutes: number
   has_linear_progression: boolean
   quiz_type_settings: CourseQuizTypeSettings

@@ -136,6 +136,15 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
 
   let nextStatus: 'received' | 'processed' | 'ignored' | 'failed' = 'received'
   let releasedAt: string | null = null
+  const isRefundEvent = Boolean(
+    event &&
+      (
+        event.includes('REFUND') ||
+        event.includes('REFUNDED') ||
+        event.includes('CHARGEBACK') ||
+        event === 'PAYMENT_DELETED'
+      ),
+  )
 
   if (event === 'CHECKOUT_PAID') {
     nextStatus = 'processed'
@@ -178,6 +187,10 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
             raw_response: body ?? {},
           })
           .eq('id', sessionId)
+
+        await adminClient.rpc('create_creator_commission_for_checkout', {
+          _checkout_session_id: sessionId,
+        })
       }
     }
   } else if (event === 'CHECKOUT_CANCELED' || event === 'CHECKOUT_EXPIRED') {
@@ -191,6 +204,44 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
           raw_response: body ?? {},
         })
         .eq('id', sessionId)
+    }
+    if (sessionId) {
+      await adminClient.rpc('cancel_creator_commission_for_checkout', {
+        _checkout_session_id: sessionId,
+        _reason: event,
+      })
+    }
+  } else if (isRefundEvent) {
+    nextStatus = 'processed'
+    if (sessionId) {
+      await adminClient
+        .from('commerce_checkout_sessions')
+        .update({
+          status: event?.includes('CHARGEBACK') ? 'chargeback' : 'refunded',
+          external_payment_id: paymentId,
+          raw_response: body ?? {},
+        })
+        .eq('id', sessionId)
+
+      await adminClient.rpc('cancel_creator_commission_for_checkout', {
+        _checkout_session_id: sessionId,
+        _reason: event ?? 'refund',
+      })
+    }
+
+    if (courseId && userId) {
+      await adminClient
+        .from('course_releases')
+        .update({
+          is_active: false,
+          release_status: 'revoked',
+          revoked_at: new Date().toISOString(),
+          revoked_reason: event ?? 'payment_refunded',
+        })
+        .eq('course_id', courseId)
+        .eq('user_id', userId)
+        .eq('source_system', 'asaas')
+        .eq('managed_by_integration', true)
     }
   } else {
     nextStatus = 'ignored'

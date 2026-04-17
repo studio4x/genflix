@@ -41,6 +41,8 @@ export const courseFormSchema = z.object({
   price_cents: z.number().int().min(0).default(0),
   currency: z.enum(['BRL']).default('BRL'),
   is_public: z.boolean().default(true),
+  creator_id: z.string().uuid().optional().nullable().or(z.literal('')),
+  creator_commission_percent: z.number().min(0).max(100).default(0),
   has_linear_progression: z.boolean().default(true),
   quiz_type_settings: courseQuizTypeSettingsSchema.default({ ...DEFAULT_COURSE_QUIZ_TYPE_SETTINGS }),
 })
