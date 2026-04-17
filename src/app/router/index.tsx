@@ -39,6 +39,8 @@ import { PublicResourcesPage } from '@/pages/public/public-resources-page'
 import { ResetPasswordPage } from '@/pages/public/reset-password-page'
 import { TermsOfUsePage } from '@/pages/public/terms-of-use-page'
 import { UnauthorizedPage } from '@/pages/public/unauthorized-page'
+import { MessagesPage } from '@/pages/shared/messages-page'
+import { MessagesRedirectPage } from '@/pages/shared/messages-redirect-page'
 import { StudentAssessmentExecutionPage } from '@/pages/student/student-assessment-execution-page'
 import { StudentCourseDetailsPage } from '@/pages/student/student-course-details-page'
 import { StudentCoursesPage } from '@/pages/student/student-courses-page'
@@ -155,6 +157,10 @@ export const appRouter = createBrowserRouter([
             path: '/aluno/minha-conta',
             element: <StudentAccountPage />,
           },
+          {
+            path: '/aluno/mensagens',
+            element: <MessagesPage contextLabel="Aluno" />,
+          },
         ],
       },
       {
@@ -192,7 +198,20 @@ export const appRouter = createBrowserRouter([
             path: '/criador/perfil',
             element: <CreatorProfilePage />,
           },
+          {
+            path: '/criador/mensagens',
+            element: <MessagesPage contextLabel="Criador" />,
+          },
         ],
+      },
+    ],
+  },
+  {
+    element: <ProtectedRoute allowedRoles={['admin', 'criador', 'professor', 'student', 'aluno']} />,
+    children: [
+      {
+        path: '/mensagens',
+        element: <MessagesRedirectPage />,
       },
     ],
   },
@@ -300,6 +319,10 @@ export const appRouter = createBrowserRouter([
           {
             path: '/admin/notificacoes',
             element: <AdminNotificationsPage />,
+          },
+          {
+            path: '/admin/mensagens',
+            element: <MessagesPage contextLabel="Admin" />,
           },
           {
             path: '/admin/pagamentos',

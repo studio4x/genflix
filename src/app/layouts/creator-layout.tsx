@@ -8,6 +8,7 @@ import { NotificationCenter } from '@/features/notifications/notification-center
 
 const creatorLinks = [
   { to: '/criador/relatorios', label: 'Meus relatorios', description: 'Vendas e cancelamentos' },
+  { to: '/criador/mensagens', label: 'Mensagens', description: 'Conversas com usuários' },
   { to: '/criador/perfil', label: 'Meu perfil', description: 'Dados da conta' },
 ]
 

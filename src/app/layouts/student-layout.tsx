@@ -28,6 +28,16 @@ const studentLinks = [
     ),
   },
   {
+    to: '/aluno/mensagens',
+    label: 'Mensagens',
+    description: 'Conversas e suporte',
+    icon: (
+      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M21 12c0 4.418-4.03 8-9 8a9.77 9.77 0 01-4-.82L3 20l1.38-3.45A7.31 7.31 0 013 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+      </svg>
+    ),
+  },
+  {
     to: '/aluno/minha-conta',
     label: 'Minha Conta',
     description: 'Dados e segurança',

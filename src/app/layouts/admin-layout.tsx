@@ -14,6 +14,7 @@ const adminLinks = [
   { to: '/admin/grupos', label: 'Grupos' },
   { to: '/admin/formularios', label: 'Formulários' },
   { to: '/admin/notificacoes', label: 'Notificações' },
+  { to: '/admin/mensagens', label: 'Mensagens' },
   { to: '/admin/pagamentos', label: 'Pagamentos' },
   { to: '/admin/tipos-quiz', label: 'Tipos de Quiz' },
   { to: '/admin/minha-conta', label: 'Minha Conta' },
