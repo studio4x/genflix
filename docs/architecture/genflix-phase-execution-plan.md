@@ -4,9 +4,19 @@ Este documento controla a sequência combinada para execução das fases restant
 
 ## Regra de condução
 
+Antes de iniciar qualquer implementação de fase, o agente deve executar uma auditoria prévia da fase:
+
+- verificar código, migrations, rotas, APIs, telas e documentação já existentes;
+- classificar a fase como `concluída`, `parcial` ou `não iniciada`;
+- se a fase estiver `concluída`, não reimplementar nada e passar para a próxima fase planejada;
+- se a fase estiver `parcial`, implementar somente o que ficou pendente;
+- se a fase estiver `não iniciada`, implementar a fase conforme o escopo planejado;
+- registrar no fechamento o que já existia antes da execução e o que foi efetivamente alterado.
+
 Ao concluir cada fase, o fechamento deve informar:
 
 - fase executada;
+- status encontrado na auditoria prévia;
 - principais entregas;
 - validações realizadas;
 - build gerado;
@@ -200,4 +210,3 @@ Pontos principais observados:
 - `path-to-regexp`;
 - `yaml`;
 - `brace-expansion`.
-
