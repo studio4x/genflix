@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { Inbox, MessageCircle, RefreshCw, Search, Send, UserPlus } from 'lucide-react'
+import { Flag, Inbox, MessageCircle, RefreshCw, Search, Send, ShieldCheck, UserPlus, X } from 'lucide-react'
 
 import { useAuth } from '@/app/providers/auth-provider'
 import { Button } from '@/components/ui/button'
@@ -8,11 +8,16 @@ import {
   createDirectConversation,
   fetchConversationMessages,
   fetchConversations,
+  fetchMessageReports,
   markConversationRead,
+  reportConversationMessage,
+  resolveMessageReport,
   searchMessageRecipients,
   sendConversationMessage,
   type ConversationMessage,
   type ConversationSummary,
+  type MessageReportReason,
+  type MessageReportSummary,
   type MessageRecipient,
 } from '@/features/messages/api'
 import { cn } from '@/lib/utils'
@@ -46,6 +51,14 @@ function getDisplayName(fullName: string | null | undefined, email: string | nul
   }
 
   return 'Usuário GenFlix'
+}
+
+const reportReasonLabels: Record<MessageReportReason, string> = {
+  spam: 'Spam',
+  harassment: 'Assédio',
+  inappropriate: 'Conteúdo inadequado',
+  abuse: 'Abuso',
+  other: 'Outro motivo',
 }
 
 function getConversationTitle(conversation: ConversationSummary) {
@@ -88,7 +101,14 @@ export function MessagesPage({ contextLabel }: { contextLabel: 'Admin' | 'Aluno'
   const [isLoadingMessages, setIsLoadingMessages] = useState(false)
   const [isSearchingRecipients, setIsSearchingRecipients] = useState(false)
   const [isSending, setIsSending] = useState(false)
+  const [isReporting, setIsReporting] = useState(false)
+  const [reportTarget, setReportTarget] = useState<ConversationMessage | null>(null)
+  const [reportReason, setReportReason] = useState<MessageReportReason>('inappropriate')
+  const [reportDescription, setReportDescription] = useState('')
+  const [messageReports, setMessageReports] = useState<MessageReportSummary[]>([])
+  const [isLoadingReports, setIsLoadingReports] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const messagesEndRef = useRef<HTMLDivElement | null>(null)
 
   const selectedConversation = useMemo(
@@ -118,6 +138,23 @@ export function MessagesPage({ contextLabel }: { contextLabel: 'Admin' | 'Aluno'
     }
   }, [selectedConversationId])
 
+  const loadMessageReports = useCallback(async () => {
+    if (contextLabel !== 'Admin') {
+      return
+    }
+
+    setIsLoadingReports(true)
+
+    try {
+      const rows = await fetchMessageReports('pending')
+      setMessageReports(rows)
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : 'Não foi possível carregar denúncias.')
+    } finally {
+      setIsLoadingReports(false)
+    }
+  }, [contextLabel])
+
   const loadMessages = useCallback(async (conversationId: string) => {
     setIsLoadingMessages(true)
     setErrorMessage(null)
@@ -137,6 +174,10 @@ export function MessagesPage({ contextLabel }: { contextLabel: 'Admin' | 'Aluno'
   useEffect(() => {
     void loadConversations()
   }, [loadConversations])
+
+  useEffect(() => {
+    void loadMessageReports()
+  }, [loadMessageReports])
 
   useEffect(() => {
     if (!selectedConversationId) {
@@ -190,6 +231,43 @@ export function MessagesPage({ contextLabel }: { contextLabel: 'Admin' | 'Aluno'
       void channel.unsubscribe()
     }
   }, [loadConversations, loadMessages, selectedConversationId])
+
+  useEffect(() => {
+    if (!user?.id) {
+      return undefined
+    }
+
+    const channel = supabase
+      .channel(`message-inbox:${user.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'conversation_participants',
+          filter: `user_id=eq.${user.id}`,
+        },
+        () => {
+          void loadConversations()
+        },
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'message_reports',
+        },
+        () => {
+          void loadMessageReports()
+        },
+      )
+      .subscribe()
+
+    return () => {
+      void channel.unsubscribe()
+    }
+  }, [loadConversations, loadMessageReports, user?.id])
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })
@@ -257,6 +335,44 @@ export function MessagesPage({ contextLabel }: { contextLabel: 'Admin' | 'Aluno'
     }
   }
 
+  async function handleReportMessage(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+
+    if (!reportTarget) {
+      return
+    }
+
+    setIsReporting(true)
+    setErrorMessage(null)
+    setSuccessMessage(null)
+
+    try {
+      await reportConversationMessage(reportTarget.id, reportReason, reportDescription)
+      setReportTarget(null)
+      setReportDescription('')
+      setReportReason('inappropriate')
+      setSuccessMessage('Denúncia enviada para moderação.')
+      await loadMessageReports()
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : 'Não foi possível denunciar a mensagem.')
+    } finally {
+      setIsReporting(false)
+    }
+  }
+
+  async function handleResolveReport(reportId: string) {
+    setErrorMessage(null)
+    setSuccessMessage(null)
+
+    try {
+      await resolveMessageReport(reportId)
+      setSuccessMessage('Denúncia marcada como resolvida.')
+      await loadMessageReports()
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : 'Não foi possível resolver a denúncia.')
+    }
+  }
+
   return (
     <div className="space-y-6">
       <header className="flex flex-col gap-4 border-b border-[#D8E6EB] pb-5 lg:flex-row lg:items-end lg:justify-between">
@@ -284,6 +400,82 @@ export function MessagesPage({ contextLabel }: { contextLabel: 'Admin' | 'Aluno'
         <div className="border border-red-200 bg-red-50 p-4 text-sm font-bold text-red-700">
           {errorMessage}
         </div>
+      ) : null}
+
+      {successMessage ? (
+        <div className="border border-emerald-200 bg-emerald-50 p-4 text-sm font-bold text-emerald-700">
+          {successMessage}
+        </div>
+      ) : null}
+
+      {contextLabel === 'Admin' ? (
+        <section className="border border-[#D8E6EB] bg-[#F8FBFC] p-5">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#1398B7]">Moderação</p>
+              <h2 className="mt-1 font-readex text-xl font-semibold text-[#15323b]">Denúncias de mensagens</h2>
+              <p className="mt-1 text-sm font-medium text-[#6d7f84]">
+                Acompanhe mensagens reportadas pelos usuários e marque como resolvidas após análise.
+              </p>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => void loadMessageReports()}
+              disabled={isLoadingReports}
+              className="h-10 rounded-none border-[#D8E6EB] bg-white font-black text-[#0A3640] hover:border-[#1398B7]"
+            >
+              <RefreshCw className={cn('mr-2 h-4 w-4', isLoadingReports ? 'animate-spin' : '')} />
+              Atualizar denúncias
+            </Button>
+          </div>
+
+          <div className="mt-4 space-y-3">
+            {isLoadingReports && messageReports.length === 0 ? (
+              <p className="text-sm font-semibold text-[#6d7f84]">Carregando denúncias...</p>
+            ) : messageReports.length === 0 ? (
+              <div className="border border-dashed border-[#D8E6EB] bg-white p-4 text-sm font-bold text-[#6d7f84]">
+                Nenhuma denúncia pendente no momento.
+              </div>
+            ) : (
+              messageReports.map((report) => (
+                <article key={report.report_id} className="border border-[#D8E6EB] bg-white p-4">
+                  <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="bg-amber-100 px-2 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-amber-800">
+                          {reportReasonLabels[report.reason]}
+                        </span>
+                        <span className="text-xs font-bold text-[#8BA0A7]">
+                          Reportado por {getDisplayName(report.reporter_name, report.reporter_email)}
+                        </span>
+                      </div>
+                      <p className="mt-3 whitespace-pre-wrap text-sm font-semibold leading-6 text-[#15323b]">
+                        {report.message_content}
+                      </p>
+                      {report.description ? (
+                        <p className="mt-2 text-xs font-semibold leading-5 text-[#6d7f84]">
+                          Observação: {report.description}
+                        </p>
+                      ) : null}
+                      <p className="mt-2 text-xs font-bold text-[#8BA0A7]">
+                        Mensagem de {getDisplayName(report.sender_name, report.sender_email)}
+                      </p>
+                    </div>
+                    <Button
+                      type="button"
+                      onClick={() => void handleResolveReport(report.report_id)}
+                      className="rounded-none bg-[linear-gradient(180deg,#1398B7_0%,#0A3640_100%)] font-black text-white"
+                    >
+                      <ShieldCheck className="mr-2 h-4 w-4" />
+                      Resolver
+                    </Button>
+                  </div>
+                </article>
+              ))
+            )}
+          </div>
+        </section>
       ) : null}
 
       <section className="grid min-h-[680px] overflow-hidden border border-[#D8E6EB] bg-white shadow-[0_18px_42px_rgba(10,54,64,0.05)] xl:grid-cols-[360px_minmax(0,1fr)]">
@@ -433,6 +625,20 @@ export function MessagesPage({ contextLabel }: { contextLabel: 'Admin' | 'Aluno'
                               <p className="text-[11px] font-bold opacity-60">{formatConversationDate(message.created_at)}</p>
                             </div>
                             <p className="whitespace-pre-wrap text-sm font-semibold leading-7">{message.content}</p>
+                            {!isMine ? (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setReportTarget(message)
+                                  setReportDescription('')
+                                  setReportReason('inappropriate')
+                                }}
+                                className="mt-2 inline-flex items-center gap-1 text-[11px] font-black uppercase tracking-[0.14em] text-[#6d7f84] hover:text-red-700"
+                              >
+                                <Flag className="h-3 w-3" />
+                                Denunciar
+                              </button>
+                            ) : null}
                           </div>
                         </div>
                       )
@@ -482,6 +688,83 @@ export function MessagesPage({ contextLabel }: { contextLabel: 'Admin' | 'Aluno'
           )}
         </div>
       </section>
+
+      {reportTarget ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0A3640]/50 px-4 py-6">
+          <form
+            onSubmit={(event) => void handleReportMessage(event)}
+            className="w-full max-w-lg border border-[#D8E6EB] bg-white p-5 shadow-[0_28px_80px_rgba(10,54,64,0.18)]"
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#1398B7]">Moderação</p>
+                <h2 className="mt-1 font-readex text-xl font-semibold text-[#15323b]">Denunciar mensagem</h2>
+                <p className="mt-1 text-sm font-medium text-[#6d7f84]">
+                  Sua denúncia será enviada para análise da equipe GenFlix.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setReportTarget(null)}
+                className="flex h-9 w-9 items-center justify-center border border-[#D8E6EB] text-[#6d7f84] hover:text-[#15323b]"
+                aria-label="Fechar"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="mt-4 border border-[#D8E6EB] bg-[#F8FBFC] p-3 text-sm font-semibold leading-6 text-[#15323b]">
+              {reportTarget.content}
+            </div>
+
+            <label className="mt-4 block">
+              <span className="text-[10px] font-black uppercase tracking-[0.22em] text-[#8BA0A7]">Motivo</span>
+              <select
+                value={reportReason}
+                onChange={(event) => setReportReason(event.target.value as MessageReportReason)}
+                className="mt-2 h-11 w-full border border-[#D8E6EB] bg-white px-3 text-sm font-bold text-[#15323b] outline-none focus:border-[#1398B7]"
+              >
+                {Object.entries(reportReasonLabels).map(([value, label]) => (
+                  <option key={value} value={value}>{label}</option>
+                ))}
+              </select>
+            </label>
+
+            <label className="mt-4 block">
+              <span className="text-[10px] font-black uppercase tracking-[0.22em] text-[#8BA0A7]">
+                Descrição opcional
+              </span>
+              <textarea
+                value={reportDescription}
+                onChange={(event) => setReportDescription(event.target.value)}
+                rows={4}
+                maxLength={500}
+                className="mt-2 w-full resize-none border border-[#D8E6EB] bg-white px-3 py-3 text-sm font-semibold leading-6 text-[#15323b] outline-none focus:border-[#1398B7]"
+                placeholder="Conte rapidamente o que aconteceu."
+              />
+            </label>
+
+            <div className="mt-5 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setReportTarget(null)}
+                className="rounded-none border-[#D8E6EB] bg-white font-black text-[#0A3640]"
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="submit"
+                disabled={isReporting}
+                className="rounded-none bg-[linear-gradient(180deg,#1398B7_0%,#0A3640_100%)] font-black text-white"
+              >
+                <Flag className="mr-2 h-4 w-4" />
+                {isReporting ? 'Enviando...' : 'Enviar denúncia'}
+              </Button>
+            </div>
+          </form>
+        </div>
+      ) : null}
     </div>
   )
 }

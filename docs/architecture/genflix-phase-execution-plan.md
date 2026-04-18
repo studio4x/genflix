@@ -198,7 +198,7 @@ Ao concluir cada fase, o fechamento deve informar:
 
 ## Fase 8 - Mensagens em tempo real
 
-**Status atual:** fundação implementada.
+**Status atual:** concluída nesta rodada.
 
 **Já existe:**
 
@@ -206,11 +206,14 @@ Ao concluir cada fase, o fechamento deve informar:
 - tela compartilhada de mensagens;
 - rotas para admin, aluno e criador.
 
-**Falta concluir:**
+**Concluído agora:**
 
-- validar realtime ponta a ponta;
-- lapidar experiência de conversa;
-- avaliar anexos, denúncia/moderação e notificações por mensagem.
+- atualização em realtime da conversa aberta e da lista de conversas;
+- ação de denunciar mensagem no chat;
+- fila simples de moderação em `/admin/mensagens`;
+- resolução de denúncias por admin;
+- notificações in-app já integradas ao envio de mensagens;
+- anexos ficam registrados como escopo futuro, pois a v1 operacional usa mensagens de texto.
 
 ## Fase 9 - Reviews nos cursos
 

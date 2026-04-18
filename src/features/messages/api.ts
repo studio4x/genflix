@@ -40,6 +40,26 @@ export interface ConversationMessage {
   updated_at: string
 }
 
+export type MessageReportReason = 'spam' | 'harassment' | 'inappropriate' | 'abuse' | 'other'
+
+export interface MessageReportSummary {
+  report_id: string
+  message_id: string
+  conversation_id: string
+  message_content: string
+  sender_id: string | null
+  sender_name: string | null
+  sender_email: string | null
+  reported_by_id: string | null
+  reporter_name: string | null
+  reporter_email: string | null
+  reason: MessageReportReason
+  description: string | null
+  status: 'pending' | 'resolved'
+  created_at: string
+  resolved_at: string | null
+}
+
 export async function searchMessageRecipients(query: string) {
   const { data, error } = await supabase.rpc('search_message_recipients', {
     _query: query,
@@ -110,6 +130,47 @@ export async function sendConversationMessage(conversationId: string, content: s
 export async function markConversationRead(conversationId: string) {
   const { error } = await supabase.rpc('mark_conversation_read', {
     _conversation_id: conversationId,
+  })
+
+  if (error) {
+    throw error
+  }
+}
+
+export async function reportConversationMessage(
+  messageId: string,
+  reason: MessageReportReason,
+  description?: string,
+) {
+  const { data, error } = await supabase.rpc('report_message', {
+    _message_id: messageId,
+    _reason: reason,
+    _description: description?.trim() || null,
+  })
+
+  if (error) {
+    throw error
+  }
+
+  return data as string
+}
+
+export async function fetchMessageReports(status: 'pending' | 'resolved' | 'all' = 'pending') {
+  const { data, error } = await supabase.rpc('list_message_reports', {
+    _status: status,
+    _limit: 50,
+  })
+
+  if (error) {
+    throw error
+  }
+
+  return (data ?? []) as MessageReportSummary[]
+}
+
+export async function resolveMessageReport(reportId: string) {
+  const { error } = await supabase.rpc('resolve_message_report', {
+    _report_id: reportId,
   })
 
   if (error) {
