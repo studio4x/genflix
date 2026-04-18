@@ -65,6 +65,7 @@ type PayoutRecord = {
   course_id: string | null
   amount_cents: number
   external_transfer_id: string | null
+  external_status: string | null
   gateway_code: string | null
   status: string
 }
