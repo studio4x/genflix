@@ -46,31 +46,31 @@ const assignableRoleCodes = ['aluno', 'criador', 'admin'] as const
 type AssignableRoleCode = (typeof assignableRoleCodes)[number]
 
 const createUserSchema = z.object({
-  email: z.string().email('E-mail invalido.'),
+  email: z.string().email('E-mail inválido.'),
   fullName: z.string().min(2, 'Nome deve ter ao menos 2 caracteres.').max(120).optional(),
   password: z
     .string()
     .min(10, 'Senha deve ter pelo menos 10 caracteres.')
-    .max(72, 'Senha deve ter no maximo 72 caracteres.')
-    .regex(/[a-z]/, 'Senha deve conter letra minuscula.')
-    .regex(/[A-Z]/, 'Senha deve conter letra maiuscula.')
-    .regex(/\d/, 'Senha deve conter numero.')
-    .regex(/[^A-Za-z0-9]/, 'Senha deve conter simbolo.')
+    .max(72, 'Senha deve ter no máximo 72 caracteres.')
+    .regex(/[a-z]/, 'Senha deve conter letra minúscula.')
+    .regex(/[A-Z]/, 'Senha deve conter letra maiúscula.')
+    .regex(/\d/, 'Senha deve conter número.')
+    .regex(/[^A-Za-z0-9]/, 'Senha deve conter símbolo.')
     .optional(),
   roleCode: z.enum(assignableRoleCodes),
 })
 
 const updateRoleSchema = z.object({
-  userId: z.string().uuid('Usuario invalido.'),
+  userId: z.string().uuid('Usuário inválido.'),
   roleCode: z.enum(assignableRoleCodes),
 })
 
 const resetPasswordSchema = z.object({
-  userId: z.string().uuid('Usuario invalido.'),
+  userId: z.string().uuid('Usuário inválido.'),
 })
 
 const deleteUserSchema = z.object({
-  userId: z.string().uuid('Usuario invalido.'),
+  userId: z.string().uuid('Usuário inválido.'),
 })
 
 function getHeaderValue(value: string | string[] | undefined) {
@@ -150,7 +150,7 @@ async function createAdminClient(req: ApiRequest, res: ApiResponse) {
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
   if (!supabaseUrl || !serviceRoleKey) {
-    jsonResponse(res, 500, { error: 'Configuracao ausente: SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY sao obrigatorias.' })
+    jsonResponse(res, 500, { error: 'Configuração ausente: SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY são obrigatórias.' })
     return null
   }
 
@@ -169,7 +169,7 @@ async function createAdminClient(req: ApiRequest, res: ApiResponse) {
 
   const requesterResult = await adminClient.auth.getUser(bearerToken)
   if (requesterResult.error || !requesterResult.data.user) {
-    jsonResponse(res, 401, { error: 'Token invalido ou expirado.' })
+    jsonResponse(res, 401, { error: 'Token inválido ou expirado.' })
     return null
   }
 
@@ -179,7 +179,7 @@ async function createAdminClient(req: ApiRequest, res: ApiResponse) {
     .eq('user_id', requesterResult.data.user.id)
 
   if (requesterRolesResult.error) {
-    jsonResponse(res, 500, { error: 'Nao foi possivel validar o perfil do solicitante.' })
+    jsonResponse(res, 500, { error: 'Não foi possível validar o perfil do solicitante.' })
     return null
   }
 
@@ -194,7 +194,7 @@ async function createAdminClient(req: ApiRequest, res: ApiResponse) {
     .map((role) => role.code)
 
   if (!requesterRoles.includes('admin')) {
-    jsonResponse(res, 403, { error: 'Apenas administradores podem acessar usuarios.' })
+    jsonResponse(res, 403, { error: 'Apenas administradores podem acessar usuários.' })
     return null
   }
 
@@ -269,7 +269,7 @@ async function handleListUsers(req: ApiRequest, res: ApiResponse) {
   ])
 
   if (profilesResult.error || rolesResult.error) {
-    jsonResponse(res, 500, { error: 'Nao foi possivel carregar os usuarios.' })
+    jsonResponse(res, 500, { error: 'Não foi possível carregar os usuários.' })
     return
   }
 
@@ -330,7 +330,7 @@ async function ensureRoleAssignment(
   const targetRole = roleMap.get(normalizedRoleCode)
 
   if (!targetRole) {
-    throw new Error(`Role ${normalizedRoleCode} nao encontrada.`)
+    throw new Error(`Regra ${normalizedRoleCode} não encontrada.`)
   }
 
   const managedRoleCodes = getManagedRoleCodes(roleCode)
@@ -375,7 +375,7 @@ async function handleCreateUser(req: ApiRequest, res: ApiResponse) {
 
   const parsedBody = parseBody(req.body)
   if (!parsedBody) {
-    jsonResponse(res, 400, { error: 'Body invalido.' })
+    jsonResponse(res, 400, { error: 'Body inválido.' })
     return
   }
 
@@ -387,7 +387,7 @@ async function handleCreateUser(req: ApiRequest, res: ApiResponse) {
   })
 
   if (!validationResult.success) {
-    jsonResponse(res, 400, { error: validationResult.error.issues[0]?.message ?? 'Dados invalidos.' })
+    jsonResponse(res, 400, { error: validationResult.error.issues[0]?.message ?? 'Dados inválidos.' })
     return
   }
 
@@ -406,7 +406,7 @@ async function handleCreateUser(req: ApiRequest, res: ApiResponse) {
 
   if (createdUserResult.error || !createdUserResult.data.user) {
     jsonResponse(res, 400, {
-      error: createdUserResult.error?.message ?? 'Nao foi possivel criar o usuario.',
+      error: createdUserResult.error?.message ?? 'Não foi possível criar o usuário.',
     })
     return
   }
@@ -417,7 +417,7 @@ async function handleCreateUser(req: ApiRequest, res: ApiResponse) {
     await ensureRoleAssignment(adminClient, roleMap, createdUser.id, payload.roleCode)
   } catch (assignmentError) {
     jsonResponse(res, 500, {
-      error: assignmentError instanceof Error ? assignmentError.message : 'Nao foi possivel associar a role do usuario.',
+      error: assignmentError instanceof Error ? assignmentError.message : 'Não foi possível associar a regra do usuário.',
     })
     return
   }
@@ -432,7 +432,7 @@ async function handleCreateUser(req: ApiRequest, res: ApiResponse) {
   )
 
   if (profileUpsertResult.error) {
-    jsonResponse(res, 500, { error: 'Usuario criado, mas falhou ao salvar o perfil.' })
+    jsonResponse(res, 500, { error: 'Usuário criado, mas falhou ao salvar o perfil.' })
     return
   }
 
@@ -441,7 +441,7 @@ async function handleCreateUser(req: ApiRequest, res: ApiResponse) {
     email: createdUser.email ?? payload.email,
     role_code: payload.roleCode,
     temporary_password: generatedPassword,
-    message: 'Usuario criado com sucesso.',
+    message: 'Usuário criado com sucesso.',
   })
 }
 
@@ -454,7 +454,7 @@ async function handleUpdateUserRole(req: ApiRequest, res: ApiResponse) {
 
   const parsedBody = parseBody(req.body)
   if (!parsedBody) {
-    jsonResponse(res, 400, { error: 'Body invalido.' })
+    jsonResponse(res, 400, { error: 'Body inválido.' })
     return
   }
 
@@ -464,7 +464,7 @@ async function handleUpdateUserRole(req: ApiRequest, res: ApiResponse) {
   })
 
   if (!validationResult.success) {
-    jsonResponse(res, 400, { error: validationResult.error.issues[0]?.message ?? 'Dados invalidos.' })
+    jsonResponse(res, 400, { error: validationResult.error.issues[0]?.message ?? 'Dados inválidos.' })
     return
   }
 
@@ -479,12 +479,12 @@ async function handleUpdateUserRole(req: ApiRequest, res: ApiResponse) {
     .maybeSingle()
 
   if (userResult.error) {
-    jsonResponse(res, 500, { error: 'Nao foi possivel localizar o usuario.' })
+    jsonResponse(res, 500, { error: 'Não foi possível localizar o usuário.' })
     return
   }
 
   if (!userResult.data) {
-    jsonResponse(res, 404, { error: 'Usuario nao encontrado.' })
+    jsonResponse(res, 404, { error: 'Usuário não encontrado.' })
     return
   }
 
@@ -492,7 +492,7 @@ async function handleUpdateUserRole(req: ApiRequest, res: ApiResponse) {
     await ensureRoleAssignment(adminClient, roleMap, userId, roleCode)
   } catch (assignmentError) {
     jsonResponse(res, 500, {
-      error: assignmentError instanceof Error ? assignmentError.message : 'Nao foi possivel atualizar a role do usuario.',
+      error: assignmentError instanceof Error ? assignmentError.message : 'Não foi possível atualizar a regra do usuário.',
     })
     return
   }
@@ -501,7 +501,7 @@ async function handleUpdateUserRole(req: ApiRequest, res: ApiResponse) {
     user_id: userId,
     email: userResult.data.email,
     role_code: roleCode,
-    message: 'Role atualizada com sucesso.',
+    message: 'Regra atualizada com sucesso.',
   })
 }
 
@@ -514,7 +514,7 @@ async function handleResetUserPassword(req: ApiRequest, res: ApiResponse) {
 
   const parsedBody = parseBody(req.body)
   if (!parsedBody) {
-    jsonResponse(res, 400, { error: 'Body invalido.' })
+    jsonResponse(res, 400, { error: 'Body inválido.' })
     return
   }
 
@@ -523,7 +523,7 @@ async function handleResetUserPassword(req: ApiRequest, res: ApiResponse) {
   })
 
   if (!validationResult.success) {
-    jsonResponse(res, 400, { error: validationResult.error.issues[0]?.message ?? 'Dados invalidos.' })
+    jsonResponse(res, 400, { error: validationResult.error.issues[0]?.message ?? 'Dados inválidos.' })
     return
   }
 
@@ -531,7 +531,7 @@ async function handleResetUserPassword(req: ApiRequest, res: ApiResponse) {
 
   const authUserResult = await adminClient.auth.admin.getUserById(userId)
   if (authUserResult.error || !authUserResult.data.user?.email) {
-    jsonResponse(res, 404, { error: 'Usuario nao encontrado ou sem e-mail cadastrado.' })
+    jsonResponse(res, 404, { error: 'Usuário não encontrado ou sem e-mail cadastrado.' })
     return
   }
 
@@ -542,7 +542,7 @@ async function handleResetUserPassword(req: ApiRequest, res: ApiResponse) {
     .maybeSingle()
 
   if (profileResult.error) {
-    jsonResponse(res, 500, { error: 'Nao foi possivel localizar o perfil do usuario.' })
+    jsonResponse(res, 500, { error: 'Não foi possível localizar o perfil do usuário.' })
     return
   }
 
@@ -557,7 +557,7 @@ async function handleResetUserPassword(req: ApiRequest, res: ApiResponse) {
 
   if (linkResult.error) {
     jsonResponse(res, 400, {
-      error: linkResult.error.message ?? 'Nao foi possivel gerar o link de redefinicao.',
+      error: linkResult.error.message ?? 'Não foi possível gerar o link de redefinição.',
     })
     return
   }
@@ -566,7 +566,7 @@ async function handleResetUserPassword(req: ApiRequest, res: ApiResponse) {
   const actionLink = linkData.properties?.action_link
 
   if (!actionLink) {
-    jsonResponse(res, 500, { error: 'O Supabase nao retornou um link de redefinicao valido.' })
+    jsonResponse(res, 500, { error: 'O Supabase não retornou um link de redefinição válido.' })
     return
   }
 
@@ -583,7 +583,7 @@ async function handleResetUserPassword(req: ApiRequest, res: ApiResponse) {
     })
   } catch (emailError) {
     jsonResponse(res, 500, {
-      error: emailError instanceof Error ? emailError.message : 'Nao foi possivel enviar o e-mail de redefinicao.',
+      error: emailError instanceof Error ? emailError.message : 'Não foi possível enviar o e-mail de redefinição.',
     })
     return
   }
@@ -592,7 +592,7 @@ async function handleResetUserPassword(req: ApiRequest, res: ApiResponse) {
     user_id: userId,
     email,
     temporary_password: null,
-    message: 'E-mail de redefinicao enviado com sucesso.',
+    message: 'E-mail de redefinição enviado com sucesso.',
   })
 }
 
@@ -605,7 +605,7 @@ async function handleDeleteUser(req: ApiRequest, res: ApiResponse) {
   const { adminClient, requesterId } = context
   const parsedBody = parseBody(req.body)
   if (!parsedBody) {
-    jsonResponse(res, 400, { error: 'Body invalido.' })
+    jsonResponse(res, 400, { error: 'Body inválido.' })
     return
   }
 
@@ -614,14 +614,14 @@ async function handleDeleteUser(req: ApiRequest, res: ApiResponse) {
   })
 
   if (!validationResult.success) {
-    jsonResponse(res, 400, { error: validationResult.error.issues[0]?.message ?? 'Dados invalidos.' })
+    jsonResponse(res, 400, { error: validationResult.error.issues[0]?.message ?? 'Dados inválidos.' })
     return
   }
 
   const { userId } = validationResult.data
 
   if (userId === requesterId) {
-    jsonResponse(res, 400, { error: 'Voce nao pode excluir seu proprio usuario.' })
+    jsonResponse(res, 400, { error: 'Você não pode excluir seu próprio usuário.' })
     return
   }
 
@@ -632,12 +632,12 @@ async function handleDeleteUser(req: ApiRequest, res: ApiResponse) {
     .maybeSingle()
 
   if (userResult.error) {
-    jsonResponse(res, 500, { error: 'Nao foi possivel localizar o usuario.' })
+    jsonResponse(res, 500, { error: 'Não foi possível localizar o usuário.' })
     return
   }
 
   if (!userResult.data) {
-    jsonResponse(res, 404, { error: 'Usuario nao encontrado.' })
+    jsonResponse(res, 404, { error: 'Usuário não encontrado.' })
     return
   }
 
@@ -647,7 +647,7 @@ async function handleDeleteUser(req: ApiRequest, res: ApiResponse) {
     .eq('user_id', userId)
 
   if (userRolesResult.error) {
-    jsonResponse(res, 500, { error: 'Nao foi possivel validar as roles do usuario.' })
+    jsonResponse(res, 500, { error: 'Não foi possível validar as regras do usuário.' })
     return
   }
 
@@ -667,13 +667,13 @@ async function handleDeleteUser(req: ApiRequest, res: ApiResponse) {
       .eq('roles.code', 'admin')
 
     if (adminCountResult.error) {
-      jsonResponse(res, 500, { error: 'Nao foi possivel validar os administradores restantes.' })
+      jsonResponse(res, 500, { error: 'Não foi possível validar os administradores restantes.' })
       return
     }
 
     const remainingAdmins = adminCountResult.count ?? 0
     if (remainingAdmins <= 1) {
-      jsonResponse(res, 400, { error: 'Nao e possivel excluir o ultimo administrador.' })
+      jsonResponse(res, 400, { error: 'Não é possível excluir o último administrador.' })
       return
     }
   }
@@ -681,7 +681,7 @@ async function handleDeleteUser(req: ApiRequest, res: ApiResponse) {
   const deleteAuthResult = await adminClient.auth.admin.deleteUser(userId)
   if (deleteAuthResult.error) {
     jsonResponse(res, 400, {
-      error: deleteAuthResult.error.message ?? 'Nao foi possivel excluir o usuario.',
+      error: deleteAuthResult.error.message ?? 'Não foi possível excluir o usuário.',
     })
     return
   }
@@ -689,7 +689,7 @@ async function handleDeleteUser(req: ApiRequest, res: ApiResponse) {
   jsonResponse(res, 200, {
     user_id: userId,
     email: userResult.data.email,
-    message: 'Usuario excluido com sucesso.',
+    message: 'Usuário excluído com sucesso.',
   })
 }
 
@@ -720,5 +720,5 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
   }
 
   res.setHeader('Allow', 'GET, POST, PUT, PATCH, DELETE')
-  res.status(405).json({ error: 'Metodo nao permitido.' })
+  res.status(405).json({ error: 'Método não permitido.' })
 }

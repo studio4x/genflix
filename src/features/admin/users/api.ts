@@ -77,7 +77,7 @@ export async function fetchAdminUsers(session: Session) {
 
   if (!response.ok) {
     throw new Error(
-      (data as ErrorResponse | null)?.error ?? 'Nao foi possivel carregar os usuarios.',
+      (data as ErrorResponse | null)?.error ?? 'Não foi possível carregar os usuários.',
     )
   }
 
@@ -103,7 +103,7 @@ export async function createAdminUser(
 
   if (!response.ok) {
     throw new Error(
-      (data as ErrorResponse | null)?.error ?? 'Nao foi possivel criar o usuario.',
+      (data as ErrorResponse | null)?.error ?? 'Não foi possível criar o usuário.',
     )
   }
 
@@ -126,7 +126,7 @@ export async function resetAdminUserPassword(userId: string, session: Session) {
 
   if (!response.ok) {
     throw new Error(
-      (data as ErrorResponse | null)?.error ?? 'Nao foi possivel redefinir a senha do usuario.',
+      (data as ErrorResponse | null)?.error ?? 'Não foi possível redefinir a senha do usuário.',
     )
   }
 
@@ -153,7 +153,7 @@ export async function updateAdminUserRole(
 
   if (!response.ok) {
     throw new Error(
-      (data as ErrorResponse | null)?.error ?? 'Nao foi possivel atualizar a role do usuario.',
+      (data as ErrorResponse | null)?.error ?? 'Não foi possível atualizar a regra do usuário.',
     )
   }
 
@@ -176,7 +176,7 @@ export async function deleteAdminUser(userId: string, session: Session) {
 
   if (!response.ok) {
     throw new Error(
-      (data as ErrorResponse | null)?.error ?? 'Nao foi possivel excluir o usuario.',
+      (data as ErrorResponse | null)?.error ?? 'Não foi possível excluir o usuário.',
     )
   }
 

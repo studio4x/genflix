@@ -153,7 +153,7 @@ Ao concluir cada fase, o fechamento deve informar:
 
 ## Fase 6 - Admin usuários, roles e gestão de acessos
 
-**Status atual:** praticamente implementada.
+**Status atual:** concluída.
 
 **Já existe:**
 
@@ -164,11 +164,13 @@ Ao concluir cada fase, o fechamento deve informar:
 - roles `admin`, `aluno` e `criador`;
 - compatibilidade com `student` e `professor` legado.
 
-**Falta concluir:**
+**Concluído nesta fase:**
 
-- refino visual final da tabela;
-- revisão de mensagens sem acentuação;
-- avaliar remoção definitiva de telas/APIs antigas de aluno se ainda não forem usadas.
+- refino visual da tela `/admin/usuarios`, com cadastro opcional para reduzir espaço vazio acima da tabela;
+- revisão de mensagens do fluxo administrativo de usuários com acentuação;
+- troca do atalho antigo de `Alunos` para `Usuários` no dashboard admin;
+- manutenção de `/admin/alunos` apenas como redirecionamento para `/admin/usuarios`;
+- remoção dos arquivos legados de alunos do admin que não estavam mais em uso.
 
 ## Fase 7 - Sistema de notificações
 

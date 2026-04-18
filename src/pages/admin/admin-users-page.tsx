@@ -49,7 +49,7 @@ const roleOptions: Array<{
   {
     code: 'criador',
     title: 'Criador',
-    description: 'Acompanha relatorios dos cursos vinculados e edita o proprio perfil.',
+    description: 'Acompanha relatórios dos cursos vinculados e edita o próprio perfil.',
   },
   {
     code: 'admin',
@@ -63,7 +63,7 @@ const roleFilters: Array<{ value: RoleFilter; label: string }> = [
   { value: 'admin', label: 'Admins' },
   { value: 'aluno', label: 'Alunos' },
   { value: 'criador', label: 'Criadores' },
-  { value: 'without-role', label: 'Sem role' },
+  { value: 'without-role', label: 'Sem regra' },
 ]
 
 function formatDateTime(value: string | null) {
@@ -138,6 +138,7 @@ export function AdminUsersPage() {
   const [updatingRoleUserId, setUpdatingRoleUserId] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isCreatePanelOpen, setIsCreatePanelOpen] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [formError, setFormError] = useState<string | null>(null)
   const [search, setSearch] = useState('')
@@ -277,12 +278,12 @@ export function AdminUsersPage() {
 
   async function handleDeleteUser(user: AdminUserListItem) {
     if (!session) {
-      setError('Sessao expirada. Faca login novamente.')
+      setError('Sessão expirada. Faça login novamente.')
       return
     }
 
     const confirmed = window.confirm(
-      `Excluir o usuario "${user.full_name?.trim() || user.email || user.id}"?\n\nEssa acao remove o acesso e os dados vinculados de forma permanente.`,
+      `Excluir o usuário "${user.full_name?.trim() || user.email || user.id}"?\n\nEssa ação remove o acesso e os dados vinculados de forma permanente.`,
     )
 
     if (!confirmed) {
@@ -321,7 +322,7 @@ export function AdminUsersPage() {
 
   async function handleUpdateRole() {
     if (!session) {
-      setError('Sessao expirada. Faca login novamente.')
+      setError('Sessão expirada. Faça login novamente.')
       return
     }
 
@@ -362,19 +363,35 @@ export function AdminUsersPage() {
             Usuários e Regras
           </h2>
           <p className="mt-2 max-w-3xl text-sm font-medium text-[#6d7a80]">
-            Cadastre usuarios como aluno, criador ou admin e acompanhe as roles atribuidas em um unico lugar.
+            Cadastre usuários como aluno, criador ou admin e acompanhe as regras atribuídas em um único lugar.
           </p>
         </div>
 
-        <Button
-          type="button"
-          variant="outline"
-          onClick={() => void loadUsers()}
-          disabled={isLoading}
-          className="rounded-2xl border-[#D8E6EB] bg-white font-bold text-[#5f7077] hover:border-[#1398B7]/40 hover:text-[#163138]"
-        >
-          {isLoading ? 'Atualizando...' : 'Atualizar lista'}
-        </Button>
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <Button
+            type="button"
+            onClick={() => {
+              if (isCreatePanelOpen || created) {
+                setCreated(null)
+                setIsCreatePanelOpen(false)
+                return
+              }
+              setIsCreatePanelOpen(true)
+            }}
+            className="rounded-2xl bg-[#1398B7] font-black hover:bg-[#0A3640]"
+          >
+            {isCreatePanelOpen || created ? 'Fechar cadastro' : 'Novo usuário'}
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => void loadUsers()}
+            disabled={isLoading}
+            className="rounded-2xl border-[#D8E6EB] bg-white font-bold text-[#5f7077] hover:border-[#1398B7]/40 hover:text-[#163138]"
+          >
+            {isLoading ? 'Atualizando...' : 'Atualizar lista'}
+          </Button>
+        </div>
       </header>
 
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
@@ -395,12 +412,12 @@ export function AdminUsersPage() {
           <p className="mt-3 text-3xl font-black text-blue-800">{summary.criadores}</p>
         </article>
         <article className="rounded-[26px] border border-slate-200 bg-slate-50 p-5">
-          <p className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-500">Sem role</p>
+          <p className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-500">Sem regra</p>
           <p className="mt-3 text-3xl font-black text-slate-800">{summary.semRole}</p>
         </article>
       </section>
 
-      <section className="grid items-start gap-5 xl:grid-cols-[minmax(0,1.1fr)_420px]">
+      <section className={`grid items-start gap-5 ${isCreatePanelOpen || created ? 'xl:grid-cols-[minmax(0,1.1fr)_420px]' : ''}`}>
         <div className="self-start rounded-[30px] border border-[#D8E6EB] bg-white p-5 shadow-sm">
           <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_220px]">
             <label className="block">
@@ -409,12 +426,12 @@ export function AdminUsersPage() {
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
                 className="h-12 w-full rounded-2xl border border-[#D8E6EB] bg-[#F2F7F9] px-4 text-sm font-semibold text-[#163138] outline-none transition focus:border-[#1398B7] focus:ring-4 focus:ring-[#1398B7]/10"
-                placeholder="Buscar por nome, e-mail, ID ou role"
+                placeholder="Buscar por nome, e-mail, ID ou regra"
               />
             </label>
 
             <label className="block">
-              <span className="sr-only">Filtrar por role</span>
+              <span className="sr-only">Filtrar por regra</span>
               <select
                 value={roleFilter}
                 onChange={(event) => setRoleFilter(event.target.value as RoleFilter)}
@@ -451,6 +468,7 @@ export function AdminUsersPage() {
           ) : null}
         </div>
 
+        {isCreatePanelOpen || created ? (
         <div className="self-start rounded-[30px] border border-[#D8E6EB] bg-[#F2F7F9] p-5 shadow-sm">
           {created ? (
             <div className="space-y-4">
@@ -485,7 +503,10 @@ export function AdminUsersPage() {
 
               <Button
                 type="button"
-                onClick={() => setCreated(null)}
+                onClick={() => {
+                  setCreated(null)
+                  setIsCreatePanelOpen(true)
+                }}
                 className="w-full rounded-2xl bg-[#15323b] hover:bg-[#0f252d]"
               >
                 Cadastrar outro usuário
@@ -578,6 +599,7 @@ export function AdminUsersPage() {
             </form>
           )}
         </div>
+        ) : null}
       </section>
 
       {error ? (
@@ -590,7 +612,7 @@ export function AdminUsersPage() {
         <section className="rounded-[30px] border border-blue-200 bg-blue-50 p-5 shadow-sm">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
-              <p className="text-[10px] font-black uppercase tracking-[0.24em] text-blue-700">Editar role</p>
+              <p className="text-[10px] font-black uppercase tracking-[0.24em] text-blue-700">Editar regra</p>
               <h3 className="mt-1 font-readex text-xl font-semibold text-blue-950">
                 {editingRoleUser.full_name?.trim() || editingRoleUser.email}
               </h3>
@@ -615,7 +637,7 @@ export function AdminUsersPage() {
                 disabled={updatingRoleUserId === editingRoleUser.id}
                 className="h-12 rounded-2xl bg-blue-700 px-5 font-black hover:bg-blue-800"
               >
-                {updatingRoleUserId === editingRoleUser.id ? 'Salvando...' : 'Salvar role'}
+                {updatingRoleUserId === editingRoleUser.id ? 'Salvando...' : 'Salvar regra'}
               </Button>
               <Button
                 type="button"
@@ -651,7 +673,7 @@ export function AdminUsersPage() {
               <thead className="bg-[#F2F7F9]">
                 <tr>
                   <th className="px-5 py-4 text-left text-[11px] font-black uppercase tracking-[0.22em] text-[#5F7077]">Usuário</th>
-                  <th className="px-5 py-4 text-left text-[11px] font-black uppercase tracking-[0.22em] text-[#5F7077]">Roles</th>
+                  <th className="px-5 py-4 text-left text-[11px] font-black uppercase tracking-[0.22em] text-[#5F7077]">Regras</th>
                   <th className="px-5 py-4 text-left text-[11px] font-black uppercase tracking-[0.22em] text-[#5F7077]">Criado em</th>
                   <th className="px-5 py-4 text-left text-[11px] font-black uppercase tracking-[0.22em] text-[#5F7077]">ID</th>
                   <th className="px-5 py-4 text-right text-[11px] font-black uppercase tracking-[0.22em] text-[#5F7077]">Ações</th>
@@ -683,7 +705,7 @@ export function AdminUsersPage() {
                           ))
                         ) : (
                           <span className="inline-flex rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[11px] font-black uppercase tracking-[0.14em] text-slate-500">
-                            Sem role
+                            Sem regra
                           </span>
                         )}
                       </div>
@@ -706,7 +728,7 @@ export function AdminUsersPage() {
                           disabled={updatingRoleUserId === user.id}
                           className="rounded-2xl border-[#c7ddff] text-[#1d4ed8] hover:bg-blue-50 hover:text-[#1e40af]"
                         >
-                          Editar role
+                          Editar regra
                         </Button>
                         <Button
                           type="button"
