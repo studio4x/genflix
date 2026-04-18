@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import type { FormEvent } from 'react'
 import { ArrowRight, CheckCircle2, LockKeyhole } from 'lucide-react'
 import { Link, Navigate, useNavigate } from 'react-router-dom'
@@ -23,15 +23,38 @@ export function ResetPasswordPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [isRecoveryLinkExpired, setIsRecoveryLinkExpired] = useState(false)
 
   const waitingRoleResolution = !!user && roles.length === 0
-  const hasMinimumLength = useMemo(() => password.length >= 6, [password])
+  const hasMinimumLength = useMemo(() => password.length >= 8, [password])
   const hasRecoveryContext = isPasswordRecoverySession || hasPasswordRecoveryUrl()
+  const isResolvingRecoverySession = hasRecoveryContext && !user && !isRecoveryLinkExpired
 
-  if (isLoading || waitingRoleResolution) {
+  useEffect(() => {
+    if (!hasRecoveryContext || user || isLoading) {
+      setIsRecoveryLinkExpired(false)
+      return
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setIsRecoveryLinkExpired(true)
+    }, 8000)
+
+    return () => window.clearTimeout(timeoutId)
+  }, [hasRecoveryContext, isLoading, user])
+
+  if (isLoading || waitingRoleResolution || isResolvingRecoverySession) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-[#10242b] p-6 font-manrope">
-        <p className="text-sm font-extrabold uppercase tracking-[0.28em] text-white/72">Carregando GenFlix...</p>
+        <div className="max-w-md rounded-[10px] border border-white/12 bg-white/8 p-6 text-center shadow-[0_18px_52px_rgba(0,0,0,0.24)] backdrop-blur">
+          <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-white/70 border-t-transparent" />
+          <p className="mt-5 text-sm font-extrabold uppercase tracking-[0.28em] text-white/72">
+            Validando link de redefinição
+          </p>
+          <p className="mt-3 text-sm leading-6 text-white/60">
+            Estamos ativando sua sessão segura para você definir a nova senha.
+          </p>
+        </div>
       </main>
     )
   }
@@ -46,7 +69,7 @@ export function ResetPasswordPage() {
     setError(null)
 
     if (!hasMinimumLength) {
-      setError('A nova senha deve ter pelo menos 6 caracteres.')
+      setError('A nova senha deve ter pelo menos 8 caracteres.')
       return
     }
 
@@ -64,7 +87,7 @@ export function ResetPasswordPage() {
       setConfirmPassword('')
       window.setTimeout(() => {
         navigate(getDashboardPathForRoles(roles), { replace: true })
-      }, 900)
+      }, 300)
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : 'Falha ao redefinir senha.')
     } finally {
@@ -107,7 +130,7 @@ export function ResetPasswordPage() {
                   Crie sua nova senha
                 </h2>
                 <p className="mt-2 text-sm font-medium leading-6 text-[#5f7077]">
-                  Insira uma senha segura. Ao salvar, seu acesso será concluído automaticamente.
+                  Insira uma senha segura. Ao definir, seu acesso será concluído automaticamente.
                 </p>
               </div>
             </div>
@@ -141,7 +164,7 @@ export function ResetPasswordPage() {
             </div>
 
             <p className="mt-4 text-sm leading-6 text-[#7a8a90]">
-              Use pelo menos 6 caracteres para proteger sua conta.
+              Use pelo menos 8 caracteres para proteger sua conta.
             </p>
 
             {message ? (
@@ -161,7 +184,7 @@ export function ResetPasswordPage() {
               type="submit"
               disabled={isSubmitting || Boolean(message)}
             >
-              {isSubmitting ? 'Atualizando...' : 'Salvar nova senha'}
+              {isSubmitting ? 'Definindo...' : 'Definir senha'}
             </button>
 
             <div className="mt-5 text-center text-sm text-[#5F7077]">
