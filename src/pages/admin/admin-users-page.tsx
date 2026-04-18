@@ -400,8 +400,8 @@ export function AdminUsersPage() {
         </article>
       </section>
 
-      <section className="grid gap-5 xl:grid-cols-[minmax(0,1.1fr)_420px]">
-        <div className="rounded-[30px] border border-[#D8E6EB] bg-white p-5 shadow-sm">
+      <section className="grid items-start gap-5 xl:grid-cols-[minmax(0,1.1fr)_420px]">
+        <div className="self-start rounded-[30px] border border-[#D8E6EB] bg-white p-5 shadow-sm">
           <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_220px]">
             <label className="block">
               <span className="sr-only">Buscar usuário</span>
@@ -451,7 +451,7 @@ export function AdminUsersPage() {
           ) : null}
         </div>
 
-        <div className="rounded-[30px] border border-[#D8E6EB] bg-[#F2F7F9] p-5 shadow-sm">
+        <div className="self-start rounded-[30px] border border-[#D8E6EB] bg-[#F2F7F9] p-5 shadow-sm">
           {created ? (
             <div className="space-y-4">
               <div>

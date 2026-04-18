@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { NotificationCenter } from '@/features/notifications/notification-center'
 
 const creatorLinks = [
-  { to: '/criador/relatorios', label: 'Meus relatorios', description: 'Vendas e cancelamentos' },
+  { to: '/criador/relatorios', label: 'Meus relatórios', description: 'Vendas e cancelamentos' },
   { to: '/criador/mensagens', label: 'Mensagens', description: 'Conversas com usuários' },
   { to: '/criador/perfil', label: 'Meu perfil', description: 'Dados da conta' },
 ]
@@ -75,7 +75,7 @@ export function CreatorLayout() {
         <aside className="self-start lg:sticky lg:top-[92px]">
           <div className="overflow-hidden rounded-[28px] border border-[#D8E6EB] bg-white shadow-[0_20px_50px_rgba(22,49,56,0.05)]">
             <div className="border-b border-[#D8E6EB] px-5 py-4">
-              <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#5F7077]">Navegacao</p>
+              <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#5F7077]">Navegação</p>
               <h2 className="mt-1 font-readex text-lg font-semibold tracking-tight text-[#15323b]">Criador</h2>
             </div>
             <nav className="space-y-2 p-3">
