@@ -1,13 +1,17 @@
 import { useEffect, useMemo, useState } from 'react'
-import { RefreshCw } from 'lucide-react'
+import { RefreshCw, Zap } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import {
   fetchAdminCreatorPayoutDashboard,
   formatMoneyFromCents,
+  processDueCreatorPayouts,
   registerPaidCreatorPayout,
+  sendPixCreatorPayout,
+  updateCreatorPayoutSettings,
   type AdminCreatorCommission,
   type AdminCreatorPayoutDashboard,
+  type CreatorPayoutMode,
 } from '@/features/admin/creator-payouts/api'
 
 function formatDateTime(value: string | null | undefined) {
@@ -59,10 +63,9 @@ function statusTone(status: string) {
 }
 
 function isCommissionEligible(commission: AdminCreatorCommission, paidAt: string) {
-  const paidAtDate = new Date(paidAt)
   return (
     (commission.status === 'pending' || commission.status === 'eligible') &&
-    new Date(commission.eligible_at) <= paidAtDate
+    new Date(commission.eligible_at) <= new Date(paidAt)
   )
 }
 
@@ -75,15 +78,29 @@ function getCourseTitle(dashboard: AdminCreatorPayoutDashboard | null, courseId:
   return dashboard?.courses.find((course) => course.id === courseId)?.title ?? 'Curso'
 }
 
+function getDefaultSettings() {
+  return {
+    mode: 'automatic' as CreatorPayoutMode,
+    intervalDays: 30,
+    minimumAmountCents: 0,
+    isEnabled: true,
+    nextRunAt: formatDateInputValue(new Date()),
+  }
+}
+
 export function AdminCreatorPayoutsPage() {
   const [dashboard, setDashboard] = useState<AdminCreatorPayoutDashboard | null>(null)
   const [isLoading, setIsLoading] = useState(true)
-  const [isRegistering, setIsRegistering] = useState(false)
+  const [isRegisteringExternal, setIsRegisteringExternal] = useState(false)
+  const [isSendingPix, setIsSendingPix] = useState(false)
+  const [isSavingSettings, setIsSavingSettings] = useState(false)
+  const [isProcessingCycle, setIsProcessingCycle] = useState(false)
   const [selectedCreatorId, setSelectedCreatorId] = useState('')
   const [statusFilter, setStatusFilter] = useState('eligible')
   const [selectedCommissionIds, setSelectedCommissionIds] = useState<string[]>([])
   const [paidAt, setPaidAt] = useState(() => formatDateInputValue(new Date()))
   const [notes, setNotes] = useState('')
+  const [settingsForm, setSettingsForm] = useState(getDefaultSettings)
   const [message, setMessage] = useState<string | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
@@ -95,6 +112,15 @@ export function AdminCreatorPayoutsPage() {
       const payload = await fetchAdminCreatorPayoutDashboard()
       setDashboard(payload)
       setSelectedCommissionIds([])
+      setSettingsForm({
+        mode: payload.payoutSettings.mode,
+        intervalDays: payload.payoutSettings.interval_days,
+        minimumAmountCents: payload.payoutSettings.minimum_amount_cents,
+        isEnabled: payload.payoutSettings.is_enabled,
+        nextRunAt: payload.payoutSettings.next_run_at
+          ? formatDateInputValue(new Date(payload.payoutSettings.next_run_at))
+          : formatDateInputValue(new Date()),
+      })
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : 'Não foi possível carregar repasses.')
     } finally {
@@ -154,6 +180,10 @@ export function AdminCreatorPayoutsPage() {
     return Array.from(new Set(selectedCommissions.map((commission) => commission.creator_id)))
   }, [selectedCommissions])
 
+  const selectedCourseIds = useMemo(() => {
+    return Array.from(new Set(selectedCommissions.map((commission) => commission.course_id)))
+  }, [selectedCommissions])
+
   const selectedAmount = useMemo(() => {
     return selectedCommissions.reduce((total, commission) => total + Number(commission.commission_amount_cents ?? 0), 0)
   }, [selectedCommissions])
@@ -163,17 +193,33 @@ export function AdminCreatorPayoutsPage() {
     const commissions = dashboard?.commissions ?? []
     const eligible = commissions.filter((commission) => !payoutItemCommissionIds.has(commission.id) && isCommissionEligible(commission, nowIso))
     const pending = commissions.filter((commission) => commission.status === 'pending' || commission.status === 'eligible')
+    const processing = commissions.filter((commission) => commission.status === 'scheduled')
     const paid = commissions.filter((commission) => commission.status === 'paid')
     const canceled = commissions.filter((commission) => commission.status === 'canceled' || commission.status === 'refunded')
 
     return {
       eligibleAmount: eligible.reduce((total, commission) => total + Number(commission.commission_amount_cents ?? 0), 0),
       pendingAmount: pending.reduce((total, commission) => total + Number(commission.commission_amount_cents ?? 0), 0),
+      processingAmount: processing.reduce((total, commission) => total + Number(commission.commission_amount_cents ?? 0), 0),
       paidAmount: paid.reduce((total, commission) => total + Number(commission.commission_amount_cents ?? 0), 0),
       canceledAmount: canceled.reduce((total, commission) => total + Number(commission.commission_amount_cents ?? 0), 0),
       eligibleCount: eligible.length,
     }
   }, [dashboard?.commissions, paidAt, payoutItemCommissionIds])
+
+  const selectedCreatorProfile = selectedCreatorIds.length === 1
+    ? dashboard?.creatorProfiles.find((profile) => profile.user_id === selectedCreatorIds[0])
+    : null
+
+  const canSendPix = selectedCommissionIds.length > 0 &&
+    selectedCreatorIds.length === 1 &&
+    selectedCourseIds.length === 1 &&
+    selectedAmount > 0 &&
+    Boolean(selectedCreatorProfile?.is_payout_enabled && selectedCreatorProfile.pix_key && selectedCreatorProfile.pix_key_type)
+
+  const canRegisterExternal = selectedCommissionIds.length > 0 &&
+    selectedCreatorIds.length === 1 &&
+    selectedAmount > 0
 
   function toggleCommission(commission: AdminCreatorCommission) {
     const paidAtIso = new Date(paidAt).toISOString()
@@ -188,18 +234,54 @@ export function AdminCreatorPayoutsPage() {
     ))
   }
 
-  async function handleRegisterPayout() {
-    if (selectedCommissionIds.length === 0) {
-      setErrorMessage('Selecione ao menos uma comissão elegível.')
+  async function handleSaveSettings() {
+    setIsSavingSettings(true)
+    setErrorMessage(null)
+    setMessage(null)
+
+    try {
+      await updateCreatorPayoutSettings({
+        mode: settingsForm.mode,
+        intervalDays: settingsForm.intervalDays,
+        minimumAmountCents: settingsForm.minimumAmountCents,
+        isEnabled: settingsForm.isEnabled,
+        nextRunAt: new Date(settingsForm.nextRunAt).toISOString(),
+      })
+      setMessage('Configurações de repasse salvas com sucesso.')
+      await loadDashboard()
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : 'Não foi possível salvar as configurações.')
+    } finally {
+      setIsSavingSettings(false)
+    }
+  }
+
+  async function handleProcessCycle() {
+    setIsProcessingCycle(true)
+    setErrorMessage(null)
+    setMessage(null)
+
+    try {
+      const result = await processDueCreatorPayouts(true)
+      const paidCount = result?.payouts?.length ?? 0
+      const syncedCount = result?.synced?.length ?? 0
+      const failureCount = result?.failures?.length ?? 0
+      setMessage(`Ciclo executado: ${paidCount} repasse(s), ${syncedCount} sincronizado(s), ${failureCount} falha(s).`)
+      await loadDashboard()
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : 'Não foi possível executar o ciclo automático.')
+    } finally {
+      setIsProcessingCycle(false)
+    }
+  }
+
+  async function handleRegisterExternalPayout() {
+    if (!canRegisterExternal) {
+      setErrorMessage('Selecione comissões elegíveis de um único criador com total maior que zero.')
       return
     }
 
-    if (selectedCreatorIds.length !== 1) {
-      setErrorMessage('Selecione comissões de um único criador por lote de repasse.')
-      return
-    }
-
-    setIsRegistering(true)
+    setIsRegisteringExternal(true)
     setErrorMessage(null)
     setMessage(null)
 
@@ -210,19 +292,46 @@ export function AdminCreatorPayoutsPage() {
         paidAt: new Date(paidAt).toISOString(),
         notes,
       })
-      setMessage('Repasse registrado como pago com sucesso.')
+      setMessage('Pagamento externo registrado com sucesso.')
       setNotes('')
       await loadDashboard()
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'Não foi possível registrar o repasse.')
+      setErrorMessage(error instanceof Error ? error.message : 'Não foi possível registrar o pagamento externo.')
     } finally {
-      setIsRegistering(false)
+      setIsRegisteringExternal(false)
     }
   }
 
-  const selectedCreatorProfile = selectedCreatorIds.length === 1
-    ? dashboard?.creatorProfiles.find((profile) => profile.user_id === selectedCreatorIds[0])
-    : null
+  async function handleSendPixPayout() {
+    if (!canSendPix) {
+      setErrorMessage('Para pagar via Asaas, selecione comissões elegíveis de um único criador e um único curso com PIX habilitado.')
+      return
+    }
+
+    const confirmed = window.confirm('Confirmar envio do PIX via Asaas para o criador selecionado?')
+    if (!confirmed) {
+      return
+    }
+
+    setIsSendingPix(true)
+    setErrorMessage(null)
+    setMessage(null)
+
+    try {
+      const result = await sendPixCreatorPayout({
+        creatorId: selectedCreatorIds[0],
+        commissionIds: selectedCommissionIds,
+        notes,
+      })
+      setMessage(`PIX enviado ao Asaas. Status: ${result?.externalStatus ?? result?.status ?? 'processando'}.`)
+      setNotes('')
+      await loadDashboard()
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : 'Não foi possível enviar o PIX via Asaas.')
+    } finally {
+      setIsSendingPix(false)
+    }
+  }
 
   return (
     <div className="animate-in space-y-7 fade-in duration-500">
@@ -231,8 +340,7 @@ export function AdminCreatorPayoutsPage() {
           <p className="text-[10px] font-black uppercase tracking-[0.28em] text-[#1398B7]">Criadores</p>
           <h2 className="mt-2 font-readex text-3xl font-semibold tracking-tight text-[#15323b]">Comissões e repasses PIX</h2>
           <p className="mt-2 max-w-3xl text-sm font-medium leading-6 text-[#5F7077]">
-            Selecione comissões elegíveis, confira os dados PIX do criador e registre o repasse pago em lote. Se uma
-            compra for estornada, a comissão ficará cancelada e não deve entrar em novo repasse.
+            Configure o ciclo de repasses, envie PIX pelo Asaas ou registre pagamentos externos quando a operação exigir.
           </p>
         </div>
 
@@ -260,28 +368,114 @@ export function AdminCreatorPayoutsPage() {
         </div>
       ) : null}
 
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <section className="grid gap-4 xl:grid-cols-[minmax(0,1.05fr)_minmax(380px,0.95fr)]">
         <article className="border border-[#D8E6EB] bg-white p-5 shadow-sm">
-          <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#5F7077]">Elegível agora</p>
-          <p className="mt-2 font-readex text-2xl font-semibold text-[#15323b]">{formatMoneyFromCents(metrics.eligibleAmount)}</p>
-          <p className="mt-2 text-xs font-semibold text-[#6d7f84]">{metrics.eligibleCount} comissão(ões)</p>
+          <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#5F7077]">Configuração global</p>
+          <h3 className="mt-2 font-readex text-xl font-semibold text-[#15323b]">Automação dos repasses</h3>
+          <p className="mt-1 text-sm font-medium leading-6 text-[#5F7077]">
+            Esta configuração aparece para os criadores e controla o ciclo automático de PIX via Asaas.
+          </p>
+
+          <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+            <label className="block">
+              <span className="text-[10px] font-black uppercase tracking-[0.22em] text-[#5F7077]">Modo</span>
+              <select
+                value={settingsForm.mode}
+                onChange={(event) => setSettingsForm((current) => ({ ...current, mode: event.target.value as CreatorPayoutMode }))}
+                className="mt-2 h-12 w-full border border-[#D8E6EB] bg-white px-4 text-sm font-bold text-[#15323b] outline-none focus:border-[#1398B7]"
+              >
+                <option value="automatic">Automático</option>
+                <option value="manual">Manual</option>
+              </select>
+            </label>
+
+            <label className="block">
+              <span className="text-[10px] font-black uppercase tracking-[0.22em] text-[#5F7077]">Intervalo</span>
+              <input
+                type="number"
+                min={1}
+                max={90}
+                value={settingsForm.intervalDays}
+                onChange={(event) => setSettingsForm((current) => ({ ...current, intervalDays: Number(event.target.value || 1) }))}
+                className="mt-2 h-12 w-full border border-[#D8E6EB] bg-white px-4 text-sm font-bold text-[#15323b] outline-none focus:border-[#1398B7]"
+              />
+            </label>
+
+            <label className="block">
+              <span className="text-[10px] font-black uppercase tracking-[0.22em] text-[#5F7077]">Valor mínimo</span>
+              <input
+                type="number"
+                min={0}
+                value={Math.round(settingsForm.minimumAmountCents / 100)}
+                onChange={(event) => setSettingsForm((current) => ({ ...current, minimumAmountCents: Number(event.target.value || 0) * 100 }))}
+                className="mt-2 h-12 w-full border border-[#D8E6EB] bg-white px-4 text-sm font-bold text-[#15323b] outline-none focus:border-[#1398B7]"
+              />
+            </label>
+
+            <label className="block">
+              <span className="text-[10px] font-black uppercase tracking-[0.22em] text-[#5F7077]">Próxima execução</span>
+              <input
+                type="datetime-local"
+                value={settingsForm.nextRunAt}
+                onChange={(event) => setSettingsForm((current) => ({ ...current, nextRunAt: event.target.value }))}
+                className="mt-2 h-12 w-full border border-[#D8E6EB] bg-white px-4 text-sm font-bold text-[#15323b] outline-none focus:border-[#1398B7]"
+              />
+            </label>
+          </div>
+
+          <div className="mt-5 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <label className="flex items-center gap-2 text-sm font-bold text-[#15323b]">
+              <input
+                type="checkbox"
+                checked={settingsForm.isEnabled}
+                onChange={(event) => setSettingsForm((current) => ({ ...current, isEnabled: event.target.checked }))}
+                className="h-4 w-4 accent-[#1398B7]"
+              />
+              Automação habilitada
+            </label>
+
+            <div className="flex flex-wrap gap-2">
+              <Button
+                type="button"
+                onClick={() => void handleProcessCycle()}
+                disabled={isProcessingCycle}
+                variant="outline"
+                className="border-[#1398B7] font-black text-[#0A3640]"
+              >
+                <Zap className="mr-2 h-4 w-4" />
+                {isProcessingCycle ? 'Executando...' : 'Executar ciclo agora'}
+              </Button>
+              <Button
+                type="button"
+                onClick={() => void handleSaveSettings()}
+                disabled={isSavingSettings}
+                className="bg-gradient-to-b from-[#1398B7] to-[#0A3640] font-black text-white hover:opacity-95"
+              >
+                {isSavingSettings ? 'Salvando...' : 'Salvar configuração'}
+              </Button>
+            </div>
+          </div>
         </article>
-        <article className="border border-[#D8E6EB] bg-white p-5 shadow-sm">
-          <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#5F7077]">Pendente total</p>
-          <p className="mt-2 font-readex text-2xl font-semibold text-[#15323b]">{formatMoneyFromCents(metrics.pendingAmount)}</p>
-          <p className="mt-2 text-xs font-semibold text-[#6d7f84]">inclui futuras elegibilidades</p>
-        </article>
-        <article className="border border-[#D8E6EB] bg-white p-5 shadow-sm">
-          <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#5F7077]">Já repassado</p>
-          <p className="mt-2 font-readex text-2xl font-semibold text-[#15323b]">{formatMoneyFromCents(metrics.paidAmount)}</p>
-        </article>
-        <article className="border border-[#D8E6EB] bg-white p-5 shadow-sm">
-          <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#5F7077]">Cancelado/estornado</p>
-          <p className="mt-2 font-readex text-2xl font-semibold text-[#15323b]">{formatMoneyFromCents(metrics.canceledAmount)}</p>
-        </article>
+
+        <section className="grid gap-3 md:grid-cols-2">
+          {[
+            ['Elegível agora', metrics.eligibleAmount, `${metrics.eligibleCount} comissão(ões)`],
+            ['Em processamento', metrics.processingAmount, 'PIX enviado ou agendado'],
+            ['Já repassado', metrics.paidAmount, 'confirmado'],
+            ['Cancelado/estornado', metrics.canceledAmount, 'não entra em repasse'],
+          ].map(([label, value, detail]) => (
+            <article key={label.toString()} className="border border-[#D8E6EB] bg-white p-5 shadow-sm">
+              <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#5F7077]">{label}</p>
+              <p className="mt-2 font-readex text-2xl font-semibold text-[#15323b]">
+                {formatMoneyFromCents(Number(value))}
+              </p>
+              <p className="mt-2 text-xs font-semibold text-[#6d7f84]">{detail}</p>
+            </article>
+          ))}
+        </section>
       </section>
 
-      <section className="grid gap-5 xl:grid-cols-[minmax(0,1.2fr)_minmax(340px,0.8fr)]">
+      <section className="grid gap-5 xl:grid-cols-[minmax(0,1.2fr)_minmax(360px,0.8fr)]">
         <div className="space-y-5">
           <article className="border border-[#D8E6EB] bg-white p-5 shadow-sm">
             <div className="grid gap-3 md:grid-cols-3">
@@ -297,9 +491,7 @@ export function AdminCreatorPayoutsPage() {
                 >
                   <option value="">Todos os criadores</option>
                   {creators.map((creator) => (
-                    <option key={creator.id} value={creator.id}>
-                      {creator.label}
-                    </option>
+                    <option key={creator.id} value={creator.id}>{creator.label}</option>
                   ))}
                 </select>
               </label>
@@ -322,7 +514,7 @@ export function AdminCreatorPayoutsPage() {
               </label>
 
               <label className="block">
-                <span className="text-[10px] font-black uppercase tracking-[0.22em] text-[#5F7077]">Data do pagamento</span>
+                <span className="text-[10px] font-black uppercase tracking-[0.22em] text-[#5F7077]">Data de referência</span>
                 <input
                   type="datetime-local"
                   value={paidAt}
@@ -340,7 +532,7 @@ export function AdminCreatorPayoutsPage() {
             <div className="border-b border-[#D8E6EB] px-5 py-4">
               <h3 className="font-readex text-xl font-semibold text-[#15323b]">Comissões</h3>
               <p className="mt-1 text-sm font-medium text-[#5F7077]">
-                Apenas comissões elegíveis, sem repasse anterior, podem ser selecionadas.
+                Para PIX via Asaas, selecione comissões de um único criador e de um único curso.
               </p>
             </div>
 
@@ -391,7 +583,7 @@ export function AdminCreatorPayoutsPage() {
                           <td className="px-5 py-4">
                             <p className="font-black text-[#15323b]">{formatMoneyFromCents(commission.commission_amount_cents)}</p>
                             <p className="mt-1 text-xs font-semibold text-[#5F7077]">
-                              {commission.commission_rate}% de {formatMoneyFromCents(commission.gross_amount_cents)}
+                              {commission.adjustment_for_commission_id ? 'Ajuste de estorno' : `${commission.commission_rate}% de ${formatMoneyFromCents(commission.gross_amount_cents)}`}
                             </p>
                           </td>
                           <td className="px-5 py-4 font-semibold text-[#5F7077]">
@@ -418,20 +610,26 @@ export function AdminCreatorPayoutsPage() {
         <div className="space-y-5">
           <article className="border border-[#D8E6EB] bg-white p-6 shadow-sm">
             <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#5F7077]">Lote selecionado</p>
-            <h3 className="mt-2 font-readex text-xl font-semibold text-[#15323b]">Registrar repasse pago</h3>
+            <h3 className="mt-2 font-readex text-xl font-semibold text-[#15323b]">Enviar ou registrar repasse</h3>
             <div className="mt-5 space-y-3 text-sm">
               <div className="flex items-center justify-between border-b border-[#D8E6EB] pb-3">
                 <span className="font-semibold text-[#5F7077]">Comissões</span>
                 <span className="font-black text-[#15323b]">{selectedCommissionIds.length}</span>
               </div>
               <div className="flex items-center justify-between border-b border-[#D8E6EB] pb-3">
-                <span className="font-semibold text-[#5F7077]">Total</span>
+                <span className="font-semibold text-[#5F7077]">Total líquido</span>
                 <span className="font-black text-[#15323b]">{formatMoneyFromCents(selectedAmount)}</span>
               </div>
               <div className="flex items-center justify-between border-b border-[#D8E6EB] pb-3">
                 <span className="font-semibold text-[#5F7077]">Criador</span>
                 <span className="max-w-[180px] truncate font-black text-[#15323b]">
                   {selectedCreatorIds.length === 1 ? getCreatorLabel(dashboard, selectedCreatorIds[0]) : 'Selecione um criador'}
+                </span>
+              </div>
+              <div className="flex items-center justify-between border-b border-[#D8E6EB] pb-3">
+                <span className="font-semibold text-[#5F7077]">Curso</span>
+                <span className="max-w-[180px] truncate font-black text-[#15323b]">
+                  {selectedCourseIds.length === 1 ? getCourseTitle(dashboard, selectedCourseIds[0]) : 'Obrigatório para Asaas'}
                 </span>
               </div>
             </div>
@@ -458,18 +656,29 @@ export function AdminCreatorPayoutsPage() {
                 value={notes}
                 onChange={(event) => setNotes(event.target.value)}
                 className="mt-2 min-h-28 w-full border border-[#D8E6EB] bg-white px-4 py-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]"
-                placeholder="Ex.: Repasse PIX realizado manualmente pelo banco."
+                placeholder="Ex.: Repasse PIX via Asaas ou pagamento externo conferido manualmente."
               />
             </label>
 
-            <Button
-              type="button"
-              onClick={() => void handleRegisterPayout()}
-              disabled={isRegistering || selectedCommissionIds.length === 0 || selectedCreatorIds.length !== 1}
-              className="mt-5 h-12 w-full bg-gradient-to-b from-[#1398B7] to-[#0A3640] font-black text-white hover:opacity-95"
-            >
-              {isRegistering ? 'Registrando...' : 'Registrar como pago'}
-            </Button>
+            <div className="mt-5 grid gap-3">
+              <Button
+                type="button"
+                onClick={() => void handleSendPixPayout()}
+                disabled={isSendingPix || !canSendPix}
+                className="h-12 w-full bg-gradient-to-b from-[#1398B7] to-[#0A3640] font-black text-white hover:opacity-95"
+              >
+                {isSendingPix ? 'Enviando PIX...' : 'Pagar via Asaas'}
+              </Button>
+              <Button
+                type="button"
+                onClick={() => void handleRegisterExternalPayout()}
+                disabled={isRegisteringExternal || !canRegisterExternal}
+                variant="outline"
+                className="h-12 w-full border-[#D8E6EB] font-black text-[#15323b]"
+              >
+                {isRegisteringExternal ? 'Registrando...' : 'Registrar pagamento externo'}
+              </Button>
+            </div>
           </article>
 
           <article className="border border-[#D8E6EB] bg-white p-6 shadow-sm">
@@ -484,6 +693,9 @@ export function AdminCreatorPayoutsPage() {
                     <div className="flex items-start justify-between gap-3">
                       <div>
                         <p className="font-black text-[#15323b]">{getCreatorLabel(dashboard, payout.creator_id)}</p>
+                        <p className="mt-1 text-xs font-semibold text-[#5F7077]">
+                          {getCourseTitle(dashboard, payout.course_id ?? '')} · {payout.payout_method === 'asaas' ? 'Asaas' : 'Externo'}
+                        </p>
                         <p className="mt-1 text-xs font-semibold text-[#5F7077]">{formatDateTime(payout.paid_at ?? payout.created_at)}</p>
                       </div>
                       <span className={`border px-2.5 py-1 text-[10px] font-black uppercase tracking-widest ${statusTone(payout.status)}`}>
@@ -493,6 +705,14 @@ export function AdminCreatorPayoutsPage() {
                     <p className="mt-3 font-readex text-xl font-semibold text-[#15323b]">
                       {formatMoneyFromCents(payout.amount_cents)}
                     </p>
+                    {payout.external_transfer_id ? (
+                      <p className="mt-2 break-all text-xs font-semibold text-[#5F7077]">
+                        Transferência: {payout.external_transfer_id} · {payout.external_status ?? 'sem status'}
+                      </p>
+                    ) : null}
+                    {payout.failure_reason ? (
+                      <p className="mt-2 text-xs font-semibold text-rose-700">{payout.failure_reason}</p>
+                    ) : null}
                   </div>
                 ))
               )}

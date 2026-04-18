@@ -1376,35 +1376,76 @@ Rota:
 
 Objetivo:
 
-- listar comissões de criadores;
-- filtrar por criador e status operacional;
+- configurar modo global de repasse (`manual` ou `automatic`);
+- definir intervalo em dias, valor mínimo e próxima execução;
+- listar e filtrar comissões de criadores;
 - destacar comissões elegíveis para repasse;
-- selecionar várias comissões do mesmo criador;
-- conferir dados PIX do criador antes de registrar pagamento;
-- registrar lote de repasse como pago;
-- exibir histórico recente de repasses.
+- pagar PIX diretamente pelo Asaas para lotes de um único criador e um único curso;
+- registrar pagamento externo quando o repasse for feito fora do Asaas;
+- executar ciclo automático sob demanda;
+- exibir histórico de repasses, transferências Asaas e falhas.
 
 API administrativa:
 
 ```text
 GET /api/admin/creator-payouts
 POST /api/admin/creator-payouts
+GET /api/admin/creator-payouts?task=process_due_payouts
 ```
 
 Regras:
 
-- exige usuário autenticado com role `admin`;
-- usa service role no servidor;
-- não expõe chaves sensíveis;
-- o POST aceita a ação `register_paid_payout`;
-- cada lote deve conter comissões de um único criador;
-- apenas comissões `pending` ou `eligible` com `eligible_at <= paid_at` podem ser pagas;
-- comissões que já aparecem em `creator_payout_items` não podem entrar em novo lote.
+- exige usuário autenticado com role `admin` para operações manuais;
+- cron exige `CREATOR_PAYOUT_CRON_SECRET` ou `CRON_SECRET`;
+- usa service role no servidor e não expõe chaves sensíveis;
+- o POST aceita `register_external_payout`, `send_pix_payout`, `update_payout_settings` e `process_due_payouts`;
+- pagamento via Asaas agrupa por `creator_id + course_id`;
+- pagamento externo permite lote do mesmo criador, mesmo com múltiplos cursos;
+- apenas comissões `pending` ou `eligible` com `eligible_at <= now()` podem ser pagas;
+- comissões já presentes em `creator_payout_items` não podem entrar em novo lote;
+- se saldo/token/API do Asaas falhar, o payout fica `failed` e as comissões voltam para `eligible`.
+
+Configuração global:
+
+```text
+creator_payout_settings
+```
+
+Campos principais:
+
+- `mode`: `manual` ou `automatic`;
+- `interval_days`: intervalo do ciclo automático;
+- `minimum_amount_cents`: valor mínimo por grupo;
+- `is_enabled`: habilita ou pausa automação;
+- `last_run_at` e `next_run_at`: controle operacional do ciclo.
+
+Transferência Asaas:
+
+- usa `POST /v3/transfers`;
+- envia `operationType: PIX`;
+- converte `cpf`, `cnpj`, `email`, `phone`, `random` para os tipos exigidos pelo Asaas;
+- grava `external_transfer_id`, `external_reference`, `external_status`, `raw_request` e `raw_response` em `creator_payouts`;
+- status `DONE` marca payout e comissões como `paid`;
+- status `PENDING` mantém payout `processing` e comissões `scheduled`;
+- status `CANCELLED` ou erro marca payout `failed` e libera as comissões para nova tentativa.
+
+Automação:
+
+- Vercel Cron chama `GET /api/admin/creator-payouts?task=process_due_payouts`;
+- o ciclo roda somente se `mode = automatic`, `is_enabled = true` e `next_run_at <= now()`;
+- a execução agrupa comissões por criador e curso;
+- a cada ciclo, o sistema também sincroniza payouts `processing` com o status mais recente no Asaas.
+
+Estornos após pagamento:
+
+- comissão ainda não paga vira `canceled` ou `refunded`;
+- comissão já paga vira `refunded`;
+- o sistema cria comissão negativa elegível imediatamente para abater o próximo repasse do mesmo criador e curso.
 
 RPC transacional:
 
 ```text
-register_creator_commission_payout(_creator_id, _commission_ids, _paid_at, _created_by, _notes)
+register_creator_commission_payout(_creator_id, _commission_ids, _paid_at, _created_by, _notes, ...)
 ```
 
 Responsabilidades:
@@ -1450,8 +1491,11 @@ Componentes da tela:
 - filtro por curso vinculado;
 - filtro por ciclo de seis meses;
 - cards de vendas, receita bruta, cancelamentos, comissões pendentes, comissões pagas e comissões estornadas;
+- seção de política de repasse com modo, intervalo, valor mínimo, próxima janela e última execução;
+- cards de repasses em processamento, pagos e falhos;
 - seção "Minha carteira de cursos" com cursos vinculados, status, preço, percentual de comissão, vendas, receita e cancelamentos;
 - tabela de semestres por curso;
+- tabela de meus repasses com método Asaas/externo, status e falhas;
 - tabela de últimas comissões filtradas por curso/período;
 - botão de atualização manual;
 - estado vazio quando não houver cursos vinculados;
@@ -1461,6 +1505,8 @@ Fonte dos dados:
 
 - `get_creator_sales_report()` para agregados semestrais;
 - `creator_commissions` para histórico de comissão;
+- `creator_payout_settings` para política global refletida ao criador;
+- `creator_payouts` para histórico dos lotes de repasse;
 - `courses` filtrado por `creator_id = auth.uid()` para carteira de cursos.
 
 ## 20. Regras de Acesso e Bloqueio

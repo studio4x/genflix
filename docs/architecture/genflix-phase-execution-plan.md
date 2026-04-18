@@ -120,6 +120,17 @@ Ao concluir cada fase, o fechamento deve informar:
 - regra visual para comissões pagas, pendentes, canceladas e estornadas;
 - RPC transacional `register_creator_commission_payout` para criar payout, itens e marcar comissões como pagas.
 
+**Extensão concluída depois da fase:**
+
+- configuração global de repasses em `creator_payout_settings`;
+- modo manual ou automático com intervalo em dias e valor mínimo;
+- botão admin para `Pagar via Asaas`;
+- fallback admin para `Registrar pagamento externo`;
+- envio PIX via endpoint Asaas `/v3/transfers`;
+- Vercel Cron diário chamando `GET /api/admin/creator-payouts?task=process_due_payouts`;
+- painel do criador refletindo política de repasse e histórico de payouts;
+- ajuste negativo automático quando venda já repassada é estornada.
+
 ## Fase 5 - Ajustes visuais GenFlix
 
 **Status atual:** em andamento.

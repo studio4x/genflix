@@ -9,5 +9,11 @@
       "source": "/((?!api/).*)",
       "destination": "/index.html"
     }
+  ],
+  "crons": [
+    {
+      "path": "/api/admin/creator-payouts?task=process_due_payouts",
+      "schedule": "0 8 * * *"
+    }
   ]
 }

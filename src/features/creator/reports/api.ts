@@ -34,6 +34,34 @@ export interface CreatorCommissionRow {
   } | null
 }
 
+export interface CreatorPayoutSettingsRow {
+  id: number
+  mode: 'manual' | 'automatic'
+  interval_days: number
+  minimum_amount_cents: number
+  is_enabled: boolean
+  last_run_at: string | null
+  next_run_at: string | null
+}
+
+export interface CreatorPayoutRow {
+  id: string
+  course_id: string | null
+  amount_cents: number
+  status: 'draft' | 'scheduled' | 'processing' | 'paid' | 'failed' | 'canceled'
+  payout_method: 'external' | 'asaas'
+  external_status: string | null
+  external_transfer_id: string | null
+  scheduled_for: string | null
+  paid_at: string | null
+  failed_at: string | null
+  failure_reason: string | null
+  created_at: string
+  courses?: {
+    title?: string | null
+  } | null
+}
+
 export interface CreatorCourseSummary {
   id: string
   title: string
@@ -75,6 +103,42 @@ export async function fetchCreatorCommissions() {
   }
 
   return (data ?? []) as CreatorCommissionRow[]
+}
+
+export async function fetchCreatorPayoutSettings() {
+  const { data, error } = await supabase
+    .from('creator_payout_settings')
+    .select('id, mode, interval_days, minimum_amount_cents, is_enabled, last_run_at, next_run_at')
+    .eq('id', 1)
+    .maybeSingle()
+
+  if (error) {
+    throw error
+  }
+
+  return (data ?? {
+    id: 1,
+    mode: 'automatic',
+    interval_days: 30,
+    minimum_amount_cents: 0,
+    is_enabled: true,
+    last_run_at: null,
+    next_run_at: null,
+  }) as CreatorPayoutSettingsRow
+}
+
+export async function fetchCreatorPayouts() {
+  const { data, error } = await supabase
+    .from('creator_payouts')
+    .select('id, course_id, amount_cents, status, payout_method, external_status, external_transfer_id, scheduled_for, paid_at, failed_at, failure_reason, created_at, courses(title)')
+    .order('created_at', { ascending: false })
+    .limit(20)
+
+  if (error) {
+    throw error
+  }
+
+  return (data ?? []) as CreatorPayoutRow[]
 }
 
 export async function fetchCreatorCourses() {

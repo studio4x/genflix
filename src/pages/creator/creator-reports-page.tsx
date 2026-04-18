@@ -5,10 +5,14 @@ import { Button } from '@/components/ui/button'
 import {
   fetchCreatorCommissions,
   fetchCreatorCourses,
+  fetchCreatorPayoutSettings,
+  fetchCreatorPayouts,
   fetchCreatorSalesReport,
   formatMoneyFromCents,
   type CreatorCommissionRow,
   type CreatorCourseSummary,
+  type CreatorPayoutRow,
+  type CreatorPayoutSettingsRow,
   type CreatorSalesReportRow,
 } from '@/features/creator/reports/api'
 
@@ -43,6 +47,7 @@ function formatStatus(status: string) {
     pending: 'Pendente',
     eligible: 'Elegível',
     scheduled: 'Agendada',
+    processing: 'Processando',
     paid: 'Paga',
     canceled: 'Cancelada',
     refunded: 'Estornada',
@@ -57,7 +62,7 @@ function statusTone(status: string) {
     return 'border-emerald-200 bg-emerald-50 text-emerald-700'
   }
 
-  if (status === 'pending' || status === 'scheduled' || status === 'draft') {
+  if (status === 'pending' || status === 'scheduled' || status === 'draft' || status === 'processing') {
     return 'border-sky-200 bg-sky-50 text-sky-700'
   }
 
@@ -76,6 +81,8 @@ export function CreatorReportsPage() {
   const [rows, setRows] = useState<CreatorSalesReportRow[]>([])
   const [courses, setCourses] = useState<CreatorCourseSummary[]>([])
   const [commissions, setCommissions] = useState<CreatorCommissionRow[]>([])
+  const [payouts, setPayouts] = useState<CreatorPayoutRow[]>([])
+  const [payoutSettings, setPayoutSettings] = useState<CreatorPayoutSettingsRow | null>(null)
   const [selectedCourseId, setSelectedCourseId] = useState('')
   const [selectedPeriodKey, setSelectedPeriodKey] = useState('')
   const [isLoading, setIsLoading] = useState(true)
@@ -86,14 +93,18 @@ export function CreatorReportsPage() {
     setErrorMessage(null)
 
     try {
-      const [reportRows, commissionRows, courseRows] = await Promise.all([
+      const [reportRows, commissionRows, courseRows, payoutRows, settings] = await Promise.all([
         fetchCreatorSalesReport(),
         fetchCreatorCommissions(),
         fetchCreatorCourses(),
+        fetchCreatorPayouts(),
+        fetchCreatorPayoutSettings(),
       ])
       setRows(reportRows)
       setCommissions(commissionRows)
       setCourses(courseRows)
+      setPayouts(payoutRows)
+      setPayoutSettings(settings)
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : 'Não foi possível carregar os relatórios.')
     } finally {
@@ -198,6 +209,17 @@ export function CreatorReportsPage() {
     { label: 'Estornadas', value: formatMoneyFromCents(commissionTotals.canceled), detail: 'canceladas ou refundadas' },
   ]
 
+  const payoutTotals = useMemo(() => {
+    return payouts.reduce(
+      (acc, payout) => ({
+        processing: acc.processing + (payout.status === 'processing' || payout.status === 'scheduled' ? Number(payout.amount_cents ?? 0) : 0),
+        paid: acc.paid + (payout.status === 'paid' ? Number(payout.amount_cents ?? 0) : 0),
+        failed: acc.failed + (payout.status === 'failed' ? Number(payout.amount_cents ?? 0) : 0),
+      }),
+      { processing: 0, paid: 0, failed: 0 },
+    )
+  }, [payouts])
+
   function handleCourseChange(courseId: string) {
     setSelectedCourseId(courseId)
     setSelectedPeriodKey('')
@@ -232,6 +254,45 @@ export function CreatorReportsPage() {
           {errorMessage}
         </div>
       ) : null}
+
+      <section className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+        <article className="border border-[#D8E6EB] bg-white p-5 shadow-sm">
+          <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#1398B7]">Política de repasse</p>
+          <h2 className="mt-2 font-readex text-xl font-semibold text-[#15323b]">
+            {payoutSettings?.mode === 'manual' ? 'Repasse manual pelo administrador' : 'Repasse automático via Asaas'}
+          </h2>
+          <p className="mt-2 text-sm font-medium leading-6 text-[#6d7f84]">
+            {payoutSettings?.is_enabled === false
+              ? 'Os repasses automáticos estão pausados pela administração.'
+              : `Ciclo a cada ${payoutSettings?.interval_days ?? 30} dia(s), com mínimo de ${formatMoneyFromCents(payoutSettings?.minimum_amount_cents ?? 0)} por lote.`}
+          </p>
+          <div className="mt-4 grid gap-3 text-sm md:grid-cols-2">
+            <div className="border border-[#D8E6EB] bg-[#F2F7F9] p-3">
+              <p className="text-[10px] font-black uppercase tracking-widest text-[#5F7077]">Próxima janela</p>
+              <p className="mt-1 font-black text-[#15323b]">{formatDateTime(payoutSettings?.next_run_at)}</p>
+            </div>
+            <div className="border border-[#D8E6EB] bg-[#F2F7F9] p-3">
+              <p className="text-[10px] font-black uppercase tracking-widest text-[#5F7077]">Última execução</p>
+              <p className="mt-1 font-black text-[#15323b]">{formatDateTime(payoutSettings?.last_run_at)}</p>
+            </div>
+          </div>
+        </article>
+
+        <article className="grid gap-3 md:grid-cols-3">
+          <div className="border border-[#D8E6EB] bg-white p-5 shadow-sm">
+            <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#5F7077]">Processando</p>
+            <p className="mt-2 font-readex text-2xl font-semibold text-[#15323b]">{formatMoneyFromCents(payoutTotals.processing)}</p>
+          </div>
+          <div className="border border-[#D8E6EB] bg-white p-5 shadow-sm">
+            <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#5F7077]">Pago</p>
+            <p className="mt-2 font-readex text-2xl font-semibold text-[#15323b]">{formatMoneyFromCents(payoutTotals.paid)}</p>
+          </div>
+          <div className="border border-[#D8E6EB] bg-white p-5 shadow-sm">
+            <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#5F7077]">Falhou</p>
+            <p className="mt-2 font-readex text-2xl font-semibold text-[#15323b]">{formatMoneyFromCents(payoutTotals.failed)}</p>
+          </div>
+        </article>
+      </section>
 
       <section className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
         <label className="block border border-[#D8E6EB] bg-[#F2F7F9] p-4">
@@ -375,6 +436,61 @@ export function CreatorReportsPage() {
                     <td className="px-5 py-4 font-black text-[#15323b]">{row.cancellations_count}</td>
                     <td className="px-5 py-4 font-black text-[#15323b]">
                       {formatMoneyFromCents(row.cancellations_amount_cents)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+
+      <section className="overflow-hidden border border-[#D8E6EB] bg-white">
+        <div className="border-b border-[#D8E6EB] px-5 py-4">
+          <h2 className="font-readex text-xl font-semibold text-[#15323b]">Meus repasses</h2>
+          <p className="mt-1 text-sm font-medium text-[#6d7f84]">
+            Histórico dos lotes pagos, em processamento ou com falha. Os pagamentos via Asaas usam a chave PIX cadastrada no seu perfil.
+          </p>
+        </div>
+
+        {payouts.length === 0 ? (
+          <div className="p-6">
+            <p className="font-readex text-lg font-semibold text-[#15323b]">Nenhum repasse registrado ainda.</p>
+            <p className="mt-2 text-sm leading-6 text-[#6d7f84]">
+              Quando suas comissões forem pagas ou enviadas ao Asaas, os lotes aparecerão aqui.
+            </p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-[#D8E6EB] text-left text-sm">
+              <thead className="bg-[#F2F7F9] text-[10px] font-black uppercase tracking-[0.2em] text-[#5F7077]">
+                <tr>
+                  <th className="px-5 py-3">Curso</th>
+                  <th className="px-5 py-3">Método</th>
+                  <th className="px-5 py-3">Valor</th>
+                  <th className="px-5 py-3">Data</th>
+                  <th className="px-5 py-3">Status</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#D8E6EB]">
+                {payouts.map((payout) => (
+                  <tr key={payout.id}>
+                    <td className="px-5 py-4 font-black text-[#15323b]">
+                      {payout.courses?.title ?? 'Curso'}
+                    </td>
+                    <td className="px-5 py-4 font-semibold text-[#5f7077]">
+                      {payout.payout_method === 'asaas' ? 'PIX via Asaas' : 'Pagamento externo'}
+                      {payout.external_status ? <span className="block text-xs">Asaas: {payout.external_status}</span> : null}
+                    </td>
+                    <td className="px-5 py-4 font-black text-[#15323b]">{formatMoneyFromCents(payout.amount_cents)}</td>
+                    <td className="px-5 py-4 font-semibold text-[#5f7077]">
+                      {formatDateTime(payout.paid_at ?? payout.failed_at ?? payout.created_at)}
+                    </td>
+                    <td className="px-5 py-4">
+                      <span className={`inline-flex border px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] ${statusTone(payout.status)}`}>
+                        {formatStatus(payout.status)}
+                      </span>
+                      {payout.failure_reason ? <p className="mt-2 text-xs font-semibold text-rose-700">{payout.failure_reason}</p> : null}
                     </td>
                   </tr>
                 ))}
