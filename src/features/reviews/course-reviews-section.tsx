@@ -208,7 +208,7 @@ export function CourseReviewsSection({
     setIsSubmitting(true)
     setMessage(null)
     try {
-      await submitCourseReview({
+      const savedReview = await submitCourseReview({
         courseId,
         rating,
         title,
@@ -217,7 +217,11 @@ export function CourseReviewsSection({
       setTitle('')
       setContent('')
       setRating(5)
-      setMessage('Avaliação publicada com sucesso. Obrigado por contribuir com a comunidade GenFlix.')
+      setMessage(
+        savedReview.moderation_status === 'pending'
+          ? 'Avaliação enviada para moderação. Ela ficará visível após aprovação.'
+          : 'Avaliação publicada com sucesso. Obrigado por contribuir com a comunidade GenFlix.',
+      )
       await loadReviews()
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Não foi possível salvar sua avaliação.')

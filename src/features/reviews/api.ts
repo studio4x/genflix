@@ -8,6 +8,28 @@ export interface CourseReview {
   title: string
   content: string
   is_verified_purchase: boolean
+  moderation_status?: ReviewModerationStatus
+  helpful_count: number
+  unhelpful_count: number
+  created_at: string
+  updated_at: string
+}
+
+export type ReviewModerationStatus = 'pending' | 'approved' | 'rejected'
+
+export interface AdminCourseReview {
+  id: string
+  author_id: string
+  author_display_name: string | null
+  author_email: string | null
+  course_id: string | null
+  course_title: string | null
+  rating: number
+  title: string
+  content: string
+  is_verified_purchase: boolean
+  moderation_status: ReviewModerationStatus
+  moderation_reason: string | null
   helpful_count: number
   unhelpful_count: number
   created_at: string
@@ -27,6 +49,12 @@ export interface SubmitCourseReviewInput {
   rating: number
   title: string
   content: string
+}
+
+export interface FetchAdminReviewsInput {
+  status?: ReviewModerationStatus | 'all'
+  rating?: number | null
+  query?: string
 }
 
 const emptyDistribution: ReviewStats['rating_distribution'] = {
@@ -96,6 +124,37 @@ export async function voteReviewHelpful(reviewId: string, isHelpful: boolean) {
   const { error } = await supabase.rpc('vote_review_helpful', {
     _review_id: reviewId,
     _is_helpful: isHelpful,
+  })
+
+  if (error) {
+    throw error
+  }
+}
+
+export async function fetchAdminCourseReviews(input: FetchAdminReviewsInput = {}) {
+  const { data, error } = await supabase.rpc('list_admin_course_reviews', {
+    _status: input.status ?? 'pending',
+    _rating: input.rating ?? null,
+    _query: input.query?.trim() || '',
+    _limit: 100,
+  })
+
+  if (error) {
+    throw error
+  }
+
+  return (data ?? []) as AdminCourseReview[]
+}
+
+export async function moderateCourseReview(
+  reviewId: string,
+  action: 'approve' | 'reject',
+  reason?: string,
+) {
+  const { error } = await supabase.rpc('moderate_course_review', {
+    _review_id: reviewId,
+    _action: action,
+    _reason: reason?.trim() || null,
   })
 
   if (error) {

@@ -22,6 +22,7 @@ import { AdminPaymentSettingsPage } from '@/pages/admin/admin-payment-settings-p
 import { AdminCreatorPayoutsPage } from '@/pages/admin/admin-creator-payouts-page'
 import { AdminQuizTypesPage } from '@/pages/admin/admin-quiz-types-page'
 import { AdminNotificationsPage } from '@/pages/admin/admin-notifications-page'
+import { AdminReviewsPage } from '@/pages/admin/admin-reviews-page'
 import { ForgotPasswordPage } from '@/pages/public/forgot-password-page'
 import { AuthCallbackPage } from '@/pages/public/auth-callback-page'
 import { CookiesPage } from '@/pages/public/cookies-page'
@@ -337,6 +338,10 @@ export const appRouter = createBrowserRouter([
           {
             path: '/admin/mensagens',
             element: <MessagesPage contextLabel="Admin" />,
+          },
+          {
+            path: '/admin/reviews',
+            element: <AdminReviewsPage />,
           },
           {
             path: '/admin/pagamentos',

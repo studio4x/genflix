@@ -16,6 +16,7 @@ const adminLinks = [
   { to: '/admin/notificacoes', label: 'Notificações' },
   { to: '/admin/preferencias-notificacoes', label: 'Preferências' },
   { to: '/admin/mensagens', label: 'Mensagens' },
+  { to: '/admin/reviews', label: 'Reviews' },
   { to: '/admin/pagamentos', label: 'Pagamentos' },
   { to: '/admin/repasses', label: 'Repasses PIX' },
   { to: '/admin/tipos-quiz', label: 'Tipos de Quiz' },

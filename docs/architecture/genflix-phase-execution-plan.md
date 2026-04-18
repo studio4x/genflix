@@ -217,7 +217,7 @@ Ao concluir cada fase, o fechamento deve informar:
 
 ## Fase 9 - Reviews nos cursos
 
-**Status atual:** fundação implementada.
+**Status atual:** concluída nesta rodada.
 
 **Já existe:**
 
@@ -227,12 +227,15 @@ Ao concluir cada fase, o fechamento deve informar:
 - votos úteis;
 - seção de reviews na página pública do curso.
 
-**Falta concluir:**
+**Concluído agora:**
 
-- painel admin completo de moderação;
-- filtros e ações de aprovação/rejeição;
-- notificações ligadas a reviews;
-- regras finais de elegibilidade para avaliação.
+- painel admin `/admin/reviews` para moderação de reviews de cursos;
+- filtros por status, nota e busca textual;
+- ações de aprovação e rejeição com motivo;
+- notificação in-app para admins quando uma review entra em moderação;
+- notificação in-app para aluno quando a review é aprovada ou rejeitada;
+- regra final de elegibilidade: apenas alunos com acesso ativo ao curso podem avaliar;
+- auto-moderação básica para spam, excesso de links, caixa alta e caracteres repetidos.
 
 ## Pendência transversal - Hardening de dependências
 
