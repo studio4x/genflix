@@ -14,12 +14,16 @@ export interface PaymentGatewaySettings {
 
 export interface CommerceCheckoutSessionSummary {
   id: string
+  buyer_name?: string | null
   buyer_email: string
   status: string
+  gateway_environment?: PaymentGatewayEnvironment | null
   checkout_url: string | null
   created_at: string
+  released_at?: string | null
   courses?: {
     title?: string | null
+    price_cents?: number | null
   } | null
 }
 
@@ -27,8 +31,43 @@ export interface CommerceEventSummary {
   id: string
   event_type: string
   status: string
+  gateway_environment?: PaymentGatewayEnvironment | null
   created_at?: string
   received_at: string
+}
+
+export interface CommerceDashboardMetrics {
+  totalSessions: number
+  activeSessions: number
+  paidSessions: number
+  refundedSessions: number
+  failedEvents: number
+  estimatedGrossRevenueCents: number
+  lastEventAt: string | null
+}
+
+export interface PaymentDiagnosticCheck {
+  key: string
+  label: string
+  status: 'ok' | 'warning' | 'error'
+  detail: string
+}
+
+export interface PaymentGatewayDiagnostics {
+  environment: PaymentGatewayEnvironment | null
+  checkedAt: string
+  checks: PaymentDiagnosticCheck[]
+}
+
+type CommerceMetricSession = {
+  id: string
+  status: string
+  courses?: { price_cents?: number | null } | { price_cents?: number | null }[] | null
+}
+
+function getSessionCoursePriceCents(session: CommerceMetricSession) {
+  const course = Array.isArray(session.courses) ? session.courses[0] : session.courses
+  return Number(course?.price_cents ?? 0)
 }
 
 export async function fetchPaymentGatewaySettings(): Promise<PaymentGatewaySettings> {
@@ -82,17 +121,22 @@ export async function updatePaymentGatewaySettings(
 }
 
 export async function fetchCommerceDashboardSummaries() {
-  const [sessionsResult, eventsResult] = await Promise.all([
+  const [sessionsResult, eventsResult, metricSessionsResult] = await Promise.all([
     supabase
       .from('commerce_checkout_sessions')
-      .select('id, buyer_email, status, checkout_url, created_at, courses(title)')
+      .select('id, buyer_name, buyer_email, status, gateway_environment, checkout_url, created_at, released_at, courses(title, price_cents)')
       .order('created_at', { ascending: false })
-      .limit(5),
+      .limit(8),
     supabase
       .from('commerce_events')
-      .select('id, event_type, status, received_at')
+      .select('id, event_type, status, gateway_environment, received_at')
       .order('received_at', { ascending: false })
-      .limit(5),
+      .limit(8),
+    supabase
+      .from('commerce_checkout_sessions')
+      .select('id, status, courses(price_cents)')
+      .order('created_at', { ascending: false })
+      .limit(1000),
   ])
 
   if (sessionsResult.error) {
@@ -103,10 +147,58 @@ export async function fetchCommerceDashboardSummaries() {
     throw eventsResult.error
   }
 
+  if (metricSessionsResult.error) {
+    throw metricSessionsResult.error
+  }
+
+  const metricSessions = (metricSessionsResult.data ?? []) as CommerceMetricSession[]
+  const recentEvents = (eventsResult.data ?? []) as CommerceEventSummary[]
+  const paidSessions = metricSessions.filter((session) => session.status === 'paid')
+  const metrics: CommerceDashboardMetrics = {
+    totalSessions: metricSessions.length,
+    activeSessions: metricSessions.filter((session) => session.status === 'active').length,
+    paidSessions: paidSessions.length,
+    refundedSessions: metricSessions.filter((session) => session.status === 'refunded' || session.status === 'chargeback').length,
+    failedEvents: recentEvents.filter((event) => event.status === 'failed').length,
+    estimatedGrossRevenueCents: paidSessions.reduce((total, session) => {
+      return total + getSessionCoursePriceCents(session)
+    }, 0),
+    lastEventAt: recentEvents[0]?.received_at ?? null,
+  }
+
   return {
     sessions: (sessionsResult.data ?? []) as CommerceCheckoutSessionSummary[],
-    events: (eventsResult.data ?? []) as CommerceEventSummary[],
+    events: recentEvents,
+    metrics,
   }
+}
+
+export async function fetchPaymentGatewayDiagnostics(): Promise<PaymentGatewayDiagnostics> {
+  const sessionResult = await supabase.auth.getSession()
+  const accessToken = sessionResult.data.session?.access_token
+
+  if (!accessToken) {
+    throw new Error('Sessão expirada. Entre novamente para diagnosticar pagamentos.')
+  }
+
+  const response = await fetch('/api/admin/payments/diagnostics', {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  })
+
+  const payload = await response.json().catch(() => null) as PaymentGatewayDiagnostics & { error?: string } | null
+
+  if (!response.ok) {
+    throw new Error(payload?.error ?? 'Não foi possível diagnosticar as configurações de pagamento.')
+  }
+
+  if (!payload?.checks) {
+    throw new Error('Diagnóstico retornou sem dados de configuração.')
+  }
+
+  return payload
 }
 
 export async function fetchPublicCatalogCourses() {

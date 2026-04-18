@@ -52,7 +52,7 @@ Ao concluir cada fase, o fechamento deve informar:
 
 ## Fase 2 - Página admin de pagamentos e operação comercial
 
-**Status atual:** base implementada.
+**Status atual:** concluída nesta rodada.
 
 **Já existe:**
 
@@ -62,12 +62,14 @@ Ao concluir cada fase, o fechamento deve informar:
 - checklist de variáveis;
 - listagem de checkouts e eventos recentes.
 
-**Falta concluir:**
+**Concluído nesta rodada:**
 
-- exibir indicadores resumidos de operação;
-- adicionar diagnóstico de configuração ausente;
-- melhorar leitura de status;
-- opcionalmente adicionar botão de teste controlado para verificar variáveis e conectividade do gateway.
+- indicadores resumidos de checkouts, pagos, ativos, estornos, eventos com falha, receita bruta estimada e último evento;
+- diagnóstico seguro de configuração via `GET /api/admin/payments/diagnostics`;
+- botão `Verificar` para reexecutar o diagnóstico sem expor segredos;
+- leitura visual de status para sessões e eventos recentes;
+- checklist operacional atualizado com variáveis, webhook e segredo;
+- spec principal de cursos/pagamentos atualizada com a operação admin.
 
 ## Fase 3 - Criador, dashboard e perfil
 

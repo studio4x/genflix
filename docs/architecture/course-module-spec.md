@@ -1242,6 +1242,35 @@ Variaveis de ambiente:
 - `ASAAS_WEBHOOK_SECRET`;
 - `SUPABASE_SERVICE_ROLE_KEY`.
 
+### 17.4.1 Painel administrativo de pagamentos
+
+Rota:
+
+```text
+/admin/pagamentos
+```
+
+Objetivo:
+
+- centralizar a operação comercial do gateway;
+- alternar ambiente ativo entre `sandbox` e `production`;
+- exibir URL pública do webhook Asaas;
+- listar variáveis obrigatórias do deploy;
+- exibir diagnóstico seguro de configuração sem mostrar segredos;
+- apresentar indicadores resumidos de checkouts, pagamentos, estornos, falhas e receita bruta estimada;
+- listar sessões de checkout e eventos recentes para auditoria operacional.
+
+Diagnóstico:
+
+- endpoint administrativo `GET /api/admin/payments/diagnostics`;
+- exige usuário autenticado com role `admin`;
+- valida se `SUPABASE_SERVICE_ROLE_KEY` existe no deploy;
+- carrega `payment_gateway_settings`;
+- verifica se o gateway ativo é `asaas`;
+- verifica se existe token Asaas para o ambiente atual;
+- verifica se `ASAAS_WEBHOOK_SECRET` está configurado;
+- nunca retorna valores sensíveis, apenas status e instrução operacional.
+
 ### 17.5 Webhook
 
 Endpoint:
