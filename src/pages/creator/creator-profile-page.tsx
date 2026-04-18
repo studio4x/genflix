@@ -49,7 +49,7 @@ export function CreatorProfilePage() {
         setDefaultCommissionPercent(payoutProfile.default_commission_percent ?? 0)
       } catch (error) {
         if (isMounted) {
-          setPayoutMessage(error instanceof Error ? error.message : 'Nao foi possivel carregar os dados de repasse.')
+          setPayoutMessage(error instanceof Error ? error.message : 'Não foi possível carregar os dados de repasse.')
         }
       }
     }
@@ -74,7 +74,7 @@ export function CreatorProfilePage() {
       })
       setProfileMessage('Perfil atualizado com sucesso.')
     } catch (error) {
-      setProfileMessage(error instanceof Error ? error.message : 'Nao foi possivel atualizar o perfil.')
+      setProfileMessage(error instanceof Error ? error.message : 'Não foi possível atualizar o perfil.')
     } finally {
       setIsSavingProfile(false)
     }
@@ -90,7 +90,7 @@ export function CreatorProfilePage() {
       setNewPassword('')
       setPasswordMessage('Senha atualizada com sucesso.')
     } catch (error) {
-      setPasswordMessage(error instanceof Error ? error.message : 'Nao foi possivel atualizar a senha.')
+      setPasswordMessage(error instanceof Error ? error.message : 'Não foi possível atualizar a senha.')
     } finally {
       setIsSavingPassword(false)
     }
@@ -114,7 +114,7 @@ export function CreatorProfilePage() {
       })
       setPayoutMessage('Dados de repasse PIX atualizados com sucesso.')
     } catch (error) {
-      setPayoutMessage(error instanceof Error ? error.message : 'Nao foi possivel atualizar os dados de repasse.')
+      setPayoutMessage(error instanceof Error ? error.message : 'Não foi possível atualizar os dados de repasse.')
     } finally {
       setIsSavingPayout(false)
     }
@@ -126,7 +126,7 @@ export function CreatorProfilePage() {
         <p className="text-[10px] font-black uppercase tracking-[0.28em] text-[#1398B7]">Perfil</p>
         <h1 className="mt-2 font-readex text-3xl font-semibold tracking-tight text-[#15323b]">Meu perfil</h1>
         <p className="mt-2 max-w-2xl text-sm font-medium leading-6 text-[#6d7f84]">
-          Atualize seus dados de exibicao e seguranca da conta de criador.
+          Atualize seus dados de exibição e segurança da conta de criador.
         </p>
       </header>
 
@@ -156,7 +156,7 @@ export function CreatorProfilePage() {
             </label>
             <div className="grid gap-3 sm:grid-cols-2">
               <label className="block">
-                <span className="text-xs font-black uppercase tracking-[0.2em] text-[#5F7077]">Fuso horario</span>
+                <span className="text-xs font-black uppercase tracking-[0.2em] text-[#5F7077]">Fuso horário</span>
                 <input
                   value={timezone}
                   onChange={(event) => setTimezone(event.target.value)}

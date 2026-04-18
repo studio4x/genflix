@@ -73,7 +73,7 @@ Ao concluir cada fase, o fechamento deve informar:
 
 ## Fase 3 - Criador, dashboard e perfil
 
-**Status atual:** parcialmente implementada.
+**Status atual:** concluída nesta rodada.
 
 **Já existe:**
 
@@ -84,12 +84,16 @@ Ao concluir cada fase, o fechamento deve informar:
 - cadastro de dados PIX;
 - relatório básico de vendas, cancelamentos e comissões.
 
-**Falta concluir:**
+**Concluído nesta rodada:**
 
-- melhorar dashboard executivo do criador;
-- adicionar filtros por curso e período;
-- exibir cursos vinculados;
-- melhorar estados vazios e mensagens operacionais.
+- dashboard executivo em `/criador/relatorios`;
+- filtros por curso e por ciclo de seis meses;
+- cards de vendas, receita bruta, cancelamentos e comissões;
+- seção de cursos vinculados ao criador com preço, status, comissão e desempenho;
+- tabela de semestres por curso com filtro aplicado;
+- tabela de comissões filtrada por curso/período;
+- estados vazios mais claros;
+- revisão de mensagens visíveis do perfil do criador.
 
 ## Fase 4 - Comissões e repasses PIX
 

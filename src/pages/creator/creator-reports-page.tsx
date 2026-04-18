@@ -1,10 +1,14 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { RefreshCw } from 'lucide-react'
 
+import { Button } from '@/components/ui/button'
 import {
   fetchCreatorCommissions,
+  fetchCreatorCourses,
   fetchCreatorSalesReport,
   formatMoneyFromCents,
   type CreatorCommissionRow,
+  type CreatorCourseSummary,
   type CreatorSalesReportRow,
 } from '@/features/creator/reports/api'
 
@@ -20,48 +24,130 @@ function formatDate(value: string | null | undefined) {
   }).format(new Date(`${value}T12:00:00`))
 }
 
+function formatDateTime(value: string | null | undefined) {
+  if (!value) {
+    return 'Sem data'
+  }
+
+  return new Intl.DateTimeFormat('pt-BR', {
+    dateStyle: 'short',
+    timeStyle: 'short',
+  }).format(new Date(value))
+}
+
+function formatStatus(status: string) {
+  const labels: Record<string, string> = {
+    draft: 'Rascunho',
+    published: 'Publicado',
+    archived: 'Arquivado',
+    pending: 'Pendente',
+    eligible: 'Elegível',
+    scheduled: 'Agendada',
+    paid: 'Paga',
+    canceled: 'Cancelada',
+    refunded: 'Estornada',
+    failed: 'Falhou',
+  }
+
+  return labels[status] ?? status
+}
+
+function statusTone(status: string) {
+  if (status === 'published' || status === 'paid' || status === 'eligible') {
+    return 'border-emerald-200 bg-emerald-50 text-emerald-700'
+  }
+
+  if (status === 'pending' || status === 'scheduled' || status === 'draft') {
+    return 'border-sky-200 bg-sky-50 text-sky-700'
+  }
+
+  if (status === 'canceled' || status === 'refunded' || status === 'failed' || status === 'archived') {
+    return 'border-rose-200 bg-rose-50 text-rose-700'
+  }
+
+  return 'border-[#D8E6EB] bg-[#E8F6FA] text-[#0A3640]'
+}
+
+function getPeriodKey(row: CreatorSalesReportRow) {
+  return `${row.course_id}:${row.period_index}`
+}
+
 export function CreatorReportsPage() {
   const [rows, setRows] = useState<CreatorSalesReportRow[]>([])
+  const [courses, setCourses] = useState<CreatorCourseSummary[]>([])
   const [commissions, setCommissions] = useState<CreatorCommissionRow[]>([])
+  const [selectedCourseId, setSelectedCourseId] = useState('')
+  const [selectedPeriodKey, setSelectedPeriodKey] = useState('')
   const [isLoading, setIsLoading] = useState(true)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
-  useEffect(() => {
-    let isMounted = true
+  const loadDashboard = useCallback(async () => {
+    setIsLoading(true)
+    setErrorMessage(null)
 
-    async function loadReport() {
-      setIsLoading(true)
-      setErrorMessage(null)
-
-      try {
-        const [reportRows, commissionRows] = await Promise.all([
-          fetchCreatorSalesReport(),
-          fetchCreatorCommissions(),
-        ])
-        if (isMounted) {
-          setRows(reportRows)
-          setCommissions(commissionRows)
-        }
-      } catch (error) {
-        if (isMounted) {
-          setErrorMessage(error instanceof Error ? error.message : 'Nao foi possivel carregar os relatorios.')
-        }
-      } finally {
-        if (isMounted) {
-          setIsLoading(false)
-        }
-      }
-    }
-
-    void loadReport()
-
-    return () => {
-      isMounted = false
+    try {
+      const [reportRows, commissionRows, courseRows] = await Promise.all([
+        fetchCreatorSalesReport(),
+        fetchCreatorCommissions(),
+        fetchCreatorCourses(),
+      ])
+      setRows(reportRows)
+      setCommissions(commissionRows)
+      setCourses(courseRows)
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : 'Não foi possível carregar os relatórios.')
+    } finally {
+      setIsLoading(false)
     }
   }, [])
 
+  useEffect(() => {
+    void loadDashboard()
+  }, [loadDashboard])
+
+  const periodOptions = useMemo(() => {
+    return rows
+      .filter((row) => !selectedCourseId || row.course_id === selectedCourseId)
+      .map((row) => ({
+        key: getPeriodKey(row),
+        label: `${row.course_title} · ${formatDate(row.period_starts_at)} a ${formatDate(row.period_ends_at)}`,
+        startsAt: row.period_starts_at,
+        endsAt: row.period_ends_at,
+      }))
+  }, [rows, selectedCourseId])
+
+  const selectedPeriod = useMemo(() => {
+    return rows.find((row) => getPeriodKey(row) === selectedPeriodKey) ?? null
+  }, [rows, selectedPeriodKey])
+
+  const filteredRows = useMemo(() => {
+    return rows.filter((row) => {
+      const matchesCourse = !selectedCourseId || row.course_id === selectedCourseId
+      const matchesPeriod = !selectedPeriodKey || getPeriodKey(row) === selectedPeriodKey
+      return matchesCourse && matchesPeriod
+    })
+  }, [rows, selectedCourseId, selectedPeriodKey])
+
+  const filteredCommissions = useMemo(() => {
+    return commissions.filter((commission) => {
+      const matchesCourse = !selectedCourseId || commission.course_id === selectedCourseId
+      if (!matchesCourse) {
+        return false
+      }
+
+      if (!selectedPeriod) {
+        return true
+      }
+
+      const paidAt = new Date(commission.sale_paid_at)
+      const periodStart = new Date(`${selectedPeriod.period_starts_at}T00:00:00`)
+      const periodEnd = new Date(`${selectedPeriod.period_ends_at}T23:59:59`)
+      return paidAt >= periodStart && paidAt <= periodEnd
+    })
+  }, [commissions, selectedCourseId, selectedPeriod])
+
   const totals = useMemo(() => {
-    return rows.reduce(
+    return filteredRows.reduce(
       (acc, row) => ({
         sales: acc.sales + Number(row.sales_count ?? 0),
         revenue: acc.revenue + Number(row.gross_revenue_cents ?? 0),
@@ -75,10 +161,10 @@ export function CreatorReportsPage() {
         canceledAmount: 0,
       },
     )
-  }, [rows])
+  }, [filteredRows])
 
   const commissionTotals = useMemo(() => {
-    return commissions.reduce(
+    return filteredCommissions.reduce(
       (acc, commission) => {
         const amount = Number(commission.commission_amount_cents ?? 0)
         return {
@@ -89,75 +175,185 @@ export function CreatorReportsPage() {
       },
       { pending: 0, paid: 0, canceled: 0 },
     )
-  }, [commissions])
+  }, [filteredCommissions])
+
+  const courseSummaries = useMemo(() => {
+    return courses.map((course) => {
+      const courseRows = rows.filter((row) => row.course_id === course.id)
+      return {
+        course,
+        sales: courseRows.reduce((total, row) => total + Number(row.sales_count ?? 0), 0),
+        revenue: courseRows.reduce((total, row) => total + Number(row.gross_revenue_cents ?? 0), 0),
+        cancellations: courseRows.reduce((total, row) => total + Number(row.cancellations_count ?? 0), 0),
+      }
+    })
+  }, [courses, rows])
+
+  const metricCards = [
+    { label: 'Vendas', value: totals.sales.toString(), detail: 'no filtro atual' },
+    { label: 'Receita bruta', value: formatMoneyFromCents(totals.revenue), detail: 'sem descontar taxas' },
+    { label: 'Cancelamentos', value: totals.cancellations.toString(), detail: formatMoneyFromCents(totals.canceledAmount) },
+    { label: 'Comissões pendentes', value: formatMoneyFromCents(commissionTotals.pending), detail: 'pendentes ou elegíveis' },
+    { label: 'Comissões pagas', value: formatMoneyFromCents(commissionTotals.paid), detail: 'repasse confirmado' },
+    { label: 'Estornadas', value: formatMoneyFromCents(commissionTotals.canceled), detail: 'canceladas ou refundadas' },
+  ]
+
+  function handleCourseChange(courseId: string) {
+    setSelectedCourseId(courseId)
+    setSelectedPeriodKey('')
+  }
 
   return (
     <div className="space-y-6">
-      <header className="flex flex-col gap-3 border-b border-[#D8E6EB] pb-5 md:flex-row md:items-end md:justify-between">
+      <header className="flex flex-col gap-4 border-b border-[#D8E6EB] pb-5 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <p className="text-[10px] font-black uppercase tracking-[0.28em] text-[#1398B7]">Relatorios</p>
-          <h1 className="mt-2 font-readex text-3xl font-semibold tracking-tight text-[#15323b]">Meus relatorios</h1>
-          <p className="mt-2 max-w-2xl text-sm font-medium leading-6 text-[#6d7f84]">
-            Acompanhe vendas, receita bruta e cancelamentos dos cursos vinculados a voce, agrupados em ciclos de seis meses a partir do lancamento.
+          <p className="text-[10px] font-black uppercase tracking-[0.28em] text-[#1398B7]">Relatórios</p>
+          <h1 className="mt-2 font-readex text-3xl font-semibold tracking-tight text-[#15323b]">Painel do criador</h1>
+          <p className="mt-2 max-w-3xl text-sm font-medium leading-6 text-[#6d7f84]">
+            Acompanhe os cursos vinculados a você, vendas por ciclos de seis meses, cancelamentos e comissões previstas
+            para repasse PIX.
           </p>
         </div>
+
+        <Button
+          type="button"
+          onClick={() => void loadDashboard()}
+          disabled={isLoading}
+          variant="outline"
+          className="border-[#D8E6EB] font-black text-[#15323b]"
+        >
+          <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+          Atualizar
+        </Button>
       </header>
 
-      <section className="grid gap-3 md:grid-cols-4">
-        <div className="rounded-[24px] border border-[#D8E6EB] bg-[#F2F7F9] p-5">
-          <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#5F7077]">Vendas</p>
-          <p className="mt-2 font-readex text-3xl font-semibold text-[#15323b]">{totals.sales}</p>
+      {errorMessage ? (
+        <div className="border border-rose-200 bg-rose-50 px-5 py-4 text-sm font-semibold text-rose-700">
+          {errorMessage}
         </div>
-        <div className="rounded-[24px] border border-[#D8E6EB] bg-[#F2F7F9] p-5">
-          <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#5F7077]">Receita bruta</p>
-          <p className="mt-2 font-readex text-3xl font-semibold text-[#15323b]">{formatMoneyFromCents(totals.revenue)}</p>
-        </div>
-        <div className="rounded-[24px] border border-[#D8E6EB] bg-[#F2F7F9] p-5">
-          <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#5F7077]">Cancelamentos</p>
-          <p className="mt-2 font-readex text-3xl font-semibold text-[#15323b]">{totals.cancellations}</p>
-        </div>
-        <div className="rounded-[24px] border border-[#D8E6EB] bg-[#F2F7F9] p-5">
-          <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#5F7077]">Valor cancelado</p>
-          <p className="mt-2 font-readex text-3xl font-semibold text-[#15323b]">{formatMoneyFromCents(totals.canceledAmount)}</p>
-        </div>
+      ) : null}
+
+      <section className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+        <label className="block border border-[#D8E6EB] bg-[#F2F7F9] p-4">
+          <span className="text-[10px] font-black uppercase tracking-[0.22em] text-[#5F7077]">Curso</span>
+          <select
+            value={selectedCourseId}
+            onChange={(event) => handleCourseChange(event.target.value)}
+            className="mt-2 h-12 w-full border border-[#D8E6EB] bg-white px-4 text-sm font-bold text-[#15323b] outline-none focus:border-[#1398B7]"
+          >
+            <option value="">Todos os cursos vinculados</option>
+            {courses.map((course) => (
+              <option key={course.id} value={course.id}>
+                {course.title}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className="block border border-[#D8E6EB] bg-[#F2F7F9] p-4">
+          <span className="text-[10px] font-black uppercase tracking-[0.22em] text-[#5F7077]">Período</span>
+          <select
+            value={selectedPeriodKey}
+            onChange={(event) => setSelectedPeriodKey(event.target.value)}
+            className="mt-2 h-12 w-full border border-[#D8E6EB] bg-white px-4 text-sm font-bold text-[#15323b] outline-none focus:border-[#1398B7]"
+          >
+            <option value="">Todos os ciclos de 6 meses</option>
+            {periodOptions.map((period) => (
+              <option key={period.key} value={period.key}>
+                {period.label}
+              </option>
+            ))}
+          </select>
+        </label>
       </section>
 
-      <section className="grid gap-3 md:grid-cols-3">
-        <div className="rounded-[24px] border border-[#D8E6EB] bg-[#F2F7F9] p-5">
-          <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#5F7077]">Comissões pendentes</p>
-          <p className="mt-2 font-readex text-3xl font-semibold text-[#15323b]">{formatMoneyFromCents(commissionTotals.pending)}</p>
-          <p className="mt-2 text-xs font-medium text-[#6d7f84]">Elegíveis em até 30 dias após cada venda.</p>
-        </div>
-        <div className="rounded-[24px] border border-[#D8E6EB] bg-[#F2F7F9] p-5">
-          <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#5F7077]">Comissões pagas</p>
-          <p className="mt-2 font-readex text-3xl font-semibold text-[#15323b]">{formatMoneyFromCents(commissionTotals.paid)}</p>
-        </div>
-        <div className="rounded-[24px] border border-[#D8E6EB] bg-[#F2F7F9] p-5">
-          <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#5F7077]">Canceladas/estornadas</p>
-          <p className="mt-2 font-readex text-3xl font-semibold text-[#15323b]">{formatMoneyFromCents(commissionTotals.canceled)}</p>
-        </div>
+      <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+        {metricCards.map((card) => (
+          <div key={card.label} className="border border-[#D8E6EB] bg-white p-5 shadow-sm">
+            <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#5F7077]">{card.label}</p>
+            <p className="mt-2 font-readex text-3xl font-semibold text-[#15323b]">{card.value}</p>
+            <p className="mt-2 text-xs font-semibold text-[#6d7f84]">{card.detail}</p>
+          </div>
+        ))}
       </section>
 
-      <section className="overflow-hidden rounded-[28px] border border-[#D8E6EB] bg-white">
+      <section className="overflow-hidden border border-[#D8E6EB] bg-white">
         <div className="border-b border-[#D8E6EB] px-5 py-4">
-          <h2 className="font-readex text-xl font-semibold text-[#15323b]">Semestres por curso</h2>
+          <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#5F7077]">Cursos vinculados</p>
+          <h2 className="mt-1 font-readex text-xl font-semibold text-[#15323b]">Minha carteira de cursos</h2>
         </div>
 
         {isLoading ? (
-          <p className="p-5 text-sm font-medium text-[#6d7f84]">Carregando relatorios...</p>
-        ) : errorMessage ? (
-          <p className="p-5 text-sm font-semibold text-[#1398B7]">{errorMessage}</p>
-        ) : rows.length === 0 ? (
-          <p className="p-5 text-sm font-medium text-[#6d7f84]">
-            Nenhum curso vinculado ou pedido comercial encontrado ate o momento.
+          <p className="p-5 text-sm font-medium text-[#6d7f84]">Carregando cursos...</p>
+        ) : courseSummaries.length === 0 ? (
+          <div className="p-6">
+            <p className="font-readex text-lg font-semibold text-[#15323b]">Nenhum curso vinculado ainda.</p>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-[#6d7f84]">
+              Quando um admin vincular um curso ao seu usuário, ele aparecerá aqui com métricas comerciais e comissões.
+            </p>
+          </div>
+        ) : (
+          <div className="grid gap-3 p-4 md:grid-cols-2 xl:grid-cols-3">
+            {courseSummaries.map(({ course, sales, revenue, cancellations }) => (
+              <article key={course.id} className="border border-[#D8E6EB] bg-[#F2F7F9] p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <h3 className="font-readex text-lg font-semibold tracking-tight text-[#15323b]">{course.title}</h3>
+                    <p className="mt-1 text-xs font-semibold text-[#5F7077]">
+                      Lançamento: {formatDate(course.launch_date)}
+                    </p>
+                  </div>
+                  <span className={`border px-2.5 py-1 text-[10px] font-black uppercase tracking-widest ${statusTone(course.status)}`}>
+                    {formatStatus(course.status)}
+                  </span>
+                </div>
+                <div className="mt-4 grid grid-cols-3 gap-2 text-sm">
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-[#5F7077]">Vendas</p>
+                    <p className="mt-1 font-black text-[#15323b]">{sales}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-[#5F7077]">Receita</p>
+                    <p className="mt-1 font-black text-[#15323b]">{formatMoneyFromCents(revenue)}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-[#5F7077]">Cancel.</p>
+                    <p className="mt-1 font-black text-[#15323b]">{cancellations}</p>
+                  </div>
+                </div>
+                <p className="mt-4 text-xs font-semibold text-[#6d7f84]">
+                  Preço: {formatMoneyFromCents(Number(course.price_cents ?? 0))} · Comissão: {Number(course.creator_commission_percent ?? 0)}%
+                </p>
+              </article>
+            ))}
+          </div>
+        )}
+      </section>
+
+      <section className="overflow-hidden border border-[#D8E6EB] bg-white">
+        <div className="border-b border-[#D8E6EB] px-5 py-4">
+          <h2 className="font-readex text-xl font-semibold text-[#15323b]">Semestres por curso</h2>
+          <p className="mt-1 text-sm font-medium text-[#6d7f84]">
+            Cada linha representa um ciclo de seis meses contado a partir do lançamento do curso.
           </p>
+        </div>
+
+        {isLoading ? (
+          <p className="p-5 text-sm font-medium text-[#6d7f84]">Carregando relatórios...</p>
+        ) : filteredRows.length === 0 ? (
+          <div className="p-6">
+            <p className="font-readex text-lg font-semibold text-[#15323b]">Sem dados para o filtro atual.</p>
+            <p className="mt-2 text-sm leading-6 text-[#6d7f84]">
+              Experimente selecionar outro curso ou período. As vendas aparecem após o webhook confirmar o pagamento.
+            </p>
+          </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-[#D8E6EB] text-left text-sm">
               <thead className="bg-[#F2F7F9] text-[10px] font-black uppercase tracking-[0.2em] text-[#5F7077]">
                 <tr>
                   <th className="px-5 py-3">Curso</th>
-                  <th className="px-5 py-3">Periodo</th>
+                  <th className="px-5 py-3">Período</th>
                   <th className="px-5 py-3">Vendas</th>
                   <th className="px-5 py-3">Receita</th>
                   <th className="px-5 py-3">Cancelamentos</th>
@@ -165,11 +361,11 @@ export function CreatorReportsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#D8E6EB]">
-                {rows.map((row) => (
+                {filteredRows.map((row) => (
                   <tr key={`${row.course_id}-${row.period_index}`} className="align-top">
                     <td className="px-5 py-4">
                       <p className="font-black text-[#15323b]">{row.course_title}</p>
-                      <p className="mt-1 text-xs font-medium text-[#5F7077]">Lancamento: {formatDate(row.launch_date)}</p>
+                      <p className="mt-1 text-xs font-medium text-[#5F7077]">Lançamento: {formatDate(row.launch_date)}</p>
                     </td>
                     <td className="px-5 py-4 font-semibold text-[#5f7077]">
                       {formatDate(row.period_starts_at)} a {formatDate(row.period_ends_at)}
@@ -188,15 +384,21 @@ export function CreatorReportsPage() {
         )}
       </section>
 
-      <section className="overflow-hidden rounded-[28px] border border-[#D8E6EB] bg-white">
+      <section className="overflow-hidden border border-[#D8E6EB] bg-white">
         <div className="border-b border-[#D8E6EB] px-5 py-4">
           <h2 className="font-readex text-xl font-semibold text-[#15323b]">Últimas comissões</h2>
+          <p className="mt-1 text-sm font-medium text-[#6d7f84]">
+            Comissões ficam elegíveis em até 30 dias após a venda e podem ser canceladas se houver estorno.
+          </p>
         </div>
 
-        {commissions.length === 0 ? (
-          <p className="p-5 text-sm font-medium text-[#6d7f84]">
-            Nenhuma comissão gerada ainda. Elas aparecerão aqui quando uma venda paga tiver criador vinculado e percentual configurado.
-          </p>
+        {filteredCommissions.length === 0 ? (
+          <div className="p-6">
+            <p className="font-readex text-lg font-semibold text-[#15323b]">Nenhuma comissão no filtro atual.</p>
+            <p className="mt-2 text-sm leading-6 text-[#6d7f84]">
+              Elas aparecerão aqui quando uma venda paga tiver curso vinculado e percentual configurado.
+            </p>
+          </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-[#D8E6EB] text-left text-sm">
@@ -205,12 +407,13 @@ export function CreatorReportsPage() {
                   <th className="px-5 py-3">Curso</th>
                   <th className="px-5 py-3">Venda</th>
                   <th className="px-5 py-3">Comissão</th>
+                  <th className="px-5 py-3">Venda paga em</th>
                   <th className="px-5 py-3">Elegível em</th>
                   <th className="px-5 py-3">Status</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#D8E6EB]">
-                {commissions.map((commission) => (
+                {filteredCommissions.map((commission) => (
                   <tr key={commission.id}>
                     <td className="px-5 py-4 font-black text-[#15323b]">
                       {commission.courses?.title ?? 'Curso'}
@@ -223,11 +426,14 @@ export function CreatorReportsPage() {
                       <p className="mt-1 text-xs font-semibold text-[#5F7077]">{commission.commission_rate}%</p>
                     </td>
                     <td className="px-5 py-4 font-semibold text-[#5f7077]">
-                      {new Intl.DateTimeFormat('pt-BR').format(new Date(commission.eligible_at))}
+                      {formatDateTime(commission.sale_paid_at)}
+                    </td>
+                    <td className="px-5 py-4 font-semibold text-[#5f7077]">
+                      {formatDateTime(commission.eligible_at)}
                     </td>
                     <td className="px-5 py-4">
-                      <span className="inline-flex rounded-full bg-[#E8F6FA] px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-[#1398B7]">
-                        {commission.status}
+                      <span className={`inline-flex border px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] ${statusTone(commission.status)}`}>
+                        {formatStatus(commission.status)}
                       </span>
                     </td>
                   </tr>

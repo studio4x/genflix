@@ -1387,6 +1387,32 @@ Recorte de relatorio:
 - receita bruta;
 - comissao estimada/pendente/elegivel.
 
+### 19.1 Dashboard executivo do criador
+
+Rota principal:
+
+```text
+/criador/relatorios
+```
+
+Componentes da tela:
+
+- filtro por curso vinculado;
+- filtro por ciclo de seis meses;
+- cards de vendas, receita bruta, cancelamentos, comissões pendentes, comissões pagas e comissões estornadas;
+- seção "Minha carteira de cursos" com cursos vinculados, status, preço, percentual de comissão, vendas, receita e cancelamentos;
+- tabela de semestres por curso;
+- tabela de últimas comissões filtradas por curso/período;
+- botão de atualização manual;
+- estado vazio quando não houver cursos vinculados;
+- estado vazio quando o filtro atual não tiver vendas ou comissões.
+
+Fonte dos dados:
+
+- `get_creator_sales_report()` para agregados semestrais;
+- `creator_commissions` para histórico de comissão;
+- `courses` filtrado por `creator_id = auth.uid()` para carteira de cursos.
+
 ## 20. Regras de Acesso e Bloqueio
 
 O acesso final a uma aula depende de todas as camadas:

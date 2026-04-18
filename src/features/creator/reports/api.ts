@@ -34,6 +34,17 @@ export interface CreatorCommissionRow {
   } | null
 }
 
+export interface CreatorCourseSummary {
+  id: string
+  title: string
+  status: string
+  launch_date: string | null
+  price_cents: number | null
+  currency: string | null
+  is_public: boolean | null
+  creator_commission_percent: number | null
+}
+
 interface CreatorSalesReportFilters {
   creatorId?: string | null
   courseId?: string | null
@@ -64,6 +75,28 @@ export async function fetchCreatorCommissions() {
   }
 
   return (data ?? []) as CreatorCommissionRow[]
+}
+
+export async function fetchCreatorCourses() {
+  const sessionResult = await supabase.auth.getUser()
+  const userId = sessionResult.data.user?.id
+
+  if (!userId) {
+    throw new Error('Usuário não autenticado.')
+  }
+
+  const { data, error } = await supabase
+    .from('courses')
+    .select('id, title, status, launch_date, price_cents, currency, is_public, creator_commission_percent')
+    .eq('creator_id', userId)
+    .order('launch_date', { ascending: false, nullsFirst: false })
+    .order('created_at', { ascending: false })
+
+  if (error) {
+    throw error
+  }
+
+  return (data ?? []) as CreatorCourseSummary[]
 }
 
 export function formatMoneyFromCents(valueInCents: number) {
