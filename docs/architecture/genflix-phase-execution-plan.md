@@ -25,7 +25,7 @@ Ao concluir cada fase, o fechamento deve informar:
 
 ## Fase 1 - Gateway Asaas, checkout e matrícula automática
 
-**Status atual:** parcialmente implementada.
+**Status atual:** concluída nesta rodada.
 
 **Já existe:**
 
@@ -37,13 +37,18 @@ Ao concluir cada fase, o fechamento deve informar:
 - liberação automática do curso após pagamento confirmado;
 - página admin de pagamentos com ambiente, webhook e eventos recentes.
 
-**Falta concluir:**
+**Concluído nesta rodada:**
 
-- validar fluxo real em sandbox com credenciais Asaas;
-- melhorar mensagens de erro do checkout público;
-- registrar claramente eventos suportados do webhook;
-- garantir idempotência e rastreabilidade operacional para pagamento, cancelamento, expiração e estorno;
-- atualizar a spec de cursos/pagamentos se houver mudança no contrato.
+- o formulário público de compra agora envia `buyerName` e `buyerEmail` para o backend;
+- o backend usa os dados informados no checkout Asaas e registra esses dados em `commerce_checkout_sessions`;
+- mensagens principais do checkout e webhook foram ajustadas com acentuação;
+- o webhook passou a reconhecer eventos de checkout e eventos de pagamento (`CHECKOUT_PAID`, `PAYMENT_RECEIVED`, `PAYMENT_CONFIRMED`);
+- o webhook usa chave idempotente determinística quando o Asaas não envia `id` próprio no evento;
+- a spec de cursos/pagamentos foi atualizada com o contrato real.
+
+**Pendente operacional fora de código:**
+
+- validar uma compra real em sandbox com credenciais Asaas ativas.
 
 ## Fase 2 - Página admin de pagamentos e operação comercial
 

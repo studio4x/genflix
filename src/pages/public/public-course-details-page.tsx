@@ -19,7 +19,7 @@ import { cn } from '@/lib/utils'
 
 export function PublicCourseDetailsPage() {
   const { slug = '' } = useParams()
-  const { isLoading, user, roles, session } = useAuth()
+  const { isLoading, user, roles, session, profile } = useAuth()
   const waitingRoleResolution = !!user && roles.length === 0
   const staticCourse = useMemo(() => getGenflixCourseBySlug(slug), [slug])
   const staticDetail = useMemo(() => getGenflixCourseDetailBySlug(slug), [slug])
@@ -77,10 +77,13 @@ export function PublicCourseDetailsPage() {
         throw new Error('Este curso ainda não está disponível para checkout.')
       }
 
-      const checkoutUrl = await startCourseCheckout(detail.id, session.access_token)
+      const checkoutUrl = await startCourseCheckout(detail.id, session.access_token, {
+        buyerName: buyerName || profile?.full_name || user?.user_metadata?.full_name,
+        buyerEmail: buyerEmail || profile?.email || user?.email,
+      })
       window.location.href = checkoutUrl
     } catch (error) {
-      setCheckoutError(error instanceof Error ? error.message : 'Nao foi possivel iniciar o checkout.')
+      setCheckoutError(error instanceof Error ? error.message : 'Não foi possível iniciar o checkout.')
     } finally {
       setIsStartingCheckout(false)
     }
@@ -246,7 +249,7 @@ export function PublicCourseDetailsPage() {
                         value={buyerName}
                         onChange={(event) => setBuyerName(event.target.value)}
                         className="h-12 w-full rounded-2xl border border-[#D8E6EB] bg-[#F2F7F9] px-4 text-sm font-semibold outline-none focus:border-[#1398B7]"
-                        placeholder="Seu nome"
+                        placeholder={profile?.full_name ?? 'Seu nome'}
                       />
                     </label>
                     <label className="block space-y-2">
@@ -256,7 +259,7 @@ export function PublicCourseDetailsPage() {
                         value={buyerEmail}
                         onChange={(event) => setBuyerEmail(event.target.value)}
                         className="h-12 w-full rounded-2xl border border-[#D8E6EB] bg-[#F2F7F9] px-4 text-sm font-semibold outline-none focus:border-[#1398B7]"
-                        placeholder="seu@email.com"
+                        placeholder={profile?.email ?? user?.email ?? 'seu@email.com'}
                       />
                     </label>
 

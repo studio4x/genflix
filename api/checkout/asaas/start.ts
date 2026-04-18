@@ -23,7 +23,9 @@ type ApiResponse = {
 }
 
 const startCheckoutSchema = z.object({
-  courseId: z.string().uuid('Curso invalido.'),
+  courseId: z.string().uuid('Curso inválido.'),
+  buyerName: z.string().trim().max(160).optional(),
+  buyerEmail: z.string().trim().email('E-mail inválido.').optional().or(z.literal('')),
 })
 
 function parseBody(rawBody: unknown) {
@@ -52,6 +54,11 @@ function jsonResponse(res: ApiResponse, statusCode: number, payload: unknown) {
   res.json(payload)
 }
 
+function normalizeOptionalText(value: string | null | undefined) {
+  const normalized = value?.trim()
+  return normalized && normalized.length > 0 ? normalized : null
+}
+
 export default async function handler(req: ApiRequest, res: ApiResponse) {
   if (req.method === 'OPTIONS') {
     jsonResponse(res, 200, { ok: true })
@@ -59,7 +66,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
   }
 
   if (req.method !== 'POST') {
-    jsonResponse(res, 405, { error: 'Metodo nao permitido.' })
+    jsonResponse(res, 405, { error: 'Método não permitido.' })
     return
   }
 
@@ -67,20 +74,20 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
   if (!supabaseUrl || !serviceRoleKey) {
-    jsonResponse(res, 500, { error: 'Configuracao do Supabase ausente.' })
+    jsonResponse(res, 500, { error: 'Configuração do Supabase ausente.' })
     return
   }
 
   const body = parseBody(req.body)
   const parsed = startCheckoutSchema.safeParse(body)
   if (!parsed.success) {
-    jsonResponse(res, 400, { error: parsed.error.issues[0]?.message ?? 'Dados invalidos.' })
+    jsonResponse(res, 400, { error: parsed.error.issues[0]?.message ?? 'Dados inválidos.' })
     return
   }
 
   const accessToken = getBearerToken(getHeaderValue(req.headers.authorization) ?? getHeaderValue(req.headers.Authorization))
   if (!accessToken) {
-    jsonResponse(res, 401, { error: 'Token ausente ou invalido.' })
+    jsonResponse(res, 401, { error: 'Token ausente ou inválido.' })
     return
   }
 
@@ -90,7 +97,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
 
   const { data: userData, error: userError } = await adminClient.auth.getUser(accessToken)
   if (userError || !userData.user) {
-    jsonResponse(res, 401, { error: 'Token ausente ou invalido.' })
+    jsonResponse(res, 401, { error: 'Token ausente ou inválido.' })
     return
   }
 
@@ -101,7 +108,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
     .maybeSingle()
 
   if (profileError) {
-    jsonResponse(res, 500, { error: 'Nao foi possivel carregar o perfil do usuario.' })
+    jsonResponse(res, 500, { error: 'Não foi possível carregar o perfil do usuário.' })
     return
   }
 
@@ -112,17 +119,32 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
     .maybeSingle()
 
   if (courseError) {
-    jsonResponse(res, 500, { error: 'Nao foi possivel carregar o curso.' })
+    jsonResponse(res, 500, { error: 'Não foi possível carregar o curso.' })
     return
   }
 
   if (!course || course.status !== 'published' || course.is_public !== true) {
-    jsonResponse(res, 404, { error: 'Curso indisponivel para compra.' })
+    jsonResponse(res, 404, { error: 'Curso indisponível para compra.' })
     return
   }
 
   const priceCents = Number(course.price_cents ?? 0)
   const origin = getRequestOrigin(req)
+  const buyerName =
+    normalizeOptionalText(parsed.data.buyerName) ??
+    normalizeOptionalText(profile?.full_name) ??
+    normalizeOptionalText(userData.user.user_metadata?.full_name as string | undefined) ??
+    normalizeOptionalText(userData.user.email) ??
+    'Aluno GenFlix'
+  const buyerEmail =
+    normalizeOptionalText(parsed.data.buyerEmail) ??
+    normalizeOptionalText(profile?.email) ??
+    normalizeOptionalText(userData.user.email)
+
+  if (!buyerEmail) {
+    jsonResponse(res, 400, { error: 'Informe um e-mail válido para iniciar o checkout.' })
+    return
+  }
 
   if (priceCents <= 0) {
     const releaseResult = await adminClient
@@ -148,7 +170,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
       )
 
     if (releaseResult.error) {
-      jsonResponse(res, 500, { error: 'Nao foi possivel liberar o curso gratuito.' })
+      jsonResponse(res, 500, { error: 'Não foi possível liberar o curso gratuito.' })
       return
     }
 
@@ -161,13 +183,13 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
 
   const gatewayConfig = await fetchPaymentGatewayConfiguration(supabaseUrl, serviceRoleKey)
   if (!gatewayConfig.is_active || gatewayConfig.gateway_code !== 'asaas') {
-    jsonResponse(res, 400, { error: 'Gateway de pagamento indisponivel.' })
+    jsonResponse(res, 400, { error: 'Gateway de pagamento indisponível.' })
     return
   }
 
   const asaasToken = getAsaasAccessToken(gatewayConfig.environment ?? 'sandbox')
   if (!asaasToken) {
-    jsonResponse(res, 500, { error: 'Chave do Asaas nao configurada para o ambiente ativo.' })
+    jsonResponse(res, 500, { error: 'Chave do Asaas não configurada para o ambiente ativo.' })
     return
   }
 
@@ -191,8 +213,8 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
       },
     ],
     customerData: {
-      name: profile?.full_name ?? userData.user.user_metadata?.full_name ?? userData.user.email ?? 'Aluno Genflix',
-      email: profile?.email ?? userData.user.email,
+      name: buyerName,
+      email: buyerEmail,
     },
   }
 
@@ -216,7 +238,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
       error:
         checkoutPayload?.message ||
         checkoutPayload?.errors?.[0]?.description ||
-        'Nao foi possivel criar o checkout.',
+        'Não foi possível criar o checkout.',
     })
     return
   }
@@ -227,8 +249,8 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
     id: checkoutSessionId,
     course_id: course.id,
     user_id: userData.user.id,
-    buyer_name: profile?.full_name ?? userData.user.user_metadata?.full_name ?? userData.user.email ?? 'Aluno Genflix',
-    buyer_email: profile?.email ?? userData.user.email,
+    buyer_name: buyerName,
+    buyer_email: buyerEmail,
     gateway_code: 'asaas',
     gateway_environment: gatewayConfig.environment,
     external_reference: checkoutSessionId,
@@ -240,7 +262,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
   })
 
   if (sessionInsert.error) {
-    jsonResponse(res, 500, { error: 'Nao foi possivel registrar o checkout.' })
+    jsonResponse(res, 500, { error: 'Não foi possível registrar o checkout.' })
     return
   }
 

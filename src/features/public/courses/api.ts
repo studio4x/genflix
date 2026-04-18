@@ -17,20 +17,33 @@ export async function fetchPublicCatalogCourses(): Promise<Course[]> {
   return (result.data as Course[]) ?? []
 }
 
-export async function startCourseCheckout(courseId: string, accessToken: string) {
+export type StartCourseCheckoutBuyer = {
+  buyerName?: string
+  buyerEmail?: string
+}
+
+export async function startCourseCheckout(
+  courseId: string,
+  accessToken: string,
+  buyer?: StartCourseCheckoutBuyer,
+) {
   const response = await fetch('/api/checkout/asaas/start', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${accessToken}`,
     },
-    body: JSON.stringify({ courseId }),
+    body: JSON.stringify({
+      courseId,
+      buyerName: buyer?.buyerName,
+      buyerEmail: buyer?.buyerEmail,
+    }),
   })
 
   const payload = await response.json().catch(() => null) as { error?: string; checkoutUrl?: string } | null
 
   if (!response.ok) {
-    throw new Error(payload?.error ?? 'Nao foi possivel iniciar o checkout.')
+    throw new Error(payload?.error ?? 'Não foi possível iniciar o checkout.')
   }
 
   if (!payload?.checkoutUrl) {

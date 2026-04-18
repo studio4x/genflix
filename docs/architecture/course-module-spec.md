@@ -1141,14 +1141,14 @@ Mostra:
 
 Comportamento:
 
-- se usuario nao estiver logado, direciona para login/cadastro;
-- se curso ja estiver liberado, leva ao curso;
-- se curso for gratuito, cria liberacao;
+- se usuário não estiver logado, direciona para login/cadastro;
+- se curso já estiver liberado, leva ao curso;
+- se curso for gratuito, cria liberação;
 - se curso for pago, inicia checkout.
 
 ## 17. Checkout e Pagamento com Asaas
 
-### 17.1 Endpoint de inicio
+### 17.1 Endpoint de início
 
 ```text
 POST /api/checkout/asaas/start
@@ -1156,20 +1156,24 @@ POST /api/checkout/asaas/start
 
 Requisitos:
 
-- usuario autenticado;
+- usuário autenticado;
 - `Authorization: Bearer <access_token>`;
 - `courseId` no body;
 - curso publicado;
-- curso publico;
+- curso público;
 - gateway ativo.
 
 Payload:
 
 ```json
 {
-  "courseId": "uuid-do-curso"
+  "courseId": "uuid-do-curso",
+  "buyerName": "Nome do comprador opcional",
+  "buyerEmail": "comprador@email.com"
 }
 ```
+
+`buyerName` e `buyerEmail` são opcionais no contrato público. Quando vierem preenchidos pelo formulário de compra, o backend envia esses dados para o checkout hospedado do Asaas e também registra em `commerce_checkout_sessions`. Se vierem vazios, o backend usa o perfil autenticado do usuário como fallback.
 
 Resposta para curso pago:
 
@@ -1194,7 +1198,7 @@ Resposta para curso gratuito:
 Fluxo:
 
 1. aluno clica em acessar;
-2. backend valida usuario e curso;
+2. backend valida usuário e curso;
 3. backend cria `course_releases`;
 4. origem fica como `purchase` ou fluxo gratuito, conforme regra atual;
 5. frontend manda aluno para curso.
@@ -1249,6 +1253,8 @@ POST /api/webhooks/asaas
 Eventos tratados:
 
 - `CHECKOUT_PAID`;
+- `PAYMENT_RECEIVED`;
+- `PAYMENT_CONFIRMED`;
 - `CHECKOUT_CANCELED`;
 - `CHECKOUT_EXPIRED`;
 - eventos de refund;
@@ -1260,10 +1266,11 @@ Regras:
 - valida segredo do webhook quando configurado;
 - registra evento em `commerce_events`;
 - evita duplicidade por `external_event_id`;
-- localiza checkout por `external_checkout_id` ou `external_reference`;
-- atualiza status da sessao;
+- quando o Asaas não envia um identificador próprio do evento, usa uma chave determinística com tipo do evento, checkout, pagamento e referência externa;
+- localiza checkout por `external_checkout_id`, `external_reference` do checkout ou `externalReference` do pagamento;
+- atualiza status da sessão;
 - libera ou revoga acesso;
-- cria ou cancela comissao do criador.
+- cria ou cancela comissão do criador.
 
 ### 17.6 Tabelas comerciais
 

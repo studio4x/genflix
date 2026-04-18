@@ -43,6 +43,14 @@ function jsonResponse(res: ApiResponse, statusCode: number, payload: unknown) {
   res.json(payload)
 }
 
+function readString(value: unknown) {
+  return typeof value === 'string' && value.trim().length > 0 ? value.trim() : null
+}
+
+function readNestedString(source: Record<string, unknown> | null, key: string) {
+  return source ? readString(source[key]) : null
+}
+
 async function findSessionByKeys(
   adminClient: SupabaseClient,
   checkoutId: string | null,
@@ -81,7 +89,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
   }
 
   if (req.method !== 'POST') {
-    jsonResponse(res, 405, { error: 'Metodo nao permitido.' })
+    jsonResponse(res, 405, { error: 'Método não permitido.' })
     return
   }
 
@@ -90,26 +98,47 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
   const webhookSecret = process.env.ASAAS_WEBHOOK_SECRET
 
   if (!supabaseUrl || !serviceRoleKey) {
-    jsonResponse(res, 500, { error: 'Configuracao do Supabase ausente.' })
+    jsonResponse(res, 500, { error: 'Configuração do Supabase ausente.' })
     return
   }
 
   if (webhookSecret) {
     const receivedSecret = getHeaderValue(req.headers['asaas-access-token'])
     if (receivedSecret !== webhookSecret) {
-      jsonResponse(res, 401, { error: 'Token do webhook invalido.' })
+      jsonResponse(res, 401, { error: 'Token do webhook inválido.' })
       return
     }
   }
 
   const body = parseBody(req.body)
-  const event = typeof body?.event === 'string' ? body.event : typeof body?.type === 'string' ? body.type : null
-  const eventId = typeof body?.id === 'string' ? body.id : `asaas-${crypto.randomUUID()}`
+  const event = readString(body?.event) ?? readString(body?.type)
   const checkout = typeof body?.checkout === 'object' && body.checkout ? (body.checkout as Record<string, unknown>) : null
   const payment = typeof body?.payment === 'object' && body.payment ? (body.payment as Record<string, unknown>) : null
-  const checkoutId = typeof checkout?.id === 'string' ? checkout.id : null
-  const externalReference = typeof checkout?.externalReference === 'string' ? checkout.externalReference : null
-  const paymentId = typeof payment?.id === 'string' ? payment.id : null
+  const paymentCheckoutSession =
+    typeof payment?.checkoutSession === 'object' && payment.checkoutSession
+      ? payment.checkoutSession as Record<string, unknown>
+      : null
+  const paymentCheckout =
+    typeof payment?.checkout === 'object' && payment.checkout
+      ? payment.checkout as Record<string, unknown>
+      : null
+  const checkoutId =
+    readNestedString(checkout, 'id') ??
+    readNestedString(paymentCheckoutSession, 'id') ??
+    readNestedString(paymentCheckout, 'id') ??
+    readString(payment?.checkoutSession) ??
+    readString(payment?.checkout) ??
+    readString(payment?.checkoutSessionId)
+  const externalReference =
+    readNestedString(checkout, 'externalReference') ??
+    readNestedString(paymentCheckoutSession, 'externalReference') ??
+    readNestedString(paymentCheckout, 'externalReference') ??
+    readNestedString(payment, 'externalReference')
+  const paymentId = readNestedString(payment, 'id')
+  const eventFingerprint = [event ?? 'UNKNOWN_EVENT', checkoutId, externalReference, paymentId]
+    .filter(Boolean)
+    .join(':')
+  const eventId = readString(body?.id) ?? (eventFingerprint ? `asaas:${eventFingerprint}` : `asaas:${crypto.randomUUID()}`)
 
   const adminClient = createClient(supabaseUrl, serviceRoleKey, {
     auth: { persistSession: false, autoRefreshToken: false },
@@ -145,8 +174,9 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
         event === 'PAYMENT_DELETED'
       ),
   )
+  const isPaidEvent = event === 'CHECKOUT_PAID' || event === 'PAYMENT_RECEIVED' || event === 'PAYMENT_CONFIRMED'
 
-  if (event === 'CHECKOUT_PAID') {
+  if (isPaidEvent) {
     nextStatus = 'processed'
     releasedAt = new Date().toISOString()
 
@@ -192,6 +222,8 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
           _checkout_session_id: sessionId,
         })
       }
+    } else {
+      nextStatus = 'failed'
     }
   } else if (event === 'CHECKOUT_CANCELED' || event === 'CHECKOUT_EXPIRED') {
     nextStatus = 'processed'
@@ -263,7 +295,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
   })
 
   if (insertEvent.error) {
-    jsonResponse(res, 500, { error: 'Nao foi possivel registrar o webhook.' })
+    jsonResponse(res, 500, { error: 'Não foi possível registrar o webhook.' })
     return
   }
 
