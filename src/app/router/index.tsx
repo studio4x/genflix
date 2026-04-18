@@ -19,6 +19,7 @@ import { AdminAccountPage } from '@/pages/admin/admin-account-page'
 import { AdminButtonTemplatesPage } from '@/pages/admin/admin-button-templates-page'
 import { AdminPublicFormsPage } from '@/pages/admin/admin-public-forms-page'
 import { AdminPaymentSettingsPage } from '@/pages/admin/admin-payment-settings-page'
+import { AdminCreatorPayoutsPage } from '@/pages/admin/admin-creator-payouts-page'
 import { AdminQuizTypesPage } from '@/pages/admin/admin-quiz-types-page'
 import { AdminNotificationsPage } from '@/pages/admin/admin-notifications-page'
 import { ForgotPasswordPage } from '@/pages/public/forgot-password-page'
@@ -327,6 +328,10 @@ export const appRouter = createBrowserRouter([
           {
             path: '/admin/pagamentos',
             element: <AdminPaymentSettingsPage />,
+          },
+          {
+            path: '/admin/repasses',
+            element: <AdminCreatorPayoutsPage />,
           },
           {
             path: '/admin/pagamento',

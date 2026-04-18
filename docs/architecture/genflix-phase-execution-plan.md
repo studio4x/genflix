@@ -97,7 +97,7 @@ Ao concluir cada fase, o fechamento deve informar:
 
 ## Fase 4 - Comissões e repasses PIX
 
-**Status atual:** parcialmente implementada.
+**Status atual:** concluída nesta rodada.
 
 **Já existe:**
 
@@ -108,13 +108,17 @@ Ao concluir cada fase, o fechamento deve informar:
 - função `cancel_creator_commission_for_checkout`;
 - comissão com elegibilidade em até 30 dias após a venda.
 
-**Falta concluir:**
+**Concluído nesta rodada:**
 
-- tela admin para gerir comissões;
-- tela admin para registrar repasse pago;
-- lote de repasses;
-- histórico operacional por criador;
-- regra visual para comissão cancelada por estorno.
+- rota admin `/admin/repasses`;
+- menu admin `Repasses PIX`;
+- tela admin para listar e filtrar comissões;
+- seleção em lote de comissões elegíveis do mesmo criador;
+- conferência dos dados PIX antes do pagamento;
+- registro de repasse pago via API administrativa;
+- histórico recente de repasses;
+- regra visual para comissões pagas, pendentes, canceladas e estornadas;
+- RPC transacional `register_creator_commission_payout` para criar payout, itens e marcar comissões como pagas.
 
 ## Fase 5 - Ajustes visuais GenFlix
 

@@ -1366,6 +1366,56 @@ Se compra for estornada, cancelada ou sofrer chargeback:
 - comissao ja paga deve gerar necessidade de estorno/ajuste;
 - evento deve ficar auditavel.
 
+### 18.5 Operação admin de repasses
+
+Rota:
+
+```text
+/admin/repasses
+```
+
+Objetivo:
+
+- listar comissões de criadores;
+- filtrar por criador e status operacional;
+- destacar comissões elegíveis para repasse;
+- selecionar várias comissões do mesmo criador;
+- conferir dados PIX do criador antes de registrar pagamento;
+- registrar lote de repasse como pago;
+- exibir histórico recente de repasses.
+
+API administrativa:
+
+```text
+GET /api/admin/creator-payouts
+POST /api/admin/creator-payouts
+```
+
+Regras:
+
+- exige usuário autenticado com role `admin`;
+- usa service role no servidor;
+- não expõe chaves sensíveis;
+- o POST aceita a ação `register_paid_payout`;
+- cada lote deve conter comissões de um único criador;
+- apenas comissões `pending` ou `eligible` com `eligible_at <= paid_at` podem ser pagas;
+- comissões que já aparecem em `creator_payout_items` não podem entrar em novo lote.
+
+RPC transacional:
+
+```text
+register_creator_commission_payout(_creator_id, _commission_ids, _paid_at, _created_by, _notes)
+```
+
+Responsabilidades:
+
+- validar seleção;
+- criar registro em `creator_payouts`;
+- criar itens em `creator_payout_items`;
+- marcar comissões como `paid`;
+- registrar `paid_at`;
+- executar tudo em uma única transação.
+
 ## 19. Relatorios do Criador
 
 O criador acessa area propria, sem acesso ao builder completo.
