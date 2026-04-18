@@ -174,7 +174,7 @@ Ao concluir cada fase, o fechamento deve informar:
 
 ## Fase 7 - Sistema de notificações
 
-**Status atual:** fundação implementada.
+**Status atual:** concluída.
 
 **Já existe:**
 
@@ -183,11 +183,18 @@ Ao concluir cada fase, o fechamento deve informar:
 - página admin de notificações;
 - integração visual nos layouts admin, aluno e criador.
 
-**Falta concluir:**
+**Concluído nesta fase:**
 
-- validar preferências por usuário;
-- aprofundar canais externos, se necessário;
-- criar automações adicionais para eventos comerciais, reviews e mensagens.
+- página compartilhada de preferências de notificação para admin, aluno e criador;
+- leitura e gravação real em `notification_preferences`;
+- controle por usuário dos canais `in-app`, `email`, `push` e `whatsapp`;
+- configuração de resumo por e-mail e janela de silêncio;
+- atalhos de navegação nos três painéis;
+- validação de integração com a central de notificações e com as automações já existentes de mensagens.
+
+**Observação operacional:**
+
+- canais externos continuam preparados em fila, mas envio real por provedores externos deve ser tratado em fase própria de integrações quando as credenciais definitivas forem escolhidas.
 
 ## Fase 8 - Mensagens em tempo real
 

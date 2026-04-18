@@ -14,6 +14,7 @@ const adminLinks = [
   { to: '/admin/grupos', label: 'Grupos' },
   { to: '/admin/formularios', label: 'Formulários' },
   { to: '/admin/notificacoes', label: 'Notificações' },
+  { to: '/admin/preferencias-notificacoes', label: 'Preferências' },
   { to: '/admin/mensagens', label: 'Mensagens' },
   { to: '/admin/pagamentos', label: 'Pagamentos' },
   { to: '/admin/repasses', label: 'Repasses PIX' },

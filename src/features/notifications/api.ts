@@ -3,6 +3,7 @@ import { supabase } from '@/services/supabase/client'
 export type NotificationPriority = 'low' | 'normal' | 'high' | 'urgent'
 export type NotificationChannel = 'push' | 'email' | 'whatsapp' | 'in-app'
 export type NotificationQueueStatus = 'pending' | 'retry' | 'sent' | 'delivered' | 'failed' | 'bounced' | 'ignored'
+export type EmailDigestFrequency = 'immediate' | 'daily' | 'weekly' | 'never'
 
 export interface AppNotification {
   id: string
@@ -54,6 +55,45 @@ export interface BroadcastNotificationInput {
 export interface BroadcastNotificationResult {
   recipient_count: number
   queued_count: number
+}
+
+export interface NotificationPreferences {
+  user_id: string
+  push_enabled: boolean
+  email_enabled: boolean
+  whatsapp_enabled: boolean
+  in_app_enabled: boolean
+  quiet_hours_enabled: boolean
+  quiet_hours_start: string | null
+  quiet_hours_end: string | null
+  quiet_hours_timezone: string
+  email_digest: EmailDigestFrequency
+  created_at?: string
+  updated_at?: string
+}
+
+export interface NotificationPreferencesInput {
+  push_enabled: boolean
+  email_enabled: boolean
+  whatsapp_enabled: boolean
+  in_app_enabled: boolean
+  quiet_hours_enabled: boolean
+  quiet_hours_start: string | null
+  quiet_hours_end: string | null
+  quiet_hours_timezone: string
+  email_digest: EmailDigestFrequency
+}
+
+export const defaultNotificationPreferences: NotificationPreferencesInput = {
+  push_enabled: true,
+  email_enabled: true,
+  whatsapp_enabled: false,
+  in_app_enabled: true,
+  quiet_hours_enabled: false,
+  quiet_hours_start: '22:00',
+  quiet_hours_end: '07:00',
+  quiet_hours_timezone: 'America/Sao_Paulo',
+  email_digest: 'immediate',
 }
 
 const queueStatuses: NotificationQueueStatus[] = [
@@ -182,4 +222,45 @@ export async function sendBroadcastNotification(input: BroadcastNotificationInpu
   }
 
   return data as BroadcastNotificationResult
+}
+
+export async function fetchNotificationPreferences(userId: string) {
+  const { data, error } = await supabase
+    .from('notification_preferences')
+    .select('user_id, push_enabled, email_enabled, whatsapp_enabled, in_app_enabled, quiet_hours_enabled, quiet_hours_start, quiet_hours_end, quiet_hours_timezone, email_digest, created_at, updated_at')
+    .eq('user_id', userId)
+    .maybeSingle()
+
+  if (error) {
+    throw error
+  }
+
+  if (!data) {
+    return {
+      user_id: userId,
+      ...defaultNotificationPreferences,
+    } satisfies NotificationPreferences
+  }
+
+  return data as NotificationPreferences
+}
+
+export async function saveNotificationPreferences(userId: string, input: NotificationPreferencesInput) {
+  const { data, error } = await supabase
+    .from('notification_preferences')
+    .upsert(
+      {
+        user_id: userId,
+        ...input,
+      },
+      { onConflict: 'user_id' },
+    )
+    .select('user_id, push_enabled, email_enabled, whatsapp_enabled, in_app_enabled, quiet_hours_enabled, quiet_hours_start, quiet_hours_end, quiet_hours_timezone, email_digest, created_at, updated_at')
+    .single()
+
+  if (error) {
+    throw error
+  }
+
+  return data as NotificationPreferences
 }

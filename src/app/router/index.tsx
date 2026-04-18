@@ -42,6 +42,7 @@ import { TermsOfUsePage } from '@/pages/public/terms-of-use-page'
 import { UnauthorizedPage } from '@/pages/public/unauthorized-page'
 import { MessagesPage } from '@/pages/shared/messages-page'
 import { MessagesRedirectPage } from '@/pages/shared/messages-redirect-page'
+import { NotificationPreferencesPage } from '@/pages/shared/notification-preferences-page'
 import { StudentAssessmentExecutionPage } from '@/pages/student/student-assessment-execution-page'
 import { StudentCourseDetailsPage } from '@/pages/student/student-course-details-page'
 import { StudentCoursesPage } from '@/pages/student/student-courses-page'
@@ -162,6 +163,10 @@ export const appRouter = createBrowserRouter([
             path: '/aluno/mensagens',
             element: <MessagesPage contextLabel="Aluno" />,
           },
+          {
+            path: '/aluno/notificacoes',
+            element: <NotificationPreferencesPage contextLabel="Aluno" />,
+          },
         ],
       },
       {
@@ -202,6 +207,10 @@ export const appRouter = createBrowserRouter([
           {
             path: '/criador/mensagens',
             element: <MessagesPage contextLabel="Criador" />,
+          },
+          {
+            path: '/criador/notificacoes',
+            element: <NotificationPreferencesPage contextLabel="Criador" />,
           },
         ],
       },
@@ -320,6 +329,10 @@ export const appRouter = createBrowserRouter([
           {
             path: '/admin/notificacoes',
             element: <AdminNotificationsPage />,
+          },
+          {
+            path: '/admin/preferencias-notificacoes',
+            element: <NotificationPreferencesPage contextLabel="Admin" />,
           },
           {
             path: '/admin/mensagens',
