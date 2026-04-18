@@ -133,7 +133,7 @@ Ao concluir cada fase, o fechamento deve informar:
 
 ## Fase 5 - Ajustes visuais GenFlix
 
-**Status atual:** em andamento.
+**Status atual:** concluída.
 
 **Já existe:**
 
@@ -142,13 +142,14 @@ Ao concluir cada fase, o fechamento deve informar:
 - build discreto no rodapé;
 - ajustes pontuais no painel de pagamentos, usuários e criador.
 
-**Falta concluir:**
+**Concluído nesta fase:**
 
 - varredura global de marrom/laranja antigo;
-- padronização de botões conforme Figma;
-- redução de cantos arredondados onde ainda estiver exagerado;
-- revisão de sombras;
-- garantir texto branco sobre fundos escuros/degradês.
+- camada visual global para trocar azuis antigos por degradê GenFlix vertical `#1398B7 -> #0A3640`;
+- padronização global de botões, estados de foco e bordas para a nova paleta;
+- redução agressiva de cantos arredondados para um raio curto, próximo ao padrão do Figma;
+- revisão global de sombras para projeções mais contidas;
+- regra de contraste para textos brancos sobre fundos escuros/degradês.
 
 ## Fase 6 - Admin usuários, roles e gestão de acessos
 
