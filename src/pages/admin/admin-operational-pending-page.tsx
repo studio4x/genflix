@@ -20,7 +20,7 @@ const pendingItems: PendingItem[] = [
     area: 'SMTP e domínio',
     status: 'blocked',
     description:
-      'A estrutura de notificações pode ser preparada, mas o envio real depende do domínio final e de um servidor SMTP contratado/configurado.',
+      'A fila de notificações e o processador de e-mails já estão prontos. O envio real depende do domínio final e de um servidor SMTP contratado/configurado.',
     missing: [
       'Domínio final com DNS ativo',
       'Host SMTP',
@@ -33,6 +33,7 @@ const pendingItems: PendingItem[] = [
       'Contratar ou liberar o serviço SMTP definitivo.',
       'Configurar SPF, DKIM e DMARC no DNS do domínio.',
       'Cadastrar as variáveis SMTP no ambiente de produção da Vercel.',
+      'Configurar CRON_SECRET na Vercel para liberar processamento automático seguro da fila.',
       'Executar teste real de envio para convite, recuperação de senha e notificações.',
     ],
     actionLabel: 'Ver notificações',

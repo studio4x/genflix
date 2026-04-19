@@ -333,6 +333,39 @@ Itens iniciais monitorados:
 
 Essa página deve ser atualizada sempre que uma nova funcionalidade ficar pendente por falta de credencial, DNS, token, conta externa, contrato ou informação operacional ainda não fornecida.
 
+## Fase 13 - Envio externo real de notificações por e-mail
+
+**Status atual:** concluída tecnicamente nesta rodada.
+
+**Auditoria prévia:** fase parcial.
+
+**Já existia:**
+
+- migrations de `notifications`, `notification_preferences`, `notification_queue` e `notification_delivery_logs`;
+- central de notificações e preferências por usuário;
+- página admin `/admin/notificacoes`;
+- helper SMTP usado pelo fluxo de redefinição de senha.
+
+**Concluído nesta rodada:**
+
+- rota administrativa `GET/POST /api/admin/notifications?task=process_queue` para processar a fila;
+- envio real do canal `email` via SMTP/Nodemailer quando as variáveis SMTP estiverem configuradas;
+- respeito às preferências do usuário para e-mail imediato ou e-mail desativado;
+- logs de entrega em `notification_delivery_logs`;
+- retentativas com backoff e falha final após 5 tentativas;
+- tratamento seguro de canais ainda sem provedor externo (`push` e `whatsapp`) como ignorados;
+- botão `Processar fila` na página admin de notificações;
+- cron Vercel para processar a fila automaticamente via `CRON_SECRET`;
+- pendência operacional de SMTP/domínio refletida em `/admin/pendencias`.
+
+**Pendente operacional fora de código:**
+
+- contratar/configurar SMTP definitivo;
+- configurar `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM_EMAIL`, `SMTP_FROM_NAME` e `SMTP_SECURE` na Vercel;
+- configurar `CRON_SECRET` na Vercel para execução automática segura;
+- configurar domínio final e DNS com SPF, DKIM e DMARC;
+- executar teste real de envio com SMTP definitivo.
+
 ## Pendência transversal - Hardening de dependências
 
 O `npm audit --audit-level=moderate` foi zerado na Fase 11. A partir daqui, novas vulnerabilidades devem ser tratadas como manutenção contínua antes de cada publicação relevante.

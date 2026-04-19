@@ -84,6 +84,14 @@ export interface NotificationPreferencesInput {
   email_digest: EmailDigestFrequency
 }
 
+export interface NotificationQueueProcessResult {
+  processed: number
+  sent: number
+  failed: number
+  retrying: number
+  ignored: number
+}
+
 export const defaultNotificationPreferences: NotificationPreferencesInput = {
   push_enabled: true,
   email_enabled: true,
@@ -263,4 +271,43 @@ export async function saveNotificationPreferences(userId: string, input: Notific
   }
 
   return data as NotificationPreferences
+}
+
+export async function processNotificationQueue(limit = 50) {
+  const { data: sessionData, error: sessionError } = await supabase.auth.getSession()
+
+  if (sessionError) {
+    throw sessionError
+  }
+
+  const accessToken = sessionData.session?.access_token
+  if (!accessToken) {
+    throw new Error('Sessão expirada. Entre novamente para processar a fila.')
+  }
+
+  const response = await fetch('/api/admin/notifications?task=process_queue', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify({
+      action: 'process_queue',
+      limit,
+    }),
+  })
+
+  const payload = await response.json().catch(() => null) as Partial<NotificationQueueProcessResult> & { error?: string } | null
+
+  if (!response.ok) {
+    throw new Error(payload?.error ?? 'Não foi possível processar a fila de notificações.')
+  }
+
+  return {
+    processed: Number(payload?.processed ?? 0),
+    sent: Number(payload?.sent ?? 0),
+    failed: Number(payload?.failed ?? 0),
+    retrying: Number(payload?.retrying ?? 0),
+    ignored: Number(payload?.ignored ?? 0),
+  } satisfies NotificationQueueProcessResult
 }

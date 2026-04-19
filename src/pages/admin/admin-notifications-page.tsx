@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import {
   fetchNotificationStats,
   fetchRecentQueueItems,
+  processNotificationQueue,
   sendBroadcastNotification,
   type BroadcastNotificationResult,
   type NotificationChannel,
@@ -76,6 +77,7 @@ export function AdminNotificationsPage() {
   const [unreadNotifications, setUnreadNotifications] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
   const [isSending, setIsSending] = useState(false)
+  const [isProcessingQueue, setIsProcessingQueue] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const [title, setTitle] = useState('')
@@ -175,6 +177,24 @@ export function AdminNotificationsPage() {
     }
   }
 
+  async function handleProcessQueue() {
+    setErrorMessage(null)
+    setSuccessMessage(null)
+    setIsProcessingQueue(true)
+
+    try {
+      const result = await processNotificationQueue()
+      setSuccessMessage(
+        `Fila processada: ${result.processed} item(ns), ${result.sent} enviado(s), ${result.retrying} em nova tentativa, ${result.failed} falha(s), ${result.ignored} ignorado(s).`,
+      )
+      await loadDashboard()
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : 'Não foi possível processar a fila de notificações.')
+    } finally {
+      setIsProcessingQueue(false)
+    }
+  }
+
   return (
     <div className="space-y-7">
       <header className="flex flex-col gap-4 border-b border-[#D8E6EB] pb-6 lg:flex-row lg:items-end lg:justify-between">
@@ -186,16 +206,28 @@ export function AdminNotificationsPage() {
           </p>
         </div>
 
-        <Button
-          type="button"
-          variant="outline"
-          onClick={() => void loadDashboard()}
-          disabled={isLoading}
-          className="h-11 rounded-none border-[#D8E6EB] bg-white font-black text-[#0A3640] hover:border-[#1398B7]"
-        >
-          <RefreshCw className={cn('mr-2 h-4 w-4', isLoading ? 'animate-spin' : '')} />
-          Atualizar
-        </Button>
+        <div className="flex flex-wrap gap-3">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => void handleProcessQueue()}
+            disabled={isProcessingQueue}
+            className="h-11 rounded-none border-[#1398B7] bg-white font-black text-[#0A3640] hover:bg-[#E8F6FA]"
+          >
+            <Send className="mr-2 h-4 w-4" />
+            {isProcessingQueue ? 'Processando...' : 'Processar fila'}
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => void loadDashboard()}
+            disabled={isLoading}
+            className="h-11 rounded-none border-[#D8E6EB] bg-white font-black text-[#0A3640] hover:border-[#1398B7]"
+          >
+            <RefreshCw className={cn('mr-2 h-4 w-4', isLoading ? 'animate-spin' : '')} />
+            Atualizar
+          </Button>
+        </div>
       </header>
 
       {errorMessage ? (
@@ -209,6 +241,12 @@ export function AdminNotificationsPage() {
           {successMessage}
         </div>
       ) : null}
+
+      <div className="border border-[#D8E6EB] bg-[#F2F7F9] p-4 text-sm font-semibold leading-6 text-[#15323b]">
+        O envio externo por e-mail já usa a fila técnica da GenFlix, mas depende das variáveis SMTP definitivas.
+        Enquanto SMTP/domínio não estiverem configurados, itens de e-mail permanecem em nova tentativa ou falha controlada.
+        Acompanhe essa dependência em <a href="/admin/pendencias" className="font-black text-[#1398B7] underline">Pendências Operacionais</a>.
+      </div>
 
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {[
