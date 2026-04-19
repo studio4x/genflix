@@ -264,18 +264,26 @@ Ao concluir cada fase, o fechamento deve informar:
 - Asaas produção ainda não está configurado. A Fase 12 deverá concluir a estrutura e validação em sandbox, mantendo produção como pendência operacional até a conta/credenciais definitivas estarem prontas.
 - SMTP/domínio final ainda não está contratado/configurado. A Fase 13 deverá concluir a estrutura técnica de fila/templates/processamento, mantendo o envio real em produção como pendência operacional até a contratação/configuração final.
 
+## Fase 11 - Hardening de dependências e npm audit
+
+**Status atual:** concluída nesta rodada.
+
+**Auditoria prévia:** fase parcial.
+
+**Já existia:**
+
+- `package-lock.json` com dependências recentes em boa parte do stack;
+- componente local de editor rico em `src/components/forms/react-quill.tsx`, sem dependência runtime obrigatória do pacote externo `react-quill`.
+
+**Concluído nesta rodada:**
+
+- `npm audit --audit-level=moderate` saiu de 11 vulnerabilidades para 0 vulnerabilidades;
+- atualização segura via `npm audit fix`, sem `--force`;
+- remoção de `react-quill` e, por consequência, do `quill` vulnerável;
+- remoção de declarações legadas de tipos para `react-quill` e `quill-better-table`;
+- atualização transitiva de pacotes vulneráveis como `vite`, `dompurify`, `hono`, `@hono/node-server`, `path-to-regexp`, `picomatch`, `yaml` e `brace-expansion`;
+- correção de warning local no editor rico.
+
 ## Pendência transversal - Hardening de dependências
 
-O `npm audit --audit-level=moderate` ainda acusa vulnerabilidades moderadas e altas. Esta pendência deve virar uma fase técnica própria antes de considerar a plataforma pronta para operação comercial estável.
-
-Pontos principais observados:
-
-- `vite`;
-- `lodash`;
-- `picomatch`;
-- `hono` e `@hono/node-server`;
-- `dompurify`;
-- `quill/react-quill`;
-- `path-to-regexp`;
-- `yaml`;
-- `brace-expansion`.
+O `npm audit --audit-level=moderate` foi zerado na Fase 11. A partir daqui, novas vulnerabilidades devem ser tratadas como manutenção contínua antes de cada publicação relevante.

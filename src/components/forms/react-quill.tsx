@@ -26,7 +26,6 @@ export default function ReactQuill({
   modules,
 }: ReactQuillProps) {
   const editorRef = useRef<HTMLDivElement | null>(null)
-  const toolbar = modules?.toolbar ?? []
 
   useEffect(() => {
     const editor = editorRef.current
@@ -40,6 +39,7 @@ export default function ReactQuill({
   }, [value])
 
   const toolbarButtons = useMemo(() => {
+    const toolbar = modules?.toolbar ?? []
     const flattened = toolbar.flatMap((item) => (Array.isArray(item) ? item : [item]))
     const labels = new Set(flattened.map((item) => {
       if (typeof item === 'string') {
@@ -60,7 +60,7 @@ export default function ReactQuill({
       clean: labels.has('clean'),
       header: labels.has('header'),
     }
-  }, [toolbar])
+  }, [modules])
 
   return (
     <div className={`react-quill-local ${className}`}>
