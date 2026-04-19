@@ -312,6 +312,27 @@ Ao concluir cada fase, o fechamento deve informar:
 - cadastrar o webhook no painel Asaas apontando para `/api/webhooks/asaas`;
 - se desejado, configurar `ASAAS_WEBHOOK_SECRET` no Asaas e na Vercel.
 
+## Preparação para Fase 13 - Pendências operacionais no admin
+
+**Status atual:** concluída nesta rodada.
+
+Antes de iniciar o envio externo real de notificações por e-mail, foi criada uma página administrativa para centralizar dependências externas que ainda bloqueiam funcionalidades prontas ou parcialmente prontas.
+
+Rota:
+
+```text
+/admin/pendencias
+```
+
+Itens iniciais monitorados:
+
+- envio externo de e-mails, dependente de SMTP e domínio final;
+- Asaas em produção, dependente da conta Asaas final e do token de produção;
+- validação Asaas sandbox, dependente de token sandbox e webhook de teste;
+- domínio final GenFlix, dependente de DNS e `APP_PUBLIC_URL`.
+
+Essa página deve ser atualizada sempre que uma nova funcionalidade ficar pendente por falta de credencial, DNS, token, conta externa, contrato ou informação operacional ainda não fornecida.
+
 ## Pendência transversal - Hardening de dependências
 
 O `npm audit --audit-level=moderate` foi zerado na Fase 11. A partir daqui, novas vulnerabilidades devem ser tratadas como manutenção contínua antes de cada publicação relevante.

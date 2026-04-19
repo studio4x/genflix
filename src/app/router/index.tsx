@@ -23,6 +23,7 @@ import { AdminCreatorPayoutsPage } from '@/pages/admin/admin-creator-payouts-pag
 import { AdminQuizTypesPage } from '@/pages/admin/admin-quiz-types-page'
 import { AdminNotificationsPage } from '@/pages/admin/admin-notifications-page'
 import { AdminReviewsPage } from '@/pages/admin/admin-reviews-page'
+import { AdminOperationalPendingPage } from '@/pages/admin/admin-operational-pending-page'
 import { ForgotPasswordPage } from '@/pages/public/forgot-password-page'
 import { AuthCallbackPage } from '@/pages/public/auth-callback-page'
 import { CookiesPage } from '@/pages/public/cookies-page'
@@ -358,6 +359,10 @@ export const appRouter = createBrowserRouter([
           {
             path: '/admin/tipos-quiz',
             element: <AdminQuizTypesPage />,
+          },
+          {
+            path: '/admin/pendencias',
+            element: <AdminOperationalPendingPage />,
           },
         ],
       },
