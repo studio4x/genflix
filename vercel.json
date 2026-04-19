@@ -17,7 +17,7 @@
     },
     {
       "path": "/api/admin/notifications?task=process_queue",
-      "schedule": "*/30 * * * *"
+      "schedule": "30 8 * * *"
     }
   ]
 }

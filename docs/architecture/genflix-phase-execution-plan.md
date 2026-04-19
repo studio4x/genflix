@@ -355,7 +355,7 @@ Essa página deve ser atualizada sempre que uma nova funcionalidade ficar penden
 - retentativas com backoff e falha final após 5 tentativas;
 - tratamento seguro de canais ainda sem provedor externo (`push` e `whatsapp`) como ignorados;
 - botão `Processar fila` na página admin de notificações;
-- cron Vercel para processar a fila automaticamente via `CRON_SECRET`;
+- cron Vercel diário para processar a fila automaticamente via `CRON_SECRET`, compatível com o plano Hobby;
 - pendência operacional de SMTP/domínio refletida em `/admin/pendencias`.
 
 **Pendente operacional fora de código:**
