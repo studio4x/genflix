@@ -333,7 +333,7 @@ await admin.messaging().send({
 ```typescript
 const emailPayload = {
   to: user.email,
-  from: 'noreply@homecarematch.com.br',
+  from: 'noreply@genflix.com.br',
   subject: 'Nova mensagem de João Silva',
   html: emailTemplate(title, body),
   trackingSettings: {
@@ -352,7 +352,7 @@ await sendgridClient.send(emailPayload);
 ```typescript
 const whatsappPayload = {
   to: `+55${userPhone}`,
-  from: 'homecarebot',
+  from: 'genflixbot',
   body: `${title}\n\n${body}\n\n${actionUrl}`,
   mediaUrl: null
 };
@@ -506,7 +506,7 @@ Message | User | Channel | Error | Retry
     
     <!-- Footer -->
     <div style="background: #f5f5f5; color: #666; font-size: 12px; padding: 20px; text-align: center; border-top: 1px solid #ddd;">
-      <p>HomeCare Match | <a href="/unsubscribe">Unsubscribe</a></p>
+      <p>GenFlix | <a href="/unsubscribe">Unsubscribe</a></p>
     </div>
   </div>
 </body>
@@ -579,3 +579,4 @@ Message | User | Channel | Error | Retry
 - **Data**: Abril 2026
 - **Versão**: 1.0
 - **Status**: ✅ Em Produção
+

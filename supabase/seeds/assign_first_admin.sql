@@ -6,5 +6,5 @@ insert into public.user_roles (user_id, role_id)
 select u.id, r.id
 from auth.users u
 join public.roles r on r.code = 'admin'
-where u.email = 'admin@homecarematch.com'
+where u.email = 'contato@studio4x.com.br'
 on conflict (user_id, role_id) do nothing;

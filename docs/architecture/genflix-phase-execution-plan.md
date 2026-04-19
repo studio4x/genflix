@@ -237,6 +237,33 @@ Ao concluir cada fase, o fechamento deve informar:
 - regra final de elegibilidade: apenas alunos com acesso ativo ao curso podem avaliar;
 - auto-moderação básica para spam, excesso de links, caixa alta e caracteres repetidos.
 
+## Fase 10 - Limpeza HomeCare/HCM residual
+
+**Status atual:** concluída nesta rodada.
+
+**Auditoria prévia:** fase parcial.
+
+**Já existia:**
+
+- menus principais e rotas públicas/admin da GenFlix sem exposição direta da integração antiga;
+- core LMS independente usando `course_releases`;
+- checkout Asaas usando os metadados genéricos de origem/liberação do curso.
+
+**Concluído nesta rodada:**
+
+- remover APIs legadas `api/integrations/hcm/*`;
+- remover Edge Function local `hcm-outbox-dispatch`;
+- remover telas e APIs administrativas legadas de integrações;
+- remover consultas ativas a `external_course_mappings`;
+- trocar prefixos visíveis `HCM-` em licenças/PDF por prefixo GenFlix;
+- criar e aplicar migration de cleanup para tabelas, triggers, funções e cron específicos da integração antiga;
+- confirmar que a função remota `hcm-outbox-dispatch` não existe mais no projeto Supabase da GenFlix.
+
+## Pendências operacionais assumidas para as próximas fases
+
+- Asaas produção ainda não está configurado. A Fase 12 deverá concluir a estrutura e validação em sandbox, mantendo produção como pendência operacional até a conta/credenciais definitivas estarem prontas.
+- SMTP/domínio final ainda não está contratado/configurado. A Fase 13 deverá concluir a estrutura técnica de fila/templates/processamento, mantendo o envio real em produção como pendência operacional até a contratação/configuração final.
+
 ## Pendência transversal - Hardening de dependências
 
 O `npm audit --audit-level=moderate` ainda acusa vulnerabilidades moderadas e altas. Esta pendência deve virar uma fase técnica própria antes de considerar a plataforma pronta para operação comercial estável.

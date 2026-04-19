@@ -255,17 +255,6 @@ export interface Course {
   updated_at: string
 }
 
-export interface ExternalCourseMapping {
-  id: string
-  course_id: string
-  source_system: string
-  external_course_id: string
-  external_reference_id: string | null
-  is_active: boolean
-  created_at: string
-  updated_at: string
-}
-
 export interface CourseModule {
   id: string
   course_id: string

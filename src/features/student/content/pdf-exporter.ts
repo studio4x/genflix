@@ -461,7 +461,7 @@ async function fetchLicenseContext(): Promise<LicenseContext> {
       studentDisplayName: 'Aluno',
       studentEmail: 'email-nao-informado',
       userCode: 'USUARIO',
-      releaseCode: `HCM-${crypto.randomUUID().replaceAll('-', '').slice(0, 12).toUpperCase()}`,
+      releaseCode: `GFX-${crypto.randomUUID().replaceAll('-', '').slice(0, 12).toUpperCase()}`,
     }
   }
 
@@ -482,7 +482,7 @@ async function fetchLicenseContext(): Promise<LicenseContext> {
     studentDisplayName: getDisplayName(profile?.full_name, profile?.email ?? user.email ?? null),
     studentEmail: profile?.email ?? user.email ?? 'email-nao-informado',
     userCode,
-    releaseCode: `HCM-${userCode}-${crypto.randomUUID().replaceAll('-', '').slice(0, 10).toUpperCase()}`,
+    releaseCode: `GFX-${userCode}-${crypto.randomUUID().replaceAll('-', '').slice(0, 10).toUpperCase()}`,
   }
 }
 

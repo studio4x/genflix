@@ -10,7 +10,6 @@ import type {
   Course,
   CourseQuizTypeSettings,
   CourseModule,
-  ExternalCourseMapping,
   Lesson,
   LessonFooterAction,
   LessonMaterial,
@@ -175,92 +174,6 @@ export async function updateCourse(courseId: string, input: CourseFormInput) {
     throw result.error
   }
   return result.data as Course
-}
-
-export async function fetchCourseExternalMapping(
-  courseId: string,
-  sourceSystem = 'genflix',
-) {
-  const result = await supabase
-    .from('external_course_mappings')
-    .select('*')
-    .eq('course_id', courseId)
-    .eq('source_system', sourceSystem)
-    .maybeSingle()
-
-  if (result.error) {
-    throw result.error
-  }
-
-  return (result.data as ExternalCourseMapping | null) ?? null
-}
-
-export async function upsertCourseExternalMapping(
-  courseId: string,
-  externalCourseId: string,
-  sourceSystem = 'genflix',
-) {
-  const trimmedExternalCourseId = externalCourseId.trim()
-
-  if (!trimmedExternalCourseId) {
-    const deleteResult = await supabase
-      .from('external_course_mappings')
-      .delete()
-      .eq('course_id', courseId)
-      .eq('source_system', sourceSystem)
-
-    if (deleteResult.error) {
-      throw deleteResult.error
-    }
-
-    return null
-  }
-
-  const existingResult = await supabase
-    .from('external_course_mappings')
-    .select('id')
-    .eq('course_id', courseId)
-    .eq('source_system', sourceSystem)
-    .maybeSingle()
-
-  if (existingResult.error) {
-    throw existingResult.error
-  }
-
-  if (existingResult.data?.id) {
-    const updateResult = await supabase
-      .from('external_course_mappings')
-      .update({
-        external_course_id: trimmedExternalCourseId,
-        is_active: true,
-      })
-      .eq('id', existingResult.data.id)
-      .select('*')
-      .single()
-
-    if (updateResult.error) {
-      throw updateResult.error
-    }
-
-    return updateResult.data as ExternalCourseMapping
-  }
-
-  const insertResult = await supabase
-    .from('external_course_mappings')
-    .insert({
-      course_id: courseId,
-      source_system: sourceSystem,
-      external_course_id: trimmedExternalCourseId,
-      is_active: true,
-    })
-    .select('*')
-    .single()
-
-  if (insertResult.error) {
-    throw insertResult.error
-  }
-
-  return insertResult.data as ExternalCourseMapping
 }
 
 export interface ResetCourseProgressResult {
