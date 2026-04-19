@@ -9,10 +9,19 @@ import {
   genflixCommunityItems,
   genflixNavLinks,
 } from '@/features/public/genflix-site-content'
+import { EditableList, EditableText, useEditableValue } from '@/features/site-editor/visual-editor'
 
 export function PublicCommunityPage() {
   const { isLoading, user, roles } = useAuth()
   const waitingRoleResolution = !!user && roles.length === 0
+  const communityItems = useEditableValue(
+    'community.items',
+    genflixCommunityItems.map((item) => ({
+      id: item.label,
+      label: item.label,
+      description: item.description,
+    })),
+  )
 
   if (isLoading || waitingRoleResolution) {
     return (
@@ -34,21 +43,30 @@ export function PublicCommunityPage() {
         <div className="mx-auto max-w-[1320px] px-6 lg:px-10">
           <div className="mx-auto max-w-[760px] text-center">
             <h1 className="text-[2.35rem] font-extrabold leading-[0.96] tracking-[-0.05em] text-[#183139] sm:text-[2.8rem]">
-              Tire dúvidas, troque experiências e aprofunde o que aprendeu.
+              <EditableText
+                entryKey="community.hero.title"
+                fallback="Tire dúvidas, troque experiências e aprofunde o que aprendeu."
+                label="Título da comunidade"
+              />
             </h1>
             <p className="mx-auto mt-4 max-w-[720px] text-base leading-7 text-[#61737a]">
-              Escolha sua comunidade, entre na conversa e leve o aprendizado além da tela. Aqui as dúvidas viram debate
-              e o debate vira conhecimento.
+              <EditableText
+                entryKey="community.hero.description"
+                fallback="Escolha sua comunidade, entre na conversa e leve o aprendizado além da tela. Aqui as dúvidas viram debate e o debate vira conhecimento."
+                label="Descrição da comunidade"
+              />
             </p>
           </div>
 
           <div className="mt-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
-            {genflixCommunityItems.map((item) => {
-              const Icon = item.icon
+            <EditableList entryKey="community.items" fallback={communityItems} label="Comunidades">
+              {(items) => items.map((item) => {
+              const fallback = genflixCommunityItems.find((community) => community.label === item.label) ?? genflixCommunityItems[0]
+              const Icon = fallback.icon
 
               return (
                 <article
-                  key={item.label}
+                  key={item.id}
                   className="group rounded-[14px] bg-[linear-gradient(180deg,#1398B7_0%,#0A3640_100%)] px-4 py-4 text-white shadow-[0_10px_20px_rgba(10,54,64,0.18)] transition-transform duration-300 hover:-translate-y-1"
                 >
                   <div className="flex h-9 w-9 items-center justify-center rounded-full border border-white/24 bg-white/10">
@@ -58,6 +76,7 @@ export function PublicCommunityPage() {
                 </article>
               )
             })}
+            </EditableList>
           </div>
         </div>
       </section>
@@ -84,17 +103,21 @@ export function PublicCommunityPage() {
             <div className="flex items-center">
               <div className="max-w-[460px]">
                 <h2 className="text-[1.9rem] font-bold tracking-[-0.04em] text-[#183139] sm:text-[2.1rem]">
-                  Texto de apoio
+                  <EditableText entryKey="community.support.title" fallback="Texto de apoio" label="Título do texto de apoio" />
                 </h2>
                 <p className="mt-4 text-[15px] leading-8 text-[#5f7178]">
-                  Oferecer a profissionais e estudantes universitários conteúdos modernos, objetivos e práticos, a
-                  preços justos, para que a compreensão aconteça de verdade. Nas comunidades da GenFlix, esse
-                  conhecimento ganha continuidade em conversas, trocas e repertório compartilhado.
+                  <EditableText
+                    entryKey="community.support.paragraph1"
+                    fallback="Oferecer a profissionais e estudantes universitários conteúdos modernos, objetivos e práticos, a preços justos, para que a compreensão aconteça de verdade. Nas comunidades da GenFlix, esse conhecimento ganha continuidade em conversas, trocas e repertório compartilhado."
+                    label="Texto de apoio 1"
+                  />
                 </p>
                 <p className="mt-4 text-[15px] leading-8 text-[#5f7178]">
-                  O espaço foi pensado para aproximar quem aprende, estimular o debate e transformar dúvidas em avanço
-                  concreto. Cada área reúne temas, experiências e perspectivas que ajudam a estender o estudo para além
-                  da aula.
+                  <EditableText
+                    entryKey="community.support.paragraph2"
+                    fallback="O espaço foi pensado para aproximar quem aprende, estimular o debate e transformar dúvidas em avanço concreto. Cada área reúne temas, experiências e perspectivas que ajudam a estender o estudo para além da aula."
+                    label="Texto de apoio 2"
+                  />
                 </p>
 
                 <div className="mt-8">
@@ -102,7 +125,7 @@ export function PublicCommunityPage() {
                     to="/login"
                     className="inline-flex items-center justify-center rounded-full bg-[#1398B7] px-5 py-3 font-readex text-sm font-medium text-white shadow-[0_12px_30px_rgba(19,152,183,0.24)] transition-colors hover:bg-[#0A3640]"
                   >
-                    Entrar para participar
+                    <EditableText entryKey="community.support.cta" fallback="Entrar para participar" label="CTA da comunidade" />
                   </Link>
                 </div>
               </div>

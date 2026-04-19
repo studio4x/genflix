@@ -2,6 +2,7 @@ import { type FormEvent, useState } from 'react'
 import { ArrowRight } from 'lucide-react'
 
 import { genflixNewsletterImage } from '@/features/public/genflix-site-content'
+import { EditableText, useEditableValue } from '@/features/site-editor/visual-editor'
 
 export function GenflixNewsletterSection({
   id = 'newsletter',
@@ -11,6 +12,8 @@ export function GenflixNewsletterSection({
   const [newsletterEmail, setNewsletterEmail] = useState('')
   const [message, setMessage] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const image = useEditableValue('global.newsletter.image', { src: genflixNewsletterImage, alt: 'Newsletter GenFlix' }, { pageKey: 'global' })
+  const placeholder = useEditableValue('global.newsletter.placeholder', 'Seu@e-mail.com', { pageKey: 'global' })
 
   async function handleNewsletterSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -48,15 +51,25 @@ export function GenflixNewsletterSection({
       <div className="mx-auto max-w-[1440px] px-4 lg:px-6">
         <div
           className="overflow-hidden rounded-t-[30px] bg-cover bg-center"
-          style={{ backgroundImage: `linear-gradient(180deg, rgba(14,31,37,0.72) 0%, rgba(14,31,37,0.84) 100%), url(${genflixNewsletterImage})` }}
+          style={{ backgroundImage: `linear-gradient(180deg, rgba(14,31,37,0.72) 0%, rgba(14,31,37,0.84) 100%), url(${typeof image.src === 'string' ? image.src : genflixNewsletterImage})` }}
         >
           <div className="flex min-h-[420px] items-center justify-center px-6 py-14 text-center sm:px-10">
             <div className="max-w-[720px]">
               <h2 className="mx-auto max-w-[440px] text-[2.2rem] font-extrabold leading-[1.02] tracking-[-0.05em] text-white sm:text-[2.8rem]">
-                Fique por dentro com nossa newsletter
+                <EditableText
+                  entryKey="global.newsletter.title"
+                  fallback="Fique por dentro com nossa newsletter"
+                  label="Título da newsletter"
+                  pageKey="global"
+                />
               </h2>
               <p className="mx-auto mt-4 max-w-[620px] text-base leading-7 text-white/78">
-                Cadastre-se para receber atualizações sobre nossos cursos e conteúdo.
+                <EditableText
+                  entryKey="global.newsletter.description"
+                  fallback="Cadastre-se para receber atualizações sobre nossos cursos e conteúdo."
+                  label="Descrição da newsletter"
+                  pageKey="global"
+                />
               </p>
 
               <form
@@ -69,7 +82,7 @@ export function GenflixNewsletterSection({
                     value={newsletterEmail}
                     onChange={(event) => setNewsletterEmail(event.target.value)}
                     required
-                    placeholder="Seu@e-mail.com"
+                    placeholder={placeholder}
                     className="w-full border-0 bg-transparent text-sm font-medium text-[#183139] outline-none placeholder:text-[#8ba0a7]"
                   />
                 </div>
@@ -78,7 +91,14 @@ export function GenflixNewsletterSection({
                   disabled={isSubmitting}
                   className="inline-flex min-h-[54px] items-center justify-center gap-2 rounded-[16px] bg-[#1398B7] px-6 font-readex text-sm font-medium text-white shadow-[0_14px_30px_rgba(19,152,183,0.3)] transition-colors hover:bg-[#0A3640]"
                 >
-                  {isSubmitting ? 'Enviando...' : 'Quero me inscrever'}
+                  {isSubmitting ? 'Enviando...' : (
+                    <EditableText
+                      entryKey="global.newsletter.button.label"
+                      fallback="Quero me inscrever"
+                      label="Botão da newsletter"
+                      pageKey="global"
+                    />
+                  )}
                   <ArrowRight className="h-4 w-4" />
                 </button>
               </form>

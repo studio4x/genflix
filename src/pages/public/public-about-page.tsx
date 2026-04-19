@@ -4,6 +4,7 @@ import { GenflixNewsletterSection } from '@/components/public/genflix-newsletter
 import { GenflixPublicFooter } from '@/components/public/genflix-public-footer'
 import { GenflixPublicHeader } from '@/components/public/genflix-public-header'
 import { genflixNavLinks } from '@/features/public/genflix-site-content'
+import { EditableList, EditableText, useEditableValue } from '@/features/site-editor/visual-editor'
 
 const aboutParagraphs = [
   'Há quem prefira abrir o livro, sublinhar, fazer anotações e avançar página por página. Há também quem se envolva mais com vídeos, aulas curtas e recursos interativos.',
@@ -19,6 +20,13 @@ const aboutParagraphs = [
 export function PublicAboutPage() {
   const { isLoading, user, roles } = useAuth()
   const waitingRoleResolution = !!user && roles.length === 0
+  const editableParagraphs = useEditableValue(
+    'about.paragraphs',
+    aboutParagraphs.map((paragraph, index) => ({
+      id: `paragraph-${index + 1}`,
+      description: paragraph,
+    })),
+  )
 
   if (isLoading || waitingRoleResolution) {
     return (
@@ -40,10 +48,14 @@ export function PublicAboutPage() {
         <div className="mx-auto max-w-[1320px] px-6 lg:px-10">
           <div className="rounded-[30px] bg-[#F2F7F9] px-8 py-14 text-center shadow-[0_20px_44px_rgba(21,50,59,0.04)] sm:px-12">
             <h1 className="text-[2.65rem] font-extrabold leading-[0.94] tracking-[-0.05em] text-[#183139] sm:text-[3rem]">
-              GenFlix
+              <EditableText entryKey="about.hero.title" fallback="GenFlix" label="Título da página Sobre" />
             </h1>
             <p className="mt-4 text-base font-medium text-[#1398B7]">
-              Porque aprender e ensinar não precisa ser complicado.
+              <EditableText
+                entryKey="about.hero.subtitle"
+                fallback="Porque aprender e ensinar não precisa ser complicado."
+                label="Subtítulo da página Sobre"
+              />
             </p>
           </div>
         </div>
@@ -53,9 +65,11 @@ export function PublicAboutPage() {
         <div className="mx-auto max-w-[1320px] px-6 lg:px-10">
           <div className="rounded-[28px] border border-[#D8E6EB] bg-white px-8 py-10 shadow-[0_18px_42px_rgba(21,50,59,0.03)] sm:px-10 lg:px-12">
             <div className="mx-auto max-w-[960px] space-y-5 border-t border-[#BEE3EA] pt-10 text-[15px] leading-8 text-[#4f666d]">
-              {aboutParagraphs.map((paragraph) => (
-                <p key={paragraph}>{paragraph}</p>
-              ))}
+              <EditableList entryKey="about.paragraphs" fallback={editableParagraphs} label="Parágrafos da página Sobre">
+                {(items) => items.map((item) => (
+                  <p key={item.id}>{item.description}</p>
+                ))}
+              </EditableList>
             </div>
           </div>
         </div>
@@ -72,15 +86,21 @@ export function PublicAboutPage() {
 
             <div className="max-w-[520px]">
               <h2 className="text-[2rem] font-bold tracking-[-0.04em] text-[#183139] sm:text-[2.2rem]">
-                Nossa missão
+                <EditableText entryKey="about.mission.title" fallback="Nossa missão" label="Título da missão" />
               </h2>
               <p className="mt-4 text-[15px] leading-8 text-[#5f7178]">
-                Oferecer a estudantes universitários, concurseiros e profissionais conteúdos modernos, objetivos,
-                práticos, de qualidade e a preços adequados, com materiais que proporcionem compreensão rápida e
-                efetiva daquilo que os usuários desejam aprender.
+                <EditableText
+                  entryKey="about.mission.description"
+                  fallback="Oferecer a estudantes universitários, concurseiros e profissionais conteúdos modernos, objetivos, práticos, de qualidade e a preços adequados, com materiais que proporcionem compreensão rápida e efetiva daquilo que os usuários desejam aprender."
+                  label="Descrição da missão"
+                />
               </p>
               <p className="mt-5 text-sm font-semibold text-[#1398B7]">
-                Porque aprender e ensinar não precisa ser complicado.
+                <EditableText
+                  entryKey="about.mission.tagline"
+                  fallback="Porque aprender e ensinar não precisa ser complicado."
+                  label="Frase final da missão"
+                />
               </p>
               <div className="mt-7 h-px w-full max-w-[260px] bg-[#8FCAD8]" />
             </div>

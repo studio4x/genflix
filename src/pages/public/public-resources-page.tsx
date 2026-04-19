@@ -11,6 +11,7 @@ import {
   genflixResourceItems,
   type GenflixResourceItem,
 } from '@/features/public/genflix-site-content'
+import { EditableList, EditableText, useEditableValue } from '@/features/site-editor/visual-editor'
 
 interface ResourcePopupContent {
   title: string
@@ -135,7 +136,11 @@ function ResourcePopup({
   onClose: () => void
 }) {
   const Icon = item.icon
-  const content = resourcePopupContents[item.label] ?? buildFallbackPopupContent(item)
+  const fallbackContent = resourcePopupContents[item.label] ?? buildFallbackPopupContent(item)
+  const content = useEditableValue(
+    `resources.popup.${item.label}`,
+    fallbackContent as unknown as Record<string, unknown>,
+  ) as unknown as ResourcePopupContent
 
   return (
     <div
@@ -228,9 +233,29 @@ export function PublicResourcesPage() {
   const { isLoading, user, roles } = useAuth()
   const [selectedResourceLabel, setSelectedResourceLabel] = useState<string | null>(null)
   const waitingRoleResolution = !!user && roles.length === 0
+  const resourceItems = useEditableValue(
+    'resources.items',
+    genflixResourceItems.map((item) => ({
+      id: item.label,
+      label: item.label,
+      description: item.description,
+    })),
+  )
   const selectedResource = useMemo(
-    () => genflixResourceItems.find((item) => item.label === selectedResourceLabel) ?? null,
-    [selectedResourceLabel],
+    () => {
+      if (!selectedResourceLabel) return null
+      const original = genflixResourceItems.find((item) => item.label === selectedResourceLabel)
+      if (original) return original
+      const custom = resourceItems.find((item) => item.label === selectedResourceLabel)
+      return custom
+        ? {
+            label: custom.label ?? selectedResourceLabel,
+            description: custom.description ?? '',
+            icon: genflixResourceItems[0].icon,
+          }
+        : null
+    },
+    [resourceItems, selectedResourceLabel],
   )
 
   useEffect(() => {
@@ -274,22 +299,28 @@ export function PublicResourcesPage() {
         <div className="mx-auto max-w-[1320px] px-6 lg:px-10">
           <div className="mx-auto max-w-[680px] text-center">
             <h1 className="text-[2.35rem] font-extrabold leading-[0.96] tracking-[-0.05em] text-[#183139] sm:text-[2.8rem]">
-              Muito além do vídeo
+              <EditableText entryKey="resources.title" fallback="Muito além do vídeo" label="Título de recursos" />
             </h1>
             <p className="mx-auto mt-4 max-w-[560px] text-base leading-7 text-[#61737a]">
-              Ferramentas pensadas para você aprender, fixar e revisar do seu jeito.
+              <EditableText
+                entryKey="resources.description"
+                fallback="Ferramentas pensadas para você aprender, fixar e revisar do seu jeito."
+                label="Descrição de recursos"
+              />
             </p>
           </div>
 
           <div className="mt-12 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {genflixResourceItems.map((item) => {
-              const Icon = item.icon
+            <EditableList entryKey="resources.items" fallback={resourceItems} label="Cards de recursos">
+              {(items) => items.map((item) => {
+              const fallback = genflixResourceItems.find((resource) => resource.label === item.label) ?? genflixResourceItems[0]
+              const Icon = fallback.icon
 
               return (
                 <button
                   type="button"
                   key={item.label}
-                  onClick={() => setSelectedResourceLabel(item.label)}
+                  onClick={() => setSelectedResourceLabel(item.label ?? null)}
                   className="group rounded-[18px] border border-[#D8E6EB] bg-[#F2F7F9] px-5 py-5 text-left shadow-[0_16px_36px_rgba(21,50,59,0.04)] transition-transform duration-300 hover:-translate-y-1 hover:shadow-[0_20px_42px_rgba(19,152,183,0.12)] focus:outline-none focus:ring-4 focus:ring-[#1398B7]/18"
                 >
                   <div className="flex items-start justify-between gap-4">
@@ -306,6 +337,7 @@ export function PublicResourcesPage() {
                 </button>
               )
             })}
+            </EditableList>
           </div>
 
           <div className="mt-12 flex justify-center">
@@ -313,7 +345,7 @@ export function PublicResourcesPage() {
               to="/login"
               className="inline-flex items-center justify-center rounded-full bg-[#1398B7] px-5 py-3 font-readex text-sm font-medium text-white shadow-[0_12px_30px_rgba(19,152,183,0.24)] transition-colors hover:bg-[#0A3640]"
             >
-              Entrar para explorar tudo
+              <EditableText entryKey="resources.cta" fallback="Entrar para explorar tudo" label="CTA de recursos" />
             </Link>
           </div>
         </div>

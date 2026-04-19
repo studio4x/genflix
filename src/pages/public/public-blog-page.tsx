@@ -14,6 +14,7 @@ import {
   type GenflixBlogPost,
 } from '@/features/public/genflix-site-content'
 import { fetchPublicBlogPostsFromSupabase } from '@/features/public/genflix-public-content-api'
+import { EditableText, useEditableValue } from '@/features/site-editor/visual-editor'
 import { cn } from '@/lib/utils'
 
 const POSTS_PER_PAGE = 6
@@ -25,6 +26,7 @@ export function PublicBlogPage() {
   const [selectedFilter, setSelectedFilter] = useState<(typeof genflixBlogFilters)[number]>('Todos')
   const [currentPage, setCurrentPage] = useState(1)
   const [posts, setPosts] = useState<GenflixBlogPost[]>(genflixBlogPosts)
+  const searchPlaceholder = useEditableValue('blog.search.placeholder', 'Buscar curso, área ou instrutor...')
 
   useEffect(() => {
     let isMounted = true
@@ -98,10 +100,18 @@ export function PublicBlogPage() {
         <div className="mx-auto max-w-[1320px] px-6 lg:px-10">
           <div className="rounded-[28px] bg-[#F2F7F9] px-6 py-12 text-center shadow-[0_18px_40px_rgba(21,50,59,0.04)] sm:px-10">
             <h1 className="mx-auto max-w-[640px] text-[2.35rem] font-extrabold leading-[0.96] tracking-[-0.05em] text-[#183139] sm:text-[2.8rem]">
-              Conteúdo feito por quem ensina, para quem quer ir além.
+              <EditableText
+                entryKey="blog.hero.title"
+                fallback="Conteúdo feito por quem ensina, para quem quer ir além."
+                label="Título do blog"
+              />
             </h1>
             <p className="mx-auto mt-4 max-w-[620px] text-base leading-7 text-[#61737a]">
-              Textos para quem aprende com curiosidade: dicas, reflexões e novidades das áreas que você estuda.
+              <EditableText
+                entryKey="blog.hero.description"
+                fallback="Textos para quem aprende com curiosidade: dicas, reflexões e novidades das áreas que você estuda."
+                label="Descrição do blog"
+              />
             </p>
 
             <div className="mx-auto mt-8 max-w-[560px]">
@@ -113,7 +123,7 @@ export function PublicBlogPage() {
                     setQuery(event.target.value)
                     setCurrentPage(1)
                   }}
-                  placeholder="Buscar curso, área ou instrutor..."
+                  placeholder={searchPlaceholder}
                   className="h-14 w-full rounded-full border border-[#BEE3EA] bg-white pl-12 pr-5 text-sm text-[#183139] shadow-sm outline-none transition-colors placeholder:text-[#96a8ae] focus:border-[#1398B7]"
                 />
               </div>
@@ -158,7 +168,7 @@ export function PublicBlogPage() {
                   to={`/blog/${featuredPost.slug}`}
                   className="inline-flex items-center gap-2 rounded-full bg-[#1398B7] px-4 py-2 font-readex text-sm font-medium text-white shadow-[0_10px_24px_rgba(19,152,183,0.24)] transition-colors hover:bg-[#0A3640]"
                 >
-                  Ler artigo
+                  <EditableText entryKey="blog.featured.cta" fallback="Ler artigo" label="CTA do artigo destacado" />
                   <ArrowRight className="h-4 w-4" />
                 </Link>
               </div>
@@ -226,7 +236,13 @@ export function PublicBlogPage() {
           {paginatedPosts.length === 0 ? (
             <div className="mt-10 rounded-[24px] border border-dashed border-[#D8E6EB] bg-[#F2F7F9] px-6 py-12 text-center">
               <p className="text-lg font-bold text-[#183139]">Nenhum artigo encontrado com esse filtro.</p>
-              <p className="mt-3 text-sm text-[#6d7f85]">Tente outra palavra-chave ou escolha uma categoria diferente.</p>
+              <p className="mt-3 text-sm text-[#6d7f85]">
+                <EditableText
+                  entryKey="blog.empty.description"
+                  fallback="Tente outra palavra-chave ou escolha uma categoria diferente."
+                  label="Mensagem sem artigos"
+                />
+              </p>
             </div>
           ) : null}
 

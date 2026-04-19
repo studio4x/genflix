@@ -5,6 +5,7 @@ import { useAuth } from '@/app/providers/auth-provider'
 import { GenflixPublicFooter } from '@/components/public/genflix-public-footer'
 import { GenflixPublicHeader } from '@/components/public/genflix-public-header'
 import { genflixNavLinks } from '@/features/public/genflix-site-content'
+import { EditableText, useEditableValue } from '@/features/site-editor/visual-editor'
 
 export function PublicContactPage() {
   const { isLoading, user, roles } = useAuth()
@@ -14,6 +15,9 @@ export function PublicContactPage() {
   const [message, setMessage] = useState('')
   const [feedback, setFeedback] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const namePlaceholder = useEditableValue('contact.form.name.placeholder', 'Seu nome')
+  const emailPlaceholder = useEditableValue('contact.form.email.placeholder', 'Seu@e-mail.com')
+  const messagePlaceholder = useEditableValue('contact.form.message.placeholder', 'Escreva sua mensagem')
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -98,16 +102,20 @@ export function PublicContactPage() {
             <div className="flex items-center px-6 py-12 sm:px-10 lg:px-12">
               <div className="w-full max-w-[420px]">
                 <h1 className="text-[2.45rem] font-extrabold leading-[0.95] tracking-[-0.05em] text-[#183139] sm:text-[3rem]">
-                  Fale com a gente.
+                  <EditableText entryKey="contact.title" fallback="Fale com a gente." label="Título de contato" />
                 </h1>
                 <p className="mt-4 text-base leading-7 text-[#5f7178]">
-                  Dúvidas, sugestões ou suporte — estamos aqui.
+                  <EditableText
+                    entryKey="contact.description"
+                    fallback="Dúvidas, sugestões ou suporte — estamos aqui."
+                    label="Descrição de contato"
+                  />
                 </p>
 
                 <form onSubmit={handleSubmit} className="mt-8 space-y-5">
                   <div>
                     <label htmlFor="contact-name" className="mb-2 block text-sm font-medium text-[#4f656c]">
-                      Nome completo:
+                      <EditableText entryKey="contact.form.name.label" fallback="Nome completo:" label="Rótulo do nome" />
                     </label>
                     <input
                       id="contact-name"
@@ -115,14 +123,14 @@ export function PublicContactPage() {
                       value={name}
                       onChange={(event) => setName(event.target.value)}
                       required
-                      placeholder="Seu nome"
+                      placeholder={namePlaceholder}
                       className="h-12 w-full rounded-[12px] border border-[#D8E6EB] bg-[#EDF4F6] px-4 text-sm text-[#183139] outline-none transition-colors placeholder:text-[#9babb0] focus:border-[#1398B7] focus:bg-white"
                     />
                   </div>
 
                   <div>
                     <label htmlFor="contact-email" className="mb-2 block text-sm font-medium text-[#4f656c]">
-                      E-mail:
+                      <EditableText entryKey="contact.form.email.label" fallback="E-mail:" label="Rótulo do e-mail" />
                     </label>
                     <input
                       id="contact-email"
@@ -130,14 +138,14 @@ export function PublicContactPage() {
                       value={email}
                       onChange={(event) => setEmail(event.target.value)}
                       required
-                      placeholder="Seu@e-mail.com"
+                      placeholder={emailPlaceholder}
                       className="h-12 w-full rounded-[12px] border border-[#D8E6EB] bg-[#EDF4F6] px-4 text-sm text-[#183139] outline-none transition-colors placeholder:text-[#9babb0] focus:border-[#1398B7] focus:bg-white"
                     />
                   </div>
 
                   <div>
                     <label htmlFor="contact-message" className="mb-2 block text-sm font-medium text-[#4f656c]">
-                      Assunto:
+                      <EditableText entryKey="contact.form.message.label" fallback="Assunto:" label="Rótulo do assunto" />
                     </label>
                     <textarea
                       id="contact-message"
@@ -145,7 +153,7 @@ export function PublicContactPage() {
                       onChange={(event) => setMessage(event.target.value)}
                       required
                       rows={5}
-                      placeholder="Escreva sua mensagem"
+                      placeholder={messagePlaceholder}
                       className="w-full rounded-[16px] border border-[#D8E6EB] bg-[#EDF4F6] px-4 py-3 text-sm text-[#183139] outline-none transition-colors placeholder:text-[#9babb0] focus:border-[#1398B7] focus:bg-white"
                     />
                   </div>
@@ -155,7 +163,7 @@ export function PublicContactPage() {
                     disabled={isSubmitting}
                     className="inline-flex items-center gap-2 rounded-full bg-[#1398B7] px-5 py-3 font-readex text-sm font-medium text-white shadow-[0_12px_30px_rgba(19,152,183,0.28)] transition-colors hover:bg-[#0A3640] disabled:cursor-not-allowed disabled:opacity-70"
                   >
-                    {isSubmitting ? 'Enviando...' : 'Enviar'}
+                    {isSubmitting ? 'Enviando...' : <EditableText entryKey="contact.form.submit" fallback="Enviar" label="Botão de envio" />}
                     <ArrowRight className="h-4 w-4" />
                   </button>
                   {feedback ? <p className="text-sm font-semibold text-[#5f7178]">{feedback}</p> : null}

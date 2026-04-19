@@ -15,6 +15,7 @@ import {
   type GenflixCourseItem,
 } from '@/features/public/genflix-site-content'
 import { fetchPublicCoursesFromSupabase } from '@/features/public/genflix-public-content-api'
+import { EditableText, useEditableValue } from '@/features/site-editor/visual-editor'
 import { cn } from '@/lib/utils'
 
 const COURSES_PER_PAGE = 6
@@ -26,6 +27,7 @@ export function PublicCoursesPage() {
   const [selectedFilter, setSelectedFilter] = useState<(typeof genflixCatalogFilters)[number]>('Todos')
   const [currentPage, setCurrentPage] = useState(1)
   const [courses, setCourses] = useState<GenflixCourseItem[]>(genflixCatalogCourses)
+  const searchPlaceholder = useEditableValue('courses.search.placeholder', 'Buscar curso, área ou instrutor...')
 
   useEffect(() => {
     let isMounted = true
@@ -102,7 +104,11 @@ export function PublicCoursesPage() {
         <div className="mx-auto max-w-[1440px] px-4 lg:px-6">
           <div className="rounded-[28px] bg-[#F2F7F9] px-6 py-12 text-center shadow-[0_18px_40px_rgba(21,50,59,0.04)] sm:px-10">
             <h1 className="mx-auto max-w-[520px] text-[2.45rem] font-extrabold leading-[0.94] tracking-[-0.05em] text-[#183139] sm:text-[3rem]">
-              Encontre o curso que vai mudar sua vida
+              <EditableText
+                entryKey="courses.hero.title"
+                fallback="Encontre o curso que vai mudar sua vida"
+                label="Título do catálogo"
+              />
             </h1>
 
             <div className="mx-auto mt-8 max-w-[1040px] space-y-4">
@@ -114,7 +120,7 @@ export function PublicCoursesPage() {
                     setQuery(event.target.value)
                     setCurrentPage(1)
                   }}
-                  placeholder="Buscar curso, área ou instrutor..."
+                  placeholder={searchPlaceholder}
                   className="h-14 w-full rounded-full border border-[#BEE3EA] bg-white pl-12 pr-5 text-sm text-[#183139] shadow-sm outline-none transition-colors placeholder:text-[#96a8ae] focus:border-[#1398B7]"
                 />
               </div>
@@ -155,7 +161,13 @@ export function PublicCoursesPage() {
           {filteredCourses.length === 0 ? (
             <div className="mt-10 rounded-[24px] border border-dashed border-[#D8E6EB] bg-[#F2F7F9] px-6 py-12 text-center">
               <p className="text-lg font-bold text-[#183139]">Nenhum curso encontrado com esse filtro.</p>
-              <p className="mt-3 text-sm text-[#6d7f85]">Tente outra palavra-chave ou escolha uma categoria diferente.</p>
+              <p className="mt-3 text-sm text-[#6d7f85]">
+                <EditableText
+                  entryKey="courses.empty.description"
+                  fallback="Tente outra palavra-chave ou escolha uma categoria diferente."
+                  label="Mensagem sem cursos"
+                />
+              </p>
             </div>
           ) : null}
 
@@ -201,10 +213,14 @@ export function PublicCoursesPage() {
         <div className="mx-auto max-w-[1320px] px-6 lg:px-10">
           <div className="mx-auto max-w-[620px] text-center">
             <h2 className="text-[2.1rem] font-bold tracking-[-0.04em] text-[#183139] sm:text-[2.35rem]">
-              Muito além do vídeo
+              <EditableText entryKey="courses.features.title" fallback="Muito além do vídeo" label="Título de recursos em cursos" />
             </h2>
             <p className="mt-3 text-base leading-7 text-[#6c7f85]">
-              Ferramentas pensadas para você aprender, fixar e revisar do seu jeito.
+              <EditableText
+                entryKey="courses.features.description"
+                fallback="Ferramentas pensadas para você aprender, fixar e revisar do seu jeito."
+                label="Descrição de recursos em cursos"
+              />
             </p>
           </div>
 
@@ -231,7 +247,7 @@ export function PublicCoursesPage() {
               to="/login"
               className="inline-flex items-center gap-2 rounded-full bg-[#1398B7] px-5 py-3 font-readex text-sm font-medium text-white shadow-[0_12px_30px_rgba(19,152,183,0.22)] transition-colors hover:bg-[#0A3640]"
             >
-              Ver todos os recursos
+              <EditableText entryKey="courses.features.cta" fallback="Ver todos os recursos" label="CTA de recursos em cursos" />
             </Link>
           </div>
         </div>

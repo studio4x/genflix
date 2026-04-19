@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom'
 import { GenflixPublicFooter } from '@/components/public/genflix-public-footer'
 import { GenflixPublicHeader } from '@/components/public/genflix-public-header'
 import { genflixNavLinks } from '@/features/public/genflix-site-content'
+import { EditableText } from '@/features/site-editor/visual-editor'
 
 interface PublicLegalPageShellProps {
   eyebrow: string
@@ -31,25 +32,25 @@ export function PublicLegalPageShell({
               <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
                 <div className="max-w-[760px]">
                   <p className="text-[11px] font-black uppercase tracking-[0.3em] text-[#1398B7]">
-                    {eyebrow}
+                    <EditableText entryKey={`legal.${title}.eyebrow`} fallback={eyebrow} label="Chamada da página legal" />
                   </p>
                   <h1 className="mt-4 text-[2.6rem] font-extrabold leading-[0.94] tracking-[-0.05em] text-[#183139] sm:text-[3.25rem]">
-                    {title}
+                    <EditableText entryKey={`legal.${title}.title`} fallback={title} label="Título da página legal" />
                   </h1>
                   <p className="mt-4 max-w-[640px] text-sm leading-7 text-[#66787f] sm:text-base">
-                    {summary}
+                    <EditableText entryKey={`legal.${title}.summary`} fallback={summary} label="Resumo da página legal" />
                   </p>
                 </div>
 
                 <div className="rounded-[22px] border border-[#D8E6EB] bg-white px-5 py-4 shadow-sm">
                   <p className="text-[11px] font-black uppercase tracking-[0.24em] text-[#97a6ab]">
-                    Atualizado em {updatedAt}
+                    Atualizado em <EditableText entryKey={`legal.${title}.updatedAt`} fallback={updatedAt} label="Data de atualização" />
                   </p>
                   <Link
                     className="mt-4 inline-flex items-center rounded-full border border-[#D8E6EB] bg-[#F2F7F9] px-4 py-2 text-xs font-black uppercase tracking-[0.2em] text-[#0A3640] transition-colors hover:border-[#1398B7] hover:text-[#1398B7]"
                     to="/login"
                   >
-                    Voltar ao login
+                    <EditableText entryKey={`legal.${title}.backLogin`} fallback="Voltar ao login" label="Botão voltar ao login" />
                   </Link>
                 </div>
               </div>

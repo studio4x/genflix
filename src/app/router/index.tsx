@@ -1,4 +1,5 @@
 import { Navigate, createBrowserRouter } from 'react-router-dom'
+import type { ReactNode } from 'react'
 
 import { AdminLayout } from '@/app/layouts/admin-layout'
 import { AdminCourseBuilderLayout } from '@/app/layouts/admin-course-builder-layout'
@@ -24,6 +25,7 @@ import { AdminQuizTypesPage } from '@/pages/admin/admin-quiz-types-page'
 import { AdminNotificationsPage } from '@/pages/admin/admin-notifications-page'
 import { AdminReviewsPage } from '@/pages/admin/admin-reviews-page'
 import { AdminOperationalPendingPage } from '@/pages/admin/admin-operational-pending-page'
+import { AdminSiteEditorPage } from '@/pages/admin/admin-site-editor-page'
 import { ForgotPasswordPage } from '@/pages/public/forgot-password-page'
 import { AuthCallbackPage } from '@/pages/public/auth-callback-page'
 import { CookiesPage } from '@/pages/public/cookies-page'
@@ -45,6 +47,8 @@ import { UnauthorizedPage } from '@/pages/public/unauthorized-page'
 import { MessagesPage } from '@/pages/shared/messages-page'
 import { MessagesRedirectPage } from '@/pages/shared/messages-redirect-page'
 import { NotificationPreferencesPage } from '@/pages/shared/notification-preferences-page'
+import { EditableControlsHint, SiteContentScope, VisualEditorProvider } from '@/features/site-editor/visual-editor'
+import type { SitePageKey } from '@/features/site-editor/types'
 import { StudentAssessmentExecutionPage } from '@/pages/student/student-assessment-execution-page'
 import { StudentCourseDetailsPage } from '@/pages/student/student-course-details-page'
 import { StudentCoursesPage } from '@/pages/student/student-courses-page'
@@ -61,42 +65,53 @@ import { CourseSettingsPanel } from '@/pages/admin/builder/course-settings-panel
 import { CourseAssessmentsPanel } from '@/pages/admin/builder/course-assessments-panel'
 import { AssessmentBuilderPanel } from '@/pages/admin/builder/assessment-builder-panel'
 
+function PublicEditableRoute({ pageKey, children }: { pageKey: SitePageKey; children: ReactNode }) {
+  return (
+    <VisualEditorProvider>
+      <SiteContentScope pageKey={pageKey}>
+        <EditableControlsHint />
+        {children}
+      </SiteContentScope>
+    </VisualEditorProvider>
+  )
+}
+
 export const appRouter = createBrowserRouter([
   {
     path: '/',
-    element: <PublicHomePage />,
+    element: <PublicEditableRoute pageKey="home"><PublicHomePage /></PublicEditableRoute>,
   },
   {
     path: '/cursos',
-    element: <PublicCoursesPage />,
+    element: <PublicEditableRoute pageKey="courses"><PublicCoursesPage /></PublicEditableRoute>,
   },
   {
     path: '/cursos/:slug',
-    element: <PublicCourseDetailsPage />,
+    element: <PublicEditableRoute pageKey="course-detail"><PublicCourseDetailsPage /></PublicEditableRoute>,
   },
   {
     path: '/sobre',
-    element: <PublicAboutPage />,
+    element: <PublicEditableRoute pageKey="about"><PublicAboutPage /></PublicEditableRoute>,
   },
   {
     path: '/blog',
-    element: <PublicBlogPage />,
+    element: <PublicEditableRoute pageKey="blog"><PublicBlogPage /></PublicEditableRoute>,
   },
   {
     path: '/blog/:slug',
-    element: <PublicBlogPostPage />,
+    element: <PublicEditableRoute pageKey="blog-post"><PublicBlogPostPage /></PublicEditableRoute>,
   },
   {
     path: '/contato',
-    element: <PublicContactPage />,
+    element: <PublicEditableRoute pageKey="contact"><PublicContactPage /></PublicEditableRoute>,
   },
   {
     path: '/comunidade',
-    element: <PublicCommunityPage />,
+    element: <PublicEditableRoute pageKey="community"><PublicCommunityPage /></PublicEditableRoute>,
   },
   {
     path: '/recursos',
-    element: <PublicResourcesPage />,
+    element: <PublicEditableRoute pageKey="resources"><PublicResourcesPage /></PublicEditableRoute>,
   },
   {
     path: '/login',
@@ -124,15 +139,15 @@ export const appRouter = createBrowserRouter([
   },
   {
     path: '/privacidade',
-    element: <PrivacyPage />,
+    element: <PublicEditableRoute pageKey="privacy"><PrivacyPage /></PublicEditableRoute>,
   },
   {
     path: '/cookies',
-    element: <CookiesPage />,
+    element: <PublicEditableRoute pageKey="cookies"><CookiesPage /></PublicEditableRoute>,
   },
   {
     path: '/termos-de-uso',
-    element: <TermsOfUsePage />,
+    element: <PublicEditableRoute pageKey="terms"><TermsOfUsePage /></PublicEditableRoute>,
   },
   {
     element: <ProtectedRoute allowedRoles={['student', 'aluno']} />,
@@ -363,6 +378,10 @@ export const appRouter = createBrowserRouter([
           {
             path: '/admin/pendencias',
             element: <AdminOperationalPendingPage />,
+          },
+          {
+            path: '/admin/site-editor',
+            element: <AdminSiteEditorPage />,
           },
         ],
       },
