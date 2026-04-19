@@ -284,6 +284,34 @@ Ao concluir cada fase, o fechamento deve informar:
 - atualização transitiva de pacotes vulneráveis como `vite`, `dompurify`, `hono`, `@hono/node-server`, `path-to-regexp`, `picomatch`, `yaml` e `brace-expansion`;
 - correção de warning local no editor rico.
 
+## Fase 12 - Validação operacional Asaas sandbox/produção
+
+**Status atual:** concluída tecnicamente nesta rodada.
+
+**Auditoria prévia:** fase parcial.
+
+**Já existia:**
+
+- checkout hospedado Asaas em `POST /api/checkout/asaas/start`;
+- webhook Asaas em `POST /api/webhooks/asaas`;
+- página `/admin/pagamentos` com ambiente, webhook, checklist, eventos e sessões recentes;
+- migrations remotas de pagamento, comissões e repasses aplicadas no Supabase da GenFlix;
+- cron Vercel para processar repasses de criadores via Asaas.
+
+**Concluído nesta rodada:**
+
+- confirmação de que o Supabase remoto (`axhlkilkqolvfecyhhxx`) está com todas as migrations locais aplicadas;
+- confirmação de que o ambiente Vercel atual ainda não possui variáveis `ASAAS_*`, mantendo a validação real de compra/PIX como pendência operacional;
+- melhoria do diagnóstico administrativo para validar separadamente token ativo, token sandbox, token produção, segredo do webhook e URL pública;
+- documentação atualizada em `course-module-spec.md` com o estado operacional do Asaas.
+
+**Pendente operacional fora de código:**
+
+- configurar `ASAAS_ACCESS_TOKEN_SANDBOX` para validar uma compra e um repasse de teste;
+- configurar `ASAAS_ACCESS_TOKEN_PRODUCTION` apenas quando a conta Asaas final estiver aprovada;
+- cadastrar o webhook no painel Asaas apontando para `/api/webhooks/asaas`;
+- se desejado, configurar `ASAAS_WEBHOOK_SECRET` no Asaas e na Vercel.
+
 ## Pendência transversal - Hardening de dependências
 
 O `npm audit --audit-level=moderate` foi zerado na Fase 11. A partir daqui, novas vulnerabilidades devem ser tratadas como manutenção contínua antes de cada publicação relevante.

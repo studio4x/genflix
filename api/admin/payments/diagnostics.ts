@@ -33,6 +33,14 @@ function jsonResponse(res: ApiResponse, statusCode: number, payload: unknown) {
   res.json(payload)
 }
 
+function hasEnvironmentToken(environment: 'sandbox' | 'production') {
+  if (environment === 'sandbox') {
+    return Boolean(process.env.ASAAS_ACCESS_TOKEN_SANDBOX ?? process.env.ASAAS_ACCESS_TOKEN)
+  }
+
+  return Boolean(process.env.ASAAS_ACCESS_TOKEN_PRODUCTION ?? process.env.ASAAS_ACCESS_TOKEN)
+}
+
 async function assertAdmin(req: ApiRequest, res: ApiResponse) {
   const supabaseUrl = process.env.SUPABASE_URL ?? process.env.VITE_SUPABASE_URL
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -113,8 +121,11 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
 
   try {
     const gatewayConfig = await fetchPaymentGatewayConfiguration(context.supabaseUrl, context.serviceRoleKey)
-    const asaasToken = getAsaasAccessToken(gatewayConfig.environment)
+    const activeEnvironment = gatewayConfig.environment ?? 'sandbox'
+    const asaasToken = getAsaasAccessToken(activeEnvironment)
     const webhookSecret = process.env.ASAAS_WEBHOOK_SECRET
+    const hasSandboxToken = hasEnvironmentToken('sandbox')
+    const hasProductionToken = hasEnvironmentToken('production')
 
     checks.push({
       key: 'gateway-settings',
@@ -122,17 +133,35 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
       status: gatewayConfig.is_active && gatewayConfig.gateway_code === 'asaas' ? 'ok' : 'error',
       detail:
         gatewayConfig.is_active && gatewayConfig.gateway_code === 'asaas'
-          ? `Asaas ativo em ${gatewayConfig.environment}.`
+          ? `Asaas ativo em ${activeEnvironment}.`
           : 'Gateway inativo ou diferente de Asaas.',
     })
 
     checks.push({
-      key: 'asaas-token',
-      label: `Token Asaas ${gatewayConfig.environment}`,
+      key: 'asaas-active-token',
+      label: `Token Asaas do ambiente ativo (${activeEnvironment})`,
       status: asaasToken ? 'ok' : 'error',
       detail: asaasToken
         ? 'Token encontrado no ambiente do deploy.'
-        : `Configure ASAAS_ACCESS_TOKEN_${gatewayConfig.environment.toUpperCase()} ou ASAAS_ACCESS_TOKEN.`,
+        : `Configure ASAAS_ACCESS_TOKEN_${activeEnvironment.toUpperCase()} ou ASAAS_ACCESS_TOKEN.`,
+    })
+
+    checks.push({
+      key: 'asaas-sandbox-token',
+      label: 'Token Asaas sandbox',
+      status: hasSandboxToken ? 'ok' : activeEnvironment === 'sandbox' ? 'error' : 'warning',
+      detail: hasSandboxToken
+        ? 'Credencial sandbox disponível para testes controlados.'
+        : 'Configure ASAAS_ACCESS_TOKEN_SANDBOX antes de validar compras e repasses em sandbox.',
+    })
+
+    checks.push({
+      key: 'asaas-production-token',
+      label: 'Token Asaas produção',
+      status: hasProductionToken ? 'ok' : activeEnvironment === 'production' ? 'error' : 'warning',
+      detail: hasProductionToken
+        ? 'Credencial de produção disponível para operação real.'
+        : 'Produção ainda pendente. Configure ASAAS_ACCESS_TOKEN_PRODUCTION quando a conta Asaas final estiver aprovada.',
     })
 
     checks.push({
@@ -144,8 +173,17 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
         : 'Webhook sem segredo dedicado. Funciona, mas recomenda-se configurar ASAAS_WEBHOOK_SECRET.',
     })
 
+    checks.push({
+      key: 'public-url',
+      label: 'URL pública do app',
+      status: process.env.APP_PUBLIC_URL || process.env.VERCEL_URL ? 'ok' : 'warning',
+      detail: process.env.APP_PUBLIC_URL
+        ? `APP_PUBLIC_URL configurada: ${process.env.APP_PUBLIC_URL}.`
+        : 'APP_PUBLIC_URL não configurada. O sistema usará a origem da requisição para montar callbacks e webhook.',
+    })
+
     jsonResponse(res, 200, {
-      environment: gatewayConfig.environment,
+      environment: activeEnvironment,
       checkedAt: new Date().toISOString(),
       checks,
     })

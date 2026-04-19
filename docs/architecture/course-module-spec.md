@@ -1268,8 +1268,17 @@ Diagnóstico:
 - carrega `payment_gateway_settings`;
 - verifica se o gateway ativo é `asaas`;
 - verifica se existe token Asaas para o ambiente atual;
+- verifica separadamente token sandbox e token produção;
 - verifica se `ASAAS_WEBHOOK_SECRET` está configurado;
+- verifica se existe URL pública (`APP_PUBLIC_URL` ou origem do deploy) para callbacks/webhook;
 - nunca retorna valores sensíveis, apenas status e instrução operacional.
+
+Estado operacional atual:
+
+- a estrutura técnica do gateway Asaas está pronta para sandbox e produção;
+- o banco remoto da GenFlix possui as migrations de pagamentos, checkout, webhook, comissões e repasses aplicadas;
+- produção Asaas depende de credenciais definitivas do cliente e deve permanecer como pendência operacional enquanto a conta final não estiver aprovada/configurada;
+- o painel `/admin/pagamentos` deve exibir erro para o token do ambiente ativo quando a variável correspondente não existir no deploy.
 
 ### 17.5 Webhook
 
