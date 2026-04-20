@@ -38,7 +38,7 @@ export function PublicGenericPage({
         <div className="public-site-container">
           <div className="rounded-[28px] border border-[#D8E6EB] bg-[linear-gradient(180deg,#F8FBFC_0%,#F2F7F9_100%)] px-6 py-10 shadow-[0_20px_44px_rgba(21,50,59,0.04)] sm:px-10">
             <p className="text-[11px] font-black uppercase tracking-[0.28em] text-[#1398B7]">{eyebrow}</p>
-            <h1 className="mt-4 max-w-[760px] text-[2.5rem] font-extrabold leading-[0.94] tracking-[-0.05em] text-[#0A3640] sm:text-[3rem]">
+            <h1 className="mt-4 max-w-[760px] text-[2.5rem] font-extrabold leading-[0.94] tracking-[-0.05em] text-[#183139] sm:text-[3rem]">
               {title}
             </h1>
             <p className="mt-4 max-w-[720px] text-base leading-7 text-[#5f7178]">{description}</p>
