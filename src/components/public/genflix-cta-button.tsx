@@ -32,6 +32,20 @@ export function GenflixCtaButton({
   tone?: GenflixCtaTone
 }) {
   const Comp = asChild ? Slot.Root : 'button'
+  const content = (
+    <>
+      <span className="truncate leading-none">{children}</span>
+      <span
+        aria-hidden="true"
+        className={cn(
+          'inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-transform duration-200 group-hover/genflix-cta:translate-x-0.5',
+          iconClasses[tone],
+        )}
+      >
+        <ArrowUpRight className="h-4 w-4" />
+      </span>
+    </>
+  )
 
   return (
     <Comp
@@ -43,16 +57,7 @@ export function GenflixCtaButton({
       )}
       {...props}
     >
-      <span className="truncate leading-none">{children}</span>
-      <span
-        aria-hidden="true"
-        className={cn(
-          'inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-transform duration-200 group-hover/genflix-cta:translate-x-0.5',
-          iconClasses[tone],
-        )}
-      >
-        <ArrowUpRight className="h-4 w-4" />
-      </span>
+      {asChild ? <Slot.Slottable>{content}</Slot.Slottable> : content}
     </Comp>
   )
 }
