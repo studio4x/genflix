@@ -115,8 +115,8 @@ export function GenflixPublicFooter({
               </div>
             </div>
 
-            <div className="text-sm text-white/68">
-              <p>
+            <div className="text-center text-sm text-white/68">
+              <p className="mx-auto">
                 <EditableText
                   entryKey="global.footer.copyright"
                   fallback="Copyright ©️ 2026 e-Clix | Soluções em Conteúdo Educacional | CNPJ 38.112.632/0001-10"
