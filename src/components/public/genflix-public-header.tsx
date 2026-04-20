@@ -16,8 +16,10 @@ function HeaderNavLink({
   isActive: boolean
 }) {
   const className = cn(
-    'font-manrope text-[13px] transition-colors',
-    isActive ? 'font-semibold text-[#183139]' : 'text-[#5f7077] hover:text-[#183139]',
+    'font-manrope text-[14px] font-medium transition-colors',
+    isActive
+      ? 'font-bold text-[#1398B7]'
+      : 'text-[#5f7077] hover:font-bold hover:text-[#1398B7]',
   )
 
   if (item.isInternal) {
@@ -58,22 +60,26 @@ export function GenflixPublicHeader({
       metadata: {
         isInternal: item.isInternal ?? false,
         pageKey: item.pageKey ?? null,
+        requiresAuth: item.requiresAuth ?? false,
       },
     })),
     { pageKey: 'global' },
   )
+  const visibleNavLinks = editableNavLinks.filter((item) => item.metadata?.requiresAuth !== true || user)
+
   return (
     <header className="flex min-h-[72px] items-center justify-between gap-6">
       <GenflixLogo />
 
       <nav className="hidden items-center gap-7 lg:flex">
-        <EditableList entryKey="global.header.navLinks" fallback={editableNavLinks} label="Menu principal" pageKey="global">
+        <EditableList entryKey="global.header.navLinks" fallback={visibleNavLinks} label="Menu principal" pageKey="global">
           {(items) => items.map((item) => {
             const navItem = {
               label: item.label ?? '',
               href: item.href ?? '#',
               isInternal: item.metadata?.isInternal === true,
               pageKey: typeof item.metadata?.pageKey === 'string' ? item.metadata.pageKey as GenflixPageKey : undefined,
+              requiresAuth: item.metadata?.requiresAuth === true,
             }
             return (
               <HeaderNavLink

@@ -35,12 +35,17 @@ import { PublicCommunityPage } from '@/pages/public/public-community-page'
 import { PublicContactPage } from '@/pages/public/public-contact-page'
 import { PublicCourseDetailsPage } from '@/pages/public/public-course-details-page'
 import { PublicAboutPage } from '@/pages/public/public-about-page'
+import { PublicFaqPage } from '@/pages/public/public-faq-page'
+import { PublicHelpPage } from '@/pages/public/public-help-page'
 import { LoginPage } from '@/pages/public/login-page'
 import { SignUpPage } from '@/pages/public/sign-up-page'
 import { PrivacyPage } from '@/pages/public/privacy-page'
+import { PublicReferPage } from '@/pages/public/public-refer-page'
+import { PublicRefundPolicyPage } from '@/pages/public/public-refund-policy-page'
 import { PublicCoursesPage } from '@/pages/public/public-courses-page'
 import { PublicHomePage } from '@/pages/public/public-home-page'
 import { PublicResourcesPage } from '@/pages/public/public-resources-page'
+import { PublicTeachPage } from '@/pages/public/public-teach-page'
 import { ResetPasswordPage } from '@/pages/public/reset-password-page'
 import { TermsOfUsePage } from '@/pages/public/terms-of-use-page'
 import { UnauthorizedPage } from '@/pages/public/unauthorized-page'
@@ -112,6 +117,26 @@ export const appRouter = createBrowserRouter([
   {
     path: '/recursos',
     element: <PublicEditableRoute pageKey="resources"><PublicResourcesPage /></PublicEditableRoute>,
+  },
+  {
+    path: '/politica-de-reembolso',
+    element: <PublicRefundPolicyPage />,
+  },
+  {
+    path: '/perguntas-frequentes',
+    element: <PublicFaqPage />,
+  },
+  {
+    path: '/ajuda',
+    element: <PublicHelpPage />,
+  },
+  {
+    path: '/indique-a-genflix',
+    element: <PublicReferPage />,
+  },
+  {
+    path: '/ensine-na-genflix',
+    element: <PublicTeachPage />,
   },
   {
     path: '/login',

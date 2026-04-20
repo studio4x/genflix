@@ -4,6 +4,8 @@ import { Link } from 'react-router-dom'
 
 import { GenflixLogo } from '@/components/public/genflix-logo'
 import { GenflixPublicFooter } from '@/components/public/genflix-public-footer'
+import { GenflixPublicHeader } from '@/components/public/genflix-public-header'
+import { genflixNavLinks } from '@/features/public/genflix-site-content'
 
 interface GenflixAuthLayoutProps {
   title: string
@@ -20,8 +22,14 @@ export function GenflixAuthLayout({
 }: GenflixAuthLayoutProps) {
   return (
     <main className="min-h-screen bg-[#F2F7F9] font-manrope text-[#163138]">
+      <section className="bg-[#F2F7F9] pt-4">
+        <div className="public-site-container">
+          <GenflixPublicHeader navLinks={genflixNavLinks} />
+        </div>
+      </section>
+
       <section className="bg-[#F2F7F9] pb-0 pt-4">
-        <div className="mx-auto max-w-[1440px] px-4 lg:px-6">
+        <div className="public-site-container">
           <div className="overflow-hidden rounded-t-[30px] border border-[#D8E6EB] bg-white shadow-[0_24px_56px_rgba(21,50,59,0.05)]">
             <div className="grid min-h-[720px] lg:grid-cols-[0.95fr_1.05fr]">
               <aside

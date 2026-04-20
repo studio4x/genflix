@@ -90,14 +90,14 @@ export function PublicBlogPage() {
 
   return (
     <main className="min-h-screen bg-[#F2F7F9] font-manrope text-[#163138]">
-      <section className="bg-[#F2F7F9]">
-        <div className="mx-auto max-w-[1440px] px-4 lg:px-6">
+      <section className="bg-[#F2F7F9] pt-4">
+        <div className="public-site-container">
           <GenflixPublicHeader currentPage="blog" navLinks={genflixNavLinks} />
         </div>
       </section>
 
       <section className="bg-white pb-12 pt-6">
-        <div className="mx-auto max-w-[1320px] px-6 lg:px-10">
+        <div className="public-site-container">
           <div className="rounded-[28px] bg-[#F2F7F9] px-6 py-12 text-center shadow-[0_18px_40px_rgba(21,50,59,0.04)] sm:px-10">
             <h1 className="mx-auto max-w-[640px] text-[2.35rem] font-extrabold leading-[0.96] tracking-[-0.05em] text-[#183139] sm:text-[2.8rem]">
               <EditableText
@@ -133,7 +133,7 @@ export function PublicBlogPage() {
       </section>
 
       <section className="bg-white pb-14">
-        <div className="mx-auto max-w-[1320px] px-6 lg:px-10">
+        <div className="public-site-container">
           <div className="grid gap-8 rounded-[26px] border border-[#D8E6EB] bg-white p-6 shadow-[0_18px_36px_rgba(21,50,59,0.04)] lg:grid-cols-[1.1fr_minmax(0,0.9fr)] lg:p-8">
             <div className="overflow-hidden rounded-[24px]">
               <img
@@ -178,7 +178,7 @@ export function PublicBlogPage() {
       </section>
 
       <section className="bg-white pb-16">
-        <div className="mx-auto max-w-[1320px] px-6 lg:px-10">
+        <div className="public-site-container">
           <div className="flex flex-wrap items-center gap-3">
             {genflixBlogFilters.map((filter) => (
               <button

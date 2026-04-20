@@ -94,14 +94,14 @@ export function PublicCoursesPage() {
 
   return (
     <main className="min-h-screen bg-[#F2F7F9] font-manrope text-[#163138]">
-      <section className="bg-[#F2F7F9]">
-        <div className="mx-auto max-w-[1440px] px-4 lg:px-6">
+      <section className="bg-[#F2F7F9] pt-4">
+        <div className="public-site-container">
           <GenflixPublicHeader currentPage="courses" navLinks={genflixNavLinks} />
         </div>
       </section>
 
       <section className="bg-white pb-14 pt-6">
-        <div className="mx-auto max-w-[1440px] px-4 lg:px-6">
+        <div className="public-site-container">
           <div className="rounded-[28px] bg-[#F2F7F9] px-6 py-12 text-center shadow-[0_18px_40px_rgba(21,50,59,0.04)] sm:px-10">
             <h1 className="mx-auto max-w-[520px] text-[2.45rem] font-extrabold leading-[0.94] tracking-[-0.05em] text-[#183139] sm:text-[3rem]">
               <EditableText
@@ -151,7 +151,7 @@ export function PublicCoursesPage() {
       </section>
 
       <section className="bg-white pb-16">
-        <div className="mx-auto max-w-[1320px] px-6 lg:px-10">
+        <div className="public-site-container">
           <div className="grid gap-8 md:grid-cols-2 xl:grid-cols-3">
             {paginatedCourses.map((course) => (
               <GenflixCourseCard key={course.slug} course={course} />
@@ -210,7 +210,7 @@ export function PublicCoursesPage() {
       </section>
 
       <section className="bg-[#F2F7F9] py-16">
-        <div className="mx-auto max-w-[1320px] px-6 lg:px-10">
+        <div className="public-site-container">
           <div className="mx-auto max-w-[620px] text-center">
             <h2 className="text-[2.1rem] font-bold tracking-[-0.04em] text-[#183139] sm:text-[2.35rem]">
               <EditableText entryKey="courses.features.title" fallback="Muito além do vídeo" label="Título de recursos em cursos" />

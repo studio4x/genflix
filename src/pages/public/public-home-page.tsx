@@ -35,8 +35,8 @@ export function PublicHomePage() {
 
   return (
     <main className="min-h-screen bg-[#F2F7F9] font-manrope text-[#163138]">
-      <section id="inicio" className="bg-[#F2F7F9]">
-        <div className="mx-auto max-w-[1440px] px-4 lg:px-6">
+      <section id="inicio" className="bg-[#F2F7F9] pt-4">
+        <div className="public-site-container">
           <GenflixPublicHeader currentPage="home" navLinks={genflixNavLinks} />
 
           <div className="overflow-hidden rounded-[30px] bg-[#173039] shadow-[0_30px_70px_rgba(21,50,59,0.16)]">
@@ -64,13 +64,13 @@ export function PublicHomePage() {
                   <div className="mt-8 flex flex-col gap-3 sm:flex-row">
                     <Link
                       to="/login"
-                      className="inline-flex items-center justify-center rounded-full bg-[#1398B7] px-5 py-3 font-readex text-sm font-medium text-white shadow-[0_12px_30px_rgba(19,152,183,0.3)] transition-colors hover:bg-[#0A3640]"
+                      className="inline-flex min-h-[52px] items-center justify-center rounded-full bg-[#1398B7] px-6 py-3 font-readex text-sm font-medium text-white shadow-[0_12px_30px_rgba(19,152,183,0.3)] transition-colors hover:bg-[#0A3640]"
                     >
                       <EditableText entryKey="home.hero.primaryCta" fallback="Já sou inscrito" label="CTA principal" />
                     </Link>
                     <a
                       href="#newsletter"
-                      className="inline-flex items-center justify-center rounded-full border border-white/22 bg-white/10 px-5 py-3 font-readex text-sm font-medium text-white backdrop-blur-sm transition-colors hover:bg-white/16"
+                      className="inline-flex min-h-[52px] items-center justify-center rounded-full border border-white/22 bg-white/10 px-6 py-3 font-readex text-sm font-medium text-white backdrop-blur-sm transition-colors hover:bg-white/16"
                     >
                       <EditableText entryKey="home.hero.secondaryCta" fallback="Quero me inscrever" label="CTA secundário" />
                     </a>
@@ -82,10 +82,10 @@ export function PublicHomePage() {
         </div>
       </section>
 
-      <section className="bg-white py-14 sm:py-16">
-        <div className="mx-auto max-w-[1320px] px-6 lg:px-10">
+      <section className="bg-white py-12 sm:py-14">
+        <div className="public-site-container">
           <div className="mx-auto max-w-[520px] text-center">
-            <h2 className="text-[2rem] font-bold tracking-[-0.04em] text-[#183139] sm:text-[2.25rem]">
+            <h2 className="text-[2rem] font-bold tracking-[-0.04em] text-[#183139] sm:text-[2.25rem] lg:whitespace-nowrap">
               <EditableText
                 entryKey="home.categories.title"
                 fallback="Explore por área de conhecimento"
@@ -94,7 +94,7 @@ export function PublicHomePage() {
             </h2>
           </div>
 
-          <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
+          <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
             <EditableList entryKey="home.categories.items" fallback={categoryItems} label="Categorias da home">
               {(items) => items.map((item) => {
                 const category = genflixCategoryTiles.find((tile) => tile.label === item.label) ?? genflixCategoryTiles[0]
@@ -116,12 +116,12 @@ export function PublicHomePage() {
         </div>
       </section>
 
-      <section id="destaques" className="bg-white pb-20 pt-6">
-        <div className="mx-auto max-w-[1320px] px-6 lg:px-10">
+      <section id="destaques" className="bg-white pb-16 pt-2">
+        <div className="public-site-container">
           <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-[580px]">
               <h2 className="text-[2.15rem] font-bold tracking-[-0.04em] text-[#183139] sm:text-[2.45rem]">
-                <EditableText entryKey="home.featured.title" fallback="Cursos em Destaque" label="Título de cursos em destaque" />
+                <EditableText entryKey="home.featured.title" fallback="Mais recentes" label="Título de cursos em destaque" />
               </h2>
               <p className="mt-3 text-base leading-7 text-[#60737a]">
                 <EditableText
@@ -134,13 +134,13 @@ export function PublicHomePage() {
 
             <Link
               to="/cursos"
-              className="inline-flex items-center gap-2 self-start rounded-full bg-[#1398B7] px-5 py-3 font-readex text-sm font-medium text-white shadow-[0_12px_30px_rgba(19,152,183,0.22)] transition-colors hover:bg-[#0A3640]"
+              className="inline-flex min-h-[52px] items-center gap-2 self-start rounded-full bg-[#1398B7] px-6 py-3 font-readex text-sm font-medium text-white shadow-[0_12px_30px_rgba(19,152,183,0.22)] transition-colors hover:bg-[#0A3640]"
             >
               <EditableText entryKey="home.featured.cta" fallback="Conheça todos os cursos" label="CTA de cursos em destaque" />
             </Link>
           </div>
 
-          <div className="mt-12 grid gap-8 md:grid-cols-2 xl:grid-cols-3">
+          <div className="mt-10 grid gap-8 md:grid-cols-2 xl:grid-cols-3">
             {genflixFeaturedCourses.map((course) => (
               <GenflixCourseCard key={course.slug} course={course} />
             ))}

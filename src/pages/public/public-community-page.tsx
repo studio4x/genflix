@@ -33,14 +33,14 @@ export function PublicCommunityPage() {
 
   return (
     <main className="min-h-screen bg-[#F2F7F9] font-manrope text-[#163138]">
-      <section className="bg-[#F2F7F9]">
-        <div className="mx-auto max-w-[1440px] px-4 lg:px-6">
+      <section className="bg-[#F2F7F9] pt-4">
+        <div className="public-site-container">
           <GenflixPublicHeader currentPage="community" navLinks={genflixNavLinks} />
         </div>
       </section>
 
-      <section className="bg-white pb-14 pt-6">
-        <div className="mx-auto max-w-[1320px] px-6 lg:px-10">
+      <section className="bg-white pb-14 pt-4">
+        <div className="public-site-container">
           <div className="mx-auto max-w-[760px] text-center">
             <h1 className="text-[2.35rem] font-extrabold leading-[0.96] tracking-[-0.05em] text-[#183139] sm:text-[2.8rem]">
               <EditableText
@@ -82,7 +82,7 @@ export function PublicCommunityPage() {
       </section>
 
       <section className="bg-white pb-16">
-        <div className="mx-auto max-w-[1320px] px-6 lg:px-10">
+        <div className="public-site-container">
           <div className="grid gap-8 overflow-hidden rounded-[28px] border border-[#D8E6EB] bg-white p-6 shadow-[0_20px_46px_rgba(21,50,59,0.05)] lg:grid-cols-[1fr_0.9fr] lg:p-8">
             <div className="relative overflow-hidden rounded-[22px] bg-[#173039]">
               <img

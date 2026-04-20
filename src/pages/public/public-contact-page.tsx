@@ -64,14 +64,14 @@ export function PublicContactPage() {
 
   return (
     <main className="min-h-screen bg-[#F2F7F9] font-manrope text-[#163138]">
-      <section className="bg-[#F2F7F9]">
-        <div className="mx-auto max-w-[1440px] px-4 lg:px-6">
+      <section className="bg-[#F2F7F9] pt-4">
+        <div className="public-site-container">
           <GenflixPublicHeader currentPage="contact" navLinks={genflixNavLinks} />
         </div>
       </section>
 
       <section className="bg-white pb-0 pt-4">
-        <div className="mx-auto max-w-[1440px] px-4 lg:px-6">
+        <div className="public-site-container">
           <div className="grid min-h-[620px] overflow-hidden rounded-t-[30px] border border-[#D8E6EB] bg-white shadow-[0_24px_56px_rgba(21,50,59,0.05)] lg:grid-cols-[1.02fr_0.98fr]">
             <div className="relative flex min-h-[360px] items-center justify-center overflow-hidden bg-[radial-gradient(circle_at_32%_22%,rgba(54,211,188,0.22),transparent_38%),radial-gradient(circle_at_72%_30%,rgba(19,152,183,0.18),transparent_30%),linear-gradient(180deg,#F8FBFC_0%,#F2F7F9_100%)] px-8 py-14">
               <div className="pointer-events-none absolute inset-0">

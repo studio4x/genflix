@@ -37,6 +37,7 @@ export interface GenflixNavLink {
   href: string
   isInternal?: boolean
   pageKey?: GenflixPageKey
+  requiresAuth?: boolean
 }
 
 export interface GenflixCategoryItem {
@@ -67,6 +68,8 @@ export interface GenflixFooterColumn {
     label: string
     href: string
     isInternal?: boolean
+    openInNewTab?: boolean
+    buttonLabel?: string
   }>
 }
 
@@ -146,9 +149,10 @@ export const genflixNavLinks: GenflixNavLink[] = [
   { label: 'Início', href: '/', isInternal: true, pageKey: 'home' },
   { label: 'Sobre', href: '/sobre', isInternal: true, pageKey: 'about' },
   { label: 'Cursos', href: '/cursos', isInternal: true, pageKey: 'courses' },
+  { label: 'Recursos', href: '/recursos', isInternal: true, pageKey: 'resources' },
   { label: 'Blog', href: '/blog', isInternal: true, pageKey: 'blog' },
   { label: 'Contato', href: '/contato', isInternal: true, pageKey: 'contact' },
-  { label: 'Comunidade', href: '/comunidade', isInternal: true, pageKey: 'community' },
+  { label: 'Comunidade', href: '/comunidade', isInternal: true, pageKey: 'community', requiresAuth: true },
 ]
 
 export const genflixFooterNavLinks: GenflixFooterNavItem[] = [
@@ -168,7 +172,6 @@ export const genflixCategoryTiles: GenflixCategoryItem[] = [
   { label: 'Gestão', icon: BriefcaseBusiness },
   { label: 'Humanas', icon: Landmark },
   { label: 'Psicanálise / Psicologia', icon: BrainCircuit },
-  { label: 'Interesse geral', icon: Sparkles },
 ]
 
 export const genflixCommunityItems: GenflixCommunityItem[] = [
@@ -677,27 +680,41 @@ export function getGenflixBlogPostBySlug(slug: string) {
 
 export const genflixFooterColumns: GenflixFooterColumn[] = [
   {
-    title: 'Links rápidos',
+    title: 'Institucional',
     items: [
-      { label: 'Início', href: '/', isInternal: true },
-      { label: 'Perguntas frequentes', href: '#newsletter' },
       { label: 'Política de privacidade', href: '/privacidade', isInternal: true },
+      { label: 'Política de reembolso', href: '/politica-de-reembolso', isInternal: true },
+      { label: 'Perguntas frequentes', href: '/perguntas-frequentes', isInternal: true },
+      { label: 'Ajuda / Como usar', href: '/ajuda', isInternal: true },
     ],
   },
   {
-    title: 'Cursos',
+    title: 'Fale com a GenFlix',
     items: [
-      { label: 'Explorar catálogo', href: '/cursos', isInternal: true },
-      { label: 'Recursos', href: '/recursos', isInternal: true },
-      { label: 'Termos de uso', href: '/termos-de-uso', isInternal: true },
+      { label: 'Contato', href: '/contato', isInternal: true },
+      { label: 'Cadastro', href: '/criar-conta', isInternal: true },
     ],
   },
   {
-    title: 'Contato',
+    title: 'Conecte-se',
     items: [
-      { label: 'genflix@studio4x.com.br', href: 'mailto:genflix@studio4x.com.br' },
-      { label: 'Quero me inscrever', href: '#newsletter' },
-      { label: 'Falar com o time', href: '/contato', isInternal: true },
+      { label: 'Instagram', href: 'https://instagram.com', openInNewTab: true },
+      { label: 'Facebook', href: 'https://facebook.com', openInNewTab: true },
+      { label: 'TikTok', href: 'https://tiktok.com', openInNewTab: true },
+      { label: 'Linkedin', href: 'https://linkedin.com', openInNewTab: true },
+      { label: 'Youtube', href: 'https://youtube.com', openInNewTab: true },
+      { label: 'Indique a GenFlix', href: '/indique-a-genflix', isInternal: true },
+    ],
+  },
+  {
+    title: 'Parcerias',
+    items: [
+      {
+        label: 'Ensine na GenFlix',
+        href: '/ensine-na-genflix',
+        isInternal: true,
+        buttonLabel: 'Ensine na GenFlix',
+      },
     ],
   },
 ]
@@ -705,5 +722,7 @@ export const genflixFooterColumns: GenflixFooterColumn[] = [
 export const genflixSocialLinks: GenflixSocialLink[] = [
   { label: 'Instagram', href: 'https://instagram.com', icon: Instagram },
   { label: 'Facebook', href: 'https://facebook.com', icon: Facebook },
+  { label: 'TikTok', href: 'https://tiktok.com', icon: MessageCircleMore },
   { label: 'LinkedIn', href: 'https://linkedin.com', icon: Linkedin },
+  { label: 'YouTube', href: 'https://youtube.com', icon: MonitorPlay },
 ]

@@ -24,7 +24,7 @@ export function PublicLegalPageShell({
   return (
     <main className="min-h-screen bg-[#F2F7F9] font-manrope text-[#163138]">
       <section className="bg-[#F2F7F9] pt-4">
-        <div className="mx-auto max-w-[1440px] px-4 lg:px-6">
+        <div className="public-site-container">
           <GenflixPublicHeader navLinks={genflixNavLinks} />
 
           <div className="mt-4 overflow-hidden rounded-t-[30px] border border-[#D8E6EB] bg-white shadow-[0_24px_56px_rgba(21,50,59,0.05)]">

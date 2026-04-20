@@ -111,14 +111,14 @@ export function PublicCourseDetailsPage() {
 
   return (
     <main className="min-h-screen bg-[#F2F7F9] font-manrope text-[#163138]">
-      <section className="bg-[#F2F7F9]">
-        <div className="mx-auto max-w-[1440px] px-4 lg:px-6">
+      <section className="bg-[#F2F7F9] pt-4">
+        <div className="public-site-container">
           <GenflixPublicHeader currentPage="courses" navLinks={genflixNavLinks} />
         </div>
       </section>
 
-      <section className="bg-white pb-20 pt-6">
-        <div className="mx-auto max-w-[1320px] px-6 lg:px-10">
+      <section className="bg-white pb-20 pt-4">
+        <div className="public-site-container">
           <div className="grid gap-12 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start">
             <div>
               <p className="text-[11px] font-bold uppercase tracking-[0.26em] text-[#1398B7]">
@@ -310,7 +310,7 @@ export function PublicCourseDetailsPage() {
       <CourseReviewsSection courseId={detail.id} courseTitle={detail.title} />
 
       <section className="bg-[#F2F7F9] py-16">
-        <div className="mx-auto max-w-[1320px] px-6 lg:px-10">
+        <div className="public-site-container">
           <div className="mx-auto max-w-[620px] text-center">
             <h2 className="text-[2.1rem] font-bold tracking-[-0.04em] text-[#183139] sm:text-[2.35rem]">
               Tudo que você precisa para aprender

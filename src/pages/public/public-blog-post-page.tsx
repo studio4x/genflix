@@ -86,14 +86,14 @@ export function PublicBlogPostPage() {
 
   return (
     <main className="min-h-screen bg-[#F2F7F9] font-manrope text-[#163138]">
-      <section className="bg-[#F2F7F9]">
-        <div className="mx-auto max-w-[1440px] px-4 lg:px-6">
+      <section className="bg-[#F2F7F9] pt-4">
+        <div className="public-site-container">
           <GenflixPublicHeader currentPage="blog" navLinks={genflixNavLinks} />
         </div>
       </section>
 
       <section className="bg-white pb-10 pt-6">
-        <div className="mx-auto max-w-[1320px] px-6 lg:px-10">
+        <div className="public-site-container">
           <Link
             to="/blog"
             className="inline-flex items-center gap-2 text-sm font-semibold text-[#1398B7] transition-colors hover:text-[#1398B7]"

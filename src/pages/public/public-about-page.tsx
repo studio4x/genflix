@@ -38,14 +38,14 @@ export function PublicAboutPage() {
 
   return (
     <main className="min-h-screen bg-[#F2F7F9] font-manrope text-[#163138]">
-      <section className="bg-[#F2F7F9]">
-        <div className="mx-auto max-w-[1440px] px-4 lg:px-6">
+      <section className="bg-[#F2F7F9] pt-4">
+        <div className="public-site-container">
           <GenflixPublicHeader currentPage="about" navLinks={genflixNavLinks} />
         </div>
       </section>
 
       <section className="bg-white pb-10 pt-8">
-        <div className="mx-auto max-w-[1320px] px-6 lg:px-10">
+        <div className="public-site-container">
           <div className="rounded-[30px] bg-[#F2F7F9] px-8 py-14 text-center shadow-[0_20px_44px_rgba(21,50,59,0.04)] sm:px-12">
             <h1 className="text-[2.65rem] font-extrabold leading-[0.94] tracking-[-0.05em] text-[#183139] sm:text-[3rem]">
               <EditableText entryKey="about.hero.title" fallback="GenFlix" label="Título da página Sobre" />
@@ -62,7 +62,7 @@ export function PublicAboutPage() {
       </section>
 
       <section className="bg-white pb-16 pt-4">
-        <div className="mx-auto max-w-[1320px] px-6 lg:px-10">
+        <div className="public-site-container">
           <div className="rounded-[28px] border border-[#D8E6EB] bg-white px-8 py-10 shadow-[0_18px_42px_rgba(21,50,59,0.03)] sm:px-10 lg:px-12">
             <div className="mx-auto max-w-[960px] space-y-5 border-t border-[#BEE3EA] pt-10 text-[15px] leading-8 text-[#4f666d]">
               <EditableList entryKey="about.paragraphs" fallback={editableParagraphs} label="Parágrafos da página Sobre">
@@ -76,7 +76,7 @@ export function PublicAboutPage() {
       </section>
 
       <section className="bg-white pb-20">
-        <div className="mx-auto max-w-[1320px] px-6 lg:px-10">
+        <div className="public-site-container">
           <div className="grid gap-8 overflow-hidden rounded-[30px] bg-[#F2F7F9] px-8 py-8 shadow-[0_22px_46px_rgba(21,50,59,0.05)] lg:grid-cols-[360px_minmax(0,1fr)] lg:items-center lg:px-10 lg:py-10">
             <div className="flex min-h-[240px] items-center justify-center rounded-[24px] bg-white shadow-[0_18px_40px_rgba(21,50,59,0.06)]">
               <div className="scale-[2.3]">

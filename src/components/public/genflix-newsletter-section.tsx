@@ -47,13 +47,13 @@ export function GenflixNewsletterSection({
   }
 
   return (
-    <section id={id} className="bg-[#F2F7F9] pb-0 pt-4">
-      <div className="mx-auto max-w-[1440px] px-4 lg:px-6">
+    <section id={id} className="bg-[#F2F7F9] pb-0 pt-2">
+      <div className="public-site-container">
         <div
           className="overflow-hidden rounded-t-[30px] bg-cover bg-center"
           style={{ backgroundImage: `linear-gradient(180deg, rgba(14,31,37,0.72) 0%, rgba(14,31,37,0.84) 100%), url(${typeof image.src === 'string' ? image.src : genflixNewsletterImage})` }}
         >
-          <div className="flex min-h-[420px] items-center justify-center px-6 py-14 text-center sm:px-10">
+          <div className="flex min-h-[360px] items-center justify-center px-6 py-12 text-center sm:px-10">
             <div className="max-w-[720px]">
               <h2 className="mx-auto max-w-[440px] text-[2.2rem] font-extrabold leading-[1.02] tracking-[-0.05em] text-white sm:text-[2.8rem]">
                 <EditableText
@@ -89,7 +89,7 @@ export function GenflixNewsletterSection({
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="inline-flex min-h-[54px] items-center justify-center gap-2 rounded-[16px] bg-[#1398B7] px-6 font-readex text-sm font-medium text-white shadow-[0_14px_30px_rgba(19,152,183,0.3)] transition-colors hover:bg-[#0A3640]"
+                  className="inline-flex min-h-[54px] items-center justify-center gap-2 rounded-full bg-[#1398B7] px-6 font-readex text-sm font-medium text-white shadow-[0_14px_30px_rgba(19,152,183,0.3)] transition-colors hover:bg-[#0A3640]"
                 >
                   {isSubmitting ? 'Enviando...' : (
                     <EditableText
