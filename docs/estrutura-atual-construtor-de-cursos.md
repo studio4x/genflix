@@ -2,892 +2,1631 @@
 
 ## Objetivo
 
-Este documento descreve a implementação atual do construtor de cursos do GenFlix no painel administrativo. O foco é registrar:
+Este documento descreve em detalhe a implementação atual do construtor de cursos do GenFlix no painel administrativo. O foco aqui não é só listar arquivos, mas registrar:
 
-- estrutura funcional e rotas;
-- composição de layout e navegação;
-- componentes e painéis do builder;
-- modelagem de dados usada pelo frontend;
-- detalhes visuais, HTML/JSX, CSS e convenções de interface;
-- integrações com Supabase e utilitários auxiliares.
+- rotas e arquitetura do builder;
+- composição de layout, HTML/JSX e linguagem visual;
+- funcionalidades reais de cada tela principal;
+- estrutura atual de módulos, aulas, quizzes e avaliação final;
+- regras de importação/exportação em JSON;
+- pontos de integração com Supabase, storage e utilitários internos.
 
-O recorte documentado aqui corresponde ao builder acessado pela rota `/admin/cursos/:courseId/builder`.
-
-## Mapa geral da implementação
-
-### Arquivos centrais
-
-- `src/app/router/index.tsx`
-- `src/app/layouts/admin-course-builder-layout.tsx`
-- `src/features/admin/content/components/course-tree-dnd.tsx`
-- `src/pages/admin/builder/course-overview-panel.tsx`
-- `src/pages/admin/builder/module-editor-panel.tsx`
-- `src/pages/admin/builder/lesson-editor-panel.tsx`
-- `src/pages/admin/builder/lesson-materials-panel.tsx`
-- `src/pages/admin/builder/course-settings-panel.tsx`
-- `src/pages/admin/builder/course-assessments-panel.tsx`
-- `src/pages/admin/builder/assessment-builder-panel.tsx`
-- `src/features/admin/content/api.ts`
-- `src/features/admin/content/content-blocks.ts`
-- `src/types/content.ts`
-- `src/index.css`
-- `src/components/ui/button.tsx`
-
-### Rotas do builder
-
-Em [src/app/router/index.tsx](/c:/PLATAFORMAS%20VS%20CODE/GENFLIX/genflix/src/app/router/index.tsx:1), o construtor é montado como um layout pai com `Outlet` e subrotas internas:
+O recorte documentado corresponde ao builder aberto dentro do admin, especialmente nas rotas:
 
 - `/admin/cursos/:courseId/builder`
-  - visão geral do curso;
 - `/admin/cursos/:courseId/builder/modulos/:moduleId`
-  - editor de módulo;
 - `/admin/cursos/:courseId/builder/modulos/:moduleId/aulas/:lessonId`
-  - editor de aula;
-- `/admin/cursos/:courseId/builder/modulos/:moduleId/aulas/:lessonId/materiais`
-  - gestão de botões/arquivos do rodapé da aula;
 - `/admin/cursos/:courseId/builder/modulos/:moduleId/avaliacoes/:assessmentId`
-  - builder de quiz por módulo;
 - `/admin/cursos/:courseId/builder/assessments/final`
-  - builder da avaliação final;
 - `/admin/cursos/:courseId/builder/settings`
-  - configurações do curso;
-- `/admin/cursos/:courseId/builder/releases`
-  - liberação para alunos e grupos;
 - `/admin/cursos/:courseId/builder/assessments`
-  - painel agregador de avaliações.
 
-## Arquitetura de layout
+## Arquivos centrais
 
-### Layout raiz do builder
+### Layout, rotas e shell do builder
 
-O shell do construtor está em [src/app/layouts/admin-course-builder-layout.tsx](/c:/PLATAFORMAS%20VS%20CODE/GENFLIX/genflix/src/app/layouts/admin-course-builder-layout.tsx:1).
+- [src/app/router/index.tsx](/c:/PLATAFORMAS%20VS%20CODE/GENFLIX/genflix/src/app/router/index.tsx:1)
+- [src/app/layouts/admin-course-builder-layout.tsx](/c:/PLATAFORMAS%20VS%20CODE/GENFLIX/genflix/src/app/layouts/admin-course-builder-layout.tsx:1)
+- [src/features/admin/content/components/course-tree-dnd.tsx](/c:/PLATAFORMAS%20VS%20CODE/GENFLIX/genflix/src/features/admin/content/components/course-tree-dnd.tsx:1)
 
-Ele faz cinco coisas principais:
+### Painéis principais
+
+- [src/pages/admin/builder/course-overview-panel.tsx](/c:/PLATAFORMAS%20VS%20CODE/GENFLIX/genflix/src/pages/admin/builder/course-overview-panel.tsx:1)
+- [src/pages/admin/builder/module-editor-panel.tsx](/c:/PLATAFORMAS%20VS%20CODE/GENFLIX/genflix/src/pages/admin/builder/module-editor-panel.tsx:1)
+- [src/pages/admin/builder/lesson-editor-panel.tsx](/c:/PLATAFORMAS%20VS%20CODE/GENFLIX/genflix/src/pages/admin/builder/lesson-editor-panel.tsx:1)
+- [src/pages/admin/builder/lesson-materials-panel.tsx](/c:/PLATAFORMAS%20VS%20CODE/GENFLIX/genflix/src/pages/admin/builder/lesson-materials-panel.tsx:1)
+- [src/pages/admin/builder/course-settings-panel.tsx](/c:/PLATAFORMAS%20VS%20CODE/GENFLIX/genflix/src/pages/admin/builder/course-settings-panel.tsx:1)
+- [src/pages/admin/builder/course-assessments-panel.tsx](/c:/PLATAFORMAS%20VS%20CODE/GENFLIX/genflix/src/pages/admin/builder/course-assessments-panel.tsx:1)
+- [src/pages/admin/builder/assessment-builder-panel.tsx](/c:/PLATAFORMAS%20VS%20CODE/GENFLIX/genflix/src/pages/admin/builder/assessment-builder-panel.tsx:1)
+
+### Estruturas auxiliares
+
+- [src/features/admin/content/api.ts](/c:/PLATAFORMAS%20VS%20CODE/GENFLIX/genflix/src/features/admin/content/api.ts:1)
+- [src/features/admin/content/content-blocks.ts](/c:/PLATAFORMAS%20VS%20CODE/GENFLIX/genflix/src/features/admin/content/content-blocks.ts:1)
+- [src/features/admin/assessments/gamified-question-editor.tsx](/c:/PLATAFORMAS%20VS%20CODE/GENFLIX/genflix/src/features/admin/assessments/gamified-question-editor.tsx:1)
+- [src/features/assessments/gamified.ts](/c:/PLATAFORMAS%20VS%20CODE/GENFLIX/genflix/src/features/assessments/gamified.ts:1)
+- [src/types/content.ts](/c:/PLATAFORMAS%20VS%20CODE/GENFLIX/genflix/src/types/content.ts:1)
+- [src/index.css](/c:/PLATAFORMAS%20VS%20CODE/GENFLIX/genflix/src/index.css:1)
+
+## Mapa de rotas do builder
+
+Em [src/app/router/index.tsx](/c:/PLATAFORMAS%20VS%20CODE/GENFLIX/genflix/src/app/router/index.tsx:1), o builder funciona como um layout pai com `Outlet` e subrotas filhas:
+
+- `/admin/cursos/:courseId/builder`
+  Centro de controle do curso, resumo geral e mapa macro.
+- `/admin/cursos/:courseId/builder/modulos/novo`
+  Criação de módulo.
+- `/admin/cursos/:courseId/builder/modulos/:moduleId`
+  Configurações completas do módulo.
+- `/admin/cursos/:courseId/builder/modulos/:moduleId/aulas/nova`
+  Criação de aula.
+- `/admin/cursos/:courseId/builder/modulos/:moduleId/aulas/:lessonId`
+  Editor completo da aula.
+- `/admin/cursos/:courseId/builder/modulos/:moduleId/aulas/:lessonId/materiais`
+  Gestão de botões e URLs no rodapé da aula.
+- `/admin/cursos/:courseId/builder/modulos/:moduleId/avaliacoes/nova`
+  Criação de quiz do módulo.
+- `/admin/cursos/:courseId/builder/modulos/:moduleId/avaliacoes/:assessmentId`
+  Builder do quiz do módulo.
+- `/admin/cursos/:courseId/builder/assessments/final`
+  Builder da avaliação final do curso.
+- `/admin/cursos/:courseId/builder/settings`
+  Configurações comerciais, pedagógicas e de IA do curso.
+- `/admin/cursos/:courseId/builder/releases`
+  Atribuição a alunos e grupos.
+- `/admin/cursos/:courseId/builder/assessments`
+  Hub agregador de quizzes e avaliação final.
+
+## Arquitetura de layout do builder
+
+### Layout raiz
+
+O shell principal está em [src/app/layouts/admin-course-builder-layout.tsx](/c:/PLATAFORMAS%20VS%20CODE/GENFLIX/genflix/src/app/layouts/admin-course-builder-layout.tsx:1).
+
+Ele executa cinco funções principais:
 
 1. lê `courseId` da URL;
-2. carrega a árvore completa do curso com `fetchAdminCourseTree(courseId)`;
-3. expõe `courseTree`, `refreshTree` e `isLoading` via `BuilderContext`;
-4. desenha o frame visual do builder;
-5. injeta os painéis filhos via `<Outlet />`.
+2. carrega a árvore consolidada com `fetchAdminCourseTree(courseId)`;
+3. expõe `courseTree`, `refreshTree` e `isLoading` por `BuilderContext`;
+4. monta o frame visual do workspace;
+5. injeta os painéis internos via `<Outlet />`.
 
-### Estrutura visual macro
+### Estrutura HTML/JSX macro
 
-O HTML/JSX raiz é basicamente:
+A composição principal é:
 
-- `div.relative.flex.h-screen.w-full.flex-col`
+- `div.relative.flex.h-screen.w-full.flex-col.overflow-hidden`
   - `header`
   - `div.flex.flex-1.overflow-hidden`
     - `aside`
     - `main`
   - modais globais
-  - selo de versão do build
+  - `AppVersion`
 
-Na prática isso define um workspace de tela cheia, dividido verticalmente em:
+Isso produz uma aplicação full-screen com:
 
-- topbar fixa;
-- faixa central com sidebar à esquerda e canvas principal à direita;
-- modais em `fixed inset-0`;
-- versão no canto inferior direito.
+- topbar horizontal fixa no topo;
+- sidebar estrutural colapsável à esquerda;
+- canvas principal com scroll vertical próprio;
+- modais flutuantes centralizados;
+- selo de build no canto inferior direito.
 
 ### Topbar
 
-A topbar contém:
+A topbar usa:
 
-- botão de voltar para `/admin/cursos`;
-- botão de recolher sidebar;
+- `h-14`
+- `border-b border-slate-200`
+- `bg-white`
+- `shadow-sm`
+- `z-20`
+
+Conteúdo:
+
+- botão `Voltar`;
+- separador vertical;
+- botão de colapsar sidebar;
 - título do curso;
 - badge de status `Publicado` ou `Rascunho`;
-- botão `Visualizar` para abrir a visão do aluno em nova aba.
+- botão `Visualizar`, que abre a visão do aluno em nova aba.
 
-Padrão visual:
+Visualmente:
 
-- altura curta: `h-14`;
-- fundo branco;
-- borda inferior `border-slate-200`;
-- sombra discreta `shadow-sm`;
-- texto em `slate`;
-- ação principal em botões `ghost` ou `outline`.
+- tipografia compacta;
+- ícones inline em SVG;
+- predominância de branco, cinza e azul;
+- aparência de ferramenta administrativa, não de landing page.
 
 ### Sidebar
 
-A sidebar é um `aside` colapsável controlado por `isSidebarOpen`.
+A sidebar é um `aside` colapsável com:
 
-Características:
+- largura aberta `w-[252px]`;
+- `bg-white`;
+- `border-r border-slate-200`;
+- `transition-all duration-300`.
 
-- largura aberta fixa: `w-[252px]`;
-- fundo branco;
-- borda direita;
-- transição suave `transition-all duration-300`;
-- conteúdo principal: árvore do curso com drag and drop;
-- rodapé da sidebar: links rápidos e ações de importação/exportação.
+Ela contém:
 
-### Main canvas
+- árvore do curso com drag and drop;
+- links rápidos para `Configurações do Curso`, `Atribuir a Alunos e Grupos` e `Gerenciar Avaliações`;
+- ações de `Exportar Conteúdo` e `Importar Conteúdo (IA)`.
 
-O painel principal é:
+### Canvas principal
 
-- `main.flex-1.h-full.bg-slate-50/50.relative.overflow-y-auto.w-full`
-- com um wrapper interno absoluto `inset-0 p-4 sm:px-6 sm:py-6 lg:px-8 lg:py-7`.
+O conteúdo principal usa:
 
-Isso produz:
+- `main.flex-1.h-full.bg-slate-50/50.relative.overflow-y-auto.w-full.border-t.border-slate-100.shadow-inner`
+- wrapper interno `absolute inset-0 p-4 sm:px-6 sm:py-6 lg:px-8 lg:py-7`
 
-- scroll independente do conteúdo principal;
-- sidebar e topbar permanecendo estáveis;
-- espaçamento lateral responsivo;
-- sensação de “canvas administrativo” em cima de um fundo cinza muito claro.
+Consequências práticas:
 
-## Contexto e fluxo de dados
+- a sidebar não rola junto com o painel principal;
+- o conteúdo interno sempre respira com padding consistente;
+- o fundo levemente cinza reforça a leitura de cartões brancos.
+
+## Fluxo de dados do builder
 
 ### BuilderContext
 
-O builder usa um contexto simples:
+O contexto expõe:
 
 - `courseTree: AdminCourseTree | null`
 - `refreshTree: () => Promise<void>`
 - `isLoading: boolean`
 
-Isso centraliza o estado do curso completo e evita recargas dispersas entre painéis.
+### Estrutura `AdminCourseTree`
 
-### Tipo `AdminCourseTree`
-
-Definido em [src/features/admin/content/api.ts](/c:/PLATAFORMAS%20VS%20CODE/GENFLIX/genflix/src/features/admin/content/api.ts:1), o payload do builder reúne:
+Definida em [src/features/admin/content/api.ts](/c:/PLATAFORMAS%20VS%20CODE/GENFLIX/genflix/src/features/admin/content/api.ts:1), ela reúne:
 
 - `course`
 - `modules`
   - cada módulo com `lessons`
   - cada módulo com `assessments`
 - `courseAssessments`
-  - avaliações de nível de curso, tipicamente a final.
 
-Essa decisão é importante porque o frontend trabalha majoritariamente sobre uma árvore já agregada, e não sobre várias consultas pontuais por painel.
+Essa árvore é o eixo do builder inteiro. Quase todas as telas dependem dela para:
 
-### Fontes de dados
+- exibir a navegação lateral;
+- montar métricas;
+- localizar módulo ou aula atual;
+- recalcular a interface após CRUD e importações.
 
-O builder conversa com o Supabase via:
+### Tabelas e buckets mais relevantes
 
-- tabelas `courses`, `course_modules`, `lessons`, `assessments`;
-- tabelas auxiliares de perguntas, opções, estudos de caso e botões;
-- buckets de storage:
-  - `thumbnails`
-  - `module-pdfs`
-  - `lesson-footer-assets`
-  - `lesson-content-assets`
-  - `materials`
+Tabelas:
 
-## Estrutura funcional por painel
+- `courses`
+- `course_modules`
+- `lessons`
+- `assessments`
+- `assessment_questions`
+- `assessment_options`
+- `assessment_case_studies`
+- `lesson_footer_actions`
+- `button_templates`
 
-### 1. Visão geral do curso
+Buckets:
 
-Arquivo: [src/pages/admin/builder/course-overview-panel.tsx](/c:/PLATAFORMAS%20VS%20CODE/GENFLIX/genflix/src/pages/admin/builder/course-overview-panel.tsx:1)
+- `thumbnails`
+- `module-pdfs`
+- `lesson-footer-assets`
+- `lesson-content-assets`
+- `materials`
 
-Função:
+## Página inicial do builder
 
-- dashboard resumido do curso dentro do builder.
+### Rota
 
-Conteúdo:
+- exemplo: `https://genflix-omega.vercel.app/admin/cursos/:courseId/builder`
+- arquivo: [course-overview-panel.tsx](/c:/PLATAFORMAS%20VS%20CODE/GENFLIX/genflix/src/pages/admin/builder/course-overview-panel.tsx:1)
 
-- cabeçalho textual;
-- cards de métricas:
-  - módulos;
-  - aulas;
-  - duração estimada;
-- mapa expandido do curso;
-- bloco da avaliação final;
-- entrada para análise com IA por módulo;
-- modais de histórico e aplicação de revisão.
+### Papel funcional
 
-HTML/JSX dominante:
+Esta é a tela de entrada do construtor. Ela funciona como um centro de controle do curso e não como um formulário tradicional.
 
-- `div.space-y-8`;
-- `div.grid md:grid-cols-3` para cards de métricas;
-- `div.rounded-2xl border bg-white shadow-sm` para cartões;
-- módulos renderizados em lista vertical com cabeçalhos, badges e links.
+Ela reúne:
 
-Visualmente é um painel de overview clássico de admin:
+- métricas gerais;
+- mapa expandido da hierarquia do curso;
+- acesso direto para editar módulos, aulas e quizzes;
+- visão da avaliação final;
+- revisão com IA por módulo;
+- histórico de revisões e aplicação de correções.
 
-- muito branco;
+### Estrutura visual e layout
+
+Wrapper principal:
+
+- `div.w-full.space-y-8.pb-12.animate-in.fade-in.duration-500`
+
+Blocos principais:
+
+- cabeçalho superior com título e subtítulo;
+- banner de erro ou sucesso;
+- grid de métricas em 3 colunas;
+- card grande `Mapa do Curso`;
+- card `Avaliação Final`;
+- modais de IA.
+
+### Cabeçalho da página
+
+O topo da tela usa:
+
+- `border-b border-slate-200 pb-5`
+- `h2.text-3xl.font-extrabold`
+- parágrafo curto em `text-sm text-slate-500`
+
+Ele comunica que a tela é um resumo e um ponto de navegação, não um editor de campo único.
+
+### Cards de métricas
+
+A grade usa:
+
+- `grid grid-cols-1 gap-6 md:grid-cols-3`
+
+Os três cards atuais mostram:
+
+- quantidade de módulos;
+- quantidade de aulas;
+- duração estimada total do curso.
+
+Cada card é:
+
+- branco;
+- centralizado;
+- com ícone em círculo azul claro;
+- valor grande em `text-3xl font-black`;
+- rótulo pequeno em uppercase.
+
+### Mapa do Curso
+
+O bloco principal do overview tem duas camadas:
+
+- cabeçalho do card com título, descrição e CTA `Adicionar Módulo`;
+- corpo com a hierarquia dos módulos, aulas e quizzes.
+
+Cada módulo aparece como card próprio, contendo:
+
+- número sequencial `Módulo N`;
+- badge `Obrigatório` se `is_required` estiver ativo;
+- título do módulo;
+- botões `Ultimas revisoes`, `Analisar com IA`, `Editar Módulo`, excluir;
+- lista interna de aulas e quizzes.
+
+Cada aula no mapa mostra:
+
+- título;
+- tipo pedagógico;
+- link direto ao editor;
+- exclusão direta.
+
+Cada quiz do módulo mostra:
+
+- título;
+- passagem para o builder de avaliações;
+- exclusão direta.
+
+### Avaliação final no overview
+
+A parte final da tela exibe:
+
+- quizzes finais do curso, se existirem;
+- título da avaliação;
+- nota mínima;
+- tentativas;
+- botões `Editar` e excluir.
+
+### Funcionalidades de IA nesta tela
+
+O overview tem forte integração com revisão de módulo por IA:
+
+- `Analisar com IA`
+- reaproveitamento de análise já existente;
+- histórico por módulo;
+- modal completo com score, resumo, issues, custo e tokens;
+- ação `Implementar Ajustes`.
+
+O fluxo atual:
+
+1. o usuário pede análise;
+2. a IA devolve `quality_score`, `summary`, `issues` e, opcionalmente, `corrected_module`;
+3. o resultado pode ser salvo em histórico;
+4. o usuário pode aplicar a correção;
+5. a aplicação reimporta o módulo com `importCourseContent`.
+
+### Leitura visual da tela
+
+É uma tela de dashboard administrativo clássica:
+
+- muitos cards brancos;
 - bordas leves;
-- métricas grandes em `text-3xl font-black`;
-- labels pequenos em `uppercase tracking-widest`;
-- uso forte de azul para ações e verde/âmbar para estados.
+- azul para ação primária;
+- verde para estado positivo;
+- âmbar e rosa para alertas;
+- conteúdo muito escaneável;
+- baixa densidade e bastante espaçamento vertical.
 
-### 2. Editor de módulo
+## Configurações do módulo
 
-Arquivo: [src/pages/admin/builder/module-editor-panel.tsx](/c:/PLATAFORMAS%20VS%20CODE/GENFLIX/genflix/src/pages/admin/builder/module-editor-panel.tsx:1)
+### Rota
 
-Função:
+- exemplo: `https://genflix-omega.vercel.app/admin/cursos/:courseId/builder/modulos/:moduleId`
+- arquivo: [module-editor-panel.tsx](/c:/PLATAFORMAS%20VS%20CODE/GENFLIX/genflix/src/pages/admin/builder/module-editor-panel.tsx:1)
 
-- criar ou editar um módulo;
-- configurar nome, descrição, obrigatoriedade e regras de liberação;
-- gerenciar PDF base do módulo;
-- executar revisão com IA e aplicar ajustes.
+### Papel funcional
 
-Campos principais:
+Esta tela edita os metadados e as regras de liberação de um módulo específico.
+
+Ela cobre:
 
 - título;
 - descrição;
-- `is_required`;
-- `starts_at`;
-- `ends_at`;
-- `release_days_after_enrollment`.
+- obrigatoriedade;
+- janela de liberação;
+- liberação após X dias da inscrição;
+- PDF base do módulo;
+- revisão com IA e histórico.
 
-Blocos visuais:
+### Estrutura visual
 
-- card branco do formulário;
-- toggle em caixa azul clara para obrigatoriedade;
-- seção “Liberação Programada” com dois `datetime-local`;
-- caixa extra para “Liberar após X dias da inscrição”;
-- card para PDF base;
-- rodapé com ações `Excluir Módulo` e `Salvar Alterações`.
+Wrapper:
 
-HTML/JSX:
+- `div.w-full.space-y-6.animate-in.fade-in.duration-500`
 
-- `form.bg-white.rounded-2xl.border.shadow-sm.overflow-hidden`;
-- inputs com `rounded-xl border border-slate-200 bg-slate-50/50`;
-- seções agrupadas por `div.rounded-[24px]` e `div.rounded-2xl`.
+Blocos:
 
-Observação visual importante:
+- cabeçalho da tela;
+- barra de ações de IA;
+- formulário principal;
+- modais de IA.
 
-- embora o JSX use muitos `rounded-2xl`, `rounded-[24px]` e similares, o CSS global padroniza quase tudo para cantos menores.
+### Cabeçalho
 
-### 3. Editor de aula
+O topo alterna entre:
 
-Arquivo: [src/pages/admin/builder/lesson-editor-panel.tsx](/c:/PLATAFORMAS%20VS%20CODE/GENFLIX/genflix/src/pages/admin/builder/lesson-editor-panel.tsx:1)
+- `Criar Novo Módulo`
+- `Configurações do Módulo`
 
-É o painel mais rico do builder hoje.
+Subtítulo:
 
-Funções:
+- quando novo, explica que o módulo será uma seção principal do curso;
+- quando existente, explica que ali se atualizam detalhes e restrições.
 
-- criar ou editar aula;
-- alternar formato pedagógico:
-  - `video`
-  - `text`
-  - `hybrid`
-- editar conteúdo textual em blocos;
-- configurar YouTube;
-- moderar solicitações de narração;
-- visualizar player de áudio administrativo;
-- acessar materiais/botões do rodapé;
-- definir duração e regras de conclusão.
+### Formulário principal
 
-#### Estrutura do formulário
+O formulário usa:
 
-O formulário é dividido em fieldsets numerados:
+- `form.bg-white.rounded-2xl.border.border-slate-200.shadow-sm.overflow-hidden`
 
-- `01 Identificação da Aula`
-- `02 Formato Pedagógico`
-- `03 Configurações de Conclusão`
+O corpo interno é:
 
-Isso dá uma cara de wizard linear, embora tudo esteja numa única tela.
+- `p-6 md:p-8 space-y-6`
 
-#### Alternância de tipo de aula
+Campos atuais:
 
-Há um seletor visual em grade `sm:grid-cols-3`, com botões tab-like:
+- `Capa / Título do Módulo`
+- `Descrição Organizacional`
+- toggle `Exigir Conclusão deste Módulo`
+- bloco `Liberação Programada`
+  - `Liberar em`
+  - `Expirar em`
+- bloco `Liberar após X dias da inscrição`
+
+### Regra de liberação do módulo
+
+Esse ponto é importante funcionalmente:
+
+- o módulo pode ter data de início;
+- data de fim;
+- número de dias após inscrição;
+- se houver data e número de dias, as regras são cumulativas.
+
+Ou seja, o módulo só libera quando todas as condições aplicáveis forem atendidas.
+
+### PDF base do módulo
+
+Quando o módulo já existe, surge um card adicional:
+
+- nome do PDF atual ou estado vazio;
+- descrição explicando que o aluno receberá versão licenciada com marca d'água;
+- botão `Enviar PDF`;
+- botão `Remover PDF`, se já houver arquivo.
+
+### Rodapé do formulário
+
+O rodapé tem:
+
+- botão `Excluir Módulo`, quando não é criação;
+- botão `Salvar Alterações`.
+
+### Revisão com IA no módulo
+
+A tela do módulo tem um segundo eixo além do CRUD:
+
+- `Analisar com IA`
+- `Ver ajustes realizados`
+- histórico de revisão;
+- modal de resultado;
+- modal de histórico aplicado.
+
+O conteúdo dessas revisões inclui:
+
+- score;
+- resumo;
+- tokens de entrada e saída;
+- custo estimado;
+- lista de problemas;
+- botão `Implementar Ajustes`.
+
+### Layout e leitura visual
+
+É uma tela muito mais “formulário de configuração” do que “builder visual”.
+
+Padrões visuais:
+
+- branco como base;
+- blocos internos em cinza claro ou azul claro;
+- labels pequenas em uppercase;
+- destaque azul em checkboxes e CTAs;
+- modais grandes e muito informativos para IA.
+
+## Editor da aula
+
+### Rota
+
+- exemplo: `https://genflix-omega.vercel.app/admin/cursos/:courseId/builder/modulos/:moduleId/aulas/:lessonId`
+- arquivo: [lesson-editor-panel.tsx](/c:/PLATAFORMAS%20VS%20CODE/GENFLIX/genflix/src/pages/admin/builder/lesson-editor-panel.tsx:1)
+
+### Papel funcional
+
+É uma das telas mais importantes do builder. Aqui se define:
+
+- identidade da aula;
+- tipo pedagógico;
+- conteúdo em vídeo e/ou texto;
+- blocos ricos;
+- duração;
+- obrigatoriedade;
+- janela de liberação;
+- preview dos botões do rodapé;
+- moderação de solicitações de narração.
+
+### Estrutura geral
+
+Wrapper:
+
+- `div.w-full.space-y-6.animate-in.fade-in.duration-500.pb-20`
+
+Blocos principais:
+
+- `<style>` local com skin do editor rico;
+- cabeçalho da página;
+- player/admin de áudio e moderação, quando aplicável;
+- formulário principal;
+- rodapé de salvar/excluir.
+
+### Cabeçalho da aula
+
+Topo:
+
+- título `Criar Nova Aula` ou `Editor de Aula`;
+- subtítulo curto;
+- botão `Botoes e URLs da Aula` se a aula já existir.
+
+Esse botão leva para:
+
+- `/admin/cursos/:courseId/builder/modulos/:moduleId/aulas/:lessonId/materiais`
+
+### Área de áudio e moderação
+
+Quando a aula é `text` ou `hybrid` e já existe, aparecem:
+
+- `LessonAudioPlayer` em modo admin;
+- card de `Solicitações de moderação da narração`.
+
+Esse card permite:
+
+- listar solicitações abertas;
+- ver solicitante;
+- ver erro técnico, se houver;
+- escrever resposta administrativa;
+- marcar como resolvida.
+
+### Formulário da aula
+
+O formulário é um card grande:
+
+- `bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col`
+
+O corpo interno é organizado como se fosse um wizard, mas sem navegação entre etapas.
+
+#### Bloco 01: Identificação da Aula
+
+Contém:
+
+- título obrigatório;
+- descrição curta opcional.
+
+#### Bloco 02: Formato Pedagógico
+
+Contém o seletor de tipo:
 
 - `Apenas Vídeo`
 - `Apenas Texto`
 - `Vídeo + Texto`
 
+Visualmente é uma grade de 3 botões sobre:
+
+- `bg-slate-100/80 p-1.5 rounded-2xl`
+
 O estado ativo recebe:
 
-- fundo branco;
+- branco;
 - texto azul;
-- `shadow-sm`;
-- `ring-1 ring-slate-200`.
+- sombra leve;
+- ring sutil.
 
-O estado inativo usa:
+#### Campo de YouTube
 
-- texto cinza;
-- hover mais escuro.
+Se a aula for `video` ou `hybrid`, aparece:
 
-#### Conteúdo em blocos
+- input de URL do YouTube;
+- ícone de vídeo;
+- foco em `rose`.
 
-Quando a aula é `text` ou `hybrid`, o conteúdo não é um campo HTML único na UI. Ele é quebrado em blocos:
+#### Estrutura do conteúdo textual
+
+Se a aula for `text` ou `hybrid`, surge a área mais rica do editor:
+
+- lista de blocos;
+- ações por bloco;
+- botões para adicionar novos blocos.
+
+Tipos de bloco:
 
 - `rich-text`
 - `table`
 - `image-hotspots`
 
-Essa lógica fica em [src/features/admin/content/content-blocks.ts](/c:/PLATAFORMAS%20VS%20CODE/GENFLIX/genflix/src/features/admin/content/content-blocks.ts:1).
+Essa estrutura é baseada em [content-blocks.ts](/c:/PLATAFORMAS%20VS%20CODE/GENFLIX/genflix/src/features/admin/content/content-blocks.ts:1).
 
-O pipeline é:
+### Como o conteúdo da aula é persistido
 
-1. carregar `text_content` salvo;
-2. `splitContent(...)` separa trechos ricos, tabelas e blocos especiais;
-3. o usuário edita cada bloco separadamente;
-4. `mergeContent(...)` recompõe o HTML final antes de salvar.
+O backend da aula continua recebendo um HTML único em `text_content`, mas a UI trabalha internamente com blocos.
 
-#### Bloco de texto rico
+Fluxo:
 
-Usa [src/components/forms/react-quill.tsx](/c:/PLATAFORMAS%20VS%20CODE/GENFLIX/genflix/src/components/forms/react-quill.tsx:1), mas o componente atual é um editor local baseado em `contentEditable`, não o `react-quill` oficial.
+1. ao carregar, `splitContent(textContent)` quebra o HTML em blocos;
+2. o usuário edita cada bloco separadamente;
+3. ao salvar, `mergeContent(blocks)` recompõe o HTML final;
+4. tabelas e hotspots passam por serialização e sanitização específicas.
 
-Ele entrega:
+### Bloco de texto rico
 
-- toolbar simples;
-- `execCommand`;
-- área editável com placeholder;
-- HTML retornado via `onInput` e `onBlur`.
+O editor usa [ReactQuill customizado](/c:/PLATAFORMAS%20VS%20CODE/GENFLIX/genflix/src/components/forms/react-quill.tsx:1), mas com skin própria.
 
-Visualmente:
-
-- toolbar cinza clara;
-- botões brancos pequenos;
-- área interna com bastante padding;
-- borda sutil.
-
-Além disso, o próprio `lesson-editor-panel.tsx` injeta um `<style>` local para simular aparência de Quill:
+O painel injeta CSS local para:
 
 - `.quill`
 - `.ql-toolbar`
 - `.ql-container`
 - `.ql-editor`
 
-#### Bloco de tabela
+Visual:
 
-O bloco de tabela tem duas partes:
+- toolbar cinza clara;
+- corpo branco;
+- padding generoso;
+- títulos fortes;
+- tipografia confortável.
 
-- preview renderizado com `dangerouslySetInnerHTML`;
-- textarea monoespaçada para editar HTML cru da tabela.
+### Bloco de tabela
 
-A preview aparece numa caixa branca com borda azul clara e label “Preview da Tabela”.
-O editor cru aparece em fundo `slate-900` com texto `emerald-400`, reforçando visual de código.
+Esse bloco combina:
 
-#### Bloco de hotspots
+- preview renderizado;
+- textarea monoespaçada para HTML da tabela.
 
-O bloco `image-hotspots` usa o componente `LessonImageHotspotsBlockEditor`.
+A preview:
 
-Conceitualmente ele encapsula:
+- fica em card branco com borda azul clara;
+- exibe a tabela sanitizada.
 
-- imagem base;
-- largura/altura;
-- lista de hotspots;
-- coordenadas percentuais `x/y`;
-- título e `body_html` por hotspot.
+O editor cru:
 
-O conteúdo é serializado como um `div` com atributos `data-hcm-block` e `data-hcm-payload`, preservando o bloco especial dentro do HTML da aula.
+- usa `font-mono`;
+- fundo `slate-900`;
+- texto `emerald-400`;
+- aparência de editor de código.
 
-#### Botões de manipulação de blocos
+As tabelas são higienizadas por `sanitizeTableHtml`, que:
 
-Cada bloco tem controles de:
+- remove tags perigosas;
+- preserva apenas a estrutura permitida;
+- marca células vazias com `data-empty-cell="true"`.
 
-- subir;
-- descer;
+### Bloco de hotspots da aula
+
+Esse bloco usa `LessonImageHotspotsBlockEditor` e é independente do sistema de quizzes.
+
+Estrutura do payload:
+
+- `asset`
+  - `storage_path`
+  - `signed_url`
+  - `alt`
+  - `width`
+  - `height`
+- `hotspots`
+  - `id`
+  - `x`
+  - `y`
+  - `title`
+  - `body_html`
+
+Persistência:
+
+- o bloco é serializado dentro do HTML da aula com atributos:
+  - `data-hcm-block="image-hotspots"`
+  - `data-hcm-payload="..."`
+
+### Ações por bloco
+
+Cada bloco permite:
+
+- mover para cima;
+- mover para baixo;
 - excluir.
 
-Esses controles:
+Esses controles ficam discretos:
 
-- só ganham opacidade total no hover do grupo;
-- usam ícones do `lucide-react`;
-- ficam visualmente discretos até o foco do usuário.
+- `opacity-0 group-hover:opacity-100`
 
-### 4. Materiais e botões do rodapé da aula
+### Campo de carga horária
 
-Arquivo: [src/pages/admin/builder/lesson-materials-panel.tsx](/c:/PLATAFORMAS%20VS%20CODE/GENFLIX/genflix/src/pages/admin/builder/lesson-materials-panel.tsx:1)
+Ainda dentro do bloco 02:
 
-Função:
+- `Carga Horária Estimada (Min)`
+- input numérico;
+- valor salvo em `estimated_minutes`.
 
-- gerenciar ações de rodapé da aula que aparecem no player do aluno.
+#### Bloco 03: Configurações de Conclusão
 
-Tipos de ação:
+Contém:
 
-- arquivo;
-- URL.
+- toggle `Marcar como Aula Obrigatória`;
+- janela de liberação da aula;
+- card de `Botoes no Rodape da Aula`.
 
-Estrutura visual em duas colunas:
+Importante:
 
-- coluna esquerda:
-  - escolha de template visual;
-  - preview do botão;
-  - upload de arquivo;
-  - criação de link;
-- coluna direita:
-  - lista de ações já configuradas.
+- a aula só libera se a própria aula estiver liberada;
+- e também se o módulo pai estiver dentro das regras de liberação.
 
-HTML/JSX dominante:
+### Preview de botões do rodapé da aula
 
-- `grid xl:grid-cols-[380px_minmax(0,1fr)]`;
-- ambos os painéis em `rounded-[28px] border bg-white shadow-sm`.
+Quando a aula já existe:
 
-Isso cria uma tela muito clara, com side panel operacional e uma lista de cards à direita.
+- os `lesson_footer_actions` são carregados;
+- a tela mostra preview dos botões configurados;
+- o estilo do preview usa `getLessonFooterButtonClassName(action.template)`.
 
-### 5. Configurações do curso
+Isso permite ver rapidamente:
 
-Arquivo: [src/pages/admin/builder/course-settings-panel.tsx](/c:/PLATAFORMAS%20VS%20CODE/GENFLIX/genflix/src/pages/admin/builder/course-settings-panel.tsx:1)
+- ordem dos botões;
+- rótulo;
+- tipo `Arquivo` ou `URL`.
 
-Função:
+### Layout visual da tela
 
-- editar metadados principais do curso;
-- configurar capa, slug, lançamento e preço;
-- definir visibilidade pública;
-- associar criador e comissão;
-- configurar progressão linear;
-- habilitar tipos de quiz;
-- parametrizar padrões da IA;
-- resetar progresso de alunos.
+Esta tela mistura dois estilos:
 
-Seções principais:
+- formulário administrativo clássico;
+- mini page builder de conteúdo.
 
-- capa do curso;
-- nome e metadados comerciais;
-- descrição detalhada;
-- status;
-- progressão linear;
-- tipos de quiz disponíveis;
-- padrões do curso perfeito;
-- renovação de progresso.
+É a página com maior variedade visual dentro do builder:
 
-Visualmente, este é um painel mais “produto/comercial” do que “conteúdo”:
+- cards de moderação;
+- editor rico;
+- editor técnico de tabela;
+- preview de interações;
+- blocos reordenáveis.
 
-- muitos blocos em destaque;
-- cards coloridos em `cyan`, `blue`, `violet`, `rose`;
-- upload de thumb com área grande 4:3;
-- uso intenso de headings e subtítulos.
+## Todas as configurações e estrutura dos quizzes
 
-### 6. Gestão de avaliações
+## Entidade de avaliação
 
-Arquivo: [src/pages/admin/builder/course-assessments-panel.tsx](/c:/PLATAFORMAS%20VS%20CODE/GENFLIX/genflix/src/pages/admin/builder/course-assessments-panel.tsx:1)
+O sistema trata avaliações em dois níveis:
 
-Função:
+- `assessment_type: 'module'`
+- `assessment_type: 'final'`
 
-- consolidar avaliação final e quizzes por módulo;
-- criar, editar, excluir;
-- importar/exportar JSON de IA.
+Campos principais da avaliação:
+
+- `title`
+- `description`
+- `passing_score`
+- `max_attempts`
+- `estimated_minutes`
+- `is_required`
+- `is_active`
+- vínculo com `course_id`
+- vínculo opcional com `module_id`
+
+## Hub de avaliações
+
+### Rota
+
+- `/admin/cursos/:courseId/builder/assessments`
+- arquivo: [course-assessments-panel.tsx](/c:/PLATAFORMAS%20VS%20CODE/GENFLIX/genflix/src/pages/admin/builder/course-assessments-panel.tsx:1)
+
+### Papel funcional
+
+É uma tela agregadora. Ela não é o editor profundo da avaliação, mas o índice de navegação e manutenção.
+
+Ela mostra:
+
+- avaliação final do curso;
+- quizzes por módulo;
+- ações de criar, editar, importar e excluir.
+
+### Layout
+
+Blocos visuais:
+
+- card da avaliação final;
+- lista de cards de módulos com quizzes;
+- modal de importação de avaliação via IA.
+
+### Funcionalidades
+
+Avaliação final:
+
+- exportar JSON;
+- importar IA;
+- configurar final;
+- editar;
+- excluir.
+
+Quizzes por módulo:
+
+- adicionar quiz;
+- editar quiz existente;
+- excluir quiz;
+- importar quiz por IA diretamente para um módulo.
+
+## Construtor de avaliações
+
+### Rotas
+
+- quiz de módulo:
+  - `/admin/cursos/:courseId/builder/modulos/:moduleId/avaliacoes/:assessmentId`
+- avaliação final:
+  - `/admin/cursos/:courseId/builder/assessments/final`
+
+Arquivo:
+
+- [assessment-builder-panel.tsx](/c:/PLATAFORMAS%20VS%20CODE/GENFLIX/genflix/src/pages/admin/builder/assessment-builder-panel.tsx:1)
+
+### Papel funcional
+
+É o editor profundo dos quizzes. Ele administra:
+
+- metadados da avaliação;
+- perguntas independentes;
+- estudos de caso;
+- questões gamificadas;
+- importação estruturada;
+- regras de pontuação.
+
+### Estrutura visual do builder
 
 A tela é composta por:
 
-- card da avaliação final;
-- seção listando todos os módulos com seus quizzes;
+- cabeçalho da avaliação;
+- linha de controles rápidos;
+- banners de erro;
+- cards de métricas;
+- cartões de questões;
+- cartões de estudos de caso;
+- grade de botões para adicionar novos tipos;
+- modal para escolher modalidade do hotspot;
 - modal de importação JSON.
 
-É uma camada de navegação/organização, enquanto a edição profunda ocorre no `AssessmentBuilderPanel`.
+### Cabeçalho da avaliação
 
-### 7. Builder de avaliações
+O topo permite editar inline:
 
-Arquivo: [src/pages/admin/builder/assessment-builder-panel.tsx](/c:/PLATAFORMAS%20VS%20CODE/GENFLIX/genflix/src/pages/admin/builder/assessment-builder-panel.tsx:1)
+- título;
+- descrição;
+- nota mínima;
+- tentativas;
+- duração.
 
-É o painel mais complexo do construtor junto com o editor de aula.
+Esses campos têm persistência incremental em blur.
 
-Função:
+### Métricas e regra de aprovação
 
-- criar avaliação final ou quiz de módulo;
-- editar metadados da avaliação;
-- criar perguntas;
-- criar estudos de caso;
-- configurar tipos gamificados;
-- importar conteúdo estruturado de IA.
+O builder calcula:
 
-Tipos de questão suportados:
+- quantidade de questões pontuáveis;
+- nota mínima real em pontos;
+- total de pontos do quiz;
+- explicação textual da regra de aprovação.
+
+Regra importante:
+
+- `essay_ai` não soma pontos;
+- a aprovação considera a soma final de pontos do quiz;
+- o aluno precisa atingir o corte definido em `passing_score`.
+
+### Tipos de pergunta suportados hoje
+
+Perguntas independentes:
 
 - `single_choice`
 - `essay_ai`
-- `case_study_ai`
-- `case_study_single_choice`
 - `drag_drop_labeling`
 - `fill_in_the_blanks`
 - `image_hotspot`
 - `coloring`
 
-Elementos visuais centrais:
+Perguntas dentro de estudo de caso:
 
-- cabeçalho com resumo da regra de aprovação;
-- cards de métrica de pontuação;
-- cartões de perguntas;
-- cartões de estudos de caso;
-- grade de “Adicionar tipo de quiz” com botões grandes tracejados;
-- modal para escolher modalidade de `image_hotspot`;
-- modal de importação JSON.
+- `case_study_single_choice`
+- `case_study_ai`
 
-Esse painel é mais “builder de objetos” que “formulário clássico”, com várias regiões dinâmicas e persistência incremental.
+Estrutura de grupo:
 
-## Árvore lateral e navegação estrutural
+- `case_study`
 
-Arquivo: [src/features/admin/content/components/course-tree-dnd.tsx](/c:/PLATAFORMAS%20VS%20CODE/GENFLIX/genflix/src/features/admin/content/components/course-tree-dnd.tsx:1)
+### Multipla escolha
 
-### Papel da árvore
+Tipos:
 
-A sidebar é a espinha dorsal do builder.
+- `single_choice`
+- `case_study_single_choice`
 
-Ela exibe:
+Estrutura:
+
+- texto da pergunta;
+- lista de alternativas;
+- pontos;
+- identificação da correta.
+
+É o formato mais clássico do builder.
+
+### Discursiva com IA
+
+Tipos:
+
+- `essay_ai`
+- `case_study_ai`
+
+Estrutura:
+
+- texto da pergunta;
+- `essay_expected_answer`;
+- feedback orientado por IA.
+
+Regra importante:
+
+- não entra na nota final do quiz;
+- aparece como questão com validação qualitativa;
+- exige resposta esperada para comparação.
+
+### Arrastar e soltar
+
+Tipo:
+
+- `drag_drop_labeling`
+
+Estrutura da interação:
+
+- `instruction`
+- `asset`
+- `tokens`
+- `targets`
+
+Cada `target` tem:
+
+- `id`
+- `x`
+- `y`
+- `w`
+- `h`
+- `label`
+
+O gabarito é um mapeamento `slot_id -> token_id`.
+
+Modos de correção:
+
+- `partial_by_item`
+- `all_or_nothing`
+
+### Preencher lacunas
+
+Tipo:
+
+- `fill_in_the_blanks`
+
+Estrutura:
+
+- `instruction`
+- `segments`
+  - texto;
+  - lacunas;
+- `tokens`
+- `editor_groups`
+
+O editor atual modela a pergunta como grupos visuais, cada um com:
+
+- texto inicial;
+- uma ou várias lacunas;
+- placeholder de cada lacuna;
+- resposta correta;
+- texto após a lacuna;
+- tokens extras como distratores.
+
+O gabarito também é `slot_id -> token_id`.
+
+### Quiz de hotspot
+
+Tipo:
+
+- `image_hotspot`
+
+Estrutura:
+
+- `instruction`
+- `mode`
+- `asset`
+- `targets`
+- `outside_click_feedback`
+- `show_feedback_as_popup`
+
+Cada hotspot tem:
+
+- `id`
+- `x`
+- `y`
+- `w`
+- `h`
+- `label`
+- `is_correct`
+- `feedback_text`
+
+Modos suportados:
+
+- `single_attempt`
+  encerra no primeiro clique relevante;
+- `find_all`
+  o aluno vai encontrando todos os hotspots corretos.
+
+O gabarito é:
+
+- `correct_target_ids`
+
+### Quiz de colorir
+
+Tipo:
+
+- `coloring`
+
+É o tipo gamificado mais complexo hoje.
+
+Estrutura base:
+
+- `instruction`
+- `asset`
+- `tokens`
+  - cada token possui `label` e `hex`
+
+Modos de renderização:
+
+- `legacy_rect`
+- `svg_regions`
+
+#### `legacy_rect`
+
+Usa áreas retangulares/points posicionados sobre a imagem.
+
+Estrutura:
+
+- `targets`
+  - `id`
+  - `x`
+  - `y`
+  - `w`
+  - `h`
+  - `label`
+
+#### `svg_regions`
+
+Usa SVG real com regiões detectáveis.
+
+Estrutura:
+
+- `svg_markup`
+- `regions`
+  - `region_id`
+  - `label`
+
+Esse modo permite importar:
+
+- arquivo SVG;
+- markup SVG/XML direto;
+- regiões com `data-region-id`.
+
+### Modos de correção das questões gamificadas
+
+Todos os tipos gamificados trabalham com:
+
+- `answer_key`
+- `grading_mode`
+
+Modos:
+
+- `partial_by_item`
+  a nota da pergunta é dividida entre os itens corretos;
+- `all_or_nothing`
+  só pontua se acertar tudo.
+
+### Como o builder explica a pontuação
+
+O painel gera textos de ajuda baseados em:
+
+- tipo da pergunta;
+- quantidade de slots;
+- pontuação;
+- modo de correção.
+
+Isso deixa a lógica da avaliação mais explícita para quem está montando o quiz.
+
+### Estudos de caso
+
+O builder também suporta blocos de `case_study`.
+
+Cada estudo de caso possui:
+
+- `title`
+- `case_text`
+- lista de perguntas internas
+
+Essas perguntas podem ser:
+
+- `case_study_single_choice`
+- `case_study_ai`
+
+Visualmente, o estudo de caso é um card próprio com cabeçalho âmbar, texto longo e perguntas filhas abaixo.
+
+### Controle por tipos de quiz habilitados
+
+O builder de avaliações respeita duas camadas de permissão:
+
+- tipos de quiz ativos globalmente;
+- tipos de quiz ativos no curso.
+
+Se um tipo estiver desativado:
+
+- ele some da grade de criação;
+- o builder mostra avisos de indisponibilidade;
+- estudos de caso também podem ser bloqueados.
+
+### Modal de importação da avaliação
+
+O modal aceita JSON com:
+
+- `questions`
+- `case_studies`
+- `interaction`
+- `grading`
+
+O texto da própria UI explicita que o JSON pode misturar:
+
+- perguntas avulsas;
+- estudos de caso;
+- interações gamificadas.
+
+## Página de configurações do curso
+
+### Rota
+
+- exemplo: `https://genflix-omega.vercel.app/admin/cursos/:courseId/builder/settings`
+- arquivo: [course-settings-panel.tsx](/c:/PLATAFORMAS%20VS%20CODE/GENFLIX/genflix/src/pages/admin/builder/course-settings-panel.tsx:1)
+
+### Papel funcional
+
+Esta tela mistura três camadas:
+
+- comercial;
+- pedagógica;
+- operacional.
+
+Ela cobre:
+
+- capa do curso;
+- nome e descrição;
+- slug, lançamento e preço;
+- moeda;
+- visibilidade pública;
+- criador vinculado e comissão;
+- status;
+- progressão linear;
+- tipos de quiz permitidos;
+- padrões de revisão com IA;
+- renovação do progresso de todos os alunos.
+
+### Layout visual
+
+A tela é mais colorida que o restante do builder.
+
+Ela usa:
+
+- card branco grande para dados principais;
+- bloco ciano para checkout e vendas;
+- cartões de tipos de quiz por cor/estado;
+- card preto/cinza para padrões da IA;
+- card rosa para reset de progresso.
+
+### Seção de thumbnail
+
+O upload da capa é uma área 4:3 grande com:
+
+- drag/click;
+- preview da imagem;
+- overlay de alteração;
+- botão remover quando já existe.
+
+### Seção comercial
+
+Campos:
+
+- `title`
+- `slug`
+- `launch_date`
+- `price_cents`
+- `currency`
+- `creator_id`
+- `creator_commission_percent`
+- `is_public`
+
+Essa seção conversa com:
+
+- catálogo público;
+- checkout;
+- repasse para criador.
+
+### Descrição detalhada
+
+Usa editor rico com `ReactQuill` customizado.
+
+Serve mais ao catálogo e à venda do que ao builder interno.
+
+### Status do curso
+
+O curso pode estar em:
+
+- `draft`
+- `published`
+- `archived`
+
+### Progressão linear
+
+Toggle:
+
+- `has_linear_progression`
+
+Quando ativado:
+
+- o aluno precisa concluir a aula atual para liberar a próxima;
+- o módulo seguinte depende da conclusão do módulo anterior;
+- quizzes entram nessa progressão.
+
+### Tipos de quiz disponíveis no curso
+
+A tela exibe cartões para os tipos globais visíveis e permite ligar/desligar por curso:
+
+- multipla escolha;
+- discursiva com IA;
+- arrastar e soltar;
+- preencher lacunas;
+- hotspot;
+- colorir;
+- estudo de caso, quando suportado pela combinação de tipos.
+
+Também mostra:
+
+- quantos tipos estão ativos;
+- quantos estão ocultos por bloqueio global;
+- aviso sobre uso de estudo de caso.
+
+### Padrões do curso perfeito
+
+É a camada que orienta a IA na revisão de módulos.
+
+Campos:
+
+- `ideal_course_structure`
+- `required_elements`
+- `bibliography_rules`
+- `table_formatting_rules`
+- `additional_review_rules`
+
+### Renovar progresso do curso
+
+É uma ação destrutiva de administração.
+
+Apaga:
+
+- progresso do curso;
+- progresso das aulas;
+- tentativas e resultados das avaliações;
+- pedidos de tentativa extra;
+- grants de tentativa extra.
+
+A UI mostra:
+
+- aviso explícito;
+- cards com o que será apagado;
+- resumo do que foi impactado após a execução.
+
+## Árvore lateral do builder
+
+Arquivo:
+
+- [course-tree-dnd.tsx](/c:/PLATAFORMAS%20VS%20CODE/GENFLIX/genflix/src/features/admin/content/components/course-tree-dnd.tsx:1)
+
+### Papel funcional
+
+É a espinha dorsal de navegação do construtor.
+
+Mostra:
 
 - visão geral do curso;
 - módulos;
 - aulas por módulo;
 - quizzes por módulo;
 - avaliação final;
-- ações rápidas de criação.
+- atalhos rápidos para adicionar aula, quiz e módulo.
 
-### Drag and drop
+### Reordenação
 
-Implementado com `@hello-pangea/dnd`.
+Implementada com `@hello-pangea/dnd`.
 
 Suporta:
 
-- reordenação de módulos;
-- reordenação de aulas dentro do módulo.
+- reorder de módulos;
+- reorder de aulas dentro do módulo.
 
 Não reordena quizzes nessa versão.
 
-### Estrutura visual
+### Leitura visual
 
-Padrões de leitura:
+Módulo:
 
-- módulo:
-  - linha mais robusta;
-  - marcador `M1`, `M2`, etc.;
-  - drag handle à esquerda;
-  - lixeira visível no hover;
-- aula:
-  - indentada;
-  - linha menor;
-  - ícone por tipo:
-    - vídeo;
-    - texto;
-  - destaque azul quando ativa;
-- quiz:
-  - linha de tonalidade âmbar;
-  - ícone de escudo/check;
-- avaliação final:
-  - bloco separado com acento esverdeado.
+- linha principal forte;
+- drag handle;
+- marcador `M1`, `M2`, etc.;
+- botão de excluir em hover.
 
-### Hierarquia visual
+Aula:
 
-Há uma linha vertical `border-l-2 border-slate-100` conectando as aulas e quizzes ao módulo pai, criando leitura clara de árvore.
+- indentada;
+- ícone por tipo;
+- destaque azul quando ativa.
 
-### HTML/JSX recorrente
+Quiz:
 
-- `Link` como wrapper clicável de quase todos os nós;
-- `button` para exclusão;
-- `div.group` para hover contextual;
-- `opacity-0 group-hover:opacity-100` para controles discretos.
+- linha com tom âmbar;
+- ícone de avaliação;
+- destaque âmbar quando ativo.
 
-## Detalhes de dados e modelagem
+Avaliação final:
 
-Arquivo base: [src/types/content.ts](/c:/PLATAFORMAS%20VS%20CODE/GENFLIX/genflix/src/types/content.ts:1)
+- bloco próprio ao final da árvore;
+- destaque esverdeado.
 
-### Entidades principais
+### Quick actions
 
-- `Course`
-- `CourseModule`
-- `Lesson`
-- `Assessment`
-- `AssessmentQuestion`
-- `AssessmentCaseStudy`
-- `AssessmentOption`
-- `LessonFooterAction`
-- `ButtonTemplate`
+Dentro de cada módulo aparecem, no hover:
 
-### Curso
+- `Aula`
+- `Quiz`
 
-Além dos campos tradicionais, o curso tem:
+No final da árvore:
 
-- `is_public`;
-- `creator_id`;
-- `creator_commission_percent`;
-- `has_linear_progression`;
-- `quiz_type_settings`.
+- `Novo Módulo`
 
-### Módulo
+## Exportar conteúdo em JSON
 
-O módulo possui:
+### Onde aparece na UI
 
-- ordem `position`;
-- obrigatoriedade;
-- janela de liberação;
-- `release_days_after_enrollment`;
-- PDF base com metadados de storage.
+No shell do builder, via botão `Exportar Conteúdo` na sidebar.
 
-### Aula
+Arquivo de layout:
 
-A aula possui:
+- [admin-course-builder-layout.tsx](/c:/PLATAFORMAS%20VS%20CODE/GENFLIX/genflix/src/app/layouts/admin-course-builder-layout.tsx:1)
 
-- `lesson_type`:
-  - `video`
-  - `text`
-  - `hybrid`;
-- `youtube_url`;
-- `text_content`;
-- `estimated_minutes`;
-- janelas de liberação.
+### Modal de exportação
 
-### Conteúdo especial da aula
+O modal oferece três saídas:
 
-O HTML da aula pode conter:
+- curso completo;
+- módulo selecionado;
+- avaliação final.
 
-- rich text comum;
-- tabelas HTML sanitizadas;
-- bloco serializado de hotspots de imagem.
+Layout:
 
-### Avaliações
+- cabeçalho com título e subtítulo;
+- botões `outline` em lista;
+- select para escolher módulo.
 
-As avaliações suportam:
+### Formatos exportados
 
-- nível módulo ou final;
-- nota mínima;
-- número máximo de tentativas;
-- tempo estimado;
-- perguntas com interação;
-- answer key;
-- modos de correção parcial ou all-or-nothing.
+#### Curso completo
 
-## Camada de API do builder
+Estrutura:
 
-Arquivo: [src/features/admin/content/api.ts](/c:/PLATAFORMAS%20VS%20CODE/GENFLIX/genflix/src/features/admin/content/api.ts:1)
+- `title`
+- `description`
+- `workload_minutes`
+- `thumbnail_url`
+- `status`
+- `quiz_type_settings`
+- `modules`
 
-### Operações principais
+Cada módulo exportado contém:
 
-- buscar curso;
-- buscar módulos;
-- buscar aulas;
-- criar/editar/excluir curso;
-- criar/editar/excluir módulo;
-- criar/editar/excluir aula;
-- reordenar módulos e aulas;
-- upload de thumbnail;
-- upload/remoção de PDF de módulo;
-- upload/remoção de assets de conteúdo da aula;
-- CRUD de botões do rodapé;
-- exportar módulo;
-- exportar curso;
-- limpar curso;
-- importar curso completo;
-- importar módulos;
-- importar avaliação final.
+- `title`
+- `description`
+- `lessons`
+- `assessments`
 
-### Estratégia de importação
+#### Módulo
 
-O builder possui forte suporte a importação de JSON gerado por IA.
+Estrutura:
 
-Há três cenários:
+- `title`
+- `description`
+- `lessons`
+- `assessments`
 
-- importação de curso completo;
-- importação de módulos;
-- importação de avaliação.
+Cada aula exporta:
 
-Recursos relevantes:
+- `title`
+- `description`
+- `lesson_type`
+- `youtube_url`
+- `text_content`
+- `estimated_minutes`
 
-- limpeza opcional do curso inteiro;
-- substituição de um módulo específico “in place”;
-- normalização de JSON vindo dentro de blocos markdown;
-- exportação espelhada em JSON para round-trip.
+Cada assessment exporta o conteúdo estruturado do quiz.
 
-## HTML/JSX: padrões estruturais recorrentes
+#### Avaliação final
 
-Embora o projeto use React, a composição segue uma gramática visual bem consistente.
+É exportada por API própria do domínio de assessments.
 
-### Containers
+### APIs envolvidas
 
-Os painéis usam repetidamente:
+- `exportFullCourseContent(courseId)`
+- `exportModuleContent(moduleId)`
+- `exportFinalAssessmentContent(courseId)`
+
+### Comportamento prático
+
+O export baixa arquivo JSON usando `downloadJsonFile(...)`, já nomeado com:
+
+- nome do curso;
+- nome do módulo;
+- ou avaliação final.
+
+## Importar conteúdo em JSON
+
+### Onde aparece na UI
+
+Existem três frentes principais:
+
+- importação massiva no shell do builder;
+- importação de avaliação no hub de avaliações;
+- importação dentro do builder de avaliação.
+
+## Importação massiva do curso e dos módulos
+
+### Local
+
+- sidebar do builder, botão `Importar Conteúdo (IA)`
+- arquivo: [admin-course-builder-layout.tsx](/c:/PLATAFORMAS%20VS%20CODE/GENFLIX/genflix/src/app/layouts/admin-course-builder-layout.tsx:1)
+
+### O que o modal permite
+
+- colar JSON cru;
+- colar JSON dentro de bloco markdown;
+- adicionar novos módulos;
+- substituir um módulo existente;
+- limpar o curso inteiro antes da importação.
+
+### Tratamento do JSON
+
+O código faz:
+
+- trim;
+- remoção de fences ```json;
+- tentativa de `JSON.parse`;
+- fallback para conserto de quebras de linha;
+- limpeza de aspas escapadas problemáticas.
+
+### Modos de importação
+
+#### Adicionar novos módulos
+
+Mantém o conteúdo atual e anexa novos módulos ao final.
+
+#### Substituir módulo existente
+
+Usa `moduleIdToReplace`.
+
+Fluxo:
+
+1. atualiza título e descrição do módulo;
+2. apaga quizzes do módulo;
+3. apaga aulas do módulo;
+4. recria aulas e quizzes a partir do JSON;
+5. pode seguir inserindo módulos adicionais depois do substituído.
+
+#### Limpar curso inteiro
+
+Antes de importar:
+
+- remove avaliação final sem módulo;
+- remove todos os módulos do curso;
+- o cascade do banco cuida do restante dependente.
+
+### Formatos aceitos
+
+Pode receber:
+
+- `ImportCourseFullData`
+- `ImportModuleData[]`
+- `ImportAssessmentData`
+
+Ou seja, o importador central também aceita importação de avaliação final isolada.
+
+## Importação de avaliação pelo hub de avaliações
+
+### Local
+
+- [course-assessments-panel.tsx](/c:/PLATAFORMAS%20VS%20CODE/GENFLIX/genflix/src/pages/admin/builder/course-assessments-panel.tsx:1)
+
+### Comportamento
+
+Se `targetModuleId` existir:
+
+- cria um novo quiz do módulo;
+- importa o JSON para dentro dele.
+
+Se `targetModuleId` não existir:
+
+- procura a avaliação final;
+- se não existir, cria uma;
+- importa o JSON nela.
+
+### Campos considerados no JSON
+
+O fluxo lê, quando disponíveis:
+
+- `title`
+- `description`
+- `passing_score`
+- `max_attempts`
+- `estimated_minutes`
+- `questions`
+- `case_studies`
+
+## Importação de avaliação no builder profundo
+
+### Local
+
+- [assessment-builder-panel.tsx](/c:/PLATAFORMAS%20VS%20CODE/GENFLIX/genflix/src/pages/admin/builder/assessment-builder-panel.tsx:1)
+
+### Papel
+
+Permite reimportar a estrutura inteira de uma avaliação já aberta.
+
+O texto da interface deixa explícito que o JSON pode misturar:
+
+- perguntas independentes;
+- `case_studies`;
+- `interaction`;
+- `grading`.
+
+### Observação importante
+
+Na prática, o sistema atual foi desenhado para round-trip entre:
+
+- IA;
+- JSON estruturado;
+- builder;
+- exportação novamente para JSON.
+
+## Padrões de HTML/JSX e CSS do builder
+
+## Containers recorrentes
+
+Ao longo de todas as telas, o padrão dominante é:
 
 - `bg-white`
 - `border border-slate-200`
+- `rounded-2xl` ou `rounded-[28px]/[32px]`
 - `shadow-sm`
-- `overflow-hidden`
 
-Isso cria cartões administrativos uniformes.
+Isso cria uma linguagem de “cartões administrativos brancos sobre fundo cinza muito claro”.
 
-### Cabeçalhos de seção
+## Tipografia
 
-Padrão típico:
+Padrões muito usados:
 
-- título grande em `font-black` ou `font-extrabold`;
-- subtítulo curto em `text-sm text-slate-500`;
-- divisória com `border-b`.
+- títulos grandes em `font-black` ou `font-extrabold`;
+- subtítulos em `text-sm text-slate-500`;
+- labels em `text-xs` ou `text-[10px]`;
+- uppercase com `tracking-widest`.
 
-### Labels
+## Inputs
 
-Labels e micro-headings usam muito:
+Inputs seguem um padrão consistente:
 
-- `text-xs` ou `text-[10px]`;
-- `font-black`;
-- `uppercase`;
-- `tracking-widest`.
-
-Isso dá um aspecto editorial/técnico e melhora escaneabilidade.
-
-### Inputs
-
-Padrão recorrente:
-
-- fundo `bg-slate-50/50` ou `bg-white`;
-- borda `border-slate-200`;
+- borda clara;
+- fundo branco ou `slate-50/50`;
 - padding generoso;
 - foco com ring azul;
-- tipografia mais pesada que o default.
+- peso tipográfico relativamente forte.
 
-### Ações
+## Botões
 
-Botões aparecem em três famílias:
+O builder usa o `Button` base em [src/components/ui/button.tsx](/c:/PLATAFORMAS%20VS%20CODE/GENFLIX/genflix/src/components/ui/button.tsx:1), mas com muitas classes adicionais por tela.
 
-- `default`/azul-gradiente;
+Famílias mais comuns:
+
+- CTA azul;
 - `outline`;
-- `ghost`.
+- `ghost`;
+- destrutivo em rosa/vermelho.
 
-O componente base está em [src/components/ui/button.tsx](/c:/PLATAFORMAS%20VS%20CODE/GENFLIX/genflix/src/components/ui/button.tsx:1) e depois recebe muitas classes extras diretamente nos painéis.
+## Paleta visual
 
-## CSS e linguagem visual
+Predomina:
 
-Arquivo principal: [src/index.css](/c:/PLATAFORMAS%20VS%20CODE/GENFLIX/genflix/src/index.css:1)
+- branco;
+- `slate` para texto e fundo suave;
+- azul como ação principal;
+- ciano/teal para blocos pedagógicos;
+- âmbar para quizzes e estudos de caso;
+- esmeralda para sucesso e avaliação final;
+- rosa/vermelho para destruição e reset.
 
-### Base tipográfica
+## Resumo crítico
 
-Fontes carregadas:
+Hoje o construtor de cursos do GenFlix já funciona como uma aplicação administrativa completa, e não como um CRUD simples.
 
-- `Geist Variable`
-- `Manrope`
-- `Readex Pro`
+Ele combina:
 
-Na prática:
+- shell de navegação full-screen;
+- árvore pedagógica lateral;
+- overview operacional do curso;
+- edição profunda de módulo;
+- edição multimodal de aula;
+- hub e builder avançado de avaliações;
+- importação/exportação em JSON orientada a IA;
+- regras reais de progressão e liberação;
+- configuração comercial e pedagógica do curso.
 
-- `Geist` domina a base;
-- `Manrope` e `Readex Pro` aparecem como assets disponíveis para outras áreas;
-- o builder em si usa majoritariamente a pilha sans principal.
+Os pontos mais sofisticados atualmente são:
 
-### Paleta
+- sistema de blocos no editor da aula;
+- builder de quizzes com tipos gamificados;
+- importação estruturada de conteúdo e avaliação;
+- revisão com IA aplicada a módulo;
+- integração entre curso, progressão, quizzes e catálogo.
 
-A identidade visual é guiada por variáveis CSS:
-
-- `--genflix-accent: #1398b7`
-- `--genflix-accent-hover: #0a3640`
-- `--genflix-brand-gradient`
-- `--genflix-bg-main`
-- `--genflix-bg-soft`
-- `--genflix-border-soft`
-
-Apesar do JSX usar nomes como `blue`, `cyan`, `sky`, `teal`, o CSS global remapeia essas classes para a identidade GenFlix.
-
-Consequência prática:
-
-- `bg-blue-600` frequentemente não resulta num azul Tailwind puro;
-- ela é sobrescrita para o gradiente/acento da marca;
-- o builder inteiro fica visualmente coeso mesmo com classes semânticas variadas.
-
-### Arredondamento global
-
-Há uma decisão forte no CSS:
-
-- várias classes `rounded-*` são normalizadas para raios menores via `!important`.
-
-Então, mesmo quando o JSX sugere cantos grandes, o visual final tende a ser mais sóbrio e “quadrado”.
-
-### Sombras
-
-Sombras também são padronizadas para algo discreto:
-
-- `0 4px 10px rgba(21, 50, 59, 0.06)`
-
-Isso evita o visual exagerado de cards flutuando demais.
-
-### Quill/editor rico
-
-O CSS global define estilos para:
-
-- `.quill`
-- `.ql-toolbar.ql-snow`
-- `.ql-container.ql-snow`
-- `.ql-editor`
-
-Mesmo com o editor atual sendo um wrapper customizado, o projeto conserva nomenclatura e aparência semelhantes às do Quill.
-
-### Tabelas
-
-Tabelas têm estilos globais importantes:
-
-- largura 100%;
-- bordas colapsadas;
-- `th` com fundo claro;
-- zebra em linhas pares;
-- placeholder visual para célula vazia com `data-empty-cell="true"`.
-
-Isso é relevante porque o builder de aula depende muito do HTML de tabela ser previsível e legível.
-
-## Comportamentos especiais e diferenciais do builder
-
-### 1. Revisão com IA
-
-Presente em:
-
-- visão geral do curso;
-- editor de módulo.
-
-O fluxo atual:
-
-- analisar módulo;
-- exibir score, resumo, issues e custo/token usage;
-- opcionalmente aplicar ajustes;
-- registrar histórico;
-- publicar notice global de processamento.
-
-### 2. Importação/exportação para IA
-
-O builder foi claramente desenhado para operação híbrida humano + IA.
-
-Sinais disso:
-
-- múltiplos modais de JSON;
-- limpeza e substituição de conteúdo;
-- exportação de curso completo, módulo e avaliação;
-- importação estruturada de quizzes;
-- tratamento de JSON vindo com markdown fences.
-
-### 3. Conteúdo de aula híbrido
-
-A aula não é um simples `textarea` HTML.
-
-O sistema já suporta:
-
-- editor rico;
-- editor de tabela com preview;
-- bloco interativo de hotspots.
-
-Isso torna o builder mais próximo de um page builder educacional do que de um CRUD simples.
-
-### 4. Progressão pedagógica
-
-O builder não edita só conteúdo visual. Ele também configura regras de aprendizagem:
-
-- obrigatoriedade de módulos e aulas;
-- datas de liberação;
-- liberação relativa à inscrição;
-- progressão linear;
-- avaliação final;
-- nota mínima e tentativas.
-
-## Leitura crítica do layout atual
-
-### Forças
-
-- boa separação entre navegação estrutural e edição;
-- árvore lateral funciona bem como mapa mental do curso;
-- formulários amplos e escaneáveis;
-- visual consistente entre módulos, aulas, avaliações e configurações;
-- bom suporte a fluxos avançados com IA;
-- builder de aula já suporta conteúdo rico real, não apenas texto.
-
-### Características visuais marcantes
-
-- fundo geral claro e neutro;
-- muitos cartões brancos;
-- baixa densidade visual;
-- labels pequenas em uppercase;
-- CTAs azuis da marca;
-- estados verde/âmbar/rosa para feedback;
-- bordas suaves e sombras discretas;
-- forte uso de `slate` para hierarquia textual.
-
-### Trade-offs percebidos
-
-- parte do JSX sugere um visual mais “rounded/luxuoso”, mas o CSS global aplaina isso;
-- existe mistura entre classes locais e sobrescritas globais, o que dificulta prever aparência final apenas lendo o JSX;
-- o `ReactQuill` atual é um editor customizado simplificado, então a nomenclatura “Quill” no código é maior do que a biblioteca efetivamente usada.
-
-## Resumo estrutural
-
-Hoje o construtor de cursos do GenFlix é um sistema administrativo composto por:
-
-- um layout mestre full-screen com topbar, sidebar em árvore e canvas principal;
-- uma árvore pedagógica centralizada em `AdminCourseTree`;
-- painéis especializados para curso, módulo, aula, materiais e avaliações;
-- uma camada de persistência direta no Supabase;
-- forte suporte a JSON de IA para importar/exportar estrutura;
-- uma linguagem visual administrativa consistente, minimalista e fortemente ancorada na paleta da marca.
-
-Em termos de maturidade, o builder atual já vai além de um CRUD convencional. Ele funciona como um editor de estrutura pedagógica, conteúdo multimodal e avaliação, com recursos operacionais suficientes para manutenção contínua de um catálogo educacional complexo.
+Em termos de maturidade, a implementação atual já suporta manutenção contínua de cursos complexos, com conteúdo multimodal, avaliação rica e operação híbrida humano + IA.
