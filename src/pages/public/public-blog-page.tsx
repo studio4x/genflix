@@ -3,6 +3,7 @@ import { ArrowRight, ChevronLeft, ChevronRight, Search } from 'lucide-react'
 import { Link } from 'react-router-dom'
 
 import { useAuth } from '@/app/providers/auth-provider'
+import { GenflixCtaButton } from '@/components/public/genflix-cta-button'
 import { GenflixNewsletterSection } from '@/components/public/genflix-newsletter-section'
 import { GenflixPublicFooter } from '@/components/public/genflix-public-footer'
 import { GenflixPublicHeader } from '@/components/public/genflix-public-header'
@@ -164,13 +165,11 @@ export function PublicBlogPage() {
                   <p className="text-xs text-[#8ea0a6]">{featuredPost.publishedAt}</p>
                 </div>
 
-                <Link
-                  to={`/blog/${featuredPost.slug}`}
-                  className="inline-flex items-center gap-2 rounded-full bg-[#1398B7] px-4 py-2 font-readex text-sm font-medium text-white shadow-[0_10px_24px_rgba(19,152,183,0.24)] transition-colors hover:bg-[#0A3640]"
-                >
-                  <EditableText entryKey="blog.featured.cta" fallback="Ler artigo" label="CTA do artigo destacado" />
-                  <ArrowRight className="h-4 w-4" />
-                </Link>
+                <GenflixCtaButton asChild className="px-4 py-2">
+                  <Link to={`/blog/${featuredPost.slug}`}>
+                    <EditableText entryKey="blog.featured.cta" fallback="Ler artigo" label="CTA do artigo destacado" />
+                  </Link>
+                </GenflixCtaButton>
               </div>
             </div>
           </div>

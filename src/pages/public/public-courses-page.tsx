@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { ChevronLeft, ChevronRight, Search } from 'lucide-react'
 
 import { useAuth } from '@/app/providers/auth-provider'
+import { GenflixCtaButton } from '@/components/public/genflix-cta-button'
 import { GenflixCourseCard } from '@/components/public/genflix-course-card'
 import { GenflixNewsletterSection } from '@/components/public/genflix-newsletter-section'
 import { GenflixPublicFooter } from '@/components/public/genflix-public-footer'
@@ -243,12 +244,11 @@ export function PublicCoursesPage() {
           </div>
 
           <div className="mt-10 flex justify-center">
-            <Link
-              to="/login"
-              className="inline-flex items-center gap-2 rounded-full bg-[#1398B7] px-5 py-3 font-readex text-sm font-medium text-white shadow-[0_12px_30px_rgba(19,152,183,0.22)] transition-colors hover:bg-[#0A3640]"
-            >
-              <EditableText entryKey="courses.features.cta" fallback="Ver todos os recursos" label="CTA de recursos em cursos" />
-            </Link>
+            <GenflixCtaButton asChild className="px-5 py-3">
+              <Link to="/login">
+                <EditableText entryKey="courses.features.cta" fallback="Ver todos os recursos" label="CTA de recursos em cursos" />
+              </Link>
+            </GenflixCtaButton>
           </div>
         </div>
       </section>

@@ -4,6 +4,7 @@ import { ArrowRight, CheckCircle2, LockKeyhole } from 'lucide-react'
 import { Link, Navigate, useNavigate } from 'react-router-dom'
 
 import { useAuth } from '@/app/providers/auth-provider'
+import { GenflixCtaButton } from '@/components/public/genflix-cta-button'
 import { GenflixAuthLayout } from '@/components/public/genflix-auth-layout'
 import { getDashboardPathForRoles } from '@/features/auth/dashboard-path'
 import { hasPasswordRecoveryUrl } from '@/features/auth/password-recovery-state'
@@ -107,12 +108,9 @@ export function ResetPasswordPage() {
           <p className="mt-3 text-sm font-medium leading-6">
             Abra o link mais recente enviado ao seu e-mail ou solicite uma nova recuperação de senha.
           </p>
-          <Link
-            to="/recuperar-senha"
-            className="mt-5 inline-flex rounded-full bg-[#1398B7] px-5 py-3 font-readex text-sm font-medium text-white"
-          >
-            Solicitar novo link
-          </Link>
+          <GenflixCtaButton asChild className="mt-5">
+            <Link to="/recuperar-senha">Solicitar novo link</Link>
+          </GenflixCtaButton>
         </div>
       ) : (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#10242b]/72 p-4 backdrop-blur-sm">
@@ -179,13 +177,9 @@ export function ResetPasswordPage() {
               </p>
             ) : null}
 
-            <button
-              className="mt-6 inline-flex w-full items-center justify-center rounded-full bg-[#1398B7] px-5 py-4 font-readex text-sm font-medium text-white shadow-[0_14px_30px_rgba(10,54,64,0.22)] transition-colors hover:bg-[#0A3640] disabled:cursor-not-allowed disabled:opacity-70"
-              type="submit"
-              disabled={isSubmitting || Boolean(message)}
-            >
+            <GenflixCtaButton type="submit" disabled={isSubmitting || Boolean(message)} className="mt-6 w-full px-5 py-4">
               {isSubmitting ? 'Definindo...' : 'Definir senha'}
-            </button>
+            </GenflixCtaButton>
 
             <div className="mt-5 text-center text-sm text-[#5F7077]">
               Precisa voltar?{' '}

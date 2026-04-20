@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 
+import { GenflixCtaButton } from '@/components/public/genflix-cta-button'
 import { GenflixPublicFooter } from '@/components/public/genflix-public-footer'
 import { GenflixPublicHeader } from '@/components/public/genflix-public-header'
 import { genflixNavLinks } from '@/features/public/genflix-site-content'
@@ -46,12 +47,11 @@ export function PublicLegalPageShell({
                   <p className="text-[11px] font-black uppercase tracking-[0.24em] text-[#97a6ab]">
                     Atualizado em <EditableText entryKey={`legal.${title}.updatedAt`} fallback={updatedAt} label="Data de atualização" />
                   </p>
-                  <Link
-                    className="mt-4 inline-flex items-center rounded-full border border-[#D8E6EB] bg-[#F2F7F9] px-4 py-2 text-xs font-black uppercase tracking-[0.2em] text-[#0A3640] transition-colors hover:border-[#1398B7] hover:text-[#1398B7]"
-                    to="/login"
-                  >
-                    <EditableText entryKey={`legal.${title}.backLogin`} fallback="Voltar ao login" label="Botão voltar ao login" />
-                  </Link>
+                  <GenflixCtaButton asChild tone="surface" className="mt-4 px-4 py-2 text-xs font-black uppercase tracking-[0.2em]">
+                    <Link to="/login">
+                      <EditableText entryKey={`legal.${title}.backLogin`} fallback="Voltar ao login" label="Botão voltar ao login" />
+                    </Link>
+                  </GenflixCtaButton>
                 </div>
               </div>
             </div>

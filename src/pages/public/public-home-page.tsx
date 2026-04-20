@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 
 import { useAuth } from '@/app/providers/auth-provider'
+import { GenflixCtaButton } from '@/components/public/genflix-cta-button'
 import { GenflixCourseCard } from '@/components/public/genflix-course-card'
 import { GenflixNewsletterSection } from '@/components/public/genflix-newsletter-section'
 import { GenflixPublicFooter } from '@/components/public/genflix-public-footer'
@@ -62,18 +63,16 @@ export function PublicHomePage() {
                   </p>
 
                   <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-                    <Link
-                      to="/login"
-                      className="inline-flex min-h-[52px] items-center justify-center rounded-full bg-[#1398B7] px-6 py-3 font-readex text-sm font-medium text-white shadow-[0_12px_30px_rgba(19,152,183,0.3)] transition-colors hover:bg-[#0A3640]"
-                    >
-                      <EditableText entryKey="home.hero.primaryCta" fallback="Já sou inscrito" label="CTA principal" />
-                    </Link>
-                    <a
-                      href="#newsletter"
-                      className="inline-flex min-h-[52px] items-center justify-center rounded-full border border-white/22 bg-white/10 px-6 py-3 font-readex text-sm font-medium text-white backdrop-blur-sm transition-colors hover:bg-white/16"
-                    >
-                      <EditableText entryKey="home.hero.secondaryCta" fallback="Quero me inscrever" label="CTA secundário" />
-                    </a>
+                    <GenflixCtaButton asChild className="min-h-[52px] px-6">
+                      <Link to="/login">
+                        <EditableText entryKey="home.hero.primaryCta" fallback="Já sou inscrito" label="CTA principal" />
+                      </Link>
+                    </GenflixCtaButton>
+                    <GenflixCtaButton asChild tone="surface" className="min-h-[52px] px-6">
+                      <a href="#newsletter">
+                        <EditableText entryKey="home.hero.secondaryCta" fallback="Quero me inscrever" label="CTA secundário" />
+                      </a>
+                    </GenflixCtaButton>
                   </div>
                 </div>
               </div>
@@ -132,12 +131,11 @@ export function PublicHomePage() {
               </p>
             </div>
 
-            <Link
-              to="/cursos"
-              className="inline-flex min-h-[52px] items-center gap-2 self-start rounded-full bg-[#1398B7] px-6 py-3 font-readex text-sm font-medium text-white shadow-[0_12px_30px_rgba(19,152,183,0.22)] transition-colors hover:bg-[#0A3640]"
-            >
-              <EditableText entryKey="home.featured.cta" fallback="Conheça todos os cursos" label="CTA de cursos em destaque" />
-            </Link>
+            <GenflixCtaButton asChild className="min-h-[52px] px-6 self-start">
+              <Link to="/cursos">
+                <EditableText entryKey="home.featured.cta" fallback="Conheça todos os cursos" label="CTA de cursos em destaque" />
+              </Link>
+            </GenflixCtaButton>
           </div>
 
           <div className="mt-10 grid gap-8 md:grid-cols-2 xl:grid-cols-3">

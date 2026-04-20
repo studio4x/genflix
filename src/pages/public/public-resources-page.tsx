@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 
 import { useAuth } from '@/app/providers/auth-provider'
+import { GenflixCtaButton } from '@/components/public/genflix-cta-button'
 import { GenflixNewsletterSection } from '@/components/public/genflix-newsletter-section'
 import { GenflixPublicFooter } from '@/components/public/genflix-public-footer'
 import { GenflixPublicHeader } from '@/components/public/genflix-public-header'
@@ -341,12 +342,11 @@ export function PublicResourcesPage() {
           </div>
 
           <div className="mt-12 flex justify-center">
-            <Link
-              to="/login"
-              className="inline-flex items-center justify-center rounded-full bg-[#1398B7] px-5 py-3 font-readex text-sm font-medium text-white shadow-[0_12px_30px_rgba(19,152,183,0.24)] transition-colors hover:bg-[#0A3640]"
-            >
-              <EditableText entryKey="resources.cta" fallback="Entrar para explorar tudo" label="CTA de recursos" />
-            </Link>
+            <GenflixCtaButton asChild className="px-5 py-3">
+              <Link to="/login">
+                <EditableText entryKey="resources.cta" fallback="Entrar para explorar tudo" label="CTA de recursos" />
+              </Link>
+            </GenflixCtaButton>
           </div>
         </div>
       </section>

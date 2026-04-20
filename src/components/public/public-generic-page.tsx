@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 
+import { GenflixCtaButton } from '@/components/public/genflix-cta-button'
 import { GenflixPublicFooter } from '@/components/public/genflix-public-footer'
 import { GenflixPublicHeader } from '@/components/public/genflix-public-header'
 import { genflixNavLinks } from '@/features/public/genflix-site-content'
@@ -64,21 +65,13 @@ export function PublicGenericPage({
 
           {cta ? (
             <div className="mt-8 flex justify-start">
-              {cta.isInternal ? (
-                <Link
-                  to={cta.href}
-                  className="inline-flex items-center justify-center rounded-full bg-[#1398B7] px-5 py-3 font-readex text-sm font-medium text-white shadow-[0_12px_30px_rgba(19,152,183,0.24)] transition-colors hover:bg-[#0A3640]"
-                >
-                  {cta.label}
-                </Link>
-              ) : (
-                <a
-                  href={cta.href}
-                  className="inline-flex items-center justify-center rounded-full bg-[#1398B7] px-5 py-3 font-readex text-sm font-medium text-white shadow-[0_12px_30px_rgba(19,152,183,0.24)] transition-colors hover:bg-[#0A3640]"
-                >
-                  {cta.label}
-                </a>
-              )}
+              <GenflixCtaButton asChild>
+                {cta.isInternal ? (
+                  <Link to={cta.href}>{cta.label}</Link>
+                ) : (
+                  <a href={cta.href}>{cta.label}</a>
+                )}
+              </GenflixCtaButton>
             </div>
           ) : null}
         </div>

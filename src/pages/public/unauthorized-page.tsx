@@ -1,6 +1,7 @@
-import { ArrowRight, ShieldAlert } from 'lucide-react'
+import { ShieldAlert } from 'lucide-react'
 import { Link } from 'react-router-dom'
 
+import { GenflixCtaButton } from '@/components/public/genflix-cta-button'
 import { GenflixAuthLayout } from '@/components/public/genflix-auth-layout'
 import { genflixHeroImage } from '@/features/public/genflix-site-content'
 
@@ -26,20 +27,13 @@ export function UnauthorizedPage() {
         </p>
 
         <div className="mt-6 grid gap-3 sm:grid-cols-2">
-          <Link
-            to="/"
-            className="inline-flex h-12 items-center justify-center rounded-full border border-[#D8E6EB] bg-white px-5 font-manrope text-sm font-semibold text-[#163138] transition-colors hover:bg-[#F2F7F9]"
-          >
-            Voltar ao início
-          </Link>
+          <GenflixCtaButton asChild tone="surface" className="h-12 px-5">
+            <Link to="/">Voltar ao início</Link>
+          </GenflixCtaButton>
 
-          <Link
-            to="/login"
-            className="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-[#1398B7] px-5 font-readex text-sm font-medium text-white shadow-[0_14px_30px_rgba(10,54,64,0.22)] transition-colors hover:bg-[#0A3640]"
-          >
-            Entrar com outra conta
-            <ArrowRight className="h-4 w-4" />
-          </Link>
+          <GenflixCtaButton asChild className="h-12 px-5">
+            <Link to="/login">Entrar com outra conta</Link>
+          </GenflixCtaButton>
         </div>
       </div>
     </GenflixAuthLayout>

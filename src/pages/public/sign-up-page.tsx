@@ -4,6 +4,7 @@ import { ArrowRight } from 'lucide-react'
 import { Link, Navigate, useNavigate } from 'react-router-dom'
 
 import { useAuth } from '@/app/providers/auth-provider'
+import { GenflixCtaButton } from '@/components/public/genflix-cta-button'
 import { GenflixAuthLayout } from '@/components/public/genflix-auth-layout'
 import { getDashboardPathForRoles } from '@/features/auth/dashboard-path'
 import { genflixHeroImage } from '@/features/public/genflix-site-content'
@@ -187,13 +188,9 @@ export function SignUpPage() {
           </p>
         ) : null}
 
-        <button
-          className="inline-flex h-12 w-full items-center justify-center rounded-full bg-[#1398B7] px-5 font-readex text-sm font-medium text-white shadow-[0_14px_30px_rgba(10,54,64,0.22)] transition-colors hover:bg-[#0A3640] disabled:cursor-not-allowed disabled:opacity-70"
-          type="submit"
-          disabled={isSubmitting}
-        >
+        <GenflixCtaButton type="submit" disabled={isSubmitting} className="h-12 w-full px-5">
           {isSubmitting ? 'Criando conta...' : 'Criar conta grátis'}
-        </button>
+        </GenflixCtaButton>
 
         <div className="flex items-center gap-4 py-1">
           <span className="h-px flex-1 bg-[#D8E6EB]" />

@@ -4,6 +4,7 @@ import { ArrowRight } from 'lucide-react'
 import { Link, Navigate } from 'react-router-dom'
 
 import { useAuth } from '@/app/providers/auth-provider'
+import { GenflixCtaButton } from '@/components/public/genflix-cta-button'
 import { GenflixAuthLayout } from '@/components/public/genflix-auth-layout'
 import { getDashboardPathForRoles } from '@/features/auth/dashboard-path'
 import { genflixHeroImage } from '@/features/public/genflix-site-content'
@@ -98,13 +99,9 @@ export function ForgotPasswordPage() {
           </p>
         ) : null}
 
-        <button
-          className="inline-flex h-12 w-full items-center justify-center rounded-full bg-[#1398B7] px-5 font-readex text-sm font-medium text-white shadow-[0_14px_30px_rgba(10,54,64,0.22)] transition-colors hover:bg-[#0A3640] disabled:cursor-not-allowed disabled:opacity-70"
-          type="submit"
-          disabled={isSubmitting}
-        >
+        <GenflixCtaButton type="submit" disabled={isSubmitting} className="h-12 w-full px-5">
           {isSubmitting ? 'Enviando...' : 'Enviar link de recuperação'}
-        </button>
+        </GenflixCtaButton>
       </form>
 
       <div className="mt-6 text-center text-sm text-[#5F7077]">

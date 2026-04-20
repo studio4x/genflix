@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
-import { ArrowRight, BadgeCheck, ChevronDown, CirclePlay, Play, Sparkles } from 'lucide-react'
+import { BadgeCheck, ChevronDown, CirclePlay, Play, Sparkles } from 'lucide-react'
 import { Link, Navigate, useParams } from 'react-router-dom'
 
 import { useAuth } from '@/app/providers/auth-provider'
+import { GenflixCtaButton } from '@/components/public/genflix-cta-button'
 import { GenflixPublicFooter } from '@/components/public/genflix-public-footer'
 import { GenflixPublicHeader } from '@/components/public/genflix-public-header'
 import {
@@ -269,14 +270,9 @@ export function PublicCourseDetailsPage() {
                       </p>
                     ) : null}
 
-                    <button
-                      type="submit"
-                      disabled={isStartingCheckout}
-                      className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#1398B7] px-5 py-3 font-readex text-sm font-medium text-white shadow-[0_12px_30px_rgba(19,152,183,0.24)] transition-colors hover:bg-[#0A3640] disabled:cursor-not-allowed disabled:opacity-70"
-                    >
+                    <GenflixCtaButton type="submit" disabled={isStartingCheckout} className="w-full px-5 py-3">
                       {isStartingCheckout ? 'Abrindo checkout...' : 'Comprar agora'}
-                      <ArrowRight className="h-4 w-4" />
-                    </button>
+                    </GenflixCtaButton>
                   </form>
 
                   <div className="grid gap-3 sm:grid-cols-2">
@@ -336,12 +332,9 @@ export function PublicCourseDetailsPage() {
           </div>
 
           <div className="mt-10 flex justify-center">
-            <Link
-              to="/login"
-              className="inline-flex items-center gap-2 rounded-full bg-[#1398B7] px-5 py-3 font-readex text-sm font-medium text-white shadow-[0_12px_30px_rgba(19,152,183,0.22)] transition-colors hover:bg-[#0A3640]"
-            >
-              Ver todos os recursos
-            </Link>
+            <GenflixCtaButton asChild className="px-5 py-3">
+              <Link to="/login">Ver todos os recursos</Link>
+            </GenflixCtaButton>
           </div>
         </div>
       </section>

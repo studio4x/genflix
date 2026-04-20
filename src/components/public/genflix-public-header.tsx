@@ -1,7 +1,7 @@
-import { ArrowRight } from 'lucide-react'
 import { Link } from 'react-router-dom'
 
 import { useAuth } from '@/app/providers/auth-provider'
+import { GenflixCtaButton } from '@/components/public/genflix-cta-button'
 import { GenflixLogo } from '@/components/public/genflix-logo'
 import { getDashboardPathForRoles } from '@/features/auth/dashboard-path'
 import type { GenflixNavLink, GenflixPageKey } from '@/features/public/genflix-site-content'
@@ -92,18 +92,16 @@ export function GenflixPublicHeader({
         </EditableList>
       </nav>
 
-      <Link
-        to={ctaPath}
-        className="inline-flex items-center gap-2 rounded-full bg-[#1398B7] px-4 py-2 font-readex text-sm font-medium text-white shadow-[0_10px_24px_rgba(19,152,183,0.28)] transition-transform hover:-translate-y-0.5 hover:bg-[#1398B7]"
-      >
-        <EditableText
-          entryKey={user ? 'global.header.cta.authenticated.label' : 'global.header.cta.anonymous.label'}
-          fallback={ctaLabel}
-          label="Botão do cabeçalho"
-          pageKey="global"
-        />
-        <ArrowRight className="h-4 w-4" />
-      </Link>
+      <GenflixCtaButton asChild>
+        <Link to={ctaPath}>
+          <EditableText
+            entryKey={user ? 'global.header.cta.authenticated.label' : 'global.header.cta.anonymous.label'}
+            fallback={ctaLabel}
+            label="Botão do cabeçalho"
+            pageKey="global"
+          />
+        </Link>
+      </GenflixCtaButton>
     </header>
   )
 }

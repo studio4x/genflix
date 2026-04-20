@@ -4,6 +4,7 @@ import { Link, useNavigate } from 'react-router-dom'
 
 import { supabase } from '@/services/supabase/client'
 import { useAuth } from '@/app/providers/auth-provider'
+import { GenflixCtaButton } from '@/components/public/genflix-cta-button'
 import { getDashboardPathForRoles } from '@/features/auth/dashboard-path'
 import { GenflixAuthLayout } from '@/components/public/genflix-auth-layout'
 import { genflixHeroImage } from '@/features/public/genflix-site-content'
@@ -94,12 +95,9 @@ export function AuthCallbackPage() {
         </p>
 
         {state === 'error' ? (
-          <Link
-            to="/login"
-            className="mt-6 inline-flex rounded-full bg-[#1398B7] px-5 py-3 font-readex text-sm font-medium text-white"
-          >
-            Voltar para login
-          </Link>
+          <GenflixCtaButton asChild className="mt-6">
+            <Link to="/login">Voltar para login</Link>
+          </GenflixCtaButton>
         ) : null}
       </div>
     </GenflixAuthLayout>

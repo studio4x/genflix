@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 
+import { GenflixCtaButton } from '@/components/public/genflix-cta-button'
 import { GenflixLogo } from '@/components/public/genflix-logo'
 import { genflixFooterColumns } from '@/features/public/genflix-site-content'
 import { EditableList, EditableText, useEditableValue } from '@/features/site-editor/visual-editor'
@@ -17,15 +18,31 @@ function FooterNavLink({
   openInNewTab?: boolean
   isButton?: boolean
 }) {
-  const className = isButton
-    ? 'inline-flex items-center justify-center rounded-full bg-white px-5 py-3 font-readex text-sm font-medium text-[#0f4a54] transition-colors hover:bg-[#E8F6FA]'
-    : 'text-sm text-white/72 transition-colors hover:text-white'
+  const className = 'text-sm text-white/72 transition-colors hover:text-white'
 
   if (isInternal) {
+    if (isButton) {
+      return (
+        <GenflixCtaButton asChild tone="surface" className="text-[0.82rem]">
+          <Link to={href}>{children}</Link>
+        </GenflixCtaButton>
+      )
+    }
+
     return (
       <Link to={href} className={className}>
         {children}
       </Link>
+    )
+  }
+
+  if (isButton) {
+    return (
+      <GenflixCtaButton asChild tone="surface" className="text-[0.82rem]">
+        <a href={href} target={openInNewTab ? '_blank' : undefined} rel={openInNewTab ? 'noreferrer' : undefined}>
+          {children}
+        </a>
+      </GenflixCtaButton>
     )
   }
 

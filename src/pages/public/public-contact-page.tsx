@@ -1,7 +1,6 @@
 import { type FormEvent, useState } from 'react'
-import { ArrowRight } from 'lucide-react'
-
 import { useAuth } from '@/app/providers/auth-provider'
+import { GenflixCtaButton } from '@/components/public/genflix-cta-button'
 import { GenflixPublicFooter } from '@/components/public/genflix-public-footer'
 import { GenflixPublicHeader } from '@/components/public/genflix-public-header'
 import { genflixNavLinks } from '@/features/public/genflix-site-content'
@@ -158,14 +157,9 @@ export function PublicContactPage() {
                     />
                   </div>
 
-                  <button
-                    type="submit"
-                    disabled={isSubmitting}
-                    className="inline-flex items-center gap-2 rounded-full bg-[#1398B7] px-5 py-3 font-readex text-sm font-medium text-white shadow-[0_12px_30px_rgba(19,152,183,0.28)] transition-colors hover:bg-[#0A3640] disabled:cursor-not-allowed disabled:opacity-70"
-                  >
+                  <GenflixCtaButton type="submit" disabled={isSubmitting} className="px-5 py-3">
                     {isSubmitting ? 'Enviando...' : <EditableText entryKey="contact.form.submit" fallback="Enviar" label="Botão de envio" />}
-                    <ArrowRight className="h-4 w-4" />
-                  </button>
+                  </GenflixCtaButton>
                   {feedback ? <p className="text-sm font-semibold text-[#5f7178]">{feedback}</p> : null}
                 </form>
               </div>

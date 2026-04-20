@@ -1,6 +1,6 @@
 import { type FormEvent, useState } from 'react'
-import { ArrowRight } from 'lucide-react'
 
+import { GenflixCtaButton } from '@/components/public/genflix-cta-button'
 import { genflixNewsletterImage } from '@/features/public/genflix-site-content'
 import { EditableText, useEditableValue } from '@/features/site-editor/visual-editor'
 
@@ -86,11 +86,7 @@ export function GenflixNewsletterSection({
                     className="w-full border-0 bg-transparent text-sm font-medium text-[#183139] outline-none placeholder:text-[#8ba0a7]"
                   />
                 </div>
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="inline-flex min-h-[54px] items-center justify-center gap-2 rounded-full bg-[#1398B7] px-6 font-readex text-sm font-medium text-white shadow-[0_14px_30px_rgba(19,152,183,0.3)] transition-colors hover:bg-[#0A3640]"
-                >
+                <GenflixCtaButton type="submit" disabled={isSubmitting} className="min-h-[54px] px-6">
                   {isSubmitting ? 'Enviando...' : (
                     <EditableText
                       entryKey="global.newsletter.button.label"
@@ -99,8 +95,7 @@ export function GenflixNewsletterSection({
                       pageKey="global"
                     />
                   )}
-                  <ArrowRight className="h-4 w-4" />
-                </button>
+                </GenflixCtaButton>
               </form>
               {message ? <p className="mt-4 text-sm font-bold text-white/85">{message}</p> : null}
             </div>

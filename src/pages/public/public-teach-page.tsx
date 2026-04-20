@@ -1,5 +1,6 @@
 import { type FormEvent, useState } from 'react'
 
+import { GenflixCtaButton } from '@/components/public/genflix-cta-button'
 import { GenflixPublicFooter } from '@/components/public/genflix-public-footer'
 import { GenflixPublicHeader } from '@/components/public/genflix-public-header'
 import { genflixNavLinks } from '@/features/public/genflix-site-content'
@@ -87,13 +88,9 @@ export function PublicTeachPage() {
                   <p className="mt-3 text-sm leading-7 text-[#5f7178]">
                     O link final do PDF ainda não foi fornecido. Esta área fica pronta para receber o download assim que o material oficial chegar.
                   </p>
-                  <button
-                    type="button"
-                    disabled
-                    className="mt-5 inline-flex items-center justify-center rounded-full border border-[#D8E6EB] bg-[#F2F7F9] px-5 py-3 text-sm font-semibold text-[#5f7178] opacity-80"
-                  >
+                  <GenflixCtaButton type="button" tone="surface" disabled className="mt-5 px-5 py-3 text-sm font-semibold">
                     PDF em breve
-                  </button>
+                  </GenflixCtaButton>
                 </article>
 
                 <article className="rounded-[24px] border border-[#D8E6EB] bg-white px-6 py-6 shadow-[0_16px_36px_rgba(21,50,59,0.04)]">
@@ -154,13 +151,9 @@ export function PublicTeachPage() {
                   </p>
                 ) : null}
 
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="inline-flex h-12 w-full items-center justify-center rounded-full bg-[#1398B7] px-5 font-readex text-sm font-medium text-white shadow-[0_14px_30px_rgba(10,54,64,0.22)] transition-colors hover:bg-[#0A3640] disabled:cursor-not-allowed disabled:opacity-70"
-                >
+                <GenflixCtaButton type="submit" disabled={isSubmitting} className="h-12 w-full px-5">
                   {isSubmitting ? 'Enviando...' : 'Enviar proposta'}
-                </button>
+                </GenflixCtaButton>
               </form>
             </aside>
           </div>
