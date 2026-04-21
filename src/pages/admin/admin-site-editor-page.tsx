@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { AlertTriangle, Eye, EyeOff, History, RotateCcw, Save, ShieldCheck } from 'lucide-react'
+import { AlertTriangle, Eye, EyeOff, ExternalLink, Filter, History, RotateCcw, Save, Search, ShieldCheck } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import {
@@ -24,21 +24,98 @@ type SitePageRow = {
   status: string
 }
 
+type SiteEditorMode = 'basic' | 'advanced'
+
+function formatEntryTypeLabel(entryType: SiteContentEntry['entry_type']) {
+  switch (entryType) {
+    case 'text':
+      return 'Texto'
+    case 'rich_text':
+      return 'Texto rico'
+    case 'image':
+      return 'Imagem'
+    case 'link':
+      return 'Link'
+    case 'button':
+      return 'Botao'
+    case 'list':
+      return 'Listagem'
+    case 'json':
+      return 'Estruturado'
+    default:
+      return entryType
+  }
+}
+
+function summarizeEntryValue(value: unknown) {
+  if (typeof value === 'string') {
+    return value.length > 88 ? `${value.slice(0, 88)}...` : value
+  }
+
+  if (Array.isArray(value)) {
+    return `${value.length} item(ns)`
+  }
+
+  if (value && typeof value === 'object') {
+    return `${Object.keys(value as Record<string, unknown>).length} campo(s)`
+  }
+
+  if (value === null || value === undefined) {
+    return 'Sem valor'
+  }
+
+  return String(value)
+}
+
 export function AdminSiteEditorPage() {
   const [settings, setSettings] = useState<SiteEditorSettings>(defaultSiteEditorSettings)
   const [pages, setPages] = useState<SitePageRow[]>([])
   const [entries, setEntries] = useState<SiteContentEntry[]>([])
   const [selectedPageKey, setSelectedPageKey] = useState<SitePageKey>('home')
+  const [editorMode, setEditorMode] = useState<SiteEditorMode>('basic')
+  const [searchQuery, setSearchQuery] = useState('')
+  const [typeFilter, setTypeFilter] = useState<'all' | SiteContentEntry['entry_type']>('all')
+  const [statusFilter, setStatusFilter] = useState<'all' | 'enabled' | 'disabled'>('all')
   const [versions, setVersions] = useState<SiteContentVersion[]>([])
   const [selectedEntryId, setSelectedEntryId] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
 
-  const pageEntries = useMemo(
-    () => entries.filter((entry) => entry.page_key === selectedPageKey || entry.page_key === 'global'),
-    [entries, selectedPageKey],
+  const selectedPage = useMemo(
+    () => pages.find((page) => page.page_key === selectedPageKey) ?? null,
+    [pages, selectedPageKey],
   )
+  const pageEntries = useMemo(() => {
+    const normalizedQuery = searchQuery.trim().toLowerCase()
+
+    return entries.filter((entry) => {
+      const matchesPage = entry.page_key === selectedPageKey || entry.page_key === 'global'
+      const matchesType = typeFilter === 'all' || entry.entry_type === typeFilter
+      const matchesStatus = statusFilter === 'all'
+        || (statusFilter === 'enabled' && entry.is_enabled)
+        || (statusFilter === 'disabled' && !entry.is_enabled)
+      const matchesQuery = normalizedQuery.length === 0
+        || entry.entry_key.toLowerCase().includes(normalizedQuery)
+        || entry.page_key.toLowerCase().includes(normalizedQuery)
+        || formatEntryTypeLabel(entry.entry_type).toLowerCase().includes(normalizedQuery)
+        || summarizeEntryValue(entry.value).toLowerCase().includes(normalizedQuery)
+
+      return matchesPage && matchesType && matchesStatus && matchesQuery
+    })
+  }, [entries, searchQuery, selectedPageKey, statusFilter, typeFilter])
+  const availableEntryTypes = useMemo(
+    () => Array.from(new Set(entries.map((entry) => entry.entry_type))),
+    [entries],
+  )
+  const pageStats = useMemo(
+    () => pages.map((page) => ({
+      pageKey: page.page_key,
+      totalEntries: entries.filter((entry) => entry.page_key === page.page_key).length,
+    })),
+    [entries, pages],
+  )
+  const selectedPageStat = pageStats.find((page) => page.pageKey === selectedPageKey)?.totalEntries ?? 0
 
   const loadData = useCallback(async () => {
     setIsLoading(true)
@@ -284,8 +361,11 @@ export function AdminSiteEditorPage() {
                       : 'border-[#D8E6EB] bg-white text-[#5F7077] hover:bg-[#F2F7F9]'
                   }`}
                 >
-                  {page.title}
+                  <span>{page.title}</span>
                   <span className="ml-2 text-xs font-semibold opacity-70">{page.path}</span>
+                  <span className="ml-2 text-xs font-black uppercase opacity-70">
+                    {pageStats.find((item) => item.pageKey === page.page_key)?.totalEntries ?? 0} campo(s)
+                  </span>
                 </button>
               ))}
             </div>
@@ -296,11 +376,104 @@ export function AdminSiteEditorPage() {
           <div className="flex flex-col gap-3 border-b border-[#D8E6EB] pb-5 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#1398B7]">Overrides</p>
-              <h2 className="mt-1 font-readex text-2xl font-semibold text-[#15323b]">{selectedPageKey}</h2>
+              <h2 className="mt-1 font-readex text-2xl font-semibold text-[#15323b]">
+                {selectedPage?.title ?? selectedPageKey}
+              </h2>
+              <p className="mt-2 text-sm font-semibold text-[#5F7077]">
+                {selectedPage?.path ?? selectedPageKey} · {selectedPageStat} campo(s) cadastrados para esta pagina
+              </p>
             </div>
-            <Button type="button" variant="outline" disabled={isSaving} onClick={() => void handleClearPage()} className="rounded-none border-[#D8E6EB]">
-              Restaurar conteúdo original desta página
-            </Button>
+            <div className="flex flex-wrap gap-2">
+              {selectedPage ? (
+                <Link
+                  to={selectedPage.path}
+                  className="inline-flex items-center gap-2 border border-[#D8E6EB] bg-white px-4 py-2 text-xs font-black uppercase tracking-[0.14em] text-[#0A3640] hover:bg-[#F2F7F9]"
+                >
+                  <ExternalLink className="h-3.5 w-3.5" />
+                  Abrir pagina
+                </Link>
+              ) : null}
+              <Button type="button" variant="outline" disabled={isSaving} onClick={() => void handleClearPage()} className="rounded-none border-[#D8E6EB]">
+                Restaurar conteúdo original desta página
+              </Button>
+            </div>
+          </div>
+
+          <div className="mt-5 grid gap-4 rounded-[24px] border border-[#D8E6EB] bg-[#F8FBFC] p-4 xl:grid-cols-[1.3fr_0.9fr_0.9fr_auto]">
+            <label className="grid gap-2">
+              <span className="text-[10px] font-black uppercase tracking-[0.18em] text-[#5F7077]">Buscar campo</span>
+              <div className="flex h-11 items-center gap-2 rounded-[14px] border border-[#D8E6EB] bg-white px-3">
+                <Search className="h-4 w-4 text-[#7C8B90]" />
+                <input
+                  value={searchQuery}
+                  onChange={(event) => setSearchQuery(event.target.value)}
+                  placeholder="Ex.: titulo, footer, newsletter, CTA..."
+                  className="w-full border-0 bg-transparent text-sm font-semibold text-[#15323b] outline-none"
+                />
+              </div>
+            </label>
+
+            <label className="grid gap-2">
+              <span className="text-[10px] font-black uppercase tracking-[0.18em] text-[#5F7077]">Tipo</span>
+              <select
+                value={typeFilter}
+                onChange={(event) => setTypeFilter(event.target.value as 'all' | SiteContentEntry['entry_type'])}
+                className="h-11 rounded-[14px] border border-[#D8E6EB] bg-white px-3 text-sm font-semibold text-[#15323b] outline-none"
+              >
+                <option value="all">Todos</option>
+                {availableEntryTypes.map((entryType) => (
+                  <option key={entryType} value={entryType}>{formatEntryTypeLabel(entryType)}</option>
+                ))}
+              </select>
+            </label>
+
+            <label className="grid gap-2">
+              <span className="text-[10px] font-black uppercase tracking-[0.18em] text-[#5F7077]">Status</span>
+              <select
+                value={statusFilter}
+                onChange={(event) => setStatusFilter(event.target.value as 'all' | 'enabled' | 'disabled')}
+                className="h-11 rounded-[14px] border border-[#D8E6EB] bg-white px-3 text-sm font-semibold text-[#15323b] outline-none"
+              >
+                <option value="all">Todos</option>
+                <option value="enabled">Ativos</option>
+                <option value="disabled">Inativos</option>
+              </select>
+            </label>
+
+            <div className="grid gap-2">
+              <span className="text-[10px] font-black uppercase tracking-[0.18em] text-[#5F7077]">Modo</span>
+              <div className="inline-flex h-11 overflow-hidden rounded-[14px] border border-[#D8E6EB] bg-white">
+                <button
+                  type="button"
+                  onClick={() => setEditorMode('basic')}
+                  className={`px-4 text-xs font-black uppercase tracking-[0.14em] ${editorMode === 'basic' ? 'bg-[#0A3640] text-white' : 'text-[#5F7077]'}`}
+                >
+                  Basico
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEditorMode('advanced')}
+                  className={`px-4 text-xs font-black uppercase tracking-[0.14em] ${editorMode === 'advanced' ? 'bg-[#1398B7] text-white' : 'text-[#5F7077]'}`}
+                >
+                  Avancado
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-[20px] border border-[#D8E6EB] bg-white px-4 py-3">
+            <div>
+              <p className="text-sm font-black text-[#15323b]">{pageEntries.length} campo(s) encontrado(s)</p>
+              <p className="text-xs font-semibold text-[#5F7077]">
+                {editorMode === 'basic'
+                  ? 'Modo basico: foco em nome, tipo, resumo e acoes.'
+                  : 'Modo avancado: exibe pagina tecnica, preview salvo e estrutura completa.'}
+              </p>
+            </div>
+            <div className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-[0.14em] text-[#5F7077]">
+              <Filter className="h-3.5 w-3.5" />
+              Filtros aplicados
+            </div>
           </div>
 
           {isLoading ? (
@@ -315,19 +488,32 @@ export function AdminSiteEditorPage() {
                 <thead className="bg-[#F2F7F9] text-[10px] font-black uppercase tracking-[0.18em] text-[#5F7077]">
                   <tr>
                     <th className="px-4 py-3">Campo</th>
+                    <th className="px-4 py-3">Resumo</th>
                     <th className="px-4 py-3">Tipo</th>
                     <th className="px-4 py-3">Status</th>
                     <th className="px-4 py-3">Atualizado</th>
+                    {editorMode === 'advanced' ? <th className="px-4 py-3">Pagina tecnica</th> : null}
                     <th className="px-4 py-3">Ações</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#D8E6EB]">
                   {pageEntries.map((entry) => (
                     <tr key={entry.id} className="align-top">
-                      <td className="px-4 py-3 font-black text-[#15323b]">{entry.entry_key}</td>
-                      <td className="px-4 py-3 text-xs font-black uppercase text-[#5F7077]">{entry.entry_type}</td>
+                      <td className="px-4 py-3">
+                        <div className="font-black text-[#15323b]">{entry.entry_key}</div>
+                        <div className="mt-1 text-xs font-semibold text-[#5F7077]">
+                          {entry.page_key === 'global' ? 'Campo global' : 'Campo desta pagina'}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-xs font-semibold leading-5 text-[#5F7077]">
+                        {summarizeEntryValue(entry.value)}
+                      </td>
+                      <td className="px-4 py-3 text-xs font-black uppercase text-[#5F7077]">{formatEntryTypeLabel(entry.entry_type)}</td>
                       <td className="px-4 py-3 text-xs font-black uppercase text-[#0A3640]">{entry.is_enabled ? 'Ativo' : 'Inativo'}</td>
                       <td className="px-4 py-3 text-xs font-semibold text-[#5F7077]">{new Date(entry.updated_at).toLocaleString('pt-BR')}</td>
+                      {editorMode === 'advanced' ? (
+                        <td className="px-4 py-3 text-xs font-semibold text-[#5F7077]">{entry.page_key}</td>
+                      ) : null}
                       <td className="px-4 py-3">
                         <div className="flex flex-wrap gap-2">
                           <button type="button" onClick={() => void handleLoadVersions(entry.id)} className="inline-flex items-center gap-1 border border-[#D8E6EB] px-3 py-2 text-xs font-black text-[#0A3640] hover:bg-[#F2F7F9]">
