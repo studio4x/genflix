@@ -17,7 +17,7 @@ const toneClasses: Record<GenflixCtaTone, string> = {
 
 const iconClasses: Record<GenflixCtaTone, string> = {
   solid: 'bg-[#F8F0E8] text-[#1151B1]',
-  surface: 'bg-[#E7F1F4] text-[#1151B1]',
+  surface: 'bg-[#EBF3F5] text-[#15323B]',
   ghost: 'border border-white/24 bg-white/16 text-white',
 }
 
@@ -51,7 +51,7 @@ export function GenflixCtaButton({
     <Comp
       data-slot="genflix-cta-button"
       className={cn(
-        'group/genflix-cta inline-flex min-h-11 items-center justify-between gap-4 rounded-full border px-5 pr-2 font-readex text-sm font-medium whitespace-nowrap transition-all duration-200 outline-none select-none focus-visible:ring-3 focus-visible:ring-[#1398B7]/25 active:translate-y-px disabled:pointer-events-none disabled:opacity-60',
+        'group/genflix-cta inline-flex min-h-12 items-center justify-between gap-3 rounded-full border px-5 pr-2 font-readex text-[15px] font-semibold whitespace-nowrap transition-all duration-200 outline-none select-none focus-visible:ring-3 focus-visible:ring-[#1398B7]/25 active:translate-y-px disabled:pointer-events-none disabled:opacity-60',
         toneClasses[tone],
         className,
       )}

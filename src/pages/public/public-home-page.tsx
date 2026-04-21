@@ -392,7 +392,7 @@ function HomeFeaturedSection({
             pageKey={pageKey}
           >
             {(buttonValue) => buttonValue.isHidden === true ? null : (
-              <GenflixCtaButton asChild className="min-h-[44px] px-4 text-[13px] self-start" tone={buttonValue.tone === 'surface' || buttonValue.tone === 'ghost' ? buttonValue.tone : 'solid'}>
+              <GenflixCtaButton asChild className="min-h-[48px] px-5 self-start" tone={buttonValue.tone === 'surface' || buttonValue.tone === 'ghost' ? buttonValue.tone : 'solid'}>
                 {buttonValue.isInternal === true ? (
                   <Link to={typeof buttonValue.href === 'string' ? buttonValue.href : '/cursos'}>
                     {typeof buttonValue.label === 'string' ? buttonValue.label : 'Conheça todos os cursos'}
