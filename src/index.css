@@ -103,7 +103,7 @@
 @layer utilities {
   .public-site-container {
     width: 100%;
-    max-width: 1140px;
+    max-width: 1280px;
     margin-left: auto;
     margin-right: auto;
     padding-left: 1rem;
@@ -115,14 +115,6 @@
       padding-left: 1.5rem;
       padding-right: 1.5rem;
     }
-  }
-
-  :where([class*="rounded-"]) {
-    border-radius: 0.25rem !important;
-  }
-
-  :where([class*="rounded-[20px]"], [class*="rounded-[22px]"], [class*="rounded-[24px]"], [class*="rounded-[26px]"], [class*="rounded-[28px]"], [class*="rounded-[30px]"], [class*="rounded-[32px]"], [class*="rounded-[34px]"], [class*="rounded-[36px]"], [class*="rounded-[40px]"], [class*="rounded-2xl"], [class*="rounded-3xl"]) {
-    border-radius: 0.375rem !important;
   }
 
   :where(
@@ -197,19 +189,6 @@
     --tw-ring-color: var(--genflix-focus) !important;
   }
 
-  :where([class*="shadow-[0_10px"], [class*="shadow-[0_12px"], [class*="shadow-[0_14px"], [class*="shadow-[0_16px"], [class*="shadow-[0_18px"], [class*="shadow-[0_20px"], [class*="shadow-[0_24px"], [class*="shadow-[0_28px"]) {
-    box-shadow: 0 4px 10px rgba(21, 50, 59, 0.06) !important;
-  }
-
-  :where([class*="shadow-sm"], [class*="shadow-md"], [class*="shadow-lg"], [class*="shadow-xl"], [class*="shadow-2xl"]) {
-    box-shadow: 0 4px 10px rgba(21, 50, 59, 0.06) !important;
-  }
-
-  :where(button, a)[class*="bg-"] {
-    border-radius: 0.25rem !important;
-    box-shadow: 0 3px 8px rgba(21, 50, 59, 0.06) !important;
-  }
-
   :where(
     [class*="bg-[#1398B7]"],
     [class*="bg-[#0A3640]"],
@@ -243,33 +222,6 @@
     color: #fff !important;
   }
 
-  :where([class*="space-y-10"]) > :not([hidden]) ~ :not([hidden]) {
-    margin-top: calc(1.75rem * calc(1 - var(--tw-space-y-reverse))) !important;
-    margin-bottom: calc(1.75rem * var(--tw-space-y-reverse)) !important;
-  }
-
-  :where([class*="space-y-8"]) > :not([hidden]) ~ :not([hidden]) {
-    margin-top: calc(1.5rem * calc(1 - var(--tw-space-y-reverse))) !important;
-    margin-bottom: calc(1.5rem * var(--tw-space-y-reverse)) !important;
-  }
-
-  :where([class*="space-y-7"], [class*="space-y-6"]) > :not([hidden]) ~ :not([hidden]) {
-    margin-top: calc(1.25rem * calc(1 - var(--tw-space-y-reverse))) !important;
-    margin-bottom: calc(1.25rem * var(--tw-space-y-reverse)) !important;
-  }
-
-  :where([class*="space-y-5"]) > :not([hidden]) ~ :not([hidden]) {
-    margin-top: calc(1rem * calc(1 - var(--tw-space-y-reverse))) !important;
-    margin-bottom: calc(1rem * var(--tw-space-y-reverse)) !important;
-  }
-
-  :where([class*="gap-12"], [class*="gap-10"]) {
-    gap: 2rem !important;
-  }
-
-  :where([class*="gap-8"], [class*="gap-7"]) {
-    gap: 1.5rem !important;
-  }
 }
 
 /* Custom React Quill Styling */

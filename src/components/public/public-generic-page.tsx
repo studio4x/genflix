@@ -32,15 +32,15 @@ export function PublicGenericPage({
 }) {
   return (
     <main className="min-h-screen bg-[#F2F7F9] font-manrope text-[#163138]">
-      <section className="bg-[#F2F7F9] pt-4">
+      <section className="border-b border-white/10 bg-[linear-gradient(90deg,#1C7082_0%,#0F5562_100%)]">
         <div className="public-site-container">
           <GenflixPublicHeader navLinks={genflixNavLinks} />
         </div>
       </section>
 
-      <section className="bg-white pb-16 pt-4">
+      <section className="bg-white pb-16 pt-6">
         <div className="public-site-container">
-          <div className="rounded-[28px] border border-[#D8E6EB] bg-[linear-gradient(180deg,#F8FBFC_0%,#F2F7F9_100%)] px-6 py-10 shadow-[0_20px_44px_rgba(21,50,59,0.04)] sm:px-10">
+          <div className="rounded-[4px] border border-[#E5E1DA] bg-[linear-gradient(180deg,#FCFAF7_0%,#F5F2EE_100%)] px-6 py-12 shadow-[0_20px_44px_rgba(21,50,59,0.05)] sm:px-10">
             <p className="text-[11px] font-black uppercase tracking-[0.28em] text-[#1398B7]">
               <EditableText entryKey={`${entryPrefix}.eyebrow`} fallback={eyebrow} label="Chamada da página institucional" pageKey="global" />
             </p>

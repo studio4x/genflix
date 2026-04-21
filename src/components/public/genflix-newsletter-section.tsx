@@ -18,7 +18,7 @@ export function GenflixNewsletterSection({
   const [message, setMessage] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const image = useEditableValue(`${entryPrefix}.image`, { src: genflixNewsletterImage, alt: 'Newsletter GenFlix' }, { pageKey })
-  const placeholder = useEditableValue(`${entryPrefix}.placeholder`, 'Seu@e-mail.com', { pageKey })
+  const placeholder = useEditableValue(`${entryPrefix}.placeholder`, 'Seu melhor e-mail', { pageKey })
   const legacyButtonLabel = useEditableValue(`${entryPrefix}.button.label`, 'Quero me inscrever', { pageKey })
 
   async function handleNewsletterSubmit(event: FormEvent<HTMLFormElement>) {
@@ -53,76 +53,76 @@ export function GenflixNewsletterSection({
   }
 
   return (
-    <section id={id} className="bg-[#F2F7F9] pb-0 pt-2">
-      <div className="public-site-container">
-        <EditableImage entryKey={`${entryPrefix}.image`} fallback={image} label="Imagem da newsletter" pageKey={pageKey}>
-          {(editableImage) => (
-            <div
-              className="overflow-hidden rounded-t-[30px] bg-cover bg-center"
-              style={{
-                backgroundImage: `linear-gradient(180deg, rgba(14,31,37,0.72) 0%, rgba(14,31,37,0.84) 100%), url(${typeof editableImage.src === 'string' ? editableImage.src : genflixNewsletterImage})`,
-                backgroundPosition: getEditableImagePresentation(editableImage).backgroundPosition,
-                backgroundSize: getEditableImagePresentation(editableImage).fit === 'contain' ? 'contain' : 'cover',
-              }}
-            >
-              <div className="flex min-h-[360px] items-center justify-center px-6 py-12 text-center sm:px-10">
-                <div className="max-w-[720px]">
-                  <h2 className="mx-auto max-w-[440px] text-[2.2rem] font-extrabold leading-[1.02] tracking-[-0.05em] text-white sm:text-[2.8rem]">
-                    <EditableText
-                      entryKey={`${entryPrefix}.title`}
-                      fallback="Fique por dentro com nossa newsletter"
-                      label="Título da newsletter"
-                      pageKey={pageKey}
-                    />
-                  </h2>
-                  <p className="mx-auto mt-4 max-w-[620px] text-base leading-7 text-white/78">
-                    <EditableText
-                      entryKey={`${entryPrefix}.description`}
-                      fallback="Cadastre-se para receber atualizações sobre nossos cursos e conteúdo."
-                      label="Descrição da newsletter"
-                      pageKey={pageKey}
-                    />
-                  </p>
+    <section id={id} className="relative overflow-hidden bg-[#10242B]">
+      <EditableImage entryKey={`${entryPrefix}.image`} fallback={image} label="Imagem da newsletter" pageKey={pageKey}>
+        {(editableImage) => (
+          <div
+            className="relative"
+            style={{
+              backgroundImage: `linear-gradient(180deg, rgba(7, 20, 26, 0.7) 0%, rgba(7, 20, 26, 0.76) 100%), url(${typeof editableImage.src === 'string' ? editableImage.src : genflixNewsletterImage})`,
+              backgroundPosition: getEditableImagePresentation(editableImage).backgroundPosition,
+              backgroundSize: getEditableImagePresentation(editableImage).fit === 'contain' ? 'contain' : 'cover',
+            }}
+          >
+            <div className="public-site-container py-20 sm:py-24">
+              <div className="mx-auto flex max-w-[760px] flex-col items-center text-center">
+                <h2 className="max-w-[420px] text-[2.2rem] font-bold leading-[0.98] tracking-[-0.05em] text-white sm:text-[2.8rem]">
+                  <EditableText
+                    entryKey={`${entryPrefix}.title`}
+                    fallback="Assine nossa newsletter"
+                    label="Titulo da newsletter"
+                    pageKey={pageKey}
+                  />
+                </h2>
+                <p className="mt-4 max-w-[620px] text-sm leading-7 text-white/74 sm:text-base">
+                  <EditableText
+                    entryKey={`${entryPrefix}.description`}
+                    fallback="Cadastre-se para receber atualizacoes sobre nossos cursos e conteudo."
+                    label="Descricao da newsletter"
+                    pageKey={pageKey}
+                  />
+                </p>
 
-                  <form
-                    onSubmit={handleNewsletterSubmit}
-                    className="mx-auto mt-8 flex max-w-[720px] flex-col gap-3 rounded-[20px] bg-white/10 p-3 backdrop-blur-sm md:flex-row"
+                <form
+                  onSubmit={handleNewsletterSubmit}
+                  className="mt-8 flex w-full max-w-[640px] flex-col gap-3 rounded-full bg-white/14 p-1.5 shadow-[0_24px_60px_rgba(0,0,0,0.18)] backdrop-blur-sm md:flex-row md:items-center"
+                >
+                  <div className="flex min-h-[50px] flex-1 items-center rounded-full bg-white px-5">
+                    <input
+                      type="email"
+                      value={newsletterEmail}
+                      onChange={(event) => setNewsletterEmail(event.target.value)}
+                      required
+                      placeholder={placeholder}
+                      className="w-full border-0 bg-transparent text-sm font-medium text-[#183139] outline-none placeholder:text-[#8BA0A7]"
+                    />
+                  </div>
+
+                  <EditableButton
+                    entryKey={`${entryPrefix}.button`}
+                    fallback={{ label: legacyButtonLabel, tone: 'solid' }}
+                    label="Botao da newsletter"
+                    pageKey={pageKey}
                   >
-                    <div className="flex min-h-[54px] flex-1 items-center rounded-[16px] bg-white px-5 text-left shadow-sm">
-                      <input
-                        type="email"
-                        value={newsletterEmail}
-                        onChange={(event) => setNewsletterEmail(event.target.value)}
-                        required
-                        placeholder={placeholder}
-                        className="w-full border-0 bg-transparent text-sm font-medium text-[#183139] outline-none placeholder:text-[#8ba0a7]"
-                      />
-                    </div>
-                    <EditableButton
-                      entryKey={`${entryPrefix}.button`}
-                      fallback={{ label: legacyButtonLabel, tone: 'solid' }}
-                      label="Botão da newsletter"
-                      pageKey={pageKey}
-                    >
-                      {(buttonValue) => (
-                        <GenflixCtaButton
-                          type="submit"
-                          disabled={isSubmitting}
-                          className="min-h-[54px] px-6"
-                          tone={buttonValue.tone === 'surface' || buttonValue.tone === 'ghost' ? buttonValue.tone : 'solid'}
-                        >
-                          {isSubmitting ? 'Enviando...' : (typeof buttonValue.label === 'string' ? buttonValue.label : 'Quero me inscrever')}
-                        </GenflixCtaButton>
-                      )}
-                    </EditableButton>
-                  </form>
-                  {message ? <p className="mt-4 text-sm font-bold text-white/85">{message}</p> : null}
-                </div>
+                    {(buttonValue) => (
+                      <GenflixCtaButton
+                        type="submit"
+                        disabled={isSubmitting}
+                        className="min-h-[50px] justify-between px-5 md:min-w-[220px]"
+                        tone={buttonValue.tone === 'surface' || buttonValue.tone === 'ghost' ? buttonValue.tone : 'solid'}
+                      >
+                        {isSubmitting ? 'Enviando...' : (typeof buttonValue.label === 'string' ? buttonValue.label : 'Quero me inscrever')}
+                      </GenflixCtaButton>
+                    )}
+                  </EditableButton>
+                </form>
+
+                {message ? <p className="mt-4 text-sm font-semibold text-white/86">{message}</p> : null}
               </div>
             </div>
-          )}
-        </EditableImage>
-      </div>
+          </div>
+        )}
+      </EditableImage>
     </section>
   )
 }

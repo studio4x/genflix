@@ -3,7 +3,7 @@ import { useAuth } from '@/app/providers/auth-provider'
 import { GenflixCtaButton } from '@/components/public/genflix-cta-button'
 import { GenflixPublicFooter } from '@/components/public/genflix-public-footer'
 import { GenflixPublicHeader } from '@/components/public/genflix-public-header'
-import { genflixNavLinks } from '@/features/public/genflix-site-content'
+import { genflixHeroImage, genflixNavLinks } from '@/features/public/genflix-site-content'
 import { EditableText, useEditableValue } from '@/features/site-editor/visual-editor'
 
 export function PublicContactPage() {
@@ -63,39 +63,22 @@ export function PublicContactPage() {
 
   return (
     <main className="min-h-screen bg-[#F2F7F9] font-manrope text-[#163138]">
-      <section className="bg-[#F2F7F9] pt-4">
+      <section className="border-b border-white/10 bg-[linear-gradient(90deg,#1C7082_0%,#0F5562_100%)]">
         <div className="public-site-container">
           <GenflixPublicHeader currentPage="contact" navLinks={genflixNavLinks} />
         </div>
       </section>
 
-      <section className="bg-white pb-0 pt-4">
+      <section className="bg-white pb-0 pt-6">
         <div className="public-site-container">
-          <div className="grid min-h-[620px] overflow-hidden rounded-t-[30px] border border-[#D8E6EB] bg-white shadow-[0_24px_56px_rgba(21,50,59,0.05)] lg:grid-cols-[1.02fr_0.98fr]">
-            <div className="relative flex min-h-[360px] items-center justify-center overflow-hidden bg-[radial-gradient(circle_at_32%_22%,rgba(54,211,188,0.22),transparent_38%),radial-gradient(circle_at_72%_30%,rgba(19,152,183,0.18),transparent_30%),linear-gradient(180deg,#F8FBFC_0%,#F2F7F9_100%)] px-8 py-14">
-              <div className="pointer-events-none absolute inset-0">
-                <div className="absolute left-[12%] top-[20%] h-40 w-28 rotate-[18deg] rounded-[28px] bg-[#39d0be]/38 blur-[2px]" />
-                <div className="absolute left-[22%] top-[18%] h-40 w-28 -rotate-[18deg] rounded-[28px] bg-[#1398B7]/34 blur-[2px]" />
-                <div className="absolute left-[18%] top-[36%] h-44 w-32 rounded-[32px] bg-[#4baee9]/34 blur-[2px]" />
-                <div className="absolute left-[15%] top-[23%] h-52 w-32 rotate-[18deg] rounded-[30px] border border-[#1bb6b2]/40 bg-[#1bb6b2]/18 shadow-[0_24px_40px_rgba(27,182,178,0.18)]" />
-                <div className="absolute left-[25%] top-[21%] h-52 w-32 -rotate-[18deg] rounded-[30px] border border-[#1398B7]/34 bg-[#1398B7]/18 shadow-[0_24px_40px_rgba(19,152,183,0.12)]" />
-                <div className="absolute left-[19%] top-[38%] h-56 w-36 rounded-[34px] border border-[#41a8e2]/34 bg-[#41a8e2]/18 shadow-[0_24px_40px_rgba(65,168,226,0.14)]" />
-              </div>
-
-              <div className="relative z-10 flex items-center gap-6 sm:gap-8">
-                <div className="relative h-48 w-40 shrink-0 sm:h-56 sm:w-48">
-                  <span className="absolute left-2 top-1 h-28 w-20 rotate-[18deg] rounded-[24px] bg-[#39d0be]/30 shadow-[0_20px_45px_rgba(27,182,178,0.16)] sm:h-32 sm:w-24" />
-                  <span className="absolute right-3 top-0 h-28 w-20 -rotate-[18deg] rounded-[24px] bg-[#1398B7]/28 shadow-[0_20px_45px_rgba(19,152,183,0.14)] sm:h-32 sm:w-24" />
-                  <span className="absolute bottom-0 left-8 h-32 w-24 rounded-[28px] bg-[#4ab2ea]/28 shadow-[0_20px_45px_rgba(65,168,226,0.14)] sm:h-36 sm:w-28" />
-                  <span className="absolute left-4 top-4 h-28 w-20 rotate-[18deg] rounded-[24px] border border-[#1bb6b2]/45 bg-[#1bb6b2]/18 backdrop-blur-[1px] sm:h-32 sm:w-24" />
-                  <span className="absolute right-5 top-3 h-28 w-20 -rotate-[18deg] rounded-[24px] border border-[#1398B7]/40 bg-[#1398B7]/16 backdrop-blur-[1px] sm:h-32 sm:w-24" />
-                  <span className="absolute bottom-2 left-10 h-32 w-24 rounded-[28px] border border-[#41a8e2]/40 bg-[#41a8e2]/16 backdrop-blur-[1px] sm:h-36 sm:w-28" />
-                </div>
-
-                <div className="text-[#17323a] drop-shadow-[0_10px_20px_rgba(21,50,59,0.18)]">
-                  <p className="font-readex text-[3.2rem] font-medium tracking-[-0.06em] sm:text-[4.3rem]">GenFlix</p>
-                </div>
-              </div>
+          <div className="grid min-h-[620px] overflow-hidden rounded-[4px] border border-[#D8E6EB] bg-white shadow-[0_24px_56px_rgba(21,50,59,0.06)] lg:grid-cols-[1fr_1fr]">
+            <div
+              className="relative min-h-[360px] bg-cover bg-center"
+              style={{
+                backgroundImage: `linear-gradient(180deg, rgba(10, 54, 64, 0.12) 0%, rgba(10, 54, 64, 0.42) 100%), url(${genflixHeroImage})`,
+              }}
+            >
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_20%,rgba(255,255,255,0.12),transparent_24%),radial-gradient(circle_at_78%_16%,rgba(255,255,255,0.18),transparent_20%)]" />
             </div>
 
             <div className="flex items-center px-6 py-12 sm:px-10 lg:px-12">

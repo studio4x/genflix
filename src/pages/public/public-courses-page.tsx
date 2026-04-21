@@ -95,7 +95,7 @@ export function PublicCoursesPage() {
 
   return (
     <main className="min-h-screen bg-[#F2F7F9] font-manrope text-[#163138]">
-      <section className="bg-[#F2F7F9] pt-4">
+      <section className="border-b border-white/10 bg-[linear-gradient(90deg,#1C7082_0%,#0F5562_100%)]">
         <div className="public-site-container">
           <GenflixPublicHeader currentPage="courses" navLinks={genflixNavLinks} />
         </div>
@@ -103,7 +103,7 @@ export function PublicCoursesPage() {
 
       <section className="bg-white pb-14 pt-6">
         <div className="public-site-container">
-          <div className="rounded-[28px] bg-[#F2F7F9] px-6 py-12 text-center shadow-[0_18px_40px_rgba(21,50,59,0.04)] sm:px-10">
+          <div className="rounded-[4px] border border-[#E5E1DA] bg-[linear-gradient(180deg,#FCFAF7_0%,#F5F2EE_100%)] px-6 py-12 text-center shadow-[0_18px_40px_rgba(21,50,59,0.05)] sm:px-10">
             <h1 className="mx-auto max-w-[520px] text-[2.45rem] font-extrabold leading-[0.94] tracking-[-0.05em] text-[#183139] sm:text-[3rem]">
               <EditableText
                 entryKey="courses.hero.title"
@@ -210,7 +210,7 @@ export function PublicCoursesPage() {
         </div>
       </section>
 
-      <section className="bg-[#F2F7F9] py-16">
+      <section className="bg-[#F8F5F1] py-16">
         <div className="public-site-container">
           <div className="mx-auto max-w-[620px] text-center">
             <h2 className="text-[2.1rem] font-bold tracking-[-0.04em] text-[#183139] sm:text-[2.35rem]">

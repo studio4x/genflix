@@ -53,6 +53,7 @@ export interface GenflixCourseItem {
   mentor: string
   role: string
   image: string
+  mentorImage?: string
   initials: string
 }
 
@@ -147,11 +148,11 @@ export const genflixNewsletterImage = '/images/genflix/home/newsletter.jpg'
 
 export const genflixNavLinks: GenflixNavLink[] = [
   { label: 'Início', href: '/', isInternal: true, pageKey: 'home' },
-  { label: 'Sobre', href: '/sobre', isInternal: true, pageKey: 'about' },
   { label: 'Cursos', href: '/cursos', isInternal: true, pageKey: 'courses' },
-  { label: 'Recursos', href: '/recursos', isInternal: true, pageKey: 'resources' },
   { label: 'Blog', href: '/blog', isInternal: true, pageKey: 'blog' },
   { label: 'Contato', href: '/contato', isInternal: true, pageKey: 'contact' },
+  { label: 'Sobre', href: '/sobre', isInternal: true, pageKey: 'about' },
+  { label: 'Recursos', href: '/recursos', isInternal: true, pageKey: 'resources' },
   { label: 'Comunidade', href: '/comunidade', isInternal: true, pageKey: 'community', requiresAuth: true },
 ]
 
@@ -172,6 +173,7 @@ export const genflixCategoryTiles: GenflixCategoryItem[] = [
   { label: 'Gestão', icon: BriefcaseBusiness },
   { label: 'Humanas', icon: Landmark },
   { label: 'Psicanálise / Psicologia', icon: BrainCircuit },
+  { label: 'Interesse Geral', icon: Sparkles },
 ]
 
 export const genflixCommunityItems: GenflixCommunityItem[] = [
@@ -252,6 +254,7 @@ export const genflixCatalogCourses: GenflixCourseItem[] = [
     mentor: 'Dra. Carla Mendes',
     role: 'Especialista em anatomia clínica',
     image: '/images/genflix/home/featured-1.jpg',
+    mentorImage: '/images/genflix/home/mentor-1.jpg',
     initials: 'CM',
   },
   {
@@ -261,6 +264,7 @@ export const genflixCatalogCourses: GenflixCourseItem[] = [
     mentor: 'Dr. Carlos Mendes',
     role: 'Mentor para carreiras jurídicas',
     image: '/images/genflix/home/featured-2.jpg',
+    mentorImage: '/images/genflix/home/mentor-2.jpg',
     initials: 'CM',
   },
   {
@@ -270,6 +274,7 @@ export const genflixCatalogCourses: GenflixCourseItem[] = [
     mentor: 'Dra. Marina Costa',
     role: 'Professora de raciocínio quantitativo',
     image: '/images/genflix/home/featured-3.jpg',
+    mentorImage: '/images/genflix/home/mentor-3.jpg',
     initials: 'MC',
   },
   {
@@ -279,6 +284,7 @@ export const genflixCatalogCourses: GenflixCourseItem[] = [
     mentor: 'Prof. Rafael Lima',
     role: 'Consultor em liderança e processos',
     image: '/images/genflix/home/featured-4.jpg',
+    mentorImage: '/images/genflix/home/mentor-4.jpg',
     initials: 'RL',
   },
   {
@@ -288,6 +294,7 @@ export const genflixCatalogCourses: GenflixCourseItem[] = [
     mentor: 'Prof. Carlos Mendes',
     role: 'Curadoria em pensamento político',
     image: '/images/genflix/home/featured-5.jpg',
+    mentorImage: '/images/genflix/home/mentor-5.jpg',
     initials: 'CM',
   },
   {
@@ -297,6 +304,7 @@ export const genflixCatalogCourses: GenflixCourseItem[] = [
     mentor: 'Dr. Carlos Mendes',
     role: 'Psicanalista e orientador clínico',
     image: '/images/genflix/home/featured-6.jpg',
+    mentorImage: '/images/genflix/home/mentor-6.jpg',
     initials: 'CM',
   },
   {
@@ -680,7 +688,7 @@ export function getGenflixBlogPostBySlug(slug: string) {
 
 export const genflixFooterColumns: GenflixFooterColumn[] = [
   {
-    title: 'Institucional',
+    title: 'Links RÃ¡pidos',
     items: [
       { label: 'Política de privacidade', href: '/privacidade', isInternal: true },
       { label: 'Política de reembolso', href: '/politica-de-reembolso', isInternal: true },
