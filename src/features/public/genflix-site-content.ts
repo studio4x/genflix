@@ -688,7 +688,7 @@ export function getGenflixBlogPostBySlug(slug: string) {
 
 export const genflixFooterColumns: GenflixFooterColumn[] = [
   {
-    title: 'Links RÃ¡pidos',
+    title: 'Links Rápidos',
     items: [
       { label: 'Política de privacidade', href: '/privacidade', isInternal: true },
       { label: 'Política de reembolso', href: '/politica-de-reembolso', isInternal: true },

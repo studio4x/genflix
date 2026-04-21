@@ -115,7 +115,7 @@ export function GenflixPublicHeader({
               <EditableText
                 entryKey={user ? 'global.header.cta.authenticated.label' : 'global.header.cta.anonymous.label'}
                 fallback={ctaLabel}
-                label="Botao do cabecalho"
+                label="Botão do cabeçalho"
                 pageKey="global"
               />
             </Link>
@@ -168,7 +168,7 @@ export function GenflixPublicHeader({
                 <EditableText
                   entryKey={user ? 'global.header.cta.authenticated.label' : 'global.header.cta.anonymous.label'}
                   fallback={ctaLabel}
-                  label="Botao do cabecalho mobile"
+                  label="Botão do cabeçalho mobile"
                   pageKey="global"
                 />
               </Link>

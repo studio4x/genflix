@@ -95,12 +95,13 @@ function FooterNavLink({
 const footerColumnsFallback = [
   {
     id: 'links-rapidos',
-    title: 'Links Rapidos',
+    title: 'Links Rápidos',
     metadata: {
       items: [
         { label: 'Sobre a GenFlix', href: '/sobre', isInternal: true },
         { label: 'Perguntas frequentes', href: '/perguntas-frequentes', isInternal: true },
-        { label: 'Politica de privacidade', href: '/privacidade', isInternal: true },
+        { label: 'Política de privacidade', href: '/privacidade', isInternal: true },
+        { label: 'Política de reembolso', href: '/politica-de-reembolso', isInternal: true },
       ],
     },
   },
@@ -109,7 +110,7 @@ const footerColumnsFallback = [
     title: 'Cursos',
     metadata: {
       items: [
-        { label: 'Catalogo completo', href: '/cursos', isInternal: true },
+        { label: 'Catálogo completo', href: '/cursos', isInternal: true },
         { label: 'Recursos de estudo', href: '/recursos', isInternal: true },
         { label: 'Blog', href: '/blog', isInternal: true },
       ],
@@ -145,7 +146,7 @@ export function GenflixPublicFooter({
             </div>
 
             <div className="grid gap-8 lg:grid-cols-[repeat(3,minmax(0,1fr))_220px]">
-              <EditableList entryKey="global.footer.columns" fallback={footerColumns} label="Colunas do rodape" pageKey="global">
+              <EditableList entryKey="global.footer.columns" fallback={footerColumns} label="Colunas do rodapé" pageKey="global">
                 {(columns) => columns.filter(isEditableItemVisible).map((column) => {
                   const items = Array.isArray(column.metadata?.items)
                     ? column.metadata.items.map(normalizeFooterItem).filter(isVisibleFooterItem)
@@ -177,7 +178,7 @@ export function GenflixPublicFooter({
 
               <div>
                 <h3 className="text-[11px] font-black uppercase tracking-[0.18em] text-white/92">
-                  Midias sociais
+                  Mídias sociais
                 </h3>
                 <p className="mt-4 text-sm text-white/72">Nos siga em:</p>
                 <div className="mt-4 flex items-center gap-4">
@@ -205,7 +206,7 @@ export function GenflixPublicFooter({
             <p className="mx-auto max-w-[760px]">
               <EditableText
                 entryKey="global.footer.copyright"
-                fallback="© 2026 e-Clix | Solucoes em Conteudo Educacional. Todos os direitos reservados."
+                fallback="Copyright ©️ 2026 e-Clix | Soluções em Conteúdo Educacional | CNPJ 38.112.632/0001-10"
                 label="Copyright"
                 pageKey="global"
               />

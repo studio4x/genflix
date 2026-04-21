@@ -34,14 +34,14 @@ const homeLayoutFallback: EditableListItem[] = [
   {
     id: 'home-hero',
     label: 'Hero principal',
-    description: 'Bloco de abertura com imagem, titulo e CTAs principais.',
+    description: 'Bloco de abertura com imagem, título e CTAs principais.',
     metadata: {
       templateKey: 'hero',
     },
   },
   {
     id: 'home-categories',
-    label: 'Areas de conhecimento',
+    label: 'Áreas de conhecimento',
     description: 'Grade de categorias em destaque na home.',
     metadata: {
       templateKey: 'categories',
@@ -58,7 +58,7 @@ const homeLayoutFallback: EditableListItem[] = [
   {
     id: 'home-newsletter',
     label: 'Newsletter',
-    description: 'Bloco final de captacao de e-mail.',
+    description: 'Bloco final de captação de e-mail.',
     metadata: {
       templateKey: 'newsletter',
       pageKey: 'global',
@@ -80,7 +80,7 @@ const homeLayoutSchema = {
       item: {
         id: 'hero',
         label: 'Hero principal',
-        description: 'Bloco de abertura com imagem, titulo e CTAs principais.',
+        description: 'Bloco de abertura com imagem, título e CTAs principais.',
         metadata: {
           templateKey: 'hero',
         },
@@ -88,11 +88,11 @@ const homeLayoutSchema = {
     },
     {
       id: 'categories',
-      label: 'Areas de conhecimento',
-      description: 'Grade de areas com cards editaveis e ordem controlada.',
+      label: 'Áreas de conhecimento',
+      description: 'Grade de áreas com cards editáveis e ordem controlada.',
       item: {
         id: 'categories',
-        label: 'Areas de conhecimento',
+        label: 'Áreas de conhecimento',
         description: 'Grade de categorias em destaque na home.',
         metadata: {
           templateKey: 'categories',
@@ -102,7 +102,7 @@ const homeLayoutSchema = {
     {
       id: 'featured',
       label: 'Novidades',
-      description: 'Secao de listagem principal com CTA para cursos.',
+      description: 'Seção de listagem principal com CTA para cursos.',
       item: {
         id: 'featured',
         label: 'Novidades',
@@ -115,11 +115,11 @@ const homeLayoutSchema = {
     {
       id: 'newsletter',
       label: 'Newsletter',
-      description: 'Bloco de captacao com imagem, texto e formulario.',
+      description: 'Bloco de captação com imagem, texto e formulário.',
       item: {
         id: 'newsletter',
         label: 'Newsletter',
-        description: 'Bloco final de captacao de e-mail.',
+        description: 'Bloco final de captação de e-mail.',
         metadata: {
           templateKey: 'newsletter',
         },
@@ -130,15 +130,15 @@ const homeLayoutSchema = {
 
 const homeCategoryIconKeys: Record<string, string> = {
   Saude: 'heart-pulse',
-  'SaÃºde': 'heart-pulse',
+  Saúde: 'heart-pulse',
   Juridicos: 'scale',
-  'JurÃ­dicos': 'scale',
+  Jurídicos: 'scale',
   Exatas: 'sigma',
   Gestao: 'briefcase-business',
-  'GestÃ£o': 'briefcase-business',
+  Gestão: 'briefcase-business',
   Humanas: 'landmark',
   'Psicanalise / Psicologia': 'brain-circuit',
-  'PsicanÃ¡lise / Psicologia': 'brain-circuit',
+  'Psicanálise / Psicologia': 'brain-circuit',
   'Interesse Geral': 'sparkles',
 }
 
@@ -212,7 +212,7 @@ function HomeHeroSection({
   pageKey?: SitePageKey
 }) {
   const heroImage = useEditableValue(`${entryPrefix}.image`, { src: genflixHeroImage, alt: 'GenFlix' }, { pageKey })
-  const legacyPrimaryCtaLabel = useEditableValue(`${entryPrefix}.primaryCta`, 'Entrar', { pageKey })
+  const legacyPrimaryCtaLabel = useEditableValue(`${entryPrefix}.primaryCta`, 'Já sou inscrito', { pageKey })
   const legacySecondaryCtaLabel = useEditableValue(`${entryPrefix}.secondaryCta`, 'Quero me inscrever', { pageKey })
 
   return (
@@ -233,15 +233,15 @@ function HomeHeroSection({
                 <EditableText
                   entryKey={`${entryPrefix}.title`}
                   fallback="O conhecimento que a sua carreira estava esperando."
-                  label="Titulo principal"
+                  label="Título principal"
                   pageKey={pageKey}
                 />
               </h1>
               <p className="mt-5 max-w-[420px] text-sm leading-7 text-white/78 sm:text-base">
                 <EditableText
                   entryKey={`${entryPrefix}.subtitle`}
-                  fallback="As ferramentas de estudo para quem leva o aprendizado a serio."
-                  label="Subtitulo principal"
+                  fallback="As ferramentas de estudo para quem leva o aprendizado a sério."
+                  label="Subtítulo principal"
                   pageKey={pageKey}
                 />
               </p>
@@ -257,7 +257,7 @@ function HomeHeroSection({
                     <GenflixCtaButton asChild className="min-h-[48px] px-5" tone={buttonValue.tone === 'surface' || buttonValue.tone === 'ghost' ? buttonValue.tone : 'solid'}>
                       {buttonValue.isInternal === true ? (
                         <Link to={typeof buttonValue.href === 'string' ? buttonValue.href : '/login'}>
-                          {typeof buttonValue.label === 'string' ? buttonValue.label : 'Entrar'}
+                          {typeof buttonValue.label === 'string' ? buttonValue.label : 'Já sou inscrito'}
                         </Link>
                       ) : (
                         <a
@@ -265,7 +265,7 @@ function HomeHeroSection({
                           target={buttonValue.openInNewTab === true ? '_blank' : undefined}
                           rel={buttonValue.openInNewTab === true ? 'noreferrer' : undefined}
                         >
-                          {typeof buttonValue.label === 'string' ? buttonValue.label : 'Entrar'}
+                          {typeof buttonValue.label === 'string' ? buttonValue.label : 'Já sou inscrito'}
                         </a>
                       )}
                     </GenflixCtaButton>
@@ -274,12 +274,12 @@ function HomeHeroSection({
 
                 <EditableButton
                   entryKey={`${entryPrefix}.secondaryCta`}
-                  fallback={{ label: legacySecondaryCtaLabel, href: '#newsletter', tone: 'ghost' }}
-                  label="CTA secundario do hero"
+                  fallback={{ label: legacySecondaryCtaLabel, href: '#newsletter', tone: 'surface' }}
+                  label="CTA secundário do hero"
                   pageKey={pageKey}
                 >
                   {(buttonValue) => buttonValue.isHidden === true ? null : (
-                    <GenflixCtaButton asChild tone={buttonValue.tone === 'surface' || buttonValue.tone === 'solid' ? buttonValue.tone : 'ghost'} className="min-h-[48px] px-5">
+                    <GenflixCtaButton asChild tone={buttonValue.tone === 'ghost' || buttonValue.tone === 'solid' ? buttonValue.tone : 'surface'} className="min-h-[48px] px-5">
                       <a
                         href={typeof buttonValue.href === 'string' ? buttonValue.href : '#newsletter'}
                         target={buttonValue.openInNewTab === true ? '_blank' : undefined}
@@ -325,8 +325,8 @@ function HomeCategoriesSection({
           <h2 className="text-[2rem] font-bold tracking-[-0.04em] text-[#15323B] sm:text-[2.25rem]">
             <EditableText
               entryKey={`${entryPrefix}.title`}
-              fallback="Cursos por area de conhecimento"
-              label="Titulo de categorias"
+              fallback="Cursos por área de conhecimento"
+              label="Título de categorias"
               pageKey={pageKey}
             />
           </h2>
@@ -373,7 +373,7 @@ function HomeFeaturedSection({
   sectionId?: string
   pageKey?: SitePageKey
 }) {
-  const legacyFeaturedCtaLabel = useEditableValue(`${entryPrefix}.cta`, 'Conheca todos os cursos', { pageKey })
+  const legacyFeaturedCtaLabel = useEditableValue(`${entryPrefix}.cta`, 'Conheça todos os cursos', { pageKey })
 
   return (
     <section id={sectionId} className="bg-white py-16 sm:py-20">
@@ -381,7 +381,7 @@ function HomeFeaturedSection({
         <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <h2 className="text-[2rem] font-bold tracking-[-0.04em] text-[#15323B] sm:text-[2.25rem]">
-              <EditableText entryKey={`${entryPrefix}.title`} fallback="Novidades" label="Titulo de cursos em destaque" pageKey={pageKey} />
+              <EditableText entryKey={`${entryPrefix}.title`} fallback="Novidades" label="Título de cursos em destaque" pageKey={pageKey} />
             </h2>
           </div>
 
@@ -395,7 +395,7 @@ function HomeFeaturedSection({
               <GenflixCtaButton asChild className="min-h-[44px] px-4 text-[13px] self-start" tone={buttonValue.tone === 'surface' || buttonValue.tone === 'ghost' ? buttonValue.tone : 'solid'}>
                 {buttonValue.isInternal === true ? (
                   <Link to={typeof buttonValue.href === 'string' ? buttonValue.href : '/cursos'}>
-                    {typeof buttonValue.label === 'string' ? buttonValue.label : 'Conheca todos os cursos'}
+                    {typeof buttonValue.label === 'string' ? buttonValue.label : 'Conheça todos os cursos'}
                   </Link>
                 ) : (
                   <a
@@ -403,7 +403,7 @@ function HomeFeaturedSection({
                     target={buttonValue.openInNewTab === true ? '_blank' : undefined}
                     rel={buttonValue.openInNewTab === true ? 'noreferrer' : undefined}
                   >
-                    {typeof buttonValue.label === 'string' ? buttonValue.label : 'Conheca todos os cursos'}
+                    {typeof buttonValue.label === 'string' ? buttonValue.label : 'Conheça todos os cursos'}
                   </a>
                 )}
               </GenflixCtaButton>

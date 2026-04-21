@@ -18,7 +18,7 @@ export function GenflixNewsletterSection({
   const [message, setMessage] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const image = useEditableValue(`${entryPrefix}.image`, { src: genflixNewsletterImage, alt: 'Newsletter GenFlix' }, { pageKey })
-  const placeholder = useEditableValue(`${entryPrefix}.placeholder`, 'Seu melhor e-mail', { pageKey })
+  const placeholder = useEditableValue(`${entryPrefix}.placeholder`, 'Seu@e-mail.com', { pageKey })
   const legacyButtonLabel = useEditableValue(`${entryPrefix}.button.label`, 'Quero me inscrever', { pageKey })
 
   async function handleNewsletterSubmit(event: FormEvent<HTMLFormElement>) {
@@ -70,15 +70,15 @@ export function GenflixNewsletterSection({
                   <EditableText
                     entryKey={`${entryPrefix}.title`}
                     fallback="Assine nossa newsletter"
-                    label="Titulo da newsletter"
+                    label="Título da newsletter"
                     pageKey={pageKey}
                   />
                 </h2>
                 <p className="mt-4 max-w-[620px] text-sm leading-7 text-white/74 sm:text-base">
                   <EditableText
                     entryKey={`${entryPrefix}.description`}
-                    fallback="Cadastre-se para receber atualizacoes sobre nossos cursos e conteudo."
-                    label="Descricao da newsletter"
+                    fallback="Cadastre-se para receber atualizações sobre nossos cursos e conteúdo."
+                    label="Descrição da newsletter"
                     pageKey={pageKey}
                   />
                 </p>
@@ -101,7 +101,7 @@ export function GenflixNewsletterSection({
                   <EditableButton
                     entryKey={`${entryPrefix}.button`}
                     fallback={{ label: legacyButtonLabel, tone: 'solid' }}
-                    label="Botao da newsletter"
+                    label="Botão da newsletter"
                     pageKey={pageKey}
                   >
                     {(buttonValue) => (
