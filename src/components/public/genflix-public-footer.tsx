@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 
+import { AppVersion } from '@/components/layout/AppVersion'
 import { GenflixCtaButton } from '@/components/public/genflix-cta-button'
 import { GenflixLogo } from '@/components/public/genflix-logo'
 import { genflixSocialLinks } from '@/features/public/genflix-site-content'
@@ -211,6 +212,7 @@ export function GenflixPublicFooter({
                 pageKey="global"
               />
             </p>
+            <AppVersion className="mt-2 block text-[10px] font-medium tracking-[0.14em] text-white/28" />
           </div>
         </div>
       </div>
