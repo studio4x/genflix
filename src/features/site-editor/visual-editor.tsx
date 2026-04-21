@@ -53,6 +53,7 @@ type TextStyleValue = {
   lineHeight?: string
   textTransform?: string
   fontStyle?: string
+  headingTag?: string
 }
 
 type PreviewViewport = 'desktop' | 'tablet' | 'mobile'
@@ -221,21 +222,46 @@ function normalizeTextStyle(value: unknown): TextStyleValue {
     }
   }
 
+  if (typeof value.headingTag === 'string') {
+    const normalizedHeadingTag = value.headingTag.trim().toLowerCase()
+    if (/^h[1-6]$/.test(normalizedHeadingTag)) {
+      nextStyle.headingTag = normalizedHeadingTag
+    }
+  }
+
   return nextStyle
 }
 
 function hasTextStyle(style: TextStyleValue) {
-  return Object.values(style).some((value) => typeof value === 'string' && value.trim() !== '')
+  return Object.entries(style).some(([key, value]) => key !== 'headingTag' && typeof value === 'string' && value.trim() !== '')
 }
 
 function textStyleToCss(style: TextStyleValue): CSSProperties | undefined {
   const normalized = normalizeTextStyle(style)
+  const { headingTag: _headingTag, ...cssStyle } = normalized
 
-  if (!hasTextStyle(normalized)) {
+  if (!hasTextStyle(cssStyle)) {
     return undefined
   }
 
-  return normalized
+  return cssStyle
+}
+
+function isTitleEditorEntry(label: string, entryKey: string) {
+  const normalizedLabel = label.toLowerCase()
+  const normalizedEntryKey = entryKey.toLowerCase()
+  return (
+    normalizedLabel.includes('título')
+    || normalizedLabel.includes('titulo')
+    || normalizedEntryKey.endsWith('.title')
+    || normalizedEntryKey.includes('.title.')
+    || normalizedEntryKey.includes('.heading')
+    || normalizedEntryKey.includes('.headline')
+  )
+}
+
+function getHeadingTagLabel(tag?: string) {
+  return (typeof tag === 'string' && /^h[1-6]$/.test(tag) ? tag.toUpperCase() : 'H2')
 }
 
 function normalizeEditableListItems(value: unknown): EditableListItem[] {
@@ -888,6 +914,8 @@ function EditorModal({
   const permissions = useMemo(() => getSiteEditorPermissions(roles), [roles])
   const initialRawValue = useMemo(() => valueToString(editor.fallback), [editor.fallback])
   const initialTextStyle = useMemo(() => normalizeTextStyle(editor.styleFallback), [editor.styleFallback])
+  const isTitleEditor = isTitleEditorEntry(editor.label, editor.entryKey)
+  const defaultColor = '#183139'
   const formRef = useRef<HTMLFormElement | null>(null)
   const textareaRef = useRef<HTMLTextAreaElement | null>(null)
   const [rawValue, setRawValue] = useState(() => initialRawValue)
@@ -937,6 +965,7 @@ function EditorModal({
   const previewList = Array.isArray(parsedPreview.value) ? parsedPreview.value : null
   const previewRecord = isStringRecord(parsedPreview.value) ? parsedPreview.value : null
   const previewTextStyle = useMemo(() => textStyleToCss(textStyle), [textStyle])
+  const previewHeadingTag = getHeadingTagLabel(textStyle.headingTag)
   const listEditorConfig = useMemo(() => normalizeListEditorSchema(editor.schema), [editor.schema])
   const previewImagePresentation = useMemo(() => getEditableImagePresentation(previewImage), [previewImage])
   const workflowStatus = workspaceRecord.status
@@ -1221,12 +1250,17 @@ function EditorModal({
             <h2 className="mt-1 font-readex text-xl font-semibold text-[#15323b]">{editor.label}</h2>
             <p className="mt-1 text-xs font-semibold text-[#5F7077]">{editor.pageKey}/{editor.entryKey}</p>
             <div className="mt-3 flex flex-wrap gap-2">
-              <span className="inline-flex items-center rounded-full border border-[#D8E6EB] bg-white px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-[#15323b]">
+              <span className="inline-flex items-center rounded-full border border-[#0A3640] bg-[#0A3640] px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-white">
                 Tipo: {editor.entryType}
               </span>
-              <span className="inline-flex items-center rounded-full border border-[#D8E6EB] bg-white px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-[#15323b]">
+              <span className="inline-flex items-center rounded-full border border-[#0A3640] bg-[#0A3640] px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-white">
                 Estrutura: {describeValueShape(parsedPreview.value)}
               </span>
+              {isTitleEditor ? (
+                <span className="inline-flex items-center rounded-full border border-[#D8E6EB] bg-[#F8FCFD] px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-[#0A3640]">
+                  Tag: {previewHeadingTag}
+                </span>
+              ) : null}
               <span className={cn('inline-flex items-center rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em]', workflowStatusClasses(workflowStatus))}>
                 {formatWorkflowStatus(workflowStatus)}
               </span>
@@ -1599,14 +1633,43 @@ function EditorModal({
                   <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#1398B7]">Estilo do texto</p>
                 </div>
                 <div className="mt-4 grid gap-3 md:grid-cols-2">
-                  <label className="grid gap-1.5">
+                  {isTitleEditor ? (
+                    <label className="grid gap-1.5 md:col-span-2">
+                      <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Tag do título</span>
+                      <select
+                        value={getHeadingTagLabel(textStyle.headingTag).toLowerCase()}
+                        onChange={(event) => setTextStyle((current) => ({
+                          ...current,
+                          headingTag: event.target.value,
+                        }))}
+                        className="h-11 rounded-[14px] border border-[#D8E6EB] bg-white px-3 text-sm font-semibold text-[#15323b] outline-none"
+                      >
+                        <option value="h1">H1</option>
+                        <option value="h2">H2</option>
+                        <option value="h3">H3</option>
+                        <option value="h4">H4</option>
+                        <option value="h5">H5</option>
+                        <option value="h6">H6</option>
+                      </select>
+                    </label>
+                  ) : null}
+                  <label className="grid gap-1.5 md:col-span-2">
                     <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Cor</span>
-                    <input
-                      value={textStyle.color ?? ''}
-                      onChange={(event) => setTextStyle((current) => ({ ...current, color: event.target.value }))}
-                      placeholder="#183139"
-                      className="h-11 rounded-[14px] border border-[#D8E6EB] px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]"
-                    />
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="color"
+                        value={textStyle.color ?? defaultColor}
+                        onChange={(event) => setTextStyle((current) => ({ ...current, color: event.target.value }))}
+                        className="h-11 w-14 rounded-[14px] border border-[#D8E6EB] bg-white p-1 outline-none focus:border-[#1398B7]"
+                        aria-label="Selecionar cor"
+                      />
+                      <input
+                        value={textStyle.color ?? defaultColor}
+                        onChange={(event) => setTextStyle((current) => ({ ...current, color: event.target.value }))}
+                        placeholder={defaultColor}
+                        className="h-11 flex-1 rounded-[14px] border border-[#D8E6EB] px-3 text-sm font-semibold uppercase tracking-[0.06em] text-[#15323b] outline-none focus:border-[#1398B7]"
+                      />
+                    </div>
                   </label>
                   <label className="grid gap-1.5">
                     <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Fonte</span>
@@ -2067,38 +2130,38 @@ export function VisualEditorProvider({ children }: { children: ReactNode }) {
           {isTrayExpanded ? (
             <div className="w-[min(calc(100vw-96px),720px)] rounded-[24px] border border-[#D8E6EB] bg-white/96 px-4 py-3 shadow-[0_18px_50px_rgba(6,27,33,0.16)] backdrop-blur">
               <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-            <div className="min-w-0">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className={cn(
-                  'inline-flex items-center rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em]',
-                  isEditing ? 'bg-[#0A3640] text-white' : 'bg-[#E8F6FA] text-[#0A3640]',
-                )}>
-                  {isEditing ? 'Modo edição ativo' : 'Modo navegação'}
-                </span>
-                <span className="inline-flex items-center rounded-full border border-[#D8E6EB] px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-[#5F7077]">
-                  {location.pathname}
-                </span>
-              </div>
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className={cn(
+                      'inline-flex items-center rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em]',
+                      isEditing ? 'bg-[#0A3640] text-white' : 'bg-[#E8F6FA] text-[#0A3640]',
+                    )}>
+                      {isEditing ? 'Modo edição ativo' : 'Modo navegação'}
+                    </span>
+                    <span className="inline-flex items-center rounded-full border border-[#BEE3EA] bg-[#F8FCFD] px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-[#0A3640]">
+                      {location.pathname}
+                    </span>
+                  </div>
               <p className="mt-2 text-sm font-semibold text-[#15323b]">
                 Clique nos blocos destacados para editar. Use <span className="font-black">Ctrl/Cmd + S</span> para salvar e <span className="font-black">Esc</span> para fechar.
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={() => setIsEditing((current) => !current)}
-                className={cn(
-                  'inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-black uppercase tracking-[0.16em]',
+                  <button
+                    type="button"
+                    onClick={() => setIsEditing((current) => !current)}
+                    className={cn(
+                      'inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-black uppercase tracking-[0.16em]',
                   isEditing ? 'bg-[#0A3640] text-white' : 'bg-[#1398B7] text-white',
                 )}
               >
                 <Edit3 className="h-3.5 w-3.5" />
                 {isEditing ? 'Sair da edição' : 'Ativar edição'}
-              </button>
-              <Link to="/admin/site-editor" className="inline-flex items-center gap-2 rounded-full border border-[#D8E6EB] bg-white px-4 py-2 text-xs font-black uppercase tracking-[0.16em] text-[#0A3640] hover:bg-[#F2F7F9]">
-                <Settings className="h-3.5 w-3.5" />
-                Gestão
-              </Link>
+                  </button>
+                  <Link to="/admin/site-editor" className="inline-flex items-center gap-2 rounded-full border border-[#BEE3EA] bg-[#F8FCFD] px-4 py-2 text-xs font-black uppercase tracking-[0.16em] text-[#0A3640] hover:bg-[#EAF8FB]">
+                    <Settings className="h-3.5 w-3.5" />
+                    Gestão
+                  </Link>
               </div>
             </div>
             </div>
