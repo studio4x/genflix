@@ -1,6 +1,5 @@
 import * as React from 'react'
 import { ArrowUpRight } from 'lucide-react'
-import { Slot } from 'radix-ui'
 
 import { cn } from '@/lib/utils'
 
@@ -34,10 +33,14 @@ export function GenflixCtaButton({
   asChild?: boolean
   tone?: GenflixCtaTone
 }) {
-  const Comp = asChild ? Slot.Root : 'button'
-  const content = (
+  const classes = cn(
+    'group/genflix-cta inline-flex h-11 items-center justify-center gap-3 rounded-[32px] border px-5 pr-2 font-readex text-[16px] font-medium leading-none whitespace-nowrap transition-all duration-200 outline-none select-none focus-visible:ring-3 focus-visible:ring-[#1398B7]/25 active:translate-y-px disabled:pointer-events-none disabled:opacity-60',
+    toneClasses[tone],
+    className,
+  )
+  const content = (label: React.ReactNode) => (
     <>
-      <span className="truncate leading-none">{children}</span>
+      <span className="truncate leading-none">{label}</span>
       <span
         aria-hidden="true"
         className={cn(
@@ -50,17 +53,17 @@ export function GenflixCtaButton({
     </>
   )
 
+  if (asChild && React.isValidElement<{ className?: string; children?: React.ReactNode }>(children)) {
+    return React.cloneElement(children, {
+      ...props,
+      className: cn(classes, children.props.className),
+      children: content(children.props.children),
+    })
+  }
+
   return (
-    <Comp
-      data-slot="genflix-cta-button"
-      className={cn(
-        'group/genflix-cta inline-flex h-11 items-center justify-center gap-3 rounded-[32px] border px-5 pr-2 font-readex text-[16px] font-medium leading-none whitespace-nowrap transition-all duration-200 outline-none select-none focus-visible:ring-3 focus-visible:ring-[#1398B7]/25 active:translate-y-px disabled:pointer-events-none disabled:opacity-60',
-        toneClasses[tone],
-        className,
-      )}
-      {...props}
-    >
-      {asChild ? <Slot.Slottable>{content}</Slot.Slottable> : content}
-    </Comp>
+    <button data-slot="genflix-cta-button" className={classes} {...props}>
+      {content(children)}
+    </button>
   )
 }
