@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
+import { KeyRound, Trash2 } from 'lucide-react'
 
 import { useAuth } from '@/app/providers/auth-provider'
 import { Button } from '@/components/ui/button'
@@ -82,6 +83,31 @@ function formatDateTime(value: string | null) {
   }).format(parsed)
 }
 
+function formatDate(value: string | null) {
+  if (!value) {
+    return 'Nao informado'
+  }
+
+  const parsed = new Date(value)
+  if (Number.isNaN(parsed.getTime())) {
+    return 'Nao informado'
+  }
+
+  return new Intl.DateTimeFormat('pt-BR', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  }).format(parsed)
+}
+
+function formatShortAuthId(value: string) {
+  if (!value) {
+    return 'Nao informado'
+  }
+
+  return value.length <= 8 ? value : `${value.slice(0, 8)}...`
+}
+
 function getRoleBadgeClass(roleCode: string) {
   if (roleCode === 'admin') {
     return 'border-[#D9F0F5] bg-[#E8F6FA] text-[#1398B7]'
@@ -123,6 +149,33 @@ function userMatchesRoleFilter(user: AdminUserListItem, roleFilter: RoleFilter) 
 
 function getPrimaryRoleLabel(roleCode: AdminAssignableRoleCode) {
   return roleOptions.find((role) => role.code === roleCode)?.title ?? roleCode
+}
+
+function getUserPrimaryRole(user: AdminUserListItem) {
+  return (
+    user.roles.find((role) => role.code === 'admin') ??
+    user.roles.find((role) => role.code === 'criador' || role.code === 'professor') ??
+    user.roles.find((role) => role.code === 'aluno' || role.code === 'student') ??
+    user.roles[0] ??
+    null
+  )
+}
+
+function getPrimaryRolePillClass(roleCode: string | null) {
+  if (roleCode === 'admin') {
+    return 'border-sky-200 bg-sky-50 text-sky-700'
+  }
+  if (roleCode === 'criador' || roleCode === 'professor') {
+    return 'border-indigo-200 bg-indigo-50 text-indigo-700'
+  }
+  if (roleCode === 'aluno' || roleCode === 'student') {
+    return 'border-slate-200 bg-slate-100 text-slate-700'
+  }
+  return 'border-slate-200 bg-slate-50 text-slate-500'
+}
+
+function getUserStatusPillClass() {
+  return 'border-emerald-200 bg-emerald-50 text-emerald-700'
 }
 
 export function AdminUsersPage() {
@@ -669,91 +722,125 @@ export function AdminUsersPage() {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-[#D8E6EB]">
-              <thead className="bg-[#F2F7F9]">
+            <table className="w-full min-w-[860px] border-collapse text-sm">
+              <thead className="bg-[#F2F7F9]/90 text-left">
                 <tr>
-                  <th className="px-5 py-4 text-left text-[11px] font-black uppercase tracking-[0.22em] text-[#5F7077]">Usuário</th>
-                  <th className="px-5 py-4 text-left text-[11px] font-black uppercase tracking-[0.22em] text-[#5F7077]">Regras</th>
-                  <th className="px-5 py-4 text-left text-[11px] font-black uppercase tracking-[0.22em] text-[#5F7077]">Criado em</th>
-                  <th className="px-5 py-4 text-left text-[11px] font-black uppercase tracking-[0.22em] text-[#5F7077]">ID</th>
-                  <th className="px-5 py-4 text-right text-[11px] font-black uppercase tracking-[0.22em] text-[#5F7077]">Ações</th>
+                  <th className="px-4 py-3 text-xs font-semibold uppercase tracking-[0.08em] text-[#5F7077]">Usuario</th>
+                  <th className="px-4 py-3 text-xs font-semibold uppercase tracking-[0.08em] text-[#5F7077]">Contato</th>
+                  <th className="px-4 py-3 text-xs font-semibold uppercase tracking-[0.08em] text-[#5F7077]">Papel</th>
+                  <th className="px-4 py-3 text-xs font-semibold uppercase tracking-[0.08em] text-[#5F7077]">Status</th>
+                  <th className="px-4 py-3 text-xs font-semibold uppercase tracking-[0.08em] text-[#5F7077]">Atividade</th>
+                  <th className="w-[240px] px-4 py-3 text-right text-xs font-semibold uppercase tracking-[0.08em] text-[#5F7077]">Acoes</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#EDF4F6]">
-                {filteredUsers.map((user) => (
-                  <tr key={user.id} className="align-top transition-colors hover:bg-[#F2F7F9]">
-                    <td className="px-5 py-5">
-                      <div className="min-w-[240px]">
-                        <p className="font-readex text-base font-semibold text-[#15323b]">
-                          {user.full_name?.trim() || 'Usuário sem nome'}
-                        </p>
-                        <p className="mt-1 text-sm font-semibold text-[#6d7a80]">{user.email || 'E-mail não informado'}</p>
-                        <p className="mt-1 text-xs font-bold text-[#5F7077]">Atualizado em {formatDateTime(user.updated_at)}</p>
-                      </div>
-                    </td>
-                    <td className="px-5 py-5">
-                      <div className="flex min-w-[260px] flex-wrap gap-2">
-                        {user.roles.length > 0 ? (
-                          user.roles.map((role) => (
-                            <span
-                              key={`${user.id}-${role.code}`}
-                              className={`inline-flex rounded-full border px-3 py-1 text-[11px] font-black uppercase tracking-[0.14em] ${getRoleBadgeClass(role.code)}`}
-                              title={role.assigned_at ? `Atribuída em ${formatDateTime(role.assigned_at)}` : undefined}
-                            >
-                              {getRoleLabel(role)}
-                            </span>
-                          ))
-                        ) : (
-                          <span className="inline-flex rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[11px] font-black uppercase tracking-[0.14em] text-slate-500">
-                            Sem regra
+              <tbody>
+                {filteredUsers.map((user) => {
+                  const primaryRole = getUserPrimaryRole(user)
+                  const primaryRoleLabel = primaryRole ? getRoleLabel(primaryRole) : 'Sem regra'
+                  const roleCountLabel =
+                    user.roles.length === 1 ? '1 regra aplicada' : `${user.roles.length} regras aplicadas`
+
+                  return (
+                    <tr
+                      key={user.id}
+                      className="border-t border-[#EDF4F6] align-top transition-colors hover:bg-slate-50/80"
+                    >
+                      <td className="px-4 py-4 text-sm text-[#15323b]">
+                        <div className="min-w-[220px] space-y-1">
+                          <p className="font-readex text-[15px] font-semibold text-[#15323b]">
+                            {user.full_name?.trim() || 'Usuario sem nome'}
+                          </p>
+                          <p className="text-xs text-[#6d7a80]">Criado em {formatDate(user.created_at)}</p>
+                        </div>
+                      </td>
+                      <td className="px-4 py-4 text-sm text-[#15323b]">
+                        <div className="min-w-[220px] space-y-1 text-xs text-[#6d7a80]">
+                          <p>{user.email || 'E-mail nao informado'}</p>
+                          <p>Sem telefone</p>
+                          <p>auth: {formatShortAuthId(user.id)}</p>
+                        </div>
+                      </td>
+                      <td className="px-4 py-4 text-sm text-[#15323b]">
+                        <div className="space-y-2">
+                          <span
+                            className={`inline-flex items-center rounded-md border px-2.5 py-1 text-xs font-medium ${getPrimaryRolePillClass(primaryRole?.code ?? null)}`}
+                            title={
+                              primaryRole?.assigned_at
+                                ? `Atribuida em ${formatDateTime(primaryRole.assigned_at)}`
+                                : undefined
+                            }
+                          >
+                            {primaryRoleLabel}
                           </span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-5 py-5 text-sm font-bold text-[#5f7077]">
-                      {formatDateTime(user.created_at)}
-                    </td>
-                    <td className="px-5 py-5">
-                      <code className="block min-w-[240px] break-all rounded-2xl bg-[#F2F7F9] px-3 py-2 text-xs font-bold text-[#5F7077]">
-                        {user.id}
-                      </code>
-                    </td>
-                    <td className="px-5 py-5">
-                      <div className="flex min-w-[270px] flex-wrap justify-end gap-2">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => startRoleEdit(user)}
-                          disabled={updatingRoleUserId === user.id}
-                          className="rounded-2xl border-[#c7ddff] text-[#1d4ed8] hover:bg-blue-50 hover:text-[#1e40af]"
+                          {user.roles.length > 1 ? (
+                            <div className="flex flex-wrap gap-1.5">
+                              {user.roles
+                                .filter((role) => role.code !== primaryRole?.code)
+                                .map((role) => (
+                                  <span
+                                    key={`${user.id}-${role.code}`}
+                                    className={`inline-flex rounded-md border px-2 py-0.5 text-[11px] font-medium ${getRoleBadgeClass(role.code)}`}
+                                  >
+                                    {getRoleLabel(role)}
+                                  </span>
+                                ))}
+                            </div>
+                          ) : null}
+                        </div>
+                      </td>
+                      <td className="px-4 py-4 text-sm text-[#15323b]">
+                        <span
+                          className={`inline-flex items-center rounded-md border px-2.5 py-1 text-xs font-medium ${getUserStatusPillClass()}`}
                         >
-                          Editar regra
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => void handleResetUserPassword(user)}
-                          disabled={resettingUserId === user.id}
-                          className="rounded-2xl border-cyan-200 text-cyan-700 hover:bg-cyan-50 hover:text-cyan-800"
-                        >
-                          {resettingUserId === user.id ? 'Redefinindo...' : 'Redefinir senha'}
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="destructive"
-                          size="sm"
-                          onClick={() => void handleDeleteUser(user)}
-                          disabled={deletingUserId === user.id}
-                          className="rounded-2xl"
-                        >
-                          {deletingUserId === user.id ? 'Excluindo...' : 'Excluir'}
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                          Ativo
+                        </span>
+                      </td>
+                      <td className="px-4 py-4 text-sm text-[#15323b]">
+                        <div className="min-w-[180px] space-y-1 text-xs text-[#6d7a80]">
+                          <p>{roleCountLabel}</p>
+                          <p>Atualizado em {formatDateTime(user.updated_at)}</p>
+                          <p>ID: {formatShortAuthId(user.id)}</p>
+                        </div>
+                      </td>
+                      <td className="w-[240px] px-4 py-4 text-right text-sm text-[#15323b]">
+                        <div className="flex min-w-[260px] justify-end gap-2">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => startRoleEdit(user)}
+                            disabled={updatingRoleUserId === user.id}
+                            className="h-9 rounded-full border border-[#D8E6EB] bg-white/90 px-4 text-xs text-[#15323b] hover:bg-[#F2F7F9] hover:text-[#15323b]"
+                          >
+                            Editar
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => void handleResetUserPassword(user)}
+                            disabled={resettingUserId === user.id}
+                            className="h-9 rounded-full border border-[#D8E6EB] bg-white/90 px-4 text-xs text-[#15323b] hover:bg-[#F2F7F9] hover:text-[#15323b]"
+                          >
+                            <KeyRound className="size-4" />
+                            {resettingUserId === user.id ? 'Redefinindo...' : 'Senha'}
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => void handleDeleteUser(user)}
+                            disabled={deletingUserId === user.id}
+                            className="h-9 rounded-full px-4 text-xs"
+                          >
+                            <Trash2 className="size-4" />
+                            {deletingUserId === user.id ? 'Excluindo...' : 'Excluir'}
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                })}
               </tbody>
             </table>
           </div>
