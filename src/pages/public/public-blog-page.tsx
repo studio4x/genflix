@@ -91,15 +91,11 @@ export function PublicBlogPage() {
 
   return (
     <main className="min-h-screen bg-[#F2F7F9] font-manrope text-[#163138]">
-      <section className="border-b border-white/10 bg-[linear-gradient(90deg,#1C7082_0%,#0F5562_100%)]">
-        <div className="public-site-container">
-          <GenflixPublicHeader currentPage="blog" navLinks={genflixNavLinks} />
-        </div>
-      </section>
+      <GenflixPublicHeader currentPage="blog" navLinks={genflixNavLinks} />
 
       <section className="bg-white pb-12 pt-6">
         <div className="public-site-container">
-          <div className="rounded-[4px] border border-[#E5E1DA] bg-[linear-gradient(180deg,#FCFAF7_0%,#F5F2EE_100%)] px-6 py-12 text-center shadow-[0_18px_40px_rgba(21,50,59,0.05)] sm:px-10">
+          <div className="rounded-[4px] border border-[#D8E6EB] bg-[#F2F8FA] px-6 py-12 text-center shadow-[0_18px_40px_rgba(21,50,59,0.05)] sm:px-10">
             <h1 className="mx-auto max-w-[640px] text-[2.35rem] font-extrabold leading-[0.96] tracking-[-0.05em] text-[#183139] sm:text-[2.8rem]">
               <EditableText
                 entryKey="blog.hero.title"
@@ -107,7 +103,7 @@ export function PublicBlogPage() {
                 label="Título do blog"
               />
             </h1>
-            <p className="mx-auto mt-4 max-w-[620px] text-base leading-7 text-[#61737a]">
+            <p className="mx-auto mt-4 max-w-[620px] text-base leading-7 text-[#183139]">
               <EditableText
                 entryKey="blog.hero.description"
                 fallback="Textos para quem aprende com curiosidade: dicas, reflexões e novidades das áreas que você estuda."
@@ -146,10 +142,10 @@ export function PublicBlogPage() {
 
             <div className="flex flex-col justify-center">
               <div className="flex flex-wrap items-center gap-3">
-                <span className="rounded-full bg-[#E8F6FA] px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-[#1398B7]">
+                <span className="rounded-full bg-[#EBF3F5] px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-[#15323B]">
                   {featuredPost.category}
                 </span>
-                <span className="text-xs font-medium uppercase tracking-[0.18em] text-[#97a8ad]">
+                <span className="text-xs font-medium uppercase tracking-[0.18em] text-[#183139]">
                   {featuredPost.readTime}
                 </span>
               </div>
@@ -157,12 +153,12 @@ export function PublicBlogPage() {
               <h2 className="mt-4 text-[1.7rem] font-bold leading-tight tracking-[-0.04em] text-[#183139]">
                 {featuredPost.title}
               </h2>
-              <p className="mt-4 text-sm leading-7 text-[#61737a]">{featuredPost.excerpt}</p>
+              <p className="mt-4 text-sm leading-7 text-[#183139]">{featuredPost.excerpt}</p>
 
               <div className="mt-6 flex items-center justify-between gap-4">
                 <div>
                   <p className="text-sm font-semibold text-[#183139]">{featuredPost.author}</p>
-                  <p className="text-xs text-[#8ea0a6]">{featuredPost.publishedAt}</p>
+                  <p className="text-xs text-[#183139]">{featuredPost.publishedAt}</p>
                 </div>
 
                 <GenflixCtaButton asChild className="px-4 py-2">
@@ -191,7 +187,7 @@ export function PublicBlogPage() {
                   'rounded-full border px-4 py-2 text-sm font-medium transition-colors',
                   selectedFilter === filter
                     ? 'border-[#1398B7] bg-[#1398B7] text-white shadow-[0_10px_24px_rgba(19,152,183,0.22)]'
-                    : 'border-[#D8E6EB] bg-white text-[#6d7f85] hover:border-[#BEE3EA] hover:text-[#183139]',
+                    : 'border-[#D8E6EB] bg-[#EBF3F5] text-[#15323B] hover:border-[#BEE3EA] hover:bg-[#E1EDF0] hover:text-[#15323B]',
                 )}
               >
                 {filter}
@@ -203,7 +199,7 @@ export function PublicBlogPage() {
             {paginatedPosts.map((post) => (
               <article
                 key={post.slug}
-                className="overflow-hidden rounded-[22px] border border-[#D8E6EB] bg-white shadow-[0_20px_50px_rgba(19,152,183,0.08)] transition-transform duration-300 hover:-translate-y-1.5 hover:shadow-[0_28px_60px_rgba(19,152,183,0.16)]"
+                className="overflow-hidden rounded-[22px] border border-[#D8E6EB] bg-[#F2F8FA] shadow-[0_20px_50px_rgba(19,152,183,0.08)] transition-transform duration-300 hover:-translate-y-1.5 hover:shadow-[0_28px_60px_rgba(19,152,183,0.16)]"
               >
                 <div className="aspect-[16/10] overflow-hidden">
                   <img src={post.image} alt={post.title} className="h-full w-full object-cover" loading="lazy" />
@@ -211,14 +207,14 @@ export function PublicBlogPage() {
 
                 <div className="space-y-4 p-5">
                   <div className="flex items-center justify-between gap-3">
-                    <span className="rounded-full bg-[#E8F6FA] px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-[#1398B7]">
+                    <span className="rounded-full bg-[#EBF3F5] px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-[#15323B]">
                       {post.category}
                     </span>
-                    <span className="text-xs text-[#97a8ad]">{post.readTime}</span>
+                    <span className="text-xs text-[#183139]">{post.readTime}</span>
                   </div>
 
                   <h3 className="text-lg font-bold leading-tight text-[#183139]">{post.title}</h3>
-                  <p className="text-sm leading-7 text-[#61737a]">{post.excerpt}</p>
+                  <p className="text-sm leading-7 text-[#183139]">{post.excerpt}</p>
 
                   <Link
                     to={`/blog/${post.slug}`}
@@ -233,7 +229,7 @@ export function PublicBlogPage() {
           </div>
 
           {paginatedPosts.length === 0 ? (
-            <div className="mt-10 rounded-[24px] border border-dashed border-[#D8E6EB] bg-[#F2F7F9] px-6 py-12 text-center">
+          <div className="mt-10 rounded-[24px] border border-dashed border-[#D8E6EB] bg-[#F2F8FA] px-6 py-12 text-center">
               <p className="text-lg font-bold text-[#183139]">Nenhum artigo encontrado com esse filtro.</p>
               <p className="mt-3 text-sm text-[#6d7f85]">
                 <EditableText
@@ -264,7 +260,7 @@ export function PublicBlogPage() {
                   'inline-flex h-10 w-10 items-center justify-center rounded-full border text-sm font-semibold transition-colors',
                   visibleCurrentPage === page
                     ? 'border-[#1398B7] bg-[#1398B7] text-white'
-                    : 'border-[#D8E6EB] bg-white text-[#6d7f85] hover:bg-[#E8F6FA] hover:text-[#183139]',
+                    : 'border-[#D8E6EB] bg-[#EBF3F5] text-[#15323B] hover:bg-[#E1EDF0] hover:text-[#15323B]',
                 )}
               >
                 {page}

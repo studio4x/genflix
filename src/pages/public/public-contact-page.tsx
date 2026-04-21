@@ -63,11 +63,7 @@ export function PublicContactPage() {
 
   return (
     <main className="min-h-screen bg-[#F2F7F9] font-manrope text-[#163138]">
-      <section className="border-b border-white/10 bg-[linear-gradient(90deg,#1C7082_0%,#0F5562_100%)]">
-        <div className="public-site-container">
-          <GenflixPublicHeader currentPage="contact" navLinks={genflixNavLinks} />
-        </div>
-      </section>
+      <GenflixPublicHeader currentPage="contact" navLinks={genflixNavLinks} />
 
       <section className="bg-white pb-0 pt-6">
         <div className="public-site-container">

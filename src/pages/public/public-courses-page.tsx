@@ -95,15 +95,11 @@ export function PublicCoursesPage() {
 
   return (
     <main className="min-h-screen bg-[#F2F7F9] font-manrope text-[#163138]">
-      <section className="border-b border-white/10 bg-[linear-gradient(90deg,#1C7082_0%,#0F5562_100%)]">
-        <div className="public-site-container">
-          <GenflixPublicHeader currentPage="courses" navLinks={genflixNavLinks} />
-        </div>
-      </section>
+      <GenflixPublicHeader currentPage="courses" navLinks={genflixNavLinks} />
 
       <section className="bg-white pb-14 pt-6">
         <div className="public-site-container">
-          <div className="rounded-[4px] border border-[#E5E1DA] bg-[linear-gradient(180deg,#FCFAF7_0%,#F5F2EE_100%)] px-6 py-12 text-center shadow-[0_18px_40px_rgba(21,50,59,0.05)] sm:px-10">
+          <div className="rounded-[4px] border border-[#D8E6EB] bg-[#F2F8FA] px-6 py-12 text-center shadow-[0_18px_40px_rgba(21,50,59,0.05)] sm:px-10">
             <h1 className="mx-auto max-w-[520px] text-[2.45rem] font-extrabold leading-[0.94] tracking-[-0.05em] text-[#183139] sm:text-[3rem]">
               <EditableText
                 entryKey="courses.hero.title"
@@ -139,7 +135,7 @@ export function PublicCoursesPage() {
                       'rounded-full border px-4 py-2 text-sm font-medium transition-colors',
                       selectedFilter === filter
                         ? 'border-[#1398B7] bg-[#1398B7] text-white shadow-[0_10px_24px_rgba(19,152,183,0.22)]'
-                        : 'border-[#D8E6EB] bg-white text-[#6d7f85] hover:border-[#BEE3EA] hover:text-[#183139]',
+                    : 'border-[#D8E6EB] bg-[#EBF3F5] text-[#15323B] hover:border-[#BEE3EA] hover:bg-[#E1EDF0] hover:text-[#15323B]',
                     )}
                   >
                     {filter}
@@ -160,7 +156,7 @@ export function PublicCoursesPage() {
           </div>
 
           {filteredCourses.length === 0 ? (
-            <div className="mt-10 rounded-[24px] border border-dashed border-[#D8E6EB] bg-[#F2F7F9] px-6 py-12 text-center">
+          <div className="mt-10 rounded-[24px] border border-dashed border-[#D8E6EB] bg-[#F2F8FA] px-6 py-12 text-center">
               <p className="text-lg font-bold text-[#183139]">Nenhum curso encontrado com esse filtro.</p>
               <p className="mt-3 text-sm text-[#6d7f85]">
                 <EditableText
@@ -210,13 +206,13 @@ export function PublicCoursesPage() {
         </div>
       </section>
 
-      <section className="bg-[#F8F5F1] py-16">
+      <section className="bg-[#F2F8FA] py-16">
         <div className="public-site-container">
           <div className="mx-auto max-w-[620px] text-center">
             <h2 className="text-[2.1rem] font-bold tracking-[-0.04em] text-[#183139] sm:text-[2.35rem]">
               <EditableText entryKey="courses.features.title" fallback="Muito além do vídeo" label="Título de recursos em cursos" />
             </h2>
-            <p className="mt-3 text-base leading-7 text-[#6c7f85]">
+            <p className="mt-3 text-base leading-7 text-[#183139]">
               <EditableText
                 entryKey="courses.features.description"
                 fallback="Ferramentas pensadas para você aprender, fixar e revisar do seu jeito."

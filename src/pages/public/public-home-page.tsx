@@ -439,11 +439,7 @@ export function PublicHomePage() {
 
   return (
     <main className="min-h-screen bg-[#F2F7F9] font-manrope text-[#163138]">
-      <section className="border-b border-white/10 bg-[linear-gradient(90deg,#1C7082_0%,#0F5562_100%)]">
-        <div className="public-site-container">
-          <GenflixPublicHeader currentPage="home" navLinks={genflixNavLinks} />
-        </div>
-      </section>
+      <GenflixPublicHeader currentPage="home" navLinks={genflixNavLinks} />
 
       <HomeStructureControl sections={homeSections} />
 

@@ -34,11 +34,7 @@ export function PublicCommunityPage() {
 
   return (
     <main className="min-h-screen bg-[#F2F7F9] font-manrope text-[#163138]">
-      <section className="bg-[#F2F7F9] pt-4">
-        <div className="public-site-container">
-          <GenflixPublicHeader currentPage="community" navLinks={genflixNavLinks} />
-        </div>
-      </section>
+      <GenflixPublicHeader currentPage="community" navLinks={genflixNavLinks} />
 
       <section className="bg-white pb-14 pt-4">
         <div className="public-site-container">
