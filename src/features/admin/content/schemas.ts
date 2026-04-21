@@ -74,7 +74,6 @@ export const coursePublicPageFormSchema = z.object({
   categoryLine: z.string().trim().optional().or(z.literal('')),
   marketing_title: z.string().trim().min(3, 'Informe o titulo publico do curso.'),
   marketing_description: z.string().trim().min(10, 'Informe a descricao principal do curso.'),
-  cover_image_url: z.string().trim().optional().or(z.literal('')),
   mentor_name: z.string().trim().min(2, 'Informe o nome do mentor.'),
   mentor_role: z.string().trim().min(2, 'Informe o cargo ou funcao do mentor.'),
   mentor_bio: z.string().trim().min(2, 'Informe o texto da previa de conteudo.'),

@@ -194,7 +194,6 @@ export async function updateCoursePublicPage(courseId: string, input: CoursePubl
       category: input.category?.trim() || null,
       marketing_title: input.marketing_title.trim(),
       marketing_description: input.marketing_description.trim(),
-      cover_image_url: input.cover_image_url?.trim() || null,
       mentor_name: input.mentor_name.trim(),
       mentor_role: input.mentor_role.trim(),
       mentor_bio: input.mentor_bio.trim(),

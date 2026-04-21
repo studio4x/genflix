@@ -22,7 +22,6 @@ type CoursePublicPageFormState = {
   categoryLine: string
   marketing_title: string
   marketing_description: string
-  cover_image_url: string
   mentor_name: string
   mentor_role: string
   mentor_bio: string
@@ -107,7 +106,6 @@ export function CoursePublicPagePanel() {
     categoryLine: '',
     marketing_title: '',
     marketing_description: '',
-    cover_image_url: '',
     mentor_name: '',
     mentor_role: '',
     mentor_bio: '',
@@ -153,7 +151,6 @@ export function CoursePublicPagePanel() {
       categoryLine: content.categoryLine ?? resolvedDetail.categoryLine,
       marketing_title: courseTree.course.marketing_title ?? resolvedDetail.title,
       marketing_description: courseTree.course.marketing_description ?? resolvedDetail.description,
-      cover_image_url: courseTree.course.cover_image_url ?? resolvedDetail.coverImage,
       mentor_name: courseTree.course.mentor_name ?? resolvedDetail.mentor.name,
       mentor_role: courseTree.course.mentor_role ?? resolvedDetail.mentor.role,
       mentor_bio: courseTree.course.mentor_bio ?? resolvedDetail.mentor.bio,
@@ -275,11 +272,10 @@ export function CoursePublicPagePanel() {
           <SectionHeading
             eyebrow="Hero"
             title="Cabecalho principal do curso"
-            description="Esses campos controlam a primeira dobra da pagina do curso, incluindo titulo, descricao, imagem e bloco lateral de checkout."
+            description="Esses campos controlam a primeira dobra da pagina do curso, incluindo titulo, descricao e o bloco lateral de checkout. A imagem do hero continua sendo definida nas configuracoes do curso."
           />
 
-          <div className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1fr)_280px]">
-            <div className="space-y-5">
+          <div className="mt-8 space-y-5">
               <label className="block space-y-2">
                 <span className="text-xs font-black uppercase tracking-widest text-slate-400">Categoria</span>
                 <input
@@ -322,16 +318,6 @@ export function CoursePublicPagePanel() {
                 />
               </label>
 
-              <label className="block space-y-2">
-                <span className="text-xs font-black uppercase tracking-widest text-slate-400">URL da imagem de capa</span>
-                <input
-                  className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-5 py-3 text-sm font-semibold outline-none focus:border-cyan-400 focus:bg-white"
-                  value={form.cover_image_url}
-                  onChange={(event) => updateField('cover_image_url', event.target.value)}
-                  placeholder="https://..."
-                />
-              </label>
-
               <div className="grid gap-5 md:grid-cols-2">
                 <label className="block space-y-2">
                   <span className="text-xs font-black uppercase tracking-widest text-slate-400">Preco exibido</span>
@@ -355,20 +341,6 @@ export function CoursePublicPagePanel() {
                   />
                 </label>
               </div>
-            </div>
-
-            <div className="overflow-hidden rounded-[28px] border border-slate-200 bg-slate-950/95">
-              {form.cover_image_url ? (
-                <img src={form.cover_image_url} alt="" className="aspect-[4/5] w-full object-cover" />
-              ) : (
-                <div className="flex aspect-[4/5] items-center justify-center bg-[radial-gradient(circle_at_top,_rgba(19,152,183,0.48),_transparent_56%),linear-gradient(180deg,#15323B_0%,#0C1D22_100%)] p-8 text-center text-white">
-                  <div>
-                    <p className="text-xs font-black uppercase tracking-[0.3em] text-white/60">{form.categoryLine || 'CURSO - ONLINE'}</p>
-                    <p className="mt-4 text-2xl font-black leading-tight">{form.marketing_title || 'Preview da capa publica'}</p>
-                  </div>
-                </div>
-              )}
-            </div>
           </div>
         </section>
 
