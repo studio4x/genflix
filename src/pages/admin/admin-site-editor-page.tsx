@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { AlertTriangle, Eye, EyeOff, ExternalLink, Filter, History, RotateCcw, Save, Search, ShieldCheck } from 'lucide-react'
+import { AlertTriangle, Eye, EyeOff, ExternalLink, Filter, History, MessageSquare, RotateCcw, Save, Search, ShieldCheck } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
+import { useLocalStorageState } from '@/hooks/use-local-storage-state'
 import {
   clearPageOverrides,
   clearSiteContentEntryOverride,
@@ -14,6 +15,12 @@ import {
 } from '@/features/site-editor/api'
 import type { SiteContentEntry, SiteContentVersion, SiteEditorSettings, SitePageKey } from '@/features/site-editor/types'
 import { defaultSiteEditorSettings } from '@/features/site-editor/types'
+import {
+  createSiteEditorWorkspaceKey,
+  formatWorkflowStatus,
+  SITE_EDITOR_WORKSPACE_STORAGE_KEY,
+  type SiteEditorWorkspaceRecord,
+} from '@/features/site-editor/collaboration'
 import { supabase } from '@/services/supabase/client'
 
 type SitePageRow = {
@@ -81,6 +88,8 @@ export function AdminSiteEditorPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
+  const initialWorkspaceState = useMemo(() => ({} as Record<string, SiteEditorWorkspaceRecord>), [])
+  const { state: workspaceState } = useLocalStorageState<Record<string, SiteEditorWorkspaceRecord>>(SITE_EDITOR_WORKSPACE_STORAGE_KEY, initialWorkspaceState)
 
   const selectedPage = useMemo(
     () => pages.find((page) => page.page_key === selectedPageKey) ?? null,
@@ -116,6 +125,29 @@ export function AdminSiteEditorPage() {
     [entries, pages],
   )
   const selectedPageStat = pageStats.find((page) => page.pageKey === selectedPageKey)?.totalEntries ?? 0
+  const collaborationSummary = useMemo(() => {
+    const relevantEntries = entries.filter((entry) => entry.page_key === selectedPageKey || entry.page_key === 'global')
+    return relevantEntries.reduce((accumulator, entry) => {
+      const workspace = workspaceState[createSiteEditorWorkspaceKey(entry.page_key, entry.entry_key)]
+      if (!workspace) {
+        return accumulator
+      }
+
+      accumulator[workspace.status] += 1
+      accumulator.comments += workspace.comments.length
+      if (workspace.draftRawValue) {
+        accumulator.draftsWithContent += 1
+      }
+      return accumulator
+    }, {
+      draft: 0,
+      review: 0,
+      approved: 0,
+      published: 0,
+      comments: 0,
+      draftsWithContent: 0,
+    })
+  }, [entries, selectedPageKey, workspaceState])
 
   const loadData = useCallback(async () => {
     setIsLoading(true)
@@ -290,6 +322,39 @@ export function AdminSiteEditorPage() {
 
       <section className="grid gap-6 xl:grid-cols-[0.85fr_1.15fr]">
         <div className="space-y-6">
+          <article className="border border-[#D8E6EB] bg-white p-5 shadow-sm">
+            <h2 className="font-readex text-xl font-semibold text-[#15323b]">Governança local</h2>
+            <p className="mt-2 text-sm font-semibold leading-6 text-[#5F7077]">
+              Estes dados vivem no navegador atual e ajudam a controlar rascunho, revisão, aprovação e comentários antes da publicação.
+            </p>
+            <div className="mt-5 grid gap-3 sm:grid-cols-2">
+              <div className="rounded-[18px] border border-[#D8E6EB] bg-[#F8FBFC] p-4">
+                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#5F7077]">Rascunhos locais</p>
+                <p className="mt-2 text-2xl font-black text-[#15323b]">{collaborationSummary.draftsWithContent}</p>
+              </div>
+              <div className="rounded-[18px] border border-[#D8E6EB] bg-[#F8FBFC] p-4">
+                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#5F7077]">Comentários internos</p>
+                <p className="mt-2 text-2xl font-black text-[#15323b]">{collaborationSummary.comments}</p>
+              </div>
+            </div>
+            <div className="mt-4 grid gap-2 sm:grid-cols-2">
+              {(['draft', 'review', 'approved', 'published'] as const).map((status) => (
+                <div key={status} className="flex items-center justify-between rounded-[16px] border border-[#D8E6EB] px-4 py-3 text-sm font-semibold text-[#15323b]">
+                  <span>{formatWorkflowStatus(status)}</span>
+                  <span className="font-black">{collaborationSummary[status]}</span>
+                </div>
+              ))}
+            </div>
+            <div className="mt-4 rounded-[18px] border border-[#D8E6EB] bg-[#F8FBFC] p-4">
+              <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#1398B7]">Permissões por perfil</p>
+              <div className="mt-3 grid gap-2 text-sm font-semibold text-[#15323b]">
+                <p><span className="font-black">Admin:</span> rascunho, comentários, aprovação e publicação.</p>
+                <p><span className="font-black">Criador/Professor:</span> rascunho, comentários e solicitação de revisão.</p>
+                <p><span className="font-black">Demais perfis:</span> sem acesso ao fluxo de edição.</p>
+              </div>
+            </div>
+          </article>
+
           <article className="border border-rose-200 bg-rose-50 p-5">
             <div className="flex items-start gap-3">
               <AlertTriangle className="mt-1 h-5 w-5 shrink-0 text-rose-700" />
@@ -491,13 +556,17 @@ export function AdminSiteEditorPage() {
                     <th className="px-4 py-3">Resumo</th>
                     <th className="px-4 py-3">Tipo</th>
                     <th className="px-4 py-3">Status</th>
+                    <th className="px-4 py-3">Workflow</th>
                     <th className="px-4 py-3">Atualizado</th>
                     {editorMode === 'advanced' ? <th className="px-4 py-3">Pagina tecnica</th> : null}
                     <th className="px-4 py-3">Ações</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#D8E6EB]">
-                  {pageEntries.map((entry) => (
+                  {pageEntries.map((entry) => {
+                    const workspace = workspaceState[createSiteEditorWorkspaceKey(entry.page_key, entry.entry_key)]
+
+                    return (
                     <tr key={entry.id} className="align-top">
                       <td className="px-4 py-3">
                         <div className="font-black text-[#15323b]">{entry.entry_key}</div>
@@ -507,9 +576,18 @@ export function AdminSiteEditorPage() {
                       </td>
                       <td className="px-4 py-3 text-xs font-semibold leading-5 text-[#5F7077]">
                         {summarizeEntryValue(entry.value)}
+                        {workspace?.comments.length ? (
+                          <div className="mt-2 inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-[0.14em] text-[#1398B7]">
+                            <MessageSquare className="h-3.5 w-3.5" />
+                            {workspace.comments.length} comentário(s)
+                          </div>
+                        ) : null}
                       </td>
                       <td className="px-4 py-3 text-xs font-black uppercase text-[#5F7077]">{formatEntryTypeLabel(entry.entry_type)}</td>
                       <td className="px-4 py-3 text-xs font-black uppercase text-[#0A3640]">{entry.is_enabled ? 'Ativo' : 'Inativo'}</td>
+                      <td className="px-4 py-3 text-xs font-black uppercase text-[#0A3640]">
+                        {workspace ? formatWorkflowStatus(workspace.status) : 'Sem fluxo'}
+                      </td>
                       <td className="px-4 py-3 text-xs font-semibold text-[#5F7077]">{new Date(entry.updated_at).toLocaleString('pt-BR')}</td>
                       {editorMode === 'advanced' ? (
                         <td className="px-4 py-3 text-xs font-semibold text-[#5F7077]">{entry.page_key}</td>
@@ -526,7 +604,7 @@ export function AdminSiteEditorPage() {
                         </div>
                       </td>
                     </tr>
-                  ))}
+                    )})}
                 </tbody>
               </table>
             </div>

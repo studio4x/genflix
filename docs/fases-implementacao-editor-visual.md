@@ -24,12 +24,15 @@ Evoluir o editor visual da GenFlix para um fluxo robusto, seguro e usavel por um
 - Biblioteca de midia reutilizavel com ativos ja enviados.
 - Ajuste de foco e modo de corte para imagens editaveis.
 - SEO editavel por rota publica com titulo, descricao, slug e imagem social.
+- Rascunho local por entrada antes da publicacao.
+- Desfazer e refazer dentro da sessao de edicao.
+- Comentarios internos por campo no workspace local.
+- Fluxo local de revisao, aprovacao e publicacao no editor.
+- Camada inicial de permissoes por perfil para o fluxo operacional.
 
 ### Ainda falta ou esta incompleto
-- Rascunho vs publicacao.
 - Biblioteca de blocos prontos para outras paginas alem da home.
-- Permissoes por perfil e fluxo de aprovacao.
-- Comentarios internos.
+- Fluxo colaborativo compartilhado entre usuarios por backend, e nao apenas por navegador.
 - Assistencia por IA para revisar e gerar conteudo.
 
 ## Fases
@@ -95,18 +98,19 @@ Entregas:
 - SEO por pagina: titulo, descricao, slug e imagem social.
 - Aplicacao automatica de metadados SEO nas rotas publicas.
 
-### [ ] Fase 5 - Publicacao Segura e Colaboracao
-Status: pendente
+### [x] Fase 5 - Publicacao Segura e Colaboracao
+Status: concluida
 
 Escopo:
 - Separar edicao de publicacao e criar seguranca operacional.
 
-Entregas previstas:
+Entregas:
 - Rascunho vs publicado.
 - Desfazer/refazer.
 - Comentarios internos.
 - Fluxo de aprovacao.
 - Permissoes por perfil.
+- Resumo operacional de governanca na tela admin do editor.
 
 ### [ ] Fase 6 - Assistencia Inteligente
 Status: pendente
