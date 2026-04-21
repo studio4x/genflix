@@ -47,6 +47,47 @@ export const courseFormSchema = z.object({
   quiz_type_settings: courseQuizTypeSettingsSchema.default({ ...DEFAULT_COURSE_QUIZ_TYPE_SETTINGS }),
 })
 
+export const publicCourseOutcomeSchema = z.object({
+  title: z.string().trim().min(1, 'Informe o titulo do destaque.'),
+  description: z.string().trim().min(1, 'Informe a descricao do destaque.'),
+})
+
+export const publicCourseModuleSchema = z.object({
+  title: z.string().trim().min(1, 'Informe o titulo do modulo.'),
+  lessonCount: z.number().int().min(0).default(0),
+  summary: z.string().trim().default(''),
+  items: z.array(z.string().trim().min(1)).default([]),
+  lessonLabel: z.string().trim().optional().nullable(),
+})
+
+export const coursePublicPageContentSchema = z.object({
+  categoryLine: z.string().trim().optional().nullable(),
+  aboutParagraphs: z.array(z.string().trim().min(1)).default([]),
+  outcomes: z.array(publicCourseOutcomeSchema).default([]),
+  includedItems: z.array(z.string().trim().min(1)).default([]),
+  contentSource: z.enum(['real', 'custom']).default('custom'),
+  customSyllabus: z.array(publicCourseModuleSchema).default([]),
+})
+
+export const coursePublicPageFormSchema = z.object({
+  category: z.string().trim().optional().or(z.literal('')),
+  categoryLine: z.string().trim().optional().or(z.literal('')),
+  marketing_title: z.string().trim().min(3, 'Informe o titulo publico do curso.'),
+  marketing_description: z.string().trim().min(10, 'Informe a descricao principal do curso.'),
+  cover_image_url: z.string().trim().optional().or(z.literal('')),
+  mentor_name: z.string().trim().min(2, 'Informe o nome do mentor.'),
+  mentor_role: z.string().trim().min(2, 'Informe o cargo ou funcao do mentor.'),
+  mentor_bio: z.string().trim().min(2, 'Informe o texto da previa de conteudo.'),
+  mentor_initials: z.string().trim().max(4).optional().or(z.literal('')),
+  price_label: z.string().trim().min(1, 'Informe o preco exibido na pagina publica.'),
+  secondary_price_label: z.string().trim().min(1, 'Informe o subtitulo do checkout.'),
+  aboutParagraphs: z.array(z.string().trim().min(1)).min(1, 'Adicione pelo menos um paragrafo em Sobre o Curso.'),
+  outcomes: z.array(publicCourseOutcomeSchema).min(1, 'Adicione pelo menos um destaque em O que voce vai aprender.'),
+  includedItems: z.array(z.string().trim().min(1)).min(1, 'Adicione pelo menos um item do que esta incluido.'),
+  contentSource: z.enum(['real', 'custom']).default('custom'),
+  customSyllabus: z.array(publicCourseModuleSchema).default([]),
+})
+
 export const moduleFormSchema = z.object({
   title: z.string().trim().min(2, 'Titulo deve ter ao menos 2 caracteres'),
   description: z.string().trim().max(2000).optional(),
@@ -123,6 +164,8 @@ export const lessonFooterActionFormSchema = z.object({
 })
 
 export type CourseFormInput = z.infer<typeof courseFormSchema>
+export type CoursePublicPageContentInput = z.infer<typeof coursePublicPageContentSchema>
+export type CoursePublicPageFormInput = z.infer<typeof coursePublicPageFormSchema>
 export type ModuleFormInput = z.infer<typeof moduleFormSchema>
 export type LessonFormInput = z.infer<typeof lessonFormSchema>
 export type ButtonTemplateFormInput = z.infer<typeof buttonTemplateFormSchema>

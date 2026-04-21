@@ -20,6 +20,8 @@ import type {
 import type {
   ButtonTemplateFormInput,
   CourseFormInput,
+  CoursePublicPageContentInput,
+  CoursePublicPageFormInput,
   LessonFormInput,
   LessonFooterActionFormInput,
   ModuleFormInput,
@@ -173,6 +175,42 @@ export async function updateCourse(courseId: string, input: CourseFormInput) {
   if (result.error) {
     throw result.error
   }
+  return result.data as Course
+}
+
+export async function updateCoursePublicPage(courseId: string, input: CoursePublicPageFormInput) {
+  const publicPageContent: CoursePublicPageContentInput = {
+    categoryLine: input.categoryLine?.trim() || null,
+    aboutParagraphs: input.aboutParagraphs,
+    outcomes: input.outcomes,
+    includedItems: input.includedItems,
+    contentSource: input.contentSource,
+    customSyllabus: input.customSyllabus,
+  }
+
+  const result = await supabase
+    .from('courses')
+    .update({
+      category: input.category?.trim() || null,
+      marketing_title: input.marketing_title.trim(),
+      marketing_description: input.marketing_description.trim(),
+      cover_image_url: input.cover_image_url?.trim() || null,
+      mentor_name: input.mentor_name.trim(),
+      mentor_role: input.mentor_role.trim(),
+      mentor_bio: input.mentor_bio.trim(),
+      mentor_initials: input.mentor_initials?.trim() || null,
+      price_label: input.price_label.trim(),
+      secondary_price_label: input.secondary_price_label.trim(),
+      public_page_content: publicPageContent,
+    })
+    .eq('id', courseId)
+    .select('*')
+    .single()
+
+  if (result.error) {
+    throw result.error
+  }
+
   return result.data as Course
 }
 

@@ -69,6 +69,7 @@ import { ModuleEditorPanel } from '@/pages/admin/builder/module-editor-panel'
 import { LessonEditorPanel } from '@/pages/admin/builder/lesson-editor-panel'
 import { LessonMaterialsPanel } from '@/pages/admin/builder/lesson-materials-panel'
 import { CourseSettingsPanel } from '@/pages/admin/builder/course-settings-panel'
+import { CoursePublicPagePanel } from '@/pages/admin/builder/course-public-page-panel'
 import { CourseAssessmentsPanel } from '@/pages/admin/builder/course-assessments-panel'
 import { AssessmentBuilderPanel } from '@/pages/admin/builder/assessment-builder-panel'
 
@@ -319,6 +320,10 @@ export const appRouter = createBrowserRouter([
           {
             path: 'assessments/final',
             element: <AssessmentBuilderPanel />,
+          },
+          {
+            path: 'public-page',
+            element: <CoursePublicPagePanel />,
           },
           {
             path: 'settings',

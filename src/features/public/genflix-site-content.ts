@@ -95,6 +95,8 @@ export interface GenflixCourseModule {
   title: string
   lessonCount: number
   summary: string
+  items?: string[]
+  lessonLabel?: string
 }
 
 export interface GenflixCourseDetail {

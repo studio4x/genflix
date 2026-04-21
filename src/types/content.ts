@@ -239,12 +239,23 @@ export interface Course {
   description: string | null
   status: CourseStatus
   display_order: number
+  category: string | null
   thumbnail_url: string | null
+  cover_image_url: string | null
+  marketing_title: string | null
+  marketing_description: string | null
+  mentor_name: string | null
+  mentor_role: string | null
+  mentor_bio: string | null
+  mentor_initials: string | null
+  price_label: string | null
+  secondary_price_label: string | null
   slug: string | null
   launch_date: string | null
   price_cents: number | null
   currency: string
   is_public: boolean
+  public_page_content: unknown
   creator_id: string | null
   creator_commission_percent: number
   workload_minutes: number

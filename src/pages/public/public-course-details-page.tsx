@@ -183,7 +183,7 @@ export function PublicCourseDetailsPage() {
 
                             <div className="flex items-center gap-3">
                               <span className="rounded-full bg-[#1398B7] px-3 py-1 text-[11px] font-bold text-white">
-                                {module.lessonCount} aulas
+                                {module.lessonCount} {module.lessonLabel ?? 'aulas'}
                               </span>
                               <ChevronDown
                                 className={cn('h-4 w-4 text-[#1398B7] transition-transform', isOpen ? 'rotate-180' : '')}
@@ -193,7 +193,20 @@ export function PublicCourseDetailsPage() {
 
                           {isOpen ? (
                             <div className="border-t border-[#D8E6EB] px-5 pb-5 pt-4">
-                              <p className="text-sm leading-7 text-[#667980]">{module.summary}</p>
+                              {module.items?.length ? (
+                                <div className="space-y-2">
+                                  {module.items.map((item) => (
+                                    <div
+                                      key={`${module.title}-${item}`}
+                                      className="rounded-2xl border border-[#D8E6EB] bg-[#F2F7F9] px-4 py-3 text-sm font-semibold text-[#5f7178]"
+                                    >
+                                      {item}
+                                    </div>
+                                  ))}
+                                </div>
+                              ) : (
+                                <p className="text-sm leading-7 text-[#667980]">{module.summary}</p>
+                              )}
                             </div>
                           ) : null}
                         </article>
