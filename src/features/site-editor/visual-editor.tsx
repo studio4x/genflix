@@ -427,14 +427,36 @@ function EditableMarker({
   children,
   onClick,
   label,
+  display = 'inline',
 }: {
   children: ReactNode
   onClick: () => void
   label: string
+  display?: 'inline' | 'block' | 'contents'
 }) {
+  if (display === 'contents') {
+    return (
+      <div
+        className="contents"
+        onClickCapture={(event) => {
+          event.preventDefault()
+          event.stopPropagation()
+          onClick()
+        }}
+      >
+        {children}
+      </div>
+    )
+  }
+
+  const Wrapper = display === 'block' ? 'div' : 'span'
+
   return (
-    <span
-      className="group/site-editor relative cursor-pointer rounded-[10px] bg-[#1398B7]/6 outline outline-2 outline-offset-2 outline-[#1398B7]/50 transition hover:bg-[#1398B7]/10 hover:outline-[#1398B7] focus-visible:bg-[#1398B7]/10"
+    <Wrapper
+      className={cn(
+        'group/site-editor relative cursor-pointer rounded-[10px] bg-[#1398B7]/6 outline outline-2 outline-offset-2 outline-[#1398B7]/50 transition hover:bg-[#1398B7]/10 hover:outline-[#1398B7] focus-visible:bg-[#1398B7]/10',
+        display === 'block' && 'block',
+      )}
       onClick={(event) => {
         event.preventDefault()
         event.stopPropagation()
@@ -454,7 +476,7 @@ function EditableMarker({
         {label}
       </span>
       {children}
-    </span>
+    </Wrapper>
   )
 }
 
@@ -1187,11 +1209,11 @@ function EditorModal({
   }
 
   return (
-    <div className="fixed inset-0 z-[120] flex items-center justify-center bg-[#061b21]/62 px-4 py-6 backdrop-blur-sm">
+    <div className="fixed inset-0 z-[120] overflow-y-auto bg-[#061b21]/62 px-3 py-3 backdrop-blur-sm sm:px-4 sm:py-6">
       <form
         ref={formRef}
         onSubmit={(event) => void handleSubmit(event)}
-        className="w-full max-w-5xl overflow-hidden rounded-[28px] border border-[#D8E6EB] bg-white shadow-[0_30px_90px_rgba(6,27,33,0.24)]"
+        className="mx-auto flex max-h-[calc(100vh-1.5rem)] w-full max-w-[min(1180px,calc(100vw-24px))] flex-col overflow-hidden rounded-[28px] border border-[#D8E6EB] bg-white shadow-[0_30px_90px_rgba(6,27,33,0.24)] sm:max-h-[calc(100vh-3rem)]"
       >
         <div className="flex flex-wrap items-start justify-between gap-4 border-b border-[#D8E6EB] bg-[linear-gradient(180deg,#F8FCFD_0%,#FFFFFF_100%)] p-6">
           <div>
@@ -1220,8 +1242,9 @@ function EditorModal({
           </button>
         </div>
 
-        <div className="grid gap-6 p-6 lg:grid-cols-[minmax(0,1.15fr)_minmax(320px,0.85fr)]">
-          <div className="grid gap-4">
+        <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden">
+          <div className="grid gap-6 p-4 sm:p-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(320px,0.85fr)]">
+            <div className="min-w-0 grid gap-4">
             {editor.entryType === 'image' ? (
               <div className="grid gap-3 rounded-[22px] border border-[#D8E6EB] bg-[#F2F7F9] p-4">
                 <div className="flex items-center justify-between gap-3">
@@ -1748,7 +1771,7 @@ function EditorModal({
             </div>
           </div>
 
-          <aside className="grid gap-4">
+          <aside className="min-w-0 grid gap-4">
             <div className="rounded-[22px] border border-[#D8E6EB] bg-[#F8FCFD] p-4">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="flex items-center gap-2">
@@ -1778,65 +1801,65 @@ function EditorModal({
 
               <div
                 className={cn(
-                  'mx-auto mt-4 transition-all',
+                  'mx-auto mt-4 min-w-0 max-w-full overflow-x-hidden transition-all',
                   previewViewport === 'desktop' && 'max-w-none',
                   previewViewport === 'tablet' && 'max-w-[720px]',
                   previewViewport === 'mobile' && 'max-w-[375px]',
                 )}
               >
-              {editor.entryType === 'image' && previewImage ? (
-                <div className="grid gap-3">
-                  {typeof previewImage.src === 'string' && previewImage.src ? (
-                    <div className="overflow-hidden rounded-[18px] border border-[#D8E6EB] bg-white">
-                      <img
-                        src={previewImage.src}
-                        alt={typeof previewImage.alt === 'string' ? previewImage.alt : ''}
-                        className="h-48 w-full"
-                        style={{
-                          objectFit: previewImagePresentation.objectFit,
-                          objectPosition: previewImagePresentation.objectPosition,
-                        }}
-                      />
+                {editor.entryType === 'image' && previewImage ? (
+                  <div className="grid gap-3">
+                    {typeof previewImage.src === 'string' && previewImage.src ? (
+                      <div className="overflow-hidden rounded-[18px] border border-[#D8E6EB] bg-white">
+                        <img
+                          src={previewImage.src}
+                          alt={typeof previewImage.alt === 'string' ? previewImage.alt : ''}
+                          className="h-48 w-full"
+                          style={{
+                            objectFit: previewImagePresentation.objectFit,
+                            objectPosition: previewImagePresentation.objectPosition,
+                          }}
+                        />
+                      </div>
+                    ) : (
+                      <div className="flex h-48 items-center justify-center rounded-[18px] border border-dashed border-[#D8E6EB] bg-white text-sm font-semibold text-[#5F7077]">
+                        Sem imagem definida
+                      </div>
+                    )}
+                    <div className="rounded-[18px] bg-white p-4">
+                      <p className="text-xs font-black uppercase tracking-[0.14em] text-[#5F7077]">Alt</p>
+                      <p className="mt-2 break-words text-sm font-semibold text-[#15323b]">{typeof previewImage.alt === 'string' && previewImage.alt ? previewImage.alt : 'Sem texto alternativo.'}</p>
                     </div>
-                  ) : (
-                    <div className="flex h-48 items-center justify-center rounded-[18px] border border-dashed border-[#D8E6EB] bg-white text-sm font-semibold text-[#5F7077]">
-                      Sem imagem definida
-                    </div>
-                  )}
-                  <div className="rounded-[18px] bg-white p-4">
-                    <p className="text-xs font-black uppercase tracking-[0.14em] text-[#5F7077]">Alt</p>
-                    <p className="mt-2 text-sm font-semibold text-[#15323b]">{typeof previewImage.alt === 'string' && previewImage.alt ? previewImage.alt : 'Sem texto alternativo.'}</p>
                   </div>
-                </div>
-              ) : usesRichTextToolbar ? (
-                <div className="rounded-[18px] border border-[#D8E6EB] bg-white p-4">
-                  <div
-                    className="max-w-none text-sm leading-7 text-[#15323b]"
-                    style={previewTextStyle}
-                    dangerouslySetInnerHTML={{ __html: sanitizeRichText(rawValue) }}
-                  />
-                </div>
-              ) : previewList ? (
-                <div className="grid gap-3">
-                  {previewList.slice(0, 4).map((item, index) => (
-                    <div key={index} className="rounded-[18px] border border-[#D8E6EB] bg-white p-4">
-                      <p className="text-xs font-black uppercase tracking-[0.14em] text-[#5F7077]">Item {index + 1}</p>
-                      <pre className="mt-2 overflow-auto text-xs leading-5 text-[#15323b]">{JSON.stringify(item, null, 2)}</pre>
-                    </div>
-                  ))}
-                  {previewList.length > 4 ? (
-                    <p className="text-xs font-semibold text-[#5F7077]">Mostrando 4 de {previewList.length} item(ns).</p>
-                  ) : null}
-                </div>
-              ) : previewRecord ? (
-                <div className="rounded-[18px] border border-[#D8E6EB] bg-white p-4">
-                  <pre className="overflow-auto text-xs leading-5 text-[#15323b]">{JSON.stringify(previewRecord, null, 2)}</pre>
-                </div>
-              ) : (
-                <div className="rounded-[18px] border border-[#D8E6EB] bg-white p-4">
-                  <p className="text-sm leading-7 text-[#15323b]" style={previewTextStyle}>{String(parsedPreview.value ?? '') || 'Sem conteúdo.'}</p>
-                </div>
-              )}
+                ) : usesRichTextToolbar ? (
+                  <div className="rounded-[18px] border border-[#D8E6EB] bg-white p-4">
+                    <div
+                      className="max-w-none break-words text-sm leading-7 text-[#15323b]"
+                      style={previewTextStyle}
+                      dangerouslySetInnerHTML={{ __html: sanitizeRichText(rawValue) }}
+                    />
+                  </div>
+                ) : previewList ? (
+                  <div className="grid gap-3">
+                    {previewList.slice(0, 4).map((item, index) => (
+                      <div key={index} className="rounded-[18px] border border-[#D8E6EB] bg-white p-4">
+                        <p className="text-xs font-black uppercase tracking-[0.14em] text-[#5F7077]">Item {index + 1}</p>
+                        <pre className="mt-2 overflow-auto text-xs leading-5 text-[#15323b]">{JSON.stringify(item, null, 2)}</pre>
+                      </div>
+                    ))}
+                    {previewList.length > 4 ? (
+                      <p className="text-xs font-semibold text-[#5F7077]">Mostrando 4 de {previewList.length} item(ns).</p>
+                    ) : null}
+                  </div>
+                ) : previewRecord ? (
+                  <div className="rounded-[18px] border border-[#D8E6EB] bg-white p-4">
+                    <pre className="overflow-auto text-xs leading-5 text-[#15323b]">{JSON.stringify(previewRecord, null, 2)}</pre>
+                  </div>
+                ) : (
+                  <div className="rounded-[18px] border border-[#D8E6EB] bg-white p-4">
+                    <p className="break-words text-sm leading-7 text-[#15323b]" style={previewTextStyle}>{String(parsedPreview.value ?? '') || 'Sem conteúdo.'}</p>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -1959,6 +1982,7 @@ function EditorModal({
               </div>
             ) : null}
           </aside>
+        </div>
         </div>
 
         <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[#D8E6EB] bg-[#FCFEFF] p-5">
@@ -2256,6 +2280,7 @@ export function EditableImage({
   return (
     <EditableMarker
       label={label}
+      display="block"
       onClick={() => editor.openEditor({
         pageKey: resolvedPageKey,
         entryKey,
@@ -2375,6 +2400,7 @@ export function EditableList({
   return (
     <EditableMarker
       label={label}
+      display="contents"
       onClick={() => editor.openEditor({
         pageKey: resolvedPageKey,
         entryKey,
