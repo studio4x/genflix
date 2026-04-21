@@ -35,10 +35,11 @@ export function AdminLayout() {
       <header className="sticky top-0 z-40 border-b border-[#D8E6EB] bg-[#F2F7F9]/95 backdrop-blur-md">
         <div className="flex w-full items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
           <div className="flex items-center gap-3">
-            <GenflixLogo />
+            <Link to="/" aria-label="Ir para a home da GenFlix">
+              <GenflixLogo />
+            </Link>
             <div>
               <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#1398B7]">Painel Admin</p>
-              <h1 className="font-readex text-xl font-semibold tracking-tight text-[#15323b]">GenFlix</h1>
             </div>
           </div>
 

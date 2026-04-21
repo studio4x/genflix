@@ -40,13 +40,15 @@ export function CreatorLayout() {
     <main className="min-h-screen bg-[#F2F7F9] font-manrope text-[#163138]">
       <header className="sticky top-0 z-40 border-b border-[#D8E6EB] bg-[#F2F7F9]/95 backdrop-blur-md">
         <div className="flex w-full items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
-          <Link to="/criador/relatorios" className="flex items-center gap-3">
-            <GenflixLogo />
+          <div className="flex items-center gap-3">
+            <Link to="/" aria-label="Ir para a home da GenFlix">
+              <GenflixLogo />
+            </Link>
             <div>
               <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#1398B7]">Painel do Criador</p>
               <h1 className="font-readex text-xl font-semibold tracking-tight text-[#15323b]">GenFlix</h1>
             </div>
-          </Link>
+          </div>
 
           <div className="flex items-center gap-3">
             <NotificationCenter compact />
