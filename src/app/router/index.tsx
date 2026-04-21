@@ -25,6 +25,7 @@ import { AdminQuizTypesPage } from '@/pages/admin/admin-quiz-types-page'
 import { AdminNotificationsPage } from '@/pages/admin/admin-notifications-page'
 import { AdminReviewsPage } from '@/pages/admin/admin-reviews-page'
 import { AdminOperationalPendingPage } from '@/pages/admin/admin-operational-pending-page'
+import { AdminBrandingSettingsPage } from '@/pages/admin/admin-branding-settings-page'
 import { AdminSiteEditorPage } from '@/pages/admin/admin-site-editor-page'
 import { ForgotPasswordPage } from '@/pages/public/forgot-password-page'
 import { AuthCallbackPage } from '@/pages/public/auth-callback-page'
@@ -420,6 +421,10 @@ export const appRouter = createBrowserRouter([
           {
             path: '/admin/tipos-quiz',
             element: <AdminQuizTypesPage />,
+          },
+          {
+            path: '/admin/configuracoes-site',
+            element: <AdminBrandingSettingsPage />,
           },
           {
             path: '/admin/pendencias',

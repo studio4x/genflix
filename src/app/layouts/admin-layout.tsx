@@ -20,6 +20,7 @@ const adminLinks = [
   { to: '/admin/pagamentos', label: 'Pagamentos' },
   { to: '/admin/repasses', label: 'Repasses PIX' },
   { to: '/admin/tipos-quiz', label: 'Tipos de Quiz' },
+  { to: '/admin/configuracoes-site', label: 'Configuracoes do Site' },
   { to: '/admin/site-editor', label: 'Editor Visual' },
   { to: '/admin/pendencias', label: 'Pendências' },
   { to: '/admin/minha-conta', label: 'Minha Conta' },
