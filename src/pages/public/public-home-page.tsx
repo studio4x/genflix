@@ -23,6 +23,7 @@ import {
   useSiteContentScope,
   useVisualEditorState,
 } from '@/features/site-editor/visual-editor'
+import { renderSiteIcon } from '@/features/site-editor/site-icons'
 import type { EditableListItem, SitePageKey } from '@/features/site-editor/types'
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -125,6 +126,15 @@ const homeLayoutSchema = {
       },
     },
   ],
+}
+
+const homeCategoryIconKeys: Record<string, string> = {
+  Saúde: 'heart-pulse',
+  Jurídicos: 'scale',
+  Exatas: 'sigma',
+  Gestão: 'briefcase-business',
+  Humanas: 'landmark',
+  'Psicanálise / Psicologia': 'brain-circuit',
 }
 
 function getHomeSectionMetadata(item: EditableListItem) {
@@ -300,6 +310,9 @@ function HomeCategoriesSection({
     genflixCategoryTiles.map((category) => ({
       id: category.label,
       label: category.label,
+      metadata: {
+        iconKey: homeCategoryIconKeys[category.label] ?? 'sparkles',
+      },
     })),
     { pageKey },
   )
@@ -327,7 +340,9 @@ function HomeCategoriesSection({
           >
             {(items) => items.filter(isEditableItemVisible).map((item) => {
               const category = genflixCategoryTiles.find((tile) => tile.label === item.label) ?? genflixCategoryTiles[0]
-              const Icon = category.icon
+              const iconKey = typeof item.metadata?.iconKey === 'string'
+                ? item.metadata.iconKey
+                : homeCategoryIconKeys[category.label] ?? 'sparkles'
 
               return (
                 <article
@@ -335,7 +350,7 @@ function HomeCategoriesSection({
                   className="rounded-[18px] bg-[linear-gradient(135deg,#1398B7_0%,#0A3640_100%)] px-4 py-5 text-white shadow-[0_18px_35px_rgba(10,54,64,0.18)] transition-transform duration-300 hover:-translate-y-1"
                 >
                   <div className="mb-7 flex h-9 w-9 items-center justify-center rounded-full border border-white/28 bg-white/10">
-                    <Icon className="h-4 w-4" />
+                    {renderSiteIcon(iconKey, 'h-4 w-4')}
                   </div>
                   <p className="text-sm font-semibold leading-5">{item.label}</p>
                 </article>

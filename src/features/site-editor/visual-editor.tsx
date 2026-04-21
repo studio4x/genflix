@@ -33,6 +33,7 @@ import {
   type SiteEditorSettings,
   type SitePageKey,
 } from '@/features/site-editor/types'
+import { renderSiteIcon, SITE_ICON_OPTIONS } from '@/features/site-editor/site-icons'
 import {
   createSiteEditorWorkspaceKey,
   formatWorkflowStatus,
@@ -538,7 +539,9 @@ function ListItemEditorCard({
   const templateKey = typeof metadataWithoutItems.templateKey === 'string' ? metadataWithoutItems.templateKey : ''
   const entryPrefix = typeof metadataWithoutItems.entryPrefix === 'string' ? metadataWithoutItems.entryPrefix : ''
   const pageKeyOverride = typeof metadataWithoutItems.pageKey === 'string' ? metadataWithoutItems.pageKey : ''
+  const iconKey = typeof metadataWithoutItems.iconKey === 'string' ? metadataWithoutItems.iconKey : ''
   const templateDefinition = editorConfig.templates.find((template) => template.id === templateKey)
+  const shouldShowIconField = iconKey !== '' || templateKey === 'categories' || templateKey === 'resources'
   delete metadataWithoutItems.buttonLabel
   delete metadataWithoutItems.isInternal
   delete metadataWithoutItems.openInNewTab
@@ -546,6 +549,7 @@ function ListItemEditorCard({
   delete metadataWithoutItems.templateKey
   delete metadataWithoutItems.entryPrefix
   delete metadataWithoutItems.pageKey
+  delete metadataWithoutItems.iconKey
 
   function updateField(field: keyof EditableListItem, value: string) {
     onChange({
@@ -612,7 +616,10 @@ function ListItemEditorCard({
     return (
       <div className={cn('rounded-[20px] border border-[#D8E6EB] bg-white p-4', depth > 0 && 'bg-[#FCFEFF]')}>
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-[#D8E6EB] bg-[#F8FCFD] text-[#0A3640]">
+              {iconKey ? renderSiteIcon(iconKey, 'h-4 w-4') : <Sparkles className="h-4 w-4 text-[#1398B7]" />}
+            </div>
             <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[#1398B7]">
               {depth > 0 ? `Bloco interno ${index + 1}` : `Bloco ${index + 1}`}
             </p>
@@ -670,6 +677,23 @@ function ListItemEditorCard({
               <p className="mt-1 text-xs leading-5 text-[#5F7077]">{templateDefinition.description}</p>
             ) : null}
           </div>
+          {shouldShowIconField ? (
+            <label className="grid gap-1.5 md:col-span-2">
+              <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Ícone</span>
+              <select
+                value={iconKey}
+                onChange={(event) => updateMetadataField('iconKey', event.target.value)}
+                className="h-11 rounded-[14px] border border-[#D8E6EB] bg-white px-3 text-sm font-semibold text-[#15323b] outline-none"
+              >
+                <option value="">Sem ícone</option>
+                {SITE_ICON_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+          ) : null}
           <label className="grid gap-1.5 md:col-span-2">
             <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Resumo operacional</span>
             <textarea
@@ -790,6 +814,23 @@ function ListItemEditorCard({
             className="h-11 rounded-[14px] border border-[#D8E6EB] px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]"
           />
         </label>
+        {shouldShowIconField ? (
+          <label className="grid gap-1.5 md:col-span-2">
+            <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Ícone</span>
+            <select
+              value={iconKey}
+              onChange={(event) => updateMetadataField('iconKey', event.target.value)}
+              className="h-11 rounded-[14px] border border-[#D8E6EB] bg-white px-3 text-sm font-semibold text-[#15323b] outline-none"
+            >
+              <option value="">Sem ícone</option>
+              {SITE_ICON_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </label>
+        ) : null}
         <label className="grid gap-1.5 md:col-span-2">
           <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Descrição</span>
           <textarea
@@ -966,6 +1007,7 @@ function EditorModal({
   const previewRecord = isStringRecord(parsedPreview.value) ? parsedPreview.value : null
   const previewTextStyle = useMemo(() => textStyleToCss(textStyle), [textStyle])
   const previewHeadingTag = getHeadingTagLabel(textStyle.headingTag)
+  const isSeoEditor = editor.entryType === 'json' && editor.schema?.kind === 'seo'
   const listEditorConfig = useMemo(() => normalizeListEditorSchema(editor.schema), [editor.schema])
   const previewImagePresentation = useMemo(() => getEditableImagePresentation(previewImage), [previewImage])
   const workflowStatus = workspaceRecord.status
@@ -1257,7 +1299,7 @@ function EditorModal({
                 Estrutura: {describeValueShape(parsedPreview.value)}
               </span>
               {isTitleEditor ? (
-                <span className="inline-flex items-center rounded-full border border-[#D8E6EB] bg-[#F8FCFD] px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-[#0A3640]">
+                <span className="inline-flex items-center rounded-full border border-[#0A3640] bg-[#0A3640] px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-white">
                   Tag: {previewHeadingTag}
                 </span>
               ) : null}
@@ -1277,7 +1319,10 @@ function EditorModal({
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden">
-          <div className="grid gap-6 p-4 sm:p-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(320px,0.85fr)]">
+          <div className={cn(
+            'grid gap-6 p-4 sm:p-6',
+            isSeoEditor ? 'xl:grid-cols-1' : 'xl:grid-cols-[minmax(0,1.15fr)_minmax(320px,0.85fr)]',
+          )}>
             <div className="min-w-0 grid gap-4">
             {editor.entryType === 'image' ? (
               <div className="grid gap-3 rounded-[22px] border border-[#D8E6EB] bg-[#F2F7F9] p-4">
@@ -1894,29 +1939,99 @@ function EditorModal({
                       <p className="mt-2 break-words text-sm font-semibold text-[#15323b]">{typeof previewImage.alt === 'string' && previewImage.alt ? previewImage.alt : 'Sem texto alternativo.'}</p>
                     </div>
                   </div>
-                ) : usesRichTextToolbar ? (
-                  <div className="rounded-[18px] border border-[#D8E6EB] bg-white p-4">
-                    <div
-                      className="max-w-none break-words text-sm leading-7 text-[#15323b]"
-                      style={previewTextStyle}
-                      dangerouslySetInnerHTML={{ __html: sanitizeRichText(rawValue) }}
-                    />
-                  </div>
                 ) : previewList ? (
-                  <div className="grid gap-3">
-                    {previewList.slice(0, 4).map((item, index) => (
-                      <div key={index} className="rounded-[18px] border border-[#D8E6EB] bg-white p-4">
-                        <p className="text-xs font-black uppercase tracking-[0.14em] text-[#5F7077]">Item {index + 1}</p>
-                        <pre className="mt-2 overflow-auto text-xs leading-5 text-[#15323b]">{JSON.stringify(item, null, 2)}</pre>
+                  <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                    {previewList.slice(0, 6).map((item, index) => {
+                      const itemMetadata = isStringRecord(item) && isStringRecord(item.metadata) ? item.metadata : {}
+                      const itemIconKey = typeof itemMetadata.iconKey === 'string' ? itemMetadata.iconKey : null
+
+                      return (
+                        <article key={`${item.id ?? index}`} className="overflow-hidden rounded-[18px] border border-[#D8E6EB] bg-white shadow-[0_12px_24px_rgba(21,50,59,0.04)]">
+                          <div className="bg-[linear-gradient(135deg,#1398B7_0%,#0A3640_100%)] px-4 py-4 text-white">
+                            <div className="flex items-start gap-3">
+                              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/25 bg-white/12">
+                                {renderSiteIcon(itemIconKey, 'h-4 w-4')}
+                              </div>
+                              <div className="min-w-0">
+                                <p className="text-[10px] font-black uppercase tracking-[0.16em] text-white/75">Item {index + 1}</p>
+                                <p className="mt-1 text-sm font-semibold leading-5 text-white">
+                                  {typeof item.label === 'string' && item.label.trim() !== ''
+                                    ? item.label
+                                    : typeof item.title === 'string' && item.title.trim() !== ''
+                                      ? item.title
+                                      : 'Item sem título'}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="space-y-3 px-4 py-4">
+                            {typeof item.description === 'string' && item.description.trim() !== '' ? (
+                              <p className="text-sm leading-6 text-[#5F7077]">{item.description}</p>
+                            ) : null}
+                            {typeof item.href === 'string' && item.href.trim() !== '' ? (
+                              <p className="truncate text-xs font-semibold text-[#1398B7]">{item.href}</p>
+                            ) : null}
+                          </div>
+                        </article>
+                      )
+                    })}
+                    {previewList.length > 6 ? (
+                      <p className="sm:col-span-2 xl:col-span-3 text-xs font-semibold text-[#5F7077]">
+                        Mostrando 6 de {previewList.length} item(ns).
+                      </p>
+                    ) : null}
+                  </div>
+                ) : isSeoEditor && previewRecord ? (
+                  <div className="grid gap-4 rounded-[18px] border border-[#D8E6EB] bg-white p-5 shadow-[0_12px_24px_rgba(21,50,59,0.04)]">
+                    <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-[#1398B7]">
+                      <Sparkles className="h-4 w-4" />
+                      Preview SEO
+                    </div>
+                    <div className="space-y-2">
+                      <p className="text-sm text-[#5F7077]">genflix.com{typeof previewRecord.slug === 'string' && previewRecord.slug ? previewRecord.slug : '/pagina'}</p>
+                      <h3 className="text-[1.1rem] font-bold leading-tight text-[#1398B7]">
+                        {typeof previewRecord.title === 'string' && previewRecord.title ? previewRecord.title : 'Título SEO'}
+                      </h3>
+                      <p className="text-sm leading-6 text-[#5F7077]">
+                        {typeof previewRecord.description === 'string' && previewRecord.description ? previewRecord.description : 'Descrição SEO'}
+                      </p>
+                    </div>
+                    {typeof previewRecord.image === 'string' && previewRecord.image ? (
+                      <div className="overflow-hidden rounded-[16px] border border-[#D8E6EB] bg-[#F8FCFD]">
+                        <img src={previewRecord.image} alt="" className="h-40 w-full object-cover" />
                       </div>
-                    ))}
-                    {previewList.length > 4 ? (
-                      <p className="text-xs font-semibold text-[#5F7077]">Mostrando 4 de {previewList.length} item(ns).</p>
                     ) : null}
                   </div>
                 ) : previewRecord ? (
-                  <div className="rounded-[18px] border border-[#D8E6EB] bg-white p-4">
-                    <pre className="overflow-auto text-xs leading-5 text-[#15323b]">{JSON.stringify(previewRecord, null, 2)}</pre>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    {editor.entryType === 'button' || editor.entryType === 'link' ? (
+                      <div className="sm:col-span-2 rounded-[18px] border border-[#D8E6EB] bg-white p-5 shadow-[0_12px_24px_rgba(21,50,59,0.04)]">
+                        <div className={cn(
+                          'inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-black uppercase tracking-[0.14em]',
+                          typeof previewRecord.tone === 'string' && previewRecord.tone === 'solid'
+                            ? 'border-[#0A3640] bg-[#0A3640] text-white'
+                            : 'border-[#D8E6EB] bg-[#F8FCFD] text-[#0A3640]',
+                        )}>
+                          {typeof previewRecord.label === 'string' && previewRecord.label ? previewRecord.label : 'Botão'}
+                        </div>
+                        <p className="mt-4 text-sm leading-7 text-[#5F7077]">
+                          {typeof previewRecord.href === 'string' && previewRecord.href ? previewRecord.href : 'Sem link definido'}
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="sm:col-span-2 rounded-[18px] border border-[#D8E6EB] bg-white p-5 shadow-[0_12px_24px_rgba(21,50,59,0.04)]">
+                        <div className="space-y-3">
+                          {Object.entries(previewRecord).map(([key, currentValue]) => (
+                            <div key={key} className="rounded-[14px] border border-[#D8E6EB] bg-[#F8FCFD] px-3 py-2">
+                              <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">{key}</p>
+                              <p className="mt-1 break-words text-sm font-semibold text-[#15323b]">
+                                {typeof currentValue === 'string' ? currentValue : JSON.stringify(currentValue)}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <div className="rounded-[18px] border border-[#D8E6EB] bg-white p-4">
