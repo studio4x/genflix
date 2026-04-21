@@ -212,7 +212,7 @@ export function GenflixPublicFooter({
                 pageKey="global"
               />
             </p>
-            <AppVersion className="mt-2 block text-[10px] font-medium tracking-[0.14em] text-white/28" />
+            <AppVersion className="mt-1.5 block text-[9px] font-medium tracking-[0.16em] text-white/20" />
           </div>
         </div>
       </div>
