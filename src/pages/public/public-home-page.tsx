@@ -12,7 +12,7 @@ import {
   genflixHeroImage,
   genflixNavLinks,
 } from '@/features/public/genflix-site-content'
-import { EditableList, EditableText, useEditableValue } from '@/features/site-editor/visual-editor'
+import { EditableImage, EditableList, EditableText, useEditableValue } from '@/features/site-editor/visual-editor'
 
 export function PublicHomePage() {
   const { isLoading, user, roles } = useAuth()
@@ -41,42 +41,46 @@ export function PublicHomePage() {
           <GenflixPublicHeader currentPage="home" navLinks={genflixNavLinks} />
 
           <div className="overflow-hidden rounded-[30px] bg-[#173039] shadow-[0_30px_70px_rgba(21,50,59,0.16)]">
-            <div
-              className="relative min-h-[500px] bg-cover bg-center"
-              style={{ backgroundImage: `linear-gradient(90deg, rgba(23,48,57,0.84) 0%, rgba(23,48,57,0.7) 28%, rgba(23,48,57,0.18) 58%, rgba(23,48,57,0.12) 100%), url(${typeof heroImage.src === 'string' ? heroImage.src : genflixHeroImage})` }}
-            >
-              <div className="flex min-h-[500px] items-center px-6 py-12 sm:px-10 lg:px-14">
-                <div className="max-w-[520px]">
-                  <h1 className="max-w-[420px] text-[2.35rem] font-extrabold leading-[0.94] tracking-[-0.05em] text-white sm:text-[3rem]">
-                    <EditableText
-                      entryKey="home.hero.title"
-                      fallback="O conhecimento que a sua carreira estava esperando."
-                      label="Título principal"
-                    />
-                  </h1>
-                  <p className="mt-4 max-w-[410px] text-base leading-7 text-white/78">
-                    <EditableText
-                      entryKey="home.hero.subtitle"
-                      fallback="As ferramentas de estudo para quem leva o aprendizado a sério."
-                      label="Subtítulo principal"
-                    />
-                  </p>
+            <EditableImage entryKey="home.hero.image" fallback={heroImage} label="Imagem do hero">
+              {(image) => (
+                <div
+                  className="relative min-h-[500px] bg-cover bg-center"
+                  style={{ backgroundImage: `linear-gradient(90deg, rgba(23,48,57,0.84) 0%, rgba(23,48,57,0.7) 28%, rgba(23,48,57,0.18) 58%, rgba(23,48,57,0.12) 100%), url(${typeof image.src === 'string' ? image.src : genflixHeroImage})` }}
+                >
+                  <div className="flex min-h-[500px] items-center px-6 py-12 sm:px-10 lg:px-14">
+                    <div className="max-w-[520px]">
+                      <h1 className="max-w-[420px] text-[2.35rem] font-extrabold leading-[0.94] tracking-[-0.05em] text-white sm:text-[3rem]">
+                        <EditableText
+                          entryKey="home.hero.title"
+                          fallback="O conhecimento que a sua carreira estava esperando."
+                          label="Título principal"
+                        />
+                      </h1>
+                      <p className="mt-4 max-w-[410px] text-base leading-7 text-white/78">
+                        <EditableText
+                          entryKey="home.hero.subtitle"
+                          fallback="As ferramentas de estudo para quem leva o aprendizado a sério."
+                          label="Subtítulo principal"
+                        />
+                      </p>
 
-                  <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-                    <GenflixCtaButton asChild className="min-h-[52px] px-6">
-                      <Link to="/login">
-                        <EditableText entryKey="home.hero.primaryCta" fallback="Já sou inscrito" label="CTA principal" />
-                      </Link>
-                    </GenflixCtaButton>
-                    <GenflixCtaButton asChild tone="surface" className="min-h-[52px] px-6">
-                      <a href="#newsletter">
-                        <EditableText entryKey="home.hero.secondaryCta" fallback="Quero me inscrever" label="CTA secundário" />
-                      </a>
-                    </GenflixCtaButton>
+                      <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+                        <GenflixCtaButton asChild className="min-h-[52px] px-6">
+                          <Link to="/login">
+                            <EditableText entryKey="home.hero.primaryCta" fallback="Já sou inscrito" label="CTA principal" />
+                          </Link>
+                        </GenflixCtaButton>
+                        <GenflixCtaButton asChild tone="surface" className="min-h-[52px] px-6">
+                          <a href="#newsletter">
+                            <EditableText entryKey="home.hero.secondaryCta" fallback="Quero me inscrever" label="CTA secundário" />
+                          </a>
+                        </GenflixCtaButton>
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </div>
+              )}
+            </EditableImage>
           </div>
         </div>
       </section>
