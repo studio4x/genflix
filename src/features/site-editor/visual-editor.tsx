@@ -11,7 +11,7 @@ import {
   type ReactNode,
 } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { CheckCircle2, Copy, Edit3, Image as ImageIcon, Keyboard, LayoutTemplate, MessageSquare, Plus, Redo2, RotateCcw, Save, Send, Settings, Sparkles, Undo2, Wand2, X } from 'lucide-react'
+import { CheckCircle2, Copy, Edit3, Image as ImageIcon, Keyboard, LayoutTemplate, MessageSquare, PanelBottomOpen, Plus, Redo2, RotateCcw, Save, Send, Settings, Sparkles, Undo2, Wand2, X } from 'lucide-react'
 
 import { useAuth } from '@/app/providers/auth-provider'
 import { useLocalStorageState } from '@/hooks/use-local-storage-state'
@@ -2014,6 +2014,7 @@ export function VisualEditorProvider({ children }: { children: ReactNode }) {
   const [settings, setSettings] = useState<SiteEditorSettings>(defaultSiteEditorSettings)
   const [isEditing, setIsEditing] = useState(false)
   const [editor, setEditor] = useState<EditorInput | null>(null)
+  const [isTrayExpanded, setIsTrayExpanded] = useState(false)
   const isAdmin = roles.includes('admin')
   const canShowEditor = isAdmin && isPublicEditablePath(location.pathname) && !shouldIgnoreSiteEditor()
 
@@ -2044,6 +2045,10 @@ export function VisualEditorProvider({ children }: { children: ReactNode }) {
     }
   }, [isAdmin, isLoading, loadSettings])
 
+  useEffect(() => {
+    setIsTrayExpanded(false)
+  }, [location.pathname])
+
   const value = useMemo<VisualEditorContextValue>(() => ({
     isAdmin,
     isEditing: canShowEditor && isEditing && settings.is_enabled && settings.editing_enabled && !settings.fallback_mode,
@@ -2058,8 +2063,10 @@ export function VisualEditorProvider({ children }: { children: ReactNode }) {
     <VisualEditorContext.Provider value={value}>
       {children}
       {canShowEditor && settings.is_enabled && settings.editing_enabled && !settings.fallback_mode ? (
-        <div className="fixed bottom-5 left-1/2 z-[110] w-[min(calc(100%-24px),760px)] -translate-x-1/2 rounded-[24px] border border-[#D8E6EB] bg-white/95 px-4 py-3 shadow-[0_18px_50px_rgba(6,27,33,0.2)] backdrop-blur">
-          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <div className="fixed bottom-5 right-5 z-[110] flex max-w-[calc(100%-24px)] items-end gap-3">
+          {isTrayExpanded ? (
+            <div className="w-[min(calc(100vw-96px),720px)] rounded-[24px] border border-[#D8E6EB] bg-white/96 px-4 py-3 shadow-[0_18px_50px_rgba(6,27,33,0.16)] backdrop-blur">
+              <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
                 <span className={cn(
@@ -2092,8 +2099,22 @@ export function VisualEditorProvider({ children }: { children: ReactNode }) {
                 <Settings className="h-3.5 w-3.5" />
                 Gestão
               </Link>
+              </div>
             </div>
-          </div>
+            </div>
+          ) : null}
+
+          <button
+            type="button"
+            onClick={() => setIsTrayExpanded((current) => !current)}
+            aria-label={isTrayExpanded ? 'Recolher controles do editor visual' : 'Expandir controles do editor visual'}
+            className={cn(
+              'inline-flex h-14 w-14 items-center justify-center rounded-full border border-[#D8E6EB] shadow-[0_18px_50px_rgba(6,27,33,0.16)] backdrop-blur transition hover:scale-[1.02]',
+              isTrayExpanded ? 'bg-[#0A3640] text-white' : 'bg-white/96 text-[#0A3640]',
+            )}
+          >
+            {isTrayExpanded ? <X className="h-5 w-5" /> : <PanelBottomOpen className="h-5 w-5" />}
+          </button>
         </div>
       ) : null}
       {editor ? (

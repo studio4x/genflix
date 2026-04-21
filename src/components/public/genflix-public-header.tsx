@@ -69,7 +69,9 @@ export function GenflixPublicHeader({
 
   return (
     <header className="flex min-h-[72px] items-center justify-between gap-6">
-      <GenflixLogo />
+      <Link to="/" aria-label="Ir para a home da GenFlix">
+        <GenflixLogo />
+      </Link>
 
       <nav className="hidden items-center gap-7 lg:flex">
         <EditableList entryKey="global.header.navLinks" fallback={visibleNavLinks} label="Menu principal" pageKey="global">

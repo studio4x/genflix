@@ -3,6 +3,7 @@ import { BadgeCheck, ChevronDown, CirclePlay, Play, Sparkles } from 'lucide-reac
 import { Link, Navigate, useParams } from 'react-router-dom'
 
 import { useAuth } from '@/app/providers/auth-provider'
+import { CourseCoverMedia } from '@/components/public/course-cover-media'
 import { GenflixCtaButton } from '@/components/public/genflix-cta-button'
 import { GenflixPublicFooter } from '@/components/public/genflix-public-footer'
 import { GenflixPublicHeader } from '@/components/public/genflix-public-header'
@@ -210,10 +211,14 @@ export function PublicCourseDetailsPage() {
             <aside className="lg:sticky lg:top-24">
               <div className="overflow-hidden rounded-[26px] border border-[#D8E6EB] bg-white shadow-[0_24px_60px_rgba(21,50,59,0.08)]">
                 <div className="relative aspect-[16/10] overflow-hidden bg-[#173039]">
-                  <img
+                  <CourseCoverMedia
                     src={detail.coverImage}
                     alt={detail.title}
-                    className="h-full w-full object-cover grayscale"
+                    title={detail.title}
+                    category={detail.categoryLine}
+                    initials={detail.mentor.initials}
+                    imageClassName="grayscale"
+                    placeholderClassName="p-6"
                   />
                   <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(11,31,36,0.08)_0%,rgba(11,31,36,0.54)_100%)]" />
                   <button

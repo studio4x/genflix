@@ -1,6 +1,7 @@
 import { ArrowRight } from 'lucide-react'
 import { Link } from 'react-router-dom'
 
+import { CourseCoverMedia } from '@/components/public/course-cover-media'
 import type { GenflixCourseItem } from '@/features/public/genflix-site-content'
 
 export function GenflixCourseCard({
@@ -11,11 +12,13 @@ export function GenflixCourseCard({
   return (
     <article className="group overflow-hidden rounded-[22px] border border-[#D8E6EB] bg-white shadow-[0_20px_50px_rgba(19,152,183,0.08)] transition-transform duration-300 hover:-translate-y-1.5 hover:shadow-[0_28px_60px_rgba(19,152,183,0.16)]">
       <div className="relative aspect-[16/9] overflow-hidden">
-        <img
+        <CourseCoverMedia
           src={course.image}
           alt={course.title}
-          loading="lazy"
-          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+          title={course.title}
+          initials={course.initials}
+          imageClassName="transition-transform duration-500 group-hover:scale-105"
+          placeholderClassName="transition-transform duration-500 group-hover:scale-105"
         />
         <div className="absolute left-4 top-4 rounded-full bg-white/92 px-3 py-1 text-[11px] font-bold text-[#0A3640] shadow-sm">
           {course.category}
