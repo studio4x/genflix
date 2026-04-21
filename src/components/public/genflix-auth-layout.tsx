@@ -6,7 +6,7 @@ import { GenflixLogo } from '@/components/public/genflix-logo'
 import { GenflixPublicFooter } from '@/components/public/genflix-public-footer'
 import { GenflixPublicHeader } from '@/components/public/genflix-public-header'
 import { genflixNavLinks } from '@/features/public/genflix-site-content'
-import { EditableImage, EditableText } from '@/features/site-editor/visual-editor'
+import { EditableImage, EditableText, getEditableImagePresentation } from '@/features/site-editor/visual-editor'
 
 interface GenflixAuthLayoutProps {
   entryPrefix: string
@@ -46,8 +46,8 @@ export function GenflixAuthLayout({
                     className="relative min-h-[360px] overflow-hidden"
                     style={{
                       backgroundImage: `linear-gradient(180deg, rgba(16,31,37,0.4) 0%, rgba(16,31,37,0.52) 100%), url(${typeof image.src === 'string' ? image.src : imageUrl})`,
-                      backgroundPosition: 'center',
-                      backgroundSize: 'cover',
+                      backgroundPosition: getEditableImagePresentation(image).backgroundPosition,
+                      backgroundSize: getEditableImagePresentation(image).fit === 'contain' ? 'contain' : 'cover',
                     }}
                   >
                     <div className="absolute inset-0 bg-[radial-gradient(circle_at_15%_22%,rgba(255,255,255,0.22),transparent_28%),linear-gradient(180deg,rgba(8,18,22,0.1)_0%,rgba(8,18,22,0.28)_100%)]" />

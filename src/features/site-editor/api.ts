@@ -243,3 +243,17 @@ export async function uploadSiteAsset(file: File, metadata: { alt?: string; page
 
   return data as SiteAsset
 }
+
+export async function fetchSiteAssets(limit = 24) {
+  const { data, error } = await supabase
+    .from('site_assets')
+    .select('id, storage_path, public_url, alt, width, height, mime_type, file_size, metadata, uploaded_by, created_at')
+    .order('created_at', { ascending: false })
+    .limit(limit)
+
+  if (error) {
+    throw error
+  }
+
+  return (data ?? []) as SiteAsset[]
+}

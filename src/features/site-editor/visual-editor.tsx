@@ -16,6 +16,7 @@ import { Copy, Edit3, Image as ImageIcon, Keyboard, LayoutTemplate, Plus, Rotate
 import { useAuth } from '@/app/providers/auth-provider'
 import { cn } from '@/lib/utils'
 import {
+  fetchSiteAssets,
   fetchSiteContent,
   fetchSiteEditorSettings,
   saveSiteContentEntry,
@@ -25,6 +26,7 @@ import {
 import {
   defaultSiteEditorSettings,
   type EditableListItem,
+  type SiteAsset,
   type SiteContentEntry,
   type SiteContentEntryType,
   type SiteEditorSettings,
@@ -42,6 +44,8 @@ type TextStyleValue = {
   textTransform?: string
   fontStyle?: string
 }
+
+type PreviewViewport = 'desktop' | 'tablet' | 'mobile'
 
 type NormalizedListEditorTemplate = {
   id: string
@@ -99,6 +103,39 @@ function isPublicEditablePath(pathname: string) {
 
 function isStringRecord(value: unknown): value is Record<string, unknown> {
   return !!value && typeof value === 'object' && !Array.isArray(value)
+}
+
+function getStringField(value: Record<string, unknown>, field: string) {
+  return typeof value[field] === 'string' ? value[field] as string : ''
+}
+
+function getNumberField(value: Record<string, unknown>, field: string, fallback: number) {
+  const rawValue = value[field]
+  const numericValue = typeof rawValue === 'number' ? rawValue : typeof rawValue === 'string' ? Number(rawValue) : NaN
+  if (!Number.isFinite(numericValue)) {
+    return fallback
+  }
+
+  return Math.min(100, Math.max(0, numericValue))
+}
+
+export function getEditableImagePresentation(value: unknown) {
+  const record = isStringRecord(value) ? value : {}
+  const fit = getStringField(record, 'fit') === 'contain' ? 'contain' : 'cover'
+  const focusX = getNumberField(record, 'focusX', 50)
+  const focusY = getNumberField(record, 'focusY', 50)
+  const position = `${focusX}% ${focusY}%`
+
+  return {
+    fit,
+    focusX,
+    focusY,
+    objectFit: fit as CSSProperties['objectFit'],
+    objectPosition: position,
+    backgroundPosition: position,
+    imageAlt: getStringField(record, 'alt'),
+    imageSrc: getStringField(record, 'src'),
+  }
 }
 
 function slugifyEditableId(value: string) {
@@ -808,6 +845,9 @@ function EditorModal({
   const [isSaving, setIsSaving] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
   const [textStyle, setTextStyle] = useState<TextStyleValue>(() => normalizeTextStyle(editor.styleFallback))
+  const [previewViewport, setPreviewViewport] = useState<PreviewViewport>('desktop')
+  const [assetLibrary, setAssetLibrary] = useState<SiteAsset[]>([])
+  const [isLoadingAssetLibrary, setIsLoadingAssetLibrary] = useState(false)
   const usesJsonEditor = ['list', 'json', 'link', 'button', 'image'].includes(editor.entryType)
   const usesRichTextToolbar = editor.entryType === 'rich_text'
   const isDirty = rawValue !== initialRawValue || JSON.stringify(normalizeTextStyle(editor.styleFallback)) !== JSON.stringify(textStyle)
@@ -836,6 +876,7 @@ function EditorModal({
   const previewRecord = isStringRecord(parsedPreview.value) ? parsedPreview.value : null
   const previewTextStyle = useMemo(() => textStyleToCss(textStyle), [textStyle])
   const listEditorConfig = useMemo(() => normalizeListEditorSchema(editor.schema), [editor.schema])
+  const previewImagePresentation = useMemo(() => getEditableImagePresentation(previewImage), [previewImage])
 
   function updateListEditor(nextItems: EditableListItem[]) {
     setRawValue(JSON.stringify(nextItems, null, 2))
@@ -888,6 +929,32 @@ function EditorModal({
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [handleCloseRequest])
+
+  useEffect(() => {
+    if (editor.entryType !== 'image') {
+      return
+    }
+
+    let isMounted = true
+    setIsLoadingAssetLibrary(true)
+    void fetchSiteAssets(18)
+      .then((assets) => {
+        if (!isMounted) return
+        setAssetLibrary(assets)
+      })
+      .catch(() => {
+        if (!isMounted) return
+        setAssetLibrary([])
+      })
+      .finally(() => {
+        if (!isMounted) return
+        setIsLoadingAssetLibrary(false)
+      })
+
+    return () => {
+      isMounted = false
+    }
+  }, [editor.entryType])
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -943,14 +1010,31 @@ function EditorModal({
         src: asset.public_url,
         alt: asset.alt,
         asset_id: asset.id,
+        fit: 'cover',
+        focusX: 50,
+        focusY: 50,
       }, null, 2))
       setUploadAlt(asset.alt ?? '')
+      setAssetLibrary((current) => [asset, ...current.filter((currentAsset) => currentAsset.id !== asset.id)].slice(0, 18))
       setMessage('Imagem enviada. Clique em salvar para publicar.')
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Não foi possível enviar a imagem.')
     } finally {
       setIsSaving(false)
     }
+  }
+
+  function selectAssetFromLibrary(asset: SiteAsset) {
+    setUploadAlt(asset.alt ?? '')
+    setRawValue(JSON.stringify({
+      src: asset.public_url,
+      alt: asset.alt,
+      asset_id: asset.id,
+      fit: previewImagePresentation.fit,
+      focusX: previewImagePresentation.focusX,
+      focusY: previewImagePresentation.focusY,
+    }, null, 2))
+    setMessage('Imagem da biblioteca selecionada. Clique em salvar para publicar.')
   }
 
   return (
@@ -1004,11 +1088,101 @@ function EditorModal({
                     placeholder="Descrição da imagem"
                   />
                 </label>
+                <div className="grid gap-3 md:grid-cols-3">
+                  <label className="grid gap-1.5">
+                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#5F7077]">Ajuste horizontal</span>
+                    <input
+                      type="range"
+                      min="0"
+                      max="100"
+                      value={previewImagePresentation.focusX}
+                      onChange={(event) => updateRecordEditor({
+                        ...(previewImage ?? {}),
+                        focusX: Number(event.target.value),
+                        focusY: previewImagePresentation.focusY,
+                        fit: previewImagePresentation.fit,
+                      })}
+                    />
+                    <span className="text-xs font-semibold text-[#5F7077]">{previewImagePresentation.focusX}%</span>
+                  </label>
+                  <label className="grid gap-1.5">
+                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#5F7077]">Ajuste vertical</span>
+                    <input
+                      type="range"
+                      min="0"
+                      max="100"
+                      value={previewImagePresentation.focusY}
+                      onChange={(event) => updateRecordEditor({
+                        ...(previewImage ?? {}),
+                        focusX: previewImagePresentation.focusX,
+                        focusY: Number(event.target.value),
+                        fit: previewImagePresentation.fit,
+                      })}
+                    />
+                    <span className="text-xs font-semibold text-[#5F7077]">{previewImagePresentation.focusY}%</span>
+                  </label>
+                  <label className="grid gap-1.5">
+                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#5F7077]">Modo de corte</span>
+                    <select
+                      value={previewImagePresentation.fit}
+                      onChange={(event) => updateRecordEditor({
+                        ...(previewImage ?? {}),
+                        fit: event.target.value,
+                        focusX: previewImagePresentation.focusX,
+                        focusY: previewImagePresentation.focusY,
+                      })}
+                      className="h-11 rounded-[14px] border border-[#D8E6EB] bg-white px-3 text-sm font-semibold text-[#15323b] outline-none"
+                    >
+                      <option value="cover">Cover</option>
+                      <option value="contain">Contain</option>
+                    </select>
+                  </label>
+                </div>
                 <label className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-[16px] border border-[#1398B7] bg-white px-4 py-3 text-sm font-black text-[#0A3640] hover:bg-[#E8F6FA]">
                   <ImageIcon className="h-4 w-4" />
                   Enviar imagem
                   <input type="file" accept="image/*" className="hidden" onChange={(event) => void handleImageUpload(event.target.files?.[0] ?? null)} />
                 </label>
+                <div className="rounded-[18px] border border-[#D8E6EB] bg-white p-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#1398B7]">Biblioteca de mídia</p>
+                      <p className="mt-1 text-sm font-semibold text-[#15323b]">Reutilize ativos já enviados sem subir a mesma imagem novamente.</p>
+                    </div>
+                    {isLoadingAssetLibrary ? <p className="text-xs font-semibold text-[#5F7077]">Carregando...</p> : null}
+                  </div>
+                  <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                    {assetLibrary.map((asset) => (
+                      <button
+                        key={asset.id}
+                        type="button"
+                        onClick={() => selectAssetFromLibrary(asset)}
+                        className="overflow-hidden rounded-[18px] border border-[#D8E6EB] bg-[#F8FCFD] text-left transition hover:border-[#1398B7] hover:bg-[#EAF8FB]"
+                      >
+                        {asset.public_url ? (
+                          <img
+                            src={asset.public_url}
+                            alt={asset.alt ?? ''}
+                            className="h-28 w-full border-b border-[#D8E6EB] object-cover"
+                          />
+                        ) : (
+                          <div className="flex h-28 items-center justify-center border-b border-[#D8E6EB] bg-white text-xs font-semibold text-[#5F7077]">
+                            Sem preview
+                          </div>
+                        )}
+                        <div className="px-3 py-3">
+                          <p className="line-clamp-2 text-sm font-semibold text-[#15323b]">{asset.alt || 'Sem texto alternativo'}</p>
+                          <p className="mt-1 text-xs font-semibold text-[#5F7077]">{asset.width && asset.height ? `${asset.width}x${asset.height}px` : 'Dimensões não disponíveis'}</p>
+                        </div>
+                      </button>
+                    ))}
+                    {!isLoadingAssetLibrary && assetLibrary.length === 0 ? (
+                      <div className="rounded-[18px] border border-dashed border-[#D8E6EB] bg-[#F8FCFD] px-4 py-8 text-center text-sm font-semibold text-[#5F7077]">
+                        Nenhum ativo anterior encontrado.
+                      </div>
+                    ) : null}
+                  </div>
+                </div>
               </div>
             ) : null}
 
@@ -1097,6 +1271,47 @@ function EditorModal({
                   <Sparkles className="h-4 w-4 text-[#1398B7]" />
                   <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#1398B7]">Editor guiado</p>
                 </div>
+                {editor.entryType === 'json' && editor.schema?.kind === 'seo' ? (
+                  <div className="mt-4 grid gap-3">
+                    <label className="grid gap-1.5">
+                      <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Título SEO</span>
+                      <input
+                        value={typeof previewRecord.title === 'string' ? previewRecord.title : ''}
+                        onChange={(event) => updateRecordEditor({ ...previewRecord, title: event.target.value })}
+                        className="h-11 rounded-[14px] border border-[#D8E6EB] bg-white px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]"
+                      />
+                    </label>
+                    <label className="grid gap-1.5">
+                      <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Descrição SEO</span>
+                      <textarea
+                        value={typeof previewRecord.description === 'string' ? previewRecord.description : ''}
+                        onChange={(event) => updateRecordEditor({ ...previewRecord, description: event.target.value })}
+                        rows={4}
+                        className="rounded-[14px] border border-[#D8E6EB] bg-white px-3 py-2 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]"
+                      />
+                    </label>
+                    <div className="grid gap-3 md:grid-cols-2">
+                      <label className="grid gap-1.5">
+                        <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Slug canônico</span>
+                        <input
+                          value={typeof previewRecord.slug === 'string' ? previewRecord.slug : ''}
+                          onChange={(event) => updateRecordEditor({ ...previewRecord, slug: event.target.value })}
+                          className="h-11 rounded-[14px] border border-[#D8E6EB] bg-white px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]"
+                          placeholder="/recursos"
+                        />
+                      </label>
+                      <label className="grid gap-1.5">
+                        <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Imagem social</span>
+                        <input
+                          value={typeof previewRecord.image === 'string' ? previewRecord.image : ''}
+                          onChange={(event) => updateRecordEditor({ ...previewRecord, image: event.target.value })}
+                          className="h-11 rounded-[14px] border border-[#D8E6EB] bg-white px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]"
+                          placeholder="https://..."
+                        />
+                      </label>
+                    </div>
+                  </div>
+                ) : null}
                 {editor.entryType === 'button' || editor.entryType === 'link' ? (
                   <div className="mt-4 grid gap-3 md:grid-cols-2">
                     <label className="grid gap-1.5">
@@ -1353,19 +1568,54 @@ function EditorModal({
 
           <aside className="grid gap-4">
             <div className="rounded-[22px] border border-[#D8E6EB] bg-[#F8FCFD] p-4">
-              <div className="flex items-center gap-2">
-                <Sparkles className="h-4 w-4 text-[#1398B7]" />
-                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#1398B7]">Preview rápido</p>
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="h-4 w-4 text-[#1398B7]" />
+                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#1398B7]">Preview rápido</p>
+                </div>
+                <div className="flex rounded-full border border-[#D8E6EB] bg-white p-1">
+                  {([
+                    ['desktop', 'Desktop'],
+                    ['tablet', 'Tablet'],
+                    ['mobile', 'Mobile'],
+                  ] as const).map(([mode, label]) => (
+                    <button
+                      key={mode}
+                      type="button"
+                      onClick={() => setPreviewViewport(mode)}
+                      className={cn(
+                        'rounded-full px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.14em] transition',
+                        previewViewport === mode ? 'bg-[#0A3640] text-white' : 'text-[#5F7077] hover:bg-[#F2F7F9]',
+                      )}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
               </div>
 
+              <div
+                className={cn(
+                  'mx-auto mt-4 transition-all',
+                  previewViewport === 'desktop' && 'max-w-none',
+                  previewViewport === 'tablet' && 'max-w-[720px]',
+                  previewViewport === 'mobile' && 'max-w-[375px]',
+                )}
+              >
               {editor.entryType === 'image' && previewImage ? (
-                <div className="mt-4 grid gap-3">
+                <div className="grid gap-3">
                   {typeof previewImage.src === 'string' && previewImage.src ? (
-                    <img
-                      src={previewImage.src}
-                      alt={typeof previewImage.alt === 'string' ? previewImage.alt : ''}
-                      className="h-48 w-full rounded-[18px] border border-[#D8E6EB] object-cover"
-                    />
+                    <div className="overflow-hidden rounded-[18px] border border-[#D8E6EB] bg-white">
+                      <img
+                        src={previewImage.src}
+                        alt={typeof previewImage.alt === 'string' ? previewImage.alt : ''}
+                        className="h-48 w-full"
+                        style={{
+                          objectFit: previewImagePresentation.objectFit,
+                          objectPosition: previewImagePresentation.objectPosition,
+                        }}
+                      />
+                    </div>
                   ) : (
                     <div className="flex h-48 items-center justify-center rounded-[18px] border border-dashed border-[#D8E6EB] bg-white text-sm font-semibold text-[#5F7077]">
                       Sem imagem definida
@@ -1377,7 +1627,7 @@ function EditorModal({
                   </div>
                 </div>
               ) : usesRichTextToolbar ? (
-                <div className="mt-4 rounded-[18px] border border-[#D8E6EB] bg-white p-4">
+                <div className="rounded-[18px] border border-[#D8E6EB] bg-white p-4">
                   <div
                     className="max-w-none text-sm leading-7 text-[#15323b]"
                     style={previewTextStyle}
@@ -1385,7 +1635,7 @@ function EditorModal({
                   />
                 </div>
               ) : previewList ? (
-                <div className="mt-4 grid gap-3">
+                <div className="grid gap-3">
                   {previewList.slice(0, 4).map((item, index) => (
                     <div key={index} className="rounded-[18px] border border-[#D8E6EB] bg-white p-4">
                       <p className="text-xs font-black uppercase tracking-[0.14em] text-[#5F7077]">Item {index + 1}</p>
@@ -1397,14 +1647,15 @@ function EditorModal({
                   ) : null}
                 </div>
               ) : previewRecord ? (
-                <div className="mt-4 rounded-[18px] border border-[#D8E6EB] bg-white p-4">
+                <div className="rounded-[18px] border border-[#D8E6EB] bg-white p-4">
                   <pre className="overflow-auto text-xs leading-5 text-[#15323b]">{JSON.stringify(previewRecord, null, 2)}</pre>
                 </div>
               ) : (
-                <div className="mt-4 rounded-[18px] border border-[#D8E6EB] bg-white p-4">
+                <div className="rounded-[18px] border border-[#D8E6EB] bg-white p-4">
                   <p className="text-sm leading-7 text-[#15323b]" style={previewTextStyle}>{String(parsedPreview.value ?? '') || 'Sem conteúdo.'}</p>
                 </div>
               )}
+              </div>
             </div>
 
             <div className="rounded-[22px] border border-[#D8E6EB] bg-white p-4">

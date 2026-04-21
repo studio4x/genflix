@@ -20,15 +20,16 @@ Evoluir o editor visual da GenFlix para um fluxo robusto, seguro e usavel por um
 - Estrutura da home com blocos reordenaveis.
 - Biblioteca de blocos para montar secoes da home.
 - Duplicacao e ocultacao de secoes inteiras sem mexer no layout-base.
+- Preview responsivo desktop, tablet e mobile dentro do editor.
+- Biblioteca de midia reutilizavel com ativos ja enviados.
+- Ajuste de foco e modo de corte para imagens editaveis.
+- SEO editavel por rota publica com titulo, descricao, slug e imagem social.
 
 ### Ainda falta ou esta incompleto
 - Rascunho vs publicacao.
-- Preview responsivo desktop/tablet/mobile.
 - Biblioteca de blocos prontos para outras paginas alem da home.
 - Permissoes por perfil e fluxo de aprovacao.
 - Comentarios internos.
-- SEO por pagina.
-- Biblioteca de midia e ajustes de recorte/foco.
 - Assistencia por IA para revisar e gerar conteudo.
 
 ## Fases
@@ -81,17 +82,18 @@ Entregas:
 - Gerenciador de estrutura da home separado da edicao de conteudo.
 - Prefixos proprios para blocos duplicados da home, evitando colidir com o conteudo original.
 
-### [ ] Fase 4 - Midia, Responsividade e SEO
-Status: pendente
+### [x] Fase 4 - Midia, Responsividade e SEO
+Status: concluida
 
 Escopo:
 - Dar autonomia operacional para imagens, visual mobile e configuracoes de pagina.
 
-Entregas previstas:
+Entregas:
 - Preview desktop/tablet/mobile.
 - Biblioteca de midia reutilizavel.
 - Ajuste de foco/recorte de imagem.
 - SEO por pagina: titulo, descricao, slug e imagem social.
+- Aplicacao automatica de metadados SEO nas rotas publicas.
 
 ### [ ] Fase 5 - Publicacao Segura e Colaboracao
 Status: pendente

@@ -2,7 +2,7 @@ import { type FormEvent, useState } from 'react'
 
 import { GenflixCtaButton } from '@/components/public/genflix-cta-button'
 import { genflixNewsletterImage } from '@/features/public/genflix-site-content'
-import { EditableButton, EditableImage, EditableText, useEditableValue } from '@/features/site-editor/visual-editor'
+import { EditableButton, EditableImage, EditableText, getEditableImagePresentation, useEditableValue } from '@/features/site-editor/visual-editor'
 import type { SitePageKey } from '@/features/site-editor/types'
 
 export function GenflixNewsletterSection({
@@ -59,7 +59,11 @@ export function GenflixNewsletterSection({
           {(editableImage) => (
             <div
               className="overflow-hidden rounded-t-[30px] bg-cover bg-center"
-              style={{ backgroundImage: `linear-gradient(180deg, rgba(14,31,37,0.72) 0%, rgba(14,31,37,0.84) 100%), url(${typeof editableImage.src === 'string' ? editableImage.src : genflixNewsletterImage})` }}
+              style={{
+                backgroundImage: `linear-gradient(180deg, rgba(14,31,37,0.72) 0%, rgba(14,31,37,0.84) 100%), url(${typeof editableImage.src === 'string' ? editableImage.src : genflixNewsletterImage})`,
+                backgroundPosition: getEditableImagePresentation(editableImage).backgroundPosition,
+                backgroundSize: getEditableImagePresentation(editableImage).fit === 'contain' ? 'contain' : 'cover',
+              }}
             >
               <div className="flex min-h-[360px] items-center justify-center px-6 py-12 text-center sm:px-10">
                 <div className="max-w-[720px]">

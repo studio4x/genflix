@@ -17,6 +17,7 @@ import {
   EditableImage,
   EditableList,
   EditableText,
+  getEditableImagePresentation,
   isEditableItemVisible,
   useEditableValue,
   useSiteContentScope,
@@ -207,7 +208,11 @@ function HomeHeroSection({
             {(image) => (
               <div
                 className="relative min-h-[500px] bg-cover bg-center"
-                style={{ backgroundImage: `linear-gradient(90deg, rgba(23,48,57,0.84) 0%, rgba(23,48,57,0.7) 28%, rgba(23,48,57,0.18) 58%, rgba(23,48,57,0.12) 100%), url(${typeof image.src === 'string' ? image.src : genflixHeroImage})` }}
+                style={{
+                  backgroundImage: `linear-gradient(90deg, rgba(23,48,57,0.84) 0%, rgba(23,48,57,0.7) 28%, rgba(23,48,57,0.18) 58%, rgba(23,48,57,0.12) 100%), url(${typeof image.src === 'string' ? image.src : genflixHeroImage})`,
+                  backgroundPosition: getEditableImagePresentation(image).backgroundPosition,
+                  backgroundSize: getEditableImagePresentation(image).fit === 'contain' ? 'contain' : 'cover',
+                }}
               >
                 <div className="flex min-h-[500px] items-center px-6 py-12 sm:px-10 lg:px-14">
                   <div className="max-w-[520px]">
