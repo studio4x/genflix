@@ -10,7 +10,7 @@ import {
   genflixCommunityItems,
   genflixNavLinks,
 } from '@/features/public/genflix-site-content'
-import { EditableList, EditableText, useEditableValue } from '@/features/site-editor/visual-editor'
+import { EditableList, EditableText, isEditableItemVisible, useEditableValue } from '@/features/site-editor/visual-editor'
 
 export function PublicCommunityPage() {
   const { isLoading, user, roles } = useAuth()
@@ -61,7 +61,7 @@ export function PublicCommunityPage() {
 
           <div className="mt-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
             <EditableList entryKey="community.items" fallback={communityItems} label="Comunidades">
-              {(items) => items.map((item) => {
+              {(items) => items.filter(isEditableItemVisible).map((item) => {
               const fallback = genflixCommunityItems.find((community) => community.label === item.label) ?? genflixCommunityItems[0]
               const Icon = fallback.icon
 

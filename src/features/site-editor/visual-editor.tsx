@@ -179,6 +179,15 @@ function normalizeEditableListItems(value: unknown): EditableListItem[] {
       }
     }
 
+    const baseMetadata = isStringRecord(item.metadata) ? { ...item.metadata } : {}
+    const extraMetadata = Object.fromEntries(
+      Object.entries(item).filter(([key]) => !['id', 'label', 'title', 'description', 'href', 'image', 'metadata'].includes(key)),
+    )
+    const mergedMetadata = {
+      ...baseMetadata,
+      ...extraMetadata,
+    }
+
     const nextItem: EditableListItem = {
       id: typeof item.id === 'string' && item.id.trim() !== '' ? item.id : `item-${index + 1}`,
       label: typeof item.label === 'string' ? item.label : undefined,
@@ -186,7 +195,7 @@ function normalizeEditableListItems(value: unknown): EditableListItem[] {
       description: typeof item.description === 'string' ? item.description : undefined,
       href: typeof item.href === 'string' ? item.href : undefined,
       image: typeof item.image === 'string' ? item.image : undefined,
-      metadata: isStringRecord(item.metadata) ? item.metadata : undefined,
+      metadata: Object.keys(mergedMetadata).length > 0 ? mergedMetadata : undefined,
     }
 
     return nextItem
@@ -261,6 +270,7 @@ function ListItemEditorCard({
   depth = 0,
   onChange,
   onMove,
+  onDuplicate,
   onRemove,
 }: {
   item: EditableListItem
@@ -269,12 +279,21 @@ function ListItemEditorCard({
   depth?: number
   onChange: (nextItem: EditableListItem) => void
   onMove: (fromIndex: number, delta: number) => void
+  onDuplicate: (index: number) => void
   onRemove: (index: number) => void
 }) {
-  const metadata = isStringRecord(item.metadata) ? { ...item.metadata } : {}
+  const metadata: Record<string, unknown> = isStringRecord(item.metadata) ? { ...item.metadata } : {}
   const nestedItems = normalizeEditableListItems(metadata.items)
-  const metadataWithoutItems = { ...metadata }
+  const metadataWithoutItems: Record<string, unknown> = { ...metadata }
   delete metadataWithoutItems.items
+  const buttonLabel = typeof metadataWithoutItems.buttonLabel === 'string' ? metadataWithoutItems.buttonLabel : ''
+  const isInternal = metadataWithoutItems.isInternal === true
+  const openInNewTab = metadataWithoutItems.openInNewTab === true
+  const isHidden = metadataWithoutItems.isHidden === true
+  delete metadataWithoutItems.buttonLabel
+  delete metadataWithoutItems.isInternal
+  delete metadataWithoutItems.openInNewTab
+  delete metadataWithoutItems.isHidden
 
   function updateField(field: keyof EditableListItem, value: string) {
     onChange({
@@ -283,11 +302,36 @@ function ListItemEditorCard({
     })
   }
 
+  function updateMetadataField(field: string, value: unknown) {
+    const nextMetadata: Record<string, unknown> = {
+      ...metadataWithoutItems,
+      ...(buttonLabel ? { buttonLabel } : {}),
+      ...(isInternal ? { isInternal: true } : {}),
+      ...(openInNewTab ? { openInNewTab: true } : {}),
+      ...(isHidden ? { isHidden: true } : {}),
+      [field]: value,
+      ...(nestedItems.length > 0 ? { items: nestedItems } : {}),
+    }
+
+    if (value === '' || value === false || value === undefined || value === null) {
+      delete nextMetadata[field]
+    }
+
+    onChange({
+      ...item,
+      metadata: nextMetadata,
+    })
+  }
+
   function updateNestedItems(nextNestedItems: EditableListItem[]) {
     onChange({
       ...item,
       metadata: {
         ...metadataWithoutItems,
+        ...(buttonLabel ? { buttonLabel } : {}),
+        ...(isInternal ? { isInternal: true } : {}),
+        ...(openInNewTab ? { openInNewTab: true } : {}),
+        ...(isHidden ? { isHidden: true } : {}),
         items: nextNestedItems,
       },
     })
@@ -300,6 +344,10 @@ function ListItemEditorCard({
         ...item,
         metadata: {
           ...parsed,
+          ...(buttonLabel ? { buttonLabel } : {}),
+          ...(isInternal ? { isInternal: true } : {}),
+          ...(openInNewTab ? { openInNewTab: true } : {}),
+          ...(isHidden ? { isHidden: true } : {}),
           ...(nestedItems.length > 0 ? { items: nestedItems } : {}),
         },
       })
@@ -335,6 +383,13 @@ function ListItemEditorCard({
             className="rounded-full border border-[#D8E6EB] px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.14em] text-[#0A3640] hover:bg-[#F2F7F9] disabled:opacity-50"
           >
             Descer
+          </button>
+          <button
+            type="button"
+            onClick={() => onDuplicate(index)}
+            className="rounded-full border border-[#D8E6EB] px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.14em] text-[#0A3640] hover:bg-[#F2F7F9]"
+          >
+            Duplicar
           </button>
           <button
             type="button"
@@ -379,6 +434,14 @@ function ListItemEditorCard({
             className="h-11 rounded-[14px] border border-[#D8E6EB] px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]"
           />
         </label>
+        <label className="grid gap-1.5">
+          <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Imagem</span>
+          <input
+            value={item.image ?? ''}
+            onChange={(event) => updateField('image', event.target.value)}
+            className="h-11 rounded-[14px] border border-[#D8E6EB] px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]"
+          />
+        </label>
         <label className="grid gap-1.5 md:col-span-2">
           <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Descrição</span>
           <textarea
@@ -388,6 +451,44 @@ function ListItemEditorCard({
             className="rounded-[14px] border border-[#D8E6EB] px-3 py-2 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]"
           />
         </label>
+      </div>
+
+      <div className="mt-4 grid gap-3 md:grid-cols-2">
+        <label className="grid gap-1.5">
+          <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Texto do botao opcional</span>
+          <input
+            value={buttonLabel}
+            onChange={(event) => updateMetadataField('buttonLabel', event.target.value)}
+            className="h-11 rounded-[14px] border border-[#D8E6EB] px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]"
+            placeholder="Ex.: Falar com a equipe"
+          />
+        </label>
+        <div className="grid gap-2 md:grid-cols-3 md:col-span-2">
+          <label className="flex items-center justify-between rounded-[14px] border border-[#D8E6EB] px-3 py-3 text-sm font-semibold text-[#15323b]">
+            <span>Link interno</span>
+            <input
+              type="checkbox"
+              checked={isInternal}
+              onChange={(event) => updateMetadataField('isInternal', event.target.checked)}
+            />
+          </label>
+          <label className="flex items-center justify-between rounded-[14px] border border-[#D8E6EB] px-3 py-3 text-sm font-semibold text-[#15323b]">
+            <span>Nova aba</span>
+            <input
+              type="checkbox"
+              checked={openInNewTab}
+              onChange={(event) => updateMetadataField('openInNewTab', event.target.checked)}
+            />
+          </label>
+          <label className="flex items-center justify-between rounded-[14px] border border-[#D8E6EB] px-3 py-3 text-sm font-semibold text-[#15323b]">
+            <span>Oculto</span>
+            <input
+              type="checkbox"
+              checked={isHidden}
+              onChange={(event) => updateMetadataField('isHidden', event.target.checked)}
+            />
+          </label>
+        </div>
       </div>
 
       {nestedItems.length > 0 ? (
@@ -423,6 +524,15 @@ function ListItemEditorCard({
                   updateNestedItems(nextNestedItems)
                 }}
                 onMove={(fromIndex, delta) => updateNestedItems(moveArrayItem(nestedItems, fromIndex, fromIndex + delta))}
+                onDuplicate={(duplicateIndex) => {
+                  const currentItem = nestedItems[duplicateIndex]
+                  const nextNestedItems = [...nestedItems]
+                  nextNestedItems.splice(duplicateIndex + 1, 0, {
+                    ...currentItem,
+                    id: `${currentItem.id}-copy-${Date.now()}`,
+                  })
+                  updateNestedItems(nextNestedItems)
+                }}
                 onRemove={(removeIndex) => updateNestedItems(nestedItems.filter((_, currentIndex) => currentIndex !== removeIndex))}
               />
             ))}
@@ -492,6 +602,10 @@ function EditorModal({
 
   function updateListEditor(nextItems: EditableListItem[]) {
     setRawValue(JSON.stringify(nextItems, null, 2))
+  }
+
+  function updateRecordEditor(nextValue: Record<string, unknown>) {
+    setRawValue(JSON.stringify(nextValue, null, 2))
   }
 
   function applyRichTextFormat(before: string, after = before.replace('<', '</')) {
@@ -693,6 +807,15 @@ function EditorModal({
                         updateListEditor(nextItems)
                       }}
                       onMove={(fromIndex, delta) => updateListEditor(moveArrayItem(normalizeEditableListItems(parsedPreview.value), fromIndex, fromIndex + delta))}
+                      onDuplicate={(duplicateIndex) => {
+                        const nextItems = normalizeEditableListItems(parsedPreview.value)
+                        const currentItem = nextItems[duplicateIndex]
+                        nextItems.splice(duplicateIndex + 1, 0, {
+                          ...currentItem,
+                          id: `${currentItem.id}-copy-${Date.now()}`,
+                        })
+                        updateListEditor(nextItems)
+                      }}
                       onRemove={(removeIndex) => updateListEditor(normalizeEditableListItems(parsedPreview.value).filter((_, currentIndex) => currentIndex !== removeIndex))}
                     />
                   ))}
@@ -706,6 +829,66 @@ function EditorModal({
                   <Sparkles className="h-4 w-4 text-[#1398B7]" />
                   <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#1398B7]">Editor guiado</p>
                 </div>
+                {editor.entryType === 'button' || editor.entryType === 'link' ? (
+                  <div className="mt-4 grid gap-3 md:grid-cols-2">
+                    <label className="grid gap-1.5">
+                      <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Texto</span>
+                      <input
+                        value={typeof previewRecord.label === 'string' ? previewRecord.label : ''}
+                        onChange={(event) => updateRecordEditor({ ...previewRecord, label: event.target.value })}
+                        className="h-11 rounded-[14px] border border-[#D8E6EB] bg-white px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]"
+                      />
+                    </label>
+                    <label className="grid gap-1.5">
+                      <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Link</span>
+                      <input
+                        value={typeof previewRecord.href === 'string' ? previewRecord.href : ''}
+                        onChange={(event) => updateRecordEditor({ ...previewRecord, href: event.target.value })}
+                        className="h-11 rounded-[14px] border border-[#D8E6EB] bg-white px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]"
+                      />
+                    </label>
+                    {editor.entryType === 'button' ? (
+                      <label className="grid gap-1.5">
+                        <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Tom visual</span>
+                        <select
+                          value={typeof previewRecord.tone === 'string' ? previewRecord.tone : 'solid'}
+                          onChange={(event) => updateRecordEditor({ ...previewRecord, tone: event.target.value })}
+                          className="h-11 rounded-[14px] border border-[#D8E6EB] bg-white px-3 text-sm font-semibold text-[#15323b] outline-none"
+                        >
+                          <option value="solid">Solid</option>
+                          <option value="surface">Surface</option>
+                          <option value="ghost">Ghost</option>
+                        </select>
+                      </label>
+                    ) : null}
+                    <div className="grid gap-2 md:col-span-2 md:grid-cols-3">
+                      <label className="flex items-center justify-between rounded-[14px] border border-[#D8E6EB] bg-white px-3 py-3 text-sm font-semibold text-[#15323b]">
+                        <span>Link interno</span>
+                        <input
+                          type="checkbox"
+                          checked={previewRecord.isInternal === true}
+                          onChange={(event) => updateRecordEditor({ ...previewRecord, isInternal: event.target.checked })}
+                        />
+                      </label>
+                      <label className="flex items-center justify-between rounded-[14px] border border-[#D8E6EB] bg-white px-3 py-3 text-sm font-semibold text-[#15323b]">
+                        <span>Nova aba</span>
+                        <input
+                          type="checkbox"
+                          checked={previewRecord.openInNewTab === true}
+                          onChange={(event) => updateRecordEditor({ ...previewRecord, openInNewTab: event.target.checked })}
+                        />
+                      </label>
+                      <label className="flex items-center justify-between rounded-[14px] border border-[#D8E6EB] bg-white px-3 py-3 text-sm font-semibold text-[#15323b]">
+                        <span>Oculto</span>
+                        <input
+                          type="checkbox"
+                          checked={previewRecord.isHidden === true}
+                          onChange={(event) => updateRecordEditor({ ...previewRecord, isHidden: event.target.checked })}
+                        />
+                      </label>
+                    </div>
+                  </div>
+                ) : null}
                 <div className="mt-4 grid gap-3 md:grid-cols-2">
                   {Object.entries(previewRecord).map(([key, currentValue]) => {
                     if (typeof currentValue === 'string') {
@@ -1153,6 +1336,10 @@ export function useEditableValue<TValue extends EditableValue>(
   return coerceEditableValue(entry?.value, fallback) as TValue
 }
 
+export function isEditableItemVisible(item: EditableListItem) {
+  return item.metadata?.isHidden !== true
+}
+
 export function EditableText({
   entryKey,
   fallback,
@@ -1275,6 +1462,84 @@ export function EditableImage({
         pageKey: resolvedPageKey,
         entryKey,
         entryType: 'image',
+        label,
+        fallback: value,
+        reload: scope.reload,
+      })}
+    >
+      {children(value)}
+    </EditableMarker>
+  )
+}
+
+export function EditableButton({
+  entryKey,
+  fallback,
+  label,
+  pageKey,
+  children,
+}: {
+  entryKey: string
+  fallback: Record<string, unknown>
+  label: string
+  pageKey?: SitePageKey
+  children: (button: Record<string, unknown>) => ReactNode
+}) {
+  const scope = useContext(SiteContentContext)
+  const editor = useContext(VisualEditorContext)
+  const resolvedPageKey = pageKey ?? scope?.pageKey ?? 'global'
+  const value = useEditableValue(entryKey, fallback, { pageKey: resolvedPageKey })
+
+  if (!editor?.isEditing || !scope) {
+    return <>{children(value)}</>
+  }
+
+  return (
+    <EditableMarker
+      label={label}
+      onClick={() => editor.openEditor({
+        pageKey: resolvedPageKey,
+        entryKey,
+        entryType: 'button',
+        label,
+        fallback: value,
+        reload: scope.reload,
+      })}
+    >
+      {children(value)}
+    </EditableMarker>
+  )
+}
+
+export function EditableLink({
+  entryKey,
+  fallback,
+  label,
+  pageKey,
+  children,
+}: {
+  entryKey: string
+  fallback: Record<string, unknown>
+  label: string
+  pageKey?: SitePageKey
+  children: (linkValue: Record<string, unknown>) => ReactNode
+}) {
+  const scope = useContext(SiteContentContext)
+  const editor = useContext(VisualEditorContext)
+  const resolvedPageKey = pageKey ?? scope?.pageKey ?? 'global'
+  const value = useEditableValue(entryKey, fallback, { pageKey: resolvedPageKey })
+
+  if (!editor?.isEditing || !scope) {
+    return <>{children(value)}</>
+  }
+
+  return (
+    <EditableMarker
+      label={label}
+      onClick={() => editor.openEditor({
+        pageKey: resolvedPageKey,
+        entryKey,
+        entryType: 'link',
         label,
         fallback: value,
         reload: scope.reload,

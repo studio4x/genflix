@@ -82,6 +82,7 @@ export function SignUpPage() {
 
   return (
     <GenflixAuthLayout
+      entryPrefix="global.auth.signup"
       title="Comece sua jornada"
       subtitle="Crie sua conta e acesse tudo agora."
       imageUrl={genflixHeroImage}

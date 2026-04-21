@@ -12,7 +12,7 @@ import {
   genflixHeroImage,
   genflixNavLinks,
 } from '@/features/public/genflix-site-content'
-import { EditableImage, EditableList, EditableText, useEditableValue } from '@/features/site-editor/visual-editor'
+import { EditableImage, EditableList, EditableText, isEditableItemVisible, useEditableValue } from '@/features/site-editor/visual-editor'
 
 export function PublicHomePage() {
   const { isLoading, user, roles } = useAuth()
@@ -99,7 +99,7 @@ export function PublicHomePage() {
 
           <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
             <EditableList entryKey="home.categories.items" fallback={categoryItems} label="Categorias da home">
-              {(items) => items.map((item) => {
+              {(items) => items.filter(isEditableItemVisible).map((item) => {
                 const category = genflixCategoryTiles.find((tile) => tile.label === item.label) ?? genflixCategoryTiles[0]
                 const Icon = category.icon
                 return (

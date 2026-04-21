@@ -3,6 +3,7 @@ import { PublicGenericPage } from '@/components/public/public-generic-page'
 export function PublicRefundPolicyPage() {
   return (
     <PublicGenericPage
+      entryPrefix="global.institutional.refund"
       eyebrow="Política institucional"
       title="Política de reembolso"
       description="Esta página organiza, de forma clara e objetiva, como a GenFlix tratará solicitações de cancelamento e reembolso."

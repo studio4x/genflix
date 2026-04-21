@@ -4,7 +4,7 @@ import { GenflixNewsletterSection } from '@/components/public/genflix-newsletter
 import { GenflixPublicFooter } from '@/components/public/genflix-public-footer'
 import { GenflixPublicHeader } from '@/components/public/genflix-public-header'
 import { genflixNavLinks } from '@/features/public/genflix-site-content'
-import { EditableList, EditableText, useEditableValue } from '@/features/site-editor/visual-editor'
+import { EditableList, EditableText, isEditableItemVisible, useEditableValue } from '@/features/site-editor/visual-editor'
 
 const aboutParagraphs = [
   'Há quem prefira abrir o livro, sublinhar, fazer anotações e avançar página por página. Há também quem se envolva mais com vídeos, aulas curtas e recursos interativos.',
@@ -66,7 +66,7 @@ export function PublicAboutPage() {
           <div className="rounded-[28px] border border-[#D8E6EB] bg-white px-8 py-10 shadow-[0_18px_42px_rgba(21,50,59,0.03)] sm:px-10 lg:px-12">
             <div className="mx-auto max-w-[960px] space-y-5 border-t border-[#BEE3EA] pt-10 text-[15px] leading-8 text-[#4f666d]">
               <EditableList entryKey="about.paragraphs" fallback={editableParagraphs} label="Parágrafos da página Sobre">
-                {(items) => items.map((item) => (
+                {(items) => items.filter(isEditableItemVisible).map((item) => (
                   <p key={item.id}>{item.description}</p>
                 ))}
               </EditableList>

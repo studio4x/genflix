@@ -5,7 +5,7 @@ import { GenflixCtaButton } from '@/components/public/genflix-cta-button'
 import { GenflixPublicFooter } from '@/components/public/genflix-public-footer'
 import { GenflixPublicHeader } from '@/components/public/genflix-public-header'
 import { genflixNavLinks } from '@/features/public/genflix-site-content'
-import { EditableText } from '@/features/site-editor/visual-editor'
+import { EditableButton, EditableText } from '@/features/site-editor/visual-editor'
 
 interface PublicLegalPageShellProps {
   eyebrow: string
@@ -47,11 +47,19 @@ export function PublicLegalPageShell({
                   <p className="text-[11px] font-black uppercase tracking-[0.24em] text-[#97a6ab]">
                     Atualizado em <EditableText entryKey={`legal.${title}.updatedAt`} fallback={updatedAt} label="Data de atualização" />
                   </p>
-                  <GenflixCtaButton asChild tone="surface" className="mt-4 px-4 py-2 text-xs font-black uppercase tracking-[0.2em]">
-                    <Link to="/login">
-                      <EditableText entryKey={`legal.${title}.backLogin`} fallback="Voltar ao login" label="Botão voltar ao login" />
-                    </Link>
-                  </GenflixCtaButton>
+                  <EditableButton
+                    entryKey={`legal.${title}.backLoginButton`}
+                    fallback={{ label: 'Voltar ao login', href: '/login', isInternal: true, tone: 'surface', isHidden: false }}
+                    label="Botão voltar ao login"
+                  >
+                    {(buttonValue) => buttonValue.isHidden === true ? null : (
+                      <GenflixCtaButton asChild tone={buttonValue.tone === 'ghost' || buttonValue.tone === 'solid' ? buttonValue.tone : 'surface'} className="mt-4 px-4 py-2 text-xs font-black uppercase tracking-[0.2em]">
+                        <Link to={typeof buttonValue.href === 'string' ? buttonValue.href : '/login'}>
+                          {typeof buttonValue.label === 'string' ? buttonValue.label : 'Voltar ao login'}
+                        </Link>
+                      </GenflixCtaButton>
+                    )}
+                  </EditableButton>
                 </div>
               </div>
             </div>

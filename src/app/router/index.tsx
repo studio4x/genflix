@@ -120,47 +120,47 @@ export const appRouter = createBrowserRouter([
   },
   {
     path: '/politica-de-reembolso',
-    element: <PublicRefundPolicyPage />,
+    element: <PublicEditableRoute pageKey="global"><PublicRefundPolicyPage /></PublicEditableRoute>,
   },
   {
     path: '/perguntas-frequentes',
-    element: <PublicFaqPage />,
+    element: <PublicEditableRoute pageKey="global"><PublicFaqPage /></PublicEditableRoute>,
   },
   {
     path: '/ajuda',
-    element: <PublicHelpPage />,
+    element: <PublicEditableRoute pageKey="global"><PublicHelpPage /></PublicEditableRoute>,
   },
   {
     path: '/indique-a-genflix',
-    element: <PublicReferPage />,
+    element: <PublicEditableRoute pageKey="global"><PublicReferPage /></PublicEditableRoute>,
   },
   {
     path: '/ensine-na-genflix',
-    element: <PublicTeachPage />,
+    element: <PublicEditableRoute pageKey="global"><PublicTeachPage /></PublicEditableRoute>,
   },
   {
     path: '/login',
-    element: <LoginPage />,
+    element: <PublicEditableRoute pageKey="global"><LoginPage /></PublicEditableRoute>,
   },
   {
     path: '/auth/callback',
-    element: <AuthCallbackPage />,
+    element: <PublicEditableRoute pageKey="global"><AuthCallbackPage /></PublicEditableRoute>,
   },
   {
     path: '/criar-conta',
-    element: <SignUpPage />,
+    element: <PublicEditableRoute pageKey="global"><SignUpPage /></PublicEditableRoute>,
   },
   {
     path: '/recuperar-senha',
-    element: <ForgotPasswordPage />,
+    element: <PublicEditableRoute pageKey="global"><ForgotPasswordPage /></PublicEditableRoute>,
   },
   {
     path: '/redefinir-senha',
-    element: <ResetPasswordPage />,
+    element: <PublicEditableRoute pageKey="global"><ResetPasswordPage /></PublicEditableRoute>,
   },
   {
     path: '/nao-autorizado',
-    element: <UnauthorizedPage />,
+    element: <PublicEditableRoute pageKey="global"><UnauthorizedPage /></PublicEditableRoute>,
   },
   {
     path: '/privacidade',

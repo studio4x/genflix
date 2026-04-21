@@ -3,6 +3,7 @@ import { PublicGenericPage } from '@/components/public/public-generic-page'
 export function PublicReferPage() {
   return (
     <PublicGenericPage
+      entryPrefix="global.institutional.refer"
       eyebrow="Programa futuro"
       title="Indique a GenFlix"
       description="Estamos preparando uma frente dedicada a recomendações, convites e ações de indicação da plataforma."

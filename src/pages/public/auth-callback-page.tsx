@@ -71,6 +71,7 @@ export function AuthCallbackPage() {
 
   return (
     <GenflixAuthLayout
+      entryPrefix="global.auth.callback"
       title="Validando acesso"
       subtitle="Estamos conferindo seu link mágico da GenFlix."
       imageUrl={genflixHeroImage}

@@ -12,7 +12,7 @@ import {
   genflixResourceItems,
   type GenflixResourceItem,
 } from '@/features/public/genflix-site-content'
-import { EditableList, EditableText, useEditableValue } from '@/features/site-editor/visual-editor'
+import { EditableList, EditableText, isEditableItemVisible, useEditableValue } from '@/features/site-editor/visual-editor'
 
 interface ResourcePopupContent {
   title: string
@@ -313,7 +313,7 @@ export function PublicResourcesPage() {
 
           <div className="mt-12 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             <EditableList entryKey="resources.items" fallback={resourceItems} label="Cards de recursos">
-              {(items) => items.map((item) => {
+              {(items) => items.filter(isEditableItemVisible).map((item) => {
               const fallback = genflixResourceItems.find((resource) => resource.label === item.label) ?? genflixResourceItems[0]
               const Icon = fallback.icon
 

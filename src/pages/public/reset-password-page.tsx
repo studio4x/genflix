@@ -98,6 +98,7 @@ export function ResetPasswordPage() {
 
   return (
     <GenflixAuthLayout
+      entryPrefix="global.auth.resetPassword"
       title="Redefinir senha"
       subtitle="Finalize a recuperação para acessar sua conta GenFlix."
       imageUrl={genflixHeroImage}

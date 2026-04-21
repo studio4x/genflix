@@ -14,16 +14,16 @@ Evoluir o editor visual da GenFlix para um fluxo robusto, seguro e usavel por um
 - Historico de versoes por override.
 - Atalhos de teclado e protecao contra fechamento com alteracoes nao salvas.
 - Painel administrativo de configuracao do editor.
+- Edicao guiada de botoes e links com campos amigaveis.
+- Controles de duplicar e ocultar elementos em listas.
+- Edicao expandida em paginas institucionais, auth e rodape.
 
 ### Ainda falta ou esta incompleto
-- Experiencia realmente amigavel para usuario leigo no painel administrativo.
-- Busca e descoberta de campos por pagina, tipo e objetivo.
-- Modo basico vs avancado no admin.
 - Rascunho vs publicacao.
 - Preview responsivo desktop/tablet/mobile.
 - Biblioteca de blocos prontos.
-- Visibilidade de blocos sem apagar conteudo.
-- Duplicacao de blocos e itens.
+- Visibilidade de blocos inteiros sem apagar conteudo.
+- Duplicacao de blocos inteiros.
 - Permissoes por perfil e fluxo de aprovacao.
 - Comentarios internos.
 - SEO por pagina.
@@ -50,18 +50,21 @@ Entregas:
 - Preview resumido do conteudo salvo.
 - Acesso mais direto para abrir a pagina selecionada.
 
-### [ ] Fase 2 - Edicao Guiada de Conteudo
-Status: pendente
+### [x] Fase 2 - Edicao Guiada de Conteudo
+Status: concluida
 
 Escopo:
 - Expandir os pontos editaveis no front.
 - Reduzir ainda mais o uso de JSON.
 - Incluir edicao guiada de links, botoes, cards, FAQ, colunas, formularios e rodape.
 
-Entregas previstas:
+Entregas:
 - Mais componentes com `EditableText`, `EditableImage`, `EditableList` e `EditableRichText`.
 - Formularios guiados para links, botoes e cards.
 - Controles para duplicar e ocultar elementos.
+- Paginas institucionais com campos editaveis estruturados.
+- Páginas de autenticacao com conteudo lateral guiado pelo editor.
+- Rodape com links guiados, suporte a ocultar item e CTA editavel sem depender de JSON cru.
 
 ### [ ] Fase 3 - Blocos e Estrutura
 Status: pendente

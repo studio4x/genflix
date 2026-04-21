@@ -68,6 +68,7 @@ export function LoginPage() {
 
   return (
     <GenflixAuthLayout
+      entryPrefix="global.auth.login"
       title="Bem-vindo de volta"
       subtitle={mode === 'magic-link' ? 'Entre sem senha usando um link mágico.' : 'Continue de onde parou.'}
       imageUrl={genflixHeroImage}

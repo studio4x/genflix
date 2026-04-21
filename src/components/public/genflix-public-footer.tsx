@@ -3,7 +3,41 @@ import { Link } from 'react-router-dom'
 import { GenflixCtaButton } from '@/components/public/genflix-cta-button'
 import { GenflixLogo } from '@/components/public/genflix-logo'
 import { genflixFooterColumns } from '@/features/public/genflix-site-content'
-import { EditableList, EditableText, useEditableValue } from '@/features/site-editor/visual-editor'
+import { EditableList, EditableText, isEditableItemVisible, useEditableValue } from '@/features/site-editor/visual-editor'
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return !!value && typeof value === 'object' && !Array.isArray(value)
+}
+
+function normalizeFooterItem(item: unknown) {
+  if (!isRecord(item)) {
+    return null
+  }
+
+  const metadata = isRecord(item.metadata) ? item.metadata : {}
+  const label = typeof item.label === 'string' ? item.label : ''
+  const href = typeof item.href === 'string' ? item.href : '#'
+  const buttonLabel = typeof item.buttonLabel === 'string'
+    ? item.buttonLabel
+    : typeof metadata.buttonLabel === 'string'
+      ? metadata.buttonLabel
+      : undefined
+
+  return {
+    label,
+    href,
+    buttonLabel,
+    isInternal: item.isInternal === true || metadata.isInternal === true,
+    openInNewTab: item.openInNewTab === true || metadata.openInNewTab === true,
+    isHidden: item.isHidden === true || metadata.isHidden === true,
+  }
+}
+
+type NormalizedFooterItem = NonNullable<ReturnType<typeof normalizeFooterItem>>
+
+function isVisibleFooterItem(item: ReturnType<typeof normalizeFooterItem>): item is NormalizedFooterItem {
+  return item !== null && item.isHidden !== true
+}
 
 function FooterNavLink({
   href,
@@ -95,15 +129,9 @@ export function GenflixPublicFooter({
 
               <div className="grid flex-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
                 <EditableList entryKey="global.footer.columns" fallback={footerColumns} label="Colunas do rodapé" pageKey="global">
-                  {(columns) => columns.map((column) => {
+                  {(columns) => columns.filter(isEditableItemVisible).map((column) => {
                     const items = Array.isArray(column.metadata?.items)
-                      ? column.metadata.items as Array<{
-                        label: string
-                        href: string
-                        isInternal?: boolean
-                        openInNewTab?: boolean
-                        buttonLabel?: string
-                      }>
+                      ? column.metadata.items.map(normalizeFooterItem).filter(isVisibleFooterItem)
                       : []
 
                     return (
@@ -112,12 +140,12 @@ export function GenflixPublicFooter({
                           {column.title}
                         </h3>
                         <ul className="mt-4 space-y-3">
-                          {items.map((item) => (
-                            <li key={item.label}>
+                          {items.map((item, index) => (
+                            <li key={`${String(item.buttonLabel ?? item.label ?? index)}`}>
                               <FooterNavLink
                                 href={item.href}
-                                isInternal={item.isInternal ?? false}
-                                openInNewTab={item.openInNewTab ?? false}
+                                isInternal={item.isInternal}
+                                openInNewTab={item.openInNewTab}
                                 isButton={Boolean(item.buttonLabel)}
                               >
                                 {item.buttonLabel ?? item.label}

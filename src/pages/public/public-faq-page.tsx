@@ -3,6 +3,7 @@ import { PublicGenericPage } from '@/components/public/public-generic-page'
 export function PublicFaqPage() {
   return (
     <PublicGenericPage
+      entryPrefix="global.institutional.faq"
       eyebrow="Ajuda rápida"
       title="Perguntas frequentes"
       description="Reunimos aqui os principais tópicos que serão expandidos conforme a central de ajuda pública da GenFlix evoluir."

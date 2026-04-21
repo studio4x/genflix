@@ -3,6 +3,7 @@ import { PublicGenericPage } from '@/components/public/public-generic-page'
 export function PublicHelpPage() {
   return (
     <PublicGenericPage
+      entryPrefix="global.institutional.help"
       eyebrow="Central de ajuda"
       title="Ajuda / Como usar"
       description="Esta seção será a base da futura central de ajuda com orientações práticas de uso da plataforma."

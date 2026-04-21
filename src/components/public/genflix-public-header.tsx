@@ -5,7 +5,7 @@ import { GenflixCtaButton } from '@/components/public/genflix-cta-button'
 import { GenflixLogo } from '@/components/public/genflix-logo'
 import { getDashboardPathForRoles } from '@/features/auth/dashboard-path'
 import type { GenflixNavLink, GenflixPageKey } from '@/features/public/genflix-site-content'
-import { EditableList, EditableText, useEditableValue } from '@/features/site-editor/visual-editor'
+import { EditableList, EditableText, isEditableItemVisible, useEditableValue } from '@/features/site-editor/visual-editor'
 import { cn } from '@/lib/utils'
 
 function HeaderNavLink({
@@ -65,7 +65,7 @@ export function GenflixPublicHeader({
     })),
     { pageKey: 'global' },
   )
-  const visibleNavLinks = editableNavLinks.filter((item) => item.metadata?.requiresAuth !== true || user)
+  const visibleNavLinks = editableNavLinks.filter((item) => isEditableItemVisible(item) && (item.metadata?.requiresAuth !== true || user))
 
   return (
     <header className="flex min-h-[72px] items-center justify-between gap-6">
@@ -73,7 +73,7 @@ export function GenflixPublicHeader({
 
       <nav className="hidden items-center gap-7 lg:flex">
         <EditableList entryKey="global.header.navLinks" fallback={visibleNavLinks} label="Menu principal" pageKey="global">
-          {(items) => items.map((item) => {
+          {(items) => items.filter(isEditableItemVisible).map((item) => {
             const navItem = {
               label: item.label ?? '',
               href: item.href ?? '#',

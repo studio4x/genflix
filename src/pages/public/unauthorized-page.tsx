@@ -8,6 +8,7 @@ import { genflixHeroImage } from '@/features/public/genflix-site-content'
 export function UnauthorizedPage() {
   return (
     <GenflixAuthLayout
+      entryPrefix="global.auth.unauthorized"
       title="Acesso restrito"
       subtitle="Esta área do GenFlix exige permissão específica para continuar."
       imageUrl={genflixHeroImage}

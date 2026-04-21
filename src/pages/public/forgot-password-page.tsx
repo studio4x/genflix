@@ -51,6 +51,7 @@ export function ForgotPasswordPage() {
 
   return (
     <GenflixAuthLayout
+      entryPrefix="global.auth.forgotPassword"
       title="Recupere seu acesso"
       subtitle="Enviaremos um link para você redefinir sua senha e continuar seus estudos."
       imageUrl={genflixHeroImage}
