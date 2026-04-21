@@ -17,13 +17,14 @@ Evoluir o editor visual da GenFlix para um fluxo robusto, seguro e usavel por um
 - Edicao guiada de botoes e links com campos amigaveis.
 - Controles de duplicar e ocultar elementos em listas.
 - Edicao expandida em paginas institucionais, auth e rodape.
+- Estrutura da home com blocos reordenaveis.
+- Biblioteca de blocos para montar secoes da home.
+- Duplicacao e ocultacao de secoes inteiras sem mexer no layout-base.
 
 ### Ainda falta ou esta incompleto
 - Rascunho vs publicacao.
 - Preview responsivo desktop/tablet/mobile.
-- Biblioteca de blocos prontos.
-- Visibilidade de blocos inteiros sem apagar conteudo.
-- Duplicacao de blocos inteiros.
+- Biblioteca de blocos prontos para outras paginas alem da home.
 - Permissoes por perfil e fluxo de aprovacao.
 - Comentarios internos.
 - SEO por pagina.
@@ -66,17 +67,19 @@ Entregas:
 - Páginas de autenticacao com conteudo lateral guiado pelo editor.
 - Rodape com links guiados, suporte a ocultar item e CTA editavel sem depender de JSON cru.
 
-### [ ] Fase 3 - Blocos e Estrutura
-Status: pendente
+### [x] Fase 3 - Blocos e Estrutura
+Status: concluida
 
 Escopo:
 - Permitir montar e reorganizar secoes inteiras sem quebrar o layout base.
 
-Entregas previstas:
+Entregas:
 - Biblioteca de blocos prontos.
 - Reordenacao de blocos.
 - Duplicacao de blocos.
 - Mostrar/ocultar secoes.
+- Gerenciador de estrutura da home separado da edicao de conteudo.
+- Prefixos proprios para blocos duplicados da home, evitando colidir com o conteudo original.
 
 ### [ ] Fase 4 - Midia, Responsividade e SEO
 Status: pendente

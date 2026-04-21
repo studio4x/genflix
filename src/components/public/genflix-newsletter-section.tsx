@@ -2,18 +2,24 @@ import { type FormEvent, useState } from 'react'
 
 import { GenflixCtaButton } from '@/components/public/genflix-cta-button'
 import { genflixNewsletterImage } from '@/features/public/genflix-site-content'
-import { EditableImage, EditableText, useEditableValue } from '@/features/site-editor/visual-editor'
+import { EditableButton, EditableImage, EditableText, useEditableValue } from '@/features/site-editor/visual-editor'
+import type { SitePageKey } from '@/features/site-editor/types'
 
 export function GenflixNewsletterSection({
   id = 'newsletter',
+  entryPrefix = 'global.newsletter',
+  pageKey = 'global',
 }: {
   id?: string
+  entryPrefix?: string
+  pageKey?: SitePageKey
 }) {
   const [newsletterEmail, setNewsletterEmail] = useState('')
   const [message, setMessage] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const image = useEditableValue('global.newsletter.image', { src: genflixNewsletterImage, alt: 'Newsletter GenFlix' }, { pageKey: 'global' })
-  const placeholder = useEditableValue('global.newsletter.placeholder', 'Seu@e-mail.com', { pageKey: 'global' })
+  const image = useEditableValue(`${entryPrefix}.image`, { src: genflixNewsletterImage, alt: 'Newsletter GenFlix' }, { pageKey })
+  const placeholder = useEditableValue(`${entryPrefix}.placeholder`, 'Seu@e-mail.com', { pageKey })
+  const legacyButtonLabel = useEditableValue(`${entryPrefix}.button.label`, 'Quero me inscrever', { pageKey })
 
   async function handleNewsletterSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -49,7 +55,7 @@ export function GenflixNewsletterSection({
   return (
     <section id={id} className="bg-[#F2F7F9] pb-0 pt-2">
       <div className="public-site-container">
-        <EditableImage entryKey="global.newsletter.image" fallback={image} label="Imagem da newsletter" pageKey="global">
+        <EditableImage entryKey={`${entryPrefix}.image`} fallback={image} label="Imagem da newsletter" pageKey={pageKey}>
           {(editableImage) => (
             <div
               className="overflow-hidden rounded-t-[30px] bg-cover bg-center"
@@ -59,18 +65,18 @@ export function GenflixNewsletterSection({
                 <div className="max-w-[720px]">
                   <h2 className="mx-auto max-w-[440px] text-[2.2rem] font-extrabold leading-[1.02] tracking-[-0.05em] text-white sm:text-[2.8rem]">
                     <EditableText
-                      entryKey="global.newsletter.title"
+                      entryKey={`${entryPrefix}.title`}
                       fallback="Fique por dentro com nossa newsletter"
                       label="Título da newsletter"
-                      pageKey="global"
+                      pageKey={pageKey}
                     />
                   </h2>
                   <p className="mx-auto mt-4 max-w-[620px] text-base leading-7 text-white/78">
                     <EditableText
-                      entryKey="global.newsletter.description"
+                      entryKey={`${entryPrefix}.description`}
                       fallback="Cadastre-se para receber atualizações sobre nossos cursos e conteúdo."
                       label="Descrição da newsletter"
-                      pageKey="global"
+                      pageKey={pageKey}
                     />
                   </p>
 
@@ -88,16 +94,23 @@ export function GenflixNewsletterSection({
                         className="w-full border-0 bg-transparent text-sm font-medium text-[#183139] outline-none placeholder:text-[#8ba0a7]"
                       />
                     </div>
-                    <GenflixCtaButton type="submit" disabled={isSubmitting} className="min-h-[54px] px-6">
-                      {isSubmitting ? 'Enviando...' : (
-                        <EditableText
-                          entryKey="global.newsletter.button.label"
-                          fallback="Quero me inscrever"
-                          label="Botão da newsletter"
-                          pageKey="global"
-                        />
+                    <EditableButton
+                      entryKey={`${entryPrefix}.button`}
+                      fallback={{ label: legacyButtonLabel, tone: 'solid' }}
+                      label="Botão da newsletter"
+                      pageKey={pageKey}
+                    >
+                      {(buttonValue) => (
+                        <GenflixCtaButton
+                          type="submit"
+                          disabled={isSubmitting}
+                          className="min-h-[54px] px-6"
+                          tone={buttonValue.tone === 'surface' || buttonValue.tone === 'ghost' ? buttonValue.tone : 'solid'}
+                        >
+                          {isSubmitting ? 'Enviando...' : (typeof buttonValue.label === 'string' ? buttonValue.label : 'Quero me inscrever')}
+                        </GenflixCtaButton>
                       )}
-                    </GenflixCtaButton>
+                    </EditableButton>
                   </form>
                   {message ? <p className="mt-4 text-sm font-bold text-white/85">{message}</p> : null}
                 </div>

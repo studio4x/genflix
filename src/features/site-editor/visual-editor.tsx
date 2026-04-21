@@ -11,7 +11,7 @@ import {
   type ReactNode,
 } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { Copy, Edit3, Image as ImageIcon, Keyboard, RotateCcw, Save, Settings, Sparkles, Wand2, X } from 'lucide-react'
+import { Copy, Edit3, Image as ImageIcon, Keyboard, LayoutTemplate, Plus, RotateCcw, Save, Settings, Sparkles, Wand2, X } from 'lucide-react'
 
 import { useAuth } from '@/app/providers/auth-provider'
 import { cn } from '@/lib/utils'
@@ -41,6 +41,23 @@ type TextStyleValue = {
   lineHeight?: string
   textTransform?: string
   fontStyle?: string
+}
+
+type NormalizedListEditorTemplate = {
+  id: string
+  label: string
+  description?: string
+  item: EditableListItem
+}
+
+type NormalizedListEditorSchema = {
+  kind: 'default' | 'section-registry'
+  itemName: string
+  addLabel: string
+  templates: NormalizedListEditorTemplate[]
+  hiddenFields: Set<string>
+  instancePrefix?: string
+  instancePageKey?: SitePageKey
 }
 
 type SiteContentContextValue = {
@@ -82,6 +99,14 @@ function isPublicEditablePath(pathname: string) {
 
 function isStringRecord(value: unknown): value is Record<string, unknown> {
   return !!value && typeof value === 'object' && !Array.isArray(value)
+}
+
+function slugifyEditableId(value: string) {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '') || 'item'
 }
 
 function coerceEditableValue(value: unknown, fallback: EditableValue) {
@@ -202,6 +227,114 @@ function normalizeEditableListItems(value: unknown): EditableListItem[] {
   })
 }
 
+function normalizeListEditorSchema(schema: Record<string, unknown> | undefined): NormalizedListEditorSchema {
+  const defaultConfig: NormalizedListEditorSchema = {
+    kind: 'default',
+    itemName: 'item',
+    addLabel: 'Adicionar item',
+    templates: [],
+    hiddenFields: new Set<string>(),
+  }
+
+  if (!isStringRecord(schema)) {
+    return defaultConfig
+  }
+
+  const kind = schema.kind === 'section-registry' ? 'section-registry' : 'default'
+  const rawTemplates = Array.isArray(schema.templates) ? schema.templates : []
+  const templates = rawTemplates.flatMap((template, index) => {
+    if (!isStringRecord(template)) {
+      return []
+    }
+
+    const id = typeof template.id === 'string' && template.id.trim() !== ''
+      ? template.id
+      : `template-${index + 1}`
+    const label = typeof template.label === 'string' && template.label.trim() !== ''
+      ? template.label
+      : id
+    const description = typeof template.description === 'string' ? template.description : undefined
+    const templateItemSource = isStringRecord(template.item)
+      ? template.item
+      : {
+        id,
+        label,
+        description,
+        metadata: {
+          templateKey: id,
+        },
+      }
+    const normalizedItem = normalizeEditableListItems([templateItemSource])[0] ?? { id, label }
+    const nextMetadata = isStringRecord(normalizedItem.metadata) ? { ...normalizedItem.metadata } : {}
+    if (typeof nextMetadata.templateKey !== 'string') {
+      nextMetadata.templateKey = id
+    }
+
+    return [{
+      id,
+      label,
+      description,
+      item: {
+        ...normalizedItem,
+        label: normalizedItem.label ?? label,
+        metadata: Object.keys(nextMetadata).length > 0 ? nextMetadata : undefined,
+      },
+    }]
+  })
+
+  return {
+    kind,
+    itemName: typeof schema.itemName === 'string' && schema.itemName.trim() !== '' ? schema.itemName : defaultConfig.itemName,
+    addLabel: typeof schema.addLabel === 'string' && schema.addLabel.trim() !== '' ? schema.addLabel : defaultConfig.addLabel,
+    templates,
+    hiddenFields: new Set(
+      Array.isArray(schema.hiddenFields)
+        ? schema.hiddenFields.filter((field): field is string => typeof field === 'string' && field.trim() !== '')
+        : [],
+    ),
+    instancePrefix: typeof schema.instancePrefix === 'string' && schema.instancePrefix.trim() !== '' ? schema.instancePrefix : undefined,
+    instancePageKey: typeof schema.instancePageKey === 'string' && schema.instancePageKey.trim() !== '' ? schema.instancePageKey as SitePageKey : undefined,
+  }
+}
+
+function cloneEditableListItem(item: EditableListItem, config: NormalizedListEditorSchema) {
+  const normalizedItem = normalizeEditableListItems([item])[0] ?? item
+  const nextId = `${slugifyEditableId(normalizedItem.id || normalizedItem.label || config.itemName)}-${Date.now()}`
+  const nextMetadata = isStringRecord(normalizedItem.metadata) ? { ...normalizedItem.metadata } : {}
+
+  if (config.kind === 'section-registry' && config.instancePrefix) {
+    nextMetadata.entryPrefix = `${config.instancePrefix}.${nextId}`
+    if (config.instancePageKey) {
+      nextMetadata.pageKey = config.instancePageKey
+    }
+  }
+
+  return {
+    ...normalizedItem,
+    id: nextId,
+    metadata: Object.keys(nextMetadata).length > 0 ? nextMetadata : undefined,
+  }
+}
+
+function createListItemFromTemplate(template: NormalizedListEditorTemplate, config: NormalizedListEditorSchema) {
+  const nextId = `${slugifyEditableId(template.id)}-${Date.now()}`
+  const nextMetadata = isStringRecord(template.item.metadata) ? { ...template.item.metadata } : {}
+
+  if (config.kind === 'section-registry' && config.instancePrefix) {
+    nextMetadata.entryPrefix = `${config.instancePrefix}.${nextId}`
+    if (config.instancePageKey) {
+      nextMetadata.pageKey = config.instancePageKey
+    }
+  }
+
+  return {
+    ...template.item,
+    id: nextId,
+    label: template.item.label ?? template.label,
+    metadata: Object.keys(nextMetadata).length > 0 ? nextMetadata : undefined,
+  }
+}
+
 function moveArrayItem<TValue>(items: TValue[], fromIndex: number, toIndex: number) {
   if (toIndex < 0 || toIndex >= items.length) {
     return items
@@ -272,6 +405,7 @@ function ListItemEditorCard({
   onMove,
   onDuplicate,
   onRemove,
+  editorConfig,
 }: {
   item: EditableListItem
   index: number
@@ -281,6 +415,7 @@ function ListItemEditorCard({
   onMove: (fromIndex: number, delta: number) => void
   onDuplicate: (index: number) => void
   onRemove: (index: number) => void
+  editorConfig: NormalizedListEditorSchema
 }) {
   const metadata: Record<string, unknown> = isStringRecord(item.metadata) ? { ...item.metadata } : {}
   const nestedItems = normalizeEditableListItems(metadata.items)
@@ -290,10 +425,17 @@ function ListItemEditorCard({
   const isInternal = metadataWithoutItems.isInternal === true
   const openInNewTab = metadataWithoutItems.openInNewTab === true
   const isHidden = metadataWithoutItems.isHidden === true
+  const templateKey = typeof metadataWithoutItems.templateKey === 'string' ? metadataWithoutItems.templateKey : ''
+  const entryPrefix = typeof metadataWithoutItems.entryPrefix === 'string' ? metadataWithoutItems.entryPrefix : ''
+  const pageKeyOverride = typeof metadataWithoutItems.pageKey === 'string' ? metadataWithoutItems.pageKey : ''
+  const templateDefinition = editorConfig.templates.find((template) => template.id === templateKey)
   delete metadataWithoutItems.buttonLabel
   delete metadataWithoutItems.isInternal
   delete metadataWithoutItems.openInNewTab
   delete metadataWithoutItems.isHidden
+  delete metadataWithoutItems.templateKey
+  delete metadataWithoutItems.entryPrefix
+  delete metadataWithoutItems.pageKey
 
   function updateField(field: keyof EditableListItem, value: string) {
     onChange({
@@ -354,6 +496,102 @@ function ListItemEditorCard({
     } catch {
       // Mantem o valor atual ate o JSON ficar valido.
     }
+  }
+
+  if (editorConfig.kind === 'section-registry') {
+    return (
+      <div className={cn('rounded-[20px] border border-[#D8E6EB] bg-white p-4', depth > 0 && 'bg-[#FCFEFF]')}>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[#1398B7]">
+              {depth > 0 ? `Bloco interno ${index + 1}` : `Bloco ${index + 1}`}
+            </p>
+            <p className="mt-1 text-sm font-semibold text-[#15323b]">
+              {item.label || templateDefinition?.label || item.id}
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => onMove(index, -1)}
+              disabled={index === 0}
+              className="rounded-full border border-[#D8E6EB] px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.14em] text-[#0A3640] hover:bg-[#F2F7F9] disabled:opacity-50"
+            >
+              Subir
+            </button>
+            <button
+              type="button"
+              onClick={() => onMove(index, 1)}
+              disabled={index === total - 1}
+              className="rounded-full border border-[#D8E6EB] px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.14em] text-[#0A3640] hover:bg-[#F2F7F9] disabled:opacity-50"
+            >
+              Descer
+            </button>
+            <button
+              type="button"
+              onClick={() => onDuplicate(index)}
+              className="rounded-full border border-[#D8E6EB] px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.14em] text-[#0A3640] hover:bg-[#F2F7F9]"
+            >
+              Duplicar
+            </button>
+            <button
+              type="button"
+              onClick={() => onRemove(index)}
+              className="rounded-full border border-rose-200 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.14em] text-rose-700 hover:bg-rose-50"
+            >
+              Remover
+            </button>
+          </div>
+        </div>
+
+        <div className="mt-4 grid gap-3 md:grid-cols-2">
+          <label className="grid gap-1.5">
+            <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Nome do bloco</span>
+            <input
+              value={item.label ?? ''}
+              onChange={(event) => updateField('label', event.target.value)}
+              className="h-11 rounded-[14px] border border-[#D8E6EB] px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]"
+            />
+          </label>
+          <div className="rounded-[14px] border border-[#D8E6EB] bg-[#F8FCFD] px-3 py-3">
+            <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Template</p>
+            <p className="mt-1 text-sm font-semibold text-[#15323b]">{templateDefinition?.label ?? (templateKey || 'Sem template')}</p>
+            {templateDefinition?.description ? (
+              <p className="mt-1 text-xs leading-5 text-[#5F7077]">{templateDefinition.description}</p>
+            ) : null}
+          </div>
+          <label className="grid gap-1.5 md:col-span-2">
+            <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Resumo operacional</span>
+            <textarea
+              value={item.description ?? ''}
+              onChange={(event) => updateField('description', event.target.value)}
+              rows={3}
+              className="rounded-[14px] border border-[#D8E6EB] px-3 py-2 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]"
+              placeholder="Descreva a função deste bloco para a equipe."
+            />
+          </label>
+        </div>
+
+        <div className="mt-4 grid gap-3 md:grid-cols-2">
+          <div className="rounded-[14px] border border-[#D8E6EB] bg-[#F8FCFD] px-3 py-3">
+            <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Prefixo de conteúdo</p>
+            <p className="mt-1 text-sm font-semibold text-[#15323b]">{entryPrefix || 'Usando o conteúdo padrão da seção original.'}</p>
+          </div>
+          <div className="rounded-[14px] border border-[#D8E6EB] bg-[#F8FCFD] px-3 py-3">
+            <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Escopo da página</p>
+            <p className="mt-1 text-sm font-semibold text-[#15323b]">{pageKeyOverride || 'Mantém o escopo original do bloco.'}</p>
+          </div>
+          <label className="flex items-center justify-between rounded-[14px] border border-[#D8E6EB] px-3 py-3 text-sm font-semibold text-[#15323b] md:col-span-2">
+            <span>Ocultar este bloco sem apagar o conteúdo</span>
+            <input
+              type="checkbox"
+              checked={isHidden}
+              onChange={(event) => updateMetadataField('isHidden', event.target.checked)}
+            />
+          </label>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -527,13 +765,11 @@ function ListItemEditorCard({
                 onDuplicate={(duplicateIndex) => {
                   const currentItem = nestedItems[duplicateIndex]
                   const nextNestedItems = [...nestedItems]
-                  nextNestedItems.splice(duplicateIndex + 1, 0, {
-                    ...currentItem,
-                    id: `${currentItem.id}-copy-${Date.now()}`,
-                  })
+                  nextNestedItems.splice(duplicateIndex + 1, 0, cloneEditableListItem(currentItem, editorConfig))
                   updateNestedItems(nextNestedItems)
                 }}
                 onRemove={(removeIndex) => updateNestedItems(nestedItems.filter((_, currentIndex) => currentIndex !== removeIndex))}
+                editorConfig={editorConfig}
               />
             ))}
           </div>
@@ -599,6 +835,7 @@ function EditorModal({
   const previewList = Array.isArray(parsedPreview.value) ? parsedPreview.value : null
   const previewRecord = isStringRecord(parsedPreview.value) ? parsedPreview.value : null
   const previewTextStyle = useMemo(() => textStyleToCss(textStyle), [textStyle])
+  const listEditorConfig = useMemo(() => normalizeListEditorSchema(editor.schema), [editor.schema])
 
   function updateListEditor(nextItems: EditableListItem[]) {
     setRawValue(JSON.stringify(nextItems, null, 2))
@@ -782,17 +1019,50 @@ function EditorModal({
                     <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#1398B7]">Editor de listagem</p>
                     <p className="mt-1 text-sm font-semibold text-[#15323b]">Edite itens, mova ordem e reorganize elementos sem alterar a estrutura visual da página.</p>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => updateListEditor([
-                      ...normalizeEditableListItems(parsedPreview.value),
-                      { id: `item-${previewList.length + 1}`, label: 'Novo item' },
-                    ])}
-                    className="rounded-full border border-[#D8E6EB] px-4 py-2 text-[10px] font-black uppercase tracking-[0.14em] text-[#0A3640] hover:bg-white"
-                  >
-                    Adicionar item
-                  </button>
+                  {listEditorConfig.templates.length === 0 ? (
+                    <button
+                      type="button"
+                      onClick={() => updateListEditor([
+                        ...normalizeEditableListItems(parsedPreview.value),
+                        { id: `item-${previewList.length + 1}`, label: 'Novo item' },
+                      ])}
+                      className="rounded-full border border-[#D8E6EB] px-4 py-2 text-[10px] font-black uppercase tracking-[0.14em] text-[#0A3640] hover:bg-white"
+                    >
+                      {listEditorConfig.addLabel}
+                    </button>
+                  ) : null}
                 </div>
+
+                {listEditorConfig.templates.length > 0 ? (
+                  <div className="mt-4 rounded-[18px] border border-[#D8E6EB] bg-white p-4">
+                    <div className="flex items-center gap-2">
+                      <LayoutTemplate className="h-4 w-4 text-[#1398B7]" />
+                      <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[#1398B7]">Biblioteca de blocos</p>
+                    </div>
+                    <div className="mt-3 grid gap-3 md:grid-cols-2">
+                      {listEditorConfig.templates.map((template) => (
+                        <button
+                          key={template.id}
+                          type="button"
+                          onClick={() => updateListEditor([
+                            ...normalizeEditableListItems(parsedPreview.value),
+                            createListItemFromTemplate(template, listEditorConfig),
+                          ])}
+                          className="rounded-[18px] border border-[#D8E6EB] bg-[#F8FCFD] px-4 py-4 text-left transition hover:border-[#1398B7] hover:bg-[#EAF8FB]"
+                        >
+                          <span className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.14em] text-[#1398B7]">
+                            <Plus className="h-3.5 w-3.5" />
+                            {listEditorConfig.addLabel}
+                          </span>
+                          <p className="mt-2 text-sm font-semibold text-[#15323b]">{template.label}</p>
+                          {template.description ? (
+                            <p className="mt-1 text-xs leading-5 text-[#5F7077]">{template.description}</p>
+                          ) : null}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
 
                 <div className="mt-4 grid gap-3">
                   {normalizeEditableListItems(parsedPreview.value).map((item, index) => (
@@ -810,13 +1080,11 @@ function EditorModal({
                       onDuplicate={(duplicateIndex) => {
                         const nextItems = normalizeEditableListItems(parsedPreview.value)
                         const currentItem = nextItems[duplicateIndex]
-                        nextItems.splice(duplicateIndex + 1, 0, {
-                          ...currentItem,
-                          id: `${currentItem.id}-copy-${Date.now()}`,
-                        })
+                        nextItems.splice(duplicateIndex + 1, 0, cloneEditableListItem(currentItem, listEditorConfig))
                         updateListEditor(nextItems)
                       }}
                       onRemove={(removeIndex) => updateListEditor(normalizeEditableListItems(parsedPreview.value).filter((_, currentIndex) => currentIndex !== removeIndex))}
+                      editorConfig={listEditorConfig}
                     />
                   ))}
                 </div>
@@ -1556,12 +1824,14 @@ export function EditableList({
   label,
   children,
   pageKey,
+  schema,
 }: {
   entryKey: string
   fallback: EditableListItem[]
   label: string
   children: (items: EditableListItem[]) => ReactNode
   pageKey?: SitePageKey
+  schema?: Record<string, unknown>
 }) {
   const scope = useContext(SiteContentContext)
   const editor = useContext(VisualEditorContext)
@@ -1581,12 +1851,21 @@ export function EditableList({
         entryType: 'list',
         label,
         fallback: value,
+        schema,
         reload: scope.reload,
       })}
     >
       {children(value)}
     </EditableMarker>
   )
+}
+
+export function useVisualEditorState() {
+  return useContext(VisualEditorContext)
+}
+
+export function useSiteContentScope() {
+  return useContext(SiteContentContext)
 }
 
 export function EditableControlsHint() {
