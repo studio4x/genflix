@@ -23,9 +23,15 @@ function normalizeFullName(value: string) {
   return trimmed.length > 0 ? trimmed : null
 }
 
+function normalizeWhatsAppNumber(value: string) {
+  const trimmed = value.trim()
+  return trimmed.length > 0 ? trimmed : null
+}
+
 export function StudentAccountPage() {
   const { profile, updatePassword, updateProfile } = useAuth()
   const [fullName, setFullName] = useState('')
+  const [whatsAppNumber, setWhatsAppNumber] = useState('')
   const [locale, setLocale] = useState('pt-BR')
   const [timezone, setTimezone] = useState('America/Sao_Paulo')
   const [password, setPassword] = useState('')
@@ -43,6 +49,7 @@ export function StudentAccountPage() {
     }
 
     setFullName(profile.full_name ?? '')
+    setWhatsAppNumber(profile.whatsapp_number ?? '')
     setLocale(profile.locale)
     setTimezone(profile.timezone)
   }, [profile])
@@ -54,10 +61,11 @@ export function StudentAccountPage() {
 
     return (
       normalizeFullName(fullName) !== profile.full_name ||
+      normalizeWhatsAppNumber(whatsAppNumber) !== profile.whatsapp_number ||
       locale !== profile.locale ||
       timezone !== profile.timezone
     )
-  }, [fullName, locale, profile, timezone])
+  }, [fullName, locale, profile, timezone, whatsAppNumber])
 
   async function handleProfileSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -74,6 +82,7 @@ export function StudentAccountPage() {
     try {
       await updateProfile({
         full_name: normalizeFullName(fullName),
+        whatsapp_number: normalizeWhatsAppNumber(whatsAppNumber),
         locale,
         timezone,
       })
@@ -168,6 +177,21 @@ export function StudentAccountPage() {
                 onChange={(event) => setFullName(event.target.value)}
                 placeholder="Como você deseja aparecer na plataforma"
               />
+            </label>
+
+            <label className="block space-y-2 md:col-span-2">
+              <span className="text-sm font-bold text-slate-700">WhatsApp</span>
+              <input
+                className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm font-medium text-slate-800 outline-none transition focus:border-blue-400 focus:bg-white"
+                type="tel"
+                inputMode="tel"
+                value={whatsAppNumber}
+                onChange={(event) => setWhatsAppNumber(event.target.value)}
+                placeholder="+55 (11) 99999-9999"
+              />
+              <p className="text-xs font-medium text-slate-500">
+                Esse numero podera ser usado nas notificacoes por WhatsApp quando esse canal estiver ativo.
+              </p>
             </label>
 
             <label className="block space-y-2">

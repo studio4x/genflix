@@ -520,9 +520,9 @@ export function AdminCoursesPage() {
 
                         {/* Hover Overlay Button */}
                         <div className="absolute inset-0 bg-blue-600/90 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-30">
-                           <Button className="bg-white text-blue-600 font-extrabold rounded-2xl h-12 px-6">
+                           <div className="flex h-12 items-center justify-center rounded-2xl bg-white px-6 font-extrabold text-[#15323B] shadow-xl">
                               Abrir Construtor
-                           </Button>
+                           </div>
                         </div>
                     </Link>
 

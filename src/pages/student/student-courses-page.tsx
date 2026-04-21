@@ -178,7 +178,7 @@ export function StudentCoursesPage() {
                 </div>
 
                 <div className="pointer-events-none absolute inset-0 z-30 flex items-center justify-center bg-blue-600/90 opacity-0 transition-opacity group-hover:opacity-100">
-                  <div className="flex h-12 items-center justify-center rounded-2xl bg-white px-6 font-black text-blue-600 shadow-xl">
+                  <div className="flex h-12 items-center justify-center rounded-2xl bg-white px-6 font-black text-[#15323B] shadow-xl">
                     Acessar Conteudo
                   </div>
                 </div>

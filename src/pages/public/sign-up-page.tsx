@@ -6,7 +6,9 @@ import { Link, Navigate, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/app/providers/auth-provider'
 import { GenflixCtaButton } from '@/components/public/genflix-cta-button'
 import { GenflixAuthLayout } from '@/components/public/genflix-auth-layout'
+import { LegalDocumentModal } from '@/components/public/legal-document-modal'
 import { getDashboardPathForRoles } from '@/features/auth/dashboard-path'
+import type { LegalDocumentKey } from '@/features/public/legal-documents'
 import { genflixHeroImage } from '@/features/public/genflix-site-content'
 
 export function SignUpPage() {
@@ -20,6 +22,7 @@ export function SignUpPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [openDocument, setOpenDocument] = useState<LegalDocumentKey | null>(null)
 
   const waitingRoleResolution = !!user && roles.length === 0
   const hasMinimumLength = useMemo(() => password.length >= 8, [password])
@@ -52,12 +55,12 @@ export function SignUpPage() {
     }
 
     if (password !== confirmPassword) {
-      setError('As senhas não conferem.')
+      setError('As senhas nao conferem.')
       return
     }
 
     if (!acceptTerms) {
-      setError('Você precisa concordar com os Termos de Uso e a Política de Privacidade.')
+      setError('Voce precisa concordar com os Termos de Uso e a Politica de Privacidade.')
       return
     }
 
@@ -166,13 +169,21 @@ export function SignUpPage() {
           />
           <span>
             Concordo com os{' '}
-            <Link to="/termos-de-uso" className="font-semibold text-[#1398B7] hover:text-[#1398B7]">
+            <button
+              type="button"
+              onClick={() => setOpenDocument('terms')}
+              className="font-semibold text-[#1398B7] hover:text-[#1398B7]"
+            >
               Termos de Uso
-            </Link>{' '}
+            </button>{' '}
             e{' '}
-            <Link to="/privacidade" className="font-semibold text-[#1398B7] hover:text-[#1398B7]">
-              Política de Privacidade
-            </Link>
+            <button
+              type="button"
+              onClick={() => setOpenDocument('privacy')}
+              className="font-semibold text-[#1398B7] hover:text-[#1398B7]"
+            >
+              Politica de Privacidade
+            </button>
             .
           </span>
         </label>
@@ -190,7 +201,7 @@ export function SignUpPage() {
         ) : null}
 
         <GenflixCtaButton type="submit" disabled={isSubmitting} className="h-12 w-full px-5">
-          {isSubmitting ? 'Criando conta...' : 'Criar conta grátis'}
+          {isSubmitting ? 'Criando conta...' : 'Criar conta gratis'}
         </GenflixCtaButton>
 
         <div className="flex items-center gap-4 py-1">
@@ -212,11 +223,15 @@ export function SignUpPage() {
       </form>
 
       <div className="mt-6 text-center text-sm text-[#5F7077]">
-        Já tem conta?{' '}
+        Ja tem conta?{' '}
         <Link to="/login" className="font-semibold text-[#1398B7] transition-colors hover:text-[#1398B7]">
           Entrar <ArrowRight className="inline h-3.5 w-3.5" />
         </Link>
       </div>
+
+      {openDocument ? (
+        <LegalDocumentModal documentKey={openDocument} onClose={() => setOpenDocument(null)} />
+      ) : null}
     </GenflixAuthLayout>
   )
 }
