@@ -9,7 +9,7 @@ const toneClasses: Record<GenflixCtaTone, string> = {
   solid:
     'border-white bg-[radial-gradient(circle_at_75%_25%,rgba(255,255,255,0.12),transparent_40%),linear-gradient(180deg,#19B7DA_0%,#0A3640_100%)] text-[#F6F6F6] shadow-[0px_4px_4px_rgba(0,0,0,0.25)] hover:shadow-[0px_6px_10px_rgba(0,0,0,0.28)]',
   warm:
-    'border-white bg-[radial-gradient(circle_at_75%_25%,rgba(255,241,226,0.9),transparent_40%),linear-gradient(180deg,#BC5836_0%,#B13711_100%)] text-[#F6F6F6] shadow-[0px_4px_4px_rgba(0,0,0,0.25)] hover:shadow-[0px_6px_10px_rgba(0,0,0,0.28)]',
+    'border-white bg-[radial-gradient(circle_at_75%_25%,rgba(231,248,241,0.92),transparent_40%),linear-gradient(180deg,#2FA66F_0%,#176E52_100%)] text-[#F6F6F6] shadow-[0px_4px_4px_rgba(0,0,0,0.25)] hover:shadow-[0px_6px_10px_rgba(0,0,0,0.28)]',
   surface:
     'border-[#D8E6EB] bg-white text-[#183139] shadow-[0_10px_24px_rgba(21,50,59,0.08)] hover:border-[#BEE3EA] hover:bg-[#F7FBFC]',
   ghost:
@@ -18,7 +18,7 @@ const toneClasses: Record<GenflixCtaTone, string> = {
 
 const iconClasses: Record<GenflixCtaTone, string> = {
   solid: 'bg-[#F8F0E8] text-[#1151B1]',
-  warm: 'bg-[#FFF1E2] text-[#B13711]',
+  warm: 'bg-[#E7F8F1] text-[#176E52]',
   surface: 'bg-[#EBF3F5] text-[#15323B]',
   ghost: 'border border-white/24 bg-white/16 text-white',
 }
