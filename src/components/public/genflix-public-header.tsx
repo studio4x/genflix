@@ -125,7 +125,7 @@ export function GenflixPublicHeader({
             </nav>
 
             <div className="flex items-center gap-3">
-              <GenflixCtaButton asChild tone={isHome ? 'solid' : 'surface'} className="hidden min-h-[48px] px-5 sm:inline-flex">
+              <GenflixCtaButton asChild tone={isHome ? 'solid' : 'surface'} className="hidden h-11 px-5 sm:inline-flex">
                 <Link to={ctaPath}>
                   <EditableText
                     entryKey={user ? 'global.header.cta.authenticated.label' : 'global.header.cta.anonymous.label'}
@@ -191,7 +191,7 @@ export function GenflixPublicHeader({
               </nav>
 
               <div className={cn('mt-4 border-t pt-4 sm:hidden', isHome ? 'border-white/10' : 'border-[#D8E6EB]')}>
-                <GenflixCtaButton asChild tone={isHome ? 'solid' : 'surface'} className="min-h-[48px] w-full justify-between">
+                <GenflixCtaButton asChild tone={isHome ? 'solid' : 'surface'} className="h-11 w-full px-5">
                   <Link to={ctaPath}>
                     <EditableText
                       entryKey={user ? 'global.header.cta.authenticated.label' : 'global.header.cta.anonymous.label'}

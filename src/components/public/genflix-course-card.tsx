@@ -34,10 +34,10 @@ export function GenflixCourseCard({
           </h3>
           <Link
             to={`/cursos/${course.slug}`}
-            className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[linear-gradient(180deg,#19B7DA_0%,#0A3640_100%)] text-white shadow-[0_8px_20px_rgba(10,54,64,0.18)] transition-transform duration-200 group-hover:translate-x-0.5"
+            className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#1C7082] text-white shadow-[0_4px_4px_rgba(0,0,0,0.12)] transition-transform duration-200 group-hover:translate-x-0.5"
             aria-label={`Abrir ${course.title}`}
           >
-            <ArrowUpRight className="h-4 w-4" />
+            <ArrowUpRight className="h-3 w-3" />
           </Link>
         </div>
 
