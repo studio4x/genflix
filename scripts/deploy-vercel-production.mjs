@@ -5,9 +5,18 @@ import path from 'node:path'
 
 const npxCommand = process.platform === 'win32' ? 'npx.cmd' : 'npx'
 const isWindows = process.platform === 'win32'
+const vercelToken = process.env.VERCEL_TOKEN?.trim() || process.env.VERCEL_ACCESS_TOKEN?.trim() || ''
 
 function quoteArg(value) {
   return /\s/.test(value) ? `"${value}"` : value
+}
+
+function withVercelAuthArgs(args) {
+  if (!vercelToken) {
+    return args
+  }
+
+  return [...args, '--token', vercelToken]
 }
 
 function run(command, args, options = {}) {
@@ -59,7 +68,7 @@ function ensureCleanGitWorktree() {
 ensureCleanGitWorktree()
 
 process.stdout.write('Gerando output prebuilt da Vercel sem bump adicional de build...\n')
-run(npxCommand, ['vercel', 'build', '--prod'], {
+run(npxCommand, withVercelAuthArgs(['vercel', 'build', '--prod']), {
   env: {
     CI: 'true',
   },
@@ -68,13 +77,18 @@ run(npxCommand, ['vercel', 'build', '--prod'], {
 const deployWorkspace = path.join(os.tmpdir(), 'hcm-vercel-prebuilt')
 const tempOutputDir = path.join(deployWorkspace, '.vercel', 'output')
 const tempProjectFile = path.join(deployWorkspace, '.vercel', 'project.json')
+const tempVercelEnvFile = path.join(deployWorkspace, '.vercel', '.env.production.local')
+const localVercelEnvFile = path.resolve('.vercel', '.env.production.local')
 
 fs.rmSync(deployWorkspace, { recursive: true, force: true })
 fs.mkdirSync(tempOutputDir, { recursive: true })
 fs.cpSync(path.resolve('.vercel', 'output'), tempOutputDir, { recursive: true })
 fs.copyFileSync(path.resolve('.vercel', 'project.json'), tempProjectFile)
+if (fs.existsSync(localVercelEnvFile)) {
+  fs.copyFileSync(localVercelEnvFile, tempVercelEnvFile)
+}
 
 process.stdout.write('Publicando output prebuilt em producao na Vercel a partir de workspace temporario sem metadados do git...\n')
-run(npxCommand, ['vercel', 'deploy', '--prebuilt', '--prod', '--yes'], {
+run(npxCommand, withVercelAuthArgs(['vercel', 'deploy', '--prebuilt', '--prod', '--yes']), {
   cwd: deployWorkspace,
 })
