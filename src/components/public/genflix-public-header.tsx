@@ -22,9 +22,9 @@ function HeaderNavLink({
   variant: 'home' | 'light'
 }) {
   const classes = cn(
-    'relative text-[13px] font-semibold tracking-[-0.01em] transition-colors',
+    'relative text-[15px] font-semibold leading-none tracking-[-0.02em] transition-colors',
     variant === 'home'
-      ? (isActive ? 'text-white' : 'text-white/78 hover:text-white')
+      ? (isActive ? 'font-extrabold text-white' : 'text-white hover:font-extrabold hover:text-white')
       : (isActive ? 'text-[#15323B]' : 'text-[#15323B]/78 hover:text-[#15323B]'),
     className,
   )
@@ -97,7 +97,7 @@ export function GenflixPublicHeader({
               <GenflixLogo theme={isHome ? 'light' : 'dark'} className="scale-[0.94] origin-left sm:scale-100" />
             </Link>
 
-            <nav className="hidden items-center gap-6 xl:flex">
+            <nav className="hidden items-center gap-8 xl:flex">
               <EditableList entryKey="global.header.navLinks" fallback={visibleNavLinks} label="Menu principal" pageKey="global">
                 {(items) => items.filter(isEditableItemVisible).map((item) => {
                   const navItem = {
@@ -183,7 +183,7 @@ export function GenflixPublicHeader({
                         item={navItem}
                         isActive={navItem.pageKey === currentPage}
                         variant={isHome ? 'home' : 'light'}
-                        className="rounded-[14px] px-3 py-3 text-sm"
+                        className="rounded-[14px] px-3 py-3 text-[15px]"
                       />
                     )
                   })}
