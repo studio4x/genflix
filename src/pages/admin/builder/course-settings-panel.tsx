@@ -276,40 +276,94 @@ export function CourseSettingsPanel() {
 
          <div className="bg-white rounded-[32px] border border-slate-200 shadow-sm p-6 md:p-10 space-y-10">
             {/* THUMBNAIL UPLOAD AREA */}
-            <div className="space-y-4">
-               <span className="text-xs font-black text-slate-400 uppercase tracking-widest pl-1">Capa do Curso (1024x768)</span>
-               <div 
-                  className={`relative group w-full rounded-[24px] border-2 border-dashed transition-all flex flex-col items-center justify-center overflow-hidden cursor-pointer ${
-                     form.thumbnail_url ? 'border-transparent' : 'border-slate-200 bg-slate-50/50 hover:bg-white hover:border-blue-400 hover:shadow-xl hover:shadow-blue-50'
-                  }`}
-                  style={{ aspectRatio: '4/3' }}
-               >
-                  {form.thumbnail_url ? (
-                     <>
-                        <img src={form.thumbnail_url} alt="" className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
-                        <div className="absolute inset-0 bg-slate-900/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-4">
-                           <p className="text-white font-black text-sm uppercase tracking-widest">Alterar Imagem</p>
-                           <Button type="button" variant="outline" size="sm" onClick={() => setForm(f => ({ ...f, thumbnail_url: '' }))} className="bg-white/20 border-white/40 text-white hover:bg-white hover:text-slate-900 font-bold">Remover</Button>
-                        </div>
-                     </>
-                  ) : (
-                     <div className="flex flex-col items-center gap-4 p-8 text-center" style={{ height: '100%' }}>
-                        <div className={`h-16 w-16 rounded-[20px] bg-white shadow-lg border border-slate-100 flex items-center justify-center text-slate-400 group-hover:text-blue-500 group-hover:rotate-6 transition-all duration-300 ${isUploadingThumbnail ? 'animate-pulse' : ''}`}>
+            <section className="rounded-[32px] border border-slate-200 bg-slate-50/40 p-5 md:p-6">
+               <div className="max-w-3xl space-y-3">
+                  <p className="text-[11px] font-black uppercase tracking-[0.26em] text-[#0F5AA3]">Capa do Curso</p>
+                  <h3 className="text-[2rem] font-black tracking-tight text-slate-900">Upload de imagem</h3>
+                  <p className="max-w-[860px] text-base leading-8 text-slate-600">
+                     A capa alimenta cards e paginas publicas. O upload gera um asset publico apenas para a imagem comercial do curso.
+                  </p>
+               </div>
+
+               <div className="mt-6 grid gap-4 xl:grid-cols-[260px_minmax(0,1fr)]">
+                  <div
+                     className={`relative overflow-hidden rounded-[28px] border border-[#0B5D8D]/20 bg-[radial-gradient(circle_at_top,_rgba(36,188,224,0.24),_transparent_55%),linear-gradient(145deg,#1AA0C7_0%,#104E6B_100%)] shadow-[0_24px_44px_rgba(16,78,107,0.18)] ${form.thumbnail_url ? 'min-h-[194px]' : 'min-h-[194px]'}`}
+                  >
+                     {form.thumbnail_url ? (
+                        <>
+                           <img src={form.thumbnail_url} alt="" className="absolute inset-0 h-full w-full object-cover" />
+                           <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(7,29,36,0.14)_0%,rgba(7,29,36,0.58)_100%)]" />
+                        </>
+                     ) : null}
+
+                     <div className="relative flex h-full min-h-[194px] items-center justify-center p-6">
+                        <div className={`flex h-16 w-16 items-center justify-center rounded-[20px] border border-white/50 bg-white/92 text-[#0F5AA3] shadow-lg shadow-black/10 transition-all ${isUploadingThumbnail ? 'animate-pulse' : ''}`}>
                            {isUploadingThumbnail ? (
-                              <svg className="h-8 w-8 animate-spin" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                              <svg className="h-7 w-7 animate-spin" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
                            ) : (
-                              <svg className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                              <svg className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 8h4m-2-2v4" />
+                              </svg>
                            )}
                         </div>
-                        <div className="space-y-1">
-                           <p className="text-sm font-black text-slate-800 uppercase tracking-tight">Upload da Capa</p>
-                           <p className="text-xs font-medium text-slate-400">Arraste ou clique para selecionar (JPG, PNG ou WEBP)</p>
-                        </div>
                      </div>
-                  )}
-                  <input type="file" accept="image/*" onChange={handleThumbnailUpload} className="absolute inset-0 opacity-0 cursor-pointer" title="Selecionar imagem da capa" />
+                  </div>
+
+                  <div className="rounded-[28px] border border-slate-200 bg-white px-5 py-5 md:px-6 md:py-6">
+                     <div className="space-y-2">
+                        <p className="text-xl font-black tracking-tight text-slate-900">Enviar nova imagem</p>
+                        <p className="text-base leading-7 text-slate-600">
+                           Formatos recomendados: JPG, PNG ou WEBP. Depois do upload, confirme em guardar configuracoes.
+                        </p>
+                     </div>
+
+                     <div className="mt-5 flex flex-wrap items-center gap-4">
+                        <label className="inline-flex cursor-pointer items-center gap-3">
+                           <span className="inline-flex h-11 items-center rounded-xl border border-slate-300 bg-slate-50 px-4 text-sm font-bold text-slate-800 transition-colors hover:border-[#1398B7]/40 hover:bg-white">
+                              Escolher arquivo
+                           </span>
+                           <input
+                              type="file"
+                              accept="image/*"
+                              onChange={handleThumbnailUpload}
+                              className="sr-only"
+                              title="Selecionar imagem da capa"
+                           />
+                        </label>
+                        <span className="text-sm font-medium text-slate-500">
+                           {isUploadingThumbnail
+                             ? 'Enviando imagem...'
+                             : form.thumbnail_url
+                               ? 'Imagem atual carregada. Escolha outro arquivo para substituir.'
+                               : 'Nenhum arquivo escolhido'}
+                        </span>
+                     </div>
+
+                     {form.thumbnail_url ? (
+                        <div className="mt-5 flex flex-wrap items-center gap-3">
+                           <a
+                              href={form.thumbnail_url}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-sm font-bold text-[#1398B7] transition-colors hover:text-[#0F5AA3]"
+                           >
+                              Abrir imagem atual
+                           </a>
+                           <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setForm((current) => ({ ...current, thumbnail_url: '' }))}
+                              className="rounded-xl border-slate-200 bg-white font-bold text-slate-600 hover:text-slate-900"
+                           >
+                              Remover imagem
+                           </Button>
+                        </div>
+                     ) : null}
+                  </div>
                </div>
-            </div>
+            </section>
 
             <div className="grid gap-8">
                <label className="block space-y-2">
