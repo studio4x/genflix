@@ -123,6 +123,17 @@ export function AdminSiteEditorPage() {
     [entries, pages],
   )
   const selectedPageStat = pageStats.find((page) => page.pageKey === selectedPageKey)?.totalEntries ?? 0
+
+  useEffect(() => {
+    if (pages.length === 0) {
+      return
+    }
+
+    if (!pages.some((page) => page.page_key === selectedPageKey)) {
+      setSelectedPageKey(pages[0].page_key)
+    }
+  }, [pages, selectedPageKey])
+
   const collaborationSummary = useMemo(() => {
     const relevantEntries = entries.filter((entry) => entry.page_key === selectedPageKey || entry.page_key === 'global')
     return relevantEntries.reduce((accumulator, entry) => {
@@ -336,8 +347,8 @@ export function AdminSiteEditorPage() {
         </article>
       </section>
 
-      <section className="grid gap-6 xl:grid-cols-[0.85fr_1.15fr]">
-        <div className="space-y-6">
+      <section className="grid gap-6 xl:grid-cols-[0.85fr_minmax(0,1.15fr)]">
+        <div className="min-w-0 space-y-6">
           <article className="border border-[#D8E6EB] bg-white p-5 shadow-sm">
             <h2 className="font-readex text-xl font-semibold text-[#15323b]">Governança compartilhada</h2>
             <p className="mt-2 text-sm font-semibold leading-6 text-[#5F7077]">
@@ -429,31 +440,45 @@ export function AdminSiteEditorPage() {
           </article>
 
           <article className="border border-[#D8E6EB] bg-white p-5 shadow-sm">
-            <h2 className="font-readex text-xl font-semibold text-[#15323b]">Páginas</h2>
-            <div className="mt-4 grid gap-2">
-              {pages.map((page) => (
-                <button
-                  type="button"
-                  key={page.page_key}
-                  onClick={() => setSelectedPageKey(page.page_key)}
-                  className={`border px-4 py-3 text-left text-sm font-black ${
-                    selectedPageKey === page.page_key
-                      ? 'border-[#1398B7] bg-[#E8F6FA] text-[#0A3640]'
-                      : 'border-[#D8E6EB] bg-white text-[#5F7077] hover:bg-[#F2F7F9]'
-                  }`}
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#1398B7]">Páginas</p>
+                <h2 className="mt-1 font-readex text-xl font-semibold text-[#15323b]">Selecione o contexto de edição</h2>
+                <p className="mt-2 text-sm font-semibold text-[#5F7077]">
+                  Escolha a página no seletor e mantenha os overrides abaixo, sem ocupar largura desnecessária.
+                </p>
+              </div>
+
+              <label className="grid min-w-[280px] gap-2">
+                <span className="text-[10px] font-black uppercase tracking-[0.18em] text-[#5F7077]">Página</span>
+                <select
+                  value={selectedPageKey}
+                  onChange={(event) => setSelectedPageKey(event.target.value as SitePageKey)}
+                  className="h-11 rounded-[14px] border border-[#D8E6EB] bg-white px-3 text-sm font-semibold text-[#15323b] outline-none"
                 >
-                  <span>{page.title}</span>
-                  <span className="ml-2 text-xs font-semibold opacity-70">{page.path}</span>
-                  <span className="ml-2 text-xs font-black uppercase opacity-70">
-                    {pageStats.find((item) => item.pageKey === page.page_key)?.totalEntries ?? 0} campo(s)
-                  </span>
-                </button>
-              ))}
+                  {pages.map((page) => (
+                    <option key={page.page_key} value={page.page_key}>
+                      {page.title} · {page.path}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+
+            <div className="mt-4 flex flex-wrap items-center gap-2">
+              <span className="inline-flex items-center rounded-full border border-[#D8E6EB] bg-[#F8FBFC] px-3 py-1 text-xs font-black uppercase tracking-[0.14em] text-[#15323b]">
+                {selectedPage?.title ?? selectedPageKey}
+              </span>
+              <span className="inline-flex items-center rounded-full border border-[#D8E6EB] bg-[#F8FBFC] px-3 py-1 text-xs font-black uppercase tracking-[0.14em] text-[#5F7077]">
+                {selectedPage?.path ?? selectedPageKey}
+              </span>
+              <span className="inline-flex items-center rounded-full border border-[#D8E6EB] bg-[#F8FBFC] px-3 py-1 text-xs font-black uppercase tracking-[0.14em] text-[#1398B7]">
+                {pageStats.find((item) => item.pageKey === selectedPageKey)?.totalEntries ?? 0} campo(s)
+              </span>
             </div>
           </article>
-        </div>
 
-        <section className="border border-[#D8E6EB] bg-white p-5 shadow-sm">
+        <section className="min-w-0 border border-[#D8E6EB] bg-white p-5 shadow-sm">
           <div className="flex flex-col gap-3 border-b border-[#D8E6EB] pb-5 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#1398B7]">Overrides</p>
@@ -656,6 +681,7 @@ export function AdminSiteEditorPage() {
             </div>
           ) : null}
         </section>
+        </div>
       </section>
     </div>
   )

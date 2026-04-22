@@ -2412,7 +2412,7 @@ export function VisualEditorProvider({ children }: { children: ReactNode }) {
       {canShowEditor && settings.is_enabled && settings.editing_enabled && !settings.fallback_mode ? (
         <div className="fixed bottom-5 right-5 z-[110] flex max-w-[calc(100%-24px)] items-end gap-3">
           {isTrayExpanded ? (
-            <div className="w-[min(calc(100vw-96px),720px)] rounded-[24px] border border-[#D8E6EB] bg-white/96 px-4 py-3 shadow-[0_18px_50px_rgba(6,27,33,0.16)] backdrop-blur">
+            <div className="w-[min(calc(100vw-96px),720px)] rounded-[24px] border border-[#D8E6EB] bg-white px-4 py-3 shadow-[0_18px_50px_rgba(6,27,33,0.16)]">
               <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
@@ -2442,7 +2442,7 @@ export function VisualEditorProvider({ children }: { children: ReactNode }) {
                 <Edit3 className="h-3.5 w-3.5" />
                 {isEditing ? 'Sair da edição' : 'Ativar edição'}
                   </button>
-                  <Link to="/admin/site-editor" className="inline-flex items-center gap-2 rounded-full border border-[#BEE3EA] bg-[#F8FCFD] px-4 py-2 text-xs font-black uppercase tracking-[0.16em] text-[#0A3640] hover:bg-[#EAF8FB]">
+                  <Link to="/admin/site-editor" className="inline-flex items-center gap-2 rounded-full border border-[#BEE3EA] bg-white px-4 py-2 text-xs font-black uppercase tracking-[0.16em] text-[#15323b] hover:bg-[#F2F7F9]">
                     <Settings className="h-3.5 w-3.5" />
                     Gestão
                   </Link>
@@ -2457,7 +2457,7 @@ export function VisualEditorProvider({ children }: { children: ReactNode }) {
             aria-label={isTrayExpanded ? 'Recolher controles do editor visual' : 'Expandir controles do editor visual'}
             className={cn(
               'inline-flex h-14 w-14 items-center justify-center rounded-full border border-[#D8E6EB] shadow-[0_18px_50px_rgba(6,27,33,0.16)] backdrop-blur transition hover:scale-[1.02]',
-              isTrayExpanded ? 'bg-[#0A3640] text-white' : 'bg-white/96 text-[#0A3640]',
+              isTrayExpanded ? 'bg-[#0A3640] text-white' : 'bg-white text-[#0A3640]',
             )}
           >
             {isTrayExpanded ? <X className="h-5 w-5" /> : <PanelBottomOpen className="h-5 w-5" />}
