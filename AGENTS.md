@@ -40,6 +40,31 @@ Se houver conflito entre instrucoes locais, esta diretriz deve ser tratada como 
   - se os ultimos deploys Git estao falhando com `TEAM_ACCESS_REQUIRED`;
   - se um deploy CLI `prebuilt` foi promovido com alias para o dominio principal.
 
+## Vinculo canonico da Vercel para este repositorio
+
+- Projeto canonico de producao na Vercel:
+  - team/escopo: `genflixcursos-6767s-projects`
+  - project name: `genflix`
+  - project id: `prj_PEBAfkCdpnfdrsM6W7G8LcLG4Rrl`
+- Dominio canonico de producao:
+  - `https://genflix-omega.vercel.app`
+- `APP_PUBLIC_URL` de producao deve permanecer apontando para:
+  - `https://genflix-omega.vercel.app`
+- Antes de qualquer `npm run deploy:vercel`, validar se `.vercel/project.json` esta vinculado a esse projeto canonico.
+- Se o workspace estiver vinculado ao projeto errado, relinkar antes do deploy:
+  - `vercel link --yes --project prj_PEBAfkCdpnfdrsM6W7G8LcLG4Rrl --scope genflixcursos-6767s-projects`
+  - `vercel pull --yes --environment production --scope genflixcursos-6767s-projects`
+- Sinais de vinculo incorreto:
+  - `.vercel/project.json` aponta para outro `projectId` ou outro `orgId`;
+  - o deploy publica em dominio diferente de `genflix-omega.vercel.app`;
+  - `vercel project ls --scope genflixcursos-6767s-projects` nao bate com o projeto local vinculado.
+- Regra operacional:
+  - desconsiderar `genflix-ten.vercel.app` como dominio de producao desta aplicacao;
+  - usar `genflix-omega.vercel.app` como fonte de verdade para validacao de build e smoke test final.
+- Seguranca:
+  - nunca registrar tokens da Vercel, senhas ou credenciais sensiveis em arquivos versionados do repositorio;
+  - tokens devem ser usados apenas em sessao/local env quando necessario para relink, pull ou deploy.
+
 ## Playbook de Edge Function 401
 
 Quando uma Edge Function acionada pelo frontend retornar `401` em `functions/v1/...`, seguir este fluxo:
