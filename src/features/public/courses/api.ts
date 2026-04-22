@@ -1,4 +1,8 @@
 import { publicSupabase } from '@/services/supabase/public-client'
+import {
+  isLegacyCourseSalesSchemaError,
+  withLegacyCourseSalesDefaults,
+} from '@/features/courses/schema-compat'
 import type { Course } from '@/types/content'
 
 export async function fetchPublicCatalogCourses(): Promise<Course[]> {
@@ -10,11 +14,26 @@ export async function fetchPublicCatalogCourses(): Promise<Course[]> {
     .order('display_order', { ascending: true })
     .order('created_at', { ascending: false })
 
+  if (result.error && isLegacyCourseSalesSchemaError(result.error)) {
+    const legacyResult = await publicSupabase
+      .from('courses')
+      .select('*')
+      .eq('status', 'published')
+      .order('display_order', { ascending: true })
+      .order('created_at', { ascending: false })
+
+    if (legacyResult.error) {
+      throw legacyResult.error
+    }
+
+    return ((legacyResult.data as Course[]) ?? []).map(withLegacyCourseSalesDefaults)
+  }
+
   if (result.error) {
     throw result.error
   }
 
-  return (result.data as Course[]) ?? []
+  return ((result.data as Course[]) ?? []).map(withLegacyCourseSalesDefaults)
 }
 
 export type StartCourseCheckoutBuyer = {

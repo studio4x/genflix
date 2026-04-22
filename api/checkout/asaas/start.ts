@@ -28,6 +28,38 @@ const startCheckoutSchema = z.object({
   buyerEmail: z.string().trim().email('E-mail inválido.').optional().or(z.literal('')),
 })
 
+function getErrorMessage(error: unknown) {
+  if (typeof error === 'string') {
+    return error
+  }
+
+  if (error && typeof error === 'object' && 'message' in error) {
+    const message = Reflect.get(error, 'message')
+    if (typeof message === 'string') {
+      return message
+    }
+  }
+
+  return ''
+}
+
+function isLegacyCourseSalesSchemaError(error: unknown) {
+  const message = getErrorMessage(error).toLowerCase()
+
+  return ['slug', 'launch_date', 'price_cents', 'currency', 'is_public'].some((column) => {
+    return (
+      message.includes(`courses.${column}`) ||
+      message.includes(`column ${column}`) ||
+      message.includes(`'${column}' column`) ||
+      message.includes(`"${column}"`)
+    ) && (
+      message.includes('does not exist') ||
+      message.includes('could not find') ||
+      message.includes('schema cache')
+    )
+  })
+}
+
 function parseBody(rawBody: unknown) {
   if (!rawBody) {
     return null
@@ -112,11 +144,31 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
     return
   }
 
-  const { data: course, error: courseError } = await adminClient
+  let { data: course, error: courseError } = await adminClient
     .from('courses')
     .select('id, title, description, status, price_cents, currency, is_public')
     .eq('id', parsed.data.courseId)
     .maybeSingle()
+
+  const usingLegacyCourseSalesSchema = Boolean(courseError && isLegacyCourseSalesSchemaError(courseError))
+
+  if (usingLegacyCourseSalesSchema) {
+    const legacyCourseResult = await adminClient
+      .from('courses')
+      .select('id, title, description, status')
+      .eq('id', parsed.data.courseId)
+      .maybeSingle()
+
+    course = legacyCourseResult.data
+      ? {
+        ...legacyCourseResult.data,
+        price_cents: null,
+        currency: 'BRL',
+        is_public: true,
+      }
+      : null
+    courseError = legacyCourseResult.error
+  }
 
   if (courseError) {
     jsonResponse(res, 500, { error: 'Não foi possível carregar o curso.' })
@@ -125,6 +177,11 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
 
   if (!course || course.status !== 'published' || course.is_public !== true) {
     jsonResponse(res, 404, { error: 'Curso indisponível para compra.' })
+    return
+  }
+
+  if (usingLegacyCourseSalesSchema) {
+    jsonResponse(res, 503, { error: 'Checkout indisponivel ate concluir a migracao comercial do banco.' })
     return
   }
 

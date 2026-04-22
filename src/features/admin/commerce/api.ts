@@ -1,4 +1,8 @@
 import { supabase } from '@/services/supabase/client'
+import {
+  isLegacyCourseSalesSchemaError,
+  withLegacyCourseSalesDefaults,
+} from '@/features/courses/schema-compat'
 
 export type PaymentGatewayEnvironment = 'sandbox' | 'production'
 
@@ -210,9 +214,24 @@ export async function fetchPublicCatalogCourses() {
     .order('display_order', { ascending: true })
     .order('created_at', { ascending: false })
 
+  if (result.error && isLegacyCourseSalesSchemaError(result.error)) {
+    const legacyResult = await supabase
+      .from('courses')
+      .select('*')
+      .eq('status', 'published')
+      .order('display_order', { ascending: true })
+      .order('created_at', { ascending: false })
+
+    if (legacyResult.error) {
+      throw legacyResult.error
+    }
+
+    return (legacyResult.data ?? []).map(withLegacyCourseSalesDefaults)
+  }
+
   if (result.error) {
     throw result.error
   }
 
-  return result.data ?? []
+  return (result.data ?? []).map(withLegacyCourseSalesDefaults)
 }

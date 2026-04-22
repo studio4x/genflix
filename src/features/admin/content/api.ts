@@ -5,6 +5,11 @@ import {
   type ImportAssessmentData,
 } from '@/features/admin/assessments/api'
 import { normalizeCourseQuizTypeSettings } from '@/features/assessments/course-quiz-type-settings'
+import {
+  isLegacyCourseSalesSchemaError,
+  stripLegacyCourseSalesFields,
+  withLegacyCourseSalesDefaults,
+} from '@/features/courses/schema-compat'
 import type {
   ButtonTemplate,
   Course,
@@ -96,7 +101,7 @@ export async function fetchCourses(): Promise<Course[]> {
   if (result.error) {
     throw result.error
   }
-  return (result.data as Course[]) ?? []
+  return ((result.data as Course[]) ?? []).map(withLegacyCourseSalesDefaults)
 }
 
 export async function createCourse(input: CourseFormInput, userId: string) {
@@ -112,30 +117,41 @@ export async function createCourse(input: CourseFormInput, userId: string) {
 
   const nextDisplayOrder = (positionResult.data?.[0]?.display_order ?? 0) + 1
 
-  const result = await supabase
+  const payload = {
+    title: input.title,
+    description: input.description?.trim() || null,
+    status: input.status,
+    display_order: nextDisplayOrder,
+    thumbnail_url: input.thumbnail_url?.trim() || null,
+    slug: input.slug?.trim() || slugify(input.title),
+    launch_date: input.launch_date?.trim() || null,
+    price_cents: input.price_cents ?? 0,
+    currency: input.currency,
+    is_public: input.is_public,
+    creator_id: input.creator_id || null,
+    creator_commission_percent: input.creator_commission_percent ?? 0,
+    quiz_type_settings: normalizeCourseQuizTypeSettings(input.quiz_type_settings),
+    created_by: userId,
+  }
+
+  let result = await supabase
     .from('courses')
-    .insert({
-      title: input.title,
-      description: input.description?.trim() || null,
-      status: input.status,
-      display_order: nextDisplayOrder,
-      thumbnail_url: input.thumbnail_url?.trim() || null,
-      slug: input.slug?.trim() || slugify(input.title),
-      launch_date: input.launch_date?.trim() || null,
-      price_cents: input.price_cents ?? 0,
-      currency: input.currency,
-      is_public: input.is_public,
-      creator_id: input.creator_id || null,
-      creator_commission_percent: input.creator_commission_percent ?? 0,
-      quiz_type_settings: normalizeCourseQuizTypeSettings(input.quiz_type_settings),
-      created_by: userId,
-    })
+    .insert(payload)
     .select('*')
     .single()
+
+  if (result.error && isLegacyCourseSalesSchemaError(result.error)) {
+    result = await supabase
+      .from('courses')
+      .insert(stripLegacyCourseSalesFields(payload))
+      .select('*')
+      .single()
+  }
+
   if (result.error) {
     throw result.error
   }
-  return result.data as Course
+  return withLegacyCourseSalesDefaults(result.data as Course)
 }
 
 export async function updateCoursesDisplayOrder(courses: Pick<Course, 'id' | 'display_order'>[]) {
@@ -152,30 +168,42 @@ export async function updateCoursesDisplayOrder(courses: Pick<Course, 'id' | 'di
 }
 
 export async function updateCourse(courseId: string, input: CourseFormInput) {
-  const result = await supabase
+  const payload = {
+    title: input.title,
+    description: input.description?.trim() || null,
+    status: input.status,
+    thumbnail_url: input.thumbnail_url?.trim() || null,
+    slug: input.slug?.trim() || slugify(input.title),
+    launch_date: input.launch_date?.trim() || null,
+    price_cents: input.price_cents ?? 0,
+    currency: input.currency,
+    is_public: input.is_public,
+    creator_id: input.creator_id || null,
+    creator_commission_percent: input.creator_commission_percent ?? 0,
+    has_linear_progression: input.has_linear_progression,
+    quiz_type_settings: normalizeCourseQuizTypeSettings(input.quiz_type_settings),
+  }
+
+  let result = await supabase
     .from('courses')
-    .update({
-      title: input.title,
-      description: input.description?.trim() || null,
-      status: input.status,
-      thumbnail_url: input.thumbnail_url?.trim() || null,
-      slug: input.slug?.trim() || slugify(input.title),
-      launch_date: input.launch_date?.trim() || null,
-      price_cents: input.price_cents ?? 0,
-      currency: input.currency,
-      is_public: input.is_public,
-      creator_id: input.creator_id || null,
-      creator_commission_percent: input.creator_commission_percent ?? 0,
-      has_linear_progression: input.has_linear_progression,
-      quiz_type_settings: normalizeCourseQuizTypeSettings(input.quiz_type_settings),
-    })
+    .update(payload)
     .eq('id', courseId)
     .select('*')
     .single()
+
+  if (result.error && isLegacyCourseSalesSchemaError(result.error)) {
+    result = await supabase
+      .from('courses')
+      .update(stripLegacyCourseSalesFields(payload))
+      .eq('id', courseId)
+      .select('*')
+      .single()
+  }
+
   if (result.error) {
     throw result.error
   }
-  return result.data as Course
+  return withLegacyCourseSalesDefaults(result.data as Course)
 }
 
 export async function updateCoursePublicPage(courseId: string, input: CoursePublicPageFormInput) {
@@ -266,7 +294,7 @@ export async function fetchCourse(courseId: string): Promise<Course | null> {
   if (result.error) {
     throw result.error
   }
-  return (result.data as Course | null) ?? null
+  return result.data ? withLegacyCourseSalesDefaults(result.data as Course) : null
 }
 
 export async function fetchModules(courseId: string): Promise<CourseModule[]> {
@@ -978,7 +1006,7 @@ export async function fetchAdminCourseTree(courseId: string): Promise<AdminCours
   // Course-level assessments (no module_id or course final assessment)
   const courseAssessments = assessments.filter(a => !a.module_id)
 
-  return { course, modules: treeModules, courseAssessments }
+  return { course: withLegacyCourseSalesDefaults(course), modules: treeModules, courseAssessments }
 }
 
 export function toErrorMessage(error: unknown): string {
