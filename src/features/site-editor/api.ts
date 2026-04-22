@@ -9,8 +9,48 @@ import {
   type SiteEditorSettings,
   type SitePageKey,
 } from '@/features/site-editor/types'
+import {
+  createSiteEditorWorkspaceKey,
+  getDefaultWorkspaceRecord,
+  sortWorkspaceComments,
+  type SiteEditorWorkflowStatus,
+  type SiteEditorWorkspaceComment,
+  type SiteEditorWorkspaceMap,
+  type SiteEditorWorkspaceRecord,
+} from '@/features/site-editor/collaboration'
 
 const SITE_ASSETS_BUCKET = 'site-assets'
+
+type WorkspaceRecordRow = {
+  id: string
+  page_key: SitePageKey
+  entry_key: string
+  status: SiteEditorWorkflowStatus
+  draft_raw_value: string | null
+  draft_text_style: Record<string, string> | null
+  updated_by: string | null
+  published_at: string | null
+  created_at: string
+  updated_at: string
+  site_editor_workspace_comments?: WorkspaceCommentRow[] | null
+}
+
+type WorkspaceCommentRow = {
+  id: string
+  body: string
+  author_role: string | null
+  created_by: string | null
+  created_at: string
+}
+
+export type SiteEditorAssistAction = 'rewrite' | 'summarize' | 'cta' | 'audit'
+
+export type SiteEditorAssistResponse = {
+  content: string
+  notes: string[]
+  warnings: string[]
+  provider: 'openai' | 'heuristic'
+}
 
 function isEditorForcedOff() {
   return import.meta.env.VITE_SITE_EDITOR_ENABLED === 'false'
@@ -256,4 +296,189 @@ export async function fetchSiteAssets(limit = 24) {
   }
 
   return (data ?? []) as SiteAsset[]
+}
+
+function normalizeWorkspaceComment(row: WorkspaceCommentRow): SiteEditorWorkspaceComment {
+  return {
+    id: row.id,
+    body: row.body,
+    createdAt: row.created_at,
+    authorRole: (row.author_role as SiteEditorWorkspaceComment['authorRole'] | null) ?? 'unknown',
+    createdBy: row.created_by,
+  }
+}
+
+function normalizeWorkspaceRecord(row: WorkspaceRecordRow): SiteEditorWorkspaceRecord {
+  const defaultRecord = getDefaultWorkspaceRecord(row.page_key, row.entry_key)
+
+  return {
+    ...defaultRecord,
+    id: row.id,
+    status: row.status,
+    draftRawValue: row.draft_raw_value,
+    draftTextStyle: row.draft_text_style ?? {},
+    updatedAt: row.updated_at,
+    publishedAt: row.published_at,
+    createdAt: row.created_at,
+    updatedBy: row.updated_by,
+    comments: sortWorkspaceComments((row.site_editor_workspace_comments ?? []).map(normalizeWorkspaceComment)),
+  }
+}
+
+export async function fetchSiteEditorWorkspace(pageKeys?: SitePageKey[]) {
+  const query = supabase
+    .from('site_editor_workspace_records')
+    .select(`
+      id,
+      page_key,
+      entry_key,
+      status,
+      draft_raw_value,
+      draft_text_style,
+      updated_by,
+      published_at,
+      created_at,
+      updated_at,
+      site_editor_workspace_comments (
+        id,
+        body,
+        author_role,
+        created_by,
+        created_at
+      )
+    `)
+    .order('updated_at', { ascending: false })
+
+  const filteredQuery = pageKeys && pageKeys.length > 0
+    ? query.in('page_key', pageKeys)
+    : query
+
+  const { data, error } = await filteredQuery
+
+  if (error) {
+    throw error
+  }
+
+  return ((data ?? []) as WorkspaceRecordRow[]).reduce<SiteEditorWorkspaceMap>((accumulator, row) => {
+    const normalizedRecord = normalizeWorkspaceRecord(row)
+    accumulator[createSiteEditorWorkspaceKey(normalizedRecord.pageKey, normalizedRecord.entryKey)] = normalizedRecord
+    return accumulator
+  }, {})
+}
+
+export async function upsertSiteEditorWorkspaceRecord(input: {
+  pageKey: SitePageKey
+  entryKey: string
+  status?: SiteEditorWorkflowStatus
+  draftRawValue?: string | null
+  draftTextStyle?: Record<string, string>
+  publishedAt?: string | null
+}) {
+  const { data: sessionData } = await supabase.auth.getSession()
+  const payload = {
+    page_key: input.pageKey,
+    entry_key: input.entryKey,
+    status: input.status ?? 'draft',
+    draft_raw_value: input.draftRawValue ?? null,
+    draft_text_style: input.draftTextStyle ?? {},
+    published_at: input.publishedAt ?? null,
+    updated_by: sessionData.session?.user.id ?? null,
+  }
+
+  const { data, error } = await supabase
+    .from('site_editor_workspace_records')
+    .upsert(payload, { onConflict: 'page_key,entry_key' })
+    .select(`
+      id,
+      page_key,
+      entry_key,
+      status,
+      draft_raw_value,
+      draft_text_style,
+      updated_by,
+      published_at,
+      created_at,
+      updated_at,
+      site_editor_workspace_comments (
+        id,
+        body,
+        author_role,
+        created_by,
+        created_at
+      )
+    `)
+    .single()
+
+  if (error) {
+    throw error
+  }
+
+  return normalizeWorkspaceRecord(data as WorkspaceRecordRow)
+}
+
+export async function createSiteEditorWorkspaceComment(input: {
+  pageKey: SitePageKey
+  entryKey: string
+  body: string
+  authorRole: string
+}) {
+  const normalizedBody = input.body.trim()
+  if (!normalizedBody) {
+    throw new Error('Comentario vazio.')
+  }
+
+  const workspace = await upsertSiteEditorWorkspaceRecord({
+    pageKey: input.pageKey,
+    entryKey: input.entryKey,
+  })
+
+  const { data: sessionData } = await supabase.auth.getSession()
+  const { error } = await supabase
+    .from('site_editor_workspace_comments')
+    .insert({
+      workspace_id: workspace.id,
+      body: normalizedBody,
+      author_role: input.authorRole || 'unknown',
+      created_by: sessionData.session?.user.id ?? null,
+    })
+
+  if (error) {
+    throw error
+  }
+
+  const refreshed = await fetchSiteEditorWorkspace([input.pageKey])
+  return refreshed[createSiteEditorWorkspaceKey(input.pageKey, input.entryKey)] ?? workspace
+}
+
+export async function requestSiteEditorAssist(input: {
+  pageKey: SitePageKey
+  entryKey: string
+  entryType: SiteContentEntryType
+  action: SiteEditorAssistAction
+  content: string
+}) {
+  const { data: sessionData } = await supabase.auth.getSession()
+  const response = await fetch('/api/admin/site-editor/assist', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${sessionData.session?.access_token ?? ''}`,
+    },
+    body: JSON.stringify(input),
+  })
+
+  const payload = (await response.json().catch(() => null)) as
+    | ({ error?: string } & Partial<SiteEditorAssistResponse>)
+    | null
+
+  if (!response.ok) {
+    throw new Error(payload?.error ?? 'Nao foi possivel gerar uma sugestao editorial.')
+  }
+
+  return {
+    content: payload?.content ?? '',
+    notes: payload?.notes ?? [],
+    warnings: payload?.warnings ?? [],
+    provider: payload?.provider ?? 'heuristic',
+  } satisfies SiteEditorAssistResponse
 }

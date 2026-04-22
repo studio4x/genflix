@@ -3,11 +3,11 @@ import { Link } from 'react-router-dom'
 import { AlertTriangle, Eye, EyeOff, ExternalLink, Filter, History, MessageSquare, RotateCcw, Save, Search, ShieldCheck } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
-import { useLocalStorageState } from '@/hooks/use-local-storage-state'
 import {
   clearPageOverrides,
   clearSiteContentEntryOverride,
   disableSiteEditorOverrides,
+  fetchSiteEditorWorkspace,
   fetchSiteContentVersions,
   fetchSiteEditorSettings,
   restoreSiteContentVersion,
@@ -18,8 +18,7 @@ import { defaultSiteEditorSettings } from '@/features/site-editor/types'
 import {
   createSiteEditorWorkspaceKey,
   formatWorkflowStatus,
-  SITE_EDITOR_WORKSPACE_STORAGE_KEY,
-  type SiteEditorWorkspaceRecord,
+  type SiteEditorWorkspaceMap,
 } from '@/features/site-editor/collaboration'
 import { supabase } from '@/services/supabase/client'
 
@@ -88,8 +87,7 @@ export function AdminSiteEditorPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
-  const initialWorkspaceState = useMemo(() => ({} as Record<string, SiteEditorWorkspaceRecord>), [])
-  const { state: workspaceState } = useLocalStorageState<Record<string, SiteEditorWorkspaceRecord>>(SITE_EDITOR_WORKSPACE_STORAGE_KEY, initialWorkspaceState)
+  const [workspaceState, setWorkspaceState] = useState<SiteEditorWorkspaceMap>({})
 
   const selectedPage = useMemo(
     () => pages.find((page) => page.page_key === selectedPageKey) ?? null,
@@ -154,8 +152,9 @@ export function AdminSiteEditorPage() {
     setMessage(null)
 
     try {
-      const [nextSettings, pagesResult, entriesResult] = await Promise.all([
+      const [nextSettings, workspaceRecords, pagesResult, entriesResult] = await Promise.all([
         fetchSiteEditorSettings(),
+        fetchSiteEditorWorkspace(),
         supabase
           .from('site_pages')
           .select('id, page_key, path, title, status')
@@ -170,6 +169,7 @@ export function AdminSiteEditorPage() {
       if (entriesResult.error) throw entriesResult.error
 
       setSettings(nextSettings)
+      setWorkspaceState(workspaceRecords)
       setPages((pagesResult.data ?? []) as SitePageRow[])
       setEntries((entriesResult.data ?? []) as SiteContentEntry[])
     } catch (error) {
@@ -181,6 +181,22 @@ export function AdminSiteEditorPage() {
 
   useEffect(() => {
     void loadData()
+  }, [loadData])
+
+  useEffect(() => {
+    const channel = supabase
+      .channel('site-editor-admin-collaboration')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'site_editor_workspace_records' }, () => {
+        void loadData()
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'site_editor_workspace_comments' }, () => {
+        void loadData()
+      })
+      .subscribe()
+
+    return () => {
+      void supabase.removeChannel(channel)
+    }
   }, [loadData])
 
   async function handleSettingsUpdate(input: Partial<Pick<SiteEditorSettings, 'is_enabled' | 'read_overrides_enabled' | 'editing_enabled' | 'fallback_mode'>>) {
@@ -323,13 +339,13 @@ export function AdminSiteEditorPage() {
       <section className="grid gap-6 xl:grid-cols-[0.85fr_1.15fr]">
         <div className="space-y-6">
           <article className="border border-[#D8E6EB] bg-white p-5 shadow-sm">
-            <h2 className="font-readex text-xl font-semibold text-[#15323b]">Governança local</h2>
+            <h2 className="font-readex text-xl font-semibold text-[#15323b]">Governança compartilhada</h2>
             <p className="mt-2 text-sm font-semibold leading-6 text-[#5F7077]">
-              Estes dados vivem no navegador atual e ajudam a controlar rascunho, revisão, aprovação e comentários antes da publicação.
+              Estes dados agora ficam persistidos no backend e refletem o fluxo compartilhado de rascunho, revisão, aprovação e comentários entre colaboradores do editor.
             </p>
             <div className="mt-5 grid gap-3 sm:grid-cols-2">
               <div className="rounded-[18px] border border-[#D8E6EB] bg-[#F8FBFC] p-4">
-                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#5F7077]">Rascunhos locais</p>
+                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#5F7077]">Rascunhos sincronizados</p>
                 <p className="mt-2 text-2xl font-black text-[#15323b]">{collaborationSummary.draftsWithContent}</p>
               </div>
               <div className="rounded-[18px] border border-[#D8E6EB] bg-[#F8FBFC] p-4">

@@ -1,5 +1,5 @@
 import { Navigate, createBrowserRouter } from 'react-router-dom'
-import type { ReactNode } from 'react'
+import { Suspense, lazy, type ReactNode } from 'react'
 
 import { AdminLayout } from '@/app/layouts/admin-layout'
 import { AdminCourseBuilderLayout } from '@/app/layouts/admin-course-builder-layout'
@@ -30,11 +30,7 @@ import { AdminSiteEditorPage } from '@/pages/admin/admin-site-editor-page'
 import { ForgotPasswordPage } from '@/pages/public/forgot-password-page'
 import { AuthCallbackPage } from '@/pages/public/auth-callback-page'
 import { CookiesPage } from '@/pages/public/cookies-page'
-import { PublicBlogPage } from '@/pages/public/public-blog-page'
 import { PublicBlogPostPage } from '@/pages/public/public-blog-post-page'
-import { PublicCommunityPage } from '@/pages/public/public-community-page'
-import { PublicContactPage } from '@/pages/public/public-contact-page'
-import { PublicCourseDetailsPage } from '@/pages/public/public-course-details-page'
 import { PublicAboutPage } from '@/pages/public/public-about-page'
 import { PublicFaqPage } from '@/pages/public/public-faq-page'
 import { PublicHelpPage } from '@/pages/public/public-help-page'
@@ -43,9 +39,6 @@ import { SignUpPage } from '@/pages/public/sign-up-page'
 import { PrivacyPage } from '@/pages/public/privacy-page'
 import { PublicReferPage } from '@/pages/public/public-refer-page'
 import { PublicRefundPolicyPage } from '@/pages/public/public-refund-policy-page'
-import { PublicCoursesPage } from '@/pages/public/public-courses-page'
-import { PublicHomePage } from '@/pages/public/public-home-page'
-import { PublicResourcesPage } from '@/pages/public/public-resources-page'
 import { PublicTeachPage } from '@/pages/public/public-teach-page'
 import { ResetPasswordPage } from '@/pages/public/reset-password-page'
 import { TermsOfUsePage } from '@/pages/public/terms-of-use-page'
@@ -73,6 +66,28 @@ import { CoursePublicPagePanel } from '@/pages/admin/builder/course-public-page-
 import { CourseAssessmentsPanel } from '@/pages/admin/builder/course-assessments-panel'
 import { AssessmentBuilderPanel } from '@/pages/admin/builder/assessment-builder-panel'
 
+const PublicHomePage = lazy(async () => ({ default: (await import('@/pages/public/public-home-page')).PublicHomePage }))
+const PublicCoursesPage = lazy(async () => ({ default: (await import('@/pages/public/public-courses-page')).PublicCoursesPage }))
+const PublicCourseDetailsPage = lazy(async () => ({ default: (await import('@/pages/public/public-course-details-page')).PublicCourseDetailsPage }))
+const PublicBlogPage = lazy(async () => ({ default: (await import('@/pages/public/public-blog-page')).PublicBlogPage }))
+const PublicCommunityPage = lazy(async () => ({ default: (await import('@/pages/public/public-community-page')).PublicCommunityPage }))
+const PublicContactPage = lazy(async () => ({ default: (await import('@/pages/public/public-contact-page')).PublicContactPage }))
+const PublicResourcesPage = lazy(async () => ({ default: (await import('@/pages/public/public-resources-page')).PublicResourcesPage }))
+
+function withRouteSuspense(children: ReactNode) {
+  return (
+    <Suspense
+      fallback={(
+        <div className="flex min-h-[320px] items-center justify-center bg-[#F2F7F9] px-6 py-10 text-sm font-bold text-[#5F7077]">
+          Carregando pagina...
+        </div>
+      )}
+    >
+      {children}
+    </Suspense>
+  )
+}
+
 type PublicSeoConfig = {
   entryKey: string
   fallback: {
@@ -98,7 +113,7 @@ function PublicEditableRoute({
       <SiteContentScope pageKey={pageKey}>
         <EditableControlsHint />
         {seo ? <EditablePageSeo pageKey={pageKey} entryKey={seo.entryKey} fallback={seo.fallback} label={seo.label} /> : null}
-        {children}
+        {withRouteSuspense(children)}
       </SiteContentScope>
     </VisualEditorProvider>
   )

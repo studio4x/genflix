@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link, Outlet, useNavigate, useParams } from 'react-router-dom'
 
 import { useAuth } from '@/app/providers/auth-provider'
@@ -27,6 +27,7 @@ export function StudentCoursePlayerLayout() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [isSidebarOpen, setIsSidebarOpen] = useState(true)
+  const [sidebarQuery, setSidebarQuery] = useState('')
 
   useEffect(() => {
     let isMounted = true
@@ -160,6 +161,38 @@ export function StudentCoursePlayerLayout() {
   const totalModules = modules.length
   const courseProgressPercent = totalModules === 0 ? 0 : Math.round((totalCompleted / totalModules) * 100)
   const finalAssessment = assessments.find((assessment) => assessment.assessment_type === 'final')
+  const normalizedSidebarQuery = sidebarQuery.trim().toLowerCase()
+  const filteredSidebarModules = useMemo(() => {
+    return modules
+      .map((module) => {
+        const moduleQuizzes = assessments
+          .filter((assessment) => assessment.assessment_type === 'module' && assessment.module_id === module.id)
+          .sort((assessmentA, assessmentB) => assessmentA.title.localeCompare(assessmentB.title, 'pt-BR'))
+        const matchesModule = normalizedSidebarQuery.length === 0 || module.title.toLowerCase().includes(normalizedSidebarQuery)
+        const filteredLessons = normalizedSidebarQuery.length === 0
+          ? module.lessons
+          : module.lessons.filter((lesson) => lesson.title.toLowerCase().includes(normalizedSidebarQuery))
+        const filteredQuizzes = normalizedSidebarQuery.length === 0
+          ? moduleQuizzes
+          : moduleQuizzes.filter((assessment) => assessment.title.toLowerCase().includes(normalizedSidebarQuery))
+
+        if (
+          normalizedSidebarQuery.length > 0
+          && !matchesModule
+          && filteredLessons.length === 0
+          && filteredQuizzes.length === 0
+        ) {
+          return null
+        }
+
+        return {
+          module,
+          lessons: filteredLessons,
+          moduleQuizzes: filteredQuizzes,
+        }
+      })
+      .filter((entry): entry is { module: StudentCourseModuleProgress; lessons: StudentCourseModuleProgress['lessons']; moduleQuizzes: StudentCourseAssessmentSummary[] } => entry !== null)
+  }, [assessments, modules, normalizedSidebarQuery])
 
   return (
     <div className="flex h-screen w-full overflow-hidden bg-slate-50 text-slate-900">
@@ -183,11 +216,22 @@ export function StudentCoursePlayerLayout() {
                 style={{ width: `${courseProgressPercent}%` }}
               />
             </div>
+            <label className="mt-4 block">
+              <span className="mb-2 block text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
+                Buscar no conteudo
+              </span>
+              <input
+                value={sidebarQuery}
+                onChange={(event) => setSidebarQuery(event.target.value)}
+                placeholder="Modulo, aula ou quiz"
+                className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 outline-none transition-colors placeholder:text-slate-400 focus:border-blue-500"
+              />
+            </label>
           </div>
         </div>
 
         <div className="no-scrollbar flex-1 overflow-y-auto py-2">
-          {modules.map((m, mIdx) => (
+          {filteredSidebarModules.map(({ module: m, lessons, moduleQuizzes }, mIdx) => (
             <div key={m.id} className="mb-4">
               <div className="sticky top-0 z-10 bg-white px-4 py-2">
                 <h4 className="text-xs font-extrabold uppercase tracking-widest leading-tight text-slate-800">
@@ -196,7 +240,7 @@ export function StudentCoursePlayerLayout() {
                 <p className="mt-0.5 truncate text-sm font-bold text-slate-500" title={m.title}>{m.title}</p>
               </div>
               <div className="mt-1 space-y-0.5 px-2">
-                {m.lessons.map((l) => {
+                {lessons.map((l) => {
                   const isActive = l.id === lessonId
                   const isBlocked = m.state === 'blocked'
                   return (
@@ -241,9 +285,6 @@ export function StudentCoursePlayerLayout() {
                 })}
 
                 {(() => {
-                  const moduleQuizzes = assessments
-                    .filter((assessment) => assessment.assessment_type === 'module' && assessment.module_id === m.id)
-                    .sort((assessmentA, assessmentB) => assessmentA.title.localeCompare(assessmentB.title, 'pt-BR'))
                   if (moduleQuizzes.length === 0) return null
 
                   const allModuleLessonsCompleted = m.lessons.length > 0 && m.lessons.every((lesson) => lesson.is_completed)
@@ -297,6 +338,12 @@ export function StudentCoursePlayerLayout() {
               </div>
             </div>
           ))}
+          {filteredSidebarModules.length === 0 ? (
+            <div className="px-4 py-8 text-center">
+              <p className="text-sm font-semibold text-slate-600">Nenhum item encontrado.</p>
+              <p className="mt-2 text-xs font-medium text-slate-400">Ajuste a busca para localizar modulos, aulas ou quizzes.</p>
+            </div>
+          ) : null}
 
           {finalAssessment && (
             <div className="mb-4">

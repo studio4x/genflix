@@ -10,9 +10,13 @@ export type SiteEditorWorkspaceComment = {
   body: string
   createdAt: string
   authorRole: RoleCode | 'unknown'
+  createdBy?: string | null
+  authorName?: string | null
+  authorEmail?: string | null
 }
 
 export type SiteEditorWorkspaceRecord = {
+  id?: string
   pageKey: SitePageKey
   entryKey: string
   status: SiteEditorWorkflowStatus
@@ -21,7 +25,11 @@ export type SiteEditorWorkspaceRecord = {
   draftTextStyle: Record<string, string>
   updatedAt: string | null
   publishedAt: string | null
+  createdAt?: string | null
+  updatedBy?: string | null
 }
+
+export type SiteEditorWorkspaceMap = Record<string, SiteEditorWorkspaceRecord>
 
 export type SiteEditorRolePermissions = {
   canEdit: boolean
@@ -47,6 +55,12 @@ export function getDefaultWorkspaceRecord(pageKey: SitePageKey, entryKey: string
     updatedAt: null,
     publishedAt: null,
   }
+}
+
+export function sortWorkspaceComments(comments: SiteEditorWorkspaceComment[]) {
+  return [...comments].sort((commentA, commentB) => {
+    return new Date(commentB.createdAt).getTime() - new Date(commentA.createdAt).getTime()
+  })
 }
 
 export function getSiteEditorPermissions(roles: RoleCode[]): SiteEditorRolePermissions {

@@ -110,6 +110,51 @@ export function StudentDashboardPage() {
     }) ?? courses[0] ?? null
   }, [courseStatuses, courses])
 
+  const attentionItems = useMemo(() => {
+    const finalPendingCourses = courses
+      .filter((course) => getStudentCourseJourneyStatus(courseStatuses.get(course.id) ?? null) === 'final_pending')
+      .slice(0, 2)
+      .map((course) => ({
+        id: `final-${course.id}`,
+        title: 'Prova final pendente',
+        description: `Finalize ${course.title} para concluir sua jornada neste curso.`,
+        to: `/aluno/cursos/${course.id}`,
+        cta: 'Resolver agora',
+        tone: 'amber' as const,
+      }))
+
+    const inProgressCourses = courses
+      .filter((course) => {
+        const journeyStatus = getStudentCourseJourneyStatus(courseStatuses.get(course.id) ?? null)
+        return journeyStatus === 'in_progress' && startedCourseIds.has(course.id)
+      })
+      .slice(0, 2)
+      .map((course) => ({
+        id: `progress-${course.id}`,
+        title: 'Retomar conteudo',
+        description: `Continue de onde voce parou em ${course.title}.`,
+        to: `/aluno/cursos/${course.id}`,
+        cta: 'Continuar',
+        tone: 'blue' as const,
+      }))
+
+    const items = [...finalPendingCourses, ...inProgressCourses]
+    if (items.length > 0) {
+      return items.slice(0, 3)
+    }
+
+    return [
+      {
+        id: 'catalog',
+        title: 'Explorar o catalogo',
+        description: 'Revise seus treinamentos liberados e escolha o melhor proximo passo.',
+        to: '/aluno/cursos',
+        cta: 'Ver cursos',
+        tone: 'slate' as const,
+      },
+    ]
+  }, [courseStatuses, courses, startedCourseIds])
+
   const recommendedCourses = useMemo(() => {
     const prioritizedCourses = courses.filter((course) => {
       const journeyStatus = getStudentCourseJourneyStatus(courseStatuses.get(course.id) ?? null)
@@ -187,6 +232,37 @@ export function StudentDashboardPage() {
 
       <section className="grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(360px,0.9fr)]">
         <div className="space-y-6">
+          <article className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-[0.24em] text-slate-400">Atencao imediata</p>
+              <h3 className="mt-2 text-2xl font-black tracking-tight text-slate-900">O que vale priorizar agora</h3>
+            </div>
+
+            <div className="mt-5 space-y-3">
+              {attentionItems.map((item) => (
+                <Link
+                  key={item.id}
+                  to={item.to}
+                  className={`block rounded-[24px] border px-4 py-4 transition-all ${
+                    item.tone === 'amber'
+                      ? 'border-amber-100 bg-amber-50 hover:border-amber-200 hover:bg-amber-100/60'
+                      : item.tone === 'blue'
+                        ? 'border-blue-100 bg-blue-50 hover:border-blue-200 hover:bg-blue-100/70'
+                        : 'border-slate-200 bg-slate-50 hover:border-slate-300 hover:bg-slate-100/70'
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-black text-slate-900">{item.title}</p>
+                      <p className="mt-1 text-sm leading-6 text-slate-500">{item.description}</p>
+                    </div>
+                    <span className="text-xs font-black uppercase tracking-[0.18em] text-slate-500">{item.cta}</span>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </article>
+
           <article className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
             <div className="flex items-center justify-between gap-4">
               <div>

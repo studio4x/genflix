@@ -14,14 +14,18 @@ import { Link, useLocation } from 'react-router-dom'
 import { CheckCircle2, Copy, Edit3, Image as ImageIcon, Keyboard, LayoutTemplate, MessageSquare, PanelBottomOpen, Plus, Redo2, RotateCcw, Save, Send, Settings, Sparkles, Undo2, Wand2, X } from 'lucide-react'
 
 import { useAuth } from '@/app/providers/auth-provider'
-import { useLocalStorageState } from '@/hooks/use-local-storage-state'
+import { supabase } from '@/services/supabase/client'
 import { cn } from '@/lib/utils'
 import {
+  createSiteEditorWorkspaceComment,
   fetchSiteAssets,
   fetchSiteContent,
+  fetchSiteEditorWorkspace,
   fetchSiteEditorSettings,
+  requestSiteEditorAssist,
   saveSiteContentEntry,
   shouldIgnoreSiteEditor,
+  upsertSiteEditorWorkspaceRecord,
   uploadSiteAsset,
 } from '@/features/site-editor/api'
 import {
@@ -39,8 +43,8 @@ import {
   formatWorkflowStatus,
   getDefaultWorkspaceRecord,
   getSiteEditorPermissions,
-  SITE_EDITOR_WORKSPACE_STORAGE_KEY,
   type SiteEditorWorkflowStatus,
+  type SiteEditorWorkspaceMap,
   type SiteEditorWorkspaceRecord,
 } from '@/features/site-editor/collaboration'
 
@@ -968,15 +972,16 @@ function EditorModal({
   const [assetLibrary, setAssetLibrary] = useState<SiteAsset[]>([])
   const [isLoadingAssetLibrary, setIsLoadingAssetLibrary] = useState(false)
   const [draftComment, setDraftComment] = useState('')
+  const [workspaceState, setWorkspaceState] = useState<SiteEditorWorkspaceMap>({})
+  const [isLoadingWorkspace, setIsLoadingWorkspace] = useState(false)
+  const [isRunningAssist, setIsRunningAssist] = useState(false)
+  const [assistNotes, setAssistNotes] = useState<string[]>([])
+  const [assistWarnings, setAssistWarnings] = useState<string[]>([])
+  const [assistProvider, setAssistProvider] = useState<'openai' | 'heuristic' | null>(null)
   const usesJsonEditor = ['list', 'json', 'link', 'button', 'image'].includes(editor.entryType)
   const usesRichTextToolbar = editor.entryType === 'rich_text'
   const isDirty = rawValue !== initialRawValue || JSON.stringify(initialTextStyle) !== JSON.stringify(textStyle)
   const workspaceKey = useMemo(() => createSiteEditorWorkspaceKey(editor.pageKey, editor.entryKey), [editor.entryKey, editor.pageKey])
-  const initialWorkspaceState = useMemo(() => ({} as Record<string, SiteEditorWorkspaceRecord>), [])
-  const {
-    state: workspaceState,
-    setState: setWorkspaceState,
-  } = useLocalStorageState<Record<string, SiteEditorWorkspaceRecord>>(SITE_EDITOR_WORKSPACE_STORAGE_KEY, initialWorkspaceState)
   const workspaceRecord = workspaceState[workspaceKey] ?? getDefaultWorkspaceRecord(editor.pageKey, editor.entryKey)
   const [history, setHistory] = useState<Array<{ rawValue: string; textStyle: TextStyleValue }>>([])
   const [future, setFuture] = useState<Array<{ rawValue: string; textStyle: TextStyleValue }>>([])
@@ -1014,14 +1019,11 @@ function EditorModal({
   const comments = workspaceRecord.comments
   const draftAvailable = typeof workspaceRecord.draftRawValue === 'string' && workspaceRecord.draftRawValue.trim() !== ''
 
-  function updateWorkspaceRecord(updater: (current: SiteEditorWorkspaceRecord) => SiteEditorWorkspaceRecord) {
-    setWorkspaceState((current) => {
-      const currentRecord = current[workspaceKey] ?? getDefaultWorkspaceRecord(editor.pageKey, editor.entryKey)
-      return {
-        ...current,
-        [workspaceKey]: updater(currentRecord),
-      }
-    })
+  function replaceWorkspaceRecord(nextRecord: SiteEditorWorkspaceRecord) {
+    setWorkspaceState((current) => ({
+      ...current,
+      [workspaceKey]: nextRecord,
+    }))
   }
 
   function updateListEditor(nextItems: EditableListItem[]) {
@@ -1063,6 +1065,46 @@ function EditorModal({
 
     onClose()
   }, [isDirty, onClose])
+
+  useEffect(() => {
+    let isMounted = true
+    setIsLoadingWorkspace(true)
+
+    void fetchSiteEditorWorkspace([editor.pageKey])
+      .then((records) => {
+        if (!isMounted) return
+        setWorkspaceState(records)
+      })
+      .catch(() => {
+        if (!isMounted) return
+        setWorkspaceState({})
+      })
+      .finally(() => {
+        if (!isMounted) return
+        setIsLoadingWorkspace(false)
+      })
+
+    const channel = supabase
+      .channel(`site-editor-modal-${workspaceKey}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'site_editor_workspace_records' }, () => {
+        void fetchSiteEditorWorkspace([editor.pageKey]).then((records) => {
+          if (!isMounted) return
+          setWorkspaceState(records)
+        })
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'site_editor_workspace_comments' }, () => {
+        void fetchSiteEditorWorkspace([editor.pageKey]).then((records) => {
+          if (!isMounted) return
+          setWorkspaceState(records)
+        })
+      })
+      .subscribe()
+
+    return () => {
+      isMounted = false
+      void supabase.removeChannel(channel)
+    }
+  }, [editor.pageKey, workspaceKey])
 
   useEffect(() => {
     const currentSnapshot = {
@@ -1133,17 +1175,23 @@ function EditorModal({
     }
   }, [editor.entryType])
 
-  function handleSaveDraft() {
-    updateWorkspaceRecord((current) => ({
-      ...current,
-      status: 'draft',
-      draftRawValue: rawValue,
-      draftTextStyle: Object.fromEntries(
-        Object.entries(textStyle).filter(([, value]) => typeof value === 'string' && value.trim() !== ''),
-      ) as Record<string, string>,
-      updatedAt: new Date().toISOString(),
-    }))
-    setMessage('Rascunho salvo localmente neste navegador.')
+  async function handleSaveDraft() {
+    try {
+      const nextRecord = await upsertSiteEditorWorkspaceRecord({
+        pageKey: editor.pageKey,
+        entryKey: editor.entryKey,
+        status: 'draft',
+        draftRawValue: rawValue,
+        draftTextStyle: Object.fromEntries(
+          Object.entries(textStyle).filter(([, value]) => typeof value === 'string' && value.trim() !== ''),
+        ) as Record<string, string>,
+        publishedAt: workspaceRecord.publishedAt,
+      })
+      replaceWorkspaceRecord(nextRecord)
+      setMessage('Rascunho sincronizado no workspace compartilhado.')
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Nao foi possivel salvar o rascunho.')
+    }
   }
 
   function handleLoadDraft() {
@@ -1155,39 +1203,77 @@ function EditorModal({
       rawValue: workspaceRecord.draftRawValue,
       textStyle: normalizeTextStyle(workspaceRecord.draftTextStyle),
     })
-    setMessage('Rascunho local carregado.')
+    setMessage('Rascunho sincronizado carregado.')
   }
 
-  function handleWorkflowStatus(nextStatus: SiteEditorWorkflowStatus) {
-    updateWorkspaceRecord((current) => ({
-      ...current,
-      status: nextStatus,
-      updatedAt: new Date().toISOString(),
-    }))
-    setMessage(`Status atualizado para ${formatWorkflowStatus(nextStatus)}.`)
+  async function handleWorkflowStatus(nextStatus: SiteEditorWorkflowStatus) {
+    try {
+      const nextRecord = await upsertSiteEditorWorkspaceRecord({
+        pageKey: editor.pageKey,
+        entryKey: editor.entryKey,
+        status: nextStatus,
+        draftRawValue: workspaceRecord.draftRawValue,
+        draftTextStyle: workspaceRecord.draftTextStyle,
+        publishedAt: nextStatus === 'published' ? new Date().toISOString() : workspaceRecord.publishedAt,
+      })
+      replaceWorkspaceRecord(nextRecord)
+      setMessage(`Status atualizado para ${formatWorkflowStatus(nextStatus)}.`)
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Nao foi possivel atualizar o status.')
+    }
   }
 
-  function handleAddComment() {
+  async function handleAddComment() {
     const normalizedComment = draftComment.trim()
     if (!normalizedComment) {
       return
     }
 
-    updateWorkspaceRecord((current) => ({
-      ...current,
-      comments: [
-        {
-          id: crypto.randomUUID(),
-          body: normalizedComment,
-          createdAt: new Date().toISOString(),
-          authorRole: roles[0] ?? 'unknown',
-        },
-        ...current.comments,
-      ],
-      updatedAt: new Date().toISOString(),
-    }))
-    setDraftComment('')
-    setMessage('Comentário interno registrado.')
+    try {
+      const nextRecord = await createSiteEditorWorkspaceComment({
+        pageKey: editor.pageKey,
+        entryKey: editor.entryKey,
+        body: normalizedComment,
+        authorRole: roles[0] ?? 'unknown',
+      })
+      replaceWorkspaceRecord(nextRecord)
+      setDraftComment('')
+      setMessage('Comentario compartilhado registrado.')
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Nao foi possivel registrar o comentario.')
+    }
+  }
+
+  async function handleAssist(action: 'rewrite' | 'summarize' | 'cta' | 'audit') {
+    setAssistNotes([])
+    setAssistWarnings([])
+    setAssistProvider(null)
+    setMessage(null)
+    setIsRunningAssist(true)
+
+    try {
+      const result = await requestSiteEditorAssist({
+        pageKey: editor.pageKey,
+        entryKey: editor.entryKey,
+        entryType: editor.entryType,
+        action,
+        content: rawValue,
+      })
+
+      setAssistNotes(result.notes)
+      setAssistWarnings(result.warnings)
+      setAssistProvider(result.provider)
+
+      if (action !== 'audit' && result.content.trim()) {
+        setRawValue(result.content)
+      }
+
+      setMessage(action === 'audit' ? 'Auditoria editorial concluida.' : 'Sugestao editorial aplicada ao rascunho atual.')
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Nao foi possivel gerar a sugestao editorial.')
+    } finally {
+      setIsRunningAssist(false)
+    }
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -1219,14 +1305,15 @@ function EditorModal({
           schema: { kind: 'text-style' },
         })
       }
-      updateWorkspaceRecord((current) => ({
-        ...current,
+      const nextRecord = await upsertSiteEditorWorkspaceRecord({
+        pageKey: editor.pageKey,
+        entryKey: editor.entryKey,
         status: 'published',
-        publishedAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
         draftRawValue: null,
         draftTextStyle: {},
-      }))
+        publishedAt: new Date().toISOString(),
+      })
+      replaceWorkspaceRecord(nextRecord)
       await editor.reload()
       onSaved()
       setMessage('Conteúdo publicado com sucesso.')
@@ -2043,6 +2130,81 @@ function EditorModal({
 
             <div className="rounded-[22px] border border-[#D8E6EB] bg-white p-4">
               <div className="flex items-center gap-2">
+                <Wand2 className="h-4 w-4 text-[#1398B7]" />
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#1398B7]">Assistencia editorial</p>
+              </div>
+              <div className="mt-4 grid gap-3">
+                <p className="text-sm font-semibold leading-6 text-[#5F7077]">
+                  Gere sugestoes para reescrita, resumo, CTA ou auditoria de clareza sem perder o bloco atual.
+                </p>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <button
+                    type="button"
+                    onClick={() => void handleAssist('rewrite')}
+                    disabled={isRunningAssist || !permissions.canEdit}
+                    className="inline-flex items-center justify-center gap-2 rounded-full border border-[#D8E6EB] px-4 py-2 text-xs font-black uppercase tracking-[0.14em] text-[#0A3640] hover:bg-[#F2F7F9] disabled:opacity-60"
+                  >
+                    <Sparkles className="h-3.5 w-3.5" />
+                    Reescrever
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void handleAssist('summarize')}
+                    disabled={isRunningAssist || !permissions.canEdit}
+                    className="inline-flex items-center justify-center gap-2 rounded-full border border-[#D8E6EB] px-4 py-2 text-xs font-black uppercase tracking-[0.14em] text-[#0A3640] hover:bg-[#F2F7F9] disabled:opacity-60"
+                  >
+                    <Copy className="h-3.5 w-3.5" />
+                    Resumir
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void handleAssist('cta')}
+                    disabled={isRunningAssist || !permissions.canEdit}
+                    className="inline-flex items-center justify-center gap-2 rounded-full border border-[#D8E6EB] px-4 py-2 text-xs font-black uppercase tracking-[0.14em] text-[#0A3640] hover:bg-[#F2F7F9] disabled:opacity-60"
+                  >
+                    <Send className="h-3.5 w-3.5" />
+                    Sugerir CTA
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void handleAssist('audit')}
+                    disabled={isRunningAssist || !permissions.canEdit}
+                    className="inline-flex items-center justify-center gap-2 rounded-full border border-[#D8E6EB] px-4 py-2 text-xs font-black uppercase tracking-[0.14em] text-[#0A3640] hover:bg-[#F2F7F9] disabled:opacity-60"
+                  >
+                    <CheckCircle2 className="h-3.5 w-3.5" />
+                    Auditar texto
+                  </button>
+                </div>
+                <div className="rounded-[16px] border border-[#D8E6EB] bg-[#F8FCFD] p-3 text-xs font-semibold leading-5 text-[#5F7077]">
+                  {isRunningAssist
+                    ? 'Gerando sugestao editorial...'
+                    : assistProvider
+                      ? `Ultima sugestao processada via ${assistProvider === 'openai' ? 'OpenAI' : 'heuristica local'}.`
+                      : 'Use a assistencia para refinar copy, reduzir verbosidade e revisar clareza.'}
+                </div>
+                {assistNotes.length > 0 ? (
+                  <div className="grid gap-2">
+                    {assistNotes.map((note) => (
+                      <div key={note} className="rounded-[14px] border border-[#D8E6EB] bg-white px-3 py-2 text-xs font-semibold leading-5 text-[#15323b]">
+                        {note}
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
+                {assistWarnings.length > 0 ? (
+                  <div className="grid gap-2">
+                    {assistWarnings.map((warning) => (
+                      <div key={warning} className="rounded-[14px] border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold leading-5 text-amber-800">
+                        {warning}
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
+            </div>
+
+            <div className="rounded-[22px] border border-[#D8E6EB] bg-white p-4">
+              <div className="flex items-center gap-2">
                 <Keyboard className="h-4 w-4 text-[#1398B7]" />
                 <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#1398B7]">Atalhos</p>
               </div>
@@ -2064,15 +2226,22 @@ function EditorModal({
                 <div className={cn('inline-flex w-fit items-center rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em]', workflowStatusClasses(workflowStatus))}>
                   {formatWorkflowStatus(workflowStatus)}
                 </div>
+                <div className="rounded-[16px] border border-[#D8E6EB] bg-[#F8FCFD] p-3 text-xs font-semibold leading-5 text-[#5F7077]">
+                  {isLoadingWorkspace
+                    ? 'Sincronizando workspace compartilhado...'
+                    : workspaceRecord.updatedAt
+                      ? `Ultima sincronizacao em ${new Date(workspaceRecord.updatedAt).toLocaleString('pt-BR')}.`
+                      : 'Nenhum rascunho compartilhado salvo para este campo ainda.'}
+                </div>
                 <div className="grid gap-2">
                   <button
                     type="button"
-                    onClick={handleSaveDraft}
+                    onClick={() => void handleSaveDraft()}
                     disabled={!permissions.canSaveDraft}
                     className="inline-flex items-center justify-center gap-2 rounded-full border border-[#D8E6EB] px-4 py-2 text-xs font-black uppercase tracking-[0.14em] text-[#0A3640] hover:bg-[#F2F7F9] disabled:opacity-60"
                   >
                     <Save className="h-3.5 w-3.5" />
-                    Salvar rascunho local
+                    Salvar rascunho compartilhado
                   </button>
                   <button
                     type="button"
@@ -2127,7 +2296,7 @@ function EditorModal({
                 />
                 <button
                   type="button"
-                  onClick={handleAddComment}
+                  onClick={() => void handleAddComment()}
                   disabled={!permissions.canComment || draftComment.trim().length === 0}
                   className="inline-flex items-center justify-center gap-2 rounded-full border border-[#D8E6EB] px-4 py-2 text-xs font-black uppercase tracking-[0.14em] text-[#0A3640] hover:bg-[#F2F7F9] disabled:opacity-60"
                 >
