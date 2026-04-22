@@ -1,5 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 
+import { getPublicAppUrl } from './app-url.js'
+
 type ApiRequest = {
   headers: Record<string, string | string[] | undefined>
 }
@@ -52,7 +54,7 @@ export function getRequestOrigin(req: ApiRequest) {
   const protocol = getHeaderValue(req.headers['x-forwarded-proto']) ?? 'https'
 
   if (!host) {
-    return 'https://genflix-omega.vercel.app'
+    return getPublicAppUrl()
   }
 
   return `${protocol}://${host}`

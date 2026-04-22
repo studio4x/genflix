@@ -2,6 +2,7 @@ import { randomBytes } from 'node:crypto'
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import { z } from 'zod'
 
+import { getPublicAppUrl } from '../_shared/app-url.js'
 import { sendPasswordResetEmail } from '../_shared/email.js'
 
 type ApiRequest = {
@@ -133,7 +134,7 @@ function getRequestOrigin(req: ApiRequest) {
   const protocol = getHeaderValue(req.headers['x-forwarded-proto']) ?? 'https'
 
   if (!host) {
-    return process.env.APP_PUBLIC_URL ?? 'https://genflix-omega.vercel.app'
+    return getPublicAppUrl()
   }
 
   return `${protocol}://${host}`

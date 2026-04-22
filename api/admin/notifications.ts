@@ -1,6 +1,7 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import { z } from 'zod'
 
+import { getPublicAppUrl } from '../_shared/app-url.js'
 import { getBearerToken, getHeaderValue } from '../_shared/asaas.js'
 import { sendNotificationEmail } from '../_shared/email.js'
 
@@ -81,7 +82,7 @@ function buildAbsoluteActionUrl(actionUrl: string | null) {
   if (!actionUrl) return null
   if (/^https?:\/\//i.test(actionUrl)) return actionUrl
 
-  const appUrl = process.env.APP_PUBLIC_URL ?? 'https://genflix-omega.vercel.app'
+  const appUrl = getPublicAppUrl()
   return `${appUrl.replace(/\/$/, '')}/${actionUrl.replace(/^\//, '')}`
 }
 

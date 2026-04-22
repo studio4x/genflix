@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js'
 import { z } from 'zod'
 
 import { sendPasswordResetEmail } from '../_shared/email.js'
+import { getPublicAppUrl } from '../_shared/app-url.js'
 
 type ApiRequest = {
   method?: string
@@ -73,7 +74,7 @@ function getRequestOrigin(req: ApiRequest) {
   const protocol = getHeaderValue(req.headers['x-forwarded-proto']) ?? 'https'
 
   if (!host) {
-    return process.env.APP_PUBLIC_URL ?? 'https://genflix-omega.vercel.app'
+    return getPublicAppUrl()
   }
 
   return `${protocol}://${host}`
