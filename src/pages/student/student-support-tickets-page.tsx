@@ -10,7 +10,11 @@ import { fetchMySupportTickets, fetchSupportSettings } from '@/features/support/
 import { formatSupportDate, getOrderedSupportCategories } from '@/lib/support-sla'
 import type { SupportModalStep, SupportTicketSummary } from '@/features/support/types'
 
-export function StudentSupportTicketsPage() {
+interface SupportTicketsPageProps {
+  contextLabel?: 'Aluno' | 'Criador'
+}
+
+export function StudentSupportTicketsPage({ contextLabel = 'Aluno' }: SupportTicketsPageProps) {
   const [searchParams, setSearchParams] = useSearchParams()
   const [tickets, setTickets] = useState<SupportTicketSummary[]>([])
   const [settings, setSettings] = useState<Awaited<ReturnType<typeof fetchSupportSettings>> | null>(null)
@@ -69,7 +73,7 @@ export function StudentSupportTicketsPage() {
     <div className="space-y-6">
       <header className="flex flex-col gap-4 border-b border-[#D8E6EB] pb-5 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <p className="text-[10px] font-black uppercase tracking-[0.28em] text-[#1398B7]">Aluno / Suporte</p>
+          <p className="text-[10px] font-black uppercase tracking-[0.28em] text-[#1398B7]">{contextLabel} / Suporte</p>
           <h1 className="mt-2 flex items-center gap-3 font-readex text-3xl font-semibold tracking-tight text-[#15323b]">
             <MessageSquare className="h-7 w-7 text-[#1398B7]" />
             Meus chamados

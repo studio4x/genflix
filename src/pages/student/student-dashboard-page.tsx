@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 
 import { useAuth } from '@/app/providers/auth-provider'
 import { Button } from '@/components/ui/button'
+import { NotificationPreferencesPage } from '@/pages/shared/notification-preferences-page'
+import { NotificationsOverviewPanel } from '@/features/notifications/notifications-overview-panel'
 import {
   fetchStartedCourseIds,
   fetchReleasedCourses,
@@ -47,6 +49,7 @@ function getLearningActionLabel(
 
 export function StudentDashboardPage() {
   const { profile } = useAuth()
+  const [searchParams, setSearchParams] = useSearchParams()
   const [courses, setCourses] = useState<Course[]>([])
   const [courseStatuses, setCourseStatuses] = useState<Map<string, StudentCourseStatus | null>>(new Map())
   const [startedCourseIds, setStartedCourseIds] = useState<Set<string>>(new Set())
@@ -172,6 +175,89 @@ export function StudentDashboardPage() {
       )
     : null
 
+  const requestedTab = searchParams.get('tab')
+  const activeTab = requestedTab === 'notificacoes' || requestedTab === 'preferencias' ? requestedTab : 'resumo'
+
+  function renderTabButton(tab: 'resumo' | 'notificacoes' | 'preferencias', label: string) {
+    const isActive = activeTab === tab
+    return (
+      <button
+        key={tab}
+        type="button"
+        onClick={() => setSearchParams((current) => {
+          const next = new URLSearchParams(current)
+          if (tab === 'resumo') {
+            next.delete('tab')
+          } else {
+            next.set('tab', tab)
+          }
+          return next
+        }, { replace: true })}
+        className={`rounded-full border px-4 py-2 text-xs font-black uppercase tracking-[0.2em] transition ${
+          isActive
+            ? 'border-blue-200 bg-blue-600 text-white'
+            : 'border-slate-200 bg-white text-slate-600 hover:border-blue-200 hover:text-slate-900'
+        }`}
+      >
+        {label}
+      </button>
+    )
+  }
+
+  if (activeTab === 'notificacoes') {
+    return (
+      <div className="space-y-8">
+        <header className="flex flex-col gap-5 border-b border-slate-100 pb-8 xl:flex-row xl:items-start xl:justify-between">
+          <div className="space-y-4">
+            <div className="inline-flex items-center gap-2 rounded-full border border-blue-100 bg-blue-50 px-4 py-1.5 text-[11px] font-black uppercase tracking-[0.24em] text-blue-600">
+              Painel do Aluno
+            </div>
+            <div className="space-y-3">
+              <h2 className="text-4xl font-black tracking-tight text-slate-900 sm:text-5xl">Notificações</h2>
+              <p className="max-w-3xl text-lg leading-relaxed text-slate-600">
+                Consulte avisos transacionais e comunicados enviados pela plataforma sem sair do painel.
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-3">
+              {renderTabButton('resumo', 'Resumo')}
+              {renderTabButton('notificacoes', 'Notificações')}
+              {renderTabButton('preferencias', 'Preferências')}
+            </div>
+          </div>
+        </header>
+
+        <NotificationsOverviewPanel />
+      </div>
+    )
+  }
+
+  if (activeTab === 'preferencias') {
+    return (
+      <div className="space-y-8">
+        <header className="flex flex-col gap-5 border-b border-slate-100 pb-8 xl:flex-row xl:items-start xl:justify-between">
+          <div className="space-y-4">
+            <div className="inline-flex items-center gap-2 rounded-full border border-blue-100 bg-blue-50 px-4 py-1.5 text-[11px] font-black uppercase tracking-[0.24em] text-blue-600">
+              Painel do Aluno
+            </div>
+            <div className="space-y-3">
+              <h2 className="text-4xl font-black tracking-tight text-slate-900 sm:text-5xl">Preferências</h2>
+              <p className="max-w-3xl text-lg leading-relaxed text-slate-600">
+                Ajuste os canais de notificação e o horário de silêncio sem sair do dashboard.
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-3">
+              {renderTabButton('resumo', 'Resumo')}
+              {renderTabButton('notificacoes', 'Notificações')}
+              {renderTabButton('preferencias', 'Preferências')}
+            </div>
+          </div>
+        </header>
+
+        <NotificationPreferencesPage contextLabel="Aluno" />
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-8">
       <header className="flex flex-col gap-5 border-b border-slate-100 pb-8 xl:flex-row xl:items-start xl:justify-between">
@@ -188,6 +274,11 @@ export function StudentDashboardPage() {
             <p className="max-w-3xl text-lg leading-relaxed text-slate-600">
               Gerencie sua jornada de aprendizado, acompanhe sua evolução e retome seus treinamentos com a linguagem da GenFlix.
             </p>
+            <div className="flex flex-wrap gap-3 pt-2">
+              {renderTabButton('resumo', 'Resumo')}
+              {renderTabButton('notificacoes', 'Notificações')}
+              {renderTabButton('preferencias', 'Preferências')}
+            </div>
           </div>
         </div>
 

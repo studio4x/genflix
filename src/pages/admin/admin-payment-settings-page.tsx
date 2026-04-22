@@ -354,6 +354,15 @@ export function AdminPaymentSettingsPage() {
                     <p className="mt-2 text-xs font-semibold text-[#5F7077]">
                       {formatEnvironmentLabel(session.gateway_environment ?? null)} · {formatDateTime(session.created_at)}
                     </p>
+                    {session.checkout_url ? (
+                      <div className="mt-3">
+                        <Button asChild variant="outline" className="h-9 border-[#D8E6EB] font-black text-[#15323b]">
+                          <a href={session.checkout_url} target="_blank" rel="noreferrer">
+                            Ver fatura no Asaas
+                          </a>
+                        </Button>
+                      </div>
+                    ) : null}
                   </div>
                 ))
               )}

@@ -8,7 +8,6 @@ import { StudentLayout } from '@/app/layouts/student-layout'
 import { ProtectedRoute } from '@/app/router/protected-route'
 import { MessagesPage } from '@/pages/shared/messages-page'
 import { MessagesRedirectPage } from '@/pages/shared/messages-redirect-page'
-import { NotificationPreferencesPage } from '@/pages/shared/notification-preferences-page'
 import { EditablePageSeo } from '@/features/site-editor/editable-page-seo'
 import { EditableControlsHint, SiteContentScope, VisualEditorProvider } from '@/features/site-editor/visual-editor'
 import type { SitePageKey } from '@/features/site-editor/types'
@@ -42,6 +41,7 @@ const StudentCoursesPage = lazy(async () => ({ default: (await import('@/pages/s
 const StudentCourseDetailsPage = lazy(async () => ({ default: (await import('@/pages/student/student-course-details-page')).StudentCourseDetailsPage }))
 const StudentAccountPage = lazy(async () => ({ default: (await import('@/pages/student/student-account-page')).StudentAccountPage }))
 const StudentSupportTicketsPage = lazy(async () => ({ default: (await import('@/pages/student/student-support-tickets-page')).StudentSupportTicketsPage }))
+const CreatorSupportTicketsPage = lazy(async () => ({ default: (await import('@/pages/creator/creator-support-tickets-page')).CreatorSupportTicketsPage }))
 const StudentCoursePlayerLayout = lazy(async () => ({ default: (await import('@/pages/student/student-course-player-layout')).StudentCoursePlayerLayout }))
 const StudentLessonPage = lazy(async () => ({ default: (await import('@/pages/student/student-lesson-page')).StudentLessonPage }))
 const StudentAssessmentExecutionPage = lazy(async () => ({ default: (await import('@/pages/student/student-assessment-execution-page')).StudentAssessmentExecutionPage }))
@@ -262,7 +262,7 @@ export const appRouter = createBrowserRouter([
           },
           {
             path: '/aluno/notificacoes',
-            element: <NotificationPreferencesPage contextLabel="Aluno" />,
+            element: <Navigate to="/aluno/dashboard?tab=notificacoes" replace />,
           },
         ],
       },
@@ -306,8 +306,12 @@ export const appRouter = createBrowserRouter([
             element: <MessagesPage contextLabel="Criador" />,
           },
           {
+            path: '/criador/suporte',
+            element: withRouteSuspense(<CreatorSupportTicketsPage />),
+          },
+          {
             path: '/criador/notificacoes',
-            element: <NotificationPreferencesPage contextLabel="Criador" />,
+            element: <Navigate to="/criador/relatorios?tab=notificacoes" replace />,
           },
         ],
       },
@@ -433,7 +437,7 @@ export const appRouter = createBrowserRouter([
           },
           {
             path: '/admin/preferencias-notificacoes',
-            element: <NotificationPreferencesPage contextLabel="Admin" />,
+            element: <Navigate to="/admin/notificacoes" replace />,
           },
           {
             path: '/admin/mensagens',

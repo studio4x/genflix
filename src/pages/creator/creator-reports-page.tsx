@@ -1,7 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { RefreshCw } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
+import { NotificationPreferencesPage } from '@/pages/shared/notification-preferences-page'
+import { NotificationsOverviewPanel } from '@/features/notifications/notifications-overview-panel'
 import {
   fetchCreatorCommissions,
   fetchCreatorCourses,
@@ -78,6 +81,7 @@ function getPeriodKey(row: CreatorSalesReportRow) {
 }
 
 export function CreatorReportsPage() {
+  const [searchParams, setSearchParams] = useSearchParams()
   const [rows, setRows] = useState<CreatorSalesReportRow[]>([])
   const [courses, setCourses] = useState<CreatorCourseSummary[]>([])
   const [commissions, setCommissions] = useState<CreatorCommissionRow[]>([])
@@ -225,6 +229,81 @@ export function CreatorReportsPage() {
     setSelectedPeriodKey('')
   }
 
+  const requestedTab = searchParams.get('tab')
+  const activeTab = requestedTab === 'notificacoes' || requestedTab === 'preferencias' ? requestedTab : 'relatorios'
+
+  function renderTabButton(tab: 'relatorios' | 'notificacoes' | 'preferencias', label: string) {
+    const isActive = activeTab === tab
+    return (
+      <button
+        key={tab}
+        type="button"
+        onClick={() => setSearchParams((current) => {
+          const next = new URLSearchParams(current)
+          if (tab === 'relatorios') {
+            next.delete('tab')
+          } else {
+            next.set('tab', tab)
+          }
+          return next
+        }, { replace: true })}
+        className={`rounded-full border px-4 py-2 text-xs font-black uppercase tracking-[0.2em] transition ${
+          isActive
+            ? 'border-[#1398B7] bg-[#1398B7] text-white'
+            : 'border-[#D8E6EB] bg-white text-[#5F7077] hover:border-[#1398B7] hover:text-[#15323b]'
+        }`}
+      >
+        {label}
+      </button>
+    )
+  }
+
+  if (activeTab === 'notificacoes') {
+    return (
+      <div className="space-y-6">
+        <header className="flex flex-col gap-4 border-b border-[#D8E6EB] pb-5 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-[0.28em] text-[#1398B7]">Relatórios</p>
+            <h1 className="mt-2 font-readex text-3xl font-semibold tracking-tight text-[#15323b]">Notificações</h1>
+            <p className="mt-2 max-w-3xl text-sm font-medium leading-6 text-[#6d7f84]">
+              Acompanhe comunicados enviados pela plataforma e avisos transacionais sem sair do painel do criador.
+            </p>
+            <div className="mt-4 flex flex-wrap gap-3">
+              {renderTabButton('relatorios', 'Relatórios')}
+              {renderTabButton('notificacoes', 'Notificações')}
+              {renderTabButton('preferencias', 'Preferências')}
+            </div>
+          </div>
+        </header>
+
+        <NotificationsOverviewPanel />
+      </div>
+    )
+  }
+
+  if (activeTab === 'preferencias') {
+    return (
+      <div className="space-y-6">
+        <header className="flex flex-col gap-4 border-b border-[#D8E6EB] pb-5 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-[0.28em] text-[#1398B7]">Relatórios</p>
+            <h1 className="mt-2 font-readex text-3xl font-semibold tracking-tight text-[#15323b]">Preferências</h1>
+            <p className="mt-2 max-w-3xl text-sm font-medium leading-6 text-[#6d7f84]">
+              Ajuste os canais e horários de notificação do criador diretamente nesta área.
+            </p>
+            <div className="mt-4 flex flex-wrap gap-3">
+              {renderTabButton('relatorios', 'Relatórios')}
+              {renderTabButton('notificacoes', 'Notificações')}
+              {renderTabButton('preferencias', 'Preferências')}
+            </div>
+          </div>
+        </header>
+
+        <NotificationPreferencesPage contextLabel="Criador" />
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-6">
       <header className="flex flex-col gap-4 border-b border-[#D8E6EB] pb-5 lg:flex-row lg:items-end lg:justify-between">
@@ -235,6 +314,11 @@ export function CreatorReportsPage() {
             Acompanhe os cursos vinculados a você, vendas por ciclos de seis meses, cancelamentos e comissões previstas
             para repasse PIX.
           </p>
+          <div className="mt-4 flex flex-wrap gap-3">
+            {renderTabButton('relatorios', 'Relatórios')}
+            {renderTabButton('notificacoes', 'Notificações')}
+            {renderTabButton('preferencias', 'Preferências')}
+          </div>
         </div>
 
         <Button

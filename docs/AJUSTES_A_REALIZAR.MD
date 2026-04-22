@@ -1,6 +1,7 @@
-# Ajustes a realizar
+# AJUSTES A SEREM FEITOS
 
-- [x] Mover os cards "Páginas" e "Overrides" para a coluna da direita do container do editor visual, deixando "Governança compartilhada" na coluna esquerda.
-- [x] Exibir o card "Páginas" acima do card "Overrides", otimizando o uso de espaço na página do admin.
-- [x] Ajustar a janela flutuante do editor visual para fundo branco sólido, sem transparência.
-- [x] Ajustar os textos e botões com fundo branco para cor escura, para manter contraste visual adequado.
+- ok - O modulo de tickets deve estar disponivel tambem no dashboard do criador.
+- Na pagina de pagamentos, vamos inserir o conteudo de configuracoes do pagamento em uma aba interna dessa pagina de pagamentos. Na pagina principal, preciso ter o historico de pagamentos realizados vinculado diretamente ao Asaas e com o botao de ver faturas.
+- ok - No admin, nao faz sentido ter a pagina de "/admin/preferencias-notificacoes", pois o admin devera receber todas as notificacoes. Vamos remover essa pagina e deixar somente para o dashboard do aluno e criado. No dashboard, vamos deixar esse conteudo de configuracoes em uma aba interna da pagina. Na aba principal, precisamos implementar um sistema para exibir todas as notificacoes enviadas pelo admin da plataforma e as notificacoes transacionais.
+- ok - No admin, a pagina "/admin/mensagens" devera aparecer todas as mensagens trocadas pelos criadores e alunos. Vamos deixar a parte de denuncias em uma aba interna separada dentro dessa pagina. Os alunos so poderao enviar mensagens para todos os alunos inscritos no mesmo curso que ele (de forma geral, sem escolher o aluno) e para o admin e criador (forma privada). Devera criar uma caixa de mensagens para cada curso que o aluno esta inscrito, outra para o admin e outra para os criadores. No admin, a caixa tambem devera ser para cada curso, e individualmente para cada aluno e criador.
+- ok - No dashboard do aluno, dentro da pagina "mensagens" o modal que abre ao clicar em denunciar mensagem esta com os textos branco sobre o fundo branco, revise as cores desse modal.

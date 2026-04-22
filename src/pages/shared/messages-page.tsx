@@ -110,6 +110,7 @@ export function MessagesPage({ contextLabel }: { contextLabel: 'Admin' | 'Aluno'
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const messagesEndRef = useRef<HTMLDivElement | null>(null)
+  const adminSection = contextLabel === 'Admin' && searchParams.get('section') === 'reports' ? 'reports' : 'messages'
 
   const selectedConversation = useMemo(
     () => conversations.find((conversation) => conversation.conversation_id === selectedConversationId) ?? null,
@@ -384,16 +385,50 @@ export function MessagesPage({ contextLabel }: { contextLabel: 'Admin' | 'Aluno'
           </p>
         </div>
 
-        <Button
-          type="button"
-          variant="outline"
-          onClick={() => void loadConversations()}
-          disabled={isLoadingConversations}
-          className="h-11 rounded-none border-[#D8E6EB] bg-white font-black text-[#0A3640] hover:border-[#1398B7]"
-        >
-          <RefreshCw className={cn('mr-2 h-4 w-4', isLoadingConversations ? 'animate-spin' : '')} />
-          Atualizar
-        </Button>
+        <div className="flex flex-wrap gap-3">
+          {contextLabel === 'Admin' ? (
+            <>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setSearchParams((current) => {
+                  const next = new URLSearchParams(current)
+                  next.set('section', 'messages')
+                  return next
+                }, { replace: true })}
+                className={`h-11 rounded-none border-[#D8E6EB] bg-white font-black text-[#0A3640] ${
+                  adminSection === 'messages' ? 'border-[#1398B7] bg-[#E8F6FA]' : 'hover:border-[#1398B7]'
+                }`}
+              >
+                Conversas
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setSearchParams((current) => {
+                  const next = new URLSearchParams(current)
+                  next.set('section', 'reports')
+                  return next
+                }, { replace: true })}
+                className={`h-11 rounded-none border-[#D8E6EB] bg-white font-black text-[#0A3640] ${
+                  adminSection === 'reports' ? 'border-[#1398B7] bg-[#E8F6FA]' : 'hover:border-[#1398B7]'
+                }`}
+              >
+                Denúncias
+              </Button>
+            </>
+          ) : null}
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => void loadConversations()}
+            disabled={isLoadingConversations}
+            className="h-11 rounded-none border-[#D8E6EB] bg-white font-black text-[#0A3640] hover:border-[#1398B7]"
+          >
+            <RefreshCw className={cn('mr-2 h-4 w-4', isLoadingConversations ? 'animate-spin' : '')} />
+            Atualizar
+          </Button>
+        </div>
       </header>
 
       {errorMessage ? (
@@ -408,7 +443,7 @@ export function MessagesPage({ contextLabel }: { contextLabel: 'Admin' | 'Aluno'
         </div>
       ) : null}
 
-      {contextLabel === 'Admin' ? (
+      {contextLabel === 'Admin' && adminSection === 'reports' ? (
         <section className="border border-[#D8E6EB] bg-[#F8FBFC] p-5">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
@@ -478,6 +513,7 @@ export function MessagesPage({ contextLabel }: { contextLabel: 'Admin' | 'Aluno'
         </section>
       ) : null}
 
+      {adminSection !== 'reports' ? (
       <section className="grid min-h-[680px] overflow-hidden border border-[#D8E6EB] bg-white shadow-[0_18px_42px_rgba(10,54,64,0.05)] xl:grid-cols-[360px_minmax(0,1fr)]">
         <aside className="border-b border-[#D8E6EB] bg-[#F2F7F9] xl:border-b-0 xl:border-r">
           <div className="border-b border-[#D8E6EB] p-4">
@@ -688,6 +724,7 @@ export function MessagesPage({ contextLabel }: { contextLabel: 'Admin' | 'Aluno'
           )}
         </div>
       </section>
+      ) : null}
 
       {reportTarget ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0A3640]/50 px-4 py-6">
