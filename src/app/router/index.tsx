@@ -22,6 +22,7 @@ const PublicBlogPostPage = lazy(async () => ({ default: (await import('@/pages/p
 const PublicCommunityPage = lazy(async () => ({ default: (await import('@/pages/public/public-community-page')).PublicCommunityPage }))
 const PublicContactPage = lazy(async () => ({ default: (await import('@/pages/public/public-contact-page')).PublicContactPage }))
 const PublicResourcesPage = lazy(async () => ({ default: (await import('@/pages/public/public-resources-page')).PublicResourcesPage }))
+const PublicSupportPage = lazy(async () => ({ default: (await import('@/pages/public/public-support-page')).PublicSupportPage }))
 const PublicRefundPolicyPage = lazy(async () => ({ default: (await import('@/pages/public/public-refund-policy-page')).PublicRefundPolicyPage }))
 const PublicFaqPage = lazy(async () => ({ default: (await import('@/pages/public/public-faq-page')).PublicFaqPage }))
 const PublicHelpPage = lazy(async () => ({ default: (await import('@/pages/public/public-help-page')).PublicHelpPage }))
@@ -40,6 +41,7 @@ const StudentDashboardPage = lazy(async () => ({ default: (await import('@/pages
 const StudentCoursesPage = lazy(async () => ({ default: (await import('@/pages/student/student-courses-page')).StudentCoursesPage }))
 const StudentCourseDetailsPage = lazy(async () => ({ default: (await import('@/pages/student/student-course-details-page')).StudentCourseDetailsPage }))
 const StudentAccountPage = lazy(async () => ({ default: (await import('@/pages/student/student-account-page')).StudentAccountPage }))
+const StudentSupportTicketsPage = lazy(async () => ({ default: (await import('@/pages/student/student-support-tickets-page')).StudentSupportTicketsPage }))
 const StudentCoursePlayerLayout = lazy(async () => ({ default: (await import('@/pages/student/student-course-player-layout')).StudentCoursePlayerLayout }))
 const StudentLessonPage = lazy(async () => ({ default: (await import('@/pages/student/student-lesson-page')).StudentLessonPage }))
 const StudentAssessmentExecutionPage = lazy(async () => ({ default: (await import('@/pages/student/student-assessment-execution-page')).StudentAssessmentExecutionPage }))
@@ -58,6 +60,7 @@ const AdminButtonTemplatesPage = lazy(async () => ({ default: (await import('@/p
 const AdminReportsPage = lazy(async () => ({ default: (await import('@/pages/admin/admin-reports-page')).AdminReportsPage }))
 const AdminPublicFormsPage = lazy(async () => ({ default: (await import('@/pages/admin/admin-public-forms-page')).AdminPublicFormsPage }))
 const AdminNotificationsPage = lazy(async () => ({ default: (await import('@/pages/admin/admin-notifications-page')).AdminNotificationsPage }))
+const AdminSupportTicketsPage = lazy(async () => ({ default: (await import('@/pages/admin/admin-support-tickets-page')).AdminSupportTicketsPage }))
 const AdminReviewsPage = lazy(async () => ({ default: (await import('@/pages/admin/admin-reviews-page')).AdminReviewsPage }))
 const AdminPaymentSettingsPage = lazy(async () => ({ default: (await import('@/pages/admin/admin-payment-settings-page')).AdminPaymentSettingsPage }))
 const AdminCreatorPayoutsPage = lazy(async () => ({ default: (await import('@/pages/admin/admin-creator-payouts-page')).AdminCreatorPayoutsPage }))
@@ -74,6 +77,7 @@ const AssessmentBuilderPanel = lazy(async () => ({ default: (await import('@/pag
 const CoursePublicPagePanel = lazy(async () => ({ default: (await import('@/pages/admin/builder/course-public-page-panel')).CoursePublicPagePanel }))
 const CourseSettingsPanel = lazy(async () => ({ default: (await import('@/pages/admin/builder/course-settings-panel')).CourseSettingsPanel }))
 const CourseAssessmentsPanel = lazy(async () => ({ default: (await import('@/pages/admin/builder/course-assessments-panel')).CourseAssessmentsPanel }))
+const SupportTicketDetailPage = lazy(async () => ({ default: (await import('@/pages/shared/support-ticket-detail-page')).SupportTicketDetailPage }))
 
 function withRouteSuspense(children: ReactNode) {
   return (
@@ -158,6 +162,10 @@ export const appRouter = createBrowserRouter([
     element: <PublicEditableRoute pageKey="resources" seo={{ entryKey: 'resources.seo', fallback: { title: 'GenFlix | Recursos', description: 'Acesse materiais, ferramentas e recursos complementares organizados pela GenFlix.', slug: '/recursos', image: '' } }}><PublicResourcesPage /></PublicEditableRoute>,
   },
   {
+    path: '/suporte',
+    element: withRouteSuspense(<PublicSupportPage />),
+  },
+  {
     path: '/politica-de-reembolso',
     element: <PublicEditableRoute pageKey="global" seo={{ entryKey: 'global.refund.seo', fallback: { title: 'GenFlix | Política de reembolso', description: 'Entenda as diretrizes de reembolso e cancelamento aplicadas aos serviços e conteúdos da GenFlix.', slug: '/politica-de-reembolso', image: '' } }}><PublicRefundPolicyPage /></PublicEditableRoute>,
   },
@@ -239,6 +247,14 @@ export const appRouter = createBrowserRouter([
           {
             path: '/aluno/minha-conta',
             element: withRouteSuspense(<StudentAccountPage />),
+          },
+          {
+            path: '/aluno/suporte',
+            element: withRouteSuspense(<StudentSupportTicketsPage />),
+          },
+          {
+            path: '/aluno/suporte/:ticketId',
+            element: withRouteSuspense(<SupportTicketDetailPage />),
           },
           {
             path: '/aluno/mensagens',
@@ -422,6 +438,14 @@ export const appRouter = createBrowserRouter([
           {
             path: '/admin/mensagens',
             element: <MessagesPage contextLabel="Admin" />,
+          },
+          {
+            path: '/admin/suporte',
+            element: withRouteSuspense(<AdminSupportTicketsPage />),
+          },
+          {
+            path: '/admin/suporte/:ticketId',
+            element: withRouteSuspense(<SupportTicketDetailPage />),
           },
           {
             path: '/admin/reviews',

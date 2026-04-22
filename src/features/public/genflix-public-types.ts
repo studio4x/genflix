@@ -1,6 +1,6 @@
 import type { LucideIcon } from 'lucide-react'
 
-export type GenflixPageKey = 'home' | 'courses' | 'about' | 'blog' | 'contact' | 'community' | 'resources'
+export type GenflixPageKey = 'home' | 'courses' | 'about' | 'blog' | 'contact' | 'community' | 'resources' | 'support'
 
 export interface GenflixNavLink {
   label: string

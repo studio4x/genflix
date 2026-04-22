@@ -30,7 +30,7 @@ import {
   Waypoints,
 } from 'lucide-react'
 
-export type GenflixPageKey = 'home' | 'courses' | 'about' | 'blog' | 'contact' | 'community' | 'resources'
+export type GenflixPageKey = 'home' | 'courses' | 'about' | 'blog' | 'contact' | 'community' | 'resources' | 'support'
 
 export interface GenflixNavLink {
   label: string
@@ -152,6 +152,7 @@ export const genflixNavLinks: GenflixNavLink[] = [
   { label: 'Início', href: '/', isInternal: true, pageKey: 'home' },
   { label: 'Cursos', href: '/cursos', isInternal: true, pageKey: 'courses' },
   { label: 'Blog', href: '/blog', isInternal: true, pageKey: 'blog' },
+  { label: 'Suporte', href: '/suporte', isInternal: true, pageKey: 'support' },
   { label: 'Contato', href: '/contato', isInternal: true, pageKey: 'contact' },
   { label: 'Sobre', href: '/sobre', isInternal: true, pageKey: 'about' },
   { label: 'Recursos', href: '/recursos', isInternal: true, pageKey: 'resources' },
@@ -164,6 +165,7 @@ export const genflixFooterNavLinks: GenflixFooterNavItem[] = [
   { label: 'Recursos', href: '/recursos', isInternal: true },
   { label: 'Cursos', href: '/cursos', isInternal: true },
   { label: 'Blog', href: '/blog', isInternal: true },
+  { label: 'Suporte', href: '/suporte', isInternal: true },
   { label: 'Contato', href: '/contato', isInternal: true },
   { label: 'Comunidade', href: '/comunidade', isInternal: true },
 ]
@@ -696,6 +698,7 @@ export const genflixFooterColumns: GenflixFooterColumn[] = [
       { label: 'Política de reembolso', href: '/politica-de-reembolso', isInternal: true },
       { label: 'Perguntas frequentes', href: '/perguntas-frequentes', isInternal: true },
       { label: 'Ajuda / Como usar', href: '/ajuda', isInternal: true },
+      { label: 'Suporte', href: '/suporte', isInternal: true },
     ],
   },
   {

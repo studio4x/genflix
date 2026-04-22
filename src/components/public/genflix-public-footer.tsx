@@ -101,6 +101,7 @@ const footerColumnsFallback = [
       items: [
         { label: 'Sobre a GenFlix', href: '/sobre', isInternal: true },
         { label: 'Perguntas frequentes', href: '/perguntas-frequentes', isInternal: true },
+        { label: 'Suporte', href: '/suporte', isInternal: true },
         { label: 'Política de privacidade', href: '/privacidade', isInternal: true },
         { label: 'Política de reembolso', href: '/politica-de-reembolso', isInternal: true },
       ],
@@ -123,6 +124,7 @@ const footerColumnsFallback = [
     metadata: {
       items: [
         { label: 'Fale conosco', href: '/contato', isInternal: true },
+        { label: 'Abrir chamado', href: '/suporte', isInternal: true },
         { label: 'Ajuda / Como usar', href: '/ajuda', isInternal: true },
         { label: 'Indique a GenFlix', href: '/indique-a-genflix', isInternal: true },
       ],

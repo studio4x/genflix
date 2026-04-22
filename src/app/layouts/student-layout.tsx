@@ -38,6 +38,17 @@ const studentLinks = [
     ),
   },
   {
+    to: '/aluno/suporte',
+    label: 'Suporte',
+    description: 'Tickets e atendimento',
+    icon: (
+      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2v10z" />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 9h8M8 13h5" />
+      </svg>
+    ),
+  },
+  {
     to: '/aluno/notificacoes',
     label: 'Notificações',
     description: 'Canais e preferências',
