@@ -439,6 +439,9 @@ export function AdminSiteEditorPage() {
             </div>
           </article>
 
+        </div>
+
+        <div className="min-w-0 space-y-6">
           <article className="border border-[#D8E6EB] bg-white p-5 shadow-sm">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
               <div>
@@ -478,7 +481,7 @@ export function AdminSiteEditorPage() {
             </div>
           </article>
 
-        <section className="min-w-0 border border-[#D8E6EB] bg-white p-5 shadow-sm">
+          <section className="min-w-0 border border-[#D8E6EB] bg-white p-5 shadow-sm">
           <div className="flex flex-col gap-3 border-b border-[#D8E6EB] pb-5 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#1398B7]">Overrides</p>
