@@ -62,6 +62,7 @@ const AdminReviewsPage = lazy(async () => ({ default: (await import('@/pages/adm
 const AdminPaymentSettingsPage = lazy(async () => ({ default: (await import('@/pages/admin/admin-payment-settings-page')).AdminPaymentSettingsPage }))
 const AdminCreatorPayoutsPage = lazy(async () => ({ default: (await import('@/pages/admin/admin-creator-payouts-page')).AdminCreatorPayoutsPage }))
 const AdminQuizTypesPage = lazy(async () => ({ default: (await import('@/pages/admin/admin-quiz-types-page')).AdminQuizTypesPage }))
+const AdminBannersPage = lazy(async () => ({ default: (await import('@/pages/admin/admin-banners-page')).AdminBannersPage }))
 const AdminBrandingSettingsPage = lazy(async () => ({ default: (await import('@/pages/admin/admin-branding-settings-page')).AdminBrandingSettingsPage }))
 const AdminOperationalPendingPage = lazy(async () => ({ default: (await import('@/pages/admin/admin-operational-pending-page')).AdminOperationalPendingPage }))
 const AdminSiteEditorPage = lazy(async () => ({ default: (await import('@/pages/admin/admin-site-editor-page')).AdminSiteEditorPage }))
@@ -441,6 +442,10 @@ export const appRouter = createBrowserRouter([
           {
             path: '/admin/tipos-quiz',
             element: withRouteSuspense(<AdminQuizTypesPage />),
+          },
+          {
+            path: '/admin/banners',
+            element: withRouteSuspense(<AdminBannersPage />),
           },
           {
             path: '/admin/configuracoes-site',
