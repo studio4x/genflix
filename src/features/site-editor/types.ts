@@ -9,6 +9,7 @@ export type SitePageKey =
   | 'contact'
   | 'community'
   | 'resources'
+  | 'support'
   | 'privacy'
   | 'cookies'
   | 'terms'
