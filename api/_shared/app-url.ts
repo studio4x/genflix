@@ -1,4 +1,4 @@
-const DEFAULT_PUBLIC_APP_URL = 'https://genflix-ten.vercel.app'
+const DEFAULT_PUBLIC_APP_URL = 'https://genflix-omega.vercel.app'
 
 function normalizeUrl(value: string | undefined | null) {
   if (!value) {
