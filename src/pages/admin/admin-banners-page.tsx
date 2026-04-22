@@ -512,8 +512,8 @@ export function AdminBannersPage() {
         </div>
       ) : null}
 
-      <section className="grid gap-6 xl:grid-cols-[340px_minmax(0,1fr)]">
-        <aside className="space-y-4">
+      <section className="grid gap-6 xl:grid-cols-[320px_minmax(0,1fr)]">
+        <aside className="space-y-4 xl:sticky xl:top-[108px] xl:self-start">
           <article className="rounded-[28px] border border-[#D8E6EB] bg-white p-5 shadow-sm">
             <div className="flex items-center justify-between">
               <div>
@@ -595,31 +595,33 @@ export function AdminBannersPage() {
               Selecione um banner na lista ou crie um novo para editar.
             </div>
           ) : (
-            <>
-              <article className="rounded-[28px] border border-[#D8E6EB] bg-white p-6 shadow-sm">
-                <div className="flex flex-col gap-4 border-b border-[#D8E6EB] pb-5 lg:flex-row lg:items-center lg:justify-between">
-                  <div>
-                    <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#1398B7]">Editor do banner</p>
-                    <h2 className="mt-1 font-readex text-2xl font-semibold text-[#15323b]">{draft.name || 'Banner sem nome'}</h2>
-                    <p className="mt-2 text-sm font-semibold text-[#5F7077]">Canvas desktop livre com mobile responsivo automatico. Arraste os blocos para compor o slide.</p>
-                  </div>
-                  <div className="flex flex-wrap gap-3">
-                    <Button type="button" variant="outline" onClick={() => setDraft(selectedBanner ? cloneBanner(selectedBanner) : null)} disabled={!isDirty || saving} className="rounded-2xl border-[#D8E6EB]">
-                      Reverter alteracoes
-                    </Button>
-                    <Button type="button" onClick={() => void handleSaveBanner()} disabled={saving || uploadingImage} className="rounded-2xl bg-[#1398B7] px-5 font-black text-white hover:bg-[#1089A5]">
-                      <Save className="mr-2 h-4 w-4" />
-                      {saving ? 'Salvando...' : 'Salvar banner'}
-                    </Button>
-                  </div>
+            <article className="rounded-[28px] border border-[#D8E6EB] bg-white p-6 shadow-sm">
+              <div className="flex flex-col gap-4 border-b border-[#D8E6EB] pb-5 lg:flex-row lg:items-center lg:justify-between">
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#1398B7]">Editor do banner</p>
+                  <h2 className="mt-1 font-readex text-2xl font-semibold text-[#15323b]">{draft.name || 'Banner sem nome'}</h2>
+                  <p className="mt-2 text-sm font-semibold text-[#5F7077]">
+                    Preview desktop ampliado com edicao por arraste. Os controles ficam distribuidos ao lado e abaixo para facilitar a composicao do slide.
+                  </p>
                 </div>
+                <div className="flex flex-wrap gap-3">
+                  <Button type="button" variant="outline" onClick={() => setDraft(selectedBanner ? cloneBanner(selectedBanner) : null)} disabled={!isDirty || saving} className="rounded-2xl border-[#D8E6EB]">
+                    Reverter alteracoes
+                  </Button>
+                  <Button type="button" onClick={() => void handleSaveBanner()} disabled={saving || uploadingImage} className="rounded-2xl bg-[#1398B7] px-5 font-black text-white hover:bg-[#1089A5]">
+                    <Save className="mr-2 h-4 w-4" />
+                    {saving ? 'Salvando...' : 'Salvar banner'}
+                  </Button>
+                </div>
+              </div>
 
-                <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_380px]">
-                  <div className="space-y-4">
+              <div className="mt-6 grid gap-6 2xl:grid-cols-[minmax(0,1.5fr)_minmax(380px,430px)]">
+                <div className="space-y-4 2xl:sticky 2xl:top-[108px] 2xl:self-start">
+                  <div className="rounded-[28px] border border-[#D8E6EB] bg-[#F8FBFC] p-4">
                     <div
                       ref={stageRef}
-                      className="relative overflow-hidden rounded-[32px] border border-[#D8E6EB] bg-[#0A3640] shadow-[0_24px_60px_rgba(10,54,64,0.16)]"
-                      style={{ aspectRatio: '1280 / 507' }}
+                      className="relative overflow-hidden rounded-[32px] border border-[#D8E6EB] bg-[#0A3640] shadow-[0_24px_60px_rgba(10,54,64,0.16)] min-h-[380px] lg:min-h-[500px] 2xl:min-h-[620px]"
+                      style={{ aspectRatio: '1600 / 760' }}
                     >
                       <div
                         className="absolute inset-0"
@@ -631,24 +633,24 @@ export function AdminBannersPage() {
                       />
 
                       <BannerCanvasElement elementKey="title" item={draft.layoutDesktop.title} onPointerDown={handleCanvasPointerDown}>
-                        <div className={cn('rounded-[18px] border border-dashed border-white/18 bg-black/6 px-2 py-1.5', theme?.previewSurfaceClass)}>
-                          <p className={cn('text-[2rem] font-extrabold leading-[0.92] tracking-[-0.05em]', theme?.titleClass)}>
+                        <div className={cn('rounded-[18px] border border-dashed border-white/18 bg-black/6 px-3 py-2', theme?.previewSurfaceClass)}>
+                          <p className={cn('text-[2.2rem] font-extrabold leading-[0.92] tracking-[-0.05em] xl:text-[2.9rem]', theme?.titleClass)}>
                             {canvasTitle}
                           </p>
                         </div>
                       </BannerCanvasElement>
 
                       <BannerCanvasElement elementKey="subtitle" item={draft.layoutDesktop.subtitle} onPointerDown={handleCanvasPointerDown}>
-                        <div className={cn('rounded-[18px] border border-dashed border-white/18 bg-black/6 px-2 py-1.5', theme?.previewSurfaceClass)}>
-                          <p className={cn('text-sm leading-7 sm:text-base', theme?.textClass)}>
+                        <div className={cn('rounded-[18px] border border-dashed border-white/18 bg-black/6 px-3 py-2', theme?.previewSurfaceClass)}>
+                          <p className={cn('text-sm leading-7 sm:text-base xl:text-lg', theme?.textClass)}>
                             {canvasSubtitle}
                           </p>
                         </div>
                       </BannerCanvasElement>
 
                       <BannerCanvasElement elementKey="body" item={draft.layoutDesktop.body} onPointerDown={handleCanvasPointerDown}>
-                        <div className={cn('rounded-[18px] border border-dashed border-white/18 bg-black/6 px-2 py-1.5', theme?.previewSurfaceClass)}>
-                          <p className={cn('text-[15px] leading-7', theme?.bodyClass)}>
+                        <div className={cn('rounded-[18px] border border-dashed border-white/18 bg-black/6 px-3 py-2', theme?.previewSurfaceClass)}>
+                          <p className={cn('text-[15px] leading-7 xl:text-[17px]', theme?.bodyClass)}>
                             {canvasBody}
                           </p>
                         </div>
@@ -656,281 +658,289 @@ export function AdminBannersPage() {
 
                       {draft.primaryCta?.visible ? (
                         <BannerCanvasElement elementKey="primaryCta" item={draft.layoutDesktop.primaryCta} onPointerDown={handleCanvasPointerDown}>
-                          <PreviewCta cta={{ ...draft.primaryCta, label: draft.primaryCta.label || 'CTA principal' }} />
+                          <PreviewCta cta={{ ...draft.primaryCta, label: draft.primaryCta.label || 'CTA principal' }} className="h-14 px-6" />
                         </BannerCanvasElement>
                       ) : null}
 
                       {draft.secondaryCta?.visible ? (
                         <BannerCanvasElement elementKey="secondaryCta" item={draft.layoutDesktop.secondaryCta} onPointerDown={handleCanvasPointerDown}>
-                          <PreviewCta cta={{ ...draft.secondaryCta, label: draft.secondaryCta.label || 'CTA secundario' }} />
+                          <PreviewCta cta={{ ...draft.secondaryCta, label: draft.secondaryCta.label || 'CTA secundario' }} className="h-14 px-6" />
                         </BannerCanvasElement>
                       ) : null}
                     </div>
-
-                    <div className="rounded-[22px] border border-[#D8E6EB] bg-[#F8FBFC] px-4 py-3 text-xs font-semibold leading-6 text-[#5F7077]">
-                      O preview acima representa apenas o desktop. No mobile, a home empilha os elementos visiveis automaticamente em ordem editorial.
-                    </div>
                   </div>
 
-                  <div className="space-y-5">
-                    <section className="rounded-[24px] border border-[#D8E6EB] bg-[#F8FBFC] p-4">
-                      <h3 className="font-readex text-lg font-semibold text-[#15323b]">Conteudo e imagem</h3>
+                  <div className="grid gap-4 lg:grid-cols-2">
+                    <div className="rounded-[22px] border border-[#D8E6EB] bg-[#F8FBFC] px-4 py-4 text-sm font-semibold leading-6 text-[#5F7077]">
+                      O preview agora foi ampliado para facilitar o ajuste fino do banner. Arraste os blocos diretamente sobre a arte para definir a composicao.
+                    </div>
+                    <div className="rounded-[22px] border border-[#D8E6EB] bg-white p-4">
+                      <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#5F7077]">Imagem de fundo</p>
+                      <p className="mt-2 truncate text-sm font-semibold text-[#15323b]">{draft.backgroundUrl || 'Nenhuma imagem definida'}</p>
+                      <label className="mt-4 inline-flex h-11 cursor-pointer items-center justify-center rounded-2xl bg-[#1398B7] px-4 text-xs font-black uppercase tracking-[0.14em] text-white hover:bg-[#1089A5]">
+                        <ImagePlus className="mr-2 h-4 w-4" />
+                        {uploadingImage ? 'Enviando...' : 'Trocar imagem'}
+                        <input
+                          type="file"
+                          accept=".jpg,.jpeg,.png,.webp,image/*"
+                          disabled={uploadingImage}
+                          onChange={(event) => {
+                            const file = event.target.files?.[0] ?? null
+                            void handleBackgroundUpload(file)
+                            event.currentTarget.value = ''
+                          }}
+                          className="sr-only"
+                        />
+                      </label>
+                    </div>
+                  </div>
+                </div>
 
-                      <div className="mt-4 space-y-4">
-                        <label className="grid gap-2">
-                          <span className="text-[10px] font-black uppercase tracking-[0.18em] text-[#5F7077]">Nome interno</span>
-                          <input
-                            value={draft.name}
-                            onChange={(event) => setDraftField('name', event.target.value)}
-                            className="h-11 rounded-[16px] border border-[#D8E6EB] bg-white px-4 text-sm font-semibold text-[#15323b] outline-none"
-                          />
-                        </label>
+                <div className="space-y-5">
+                  <section className="rounded-[24px] border border-[#D8E6EB] bg-[#F8FBFC] p-4">
+                    <h3 className="font-readex text-lg font-semibold text-[#15323b]">Conteudo e imagem</h3>
 
-                        <label className="grid gap-2">
-                          <span className="text-[10px] font-black uppercase tracking-[0.18em] text-[#5F7077]">Titulo</span>
-                          <textarea
-                            value={draft.title}
-                            onChange={(event) => setDraftField('title', event.target.value)}
-                            rows={3}
-                            className="rounded-[16px] border border-[#D8E6EB] bg-white px-4 py-3 text-sm font-semibold text-[#15323b] outline-none"
-                          />
-                        </label>
+                    <div className="mt-4 grid gap-4 xl:grid-cols-2">
+                      <label className="grid gap-2 xl:col-span-2">
+                        <span className="text-[10px] font-black uppercase tracking-[0.18em] text-[#5F7077]">Nome interno</span>
+                        <input
+                          value={draft.name}
+                          onChange={(event) => setDraftField('name', event.target.value)}
+                          className="h-11 rounded-[16px] border border-[#D8E6EB] bg-white px-4 text-sm font-semibold text-[#15323b] outline-none"
+                        />
+                      </label>
 
-                        <label className="grid gap-2">
-                          <span className="text-[10px] font-black uppercase tracking-[0.18em] text-[#5F7077]">Subtitulo</span>
-                          <textarea
-                            value={draft.subtitle}
-                            onChange={(event) => setDraftField('subtitle', event.target.value)}
-                            rows={2}
-                            className="rounded-[16px] border border-[#D8E6EB] bg-white px-4 py-3 text-sm font-semibold text-[#15323b] outline-none"
-                          />
-                        </label>
+                      <label className="grid gap-2 xl:col-span-2">
+                        <span className="text-[10px] font-black uppercase tracking-[0.18em] text-[#5F7077]">Titulo</span>
+                        <textarea
+                          value={draft.title}
+                          onChange={(event) => setDraftField('title', event.target.value)}
+                          rows={3}
+                          className="rounded-[16px] border border-[#D8E6EB] bg-white px-4 py-3 text-sm font-semibold text-[#15323b] outline-none"
+                        />
+                      </label>
 
-                        <label className="grid gap-2">
-                          <span className="text-[10px] font-black uppercase tracking-[0.18em] text-[#5F7077]">Texto complementar</span>
-                          <textarea
-                            value={draft.body}
-                            onChange={(event) => setDraftField('body', event.target.value)}
-                            rows={3}
-                            className="rounded-[16px] border border-[#D8E6EB] bg-white px-4 py-3 text-sm font-semibold text-[#15323b] outline-none"
-                          />
-                        </label>
+                      <label className="grid gap-2">
+                        <span className="text-[10px] font-black uppercase tracking-[0.18em] text-[#5F7077]">Subtitulo</span>
+                        <textarea
+                          value={draft.subtitle}
+                          onChange={(event) => setDraftField('subtitle', event.target.value)}
+                          rows={4}
+                          className="rounded-[16px] border border-[#D8E6EB] bg-white px-4 py-3 text-sm font-semibold text-[#15323b] outline-none"
+                        />
+                      </label>
 
-                        <label className="grid gap-2">
-                          <span className="text-[10px] font-black uppercase tracking-[0.18em] text-[#5F7077]">Preset visual</span>
-                          <select
-                            value={draft.themePreset}
-                            onChange={(event) => setDraftField('themePreset', event.target.value as SiteBanner['themePreset'])}
-                            className="h-11 rounded-[16px] border border-[#D8E6EB] bg-white px-4 text-sm font-semibold text-[#15323b] outline-none"
-                          >
-                            {bannerThemePresetOptions.map((option) => (
-                              <option key={option.value} value={option.value}>{option.label}</option>
-                            ))}
-                          </select>
-                        </label>
+                      <label className="grid gap-2">
+                        <span className="text-[10px] font-black uppercase tracking-[0.18em] text-[#5F7077]">Texto complementar</span>
+                        <textarea
+                          value={draft.body}
+                          onChange={(event) => setDraftField('body', event.target.value)}
+                          rows={4}
+                          className="rounded-[16px] border border-[#D8E6EB] bg-white px-4 py-3 text-sm font-semibold text-[#15323b] outline-none"
+                        />
+                      </label>
 
-                        <div className="rounded-[18px] border border-[#D8E6EB] bg-white p-4">
-                          <div className="flex items-center justify-between gap-3">
-                            <div>
-                              <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#5F7077]">Imagem de fundo</p>
-                              <p className="mt-2 truncate text-sm font-semibold text-[#15323b]">{draft.backgroundUrl || 'Nenhuma imagem definida'}</p>
-                            </div>
-                            <label className="inline-flex h-10 cursor-pointer items-center justify-center rounded-2xl bg-[#1398B7] px-4 text-xs font-black uppercase tracking-[0.14em] text-white hover:bg-[#1089A5]">
-                              <ImagePlus className="mr-2 h-4 w-4" />
-                              {uploadingImage ? 'Enviando...' : 'Trocar'}
-                              <input
-                                type="file"
-                                accept=".jpg,.jpeg,.png,.webp,image/*"
-                                disabled={uploadingImage}
-                                onChange={(event) => {
-                                  const file = event.target.files?.[0] ?? null
-                                  void handleBackgroundUpload(file)
-                                  event.currentTarget.value = ''
-                                }}
-                                className="sr-only"
-                              />
-                            </label>
-                          </div>
-                        </div>
+                      <label className="grid gap-2 xl:col-span-2">
+                        <span className="text-[10px] font-black uppercase tracking-[0.18em] text-[#5F7077]">Preset visual</span>
+                        <select
+                          value={draft.themePreset}
+                          onChange={(event) => setDraftField('themePreset', event.target.value as SiteBanner['themePreset'])}
+                          className="h-11 rounded-[16px] border border-[#D8E6EB] bg-white px-4 text-sm font-semibold text-[#15323b] outline-none"
+                        >
+                          {bannerThemePresetOptions.map((option) => (
+                            <option key={option.value} value={option.value}>{option.label}</option>
+                          ))}
+                        </select>
+                      </label>
+                    </div>
+                  </section>
+
+                  <section className="rounded-[24px] border border-[#D8E6EB] bg-[#F8FBFC] p-4">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <h3 className="font-readex text-lg font-semibold text-[#15323b]">Composicao desktop</h3>
+                        <p className="mt-1 text-xs font-semibold leading-5 text-[#5F7077]">Ajuste visibilidade, largura e profundidade sem perder o preview ampliado ao lado.</p>
                       </div>
-                    </section>
+                    </div>
 
-                    <section className="rounded-[24px] border border-[#D8E6EB] bg-[#F8FBFC] p-4">
-                      <h3 className="font-readex text-lg font-semibold text-[#15323b]">Composicao desktop</h3>
-                      <div className="mt-4 space-y-3">
-                        {(Object.keys(bannerElementLabels) as SiteBannerLayoutKey[]).map((layoutKey) => {
-                          const item = draft.layoutDesktop[layoutKey]
+                    <div className="mt-4 grid gap-3 lg:grid-cols-2">
+                      {(Object.keys(bannerElementLabels) as SiteBannerLayoutKey[]).map((layoutKey) => {
+                        const item = draft.layoutDesktop[layoutKey]
 
-                          return (
-                            <div key={layoutKey} className="rounded-[18px] border border-[#D8E6EB] bg-white p-4">
-                              <div className="flex items-center justify-between gap-2">
-                                <p className="text-sm font-black text-[#15323b]">{bannerElementLabels[layoutKey]}</p>
-                                <label className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-[0.12em] text-[#5F7077]">
-                                  <input
-                                    type="checkbox"
-                                    checked={item.visible}
-                                    onChange={(event) => setLayoutItem(layoutKey, (current) => ({ ...current, visible: event.target.checked }))}
-                                  />
-                                  Visivel
-                                </label>
-                              </div>
+                        return (
+                          <div key={layoutKey} className="rounded-[18px] border border-[#D8E6EB] bg-white p-4">
+                            <div className="flex items-center justify-between gap-2">
+                              <p className="text-sm font-black text-[#15323b]">{bannerElementLabels[layoutKey]}</p>
+                              <label className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-[0.12em] text-[#5F7077]">
+                                <input
+                                  type="checkbox"
+                                  checked={item.visible}
+                                  onChange={(event) => setLayoutItem(layoutKey, (current) => ({ ...current, visible: event.target.checked }))}
+                                />
+                                Visivel
+                              </label>
+                            </div>
 
-                              <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                                <label className="grid gap-2">
-                                  <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Largura</span>
-                                  <input
-                                    type="range"
-                                    min={18}
-                                    max={62}
-                                    step={1}
-                                    value={item.width}
-                                    onChange={(event) => setLayoutItem(layoutKey, (current) => ({
-                                      ...current,
-                                      width: Number(event.target.value),
-                                      x: normalizePercent(clamp(current.x, 0, 100 - Number(event.target.value))),
-                                    }))}
-                                  />
-                                  <span className="text-xs font-semibold text-[#5F7077]">{item.width}%</span>
-                                </label>
+                            <div className="mt-3 grid gap-3">
+                              <label className="grid gap-2">
+                                <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Largura</span>
+                                <input
+                                  type="range"
+                                  min={18}
+                                  max={62}
+                                  step={1}
+                                  value={item.width}
+                                  onChange={(event) => setLayoutItem(layoutKey, (current) => ({
+                                    ...current,
+                                    width: Number(event.target.value),
+                                    x: normalizePercent(clamp(current.x, 0, 100 - Number(event.target.value))),
+                                  }))}
+                                />
+                                <span className="text-xs font-semibold text-[#5F7077]">{item.width}%</span>
+                              </label>
 
-                                <div className="grid gap-2">
-                                  <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Camada</span>
-                                  <div className="flex items-center gap-2">
-                                    <button type="button" onClick={() => setLayoutItem(layoutKey, (current) => ({ ...current, zIndex: Math.max(1, current.zIndex - 1) }))} className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-[#D8E6EB] text-[#5F7077] hover:bg-[#F2F7F9]">-</button>
-                                    <div className="flex-1 rounded-xl border border-[#D8E6EB] bg-[#F8FBFC] px-3 py-2 text-center text-sm font-black text-[#15323b]">{item.zIndex}</div>
-                                    <button type="button" onClick={() => setLayoutItem(layoutKey, (current) => ({ ...current, zIndex: current.zIndex + 1 }))} className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-[#D8E6EB] text-[#5F7077] hover:bg-[#F2F7F9]">+</button>
-                                  </div>
+                              <div className="grid gap-2">
+                                <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Camada</span>
+                                <div className="flex items-center gap-2">
+                                  <button type="button" onClick={() => setLayoutItem(layoutKey, (current) => ({ ...current, zIndex: Math.max(1, current.zIndex - 1) }))} className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-[#D8E6EB] text-[#5F7077] hover:bg-[#F2F7F9]">-</button>
+                                  <div className="flex-1 rounded-xl border border-[#D8E6EB] bg-[#F8FBFC] px-3 py-2 text-center text-sm font-black text-[#15323b]">{item.zIndex}</div>
+                                  <button type="button" onClick={() => setLayoutItem(layoutKey, (current) => ({ ...current, zIndex: current.zIndex + 1 }))} className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-[#D8E6EB] text-[#5F7077] hover:bg-[#F2F7F9]">+</button>
                                 </div>
                               </div>
                             </div>
-                          )
-                        })}
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </section>
+                </div>
+              </div>
+
+              <div className="mt-6 grid gap-6 xl:grid-cols-2">
+                {([
+                  { key: 'primaryCta', title: 'CTA principal' },
+                  { key: 'secondaryCta', title: 'CTA secundario' },
+                ] as const).map(({ key, title }) => {
+                  const cta = draft[key]
+
+                  return (
+                    <section key={key} className="rounded-[24px] border border-[#D8E6EB] bg-[#F8FBFC] p-4">
+                      <div className="flex items-center justify-between gap-3">
+                        <div>
+                          <h3 className="font-readex text-lg font-semibold text-[#15323b]">{title}</h3>
+                          <p className="mt-1 text-xs font-semibold leading-5 text-[#5F7077]">Defina texto, destino e preset deste botao do banner.</p>
+                        </div>
+                        <label className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-[0.12em] text-[#5F7077]">
+                          <input
+                            type="checkbox"
+                            checked={cta?.visible ?? false}
+                            onChange={(event) => setCta(key, (current) => {
+                              const base = current ?? {
+                                label: title,
+                                href: '#',
+                                isInternal: true,
+                                openInNewTab: false,
+                                tonePreset: key === 'primaryCta' ? 'solid' : 'surface',
+                                visible: true,
+                              }
+                              return {
+                                ...base,
+                                visible: event.target.checked,
+                              }
+                            })}
+                          />
+                          Usar no banner
+                        </label>
+                      </div>
+
+                      <div className="mt-4 grid gap-3">
+                        <label className="grid gap-2">
+                          <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Texto do botao</span>
+                          <input
+                            value={cta?.label ?? ''}
+                            onChange={(event) => setCta(key, (current) => ({
+                              ...(current ?? {
+                                href: '#',
+                                isInternal: true,
+                                openInNewTab: false,
+                                tonePreset: key === 'primaryCta' ? 'solid' : 'surface',
+                                visible: true,
+                              }),
+                              label: event.target.value,
+                            } as SiteBannerCta))}
+                            className="h-11 rounded-[16px] border border-[#D8E6EB] bg-white px-4 text-sm font-semibold text-[#15323b] outline-none"
+                          />
+                        </label>
+
+                        <label className="grid gap-2">
+                          <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Link</span>
+                          <input
+                            value={cta?.href ?? ''}
+                            onChange={(event) => setCta(key, (current) => ({
+                              ...(current ?? {
+                                label: title,
+                                isInternal: true,
+                                openInNewTab: false,
+                                tonePreset: key === 'primaryCta' ? 'solid' : 'surface',
+                                visible: true,
+                              }),
+                              href: event.target.value,
+                            } as SiteBannerCta))}
+                            className="h-11 rounded-[16px] border border-[#D8E6EB] bg-white px-4 text-sm font-semibold text-[#15323b] outline-none"
+                          />
+                        </label>
+
+                        <div className="grid gap-3 sm:grid-cols-2">
+                          <label className="grid gap-2">
+                            <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Preset do botao</span>
+                            <select
+                              value={cta?.tonePreset ?? (key === 'primaryCta' ? 'solid' : 'surface')}
+                              onChange={(event) => setCta(key, (current) => ({
+                                ...(current ?? {
+                                  label: title,
+                                  href: '#',
+                                  isInternal: true,
+                                  openInNewTab: false,
+                                  visible: true,
+                                }),
+                                tonePreset: event.target.value as SiteBannerCta['tonePreset'],
+                              } as SiteBannerCta))}
+                              className="h-11 rounded-[16px] border border-[#D8E6EB] bg-white px-4 text-sm font-semibold text-[#15323b] outline-none"
+                            >
+                              {bannerTonePresetOptions.map((option) => (
+                                <option key={option.value} value={option.value}>{option.label}</option>
+                              ))}
+                            </select>
+                          </label>
+
+                          <label className="grid gap-2">
+                            <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Tipo de link</span>
+                            <select
+                              value={cta?.isInternal === false ? 'external' : 'internal'}
+                              onChange={(event) => setCta(key, (current) => ({
+                                ...(current ?? {
+                                  label: title,
+                                  href: '#',
+                                  openInNewTab: false,
+                                  tonePreset: key === 'primaryCta' ? 'solid' : 'surface',
+                                  visible: true,
+                                }),
+                                isInternal: event.target.value === 'internal',
+                                openInNewTab: event.target.value === 'external',
+                              } as SiteBannerCta))}
+                              className="h-11 rounded-[16px] border border-[#D8E6EB] bg-white px-4 text-sm font-semibold text-[#15323b] outline-none"
+                            >
+                              <option value="internal">Interno</option>
+                              <option value="external">Externo</option>
+                            </select>
+                          </label>
+                        </div>
                       </div>
                     </section>
-
-                    {([
-                      { key: 'primaryCta', title: 'CTA principal' },
-                      { key: 'secondaryCta', title: 'CTA secundario' },
-                    ] as const).map(({ key, title }) => {
-                      const cta = draft[key]
-
-                      return (
-                        <section key={key} className="rounded-[24px] border border-[#D8E6EB] bg-[#F8FBFC] p-4">
-                          <div className="flex items-center justify-between gap-3">
-                            <h3 className="font-readex text-lg font-semibold text-[#15323b]">{title}</h3>
-                            <label className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-[0.12em] text-[#5F7077]">
-                              <input
-                                type="checkbox"
-                                checked={cta?.visible ?? false}
-                                onChange={(event) => setCta(key, (current) => {
-                                  const base = current ?? {
-                                    label: title,
-                                    href: '#',
-                                    isInternal: true,
-                                    openInNewTab: false,
-                                    tonePreset: key === 'primaryCta' ? 'solid' : 'surface',
-                                    visible: true,
-                                  }
-                                  return {
-                                    ...base,
-                                    visible: event.target.checked,
-                                  }
-                                })}
-                              />
-                              Usar no banner
-                            </label>
-                          </div>
-
-                          <div className="mt-4 grid gap-3">
-                            <label className="grid gap-2">
-                              <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Texto do botao</span>
-                              <input
-                                value={cta?.label ?? ''}
-                                onChange={(event) => setCta(key, (current) => ({
-                                  ...(current ?? {
-                                    href: '#',
-                                    isInternal: true,
-                                    openInNewTab: false,
-                                    tonePreset: key === 'primaryCta' ? 'solid' : 'surface',
-                                    visible: true,
-                                  }),
-                                  label: event.target.value,
-                                } as SiteBannerCta))}
-                                className="h-11 rounded-[16px] border border-[#D8E6EB] bg-white px-4 text-sm font-semibold text-[#15323b] outline-none"
-                              />
-                            </label>
-
-                            <label className="grid gap-2">
-                              <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Link</span>
-                              <input
-                                value={cta?.href ?? ''}
-                                onChange={(event) => setCta(key, (current) => ({
-                                  ...(current ?? {
-                                    label: title,
-                                    isInternal: true,
-                                    openInNewTab: false,
-                                    tonePreset: key === 'primaryCta' ? 'solid' : 'surface',
-                                    visible: true,
-                                  }),
-                                  href: event.target.value,
-                                } as SiteBannerCta))}
-                                className="h-11 rounded-[16px] border border-[#D8E6EB] bg-white px-4 text-sm font-semibold text-[#15323b] outline-none"
-                              />
-                            </label>
-
-                            <div className="grid gap-3 sm:grid-cols-2">
-                              <label className="grid gap-2">
-                                <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Preset do botao</span>
-                                <select
-                                  value={cta?.tonePreset ?? (key === 'primaryCta' ? 'solid' : 'surface')}
-                                  onChange={(event) => setCta(key, (current) => ({
-                                    ...(current ?? {
-                                      label: title,
-                                      href: '#',
-                                      isInternal: true,
-                                      openInNewTab: false,
-                                      visible: true,
-                                    }),
-                                    tonePreset: event.target.value as SiteBannerCta['tonePreset'],
-                                  } as SiteBannerCta))}
-                                  className="h-11 rounded-[16px] border border-[#D8E6EB] bg-white px-4 text-sm font-semibold text-[#15323b] outline-none"
-                                >
-                                  {bannerTonePresetOptions.map((option) => (
-                                    <option key={option.value} value={option.value}>{option.label}</option>
-                                  ))}
-                                </select>
-                              </label>
-
-                              <label className="grid gap-2">
-                                <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Tipo de link</span>
-                                <select
-                                  value={cta?.isInternal === false ? 'external' : 'internal'}
-                                  onChange={(event) => setCta(key, (current) => ({
-                                    ...(current ?? {
-                                      label: title,
-                                      href: '#',
-                                      openInNewTab: false,
-                                      tonePreset: key === 'primaryCta' ? 'solid' : 'surface',
-                                      visible: true,
-                                    }),
-                                    isInternal: event.target.value === 'internal',
-                                    openInNewTab: event.target.value === 'external',
-                                  } as SiteBannerCta))}
-                                  className="h-11 rounded-[16px] border border-[#D8E6EB] bg-white px-4 text-sm font-semibold text-[#15323b] outline-none"
-                                >
-                                  <option value="internal">Interno</option>
-                                  <option value="external">Externo</option>
-                                </select>
-                              </label>
-                            </div>
-                          </div>
-                        </section>
-                      )
-                    })}
-                  </div>
-                </div>
-              </article>
-            </>
+                  )
+                })}
+              </div>
+            </article>
           )}
         </section>
       </section>
