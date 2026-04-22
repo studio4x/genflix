@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { Flag, Inbox, MessageCircle, RefreshCw, Search, Send, ShieldCheck, UserPlus, X } from 'lucide-react'
 
 import { useAuth } from '@/app/providers/auth-provider'
@@ -62,6 +62,13 @@ const reportReasonLabels: Record<MessageReportReason, string> = {
 }
 
 function getConversationTitle(conversation: ConversationSummary) {
+  if (conversation.metadata?.kind === 'creator_channel') {
+    const otherParticipant = conversation.participants.find((participant) => !participant.is_current_user)
+    if (otherParticipant) {
+      return getDisplayName(otherParticipant.full_name, otherParticipant.email)
+    }
+  }
+
   if (conversation.title?.trim()) {
     return conversation.title
   }
@@ -77,12 +84,56 @@ function getConversationTitle(conversation: ConversationSummary) {
 }
 
 function getConversationSubtitle(conversation: ConversationSummary) {
+  if (conversation.metadata?.kind === 'course_room') {
+    return 'Sala do curso com alunos ativos'
+  }
+
+  if (conversation.metadata?.kind === 'creator_channel') {
+    return 'Canal direto com o criador do curso'
+  }
+
   const otherParticipant = conversation.participants.find((participant) => !participant.is_current_user)
   if (!otherParticipant) {
     return 'Sem outro participante'
   }
 
   return otherParticipant.email
+}
+
+function getConversationBadgeLabel(conversation: ConversationSummary) {
+  if (conversation.metadata?.kind === 'course_room') {
+    return 'Curso'
+  }
+
+  if (conversation.metadata?.kind === 'creator_channel') {
+    return 'Criador'
+  }
+
+  return conversation.conversation_type === 'group' ? 'Grupo' : 'Direta'
+}
+
+function getConversationPriority(conversation: ConversationSummary) {
+  if (conversation.metadata?.kind === 'course_room') {
+    return 0
+  }
+
+  if (conversation.metadata?.kind === 'creator_channel') {
+    return 1
+  }
+
+  return 2
+}
+
+function getSupportRoute(contextLabel: 'Admin' | 'Aluno' | 'Criador') {
+  if (contextLabel === 'Admin') {
+    return '/admin/suporte'
+  }
+
+  if (contextLabel === 'Criador') {
+    return '/criador/suporte'
+  }
+
+  return '/aluno/suporte'
 }
 
 export function MessagesPage({ contextLabel }: { contextLabel: 'Admin' | 'Aluno' | 'Criador' }) {
@@ -116,6 +167,20 @@ export function MessagesPage({ contextLabel }: { contextLabel: 'Admin' | 'Aluno'
     () => conversations.find((conversation) => conversation.conversation_id === selectedConversationId) ?? null,
     [conversations, selectedConversationId],
   )
+  const supportRoute = useMemo(() => getSupportRoute(contextLabel), [contextLabel])
+  const visibleConversations = useMemo(() => {
+    return [...conversations].sort((left, right) => {
+      const priorityDifference = getConversationPriority(left) - getConversationPriority(right)
+      if (priorityDifference !== 0) {
+        return priorityDifference
+      }
+
+      const leftTimestamp = left.last_message_at ? new Date(left.last_message_at).getTime() : 0
+      const rightTimestamp = right.last_message_at ? new Date(right.last_message_at).getTime() : 0
+
+      return rightTimestamp - leftTimestamp
+    })
+  }, [conversations])
 
   const loadConversations = useCallback(async () => {
     setIsLoadingConversations(true)
@@ -124,12 +189,23 @@ export function MessagesPage({ contextLabel }: { contextLabel: 'Admin' | 'Aluno'
     try {
       const rows = await fetchConversations()
       setConversations(rows)
+      const prioritizedRows = [...rows].sort((left, right) => {
+        const priorityDifference = getConversationPriority(left) - getConversationPriority(right)
+        if (priorityDifference !== 0) {
+          return priorityDifference
+        }
+
+        const leftTimestamp = left.last_message_at ? new Date(left.last_message_at).getTime() : 0
+        const rightTimestamp = right.last_message_at ? new Date(right.last_message_at).getTime() : 0
+
+        return rightTimestamp - leftTimestamp
+      })
 
       if (!selectedConversationId && rows.length > 0) {
         const nextConversationId =
           requestedConversationIdRef.current && rows.some((conversation) => conversation.conversation_id === requestedConversationIdRef.current)
             ? requestedConversationIdRef.current
-            : rows[0].conversation_id
+            : prioritizedRows[0]?.conversation_id ?? rows[0].conversation_id
         setSelectedConversationId(nextConversationId)
       }
     } catch (error) {
@@ -381,7 +457,11 @@ export function MessagesPage({ contextLabel }: { contextLabel: 'Admin' | 'Aluno'
           <p className="text-[10px] font-black uppercase tracking-[0.28em] text-[#1398B7]">{contextLabel} / Mensagens</p>
           <h1 className="mt-2 font-readex text-3xl font-semibold tracking-tight text-[#15323b]">Mensagens</h1>
           <p className="mt-2 max-w-2xl text-sm font-medium leading-6 text-[#6d7f84]">
-            Converse com alunos, criadores e administradores em tempo real dentro da GenFlix.
+            Converse com alunos e criadores em tempo real dentro da GenFlix. Para falar com administradores, use o canal de{' '}
+            <Link to={supportRoute} className="font-black text-[#1398B7] underline underline-offset-2 hover:text-[#0A3640]">
+              suporte
+            </Link>
+            .
           </p>
         </div>
 
@@ -558,9 +638,9 @@ export function MessagesPage({ contextLabel }: { contextLabel: 'Admin' | 'Aluno'
           </div>
 
           <div className="max-h-[560px] overflow-y-auto">
-            {isLoadingConversations && conversations.length === 0 ? (
+            {isLoadingConversations && visibleConversations.length === 0 ? (
               <p className="p-5 text-sm font-semibold text-[#6d7f84]">Carregando conversas...</p>
-            ) : conversations.length === 0 ? (
+            ) : visibleConversations.length === 0 ? (
               <div className="p-8 text-center">
                 <UserPlus className="mx-auto h-8 w-8 text-[#1398B7]" />
                 <p className="mt-3 font-readex text-base font-semibold text-[#15323b]">Comece uma conversa</p>
@@ -570,7 +650,7 @@ export function MessagesPage({ contextLabel }: { contextLabel: 'Admin' | 'Aluno'
               </div>
             ) : (
               <div className="divide-y divide-[#D8E6EB]">
-                {conversations.map((conversation) => {
+                {visibleConversations.map((conversation) => {
                   const isActive = conversation.conversation_id === selectedConversationId
                   return (
                     <button
@@ -584,6 +664,9 @@ export function MessagesPage({ contextLabel }: { contextLabel: 'Admin' | 'Aluno'
                     >
                       <span className="flex items-start justify-between gap-3">
                         <span className="min-w-0">
+                          <span className="inline-flex items-center bg-[#E8F6FA] px-2 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-[#0A3640]">
+                            {getConversationBadgeLabel(conversation)}
+                          </span>
                           <span className="block truncate font-readex text-sm font-semibold text-[#15323b]">
                             {getConversationTitle(conversation)}
                           </span>
@@ -619,11 +702,18 @@ export function MessagesPage({ contextLabel }: { contextLabel: 'Admin' | 'Aluno'
                     {getConversationTitle(selectedConversation).slice(0, 2).toUpperCase()}
                   </span>
                   <div className="min-w-0">
+                    <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#1398B7]">
+                      {getConversationBadgeLabel(selectedConversation)}
+                    </p>
                     <h2 className="truncate font-readex text-lg font-semibold text-[#15323b]">
                       {getConversationTitle(selectedConversation)}
                     </h2>
                     <p className="truncate text-xs font-semibold text-[#6d7f84]">
-                      {selectedConversation.participants.length} participante(s)
+                      {selectedConversation.metadata?.kind === 'course_room'
+                        ? `${selectedConversation.participants.length} aluno(s) com acesso ativo`
+                        : selectedConversation.metadata?.kind === 'creator_channel'
+                          ? 'Canal privado entre aluno e criador'
+                          : `${selectedConversation.participants.length} participante(s)`}
                     </p>
                   </div>
                 </div>

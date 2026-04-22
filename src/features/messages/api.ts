@@ -15,10 +15,18 @@ export interface ConversationParticipant {
   is_current_user: boolean
 }
 
+export interface ConversationMetadata {
+  kind?: 'course_room' | 'creator_channel' | string
+  course_id?: string
+  course_title?: string
+  creator_id?: string
+}
+
 export interface ConversationSummary {
   conversation_id: string
   conversation_type: 'direct' | 'support' | 'group'
   title: string | null
+  metadata: ConversationMetadata
   last_message_at: string | null
   last_message_preview: string | null
   message_count: number
@@ -96,6 +104,7 @@ export async function fetchConversations() {
 
   return ((data ?? []) as ConversationSummary[]).map((conversation) => ({
     ...conversation,
+    metadata: conversation.metadata && typeof conversation.metadata === 'object' ? conversation.metadata : {},
     participants: Array.isArray(conversation.participants) ? conversation.participants : [],
   }))
 }
