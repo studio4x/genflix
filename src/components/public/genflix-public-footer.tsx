@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { AppVersion } from '@/components/layout/AppVersion'
 import { GenflixCtaButton } from '@/components/public/genflix-cta-button'
 import { GenflixLogo } from '@/components/public/genflix-logo'
-import { genflixSocialLinks } from '@/features/public/genflix-site-content'
+import { genflixSocialLinks } from '@/features/public/genflix-public-shell-content'
 import { EditableList, EditableText, isEditableItemVisible, useEditableValue } from '@/features/site-editor/visual-editor'
 
 function isRecord(value: unknown): value is Record<string, unknown> {

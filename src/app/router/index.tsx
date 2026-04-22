@@ -5,74 +5,74 @@ import { AdminLayout } from '@/app/layouts/admin-layout'
 import { AdminCourseBuilderLayout } from '@/app/layouts/admin-course-builder-layout'
 import { CreatorLayout } from '@/app/layouts/creator-layout'
 import { StudentLayout } from '@/app/layouts/student-layout'
-import { StudentCoursePlayerLayout } from '@/pages/student/student-course-player-layout'
 import { ProtectedRoute } from '@/app/router/protected-route'
-import { AdminCourseReleasesPage } from '@/pages/admin/admin-course-releases-page'
-import { AdminCoursesPage } from '@/pages/admin/admin-courses-page'
-import { AdminDashboardPage } from '@/pages/admin/admin-dashboard-page'
-import { AdminGroupsPage } from '@/pages/admin/admin-groups-page'
-import { AdminLessonsPage } from '@/pages/admin/admin-lessons-page'
-import { AdminMaterialsPage } from '@/pages/admin/admin-materials-page'
-import { AdminModulesPage } from '@/pages/admin/admin-modules-page'
-import { AdminReportsPage } from '@/pages/admin/admin-reports-page'
-import { AdminUsersPage } from '@/pages/admin/admin-users-page'
-import { AdminAccountPage } from '@/pages/admin/admin-account-page'
-import { AdminButtonTemplatesPage } from '@/pages/admin/admin-button-templates-page'
-import { AdminPublicFormsPage } from '@/pages/admin/admin-public-forms-page'
-import { AdminPaymentSettingsPage } from '@/pages/admin/admin-payment-settings-page'
-import { AdminCreatorPayoutsPage } from '@/pages/admin/admin-creator-payouts-page'
-import { AdminQuizTypesPage } from '@/pages/admin/admin-quiz-types-page'
-import { AdminNotificationsPage } from '@/pages/admin/admin-notifications-page'
-import { AdminReviewsPage } from '@/pages/admin/admin-reviews-page'
-import { AdminOperationalPendingPage } from '@/pages/admin/admin-operational-pending-page'
-import { AdminBrandingSettingsPage } from '@/pages/admin/admin-branding-settings-page'
-import { AdminSiteEditorPage } from '@/pages/admin/admin-site-editor-page'
-import { ForgotPasswordPage } from '@/pages/public/forgot-password-page'
-import { AuthCallbackPage } from '@/pages/public/auth-callback-page'
-import { CookiesPage } from '@/pages/public/cookies-page'
-import { PublicBlogPostPage } from '@/pages/public/public-blog-post-page'
-import { PublicAboutPage } from '@/pages/public/public-about-page'
-import { PublicFaqPage } from '@/pages/public/public-faq-page'
-import { PublicHelpPage } from '@/pages/public/public-help-page'
-import { LoginPage } from '@/pages/public/login-page'
-import { SignUpPage } from '@/pages/public/sign-up-page'
-import { PrivacyPage } from '@/pages/public/privacy-page'
-import { PublicReferPage } from '@/pages/public/public-refer-page'
-import { PublicRefundPolicyPage } from '@/pages/public/public-refund-policy-page'
-import { PublicTeachPage } from '@/pages/public/public-teach-page'
-import { ResetPasswordPage } from '@/pages/public/reset-password-page'
-import { TermsOfUsePage } from '@/pages/public/terms-of-use-page'
-import { UnauthorizedPage } from '@/pages/public/unauthorized-page'
 import { MessagesPage } from '@/pages/shared/messages-page'
 import { MessagesRedirectPage } from '@/pages/shared/messages-redirect-page'
 import { NotificationPreferencesPage } from '@/pages/shared/notification-preferences-page'
 import { EditablePageSeo } from '@/features/site-editor/editable-page-seo'
 import { EditableControlsHint, SiteContentScope, VisualEditorProvider } from '@/features/site-editor/visual-editor'
 import type { SitePageKey } from '@/features/site-editor/types'
-import { StudentAssessmentExecutionPage } from '@/pages/student/student-assessment-execution-page'
-import { StudentCourseDetailsPage } from '@/pages/student/student-course-details-page'
-import { StudentCoursesPage } from '@/pages/student/student-courses-page'
-import { StudentAccountPage } from '@/pages/student/student-account-page'
-import { StudentDashboardPage } from '@/pages/student/student-dashboard-page'
-import { StudentLessonPage } from '@/pages/student/student-lesson-page'
-import { CreatorProfilePage } from '@/pages/creator/creator-profile-page'
-import { CreatorReportsPage } from '@/pages/creator/creator-reports-page'
-import { CourseOverviewPanel } from '@/pages/admin/builder/course-overview-panel'
-import { ModuleEditorPanel } from '@/pages/admin/builder/module-editor-panel'
-import { LessonEditorPanel } from '@/pages/admin/builder/lesson-editor-panel'
-import { LessonMaterialsPanel } from '@/pages/admin/builder/lesson-materials-panel'
-import { CourseSettingsPanel } from '@/pages/admin/builder/course-settings-panel'
-import { CoursePublicPagePanel } from '@/pages/admin/builder/course-public-page-panel'
-import { CourseAssessmentsPanel } from '@/pages/admin/builder/course-assessments-panel'
-import { AssessmentBuilderPanel } from '@/pages/admin/builder/assessment-builder-panel'
 
 const PublicHomePage = lazy(async () => ({ default: (await import('@/pages/public/public-home-page')).PublicHomePage }))
 const PublicCoursesPage = lazy(async () => ({ default: (await import('@/pages/public/public-courses-page')).PublicCoursesPage }))
 const PublicCourseDetailsPage = lazy(async () => ({ default: (await import('@/pages/public/public-course-details-page')).PublicCourseDetailsPage }))
+const PublicAboutPage = lazy(async () => ({ default: (await import('@/pages/public/public-about-page')).PublicAboutPage }))
 const PublicBlogPage = lazy(async () => ({ default: (await import('@/pages/public/public-blog-page')).PublicBlogPage }))
+const PublicBlogPostPage = lazy(async () => ({ default: (await import('@/pages/public/public-blog-post-page')).PublicBlogPostPage }))
 const PublicCommunityPage = lazy(async () => ({ default: (await import('@/pages/public/public-community-page')).PublicCommunityPage }))
 const PublicContactPage = lazy(async () => ({ default: (await import('@/pages/public/public-contact-page')).PublicContactPage }))
 const PublicResourcesPage = lazy(async () => ({ default: (await import('@/pages/public/public-resources-page')).PublicResourcesPage }))
+const PublicRefundPolicyPage = lazy(async () => ({ default: (await import('@/pages/public/public-refund-policy-page')).PublicRefundPolicyPage }))
+const PublicFaqPage = lazy(async () => ({ default: (await import('@/pages/public/public-faq-page')).PublicFaqPage }))
+const PublicHelpPage = lazy(async () => ({ default: (await import('@/pages/public/public-help-page')).PublicHelpPage }))
+const PublicReferPage = lazy(async () => ({ default: (await import('@/pages/public/public-refer-page')).PublicReferPage }))
+const PublicTeachPage = lazy(async () => ({ default: (await import('@/pages/public/public-teach-page')).PublicTeachPage }))
+const LoginPage = lazy(async () => ({ default: (await import('@/pages/public/login-page')).LoginPage }))
+const AuthCallbackPage = lazy(async () => ({ default: (await import('@/pages/public/auth-callback-page')).AuthCallbackPage }))
+const SignUpPage = lazy(async () => ({ default: (await import('@/pages/public/sign-up-page')).SignUpPage }))
+const ForgotPasswordPage = lazy(async () => ({ default: (await import('@/pages/public/forgot-password-page')).ForgotPasswordPage }))
+const ResetPasswordPage = lazy(async () => ({ default: (await import('@/pages/public/reset-password-page')).ResetPasswordPage }))
+const UnauthorizedPage = lazy(async () => ({ default: (await import('@/pages/public/unauthorized-page')).UnauthorizedPage }))
+const PrivacyPage = lazy(async () => ({ default: (await import('@/pages/public/privacy-page')).PrivacyPage }))
+const CookiesPage = lazy(async () => ({ default: (await import('@/pages/public/cookies-page')).CookiesPage }))
+const TermsOfUsePage = lazy(async () => ({ default: (await import('@/pages/public/terms-of-use-page')).TermsOfUsePage }))
+const StudentDashboardPage = lazy(async () => ({ default: (await import('@/pages/student/student-dashboard-page')).StudentDashboardPage }))
+const StudentCoursesPage = lazy(async () => ({ default: (await import('@/pages/student/student-courses-page')).StudentCoursesPage }))
+const StudentCourseDetailsPage = lazy(async () => ({ default: (await import('@/pages/student/student-course-details-page')).StudentCourseDetailsPage }))
+const StudentAccountPage = lazy(async () => ({ default: (await import('@/pages/student/student-account-page')).StudentAccountPage }))
+const StudentCoursePlayerLayout = lazy(async () => ({ default: (await import('@/pages/student/student-course-player-layout')).StudentCoursePlayerLayout }))
+const StudentLessonPage = lazy(async () => ({ default: (await import('@/pages/student/student-lesson-page')).StudentLessonPage }))
+const StudentAssessmentExecutionPage = lazy(async () => ({ default: (await import('@/pages/student/student-assessment-execution-page')).StudentAssessmentExecutionPage }))
+const CreatorReportsPage = lazy(async () => ({ default: (await import('@/pages/creator/creator-reports-page')).CreatorReportsPage }))
+const CreatorProfilePage = lazy(async () => ({ default: (await import('@/pages/creator/creator-profile-page')).CreatorProfilePage }))
+const AdminDashboardPage = lazy(async () => ({ default: (await import('@/pages/admin/admin-dashboard-page')).AdminDashboardPage }))
+const AdminCoursesPage = lazy(async () => ({ default: (await import('@/pages/admin/admin-courses-page')).AdminCoursesPage }))
+const AdminModulesPage = lazy(async () => ({ default: (await import('@/pages/admin/admin-modules-page')).AdminModulesPage }))
+const AdminCourseReleasesPage = lazy(async () => ({ default: (await import('@/pages/admin/admin-course-releases-page')).AdminCourseReleasesPage }))
+const AdminLessonsPage = lazy(async () => ({ default: (await import('@/pages/admin/admin-lessons-page')).AdminLessonsPage }))
+const AdminMaterialsPage = lazy(async () => ({ default: (await import('@/pages/admin/admin-materials-page')).AdminMaterialsPage }))
+const AdminGroupsPage = lazy(async () => ({ default: (await import('@/pages/admin/admin-groups-page')).AdminGroupsPage }))
+const AdminUsersPage = lazy(async () => ({ default: (await import('@/pages/admin/admin-users-page')).AdminUsersPage }))
+const AdminAccountPage = lazy(async () => ({ default: (await import('@/pages/admin/admin-account-page')).AdminAccountPage }))
+const AdminButtonTemplatesPage = lazy(async () => ({ default: (await import('@/pages/admin/admin-button-templates-page')).AdminButtonTemplatesPage }))
+const AdminReportsPage = lazy(async () => ({ default: (await import('@/pages/admin/admin-reports-page')).AdminReportsPage }))
+const AdminPublicFormsPage = lazy(async () => ({ default: (await import('@/pages/admin/admin-public-forms-page')).AdminPublicFormsPage }))
+const AdminNotificationsPage = lazy(async () => ({ default: (await import('@/pages/admin/admin-notifications-page')).AdminNotificationsPage }))
+const AdminReviewsPage = lazy(async () => ({ default: (await import('@/pages/admin/admin-reviews-page')).AdminReviewsPage }))
+const AdminPaymentSettingsPage = lazy(async () => ({ default: (await import('@/pages/admin/admin-payment-settings-page')).AdminPaymentSettingsPage }))
+const AdminCreatorPayoutsPage = lazy(async () => ({ default: (await import('@/pages/admin/admin-creator-payouts-page')).AdminCreatorPayoutsPage }))
+const AdminQuizTypesPage = lazy(async () => ({ default: (await import('@/pages/admin/admin-quiz-types-page')).AdminQuizTypesPage }))
+const AdminBrandingSettingsPage = lazy(async () => ({ default: (await import('@/pages/admin/admin-branding-settings-page')).AdminBrandingSettingsPage }))
+const AdminOperationalPendingPage = lazy(async () => ({ default: (await import('@/pages/admin/admin-operational-pending-page')).AdminOperationalPendingPage }))
+const AdminSiteEditorPage = lazy(async () => ({ default: (await import('@/pages/admin/admin-site-editor-page')).AdminSiteEditorPage }))
+const CourseOverviewPanel = lazy(async () => ({ default: (await import('@/pages/admin/builder/course-overview-panel')).CourseOverviewPanel }))
+const ModuleEditorPanel = lazy(async () => ({ default: (await import('@/pages/admin/builder/module-editor-panel')).ModuleEditorPanel }))
+const LessonEditorPanel = lazy(async () => ({ default: (await import('@/pages/admin/builder/lesson-editor-panel')).LessonEditorPanel }))
+const LessonMaterialsPanel = lazy(async () => ({ default: (await import('@/pages/admin/builder/lesson-materials-panel')).LessonMaterialsPanel }))
+const AssessmentBuilderPanel = lazy(async () => ({ default: (await import('@/pages/admin/builder/assessment-builder-panel')).AssessmentBuilderPanel }))
+const CoursePublicPagePanel = lazy(async () => ({ default: (await import('@/pages/admin/builder/course-public-page-panel')).CoursePublicPagePanel }))
+const CourseSettingsPanel = lazy(async () => ({ default: (await import('@/pages/admin/builder/course-settings-panel')).CourseSettingsPanel }))
+const CourseAssessmentsPanel = lazy(async () => ({ default: (await import('@/pages/admin/builder/course-assessments-panel')).CourseAssessmentsPanel }))
 
 function withRouteSuspense(children: ReactNode) {
   return (
@@ -225,19 +225,19 @@ export const appRouter = createBrowserRouter([
           },
           {
             path: '/aluno/dashboard',
-            element: <StudentDashboardPage />,
+            element: withRouteSuspense(<StudentDashboardPage />),
           },
           {
             path: '/aluno/cursos',
-            element: <StudentCoursesPage />,
+            element: withRouteSuspense(<StudentCoursesPage />),
           },
           {
             path: '/aluno/cursos/:courseId',
-            element: <StudentCourseDetailsPage />,
+            element: withRouteSuspense(<StudentCourseDetailsPage />),
           },
           {
             path: '/aluno/minha-conta',
-            element: <StudentAccountPage />,
+            element: withRouteSuspense(<StudentAccountPage />),
           },
           {
             path: '/aluno/mensagens',
@@ -251,15 +251,15 @@ export const appRouter = createBrowserRouter([
       },
       {
         path: '/aluno/cursos/:courseId/player',
-        element: <StudentCoursePlayerLayout />,
+        element: withRouteSuspense(<StudentCoursePlayerLayout />),
         children: [
           {
             path: 'aulas/:lessonId',
-            element: <StudentLessonPage />,
+            element: withRouteSuspense(<StudentLessonPage />),
           },
           {
             path: 'avaliacoes/:assessmentId',
-            element: <StudentAssessmentExecutionPage />,
+            element: withRouteSuspense(<StudentAssessmentExecutionPage />),
           },
         ],
       },
@@ -278,11 +278,11 @@ export const appRouter = createBrowserRouter([
           },
           {
             path: '/criador/relatorios',
-            element: <CreatorReportsPage />,
+            element: withRouteSuspense(<CreatorReportsPage />),
           },
           {
             path: '/criador/perfil',
-            element: <CreatorProfilePage />,
+            element: withRouteSuspense(<CreatorProfilePage />),
           },
           {
             path: '/criador/mensagens',
@@ -314,43 +314,43 @@ export const appRouter = createBrowserRouter([
         children: [
           {
             index: true,
-            element: <CourseOverviewPanel />,
+            element: withRouteSuspense(<CourseOverviewPanel />),
           },
           {
             path: 'modulos/:moduleId',
-            element: <ModuleEditorPanel />,
+            element: withRouteSuspense(<ModuleEditorPanel />),
           },
           {
             path: 'modulos/:moduleId/aulas/:lessonId',
-            element: <LessonEditorPanel />,
+            element: withRouteSuspense(<LessonEditorPanel />),
           },
           {
             path: 'modulos/:moduleId/aulas/:lessonId/materiais',
-            element: <LessonMaterialsPanel />,
+            element: withRouteSuspense(<LessonMaterialsPanel />),
           },
           {
             path: 'modulos/:moduleId/avaliacoes/:assessmentId',
-            element: <AssessmentBuilderPanel />,
+            element: withRouteSuspense(<AssessmentBuilderPanel />),
           },
           {
             path: 'assessments/final',
-            element: <AssessmentBuilderPanel />,
+            element: withRouteSuspense(<AssessmentBuilderPanel />),
           },
           {
             path: 'public-page',
-            element: <CoursePublicPagePanel />,
+            element: withRouteSuspense(<CoursePublicPagePanel />),
           },
           {
             path: 'settings',
-            element: <CourseSettingsPanel />,
+            element: withRouteSuspense(<CourseSettingsPanel />),
           },
           {
             path: 'releases',
-            element: <AdminCourseReleasesPage />,
+            element: withRouteSuspense(<AdminCourseReleasesPage />),
           },
           {
             path: 'assessments',
-            element: <CourseAssessmentsPanel />,
+            element: withRouteSuspense(<CourseAssessmentsPanel />),
           },
         ]
       },
@@ -360,31 +360,31 @@ export const appRouter = createBrowserRouter([
         children: [
           {
             index: true,
-            element: <AdminDashboardPage />,
+            element: withRouteSuspense(<AdminDashboardPage />),
           },
           {
             path: '/admin/cursos',
-            element: <AdminCoursesPage />,
+            element: withRouteSuspense(<AdminCoursesPage />),
           },
           {
             path: '/admin/cursos/:courseId/modulos',
-            element: <AdminModulesPage />,
+            element: withRouteSuspense(<AdminModulesPage />),
           },
           {
             path: '/admin/cursos/:courseId/liberacoes',
-            element: <AdminCourseReleasesPage />,
+            element: withRouteSuspense(<AdminCourseReleasesPage />),
           },
           {
             path: '/admin/modulos/:moduleId/aulas',
-            element: <AdminLessonsPage />,
+            element: withRouteSuspense(<AdminLessonsPage />),
           },
           {
             path: '/admin/aulas/:lessonId/materiais',
-            element: <AdminMaterialsPage />,
+            element: withRouteSuspense(<AdminMaterialsPage />),
           },
           {
             path: '/admin/grupos',
-            element: <AdminGroupsPage />,
+            element: withRouteSuspense(<AdminGroupsPage />),
           },
           {
             path: '/admin/alunos',
@@ -392,27 +392,27 @@ export const appRouter = createBrowserRouter([
           },
           {
             path: '/admin/usuarios',
-            element: <AdminUsersPage />,
+            element: withRouteSuspense(<AdminUsersPage />),
           },
           {
             path: '/admin/minha-conta',
-            element: <AdminAccountPage />,
+            element: withRouteSuspense(<AdminAccountPage />),
           },
           {
             path: '/admin/botoes-aula',
-            element: <AdminButtonTemplatesPage />,
+            element: withRouteSuspense(<AdminButtonTemplatesPage />),
           },
           {
             path: '/admin/relatorios',
-            element: <AdminReportsPage />,
+            element: withRouteSuspense(<AdminReportsPage />),
           },
           {
             path: '/admin/formularios',
-            element: <AdminPublicFormsPage />,
+            element: withRouteSuspense(<AdminPublicFormsPage />),
           },
           {
             path: '/admin/notificacoes',
-            element: <AdminNotificationsPage />,
+            element: withRouteSuspense(<AdminNotificationsPage />),
           },
           {
             path: '/admin/preferencias-notificacoes',
@@ -424,15 +424,15 @@ export const appRouter = createBrowserRouter([
           },
           {
             path: '/admin/reviews',
-            element: <AdminReviewsPage />,
+            element: withRouteSuspense(<AdminReviewsPage />),
           },
           {
             path: '/admin/pagamentos',
-            element: <AdminPaymentSettingsPage />,
+            element: withRouteSuspense(<AdminPaymentSettingsPage />),
           },
           {
             path: '/admin/repasses',
-            element: <AdminCreatorPayoutsPage />,
+            element: withRouteSuspense(<AdminCreatorPayoutsPage />),
           },
           {
             path: '/admin/pagamento',
@@ -440,19 +440,19 @@ export const appRouter = createBrowserRouter([
           },
           {
             path: '/admin/tipos-quiz',
-            element: <AdminQuizTypesPage />,
+            element: withRouteSuspense(<AdminQuizTypesPage />),
           },
           {
             path: '/admin/configuracoes-site',
-            element: <AdminBrandingSettingsPage />,
+            element: withRouteSuspense(<AdminBrandingSettingsPage />),
           },
           {
             path: '/admin/pendencias',
-            element: <AdminOperationalPendingPage />,
+            element: withRouteSuspense(<AdminOperationalPendingPage />),
           },
           {
             path: '/admin/site-editor',
-            element: <AdminSiteEditorPage />,
+            element: withRouteSuspense(<AdminSiteEditorPage />),
           },
         ],
       },

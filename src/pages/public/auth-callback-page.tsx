@@ -7,7 +7,7 @@ import { useAuth } from '@/app/providers/auth-provider'
 import { GenflixCtaButton } from '@/components/public/genflix-cta-button'
 import { getDashboardPathForRoles } from '@/features/auth/dashboard-path'
 import { GenflixAuthLayout } from '@/components/public/genflix-auth-layout'
-import { genflixHeroImage } from '@/features/public/genflix-site-content'
+import { genflixHeroImage } from '@/features/public/genflix-public-media'
 import type { RoleCode } from '@/types/auth'
 
 type CallbackState = 'loading' | 'success' | 'error'

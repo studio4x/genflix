@@ -8,7 +8,7 @@ import { GenflixCtaButton } from '@/components/public/genflix-cta-button'
 import { GenflixAuthLayout } from '@/components/public/genflix-auth-layout'
 import { getDashboardPathForRoles } from '@/features/auth/dashboard-path'
 import { hasPasswordRecoveryUrl } from '@/features/auth/password-recovery-state'
-import { genflixHeroImage } from '@/features/public/genflix-site-content'
+import { genflixHeroImage } from '@/features/public/genflix-public-media'
 
 export function ResetPasswordPage() {
   const navigate = useNavigate()

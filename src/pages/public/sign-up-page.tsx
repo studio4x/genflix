@@ -9,7 +9,7 @@ import { GenflixAuthLayout } from '@/components/public/genflix-auth-layout'
 import { LegalDocumentModal } from '@/components/public/legal-document-modal'
 import { getDashboardPathForRoles } from '@/features/auth/dashboard-path'
 import type { LegalDocumentKey } from '@/features/public/legal-documents'
-import { genflixHeroImage } from '@/features/public/genflix-site-content'
+import { genflixHeroImage } from '@/features/public/genflix-public-media'
 
 export function SignUpPage() {
   const navigate = useNavigate()

@@ -2,7 +2,7 @@ import { ArrowUpRight } from 'lucide-react'
 import { Link } from 'react-router-dom'
 
 import { CourseCoverMedia } from '@/components/public/course-cover-media'
-import type { GenflixCourseItem } from '@/features/public/genflix-site-content'
+import type { GenflixCourseItem } from '@/features/public/genflix-public-types'
 
 export function GenflixCourseCard({
   course,

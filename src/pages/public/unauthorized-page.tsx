@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 
 import { GenflixCtaButton } from '@/components/public/genflix-cta-button'
 import { GenflixAuthLayout } from '@/components/public/genflix-auth-layout'
-import { genflixHeroImage } from '@/features/public/genflix-site-content'
+import { genflixHeroImage } from '@/features/public/genflix-public-media'
 
 export function UnauthorizedPage() {
   return (

@@ -4,7 +4,8 @@ import { useAuth } from '@/app/providers/auth-provider'
 import { GenflixCtaButton } from '@/components/public/genflix-cta-button'
 import { GenflixPublicFooter } from '@/components/public/genflix-public-footer'
 import { GenflixPublicHeader } from '@/components/public/genflix-public-header'
-import { genflixHeroImage, genflixNavLinks } from '@/features/public/genflix-site-content'
+import { genflixHeroImage } from '@/features/public/genflix-public-media'
+import { genflixNavLinks } from '@/features/public/genflix-public-shell-content'
 import {
   createSectionRegistryFallback,
   createSectionRegistrySchema,

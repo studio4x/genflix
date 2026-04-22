@@ -5,7 +5,7 @@ import { Link } from 'react-router-dom'
 import { GenflixLogo } from '@/components/public/genflix-logo'
 import { GenflixPublicFooter } from '@/components/public/genflix-public-footer'
 import { GenflixPublicHeader } from '@/components/public/genflix-public-header'
-import { genflixNavLinks } from '@/features/public/genflix-site-content'
+import { genflixNavLinks } from '@/features/public/genflix-public-shell-content'
 import { EditableImage, EditableText, getEditableImagePresentation } from '@/features/site-editor/visual-editor'
 
 interface GenflixAuthLayoutProps {

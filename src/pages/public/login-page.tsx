@@ -7,7 +7,7 @@ import { useAuth } from '@/app/providers/auth-provider'
 import { GenflixCtaButton } from '@/components/public/genflix-cta-button'
 import { GenflixAuthLayout } from '@/components/public/genflix-auth-layout'
 import { getDashboardPathForRoles } from '@/features/auth/dashboard-path'
-import { genflixHeroImage } from '@/features/public/genflix-site-content'
+import { genflixHeroImage } from '@/features/public/genflix-public-media'
 
 type LoginMode = 'magic-link' | 'password'
 

@@ -6,7 +6,7 @@ import { useAuth } from '@/app/providers/auth-provider'
 import { GenflixCtaButton } from '@/components/public/genflix-cta-button'
 import { GenflixLogo } from '@/components/public/genflix-logo'
 import { getDashboardPathForRoles } from '@/features/auth/dashboard-path'
-import type { GenflixNavLink, GenflixPageKey } from '@/features/public/genflix-site-content'
+import type { GenflixNavLink, GenflixPageKey } from '@/features/public/genflix-public-types'
 import { EditableList, EditableText, isEditableItemVisible, useEditableValue } from '@/features/site-editor/visual-editor'
 import { cn } from '@/lib/utils'
 

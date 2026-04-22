@@ -3,7 +3,7 @@ import { GenflixLogo } from '@/components/public/genflix-logo'
 import { GenflixNewsletterSection } from '@/components/public/genflix-newsletter-section'
 import { GenflixPublicFooter } from '@/components/public/genflix-public-footer'
 import { GenflixPublicHeader } from '@/components/public/genflix-public-header'
-import { genflixNavLinks } from '@/features/public/genflix-site-content'
+import { genflixNavLinks } from '@/features/public/genflix-public-shell-content'
 import {
   createSectionRegistryFallback,
   createSectionRegistrySchema,

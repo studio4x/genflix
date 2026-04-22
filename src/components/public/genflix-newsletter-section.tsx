@@ -1,7 +1,7 @@
 import { type FormEvent, useState } from 'react'
 
 import { GenflixCtaButton } from '@/components/public/genflix-cta-button'
-import { genflixNewsletterImage } from '@/features/public/genflix-site-content'
+import { genflixNewsletterImage } from '@/features/public/genflix-public-media'
 import { EditableButton, EditableImage, EditableText, getEditableImagePresentation, useEditableValue } from '@/features/site-editor/visual-editor'
 import type { SitePageKey } from '@/features/site-editor/types'
 
