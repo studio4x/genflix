@@ -727,7 +727,10 @@ export function MessagesPage({ contextLabel }: { contextLabel: 'Admin' | 'Aluno'
       ) : null}
 
       {reportTarget ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0A3640]/50 px-4 py-6">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center px-4 py-6"
+          style={{ backgroundColor: 'rgba(10, 54, 64, 0.5)' }}
+        >
           <form
             onSubmit={(event) => void handleReportMessage(event)}
             className="w-full max-w-lg border border-[#D8E6EB] bg-white p-5 shadow-[0_28px_80px_rgba(10,54,64,0.18)]"
@@ -776,7 +779,7 @@ export function MessagesPage({ contextLabel }: { contextLabel: 'Admin' | 'Aluno'
                 onChange={(event) => setReportDescription(event.target.value)}
                 rows={4}
                 maxLength={500}
-                className="mt-2 w-full resize-none border border-[#D8E6EB] bg-white px-3 py-3 text-sm font-semibold leading-6 text-[#15323b] outline-none focus:border-[#1398B7]"
+                className="mt-2 w-full resize-none border border-[#D8E6EB] bg-white px-3 py-3 text-sm font-semibold leading-6 text-[#15323b] outline-none placeholder:text-[#8BA0A7] focus:border-[#1398B7]"
                 placeholder="Conte rapidamente o que aconteceu."
               />
             </label>
@@ -786,7 +789,7 @@ export function MessagesPage({ contextLabel }: { contextLabel: 'Admin' | 'Aluno'
                 type="button"
                 variant="outline"
                 onClick={() => setReportTarget(null)}
-                className="rounded-none border-[#D8E6EB] bg-white font-black text-[#0A3640]"
+                className="rounded-none border-[#D8E6EB] bg-white font-black !text-[#0A3640] hover:!text-[#0A3640]"
               >
                 Cancelar
               </Button>
