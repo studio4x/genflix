@@ -14,7 +14,7 @@ type LoginMode = 'magic-link' | 'password'
 export function LoginPage() {
   const navigate = useNavigate()
   const { user, signIn, signInWithMagicLink, isLoading, roles } = useAuth()
-  const [mode, setMode] = useState<LoginMode>('magic-link')
+  const [mode, setMode] = useState<LoginMode>('password')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -70,7 +70,7 @@ export function LoginPage() {
     <GenflixAuthLayout
       entryPrefix="global.auth.login"
       title="Bem-vindo de volta"
-      subtitle={mode === 'magic-link' ? 'Entre sem senha usando um link mágico.' : 'Continue de onde parou.'}
+      subtitle={mode === 'password' ? 'Continue de onde parou.' : 'Entre sem senha usando um link mágico.'}
       imageUrl={genflixHeroImage}
     >
       <div className="border-b border-[#D8E6EB]">
@@ -94,22 +94,6 @@ export function LoginPage() {
         <button
           type="button"
           onClick={() => {
-            setMode('magic-link')
-            setError(null)
-            setMessage(null)
-          }}
-          className={`inline-flex h-11 items-center justify-center gap-2 rounded-[14px] text-sm font-bold transition ${
-            mode === 'magic-link'
-              ? 'bg-[#1398B7] text-white shadow-sm'
-              : 'text-[#6d7f84] hover:bg-white'
-          }`}
-        >
-          <MailCheck className="h-4 w-4" />
-          Link mágico
-        </button>
-        <button
-          type="button"
-          onClick={() => {
             setMode('password')
             setError(null)
             setMessage(null)
@@ -122,6 +106,22 @@ export function LoginPage() {
         >
           <KeyRound className="h-4 w-4" />
           Senha
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setMode('magic-link')
+            setError(null)
+            setMessage(null)
+          }}
+          className={`inline-flex h-11 items-center justify-center gap-2 rounded-[14px] text-sm font-bold transition ${
+            mode === 'magic-link'
+              ? 'bg-[#1398B7] text-white shadow-sm'
+              : 'text-[#6d7f84] hover:bg-white'
+          }`}
+        >
+          <MailCheck className="h-4 w-4" />
+          Link mágico
         </button>
       </div>
 
