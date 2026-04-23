@@ -1034,7 +1034,7 @@ export function AdminBannersPage() {
                       open={expandedCards.composition}
                       onToggle={() => toggleCard('composition')}
                     >
-                    <div className="grid gap-2.5 lg:grid-cols-2">
+                    <div className="grid gap-3">
                       {(Object.keys(bannerElementLabels) as SiteBannerLayoutKey[]).map((layoutKey) => {
                         const item = draft.layoutDesktop[layoutKey]
                         const layoutCardKey = `layout-${layoutKey}`
@@ -1053,8 +1053,8 @@ export function AdminBannersPage() {
                             summary={`${item.width}% de largura • camada ${item.zIndex} • ${item.visible ? 'visivel' : 'oculto'}`}
                             open={expandedCards[layoutCardKey]}
                             onToggle={() => toggleCard(layoutCardKey)}
-                            className="rounded-[18px] bg-white p-3"
-                            bodyClassName="grid gap-2.5"
+                            className="min-w-0 overflow-hidden rounded-[18px] bg-white p-3"
+                            bodyClassName="grid min-w-0 gap-2.5"
                           >
                             <label className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-[0.12em] text-[#5F7077]">
                               <input
@@ -1065,7 +1065,7 @@ export function AdminBannersPage() {
                               Visivel
                             </label>
 
-                            <div className="grid gap-2.5">
+                            <div className="grid min-w-0 gap-2.5">
                               <label className="grid gap-2">
                                 <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Largura</span>
                                 <input
@@ -1085,10 +1085,10 @@ export function AdminBannersPage() {
 
                               <div className="grid gap-2">
                                 <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Camada</span>
-                                <div className="flex items-center gap-2">
-                                  <button type="button" onClick={() => setLayoutItem(layoutKey, (current) => ({ ...current, zIndex: Math.max(1, current.zIndex - 1) }))} className="inline-flex h-8 w-8 items-center justify-center rounded-xl border border-[#D8E6EB] text-[#5F7077] hover:bg-[#F2F7F9]">-</button>
-                                  <div className="flex-1 rounded-xl border border-[#D8E6EB] bg-[#F8FBFC] px-3 py-1.5 text-center text-sm font-black text-[#15323b]">{item.zIndex}</div>
-                                  <button type="button" onClick={() => setLayoutItem(layoutKey, (current) => ({ ...current, zIndex: current.zIndex + 1 }))} className="inline-flex h-8 w-8 items-center justify-center rounded-xl border border-[#D8E6EB] text-[#5F7077] hover:bg-[#F2F7F9]">+</button>
+                                <div className="flex min-w-0 items-center gap-2">
+                                  <button type="button" onClick={() => setLayoutItem(layoutKey, (current) => ({ ...current, zIndex: Math.max(1, current.zIndex - 1) }))} className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-[#D8E6EB] text-[#5F7077] hover:bg-[#F2F7F9]">-</button>
+                                  <div className="min-w-0 flex-1 rounded-xl border border-[#D8E6EB] bg-[#F8FBFC] px-3 py-1.5 text-center text-sm font-black text-[#15323b]">{item.zIndex}</div>
+                                  <button type="button" onClick={() => setLayoutItem(layoutKey, (current) => ({ ...current, zIndex: current.zIndex + 1 }))} className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-[#D8E6EB] text-[#5F7077] hover:bg-[#F2F7F9]">+</button>
                                 </div>
                               </div>
 
@@ -1103,7 +1103,7 @@ export function AdminBannersPage() {
                                   <button
                                     type="button"
                                     onClick={() => setElementStyle(layoutKey, (current) => ({ ...current, textColor: undefined }))}
-                                    className="inline-flex h-9 items-center justify-center rounded-xl border border-[#D8E6EB] bg-white px-3 text-xs font-black uppercase tracking-[0.12em] text-[#5F7077] hover:bg-[#F2F7F9]"
+                                    className="inline-flex h-9 w-full min-w-0 items-center justify-center rounded-xl border border-[#D8E6EB] bg-white px-3 text-center text-xs font-black uppercase tracking-[0.12em] text-[#5F7077] hover:bg-[#F2F7F9]"
                                   >
                                     Usar cor do preset
                                   </button>
@@ -1125,7 +1125,7 @@ export function AdminBannersPage() {
                                   <button
                                     type="button"
                                     onClick={() => setElementStyle(layoutKey, () => ({}))}
-                                    className="inline-flex h-9 items-center justify-center rounded-xl border border-[#D8E6EB] bg-white px-3 text-xs font-black uppercase tracking-[0.12em] text-[#5F7077] hover:bg-[#F2F7F9]"
+                                    className="inline-flex h-9 w-full min-w-0 items-center justify-center rounded-xl border border-[#D8E6EB] bg-white px-3 text-center text-xs font-black uppercase tracking-[0.12em] text-[#5F7077] hover:bg-[#F2F7F9]"
                                   >
                                     Usar cores do preset
                                   </button>
