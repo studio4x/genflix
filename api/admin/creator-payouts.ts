@@ -12,6 +12,7 @@ import {
   type AsaasEnvironment,
   type AsaasTransferPayload,
 } from '../_shared/asaas.js'
+import { queueUserNotification } from '../_shared/notifications.js'
 
 type ApiRequest = {
   method?: string
@@ -173,6 +174,74 @@ function getSafeAsaasStatus(payload: AsaasTransferPayload | null | undefined) {
 
 function formatTransferDescription(creatorLabel: string, courseTitle: string) {
   return `Repasse GenFlix - ${creatorLabel} - ${courseTitle}`.slice(0, 140)
+}
+
+function formatCurrencyCents(amountCents: number) {
+  return new Intl.NumberFormat('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+  }).format((amountCents ?? 0) / 100)
+}
+
+async function fetchCourseTitle(adminClient: SupabaseClient, courseId: string | null | undefined) {
+  if (!courseId) {
+    return 'seus cursos'
+  }
+
+  const result = await adminClient
+    .from('courses')
+    .select('title')
+    .eq('id', courseId)
+    .maybeSingle()
+
+  return typeof result.data?.title === 'string' && result.data.title.trim()
+    ? result.data.title.trim()
+    : 'seus cursos'
+}
+
+async function notifyCreatorPayoutEvent(input: {
+  adminClient: SupabaseClient
+  creatorId: string
+  courseId?: string | null
+  amountCents: number
+  kind: 'processing' | 'paid' | 'failed'
+  failureReason?: string | null
+}) {
+  const courseTitle = await fetchCourseTitle(input.adminClient, input.courseId)
+  const amountLabel = formatCurrencyCents(input.amountCents)
+
+  const copy = {
+    processing: {
+      title: 'Repasse iniciado',
+      body: `Um repasse de ${amountLabel} referente ao curso ${courseTitle} entrou em processamento.`,
+      priority: 'normal' as const,
+    },
+    paid: {
+      title: 'Repasse concluido',
+      body: `O repasse de ${amountLabel} referente ao curso ${courseTitle} foi concluido com sucesso.`,
+      priority: 'high' as const,
+    },
+    failed: {
+      title: 'Repasse com falha',
+      body: `O repasse de ${amountLabel} referente ao curso ${courseTitle} precisa de revisao. ${input.failureReason ?? 'Verifique o status no painel.'}`,
+      priority: 'high' as const,
+    },
+  }[input.kind]
+
+  await queueUserNotification(input.adminClient, {
+    userId: input.creatorId,
+    title: copy.title,
+    body: copy.body,
+    category: 'payout',
+    priority: copy.priority,
+    actionUrl: '/criador/relatorios',
+    channels: ['in-app', 'email'],
+    metadata: {
+      course_id: input.courseId ?? null,
+      amount_cents: input.amountCents,
+      payout_status: input.kind,
+    },
+  }).catch(() => undefined)
 }
 
 async function createServiceClient() {
@@ -552,6 +621,14 @@ async function finalizePayoutStatus(input: {
         .in('id', commissionIds)
     }
 
+    await notifyCreatorPayoutEvent({
+      adminClient: input.adminClient,
+      creatorId: input.payout.creator_id,
+      courseId: input.payout.course_id,
+      amountCents: input.payout.amount_cents,
+      kind: 'paid',
+    })
+
     return 'paid'
   }
 
@@ -563,6 +640,15 @@ async function finalizePayoutStatus(input: {
       reason: 'Transferência cancelada no Asaas.',
       rawResponse: input.transferPayload,
     })
+    await notifyCreatorPayoutEvent({
+      adminClient: input.adminClient,
+      creatorId: input.payout.creator_id,
+      courseId: input.payout.course_id,
+      amountCents: input.payout.amount_cents,
+      kind: 'failed',
+      failureReason: 'A transferencia foi cancelada no Asaas.',
+    })
+
     return 'failed'
   }
 
@@ -682,6 +768,16 @@ async function sendPayoutViaAsaas(input: {
       transferPayload: transfer.payload,
     })
 
+    if (finalStatus === 'processing') {
+      await notifyCreatorPayoutEvent({
+        adminClient: input.context.adminClient,
+        creatorId: input.selection.creator.user_id,
+        courseId: input.selection.course.id,
+        amountCents: input.selection.amountCents,
+        kind: 'processing',
+      })
+    }
+
     return {
       payoutId: payout.id,
       transferId: transfer.payload.id,
@@ -696,6 +792,16 @@ async function sendPayoutViaAsaas(input: {
       commissionIds,
       reason: message,
     })
+
+    await notifyCreatorPayoutEvent({
+      adminClient: input.context.adminClient,
+      creatorId: input.selection.creator.user_id,
+      courseId: input.selection.course.id,
+      amountCents: input.selection.amountCents,
+      kind: 'failed',
+      failureReason: message,
+    })
+
     throw error
   }
 }
@@ -758,6 +864,22 @@ async function handleRegisterExternalPayout(context: AdminContext, req: ApiReque
   if (error) {
     jsonResponse(res, 400, { error: error.message })
     return
+  }
+
+  const payoutRecord = await context.adminClient
+    .from('creator_payouts')
+    .select('creator_id, course_id, amount_cents')
+    .eq('id', data)
+    .maybeSingle()
+
+  if (payoutRecord.data) {
+    await notifyCreatorPayoutEvent({
+      adminClient: context.adminClient,
+      creatorId: payoutRecord.data.creator_id as string,
+      courseId: payoutRecord.data.course_id as string | null,
+      amountCents: Number(payoutRecord.data.amount_cents ?? 0),
+      kind: 'paid',
+    })
   }
 
   jsonResponse(res, 200, {

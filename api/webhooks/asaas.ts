@@ -5,6 +5,7 @@ import {
   getConfiguredAsaasWebhookSecrets,
   getHeaderValue,
 } from '../_shared/asaas.js'
+import { queueUserNotification } from '../_shared/notifications.js'
 
 type ApiRequest = {
   method?: string
@@ -81,6 +82,22 @@ async function findSessionByKeys(
   }
 
   return null
+}
+
+async function fetchCourseTitle(adminClient: SupabaseClient, courseId: string | null) {
+  if (!courseId) {
+    return 'seu curso'
+  }
+
+  const result = await adminClient
+    .from('courses')
+    .select('title')
+    .eq('id', courseId)
+    .maybeSingle()
+
+  return typeof result.data?.title === 'string' && result.data.title.trim()
+    ? result.data.title.trim()
+    : 'seu curso'
 }
 
 export default async function handler(req: ApiRequest, res: ApiResponse) {
@@ -163,6 +180,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
   const sessionId = typeof session?.id === 'string' ? session.id : null
   const courseId = typeof session?.course_id === 'string' ? session.course_id : null
   const userId = typeof session?.user_id === 'string' ? session.user_id : null
+  const courseTitle = await fetchCourseTitle(adminClient, courseId)
 
   let nextStatus: 'received' | 'processed' | 'ignored' | 'failed' = 'received'
   let releasedAt: string | null = null
@@ -222,6 +240,21 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
         await adminClient.rpc('create_creator_commission_for_checkout', {
           _checkout_session_id: sessionId,
         })
+
+        await queueUserNotification(adminClient, {
+          userId,
+          title: 'Compra confirmada',
+          body: `Seu pagamento foi aprovado e o acesso ao curso ${courseTitle} ja esta liberado.`,
+          category: 'payment',
+          priority: 'high',
+          actionUrl: `/aluno/cursos/${courseId}`,
+          channels: ['in-app', 'email'],
+          metadata: {
+            course_id: courseId,
+            checkout_session_id: sessionId,
+            payment_status: 'paid',
+          },
+        }).catch(() => undefined)
       }
     } else {
       nextStatus = 'failed'
@@ -275,6 +308,21 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
         .eq('user_id', userId)
         .eq('source_system', 'asaas')
         .eq('managed_by_integration', true)
+
+      await queueUserNotification(adminClient, {
+        userId,
+        title: 'Pagamento estornado',
+        body: `O pagamento do curso ${courseTitle} foi estornado e o acesso vinculado a esta compra foi atualizado.`,
+        category: 'payment',
+        priority: 'high',
+        actionUrl: '/politica-de-reembolso',
+        channels: ['in-app', 'email'],
+        metadata: {
+          course_id: courseId,
+          checkout_session_id: sessionId,
+          payment_status: event?.includes('CHARGEBACK') ? 'chargeback' : 'refunded',
+        },
+      }).catch(() => undefined)
     }
   } else {
     nextStatus = 'ignored'

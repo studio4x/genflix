@@ -9,6 +9,7 @@ import {
   getHeaderValue,
   getRequestOrigin,
 } from '../../_shared/asaas.js'
+import { queueUserNotification } from '../../_shared/notifications.js'
 
 type ApiRequest = {
   method?: string
@@ -230,6 +231,20 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
       jsonResponse(res, 500, { error: 'Não foi possível liberar o curso gratuito.' })
       return
     }
+
+    await queueUserNotification(adminClient, {
+      userId: userData.user.id,
+      title: 'Curso liberado com sucesso',
+      body: `O acesso ao curso ${course.title ?? 'selecionado'} ja esta disponivel na sua area do aluno.`,
+      category: 'payment',
+      priority: 'high',
+      actionUrl: `/aluno/cursos/${course.id}`,
+      channels: ['in-app', 'email'],
+      metadata: {
+        course_id: course.id,
+        release_mode: 'free',
+      },
+    }).catch(() => undefined)
 
     jsonResponse(res, 200, {
       checkoutUrl: `${origin}/aluno/cursos/${course.id}`,
