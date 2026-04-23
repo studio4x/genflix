@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
-import { Link, Navigate, useNavigate } from 'react-router-dom'
+import { Link, Navigate } from 'react-router-dom'
 import { ArrowRight, KeyRound, MailCheck } from 'lucide-react'
 
 import { useAuth } from '@/app/providers/auth-provider'
@@ -12,7 +12,6 @@ import { genflixHeroImage } from '@/features/public/genflix-public-media'
 type LoginMode = 'magic-link' | 'password'
 
 export function LoginPage() {
-  const navigate = useNavigate()
   const { user, signIn, signInWithMagicLink, isLoading, roles } = useAuth()
   const [mode, setMode] = useState<LoginMode>('password')
   const [email, setEmail] = useState('')
@@ -42,7 +41,6 @@ export function LoginPage() {
 
     try {
       await signIn(email, password)
-      navigate('/', { replace: true })
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : 'Falha no login.')
     } finally {
