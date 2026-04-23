@@ -499,23 +499,6 @@ export function StudentDashboardPage() {
               </div>
             </div>
 
-            <div className="mt-4 grid gap-3 sm:grid-cols-2">
-              <div className="rounded-[22px] border border-slate-200 bg-slate-50 p-4">
-                <p className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">Nome</p>
-                <p className="mt-2 text-sm font-bold text-slate-800">{profile?.full_name || 'Não informado'}</p>
-              </div>
-              <div className="rounded-[22px] border border-slate-200 bg-slate-50 p-4">
-                <p className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">E-mail</p>
-                <p className="mt-2 break-all text-sm font-bold text-slate-800">{profile?.email}</p>
-              </div>
-            </div>
-
-            <Link
-              to="/aluno/minha-conta"
-              className="mt-4 inline-flex h-11 items-center justify-center rounded-2xl border border-slate-200 bg-white px-4 text-sm font-black text-slate-700 transition-colors hover:border-slate-300 hover:text-slate-900"
-            >
-              Editar meus dados
-            </Link>
           </article>
 
           <article className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
