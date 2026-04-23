@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { ArrowDown, ArrowUp, Copy, Eye, EyeOff, Grip, ImagePlus, Layers, Plus, Save, Trash2 } from 'lucide-react'
+import { ArrowDown, ArrowUp, Copy, Eye, EyeOff, Grip, ImagePlus, Layers, Monitor, Plus, Save, Smartphone, Trash2 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import {
@@ -94,16 +94,45 @@ function PreviewCta({
   )
 }
 
+function getPreviewLayoutItem(
+  item: SiteBannerLayoutItem,
+  elementKey: SiteBannerLayoutKey,
+  isMobilePreview: boolean,
+): SiteBannerLayoutItem {
+  if (!isMobilePreview) {
+    return item
+  }
+
+  const mobileFallbacks: Record<SiteBannerLayoutKey, Pick<SiteBannerLayoutItem, 'x' | 'y' | 'width'>> = {
+    title: { x: 8, y: 12, width: 84 },
+    subtitle: { x: 8, y: 54, width: 84 },
+    body: { x: 8, y: 68, width: 82 },
+    primaryCta: { x: 8, y: 80, width: 78 },
+    secondaryCta: { x: 8, y: 90, width: 78 },
+  }
+
+  const fallback = mobileFallbacks[elementKey]
+
+  return {
+    ...item,
+    x: normalizePercent(clamp(item.x * 0.38 + fallback.x * 0.62, 4, 100 - fallback.width)),
+    y: normalizePercent(clamp(item.y * 0.45 + fallback.y * 0.55, 8, 92)),
+    width: normalizePercent(clamp(Math.min(Math.max(item.width, fallback.width - 10), fallback.width), 42, fallback.width)),
+  }
+}
+
 function BannerCanvasElement({
   elementKey,
   item,
   children,
   onPointerDown,
+  draggable = true,
 }: {
   elementKey: SiteBannerLayoutKey
   item: SiteBannerLayoutItem
   children: React.ReactNode
   onPointerDown: (key: SiteBannerLayoutKey, event: React.PointerEvent<HTMLDivElement>) => void
+  draggable?: boolean
 }) {
   if (!item.visible) {
     return null
@@ -111,16 +140,22 @@ function BannerCanvasElement({
 
   return (
     <div
-      className="group absolute cursor-grab active:cursor-grabbing"
+      className={cn(
+        'group absolute',
+        draggable ? 'cursor-grab active:cursor-grabbing' : 'cursor-default',
+      )}
       style={{
         left: `${item.x}%`,
         top: `${item.y}%`,
         width: `${item.width}%`,
         zIndex: item.zIndex,
       }}
-      onPointerDown={(event) => onPointerDown(elementKey, event)}
+      onPointerDown={draggable ? (event) => onPointerDown(elementKey, event) : undefined}
     >
-      <div className="pointer-events-none absolute -left-2 -top-2 inline-flex items-center gap-1 rounded-full border border-[#D8E6EB] bg-white/95 px-2 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-[#15323b] shadow-sm opacity-0 transition-opacity group-hover:opacity-100">
+      <div className={cn(
+        'pointer-events-none absolute -left-2 -top-2 inline-flex items-center gap-1 rounded-full border border-[#D8E6EB] bg-white/95 px-2 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-[#15323b] shadow-sm transition-opacity',
+        draggable ? 'opacity-0 group-hover:opacity-100' : 'opacity-100',
+      )}>
         <Grip className="h-3 w-3" />
         {bannerElementLabels[elementKey]}
       </div>
@@ -139,7 +174,10 @@ export function AdminBannersPage() {
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const stageRef = useRef<HTMLDivElement | null>(null)
+  const stageShellRef = useRef<HTMLDivElement | null>(null)
   const dragStateRef = useRef<BannerDragState | null>(null)
+  const [previewMode, setPreviewMode] = useState<'desktop' | 'mobile'>('desktop')
+  const [isCanvasDocked, setIsCanvasDocked] = useState(false)
 
   const selectedBanner = useMemo(
     () => banners.find((banner) => banner.id === selectedBannerId) ?? null,
@@ -174,6 +212,28 @@ export function AdminBannersPage() {
   useEffect(() => {
     void loadBanners()
   }, [])
+
+  useEffect(() => {
+    function updateDockedState() {
+      const stageShell = stageShellRef.current
+      if (!stageShell || previewMode === 'mobile') {
+        setIsCanvasDocked(false)
+        return
+      }
+
+      const rect = stageShell.getBoundingClientRect()
+      setIsCanvasDocked(rect.top <= 110 && rect.bottom > 240)
+    }
+
+    updateDockedState()
+    window.addEventListener('scroll', updateDockedState, { passive: true })
+    window.addEventListener('resize', updateDockedState)
+
+    return () => {
+      window.removeEventListener('scroll', updateDockedState)
+      window.removeEventListener('resize', updateDockedState)
+    }
+  }, [previewMode])
 
   useEffect(() => {
     function handlePointerMove(event: PointerEvent) {
@@ -472,6 +532,12 @@ export function AdminBannersPage() {
   const canvasTitle = draft?.title.trim() || 'Titulo do banner'
   const canvasSubtitle = draft?.subtitle.trim() || 'Subtitulo opcional'
   const canvasBody = draft?.body.trim() || 'Texto complementar opcional'
+  const isMobilePreview = previewMode === 'mobile'
+  const titleLayout = draft ? getPreviewLayoutItem(draft.layoutDesktop.title, 'title', isMobilePreview) : null
+  const subtitleLayout = draft ? getPreviewLayoutItem(draft.layoutDesktop.subtitle, 'subtitle', isMobilePreview) : null
+  const bodyLayout = draft ? getPreviewLayoutItem(draft.layoutDesktop.body, 'body', isMobilePreview) : null
+  const primaryCtaLayout = draft ? getPreviewLayoutItem(draft.layoutDesktop.primaryCta, 'primaryCta', isMobilePreview) : null
+  const secondaryCtaLayout = draft ? getPreviewLayoutItem(draft.layoutDesktop.secondaryCta, 'secondaryCta', isMobilePreview) : null
 
   return (
     <div className="space-y-7">
@@ -605,6 +671,30 @@ export function AdminBannersPage() {
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-3">
+                  <div className="inline-flex items-center rounded-2xl border border-[#D8E6EB] bg-[#F8FBFC] p-1">
+                    <button
+                      type="button"
+                      onClick={() => setPreviewMode('desktop')}
+                      className={cn(
+                        'inline-flex h-10 items-center gap-2 rounded-[14px] px-3 text-xs font-black uppercase tracking-[0.14em] transition-colors',
+                        previewMode === 'desktop' ? 'bg-[#1398B7] text-white' : 'text-[#5F7077] hover:text-[#15323b]',
+                      )}
+                    >
+                      <Monitor className="h-4 w-4" />
+                      Desktop
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPreviewMode('mobile')}
+                      className={cn(
+                        'inline-flex h-10 items-center gap-2 rounded-[14px] px-3 text-xs font-black uppercase tracking-[0.14em] transition-colors',
+                        previewMode === 'mobile' ? 'bg-[#1398B7] text-white' : 'text-[#5F7077] hover:text-[#15323b]',
+                      )}
+                    >
+                      <Smartphone className="h-4 w-4" />
+                      Mobile
+                    </button>
+                  </div>
                   <Button type="button" variant="outline" onClick={() => setDraft(selectedBanner ? cloneBanner(selectedBanner) : null)} disabled={!isDirty || saving} className="rounded-2xl border-[#D8E6EB]">
                     Reverter alteracoes
                   </Button>
@@ -616,11 +706,21 @@ export function AdminBannersPage() {
               </div>
 
               <div className="mt-6 space-y-6">
-                <div className="overflow-hidden rounded-[28px] border border-[#D8E6EB] bg-[#F8FBFC] p-4">
+                <div
+                  ref={stageShellRef}
+                  className="sticky top-[104px] z-20 overflow-hidden rounded-[28px] border border-[#D8E6EB] bg-[#F8FBFC] p-4"
+                >
                     <div
                       ref={stageRef}
-                      className="relative w-full max-w-full min-w-0 overflow-hidden rounded-[32px] border border-[#D8E6EB] bg-[#0A3640] shadow-[0_24px_60px_rgba(10,54,64,0.16)] min-h-[340px] lg:min-h-[480px] 2xl:min-h-[580px]"
-                      style={{ aspectRatio: '1600 / 760' }}
+                      className={cn(
+                        'relative min-w-0 overflow-hidden rounded-[32px] border border-[#D8E6EB] bg-[#0A3640] shadow-[0_24px_60px_rgba(10,54,64,0.16)] transition-all duration-300',
+                        isMobilePreview
+                          ? 'mx-auto w-full max-w-[420px] min-h-[620px]'
+                          : isCanvasDocked
+                            ? 'mx-auto w-[60%] max-w-[860px] min-h-[300px] lg:min-h-[360px]'
+                            : 'w-full max-w-full min-h-[340px] lg:min-h-[480px] 2xl:min-h-[580px]',
+                      )}
+                      style={{ aspectRatio: isMobilePreview ? '390 / 760' : '1600 / 760' }}
                     >
                       <div
                         className="absolute inset-0"
@@ -631,39 +731,39 @@ export function AdminBannersPage() {
                         }}
                       />
 
-                      <BannerCanvasElement elementKey="title" item={draft.layoutDesktop.title} onPointerDown={handleCanvasPointerDown}>
+                      <BannerCanvasElement elementKey="title" item={titleLayout ?? draft.layoutDesktop.title} onPointerDown={handleCanvasPointerDown} draggable={!isMobilePreview}>
                         <div className={cn('rounded-[18px] border border-dashed border-white/18 bg-black/6 px-3 py-2', theme?.previewSurfaceClass)}>
-                          <p className={cn('text-[2.2rem] font-extrabold leading-[0.92] tracking-[-0.05em] xl:text-[2.9rem]', theme?.titleClass)}>
+                          <p className={cn('font-extrabold leading-[0.92] tracking-[-0.05em]', isMobilePreview ? 'text-[1.9rem]' : 'text-[2.2rem] xl:text-[2.9rem]', theme?.titleClass)}>
                             {canvasTitle}
                           </p>
                         </div>
                       </BannerCanvasElement>
 
-                      <BannerCanvasElement elementKey="subtitle" item={draft.layoutDesktop.subtitle} onPointerDown={handleCanvasPointerDown}>
+                      <BannerCanvasElement elementKey="subtitle" item={subtitleLayout ?? draft.layoutDesktop.subtitle} onPointerDown={handleCanvasPointerDown} draggable={!isMobilePreview}>
                         <div className={cn('rounded-[18px] border border-dashed border-white/18 bg-black/6 px-3 py-2', theme?.previewSurfaceClass)}>
-                          <p className={cn('text-sm leading-7 sm:text-base xl:text-lg', theme?.textClass)}>
+                          <p className={cn(isMobilePreview ? 'text-sm leading-6' : 'text-sm leading-7 sm:text-base xl:text-lg', theme?.textClass)}>
                             {canvasSubtitle}
                           </p>
                         </div>
                       </BannerCanvasElement>
 
-                      <BannerCanvasElement elementKey="body" item={draft.layoutDesktop.body} onPointerDown={handleCanvasPointerDown}>
+                      <BannerCanvasElement elementKey="body" item={bodyLayout ?? draft.layoutDesktop.body} onPointerDown={handleCanvasPointerDown} draggable={!isMobilePreview}>
                         <div className={cn('rounded-[18px] border border-dashed border-white/18 bg-black/6 px-3 py-2', theme?.previewSurfaceClass)}>
-                          <p className={cn('text-[15px] leading-7 xl:text-[17px]', theme?.bodyClass)}>
+                          <p className={cn(isMobilePreview ? 'text-sm leading-6' : 'text-[15px] leading-7 xl:text-[17px]', theme?.bodyClass)}>
                             {canvasBody}
                           </p>
                         </div>
                       </BannerCanvasElement>
 
                       {draft.primaryCta?.visible ? (
-                        <BannerCanvasElement elementKey="primaryCta" item={draft.layoutDesktop.primaryCta} onPointerDown={handleCanvasPointerDown}>
-                          <PreviewCta cta={{ ...draft.primaryCta, label: draft.primaryCta.label || 'CTA principal' }} className="h-14 px-6" />
+                        <BannerCanvasElement elementKey="primaryCta" item={primaryCtaLayout ?? draft.layoutDesktop.primaryCta} onPointerDown={handleCanvasPointerDown} draggable={!isMobilePreview}>
+                          <PreviewCta cta={{ ...draft.primaryCta, label: draft.primaryCta.label || 'CTA principal' }} className={cn(isMobilePreview ? 'h-12 px-4 text-sm' : 'h-14 px-6')} />
                         </BannerCanvasElement>
                       ) : null}
 
                       {draft.secondaryCta?.visible ? (
-                        <BannerCanvasElement elementKey="secondaryCta" item={draft.layoutDesktop.secondaryCta} onPointerDown={handleCanvasPointerDown}>
-                          <PreviewCta cta={{ ...draft.secondaryCta, label: draft.secondaryCta.label || 'CTA secundario' }} className="h-14 px-6" />
+                        <BannerCanvasElement elementKey="secondaryCta" item={secondaryCtaLayout ?? draft.layoutDesktop.secondaryCta} onPointerDown={handleCanvasPointerDown} draggable={!isMobilePreview}>
+                          <PreviewCta cta={{ ...draft.secondaryCta, label: draft.secondaryCta.label || 'CTA secundario' }} className={cn(isMobilePreview ? 'h-12 px-4 text-sm' : 'h-14 px-6')} />
                         </BannerCanvasElement>
                       ) : null}
                     </div>
@@ -751,7 +851,7 @@ export function AdminBannersPage() {
                     </div>
                   </section>
 
-                  <section className="rounded-[24px] border border-[#D8E6EB] bg-[#F8FBFC] p-4">
+                  <section className="rounded-[24px] border border-[#D8E6EB] bg-[#F8FBFC] p-4 xl:col-span-2">
                     <div className="flex items-center justify-between gap-3">
                       <div>
                         <h3 className="font-readex text-lg font-semibold text-[#15323b]">Composicao desktop</h3>
@@ -759,7 +859,7 @@ export function AdminBannersPage() {
                       </div>
                     </div>
 
-                    <div className="mt-4 grid gap-2.5">
+                    <div className="mt-4 grid gap-2.5 lg:grid-cols-2">
                       {(Object.keys(bannerElementLabels) as SiteBannerLayoutKey[]).map((layoutKey) => {
                         const item = draft.layoutDesktop[layoutKey]
 
@@ -810,129 +910,129 @@ export function AdminBannersPage() {
                     </div>
                   </section>
 
-                {([
-                  { key: 'primaryCta', title: 'CTA principal' },
-                  { key: 'secondaryCta', title: 'CTA secundario' },
-                ] as const).map(({ key, title }) => {
-                  const cta = draft[key]
+                  <div className="space-y-6 xl:col-span-1">
+                    {([
+                      { key: 'primaryCta', title: 'CTA principal' },
+                      { key: 'secondaryCta', title: 'CTA secundario' },
+                    ] as const).map(({ key, title }) => {
+                      const cta = draft[key]
 
-                  return (
-                    <section key={key} className="rounded-[24px] border border-[#D8E6EB] bg-[#F8FBFC] p-4">
-                      <div className="flex flex-col items-start gap-3">
-                        <div>
-                          <h3 className="font-readex text-lg font-semibold text-[#15323b]">{title}</h3>
-                          <p className="mt-1 text-xs font-semibold leading-5 text-[#5F7077]">Defina texto, destino e preset deste botao do banner.</p>
-                        </div>
-                        <label className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-[0.12em] text-[#5F7077]">
-                          <input
-                            type="checkbox"
-                            checked={cta?.visible ?? false}
-                            onChange={(event) => setCta(key, (current) => {
-                              const base = current ?? {
-                                label: title,
-                                href: '#',
-                                isInternal: true,
-                                openInNewTab: false,
-                                tonePreset: key === 'primaryCta' ? 'solid' : 'surface',
-                                visible: true,
-                              }
-                              return {
-                                ...base,
-                                visible: event.target.checked,
-                              }
-                            })}
-                          />
-                          Usar no banner
-                        </label>
-                      </div>
+                      return (
+                        <section key={key} className="rounded-[24px] border border-[#D8E6EB] bg-[#F8FBFC] p-4">
+                          <div className="flex flex-col items-start gap-3">
+                            <div>
+                              <h3 className="font-readex text-lg font-semibold text-[#15323b]">{title}</h3>
+                              <p className="mt-1 text-xs font-semibold leading-5 text-[#5F7077]">Defina texto, destino e preset deste botao do banner.</p>
+                            </div>
+                            <label className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-[0.12em] text-[#5F7077]">
+                              <input
+                                type="checkbox"
+                                checked={cta?.visible ?? false}
+                                onChange={(event) => setCta(key, (current) => {
+                                  const base = current ?? {
+                                    label: title,
+                                    href: '#',
+                                    isInternal: true,
+                                    openInNewTab: false,
+                                    tonePreset: key === 'primaryCta' ? 'solid' : 'surface',
+                                    visible: true,
+                                  }
+                                  return {
+                                    ...base,
+                                    visible: event.target.checked,
+                                  }
+                                })}
+                              />
+                              Usar no banner
+                            </label>
+                          </div>
 
-                      <div className="mt-4 grid gap-3">
-                        <label className="grid gap-2">
-                          <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Texto do botao</span>
-                          <input
-                            value={cta?.label ?? ''}
-                            onChange={(event) => setCta(key, (current) => ({
-                              ...(current ?? {
-                                href: '#',
-                                isInternal: true,
-                                openInNewTab: false,
-                                tonePreset: key === 'primaryCta' ? 'solid' : 'surface',
-                                visible: true,
-                              }),
-                              label: event.target.value,
-                            } as SiteBannerCta))}
-                            className="h-11 rounded-[16px] border border-[#D8E6EB] bg-white px-4 text-sm font-semibold text-[#15323b] outline-none"
-                          />
-                        </label>
+                          <div className="mt-4 grid gap-3">
+                            <label className="grid gap-2">
+                              <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Texto do botao</span>
+                              <input
+                                value={cta?.label ?? ''}
+                                onChange={(event) => setCta(key, (current) => ({
+                                  ...(current ?? {
+                                    href: '#',
+                                    isInternal: true,
+                                    openInNewTab: false,
+                                    tonePreset: key === 'primaryCta' ? 'solid' : 'surface',
+                                    visible: true,
+                                  }),
+                                  label: event.target.value,
+                                } as SiteBannerCta))}
+                                className="h-11 rounded-[16px] border border-[#D8E6EB] bg-white px-4 text-sm font-semibold text-[#15323b] outline-none"
+                              />
+                            </label>
 
-                        <label className="grid gap-2">
-                          <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Link</span>
-                          <input
-                            value={cta?.href ?? ''}
-                            onChange={(event) => setCta(key, (current) => ({
-                              ...(current ?? {
-                                label: title,
-                                isInternal: true,
-                                openInNewTab: false,
-                                tonePreset: key === 'primaryCta' ? 'solid' : 'surface',
-                                visible: true,
-                              }),
-                              href: event.target.value,
-                            } as SiteBannerCta))}
-                            className="h-11 rounded-[16px] border border-[#D8E6EB] bg-white px-4 text-sm font-semibold text-[#15323b] outline-none"
-                          />
-                        </label>
+                            <label className="grid gap-2">
+                              <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Link</span>
+                              <input
+                                value={cta?.href ?? ''}
+                                onChange={(event) => setCta(key, (current) => ({
+                                  ...(current ?? {
+                                    label: title,
+                                    isInternal: true,
+                                    openInNewTab: false,
+                                    tonePreset: key === 'primaryCta' ? 'solid' : 'surface',
+                                    visible: true,
+                                  }),
+                                  href: event.target.value,
+                                } as SiteBannerCta))}
+                                className="h-11 rounded-[16px] border border-[#D8E6EB] bg-white px-4 text-sm font-semibold text-[#15323b] outline-none"
+                              />
+                            </label>
 
-                        <div className="grid gap-3 sm:grid-cols-2">
-                          <label className="grid gap-2">
-                            <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Preset do botao</span>
-                            <select
-                              value={cta?.tonePreset ?? (key === 'primaryCta' ? 'solid' : 'surface')}
-                              onChange={(event) => setCta(key, (current) => ({
-                                ...(current ?? {
-                                  label: title,
-                                  href: '#',
-                                  isInternal: true,
-                                  openInNewTab: false,
-                                  visible: true,
-                                }),
-                                tonePreset: event.target.value as SiteBannerCta['tonePreset'],
-                              } as SiteBannerCta))}
-                              className="h-11 rounded-[16px] border border-[#D8E6EB] bg-white px-4 text-sm font-semibold text-[#15323b] outline-none"
-                            >
-                              {bannerTonePresetOptions.map((option) => (
-                                <option key={option.value} value={option.value}>{option.label}</option>
-                              ))}
-                            </select>
-                          </label>
+                            <label className="grid gap-2">
+                              <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Preset do botao</span>
+                              <select
+                                value={cta?.tonePreset ?? (key === 'primaryCta' ? 'solid' : 'surface')}
+                                onChange={(event) => setCta(key, (current) => ({
+                                  ...(current ?? {
+                                    label: title,
+                                    href: '#',
+                                    isInternal: true,
+                                    openInNewTab: false,
+                                    visible: true,
+                                  }),
+                                  tonePreset: event.target.value as SiteBannerCta['tonePreset'],
+                                } as SiteBannerCta))}
+                                className="h-11 rounded-[16px] border border-[#D8E6EB] bg-white px-4 text-sm font-semibold text-[#15323b] outline-none"
+                              >
+                                {bannerTonePresetOptions.map((option) => (
+                                  <option key={option.value} value={option.value}>{option.label}</option>
+                                ))}
+                              </select>
+                            </label>
 
-                          <label className="grid gap-2">
-                            <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Tipo de link</span>
-                            <select
-                              value={cta?.isInternal === false ? 'external' : 'internal'}
-                              onChange={(event) => setCta(key, (current) => ({
-                                ...(current ?? {
-                                  label: title,
-                                  href: '#',
-                                  openInNewTab: false,
-                                  tonePreset: key === 'primaryCta' ? 'solid' : 'surface',
-                                  visible: true,
-                                }),
-                                isInternal: event.target.value === 'internal',
-                                openInNewTab: event.target.value === 'external',
-                              } as SiteBannerCta))}
-                              className="h-11 rounded-[16px] border border-[#D8E6EB] bg-white px-4 text-sm font-semibold text-[#15323b] outline-none"
-                            >
-                              <option value="internal">Interno</option>
-                              <option value="external">Externo</option>
-                            </select>
-                          </label>
-                        </div>
-                      </div>
-                    </section>
-                  )
-                })}
-              </div>
+                            <label className="grid gap-2">
+                              <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Tipo de link</span>
+                              <select
+                                value={cta?.isInternal === false ? 'external' : 'internal'}
+                                onChange={(event) => setCta(key, (current) => ({
+                                  ...(current ?? {
+                                    label: title,
+                                    href: '#',
+                                    openInNewTab: false,
+                                    tonePreset: key === 'primaryCta' ? 'solid' : 'surface',
+                                    visible: true,
+                                  }),
+                                  isInternal: event.target.value === 'internal',
+                                  openInNewTab: event.target.value === 'external',
+                                } as SiteBannerCta))}
+                                className="h-11 rounded-[16px] border border-[#D8E6EB] bg-white px-4 text-sm font-semibold text-[#15323b] outline-none"
+                              >
+                                <option value="internal">Interno</option>
+                                <option value="external">Externo</option>
+                              </select>
+                            </label>
+                          </div>
+                        </section>
+                      )
+                    })}
+                  </div>
+                </div>
               </div>
             </article>
           )}
