@@ -99,7 +99,7 @@ export function AdminDashboardPage() {
               <p className="text-sm font-semibold uppercase tracking-wider text-cyan-700/80">Pagamento</p>
             </div>
           </div>
-          <p className="text-sm text-slate-600 mb-6">Configure o gateway Asaas, ambiente de teste e URL do webhook.</p>
+          <p className="text-sm text-slate-600 mb-6">Acompanhe o gateway Asaas, o ambiente ativo e a URL do webhook.</p>
           <Button variant="outline" className="w-full border-cyan-200 text-cyan-800 hover:bg-cyan-100 hover:text-cyan-900 shadow-sm" asChild>
             <Link to="/admin/pagamento">Abrir Configurações</Link>
           </Button>

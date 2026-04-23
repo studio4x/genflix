@@ -42,20 +42,17 @@ const pendingItems: PendingItem[] = [
   {
     title: 'Asaas em produção',
     area: 'Pagamentos',
-    status: 'blocked',
+    status: 'ready',
     description:
-      'O checkout e os repasses PIX já estão estruturados para Asaas, mas a operação real depende da conta Asaas final aprovada e das credenciais de produção.',
+      'O checkout e os repasses PIX já estão operando com o ambiente de produção do Asaas configurado no deploy principal da plataforma.',
     missing: [
-      'Conta Asaas de produção aprovada',
-      'ASAAS_ACCESS_TOKEN_PRODUCTION',
-      'Webhook cadastrado no painel Asaas',
-      'Segredo ASAAS_WEBHOOK_SECRET, se a operação optar por validação dedicada',
+      'Validar uma compra real controlada',
+      'Confirmar recebimento do webhook de produção no painel Asaas',
     ],
     nextSteps: [
-      'Obter o token de produção no painel Asaas.',
-      'Cadastrar o token na Vercel.',
-      'Cadastrar o webhook apontando para /api/webhooks/asaas.',
-      'Fazer uma compra real controlada e validar liberação automática do curso.',
+      'Cadastrar o webhook apontando para /api/webhooks/asaas no painel Asaas, se ainda não estiver ativo.',
+      'Executar uma compra real controlada para validar a liberação automática do curso.',
+      'Conferir eventos e checkout em /admin/pagamentos.',
     ],
     actionLabel: 'Abrir pagamentos',
     actionTo: '/admin/pagamentos',
