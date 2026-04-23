@@ -512,8 +512,8 @@ export function AdminBannersPage() {
         </div>
       ) : null}
 
-      <section className="grid gap-6 xl:grid-cols-[320px_minmax(0,1fr)]">
-        <aside className="space-y-4 xl:sticky xl:top-[108px] xl:self-start">
+      <section className="space-y-6">
+        <aside className="space-y-4">
           <article className="rounded-[28px] border border-[#D8E6EB] bg-white p-5 shadow-sm">
             <div className="flex items-center justify-between">
               <div>
@@ -525,11 +525,11 @@ export function AdminBannersPage() {
               </div>
             </div>
 
-            <div className="mt-5 space-y-3">
+            <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
               {loading ? (
                 <p className="text-sm font-semibold text-[#5F7077]">Carregando banners...</p>
               ) : banners.length === 0 ? (
-                <div className="rounded-[22px] border border-dashed border-[#D8E6EB] bg-[#F8FBFC] px-4 py-6 text-center">
+                <div className="rounded-[22px] border border-dashed border-[#D8E6EB] bg-[#F8FBFC] px-4 py-6 text-center md:col-span-2 xl:col-span-4">
                   <p className="text-sm font-semibold text-[#5F7077]">Nenhum banner cadastrado ainda.</p>
                   <Button type="button" onClick={() => void handleCreateBanner()} className="mt-4 rounded-2xl bg-[#1398B7] font-black text-white hover:bg-[#1089A5]">
                     Criar primeiro banner
@@ -542,7 +542,7 @@ export function AdminBannersPage() {
                   <article
                     key={banner.id}
                     className={cn(
-                      'rounded-[24px] border p-4 transition-all',
+                      'h-full rounded-[24px] border p-4 transition-all',
                       isSelected ? 'border-[#1398B7] bg-[#E8F6FA]' : 'border-[#D8E6EB] bg-[#F8FBFC] hover:border-[#B8D8E1]',
                     )}
                   >
@@ -615,12 +615,11 @@ export function AdminBannersPage() {
                 </div>
               </div>
 
-              <div className="mt-6 grid gap-6 2xl:grid-cols-[minmax(0,1.5fr)_minmax(380px,430px)]">
-                <div className="space-y-4 2xl:sticky 2xl:top-[108px] 2xl:self-start">
-                  <div className="rounded-[28px] border border-[#D8E6EB] bg-[#F8FBFC] p-4">
+              <div className="mt-6 space-y-6">
+                <div className="rounded-[28px] border border-[#D8E6EB] bg-[#F8FBFC] p-4">
                     <div
                       ref={stageRef}
-                      className="relative overflow-hidden rounded-[32px] border border-[#D8E6EB] bg-[#0A3640] shadow-[0_24px_60px_rgba(10,54,64,0.16)] min-h-[380px] lg:min-h-[500px] 2xl:min-h-[620px]"
+                      className="relative min-w-0 overflow-hidden rounded-[32px] border border-[#D8E6EB] bg-[#0A3640] shadow-[0_24px_60px_rgba(10,54,64,0.16)] min-h-[380px] lg:min-h-[520px] 2xl:min-h-[640px]"
                       style={{ aspectRatio: '1600 / 760' }}
                     >
                       <div
@@ -668,40 +667,37 @@ export function AdminBannersPage() {
                         </BannerCanvasElement>
                       ) : null}
                     </div>
-                  </div>
-
-                  <div className="grid gap-4 lg:grid-cols-2">
-                    <div className="rounded-[22px] border border-[#D8E6EB] bg-[#F8FBFC] px-4 py-4 text-sm font-semibold leading-6 text-[#5F7077]">
-                      O preview agora foi ampliado para facilitar o ajuste fino do banner. Arraste os blocos diretamente sobre a arte para definir a composicao.
-                    </div>
-                    <div className="rounded-[22px] border border-[#D8E6EB] bg-white p-4">
-                      <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#5F7077]">Imagem de fundo</p>
-                      <p className="mt-2 truncate text-sm font-semibold text-[#15323b]">{draft.backgroundUrl || 'Nenhuma imagem definida'}</p>
-                      <label className="mt-4 inline-flex h-11 cursor-pointer items-center justify-center rounded-2xl bg-[#1398B7] px-4 text-xs font-black uppercase tracking-[0.14em] text-white hover:bg-[#1089A5]">
-                        <ImagePlus className="mr-2 h-4 w-4" />
-                        {uploadingImage ? 'Enviando...' : 'Trocar imagem'}
-                        <input
-                          type="file"
-                          accept=".jpg,.jpeg,.png,.webp,image/*"
-                          disabled={uploadingImage}
-                          onChange={(event) => {
-                            const file = event.target.files?.[0] ?? null
-                            void handleBackgroundUpload(file)
-                            event.currentTarget.value = ''
-                          }}
-                          className="sr-only"
-                        />
-                      </label>
-                    </div>
-                  </div>
                 </div>
 
-                <div className="space-y-5">
+                <div className="grid gap-6 xl:grid-cols-4">
                   <section className="rounded-[24px] border border-[#D8E6EB] bg-[#F8FBFC] p-4">
                     <h3 className="font-readex text-lg font-semibold text-[#15323b]">Conteudo e imagem</h3>
+                    <p className="mt-2 text-xs font-semibold leading-5 text-[#5F7077]">
+                      O preview acima fica em largura total para facilitar o ajuste fino. Arraste os blocos diretamente sobre a arte e use este card para trocar a imagem.
+                    </p>
 
-                    <div className="mt-4 grid gap-4 xl:grid-cols-2">
-                      <label className="grid gap-2 xl:col-span-2">
+                    <div className="mt-4 grid gap-4">
+                      <div className="rounded-[18px] border border-[#D8E6EB] bg-white p-4">
+                        <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#5F7077]">Imagem de fundo</p>
+                        <p className="mt-2 truncate text-sm font-semibold text-[#15323b]">{draft.backgroundUrl || 'Nenhuma imagem definida'}</p>
+                        <label className="mt-4 inline-flex h-11 cursor-pointer items-center justify-center rounded-2xl bg-[#1398B7] px-4 text-xs font-black uppercase tracking-[0.14em] text-white hover:bg-[#1089A5]">
+                          <ImagePlus className="mr-2 h-4 w-4" />
+                          {uploadingImage ? 'Enviando...' : 'Trocar imagem'}
+                          <input
+                            type="file"
+                            accept=".jpg,.jpeg,.png,.webp,image/*"
+                            disabled={uploadingImage}
+                            onChange={(event) => {
+                              const file = event.target.files?.[0] ?? null
+                              void handleBackgroundUpload(file)
+                              event.currentTarget.value = ''
+                            }}
+                            className="sr-only"
+                          />
+                        </label>
+                      </div>
+
+                      <label className="grid gap-2">
                         <span className="text-[10px] font-black uppercase tracking-[0.18em] text-[#5F7077]">Nome interno</span>
                         <input
                           value={draft.name}
@@ -710,7 +706,7 @@ export function AdminBannersPage() {
                         />
                       </label>
 
-                      <label className="grid gap-2 xl:col-span-2">
+                      <label className="grid gap-2">
                         <span className="text-[10px] font-black uppercase tracking-[0.18em] text-[#5F7077]">Titulo</span>
                         <textarea
                           value={draft.title}
@@ -740,7 +736,7 @@ export function AdminBannersPage() {
                         />
                       </label>
 
-                      <label className="grid gap-2 xl:col-span-2">
+                      <label className="grid gap-2">
                         <span className="text-[10px] font-black uppercase tracking-[0.18em] text-[#5F7077]">Preset visual</span>
                         <select
                           value={draft.themePreset}
@@ -763,7 +759,7 @@ export function AdminBannersPage() {
                       </div>
                     </div>
 
-                    <div className="mt-4 grid gap-3 lg:grid-cols-2">
+                    <div className="mt-4 grid gap-3">
                       {(Object.keys(bannerElementLabels) as SiteBannerLayoutKey[]).map((layoutKey) => {
                         const item = draft.layoutDesktop[layoutKey]
 
@@ -813,10 +809,7 @@ export function AdminBannersPage() {
                       })}
                     </div>
                   </section>
-                </div>
-              </div>
 
-              <div className="mt-6 grid gap-6 xl:grid-cols-2">
                 {([
                   { key: 'primaryCta', title: 'CTA principal' },
                   { key: 'secondaryCta', title: 'CTA secundario' },
@@ -939,6 +932,7 @@ export function AdminBannersPage() {
                     </section>
                   )
                 })}
+              </div>
               </div>
             </article>
           )}

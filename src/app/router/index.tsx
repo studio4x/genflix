@@ -42,6 +42,7 @@ const StudentCourseDetailsPage = lazy(async () => ({ default: (await import('@/p
 const StudentAccountPage = lazy(async () => ({ default: (await import('@/pages/student/student-account-page')).StudentAccountPage }))
 const StudentSupportTicketsPage = lazy(async () => ({ default: (await import('@/pages/student/student-support-tickets-page')).StudentSupportTicketsPage }))
 const CreatorSupportTicketsPage = lazy(async () => ({ default: (await import('@/pages/creator/creator-support-tickets-page')).CreatorSupportTicketsPage }))
+const CreatorNotificationsPage = lazy(async () => ({ default: (await import('@/pages/creator/creator-notifications-page')).CreatorNotificationsPage }))
 const StudentCoursePlayerLayout = lazy(async () => ({ default: (await import('@/pages/student/student-course-player-layout')).StudentCoursePlayerLayout }))
 const StudentLessonPage = lazy(async () => ({ default: (await import('@/pages/student/student-lesson-page')).StudentLessonPage }))
 const StudentAssessmentExecutionPage = lazy(async () => ({ default: (await import('@/pages/student/student-assessment-execution-page')).StudentAssessmentExecutionPage }))
@@ -311,7 +312,7 @@ export const appRouter = createBrowserRouter([
           },
           {
             path: '/criador/notificacoes',
-            element: <Navigate to="/criador/relatorios?tab=notificacoes" replace />,
+            element: withRouteSuspense(<CreatorNotificationsPage />),
           },
         ],
       },

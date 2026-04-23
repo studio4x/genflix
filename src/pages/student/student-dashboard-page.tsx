@@ -323,7 +323,7 @@ export function StudentDashboardPage() {
 
       <section className="grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(360px,0.9fr)]">
         <div className="space-y-6">
-          <article className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
+          <article className="hidden rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
             <div>
               <p className="text-[10px] font-black uppercase tracking-[0.24em] text-slate-400">Atencao imediata</p>
               <h3 className="mt-2 text-2xl font-black tracking-tight text-slate-900">O que vale priorizar agora</h3>

@@ -143,7 +143,7 @@ export function PublicSupportPage() {
             <GenflixCtaButton
               type="button"
               tone="surface"
-              className="mt-8 h-12 w-full justify-between px-5 text-[#0A3640]"
+              className="mt-8 h-12 w-full justify-between px-5 !text-[#0A3640] [&>span:first-child]:!text-[#0A3640]"
               onClick={() => setIsModalOpen(true)}
             >
               Abrir chamado
