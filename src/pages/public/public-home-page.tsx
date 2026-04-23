@@ -131,30 +131,17 @@ export function PublicHomePage() {
             </nav>
 
             <div className="flex items-center gap-3">
-              <Button
-                asChild
-                variant="outline"
-                className="hidden rounded-2xl border-slate-200 bg-white px-5 font-bold text-slate-700 shadow-sm hover:bg-slate-50 md:inline-flex"
-              >
-                <a href="#cursos">
-                  Ver Cursos
-                </a>
-              </Button>
-              <Button
-                asChild
-                variant="outline"
-                className="hidden rounded-2xl border-slate-200 bg-white px-5 font-bold text-slate-700 shadow-sm hover:bg-slate-50 xl:inline-flex"
-              >
-                <Link to="/login">
-                  Minha Conta
-                </Link>
-              </Button>
-              <Button
-                asChild
-                className="rounded-2xl bg-[#1473ff] px-5 font-bold text-white shadow-[0_12px_30px_rgba(20,115,255,0.22)] hover:bg-[#1067e6]"
-              >
-                <Link to="/login">Entrar</Link>
-              </Button>
+              {user ? (
+                <Button
+                  asChild
+                  variant="outline"
+                  className="rounded-2xl border-slate-200 bg-white px-5 font-bold text-slate-700 shadow-sm hover:bg-slate-50"
+                >
+                  <Link to={roles.includes('admin') ? '/admin' : '/aluno'}>
+                    Minha Conta
+                  </Link>
+                </Button>
+              ) : null}
             </div>
           </header>
 
@@ -197,7 +184,9 @@ export function PublicHomePage() {
                 asChild
                 className="h-14 rounded-2xl bg-[#1473ff] px-8 text-base font-black text-white shadow-[0_14px_35px_rgba(20,115,255,0.24)] hover:bg-[#1067e6]"
               >
-                <Link to="/login">Ir para meu painel</Link>
+                <a href="https://homecarematch.com.br" target="_blank" rel="noreferrer">
+                  Acessar pela HomeCare Match
+                </a>
               </Button>
               <Button
                 asChild
@@ -389,13 +378,6 @@ export function PublicHomePage() {
                 <a href="https://homecarematch.com.br" target="_blank" rel="noreferrer">
                   Ir para HomeCare Match
                 </a>
-              </Button>
-              <Button
-                asChild
-                variant="outline"
-                className="h-14 rounded-2xl border-white/12 bg-white/5 px-8 font-black text-white hover:bg-white/10"
-              >
-                <Link to="/login">Já tenho acesso</Link>
               </Button>
             </div>
           </div>

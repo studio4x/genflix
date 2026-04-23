@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom'
 
 import homeCareMatchLogoUrl from '@/assets/homecare-match-logo.jpg'
 import { PlatformFooter } from '@/components/layout/platform-footer'
-import { Button } from '@/components/ui/button'
 
 interface AuthShellProps {
   title: string
@@ -45,21 +44,14 @@ export function AuthShell({ title, subtitle, children }: AuthShellProps) {
               ))}
             </nav>
 
-            <div className="flex items-center gap-3">
-              <Button
-                asChild
-                variant="outline"
-                className="hidden rounded-2xl border-slate-200 bg-white px-5 font-bold text-slate-700 shadow-sm hover:bg-slate-50 md:inline-flex"
-              >
-                <Link to="/">Ver Cursos</Link>
-              </Button>
-              <Button
-                asChild
-                className="rounded-2xl bg-[#1473ff] px-5 font-bold text-white shadow-[0_12px_30px_rgba(20,115,255,0.22)] hover:bg-[#1067e6]"
-              >
-                <Link to="/login">Entrar</Link>
-              </Button>
-            </div>
+            <a
+              href="https://homecarematch.com.br"
+              target="_blank"
+              rel="noreferrer"
+              className="hidden rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-700 shadow-sm transition hover:bg-slate-50 md:inline-flex"
+            >
+              HomeCare Match
+            </a>
           </header>
 
           <div className="flex flex-1 items-center justify-center py-12 sm:py-16">
