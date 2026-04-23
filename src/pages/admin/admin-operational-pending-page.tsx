@@ -18,23 +18,17 @@ const pendingItems: PendingItem[] = [
   {
     title: 'Envio externo de e-mails',
     area: 'SMTP e domínio',
-    status: 'blocked',
+    status: 'ready',
     description:
-      'A fila de notificações e o processador de e-mails já estão prontos. O envio real depende do domínio final e de um servidor SMTP contratado/configurado.',
+      'A fila de notificações e o processador de e-mails já estão operando com SMTP ativo no deploy principal. Enquanto a plataforma estiver em construção, o remetente configurado é genflix@e-clix.com.br.',
     missing: [
-      'Domínio final com DNS ativo',
-      'Host SMTP',
-      'Porta e modo TLS/SSL',
-      'Usuário SMTP',
-      'Senha SMTP',
-      'E-mail e nome do remetente',
+      'Executar um teste real de envio para convite, recuperação de senha e notificações',
+      'Substituir o remetente temporário pelo domínio final da GenFlix quando ele estiver pronto',
     ],
     nextSteps: [
-      'Contratar ou liberar o serviço SMTP definitivo.',
-      'Configurar SPF, DKIM e DMARC no DNS do domínio.',
-      'Cadastrar as variáveis SMTP no ambiente de produção da Vercel.',
-      'Configurar CRON_SECRET na Vercel para liberar processamento automático seguro da fila.',
-      'Executar teste real de envio para convite, recuperação de senha e notificações.',
+      'Monitorar entregabilidade e autenticação do remetente atual.',
+      'Quando o domínio final estiver disponível, atualizar SPF, DKIM e DMARC.',
+      'Trocar o remetente operacional para o e-mail definitivo da plataforma.',
     ],
     actionLabel: 'Ver notificações',
     actionTo: '/admin/notificacoes',
@@ -60,15 +54,17 @@ const pendingItems: PendingItem[] = [
   {
     title: 'Validação Asaas sandbox',
     area: 'Pagamentos',
-    status: 'partial',
+    status: 'ready',
     description:
-      'A plataforma está pronta para validar checkout e repasse em sandbox, mas precisa do token sandbox do Asaas no ambiente de produção/staging.',
-    missing: ['ASAAS_ACCESS_TOKEN_SANDBOX', 'Webhook sandbox cadastrado, se for testar o fluxo completo via callback'],
+      'A plataforma já possui credenciais e segredo dedicados para sandbox do Asaas, permitindo validar compras e repasses em ambiente de testes sem afetar a produção.',
+    missing: [
+      'Executar um checkout de teste em sandbox',
+      'Confirmar o callback do webhook sandbox com um evento real',
+    ],
     nextSteps: [
-      'Cadastrar ASAAS_ACCESS_TOKEN_SANDBOX na Vercel.',
-      'Rodar diagnóstico em /admin/pagamentos.',
-      'Criar uma compra de teste.',
-      'Simular webhook ou aguardar callback real do sandbox.',
+      'Rodar diagnóstico em /admin/pagamentos para confirmar os checks.',
+      'Criar uma compra de teste em sandbox.',
+      'Validar o processamento do webhook sandbox e a liberação controlada do curso.',
     ],
     actionLabel: 'Diagnosticar Asaas',
     actionTo: '/admin/pagamentos',
@@ -78,7 +74,7 @@ const pendingItems: PendingItem[] = [
     area: 'Infraestrutura',
     status: 'partial',
     description:
-      'O projeto está publicado no domínio temporário da Vercel. Algumas URLs e e-mails finais devem ser revisados quando genflix.com.br estiver apontado.',
+      'O projeto segue publicado no domínio temporário da Vercel. Algumas URLs e o remetente final devem ser revisados quando genflix.com.br estiver apontado.',
     missing: ['DNS do domínio final apontado para Vercel', 'APP_PUBLIC_URL atualizado para https://genflix.com.br'],
     nextSteps: [
       'Configurar o domínio final na Vercel.',
