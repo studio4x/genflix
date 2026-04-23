@@ -41,6 +41,7 @@ const adminNavGroups: AdminNavGroup[] = [
       { to: '/admin/banners', label: 'Banners' },
       { to: '/admin/site-editor', label: 'Editor Visual' },
       { to: '/admin/formularios', label: 'Formularios' },
+      { to: '/admin/tipos-quiz', label: 'Tipos de Quiz' },
     ],
   },
   {
@@ -70,7 +71,6 @@ const adminNavGroups: AdminNavGroup[] = [
     label: 'Plataforma',
     description: 'Configuracoes de apoio e administracao da conta.',
     links: [
-      { to: '/admin/tipos-quiz', label: 'Tipos de Quiz' },
       { to: '/admin/minha-conta', label: 'Minha Conta' },
       { to: '/admin/configuracoes-site', label: 'Configuracoes do Site' },
     ],
