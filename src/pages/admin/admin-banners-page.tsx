@@ -174,10 +174,8 @@ export function AdminBannersPage() {
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const stageRef = useRef<HTMLDivElement | null>(null)
-  const stageShellRef = useRef<HTMLDivElement | null>(null)
   const dragStateRef = useRef<BannerDragState | null>(null)
   const [previewMode, setPreviewMode] = useState<'desktop' | 'mobile'>('desktop')
-  const [isCanvasDocked, setIsCanvasDocked] = useState(false)
 
   const selectedBanner = useMemo(
     () => banners.find((banner) => banner.id === selectedBannerId) ?? null,
@@ -212,28 +210,6 @@ export function AdminBannersPage() {
   useEffect(() => {
     void loadBanners()
   }, [])
-
-  useEffect(() => {
-    function updateDockedState() {
-      const stageShell = stageShellRef.current
-      if (!stageShell || previewMode === 'mobile') {
-        setIsCanvasDocked(false)
-        return
-      }
-
-      const rect = stageShell.getBoundingClientRect()
-      setIsCanvasDocked(rect.top <= 110 && rect.bottom > 240)
-    }
-
-    updateDockedState()
-    window.addEventListener('scroll', updateDockedState, { passive: true })
-    window.addEventListener('resize', updateDockedState)
-
-    return () => {
-      window.removeEventListener('scroll', updateDockedState)
-      window.removeEventListener('resize', updateDockedState)
-    }
-  }, [previewMode])
 
   useEffect(() => {
     function handlePointerMove(event: PointerEvent) {
@@ -667,34 +643,10 @@ export function AdminBannersPage() {
                   <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#1398B7]">Editor do banner</p>
                   <h2 className="mt-1 font-readex text-2xl font-semibold text-[#15323b]">{draft.name || 'Banner sem nome'}</h2>
                   <p className="mt-2 text-sm font-semibold text-[#5F7077]">
-                    Preview desktop ampliado com edicao por arraste. Os controles ficam distribuidos ao lado e abaixo para facilitar a composicao do slide.
+                    O preview fica estavel ao lado dos cards de ajuste para facilitar a composicao do slide em tempo real.
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-3">
-                  <div className="inline-flex items-center rounded-2xl border border-[#D8E6EB] bg-[#F8FBFC] p-1">
-                    <button
-                      type="button"
-                      onClick={() => setPreviewMode('desktop')}
-                      className={cn(
-                        'inline-flex h-10 items-center gap-2 rounded-[14px] px-3 text-xs font-black uppercase tracking-[0.14em] transition-colors',
-                        previewMode === 'desktop' ? 'bg-[#1398B7] text-white' : 'text-[#5F7077] hover:text-[#15323b]',
-                      )}
-                    >
-                      <Monitor className="h-4 w-4" />
-                      Desktop
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setPreviewMode('mobile')}
-                      className={cn(
-                        'inline-flex h-10 items-center gap-2 rounded-[14px] px-3 text-xs font-black uppercase tracking-[0.14em] transition-colors',
-                        previewMode === 'mobile' ? 'bg-[#1398B7] text-white' : 'text-[#5F7077] hover:text-[#15323b]',
-                      )}
-                    >
-                      <Smartphone className="h-4 w-4" />
-                      Mobile
-                    </button>
-                  </div>
                   <Button type="button" variant="outline" onClick={() => setDraft(selectedBanner ? cloneBanner(selectedBanner) : null)} disabled={!isDirty || saving} className="rounded-2xl border-[#D8E6EB]">
                     Reverter alteracoes
                   </Button>
@@ -705,20 +657,49 @@ export function AdminBannersPage() {
                 </div>
               </div>
 
-              <div className="mt-6 space-y-6">
-                <div
-                  ref={stageShellRef}
-                  className="sticky top-[104px] z-20 overflow-hidden rounded-[28px] border border-[#D8E6EB] bg-[#F8FBFC] p-4"
-                >
+              <div className="mt-6 grid gap-6 xl:grid-cols-12 xl:items-start">
+                <div className="xl:col-span-7 2xl:col-span-8">
+                  <div className="rounded-[28px] border border-[#D8E6EB] bg-[#F8FBFC] p-4 xl:sticky xl:top-24">
+                    <div className="mb-4 flex items-center justify-between gap-3">
+                      <div>
+                        <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#5F7077]">Preview do banner</p>
+                        <p className="mt-1 text-xs font-semibold text-[#5F7077]">
+                          Arraste os blocos diretamente sobre a arte para reposicionar os elementos.
+                        </p>
+                      </div>
+                      <div className="inline-flex items-center rounded-2xl border border-[#D8E6EB] bg-white p-1 shadow-sm">
+                        <button
+                          type="button"
+                          onClick={() => setPreviewMode('desktop')}
+                          className={cn(
+                            'inline-flex h-10 items-center gap-2 rounded-[14px] px-3 text-xs font-black uppercase tracking-[0.14em] transition-colors',
+                            previewMode === 'desktop' ? 'bg-[#1398B7] text-white' : 'text-[#5F7077] hover:text-[#15323b]',
+                          )}
+                        >
+                          <Monitor className="h-4 w-4" />
+                          Desktop
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setPreviewMode('mobile')}
+                          className={cn(
+                            'inline-flex h-10 items-center gap-2 rounded-[14px] px-3 text-xs font-black uppercase tracking-[0.14em] transition-colors',
+                            previewMode === 'mobile' ? 'bg-[#1398B7] text-white' : 'text-[#5F7077] hover:text-[#15323b]',
+                          )}
+                        >
+                          <Smartphone className="h-4 w-4" />
+                          Mobile
+                        </button>
+                      </div>
+                    </div>
+
                     <div
                       ref={stageRef}
                       className={cn(
                         'relative min-w-0 overflow-hidden rounded-[32px] border border-[#D8E6EB] bg-[#0A3640] shadow-[0_24px_60px_rgba(10,54,64,0.16)] transition-all duration-300',
                         isMobilePreview
                           ? 'mx-auto w-full max-w-[420px] min-h-[620px]'
-                          : isCanvasDocked
-                            ? 'mx-auto w-[60%] max-w-[860px] min-h-[300px] lg:min-h-[360px]'
-                            : 'w-full max-w-full min-h-[340px] lg:min-h-[480px] 2xl:min-h-[580px]',
+                          : 'w-full max-w-full min-h-[340px] lg:min-h-[430px] 2xl:min-h-[520px]',
                       )}
                       style={{ aspectRatio: isMobilePreview ? '390 / 760' : '1600 / 760' }}
                     >
@@ -767,13 +748,15 @@ export function AdminBannersPage() {
                         </BannerCanvasElement>
                       ) : null}
                     </div>
+                  </div>
                 </div>
 
-                <div className="grid gap-6 xl:grid-cols-4">
-                  <section className="rounded-[24px] border border-[#D8E6EB] bg-[#F8FBFC] p-4">
+                <div className="xl:col-span-5 2xl:col-span-4">
+                  <div className="grid gap-6 xl:max-h-[calc(100vh-9rem)] xl:overflow-y-auto xl:pr-2">
+                    <section className="rounded-[24px] border border-[#D8E6EB] bg-[#F8FBFC] p-4">
                     <h3 className="font-readex text-lg font-semibold text-[#15323b]">Conteudo e imagem</h3>
                     <p className="mt-2 text-xs font-semibold leading-5 text-[#5F7077]">
-                      O preview acima fica em largura total para facilitar o ajuste fino. Arraste os blocos diretamente sobre a arte e use este card para trocar a imagem.
+                      Use este card para trocar a imagem e ajustar o texto enquanto acompanha o resultado no preview ao lado.
                     </p>
 
                     <div className="mt-4 grid gap-4">
@@ -849,13 +832,13 @@ export function AdminBannersPage() {
                         </select>
                       </label>
                     </div>
-                  </section>
+                    </section>
 
-                  <section className="rounded-[24px] border border-[#D8E6EB] bg-[#F8FBFC] p-4 xl:col-span-2">
+                    <section className="rounded-[24px] border border-[#D8E6EB] bg-[#F8FBFC] p-4">
                     <div className="flex items-center justify-between gap-3">
                       <div>
                         <h3 className="font-readex text-lg font-semibold text-[#15323b]">Composicao desktop</h3>
-                        <p className="mt-1 text-xs font-semibold leading-5 text-[#5F7077]">Ajuste visibilidade, largura e profundidade sem perder o preview ampliado ao lado.</p>
+                        <p className="mt-1 text-xs font-semibold leading-5 text-[#5F7077]">Ajuste visibilidade, largura e profundidade sem perder o preview estavel ao lado.</p>
                       </div>
                     </div>
 
@@ -908,9 +891,9 @@ export function AdminBannersPage() {
                         )
                       })}
                     </div>
-                  </section>
+                    </section>
 
-                  <div className="space-y-6 xl:col-span-1">
+                    <div className="space-y-6">
                     {([
                       { key: 'primaryCta', title: 'CTA principal' },
                       { key: 'secondaryCta', title: 'CTA secundario' },
@@ -1031,6 +1014,7 @@ export function AdminBannersPage() {
                         </section>
                       )
                     })}
+                    </div>
                   </div>
                 </div>
               </div>
