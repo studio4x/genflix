@@ -93,6 +93,18 @@ export async function createDirectConversation(recipientId: string) {
   return data as string
 }
 
+export async function createCourseCreatorConversation(courseId: string) {
+  const { data, error } = await supabase.rpc('create_course_creator_conversation', {
+    _course_id: courseId,
+  })
+
+  if (error) {
+    throw error
+  }
+
+  return data as string
+}
+
 export async function fetchConversations() {
   const { data, error } = await supabase.rpc('list_user_conversations', {
     _limit: 80,

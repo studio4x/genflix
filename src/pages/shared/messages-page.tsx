@@ -5,6 +5,7 @@ import { Flag, Inbox, MessageCircle, RefreshCw, Search, Send, ShieldCheck, UserP
 import { useAuth } from '@/app/providers/auth-provider'
 import { Button } from '@/components/ui/button'
 import {
+  createCourseCreatorConversation,
   createDirectConversation,
   fetchConversationMessages,
   fetchConversations,
@@ -63,6 +64,10 @@ const reportReasonLabels: Record<MessageReportReason, string> = {
 
 function getConversationTitle(conversation: ConversationSummary) {
   if (conversation.metadata?.kind === 'creator_channel') {
+    if (conversation.metadata.course_title?.trim()) {
+      return `Criador do curso - ${conversation.metadata.course_title.trim()}`
+    }
+
     const otherParticipant = conversation.participants.find((participant) => !participant.is_current_user)
     if (otherParticipant) {
       return getDisplayName(otherParticipant.full_name, otherParticipant.email)
@@ -89,7 +94,8 @@ function getConversationSubtitle(conversation: ConversationSummary) {
   }
 
   if (conversation.metadata?.kind === 'creator_channel') {
-    return 'Canal direto com o criador do curso'
+    const otherParticipant = conversation.participants.find((participant) => !participant.is_current_user)
+    return `Canal direto com ${getDisplayName(otherParticipant?.full_name, otherParticipant?.email)}`
   }
 
   const otherParticipant = conversation.participants.find((participant) => !participant.is_current_user)
@@ -169,7 +175,17 @@ export function MessagesPage({ contextLabel }: { contextLabel: 'Admin' | 'Aluno'
   )
   const supportRoute = useMemo(() => getSupportRoute(contextLabel), [contextLabel])
   const visibleConversations = useMemo(() => {
-    return [...conversations].sort((left, right) => {
+    const scopedConversations = contextLabel === 'Aluno'
+      ? conversations.filter((conversation) => {
+        if (conversation.metadata?.kind !== 'creator_channel') {
+          return true
+        }
+
+        return conversation.conversation_id === selectedConversationId || conversation.message_count > 0
+      })
+      : conversations
+
+    return [...scopedConversations].sort((left, right) => {
       const priorityDifference = getConversationPriority(left) - getConversationPriority(right)
       if (priorityDifference !== 0) {
         return priorityDifference
@@ -180,7 +196,7 @@ export function MessagesPage({ contextLabel }: { contextLabel: 'Admin' | 'Aluno'
 
       return rightTimestamp - leftTimestamp
     })
-  }, [conversations])
+  }, [contextLabel, conversations, selectedConversationId])
 
   const loadConversations = useCallback(async () => {
     setIsLoadingConversations(true)
@@ -388,6 +404,19 @@ export function MessagesPage({ contextLabel }: { contextLabel: 'Admin' | 'Aluno'
       await loadConversations()
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : 'Não foi possível iniciar a conversa.')
+    }
+  }
+
+  async function handleOpenCourseCreatorChannel(courseId: string) {
+    setErrorMessage(null)
+
+    try {
+      const conversationId = await createCourseCreatorConversation(courseId)
+      requestedConversationIdRef.current = conversationId
+      setSelectedConversationId(conversationId)
+      await loadConversations()
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : 'Nao foi possivel abrir o canal com o criador.')
     }
   }
 
@@ -698,23 +727,38 @@ export function MessagesPage({ contextLabel }: { contextLabel: 'Admin' | 'Aluno'
             <>
               <div className="border-b border-[#D8E6EB] bg-white px-5 py-4">
                 <div className="flex items-center gap-3">
-                  <span className="flex h-11 w-11 items-center justify-center bg-[linear-gradient(180deg,#1398B7_0%,#0A3640_100%)] font-black text-white">
-                    {getConversationTitle(selectedConversation).slice(0, 2).toUpperCase()}
-                  </span>
-                  <div className="min-w-0">
-                    <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#1398B7]">
-                      {getConversationBadgeLabel(selectedConversation)}
-                    </p>
-                    <h2 className="truncate font-readex text-lg font-semibold text-[#15323b]">
-                      {getConversationTitle(selectedConversation)}
-                    </h2>
-                    <p className="truncate text-xs font-semibold text-[#6d7f84]">
-                      {selectedConversation.metadata?.kind === 'course_room'
-                        ? `${selectedConversation.participants.length} aluno(s) com acesso ativo`
-                        : selectedConversation.metadata?.kind === 'creator_channel'
-                          ? 'Canal privado entre aluno e criador'
-                          : `${selectedConversation.participants.length} participante(s)`}
-                    </p>
+                  <div className="flex flex-1 items-center justify-between gap-4">
+                    <div className="flex min-w-0 items-center gap-3">
+                      <span className="flex h-11 w-11 items-center justify-center bg-[linear-gradient(180deg,#1398B7_0%,#0A3640_100%)] font-black text-white">
+                        {getConversationTitle(selectedConversation).slice(0, 2).toUpperCase()}
+                      </span>
+                      <div className="min-w-0">
+                        <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#1398B7]">
+                          {getConversationBadgeLabel(selectedConversation)}
+                        </p>
+                        <h2 className="truncate font-readex text-lg font-semibold text-[#15323b]">
+                          {getConversationTitle(selectedConversation)}
+                        </h2>
+                        <p className="truncate text-xs font-semibold text-[#6d7f84]">
+                          {selectedConversation.metadata?.kind === 'course_room'
+                            ? `${selectedConversation.participants.length} aluno(s) com acesso ativo`
+                            : selectedConversation.metadata?.kind === 'creator_channel'
+                              ? 'Canal privado entre aluno e criador'
+                              : `${selectedConversation.participants.length} participante(s)`}
+                        </p>
+                      </div>
+                    </div>
+
+                    {contextLabel === 'Aluno' && selectedConversation.metadata?.kind === 'course_room' && selectedConversation.metadata.course_id ? (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => void handleOpenCourseCreatorChannel(selectedConversation.metadata.course_id!)}
+                        className="shrink-0 rounded-2xl border-[#D8E6EB] bg-white font-black text-[#0A3640] hover:border-[#1398B7]"
+                      >
+                        Falar com o criador
+                      </Button>
+                    ) : null}
                   </div>
                 </div>
               </div>
