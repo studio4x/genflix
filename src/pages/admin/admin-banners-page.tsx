@@ -58,6 +58,17 @@ function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max)
 }
 
+function applyWidthWithinCanvas(item: SiteBannerLayoutItem, nextWidth: number) {
+  const normalizedWidth = normalizePercent(clamp(nextWidth, 18, 100))
+  const normalizedX = normalizePercent(clamp(item.x, 0, 100 - normalizedWidth))
+
+  return {
+    ...item,
+    width: normalizedWidth,
+    x: normalizedX,
+  }
+}
+
 function moveItem<T>(items: T[], fromIndex: number, toIndex: number) {
   const next = [...items]
   const [movedItem] = next.splice(fromIndex, 1)
@@ -1071,14 +1082,13 @@ export function AdminBannersPage() {
                                 <input
                                   type="range"
                                   min={18}
-                                  max={62}
-                                  step={1}
+                                  max={100}
+                                  step={0.5}
                                   value={item.width}
-                                  onChange={(event) => setLayoutItem(layoutKey, (current) => ({
-                                    ...current,
-                                    width: Number(event.target.value),
-                                    x: normalizePercent(clamp(current.x, 0, 100 - Number(event.target.value))),
-                                  }))}
+                                  onChange={(event) => setLayoutItem(
+                                    layoutKey,
+                                    (current) => applyWidthWithinCanvas(current, Number(event.target.value)),
+                                  )}
                                 />
                                 <span className="text-xs font-semibold text-[#5F7077]">{item.width}%</span>
                               </label>
