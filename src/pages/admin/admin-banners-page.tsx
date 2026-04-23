@@ -595,7 +595,7 @@ export function AdminBannersPage() {
               Selecione um banner na lista ou crie um novo para editar.
             </div>
           ) : (
-            <article className="rounded-[28px] border border-[#D8E6EB] bg-white p-6 shadow-sm">
+            <article className="min-w-0 rounded-[28px] border border-[#D8E6EB] bg-white p-6 shadow-sm">
               <div className="flex flex-col gap-4 border-b border-[#D8E6EB] pb-5 lg:flex-row lg:items-center lg:justify-between">
                 <div>
                   <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#1398B7]">Editor do banner</p>
@@ -616,10 +616,10 @@ export function AdminBannersPage() {
               </div>
 
               <div className="mt-6 space-y-6">
-                <div className="rounded-[28px] border border-[#D8E6EB] bg-[#F8FBFC] p-4">
+                <div className="overflow-hidden rounded-[28px] border border-[#D8E6EB] bg-[#F8FBFC] p-4">
                     <div
                       ref={stageRef}
-                      className="relative min-w-0 overflow-hidden rounded-[32px] border border-[#D8E6EB] bg-[#0A3640] shadow-[0_24px_60px_rgba(10,54,64,0.16)] min-h-[380px] lg:min-h-[520px] 2xl:min-h-[640px]"
+                      className="relative w-full max-w-full min-w-0 overflow-hidden rounded-[32px] border border-[#D8E6EB] bg-[#0A3640] shadow-[0_24px_60px_rgba(10,54,64,0.16)] min-h-[340px] lg:min-h-[480px] 2xl:min-h-[580px]"
                       style={{ aspectRatio: '1600 / 760' }}
                     >
                       <div
@@ -759,12 +759,12 @@ export function AdminBannersPage() {
                       </div>
                     </div>
 
-                    <div className="mt-4 grid gap-3">
+                    <div className="mt-4 grid gap-2.5">
                       {(Object.keys(bannerElementLabels) as SiteBannerLayoutKey[]).map((layoutKey) => {
                         const item = draft.layoutDesktop[layoutKey]
 
                         return (
-                          <div key={layoutKey} className="rounded-[18px] border border-[#D8E6EB] bg-white p-4">
+                          <div key={layoutKey} className="rounded-[18px] border border-[#D8E6EB] bg-white p-3">
                             <div className="flex items-center justify-between gap-2">
                               <p className="text-sm font-black text-[#15323b]">{bannerElementLabels[layoutKey]}</p>
                               <label className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-[0.12em] text-[#5F7077]">
@@ -777,7 +777,7 @@ export function AdminBannersPage() {
                               </label>
                             </div>
 
-                            <div className="mt-3 grid gap-3">
+                            <div className="mt-2.5 grid gap-2.5">
                               <label className="grid gap-2">
                                 <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Largura</span>
                                 <input
@@ -798,9 +798,9 @@ export function AdminBannersPage() {
                               <div className="grid gap-2">
                                 <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Camada</span>
                                 <div className="flex items-center gap-2">
-                                  <button type="button" onClick={() => setLayoutItem(layoutKey, (current) => ({ ...current, zIndex: Math.max(1, current.zIndex - 1) }))} className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-[#D8E6EB] text-[#5F7077] hover:bg-[#F2F7F9]">-</button>
-                                  <div className="flex-1 rounded-xl border border-[#D8E6EB] bg-[#F8FBFC] px-3 py-2 text-center text-sm font-black text-[#15323b]">{item.zIndex}</div>
-                                  <button type="button" onClick={() => setLayoutItem(layoutKey, (current) => ({ ...current, zIndex: current.zIndex + 1 }))} className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-[#D8E6EB] text-[#5F7077] hover:bg-[#F2F7F9]">+</button>
+                                  <button type="button" onClick={() => setLayoutItem(layoutKey, (current) => ({ ...current, zIndex: Math.max(1, current.zIndex - 1) }))} className="inline-flex h-8 w-8 items-center justify-center rounded-xl border border-[#D8E6EB] text-[#5F7077] hover:bg-[#F2F7F9]">-</button>
+                                  <div className="flex-1 rounded-xl border border-[#D8E6EB] bg-[#F8FBFC] px-3 py-1.5 text-center text-sm font-black text-[#15323b]">{item.zIndex}</div>
+                                  <button type="button" onClick={() => setLayoutItem(layoutKey, (current) => ({ ...current, zIndex: current.zIndex + 1 }))} className="inline-flex h-8 w-8 items-center justify-center rounded-xl border border-[#D8E6EB] text-[#5F7077] hover:bg-[#F2F7F9]">+</button>
                                 </div>
                               </div>
                             </div>
@@ -818,7 +818,7 @@ export function AdminBannersPage() {
 
                   return (
                     <section key={key} className="rounded-[24px] border border-[#D8E6EB] bg-[#F8FBFC] p-4">
-                      <div className="flex items-center justify-between gap-3">
+                      <div className="flex flex-col items-start gap-3">
                         <div>
                           <h3 className="font-readex text-lg font-semibold text-[#15323b]">{title}</h3>
                           <p className="mt-1 text-xs font-semibold leading-5 text-[#5F7077]">Defina texto, destino e preset deste botao do banner.</p>
