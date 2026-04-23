@@ -173,6 +173,14 @@ export function MessagesPage({ contextLabel }: { contextLabel: 'Admin' | 'Aluno'
     () => conversations.find((conversation) => conversation.conversation_id === selectedConversationId) ?? null,
     [conversations, selectedConversationId],
   )
+  const isCreatorMonitoringCourseRoom = useMemo(
+    () => (
+      contextLabel === 'Criador'
+      && selectedConversation?.metadata?.kind === 'course_room'
+      && !selectedConversation.participants.some((participant) => participant.is_current_user)
+    ),
+    [contextLabel, selectedConversation],
+  )
   const supportRoute = useMemo(() => getSupportRoute(contextLabel), [contextLabel])
   const visibleConversations = useMemo(() => {
     const scopedConversations = contextLabel === 'Aluno'
@@ -741,7 +749,7 @@ export function MessagesPage({ contextLabel }: { contextLabel: 'Admin' | 'Aluno'
                         </h2>
                         <p className="truncate text-xs font-semibold text-[#6d7f84]">
                           {selectedConversation.metadata?.kind === 'course_room'
-                            ? `${selectedConversation.participants.length} aluno(s) com acesso ativo`
+                            ? `${selectedConversation.participants.length} aluno(s) com acesso ativo${isCreatorMonitoringCourseRoom ? ' • acompanhamento do criador' : ''}`
                             : selectedConversation.metadata?.kind === 'creator_channel'
                               ? 'Canal privado entre aluno e criador'
                               : `${selectedConversation.participants.length} participante(s)`}
@@ -818,32 +826,40 @@ export function MessagesPage({ contextLabel }: { contextLabel: 'Admin' | 'Aluno'
                 )}
               </div>
 
-              <form onSubmit={(event) => void handleSendMessage(event)} className="border-t border-[#D8E6EB] bg-[#F2F7F9] p-4">
-                <div className="flex gap-3">
-                  <textarea
-                    value={draft}
-                    onChange={(event) => setDraft(event.target.value)}
-                    maxLength={5000}
-                    rows={2}
-                    className="min-h-12 flex-1 resize-none border border-[#D8E6EB] bg-white px-4 py-3 text-sm font-semibold leading-6 text-[#15323b] outline-none focus:border-[#1398B7]"
-                    placeholder="Digite sua mensagem..."
-                    onKeyDown={(event) => {
-                      if (event.key === 'Enter' && !event.shiftKey) {
-                        event.preventDefault()
-                        event.currentTarget.form?.requestSubmit()
-                      }
-                    }}
-                  />
-                  <Button
-                    type="submit"
-                    disabled={isSending || !draft.trim()}
-                    className="h-auto rounded-none bg-[linear-gradient(180deg,#1398B7_0%,#0A3640_100%)] px-5 font-black text-white hover:opacity-95"
-                  >
-                    <Send className="h-4 w-4" />
-                  </Button>
+              {isCreatorMonitoringCourseRoom ? (
+                <div className="border-t border-[#D8E6EB] bg-[#F2F7F9] px-4 py-4">
+                  <p className="text-sm font-semibold text-[#5F7077]">
+                    Este canal esta em modo de acompanhamento para o criador. Os alunos seguem conversando entre si na sala do curso, e o contato direto com o criador continua no canal privado do curso.
+                  </p>
                 </div>
-                <p className="mt-2 text-right text-[11px] font-semibold text-[#8BA0A7]">{draft.length}/5000</p>
-              </form>
+              ) : (
+                <form onSubmit={(event) => void handleSendMessage(event)} className="border-t border-[#D8E6EB] bg-[#F2F7F9] p-4">
+                  <div className="flex gap-3">
+                    <textarea
+                      value={draft}
+                      onChange={(event) => setDraft(event.target.value)}
+                      maxLength={5000}
+                      rows={2}
+                      className="min-h-12 flex-1 resize-none border border-[#D8E6EB] bg-white px-4 py-3 text-sm font-semibold leading-6 text-[#15323b] outline-none focus:border-[#1398B7]"
+                      placeholder="Digite sua mensagem..."
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter' && !event.shiftKey) {
+                          event.preventDefault()
+                          event.currentTarget.form?.requestSubmit()
+                        }
+                      }}
+                    />
+                    <Button
+                      type="submit"
+                      disabled={isSending || !draft.trim()}
+                      className="h-auto rounded-none bg-[linear-gradient(180deg,#1398B7_0%,#0A3640_100%)] px-5 font-black text-white hover:opacity-95"
+                    >
+                      <Send className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <p className="mt-2 text-right text-[11px] font-semibold text-[#8BA0A7]">{draft.length}/5000</p>
+                </form>
+              )}
             </>
           ) : (
             <div className="flex flex-1 items-center justify-center bg-white p-8 text-center">

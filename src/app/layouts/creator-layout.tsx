@@ -11,7 +11,7 @@ const creatorLinks = [
   { to: '/criador/mensagens', label: 'Mensagens', description: 'Conversas com usuários' },
   { to: '/criador/suporte', label: 'Tickets', description: 'Chamados e atendimento' },
   { to: '/criador/notificacoes', label: 'Notificações', description: 'Canais e preferências' },
-  { to: '/criador/perfil', label: 'Meu perfil', description: 'Dados da conta' },
+  { to: '/criador/perfil', label: 'Minha conta', description: 'Dados da conta' },
 ]
 
 function getCreatorDisplayName(fullName: string | null | undefined, email: string | null | undefined) {
@@ -24,6 +24,32 @@ function getCreatorDisplayName(fullName: string | null | undefined, email: strin
   }
 
   return 'Criador'
+}
+
+function CreatorAvatar({
+  avatarUrl,
+  fallback,
+  className,
+}: {
+  avatarUrl: string | null | undefined
+  fallback: string
+  className: string
+}) {
+  if (avatarUrl?.trim()) {
+    return (
+      <img
+        src={avatarUrl}
+        alt="Avatar do criador"
+        className={`${className} object-cover`}
+      />
+    )
+  }
+
+  return (
+    <div className={`${className} bg-gradient-to-br from-[#1398B7] to-[#0A3640] text-white`}>
+      {fallback}
+    </div>
+  )
 }
 
 export function CreatorLayout() {
@@ -54,9 +80,11 @@ export function CreatorLayout() {
           <div className="flex items-center gap-3">
             <NotificationCenter compact />
             <div className="hidden items-center gap-3 rounded-full border border-[#D8E6EB] bg-white px-2 py-1.5 shadow-sm md:flex">
-              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-[#1398B7] to-[#0A3640] text-xs font-black text-white">
-                {initials || 'CR'}
-              </div>
+              <CreatorAvatar
+                avatarUrl={profile?.avatar_url}
+                fallback={initials || 'CR'}
+                className="flex h-9 w-9 items-center justify-center rounded-full text-xs font-black"
+              />
               <div className="pr-2">
                 <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#5F7077]">Criador</p>
                 <p className="max-w-[220px] truncate text-sm font-semibold text-[#163138]">{displayName}</p>

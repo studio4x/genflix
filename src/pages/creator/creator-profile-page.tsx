@@ -1,7 +1,8 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useState, type ChangeEvent, type FormEvent } from 'react'
 
 import { useAuth } from '@/app/providers/auth-provider'
 import { Button } from '@/components/ui/button'
+import { uploadProfileAvatar } from '@/features/account/avatar-api'
 import {
   fetchCreatorPayoutProfile,
   upsertCreatorPayoutProfile,
@@ -22,9 +23,12 @@ export function CreatorProfilePage() {
   const [profileMessage, setProfileMessage] = useState<string | null>(null)
   const [passwordMessage, setPasswordMessage] = useState<string | null>(null)
   const [payoutMessage, setPayoutMessage] = useState<string | null>(null)
+  const [avatarMessage, setAvatarMessage] = useState<string | null>(null)
+  const [avatarError, setAvatarError] = useState<string | null>(null)
   const [isSavingProfile, setIsSavingProfile] = useState(false)
   const [isSavingPassword, setIsSavingPassword] = useState(false)
   const [isSavingPayout, setIsSavingPayout] = useState(false)
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false)
 
   useEffect(() => {
     setFullName(profile?.full_name ?? '')
@@ -120,11 +124,39 @@ export function CreatorProfilePage() {
     }
   }
 
+  async function handleAvatarChange(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0]
+    event.target.value = ''
+    setAvatarMessage(null)
+    setAvatarError(null)
+
+    if (!file || !user?.id) {
+      return
+    }
+
+    if (!file.type.startsWith('image/')) {
+      setAvatarError('Selecione uma imagem valida para o avatar.')
+      return
+    }
+
+    setIsUploadingAvatar(true)
+
+    try {
+      const asset = await uploadProfileAvatar(file, user.id)
+      await updateProfile({ avatar_url: asset.publicUrl })
+      setAvatarMessage('Avatar atualizado com sucesso.')
+    } catch (error) {
+      setAvatarError(error instanceof Error ? error.message : 'Nao foi possivel atualizar o avatar.')
+    } finally {
+      setIsUploadingAvatar(false)
+    }
+  }
+
   return (
     <div className="space-y-6">
       <header className="border-b border-[#D8E6EB] pb-5">
-        <p className="text-[10px] font-black uppercase tracking-[0.28em] text-[#1398B7]">Perfil</p>
-        <h1 className="mt-2 font-readex text-3xl font-semibold tracking-tight text-[#15323b]">Meu perfil</h1>
+        <p className="text-[10px] font-black uppercase tracking-[0.28em] text-[#1398B7]">Minha conta</p>
+        <h1 className="mt-2 font-readex text-3xl font-semibold tracking-tight text-[#15323b]">Dados do criador</h1>
         <p className="mt-2 max-w-2xl text-sm font-medium leading-6 text-[#6d7f84]">
           Atualize seus dados de exibição e segurança da conta de criador.
         </p>
@@ -183,34 +215,71 @@ export function CreatorProfilePage() {
           </Button>
         </form>
 
-        <form
-          onSubmit={(event) => void handlePasswordSubmit(event)}
-          className="rounded-[28px] border border-[#D8E6EB] bg-[#F2F7F9] p-5"
-        >
-          <h2 className="font-readex text-xl font-semibold text-[#15323b]">Seguranca</h2>
-          <div className="mt-5 space-y-4">
-            <label className="block">
-              <span className="text-xs font-black uppercase tracking-[0.2em] text-[#5F7077]">Nova senha</span>
-              <input
-                type="password"
-                value={newPassword}
-                onChange={(event) => setNewPassword(event.target.value)}
-                minLength={8}
-                className="mt-2 h-12 w-full rounded-2xl border border-[#D8E6EB] bg-white px-4 text-sm font-semibold outline-none focus:border-[#1398B7]"
-                placeholder="Digite a nova senha"
-                required
-              />
-            </label>
-          </div>
-          {passwordMessage ? <p className="mt-4 text-sm font-semibold text-[#5f7077]">{passwordMessage}</p> : null}
-          <Button
-            type="submit"
-            disabled={isSavingPassword}
-            className="mt-5 h-12 rounded-2xl bg-[#15323b] px-6 font-black text-white hover:bg-[#0d252d]"
+        <div className="space-y-5">
+          <article className="rounded-[28px] border border-[#D8E6EB] bg-[#F2F7F9] p-5">
+            <h2 className="font-readex text-xl font-semibold text-[#15323b]">Avatar</h2>
+            <div className="mt-5 flex flex-col gap-5 sm:flex-row sm:items-start">
+              {profile?.avatar_url ? (
+                <img
+                  src={profile.avatar_url}
+                  alt="Avatar atual do criador"
+                  className="h-24 w-24 rounded-[28px] border border-[#D8E6EB] object-cover shadow-sm"
+                />
+              ) : (
+                <div className="flex h-24 w-24 items-center justify-center rounded-[28px] bg-gradient-to-br from-[#1398B7] to-[#0A3640] text-xl font-black text-white shadow-sm">
+                  {(fullName || profile?.email || 'CR').slice(0, 2).toUpperCase()}
+                </div>
+              )}
+
+              <div className="flex-1 space-y-3">
+                <p className="text-sm font-medium leading-6 text-[#6d7f84]">
+                  Envie uma imagem para aparecer no seu dashboard de criador e nas areas da conta.
+                </p>
+                <input
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp,image/gif"
+                  onChange={(event) => void handleAvatarChange(event)}
+                  className="block w-full cursor-pointer rounded-2xl border border-[#D8E6EB] bg-white px-4 py-3 text-sm font-semibold text-[#15323b] file:mr-4 file:rounded-xl file:border-0 file:bg-[#1398B7] file:px-4 file:py-2 file:font-black file:text-white hover:file:bg-[#0A3640]"
+                  disabled={isUploadingAvatar}
+                />
+                <p className="text-xs font-semibold text-[#6d7f84]">
+                  Formatos recomendados: JPG, PNG, WEBP ou GIF.
+                </p>
+                {avatarMessage ? <p className="text-sm font-semibold text-[#5f7077]">{avatarMessage}</p> : null}
+                {avatarError ? <p className="text-sm font-semibold text-red-600">{avatarError}</p> : null}
+              </div>
+            </div>
+          </article>
+
+          <form
+            onSubmit={(event) => void handlePasswordSubmit(event)}
+            className="rounded-[28px] border border-[#D8E6EB] bg-[#F2F7F9] p-5"
           >
-            {isSavingPassword ? 'Atualizando...' : 'Atualizar senha'}
-          </Button>
-        </form>
+            <h2 className="font-readex text-xl font-semibold text-[#15323b]">Seguranca</h2>
+            <div className="mt-5 space-y-4">
+              <label className="block">
+                <span className="text-xs font-black uppercase tracking-[0.2em] text-[#5F7077]">Nova senha</span>
+                <input
+                  type="password"
+                  value={newPassword}
+                  onChange={(event) => setNewPassword(event.target.value)}
+                  minLength={8}
+                  className="mt-2 h-12 w-full rounded-2xl border border-[#D8E6EB] bg-white px-4 text-sm font-semibold outline-none focus:border-[#1398B7]"
+                  placeholder="Digite a nova senha"
+                  required
+                />
+              </label>
+            </div>
+            {passwordMessage ? <p className="mt-4 text-sm font-semibold text-[#5f7077]">{passwordMessage}</p> : null}
+            <Button
+              type="submit"
+              disabled={isSavingPassword}
+              className="mt-5 h-12 rounded-2xl bg-[#15323b] px-6 font-black text-white hover:bg-[#0d252d]"
+            >
+              {isSavingPassword ? 'Atualizando...' : 'Atualizar senha'}
+            </Button>
+          </form>
+        </div>
       </section>
 
       <form

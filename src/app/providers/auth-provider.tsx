@@ -66,7 +66,7 @@ async function loadProfileAndRoles(userId: string) {
   const [profileResult, rolesResult] = await Promise.all([
     supabase
       .from('profiles')
-      .select('id, email, full_name, whatsapp_number, timezone, locale')
+      .select('id, email, full_name, avatar_url, whatsapp_number, timezone, locale')
       .eq('id', userId)
       .maybeSingle(),
     supabase
@@ -92,7 +92,7 @@ async function loadProfileAndRoles(userId: string) {
 async function loadProfile(userId: string) {
   const profileResult = await supabase
     .from('profiles')
-    .select('id, email, full_name, whatsapp_number, timezone, locale')
+    .select('id, email, full_name, avatar_url, whatsapp_number, timezone, locale')
     .eq('id', userId)
     .maybeSingle()
 
@@ -117,7 +117,7 @@ async function syncProfileNameFromMetadata(userId: string, profile: Profile | nu
     .from('profiles')
     .update({ full_name: metadataName })
     .eq('id', userId)
-    .select('id, email, full_name, whatsapp_number, timezone, locale')
+    .select('id, email, full_name, avatar_url, whatsapp_number, timezone, locale')
     .single()
 
   if (updateResult.error) {
@@ -341,19 +341,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     const nextPayload = {
-      full_name: payload.full_name,
-      timezone: payload.timezone,
-      locale: payload.locale,
+      ...(Object.prototype.hasOwnProperty.call(payload, 'full_name')
+        ? { full_name: payload.full_name }
+        : {}),
+      ...(Object.prototype.hasOwnProperty.call(payload, 'avatar_url')
+        ? { avatar_url: payload.avatar_url }
+        : {}),
+      ...(Object.prototype.hasOwnProperty.call(payload, 'timezone')
+        ? { timezone: payload.timezone }
+        : {}),
+      ...(Object.prototype.hasOwnProperty.call(payload, 'locale')
+        ? { locale: payload.locale }
+        : {}),
       ...(Object.prototype.hasOwnProperty.call(payload, 'whatsapp_number')
         ? { whatsapp_number: payload.whatsapp_number }
         : {}),
+    }
+
+    if (Object.keys(nextPayload).length === 0) {
+      throw new Error('Nenhuma alteracao de perfil foi informada.')
     }
 
     const result = await supabase
       .from('profiles')
       .update(nextPayload)
       .eq('id', currentUserIdRef.current)
-      .select('id, email, full_name, whatsapp_number, timezone, locale')
+      .select('id, email, full_name, avatar_url, whatsapp_number, timezone, locale')
       .single()
 
     if (result.error) {

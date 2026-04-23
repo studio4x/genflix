@@ -82,6 +82,32 @@ function getStudentDisplayName(fullName: string | null | undefined, email: strin
   return 'Aluno'
 }
 
+function StudentAvatar({
+  avatarUrl,
+  fallback,
+  className,
+}: {
+  avatarUrl: string | null | undefined
+  fallback: string
+  className: string
+}) {
+  if (avatarUrl?.trim()) {
+    return (
+      <img
+        src={avatarUrl}
+        alt="Avatar do aluno"
+        className={`${className} object-cover`}
+      />
+    )
+  }
+
+  return (
+    <div className={`${className} bg-gradient-to-br from-[#1398B7] to-[#0A3640] text-white`}>
+      {fallback}
+    </div>
+  )
+}
+
 export function StudentLayout() {
   const { profile, signOut } = useAuth()
   const location = useLocation()
@@ -130,9 +156,11 @@ export function StudentLayout() {
                     : 'border-[#D8E6EB] bg-white hover:border-[#1398B7]/40'
                 }`}
               >
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-[#1398B7] to-[#0A3640] text-sm font-black text-white shadow-sm">
-                  {firstName.slice(0, 2).toUpperCase()}
-                </div>
+                <StudentAvatar
+                  avatarUrl={profile?.avatar_url}
+                  fallback={firstName.slice(0, 2).toUpperCase()}
+                  className="flex h-10 w-10 items-center justify-center rounded-full text-sm font-black shadow-sm"
+                />
                 <div className="pr-2">
                   <p className="text-sm font-black text-[#163138]">{displayName}</p>
                   <p className="text-[11px] font-medium text-[#5F7077]">Minha conta</p>
@@ -161,9 +189,11 @@ export function StudentLayout() {
           <div className="overflow-hidden rounded-[30px] border border-[#D8E6EB] bg-white shadow-[0_20px_50px_rgba(22,49,56,0.05)]">
             <div className="border-b border-[#D8E6EB] p-5">
               <div className="flex items-start gap-4">
-                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-[#1398B7] to-[#0A3640] text-base font-black text-white shadow-sm">
-                  {firstName.slice(0, 2).toUpperCase()}
-                </div>
+                <StudentAvatar
+                  avatarUrl={profile?.avatar_url}
+                  fallback={firstName.slice(0, 2).toUpperCase()}
+                  className="flex h-14 w-14 items-center justify-center rounded-full text-base font-black shadow-sm"
+                />
                 <div className="min-w-0">
                   <p className="truncate text-lg font-black tracking-tight text-[#163138]">{displayName}</p>
                   <p className="mt-1 text-[11px] font-black uppercase tracking-[0.22em] text-[#1398B7]">Aluno</p>

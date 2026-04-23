@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from 'react'
-import type { FormEvent } from 'react'
+import type { ChangeEvent, FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 
 import { useAuth } from '@/app/providers/auth-provider'
 import { Button } from '@/components/ui/button'
+import { uploadProfileAvatar } from '@/features/account/avatar-api'
 
 const localeOptions = [
   { value: 'pt-BR', label: 'Português (Brasil)' },
@@ -29,7 +30,7 @@ function normalizeWhatsAppNumber(value: string) {
 }
 
 export function StudentAccountPage() {
-  const { profile, updatePassword, updateProfile } = useAuth()
+  const { profile, updatePassword, updateProfile, user } = useAuth()
   const [fullName, setFullName] = useState('')
   const [whatsAppNumber, setWhatsAppNumber] = useState('')
   const [locale, setLocale] = useState('pt-BR')
@@ -40,8 +41,11 @@ export function StudentAccountPage() {
   const [profileMessage, setProfileMessage] = useState<string | null>(null)
   const [passwordError, setPasswordError] = useState<string | null>(null)
   const [passwordMessage, setPasswordMessage] = useState<string | null>(null)
+  const [avatarMessage, setAvatarMessage] = useState<string | null>(null)
+  const [avatarError, setAvatarError] = useState<string | null>(null)
   const [isSavingProfile, setIsSavingProfile] = useState(false)
   const [isSavingPassword, setIsSavingPassword] = useState(false)
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false)
 
   useEffect(() => {
     if (!profile) {
@@ -122,6 +126,34 @@ export function StudentAccountPage() {
       setPasswordError(message)
     } finally {
       setIsSavingPassword(false)
+    }
+  }
+
+  async function handleAvatarChange(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0]
+    event.target.value = ''
+    setAvatarMessage(null)
+    setAvatarError(null)
+
+    if (!file || !user?.id) {
+      return
+    }
+
+    if (!file.type.startsWith('image/')) {
+      setAvatarError('Selecione uma imagem valida para o avatar.')
+      return
+    }
+
+    setIsUploadingAvatar(true)
+
+    try {
+      const asset = await uploadProfileAvatar(file, user.id)
+      await updateProfile({ avatar_url: asset.publicUrl })
+      setAvatarMessage('Avatar atualizado com sucesso.')
+    } catch (uploadError) {
+      setAvatarError(uploadError instanceof Error ? uploadError.message : 'Falha ao enviar o avatar.')
+    } finally {
+      setIsUploadingAvatar(false)
     }
   }
 
@@ -265,6 +297,59 @@ export function StudentAccountPage() {
         </form>
 
         <div className="space-y-6">
+          <article className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
+            <div className="flex items-start justify-between gap-4 border-b border-slate-100 pb-5">
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-[0.24em] text-slate-400">Avatar</p>
+                <h3 className="mt-2 text-2xl font-black tracking-tight text-slate-900">Foto de perfil</h3>
+                <p className="mt-3 text-sm leading-relaxed text-slate-600">
+                  Envie uma imagem para personalizar sua conta no dashboard e nos atalhos do aluno.
+                </p>
+              </div>
+
+              {profile?.avatar_url ? (
+                <img
+                  src={profile.avatar_url}
+                  alt="Avatar atual do aluno"
+                  className="h-20 w-20 rounded-[24px] border border-slate-200 object-cover shadow-sm"
+                />
+              ) : (
+                <div className="flex h-20 w-20 items-center justify-center rounded-[24px] bg-gradient-to-br from-[#1398B7] to-[#0A3640] text-xl font-black text-white shadow-sm">
+                  {(fullName || profile?.email || 'AL').slice(0, 2).toUpperCase()}
+                </div>
+              )}
+            </div>
+
+            <div className="mt-5 space-y-4">
+              <label className="block space-y-2">
+                <span className="text-sm font-bold text-slate-700">Nova imagem</span>
+                <input
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp,image/gif"
+                  onChange={(event) => void handleAvatarChange(event)}
+                  className="block w-full cursor-pointer rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700 file:mr-4 file:rounded-xl file:border-0 file:bg-blue-600 file:px-4 file:py-2 file:font-bold file:text-white hover:file:bg-blue-700"
+                  disabled={isUploadingAvatar}
+                />
+              </label>
+
+              <p className="text-xs font-medium text-slate-500">
+                Formatos recomendados: JPG, PNG, WEBP ou GIF.
+              </p>
+
+              {avatarMessage ? (
+                <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700">
+                  {avatarMessage}
+                </div>
+              ) : null}
+
+              {avatarError ? (
+                <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-600">
+                  {avatarError}
+                </div>
+              ) : null}
+            </div>
+          </article>
+
           <form onSubmit={handlePasswordSubmit} className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
             <div className="border-b border-slate-100 pb-5">
               <p className="text-[10px] font-black uppercase tracking-[0.24em] text-slate-400">Segurança</p>
