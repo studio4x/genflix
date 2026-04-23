@@ -4,6 +4,7 @@ import {
   fetchPaymentGatewayConfiguration,
   getAsaasAccessToken,
   getBearerToken,
+  getConfiguredAsaasWebhookSecrets,
   getHeaderValue,
 } from '../../_shared/asaas.js'
 
@@ -41,12 +42,20 @@ function hasEnvironmentToken(environment: 'sandbox' | 'production') {
   return Boolean(process.env.ASAAS_ACCESS_TOKEN_PRODUCTION ?? process.env.ASAAS_ACCESS_TOKEN)
 }
 
+function hasEnvironmentWebhookSecret(environment: 'sandbox' | 'production') {
+  if (environment === 'sandbox') {
+    return Boolean(process.env.ASAAS_WEBHOOK_SECRET_SANDBOX ?? process.env.ASAAS_WEBHOOK_SECRET)
+  }
+
+  return Boolean(process.env.ASAAS_WEBHOOK_SECRET_PRODUCTION ?? process.env.ASAAS_WEBHOOK_SECRET)
+}
+
 async function assertAdmin(req: ApiRequest, res: ApiResponse) {
   const supabaseUrl = process.env.SUPABASE_URL ?? process.env.VITE_SUPABASE_URL
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
   if (!supabaseUrl || !serviceRoleKey) {
-    jsonResponse(res, 500, { error: 'Configuração ausente: Supabase URL e service role são obrigatórios.' })
+    jsonResponse(res, 500, { error: 'ConfiguraÃ§Ã£o ausente: Supabase URL e service role sÃ£o obrigatÃ³rios.' })
     return null
   }
 
@@ -62,7 +71,7 @@ async function assertAdmin(req: ApiRequest, res: ApiResponse) {
 
   const userResult = await adminClient.auth.getUser(token)
   if (userResult.error || !userResult.data.user) {
-    jsonResponse(res, 401, { error: 'Token inválido ou expirado.' })
+    jsonResponse(res, 401, { error: 'Token invÃ¡lido ou expirado.' })
     return null
   }
 
@@ -72,7 +81,7 @@ async function assertAdmin(req: ApiRequest, res: ApiResponse) {
     .eq('user_id', userResult.data.user.id)
 
   if (rolesResult.error) {
-    jsonResponse(res, 500, { error: 'Não foi possível validar as permissões do usuário.' })
+    jsonResponse(res, 500, { error: 'NÃ£o foi possÃ­vel validar as permissÃµes do usuÃ¡rio.' })
     return null
   }
 
@@ -101,7 +110,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
   }
 
   if (req.method !== 'GET') {
-    jsonResponse(res, 405, { error: 'Método não permitido.' })
+    jsonResponse(res, 405, { error: 'MÃ©todo nÃ£o permitido.' })
     return
   }
 
@@ -115,7 +124,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
       key: 'supabase-service-role',
       label: 'Service role do Supabase',
       status: 'ok',
-      detail: 'Variável disponível no ambiente do deploy.',
+      detail: 'VariÃ¡vel disponÃ­vel no ambiente do deploy.',
     },
   ]
 
@@ -123,9 +132,11 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
     const gatewayConfig = await fetchPaymentGatewayConfiguration(context.supabaseUrl, context.serviceRoleKey)
     const activeEnvironment = gatewayConfig.environment ?? 'sandbox'
     const asaasToken = getAsaasAccessToken(activeEnvironment)
-    const webhookSecret = process.env.ASAAS_WEBHOOK_SECRET
+    const webhookSecrets = getConfiguredAsaasWebhookSecrets()
     const hasSandboxToken = hasEnvironmentToken('sandbox')
     const hasProductionToken = hasEnvironmentToken('production')
+    const hasSandboxWebhookSecret = hasEnvironmentWebhookSecret('sandbox')
+    const hasProductionWebhookSecret = hasEnvironmentWebhookSecret('production')
 
     checks.push({
       key: 'gateway-settings',
@@ -151,35 +162,53 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
       label: 'Token Asaas sandbox',
       status: hasSandboxToken ? 'ok' : activeEnvironment === 'sandbox' ? 'error' : 'warning',
       detail: hasSandboxToken
-        ? 'Credencial sandbox disponível para testes controlados.'
+        ? 'Credencial sandbox disponÃ­vel para testes controlados.'
         : 'Configure ASAAS_ACCESS_TOKEN_SANDBOX antes de validar compras e repasses em sandbox.',
     })
 
     checks.push({
       key: 'asaas-production-token',
-      label: 'Token Asaas produção',
+      label: 'Token Asaas produÃ§Ã£o',
       status: hasProductionToken ? 'ok' : activeEnvironment === 'production' ? 'error' : 'warning',
       detail: hasProductionToken
-        ? 'Credencial de produção disponível para operação real.'
-        : 'Produção ainda pendente. Configure ASAAS_ACCESS_TOKEN_PRODUCTION quando a conta Asaas final estiver aprovada.',
+        ? 'Credencial de produÃ§Ã£o disponÃ­vel para operaÃ§Ã£o real.'
+        : 'ProduÃ§Ã£o ainda pendente. Configure ASAAS_ACCESS_TOKEN_PRODUCTION quando a conta Asaas final estiver aprovada.',
     })
 
     checks.push({
       key: 'webhook-secret',
       label: 'Segredo do webhook',
-      status: webhookSecret ? 'ok' : 'warning',
-      detail: webhookSecret
-        ? 'ASAAS_WEBHOOK_SECRET configurado.'
+      status: webhookSecrets.length > 0 ? 'ok' : 'warning',
+      detail: webhookSecrets.length > 0
+        ? 'Webhook com segredo configurado para pelo menos um ambiente do Asaas.'
         : 'Webhook sem segredo dedicado. Funciona, mas recomenda-se configurar ASAAS_WEBHOOK_SECRET.',
     })
 
     checks.push({
+      key: 'webhook-secret-sandbox',
+      label: 'Segredo do webhook sandbox',
+      status: hasSandboxWebhookSecret ? 'ok' : activeEnvironment === 'sandbox' ? 'error' : 'warning',
+      detail: hasSandboxWebhookSecret
+        ? 'Segredo do webhook sandbox disponÃ­vel.'
+        : 'Configure ASAAS_WEBHOOK_SECRET_SANDBOX antes de validar callbacks em sandbox.',
+    })
+
+    checks.push({
+      key: 'webhook-secret-production',
+      label: 'Segredo do webhook produÃ§Ã£o',
+      status: hasProductionWebhookSecret ? 'ok' : activeEnvironment === 'production' ? 'error' : 'warning',
+      detail: hasProductionWebhookSecret
+        ? 'Segredo do webhook produÃ§Ã£o disponÃ­vel.'
+        : 'Configure ASAAS_WEBHOOK_SECRET_PRODUCTION ou ASAAS_WEBHOOK_SECRET para callbacks de produÃ§Ã£o.',
+    })
+
+    checks.push({
       key: 'public-url',
-      label: 'URL pública do app',
+      label: 'URL pÃºblica do app',
       status: process.env.APP_PUBLIC_URL || process.env.VERCEL_URL ? 'ok' : 'warning',
       detail: process.env.APP_PUBLIC_URL
         ? `APP_PUBLIC_URL configurada: ${process.env.APP_PUBLIC_URL}.`
-        : 'APP_PUBLIC_URL não configurada. O sistema usará a origem da requisição para montar callbacks e webhook.',
+        : 'APP_PUBLIC_URL nÃ£o configurada. O sistema usarÃ¡ a origem da requisiÃ§Ã£o para montar callbacks e webhook.',
     })
 
     jsonResponse(res, 200, {
@@ -192,7 +221,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
       key: 'gateway-settings',
       label: 'Registro do gateway',
       status: 'error',
-      detail: error instanceof Error ? error.message : 'Não foi possível carregar a configuração do gateway.',
+      detail: error instanceof Error ? error.message : 'NÃ£o foi possÃ­vel carregar a configuraÃ§Ã£o do gateway.',
     })
 
     jsonResponse(res, 200, {

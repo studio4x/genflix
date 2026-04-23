@@ -72,6 +72,14 @@ export function getAsaasAccessToken(environment: AsaasEnvironment) {
     : process.env.ASAAS_ACCESS_TOKEN_PRODUCTION ?? process.env.ASAAS_ACCESS_TOKEN
 }
 
+export function getConfiguredAsaasWebhookSecrets() {
+  return Array.from(new Set([
+    process.env.ASAAS_WEBHOOK_SECRET_PRODUCTION,
+    process.env.ASAAS_WEBHOOK_SECRET_SANDBOX,
+    process.env.ASAAS_WEBHOOK_SECRET,
+  ].filter((value): value is string => typeof value === 'string' && value.trim().length > 0)))
+}
+
 export function getAsaasPixAddressKeyType(keyType: string | null | undefined) {
   const normalized = keyType?.toLowerCase()
   const mapping: Record<PixKeyType, 'CPF' | 'CNPJ' | 'EMAIL' | 'PHONE' | 'EVP'> = {
@@ -104,7 +112,7 @@ export async function fetchAsaasBalance(environment: AsaasEnvironment, accessTok
   const payload = await response.json().catch(() => null) as { balance?: number; errors?: Array<{ description?: string }> } | null
 
   if (!response.ok) {
-    throw new Error(payload?.errors?.[0]?.description ?? 'Não foi possível consultar o saldo disponível no Asaas.')
+    throw new Error(payload?.errors?.[0]?.description ?? 'NÃ£o foi possÃ­vel consultar o saldo disponÃ­vel no Asaas.')
   }
 
   return Number(payload?.balance ?? 0)
@@ -122,7 +130,7 @@ export async function createAsaasPixTransfer(input: {
   const pixAddressKeyType = getAsaasPixAddressKeyType(input.pixKeyType)
 
   if (!pixAddressKeyType) {
-    throw new Error('Tipo de chave PIX inválido para transferência Asaas.')
+    throw new Error('Tipo de chave PIX invÃ¡lido para transferÃªncia Asaas.')
   }
 
   const requestBody = {
@@ -146,7 +154,7 @@ export async function createAsaasPixTransfer(input: {
   const payload = await response.json().catch(() => null) as AsaasTransferPayload | null
 
   if (!response.ok || !payload?.id) {
-    throw new Error(readAsaasError(payload, 'Não foi possível criar a transferência PIX no Asaas.'))
+    throw new Error(readAsaasError(payload, 'NÃ£o foi possÃ­vel criar a transferÃªncia PIX no Asaas.'))
   }
 
   return {
@@ -170,7 +178,7 @@ export async function fetchAsaasTransfer(input: {
   const payload = await response.json().catch(() => null) as AsaasTransferPayload | null
 
   if (!response.ok || !payload?.id) {
-    throw new Error(readAsaasError(payload, 'Não foi possível consultar a transferência PIX no Asaas.'))
+    throw new Error(readAsaasError(payload, 'NÃ£o foi possÃ­vel consultar a transferÃªncia PIX no Asaas.'))
   }
 
   return payload

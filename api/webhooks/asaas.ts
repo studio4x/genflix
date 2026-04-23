@@ -2,6 +2,7 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 
 import {
   fetchPaymentGatewayConfiguration,
+  getConfiguredAsaasWebhookSecrets,
   getHeaderValue,
 } from '../_shared/asaas.js'
 
@@ -89,23 +90,23 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
   }
 
   if (req.method !== 'POST') {
-    jsonResponse(res, 405, { error: 'Método não permitido.' })
+    jsonResponse(res, 405, { error: 'MÃ©todo nÃ£o permitido.' })
     return
   }
 
   const supabaseUrl = process.env.VITE_SUPABASE_URL ?? process.env.SUPABASE_URL
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-  const webhookSecret = process.env.ASAAS_WEBHOOK_SECRET
+  const webhookSecrets = getConfiguredAsaasWebhookSecrets()
 
   if (!supabaseUrl || !serviceRoleKey) {
-    jsonResponse(res, 500, { error: 'Configuração do Supabase ausente.' })
+    jsonResponse(res, 500, { error: 'ConfiguraÃ§Ã£o do Supabase ausente.' })
     return
   }
 
-  if (webhookSecret) {
+  if (webhookSecrets.length > 0) {
     const receivedSecret = getHeaderValue(req.headers['asaas-access-token'])
-    if (receivedSecret !== webhookSecret) {
-      jsonResponse(res, 401, { error: 'Token do webhook inválido.' })
+    if (!receivedSecret || !webhookSecrets.includes(receivedSecret)) {
+      jsonResponse(res, 401, { error: 'Token do webhook invÃ¡lido.' })
       return
     }
   }
@@ -295,7 +296,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
   })
 
   if (insertEvent.error) {
-    jsonResponse(res, 500, { error: 'Não foi possível registrar o webhook.' })
+    jsonResponse(res, 500, { error: 'NÃ£o foi possÃ­vel registrar o webhook.' })
     return
   }
 
