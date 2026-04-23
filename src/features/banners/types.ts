@@ -7,6 +7,7 @@ export type SiteBannerLocationKey = typeof HOME_HERO_BANNER_LOCATION
 export type SiteBannerThemePreset = 'light-strong' | 'light-soft' | 'dark-soft'
 export type SiteBannerTonePreset = 'solid' | 'warm' | 'surface'
 export type SiteBannerLayoutKey = 'title' | 'subtitle' | 'body' | 'primaryCta' | 'secondaryCta'
+export type SiteBannerColorKey = SiteBannerLayoutKey
 
 export interface SiteBannerLayoutItem {
   x: number
@@ -34,6 +35,19 @@ export interface SiteBannerLayoutDesktop {
   secondaryCta: SiteBannerLayoutItem
 }
 
+export interface SiteBannerElementStyle {
+  textColor?: string
+  backgroundColor?: string
+}
+
+export interface SiteBannerElementStyles {
+  title: SiteBannerElementStyle
+  subtitle: SiteBannerElementStyle
+  body: SiteBannerElementStyle
+  primaryCta: SiteBannerElementStyle
+  secondaryCta: SiteBannerElementStyle
+}
+
 export interface SiteBanner {
   id: string
   locationKey: SiteBannerLocationKey
@@ -45,6 +59,7 @@ export interface SiteBanner {
   backgroundUrl: string
   themePreset: SiteBannerThemePreset
   layoutDesktop: SiteBannerLayoutDesktop
+  elementStyles: SiteBannerElementStyles
   primaryCta: SiteBannerCta | null
   secondaryCta: SiteBannerCta | null
   isActive: boolean
@@ -61,6 +76,14 @@ export const defaultBannerLayoutDesktop: SiteBannerLayoutDesktop = {
   body: { x: 0, y: 70, width: 34, visible: false, zIndex: 3 },
   primaryCta: { x: 0, y: 84, width: 24, visible: true, zIndex: 4 },
   secondaryCta: { x: 16, y: 84, width: 24, visible: true, zIndex: 4 },
+}
+
+export const defaultBannerElementStyles: SiteBannerElementStyles = {
+  title: {},
+  subtitle: {},
+  body: {},
+  primaryCta: {},
+  secondaryCta: {},
 }
 
 export const defaultPrimaryBannerCta: SiteBannerCta = {
@@ -131,6 +154,7 @@ export function createDefaultSiteBanner(sortOrder: number): Omit<SiteBanner, 'id
     backgroundUrl: '/images/genflix/home/hero.jpg',
     themePreset: 'light-strong',
     layoutDesktop: structuredClone(defaultBannerLayoutDesktop),
+    elementStyles: structuredClone(defaultBannerElementStyles),
     primaryCta: { ...defaultPrimaryBannerCta },
     secondaryCta: { ...defaultSecondaryBannerCta },
     isActive: false,
@@ -145,6 +169,16 @@ export function cloneBannerLayout(layout: SiteBannerLayoutDesktop): SiteBannerLa
     body: { ...layout.body },
     primaryCta: { ...layout.primaryCta },
     secondaryCta: { ...layout.secondaryCta },
+  }
+}
+
+export function cloneBannerElementStyles(styles: SiteBannerElementStyles): SiteBannerElementStyles {
+  return {
+    title: { ...styles.title },
+    subtitle: { ...styles.subtitle },
+    body: { ...styles.body },
+    primaryCta: { ...styles.primaryCta },
+    secondaryCta: { ...styles.secondaryCta },
   }
 }
 

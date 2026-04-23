@@ -26,12 +26,19 @@ const iconClasses: Record<GenflixCtaTone, string> = {
 export function GenflixCtaButton({
   asChild = false,
   tone = 'solid',
+  customColors,
   className,
   children,
   ...props
 }: React.ComponentProps<'button'> & {
   asChild?: boolean
   tone?: GenflixCtaTone
+  customColors?: {
+    buttonBackgroundColor?: string
+    buttonTextColor?: string
+    iconBackgroundColor?: string
+    iconTextColor?: string
+  }
 }) {
   const classes = cn(
     'group/genflix-cta inline-flex h-11 items-center justify-center gap-3 rounded-[32px] border px-5 pr-2 font-readex text-[16px] font-medium leading-none whitespace-nowrap transition-all duration-200 outline-none select-none focus-visible:ring-3 focus-visible:ring-[#1398B7]/25 active:translate-y-px disabled:pointer-events-none disabled:opacity-60',
@@ -47,22 +54,41 @@ export function GenflixCtaButton({
           'inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-transform duration-200 group-hover/genflix-cta:translate-x-0.5',
           iconClasses[tone],
         )}
+        style={{
+          backgroundColor: customColors?.iconBackgroundColor,
+          color: customColors?.iconTextColor,
+        }}
       >
         <ArrowUpRight className="h-4 w-4" />
       </span>
     </>
   )
 
-  if (asChild && React.isValidElement<{ className?: string; children?: React.ReactNode }>(children)) {
+  if (asChild && React.isValidElement<{ className?: string; children?: React.ReactNode; style?: React.CSSProperties }>(children)) {
     return React.cloneElement(children, {
       ...props,
       className: cn(classes, children.props.className),
+      style: {
+        ...children.props.style,
+        backgroundColor: customColors?.buttonBackgroundColor,
+        color: customColors?.buttonTextColor,
+        borderColor: customColors?.buttonBackgroundColor,
+      },
       children: content(children.props.children),
     })
   }
 
   return (
-    <button data-slot="genflix-cta-button" className={classes} {...props}>
+    <button
+      data-slot="genflix-cta-button"
+      className={classes}
+      style={{
+        backgroundColor: customColors?.buttonBackgroundColor,
+        color: customColors?.buttonTextColor,
+        borderColor: customColors?.buttonBackgroundColor,
+      }}
+      {...props}
+    >
       {content(children)}
     </button>
   )

@@ -7,6 +7,28 @@ import { bannerThemeStyles } from '@/features/banners/presets'
 import type { SiteBanner, SiteBannerCta, SiteBannerLayoutItem, SiteBannerLayoutKey } from '@/features/banners/types'
 import { cn } from '@/lib/utils'
 
+function getElementColors(banner: SiteBanner, key: SiteBannerLayoutKey) {
+  const theme = bannerThemeStyles[banner.themePreset]
+  const custom = banner.elementStyles[key]
+
+  if (key === 'title') {
+    return { color: custom.textColor || theme.titleColor }
+  }
+
+  if (key === 'subtitle') {
+    return { color: custom.textColor || theme.textColor }
+  }
+
+  if (key === 'body') {
+    return { color: custom.textColor || theme.bodyColor }
+  }
+
+  return {
+    color: custom.textColor || undefined,
+    backgroundColor: custom.backgroundColor || undefined,
+  }
+}
+
 function toDesktopStyle(item: SiteBannerLayoutItem) {
   return {
     left: `${item.x}%`,
@@ -27,20 +49,25 @@ function isRenderableCta(value: SiteBannerCta | null, item: SiteBannerLayoutItem
 function BannerLink({
   cta,
   className,
+  customColors,
 }: {
   cta: SiteBannerCta
   className?: string
+  customColors?: {
+    buttonBackgroundColor?: string
+    buttonTextColor?: string
+  }
 }) {
   if (cta.isInternal) {
     return (
-      <GenflixCtaButton asChild tone={cta.tonePreset} className={className}>
+      <GenflixCtaButton asChild tone={cta.tonePreset} className={className} customColors={customColors}>
         <Link to={cta.href}>{cta.label}</Link>
       </GenflixCtaButton>
     )
   }
 
   return (
-    <GenflixCtaButton asChild tone={cta.tonePreset} className={className}>
+    <GenflixCtaButton asChild tone={cta.tonePreset} className={className} customColors={customColors}>
       <a href={cta.href} target={cta.openInNewTab ? '_blank' : undefined} rel={cta.openInNewTab ? 'noreferrer' : undefined}>
         {cta.label}
       </a>
@@ -50,6 +77,11 @@ function BannerLink({
 
 function DesktopBannerContent({ banner }: { banner: SiteBanner }) {
   const theme = bannerThemeStyles[banner.themePreset]
+  const titleStyle = getElementColors(banner, 'title')
+  const subtitleStyle = getElementColors(banner, 'subtitle')
+  const bodyStyle = getElementColors(banner, 'body')
+  const primaryCtaStyle = getElementColors(banner, 'primaryCta')
+  const secondaryCtaStyle = getElementColors(banner, 'secondaryCta')
   const desktopElements: Array<{
     key: SiteBannerLayoutKey
     item: SiteBannerLayoutItem
@@ -59,31 +91,31 @@ function DesktopBannerContent({ banner }: { banner: SiteBanner }) {
     {
       key: 'title',
       item: banner.layoutDesktop.title,
-      content: <h2 className={cn('text-[2.5rem] font-extrabold leading-[0.92] tracking-[-0.05em] sm:text-[3rem] md:text-[3.25rem]', theme.titleClass)}>{banner.title}</h2>,
+      content: <h2 className={cn('text-[2.5rem] font-extrabold leading-[0.92] tracking-[-0.05em] sm:text-[3rem] md:text-[3.25rem]', theme.titleClass)} style={{ color: titleStyle.color }}>{banner.title}</h2>,
       shouldRender: isRenderableText(banner.title, banner.layoutDesktop.title),
     },
     {
       key: 'subtitle',
       item: banner.layoutDesktop.subtitle,
-      content: <p className={cn('text-sm leading-7 sm:text-base', theme.textClass)}>{banner.subtitle}</p>,
+      content: <p className={cn('text-sm leading-7 sm:text-base', theme.textClass)} style={{ color: subtitleStyle.color }}>{banner.subtitle}</p>,
       shouldRender: isRenderableText(banner.subtitle, banner.layoutDesktop.subtitle),
     },
     {
       key: 'body',
       item: banner.layoutDesktop.body,
-      content: <p className={cn('text-[15px] leading-7', theme.bodyClass)}>{banner.body}</p>,
+      content: <p className={cn('text-[15px] leading-7', theme.bodyClass)} style={{ color: bodyStyle.color }}>{banner.body}</p>,
       shouldRender: isRenderableText(banner.body, banner.layoutDesktop.body),
     },
     {
       key: 'primaryCta',
       item: banner.layoutDesktop.primaryCta,
-      content: banner.primaryCta ? <BannerLink cta={banner.primaryCta} className="h-12 w-full justify-between px-5" /> : null,
+      content: banner.primaryCta ? <BannerLink cta={banner.primaryCta} className="h-12 w-full justify-between px-5" customColors={{ buttonBackgroundColor: primaryCtaStyle.backgroundColor, buttonTextColor: primaryCtaStyle.color }} /> : null,
       shouldRender: isRenderableCta(banner.primaryCta, banner.layoutDesktop.primaryCta),
     },
     {
       key: 'secondaryCta',
       item: banner.layoutDesktop.secondaryCta,
-      content: banner.secondaryCta ? <BannerLink cta={banner.secondaryCta} className="h-12 w-full justify-between px-5" /> : null,
+      content: banner.secondaryCta ? <BannerLink cta={banner.secondaryCta} className="h-12 w-full justify-between px-5" customColors={{ buttonBackgroundColor: secondaryCtaStyle.backgroundColor, buttonTextColor: secondaryCtaStyle.color }} /> : null,
       shouldRender: isRenderableCta(banner.secondaryCta, banner.layoutDesktop.secondaryCta),
     },
   ]
@@ -105,29 +137,34 @@ function DesktopBannerContent({ banner }: { banner: SiteBanner }) {
 
 function MobileBannerContent({ banner }: { banner: SiteBanner }) {
   const theme = bannerThemeStyles[banner.themePreset]
+  const titleStyle = getElementColors(banner, 'title')
+  const subtitleStyle = getElementColors(banner, 'subtitle')
+  const bodyStyle = getElementColors(banner, 'body')
+  const primaryCtaStyle = getElementColors(banner, 'primaryCta')
+  const secondaryCtaStyle = getElementColors(banner, 'secondaryCta')
 
   return (
     <div className="flex min-h-[480px] items-end px-4 py-10 sm:px-6 lg:hidden">
       <div className="max-w-[520px]">
         {isRenderableText(banner.title, banner.layoutDesktop.title) ? (
-          <h2 className={cn('text-[2.2rem] font-extrabold leading-[0.94] tracking-[-0.05em] sm:text-[2.6rem]', theme.titleClass)}>
+          <h2 className={cn('text-[2.2rem] font-extrabold leading-[0.94] tracking-[-0.05em] sm:text-[2.6rem]', theme.titleClass)} style={{ color: titleStyle.color }}>
             {banner.title}
           </h2>
         ) : null}
         {isRenderableText(banner.subtitle, banner.layoutDesktop.subtitle) ? (
-          <p className={cn('mt-4 text-sm leading-7 sm:text-base', theme.textClass)}>
+          <p className={cn('mt-4 text-sm leading-7 sm:text-base', theme.textClass)} style={{ color: subtitleStyle.color }}>
             {banner.subtitle}
           </p>
         ) : null}
         {isRenderableText(banner.body, banner.layoutDesktop.body) ? (
-          <p className={cn('mt-4 text-[15px] leading-7', theme.bodyClass)}>
+          <p className={cn('mt-4 text-[15px] leading-7', theme.bodyClass)} style={{ color: bodyStyle.color }}>
             {banner.body}
           </p>
         ) : null}
         {(isRenderableCta(banner.primaryCta, banner.layoutDesktop.primaryCta) || isRenderableCta(banner.secondaryCta, banner.layoutDesktop.secondaryCta)) ? (
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-            {isRenderableCta(banner.primaryCta, banner.layoutDesktop.primaryCta) && banner.primaryCta ? <BannerLink cta={banner.primaryCta} className="h-12 px-5" /> : null}
-            {isRenderableCta(banner.secondaryCta, banner.layoutDesktop.secondaryCta) && banner.secondaryCta ? <BannerLink cta={banner.secondaryCta} className="h-12 px-5" /> : null}
+            {isRenderableCta(banner.primaryCta, banner.layoutDesktop.primaryCta) && banner.primaryCta ? <BannerLink cta={banner.primaryCta} className="h-12 px-5" customColors={{ buttonBackgroundColor: primaryCtaStyle.backgroundColor, buttonTextColor: primaryCtaStyle.color }} /> : null}
+            {isRenderableCta(banner.secondaryCta, banner.layoutDesktop.secondaryCta) && banner.secondaryCta ? <BannerLink cta={banner.secondaryCta} className="h-12 px-5" customColors={{ buttonBackgroundColor: secondaryCtaStyle.backgroundColor, buttonTextColor: secondaryCtaStyle.color }} /> : null}
           </div>
         ) : null}
       </div>

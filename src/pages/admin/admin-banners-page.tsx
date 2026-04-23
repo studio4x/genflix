@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { ArrowDown, ArrowUp, Copy, Eye, EyeOff, Grip, ImagePlus, Layers, Monitor, Plus, Save, Smartphone, Trash2 } from 'lucide-react'
+import { ArrowDown, ArrowUp, ChevronDown, Copy, Eye, EyeOff, Grip, ImagePlus, Layers, Monitor, Plus, Save, Smartphone, Trash2 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import {
@@ -16,9 +16,12 @@ import {
   bannerElementLabels,
   bannerThemePresetOptions,
   bannerTonePresetOptions,
+  cloneBannerElementStyles,
   cloneBannerLayout,
   type SiteBanner,
   type SiteBannerCta,
+  type SiteBannerColorKey,
+  type SiteBannerElementStyle,
   type SiteBannerLayoutItem,
   type SiteBannerLayoutKey,
 } from '@/features/banners/types'
@@ -29,16 +32,19 @@ import { cn } from '@/lib/utils'
 type BannerDragState = {
   key: SiteBannerLayoutKey
   pointerId: number
+  mode: 'move' | 'resize'
   startClientX: number
   startClientY: number
   startX: number
   startY: number
+  startWidth: number
 }
 
 function cloneBanner(banner: SiteBanner): SiteBanner {
   return {
     ...banner,
     layoutDesktop: cloneBannerLayout(banner.layoutDesktop),
+    elementStyles: cloneBannerElementStyles(banner.elementStyles),
     primaryCta: banner.primaryCta ? { ...banner.primaryCta } : null,
     secondaryCta: banner.secondaryCta ? { ...banner.secondaryCta } : null,
   }
@@ -73,6 +79,7 @@ function getDraftSignature(banner: SiteBanner | null) {
     backgroundUrl: banner.backgroundUrl,
     themePreset: banner.themePreset,
     layoutDesktop: banner.layoutDesktop,
+    elementStyles: banner.elementStyles,
     primaryCta: banner.primaryCta,
     secondaryCta: banner.secondaryCta,
     isActive: banner.isActive,
@@ -80,15 +87,117 @@ function getDraftSignature(banner: SiteBanner | null) {
   })
 }
 
+function normalizeColorValue(value: string | undefined, fallback: string) {
+  const normalized = value?.trim()
+  return /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(normalized ?? '') ? normalized! : fallback
+}
+
+function getThemeTextColor(themePreset: SiteBanner['themePreset'], key: 'title' | 'subtitle' | 'body') {
+  const theme = bannerThemeStyles[themePreset]
+  if (key === 'title') return theme.titleColor
+  if (key === 'subtitle') return theme.textColor
+  return theme.bodyColor
+}
+
+function getToneColorDefaults(tone: SiteBannerCta['tonePreset']) {
+  if (tone === 'warm') {
+    return { backgroundColor: '#176E52', textColor: '#F6F6F6' }
+  }
+  if (tone === 'surface') {
+    return { backgroundColor: '#FFFFFF', textColor: '#183139' }
+  }
+  return { backgroundColor: '#0A3640', textColor: '#F6F6F6' }
+}
+
+function ColorField({
+  label,
+  value,
+  fallback,
+  onChange,
+}: {
+  label: string
+  value?: string
+  fallback: string
+  onChange: (value: string) => void
+}) {
+  const displayValue = normalizeColorValue(value, fallback)
+
+  return (
+    <label className="grid gap-2">
+      <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">{label}</span>
+      <div className="flex items-center gap-2 rounded-[16px] border border-[#D8E6EB] bg-white px-3 py-2">
+        <input
+          type="color"
+          value={displayValue}
+          onChange={(event) => onChange(event.target.value)}
+          className="h-8 w-10 cursor-pointer rounded-md border border-[#D8E6EB] bg-transparent p-0"
+        />
+        <input
+          value={displayValue}
+          onChange={(event) => onChange(event.target.value)}
+          className="h-8 flex-1 bg-transparent text-sm font-semibold text-[#15323b] outline-none"
+        />
+      </div>
+    </label>
+  )
+}
+
+function CollapsibleCard({
+  title,
+  summary,
+  open,
+  onToggle,
+  children,
+  className,
+  bodyClassName,
+}: {
+  title: string
+  summary?: string
+  open: boolean
+  onToggle: () => void
+  children: React.ReactNode
+  className?: string
+  bodyClassName?: string
+}) {
+  return (
+    <section className={cn('rounded-[24px] border border-[#D8E6EB] bg-[#F8FBFC] p-4', className)}>
+      <button
+        type="button"
+        onClick={onToggle}
+        className="flex w-full items-start justify-between gap-3 text-left"
+      >
+        <div>
+          <h3 className="font-readex text-lg font-semibold text-[#15323b]">{title}</h3>
+          {summary ? <p className="mt-1 text-xs font-semibold leading-5 text-[#5F7077]">{summary}</p> : null}
+        </div>
+        <span className={cn('mt-1 inline-flex h-8 w-8 items-center justify-center rounded-xl border border-[#D8E6EB] bg-white text-[#5F7077] transition-transform', open ? 'rotate-180' : '')}>
+          <ChevronDown className="h-4 w-4" />
+        </span>
+      </button>
+      {open ? <div className={cn('mt-4', bodyClassName)}>{children}</div> : null}
+    </section>
+  )
+}
+
 function PreviewCta({
   cta,
+  colors,
   className,
 }: {
   cta: SiteBannerCta
+  colors?: SiteBannerElementStyle
   className?: string
 }) {
   return (
-    <GenflixCtaButton type="button" tone={cta.tonePreset} className={cn('h-12 w-full justify-between px-5', className)}>
+    <GenflixCtaButton
+      type="button"
+      tone={cta.tonePreset}
+      customColors={{
+        buttonBackgroundColor: colors?.backgroundColor,
+        buttonTextColor: colors?.textColor,
+      }}
+      className={cn('h-12 w-full justify-between px-5', className)}
+    >
       {cta.label || 'CTA'}
     </GenflixCtaButton>
   )
@@ -126,12 +235,14 @@ function BannerCanvasElement({
   item,
   children,
   onPointerDown,
+  onResizePointerDown,
   draggable = true,
 }: {
   elementKey: SiteBannerLayoutKey
   item: SiteBannerLayoutItem
   children: React.ReactNode
   onPointerDown: (key: SiteBannerLayoutKey, event: React.PointerEvent<HTMLDivElement>) => void
+  onResizePointerDown: (key: SiteBannerLayoutKey, event: React.PointerEvent<HTMLButtonElement>) => void
   draggable?: boolean
 }) {
   if (!item.visible) {
@@ -160,6 +271,16 @@ function BannerCanvasElement({
         {bannerElementLabels[elementKey]}
       </div>
       {children}
+      {draggable ? (
+        <button
+          type="button"
+          aria-label={`Redimensionar ${bannerElementLabels[elementKey]}`}
+          className="absolute -right-2 top-1/2 inline-flex h-5 w-5 -translate-y-1/2 items-center justify-center rounded-full border border-[#D8E6EB] bg-white text-[#15323b] opacity-0 shadow-sm transition-opacity group-hover:opacity-100"
+          onPointerDown={(event) => onResizePointerDown(elementKey, event)}
+        >
+          <span className="h-2.5 w-2.5 rounded-[2px] border border-current" />
+        </button>
+      ) : null}
     </div>
   )
 }
@@ -176,6 +297,17 @@ export function AdminBannersPage() {
   const stageRef = useRef<HTMLDivElement | null>(null)
   const dragStateRef = useRef<BannerDragState | null>(null)
   const [previewMode, setPreviewMode] = useState<'desktop' | 'mobile'>('desktop')
+  const [expandedCards, setExpandedCards] = useState<Record<string, boolean>>({
+    content: true,
+    composition: true,
+    'layout-title': true,
+    'layout-subtitle': false,
+    'layout-body': false,
+    'layout-primaryCta': false,
+    'layout-secondaryCta': false,
+    'cta-primaryCta': true,
+    'cta-secondaryCta': false,
+  })
 
   const selectedBanner = useMemo(
     () => banners.find((banner) => banner.id === selectedBannerId) ?? null,
@@ -230,6 +362,21 @@ export function AdminBannersPage() {
         }
 
         const currentItem = current.layoutDesktop[dragState.key]
+        if (dragState.mode === 'resize') {
+          const nextWidth = normalizePercent(clamp(dragState.startWidth + deltaX, 18, 100 - dragState.startX))
+
+          return {
+            ...current,
+            layoutDesktop: {
+              ...current.layoutDesktop,
+              [dragState.key]: {
+                ...current.layoutDesktop[dragState.key],
+                width: nextWidth,
+              },
+            },
+          }
+        }
+
         const nextX = normalizePercent(clamp(dragState.startX + deltaX, 0, 100 - currentItem.width))
         const nextY = normalizePercent(clamp(dragState.startY + deltaY, 0, 92))
 
@@ -265,6 +412,10 @@ export function AdminBannersPage() {
     }
   }, [])
 
+  function toggleCard(key: string) {
+    setExpandedCards((current) => ({ ...current, [key]: !current[key] }))
+  }
+
   function setDraftField<K extends keyof SiteBanner>(field: K, value: SiteBanner[K]) {
     setDraft((current) => current ? { ...current, [field]: value } : current)
   }
@@ -290,6 +441,22 @@ export function AdminBannersPage() {
       ...current,
       [which]: updater(current[which]),
     } : current)
+  }
+
+  function setElementStyle(key: SiteBannerColorKey, updater: (style: SiteBannerElementStyle) => SiteBannerElementStyle) {
+    setDraft((current) => {
+      if (!current) {
+        return current
+      }
+
+      return {
+        ...current,
+        elementStyles: {
+          ...current.elementStyles,
+          [key]: updater(current.elementStyles[key]),
+        },
+      }
+    })
   }
 
   function maybeChangeSelection(nextId: string) {
@@ -394,6 +561,7 @@ export function AdminBannersPage() {
         backgroundUrl: draft.backgroundUrl,
         themePreset: draft.themePreset,
         layoutDesktop: draft.layoutDesktop,
+        elementStyles: draft.elementStyles,
         primaryCta: draft.primaryCta,
         secondaryCta: draft.secondaryCta,
         isActive: draft.isActive,
@@ -497,10 +665,33 @@ export function AdminBannersPage() {
     dragStateRef.current = {
       key,
       pointerId: event.pointerId,
+      mode: 'move',
       startClientX: event.clientX,
       startClientY: event.clientY,
       startX: currentItem.x,
       startY: currentItem.y,
+      startWidth: currentItem.width,
+    }
+  }
+
+  function handleCanvasResizePointerDown(key: SiteBannerLayoutKey, event: React.PointerEvent<HTMLButtonElement>) {
+    event.preventDefault()
+    event.stopPropagation()
+
+    if (!draft) {
+      return
+    }
+
+    const currentItem = draft.layoutDesktop[key]
+    dragStateRef.current = {
+      key,
+      pointerId: event.pointerId,
+      mode: 'resize',
+      startClientX: event.clientX,
+      startClientY: event.clientY,
+      startX: currentItem.x,
+      startY: currentItem.y,
+      startWidth: currentItem.width,
     }
   }
 
@@ -509,6 +700,9 @@ export function AdminBannersPage() {
   const canvasSubtitle = draft?.subtitle.trim() || 'Subtitulo opcional'
   const canvasBody = draft?.body.trim() || 'Texto complementar opcional'
   const isMobilePreview = previewMode === 'mobile'
+  const titleColor = draft ? draft.elementStyles.title.textColor || getThemeTextColor(draft.themePreset, 'title') : '#FFFFFF'
+  const subtitleColor = draft ? draft.elementStyles.subtitle.textColor || getThemeTextColor(draft.themePreset, 'subtitle') : '#FFFFFF'
+  const bodyColor = draft ? draft.elementStyles.body.textColor || getThemeTextColor(draft.themePreset, 'body') : '#FFFFFF'
   const titleLayout = draft ? getPreviewLayoutItem(draft.layoutDesktop.title, 'title', isMobilePreview) : null
   const subtitleLayout = draft ? getPreviewLayoutItem(draft.layoutDesktop.subtitle, 'subtitle', isMobilePreview) : null
   const bodyLayout = draft ? getPreviewLayoutItem(draft.layoutDesktop.body, 'body', isMobilePreview) : null
@@ -712,39 +906,39 @@ export function AdminBannersPage() {
                         }}
                       />
 
-                      <BannerCanvasElement elementKey="title" item={titleLayout ?? draft.layoutDesktop.title} onPointerDown={handleCanvasPointerDown} draggable={!isMobilePreview}>
+                      <BannerCanvasElement elementKey="title" item={titleLayout ?? draft.layoutDesktop.title} onPointerDown={handleCanvasPointerDown} onResizePointerDown={handleCanvasResizePointerDown} draggable={!isMobilePreview}>
                         <div className={cn('rounded-[18px] border border-dashed border-white/18 bg-black/6 px-3 py-2', theme?.previewSurfaceClass)}>
-                          <p className={cn('font-extrabold leading-[0.92] tracking-[-0.05em]', isMobilePreview ? 'text-[1.9rem]' : 'text-[2.2rem] xl:text-[2.9rem]', theme?.titleClass)}>
+                          <p className={cn('font-extrabold leading-[0.92] tracking-[-0.05em]', isMobilePreview ? 'text-[1.9rem]' : 'text-[2.2rem] xl:text-[2.9rem]', theme?.titleClass)} style={{ color: titleColor }}>
                             {canvasTitle}
                           </p>
                         </div>
                       </BannerCanvasElement>
 
-                      <BannerCanvasElement elementKey="subtitle" item={subtitleLayout ?? draft.layoutDesktop.subtitle} onPointerDown={handleCanvasPointerDown} draggable={!isMobilePreview}>
+                      <BannerCanvasElement elementKey="subtitle" item={subtitleLayout ?? draft.layoutDesktop.subtitle} onPointerDown={handleCanvasPointerDown} onResizePointerDown={handleCanvasResizePointerDown} draggable={!isMobilePreview}>
                         <div className={cn('rounded-[18px] border border-dashed border-white/18 bg-black/6 px-3 py-2', theme?.previewSurfaceClass)}>
-                          <p className={cn(isMobilePreview ? 'text-sm leading-6' : 'text-sm leading-7 sm:text-base xl:text-lg', theme?.textClass)}>
+                          <p className={cn(isMobilePreview ? 'text-sm leading-6' : 'text-sm leading-7 sm:text-base xl:text-lg', theme?.textClass)} style={{ color: subtitleColor }}>
                             {canvasSubtitle}
                           </p>
                         </div>
                       </BannerCanvasElement>
 
-                      <BannerCanvasElement elementKey="body" item={bodyLayout ?? draft.layoutDesktop.body} onPointerDown={handleCanvasPointerDown} draggable={!isMobilePreview}>
+                      <BannerCanvasElement elementKey="body" item={bodyLayout ?? draft.layoutDesktop.body} onPointerDown={handleCanvasPointerDown} onResizePointerDown={handleCanvasResizePointerDown} draggable={!isMobilePreview}>
                         <div className={cn('rounded-[18px] border border-dashed border-white/18 bg-black/6 px-3 py-2', theme?.previewSurfaceClass)}>
-                          <p className={cn(isMobilePreview ? 'text-sm leading-6' : 'text-[15px] leading-7 xl:text-[17px]', theme?.bodyClass)}>
+                          <p className={cn(isMobilePreview ? 'text-sm leading-6' : 'text-[15px] leading-7 xl:text-[17px]', theme?.bodyClass)} style={{ color: bodyColor }}>
                             {canvasBody}
                           </p>
                         </div>
                       </BannerCanvasElement>
 
                       {draft.primaryCta?.visible ? (
-                        <BannerCanvasElement elementKey="primaryCta" item={primaryCtaLayout ?? draft.layoutDesktop.primaryCta} onPointerDown={handleCanvasPointerDown} draggable={!isMobilePreview}>
-                          <PreviewCta cta={{ ...draft.primaryCta, label: draft.primaryCta.label || 'CTA principal' }} className={cn(isMobilePreview ? 'h-12 px-4 text-sm' : 'h-14 px-6')} />
+                        <BannerCanvasElement elementKey="primaryCta" item={primaryCtaLayout ?? draft.layoutDesktop.primaryCta} onPointerDown={handleCanvasPointerDown} onResizePointerDown={handleCanvasResizePointerDown} draggable={!isMobilePreview}>
+                          <PreviewCta cta={{ ...draft.primaryCta, label: draft.primaryCta.label || 'CTA principal' }} colors={draft.elementStyles.primaryCta} className={cn(isMobilePreview ? 'h-12 px-4 text-sm' : 'h-14 px-6')} />
                         </BannerCanvasElement>
                       ) : null}
 
                       {draft.secondaryCta?.visible ? (
-                        <BannerCanvasElement elementKey="secondaryCta" item={secondaryCtaLayout ?? draft.layoutDesktop.secondaryCta} onPointerDown={handleCanvasPointerDown} draggable={!isMobilePreview}>
-                          <PreviewCta cta={{ ...draft.secondaryCta, label: draft.secondaryCta.label || 'CTA secundario' }} className={cn(isMobilePreview ? 'h-12 px-4 text-sm' : 'h-14 px-6')} />
+                        <BannerCanvasElement elementKey="secondaryCta" item={secondaryCtaLayout ?? draft.layoutDesktop.secondaryCta} onPointerDown={handleCanvasPointerDown} onResizePointerDown={handleCanvasResizePointerDown} draggable={!isMobilePreview}>
+                          <PreviewCta cta={{ ...draft.secondaryCta, label: draft.secondaryCta.label || 'CTA secundario' }} colors={draft.elementStyles.secondaryCta} className={cn(isMobilePreview ? 'h-12 px-4 text-sm' : 'h-14 px-6')} />
                         </BannerCanvasElement>
                       ) : null}
                     </div>
@@ -753,13 +947,13 @@ export function AdminBannersPage() {
 
                 <div className="xl:col-span-5 2xl:col-span-4">
                   <div className="grid gap-6 xl:max-h-[calc(100vh-9rem)] xl:overflow-y-auto xl:pr-2">
-                    <section className="rounded-[24px] border border-[#D8E6EB] bg-[#F8FBFC] p-4">
-                    <h3 className="font-readex text-lg font-semibold text-[#15323b]">Conteudo e imagem</h3>
-                    <p className="mt-2 text-xs font-semibold leading-5 text-[#5F7077]">
-                      Use este card para trocar a imagem e ajustar o texto enquanto acompanha o resultado no preview ao lado.
-                    </p>
-
-                    <div className="mt-4 grid gap-4">
+                    <CollapsibleCard
+                      title="Conteudo e imagem"
+                      summary="Troque a imagem, ajuste os textos-base e mantenha o preview visivel ao lado."
+                      open={expandedCards.content}
+                      onToggle={() => toggleCard('content')}
+                    >
+                    <div className="grid gap-4">
                       <div className="rounded-[18px] border border-[#D8E6EB] bg-white p-4">
                         <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#5F7077]">Imagem de fundo</p>
                         <p className="mt-2 truncate text-sm font-semibold text-[#15323b]">{draft.backgroundUrl || 'Nenhuma imagem definida'}</p>
@@ -832,35 +1026,46 @@ export function AdminBannersPage() {
                         </select>
                       </label>
                     </div>
-                    </section>
+                    </CollapsibleCard>
 
-                    <section className="rounded-[24px] border border-[#D8E6EB] bg-[#F8FBFC] p-4">
-                    <div className="flex items-center justify-between gap-3">
-                      <div>
-                        <h3 className="font-readex text-lg font-semibold text-[#15323b]">Composicao desktop</h3>
-                        <p className="mt-1 text-xs font-semibold leading-5 text-[#5F7077]">Ajuste visibilidade, largura e profundidade sem perder o preview estavel ao lado.</p>
-                      </div>
-                    </div>
-
-                    <div className="mt-4 grid gap-2.5 lg:grid-cols-2">
+                    <CollapsibleCard
+                      title="Composicao desktop"
+                      summary="Ajuste visibilidade, largura, camada e cor sem perder o preview estavel ao lado."
+                      open={expandedCards.composition}
+                      onToggle={() => toggleCard('composition')}
+                    >
+                    <div className="grid gap-2.5 lg:grid-cols-2">
                       {(Object.keys(bannerElementLabels) as SiteBannerLayoutKey[]).map((layoutKey) => {
                         const item = draft.layoutDesktop[layoutKey]
+                        const layoutCardKey = `layout-${layoutKey}`
+                        const isTextElement = layoutKey === 'title' || layoutKey === 'subtitle' || layoutKey === 'body'
+                        const defaultTextColor = getThemeTextColor(draft.themePreset, isTextElement ? layoutKey : 'body')
+                        const ctaDefaults = layoutKey === 'primaryCta' && draft.primaryCta
+                          ? getToneColorDefaults(draft.primaryCta.tonePreset)
+                          : layoutKey === 'secondaryCta' && draft.secondaryCta
+                            ? getToneColorDefaults(draft.secondaryCta.tonePreset)
+                            : null
 
                         return (
-                          <div key={layoutKey} className="rounded-[18px] border border-[#D8E6EB] bg-white p-3">
-                            <div className="flex items-center justify-between gap-2">
-                              <p className="text-sm font-black text-[#15323b]">{bannerElementLabels[layoutKey]}</p>
-                              <label className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-[0.12em] text-[#5F7077]">
-                                <input
-                                  type="checkbox"
-                                  checked={item.visible}
-                                  onChange={(event) => setLayoutItem(layoutKey, (current) => ({ ...current, visible: event.target.checked }))}
-                                />
-                                Visivel
-                              </label>
-                            </div>
+                          <CollapsibleCard
+                            key={layoutKey}
+                            title={bannerElementLabels[layoutKey]}
+                            summary={`${item.width}% de largura • camada ${item.zIndex} • ${item.visible ? 'visivel' : 'oculto'}`}
+                            open={expandedCards[layoutCardKey]}
+                            onToggle={() => toggleCard(layoutCardKey)}
+                            className="rounded-[18px] bg-white p-3"
+                            bodyClassName="grid gap-2.5"
+                          >
+                            <label className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-[0.12em] text-[#5F7077]">
+                              <input
+                                type="checkbox"
+                                checked={item.visible}
+                                onChange={(event) => setLayoutItem(layoutKey, (current) => ({ ...current, visible: event.target.checked }))}
+                              />
+                              Visivel
+                            </label>
 
-                            <div className="mt-2.5 grid gap-2.5">
+                            <div className="grid gap-2.5">
                               <label className="grid gap-2">
                                 <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Largura</span>
                                 <input
@@ -886,12 +1091,52 @@ export function AdminBannersPage() {
                                   <button type="button" onClick={() => setLayoutItem(layoutKey, (current) => ({ ...current, zIndex: current.zIndex + 1 }))} className="inline-flex h-8 w-8 items-center justify-center rounded-xl border border-[#D8E6EB] text-[#5F7077] hover:bg-[#F2F7F9]">+</button>
                                 </div>
                               </div>
+
+                              {isTextElement ? (
+                                <>
+                                  <ColorField
+                                    label="Cor do texto"
+                                    value={draft.elementStyles[layoutKey].textColor}
+                                    fallback={defaultTextColor}
+                                    onChange={(value) => setElementStyle(layoutKey, (current) => ({ ...current, textColor: value }))}
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => setElementStyle(layoutKey, (current) => ({ ...current, textColor: undefined }))}
+                                    className="inline-flex h-9 items-center justify-center rounded-xl border border-[#D8E6EB] bg-white px-3 text-xs font-black uppercase tracking-[0.12em] text-[#5F7077] hover:bg-[#F2F7F9]"
+                                  >
+                                    Usar cor do preset
+                                  </button>
+                                </>
+                              ) : ctaDefaults ? (
+                                <>
+                                  <ColorField
+                                    label="Cor do botao"
+                                    value={draft.elementStyles[layoutKey].backgroundColor}
+                                    fallback={ctaDefaults.backgroundColor}
+                                    onChange={(value) => setElementStyle(layoutKey, (current) => ({ ...current, backgroundColor: value }))}
+                                  />
+                                  <ColorField
+                                    label="Cor do texto"
+                                    value={draft.elementStyles[layoutKey].textColor}
+                                    fallback={ctaDefaults.textColor}
+                                    onChange={(value) => setElementStyle(layoutKey, (current) => ({ ...current, textColor: value }))}
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => setElementStyle(layoutKey, () => ({}))}
+                                    className="inline-flex h-9 items-center justify-center rounded-xl border border-[#D8E6EB] bg-white px-3 text-xs font-black uppercase tracking-[0.12em] text-[#5F7077] hover:bg-[#F2F7F9]"
+                                  >
+                                    Usar cores do preset
+                                  </button>
+                                </>
+                              ) : null}
                             </div>
-                          </div>
+                          </CollapsibleCard>
                         )
                       })}
                     </div>
-                    </section>
+                    </CollapsibleCard>
 
                     <div className="space-y-6">
                     {([
@@ -899,14 +1144,18 @@ export function AdminBannersPage() {
                       { key: 'secondaryCta', title: 'CTA secundario' },
                     ] as const).map(({ key, title }) => {
                       const cta = draft[key]
+                      const ctaCardKey = `cta-${key}`
+                      const toneDefaults = getToneColorDefaults(cta?.tonePreset ?? (key === 'primaryCta' ? 'solid' : 'surface'))
 
                       return (
-                        <section key={key} className="rounded-[24px] border border-[#D8E6EB] bg-[#F8FBFC] p-4">
+                        <CollapsibleCard
+                          key={key}
+                          title={title}
+                          summary="Defina texto, destino, preset e cores deste botao do banner."
+                          open={expandedCards[ctaCardKey]}
+                          onToggle={() => toggleCard(ctaCardKey)}
+                        >
                           <div className="flex flex-col items-start gap-3">
-                            <div>
-                              <h3 className="font-readex text-lg font-semibold text-[#15323b]">{title}</h3>
-                              <p className="mt-1 text-xs font-semibold leading-5 text-[#5F7077]">Defina texto, destino e preset deste botao do banner.</p>
-                            </div>
                             <label className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-[0.12em] text-[#5F7077]">
                               <input
                                 type="checkbox"
@@ -1010,8 +1259,30 @@ export function AdminBannersPage() {
                                 <option value="external">Externo</option>
                               </select>
                             </label>
+
+                            <ColorField
+                              label="Cor do botao"
+                              value={draft.elementStyles[key].backgroundColor}
+                              fallback={toneDefaults.backgroundColor}
+                              onChange={(value) => setElementStyle(key, (current) => ({ ...current, backgroundColor: value }))}
+                            />
+
+                            <ColorField
+                              label="Cor do texto"
+                              value={draft.elementStyles[key].textColor}
+                              fallback={toneDefaults.textColor}
+                              onChange={(value) => setElementStyle(key, (current) => ({ ...current, textColor: value }))}
+                            />
+
+                            <button
+                              type="button"
+                              onClick={() => setElementStyle(key, () => ({}))}
+                              className="inline-flex h-9 items-center justify-center rounded-xl border border-[#D8E6EB] bg-white px-3 text-xs font-black uppercase tracking-[0.12em] text-[#5F7077] hover:bg-[#F2F7F9]"
+                            >
+                              Usar cores do preset
+                            </button>
                           </div>
-                        </section>
+                        </CollapsibleCard>
                       )
                     })}
                     </div>
