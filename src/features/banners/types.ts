@@ -35,6 +35,8 @@ export interface SiteBannerLayoutDesktop {
   secondaryCta: SiteBannerLayoutItem
 }
 
+export type SiteBannerLayoutMobile = SiteBannerLayoutDesktop
+
 export interface SiteBannerElementStyle {
   textColor?: string
   backgroundColor?: string
@@ -59,6 +61,7 @@ export interface SiteBanner {
   backgroundUrl: string
   themePreset: SiteBannerThemePreset
   layoutDesktop: SiteBannerLayoutDesktop
+  layoutMobile: SiteBannerLayoutMobile
   elementStyles: SiteBannerElementStyles
   primaryCta: SiteBannerCta | null
   secondaryCta: SiteBannerCta | null
@@ -76,6 +79,14 @@ export const defaultBannerLayoutDesktop: SiteBannerLayoutDesktop = {
   body: { x: 0, y: 70, width: 34, visible: false, zIndex: 3 },
   primaryCta: { x: 0, y: 84, width: 24, visible: true, zIndex: 4 },
   secondaryCta: { x: 16, y: 84, width: 24, visible: true, zIndex: 4 },
+}
+
+export const defaultBannerLayoutMobile: SiteBannerLayoutMobile = {
+  title: { x: 8, y: 12, width: 84, visible: true, zIndex: 3 },
+  subtitle: { x: 8, y: 52, width: 84, visible: true, zIndex: 3 },
+  body: { x: 8, y: 68, width: 82, visible: false, zIndex: 3 },
+  primaryCta: { x: 8, y: 82, width: 78, visible: true, zIndex: 4 },
+  secondaryCta: { x: 8, y: 90, width: 78, visible: true, zIndex: 4 },
 }
 
 export const defaultBannerElementStyles: SiteBannerElementStyles = {
@@ -154,6 +165,7 @@ export function createDefaultSiteBanner(sortOrder: number): Omit<SiteBanner, 'id
     backgroundUrl: '/images/genflix/home/hero.jpg',
     themePreset: 'light-strong',
     layoutDesktop: structuredClone(defaultBannerLayoutDesktop),
+    layoutMobile: structuredClone(defaultBannerLayoutMobile),
     elementStyles: structuredClone(defaultBannerElementStyles),
     primaryCta: { ...defaultPrimaryBannerCta },
     secondaryCta: { ...defaultSecondaryBannerCta },

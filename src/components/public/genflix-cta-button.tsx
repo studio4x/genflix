@@ -47,7 +47,9 @@ export function GenflixCtaButton({
   )
   const content = (label: React.ReactNode) => (
     <>
-      <span className="truncate leading-none">{label}</span>
+      <span className="truncate leading-none" style={{ color: customColors?.buttonTextColor }}>
+        {label}
+      </span>
       <span
         aria-hidden="true"
         className={cn(
@@ -70,9 +72,10 @@ export function GenflixCtaButton({
       className: cn(classes, children.props.className),
       style: {
         ...children.props.style,
+        backgroundImage: customColors?.buttonBackgroundColor ? 'none' : children.props.style?.backgroundImage,
         backgroundColor: customColors?.buttonBackgroundColor,
         color: customColors?.buttonTextColor,
-        borderColor: customColors?.buttonBackgroundColor,
+        borderColor: customColors?.buttonBackgroundColor ?? children.props.style?.borderColor,
       },
       children: content(children.props.children),
     })
@@ -83,6 +86,7 @@ export function GenflixCtaButton({
       data-slot="genflix-cta-button"
       className={classes}
       style={{
+        backgroundImage: customColors?.buttonBackgroundColor ? 'none' : undefined,
         backgroundColor: customColors?.buttonBackgroundColor,
         color: customColors?.buttonTextColor,
         borderColor: customColors?.buttonBackgroundColor,

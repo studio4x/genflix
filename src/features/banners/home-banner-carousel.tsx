@@ -142,32 +142,55 @@ function MobileBannerContent({ banner }: { banner: SiteBanner }) {
   const bodyStyle = getElementColors(banner, 'body')
   const primaryCtaStyle = getElementColors(banner, 'primaryCta')
   const secondaryCtaStyle = getElementColors(banner, 'secondaryCta')
+  const mobileElements: Array<{
+    key: SiteBannerLayoutKey
+    item: SiteBannerLayoutItem
+    content: ReactNode
+    shouldRender: boolean
+  }> = [
+    {
+      key: 'title',
+      item: banner.layoutMobile.title,
+      content: <h2 className={cn('text-[2.2rem] font-extrabold leading-[0.94] tracking-[-0.05em] sm:text-[2.6rem]', theme.titleClass)} style={{ color: titleStyle.color }}>{banner.title}</h2>,
+      shouldRender: isRenderableText(banner.title, banner.layoutMobile.title),
+    },
+    {
+      key: 'subtitle',
+      item: banner.layoutMobile.subtitle,
+      content: <p className={cn('text-sm leading-7 sm:text-base', theme.textClass)} style={{ color: subtitleStyle.color }}>{banner.subtitle}</p>,
+      shouldRender: isRenderableText(banner.subtitle, banner.layoutMobile.subtitle),
+    },
+    {
+      key: 'body',
+      item: banner.layoutMobile.body,
+      content: <p className={cn('text-[15px] leading-7', theme.bodyClass)} style={{ color: bodyStyle.color }}>{banner.body}</p>,
+      shouldRender: isRenderableText(banner.body, banner.layoutMobile.body),
+    },
+    {
+      key: 'primaryCta',
+      item: banner.layoutMobile.primaryCta,
+      content: banner.primaryCta ? <BannerLink cta={banner.primaryCta} className="h-12 w-full justify-between px-5" customColors={{ buttonBackgroundColor: primaryCtaStyle.backgroundColor, buttonTextColor: primaryCtaStyle.color }} /> : null,
+      shouldRender: isRenderableCta(banner.primaryCta, banner.layoutMobile.primaryCta),
+    },
+    {
+      key: 'secondaryCta',
+      item: banner.layoutMobile.secondaryCta,
+      content: banner.secondaryCta ? <BannerLink cta={banner.secondaryCta} className="h-12 w-full justify-between px-5" customColors={{ buttonBackgroundColor: secondaryCtaStyle.backgroundColor, buttonTextColor: secondaryCtaStyle.color }} /> : null,
+      shouldRender: isRenderableCta(banner.secondaryCta, banner.layoutMobile.secondaryCta),
+    },
+  ]
 
   return (
-    <div className="flex min-h-[480px] items-end px-4 py-10 sm:px-6 lg:hidden">
-      <div className="max-w-[520px]">
-        {isRenderableText(banner.title, banner.layoutDesktop.title) ? (
-          <h2 className={cn('text-[2.2rem] font-extrabold leading-[0.94] tracking-[-0.05em] sm:text-[2.6rem]', theme.titleClass)} style={{ color: titleStyle.color }}>
-            {banner.title}
-          </h2>
-        ) : null}
-        {isRenderableText(banner.subtitle, banner.layoutDesktop.subtitle) ? (
-          <p className={cn('mt-4 text-sm leading-7 sm:text-base', theme.textClass)} style={{ color: subtitleStyle.color }}>
-            {banner.subtitle}
-          </p>
-        ) : null}
-        {isRenderableText(banner.body, banner.layoutDesktop.body) ? (
-          <p className={cn('mt-4 text-[15px] leading-7', theme.bodyClass)} style={{ color: bodyStyle.color }}>
-            {banner.body}
-          </p>
-        ) : null}
-        {(isRenderableCta(banner.primaryCta, banner.layoutDesktop.primaryCta) || isRenderableCta(banner.secondaryCta, banner.layoutDesktop.secondaryCta)) ? (
-          <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-            {isRenderableCta(banner.primaryCta, banner.layoutDesktop.primaryCta) && banner.primaryCta ? <BannerLink cta={banner.primaryCta} className="h-12 px-5" customColors={{ buttonBackgroundColor: primaryCtaStyle.backgroundColor, buttonTextColor: primaryCtaStyle.color }} /> : null}
-            {isRenderableCta(banner.secondaryCta, banner.layoutDesktop.secondaryCta) && banner.secondaryCta ? <BannerLink cta={banner.secondaryCta} className="h-12 px-5" customColors={{ buttonBackgroundColor: secondaryCtaStyle.backgroundColor, buttonTextColor: secondaryCtaStyle.color }} /> : null}
-          </div>
-        ) : null}
-      </div>
+    <div className="pointer-events-none absolute inset-0 lg:hidden">
+      {mobileElements.map((element) => element.shouldRender ? (
+        <div
+          key={element.key}
+          className="pointer-events-auto absolute"
+          style={toDesktopStyle(element.item)}
+        >
+          {element.content}
+        </div>
+      ) : null)}
     </div>
   )
 }
