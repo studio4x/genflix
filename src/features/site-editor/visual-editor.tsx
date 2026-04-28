@@ -17,6 +17,7 @@ import { CheckCircle2, Copy, Edit3, Image as ImageIcon, LayoutTemplate, MessageS
 
 import { useAuth } from '@/app/providers/auth-provider'
 import { GenflixCtaButton, normalizeGenflixCtaTone } from '@/components/public/genflix-cta-button'
+import { GenflixLogo } from '@/components/public/genflix-logo'
 import { supabase } from '@/services/supabase/client'
 import { cn } from '@/lib/utils'
 import {
@@ -40,6 +41,7 @@ import {
   type SitePageKey,
 } from '@/features/site-editor/types'
 import { renderSiteIcon, renderSiteIconVisual, SITE_ICON_OPTIONS } from '@/features/site-editor/site-icons'
+import { defaultSiteAppearance, normalizeSiteAppearance } from '@/features/site-editor/site-appearance'
 import {
   createSiteEditorWorkspaceKey,
   formatWorkflowStatus,
@@ -1187,9 +1189,11 @@ function EditorModal({
   const previewImage = isStringRecord(parsedPreview.value) ? parsedPreview.value : null
   const previewList = Array.isArray(parsedPreview.value) ? parsedPreview.value : null
   const previewRecord = isStringRecord(parsedPreview.value) ? parsedPreview.value : null
+  const appearancePreview = useMemo(() => normalizeSiteAppearance(previewRecord, defaultSiteAppearance), [previewRecord])
   const previewTextStyle = useMemo(() => textStyleToCss(textStyle), [textStyle])
   const previewHeadingTag = getHeadingTagLabel(textStyle.headingTag)
   const isSeoEditor = editor.entryType === 'json' && editor.schema?.kind === 'seo'
+  const isSiteAppearanceEditor = editor.entryType === 'json' && editor.schema?.kind === 'site-appearance'
   const listEditorConfig = useMemo(() => normalizeListEditorSchema(editor.schema), [editor.schema])
   const previewImagePresentation = useMemo(() => getEditableImagePresentation(previewImage), [previewImage])
   const showTypographyControls = editor.entryType === 'text' || editor.entryType === 'rich_text' || editor.entryType === 'button' || editor.entryType === 'link'
@@ -1855,6 +1859,145 @@ function EditorModal({
                     </div>
                   </div>
                 ) : null}
+                {isSiteAppearanceEditor ? (
+                  <div className="mt-4 grid gap-4">
+                    <div className="grid gap-3 md:grid-cols-2">
+                      <label className="grid gap-1.5">
+                        <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Tamanho da logo</span>
+                        <input
+                          type="number"
+                          min="0.6"
+                          max="2"
+                          step="0.05"
+                          value={appearancePreview.logoScale ?? defaultSiteAppearance.logoScale}
+                          onChange={(event) => updateRecordEditor({ ...appearancePreview, logoScale: Number.isFinite(event.target.valueAsNumber) ? event.target.valueAsNumber : defaultSiteAppearance.logoScale })}
+                          className="h-11 rounded-[14px] border border-[#D8E6EB] bg-white px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]"
+                        />
+                      </label>
+                      <label className="grid gap-1.5">
+                        <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Altura do header</span>
+                        <input
+                          value={appearancePreview.headerHeight ?? defaultSiteAppearance.headerHeight}
+                          onChange={(event) => updateRecordEditor({ ...appearancePreview, headerHeight: event.target.value })}
+                          placeholder="72px"
+                          className="h-11 rounded-[14px] border border-[#D8E6EB] bg-white px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]"
+                        />
+                      </label>
+                    </div>
+                    <div className="grid gap-3 md:grid-cols-2">
+                      {([
+                        ['menuColor', 'Cor do menu'],
+                        ['menuActiveColor', 'Cor ativa do menu'],
+                        ['menuHoverColor', 'Cor de hover do menu'],
+                        ['pageBackgroundColor', 'Cor de fundo da pagina'],
+                      ] as const).map(([field, label]) => (
+                        <label key={field} className="grid gap-1.5">
+                          <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">{label}</span>
+                          <div className="flex items-center gap-3">
+                            <input
+                              type="color"
+                              value={typeof appearancePreview[field] === 'string' ? appearancePreview[field] as string : '#ffffff'}
+                              onChange={(event) => updateRecordEditor({ ...appearancePreview, [field]: event.target.value })}
+                              className="h-11 w-14 rounded-[14px] border border-[#D8E6EB] bg-white p-1 outline-none focus:border-[#1398B7]"
+                            />
+                            <input
+                              value={typeof appearancePreview[field] === 'string' ? appearancePreview[field] as string : ''}
+                              onChange={(event) => updateRecordEditor({ ...appearancePreview, [field]: event.target.value })}
+                              placeholder="#ffffff"
+                              className="h-11 flex-1 rounded-[14px] border border-[#D8E6EB] bg-white px-3 text-sm font-semibold uppercase tracking-[0.06em] text-[#15323b] outline-none focus:border-[#1398B7]"
+                            />
+                          </div>
+                        </label>
+                      ))}
+                    </div>
+                    <div className="grid gap-3 md:grid-cols-2">
+                      <label className="grid gap-1.5">
+                        <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Fonte do menu</span>
+                        <input
+                          value={appearancePreview.menuFontFamily ?? defaultSiteAppearance.menuFontFamily}
+                          onChange={(event) => updateRecordEditor({ ...appearancePreview, menuFontFamily: event.target.value })}
+                          placeholder="inherit"
+                          className="h-11 rounded-[14px] border border-[#D8E6EB] bg-white px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]"
+                        />
+                      </label>
+                      <label className="grid gap-1.5">
+                        <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Tamanho da fonte do menu</span>
+                        <input
+                          value={appearancePreview.menuFontSize ?? defaultSiteAppearance.menuFontSize}
+                          onChange={(event) => updateRecordEditor({ ...appearancePreview, menuFontSize: event.target.value })}
+                          placeholder="15px"
+                          className="h-11 rounded-[14px] border border-[#D8E6EB] bg-white px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]"
+                        />
+                      </label>
+                      <label className="grid gap-1.5">
+                        <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Peso da fonte do menu</span>
+                        <input
+                          value={appearancePreview.menuFontWeight ?? defaultSiteAppearance.menuFontWeight}
+                          onChange={(event) => updateRecordEditor({ ...appearancePreview, menuFontWeight: event.target.value })}
+                          placeholder="600"
+                          className="h-11 rounded-[14px] border border-[#D8E6EB] bg-white px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]"
+                        />
+                      </label>
+                      <label className="grid gap-1.5">
+                        <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Espacamento do menu</span>
+                        <input
+                          value={appearancePreview.menuLetterSpacing ?? defaultSiteAppearance.menuLetterSpacing}
+                          onChange={(event) => updateRecordEditor({ ...appearancePreview, menuLetterSpacing: event.target.value })}
+                          placeholder="-0.02em"
+                          className="h-11 rounded-[14px] border border-[#D8E6EB] bg-white px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]"
+                        />
+                      </label>
+                    </div>
+                    <div className="rounded-[18px] border border-[#D8E6EB] bg-white p-4">
+                      <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Preview rapido</p>
+                      <div
+                        className="mt-3 overflow-hidden rounded-[18px] border border-[#D8E6EB]"
+                        style={{ backgroundColor: appearancePreview.pageBackgroundColor ?? defaultSiteAppearance.pageBackgroundColor }}
+                      >
+                        <div
+                          className="flex items-center justify-between gap-3 px-4"
+                          style={{ height: appearancePreview.headerHeight ?? defaultSiteAppearance.headerHeight }}
+                        >
+                          <div
+                            className="origin-left"
+                            style={{ transform: `scale(${appearancePreview.logoScale ?? defaultSiteAppearance.logoScale})` }}
+                          >
+                            <GenflixLogo theme="dark" />
+                          </div>
+                          <div className="hidden gap-4 md:flex">
+                            <span
+                              className="text-[14px] font-semibold"
+                              style={{
+                                color: appearancePreview.menuColor ?? defaultSiteAppearance.menuColor,
+                                fontFamily: appearancePreview.menuFontFamily ?? defaultSiteAppearance.menuFontFamily,
+                                fontSize: appearancePreview.menuFontSize ?? defaultSiteAppearance.menuFontSize,
+                                fontWeight: appearancePreview.menuFontWeight ?? defaultSiteAppearance.menuFontWeight,
+                                letterSpacing: appearancePreview.menuLetterSpacing ?? defaultSiteAppearance.menuLetterSpacing,
+                              }}
+                            >
+                              Menu
+                            </span>
+                            <span
+                              className="text-[14px] font-semibold"
+                              style={{
+                                color: appearancePreview.menuActiveColor ?? defaultSiteAppearance.menuActiveColor,
+                                fontFamily: appearancePreview.menuFontFamily ?? defaultSiteAppearance.menuFontFamily,
+                                fontSize: appearancePreview.menuFontSize ?? defaultSiteAppearance.menuFontSize,
+                                fontWeight: appearancePreview.menuFontWeight ?? defaultSiteAppearance.menuFontWeight,
+                                letterSpacing: appearancePreview.menuLetterSpacing ?? defaultSiteAppearance.menuLetterSpacing,
+                              }}
+                            >
+                              Ativo
+                            </span>
+                          </div>
+                        </div>
+                        <div className="border-t border-[#D8E6EB] px-4 py-4 text-sm font-semibold text-[#15323b]">
+                          O fundo da pagina e o estilo do menu seguem os valores salvos nesta entrada.
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ) : null}
                 {editor.entryType === 'button' || editor.entryType === 'link' ? (
                   <div className="mt-4 grid gap-3 md:grid-cols-2">
                     <label className="grid gap-1.5">
@@ -1947,6 +2090,7 @@ function EditorModal({
                     </div>
                   </div>
                 ) : null}
+                {!isSiteAppearanceEditor ? (
                 <div className="mt-4 grid gap-3 md:grid-cols-2">
                   {Object.entries(previewRecord).map(([key, currentValue]) => {
                     if (typeof currentValue === 'string') {
@@ -1989,6 +2133,7 @@ function EditorModal({
                     )
                   })}
                 </div>
+                ) : null}
               </div>
             ) : null}
 

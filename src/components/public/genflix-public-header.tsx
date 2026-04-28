@@ -1,13 +1,14 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type CSSProperties } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { Menu, X } from 'lucide-react'
+import { Menu, Settings2, X } from 'lucide-react'
 
 import { useAuth } from '@/app/providers/auth-provider'
 import { GenflixCtaButton } from '@/components/public/genflix-cta-button'
 import { GenflixLogo } from '@/components/public/genflix-logo'
 import { getDashboardPathForRoles } from '@/features/auth/dashboard-path'
 import type { GenflixNavLink, GenflixPageKey } from '@/features/public/genflix-public-types'
-import { EditableList, EditableText, isEditableItemVisible, useEditableValue } from '@/features/site-editor/visual-editor'
+import { createDefaultSiteAppearance, normalizeSiteAppearance, resolveSiteAppearancePageKey, type SiteAppearanceScopeKey, type SiteAppearanceTheme } from '@/features/site-editor/site-appearance'
+import { useSiteContentScope, useVisualEditorState, EditableList, EditableText, isEditableItemVisible, useEditableValue } from '@/features/site-editor/visual-editor'
 import { cn } from '@/lib/utils'
 
 function HeaderNavLink({
@@ -15,32 +16,63 @@ function HeaderNavLink({
   isActive,
   className,
   variant,
+  appearance,
 }: {
   item: GenflixNavLink
   isActive: boolean
   className?: string
   variant: 'home' | 'light'
+  appearance: ReturnType<typeof normalizeSiteAppearance>
 }) {
+  const defaultColor = variant === 'home' ? '#FFFFFF' : '#15323B'
+  const resolvedColor = appearance.menuColor ?? defaultColor
+  const resolvedActiveColor = appearance.menuActiveColor ?? resolvedColor
+  const resolvedHoverColor = appearance.menuHoverColor ?? resolvedColor
   const classes = cn(
-    'relative text-[15px] font-semibold leading-none tracking-[-0.02em] transition-colors',
-    variant === 'home'
-      ? (isActive ? 'font-extrabold text-white' : 'text-white hover:font-extrabold hover:text-white')
-      : (isActive ? 'text-[#15323B]' : 'text-[#15323B]/78 hover:text-[#15323B]'),
+    'relative text-[15px] leading-none tracking-[-0.02em] transition-colors hover:text-[color:var(--genflix-menu-hover-color)]',
+    isActive ? 'font-extrabold' : 'font-semibold',
     className,
   )
+  const style = {
+    color: isActive ? resolvedActiveColor : resolvedColor,
+    fontFamily: appearance.menuFontFamily ?? undefined,
+    fontSize: appearance.menuFontSize ?? undefined,
+    fontWeight: appearance.menuFontWeight ?? undefined,
+    letterSpacing: appearance.menuLetterSpacing ?? undefined,
+    ['--genflix-menu-hover-color' as never]: resolvedHoverColor,
+  } as CSSProperties
 
   if (item.isInternal) {
     return (
-      <Link to={item.href} className={classes}>
+      <Link to={item.href} className={classes} style={style}>
         {item.label}
       </Link>
     )
   }
 
   return (
-    <a href={item.href} className={classes}>
+    <a href={item.href} className={classes} style={style}>
       {item.label}
     </a>
+  )
+}
+
+function HeaderAppearanceControl({
+  label,
+  onClick,
+}: {
+  label: string
+  onClick: () => void
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="inline-flex items-center gap-2 rounded-full border border-[#D8E6EB] bg-white px-4 py-2 text-xs font-black uppercase tracking-[0.14em] text-[#0A3640] shadow-[0_18px_40px_rgba(6,27,33,0.08)] hover:bg-[#F2F7F9]"
+    >
+      <Settings2 className="h-3.5 w-3.5" />
+      {label}
+    </button>
   )
 }
 
@@ -53,8 +85,20 @@ export function GenflixPublicHeader({
 }) {
   const { pathname } = useLocation()
   const { user, roles } = useAuth()
+  const editor = useVisualEditorState()
+  const scope = useSiteContentScope()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const isHome = currentPage === 'home'
+  const headerTheme: SiteAppearanceTheme = isHome ? 'home' : 'light'
+  const appearanceScopePageKey = resolveSiteAppearancePageKey(currentPage)
+  const currentScopeAppearance = normalizeSiteAppearance(
+    useEditableValue('site.appearance', createDefaultSiteAppearance(headerTheme), { pageKey: appearanceScopePageKey }),
+    createDefaultSiteAppearance(headerTheme),
+  )
+  const globalAppearance = normalizeSiteAppearance(
+    useEditableValue('site.appearance', createDefaultSiteAppearance('light'), { pageKey: 'global' }),
+    createDefaultSiteAppearance('light'),
+  )
   const ctaPath = user ? getDashboardPathForRoles(roles) : '/login'
   const ctaLabel = useEditableValue(
     user ? 'global.header.cta.authenticated.label' : 'global.header.cta.anonymous.label',
@@ -81,6 +125,47 @@ export function GenflixPublicHeader({
     setIsMenuOpen(false)
   }, [pathname])
 
+  useEffect(() => {
+    if (typeof document === 'undefined') {
+      return
+    }
+
+    document.body.dataset.genflixPublicShell = 'true'
+    document.body.style.setProperty('--genflix-page-background', currentScopeAppearance.pageBackgroundColor ?? '#F2F7F9')
+
+    return () => {
+      if (document.body.dataset.genflixPublicShell === 'true') {
+        delete document.body.dataset.genflixPublicShell
+      }
+      document.body.style.removeProperty('--genflix-page-background')
+    }
+  }, [currentScopeAppearance.pageBackgroundColor])
+
+  const openAppearanceEditor = (scopePageKey: SiteAppearanceScopeKey) => {
+    if (!editor?.isEditing || !scope) {
+      return
+    }
+
+    editor.openEditor({
+      pageKey: scopePageKey,
+      entryKey: 'site.appearance',
+      entryType: 'json',
+      label: scopePageKey === 'global' ? 'Header global' : 'Header da pagina',
+      fallback: scopePageKey === 'global' ? globalAppearance : currentScopeAppearance,
+      schema: { kind: 'site-appearance' },
+      reload: scope.reload,
+    })
+  }
+
+  const headerChromeStyle = {
+    height: currentScopeAppearance.headerHeight ?? '72px',
+  }
+
+  const logoStyle = {
+    transform: `scale(${currentScopeAppearance.logoScale ?? 1})`,
+    transformOrigin: 'left center',
+  }
+
   return (
     <section
       className={cn(
@@ -92,9 +177,9 @@ export function GenflixPublicHeader({
     >
       <div className="public-site-container">
         <header className="relative">
-          <div className="flex min-h-[72px] items-center justify-between gap-4 py-4">
+          <div className="flex items-center justify-between gap-4" style={headerChromeStyle}>
             <Link to="/" aria-label="Ir para a home da GenFlix" className="shrink-0">
-              <GenflixLogo theme={isHome ? 'light' : 'dark'} className="scale-[0.94] origin-left sm:scale-100" />
+              <GenflixLogo theme={isHome ? 'light' : 'dark'} className="origin-left" style={logoStyle} />
             </Link>
 
             <nav className="hidden items-center gap-8 xl:flex">
@@ -118,6 +203,7 @@ export function GenflixPublicHeader({
                       item={navItem}
                       isActive={navItem.pageKey === currentPage}
                       variant={isHome ? 'home' : 'light'}
+                      appearance={currentScopeAppearance}
                     />
                   )
                 })}
@@ -130,11 +216,29 @@ export function GenflixPublicHeader({
                   <EditableText
                     entryKey={user ? 'global.header.cta.authenticated.label' : 'global.header.cta.anonymous.label'}
                     fallback={ctaLabel}
-                    label="Botão do cabeçalho"
+                    label="Botao do cabecalho"
                     pageKey="global"
                   />
                 </Link>
               </GenflixCtaButton>
+
+              {editor?.isEditing && scope ? (
+                <div className="hidden items-center gap-2 xl:flex">
+                  <HeaderAppearanceControl
+                    label={appearanceScopePageKey === 'global' ? 'Header global' : 'Header desta pagina'}
+                    onClick={() => openAppearanceEditor(appearanceScopePageKey)}
+                  />
+                  {appearanceScopePageKey !== 'global' ? (
+                    <button
+                      type="button"
+                      onClick={() => openAppearanceEditor('global')}
+                      className="inline-flex items-center gap-2 rounded-full border border-[#D8E6EB] bg-[#F8FCFD] px-4 py-2 text-xs font-black uppercase tracking-[0.14em] text-[#5F7077] hover:bg-white"
+                    >
+                      Global
+                    </button>
+                  ) : null}
+                </div>
+              ) : null}
 
               <button
                 type="button"
@@ -183,6 +287,7 @@ export function GenflixPublicHeader({
                         item={navItem}
                         isActive={navItem.pageKey === currentPage}
                         variant={isHome ? 'home' : 'light'}
+                        appearance={currentScopeAppearance}
                         className="rounded-[14px] px-3 py-3 text-[15px]"
                       />
                     )
@@ -196,12 +301,30 @@ export function GenflixPublicHeader({
                     <EditableText
                       entryKey={user ? 'global.header.cta.authenticated.label' : 'global.header.cta.anonymous.label'}
                       fallback={ctaLabel}
-                      label="Botão do cabeçalho mobile"
+                      label="Botao do cabecalho mobile"
                       pageKey="global"
                     />
                   </Link>
                 </GenflixCtaButton>
               </div>
+            </div>
+          ) : null}
+
+          {editor?.isEditing && scope ? (
+            <div className="mt-3 flex flex-wrap gap-2 xl:hidden">
+              <HeaderAppearanceControl
+                label={appearanceScopePageKey === 'global' ? 'Header global' : 'Header desta pagina'}
+                onClick={() => openAppearanceEditor(appearanceScopePageKey)}
+              />
+              {appearanceScopePageKey !== 'global' ? (
+                <button
+                  type="button"
+                  onClick={() => openAppearanceEditor('global')}
+                  className="inline-flex items-center gap-2 rounded-full border border-[#D8E6EB] bg-[#F8FCFD] px-4 py-2 text-xs font-black uppercase tracking-[0.14em] text-[#5F7077] hover:bg-white"
+                >
+                  Global
+                </button>
+              ) : null}
             </div>
           ) : null}
         </header>

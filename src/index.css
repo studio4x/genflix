@@ -117,6 +117,10 @@
     }
   }
 
+  body[data-genflix-public-shell="true"] main.min-h-screen.font-manrope {
+    background-color: var(--genflix-page-background, #f2f7f9) !important;
+  }
+
   :where(
     [class*="bg-[#1398B7]"],
     [class*="bg-[#0A3640]"],
