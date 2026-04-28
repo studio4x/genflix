@@ -8,6 +8,21 @@ export type SiteBannerThemePreset = 'light-strong' | 'light-soft' | 'dark-soft'
 export type SiteBannerTonePreset = 'solid' | 'warm' | 'surface'
 export type SiteBannerLayoutKey = 'title' | 'subtitle' | 'body' | 'primaryCta' | 'secondaryCta'
 export type SiteBannerColorKey = SiteBannerLayoutKey
+export type BannerEditorComponentType = 'title' | 'subtitle' | 'body' | 'primaryCta' | 'secondaryCta'
+
+export interface BannerEditorState {
+  root?: {
+    props?: {
+      backgroundUrl?: string
+      themePreset?: SiteBannerThemePreset
+      height?: number
+    }
+  }
+  content: Array<{
+    type: BannerEditorComponentType
+    props: Record<string, unknown>
+  }>
+}
 
 export interface SiteBannerLayoutItem {
   x: number
@@ -71,6 +86,8 @@ export interface SiteBanner {
   heightDesktop: number
   heightMobile: number
   elementStyles: SiteBannerElementStyles
+  editorStateDesktop: BannerEditorState
+  editorStateMobile: BannerEditorState
   primaryCta: SiteBannerCta | null
   secondaryCta: SiteBannerCta | null
   isActive: boolean
@@ -106,6 +123,40 @@ export const defaultBannerElementStyles: SiteBannerElementStyles = {
   body: {},
   primaryCta: {},
   secondaryCta: {},
+}
+
+export const defaultBannerEditorStateDesktop: BannerEditorState = {
+  root: {
+    props: {
+      backgroundUrl: '/images/genflix/home/hero.jpg',
+      themePreset: 'light-strong',
+      height: defaultBannerHeightDesktop,
+    },
+  },
+  content: [
+    { type: 'title', props: { text: 'O conhecimento que a sua carreira estava esperando.', x: 0, y: 122, width: 40, visible: true } },
+    { type: 'subtitle', props: { text: 'As ferramentas de estudo para quem leva o aprendizado a serio.', x: 0, y: 410, width: 38, visible: true } },
+    { type: 'body', props: { text: '', x: 0, y: 532, width: 34, visible: false } },
+    { type: 'primaryCta', props: { label: 'Ja sou inscrito', href: '/login', isInternal: true, openInNewTab: false, tonePreset: 'solid', x: 0, y: 638, width: 24, visible: true } },
+    { type: 'secondaryCta', props: { label: 'Quero me inscrever', href: '/criar-conta', isInternal: true, openInNewTab: false, tonePreset: 'surface', x: 210, y: 638, width: 24, visible: true } },
+  ],
+}
+
+export const defaultBannerEditorStateMobile: BannerEditorState = {
+  root: {
+    props: {
+      backgroundUrl: '/images/genflix/home/hero.jpg',
+      themePreset: 'light-strong',
+      height: defaultBannerHeightMobile,
+    },
+  },
+  content: [
+    { type: 'title', props: { text: 'O conhecimento que a sua carreira estava esperando.', x: 0, y: 67, width: 84, visible: true } },
+    { type: 'subtitle', props: { text: 'As ferramentas de estudo para quem leva o aprendizado a serio.', x: 0, y: 291, width: 84, visible: true } },
+    { type: 'body', props: { text: '', x: 0, y: 381, width: 82, visible: false } },
+    { type: 'primaryCta', props: { label: 'Ja sou inscrito', href: '/login', isInternal: true, openInNewTab: false, tonePreset: 'solid', x: 0, y: 459, width: 78, visible: true } },
+    { type: 'secondaryCta', props: { label: 'Quero me inscrever', href: '/criar-conta', isInternal: true, openInNewTab: false, tonePreset: 'surface', x: 0, y: 504, width: 78, visible: true } },
+  ],
 }
 
 export const defaultPrimaryBannerCta: SiteBannerCta = {
@@ -180,6 +231,8 @@ export function createDefaultSiteBanner(sortOrder: number): Omit<SiteBanner, 'id
     heightDesktop: defaultBannerHeightDesktop,
     heightMobile: defaultBannerHeightMobile,
     elementStyles: structuredClone(defaultBannerElementStyles),
+    editorStateDesktop: structuredClone(defaultBannerEditorStateDesktop),
+    editorStateMobile: structuredClone(defaultBannerEditorStateMobile),
     primaryCta: { ...defaultPrimaryBannerCta },
     secondaryCta: { ...defaultSecondaryBannerCta },
     isActive: false,
