@@ -409,6 +409,8 @@ export function HomeBannerCarousel({
         {slides.map((banner, index) => {
           const theme = bannerThemeStyles[banner.themePreset]
           const isVisible = index === activeIndex
+          const desktopBackgroundUrl = banner.backgroundUrl
+          const mobileBackgroundUrl = banner.backgroundUrlMobile || banner.backgroundUrl
 
           return (
             <article
@@ -418,11 +420,19 @@ export function HomeBannerCarousel({
                 isVisible ? 'opacity-100' : 'pointer-events-none opacity-0',
               )}
               aria-hidden={!isVisible}
-            >
+              >
               <div
-                className="absolute inset-0"
+                className="absolute inset-0 hidden lg:block"
                 style={{
-                  backgroundImage: `${theme.overlay}, url(${banner.backgroundUrl})`,
+                  backgroundImage: `${theme.overlay}, url(${desktopBackgroundUrl})`,
+                  backgroundPosition: 'center',
+                  backgroundSize: 'cover',
+                }}
+              />
+              <div
+                className="absolute inset-0 lg:hidden"
+                style={{
+                  backgroundImage: `${theme.overlay}, url(${mobileBackgroundUrl})`,
                   backgroundPosition: 'center',
                   backgroundSize: 'cover',
                 }}

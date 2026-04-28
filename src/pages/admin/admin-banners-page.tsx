@@ -48,6 +48,8 @@ type BannerDragState = {
   startWidth: number
 }
 
+type BannerBackgroundVariant = 'desktop' | 'mobile'
+
 const DESKTOP_CANVAS_WIDTH = DESKTOP_BANNER_DESIGN_WIDTH
 const MOBILE_CANVAS_WIDTH = 420
 const LAYOUT_KEYS: SiteBannerLayoutKey[] = ['title', 'subtitle', 'body', 'primaryCta', 'secondaryCta']
@@ -61,6 +63,14 @@ function cloneBanner(banner: SiteBanner): SiteBanner {
     primaryCta: banner.primaryCta ? { ...banner.primaryCta } : null,
     secondaryCta: banner.secondaryCta ? { ...banner.secondaryCta } : null,
   }
+}
+
+function getBannerBackgroundUrl(banner: SiteBanner, variant: BannerBackgroundVariant) {
+  if (variant === 'mobile') {
+    return banner.backgroundUrlMobile || banner.backgroundUrl
+  }
+
+  return banner.backgroundUrl
 }
 
 function normalizePercent(value: number) {
@@ -173,6 +183,8 @@ function getDraftSignature(banner: SiteBanner | null) {
     body: banner.body,
     backgroundAssetId: banner.backgroundAssetId,
     backgroundUrl: banner.backgroundUrl,
+    backgroundAssetIdMobile: banner.backgroundAssetIdMobile,
+    backgroundUrlMobile: banner.backgroundUrlMobile,
     themePreset: banner.themePreset,
     layoutDesktop: banner.layoutDesktop,
     layoutMobile: banner.layoutMobile,
@@ -437,7 +449,7 @@ export function AdminBannersPage() {
   const [draft, setDraft] = useState<SiteBanner | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
-  const [uploadingImage, setUploadingImage] = useState(false)
+  const [uploadingBackground, setUploadingBackground] = useState<BannerBackgroundVariant | null>(null)
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const stageRef = useRef<HTMLDivElement | null>(null)
@@ -814,6 +826,8 @@ export function AdminBannersPage() {
         body: draft.body.trim(),
         backgroundAssetId: draft.backgroundAssetId,
         backgroundUrl: draft.backgroundUrl,
+        backgroundAssetIdMobile: draft.backgroundAssetIdMobile,
+        backgroundUrlMobile: draft.backgroundUrlMobile,
         themePreset: draft.themePreset,
         layoutDesktop: normalizedDesktop,
         layoutMobile: normalizedMobile,
@@ -887,12 +901,12 @@ export function AdminBannersPage() {
     }
   }
 
-  async function handleBackgroundUpload(file: File | null) {
+  async function handleBackgroundUpload(variant: BannerBackgroundVariant, file: File | null) {
     if (!file || !draft) {
       return
     }
 
-    setUploadingImage(true)
+    setUploadingBackground(variant)
     setMessage(null)
     setError(null)
 
@@ -900,19 +914,21 @@ export function AdminBannersPage() {
       const asset = await uploadSiteAsset(file, {
         alt: draft.name || file.name,
         pageKey: 'home',
-        entryKey: `banner:${draft.id}:background`,
+        entryKey: `banner:${draft.id}:background:${variant}`,
       })
 
       setDraft((current) => current ? {
         ...current,
-        backgroundAssetId: asset.id,
-        backgroundUrl: asset.public_url ?? current.backgroundUrl,
+        backgroundAssetId: variant === 'desktop' ? asset.id : current.backgroundAssetId,
+        backgroundUrl: variant === 'desktop' ? (asset.public_url ?? current.backgroundUrl) : current.backgroundUrl,
+        backgroundAssetIdMobile: variant === 'mobile' ? asset.id : current.backgroundAssetIdMobile,
+        backgroundUrlMobile: variant === 'mobile' ? (asset.public_url ?? current.backgroundUrlMobile) : current.backgroundUrlMobile,
       } : current)
       setMessage('Imagem do banner enviada. Salve para publicar a troca.')
     } catch (uploadError) {
       setError(uploadError instanceof Error ? uploadError.message : 'Nao foi possivel enviar a imagem.')
     } finally {
-      setUploadingImage(false)
+      setUploadingBackground(null)
     }
   }
 
@@ -1234,7 +1250,7 @@ export function AdminBannersPage() {
                   <Button type="button" variant="outline" onClick={handleAlignAllInsideCanvas} disabled={saving} className="rounded-2xl border-[#D8E6EB]">
                     Alinhar no canvas
                   </Button>
-                  <Button type="button" onClick={() => void handleSaveBanner()} disabled={saving || uploadingImage} className="rounded-2xl bg-[#1398B7] px-5 font-black text-white hover:bg-[#1089A5]">
+                  <Button type="button" onClick={() => void handleSaveBanner()} disabled={saving || uploadingBackground !== null} className="rounded-2xl bg-[#1398B7] px-5 font-black text-white hover:bg-[#1089A5]">
                     <Save className="mr-2 h-4 w-4" />
                     {saving ? 'Salvando...' : 'Salvar banner'}
                   </Button>
@@ -1293,7 +1309,7 @@ export function AdminBannersPage() {
                       <div
                         className="absolute inset-0"
                         style={{
-                          backgroundImage: `${theme?.overlay ?? ''}, url(${draft.backgroundUrl})`,
+                          backgroundImage: `${theme?.overlay ?? ''}, url(${getBannerBackgroundUrl(draft, isMobilePreview ? 'mobile' : 'desktop')})`,
                           backgroundPosition: 'center',
                           backgroundSize: 'cover',
                         }}
@@ -1346,22 +1362,41 @@ export function AdminBannersPage() {
                     <div className="grid gap-4">
                       <div className="rounded-[18px] border border-[#D8E6EB] bg-white p-4">
                         <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#5F7077]">Imagem de fundo</p>
-                        <p className="mt-2 truncate text-sm font-semibold text-[#15323b]">{draft.backgroundUrl || 'Nenhuma imagem definida'}</p>
-                        <label className="mt-4 inline-flex h-11 cursor-pointer items-center justify-center rounded-2xl bg-[#1398B7] px-4 text-xs font-black uppercase tracking-[0.14em] text-white hover:bg-[#1089A5]">
-                          <ImagePlus className="mr-2 h-4 w-4" />
-                          {uploadingImage ? 'Enviando...' : 'Trocar imagem'}
-                          <input
-                            type="file"
-                            accept=".jpg,.jpeg,.png,.webp,image/*"
-                            disabled={uploadingImage}
-                            onChange={(event) => {
-                              const file = event.target.files?.[0] ?? null
-                              void handleBackgroundUpload(file)
-                              event.currentTarget.value = ''
-                            }}
-                            className="sr-only"
-                          />
-                        </label>
+                        <p className="mt-2 text-xs font-semibold text-[#7C8E94]">Use uma arte para desktop e outra para mobile. Se o mobile nao tiver imagem propria, ele herda a do desktop.</p>
+                        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                          {([
+                            {
+                              variant: 'desktop' as const,
+                              label: 'Desktop',
+                              value: draft.backgroundUrl,
+                            },
+                            {
+                              variant: 'mobile' as const,
+                              label: 'Mobile',
+                              value: draft.backgroundUrlMobile || draft.backgroundUrl,
+                            },
+                          ]).map((field) => (
+                            <div key={field.variant} className="rounded-[18px] border border-[#D8E6EB] bg-[#F8FBFC] p-3">
+                              <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#5F7077]">{field.label}</p>
+                              <p className="mt-2 truncate text-sm font-semibold text-[#15323b]">{field.value || 'Nenhuma imagem definida'}</p>
+                              <label className="mt-3 inline-flex h-11 cursor-pointer items-center justify-center rounded-2xl bg-[#1398B7] px-4 text-xs font-black uppercase tracking-[0.14em] text-white hover:bg-[#1089A5]">
+                                <ImagePlus className="mr-2 h-4 w-4" />
+                                {uploadingBackground === field.variant ? 'Enviando...' : `Trocar ${field.label.toLowerCase()}`}
+                                <input
+                                  type="file"
+                                  accept=".jpg,.jpeg,.png,.webp,image/*"
+                                  disabled={uploadingBackground !== null}
+                                  onChange={(event) => {
+                                    const file = event.target.files?.[0] ?? null
+                                    void handleBackgroundUpload(field.variant, file)
+                                    event.currentTarget.value = ''
+                                  }}
+                                  className="sr-only"
+                                />
+                              </label>
+                            </div>
+                          ))}
+                        </div>
                       </div>
 
                       <label className="grid gap-2">

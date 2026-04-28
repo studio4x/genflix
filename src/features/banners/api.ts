@@ -35,6 +35,8 @@ type SiteBannerRow = {
   body: string | null
   background_asset_id: string | null
   background_url: string | null
+  background_asset_id_mobile: string | null
+  background_url_mobile: string | null
   theme_preset: string
   layout_desktop: Record<string, unknown> | null
   layout_mobile: Record<string, unknown> | null
@@ -59,6 +61,8 @@ type UpdateSiteBannerInput = {
   body?: string
   backgroundAssetId?: string | null
   backgroundUrl?: string
+  backgroundAssetIdMobile?: string | null
+  backgroundUrlMobile?: string
   themePreset?: SiteBannerThemePreset
   layoutDesktop?: SiteBannerLayoutDesktop
   layoutMobile?: SiteBannerLayoutMobile
@@ -185,6 +189,8 @@ function normalizeBanner(row: SiteBannerRow): SiteBanner {
     body: row.body ?? '',
     backgroundAssetId: row.background_asset_id,
     backgroundUrl: row.background_url ?? '/images/genflix/home/hero.jpg',
+    backgroundAssetIdMobile: row.background_asset_id_mobile,
+    backgroundUrlMobile: row.background_url_mobile ?? row.background_url ?? '/images/genflix/home/hero.jpg',
     themePreset: row.theme_preset as SiteBannerThemePreset,
     layoutDesktop: normalizeLayoutDesktop(row.layout_desktop),
     layoutMobile: normalizeLayoutMobile(row.layout_mobile),
@@ -210,7 +216,7 @@ async function currentUserId() {
 export async function fetchSiteBanners(locationKey: SiteBannerLocationKey = HOME_HERO_BANNER_LOCATION) {
   const { data, error } = await supabase
     .from('site_banners')
-    .select('id, location_key, name, title, subtitle, body, background_asset_id, background_url, theme_preset, layout_desktop, layout_mobile, height_desktop, height_mobile, element_styles, primary_cta, secondary_cta, is_active, sort_order, created_by, updated_by, created_at, updated_at')
+    .select('id, location_key, name, title, subtitle, body, background_asset_id, background_url, background_asset_id_mobile, background_url_mobile, theme_preset, layout_desktop, layout_mobile, height_desktop, height_mobile, element_styles, primary_cta, secondary_cta, is_active, sort_order, created_by, updated_by, created_at, updated_at')
     .eq('location_key', locationKey)
     .order('sort_order', { ascending: true })
     .order('created_at', { ascending: true })
@@ -338,7 +344,7 @@ export async function deleteSiteBannerCarouselTarget(targetId: string) {
 export async function fetchActiveSiteBanners(locationKey: SiteBannerLocationKey = HOME_HERO_BANNER_LOCATION) {
   const { data, error } = await supabase
     .from('site_banners')
-    .select('id, location_key, name, title, subtitle, body, background_asset_id, background_url, theme_preset, layout_desktop, layout_mobile, height_desktop, height_mobile, element_styles, primary_cta, secondary_cta, is_active, sort_order, created_by, updated_by, created_at, updated_at')
+    .select('id, location_key, name, title, subtitle, body, background_asset_id, background_url, background_asset_id_mobile, background_url_mobile, theme_preset, layout_desktop, layout_mobile, height_desktop, height_mobile, element_styles, primary_cta, secondary_cta, is_active, sort_order, created_by, updated_by, created_at, updated_at')
     .eq('location_key', locationKey)
     .eq('is_active', true)
     .order('sort_order', { ascending: true })
@@ -367,6 +373,8 @@ export async function createSiteBanner(locationKey: SiteBannerLocationKey = HOME
       body: draft.body,
       background_asset_id: draft.backgroundAssetId,
       background_url: draft.backgroundUrl,
+      background_asset_id_mobile: draft.backgroundAssetIdMobile,
+      background_url_mobile: draft.backgroundUrlMobile,
       theme_preset: draft.themePreset,
       layout_desktop: draft.layoutDesktop,
       layout_mobile: draft.layoutMobile,
@@ -380,7 +388,7 @@ export async function createSiteBanner(locationKey: SiteBannerLocationKey = HOME
       created_by: userId,
       updated_by: userId,
     })
-    .select('id, location_key, name, title, subtitle, body, background_asset_id, background_url, theme_preset, layout_desktop, layout_mobile, height_desktop, height_mobile, element_styles, primary_cta, secondary_cta, is_active, sort_order, created_by, updated_by, created_at, updated_at')
+    .select('id, location_key, name, title, subtitle, body, background_asset_id, background_url, background_asset_id_mobile, background_url_mobile, theme_preset, layout_desktop, layout_mobile, height_desktop, height_mobile, element_styles, primary_cta, secondary_cta, is_active, sort_order, created_by, updated_by, created_at, updated_at')
     .single()
 
   if (error) {
@@ -402,6 +410,8 @@ export async function updateSiteBanner(input: UpdateSiteBannerInput) {
   if (input.body !== undefined) payload.body = input.body
   if (input.backgroundAssetId !== undefined) payload.background_asset_id = input.backgroundAssetId
   if (input.backgroundUrl !== undefined) payload.background_url = input.backgroundUrl
+  if (input.backgroundAssetIdMobile !== undefined) payload.background_asset_id_mobile = input.backgroundAssetIdMobile
+  if (input.backgroundUrlMobile !== undefined) payload.background_url_mobile = input.backgroundUrlMobile
   if (input.themePreset !== undefined) payload.theme_preset = input.themePreset
   if (input.layoutDesktop !== undefined) payload.layout_desktop = input.layoutDesktop
   if (input.layoutMobile !== undefined) payload.layout_mobile = input.layoutMobile
@@ -417,7 +427,7 @@ export async function updateSiteBanner(input: UpdateSiteBannerInput) {
     .from('site_banners')
     .update(payload)
     .eq('id', input.id)
-    .select('id, location_key, name, title, subtitle, body, background_asset_id, background_url, theme_preset, layout_desktop, layout_mobile, height_desktop, height_mobile, element_styles, primary_cta, secondary_cta, is_active, sort_order, created_by, updated_by, created_at, updated_at')
+    .select('id, location_key, name, title, subtitle, body, background_asset_id, background_url, background_asset_id_mobile, background_url_mobile, theme_preset, layout_desktop, layout_mobile, height_desktop, height_mobile, element_styles, primary_cta, secondary_cta, is_active, sort_order, created_by, updated_by, created_at, updated_at')
     .single()
 
   if (error) {
@@ -469,6 +479,8 @@ export async function duplicateSiteBanner(banner: SiteBanner) {
       body: banner.body,
       background_asset_id: banner.backgroundAssetId,
       background_url: banner.backgroundUrl,
+      background_asset_id_mobile: banner.backgroundAssetIdMobile,
+      background_url_mobile: banner.backgroundUrlMobile,
       theme_preset: banner.themePreset,
       layout_desktop: cloneBannerLayout(banner.layoutDesktop),
       layout_mobile: cloneBannerLayout(banner.layoutMobile),
@@ -482,7 +494,7 @@ export async function duplicateSiteBanner(banner: SiteBanner) {
       created_by: userId,
       updated_by: userId,
     })
-    .select('id, location_key, name, title, subtitle, body, background_asset_id, background_url, theme_preset, layout_desktop, layout_mobile, height_desktop, height_mobile, element_styles, primary_cta, secondary_cta, is_active, sort_order, created_by, updated_by, created_at, updated_at')
+    .select('id, location_key, name, title, subtitle, body, background_asset_id, background_url, background_asset_id_mobile, background_url_mobile, theme_preset, layout_desktop, layout_mobile, height_desktop, height_mobile, element_styles, primary_cta, secondary_cta, is_active, sort_order, created_by, updated_by, created_at, updated_at')
     .single()
 
   if (error) {

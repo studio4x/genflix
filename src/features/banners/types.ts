@@ -77,6 +77,8 @@ export interface SiteBanner {
   body: string
   backgroundAssetId: string | null
   backgroundUrl: string
+  backgroundAssetIdMobile: string | null
+  backgroundUrlMobile: string
   themePreset: SiteBannerThemePreset
   layoutDesktop: SiteBannerLayoutDesktop
   layoutMobile: SiteBannerLayoutMobile
@@ -189,6 +191,8 @@ export function createDefaultSiteBanner(
     body: '',
     backgroundAssetId: null,
     backgroundUrl: '/images/genflix/home/hero.jpg',
+    backgroundAssetIdMobile: null,
+    backgroundUrlMobile: '/images/genflix/home/hero.jpg',
     themePreset: 'light-strong',
     layoutDesktop: structuredClone(defaultBannerLayoutDesktop),
     layoutMobile: structuredClone(defaultBannerLayoutMobile),
