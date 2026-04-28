@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { AlertTriangle, Eye, EyeOff, ExternalLink, Filter, History, MessageSquare, RotateCcw, Save, Search, ShieldCheck } from 'lucide-react'
+import { AlertTriangle, Copy, Eye, EyeOff, ExternalLink, Filter, History, MessageSquare, RotateCcw, Save, Search, ShieldCheck } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import {
@@ -20,6 +20,7 @@ import {
   formatWorkflowStatus,
   type SiteEditorWorkspaceMap,
 } from '@/features/site-editor/collaboration'
+import { renderSiteIcon, SITE_ICON_OPTIONS } from '@/features/site-editor/site-icons'
 import { supabase } from '@/services/supabase/client'
 
 type SitePageRow = {
@@ -80,6 +81,7 @@ export function AdminSiteEditorPage() {
   const [selectedPageKey, setSelectedPageKey] = useState<SitePageKey>('home')
   const [editorMode, setEditorMode] = useState<SiteEditorMode>('basic')
   const [searchQuery, setSearchQuery] = useState('')
+  const [iconSearchQuery, setIconSearchQuery] = useState('')
   const [typeFilter, setTypeFilter] = useState<'all' | SiteContentEntry['entry_type']>('all')
   const [statusFilter, setStatusFilter] = useState<'all' | 'enabled' | 'disabled'>('all')
   const [versions, setVersions] = useState<SiteContentVersion[]>([])
@@ -123,6 +125,20 @@ export function AdminSiteEditorPage() {
     [entries, pages],
   )
   const selectedPageStat = pageStats.find((page) => page.pageKey === selectedPageKey)?.totalEntries ?? 0
+  const filteredIconOptions = useMemo(() => {
+    const normalizedQuery = iconSearchQuery.trim().toLowerCase()
+
+    return SITE_ICON_OPTIONS.filter((option) => {
+      if (normalizedQuery.length === 0) {
+        return true
+      }
+
+      return (
+        option.label.toLowerCase().includes(normalizedQuery)
+        || option.value.toLowerCase().includes(normalizedQuery)
+      )
+    })
+  }, [iconSearchQuery])
 
   useEffect(() => {
     if (pages.length === 0) {
@@ -281,6 +297,15 @@ export function AdminSiteEditorPage() {
     }
   }
 
+  async function handleCopyIconKey(iconKey: string) {
+    try {
+      await navigator.clipboard.writeText(iconKey)
+      setMessage(`Chave do ícone "${iconKey}" copiada para uso no editor.`)
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Não foi possível copiar a chave do ícone.')
+    }
+  }
+
   async function handleRestoreVersion(version: SiteContentVersion) {
     setIsSaving(true)
     setMessage(null)
@@ -436,6 +461,63 @@ export function AdminSiteEditorPage() {
                 <Save className="mr-2 h-4 w-4" />
                 {settings.editing_enabled ? 'Bloquear edição inline' : 'Liberar edição inline'}
               </Button>
+            </div>
+          </article>
+
+          <article className="border border-[#D8E6EB] bg-white p-5 shadow-sm">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#1398B7]">Biblioteca</p>
+                <h2 className="mt-1 font-readex text-xl font-semibold text-[#15323b]">Ícones do site</h2>
+                <p className="mt-2 text-sm font-semibold leading-6 text-[#5F7077]">
+                  Use esta biblioteca para localizar e copiar as chaves de ícone usadas em cards, seções e elementos editáveis.
+                </p>
+              </div>
+              <div className="rounded-[18px] border border-[#D8E6EB] bg-[#F8FBFC] px-4 py-3 text-right">
+                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#5F7077]">Disponíveis</p>
+                <p className="mt-1 font-readex text-2xl font-semibold text-[#15323b]">{SITE_ICON_OPTIONS.length}</p>
+              </div>
+            </div>
+
+            <label className="mt-4 grid gap-2">
+              <span className="text-[10px] font-black uppercase tracking-[0.18em] text-[#5F7077]">Buscar ícone</span>
+              <div className="flex h-11 items-center gap-2 rounded-[14px] border border-[#D8E6EB] bg-[#F8FBFC] px-3">
+                <Search className="h-4 w-4 text-[#7C8B90]" />
+                <input
+                  value={iconSearchQuery}
+                  onChange={(event) => setIconSearchQuery(event.target.value)}
+                  placeholder="Ex.: saúde, vídeo, link, arquivo..."
+                  className="w-full border-0 bg-transparent text-sm font-semibold text-[#15323b] outline-none"
+                />
+              </div>
+            </label>
+
+            <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+              {filteredIconOptions.map((option) => (
+                <article key={option.value} className="rounded-[18px] border border-[#D8E6EB] bg-[#F8FBFC] p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-[#D8E6EB] bg-white text-[#1398B7]">
+                      {renderSiteIcon(option.value, 'h-5 w-5')}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => void handleCopyIconKey(option.value)}
+                      className="inline-flex items-center gap-2 rounded-full border border-[#D8E6EB] bg-white px-3 py-2 text-[10px] font-black uppercase tracking-[0.14em] text-[#0A3640] hover:bg-[#F2F7F9]"
+                    >
+                      <Copy className="h-3.5 w-3.5" />
+                      Copiar chave
+                    </button>
+                  </div>
+                  <p className="mt-3 text-sm font-bold text-[#15323b]">{option.label}</p>
+                  <p className="mt-1 text-xs font-semibold text-[#5F7077]">Chave: {option.value}</p>
+                </article>
+              ))}
+
+              {filteredIconOptions.length === 0 ? (
+                <div className="rounded-[18px] border border-dashed border-[#D8E6EB] bg-[#F8FBFC] px-4 py-8 text-sm font-semibold text-[#5F7077] sm:col-span-2 xl:col-span-3">
+                  Nenhum ícone encontrado para esse filtro.
+                </div>
+              ) : null}
             </div>
           </article>
 

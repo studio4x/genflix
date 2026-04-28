@@ -38,7 +38,7 @@
 
 [OK] T12 - Permitir upload de ícones nos cards que já possuem ícones.
 
-[ ] T13 - Criar biblioteca de ícones no admin para uso nos elementos do site.
+[OK] T13 - Criar biblioteca de ícones no admin para uso nos elementos do site.
 
 [ ] T14 - Permitir trocar ícones existentes por ícones da biblioteca.
 
