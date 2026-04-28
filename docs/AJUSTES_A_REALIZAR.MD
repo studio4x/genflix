@@ -28,7 +28,7 @@
 
 [OK] T11 - Remover do editor visual os cards: Assistência editorial, Atalhos, Schema salvo e Conteúdo estruturado JSON.
 
-[ ] T16 - Permitir recolher e expandir todos os elementos da página do editor visual.
+[OK] T16 - Permitir recolher e expandir todos os elementos da página do editor visual.
 
 ---
 
