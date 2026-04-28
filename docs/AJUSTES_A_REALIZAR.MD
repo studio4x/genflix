@@ -12,7 +12,7 @@
 
 [OK] T2 - Permitir ajustar tipografia dos textos dos banners: fonte, tamanho, peso, espaçamento e alinhamento.
 
-[ ] T3 - Corrigir divergência entre editor e frontend dos banners: posição, largura e espaçamento dos elementos devem refletir exatamente o configurado.
+[OK] T3 - Corrigir divergência entre editor e frontend dos banners: posição, largura e espaçamento dos elementos devem refletir exatamente o configurado.
 
 [ ] T4 - Alterar posicionamento dos elementos do banner para usar distância em relação às bordas, em vez de porcentagem.
 
