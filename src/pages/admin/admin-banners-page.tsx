@@ -81,10 +81,6 @@ function parseBannerHeightInput(value: string, fallback: number) {
   return clampBannerHeight(parsed)
 }
 
-function isLegacyPercentPosition(value: number) {
-  return value >= 0 && value <= 100
-}
-
 function applyWidthWithinCanvas(item: SiteBannerLayoutItem, nextWidth: number) {
   const normalizedWidth = normalizePercent(clamp(nextWidth, 18, 100))
   const normalizedX = Math.round(Math.max(0, item.x))
@@ -340,7 +336,7 @@ function BannerCanvasElement({
     <div
       className={cn(
         'group absolute',
-        draggable ? 'cursor-grab active:cursor-grabbing' : 'cursor-default',
+        draggable ? 'cursor-grab touch-none select-none active:cursor-grabbing' : 'cursor-default',
       )}
       style={{
         left: `${item.x}px`,
@@ -447,7 +443,7 @@ export function AdminBannersPage() {
       const dragState = dragStateRef.current
       const stage = stageRef.current
 
-      if (!dragState || !stage) {
+      if (!dragState || !stage || dragState.pointerId !== event.pointerId) {
         return
       }
 
@@ -492,7 +488,7 @@ export function AdminBannersPage() {
       })
     }
 
-    function handlePointerUp(event: PointerEvent) {
+    function finishDrag(event: PointerEvent) {
       const dragState = dragStateRef.current
       if (!dragState || dragState.pointerId !== event.pointerId) {
         return
@@ -502,11 +498,13 @@ export function AdminBannersPage() {
     }
 
     window.addEventListener('pointermove', handlePointerMove)
-    window.addEventListener('pointerup', handlePointerUp)
+    window.addEventListener('pointerup', finishDrag)
+    window.addEventListener('pointercancel', finishDrag)
 
     return () => {
       window.removeEventListener('pointermove', handlePointerMove)
-      window.removeEventListener('pointerup', handlePointerUp)
+      window.removeEventListener('pointerup', finishDrag)
+      window.removeEventListener('pointercancel', finishDrag)
     }
   }, [previewMode])
 
@@ -786,23 +784,23 @@ export function AdminBannersPage() {
   }
 
   function handleCanvasPointerDown(key: SiteBannerLayoutKey, event: React.PointerEvent<HTMLDivElement>) {
+    event.preventDefault()
+
     if (!draft) {
       return
     }
 
     const currentLayout = previewMode === 'mobile' ? draft.layoutMobile : draft.layoutDesktop
     const currentItem = currentLayout[key]
-    const stageRect = stageRef.current?.getBoundingClientRect()
-    const startX = isLegacyPercentPosition(currentItem.x) && stageRect ? (currentItem.x / 100) * stageRect.width : currentItem.x
-    const startY = isLegacyPercentPosition(currentItem.y) && stageRect ? (currentItem.y / 100) * stageRect.height : currentItem.y
+    event.currentTarget.setPointerCapture?.(event.pointerId)
     dragStateRef.current = {
       key,
       pointerId: event.pointerId,
       mode: 'move',
       startClientX: event.clientX,
       startClientY: event.clientY,
-      startX,
-      startY,
+      startX: currentItem.x,
+      startY: currentItem.y,
       startWidth: currentItem.width,
     }
   }
@@ -817,17 +815,15 @@ export function AdminBannersPage() {
 
     const currentLayout = previewMode === 'mobile' ? draft.layoutMobile : draft.layoutDesktop
     const currentItem = currentLayout[key]
-    const stageRect = stageRef.current?.getBoundingClientRect()
-    const startX = isLegacyPercentPosition(currentItem.x) && stageRect ? (currentItem.x / 100) * stageRect.width : currentItem.x
-    const startY = isLegacyPercentPosition(currentItem.y) && stageRect ? (currentItem.y / 100) * stageRect.height : currentItem.y
+    event.currentTarget.setPointerCapture?.(event.pointerId)
     dragStateRef.current = {
       key,
       pointerId: event.pointerId,
       mode: 'resize',
       startClientX: event.clientX,
       startClientY: event.clientY,
-      startX,
-      startY,
+      startX: currentItem.x,
+      startY: currentItem.y,
       startWidth: currentItem.width,
     }
   }
