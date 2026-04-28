@@ -108,7 +108,7 @@ run(npxCommand, withVercelAuthArgs(['vercel', 'build', '--prod']), {
 })
 
 process.stdout.write(`Publicando output prebuilt em producao na Vercel pelo projeto canonico (${vercelScope})...\n`)
-const deployResult = run(npxCommand, withVercelAuthArgs(['vercel', 'deploy', '--prebuilt', '--prod', '--yes']), {
+const deployResult = run(npxCommand, withVercelAuthArgs(['vercel', 'deploy', '--prebuilt', '--prod', '--yes', '--output', 'json']), {
   captureOutput: true,
 })
 
@@ -121,11 +121,35 @@ if (deployResult.status !== 0) {
 process.stdout.write(deployResult.stdout ?? '')
 process.stderr.write(deployResult.stderr ?? '')
 
-const deploymentUrlMatch = (deployResult.stdout ?? '').match(/Production:\s+(https?:\/\/[^\s]+)/)
-const deploymentUrl = deploymentUrlMatch?.[1]
+let deploymentUrl = ''
+try {
+  const payload = JSON.parse((deployResult.stdout ?? '').trim())
+  deploymentUrl = payload?.url || payload?.deployment?.url || ''
+} catch {
+  deploymentUrl = ''
+}
 const canonicalDomain = canonicalProductionUrl.replace(/^https?:\/\//, '').replace(/\/+$/, '')
 
 if (deploymentUrl && canonicalDomain) {
   process.stdout.write(`Atualizando alias canonico ${canonicalDomain} -> ${deploymentUrl}\n`)
   run(npxCommand, withVercelAuthArgs(['vercel', 'alias', 'set', deploymentUrl, canonicalDomain]))
+
+  const aliasResult = run(npxCommand, withVercelAuthArgs(['vercel', 'alias', 'ls']), { captureOutput: true })
+  const expectedAlias = `${deploymentUrl.replace(/^https?:\/\//, '')}    ${canonicalDomain}`
+  const aliasOutput = aliasResult.stdout ?? ''
+
+  if (!aliasOutput.includes(expectedAlias)) {
+    process.stderr.write(`Falha ao validar alias canonico. Esperado: ${expectedAlias}\n`)
+    process.exit(1)
+  }
+
+  const currentResult = run(npxCommand, withVercelAuthArgs(['vercel', 'ls', 'genflix']), { captureOutput: true })
+  const currentOutput = currentResult.stdout ?? ''
+  if (!currentOutput.includes(deploymentUrl)) {
+    process.stderr.write(`Falha ao validar deployment atual. Ultimo deploy nao aparece como current: ${deploymentUrl}\n`)
+    process.exit(1)
+  }
+} else {
+  process.stderr.write('Falha ao extrair URL do deploy para validar alias/current.\n')
+  process.exit(1)
 }
