@@ -72,33 +72,17 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return !!value && typeof value === 'object' && !Array.isArray(value)
 }
 
-const LEGACY_DESKTOP_LAYOUT_WIDTH = 1280
-const LEGACY_DESKTOP_LAYOUT_HEIGHT = 760
-const LEGACY_MOBILE_LAYOUT_WIDTH = 420
-const LEGACY_MOBILE_LAYOUT_HEIGHT = 560
-
-function isLegacyPercentPosition(value: number) {
-  return value >= 0 && value <= 100
-}
-
 function normalizeLayoutItem(
   value: unknown,
   fallback: SiteBannerLayoutDesktop[keyof SiteBannerLayoutDesktop],
-  canvasWidth: number,
-  canvasHeight: number,
 ) {
   if (!isRecord(value)) {
     return { ...fallback }
   }
 
-  const rawX = typeof value.x === 'number' ? value.x : fallback.x
-  const rawY = typeof value.y === 'number' ? value.y : fallback.y
-  const normalizedX = isLegacyPercentPosition(rawX) ? Math.round((rawX / 100) * canvasWidth) : rawX
-  const normalizedY = isLegacyPercentPosition(rawY) ? Math.round((rawY / 100) * canvasHeight) : rawY
-
   return {
-    x: normalizedX,
-    y: normalizedY,
+    x: typeof value.x === 'number' ? value.x : fallback.x,
+    y: typeof value.y === 'number' ? value.y : fallback.y,
     width: typeof value.width === 'number' ? value.width : fallback.width,
     visible: typeof value.visible === 'boolean' ? value.visible : fallback.visible,
     zIndex: typeof value.zIndex === 'number' ? value.zIndex : fallback.zIndex,
@@ -108,22 +92,22 @@ function normalizeLayoutItem(
 function normalizeLayoutDesktop(value: unknown): SiteBannerLayoutDesktop {
   const record = isRecord(value) ? value : {}
   return {
-    title: normalizeLayoutItem(record.title, defaultBannerLayoutDesktop.title, LEGACY_DESKTOP_LAYOUT_WIDTH, LEGACY_DESKTOP_LAYOUT_HEIGHT),
-    subtitle: normalizeLayoutItem(record.subtitle, defaultBannerLayoutDesktop.subtitle, LEGACY_DESKTOP_LAYOUT_WIDTH, LEGACY_DESKTOP_LAYOUT_HEIGHT),
-    body: normalizeLayoutItem(record.body, defaultBannerLayoutDesktop.body, LEGACY_DESKTOP_LAYOUT_WIDTH, LEGACY_DESKTOP_LAYOUT_HEIGHT),
-    primaryCta: normalizeLayoutItem(record.primaryCta, defaultBannerLayoutDesktop.primaryCta, LEGACY_DESKTOP_LAYOUT_WIDTH, LEGACY_DESKTOP_LAYOUT_HEIGHT),
-    secondaryCta: normalizeLayoutItem(record.secondaryCta, defaultBannerLayoutDesktop.secondaryCta, LEGACY_DESKTOP_LAYOUT_WIDTH, LEGACY_DESKTOP_LAYOUT_HEIGHT),
+    title: normalizeLayoutItem(record.title, defaultBannerLayoutDesktop.title),
+    subtitle: normalizeLayoutItem(record.subtitle, defaultBannerLayoutDesktop.subtitle),
+    body: normalizeLayoutItem(record.body, defaultBannerLayoutDesktop.body),
+    primaryCta: normalizeLayoutItem(record.primaryCta, defaultBannerLayoutDesktop.primaryCta),
+    secondaryCta: normalizeLayoutItem(record.secondaryCta, defaultBannerLayoutDesktop.secondaryCta),
   }
 }
 
 function normalizeLayoutMobile(value: unknown): SiteBannerLayoutMobile {
   const record = isRecord(value) ? value : {}
   return {
-    title: normalizeLayoutItem(record.title, defaultBannerLayoutMobile.title, LEGACY_MOBILE_LAYOUT_WIDTH, LEGACY_MOBILE_LAYOUT_HEIGHT),
-    subtitle: normalizeLayoutItem(record.subtitle, defaultBannerLayoutMobile.subtitle, LEGACY_MOBILE_LAYOUT_WIDTH, LEGACY_MOBILE_LAYOUT_HEIGHT),
-    body: normalizeLayoutItem(record.body, defaultBannerLayoutMobile.body, LEGACY_MOBILE_LAYOUT_WIDTH, LEGACY_MOBILE_LAYOUT_HEIGHT),
-    primaryCta: normalizeLayoutItem(record.primaryCta, defaultBannerLayoutMobile.primaryCta, LEGACY_MOBILE_LAYOUT_WIDTH, LEGACY_MOBILE_LAYOUT_HEIGHT),
-    secondaryCta: normalizeLayoutItem(record.secondaryCta, defaultBannerLayoutMobile.secondaryCta, LEGACY_MOBILE_LAYOUT_WIDTH, LEGACY_MOBILE_LAYOUT_HEIGHT),
+    title: normalizeLayoutItem(record.title, defaultBannerLayoutMobile.title),
+    subtitle: normalizeLayoutItem(record.subtitle, defaultBannerLayoutMobile.subtitle),
+    body: normalizeLayoutItem(record.body, defaultBannerLayoutMobile.body),
+    primaryCta: normalizeLayoutItem(record.primaryCta, defaultBannerLayoutMobile.primaryCta),
+    secondaryCta: normalizeLayoutItem(record.secondaryCta, defaultBannerLayoutMobile.secondaryCta),
   }
 }
 

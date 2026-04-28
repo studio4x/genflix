@@ -40,6 +40,10 @@ type BannerDragState = {
   startWidth: number
 }
 
+const DESKTOP_CANVAS_WIDTH = 1280
+const MOBILE_CANVAS_WIDTH = 420
+const LAYOUT_KEYS: SiteBannerLayoutKey[] = ['title', 'subtitle', 'body', 'primaryCta', 'secondaryCta']
+
 function cloneBanner(banner: SiteBanner): SiteBanner {
   return {
     ...banner,
@@ -90,6 +94,48 @@ function applyWidthWithinCanvas(item: SiteBannerLayoutItem, nextWidth: number) {
     width: normalizedWidth,
     x: normalizedX,
   }
+}
+
+function scaleLayoutForHeight<T extends Record<SiteBannerLayoutKey, SiteBannerLayoutItem>>(layout: T, previousHeight: number, nextHeight: number) {
+  if (!Number.isFinite(previousHeight) || previousHeight <= 0 || previousHeight === nextHeight) {
+    return layout
+  }
+
+  const ratio = nextHeight / previousHeight
+  const nextLayout = { ...layout } as T
+
+  for (const key of LAYOUT_KEYS) {
+    nextLayout[key] = {
+      ...layout[key],
+      y: Math.round(layout[key].y * ratio),
+    }
+  }
+
+  return nextLayout
+}
+
+function keepLayoutInsideCanvas<T extends Record<SiteBannerLayoutKey, SiteBannerLayoutItem>>(
+  layout: T,
+  canvasWidth: number,
+  canvasHeight: number,
+) {
+  const nextLayout = { ...layout } as T
+
+  for (const key of LAYOUT_KEYS) {
+    const item = layout[key]
+    const elementWidthPx = (item.width / 100) * canvasWidth
+    const maxX = Math.max(0, canvasWidth - elementWidthPx)
+    const maxY = Math.max(0, canvasHeight - 20)
+
+    nextLayout[key] = {
+      ...item,
+      x: Math.round(clamp(item.x, 0, maxX)),
+      y: Math.round(clamp(item.y, 0, maxY)),
+      width: normalizePercent(clamp(item.width, 18, 100)),
+    }
+  }
+
+  return nextLayout
 }
 
 function moveItem<T>(items: T[], fromIndex: number, toIndex: number) {
@@ -530,11 +576,41 @@ export function AdminBannersPage() {
         setHeightMobileInput(formatBannerHeightInput(nextValue))
       }
 
+      if (which === 'heightDesktop') {
+        const scaledDesktop = scaleLayoutForHeight(current.layoutDesktop, current.heightDesktop, nextValue)
+        return {
+          ...current,
+          heightDesktop: nextValue,
+          layoutDesktop: keepLayoutInsideCanvas(scaledDesktop, DESKTOP_CANVAS_WIDTH, nextValue),
+        }
+      }
+
+      const scaledMobile = scaleLayoutForHeight(current.layoutMobile, current.heightMobile, nextValue)
       return {
         ...current,
-        [which]: nextValue,
+        heightMobile: nextValue,
+        layoutMobile: keepLayoutInsideCanvas(scaledMobile, MOBILE_CANVAS_WIDTH, nextValue),
       }
     })
+  }
+
+  function handleAlignAllInsideCanvas() {
+    setDraft((current) => {
+      if (!current) {
+        return current
+      }
+
+      const desktop = keepLayoutInsideCanvas(current.layoutDesktop, DESKTOP_CANVAS_WIDTH, current.heightDesktop)
+      const mobile = keepLayoutInsideCanvas(current.layoutMobile, MOBILE_CANVAS_WIDTH, current.heightMobile)
+
+      return {
+        ...current,
+        layoutDesktop: desktop,
+        layoutMobile: mobile,
+      }
+    })
+    setMessage('Elementos alinhados dentro do canvas para desktop e mobile.')
+    setError(null)
   }
 
   function setLayoutItem(key: SiteBannerLayoutKey, updater: (item: SiteBannerLayoutItem) => SiteBannerLayoutItem) {
@@ -673,6 +749,8 @@ export function AdminBannersPage() {
     setError(null)
 
     try {
+      const normalizedDesktop = keepLayoutInsideCanvas(draft.layoutDesktop, DESKTOP_CANVAS_WIDTH, nextHeightDesktop)
+      const normalizedMobile = keepLayoutInsideCanvas(draft.layoutMobile, MOBILE_CANVAS_WIDTH, nextHeightMobile)
       const updated = await updateSiteBanner({
         id: draft.id,
         name: draft.name.trim() || 'Banner sem nome',
@@ -682,8 +760,8 @@ export function AdminBannersPage() {
         backgroundAssetId: draft.backgroundAssetId,
         backgroundUrl: draft.backgroundUrl,
         themePreset: draft.themePreset,
-        layoutDesktop: draft.layoutDesktop,
-        layoutMobile: draft.layoutMobile,
+        layoutDesktop: normalizedDesktop,
+        layoutMobile: normalizedMobile,
         heightDesktop: nextHeightDesktop,
         heightMobile: nextHeightMobile,
         elementStyles: draft.elementStyles,
@@ -982,6 +1060,9 @@ export function AdminBannersPage() {
                 <div className="flex flex-wrap gap-3">
                   <Button type="button" variant="outline" onClick={() => setDraft(selectedBanner ? cloneBanner(selectedBanner) : null)} disabled={!isDirty || saving} className="rounded-2xl border-[#D8E6EB]">
                     Reverter alteracoes
+                  </Button>
+                  <Button type="button" variant="outline" onClick={handleAlignAllInsideCanvas} disabled={saving} className="rounded-2xl border-[#D8E6EB]">
+                    Alinhar no canvas
                   </Button>
                   <Button type="button" onClick={() => void handleSaveBanner()} disabled={saving || uploadingImage} className="rounded-2xl bg-[#1398B7] px-5 font-black text-white hover:bg-[#1089A5]">
                     <Save className="mr-2 h-4 w-4" />
