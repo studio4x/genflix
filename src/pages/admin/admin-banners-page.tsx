@@ -59,6 +59,10 @@ function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max)
 }
 
+function clampBannerHeight(value: number) {
+  return Math.round(clamp(value, 320, 1200))
+}
+
 function applyWidthWithinCanvas(item: SiteBannerLayoutItem, nextWidth: number) {
   const normalizedWidth = normalizePercent(clamp(nextWidth, 18, 100))
   const normalizedX = normalizePercent(clamp(item.x, 0, 100 - normalizedWidth))
@@ -92,6 +96,8 @@ function getDraftSignature(banner: SiteBanner | null) {
     themePreset: banner.themePreset,
     layoutDesktop: banner.layoutDesktop,
     layoutMobile: banner.layoutMobile,
+    heightDesktop: banner.heightDesktop,
+    heightMobile: banner.heightMobile,
     elementStyles: banner.elementStyles,
     primaryCta: banner.primaryCta,
     secondaryCta: banner.secondaryCta,
@@ -594,6 +600,8 @@ export function AdminBannersPage() {
         themePreset: draft.themePreset,
         layoutDesktop: draft.layoutDesktop,
         layoutMobile: draft.layoutMobile,
+        heightDesktop: clampBannerHeight(draft.heightDesktop),
+        heightMobile: clampBannerHeight(draft.heightMobile),
         elementStyles: draft.elementStyles,
         primaryCta: draft.primaryCta,
         secondaryCta: draft.secondaryCta,
@@ -735,6 +743,7 @@ export function AdminBannersPage() {
   const canvasSubtitle = draft?.subtitle.trim() || 'Subtitulo opcional'
   const canvasBody = draft?.body.trim() || 'Texto complementar opcional'
   const isMobilePreview = previewMode === 'mobile'
+  const previewHeight = draft ? (isMobilePreview ? draft.heightMobile : draft.heightDesktop) : 560
   const activeLayoutLabel = isMobilePreview ? 'mobile' : 'desktop'
   const activeLayout = draft ? (isMobilePreview ? draft.layoutMobile : draft.layoutDesktop) : null
   const titleColor = draft ? draft.elementStyles.title.textColor || getThemeTextColor(draft.themePreset, 'title') : '#FFFFFF'
@@ -929,10 +938,10 @@ export function AdminBannersPage() {
                       className={cn(
                         'relative min-w-0 overflow-hidden rounded-[32px] border border-[#D8E6EB] bg-[#0A3640] shadow-[0_24px_60px_rgba(10,54,64,0.16)] transition-all duration-300',
                         isMobilePreview
-                          ? 'mx-auto w-full max-w-[420px] min-h-[620px]'
-                          : 'w-full max-w-full min-h-[340px] lg:min-h-[430px] 2xl:min-h-[520px]',
+                          ? 'mx-auto w-full max-w-[420px]'
+                          : 'w-full max-w-full',
                       )}
-                      style={{ aspectRatio: isMobilePreview ? '390 / 760' : '1600 / 760' }}
+                      style={{ height: `${previewHeight}px` }}
                     >
                       <div
                         className="absolute inset-0"
@@ -1072,6 +1081,35 @@ export function AdminBannersPage() {
                       onToggle={() => toggleCard('composition')}
                     >
                     <div className="grid gap-3">
+                      <div className="rounded-[18px] border border-[#D8E6EB] bg-white p-3">
+                        <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Altura do banner</p>
+                        <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                          <label className="grid gap-2">
+                            <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Desktop (px)</span>
+                            <input
+                              type="number"
+                              min={320}
+                              max={1200}
+                              step={1}
+                              value={draft.heightDesktop}
+                              onChange={(event) => setDraftField('heightDesktop', clampBannerHeight(Number(event.target.value) || 760))}
+                              className="h-11 rounded-[16px] border border-[#D8E6EB] bg-white px-4 text-sm font-semibold text-[#15323b] outline-none"
+                            />
+                          </label>
+                          <label className="grid gap-2">
+                            <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Mobile (px)</span>
+                            <input
+                              type="number"
+                              min={320}
+                              max={1200}
+                              step={1}
+                              value={draft.heightMobile}
+                              onChange={(event) => setDraftField('heightMobile', clampBannerHeight(Number(event.target.value) || 560))}
+                              className="h-11 rounded-[16px] border border-[#D8E6EB] bg-white px-4 text-sm font-semibold text-[#15323b] outline-none"
+                            />
+                          </label>
+                        </div>
+                      </div>
                       {(['title', 'subtitle', 'body'] as const).map((layoutKey) => {
                         const item = activeLayout?.[layoutKey] ?? draft.layoutDesktop[layoutKey]
                         const layoutCardKey = `layout-${layoutKey}`

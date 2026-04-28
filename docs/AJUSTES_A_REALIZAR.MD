@@ -4,23 +4,11 @@
 
 [OK] T0 - A ultima execucao foi pausada. Analisei o que foi solicitado e registrei abaixo o que faltou implementar. Nao implementei nenhuma feature neste item.
 
-Resultado T0:
-- [OK] T0.1 - Escopo parcial encontrado em banners da home e no editor visual.
-- [OK] T0.2 - O repositorio ficou interrompido com conflitos abertos em arquivos centrais, inclusive `src/features/banners/*`, `src/pages/admin/admin-banners-page.tsx`, `src/features/site-editor/visual-editor.tsx` e `src/components/layout/AppVersion.tsx`, entao nenhuma entrega parcial pode ser considerada concluida sem estabilizar a base.
-- T0.3 - T1 e T2: ha estrutura parcial para `desktopHeight`, `mobileHeight` e `elementStyles`, com controles no admin e renderizacao no carousel, mas faltou finalizar conflitos, validar persistencia completa e fechar build/testes.
-- T0.4 - T3: faltou alinhar editor e frontend do banner em 1:1. O admin ainda declara que no mobile os elementos sao empilhados automaticamente, o que contradiz a necessidade de refletir exatamente a configuracao salva.
-- T0.5 - T4: faltou trocar o posicionamento por distancia em relacao as bordas. O modelo e a renderizacao seguem usando `x`, `y` e `width` em porcentagem.
-- T0.6 - T5: ha indicios de setas adicionadas no carousel, mas faltou concluir a integracao em meio aos conflitos e validar o comportamento final em desktop e mobile.
-- T0.7 - T6: ha avancos pontuais de cor e dimensao nos banners, mas faltou entregar isso como capacidade consistente do editor visual.
-- T0.8 - T7: ha indicios de presets/estilos de CTA, mas faltou padronizar a troca de estilo dos botoes existentes dentro do editor visual.
-- T0.9 - T11: nao foi concluido. Os cards `Assistencia editorial`, `Atalhos`, `Schema salvo` e o rotulo `Conteudo estruturado JSON` ainda existem no editor visual.
-- T0.10 - T16: nao foi concluido. Existe apenas o recolhimento da bandeja do editor visual, sem acao para recolher ou expandir todos os elementos da pagina.
-
 ---
 
 ## CHAT 1 — Banners
 
-[ ] T1 - Permitir ajustar altura dos banners no editor, separando desktop e mobile.
+[OK] T1 - Permitir ajustar altura dos banners no editor, separando desktop e mobile.
 
 [ ] T2 - Permitir ajustar tipografia dos textos dos banners: fonte, tamanho, peso, espaçamento e alinhamento.
 
@@ -185,3 +173,4 @@ Resultado T0:
 [ ] T52 - Criar um documento de checklist com tudo o que já foi implementado, descrevendo em detalhes. Esse documento será usado para validar o que foi implementado, testar todas as funcionalidades disponíveis e identificar se ainda falta algo para implementar.
 
 ---
+

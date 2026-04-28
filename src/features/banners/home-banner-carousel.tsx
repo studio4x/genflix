@@ -266,6 +266,7 @@ export function HomeBannerCarousel({
   }, [activeIndex, autoplayIntervalMs, banners.length, isPaused, prefersReducedMotion])
 
   const slides = useMemo(() => banners.filter((banner) => banner.isActive), [banners])
+  const activeSlide = slides[activeIndex] ?? slides[0] ?? null
 
   function goToSlide(index: number) {
     setActiveIndex(index)
@@ -320,7 +321,13 @@ export function HomeBannerCarousel({
       onTouchEnd={handleTouchEnd}
       aria-label="Banner principal da home"
     >
-      <div className="relative min-h-[480px] sm:min-h-[520px]">
+      <div
+        className="home-banner-carousel-track relative"
+        style={{
+          ['--banner-mobile-height' as string]: `${activeSlide?.heightMobile ?? 560}px`,
+          ['--banner-desktop-height' as string]: `${activeSlide?.heightDesktop ?? 760}px`,
+        }}
+      >
         {slides.map((banner, index) => {
           const theme = bannerThemeStyles[banner.themePreset]
           const isVisible = index === activeIndex

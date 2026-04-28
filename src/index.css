@@ -433,3 +433,13 @@ tr:nth-child(even) {
   margin: 0 0 1rem 0;
   color: #475569;
 }
+
+.home-banner-carousel-track {
+  min-height: var(--banner-mobile-height, 560px);
+}
+
+@media (min-width: 1024px) {
+  .home-banner-carousel-track {
+    min-height: var(--banner-desktop-height, 760px);
+  }
+}

@@ -62,6 +62,8 @@ export interface SiteBanner {
   themePreset: SiteBannerThemePreset
   layoutDesktop: SiteBannerLayoutDesktop
   layoutMobile: SiteBannerLayoutMobile
+  heightDesktop: number
+  heightMobile: number
   elementStyles: SiteBannerElementStyles
   primaryCta: SiteBannerCta | null
   secondaryCta: SiteBannerCta | null
@@ -88,6 +90,9 @@ export const defaultBannerLayoutMobile: SiteBannerLayoutMobile = {
   primaryCta: { x: 8, y: 82, width: 78, visible: true, zIndex: 4 },
   secondaryCta: { x: 8, y: 90, width: 78, visible: true, zIndex: 4 },
 }
+
+export const defaultBannerHeightDesktop = 760
+export const defaultBannerHeightMobile = 560
 
 export const defaultBannerElementStyles: SiteBannerElementStyles = {
   title: {},
@@ -166,6 +171,8 @@ export function createDefaultSiteBanner(sortOrder: number): Omit<SiteBanner, 'id
     themePreset: 'light-strong',
     layoutDesktop: structuredClone(defaultBannerLayoutDesktop),
     layoutMobile: structuredClone(defaultBannerLayoutMobile),
+    heightDesktop: defaultBannerHeightDesktop,
+    heightMobile: defaultBannerHeightMobile,
     elementStyles: structuredClone(defaultBannerElementStyles),
     primaryCta: { ...defaultPrimaryBannerCta },
     secondaryCta: { ...defaultSecondaryBannerCta },
