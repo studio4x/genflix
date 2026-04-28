@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 
 import { useAuth } from '@/app/providers/auth-provider'
 import { HomeBannerCarousel } from '@/features/banners/home-banner-carousel'
-import { GenflixCtaButton } from '@/components/public/genflix-cta-button'
+import { GenflixCtaButton, normalizeGenflixCtaTone } from '@/components/public/genflix-cta-button'
 import { GenflixCourseCard } from '@/components/public/genflix-course-card'
 import { GenflixNewsletterSection } from '@/components/public/genflix-newsletter-section'
 import { GenflixPublicFooter } from '@/components/public/genflix-public-footer'
@@ -307,7 +307,7 @@ function HomeFeaturedSection({
             pageKey={pageKey}
           >
             {(buttonValue) => buttonValue.isHidden === true ? null : (
-              <GenflixCtaButton asChild className="h-11 self-start px-5" tone={buttonValue.tone === 'surface' || buttonValue.tone === 'ghost' ? buttonValue.tone : 'solid'}>
+              <GenflixCtaButton asChild className="h-11 self-start px-5" tone={normalizeGenflixCtaTone(buttonValue.tone)}>
                 {buttonValue.isInternal === true ? (
                   <Link to={typeof buttonValue.href === 'string' ? buttonValue.href : '/cursos'}>
                     {typeof buttonValue.label === 'string' ? buttonValue.label : 'Conheca todos os cursos'}

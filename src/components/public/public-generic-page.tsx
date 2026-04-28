@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 
-import { GenflixCtaButton } from '@/components/public/genflix-cta-button'
+import { GenflixCtaButton, normalizeGenflixCtaTone } from '@/components/public/genflix-cta-button'
 import { GenflixPublicFooter } from '@/components/public/genflix-public-footer'
 import { GenflixPublicHeader } from '@/components/public/genflix-public-header'
 import { genflixNavLinks } from '@/features/public/genflix-public-shell-content'
@@ -100,7 +100,7 @@ export function PublicGenericPage({
                 pageKey="global"
               >
                 {(buttonValue) => buttonValue.isHidden === true ? null : (
-                  <GenflixCtaButton asChild tone={buttonValue.tone === 'surface' || buttonValue.tone === 'ghost' ? buttonValue.tone : 'solid'}>
+                  <GenflixCtaButton asChild tone={normalizeGenflixCtaTone(buttonValue.tone)}>
                     {buttonValue.isInternal === true ? (
                       <Link to={typeof buttonValue.href === 'string' ? buttonValue.href : '#'}>
                         {typeof buttonValue.label === 'string' ? buttonValue.label : cta.label}

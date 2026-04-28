@@ -16,6 +16,7 @@ import { Link, useLocation } from 'react-router-dom'
 import { CheckCircle2, Copy, Edit3, Image as ImageIcon, Keyboard, LayoutTemplate, MessageSquare, PanelBottomOpen, Plus, Redo2, RotateCcw, Save, Send, Settings, Sparkles, Undo2, Wand2, X } from 'lucide-react'
 
 import { useAuth } from '@/app/providers/auth-provider'
+import { GenflixCtaButton, normalizeGenflixCtaTone } from '@/components/public/genflix-cta-button'
 import { supabase } from '@/services/supabase/client'
 import { cn } from '@/lib/utils'
 import {
@@ -301,6 +302,29 @@ function cloneNodeWithStyle(node: ReactNode, style?: CSSProperties) {
     },
   })
 }
+
+const BUTTON_STYLE_PRESETS = [
+  {
+    tone: 'solid' as const,
+    label: 'Principal',
+    description: 'Botão forte, para chamada primária.',
+  },
+  {
+    tone: 'warm' as const,
+    label: 'Aquecido',
+    description: 'Botão com destaque verde para ações positivas.',
+  },
+  {
+    tone: 'surface' as const,
+    label: 'Superfície',
+    description: 'Botão claro, ideal para ações secundárias.',
+  },
+  {
+    tone: 'ghost' as const,
+    label: 'Discreto',
+    description: 'Botão translúcido para fundos escuros.',
+  },
+] as const
 
 function isTitleEditorEntry(label: string, entryKey: string) {
   const normalizedLabel = label.toLowerCase()
@@ -1723,18 +1747,50 @@ function EditorModal({
                       />
                     </label>
                     {editor.entryType === 'button' ? (
-                      <label className="grid gap-1.5">
-                        <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Tom visual</span>
-                        <select
-                          value={typeof previewRecord.tone === 'string' ? previewRecord.tone : 'solid'}
-                          onChange={(event) => updateRecordEditor({ ...previewRecord, tone: event.target.value })}
-                          className="h-11 rounded-[14px] border border-[#D8E6EB] bg-white px-3 text-sm font-semibold text-[#15323b] outline-none"
-                        >
-                          <option value="solid">Solid</option>
-                          <option value="surface">Surface</option>
-                          <option value="ghost">Ghost</option>
-                        </select>
-                      </label>
+                      <div className="md:col-span-2">
+                        <div className="flex items-center justify-between gap-3">
+                          <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Padrao de botoes</span>
+                          <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#8BA0A7]">Clique para trocar o estilo</span>
+                        </div>
+                        <div className="mt-3 grid gap-3 lg:grid-cols-2">
+                          {BUTTON_STYLE_PRESETS.map((preset) => {
+                            const isSelected = normalizeGenflixCtaTone(previewRecord.tone) === preset.tone
+
+                            return (
+                              <button
+                                key={preset.tone}
+                                type="button"
+                                onClick={() => updateRecordEditor({ ...previewRecord, tone: preset.tone })}
+                                className={cn(
+                                  'rounded-[18px] border p-4 text-left transition',
+                                  isSelected
+                                    ? 'border-[#1398B7] bg-[#EAF8FB] shadow-[0_12px_24px_rgba(19,152,183,0.10)]'
+                                    : 'border-[#D8E6EB] bg-white hover:border-[#BEE3EA] hover:bg-[#F8FCFD]',
+                                )}
+                              >
+                                <div className="flex items-start justify-between gap-3">
+                                  <div>
+                                    <p className="text-sm font-black text-[#15323b]">{preset.label}</p>
+                                    <p className="mt-1 text-xs leading-5 text-[#5F7077]">{preset.description}</p>
+                                  </div>
+                                  <span className="rounded-full border border-[#D8E6EB] px-2 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">
+                                    {preset.tone}
+                                  </span>
+                                </div>
+                                <div className="mt-4">
+                                  <GenflixCtaButton asChild tone={preset.tone}>
+                                    <div className="h-11 w-full justify-between px-4 text-[13px]">
+                                      {typeof previewRecord.label === 'string' && previewRecord.label.trim() !== ''
+                                        ? previewRecord.label
+                                        : 'Botao de exemplo'}
+                                    </div>
+                                  </GenflixCtaButton>
+                                </div>
+                              </button>
+                            )
+                          })}
+                        </div>
+                      </div>
                     ) : null}
                     <div className="grid gap-2 md:col-span-2 md:grid-cols-3">
                       <label className="flex items-center justify-between rounded-[14px] border border-[#D8E6EB] bg-white px-3 py-3 text-sm font-semibold text-[#15323b]">
@@ -2229,14 +2285,22 @@ function EditorModal({
                   <div className="grid gap-3 sm:grid-cols-2">
                     {editor.entryType === 'button' || editor.entryType === 'link' ? (
                       <div className="sm:col-span-2 rounded-[18px] border border-[#D8E6EB] bg-white p-5 shadow-[0_12px_24px_rgba(21,50,59,0.04)]">
-                        <div className={cn(
-                          'inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-black uppercase tracking-[0.14em]',
-                          typeof previewRecord.tone === 'string' && previewRecord.tone === 'solid'
-                            ? 'border-[#0A3640] bg-[#0A3640] text-white'
-                            : 'border-[#D8E6EB] bg-[#F8FCFD] text-[#0A3640]',
-                        )} style={previewTextStyle}>
-                          {typeof previewRecord.label === 'string' && previewRecord.label ? previewRecord.label : 'Botão'}
-                        </div>
+                        {editor.entryType === 'button' ? (
+                          <GenflixCtaButton
+                            type="button"
+                            tone={normalizeGenflixCtaTone(previewRecord.tone)}
+                            className="h-12 w-full justify-between px-5 text-[14px]"
+                          >
+                            {typeof previewRecord.label === 'string' && previewRecord.label ? previewRecord.label : 'Botão'}
+                          </GenflixCtaButton>
+                        ) : (
+                          <div
+                            className="inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-black uppercase tracking-[0.14em] border-[#D8E6EB] bg-[#F8FCFD] text-[#0A3640]"
+                            style={previewTextStyle}
+                          >
+                            {typeof previewRecord.label === 'string' && previewRecord.label ? previewRecord.label : 'Link'}
+                          </div>
+                        )}
                         <p className="mt-4 text-sm leading-7 text-[#5F7077]">
                           {typeof previewRecord.href === 'string' && previewRecord.href ? previewRecord.href : 'Sem link definido'}
                         </p>

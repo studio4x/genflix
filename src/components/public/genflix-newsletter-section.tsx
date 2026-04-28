@@ -1,6 +1,6 @@
 import { type FormEvent, useState } from 'react'
 
-import { GenflixCtaButton } from '@/components/public/genflix-cta-button'
+import { GenflixCtaButton, normalizeGenflixCtaTone } from '@/components/public/genflix-cta-button'
 import { genflixNewsletterImage } from '@/features/public/genflix-public-media'
 import { EditableButton, EditableImage, EditableText, getEditableImagePresentation, useEditableValue } from '@/features/site-editor/visual-editor'
 import type { SitePageKey } from '@/features/site-editor/types'
@@ -109,7 +109,7 @@ export function GenflixNewsletterSection({
                         type="submit"
                         disabled={isSubmitting}
                         className="min-h-[50px] justify-between px-5 md:min-w-[220px]"
-                        tone={buttonValue.tone === 'surface' || buttonValue.tone === 'ghost' ? buttonValue.tone : 'solid'}
+                        tone={normalizeGenflixCtaTone(buttonValue.tone)}
                       >
                         {isSubmitting ? 'Enviando...' : (typeof buttonValue.label === 'string' ? buttonValue.label : 'Quero me inscrever')}
                       </GenflixCtaButton>

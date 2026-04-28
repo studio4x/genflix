@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom'
 
 import { useAuth } from '@/app/providers/auth-provider'
 import { SupportTicketModal } from '@/components/support/support-ticket-modal'
-import { GenflixCtaButton } from '@/components/public/genflix-cta-button'
+import { GenflixCtaButton, normalizeGenflixCtaTone } from '@/components/public/genflix-cta-button'
 import { GenflixPublicFooter } from '@/components/public/genflix-public-footer'
 import { GenflixPublicHeader } from '@/components/public/genflix-public-header'
 import { BannerPlacementSlot } from '@/features/banners/banner-placement-slot'
@@ -235,7 +235,7 @@ export function PublicSupportPage() {
                   Abrir um chamado
                 </GenflixCtaButton>
                 {user ? (
-                  <GenflixCtaButton asChild tone="surface" className="h-12 px-5 text-[#0A3640]">
+                  <GenflixCtaButton asChild tone={normalizeGenflixCtaTone('surface')} className="h-12 px-5 text-[#0A3640]">
                     <Link to={getSupportListRoute(roles.includes('admin'))}>Ver historico de chamados</Link>
                   </GenflixCtaButton>
                 ) : null}

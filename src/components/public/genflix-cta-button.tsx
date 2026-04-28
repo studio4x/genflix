@@ -5,6 +5,14 @@ import { cn } from '@/lib/utils'
 
 type GenflixCtaTone = 'solid' | 'warm' | 'surface' | 'ghost'
 
+export const GENFLIX_CTA_TONES = ['solid', 'warm', 'surface', 'ghost'] as const
+
+export function normalizeGenflixCtaTone(value: unknown): GenflixCtaTone {
+  return GENFLIX_CTA_TONES.includes(value as (typeof GENFLIX_CTA_TONES)[number])
+    ? value as GenflixCtaTone
+    : 'solid'
+}
+
 const toneClasses: Record<GenflixCtaTone, string> = {
   solid:
     'border-white bg-[radial-gradient(circle_at_75%_25%,rgba(255,255,255,0.12),transparent_40%),linear-gradient(180deg,#19B7DA_0%,#0A3640_100%)] text-[#F6F6F6] shadow-[0px_4px_4px_rgba(0,0,0,0.25)] hover:shadow-[0px_6px_10px_rgba(0,0,0,0.28)]',

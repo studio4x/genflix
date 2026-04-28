@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 
-import { GenflixCtaButton } from '@/components/public/genflix-cta-button'
+import { GenflixCtaButton, normalizeGenflixCtaTone } from '@/components/public/genflix-cta-button'
 import { GenflixPublicFooter } from '@/components/public/genflix-public-footer'
 import { GenflixPublicHeader } from '@/components/public/genflix-public-header'
 import { BannerPlacementSlot } from '@/features/banners/banner-placement-slot'
@@ -54,7 +54,7 @@ export function PublicLegalPageShell({
                   label="Botão voltar ao login"
                 >
                   {(buttonValue) => buttonValue.isHidden === true ? null : (
-                    <GenflixCtaButton asChild tone={buttonValue.tone === 'ghost' || buttonValue.tone === 'solid' ? buttonValue.tone : 'surface'} className="mt-4 px-4 py-2 text-xs font-black uppercase tracking-[0.2em]">
+                    <GenflixCtaButton asChild tone={normalizeGenflixCtaTone(buttonValue.tone)} className="mt-4 px-4 py-2 text-xs font-black uppercase tracking-[0.2em]">
                       <Link to={typeof buttonValue.href === 'string' ? buttonValue.href : '/login'}>
                         {typeof buttonValue.label === 'string' ? buttonValue.label : 'Voltar ao login'}
                       </Link>
