@@ -45,6 +45,7 @@ export interface SiteBannerElementStyle {
   fontWeight?: number
   letterSpacing?: number
   textAlign?: 'left' | 'center' | 'right'
+  verticalAlign?: 'top' | 'middle' | 'bottom'
 }
 
 export interface SiteBannerElementStyles {

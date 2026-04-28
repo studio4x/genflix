@@ -150,6 +150,18 @@ function getBannerTextTypographyStyle(style: SiteBannerElementStyle) {
   } as const
 }
 
+function getVerticalAnchorTransform(verticalAlign?: SiteBannerElementStyle['verticalAlign']) {
+  if (verticalAlign === 'middle') {
+    return 'translateY(-50%)'
+  }
+
+  if (verticalAlign === 'bottom') {
+    return 'translateY(-100%)'
+  }
+
+  return 'translateY(0)'
+}
+
 function getToneColorDefaults(tone: SiteBannerCta['tonePreset']) {
   if (tone === 'warm') {
     return { backgroundColor: '#176E52', textColor: '#F6F6F6' }
@@ -307,6 +319,7 @@ function BannerCanvasElement({
   elementKey,
   item,
   children,
+  verticalAlign,
   onPointerDown,
   onResizePointerDown,
   draggable = true,
@@ -314,6 +327,7 @@ function BannerCanvasElement({
   elementKey: SiteBannerLayoutKey
   item: SiteBannerLayoutItem
   children: React.ReactNode
+  verticalAlign?: SiteBannerElementStyle['verticalAlign']
   onPointerDown: (key: SiteBannerLayoutKey, event: React.PointerEvent<HTMLDivElement>) => void
   onResizePointerDown: (key: SiteBannerLayoutKey, event: React.PointerEvent<HTMLButtonElement>) => void
   draggable?: boolean
@@ -333,6 +347,7 @@ function BannerCanvasElement({
         top: `${item.y}px`,
         width: `${item.width}%`,
         zIndex: item.zIndex,
+        transform: getVerticalAnchorTransform(verticalAlign),
       }}
       onPointerDown={draggable ? (event) => onPointerDown(elementKey, event) : undefined}
     >
@@ -1035,32 +1050,32 @@ export function AdminBannersPage() {
                       />
 
                       <div className="public-site-container relative h-full">
-                        <BannerCanvasElement elementKey="title" item={titleLayout ?? draft.layoutDesktop.title} onPointerDown={handleCanvasPointerDown} onResizePointerDown={handleCanvasResizePointerDown} draggable>
+                        <BannerCanvasElement elementKey="title" item={titleLayout ?? draft.layoutDesktop.title} verticalAlign={draft.elementStyles.title.verticalAlign} onPointerDown={handleCanvasPointerDown} onResizePointerDown={handleCanvasResizePointerDown} draggable>
                           <p className={cn(isMobilePreview ? 'text-[2.2rem] font-extrabold leading-[0.94] tracking-[-0.05em] sm:text-[2.6rem]' : 'text-[2.5rem] font-extrabold leading-[0.92] tracking-[-0.05em] sm:text-[3rem] md:text-[3.25rem]', theme?.titleClass)} style={{ color: titleColor, ...titleTypographyStyle }}>
                             {canvasTitle}
                           </p>
                         </BannerCanvasElement>
 
-                        <BannerCanvasElement elementKey="subtitle" item={subtitleLayout ?? draft.layoutDesktop.subtitle} onPointerDown={handleCanvasPointerDown} onResizePointerDown={handleCanvasResizePointerDown} draggable>
+                        <BannerCanvasElement elementKey="subtitle" item={subtitleLayout ?? draft.layoutDesktop.subtitle} verticalAlign={draft.elementStyles.subtitle.verticalAlign} onPointerDown={handleCanvasPointerDown} onResizePointerDown={handleCanvasResizePointerDown} draggable>
                           <p className={cn('text-sm leading-7 sm:text-base', theme?.textClass)} style={{ color: subtitleColor, ...subtitleTypographyStyle }}>
                             {canvasSubtitle}
                           </p>
                         </BannerCanvasElement>
 
-                        <BannerCanvasElement elementKey="body" item={bodyLayout ?? draft.layoutDesktop.body} onPointerDown={handleCanvasPointerDown} onResizePointerDown={handleCanvasResizePointerDown} draggable>
+                        <BannerCanvasElement elementKey="body" item={bodyLayout ?? draft.layoutDesktop.body} verticalAlign={draft.elementStyles.body.verticalAlign} onPointerDown={handleCanvasPointerDown} onResizePointerDown={handleCanvasResizePointerDown} draggable>
                           <p className={cn('text-[15px] leading-7', theme?.bodyClass)} style={{ color: bodyColor, ...bodyTypographyStyle }}>
                             {canvasBody}
                           </p>
                         </BannerCanvasElement>
 
                         {draft.primaryCta?.visible ? (
-                          <BannerCanvasElement elementKey="primaryCta" item={primaryCtaLayout ?? draft.layoutDesktop.primaryCta} onPointerDown={handleCanvasPointerDown} onResizePointerDown={handleCanvasResizePointerDown} draggable>
+                          <BannerCanvasElement elementKey="primaryCta" item={primaryCtaLayout ?? draft.layoutDesktop.primaryCta} verticalAlign={draft.elementStyles.primaryCta.verticalAlign} onPointerDown={handleCanvasPointerDown} onResizePointerDown={handleCanvasResizePointerDown} draggable>
                             <PreviewCta cta={{ ...draft.primaryCta, label: draft.primaryCta.label || 'CTA principal' }} colors={draft.elementStyles.primaryCta} className="h-12 w-full justify-between px-5" />
                           </BannerCanvasElement>
                         ) : null}
 
                         {draft.secondaryCta?.visible ? (
-                          <BannerCanvasElement elementKey="secondaryCta" item={secondaryCtaLayout ?? draft.layoutDesktop.secondaryCta} onPointerDown={handleCanvasPointerDown} onResizePointerDown={handleCanvasResizePointerDown} draggable>
+                          <BannerCanvasElement elementKey="secondaryCta" item={secondaryCtaLayout ?? draft.layoutDesktop.secondaryCta} verticalAlign={draft.elementStyles.secondaryCta.verticalAlign} onPointerDown={handleCanvasPointerDown} onResizePointerDown={handleCanvasResizePointerDown} draggable>
                             <PreviewCta cta={{ ...draft.secondaryCta, label: draft.secondaryCta.label || 'CTA secundario' }} colors={draft.elementStyles.secondaryCta} className="h-12 w-full justify-between px-5" />
                           </BannerCanvasElement>
                         ) : null}
@@ -1289,7 +1304,7 @@ export function AdminBannersPage() {
                                 />
                               </label>
                               <label className="grid gap-2">
-                                <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Alinhamento</span>
+                                <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Alinhamento horizontal</span>
                                 <select
                                   value={draft.elementStyles[layoutKey].textAlign ?? ''}
                                   onChange={(event) => {
@@ -1303,6 +1318,39 @@ export function AdminBannersPage() {
                                   <option value="center">Centro</option>
                                   <option value="right">Direita</option>
                                 </select>
+                              </label>
+                            </div>
+                            <div className="grid gap-2 sm:grid-cols-2">
+                              <label className="grid gap-2">
+                                <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Alinhamento vertical</span>
+                                <select
+                                  value={draft.elementStyles[layoutKey].verticalAlign ?? ''}
+                                  onChange={(event) => {
+                                    const value = event.target.value as 'top' | 'middle' | 'bottom' | ''
+                                    setElementStyle(layoutKey, (current) => ({ ...current, verticalAlign: value || undefined }))
+                                  }}
+                                  className="h-11 rounded-[16px] border border-[#D8E6EB] bg-white px-4 text-sm font-semibold text-[#15323b] outline-none"
+                                >
+                                  <option value="">Topo</option>
+                                  <option value="top">Topo</option>
+                                  <option value="middle">Centro</option>
+                                  <option value="bottom">Base</option>
+                                </select>
+                              </label>
+                              <label className="grid gap-2">
+                                <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">EspaÃ§amento (px)</span>
+                                <input
+                                  type="number"
+                                  min={-10}
+                                  max={30}
+                                  step={0.1}
+                                  value={draft.elementStyles[layoutKey].letterSpacing ?? ''}
+                                  onChange={(event) => {
+                                    const raw = Number(event.target.value)
+                                    setElementStyle(layoutKey, (current) => ({ ...current, letterSpacing: Number.isFinite(raw) ? raw : undefined }))
+                                  }}
+                                  className="h-11 rounded-[16px] border border-[#D8E6EB] bg-white px-4 text-sm font-semibold text-[#15323b] outline-none"
+                                />
                               </label>
                             </div>
                             <button
@@ -1321,6 +1369,7 @@ export function AdminBannersPage() {
                                 fontWeight: undefined,
                                 letterSpacing: undefined,
                                 textAlign: undefined,
+                                verticalAlign: undefined,
                               }))}
                               className="inline-flex h-9 w-full min-w-0 items-center justify-center rounded-xl border border-[#D8E6EB] bg-white px-3 text-center text-xs font-black uppercase tracking-[0.12em] text-[#5F7077] hover:bg-[#F2F7F9]"
                             >

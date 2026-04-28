@@ -41,6 +41,18 @@ function getTextTypographyStyle(banner: SiteBanner, key: 'title' | 'subtitle' | 
   } as const
 }
 
+function getVerticalAnchorTransform(verticalAlign: SiteBanner['elementStyles']['title']['verticalAlign']) {
+  if (verticalAlign === 'middle') {
+    return 'translateY(-50%)'
+  }
+
+  if (verticalAlign === 'bottom') {
+    return 'translateY(-100%)'
+  }
+
+  return 'translateY(0)'
+}
+
 function toDesktopStyle(item: SiteBannerLayoutItem) {
   return {
     left: `${item.x}px`,
@@ -141,7 +153,10 @@ function DesktopBannerContent({ banner }: { banner: SiteBanner }) {
         <div
           key={element.key}
           className="pointer-events-auto absolute"
-          style={toDesktopStyle(element.item)}
+          style={{
+            ...toDesktopStyle(element.item),
+            transform: getVerticalAnchorTransform(banner.elementStyles[element.key].verticalAlign),
+          }}
         >
           {element.content}
         </div>
@@ -204,7 +219,10 @@ function MobileBannerContent({ banner }: { banner: SiteBanner }) {
         <div
           key={element.key}
           className="pointer-events-auto absolute"
-          style={toDesktopStyle(element.item)}
+          style={{
+            ...toDesktopStyle(element.item),
+            transform: getVerticalAnchorTransform(banner.elementStyles[element.key].verticalAlign),
+          }}
         >
           {element.content}
         </div>

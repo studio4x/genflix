@@ -142,6 +142,9 @@ function normalizeElementStyle(value: unknown, fallback: SiteBannerElementStyle)
     textAlign: value.textAlign === 'left' || value.textAlign === 'center' || value.textAlign === 'right'
       ? value.textAlign
       : fallback.textAlign,
+    verticalAlign: value.verticalAlign === 'top' || value.verticalAlign === 'middle' || value.verticalAlign === 'bottom'
+      ? value.verticalAlign
+      : fallback.verticalAlign,
   }
 }
 
