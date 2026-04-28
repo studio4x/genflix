@@ -6,6 +6,7 @@ import { GenflixCtaButton } from '@/components/public/genflix-cta-button'
 import { GenflixNewsletterSection } from '@/components/public/genflix-newsletter-section'
 import { GenflixPublicFooter } from '@/components/public/genflix-public-footer'
 import { GenflixPublicHeader } from '@/components/public/genflix-public-header'
+import { BannerPlacementSlot } from '@/features/banners/banner-placement-slot'
 import {
   genflixCommunityItems,
   genflixNavLinks,
@@ -172,6 +173,7 @@ export function PublicCommunityPage() {
   return (
     <main className="min-h-screen bg-[#F2F7F9] font-manrope text-[#163138]">
       <GenflixPublicHeader currentPage="community" navLinks={genflixNavLinks} />
+      <BannerPlacementSlot pageKey="community" placementKey="hero" />
       <SectionStructureControl
         buttonLabel="Gerenciar blocos da pagina"
         pageKey="community"

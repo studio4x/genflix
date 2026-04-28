@@ -7,6 +7,7 @@ import { GenflixCtaButton } from '@/components/public/genflix-cta-button'
 import { GenflixNewsletterSection } from '@/components/public/genflix-newsletter-section'
 import { GenflixPublicFooter } from '@/components/public/genflix-public-footer'
 import { GenflixPublicHeader } from '@/components/public/genflix-public-header'
+import { BannerPlacementSlot } from '@/features/banners/banner-placement-slot'
 import {
   genflixBlogFilters,
   genflixBlogPosts,
@@ -92,6 +93,7 @@ export function PublicBlogPage() {
   return (
     <main className="min-h-screen bg-[#F2F7F9] font-manrope text-[#163138]">
       <GenflixPublicHeader currentPage="blog" navLinks={genflixNavLinks} />
+      <BannerPlacementSlot pageKey="blog" placementKey="hero" />
 
       <section className="bg-white pb-12 pt-6">
         <div className="public-site-container">

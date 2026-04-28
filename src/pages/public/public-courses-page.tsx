@@ -8,6 +8,7 @@ import { GenflixCourseCard } from '@/components/public/genflix-course-card'
 import { GenflixNewsletterSection } from '@/components/public/genflix-newsletter-section'
 import { GenflixPublicFooter } from '@/components/public/genflix-public-footer'
 import { GenflixPublicHeader } from '@/components/public/genflix-public-header'
+import { BannerPlacementSlot } from '@/features/banners/banner-placement-slot'
 import {
   genflixCatalogCourses,
   genflixCatalogFilters,
@@ -96,6 +97,7 @@ export function PublicCoursesPage() {
   return (
     <main className="min-h-screen bg-[#F2F7F9] font-manrope text-[#163138]">
       <GenflixPublicHeader currentPage="courses" navLinks={genflixNavLinks} />
+      <BannerPlacementSlot pageKey="courses" placementKey="hero" />
 
       <section className="bg-white pb-14 pt-6">
         <div className="public-site-container">

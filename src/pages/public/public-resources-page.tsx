@@ -7,6 +7,7 @@ import { GenflixCtaButton } from '@/components/public/genflix-cta-button'
 import { GenflixNewsletterSection } from '@/components/public/genflix-newsletter-section'
 import { GenflixPublicFooter } from '@/components/public/genflix-public-footer'
 import { GenflixPublicHeader } from '@/components/public/genflix-public-header'
+import { BannerPlacementSlot } from '@/features/banners/banner-placement-slot'
 import {
   genflixNavLinks,
   genflixResourceItems,
@@ -291,6 +292,7 @@ export function PublicResourcesPage() {
   return (
     <main className="min-h-screen bg-[#F2F7F9] font-manrope text-[#163138]">
       <GenflixPublicHeader currentPage="resources" navLinks={genflixNavLinks} />
+      <BannerPlacementSlot pageKey="resources" placementKey="hero" />
 
       <section className="bg-white pb-16 pt-4">
         <div className="public-site-container">

@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom'
 import { GenflixCtaButton } from '@/components/public/genflix-cta-button'
 import { GenflixPublicFooter } from '@/components/public/genflix-public-footer'
 import { GenflixPublicHeader } from '@/components/public/genflix-public-header'
+import { BannerPlacementSlot } from '@/features/banners/banner-placement-slot'
 import { genflixNavLinks } from '@/features/public/genflix-public-shell-content'
 import { EditableButton, EditableText } from '@/features/site-editor/visual-editor'
 
@@ -25,6 +26,7 @@ export function PublicLegalPageShell({
   return (
     <main className="min-h-screen bg-[#F2F7F9] font-manrope text-[#163138]">
       <GenflixPublicHeader navLinks={genflixNavLinks} />
+      <BannerPlacementSlot pageKey="global" placementKey="hero" />
 
       <div className="public-site-container pt-4">
         <div className="overflow-hidden rounded-t-[30px] border border-[#D8E6EB] bg-white shadow-[0_24px_56px_rgba(21,50,59,0.05)]">

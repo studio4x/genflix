@@ -7,6 +7,7 @@ import { SupportTicketModal } from '@/components/support/support-ticket-modal'
 import { GenflixCtaButton } from '@/components/public/genflix-cta-button'
 import { GenflixPublicFooter } from '@/components/public/genflix-public-footer'
 import { GenflixPublicHeader } from '@/components/public/genflix-public-header'
+import { BannerPlacementSlot } from '@/features/banners/banner-placement-slot'
 import { fetchSupportFaqs, fetchSupportSettings } from '@/features/support/api'
 import { genflixNavLinks } from '@/features/public/genflix-site-content'
 import { formatSupportBusinessHours, getOrderedSupportCategories, getSupportListRoute } from '@/lib/support-sla'
@@ -66,6 +67,7 @@ export function PublicSupportPage() {
   return (
     <main className="min-h-screen bg-[#F2F7F9] font-manrope text-[#163138]">
       <GenflixPublicHeader currentPage="support" navLinks={genflixNavLinks} />
+      <BannerPlacementSlot pageKey="support" placementKey="hero" />
 
       <section className="border-b border-[#D8E6EB] bg-white">
         <div className="public-site-container py-14 sm:py-16">

@@ -3,6 +3,7 @@ import { GenflixLogo } from '@/components/public/genflix-logo'
 import { GenflixNewsletterSection } from '@/components/public/genflix-newsletter-section'
 import { GenflixPublicFooter } from '@/components/public/genflix-public-footer'
 import { GenflixPublicHeader } from '@/components/public/genflix-public-header'
+import { BannerPlacementSlot } from '@/features/banners/banner-placement-slot'
 import { genflixNavLinks } from '@/features/public/genflix-public-shell-content'
 import {
   createSectionRegistryFallback,
@@ -155,6 +156,7 @@ export function PublicAboutPage() {
   return (
     <main className="min-h-screen bg-[#F2F7F9] font-manrope text-[#163138]">
       <GenflixPublicHeader currentPage="about" navLinks={genflixNavLinks} />
+      <BannerPlacementSlot pageKey="about" placementKey="hero" />
       <SectionStructureControl
         buttonLabel="Gerenciar blocos da pagina"
         pageKey="about"

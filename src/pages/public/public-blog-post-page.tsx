@@ -6,6 +6,7 @@ import { useAuth } from '@/app/providers/auth-provider'
 import { GenflixNewsletterSection } from '@/components/public/genflix-newsletter-section'
 import { GenflixPublicFooter } from '@/components/public/genflix-public-footer'
 import { GenflixPublicHeader } from '@/components/public/genflix-public-header'
+import { BannerPlacementSlot } from '@/features/banners/banner-placement-slot'
 import {
   genflixBlogPosts,
   genflixNavLinks,
@@ -87,6 +88,7 @@ export function PublicBlogPostPage() {
   return (
     <main className="min-h-screen bg-[#F2F7F9] font-manrope text-[#163138]">
       <GenflixPublicHeader currentPage="blog" navLinks={genflixNavLinks} />
+      <BannerPlacementSlot pageKey="blog-post" placementKey="hero" />
 
       <section className="bg-white pb-10 pt-6">
         <div className="public-site-container">

@@ -7,6 +7,7 @@ import { CourseCoverMedia } from '@/components/public/course-cover-media'
 import { GenflixCtaButton } from '@/components/public/genflix-cta-button'
 import { GenflixPublicFooter } from '@/components/public/genflix-public-footer'
 import { GenflixPublicHeader } from '@/components/public/genflix-public-header'
+import { BannerPlacementSlot } from '@/features/banners/banner-placement-slot'
 import {
   genflixNavLinks,
   genflixStudyFeatures,
@@ -114,6 +115,7 @@ export function PublicCourseDetailsPage() {
   return (
     <main className="min-h-screen bg-[#F2F7F9] font-manrope text-[#163138]">
       <GenflixPublicHeader currentPage="courses" navLinks={genflixNavLinks} />
+      <BannerPlacementSlot pageKey="course-detail" placementKey="hero" />
 
       <section className="bg-white pb-20 pt-4">
         <div className="public-site-container">

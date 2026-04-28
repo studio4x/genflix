@@ -1,6 +1,7 @@
 import { type FormEvent, useState } from 'react'
 
 import { GenflixCtaButton } from '@/components/public/genflix-cta-button'
+import { BannerPlacementSlot } from '@/features/banners/banner-placement-slot'
 import { GenflixPublicFooter } from '@/components/public/genflix-public-footer'
 import { GenflixPublicHeader } from '@/components/public/genflix-public-header'
 import { genflixNavLinks } from '@/features/public/genflix-public-shell-content'
@@ -51,6 +52,7 @@ export function PublicTeachPage() {
   return (
     <main className="min-h-screen bg-[#F2F7F9] font-manrope text-[#163138]">
       <GenflixPublicHeader navLinks={genflixNavLinks} />
+      <BannerPlacementSlot pageKey="global" placementKey="hero" />
 
       <section className="bg-white pb-16 pt-4">
         <div className="public-site-container">

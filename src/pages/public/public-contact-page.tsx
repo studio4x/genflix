@@ -4,6 +4,7 @@ import { useAuth } from '@/app/providers/auth-provider'
 import { GenflixCtaButton } from '@/components/public/genflix-cta-button'
 import { GenflixPublicFooter } from '@/components/public/genflix-public-footer'
 import { GenflixPublicHeader } from '@/components/public/genflix-public-header'
+import { BannerPlacementSlot } from '@/features/banners/banner-placement-slot'
 import { genflixHeroImage } from '@/features/public/genflix-public-media'
 import { genflixNavLinks } from '@/features/public/genflix-public-shell-content'
 import {
@@ -201,6 +202,7 @@ export function PublicContactPage() {
   return (
     <main className="min-h-screen bg-[#F2F7F9] font-manrope text-[#163138]">
       <GenflixPublicHeader currentPage="contact" navLinks={genflixNavLinks} />
+      <BannerPlacementSlot pageKey="contact" placementKey="hero" />
       <SectionStructureControl
         buttonLabel="Gerenciar blocos da pagina"
         pageKey="contact"
