@@ -65,6 +65,24 @@ Se houver conflito entre instrucoes locais, esta diretriz deve ser tratada como 
   - nunca registrar tokens da Vercel, senhas ou credenciais sensiveis em arquivos versionados do repositorio;
   - tokens devem ser usados apenas em sessao/local env quando necessario para relink, pull ou deploy.
 
+## Fonte canonica de credenciais locais
+
+- Para qualquer acao com Vercel, Supabase, deploy, diagnostico operacional, webhook, cron ou Edge Function, o agente deve usar obrigatoriamente as variaveis de `.env.local` como fonte de verdade local.
+- Antes de executar comandos de Vercel/Supabase, validar:
+  - `VERCEL_PROJECT_ID`
+  - `VERCEL_ORG_ID`
+  - `VERCEL_SCOPE`
+  - `SUPABASE_URL`
+  - `SUPABASE_SERVICE_ROLE_KEY`
+  - `APP_PUBLIC_URL`
+- O agente deve confirmar que `.vercel/project.json` corresponde ao projeto canonico informado acima antes de publicar em producao.
+- Se houver divergencia entre `.env.local` e `.vercel/project.json`, corrigir o vinculo antes de seguir:
+  - `vercel link --yes --project genflix --scope genflixcursos-6767s-projects`
+  - `vercel pull --yes --environment production --scope genflixcursos-6767s-projects`
+- Seguranca operacional:
+  - nunca expor valores sensiveis na resposta final;
+  - nunca commitar `.env.local` nem copiar credenciais para arquivos versionados.
+
 ## Playbook de Edge Function 401
 
 Quando uma Edge Function acionada pelo frontend retornar `401` em `functions/v1/...`, seguir este fluxo:

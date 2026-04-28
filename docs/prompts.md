@@ -11,4 +11,5 @@ Regras:
 - Não implemente outras tarefas
 - Não altere arquitetura sem necessidade
 - Consulte apenas os docs necessários
+- Se a tarefa já tiver sido implementada anteriormente, sinalize e não execute.
 - Marque como [OK]
