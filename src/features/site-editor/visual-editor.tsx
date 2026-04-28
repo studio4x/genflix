@@ -1047,6 +1047,7 @@ function EditorModal({
   const [draftComment, setDraftComment] = useState('')
   const [workspaceState, setWorkspaceState] = useState<SiteEditorWorkspaceMap>({})
   const [isLoadingWorkspace, setIsLoadingWorkspace] = useState(false)
+  const [areAllListItemsCollapsed, setAreAllListItemsCollapsed] = useState(false)
   const usesJsonEditor = ['list', 'json', 'link', 'button', 'image'].includes(editor.entryType)
   const usesRichTextToolbar = editor.entryType === 'rich_text'
   const isDirty = rawValue !== initialRawValue || JSON.stringify(initialTextStyle) !== JSON.stringify(textStyle)
@@ -1572,18 +1573,34 @@ function EditorModal({
                     <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#1398B7]">Editor de listagem</p>
                     <p className="mt-1 text-sm font-semibold text-[#15323b]">Edite itens, mova ordem e reorganize elementos sem alterar a estrutura visual da página.</p>
                   </div>
-                  {listEditorConfig.templates.length === 0 ? (
+                  <div className="flex flex-wrap gap-2">
                     <button
                       type="button"
-                      onClick={() => updateListEditor([
-                        ...normalizeEditableListItems(parsedPreview.value),
-                        { id: `item-${previewList.length + 1}`, label: 'Novo item' },
-                      ])}
+                      onClick={() => setAreAllListItemsCollapsed(true)}
                       className="rounded-full border border-[#D8E6EB] px-4 py-2 text-[10px] font-black uppercase tracking-[0.14em] text-[#0A3640] hover:bg-white"
                     >
-                      {listEditorConfig.addLabel}
+                      Recolher todos
                     </button>
-                  ) : null}
+                    <button
+                      type="button"
+                      onClick={() => setAreAllListItemsCollapsed(false)}
+                      className="rounded-full border border-[#D8E6EB] px-4 py-2 text-[10px] font-black uppercase tracking-[0.14em] text-[#0A3640] hover:bg-white"
+                    >
+                      Expandir todos
+                    </button>
+                    {listEditorConfig.templates.length === 0 ? (
+                      <button
+                        type="button"
+                        onClick={() => updateListEditor([
+                          ...normalizeEditableListItems(parsedPreview.value),
+                          { id: `item-${previewList.length + 1}`, label: 'Novo item' },
+                        ])}
+                        className="rounded-full border border-[#D8E6EB] px-4 py-2 text-[10px] font-black uppercase tracking-[0.14em] text-[#0A3640] hover:bg-white"
+                      >
+                        {listEditorConfig.addLabel}
+                      </button>
+                    ) : null}
+                  </div>
                 </div>
 
                 {listEditorConfig.templates.length > 0 ? (
@@ -1617,30 +1634,36 @@ function EditorModal({
                   </div>
                 ) : null}
 
-                <div className="mt-4 grid gap-3">
-                  {normalizeEditableListItems(parsedPreview.value).map((item, index) => (
-                    <ListItemEditorCard
-                      key={item.id}
-                      item={item}
-                      index={index}
-                      total={previewList.length}
-                      onChange={(nextItem) => {
-                        const nextItems = normalizeEditableListItems(parsedPreview.value)
-                        nextItems[index] = nextItem
-                        updateListEditor(nextItems)
-                      }}
-                      onMove={(fromIndex, delta) => updateListEditor(moveArrayItem(normalizeEditableListItems(parsedPreview.value), fromIndex, fromIndex + delta))}
-                      onDuplicate={(duplicateIndex) => {
-                        const nextItems = normalizeEditableListItems(parsedPreview.value)
-                        const currentItem = nextItems[duplicateIndex]
-                        nextItems.splice(duplicateIndex + 1, 0, cloneEditableListItem(currentItem, listEditorConfig))
-                        updateListEditor(nextItems)
-                      }}
-                      onRemove={(removeIndex) => updateListEditor(normalizeEditableListItems(parsedPreview.value).filter((_, currentIndex) => currentIndex !== removeIndex))}
-                      editorConfig={listEditorConfig}
-                    />
-                  ))}
-                </div>
+                {areAllListItemsCollapsed ? (
+                  <div className="mt-4 rounded-[18px] border border-dashed border-[#D8E6EB] bg-white px-4 py-6 text-sm font-semibold text-[#5F7077]">
+                    Todos os elementos da listagem estão recolhidos. Use Expandir todos para voltar a ver os cartões.
+                  </div>
+                ) : (
+                  <div className="mt-4 grid gap-3">
+                    {normalizeEditableListItems(parsedPreview.value).map((item, index) => (
+                      <ListItemEditorCard
+                        key={item.id}
+                        item={item}
+                        index={index}
+                        total={previewList.length}
+                        onChange={(nextItem) => {
+                          const nextItems = normalizeEditableListItems(parsedPreview.value)
+                          nextItems[index] = nextItem
+                          updateListEditor(nextItems)
+                        }}
+                        onMove={(fromIndex, delta) => updateListEditor(moveArrayItem(normalizeEditableListItems(parsedPreview.value), fromIndex, fromIndex + delta))}
+                        onDuplicate={(duplicateIndex) => {
+                          const nextItems = normalizeEditableListItems(parsedPreview.value)
+                          const currentItem = nextItems[duplicateIndex]
+                          nextItems.splice(duplicateIndex + 1, 0, cloneEditableListItem(currentItem, listEditorConfig))
+                          updateListEditor(nextItems)
+                        }}
+                        onRemove={(removeIndex) => updateListEditor(normalizeEditableListItems(parsedPreview.value).filter((_, currentIndex) => currentIndex !== removeIndex))}
+                        editorConfig={listEditorConfig}
+                      />
+                    ))}
+                  </div>
+                )}
               </div>
             ) : null}
 
