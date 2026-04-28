@@ -5,7 +5,7 @@ import { Link } from 'react-router-dom'
 import { GenflixCtaButton } from '@/components/public/genflix-cta-button'
 import { fetchActiveSiteBanners } from '@/features/banners/api'
 import { bannerThemeStyles } from '@/features/banners/presets'
-import type { SiteBanner, SiteBannerCta, SiteBannerLayoutItem, SiteBannerLayoutKey } from '@/features/banners/types'
+import type { SiteBanner, SiteBannerCta, SiteBannerLayoutItem, SiteBannerLayoutKey, SiteBannerLocationKey } from '@/features/banners/types'
 import { cn } from '@/lib/utils'
 
 function getElementColors(banner: SiteBanner, key: SiteBannerLayoutKey) {
@@ -234,9 +234,11 @@ function MobileBannerContent({ banner }: { banner: SiteBanner }) {
 export function HomeBannerCarousel({
   fallback,
   autoplayIntervalMs = 6000,
+  locationKey = 'home-hero',
 }: {
   fallback: ReactNode
   autoplayIntervalMs?: number
+  locationKey?: SiteBannerLocationKey
 }) {
   const [banners, setBanners] = useState<SiteBanner[]>([])
   const [activeIndex, setActiveIndex] = useState(0)
@@ -248,7 +250,7 @@ export function HomeBannerCarousel({
   useEffect(() => {
     let isMounted = true
 
-    void fetchActiveSiteBanners()
+    void fetchActiveSiteBanners(locationKey)
       .then((rows) => {
         if (isMounted) {
           setBanners(rows)
@@ -268,7 +270,7 @@ export function HomeBannerCarousel({
     return () => {
       isMounted = false
     }
-  }, [])
+  }, [locationKey])
 
   useEffect(() => {
     if (typeof window === 'undefined') {

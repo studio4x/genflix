@@ -11,6 +11,7 @@ import { MessagesRedirectPage } from '@/pages/shared/messages-redirect-page'
 import { EditablePageSeo } from '@/features/site-editor/editable-page-seo'
 import { EditableControlsHint, SiteContentScope, VisualEditorProvider } from '@/features/site-editor/visual-editor'
 import type { SitePageKey } from '@/features/site-editor/types'
+import { BannerPlacementSlot } from '@/features/banners/banner-placement-slot'
 
 const PublicHomePage = lazy(async () => ({ default: (await import('@/pages/public/public-home-page')).PublicHomePage }))
 const PublicCoursesPage = lazy(async () => ({ default: (await import('@/pages/public/public-courses-page')).PublicCoursesPage }))
@@ -119,6 +120,7 @@ function PublicEditableRoute({
       <SiteContentScope pageKey={pageKey}>
         <EditableControlsHint />
         {seo ? <EditablePageSeo pageKey={pageKey} entryKey={seo.entryKey} fallback={seo.fallback} label={seo.label} /> : null}
+        {pageKey !== 'home' ? <BannerPlacementSlot pageKey={pageKey} placementKey="hero" /> : null}
         {withRouteSuspense(children)}
       </SiteContentScope>
     </VisualEditorProvider>

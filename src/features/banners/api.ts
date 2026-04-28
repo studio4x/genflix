@@ -267,6 +267,32 @@ export async function fetchSiteBannerCarouselTargets(locationKey: SiteBannerLoca
   } satisfies SiteBannerCarouselTarget))
 }
 
+export async function fetchSiteBannerCarouselTargetLocationKeys(input: {
+  pageKey: SitePageKey
+  placementKey: SiteBannerPlacementKey
+}) {
+  const { data, error } = await supabase
+    .from('site_banner_carousel_targets')
+    .select('location_key')
+    .eq('page_key', input.pageKey)
+    .eq('placement_key', input.placementKey)
+    .order('location_key', { ascending: true })
+
+  if (error) {
+    throw error
+  }
+
+  const keys = new Set<string>()
+  for (const row of (data ?? []) as Array<{ location_key: string | null }>) {
+    const key = row.location_key?.trim()
+    if (key) {
+      keys.add(key)
+    }
+  }
+
+  return Array.from(keys)
+}
+
 export async function upsertSiteBannerCarouselTarget(input: {
   locationKey: SiteBannerLocationKey
   pageKey: SitePageKey
