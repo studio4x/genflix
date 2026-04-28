@@ -18,10 +18,13 @@ import {
   type SiteBannerElementStyles,
   type SiteBannerLayoutDesktop,
   type SiteBannerLayoutMobile,
+  type SiteBannerCarouselTarget,
+  type SiteBannerPlacementKey,
   type SiteBannerLocationKey,
   type SiteBannerThemePreset,
   cloneBannerElementStyles,
 } from '@/features/banners/types'
+import type { SitePageKey } from '@/features/site-editor/types'
 
 type SiteBannerRow = {
   id: string
@@ -98,6 +101,13 @@ function normalizeLayoutDesktop(value: unknown): SiteBannerLayoutDesktop {
     primaryCta: normalizeLayoutItem(record.primaryCta, defaultBannerLayoutDesktop.primaryCta),
     secondaryCta: normalizeLayoutItem(record.secondaryCta, defaultBannerLayoutDesktop.secondaryCta),
   }
+}
+
+type SiteBannerCarouselTargetRow = {
+  id: string
+  location_key: string
+  page_key: SitePageKey
+  placement_key: SiteBannerPlacementKey
 }
 
 function normalizeLayoutMobile(value: unknown): SiteBannerLayoutMobile {
@@ -235,6 +245,68 @@ export async function fetchSiteBannerLocations() {
   }
 
   return Array.from(keys)
+}
+
+export async function fetchSiteBannerCarouselTargets(locationKey: SiteBannerLocationKey) {
+  const { data, error } = await supabase
+    .from('site_banner_carousel_targets')
+    .select('id, location_key, page_key, placement_key')
+    .eq('location_key', locationKey)
+    .order('page_key', { ascending: true })
+    .order('placement_key', { ascending: true })
+
+  if (error) {
+    throw error
+  }
+
+  return ((data ?? []) as SiteBannerCarouselTargetRow[]).map((row) => ({
+    id: row.id,
+    locationKey: row.location_key,
+    pageKey: row.page_key,
+    placementKey: row.placement_key,
+  } satisfies SiteBannerCarouselTarget))
+}
+
+export async function upsertSiteBannerCarouselTarget(input: {
+  locationKey: SiteBannerLocationKey
+  pageKey: SitePageKey
+  placementKey: SiteBannerPlacementKey
+}) {
+  const userId = await currentUserId()
+  const { data, error } = await supabase
+    .from('site_banner_carousel_targets')
+    .upsert({
+      location_key: input.locationKey,
+      page_key: input.pageKey,
+      placement_key: input.placementKey,
+      created_by: userId,
+      updated_by: userId,
+    }, { onConflict: 'location_key,page_key,placement_key' })
+    .select('id, location_key, page_key, placement_key')
+    .single()
+
+  if (error) {
+    throw error
+  }
+
+  const row = data as SiteBannerCarouselTargetRow
+  return {
+    id: row.id,
+    locationKey: row.location_key,
+    pageKey: row.page_key,
+    placementKey: row.placement_key,
+  } satisfies SiteBannerCarouselTarget
+}
+
+export async function deleteSiteBannerCarouselTarget(targetId: string) {
+  const { error } = await supabase
+    .from('site_banner_carousel_targets')
+    .delete()
+    .eq('id', targetId)
+
+  if (error) {
+    throw error
+  }
 }
 
 export async function fetchActiveSiteBanners(locationKey: SiteBannerLocationKey = HOME_HERO_BANNER_LOCATION) {

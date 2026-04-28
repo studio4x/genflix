@@ -1,4 +1,5 @@
 import type { GenflixPageKey } from '@/features/public/genflix-public-types'
+import type { SitePageKey } from '@/features/site-editor/types'
 
 export const HOME_HERO_BANNER_LOCATION = 'home-hero' as const
 
@@ -8,6 +9,15 @@ export type SiteBannerThemePreset = 'light-strong' | 'light-soft' | 'dark-soft'
 export type SiteBannerTonePreset = 'solid' | 'warm' | 'surface'
 export type SiteBannerLayoutKey = 'title' | 'subtitle' | 'body' | 'primaryCta' | 'secondaryCta'
 export type SiteBannerColorKey = SiteBannerLayoutKey
+
+export type SiteBannerPlacementKey = 'hero' | 'mid' | 'footer'
+
+export interface SiteBannerCarouselTarget {
+  id: string
+  locationKey: SiteBannerLocationKey
+  pageKey: SitePageKey
+  placementKey: SiteBannerPlacementKey
+}
 
 export interface SiteBannerLayoutItem {
   x: number

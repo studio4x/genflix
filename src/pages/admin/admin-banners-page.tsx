@@ -4,12 +4,15 @@ import { ArrowDown, ArrowUp, ChevronDown, Copy, Eye, EyeOff, Grip, ImagePlus, La
 import { Button } from '@/components/ui/button'
 import {
   createSiteBanner,
+  deleteSiteBannerCarouselTarget,
   deleteSiteBanner,
   duplicateSiteBanner,
   fetchSiteBannerLocations,
+  fetchSiteBannerCarouselTargets,
   fetchSiteBanners,
   reorderSiteBanners,
   toggleSiteBannerActive,
+  upsertSiteBannerCarouselTarget,
   updateSiteBanner,
 } from '@/features/banners/api'
 import { bannerThemeStyles } from '@/features/banners/presets'
@@ -20,6 +23,8 @@ import {
   cloneBannerElementStyles,
   cloneBannerLayout,
   type SiteBanner,
+  type SiteBannerCarouselTarget,
+  type SiteBannerPlacementKey,
   type SiteBannerCta,
   type SiteBannerColorKey,
   type SiteBannerElementStyle,
@@ -28,6 +33,7 @@ import {
 } from '@/features/banners/types'
 import { GenflixCtaButton } from '@/components/public/genflix-cta-button'
 import { uploadSiteAsset } from '@/features/site-editor/api'
+import type { SitePageKey } from '@/features/site-editor/types'
 import { cn } from '@/lib/utils'
 
 type BannerDragState = {
@@ -440,6 +446,25 @@ export function AdminBannersPage() {
   const [heightMobileInput, setHeightMobileInput] = useState('560')
   const [locationKeys, setLocationKeys] = useState<string[]>([])
   const [selectedLocationKey, setSelectedLocationKey] = useState<string>('home-hero')
+  const [carouselTargets, setCarouselTargets] = useState<SiteBannerCarouselTarget[]>([])
+  const [targetPageKey, setTargetPageKey] = useState<SitePageKey>('home')
+  const [targetPlacementKey, setTargetPlacementKey] = useState<SiteBannerPlacementKey>('hero')
+
+  const pageOptions: Array<{ value: SitePageKey; label: string }> = [
+    { value: 'home', label: 'Home' },
+    { value: 'courses', label: 'Cursos' },
+    { value: 'course-detail', label: 'Detalhe de curso' },
+    { value: 'about', label: 'Sobre' },
+    { value: 'blog', label: 'Blog' },
+    { value: 'blog-post', label: 'Post do blog' },
+    { value: 'contact', label: 'Contato' },
+    { value: 'community', label: 'Comunidade' },
+    { value: 'resources', label: 'Recursos' },
+    { value: 'support', label: 'Suporte' },
+    { value: 'privacy', label: 'Privacidade' },
+    { value: 'cookies', label: 'Cookies' },
+    { value: 'terms', label: 'Termos' },
+  ]
   const [expandedCards, setExpandedCards] = useState<Record<string, boolean>>({
     content: true,
     composition: true,
@@ -464,9 +489,13 @@ export function AdminBannersPage() {
     setError(null)
 
     try {
-      const rows = await fetchSiteBanners(locationKey)
-      const locations = await fetchSiteBannerLocations()
+      const [rows, locations, targets] = await Promise.all([
+        fetchSiteBanners(locationKey),
+        fetchSiteBannerLocations(),
+        fetchSiteBannerCarouselTargets(locationKey),
+      ])
       setLocationKeys(locations)
+      setCarouselTargets(targets)
       setBanners(rows)
 
       const nextSelectedId = preferredBannerId && rows.some((banner) => banner.id === preferredBannerId)
@@ -936,6 +965,42 @@ export function AdminBannersPage() {
     }
   }
 
+  async function handleAddCarouselTarget() {
+    setSaving(true)
+    setError(null)
+    setMessage(null)
+    try {
+      await upsertSiteBannerCarouselTarget({
+        locationKey: selectedLocationKey,
+        pageKey: targetPageKey,
+        placementKey: targetPlacementKey,
+      })
+      const targets = await fetchSiteBannerCarouselTargets(selectedLocationKey)
+      setCarouselTargets(targets)
+      setMessage('Destino de exibicao adicionado ao carrossel.')
+    } catch (targetError) {
+      setError(targetError instanceof Error ? targetError.message : 'Nao foi possivel adicionar destino ao carrossel.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  async function handleRemoveCarouselTarget(targetId: string) {
+    setSaving(true)
+    setError(null)
+    setMessage(null)
+    try {
+      await deleteSiteBannerCarouselTarget(targetId)
+      const targets = await fetchSiteBannerCarouselTargets(selectedLocationKey)
+      setCarouselTargets(targets)
+      setMessage('Destino removido do carrossel.')
+    } catch (targetError) {
+      setError(targetError instanceof Error ? targetError.message : 'Nao foi possivel remover destino do carrossel.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
   function handleCanvasResizePointerDown(key: SiteBannerLayoutKey, event: React.PointerEvent<HTMLButtonElement>) {
     event.preventDefault()
     event.stopPropagation()
@@ -1105,6 +1170,42 @@ export function AdminBannersPage() {
                   </article>
                 )
               })}
+            </div>
+
+            <div className="mt-6 rounded-[20px] border border-[#D8E6EB] bg-white p-4">
+              <p className="text-[10px] font-black uppercase tracking-[0.16em] text-[#5F7077]">Exibicao do carrossel</p>
+              <p className="mt-1 text-xs font-semibold text-[#5F7077]">Defina em quais paginas e locais este carrossel deve aparecer.</p>
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <select
+                  value={targetPageKey}
+                  onChange={(event) => setTargetPageKey(event.target.value as SitePageKey)}
+                  className="h-9 rounded-xl border border-[#D8E6EB] bg-[#F8FBFC] px-3 text-xs font-semibold text-[#15323b]"
+                >
+                  {pageOptions.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
+                </select>
+                <select
+                  value={targetPlacementKey}
+                  onChange={(event) => setTargetPlacementKey(event.target.value as SiteBannerPlacementKey)}
+                  className="h-9 rounded-xl border border-[#D8E6EB] bg-[#F8FBFC] px-3 text-xs font-semibold text-[#15323b]"
+                >
+                  <option value="hero">Hero</option>
+                  <option value="mid">Meio da pagina</option>
+                  <option value="footer">Rodape da pagina</option>
+                </select>
+                <Button type="button" variant="outline" onClick={() => void handleAddCarouselTarget()} disabled={saving} className="h-9 rounded-xl border-[#D8E6EB] px-3 text-[10px] font-black uppercase tracking-[0.12em]">
+                  Adicionar destino
+                </Button>
+              </div>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {carouselTargets.length === 0 ? (
+                  <span className="text-xs font-semibold text-[#5F7077]">Nenhum destino configurado para este carrossel.</span>
+                ) : carouselTargets.map((target) => (
+                  <span key={target.id} className="inline-flex items-center gap-2 rounded-full border border-[#D8E6EB] bg-[#F8FBFC] px-3 py-1 text-xs font-black uppercase tracking-[0.1em] text-[#15323b]">
+                    {target.pageKey} / {target.placementKey}
+                    <button type="button" onClick={() => void handleRemoveCarouselTarget(target.id)} className="text-rose-600">x</button>
+                  </span>
+                ))}
+              </div>
             </div>
           </article>
         </aside>
