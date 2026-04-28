@@ -142,11 +142,12 @@ if (deploymentUrl && canonicalDomain) {
   run(npxCommand, withVercelAuthArgs(['vercel', 'alias', 'set', deploymentUrl, canonicalDomain]))
 
   const aliasResult = run(npxCommand, withVercelAuthArgs(['vercel', 'alias', 'ls']), { captureOutput: true })
-  const expectedAlias = `${deploymentUrl.replace(/^https?:\/\//, '')}    ${canonicalDomain}`
+  const deploymentHost = deploymentUrl.replace(/^https?:\/\//, '')
   const aliasOutput = aliasResult.stdout ?? ''
+  const aliasRegex = new RegExp(`${deploymentHost.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s+${canonicalDomain.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`)
 
-  if (!aliasOutput.includes(expectedAlias)) {
-    process.stderr.write(`Falha ao validar alias canonico. Esperado: ${expectedAlias}\n`)
+  if (!aliasRegex.test(aliasOutput)) {
+    process.stderr.write(`Falha ao validar alias canonico. Esperado: ${deploymentHost} -> ${canonicalDomain}\n`)
     process.exit(1)
   }
 
