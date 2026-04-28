@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode, type TouchEvent } from 'react'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { Link } from 'react-router-dom'
 
 import { GenflixCtaButton } from '@/components/public/genflix-cta-button'
@@ -376,23 +377,47 @@ export function HomeBannerCarousel({
       </div>
 
       {slides.length > 1 ? (
-        <div className="pointer-events-none absolute inset-x-0 bottom-5 z-20 flex justify-center">
-          <div className="pointer-events-auto inline-flex items-center gap-2 rounded-full border border-white/18 bg-[#0B2630]/32 px-3 py-2 backdrop-blur-sm">
-            {slides.map((banner, index) => (
-              <button
-                key={banner.id}
-                type="button"
-                onClick={() => goToSlide(index)}
-                aria-label={`Ir para o banner ${index + 1}`}
-                aria-current={index === activeIndex}
-                className={cn(
-                  'h-2.5 rounded-full transition-all',
-                  index === activeIndex ? 'w-8 bg-white' : 'w-2.5 bg-white/42 hover:bg-white/68',
-                )}
-              />
-            ))}
+        <>
+          <div className="pointer-events-none absolute inset-y-0 left-0 z-20 flex items-center pl-3 sm:pl-4">
+            <button
+              type="button"
+              onClick={() => goToNext(-1)}
+              aria-label="Banner anterior"
+              className="pointer-events-auto inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/25 bg-[#0B2630]/45 text-white backdrop-blur-sm transition-colors hover:bg-[#0B2630]/65"
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </button>
           </div>
-        </div>
+
+          <div className="pointer-events-none absolute inset-y-0 right-0 z-20 flex items-center pr-3 sm:pr-4">
+            <button
+              type="button"
+              onClick={() => goToNext(1)}
+              aria-label="Próximo banner"
+              className="pointer-events-auto inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/25 bg-[#0B2630]/45 text-white backdrop-blur-sm transition-colors hover:bg-[#0B2630]/65"
+            >
+              <ChevronRight className="h-5 w-5" />
+            </button>
+          </div>
+
+          <div className="pointer-events-none absolute inset-x-0 bottom-5 z-20 flex justify-center">
+            <div className="pointer-events-auto inline-flex items-center gap-2 rounded-full border border-white/18 bg-[#0B2630]/32 px-3 py-2 backdrop-blur-sm">
+              {slides.map((banner, index) => (
+                <button
+                  key={banner.id}
+                  type="button"
+                  onClick={() => goToSlide(index)}
+                  aria-label={`Ir para o banner ${index + 1}`}
+                  aria-current={index === activeIndex}
+                  className={cn(
+                    'h-2.5 rounded-full transition-all',
+                    index === activeIndex ? 'w-8 bg-white' : 'w-2.5 bg-white/42 hover:bg-white/68',
+                  )}
+                />
+              ))}
+            </div>
+          </div>
+        </>
       ) : null}
     </section>
   )

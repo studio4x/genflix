@@ -16,7 +16,7 @@
 
 [OK] T4 - Alterar posicionamento dos elementos do banner para usar distância em relação às bordas, em vez de porcentagem.
 
-[ ] T5 - Adicionar setas de navegação nos banners, funcionando em desktop e mobile.
+[OK] T5 - Adicionar setas de navegação nos banners, funcionando em desktop e mobile.
 
 ---
 
