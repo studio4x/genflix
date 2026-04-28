@@ -22,7 +22,7 @@ import {
   useSiteContentScope,
   useVisualEditorState,
 } from '@/features/site-editor/visual-editor'
-import { renderSiteIcon } from '@/features/site-editor/site-icons'
+import { renderSiteIconVisual } from '@/features/site-editor/site-icons'
 import type { EditableListItem, SitePageKey } from '@/features/site-editor/types'
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -259,6 +259,8 @@ function HomeCategoriesSection({
               const iconKey = typeof item.metadata?.iconKey === 'string'
                 ? item.metadata.iconKey
                 : homeCategoryIconKeys[category.label] ?? 'sparkles'
+              const iconImageUrl = typeof item.metadata?.iconImageUrl === 'string' ? item.metadata.iconImageUrl : null
+              const iconImageAlt = typeof item.metadata?.iconImageAlt === 'string' ? item.metadata.iconImageAlt : null
 
               return (
                 <article
@@ -266,7 +268,12 @@ function HomeCategoriesSection({
                   className="min-h-[124px] rounded-[4px] bg-[linear-gradient(180deg,#1BA8C5_0%,#0A3640_100%)] px-4 py-4 text-white shadow-[0_18px_30px_rgba(10,54,64,0.14)]"
                 >
                   <div className="flex h-11 w-11 items-center justify-center text-white/95">
-                    {renderSiteIcon(iconKey, 'h-5 w-5')}
+                    {renderSiteIconVisual({
+                      iconKey,
+                      iconImageUrl,
+                      iconAlt: iconImageAlt || item.label,
+                      className: 'h-5 w-5',
+                    })}
                   </div>
                   <p className="mt-3 text-[15px] font-semibold leading-6 tracking-[-0.02em]">{item.label}</p>
                 </article>

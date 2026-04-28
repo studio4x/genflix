@@ -39,7 +39,7 @@ import {
   type SiteEditorSettings,
   type SitePageKey,
 } from '@/features/site-editor/types'
-import { renderSiteIcon, SITE_ICON_OPTIONS } from '@/features/site-editor/site-icons'
+import { renderSiteIcon, renderSiteIconVisual, SITE_ICON_OPTIONS } from '@/features/site-editor/site-icons'
 import {
   createSiteEditorWorkspaceKey,
   formatWorkflowStatus,
@@ -593,6 +593,7 @@ function ListItemEditorCard({
   onMove,
   onDuplicate,
   onRemove,
+  onUploadIcon,
   editorConfig,
 }: {
   item: EditableListItem
@@ -603,6 +604,7 @@ function ListItemEditorCard({
   onMove: (fromIndex: number, delta: number) => void
   onDuplicate: (index: number) => void
   onRemove: (index: number) => void
+  onUploadIcon?: (index: number, file: File) => void
   editorConfig: NormalizedListEditorSchema
 }) {
   const metadata: Record<string, unknown> = isStringRecord(item.metadata) ? { ...item.metadata } : {}
@@ -618,6 +620,8 @@ function ListItemEditorCard({
   const pageKeyOverride = typeof metadataWithoutItems.pageKey === 'string' ? metadataWithoutItems.pageKey : ''
   const iconKey = typeof metadataWithoutItems.iconKey === 'string' ? metadataWithoutItems.iconKey : ''
   const colorValue = typeof metadataWithoutItems.color === 'string' ? metadataWithoutItems.color : ''
+  const iconImageUrl = typeof metadataWithoutItems.iconImageUrl === 'string' ? metadataWithoutItems.iconImageUrl : ''
+  const iconImageAlt = typeof metadataWithoutItems.iconImageAlt === 'string' ? metadataWithoutItems.iconImageAlt : ''
   const templateDefinition = editorConfig.templates.find((template) => template.id === templateKey)
   const shouldShowIconField = editorConfig.kind === 'section-registry' || iconKey !== '' || templateKey === 'categories' || templateKey === 'resources'
   delete metadataWithoutItems.buttonLabel
@@ -655,6 +659,14 @@ function ListItemEditorCard({
       ...item,
       metadata: nextMetadata,
     })
+  }
+
+  function handleIconUpload(file: File | null) {
+    if (!file || !onUploadIcon) {
+      return
+    }
+
+    onUploadIcon(index, file)
   }
 
   function updateNestedItems(nextNestedItems: EditableListItem[]) {
@@ -699,7 +711,12 @@ function ListItemEditorCard({
               className="flex h-10 w-10 items-center justify-center rounded-2xl border bg-[#F8FCFD]"
               style={{ borderColor: colorValue || '#D8E6EB', color: colorValue || '#0A3640' }}
             >
-              {iconKey ? renderSiteIcon(iconKey, 'h-4 w-4') : <Sparkles className="h-4 w-4" />}
+              {renderSiteIconVisual({
+                iconKey,
+                iconImageUrl,
+                iconAlt: iconImageAlt || item.label || item.title || item.id,
+                className: 'h-4 w-4',
+              })}
             </div>
             <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[#1398B7]">
               {depth > 0 ? `Bloco interno ${index + 1}` : `Bloco ${index + 1}`}
@@ -782,6 +799,52 @@ function ListItemEditorCard({
                   </option>
                 ))}
               </select>
+              <div className="grid gap-2 rounded-[14px] border border-[#D8E6EB] bg-[#F8FCFD] p-3">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full border border-[#D8E6EB] bg-white text-[#0A3640]">
+                    {iconImageUrl ? (
+                      <img src={iconImageUrl} alt={iconImageAlt || item.label || item.title || item.id} className="h-4 w-4 object-contain" />
+                    ) : (
+                      renderSiteIcon(iconKey, 'h-4 w-4')
+                    )}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs font-bold text-[#15323b]">
+                      {iconImageUrl ? 'Ícone enviado' : 'Ícone da biblioteca'}
+                    </p>
+                    <p className="text-[11px] leading-5 text-[#5F7077]">
+                      {iconImageUrl
+                        ? (iconImageAlt || 'Imagem carregada para este card.')
+                        : 'Use um arquivo de imagem para substituir o ícone atual.'}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <label className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-[#1398B7] bg-white px-3 py-2 text-[10px] font-black uppercase tracking-[0.14em] text-[#0A3640] hover:bg-[#E8F6FA]">
+                    Upload de ícone
+                    <input type="file" accept="image/*" className="hidden" onChange={(event) => handleIconUpload(event.target.files?.[0] ?? null)} />
+                  </label>
+                  {iconImageUrl ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const nextMetadata = { ...metadata }
+                        delete nextMetadata.iconImageUrl
+                        delete nextMetadata.iconImageAlt
+                        delete nextMetadata.iconImageAssetId
+
+                        onChange({
+                          ...item,
+                          metadata: Object.keys(nextMetadata).length > 0 ? nextMetadata : undefined,
+                        })
+                      }}
+                      className="rounded-full border border-[#D8E6EB] px-3 py-2 text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077] hover:bg-white"
+                    >
+                      Remover imagem
+                    </button>
+                  ) : null}
+                </div>
+              </div>
             </label>
           ) : null}
           <div className="grid gap-1.5 md:col-span-2 md:grid-cols-[auto_minmax(0,1fr)] md:items-end">
@@ -1031,6 +1094,7 @@ function ListItemEditorCard({
                   updateNestedItems(nextNestedItems)
                 }}
                 onRemove={(removeIndex) => updateNestedItems(nestedItems.filter((_, currentIndex) => currentIndex !== removeIndex))}
+                onUploadIcon={onUploadIcon}
                 editorConfig={editorConfig}
               />
             ))}
@@ -1133,6 +1197,39 @@ function EditorModal({
 
   function updateListEditor(nextItems: EditableListItem[]) {
     setRawValue(JSON.stringify(nextItems, null, 2))
+  }
+
+  async function handleListIconUpload(itemIndex: number, file: File | null) {
+    if (!file || !previewList || itemIndex < 0 || itemIndex >= previewList.length) {
+      return
+    }
+
+    setMessage(null)
+    setIsSaving(true)
+
+    try {
+      const currentItem = normalizeEditableListItems(previewList)[itemIndex]
+      const asset = await uploadSiteAsset(file, {
+        alt: currentItem?.label || currentItem?.title || file.name,
+        pageKey: editor.pageKey,
+        entryKey: editor.entryKey,
+      })
+      const nextItems = normalizeEditableListItems(previewList)
+      const nextMetadata = isStringRecord(nextItems[itemIndex]?.metadata) ? { ...nextItems[itemIndex]!.metadata } : {}
+      nextMetadata.iconImageUrl = asset.public_url
+      nextMetadata.iconImageAlt = asset.alt ?? currentItem?.label ?? currentItem?.title ?? file.name
+      nextMetadata.iconImageAssetId = asset.id
+      nextItems[itemIndex] = {
+        ...nextItems[itemIndex],
+        metadata: nextMetadata,
+      }
+      updateListEditor(nextItems)
+      setMessage('Ícone enviado. Clique em salvar para publicar.')
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Não foi possível enviar o ícone.')
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   function updateRecordEditor(nextValue: Record<string, unknown>) {
@@ -1693,6 +1790,7 @@ function EditorModal({
                           updateListEditor(nextItems)
                         }}
                         onRemove={(removeIndex) => updateListEditor(normalizeEditableListItems(parsedPreview.value).filter((_, currentIndex) => currentIndex !== removeIndex))}
+                        onUploadIcon={(uploadIndex, file) => void handleListIconUpload(uploadIndex, file)}
                         editorConfig={listEditorConfig}
                       />
                     ))}
@@ -2243,13 +2341,20 @@ function EditorModal({
                     {previewList.slice(0, 6).map((item, index) => {
                       const itemMetadata = isStringRecord(item) && isStringRecord(item.metadata) ? item.metadata : {}
                       const itemIconKey = typeof itemMetadata.iconKey === 'string' ? itemMetadata.iconKey : null
+                      const itemIconImageUrl = typeof itemMetadata.iconImageUrl === 'string' ? itemMetadata.iconImageUrl : null
+                      const itemIconImageAlt = typeof itemMetadata.iconImageAlt === 'string' ? itemMetadata.iconImageAlt : null
 
                       return (
                         <article key={`${item.id ?? index}`} className="overflow-hidden rounded-[18px] border border-[#D8E6EB] bg-white shadow-[0_12px_24px_rgba(21,50,59,0.04)]">
                           <div className="bg-[linear-gradient(135deg,#1398B7_0%,#0A3640_100%)] px-4 py-4 text-white">
                             <div className="flex items-start gap-3">
                               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/25 bg-white/12">
-                                {renderSiteIcon(itemIconKey, 'h-4 w-4')}
+                                {renderSiteIconVisual({
+                                  iconKey: itemIconKey,
+                                  iconImageUrl: itemIconImageUrl,
+                                  iconAlt: itemIconImageAlt || (typeof item.label === 'string' ? item.label : undefined),
+                                  className: 'h-4 w-4',
+                                })}
                               </div>
                               <div className="min-w-0">
                                 <p className="text-[10px] font-black uppercase tracking-[0.16em] text-white/75">Item {index + 1}</p>

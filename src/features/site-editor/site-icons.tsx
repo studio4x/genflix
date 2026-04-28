@@ -54,6 +54,25 @@ export function renderSiteIcon(iconKey: string | null | undefined, className?: s
   return <Icon className={cn('h-4 w-4', className)} />
 }
 
+export function renderSiteIconVisual(input: {
+  iconKey?: string | null
+  iconImageUrl?: string | null
+  iconAlt?: string | null
+  className?: string
+}) {
+  if (typeof input.iconImageUrl === 'string' && input.iconImageUrl.trim() !== '') {
+    return (
+      <img
+        src={input.iconImageUrl}
+        alt={input.iconAlt ?? ''}
+        className={cn('block h-4 w-4 object-contain', input.className)}
+      />
+    )
+  }
+
+  return renderSiteIcon(input.iconKey ?? null, input.className)
+}
+
 export function getSiteIconOption(iconKey: string | null | undefined) {
   return SITE_ICON_OPTIONS.find((item) => item.value === iconKey) ?? null
 }
