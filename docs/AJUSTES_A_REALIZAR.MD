@@ -24,7 +24,7 @@
 
 [OK] T6 - Permitir modificar cores e dimensões dos elementos no editor visual.
 
-[ ] T7 - Criar padrão de botões no editor visual e permitir trocar o estilo dos botões existentes.
+[OK] T7 - Criar padrão de botões no editor visual e permitir trocar o estilo dos botões existentes.
 
 [ ] T11 - Remover do editor visual os cards: Assistência editorial, Atalhos, Schema salvo e Conteúdo estruturado JSON.
 
