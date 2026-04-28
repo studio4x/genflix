@@ -108,7 +108,7 @@ run(npxCommand, withVercelAuthArgs(['vercel', 'build', '--prod']), {
 })
 
 process.stdout.write(`Publicando output prebuilt em producao na Vercel pelo projeto canonico (${vercelScope})...\n`)
-const deployResult = run(npxCommand, withVercelAuthArgs(['vercel', 'deploy', '--prebuilt', '--prod', '--yes', '--output', 'json']), {
+const deployResult = run(npxCommand, withVercelAuthArgs(['vercel', 'deploy', '--prebuilt', '--prod', '--yes']), {
   captureOutput: true,
 })
 
@@ -121,12 +121,19 @@ if (deployResult.status !== 0) {
 process.stdout.write(deployResult.stdout ?? '')
 process.stderr.write(deployResult.stderr ?? '')
 
+const deployOutput = `${deployResult.stdout ?? ''}\n${deployResult.stderr ?? ''}`
 let deploymentUrl = ''
-try {
-  const payload = JSON.parse((deployResult.stdout ?? '').trim())
-  deploymentUrl = payload?.url || payload?.deployment?.url || ''
-} catch {
-  deploymentUrl = ''
+const productionMatch = deployOutput.match(/Production:\s+(https?:\/\/[^\s]+)/)
+if (productionMatch?.[1]) {
+  deploymentUrl = productionMatch[1]
+} else {
+  const inspectMatch = deployOutput.match(/Inspect:\s+(https?:\/\/vercel\.com\/[^\s]+)/)
+  if (inspectMatch?.[1]) {
+    const slug = inspectMatch[1].split('/').pop() || ''
+    if (slug) {
+      deploymentUrl = `https://${slug}.vercel.app`
+    }
+  }
 }
 const canonicalDomain = canonicalProductionUrl.replace(/^https?:\/\//, '').replace(/\/+$/, '')
 
