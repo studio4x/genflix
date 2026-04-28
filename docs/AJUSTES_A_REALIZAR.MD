@@ -36,7 +36,7 @@
 
 [OK] T8 - Permitir criar, editar e deletar áreas/seções do site, incluindo título, ícone e cor.
 
-[ ] T12 - Permitir upload de ícones nos cards que já possuem ícones.
+[OK] T12 - Permitir upload de ícones nos cards que já possuem ícones.
 
 [ ] T13 - Criar biblioteca de ícones no admin para uso nos elementos do site.
 
