@@ -63,9 +63,13 @@ function clampBannerHeight(value: number) {
   return Math.round(clamp(value, 320, 1200))
 }
 
+function isLegacyPercentPosition(value: number) {
+  return value >= 0 && value <= 100
+}
+
 function applyWidthWithinCanvas(item: SiteBannerLayoutItem, nextWidth: number) {
   const normalizedWidth = normalizePercent(clamp(nextWidth, 18, 100))
-  const normalizedX = normalizePercent(clamp(item.x, 0, 100 - normalizedWidth))
+  const normalizedX = Math.round(Math.max(0, item.x))
 
   return {
     ...item,
@@ -307,8 +311,8 @@ function BannerCanvasElement({
         draggable ? 'cursor-grab active:cursor-grabbing' : 'cursor-default',
       )}
       style={{
-        left: `${item.x}%`,
-        top: `${item.y}%`,
+        left: `${item.x}px`,
+        top: `${item.y}px`,
         width: `${item.width}%`,
         zIndex: item.zIndex,
       }}
@@ -403,8 +407,8 @@ export function AdminBannersPage() {
       }
 
       const rect = stage.getBoundingClientRect()
-      const deltaX = ((event.clientX - dragState.startClientX) / rect.width) * 100
-      const deltaY = ((event.clientY - dragState.startClientY) / rect.height) * 100
+      const deltaXPx = event.clientX - dragState.startClientX
+      const deltaYPx = event.clientY - dragState.startClientY
 
       setDraft((current) => {
         if (!current) {
@@ -418,13 +422,16 @@ export function AdminBannersPage() {
             ...current,
             [layoutKey]: {
               ...current[layoutKey],
-              [dragState.key]: applyWidthWithinCanvas(currentItem, dragState.startWidth + deltaX),
+              [dragState.key]: applyWidthWithinCanvas(currentItem, dragState.startWidth + ((deltaXPx / rect.width) * 100)),
             },
           }
         }
 
-        const nextX = normalizePercent(clamp(dragState.startX + deltaX, 0, 100 - currentItem.width))
-        const nextY = normalizePercent(clamp(dragState.startY + deltaY, 0, 92))
+        const elementWidthPx = (currentItem.width / 100) * rect.width
+        const maxX = Math.max(0, rect.width - elementWidthPx)
+        const maxY = Math.max(0, rect.height - 16)
+        const nextX = Math.round(clamp(dragState.startX + deltaXPx, 0, maxX))
+        const nextY = Math.round(clamp(dragState.startY + deltaYPx, 0, maxY))
 
         return {
           ...current,
@@ -714,14 +721,17 @@ export function AdminBannersPage() {
 
     const currentLayout = previewMode === 'mobile' ? draft.layoutMobile : draft.layoutDesktop
     const currentItem = currentLayout[key]
+    const stageRect = stageRef.current?.getBoundingClientRect()
+    const startX = isLegacyPercentPosition(currentItem.x) && stageRect ? (currentItem.x / 100) * stageRect.width : currentItem.x
+    const startY = isLegacyPercentPosition(currentItem.y) && stageRect ? (currentItem.y / 100) * stageRect.height : currentItem.y
     dragStateRef.current = {
       key,
       pointerId: event.pointerId,
       mode: 'move',
       startClientX: event.clientX,
       startClientY: event.clientY,
-      startX: currentItem.x,
-      startY: currentItem.y,
+      startX,
+      startY,
       startWidth: currentItem.width,
     }
   }
@@ -736,14 +746,17 @@ export function AdminBannersPage() {
 
     const currentLayout = previewMode === 'mobile' ? draft.layoutMobile : draft.layoutDesktop
     const currentItem = currentLayout[key]
+    const stageRect = stageRef.current?.getBoundingClientRect()
+    const startX = isLegacyPercentPosition(currentItem.x) && stageRect ? (currentItem.x / 100) * stageRect.width : currentItem.x
+    const startY = isLegacyPercentPosition(currentItem.y) && stageRect ? (currentItem.y / 100) * stageRect.height : currentItem.y
     dragStateRef.current = {
       key,
       pointerId: event.pointerId,
       mode: 'resize',
       startClientX: event.clientX,
       startClientY: event.clientY,
-      startX: currentItem.x,
-      startY: currentItem.y,
+      startX,
+      startY,
       startWidth: currentItem.width,
     }
   }

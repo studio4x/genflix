@@ -81,19 +81,19 @@ export interface SiteBanner {
 }
 
 export const defaultBannerLayoutDesktop: SiteBannerLayoutDesktop = {
-  title: { x: 0, y: 16, width: 40, visible: true, zIndex: 3 },
-  subtitle: { x: 0, y: 54, width: 38, visible: true, zIndex: 3 },
-  body: { x: 0, y: 70, width: 34, visible: false, zIndex: 3 },
-  primaryCta: { x: 0, y: 84, width: 24, visible: true, zIndex: 4 },
-  secondaryCta: { x: 16, y: 84, width: 24, visible: true, zIndex: 4 },
+  title: { x: 0, y: 122, width: 40, visible: true, zIndex: 3 },
+  subtitle: { x: 0, y: 410, width: 38, visible: true, zIndex: 3 },
+  body: { x: 0, y: 532, width: 34, visible: false, zIndex: 3 },
+  primaryCta: { x: 0, y: 638, width: 24, visible: true, zIndex: 4 },
+  secondaryCta: { x: 210, y: 638, width: 24, visible: true, zIndex: 4 },
 }
 
 export const defaultBannerLayoutMobile: SiteBannerLayoutMobile = {
-  title: { x: 8, y: 12, width: 84, visible: true, zIndex: 3 },
-  subtitle: { x: 8, y: 52, width: 84, visible: true, zIndex: 3 },
-  body: { x: 8, y: 68, width: 82, visible: false, zIndex: 3 },
-  primaryCta: { x: 8, y: 82, width: 78, visible: true, zIndex: 4 },
-  secondaryCta: { x: 8, y: 90, width: 78, visible: true, zIndex: 4 },
+  title: { x: 0, y: 67, width: 84, visible: true, zIndex: 3 },
+  subtitle: { x: 0, y: 291, width: 84, visible: true, zIndex: 3 },
+  body: { x: 0, y: 381, width: 82, visible: false, zIndex: 3 },
+  primaryCta: { x: 0, y: 459, width: 78, visible: true, zIndex: 4 },
+  secondaryCta: { x: 0, y: 504, width: 78, visible: true, zIndex: 4 },
 }
 
 export const defaultBannerHeightDesktop = 760

@@ -42,8 +42,8 @@ function getTextTypographyStyle(banner: SiteBanner, key: 'title' | 'subtitle' | 
 
 function toDesktopStyle(item: SiteBannerLayoutItem) {
   return {
-    left: `${item.x}%`,
-    top: `${item.y}%`,
+    left: `${item.x}px`,
+    top: `${item.y}px`,
     width: `${item.width}%`,
     zIndex: item.zIndex,
   }
