@@ -120,22 +120,30 @@ function keepLayoutInsideCanvas<T extends Record<SiteBannerLayoutKey, SiteBanner
   canvasHeight: number,
 ) {
   const nextLayout = { ...layout } as T
+  let movedCount = 0
 
   for (const key of LAYOUT_KEYS) {
     const item = layout[key]
     const elementWidthPx = (item.width / 100) * canvasWidth
     const maxX = Math.max(0, canvasWidth - elementWidthPx)
     const maxY = Math.max(0, canvasHeight - 20)
+    const nextX = Math.round(clamp(item.x, 0, maxX))
+    const nextY = Math.round(clamp(item.y, 0, maxY))
+    const nextWidth = normalizePercent(clamp(item.width, 18, 100))
+
+    if (nextX !== item.x || nextY !== item.y || nextWidth !== item.width) {
+      movedCount += 1
+    }
 
     nextLayout[key] = {
       ...item,
-      x: Math.round(clamp(item.x, 0, maxX)),
-      y: Math.round(clamp(item.y, 0, maxY)),
-      width: normalizePercent(clamp(item.width, 18, 100)),
+      x: nextX,
+      y: nextY,
+      width: nextWidth,
     }
   }
 
-  return nextLayout
+  return { layout: nextLayout, movedCount }
 }
 
 function moveItem<T>(items: T[], fromIndex: number, toIndex: number) {
@@ -578,23 +586,28 @@ export function AdminBannersPage() {
 
       if (which === 'heightDesktop') {
         const scaledDesktop = scaleLayoutForHeight(current.layoutDesktop, current.heightDesktop, nextValue)
+        const normalizedDesktop = keepLayoutInsideCanvas(scaledDesktop, DESKTOP_CANVAS_WIDTH, nextValue)
         return {
           ...current,
           heightDesktop: nextValue,
-          layoutDesktop: keepLayoutInsideCanvas(scaledDesktop, DESKTOP_CANVAS_WIDTH, nextValue),
+          layoutDesktop: normalizedDesktop.layout,
         }
       }
 
       const scaledMobile = scaleLayoutForHeight(current.layoutMobile, current.heightMobile, nextValue)
+      const normalizedMobile = keepLayoutInsideCanvas(scaledMobile, MOBILE_CANVAS_WIDTH, nextValue)
       return {
         ...current,
         heightMobile: nextValue,
-        layoutMobile: keepLayoutInsideCanvas(scaledMobile, MOBILE_CANVAS_WIDTH, nextValue),
+        layoutMobile: normalizedMobile.layout,
       }
     })
   }
 
   function handleAlignAllInsideCanvas() {
+    let desktopMovedCount = 0
+    let mobileMovedCount = 0
+
     setDraft((current) => {
       if (!current) {
         return current
@@ -602,14 +615,21 @@ export function AdminBannersPage() {
 
       const desktop = keepLayoutInsideCanvas(current.layoutDesktop, DESKTOP_CANVAS_WIDTH, current.heightDesktop)
       const mobile = keepLayoutInsideCanvas(current.layoutMobile, MOBILE_CANVAS_WIDTH, current.heightMobile)
+      desktopMovedCount = desktop.movedCount
+      mobileMovedCount = mobile.movedCount
 
       return {
         ...current,
-        layoutDesktop: desktop,
-        layoutMobile: mobile,
+        layoutDesktop: desktop.layout,
+        layoutMobile: mobile.layout,
       }
     })
-    setMessage('Elementos alinhados dentro do canvas para desktop e mobile.')
+    const totalMoved = desktopMovedCount + mobileMovedCount
+    setMessage(
+      totalMoved > 0
+        ? `Alinhamento aplicado. ${desktopMovedCount} ajuste(s) no desktop e ${mobileMovedCount} no mobile.`
+        : 'Todos os elementos ja estavam dentro do canvas.',
+    )
     setError(null)
   }
 
@@ -749,8 +769,8 @@ export function AdminBannersPage() {
     setError(null)
 
     try {
-      const normalizedDesktop = keepLayoutInsideCanvas(draft.layoutDesktop, DESKTOP_CANVAS_WIDTH, nextHeightDesktop)
-      const normalizedMobile = keepLayoutInsideCanvas(draft.layoutMobile, MOBILE_CANVAS_WIDTH, nextHeightMobile)
+      const normalizedDesktop = keepLayoutInsideCanvas(draft.layoutDesktop, DESKTOP_CANVAS_WIDTH, nextHeightDesktop).layout
+      const normalizedMobile = keepLayoutInsideCanvas(draft.layoutMobile, MOBILE_CANVAS_WIDTH, nextHeightMobile).layout
       const updated = await updateSiteBanner({
         id: draft.id,
         name: draft.name.trim() || 'Banner sem nome',
@@ -1107,16 +1127,19 @@ export function AdminBannersPage() {
                       </div>
                     </div>
 
-                    <div
-                      ref={stageRef}
-                      className={cn(
-                        'relative min-w-0 overflow-hidden rounded-[32px] border border-[#D8E6EB] bg-[#0A3640] shadow-[0_24px_60px_rgba(10,54,64,0.16)] transition-all duration-300',
-                        isMobilePreview
-                          ? 'mx-auto w-full max-w-[420px]'
-                          : 'w-full max-w-full',
-                      )}
-                      style={{ height: `${previewHeight}px` }}
-                    >
+                    <div className={cn('w-full', isMobilePreview ? 'overflow-visible' : 'overflow-x-auto')}>
+                      <div
+                        ref={stageRef}
+                        className={cn(
+                          'relative overflow-hidden rounded-[32px] border border-[#D8E6EB] bg-[#0A3640] shadow-[0_24px_60px_rgba(10,54,64,0.16)] transition-all duration-300',
+                          isMobilePreview ? 'mx-auto' : '',
+                        )}
+                        style={{
+                          height: `${previewHeight}px`,
+                          width: `${isMobilePreview ? MOBILE_CANVAS_WIDTH : DESKTOP_CANVAS_WIDTH}px`,
+                          minWidth: `${isMobilePreview ? MOBILE_CANVAS_WIDTH : DESKTOP_CANVAS_WIDTH}px`,
+                        }}
+                      >
                       <div
                         className="absolute inset-0"
                         style={{
@@ -1156,6 +1179,7 @@ export function AdminBannersPage() {
                             <PreviewCta cta={{ ...draft.secondaryCta, label: draft.secondaryCta.label || 'CTA secundario' }} colors={draft.elementStyles.secondaryCta} className="h-12 w-full justify-between px-5" />
                           </BannerCanvasElement>
                         ) : null}
+                      </div>
                       </div>
                     </div>
                   </div>
