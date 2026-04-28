@@ -1,0 +1,5 @@
+-- Reconciliacao de historico:
+-- esta migration existe no banco remoto (20260423195000),
+-- mas nao estava presente no diretorio local.
+-- Arquivo propositalmente no-op para alinhar o historico
+-- e permitir novos pushes de migracao.

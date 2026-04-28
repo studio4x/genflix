@@ -1,6 +1,35 @@
 import { spawnSync } from 'node:child_process'
+import { existsSync, readFileSync } from 'node:fs'
+import { join } from 'node:path'
 const npxCommand = process.platform === 'win32' ? 'npx.cmd' : 'npx'
 const isWindows = process.platform === 'win32'
+
+function loadEnvFile(filePath) {
+  if (!existsSync(filePath)) {
+    return
+  }
+
+  const raw = readFileSync(filePath, 'utf8')
+  for (const line of raw.split(/\r?\n/)) {
+    const trimmed = line.trim()
+    if (!trimmed || trimmed.startsWith('#')) {
+      continue
+    }
+    const separatorIndex = trimmed.indexOf('=')
+    if (separatorIndex <= 0) {
+      continue
+    }
+    const key = trimmed.slice(0, separatorIndex).trim()
+    const value = trimmed.slice(separatorIndex + 1)
+    if (!process.env[key]) {
+      process.env[key] = value
+    }
+  }
+}
+
+loadEnvFile(join(process.cwd(), '.env'))
+loadEnvFile(join(process.cwd(), '.env.local'))
+
 const vercelToken = process.env.VERCEL_TOKEN?.trim() || process.env.VERCEL_ACCESS_TOKEN?.trim() || ''
 const vercelScope = process.env.VERCEL_SCOPE?.trim() || 'genflixcursos-6767s-projects'
 
