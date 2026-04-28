@@ -34,7 +34,7 @@
 
 ## CHAT 3 — Editor visual: seções, ícones e alinhamento
 
-[ ] T8 - Permitir criar, editar e deletar áreas/seções do site, incluindo título, ícone e cor.
+[OK] T8 - Permitir criar, editar e deletar áreas/seções do site, incluindo título, ícone e cor.
 
 [ ] T12 - Permitir upload de ícones nos cards que já possuem ícones.
 

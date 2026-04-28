@@ -12,15 +12,21 @@ export type SectionRegistryTemplate = {
   label: string
   description: string
   pageKey?: SitePageKey
+  title?: string
+  iconKey?: string
+  color?: string
 }
 
 export function createSectionRegistryFallback(templates: SectionRegistryTemplate[]) {
   return templates.map((template) => ({
     id: template.id,
     label: template.label,
+    title: template.title ?? template.label,
     description: template.description,
     metadata: {
       templateKey: template.id,
+      ...(template.iconKey ? { iconKey: template.iconKey } : {}),
+      ...(template.color ? { color: template.color } : {}),
       ...(template.pageKey ? { pageKey: template.pageKey } : {}),
     },
   })) satisfies EditableListItem[]
@@ -46,9 +52,12 @@ export function createSectionRegistrySchema(input: {
       item: {
         id: template.id,
         label: template.label,
+        title: template.title ?? template.label,
         description: template.description,
         metadata: {
           templateKey: template.id,
+          ...(template.iconKey ? { iconKey: template.iconKey } : {}),
+          ...(template.color ? { color: template.color } : {}),
           ...(template.pageKey ? { pageKey: template.pageKey } : {}),
         },
       },
