@@ -22,7 +22,7 @@
 
 ## CHAT 2 — Editor visual: estrutura e controles básicos
 
-[ ] T6 - Permitir modificar cores e dimensões dos elementos no editor visual.
+[OK] T6 - Permitir modificar cores e dimensões dos elementos no editor visual.
 
 [ ] T7 - Criar padrão de botões no editor visual e permitir trocar o estilo dos botões existentes.
 
