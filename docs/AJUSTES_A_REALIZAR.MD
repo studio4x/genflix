@@ -48,7 +48,7 @@
 
 ## CHAT 4 — Editor visual: header e cards
 
-[ ] T9 - Permitir ajustar o header pelo editor visual: tamanho da logo, altura do header, cores do menu, tipografia do menu e cor de fundo por página ou global.
+[OK] T9 - Permitir ajustar o header pelo editor visual: tamanho da logo, altura do header, cores do menu, tipografia do menu e cor de fundo por página ou global.
 
 [ ] T10 - Permitir ajustar cards de grids de conteúdos, como a seção “Muito além do vídeo” na home.
 
