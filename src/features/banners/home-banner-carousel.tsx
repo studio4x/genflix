@@ -1,11 +1,19 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode, type TouchEvent } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode, type TouchEvent } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { Link } from 'react-router-dom'
 
 import { GenflixCtaButton } from '@/components/public/genflix-cta-button'
 import { fetchActiveSiteBanners } from '@/features/banners/api'
 import { bannerThemeStyles } from '@/features/banners/presets'
-import type { SiteBanner, SiteBannerCta, SiteBannerLayoutItem, SiteBannerLayoutKey, SiteBannerLocationKey } from '@/features/banners/types'
+import {
+  DESKTOP_BANNER_DESIGN_WIDTH,
+  MOBILE_BANNER_DESIGN_WIDTH,
+  type SiteBanner,
+  type SiteBannerCta,
+  type SiteBannerLayoutItem,
+  type SiteBannerLayoutKey,
+  type SiteBannerLocationKey,
+} from '@/features/banners/types'
 import { cn } from '@/lib/utils'
 
 function getElementColors(banner: SiteBanner, key: SiteBannerLayoutKey) {
@@ -53,9 +61,9 @@ function getVerticalAnchorTransform(verticalAlign: SiteBanner['elementStyles']['
   return 'translateY(0)'
 }
 
-function toDesktopStyle(item: SiteBannerLayoutItem) {
+function toDesktopStyle(item: SiteBannerLayoutItem, scaleFactor: number) {
   return {
-    left: `${item.x}px`,
+    left: `${item.x * scaleFactor}px`,
     top: `${item.y}px`,
     width: `${item.width}%`,
     zIndex: item.zIndex,
@@ -99,7 +107,7 @@ function BannerLink({
   )
 }
 
-function DesktopBannerContent({ banner }: { banner: SiteBanner }) {
+function DesktopBannerContent({ banner, scaleFactor }: { banner: SiteBanner; scaleFactor: number }) {
   const theme = bannerThemeStyles[banner.themePreset]
   const titleStyle = getElementColors(banner, 'title')
   const subtitleStyle = getElementColors(banner, 'subtitle')
@@ -154,7 +162,7 @@ function DesktopBannerContent({ banner }: { banner: SiteBanner }) {
           key={element.key}
           className="pointer-events-auto absolute"
           style={{
-            ...toDesktopStyle(element.item),
+            ...toDesktopStyle(element.item, scaleFactor),
             transform: getVerticalAnchorTransform(banner.elementStyles[element.key].verticalAlign),
           }}
         >
@@ -165,7 +173,7 @@ function DesktopBannerContent({ banner }: { banner: SiteBanner }) {
   )
 }
 
-function MobileBannerContent({ banner }: { banner: SiteBanner }) {
+function MobileBannerContent({ banner, scaleFactor }: { banner: SiteBanner; scaleFactor: number }) {
   const theme = bannerThemeStyles[banner.themePreset]
   const titleStyle = getElementColors(banner, 'title')
   const subtitleStyle = getElementColors(banner, 'subtitle')
@@ -220,7 +228,7 @@ function MobileBannerContent({ banner }: { banner: SiteBanner }) {
           key={element.key}
           className="pointer-events-auto absolute"
           style={{
-            ...toDesktopStyle(element.item),
+            ...toDesktopStyle(element.item, scaleFactor),
             transform: getVerticalAnchorTransform(banner.elementStyles[element.key].verticalAlign),
           }}
         >
@@ -245,6 +253,8 @@ export function HomeBannerCarousel({
   const [isPaused, setIsPaused] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false)
+  const [contentWidth, setContentWidth] = useState(0)
+  const contentRef = useRef<HTMLDivElement | null>(null)
   const touchStartXRef = useRef<number | null>(null)
 
   useEffect(() => {
@@ -303,8 +313,38 @@ export function HomeBannerCarousel({
     return () => window.clearInterval(interval)
   }, [activeIndex, autoplayIntervalMs, banners.length, isPaused, prefersReducedMotion])
 
+  useLayoutEffect(() => {
+    const node = contentRef.current
+    if (!node) {
+      return
+    }
+
+    const updateWidth = () => {
+      setContentWidth(node.getBoundingClientRect().width)
+    }
+
+    updateWidth()
+
+    if (typeof ResizeObserver === 'undefined') {
+      window.addEventListener('resize', updateWidth)
+      return () => window.removeEventListener('resize', updateWidth)
+    }
+
+    const observer = new ResizeObserver(() => {
+      updateWidth()
+    })
+
+    observer.observe(node)
+
+    return () => {
+      observer.disconnect()
+    }
+  }, [])
+
   const slides = useMemo(() => banners.filter((banner) => banner.isActive), [banners])
   const activeSlide = slides[activeIndex] ?? slides[0] ?? null
+  const desktopScaleFactor = contentWidth > 0 ? contentWidth / DESKTOP_BANNER_DESIGN_WIDTH : 1
+  const mobileScaleFactor = contentWidth > 0 ? contentWidth / MOBILE_BANNER_DESIGN_WIDTH : 1
 
   function goToSlide(index: number) {
     setActiveIndex(index)
@@ -387,9 +427,9 @@ export function HomeBannerCarousel({
                   backgroundSize: 'cover',
                 }}
               />
-              <div className="public-site-container relative h-full">
-                <DesktopBannerContent banner={banner} />
-                <MobileBannerContent banner={banner} />
+              <div ref={contentRef} className="public-site-container relative h-full">
+                <DesktopBannerContent banner={banner} scaleFactor={desktopScaleFactor} />
+                <MobileBannerContent banner={banner} scaleFactor={mobileScaleFactor} />
               </div>
             </article>
           )

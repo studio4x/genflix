@@ -17,6 +17,7 @@ import {
 } from '@/features/banners/api'
 import { bannerThemeStyles } from '@/features/banners/presets'
 import {
+  DESKTOP_BANNER_DESIGN_WIDTH,
   bannerElementLabels,
   bannerThemePresetOptions,
   bannerTonePresetOptions,
@@ -47,7 +48,7 @@ type BannerDragState = {
   startWidth: number
 }
 
-const DESKTOP_CANVAS_WIDTH = 1280
+const DESKTOP_CANVAS_WIDTH = DESKTOP_BANNER_DESIGN_WIDTH
 const MOBILE_CANVAS_WIDTH = 420
 const LAYOUT_KEYS: SiteBannerLayoutKey[] = ['title', 'subtitle', 'body', 'primaryCta', 'secondaryCta']
 
@@ -1223,6 +1224,7 @@ export function AdminBannersPage() {
                   <h2 className="mt-1 font-readex text-2xl font-semibold text-[#15323b]">{draft.name || 'Banner sem nome'}</h2>
                   <p className="mt-2 text-sm font-semibold text-[#5F7077]">
                     O preview fica estavel ao lado dos cards de ajuste para facilitar a composicao do slide em tempo real.
+                    Base de desktop: 1920px de largura.
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-3">
@@ -1425,6 +1427,7 @@ export function AdminBannersPage() {
                     <div className="grid gap-3">
                       <div className="rounded-[18px] border border-[#D8E6EB] bg-white p-3">
                         <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Altura do banner</p>
+                        <p className="mt-1 text-[10px] font-semibold text-[#7C8E94]">A largura de referencia do desktop e 1920px.</p>
                         <div className="mt-3 grid gap-3 sm:grid-cols-2">
                           <label className="grid gap-2">
                             <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Desktop (px)</span>

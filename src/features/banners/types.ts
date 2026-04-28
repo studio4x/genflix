@@ -2,6 +2,8 @@ import type { GenflixPageKey } from '@/features/public/genflix-public-types'
 import type { SitePageKey } from '@/features/site-editor/types'
 
 export const HOME_HERO_BANNER_LOCATION = 'home-hero' as const
+export const DESKTOP_BANNER_DESIGN_WIDTH = 1920
+export const MOBILE_BANNER_DESIGN_WIDTH = 420
 
 export type SiteBannerLocationKey = string
 
