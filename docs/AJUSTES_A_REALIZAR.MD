@@ -10,7 +10,7 @@
 
 [OK] T1 - Permitir ajustar altura dos banners no editor, separando desktop e mobile.
 
-[ ] T2 - Permitir ajustar tipografia dos textos dos banners: fonte, tamanho, peso, espaçamento e alinhamento.
+[OK] T2 - Permitir ajustar tipografia dos textos dos banners: fonte, tamanho, peso, espaçamento e alinhamento.
 
 [ ] T3 - Corrigir divergência entre editor e frontend dos banners: posição, largura e espaçamento dos elementos devem refletir exatamente o configurado.
 
@@ -173,5 +173,6 @@
 [ ] T52 - Criar um documento de checklist com tudo o que já foi implementado, descrevendo em detalhes. Esse documento será usado para validar o que foi implementado, testar todas as funcionalidades disponíveis e identificar se ainda falta algo para implementar.
 
 ---
+
 
 
