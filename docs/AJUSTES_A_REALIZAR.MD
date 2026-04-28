@@ -40,9 +40,9 @@
 
 [OK] T13 - Criar biblioteca de ícones no admin para uso nos elementos do site.
 
-[ ] T14 - Permitir trocar ícones existentes por ícones da biblioteca.
+[OK] T14 - Permitir trocar ícones existentes por ícones da biblioteca.
 
-[ ] T15 - Permitir alinhar texto/conteúdo nas seções editadas pelo editor visual.
+[OK] T15 - Permitir alinhar texto/conteúdo nas seções editadas pelo editor visual.
 
 ---
 

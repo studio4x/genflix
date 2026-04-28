@@ -70,6 +70,7 @@ type TextStyleValue = {
   lineHeight?: string
   textTransform?: string
   fontStyle?: string
+  textAlign?: 'left' | 'center' | 'right' | 'justify'
   headingTag?: string
 }
 
@@ -221,7 +222,7 @@ function normalizeTextStyle(value: unknown): TextStyleValue {
   }
 
   const nextStyle: TextStyleValue = {}
-  const fields: Array<keyof TextStyleValue> = [
+  const fields: Array<Exclude<keyof TextStyleValue, 'headingTag' | 'textAlign'>> = [
     'color',
     'backgroundColor',
     'width',
@@ -256,6 +257,13 @@ function normalizeTextStyle(value: unknown): TextStyleValue {
     }
   }
 
+  if (typeof value.textAlign === 'string') {
+    const normalizedTextAlign = value.textAlign.trim().toLowerCase()
+    if (['left', 'center', 'right', 'justify'].includes(normalizedTextAlign)) {
+      nextStyle.textAlign = normalizedTextAlign as TextStyleValue['textAlign']
+    }
+  }
+
   return nextStyle
 }
 
@@ -275,6 +283,7 @@ function hasBoxStyle(style: TextStyleValue) {
     || style.paddingInline
     || style.paddingBlock
     || style.borderRadius
+    || style.textAlign
   )
 }
 
@@ -2071,6 +2080,23 @@ function EditorModal({
                       className="h-11 rounded-[14px] border border-[#D8E6EB] px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]"
                     />
                   </label>
+                  <label className="grid gap-1.5 md:col-span-2">
+                    <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Alinhamento</span>
+                    <select
+                      value={textStyle.textAlign ?? ''}
+                      onChange={(event) => setTextStyle((current) => ({
+                        ...current,
+                        textAlign: (event.target.value || undefined) as TextStyleValue['textAlign'] | undefined,
+                      }))}
+                      className="h-11 rounded-[14px] border border-[#D8E6EB] bg-white px-3 text-sm font-semibold text-[#15323b] outline-none"
+                    >
+                      <option value="">Padrão</option>
+                      <option value="left">Esquerda</option>
+                      <option value="center">Centro</option>
+                      <option value="right">Direita</option>
+                      <option value="justify">Justificado</option>
+                    </select>
+                  </label>
                   {showTypographyControls ? (
                     <>
                   {isTitleEditor ? (
@@ -2776,7 +2802,8 @@ export function EditableText({
   const styleEntryKey = `${entryKey}.__style`
   const styleValue = normalizeTextStyle(useEditableValue(styleEntryKey, {}, { pageKey: resolvedPageKey }))
   const inlineStyle = textStyleToCss(styleValue)
-  const renderedStyle = inlineStyle && hasBoxStyle(styleValue) && !inlineStyle.display
+  const shouldRenderAsBlock = hasBoxStyle(styleValue) || styleValue.textAlign !== undefined
+  const renderedStyle = inlineStyle && shouldRenderAsBlock && !inlineStyle.display
     ? { ...inlineStyle, display: 'inline-block' }
     : inlineStyle
   const content = renderedStyle ? <span style={renderedStyle}>{value}</span> : <>{value}</>
