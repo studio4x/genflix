@@ -319,10 +319,9 @@ function BannerCanvasElement({
       onPointerDown={draggable ? (event) => onPointerDown(elementKey, event) : undefined}
     >
       <div className={cn(
-        'pointer-events-none absolute -left-2 -top-2 inline-flex items-center gap-1 rounded-full border border-[#D8E6EB] bg-white/95 px-2 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-[#15323b] shadow-sm transition-opacity',
+        'pointer-events-none absolute -left-2 -top-2 inline-flex items-center gap-1 rounded-full border border-white/10 bg-[#0A3640]/92 px-2 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-white shadow-sm transition-opacity backdrop-blur-sm',
         draggable ? 'opacity-0 group-hover:opacity-100' : 'opacity-100',
-      )}
-      style={{ backgroundColor: '#FFFFFF', color: '#15323b' }}>
+      )}>
         <Grip className="h-3 w-3" />
         {bannerElementLabels[elementKey]}
       </div>
