@@ -118,6 +118,16 @@ function getThemeTextColor(themePreset: SiteBanner['themePreset'], key: 'title' 
   return theme.bodyColor
 }
 
+function getBannerTextTypographyStyle(style: SiteBannerElementStyle) {
+  return {
+    fontFamily: style.fontFamily || undefined,
+    fontSize: typeof style.fontSize === 'number' ? `${style.fontSize}px` : undefined,
+    fontWeight: typeof style.fontWeight === 'number' ? style.fontWeight : undefined,
+    letterSpacing: typeof style.letterSpacing === 'number' ? `${style.letterSpacing}px` : undefined,
+    textAlign: style.textAlign || undefined,
+  } as const
+}
+
 function getToneColorDefaults(tone: SiteBannerCta['tonePreset']) {
   if (tone === 'warm') {
     return { backgroundColor: '#176E52', textColor: '#F6F6F6' }
@@ -752,6 +762,9 @@ export function AdminBannersPage() {
   const titleLayout = activeLayout?.title ?? null
   const subtitleLayout = activeLayout?.subtitle ?? null
   const bodyLayout = activeLayout?.body ?? null
+  const titleTypographyStyle = draft ? getBannerTextTypographyStyle(draft.elementStyles.title) : {}
+  const subtitleTypographyStyle = draft ? getBannerTextTypographyStyle(draft.elementStyles.subtitle) : {}
+  const bodyTypographyStyle = draft ? getBannerTextTypographyStyle(draft.elementStyles.body) : {}
   const primaryCtaLayout = activeLayout?.primaryCta ?? null
   const secondaryCtaLayout = activeLayout?.secondaryCta ?? null
 
@@ -954,7 +967,7 @@ export function AdminBannersPage() {
 
                       <BannerCanvasElement elementKey="title" item={titleLayout ?? draft.layoutDesktop.title} onPointerDown={handleCanvasPointerDown} onResizePointerDown={handleCanvasResizePointerDown} draggable>
                         <div className={cn('rounded-[18px] border border-dashed border-white/18 bg-black/6 px-3 py-2', theme?.previewSurfaceClass)}>
-                          <p className={cn('font-extrabold leading-[0.92] tracking-[-0.05em]', isMobilePreview ? 'text-[1.9rem]' : 'text-[2.2rem] xl:text-[2.9rem]', theme?.titleClass)} style={{ color: titleColor }}>
+                          <p className={cn('font-extrabold leading-[0.92] tracking-[-0.05em]', isMobilePreview ? 'text-[1.9rem]' : 'text-[2.2rem] xl:text-[2.9rem]', theme?.titleClass)} style={{ color: titleColor, ...titleTypographyStyle }}>
                             {canvasTitle}
                           </p>
                         </div>
@@ -962,7 +975,7 @@ export function AdminBannersPage() {
 
                       <BannerCanvasElement elementKey="subtitle" item={subtitleLayout ?? draft.layoutDesktop.subtitle} onPointerDown={handleCanvasPointerDown} onResizePointerDown={handleCanvasResizePointerDown} draggable>
                         <div className={cn('rounded-[18px] border border-dashed border-white/18 bg-black/6 px-3 py-2', theme?.previewSurfaceClass)}>
-                          <p className={cn(isMobilePreview ? 'text-sm leading-6' : 'text-sm leading-7 sm:text-base xl:text-lg', theme?.textClass)} style={{ color: subtitleColor }}>
+                          <p className={cn(isMobilePreview ? 'text-sm leading-6' : 'text-sm leading-7 sm:text-base xl:text-lg', theme?.textClass)} style={{ color: subtitleColor, ...subtitleTypographyStyle }}>
                             {canvasSubtitle}
                           </p>
                         </div>
@@ -970,7 +983,7 @@ export function AdminBannersPage() {
 
                       <BannerCanvasElement elementKey="body" item={bodyLayout ?? draft.layoutDesktop.body} onPointerDown={handleCanvasPointerDown} onResizePointerDown={handleCanvasResizePointerDown} draggable>
                         <div className={cn('rounded-[18px] border border-dashed border-white/18 bg-black/6 px-3 py-2', theme?.previewSurfaceClass)}>
-                          <p className={cn(isMobilePreview ? 'text-sm leading-6' : 'text-[15px] leading-7 xl:text-[17px]', theme?.bodyClass)} style={{ color: bodyColor }}>
+                          <p className={cn(isMobilePreview ? 'text-sm leading-6' : 'text-[15px] leading-7 xl:text-[17px]', theme?.bodyClass)} style={{ color: bodyColor, ...bodyTypographyStyle }}>
                             {canvasBody}
                           </p>
                         </div>
@@ -1139,12 +1152,100 @@ export function AdminBannersPage() {
                               fallback={defaultTextColor}
                               onChange={(value) => setElementStyle(layoutKey, (current) => ({ ...current, textColor: value }))}
                             />
+                            <label className="grid gap-2">
+                              <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Fonte (font-family)</span>
+                              <input
+                                value={draft.elementStyles[layoutKey].fontFamily ?? ''}
+                                onChange={(event) => setElementStyle(layoutKey, (current) => ({ ...current, fontFamily: event.target.value.trim() || undefined }))}
+                                placeholder="Ex.: var(--font-readex), Readex Pro"
+                                className="h-11 rounded-[16px] border border-[#D8E6EB] bg-white px-4 text-sm font-semibold text-[#15323b] outline-none"
+                              />
+                            </label>
+                            <div className="grid gap-2 sm:grid-cols-2">
+                              <label className="grid gap-2">
+                                <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Tamanho (px)</span>
+                                <input
+                                  type="number"
+                                  min={10}
+                                  max={120}
+                                  step={1}
+                                  value={draft.elementStyles[layoutKey].fontSize ?? ''}
+                                  onChange={(event) => {
+                                    const raw = Number(event.target.value)
+                                    setElementStyle(layoutKey, (current) => ({ ...current, fontSize: Number.isFinite(raw) && raw > 0 ? raw : undefined }))
+                                  }}
+                                  className="h-11 rounded-[16px] border border-[#D8E6EB] bg-white px-4 text-sm font-semibold text-[#15323b] outline-none"
+                                />
+                              </label>
+                              <label className="grid gap-2">
+                                <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Peso (100-900)</span>
+                                <input
+                                  type="number"
+                                  min={100}
+                                  max={900}
+                                  step={100}
+                                  value={draft.elementStyles[layoutKey].fontWeight ?? ''}
+                                  onChange={(event) => {
+                                    const raw = Number(event.target.value)
+                                    setElementStyle(layoutKey, (current) => ({ ...current, fontWeight: Number.isFinite(raw) && raw >= 100 ? raw : undefined }))
+                                  }}
+                                  className="h-11 rounded-[16px] border border-[#D8E6EB] bg-white px-4 text-sm font-semibold text-[#15323b] outline-none"
+                                />
+                              </label>
+                            </div>
+                            <div className="grid gap-2 sm:grid-cols-2">
+                              <label className="grid gap-2">
+                                <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Espaçamento (px)</span>
+                                <input
+                                  type="number"
+                                  min={-10}
+                                  max={30}
+                                  step={0.1}
+                                  value={draft.elementStyles[layoutKey].letterSpacing ?? ''}
+                                  onChange={(event) => {
+                                    const raw = Number(event.target.value)
+                                    setElementStyle(layoutKey, (current) => ({ ...current, letterSpacing: Number.isFinite(raw) ? raw : undefined }))
+                                  }}
+                                  className="h-11 rounded-[16px] border border-[#D8E6EB] bg-white px-4 text-sm font-semibold text-[#15323b] outline-none"
+                                />
+                              </label>
+                              <label className="grid gap-2">
+                                <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Alinhamento</span>
+                                <select
+                                  value={draft.elementStyles[layoutKey].textAlign ?? ''}
+                                  onChange={(event) => {
+                                    const value = event.target.value as 'left' | 'center' | 'right' | ''
+                                    setElementStyle(layoutKey, (current) => ({ ...current, textAlign: value || undefined }))
+                                  }}
+                                  className="h-11 rounded-[16px] border border-[#D8E6EB] bg-white px-4 text-sm font-semibold text-[#15323b] outline-none"
+                                >
+                                  <option value="">Padrao</option>
+                                  <option value="left">Esquerda</option>
+                                  <option value="center">Centro</option>
+                                  <option value="right">Direita</option>
+                                </select>
+                              </label>
+                            </div>
                             <button
                               type="button"
                               onClick={() => setElementStyle(layoutKey, (current) => ({ ...current, textColor: undefined }))}
                               className="inline-flex h-9 w-full min-w-0 items-center justify-center rounded-xl border border-[#D8E6EB] bg-white px-3 text-center text-xs font-black uppercase tracking-[0.12em] text-[#5F7077] hover:bg-[#F2F7F9]"
                             >
                               Usar cor do preset
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setElementStyle(layoutKey, (current) => ({
+                                ...current,
+                                fontFamily: undefined,
+                                fontSize: undefined,
+                                fontWeight: undefined,
+                                letterSpacing: undefined,
+                                textAlign: undefined,
+                              }))}
+                              className="inline-flex h-9 w-full min-w-0 items-center justify-center rounded-xl border border-[#D8E6EB] bg-white px-3 text-center text-xs font-black uppercase tracking-[0.12em] text-[#5F7077] hover:bg-[#F2F7F9]"
+                            >
+                              Limpar tipografia customizada
                             </button>
                           </CollapsibleCard>
                         )

@@ -40,6 +40,11 @@ export type SiteBannerLayoutMobile = SiteBannerLayoutDesktop
 export interface SiteBannerElementStyle {
   textColor?: string
   backgroundColor?: string
+  fontFamily?: string
+  fontSize?: number
+  fontWeight?: number
+  letterSpacing?: number
+  textAlign?: 'left' | 'center' | 'right'
 }
 
 export interface SiteBannerElementStyles {

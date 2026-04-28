@@ -116,6 +116,13 @@ function normalizeElementStyle(value: unknown, fallback: SiteBannerElementStyle)
   return {
     textColor: typeof value.textColor === 'string' ? value.textColor : fallback.textColor,
     backgroundColor: typeof value.backgroundColor === 'string' ? value.backgroundColor : fallback.backgroundColor,
+    fontFamily: typeof value.fontFamily === 'string' ? value.fontFamily : fallback.fontFamily,
+    fontSize: typeof value.fontSize === 'number' ? value.fontSize : fallback.fontSize,
+    fontWeight: typeof value.fontWeight === 'number' ? value.fontWeight : fallback.fontWeight,
+    letterSpacing: typeof value.letterSpacing === 'number' ? value.letterSpacing : fallback.letterSpacing,
+    textAlign: value.textAlign === 'left' || value.textAlign === 'center' || value.textAlign === 'right'
+      ? value.textAlign
+      : fallback.textAlign,
   }
 }
 

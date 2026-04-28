@@ -29,6 +29,17 @@ function getElementColors(banner: SiteBanner, key: SiteBannerLayoutKey) {
   }
 }
 
+function getTextTypographyStyle(banner: SiteBanner, key: 'title' | 'subtitle' | 'body') {
+  const style = banner.elementStyles[key]
+  return {
+    fontFamily: style.fontFamily || undefined,
+    fontSize: typeof style.fontSize === 'number' ? `${style.fontSize}px` : undefined,
+    fontWeight: typeof style.fontWeight === 'number' ? style.fontWeight : undefined,
+    letterSpacing: typeof style.letterSpacing === 'number' ? `${style.letterSpacing}px` : undefined,
+    textAlign: style.textAlign || undefined,
+  } as const
+}
+
 function toDesktopStyle(item: SiteBannerLayoutItem) {
   return {
     left: `${item.x}%`,
@@ -80,6 +91,9 @@ function DesktopBannerContent({ banner }: { banner: SiteBanner }) {
   const titleStyle = getElementColors(banner, 'title')
   const subtitleStyle = getElementColors(banner, 'subtitle')
   const bodyStyle = getElementColors(banner, 'body')
+  const titleTypography = getTextTypographyStyle(banner, 'title')
+  const subtitleTypography = getTextTypographyStyle(banner, 'subtitle')
+  const bodyTypography = getTextTypographyStyle(banner, 'body')
   const primaryCtaStyle = getElementColors(banner, 'primaryCta')
   const secondaryCtaStyle = getElementColors(banner, 'secondaryCta')
   const desktopElements: Array<{
@@ -91,19 +105,19 @@ function DesktopBannerContent({ banner }: { banner: SiteBanner }) {
     {
       key: 'title',
       item: banner.layoutDesktop.title,
-      content: <h2 className={cn('text-[2.5rem] font-extrabold leading-[0.92] tracking-[-0.05em] sm:text-[3rem] md:text-[3.25rem]', theme.titleClass)} style={{ color: titleStyle.color }}>{banner.title}</h2>,
+      content: <h2 className={cn('text-[2.5rem] font-extrabold leading-[0.92] tracking-[-0.05em] sm:text-[3rem] md:text-[3.25rem]', theme.titleClass)} style={{ color: titleStyle.color, ...titleTypography }}>{banner.title}</h2>,
       shouldRender: isRenderableText(banner.title, banner.layoutDesktop.title),
     },
     {
       key: 'subtitle',
       item: banner.layoutDesktop.subtitle,
-      content: <p className={cn('text-sm leading-7 sm:text-base', theme.textClass)} style={{ color: subtitleStyle.color }}>{banner.subtitle}</p>,
+      content: <p className={cn('text-sm leading-7 sm:text-base', theme.textClass)} style={{ color: subtitleStyle.color, ...subtitleTypography }}>{banner.subtitle}</p>,
       shouldRender: isRenderableText(banner.subtitle, banner.layoutDesktop.subtitle),
     },
     {
       key: 'body',
       item: banner.layoutDesktop.body,
-      content: <p className={cn('text-[15px] leading-7', theme.bodyClass)} style={{ color: bodyStyle.color }}>{banner.body}</p>,
+      content: <p className={cn('text-[15px] leading-7', theme.bodyClass)} style={{ color: bodyStyle.color, ...bodyTypography }}>{banner.body}</p>,
       shouldRender: isRenderableText(banner.body, banner.layoutDesktop.body),
     },
     {
@@ -140,6 +154,9 @@ function MobileBannerContent({ banner }: { banner: SiteBanner }) {
   const titleStyle = getElementColors(banner, 'title')
   const subtitleStyle = getElementColors(banner, 'subtitle')
   const bodyStyle = getElementColors(banner, 'body')
+  const titleTypography = getTextTypographyStyle(banner, 'title')
+  const subtitleTypography = getTextTypographyStyle(banner, 'subtitle')
+  const bodyTypography = getTextTypographyStyle(banner, 'body')
   const primaryCtaStyle = getElementColors(banner, 'primaryCta')
   const secondaryCtaStyle = getElementColors(banner, 'secondaryCta')
   const mobileElements: Array<{
@@ -151,19 +168,19 @@ function MobileBannerContent({ banner }: { banner: SiteBanner }) {
     {
       key: 'title',
       item: banner.layoutMobile.title,
-      content: <h2 className={cn('text-[2.2rem] font-extrabold leading-[0.94] tracking-[-0.05em] sm:text-[2.6rem]', theme.titleClass)} style={{ color: titleStyle.color }}>{banner.title}</h2>,
+      content: <h2 className={cn('text-[2.2rem] font-extrabold leading-[0.94] tracking-[-0.05em] sm:text-[2.6rem]', theme.titleClass)} style={{ color: titleStyle.color, ...titleTypography }}>{banner.title}</h2>,
       shouldRender: isRenderableText(banner.title, banner.layoutMobile.title),
     },
     {
       key: 'subtitle',
       item: banner.layoutMobile.subtitle,
-      content: <p className={cn('text-sm leading-7 sm:text-base', theme.textClass)} style={{ color: subtitleStyle.color }}>{banner.subtitle}</p>,
+      content: <p className={cn('text-sm leading-7 sm:text-base', theme.textClass)} style={{ color: subtitleStyle.color, ...subtitleTypography }}>{banner.subtitle}</p>,
       shouldRender: isRenderableText(banner.subtitle, banner.layoutMobile.subtitle),
     },
     {
       key: 'body',
       item: banner.layoutMobile.body,
-      content: <p className={cn('text-[15px] leading-7', theme.bodyClass)} style={{ color: bodyStyle.color }}>{banner.body}</p>,
+      content: <p className={cn('text-[15px] leading-7', theme.bodyClass)} style={{ color: bodyStyle.color, ...bodyTypography }}>{banner.body}</p>,
       shouldRender: isRenderableText(banner.body, banner.layoutMobile.body),
     },
     {
