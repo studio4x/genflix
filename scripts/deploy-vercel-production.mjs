@@ -32,6 +32,7 @@ loadEnvFile(join(process.cwd(), '.env.local'))
 
 const vercelToken = process.env.VERCEL_TOKEN?.trim() || process.env.VERCEL_ACCESS_TOKEN?.trim() || ''
 const vercelScope = process.env.VERCEL_SCOPE?.trim() || 'genflixcursos-6767s-projects'
+const canonicalProductionUrl = process.env.APP_PUBLIC_URL?.trim() || ''
 
 function quoteArg(value) {
   return /\s/.test(value) ? `"${value}"` : value
@@ -106,5 +107,25 @@ run(npxCommand, withVercelAuthArgs(['vercel', 'build', '--prod']), {
   },
 })
 
-process.stdout.write(`Publicando output prebuilt em producao na Vercel pelo projeto canônico (${vercelScope})...\n`)
-run(npxCommand, withVercelAuthArgs(['vercel', 'deploy', '--prebuilt', '--prod', '--yes']))
+process.stdout.write(`Publicando output prebuilt em producao na Vercel pelo projeto canonico (${vercelScope})...\n`)
+const deployResult = run(npxCommand, withVercelAuthArgs(['vercel', 'deploy', '--prebuilt', '--prod', '--yes']), {
+  captureOutput: true,
+})
+
+if (deployResult.status !== 0) {
+  process.stdout.write(deployResult.stdout ?? '')
+  process.stderr.write(deployResult.stderr ?? '')
+  process.exit(deployResult.status ?? 1)
+}
+
+process.stdout.write(deployResult.stdout ?? '')
+process.stderr.write(deployResult.stderr ?? '')
+
+const deploymentUrlMatch = (deployResult.stdout ?? '').match(/Production:\s+(https?:\/\/[^\s]+)/)
+const deploymentUrl = deploymentUrlMatch?.[1]
+const canonicalDomain = canonicalProductionUrl.replace(/^https?:\/\//, '').replace(/\/+$/, '')
+
+if (deploymentUrl && canonicalDomain) {
+  process.stdout.write(`Atualizando alias canonico ${canonicalDomain} -> ${deploymentUrl}\n`)
+  run(npxCommand, withVercelAuthArgs(['vercel', 'alias', 'set', deploymentUrl, canonicalDomain]))
+}
