@@ -168,7 +168,7 @@ function normalizeBanner(row: SiteBannerRow): SiteBanner {
   const heightMobile = Number.isFinite(row.height_mobile) ? Math.round(Number(row.height_mobile)) : defaultBannerHeightMobile
   return {
     id: row.id,
-    locationKey: HOME_HERO_BANNER_LOCATION,
+    locationKey: row.location_key || HOME_HERO_BANNER_LOCATION,
     name: row.name,
     title: row.title,
     subtitle: row.subtitle ?? '',
@@ -212,6 +212,31 @@ export async function fetchSiteBanners(locationKey: SiteBannerLocationKey = HOME
   return ((data ?? []) as SiteBannerRow[]).map(normalizeBanner)
 }
 
+export async function fetchSiteBannerLocations() {
+  const { data, error } = await supabase
+    .from('site_banners')
+    .select('location_key')
+    .order('location_key', { ascending: true })
+
+  if (error) {
+    throw error
+  }
+
+  const keys = new Set<string>()
+  for (const row of (data ?? []) as Array<{ location_key: string | null }>) {
+    const key = row.location_key?.trim()
+    if (key) {
+      keys.add(key)
+    }
+  }
+
+  if (!keys.has(HOME_HERO_BANNER_LOCATION)) {
+    keys.add(HOME_HERO_BANNER_LOCATION)
+  }
+
+  return Array.from(keys)
+}
+
 export async function fetchActiveSiteBanners(locationKey: SiteBannerLocationKey = HOME_HERO_BANNER_LOCATION) {
   const { data, error } = await supabase
     .from('site_banners')
@@ -232,7 +257,7 @@ export async function createSiteBanner(locationKey: SiteBannerLocationKey = HOME
   const existing = await fetchSiteBanners(locationKey)
   const nextSortOrder = existing.length
   const userId = await currentUserId()
-  const draft = createDefaultSiteBanner(nextSortOrder)
+  const draft = createDefaultSiteBanner(nextSortOrder, locationKey)
 
   const { data, error } = await supabase
     .from('site_banners')

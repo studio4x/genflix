@@ -6,6 +6,7 @@ import {
   createSiteBanner,
   deleteSiteBanner,
   duplicateSiteBanner,
+  fetchSiteBannerLocations,
   fetchSiteBanners,
   reorderSiteBanners,
   toggleSiteBannerActive,
@@ -437,6 +438,8 @@ export function AdminBannersPage() {
   const [previewMode, setPreviewMode] = useState<'desktop' | 'mobile'>('desktop')
   const [heightDesktopInput, setHeightDesktopInput] = useState('760')
   const [heightMobileInput, setHeightMobileInput] = useState('560')
+  const [locationKeys, setLocationKeys] = useState<string[]>([])
+  const [selectedLocationKey, setSelectedLocationKey] = useState<string>('home-hero')
   const [expandedCards, setExpandedCards] = useState<Record<string, boolean>>({
     content: true,
     composition: true,
@@ -456,12 +459,14 @@ export function AdminBannersPage() {
     [draft, selectedBanner],
   )
 
-  async function loadBanners(preferredBannerId?: string | null) {
+  async function loadBanners(preferredBannerId?: string | null, locationKey = selectedLocationKey) {
     setLoading(true)
     setError(null)
 
     try {
-      const rows = await fetchSiteBanners()
+      const rows = await fetchSiteBanners(locationKey)
+      const locations = await fetchSiteBannerLocations()
+      setLocationKeys(locations)
       setBanners(rows)
 
       const nextSelectedId = preferredBannerId && rows.some((banner) => banner.id === preferredBannerId)
@@ -478,8 +483,8 @@ export function AdminBannersPage() {
   }
 
   useEffect(() => {
-    void loadBanners()
-  }, [])
+    void loadBanners(undefined, selectedLocationKey)
+  }, [selectedLocationKey])
 
   useEffect(() => {
     if (!draft) {
@@ -696,7 +701,7 @@ export function AdminBannersPage() {
     setError(null)
 
     try {
-      const created = await createSiteBanner()
+      const created = await createSiteBanner(selectedLocationKey)
       await loadBanners(created.id)
       setMessage('Novo banner criado. Configure o conteudo e salve quando terminar.')
     } catch (createError) {
@@ -903,6 +908,34 @@ export function AdminBannersPage() {
     }
   }
 
+  async function handleCreateCarousel() {
+    const input = window.prompt('Informe uma chave para o novo carrossel (ex.: home-secundario, cursos-hero):')
+    const key = (input ?? '').trim().toLowerCase().replace(/\s+/g, '-')
+    if (!key) return
+
+    if (locationKeys.includes(key)) {
+      setSelectedLocationKey(key)
+      setMessage(`Carrossel "${key}" já existe e foi selecionado.`)
+      return
+    }
+
+    setSaving(true)
+    setMessage(null)
+    setError(null)
+    try {
+      const created = await createSiteBanner(key)
+      const nextLocations = Array.from(new Set([...locationKeys, key])).sort()
+      setLocationKeys(nextLocations)
+      setSelectedLocationKey(key)
+      await loadBanners(created.id, key)
+      setMessage(`Carrossel "${key}" criado.`)
+    } catch (createError) {
+      setError(createError instanceof Error ? createError.message : 'Nao foi possivel criar o carrossel.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
   function handleCanvasResizePointerDown(key: SiteBannerLayoutKey, event: React.PointerEvent<HTMLButtonElement>) {
     event.preventDefault()
     event.stopPropagation()
@@ -993,8 +1026,22 @@ export function AdminBannersPage() {
                 <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#5F7077]">Lista de banners</p>
                 <h2 className="mt-1 font-readex text-xl font-semibold text-[#15323b]">{banners.length} cadastrado(s)</h2>
               </div>
+              <div className="flex items-center gap-2">
+                <select
+                  value={selectedLocationKey}
+                  onChange={(event) => setSelectedLocationKey(event.target.value)}
+                  className="h-9 rounded-xl border border-[#D8E6EB] bg-white px-3 text-xs font-black uppercase tracking-[0.12em] text-[#15323b]"
+                >
+                  {locationKeys.map((key) => (
+                    <option key={key} value={key}>{key}</option>
+                  ))}
+                </select>
+                <Button type="button" variant="outline" onClick={() => void handleCreateCarousel()} className="h-9 rounded-xl border-[#D8E6EB] px-3 text-[10px] font-black uppercase tracking-[0.12em]">
+                  Novo carrossel
+                </Button>
+              </div>
               <div className="rounded-full bg-[#E8F6FA] px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-[#1398B7]">
-                Home hero
+                {selectedLocationKey}
               </div>
             </div>
 

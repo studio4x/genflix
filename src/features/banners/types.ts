@@ -2,7 +2,7 @@ import type { GenflixPageKey } from '@/features/public/genflix-public-types'
 
 export const HOME_HERO_BANNER_LOCATION = 'home-hero' as const
 
-export type SiteBannerLocationKey = typeof HOME_HERO_BANNER_LOCATION
+export type SiteBannerLocationKey = string
 
 export type SiteBannerThemePreset = 'light-strong' | 'light-soft' | 'dark-soft'
 export type SiteBannerTonePreset = 'solid' | 'warm' | 'surface'
@@ -165,9 +165,12 @@ export const bannerElementLabels: Record<SiteBannerLayoutKey, string> = {
   secondaryCta: 'CTA secundario',
 }
 
-export function createDefaultSiteBanner(sortOrder: number): Omit<SiteBanner, 'id' | 'createdBy' | 'updatedBy' | 'createdAt' | 'updatedAt'> {
+export function createDefaultSiteBanner(
+  sortOrder: number,
+  locationKey: SiteBannerLocationKey = HOME_HERO_BANNER_LOCATION,
+): Omit<SiteBanner, 'id' | 'createdBy' | 'updatedBy' | 'createdAt' | 'updatedAt'> {
   return {
-    locationKey: HOME_HERO_BANNER_LOCATION,
+    locationKey,
     name: `Banner ${sortOrder + 1}`,
     title: 'O conhecimento que a sua carreira estava esperando.',
     subtitle: 'As ferramentas de estudo para quem leva o aprendizado a serio.',
