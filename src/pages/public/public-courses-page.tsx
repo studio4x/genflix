@@ -13,11 +13,16 @@ import {
   genflixCatalogCourses,
   genflixCatalogFilters,
   genflixNavLinks,
-  genflixStudyFeatures,
   type GenflixCourseItem,
 } from '@/features/public/genflix-site-content'
 import { fetchPublicCoursesFromSupabase } from '@/features/public/genflix-public-content-api'
-import { EditableText, useEditableValue } from '@/features/site-editor/visual-editor'
+import {
+  genflixStudyFeatureCardsFallback,
+  genflixStudyFeatureCardsSchema,
+  resolveStudyFeatureIconKey,
+} from '@/features/public/genflix-study-feature-editor'
+import { EditableList, EditableText, isEditableItemVisible, useEditableValue } from '@/features/site-editor/visual-editor'
+import { renderSiteIconVisual } from '@/features/site-editor/site-icons'
 import { cn } from '@/lib/utils'
 
 const COURSES_PER_PAGE = 6
@@ -223,23 +228,33 @@ export function PublicCoursesPage() {
             </p>
           </div>
 
-          <div className="mt-10 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-            {genflixStudyFeatures.map((feature) => {
-              const Icon = feature.icon
-              return (
-                <article
-                  key={feature.title}
-                  className="rounded-[20px] border border-[#D8E6EB] bg-white px-6 py-6 shadow-[0_16px_36px_rgba(21,50,59,0.04)]"
-                >
-                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#E8F6FA] text-[#1398B7]">
-                    <Icon className="h-5 w-5" />
-                  </div>
-                  <h3 className="mt-5 text-lg font-bold text-[#183139]">{feature.title}</h3>
-                  <p className="mt-3 text-sm leading-7 text-[#6d7f85]">{feature.description}</p>
-                </article>
-              )
-            })}
-          </div>
+          <EditableList
+            entryKey="courses.features.items"
+            fallback={genflixStudyFeatureCardsFallback}
+            label="Cards de recursos em cursos"
+            schema={genflixStudyFeatureCardsSchema}
+          >
+            {(items) => (
+              <div className="mt-10 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+                {items.filter(isEditableItemVisible).map((item) => (
+                  <article
+                    key={item.id}
+                    className="rounded-[20px] border border-[#D8E6EB] bg-white px-6 py-6 shadow-[0_16px_36px_rgba(21,50,59,0.04)]"
+                  >
+                    <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#E8F6FA] text-[#1398B7]">
+                      {renderSiteIconVisual({
+                        iconKey: resolveStudyFeatureIconKey(item),
+                        iconAlt: item.label ?? item.title ?? 'Recurso',
+                        className: 'h-5 w-5',
+                      })}
+                    </div>
+                    <h3 className="mt-5 text-lg font-bold text-[#183139]">{item.title ?? item.label ?? 'Card'}</h3>
+                    <p className="mt-3 text-sm leading-7 text-[#6d7f85]">{item.description ?? ''}</p>
+                  </article>
+                ))}
+              </div>
+            )}
+          </EditableList>
 
           <div className="mt-10 flex justify-center">
             <GenflixCtaButton asChild className="px-5 py-3">

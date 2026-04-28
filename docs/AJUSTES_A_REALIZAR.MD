@@ -30,6 +30,8 @@
 
 [OK] T16 - Permitir recolher e expandir todos os elementos da página do editor visual.
 
+[ ] T16.5 - No card "conteudo e imagem", insira no campo "preset visual" a opção de não inserir overlay.
+
 ---
 
 ## CHAT 3 — Editor visual: seções, ícones e alinhamento
@@ -50,7 +52,7 @@
 
 [OK] T9 - Permitir ajustar o header pelo editor visual: tamanho da logo, altura do header, cores do menu, tipografia do menu e cor de fundo por página ou global.
 
-[ ] T10 - Permitir ajustar cards de grids de conteúdos, como a seção “Muito além do vídeo” na home.
+[OK] T10 - Permitir ajustar cards de grids de conteúdos, como a seção “Muito além do vídeo” na home.
 
 ---
 
