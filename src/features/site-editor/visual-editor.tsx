@@ -1,5 +1,7 @@
 import {
   createContext,
+  cloneElement,
+  isValidElement,
   useCallback,
   useContext,
   useEffect,
@@ -51,6 +53,16 @@ import {
 type EditableValue = string | EditableListItem[] | Record<string, unknown> | null
 type TextStyleValue = {
   color?: string
+  backgroundColor?: string
+  width?: string
+  height?: string
+  minWidth?: string
+  minHeight?: string
+  maxWidth?: string
+  maxHeight?: string
+  paddingInline?: string
+  paddingBlock?: string
+  borderRadius?: string
   fontFamily?: string
   fontSize?: string
   fontWeight?: string
@@ -211,6 +223,16 @@ function normalizeTextStyle(value: unknown): TextStyleValue {
   const nextStyle: TextStyleValue = {}
   const fields: Array<keyof TextStyleValue> = [
     'color',
+    'backgroundColor',
+    'width',
+    'height',
+    'minWidth',
+    'minHeight',
+    'maxWidth',
+    'maxHeight',
+    'paddingInline',
+    'paddingBlock',
+    'borderRadius',
     'fontFamily',
     'fontSize',
     'fontWeight',
@@ -241,6 +263,21 @@ function hasTextStyle(style: TextStyleValue) {
   return Object.entries(style).some(([key, value]) => key !== 'headingTag' && typeof value === 'string' && value.trim() !== '')
 }
 
+function hasBoxStyle(style: TextStyleValue) {
+  return Boolean(
+    style.backgroundColor
+    || style.width
+    || style.height
+    || style.minWidth
+    || style.minHeight
+    || style.maxWidth
+    || style.maxHeight
+    || style.paddingInline
+    || style.paddingBlock
+    || style.borderRadius
+  )
+}
+
 function textStyleToCss(style: TextStyleValue): CSSProperties | undefined {
   const normalized = normalizeTextStyle(style)
   const { headingTag: _headingTag, ...cssStyle } = normalized
@@ -250,6 +287,19 @@ function textStyleToCss(style: TextStyleValue): CSSProperties | undefined {
   }
 
   return cssStyle
+}
+
+function cloneNodeWithStyle(node: ReactNode, style?: CSSProperties) {
+  if (!style || !isValidElement<{ style?: CSSProperties }>(node)) {
+    return node
+  }
+
+  return cloneElement(node, {
+    style: {
+      ...(node.props.style ?? {}),
+      ...style,
+    },
+  })
 }
 
 function isTitleEditorEntry(label: string, entryKey: string) {
@@ -1015,6 +1065,7 @@ function EditorModal({
   const isSeoEditor = editor.entryType === 'json' && editor.schema?.kind === 'seo'
   const listEditorConfig = useMemo(() => normalizeListEditorSchema(editor.schema), [editor.schema])
   const previewImagePresentation = useMemo(() => getEditableImagePresentation(previewImage), [previewImage])
+  const showTypographyControls = editor.entryType === 'text' || editor.entryType === 'rich_text' || editor.entryType === 'button' || editor.entryType === 'link'
   const workflowStatus = workspaceRecord.status
   const comments = workspaceRecord.comments
   const draftAvailable = typeof workspaceRecord.draftRawValue === 'string' && workspaceRecord.draftRawValue.trim() !== ''
@@ -1762,9 +1813,92 @@ function EditorModal({
               <div className="rounded-[22px] border border-[#D8E6EB] bg-white p-4">
                 <div className="flex items-center gap-2">
                   <Sparkles className="h-4 w-4 text-[#1398B7]" />
-                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#1398B7]">Estilo do texto</p>
+                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#1398B7]">Estilo do elemento</p>
                 </div>
                 <div className="mt-4 grid gap-3 md:grid-cols-2">
+                  <label className="grid gap-1.5 md:col-span-2">
+                    <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Cor de fundo</span>
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="color"
+                        value={textStyle.backgroundColor ?? '#ffffff'}
+                        onChange={(event) => setTextStyle((current) => ({ ...current, backgroundColor: event.target.value }))}
+                        className="h-11 w-14 rounded-[14px] border border-[#D8E6EB] bg-white p-1 outline-none focus:border-[#1398B7]"
+                        aria-label="Selecionar cor de fundo"
+                      />
+                      <input
+                        value={textStyle.backgroundColor ?? ''}
+                        onChange={(event) => setTextStyle((current) => ({ ...current, backgroundColor: event.target.value }))}
+                        placeholder="#ffffff"
+                        className="h-11 flex-1 rounded-[14px] border border-[#D8E6EB] px-3 text-sm font-semibold uppercase tracking-[0.06em] text-[#15323b] outline-none focus:border-[#1398B7]"
+                      />
+                    </div>
+                  </label>
+                  <label className="grid gap-1.5">
+                    <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Largura</span>
+                    <input
+                      value={textStyle.width ?? ''}
+                      onChange={(event) => setTextStyle((current) => ({ ...current, width: event.target.value }))}
+                      placeholder="100%"
+                      className="h-11 rounded-[14px] border border-[#D8E6EB] px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]"
+                    />
+                  </label>
+                  <label className="grid gap-1.5">
+                    <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Altura</span>
+                    <input
+                      value={textStyle.height ?? ''}
+                      onChange={(event) => setTextStyle((current) => ({ ...current, height: event.target.value }))}
+                      placeholder="auto"
+                      className="h-11 rounded-[14px] border border-[#D8E6EB] px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]"
+                    />
+                  </label>
+                  <label className="grid gap-1.5">
+                    <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Largura mínima</span>
+                    <input
+                      value={textStyle.minWidth ?? ''}
+                      onChange={(event) => setTextStyle((current) => ({ ...current, minWidth: event.target.value }))}
+                      placeholder="240px"
+                      className="h-11 rounded-[14px] border border-[#D8E6EB] px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]"
+                    />
+                  </label>
+                  <label className="grid gap-1.5">
+                    <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Altura mínima</span>
+                    <input
+                      value={textStyle.minHeight ?? ''}
+                      onChange={(event) => setTextStyle((current) => ({ ...current, minHeight: event.target.value }))}
+                      placeholder="48px"
+                      className="h-11 rounded-[14px] border border-[#D8E6EB] px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]"
+                    />
+                  </label>
+                  <label className="grid gap-1.5">
+                    <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Arredondamento</span>
+                    <input
+                      value={textStyle.borderRadius ?? ''}
+                      onChange={(event) => setTextStyle((current) => ({ ...current, borderRadius: event.target.value }))}
+                      placeholder="24px"
+                      className="h-11 rounded-[14px] border border-[#D8E6EB] px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]"
+                    />
+                  </label>
+                  <label className="grid gap-1.5">
+                    <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Padding horizontal</span>
+                    <input
+                      value={textStyle.paddingInline ?? ''}
+                      onChange={(event) => setTextStyle((current) => ({ ...current, paddingInline: event.target.value }))}
+                      placeholder="1.5rem"
+                      className="h-11 rounded-[14px] border border-[#D8E6EB] px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]"
+                    />
+                  </label>
+                  <label className="grid gap-1.5">
+                    <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Padding vertical</span>
+                    <input
+                      value={textStyle.paddingBlock ?? ''}
+                      onChange={(event) => setTextStyle((current) => ({ ...current, paddingBlock: event.target.value }))}
+                      placeholder="0.75rem"
+                      className="h-11 rounded-[14px] border border-[#D8E6EB] px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]"
+                    />
+                  </label>
+                  {showTypographyControls ? (
+                    <>
                   {isTitleEditor ? (
                     <label className="grid gap-1.5 md:col-span-2">
                       <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Tag do título</span>
@@ -1786,7 +1920,7 @@ function EditorModal({
                     </label>
                   ) : null}
                   <label className="grid gap-1.5 md:col-span-2">
-                    <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Cor</span>
+                    <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Cor do texto</span>
                     <div className="flex items-center gap-3">
                       <input
                         type="color"
@@ -1848,6 +1982,8 @@ function EditorModal({
                       className="h-11 rounded-[14px] border border-[#D8E6EB] px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]"
                     />
                   </label>
+                    </>
+                  ) : null}
                 </div>
               </div>
             ) : null}
@@ -2005,11 +2141,11 @@ function EditorModal({
                 {editor.entryType === 'image' && previewImage ? (
                   <div className="grid gap-3">
                     {typeof previewImage.src === 'string' && previewImage.src ? (
-                      <div className="overflow-hidden rounded-[18px] border border-[#D8E6EB] bg-white">
+                      <div className="h-48 overflow-hidden rounded-[18px] border border-[#D8E6EB] bg-white" style={previewTextStyle}>
                         <img
                           src={previewImage.src}
                           alt={typeof previewImage.alt === 'string' ? previewImage.alt : ''}
-                          className="h-48 w-full"
+                          className="block h-full w-full"
                           style={{
                             objectFit: previewImagePresentation.objectFit,
                             objectPosition: previewImagePresentation.objectPosition,
@@ -2098,7 +2234,7 @@ function EditorModal({
                           typeof previewRecord.tone === 'string' && previewRecord.tone === 'solid'
                             ? 'border-[#0A3640] bg-[#0A3640] text-white'
                             : 'border-[#D8E6EB] bg-[#F8FCFD] text-[#0A3640]',
-                        )}>
+                        )} style={previewTextStyle}>
                           {typeof previewRecord.label === 'string' && previewRecord.label ? previewRecord.label : 'Botão'}
                         </div>
                         <p className="mt-4 text-sm leading-7 text-[#5F7077]">
@@ -2548,7 +2684,10 @@ export function EditableText({
   const styleEntryKey = `${entryKey}.__style`
   const styleValue = normalizeTextStyle(useEditableValue(styleEntryKey, {}, { pageKey: resolvedPageKey }))
   const inlineStyle = textStyleToCss(styleValue)
-  const content = inlineStyle ? <span style={inlineStyle}>{value}</span> : <>{value}</>
+  const renderedStyle = inlineStyle && hasBoxStyle(styleValue) && !inlineStyle.display
+    ? { ...inlineStyle, display: 'inline-block' }
+    : inlineStyle
+  const content = renderedStyle ? <span style={renderedStyle}>{value}</span> : <>{value}</>
 
   if (!editor?.isEditing || !scope) {
     return content
@@ -2640,9 +2779,12 @@ export function EditableImage({
   const editor = useContext(VisualEditorContext)
   const resolvedPageKey = pageKey ?? scope?.pageKey ?? 'global'
   const value = useEditableValue(entryKey, fallback, { pageKey: resolvedPageKey })
+  const styleEntryKey = `${entryKey}.__style`
+  const styleValue = normalizeTextStyle(useEditableValue(styleEntryKey, {}, { pageKey: resolvedPageKey }))
+  const content = cloneNodeWithStyle(children(value), textStyleToCss(styleValue))
 
   if (!editor?.isEditing || !scope) {
-    return <>{children(value)}</>
+    return <>{content}</>
   }
 
   return (
@@ -2655,10 +2797,12 @@ export function EditableImage({
         entryType: 'image',
         label,
         fallback: value,
+        styleEntryKey,
+        styleFallback: styleValue,
         reload: scope.reload,
       })}
     >
-      {children(value)}
+      {content}
     </EditableMarker>
   )
 }
@@ -2680,9 +2824,12 @@ export function EditableButton({
   const editor = useContext(VisualEditorContext)
   const resolvedPageKey = pageKey ?? scope?.pageKey ?? 'global'
   const value = useEditableValue(entryKey, fallback, { pageKey: resolvedPageKey })
+  const styleEntryKey = `${entryKey}.__style`
+  const styleValue = normalizeTextStyle(useEditableValue(styleEntryKey, {}, { pageKey: resolvedPageKey }))
+  const content = cloneNodeWithStyle(children(value), textStyleToCss(styleValue))
 
   if (!editor?.isEditing || !scope) {
-    return <>{children(value)}</>
+    return <>{content}</>
   }
 
   return (
@@ -2694,10 +2841,12 @@ export function EditableButton({
         entryType: 'button',
         label,
         fallback: value,
+        styleEntryKey,
+        styleFallback: styleValue,
         reload: scope.reload,
       })}
     >
-      {children(value)}
+      {content}
     </EditableMarker>
   )
 }
@@ -2719,9 +2868,12 @@ export function EditableLink({
   const editor = useContext(VisualEditorContext)
   const resolvedPageKey = pageKey ?? scope?.pageKey ?? 'global'
   const value = useEditableValue(entryKey, fallback, { pageKey: resolvedPageKey })
+  const styleEntryKey = `${entryKey}.__style`
+  const styleValue = normalizeTextStyle(useEditableValue(styleEntryKey, {}, { pageKey: resolvedPageKey }))
+  const content = cloneNodeWithStyle(children(value), textStyleToCss(styleValue))
 
   if (!editor?.isEditing || !scope) {
-    return <>{children(value)}</>
+    return <>{content}</>
   }
 
   return (
@@ -2733,10 +2885,12 @@ export function EditableLink({
         entryType: 'link',
         label,
         fallback: value,
+        styleEntryKey,
+        styleFallback: styleValue,
         reload: scope.reload,
       })}
     >
-      {children(value)}
+      {content}
     </EditableMarker>
   )
 }

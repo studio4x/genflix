@@ -71,11 +71,12 @@ export function GenflixCtaButton({
       ...props,
       className: cn(classes, children.props.className),
       style: {
+        ...props.style,
         ...children.props.style,
-        backgroundImage: customColors?.buttonBackgroundColor ? 'none' : children.props.style?.backgroundImage,
-        backgroundColor: customColors?.buttonBackgroundColor,
-        color: customColors?.buttonTextColor,
-        borderColor: customColors?.buttonBackgroundColor ?? children.props.style?.borderColor,
+        backgroundImage: customColors?.buttonBackgroundColor ? 'none' : props.style?.backgroundImage ?? children.props.style?.backgroundImage,
+        backgroundColor: customColors?.buttonBackgroundColor ?? props.style?.backgroundColor,
+        color: customColors?.buttonTextColor ?? props.style?.color,
+        borderColor: customColors?.buttonBackgroundColor ?? props.style?.borderColor ?? children.props.style?.borderColor,
       },
       children: content(children.props.children),
     })
