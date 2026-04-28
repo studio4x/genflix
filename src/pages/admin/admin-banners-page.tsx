@@ -63,6 +63,24 @@ function clampBannerHeight(value: number) {
   return Math.round(clamp(value, 320, 1200))
 }
 
+function formatBannerHeightInput(value: number) {
+  return Number.isFinite(value) ? String(Math.round(value)) : ''
+}
+
+function parseBannerHeightInput(value: string, fallback: number) {
+  const trimmed = value.trim()
+  if (trimmed === '') {
+    return fallback
+  }
+
+  const parsed = Number(trimmed)
+  if (!Number.isFinite(parsed)) {
+    return fallback
+  }
+
+  return clampBannerHeight(parsed)
+}
+
 function isLegacyPercentPosition(value: number) {
   return value >= 0 && value <= 100
 }
@@ -352,6 +370,8 @@ export function AdminBannersPage() {
   const stageRef = useRef<HTMLDivElement | null>(null)
   const dragStateRef = useRef<BannerDragState | null>(null)
   const [previewMode, setPreviewMode] = useState<'desktop' | 'mobile'>('desktop')
+  const [heightDesktopInput, setHeightDesktopInput] = useState('760')
+  const [heightMobileInput, setHeightMobileInput] = useState('560')
   const [expandedCards, setExpandedCards] = useState<Record<string, boolean>>({
     content: true,
     composition: true,
@@ -395,6 +415,17 @@ export function AdminBannersPage() {
   useEffect(() => {
     void loadBanners()
   }, [])
+
+  useEffect(() => {
+    if (!draft) {
+      setHeightDesktopInput('760')
+      setHeightMobileInput('560')
+      return
+    }
+
+    setHeightDesktopInput(formatBannerHeightInput(draft.heightDesktop))
+    setHeightMobileInput(formatBannerHeightInput(draft.heightMobile))
+  }, [draft?.id, draft?.heightDesktop, draft?.heightMobile])
 
   useEffect(() => {
     function handlePointerMove(event: PointerEvent) {
@@ -470,6 +501,27 @@ export function AdminBannersPage() {
 
   function setDraftField<K extends keyof SiteBanner>(field: K, value: SiteBanner[K]) {
     setDraft((current) => current ? { ...current, [field]: value } : current)
+  }
+
+  function commitBannerHeight(which: 'heightDesktop' | 'heightMobile', value: string) {
+    setDraft((current) => {
+      if (!current) {
+        return current
+      }
+
+      const fallback = which === 'heightDesktop' ? current.heightDesktop : current.heightMobile
+      const nextValue = parseBannerHeightInput(value, fallback)
+      if (which === 'heightDesktop') {
+        setHeightDesktopInput(formatBannerHeightInput(nextValue))
+      } else {
+        setHeightMobileInput(formatBannerHeightInput(nextValue))
+      }
+
+      return {
+        ...current,
+        [which]: nextValue,
+      }
+    })
   }
 
   function setLayoutItem(key: SiteBannerLayoutKey, updater: (item: SiteBannerLayoutItem) => SiteBannerLayoutItem) {
@@ -595,6 +647,9 @@ export function AdminBannersPage() {
       return
     }
 
+    const nextHeightDesktop = parseBannerHeightInput(heightDesktopInput, draft.heightDesktop)
+    const nextHeightMobile = parseBannerHeightInput(heightMobileInput, draft.heightMobile)
+
     if (!draft.title.trim()) {
       setError('O titulo do banner e obrigatorio.')
       return
@@ -616,8 +671,8 @@ export function AdminBannersPage() {
         themePreset: draft.themePreset,
         layoutDesktop: draft.layoutDesktop,
         layoutMobile: draft.layoutMobile,
-        heightDesktop: clampBannerHeight(draft.heightDesktop),
-        heightMobile: clampBannerHeight(draft.heightMobile),
+        heightDesktop: nextHeightDesktop,
+        heightMobile: nextHeightMobile,
         elementStyles: draft.elementStyles,
         primaryCta: draft.primaryCta,
         secondaryCta: draft.secondaryCta,
@@ -627,6 +682,8 @@ export function AdminBannersPage() {
 
       setBanners((current) => current.map((banner) => banner.id === updated.id ? updated : banner))
       setDraft(cloneBanner(updated))
+      setHeightDesktopInput(formatBannerHeightInput(updated.heightDesktop))
+      setHeightMobileInput(formatBannerHeightInput(updated.heightMobile))
       setMessage('Banner salvo com sucesso.')
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : 'Nao foi possivel salvar o banner.')
@@ -1108,24 +1165,38 @@ export function AdminBannersPage() {
                           <label className="grid gap-2">
                             <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Desktop (px)</span>
                             <input
-                              type="number"
+                              type="text"
+                              inputMode="numeric"
                               min={320}
                               max={1200}
                               step={1}
-                              value={draft.heightDesktop}
-                              onChange={(event) => setDraftField('heightDesktop', clampBannerHeight(Number(event.target.value) || 760))}
+                              value={heightDesktopInput}
+                              onChange={(event) => setHeightDesktopInput(event.target.value)}
+                              onBlur={() => commitBannerHeight('heightDesktop', heightDesktopInput)}
+                              onKeyDown={(event) => {
+                                if (event.key === 'Enter') {
+                                  event.currentTarget.blur()
+                                }
+                              }}
                               className="h-11 rounded-[16px] border border-[#D8E6EB] bg-white px-4 text-sm font-semibold text-[#15323b] outline-none"
                             />
                           </label>
                           <label className="grid gap-2">
                             <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Mobile (px)</span>
                             <input
-                              type="number"
+                              type="text"
+                              inputMode="numeric"
                               min={320}
                               max={1200}
                               step={1}
-                              value={draft.heightMobile}
-                              onChange={(event) => setDraftField('heightMobile', clampBannerHeight(Number(event.target.value) || 560))}
+                              value={heightMobileInput}
+                              onChange={(event) => setHeightMobileInput(event.target.value)}
+                              onBlur={() => commitBannerHeight('heightMobile', heightMobileInput)}
+                              onKeyDown={(event) => {
+                                if (event.key === 'Enter') {
+                                  event.currentTarget.blur()
+                                }
+                              }}
                               className="h-11 rounded-[16px] border border-[#D8E6EB] bg-white px-4 text-sm font-semibold text-[#15323b] outline-none"
                             />
                           </label>
