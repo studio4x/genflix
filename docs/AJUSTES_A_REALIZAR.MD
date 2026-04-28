@@ -26,7 +26,7 @@
 
 [OK] T7 - Criar padrão de botões no editor visual e permitir trocar o estilo dos botões existentes.
 
-[ ] T11 - Remover do editor visual os cards: Assistência editorial, Atalhos, Schema salvo e Conteúdo estruturado JSON.
+[OK] T11 - Remover do editor visual os cards: Assistência editorial, Atalhos, Schema salvo e Conteúdo estruturado JSON.
 
 [ ] T16 - Permitir recolher e expandir todos os elementos da página do editor visual.
 

@@ -13,7 +13,7 @@ import {
   type ReactNode,
 } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { CheckCircle2, Copy, Edit3, Image as ImageIcon, Keyboard, LayoutTemplate, MessageSquare, PanelBottomOpen, Plus, Redo2, RotateCcw, Save, Send, Settings, Sparkles, Undo2, Wand2, X } from 'lucide-react'
+import { CheckCircle2, Copy, Edit3, Image as ImageIcon, LayoutTemplate, MessageSquare, PanelBottomOpen, Plus, Redo2, RotateCcw, Save, Send, Settings, Sparkles, Undo2, Wand2, X } from 'lucide-react'
 
 import { useAuth } from '@/app/providers/auth-provider'
 import { GenflixCtaButton, normalizeGenflixCtaTone } from '@/components/public/genflix-cta-button'
@@ -25,7 +25,6 @@ import {
   fetchSiteContent,
   fetchSiteEditorWorkspace,
   fetchSiteEditorSettings,
-  requestSiteEditorAssist,
   saveSiteContentEntry,
   shouldIgnoreSiteEditor,
   upsertSiteEditorWorkspaceRecord,
@@ -1048,10 +1047,6 @@ function EditorModal({
   const [draftComment, setDraftComment] = useState('')
   const [workspaceState, setWorkspaceState] = useState<SiteEditorWorkspaceMap>({})
   const [isLoadingWorkspace, setIsLoadingWorkspace] = useState(false)
-  const [isRunningAssist, setIsRunningAssist] = useState(false)
-  const [assistNotes, setAssistNotes] = useState<string[]>([])
-  const [assistWarnings, setAssistWarnings] = useState<string[]>([])
-  const [assistProvider, setAssistProvider] = useState<'openai' | 'heuristic' | null>(null)
   const usesJsonEditor = ['list', 'json', 'link', 'button', 'image'].includes(editor.entryType)
   const usesRichTextToolbar = editor.entryType === 'rich_text'
   const isDirty = rawValue !== initialRawValue || JSON.stringify(initialTextStyle) !== JSON.stringify(textStyle)
@@ -1316,38 +1311,6 @@ function EditorModal({
       setMessage('Comentario compartilhado registrado.')
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Nao foi possivel registrar o comentario.')
-    }
-  }
-
-  async function handleAssist(action: 'rewrite' | 'summarize' | 'cta' | 'audit') {
-    setAssistNotes([])
-    setAssistWarnings([])
-    setAssistProvider(null)
-    setMessage(null)
-    setIsRunningAssist(true)
-
-    try {
-      const result = await requestSiteEditorAssist({
-        pageKey: editor.pageKey,
-        entryKey: editor.entryKey,
-        entryType: editor.entryType,
-        action,
-        content: rawValue,
-      })
-
-      setAssistNotes(result.notes)
-      setAssistWarnings(result.warnings)
-      setAssistProvider(result.provider)
-
-      if (action !== 'audit' && result.content.trim()) {
-        setRawValue(result.content)
-      }
-
-      setMessage(action === 'audit' ? 'Auditoria editorial concluida.' : 'Sugestao editorial aplicada ao rascunho atual.')
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Nao foi possivel gerar a sugestao editorial.')
-    } finally {
-      setIsRunningAssist(false)
     }
   }
 
@@ -2048,7 +2011,7 @@ function EditorModal({
               <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#D8E6EB] px-4 py-3">
                 <div>
                   <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#5F7077]">
-                    {usesJsonEditor ? 'Conteúdo estruturado JSON' : usesRichTextToolbar ? 'Editor rico' : 'Conteúdo'}
+                    {usesRichTextToolbar ? 'Editor rico' : 'Conteúdo'}
                   </p>
                   <p className="mt-1 text-sm font-semibold text-[#15323b]">
                     {usesJsonEditor
@@ -2330,95 +2293,6 @@ function EditorModal({
 
             <div className="rounded-[22px] border border-[#D8E6EB] bg-white p-4">
               <div className="flex items-center gap-2">
-                <Wand2 className="h-4 w-4 text-[#1398B7]" />
-                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#1398B7]">Assistencia editorial</p>
-              </div>
-              <div className="mt-4 grid gap-3">
-                <p className="text-sm font-semibold leading-6 text-[#5F7077]">
-                  Gere sugestoes para reescrita, resumo, CTA ou auditoria de clareza sem perder o bloco atual.
-                </p>
-                <div className="grid gap-2 sm:grid-cols-2">
-                  <button
-                    type="button"
-                    onClick={() => void handleAssist('rewrite')}
-                    disabled={isRunningAssist || !permissions.canEdit}
-                    className="inline-flex items-center justify-center gap-2 rounded-full border border-[#D8E6EB] px-4 py-2 text-xs font-black uppercase tracking-[0.14em] text-[#0A3640] hover:bg-[#F2F7F9] disabled:opacity-60"
-                  >
-                    <Sparkles className="h-3.5 w-3.5" />
-                    Reescrever
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => void handleAssist('summarize')}
-                    disabled={isRunningAssist || !permissions.canEdit}
-                    className="inline-flex items-center justify-center gap-2 rounded-full border border-[#D8E6EB] px-4 py-2 text-xs font-black uppercase tracking-[0.14em] text-[#0A3640] hover:bg-[#F2F7F9] disabled:opacity-60"
-                  >
-                    <Copy className="h-3.5 w-3.5" />
-                    Resumir
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => void handleAssist('cta')}
-                    disabled={isRunningAssist || !permissions.canEdit}
-                    className="inline-flex items-center justify-center gap-2 rounded-full border border-[#D8E6EB] px-4 py-2 text-xs font-black uppercase tracking-[0.14em] text-[#0A3640] hover:bg-[#F2F7F9] disabled:opacity-60"
-                  >
-                    <Send className="h-3.5 w-3.5" />
-                    Sugerir CTA
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => void handleAssist('audit')}
-                    disabled={isRunningAssist || !permissions.canEdit}
-                    className="inline-flex items-center justify-center gap-2 rounded-full border border-[#D8E6EB] px-4 py-2 text-xs font-black uppercase tracking-[0.14em] text-[#0A3640] hover:bg-[#F2F7F9] disabled:opacity-60"
-                  >
-                    <CheckCircle2 className="h-3.5 w-3.5" />
-                    Auditar texto
-                  </button>
-                </div>
-                <div className="rounded-[16px] border border-[#D8E6EB] bg-[#F8FCFD] p-3 text-xs font-semibold leading-5 text-[#5F7077]">
-                  {isRunningAssist
-                    ? 'Gerando sugestao editorial...'
-                    : assistProvider
-                      ? `Ultima sugestao processada via ${assistProvider === 'openai' ? 'OpenAI' : 'heuristica local'}.`
-                      : 'Use a assistencia para refinar copy, reduzir verbosidade e revisar clareza.'}
-                </div>
-                {assistNotes.length > 0 ? (
-                  <div className="grid gap-2">
-                    {assistNotes.map((note) => (
-                      <div key={note} className="rounded-[14px] border border-[#D8E6EB] bg-white px-3 py-2 text-xs font-semibold leading-5 text-[#15323b]">
-                        {note}
-                      </div>
-                    ))}
-                  </div>
-                ) : null}
-                {assistWarnings.length > 0 ? (
-                  <div className="grid gap-2">
-                    {assistWarnings.map((warning) => (
-                      <div key={warning} className="rounded-[14px] border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold leading-5 text-amber-800">
-                        {warning}
-                      </div>
-                    ))}
-                  </div>
-                ) : null}
-              </div>
-            </div>
-
-            <div className="rounded-[22px] border border-[#D8E6EB] bg-white p-4">
-              <div className="flex items-center gap-2">
-                <Keyboard className="h-4 w-4 text-[#1398B7]" />
-                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#1398B7]">Atalhos</p>
-              </div>
-              <div className="mt-4 grid gap-2 text-sm font-semibold text-[#15323b]">
-                <p><span className="font-black">Ctrl/Cmd + S</span> publica o conteúdo atual.</p>
-                <p><span className="font-black">Esc</span> fecha o modal.</p>
-                <p><span className="font-black">Desfazer/Refazer</span> navega entre snapshots da sessão atual.</p>
-                <p><span className="font-black">Restaurar</span> volta ao valor carregado antes da edição atual.</p>
-                <p><span className="font-black">Listagens</span> agora podem ser reordenadas e reorganizadas visualmente.</p>
-              </div>
-            </div>
-
-            <div className="rounded-[22px] border border-[#D8E6EB] bg-white p-4">
-              <div className="flex items-center gap-2">
                 <CheckCircle2 className="h-4 w-4 text-[#1398B7]" />
                 <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#1398B7]">Fluxo de publicação</p>
               </div>
@@ -2520,14 +2394,6 @@ function EditorModal({
               </div>
             </div>
 
-            {editor.schema ? (
-              <div className="rounded-[22px] border border-[#D8E6EB] bg-white p-4">
-                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#1398B7]">Schema salvo</p>
-                <pre className="mt-3 overflow-auto rounded-[16px] bg-[#F8FCFD] p-4 text-xs leading-5 text-[#15323b]">
-                  {JSON.stringify(editor.schema, null, 2)}
-                </pre>
-              </div>
-            ) : null}
           </aside>
         </div>
         </div>
