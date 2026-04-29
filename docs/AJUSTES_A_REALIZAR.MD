@@ -64,7 +64,7 @@
 
 [OK] T19 - Permitir  edição da coluna de mídias sociais do rodapé no editor visual.
 
-[ ] T20 - No rodapé, exibir ícones sociais na vertical, com ícone no início da linha e texto depois.
+[OK] T20 - No rodapé, exibir ícones sociais na vertical, com ícone no início da linha e texto depois.
 
 ---
 
