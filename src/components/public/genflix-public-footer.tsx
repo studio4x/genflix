@@ -1,3 +1,4 @@
+import { MessageCircleMore } from 'lucide-react'
 import { Link } from 'react-router-dom'
 
 import { AppVersion } from '@/components/layout/AppVersion'
@@ -38,6 +39,22 @@ type NormalizedFooterItem = NonNullable<ReturnType<typeof normalizeFooterItem>>
 
 function isVisibleFooterItem(item: ReturnType<typeof normalizeFooterItem>): item is NormalizedFooterItem {
   return item !== null && item.isHidden !== true
+}
+
+const footerSocialLinksFallback = genflixSocialLinks
+  .filter((item) => item.label !== 'TikTok' && item.label !== 'YouTube')
+  .map((item) => ({
+    id: item.label,
+    label: item.label,
+    href: item.href,
+  }))
+
+const footerSocialIconMap = new Map(
+  genflixSocialLinks.map((item) => [item.label.trim().toLowerCase(), item.icon] as const),
+)
+
+function getFooterSocialIcon(label: string) {
+  return footerSocialIconMap.get(label.trim().toLowerCase()) ?? MessageCircleMore
 }
 
 function FooterNavLink({
@@ -138,6 +155,7 @@ export function GenflixPublicFooter({
   id?: string
 }) {
   const footerColumns = useEditableValue('global.footer.columns', footerColumnsFallback, { pageKey: 'global' })
+  const footerSocialLinks = useEditableValue('global.footer.socialLinks', footerSocialLinksFallback, { pageKey: 'global' })
 
   return (
     <footer id={id} className="bg-[#0A3640] text-white">
@@ -179,29 +197,40 @@ export function GenflixPublicFooter({
                 })}
               </EditableList>
 
-              <div>
-                <h3 className="text-[11px] font-black uppercase tracking-[0.18em] text-white/92">
-                  Mídias sociais
-                </h3>
-                <p className="mt-4 text-sm text-white/72">Nos siga em:</p>
-                <div className="mt-4 flex items-center gap-4">
-                  {genflixSocialLinks.filter((item) => item.label !== 'TikTok' && item.label !== 'YouTube').map((item) => {
-                    const Icon = item.icon
-                    return (
-                      <a
-                        key={item.label}
-                        href={item.href}
-                        target="_blank"
-                        rel="noreferrer"
-                        aria-label={item.label}
-                        className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/14 bg-white/6 text-white/80 transition-colors hover:bg-white/10 hover:text-white"
-                      >
-                        <Icon className="h-4 w-4" />
-                      </a>
-                    )
-                  })}
-                </div>
-              </div>
+              <EditableList
+                entryKey="global.footer.socialLinks"
+                fallback={footerSocialLinks}
+                label="Mídias sociais"
+                pageKey="global"
+              >
+                {(items) => (
+                  <div>
+                    <h3 className="text-[11px] font-black uppercase tracking-[0.18em] text-white/92">
+                      Mídias sociais
+                    </h3>
+                    <p className="mt-4 text-sm text-white/72">Nos siga em:</p>
+                    <div className="mt-4 flex items-center gap-4">
+                      {items.filter(isEditableItemVisible).map((item) => {
+                        const Icon = getFooterSocialIcon(item.label ?? item.title ?? '')
+                        const label = item.label ?? item.title ?? 'Rede social'
+
+                        return (
+                          <a
+                            key={item.id}
+                            href={item.href ?? '#'}
+                            target="_blank"
+                            rel="noreferrer"
+                            aria-label={label}
+                            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/14 bg-white/6 text-white/80 transition-colors hover:bg-white/10 hover:text-white"
+                          >
+                            <Icon className="h-4 w-4" />
+                          </a>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )}
+              </EditableList>
             </div>
           </div>
 
