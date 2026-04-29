@@ -85,6 +85,38 @@ function HeaderAppearanceControl({
   )
 }
 
+function resolveHexColorLuminance(color: string) {
+  const normalized = color.trim().replace('#', '')
+  const hex = normalized.length === 3
+    ? normalized.split('').map((char) => `${char}${char}`).join('')
+    : normalized
+
+  if (!/^[0-9a-fA-F]{6}$/.test(hex)) {
+    return null
+  }
+
+  const red = parseInt(hex.slice(0, 2), 16)
+  const green = parseInt(hex.slice(2, 4), 16)
+  const blue = parseInt(hex.slice(4, 6), 16)
+
+  return (0.299 * red + 0.587 * green + 0.114 * blue) / 255
+}
+
+function resolveLogoTheme(backgroundColor?: string, useHomeTheme = false): 'light' | 'dark' {
+  if (useHomeTheme) {
+    return 'light'
+  }
+
+  if (typeof backgroundColor === 'string') {
+    const luminance = resolveHexColorLuminance(backgroundColor)
+    if (typeof luminance === 'number') {
+      return luminance < 0.55 ? 'light' : 'dark'
+    }
+  }
+
+  return 'dark'
+}
+
 export function GenflixPublicHeader({
   currentPage,
   navLinks,
@@ -118,6 +150,7 @@ export function GenflixPublicHeader({
     viewport,
   )
   const useHomeTheme = isHome && pageAppearanceRecord.scope !== 'global'
+  const logoTheme = resolveLogoTheme(currentScopeAppearance.pageBackgroundColor, useHomeTheme)
   const ctaPath = user ? getDashboardPathForRoles(roles) : '/login'
   const ctaLabel = useEditableValue(
     user ? 'global.header.cta.authenticated.label' : 'global.header.cta.anonymous.label',
@@ -232,7 +265,7 @@ export function GenflixPublicHeader({
         <header className="relative">
           <div className="flex items-center justify-between gap-4" style={headerChromeStyle}>
             <Link to="/" aria-label="Ir para a home da GenFlix" className="shrink-0">
-              <GenflixLogo theme={isHome ? 'light' : 'dark'} className="origin-left" style={logoStyle} />
+              <GenflixLogo theme={logoTheme} className="origin-left" style={logoStyle} />
             </Link>
 
             <nav className="hidden items-center gap-8 xl:flex">

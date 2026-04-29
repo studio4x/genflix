@@ -595,6 +595,30 @@ function sanitizeRichText(rawValue: string) {
     .replace(/\son[a-z]+='[^']*'/gi, '')
 }
 
+function toPixelNumberInputValue(value: unknown, fallback: string) {
+  const rawValue = typeof value === 'string' ? value : fallback
+  const normalized = normalizeCssLengthValue(rawValue, fallback) ?? fallback
+  const match = normalized.match(/^(-?\d+(?:\.\d+)?)px$/i)
+  if (match) {
+    return match[1]
+  }
+
+  return normalized
+}
+
+function toPixelCssValue(rawValue: string, fallback: string) {
+  const trimmed = rawValue.trim()
+  if (trimmed === '') {
+    return fallback
+  }
+
+  if (/^-?\d+(\.\d+)?$/.test(trimmed)) {
+    return `${trimmed}px`
+  }
+
+  return normalizeCssLengthValue(trimmed, fallback) ?? fallback
+}
+
 function parseEditorValue(entryType: SiteContentEntryType, rawValue: string) {
   if (entryType === 'list' || entryType === 'json' || entryType === 'button' || entryType === 'link' || entryType === 'image') {
     return JSON.parse(rawValue) as unknown
@@ -2081,9 +2105,14 @@ function EditorModal({
                         <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Altura do header</span>
                         <div className="flex items-center gap-2">
                           <input
-                            value={appearancePreview.headerHeight ?? defaultSiteAppearance.headerHeight}
-                            onChange={(event) => updateAppearanceDraft(setAppearanceVariantField(cloneAppearanceDraft(appearanceDraft), previewViewport, 'headerHeight', event.target.value))}
-                            placeholder="72px"
+                            value={toPixelNumberInputValue(appearancePreview.headerHeight, defaultSiteAppearance.headerHeight ?? '72px')}
+                            onChange={(event) => updateAppearanceDraft(setAppearanceVariantField(
+                              cloneAppearanceDraft(appearanceDraft),
+                              previewViewport,
+                              'headerHeight',
+                              toPixelCssValue(event.target.value, defaultSiteAppearance.headerHeight ?? '72px'),
+                            ))}
+                            placeholder="72"
                             className="h-11 flex-1 rounded-[14px] border border-[#D8E6EB] bg-white px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]"
                           />
                           <span className="shrink-0 text-[10px] font-black uppercase tracking-[0.14em] text-[#8A9AA1]">px</span>
@@ -2132,9 +2161,14 @@ function EditorModal({
                         <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Tamanho da fonte do menu</span>
                         <div className="flex items-center gap-2">
                           <input
-                            value={appearancePreview.menuFontSize ?? defaultSiteAppearance.menuFontSize}
-                            onChange={(event) => updateAppearanceDraft(setAppearanceVariantField(cloneAppearanceDraft(appearanceDraft), previewViewport, 'menuFontSize', event.target.value))}
-                            placeholder="15px"
+                            value={toPixelNumberInputValue(appearancePreview.menuFontSize, defaultSiteAppearance.menuFontSize ?? '15px')}
+                            onChange={(event) => updateAppearanceDraft(setAppearanceVariantField(
+                              cloneAppearanceDraft(appearanceDraft),
+                              previewViewport,
+                              'menuFontSize',
+                              toPixelCssValue(event.target.value, defaultSiteAppearance.menuFontSize ?? '15px'),
+                            ))}
+                            placeholder="15"
                             className="h-11 flex-1 rounded-[14px] border border-[#D8E6EB] bg-white px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]"
                           />
                           <span className="shrink-0 text-[10px] font-black uppercase tracking-[0.14em] text-[#8A9AA1]">px</span>
