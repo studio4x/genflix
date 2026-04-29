@@ -1,6 +1,7 @@
 import { spawnSync } from 'node:child_process'
-import { existsSync, readFileSync } from 'node:fs'
+import { existsSync, mkdtempSync, cpSync, rmSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { tmpdir } from 'node:os'
 const npxCommand = process.platform === 'win32' ? 'npx.cmd' : 'npx'
 const isWindows = process.platform === 'win32'
 const vercelApiBase = 'https://api.vercel.com'
@@ -195,37 +196,49 @@ async function main() {
   })
 
   process.stdout.write(`Publicando output prebuilt em producao na Vercel pelo projeto canonico (${vercelScope})...\n`)
-  const deployResult = run(npxCommand, withVercelAuthArgs(['vercel', 'deploy', '--prebuilt', '--prod', '--yes']), {
-    captureOutput: true,
-  })
+  const tempWorkspace = mkdtempSync(join(tmpdir(), 'genflix-vercel-'))
 
-  if (deployResult.status !== 0) {
+  try {
+    const tempOutputDir = join(tempWorkspace, '.vercel', 'output')
+    cpSync(join(process.cwd(), '.vercel', 'output'), tempOutputDir, { recursive: true })
+
+    const deployResult = run(npxCommand, withVercelAuthArgs(['vercel', 'deploy', '--prebuilt', '--prod', '--yes']), {
+      captureOutput: true,
+      cwd: tempWorkspace,
+    })
+
+    if (deployResult.status !== 0) {
+      process.stdout.write(deployResult.stdout ?? '')
+      process.stderr.write(deployResult.stderr ?? '')
+      process.exit(deployResult.status ?? 1)
+    }
+
     process.stdout.write(deployResult.stdout ?? '')
     process.stderr.write(deployResult.stderr ?? '')
-    process.exit(deployResult.status ?? 1)
+
+    const deployment = await waitForDeploymentBySha(headSha)
+    const deploymentUrl = `https://${deployment.url}`
+
+    if (!canonicalDomain) {
+      throw new Error('APP_PUBLIC_URL nao configurado; nao foi possivel validar alias canonico.')
+    }
+
+    process.stdout.write(`Atualizando alias canonico ${canonicalDomain} -> ${deploymentUrl}\n`)
+    run(npxCommand, withVercelAuthArgs(['vercel', 'alias', 'set', deploymentUrl, canonicalDomain]), {
+      cwd: tempWorkspace,
+    })
+
+    await ensureAliasPointsTo(deploymentUrl, canonicalDomain)
+
+    const currentDeployment = await getLatestProductionDeployment()
+    if (!currentDeployment || currentDeployment.meta?.githubCommitSha !== headSha || currentDeployment.readyState !== 'READY') {
+      throw new Error(`Falha ao validar deployment atual. Esperado SHA ${headSha}, encontrado ${currentDeployment?.meta?.githubCommitSha ?? 'desconhecido'}.`)
+    }
+
+    process.stdout.write(`Deploy confirmado para ${deploymentUrl} com alias ${canonicalDomain}\n`)
+  } finally {
+    rmSync(tempWorkspace, { recursive: true, force: true })
   }
-
-  process.stdout.write(deployResult.stdout ?? '')
-  process.stderr.write(deployResult.stderr ?? '')
-
-  const deployment = await waitForDeploymentBySha(headSha)
-  const deploymentUrl = `https://${deployment.url}`
-
-  if (!canonicalDomain) {
-    throw new Error('APP_PUBLIC_URL nao configurado; nao foi possivel validar alias canonico.')
-  }
-
-  process.stdout.write(`Atualizando alias canonico ${canonicalDomain} -> ${deploymentUrl}\n`)
-  run(npxCommand, withVercelAuthArgs(['vercel', 'alias', 'set', deploymentUrl, canonicalDomain]))
-
-  await ensureAliasPointsTo(deploymentUrl, canonicalDomain)
-
-  const currentDeployment = await getLatestProductionDeployment()
-  if (!currentDeployment || currentDeployment.meta?.githubCommitSha !== headSha || currentDeployment.readyState !== 'READY') {
-    throw new Error(`Falha ao validar deployment atual. Esperado SHA ${headSha}, encontrado ${currentDeployment?.meta?.githubCommitSha ?? 'desconhecido'}.`)
-  }
-
-  process.stdout.write(`Deploy confirmado para ${deploymentUrl} com alias ${canonicalDomain}\n`)
 }
 
 main().catch((error) => {
