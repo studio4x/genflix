@@ -3596,6 +3596,9 @@ export function EditableButton({
   const styleEntryKey = `${entryKey}.__style`
   const styleValue = normalizeTextStyle(useEditableValue(styleEntryKey, {}, { pageKey: resolvedPageKey }))
   const content = cloneNodeWithStyle(children(value), textStyleToCss(styleValue))
+  const interactiveContent = editor?.isEditing
+    ? cloneNodeWithStyle(content, { pointerEvents: 'none' })
+    : content
 
   if (!editor?.isEditing || !scope) {
     return <>{content}</>
@@ -3615,7 +3618,7 @@ export function EditableButton({
         reload: scope.reload,
       })}
     >
-      {content}
+      {interactiveContent}
     </EditableMarker>
   )
 }
