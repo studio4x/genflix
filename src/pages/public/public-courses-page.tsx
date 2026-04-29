@@ -21,7 +21,7 @@ import {
   genflixStudyFeatureCardsSchema,
   resolveStudyFeatureIconKey,
 } from '@/features/public/genflix-study-feature-editor'
-import { EditableList, EditableText, isEditableItemVisible, useEditableValue } from '@/features/site-editor/visual-editor'
+import { EditableButton, EditableList, EditableText, isEditableItemVisible, useEditableValue } from '@/features/site-editor/visual-editor'
 import { renderSiteIconVisual } from '@/features/site-editor/site-icons'
 import { cn } from '@/lib/utils'
 
@@ -257,11 +257,34 @@ export function PublicCoursesPage() {
           </EditableList>
 
           <div className="mt-10 flex justify-center">
-            <GenflixCtaButton asChild className="px-5 py-3">
-              <Link to="/login">
-                <EditableText entryKey="courses.features.cta" fallback="Ver todos os recursos" label="CTA de recursos em cursos" />
-              </Link>
-            </GenflixCtaButton>
+            <EditableButton
+              entryKey="courses.features.cta"
+              fallback={{
+                label: 'Ver todos os recursos',
+                href: '/login',
+                isInternal: true,
+                tone: 'solid',
+              }}
+              label="CTA de recursos em cursos"
+            >
+              {(buttonValue) => buttonValue.isHidden === true ? null : (
+                <GenflixCtaButton asChild className="px-5 py-3">
+                  {buttonValue.isInternal === true ? (
+                    <Link to={typeof buttonValue.href === 'string' ? buttonValue.href : '/login'}>
+                      {typeof buttonValue.label === 'string' ? buttonValue.label : 'Ver todos os recursos'}
+                    </Link>
+                  ) : (
+                    <a
+                      href={typeof buttonValue.href === 'string' ? buttonValue.href : '/login'}
+                      target={buttonValue.openInNewTab === true ? '_blank' : undefined}
+                      rel={buttonValue.openInNewTab === true ? 'noreferrer' : undefined}
+                    >
+                      {typeof buttonValue.label === 'string' ? buttonValue.label : 'Ver todos os recursos'}
+                    </a>
+                  )}
+                </GenflixCtaButton>
+              )}
+            </EditableButton>
           </div>
         </div>
       </section>

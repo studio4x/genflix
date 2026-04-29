@@ -17,7 +17,7 @@ import {
   type SiteAppearanceTheme,
   type SiteAppearanceViewport,
 } from '@/features/site-editor/site-appearance'
-import { useSiteContentScope, useVisualEditorState, EditableList, EditableText, isEditableItemVisible, useEditableValue } from '@/features/site-editor/visual-editor'
+import { useSiteContentScope, useVisualEditorState, EditableButton, EditableList, isEditableItemVisible, useEditableValue } from '@/features/site-editor/visual-editor'
 import { cn } from '@/lib/utils'
 
 function HeaderNavLink({
@@ -297,16 +297,35 @@ export function GenflixPublicHeader({
             </nav>
 
             <div className="flex items-center gap-3">
-              <GenflixCtaButton asChild tone="warm" className="hidden h-11 px-5 sm:inline-flex">
-                <Link to={ctaPath}>
-                  <EditableText
-                    entryKey={user ? 'global.header.cta.authenticated.label' : 'global.header.cta.anonymous.label'}
-                    fallback={ctaLabel}
-                    label="Botao do cabecalho"
-                    pageKey="global"
-                  />
-                </Link>
-              </GenflixCtaButton>
+              <EditableButton
+                entryKey={user ? 'global.header.cta.authenticated.label' : 'global.header.cta.anonymous.label'}
+                fallback={{
+                  label: ctaLabel,
+                  href: ctaPath,
+                  isInternal: ctaPath.startsWith('/'),
+                  tone: 'warm',
+                }}
+                label="Botao do cabecalho"
+                pageKey="global"
+              >
+                {(buttonValue) => buttonValue.isHidden === true ? null : (
+                  <GenflixCtaButton asChild tone="warm" className="hidden h-11 px-5 sm:inline-flex">
+                    {buttonValue.isInternal === true ? (
+                      <Link to={typeof buttonValue.href === 'string' ? buttonValue.href : ctaPath}>
+                        {typeof buttonValue.label === 'string' ? buttonValue.label : ctaLabel}
+                      </Link>
+                    ) : (
+                      <a
+                        href={typeof buttonValue.href === 'string' ? buttonValue.href : ctaPath}
+                        target={buttonValue.openInNewTab === true ? '_blank' : undefined}
+                        rel={buttonValue.openInNewTab === true ? 'noreferrer' : undefined}
+                      >
+                        {typeof buttonValue.label === 'string' ? buttonValue.label : ctaLabel}
+                      </a>
+                    )}
+                  </GenflixCtaButton>
+                )}
+              </EditableButton>
 
               {editor?.isEditing && scope ? (
                 <div className="hidden items-center gap-2 xl:flex">
@@ -382,16 +401,35 @@ export function GenflixPublicHeader({
               </nav>
 
               <div className={cn('mt-4 border-t pt-4 sm:hidden', useHomeTheme ? 'border-white/10' : 'border-[#D8E6EB]')}>
-                <GenflixCtaButton asChild tone="warm" className="h-11 w-full px-5">
-                  <Link to={ctaPath}>
-                    <EditableText
-                      entryKey={user ? 'global.header.cta.authenticated.label' : 'global.header.cta.anonymous.label'}
-                      fallback={ctaLabel}
-                      label="Botao do cabecalho mobile"
-                      pageKey="global"
-                    />
-                  </Link>
-                </GenflixCtaButton>
+                <EditableButton
+                  entryKey={user ? 'global.header.cta.authenticated.label' : 'global.header.cta.anonymous.label'}
+                  fallback={{
+                    label: ctaLabel,
+                    href: ctaPath,
+                    isInternal: ctaPath.startsWith('/'),
+                    tone: 'warm',
+                  }}
+                  label="Botao do cabecalho mobile"
+                  pageKey="global"
+                >
+                  {(buttonValue) => buttonValue.isHidden === true ? null : (
+                    <GenflixCtaButton asChild tone="warm" className="h-11 w-full px-5">
+                      {buttonValue.isInternal === true ? (
+                        <Link to={typeof buttonValue.href === 'string' ? buttonValue.href : ctaPath}>
+                          {typeof buttonValue.label === 'string' ? buttonValue.label : ctaLabel}
+                        </Link>
+                      ) : (
+                        <a
+                          href={typeof buttonValue.href === 'string' ? buttonValue.href : ctaPath}
+                          target={buttonValue.openInNewTab === true ? '_blank' : undefined}
+                          rel={buttonValue.openInNewTab === true ? 'noreferrer' : undefined}
+                        >
+                          {typeof buttonValue.label === 'string' ? buttonValue.label : ctaLabel}
+                        </a>
+                      )}
+                    </GenflixCtaButton>
+                  )}
+                </EditableButton>
               </div>
             </div>
           ) : null}
