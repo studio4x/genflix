@@ -7,7 +7,7 @@ export const MOBILE_BANNER_DESIGN_WIDTH = 420
 
 export type SiteBannerLocationKey = string
 
-export type SiteBannerThemePreset = 'light-strong' | 'light-soft' | 'dark-soft'
+export type SiteBannerThemePreset = 'light-strong' | 'light-soft' | 'dark-soft' | 'no-overlay'
 export type SiteBannerTonePreset = 'solid' | 'warm' | 'surface'
 export type SiteBannerLayoutKey = 'title' | 'subtitle' | 'body' | 'primaryCta' | 'secondaryCta'
 export type SiteBannerColorKey = SiteBannerLayoutKey
@@ -159,6 +159,11 @@ export const bannerThemePresetOptions: Array<{
     value: 'dark-soft',
     label: 'Escuro sobre imagem clara',
     description: 'Heading escuro com overlay claro para fotos mais luminosas.',
+  },
+  {
+    value: 'no-overlay',
+    label: 'Sem overlay',
+    description: 'Exibe a imagem original sem camada de sobreposicao.',
   },
 ]
 

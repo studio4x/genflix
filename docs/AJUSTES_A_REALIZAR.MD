@@ -30,7 +30,7 @@
 
 [OK] T16 - Permitir recolher e expandir todos os elementos da página do editor visual.
 
-[ ] T16.5 - No card "conteudo e imagem", insira no campo "preset visual" a opção de não inserir overlay.
+[OK] T16.5 - No card "conteudo e imagem", insira no campo "preset visual" a opção de não inserir overlay.
 
 ---
 

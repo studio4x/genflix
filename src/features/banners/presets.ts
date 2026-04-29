@@ -40,4 +40,14 @@ export const bannerThemeStyles: Record<SiteBannerThemePreset, {
     textColor: '#32515A',
     bodyColor: '#58727A',
   },
+  'no-overlay': {
+    overlay: '',
+    titleClass: 'text-white drop-shadow-[0_4px_16px_rgba(0,0,0,0.38)]',
+    textClass: 'text-white/90 drop-shadow-[0_2px_12px_rgba(0,0,0,0.32)]',
+    bodyClass: 'text-white/82 drop-shadow-[0_2px_12px_rgba(0,0,0,0.28)]',
+    previewSurfaceClass: 'text-white',
+    titleColor: '#FFFFFF',
+    textColor: '#F3FBFD',
+    bodyColor: '#E1F1F5',
+  },
 }

@@ -1042,6 +1042,9 @@ export function AdminBannersPage() {
   }
 
   const theme = draft ? bannerThemeStyles[draft.themePreset] : null
+  const getBackgroundImage = (overlay: string | undefined, backgroundUrl: string) => (
+    overlay ? `${overlay}, url(${backgroundUrl})` : `url(${backgroundUrl})`
+  )
   const canvasTitle = draft?.title.trim() || 'Titulo do banner'
   const canvasSubtitle = draft?.subtitle.trim() || 'Subtitulo opcional'
   const canvasBody = draft?.body.trim() || 'Texto complementar opcional'
@@ -1309,7 +1312,7 @@ export function AdminBannersPage() {
                       <div
                         className="absolute inset-0"
                         style={{
-                          backgroundImage: `${theme?.overlay ?? ''}, url(${getBannerBackgroundUrl(draft, isMobilePreview ? 'mobile' : 'desktop')})`,
+                          backgroundImage: getBackgroundImage(theme?.overlay, getBannerBackgroundUrl(draft, isMobilePreview ? 'mobile' : 'desktop')),
                           backgroundPosition: 'center',
                           backgroundSize: 'cover',
                         }}

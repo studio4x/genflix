@@ -345,6 +345,9 @@ export function HomeBannerCarousel({
   const activeSlide = slides[activeIndex] ?? slides[0] ?? null
   const desktopScaleFactor = contentWidth > 0 ? contentWidth / DESKTOP_BANNER_DESIGN_WIDTH : 1
   const mobileScaleFactor = contentWidth > 0 ? contentWidth / MOBILE_BANNER_DESIGN_WIDTH : 1
+  const getBackgroundImage = (overlay: string, backgroundUrl: string) => (
+    overlay ? `${overlay}, url(${backgroundUrl})` : `url(${backgroundUrl})`
+  )
 
   function goToSlide(index: number) {
     setActiveIndex(index)
@@ -424,7 +427,7 @@ export function HomeBannerCarousel({
               <div
                 className="absolute inset-0 hidden lg:block"
                 style={{
-                  backgroundImage: `${theme.overlay}, url(${desktopBackgroundUrl})`,
+                  backgroundImage: getBackgroundImage(theme.overlay, desktopBackgroundUrl),
                   backgroundPosition: 'center',
                   backgroundSize: 'cover',
                 }}
@@ -432,7 +435,7 @@ export function HomeBannerCarousel({
               <div
                 className="absolute inset-0 lg:hidden"
                 style={{
-                  backgroundImage: `${theme.overlay}, url(${mobileBackgroundUrl})`,
+                  backgroundImage: getBackgroundImage(theme.overlay, mobileBackgroundUrl),
                   backgroundPosition: 'center',
                   backgroundSize: 'cover',
                 }}
