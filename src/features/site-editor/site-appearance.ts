@@ -52,6 +52,27 @@ function isStringRecord(value: unknown): value is Record<string, unknown> {
   return !!value && typeof value === 'object' && !Array.isArray(value)
 }
 
+export function normalizeCssLengthValue(value: unknown, fallback?: string) {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return `${value}px`
+  }
+
+  if (typeof value === 'string') {
+    const trimmed = value.trim()
+    if (trimmed === '') {
+      return fallback
+    }
+
+    if (/^-?\d+(\.\d+)?$/.test(trimmed)) {
+      return `${trimmed}px`
+    }
+
+    return trimmed
+  }
+
+  return fallback
+}
+
 function normalizeSiteAppearanceFields(value: unknown, fallback: SiteAppearanceFields = defaultSiteAppearance): SiteAppearanceFields {
   const source = isStringRecord(value) ? value : {}
 
@@ -83,12 +104,12 @@ function normalizeSiteAppearanceFields(value: unknown, fallback: SiteAppearanceF
 
   return {
     logoScale: readNumber('logoScale'),
-    headerHeight: readString('headerHeight'),
+    headerHeight: normalizeCssLengthValue(source.headerHeight, normalizeCssLengthValue(fallback.headerHeight, defaultSiteAppearance.headerHeight)),
     menuColor: readString('menuColor'),
     menuActiveColor: readString('menuActiveColor'),
     menuHoverColor: readString('menuHoverColor'),
     menuFontFamily: readString('menuFontFamily'),
-    menuFontSize: readString('menuFontSize'),
+    menuFontSize: normalizeCssLengthValue(source.menuFontSize, normalizeCssLengthValue(fallback.menuFontSize, defaultSiteAppearance.menuFontSize)),
     menuFontWeight: readString('menuFontWeight'),
     menuLetterSpacing: readString('menuLetterSpacing'),
     pageBackgroundColor: readString('pageBackgroundColor'),

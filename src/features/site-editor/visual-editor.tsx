@@ -44,6 +44,7 @@ import { renderSiteIcon, renderSiteIconVisual, SITE_ICON_OPTIONS } from '@/featu
 import {
   buildSiteAppearanceValue,
   defaultSiteAppearance,
+  normalizeCssLengthValue,
   normalizeSiteAppearance,
   resolveSiteAppearanceVariant,
   type NormalizedSiteAppearance,
@@ -243,8 +244,6 @@ function normalizeTextStyle(value: unknown): TextStyleValue {
     'minHeight',
     'maxWidth',
     'maxHeight',
-    'paddingInline',
-    'paddingBlock',
     'borderRadius',
     'fontFamily',
     'fontSize',
@@ -258,7 +257,11 @@ function normalizeTextStyle(value: unknown): TextStyleValue {
   for (const field of fields) {
     const currentValue = value[field]
     if (typeof currentValue === 'string' && currentValue.trim() !== '') {
-      nextStyle[field] = currentValue
+      if (['minWidth', 'minHeight', 'maxWidth', 'maxHeight', 'borderRadius', 'fontSize'].includes(field)) {
+        nextStyle[field] = normalizeCssLengthValue(currentValue, currentValue)
+      } else {
+        nextStyle[field] = currentValue
+      }
     }
   }
 
@@ -2076,12 +2079,15 @@ function EditorModal({
                       </label>
                       <label className="grid gap-1.5">
                         <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Altura do header</span>
-                        <input
-                          value={appearancePreview.headerHeight ?? defaultSiteAppearance.headerHeight}
-                          onChange={(event) => updateAppearanceDraft(setAppearanceVariantField(cloneAppearanceDraft(appearanceDraft), previewViewport, 'headerHeight', event.target.value))}
-                          placeholder="72px"
-                          className="h-11 rounded-[14px] border border-[#D8E6EB] bg-white px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]"
-                        />
+                        <div className="flex items-center gap-2">
+                          <input
+                            value={appearancePreview.headerHeight ?? defaultSiteAppearance.headerHeight}
+                            onChange={(event) => updateAppearanceDraft(setAppearanceVariantField(cloneAppearanceDraft(appearanceDraft), previewViewport, 'headerHeight', event.target.value))}
+                            placeholder="72px"
+                            className="h-11 flex-1 rounded-[14px] border border-[#D8E6EB] bg-white px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]"
+                          />
+                          <span className="shrink-0 text-[10px] font-black uppercase tracking-[0.14em] text-[#8A9AA1]">px</span>
+                        </div>
                       </label>
                     </div>
 
@@ -2124,12 +2130,15 @@ function EditorModal({
                       </label>
                       <label className="grid gap-1.5">
                         <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Tamanho da fonte do menu</span>
-                        <input
-                          value={appearancePreview.menuFontSize ?? defaultSiteAppearance.menuFontSize}
-                          onChange={(event) => updateAppearanceDraft(setAppearanceVariantField(cloneAppearanceDraft(appearanceDraft), previewViewport, 'menuFontSize', event.target.value))}
-                          placeholder="15px"
-                          className="h-11 rounded-[14px] border border-[#D8E6EB] bg-white px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]"
-                        />
+                        <div className="flex items-center gap-2">
+                          <input
+                            value={appearancePreview.menuFontSize ?? defaultSiteAppearance.menuFontSize}
+                            onChange={(event) => updateAppearanceDraft(setAppearanceVariantField(cloneAppearanceDraft(appearanceDraft), previewViewport, 'menuFontSize', event.target.value))}
+                            placeholder="15px"
+                            className="h-11 flex-1 rounded-[14px] border border-[#D8E6EB] bg-white px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]"
+                          />
+                          <span className="shrink-0 text-[10px] font-black uppercase tracking-[0.14em] text-[#8A9AA1]">px</span>
+                        </div>
                       </label>
                       <label className="grid gap-1.5">
                         <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Peso da fonte do menu</span>
@@ -2387,30 +2396,39 @@ function EditorModal({
                   </label>
                   <label className="grid gap-1.5">
                     <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Largura mínima</span>
-                    <input
-                      value={textStyle.minWidth ?? ''}
-                      onChange={(event) => setTextStyle((current) => ({ ...current, minWidth: event.target.value }))}
-                      placeholder="240px"
-                      className="h-11 rounded-[14px] border border-[#D8E6EB] px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]"
-                    />
+                    <div className="flex items-center gap-2">
+                      <input
+                        value={textStyle.minWidth ?? ''}
+                        onChange={(event) => setTextStyle((current) => ({ ...current, minWidth: event.target.value }))}
+                        placeholder="240px"
+                        className="h-11 flex-1 rounded-[14px] border border-[#D8E6EB] px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]"
+                      />
+                      <span className="shrink-0 text-[10px] font-black uppercase tracking-[0.14em] text-[#8A9AA1]">px</span>
+                    </div>
                   </label>
                   <label className="grid gap-1.5">
                     <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Altura mínima</span>
-                    <input
-                      value={textStyle.minHeight ?? ''}
-                      onChange={(event) => setTextStyle((current) => ({ ...current, minHeight: event.target.value }))}
-                      placeholder="48px"
-                      className="h-11 rounded-[14px] border border-[#D8E6EB] px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]"
-                    />
+                    <div className="flex items-center gap-2">
+                      <input
+                        value={textStyle.minHeight ?? ''}
+                        onChange={(event) => setTextStyle((current) => ({ ...current, minHeight: event.target.value }))}
+                        placeholder="48px"
+                        className="h-11 flex-1 rounded-[14px] border border-[#D8E6EB] px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]"
+                      />
+                      <span className="shrink-0 text-[10px] font-black uppercase tracking-[0.14em] text-[#8A9AA1]">px</span>
+                    </div>
                   </label>
                   <label className="grid gap-1.5">
                     <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Arredondamento</span>
-                    <input
-                      value={textStyle.borderRadius ?? ''}
-                      onChange={(event) => setTextStyle((current) => ({ ...current, borderRadius: event.target.value }))}
-                      placeholder="24px"
-                      className="h-11 rounded-[14px] border border-[#D8E6EB] px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]"
-                    />
+                    <div className="flex items-center gap-2">
+                      <input
+                        value={textStyle.borderRadius ?? ''}
+                        onChange={(event) => setTextStyle((current) => ({ ...current, borderRadius: event.target.value }))}
+                        placeholder="24px"
+                        className="h-11 flex-1 rounded-[14px] border border-[#D8E6EB] px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]"
+                      />
+                      <span className="shrink-0 text-[10px] font-black uppercase tracking-[0.14em] text-[#8A9AA1]">px</span>
+                    </div>
                   </label>
                   <label className="grid gap-1.5">
                     <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Padding horizontal</span>
@@ -2498,12 +2516,15 @@ function EditorModal({
                   </label>
                   <label className="grid gap-1.5">
                     <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Tamanho</span>
-                    <input
-                      value={textStyle.fontSize ?? ''}
-                      onChange={(event) => setTextStyle((current) => ({ ...current, fontSize: event.target.value }))}
-                      placeholder="2.5rem"
-                      className="h-11 rounded-[14px] border border-[#D8E6EB] px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]"
-                    />
+                    <div className="flex items-center gap-2">
+                      <input
+                        value={textStyle.fontSize ?? ''}
+                        onChange={(event) => setTextStyle((current) => ({ ...current, fontSize: event.target.value }))}
+                        placeholder="2.5rem"
+                        className="h-11 flex-1 rounded-[14px] border border-[#D8E6EB] px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]"
+                      />
+                      <span className="shrink-0 text-[10px] font-black uppercase tracking-[0.14em] text-[#8A9AA1]">px</span>
+                    </div>
                   </label>
                   <label className="grid gap-1.5">
                     <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Peso</span>
