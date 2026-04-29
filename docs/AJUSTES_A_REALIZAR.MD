@@ -206,6 +206,8 @@
 [ ] T64 - Implemente o módulo de FAQ/Ajuda para criar as perguntas e respostas diretamente pelo painel admin. Importe as perguntas frequentes já existentes nesse módulo. Utilize o arquivo "SPEC_FAQ.md" como referência de implementação.
 
 [ ] T65 - O layout da página https://genflix-omega.vercel.app/privacidade está com a estrutura diferente das demais páginas do site, a página está no formato box. AJuste esta página.
+
+[ ] T66 - NA TAREFA [T16] foi implementada a funcionalidade de expandir e recoelher todos, porém, a ideia que eu quero mesmo, é que cada item tenha a opção de clicar para recolher ele mas manter o titulo do item aparecendo, exatamente igual a um acordeão/sanfona.
 ---
 
 

@@ -4,11 +4,28 @@ import { GenflixCtaButton, normalizeGenflixCtaTone } from '@/components/public/g
 import { GenflixPublicFooter } from '@/components/public/genflix-public-footer'
 import { GenflixPublicHeader } from '@/components/public/genflix-public-header'
 import { genflixNavLinks } from '@/features/public/genflix-public-shell-content'
-import { EditableButton, EditableList, EditableText, isEditableItemVisible } from '@/features/site-editor/visual-editor'
+import { EditableButton, EditableList, EditableText, isEditableItemVisible, sanitizeRichText } from '@/features/site-editor/visual-editor'
 
 type GenericPageSection = {
   title: string
-  paragraphs: string[]
+  description?: string
+  paragraphs?: string[]
+}
+
+function escapeHtml(value: string) {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
+function paragraphsToHtml(paragraphs: string[]) {
+  return paragraphs
+    .filter((paragraph) => typeof paragraph === 'string' && paragraph.trim() !== '')
+    .map((paragraph) => `<p>${escapeHtml(paragraph)}</p>`)
+    .join('')
 }
 
 export function PublicGenericPage({
@@ -54,34 +71,32 @@ export function PublicGenericPage({
               fallback={sections.map((section, index) => ({
                 id: `${entryPrefix}-section-${index + 1}`,
                 title: section.title,
-                metadata: {
-                  paragraphs: section.paragraphs,
-                },
+                description: section.description ?? paragraphsToHtml(section.paragraphs ?? []),
               }))}
               label="Seções da página institucional"
               pageKey="global"
+              schema={{
+                kind: 'rich-text-list',
+                itemName: 'seção',
+                addLabel: 'Adicionar seção',
+              }}
             >
-              {(items) => items.filter(isEditableItemVisible).map((item) => {
-                const paragraphs = Array.isArray(item.metadata?.paragraphs)
-                  ? item.metadata.paragraphs.filter((paragraph): paragraph is string => typeof paragraph === 'string')
-                  : []
-
-                return (
-                  <article
-                    key={item.id}
-                    className="rounded-[24px] border border-[#D8E6EB] bg-white px-6 py-6 shadow-[0_16px_36px_rgba(21,50,59,0.04)] sm:px-8"
-                  >
-                    <h2 className="text-[1.5rem] font-bold tracking-[-0.03em] text-[#183139]">{item.title ?? item.label ?? 'Seção'}</h2>
-                    <div className="mt-4 space-y-4">
-                      {paragraphs.map((paragraph, index) => (
-                        <p key={`${item.id}-${index}`} className="text-[15px] leading-8 text-[#5f7178]">
-                          {paragraph}
-                        </p>
-                      ))}
-                    </div>
-                  </article>
-                )
-              })}
+              {(items) => items.filter(isEditableItemVisible).map((item) => (
+                <article
+                  key={item.id}
+                  className="rounded-[24px] border border-[#D8E6EB] bg-white px-6 py-6 shadow-[0_16px_36px_rgba(21,50,59,0.04)] sm:px-8"
+                >
+                  <h2 className="text-[1.5rem] font-bold tracking-[-0.03em] text-[#183139]">{item.title ?? item.label ?? 'Seção'}</h2>
+                  {item.description ? (
+                    <div
+                      className="mt-4 space-y-4 text-[15px] leading-8 text-[#5f7178]"
+                      dangerouslySetInnerHTML={{
+                        __html: sanitizeRichText(item.description || paragraphsToHtml(Array.isArray(item.metadata?.paragraphs) ? item.metadata.paragraphs.filter((paragraph): paragraph is string => typeof paragraph === 'string') : [])),
+                      }}
+                    />
+                  ) : null}
+                </article>
+              ))}
             </EditableList>
           </div>
 

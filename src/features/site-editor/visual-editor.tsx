@@ -98,7 +98,7 @@ type NormalizedListEditorTemplate = {
 }
 
 type NormalizedListEditorSchema = {
-  kind: 'default' | 'section-registry'
+  kind: 'default' | 'section-registry' | 'rich-text-list'
   itemName: string
   addLabel: string
   templates: NormalizedListEditorTemplate[]
@@ -462,7 +462,11 @@ function normalizeEditableListItems(value: unknown): EditableListItem[] {
       id: typeof item.id === 'string' && item.id.trim() !== '' ? item.id : `item-${index + 1}`,
       label: typeof item.label === 'string' ? item.label : undefined,
       title: typeof item.title === 'string' ? item.title : undefined,
-      description: typeof item.description === 'string' ? item.description : undefined,
+      description: typeof item.description === 'string'
+        ? item.description
+        : isStringRecord(item.metadata) && Array.isArray(item.metadata.paragraphs)
+          ? paragraphsToRichTextHtml(item.metadata.paragraphs.filter((paragraph): paragraph is string => typeof paragraph === 'string'))
+          : undefined,
       href: typeof item.href === 'string' ? item.href : undefined,
       image: typeof item.image === 'string' ? item.image : undefined,
       metadata: Object.keys(mergedMetadata).length > 0 ? mergedMetadata : undefined,
@@ -485,7 +489,9 @@ function normalizeListEditorSchema(schema: Record<string, unknown> | undefined):
     return defaultConfig
   }
 
-  const kind = schema.kind === 'section-registry' ? 'section-registry' : 'default'
+  const kind = schema.kind === 'section-registry' || schema.kind === 'rich-text-list'
+    ? schema.kind
+    : 'default'
   const rawTemplates = Array.isArray(schema.templates) ? schema.templates : []
   const templates = rawTemplates.flatMap((template, index) => {
     if (!isStringRecord(template)) {
@@ -591,7 +597,23 @@ function moveArrayItem<TValue>(items: TValue[], fromIndex: number, toIndex: numb
   return nextItems
 }
 
-function sanitizeRichText(rawValue: string) {
+function escapeHtml(value: string) {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
+function paragraphsToRichTextHtml(paragraphs: string[]) {
+  return paragraphs
+    .filter((paragraph) => typeof paragraph === 'string' && paragraph.trim() !== '')
+    .map((paragraph) => `<p>${escapeHtml(paragraph)}</p>`)
+    .join('')
+}
+
+export function sanitizeRichText(rawValue: string) {
   return rawValue
     .replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, '')
     .replace(/\son[a-z]+="[^"]*"/gi, '')
@@ -725,6 +747,7 @@ function ListItemEditorCard({
   onUploadIcon?: (index: number, file: File) => void
   editorConfig: NormalizedListEditorSchema
 }) {
+  const descriptionRef = useRef<HTMLTextAreaElement | null>(null)
   const metadata: Record<string, unknown> = isStringRecord(item.metadata) ? { ...item.metadata } : {}
   const nestedItems = normalizeEditableListItems(metadata.items)
   const metadataWithoutItems: Record<string, unknown> = { ...metadata }
@@ -787,6 +810,32 @@ function ListItemEditorCard({
     onUploadIcon(index, file)
   }
 
+  function updateRichTextField(value: string) {
+    onChange({
+      ...item,
+      description: value,
+    })
+  }
+
+  function applyRichTextFormat(before: string, after = before.replace('<', '</')) {
+    const textarea = descriptionRef.current
+    if (!textarea) return
+
+    const currentValue = item.description ?? ''
+    const selectionStart = textarea.selectionStart ?? 0
+    const selectionEnd = textarea.selectionEnd ?? selectionStart
+    const selectedText = currentValue.slice(selectionStart, selectionEnd)
+    const nextValue = `${currentValue.slice(0, selectionStart)}${before}${selectedText || 'texto'}${after}${currentValue.slice(selectionEnd)}`
+
+    updateRichTextField(nextValue)
+    queueMicrotask(() => {
+      textarea.focus()
+      const cursorStart = selectionStart + before.length
+      const cursorEnd = cursorStart + (selectedText || 'texto').length
+      textarea.setSelectionRange(cursorStart, cursorEnd)
+    })
+  }
+
   function updateNestedItems(nextNestedItems: EditableListItem[]) {
     onChange({
       ...item,
@@ -799,6 +848,107 @@ function ListItemEditorCard({
         items: nextNestedItems,
       },
     })
+  }
+
+  if (editorConfig.kind === 'rich-text-list') {
+    return (
+      <div className={cn('rounded-[20px] border border-[#D8E6EB] bg-white p-4', depth > 0 && 'bg-[#FCFEFF]')}>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[#1398B7]">
+              {depth > 0 ? `Parágrafo interno ${index + 1}` : `Parágrafo ${index + 1}`}
+            </p>
+            <p className="mt-1 text-sm font-semibold text-[#15323b]">
+              {item.title || item.label || item.id}
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => onMove(index, -1)}
+              disabled={index === 0}
+              className="rounded-full border border-[#D8E6EB] px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.14em] text-[#0A3640] hover:bg-[#F2F7F9] disabled:opacity-50"
+            >
+              Subir
+            </button>
+            <button
+              type="button"
+              onClick={() => onMove(index, 1)}
+              disabled={index === total - 1}
+              className="rounded-full border border-[#D8E6EB] px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.14em] text-[#0A3640] hover:bg-[#F2F7F9] disabled:opacity-50"
+            >
+              Descer
+            </button>
+            <button
+              type="button"
+              onClick={() => onDuplicate(index)}
+              className="rounded-full border border-[#D8E6EB] px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.14em] text-[#0A3640] hover:bg-[#F2F7F9]"
+            >
+              Duplicar
+            </button>
+            <button
+              type="button"
+              onClick={() => onRemove(index)}
+              className="rounded-full border border-rose-200 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.14em] text-rose-700 hover:bg-rose-50"
+            >
+              Remover
+            </button>
+          </div>
+        </div>
+
+        <div className="mt-4 grid gap-3 md:grid-cols-2">
+          <label className="grid gap-1.5">
+            <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">ID</span>
+            <input
+              value={item.id}
+              onChange={(event) => updateField('id', event.target.value)}
+              className="h-11 rounded-[14px] border border-[#D8E6EB] px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]"
+            />
+          </label>
+          <label className="grid gap-1.5">
+            <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Label</span>
+            <input
+              value={item.label ?? ''}
+              onChange={(event) => updateField('label', event.target.value)}
+              className="h-11 rounded-[14px] border border-[#D8E6EB] px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]"
+              placeholder="Nome exibido no editor"
+            />
+          </label>
+          <label className="grid gap-1.5 md:col-span-2">
+            <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Título opcional</span>
+            <input
+              value={item.title ?? ''}
+              onChange={(event) => updateField('title', event.target.value)}
+              className="h-11 rounded-[14px] border border-[#D8E6EB] px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]"
+              placeholder="Exibido antes do texto, se houver"
+            />
+          </label>
+        </div>
+
+        <div className="mt-4 rounded-[18px] border border-[#D8E6EB] bg-[#F8FCFD]">
+          <div className="flex flex-wrap gap-2 border-b border-[#D8E6EB] px-4 py-3">
+            <button type="button" onClick={() => applyRichTextFormat('<strong>', '</strong>')} className="rounded-full border border-[#D8E6EB] px-3 py-2 text-xs font-black uppercase tracking-[0.14em] text-[#0A3640] hover:bg-[#F2F7F9]">Negrito</button>
+            <button type="button" onClick={() => applyRichTextFormat('<em>', '</em>')} className="rounded-full border border-[#D8E6EB] px-3 py-2 text-xs font-black uppercase tracking-[0.14em] text-[#0A3640] hover:bg-[#F2F7F9]">Itálico</button>
+            <button type="button" onClick={() => applyRichTextFormat('<p>', '</p>')} className="rounded-full border border-[#D8E6EB] px-3 py-2 text-xs font-black uppercase tracking-[0.14em] text-[#0A3640] hover:bg-[#F2F7F9]">Parágrafo</button>
+            <button type="button" onClick={() => applyRichTextFormat('<h3>', '</h3>')} className="rounded-full border border-[#D8E6EB] px-3 py-2 text-xs font-black uppercase tracking-[0.14em] text-[#0A3640] hover:bg-[#F2F7F9]">Título</button>
+            <button type="button" onClick={() => applyRichTextFormat('<ul><li>', '</li></ul>')} className="rounded-full border border-[#D8E6EB] px-3 py-2 text-xs font-black uppercase tracking-[0.14em] text-[#0A3640] hover:bg-[#F2F7F9]">Lista</button>
+          </div>
+          <div className="grid gap-2 p-4">
+            <textarea
+              ref={descriptionRef}
+              value={item.description ?? ''}
+              onChange={(event) => updateRichTextField(event.target.value)}
+              rows={8}
+              className="w-full resize-y rounded-[18px] border border-[#D8E6EB] bg-white px-4 py-3 text-sm leading-6 text-[#15323b] outline-none focus:border-[#1398B7]"
+              placeholder="Escreva o texto do parágrafo aqui..."
+            />
+            <p className="text-xs leading-5 text-[#5F7077]">
+              Use os botões acima para formatar o conteúdo sem abrir JSON.
+            </p>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   function updateMetadataJson(rawValue: string) {
@@ -1264,17 +1414,20 @@ function EditorModal({
   const [workspaceState, setWorkspaceState] = useState<SiteEditorWorkspaceMap>({})
   const [isLoadingWorkspace, setIsLoadingWorkspace] = useState(false)
   const [areAllListItemsCollapsed, setAreAllListItemsCollapsed] = useState(false)
-  const usesJsonEditor = ['list', 'json', 'link', 'button', 'image'].includes(editor.entryType)
-  const usesRichTextToolbar = editor.entryType === 'rich_text'
-  const isDirty = rawValue !== initialRawValue || JSON.stringify(initialTextStyle) !== JSON.stringify(textStyle)
   const workspaceKey = useMemo(() => createSiteEditorWorkspaceKey(editor.pageKey, editor.entryKey), [editor.entryKey, editor.pageKey])
   const workspaceRecord = workspaceState[workspaceKey] ?? getDefaultWorkspaceRecord(editor.pageKey, editor.entryKey)
   const [history, setHistory] = useState<Array<{ rawValue: string; textStyle: TextStyleValue }>>([])
   const [future, setFuture] = useState<Array<{ rawValue: string; textStyle: TextStyleValue }>>([])
   const skipHistoryRef = useRef(true)
   const previousSnapshotRef = useRef<{ rawValue: string; textStyle: TextStyleValue }>({ rawValue: initialRawValue, textStyle: initialTextStyle })
+  const listEditorConfig = useMemo(() => normalizeListEditorSchema(editor.schema), [editor.schema])
+  const shouldParseJsonValue = ['list', 'json', 'link', 'button', 'image'].includes(editor.entryType)
+  const isRichTextListEditor = editor.entryType === 'list' && listEditorConfig.kind === 'rich-text-list'
+  const usesJsonEditor = shouldParseJsonValue && !isRichTextListEditor
+  const usesRichTextToolbar = editor.entryType === 'rich_text'
+  const isDirty = rawValue !== initialRawValue || JSON.stringify(initialTextStyle) !== JSON.stringify(textStyle)
   const parsedPreview = useMemo(() => {
-    if (!usesJsonEditor) {
+    if (!shouldParseJsonValue) {
       return {
         value: rawValue,
         error: null as string | null,
@@ -1292,7 +1445,7 @@ function EditorModal({
         error: error instanceof Error ? error.message : 'JSON inválido.',
       }
     }
-  }, [rawValue, usesJsonEditor])
+  }, [rawValue, shouldParseJsonValue])
   const previewImage = isStringRecord(parsedPreview.value) ? parsedPreview.value : null
   const previewList = Array.isArray(parsedPreview.value) ? parsedPreview.value : null
   const previewRecord = isStringRecord(parsedPreview.value) ? parsedPreview.value : null
@@ -1310,7 +1463,6 @@ function EditorModal({
   const isSiteAppearanceEditor = editor.entryType === 'json' && editor.schema?.kind === 'site-appearance'
   const isGlobalHeaderEditor = editor.pageKey === 'global'
   const isAppearanceLockedToGlobal = isSiteAppearanceEditor && !isGlobalHeaderEditor && appearanceDraft.scope === 'global'
-  const listEditorConfig = useMemo(() => normalizeListEditorSchema(editor.schema), [editor.schema])
   const previewImagePresentation = useMemo(() => getEditableImagePresentation(previewImage), [previewImage])
   const showTypographyControls = editor.entryType === 'text' || editor.entryType === 'rich_text' || editor.entryType === 'button' || editor.entryType === 'link'
   const workflowStatus = workspaceRecord.status
@@ -2845,7 +2997,14 @@ function EditorModal({
                           </div>
                           <div className="space-y-3 px-4 py-4">
                             {typeof item.description === 'string' && item.description.trim() !== '' ? (
-                              <p className="text-sm leading-6 text-[#5F7077]">{item.description}</p>
+                              isRichTextListEditor ? (
+                                <div
+                                  className="space-y-3 text-sm leading-6 text-[#5F7077]"
+                                  dangerouslySetInnerHTML={{ __html: sanitizeRichText(item.description) }}
+                                />
+                              ) : (
+                                <p className="text-sm leading-6 text-[#5F7077]">{item.description}</p>
+                              )
                             ) : null}
                             {typeof item.href === 'string' && item.href.trim() !== '' ? (
                               <p className="truncate text-xs font-semibold text-[#1398B7]">{item.href}</p>

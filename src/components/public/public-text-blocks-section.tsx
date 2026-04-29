@@ -1,4 +1,4 @@
-import { EditableList, isEditableItemVisible, useEditableValue, useSiteContentScope, useVisualEditorState } from '@/features/site-editor/visual-editor'
+import { EditableList, isEditableItemVisible, sanitizeRichText, useEditableValue, useSiteContentScope, useVisualEditorState } from '@/features/site-editor/visual-editor'
 import type { EditableListItem, SitePageKey } from '@/features/site-editor/types'
 
 type PublicTextBlocksSectionProps = {
@@ -44,6 +44,7 @@ export function PublicTextBlocksSection({
         label={label}
         pageKey={resolvedPageKey}
         schema={{
+          kind: 'rich-text-list',
           itemName: 'bloco de texto',
           addLabel: 'Adicionar bloco de texto',
         }}
@@ -61,9 +62,10 @@ export function PublicTextBlocksSection({
                     </h3>
                   ) : null}
                   {item.description ? (
-                    <p className={`${item.label || item.title ? 'mt-3' : ''} text-sm leading-7 text-[#5F7077]`}>
-                      {item.description}
-                    </p>
+                    <div
+                      className={`${item.label || item.title ? 'mt-3' : ''} space-y-4 text-sm leading-7 text-[#5F7077]`}
+                      dangerouslySetInnerHTML={{ __html: sanitizeRichText(item.description) }}
+                    />
                   ) : null}
                 </article>
               ))}
