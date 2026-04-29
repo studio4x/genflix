@@ -142,7 +142,7 @@ export function GenflixPublicFooter({
   return (
     <footer id={id} className="bg-[#0A3640] text-white">
       <div className="public-site-container py-8 sm:py-10">
-        <div className="space-y-8 rounded-[32px] border border-white/8 bg-[#0A3640] px-6 py-8 sm:px-8 lg:px-10">
+        <div className="space-y-8 rounded-[32px] bg-[#0A3640] px-6 py-8 sm:px-8 lg:px-10">
           <div className="space-y-8 border-b border-white/18 pb-8">
             <div className="flex items-center">
               <GenflixLogo theme="light" />
