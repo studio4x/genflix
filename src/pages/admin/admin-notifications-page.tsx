@@ -3,11 +3,14 @@ import { BellRing, Mail, MessageCircle, MonitorSmartphone, RefreshCw, Send } fro
 
 import { Button } from '@/components/ui/button'
 import {
+  fetchNotificationAdminSettings,
   fetchNotificationStats,
   fetchRecentQueueItems,
   processNotificationQueue,
+  saveNotificationAdminSettings,
   sendBroadcastNotification,
   type BroadcastNotificationResult,
+  type NotificationAdminSettings,
   type NotificationChannel,
   type NotificationPriority,
   type NotificationQueueItem,
@@ -64,6 +67,7 @@ function getStatusClassName(status: NotificationQueueItem['status']) {
 
 export function AdminNotificationsPage() {
   const [queueItems, setQueueItems] = useState<NotificationQueueItem[]>([])
+  const [adminSettings, setAdminSettings] = useState<NotificationAdminSettings | null>(null)
   const [queueStats, setQueueStats] = useState({
     pending: 0,
     retry: 0,
@@ -77,9 +81,11 @@ export function AdminNotificationsPage() {
   const [unreadNotifications, setUnreadNotifications] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
   const [isSending, setIsSending] = useState(false)
+  const [isSavingSettings, setIsSavingSettings] = useState(false)
   const [isProcessingQueue, setIsProcessingQueue] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
+  const [adminNotificationEmail, setAdminNotificationEmail] = useState('')
   const [title, setTitle] = useState('')
   const [body, setBody] = useState('')
   const [category, setCategory] = useState('system')
@@ -97,14 +103,17 @@ export function AdminNotificationsPage() {
     setErrorMessage(null)
 
     try {
-      const [stats, recentItems] = await Promise.all([
+      const [stats, recentItems, settings] = await Promise.all([
         fetchNotificationStats(),
         fetchRecentQueueItems(),
+        fetchNotificationAdminSettings(),
       ])
       setQueueStats(stats.queue)
       setTotalNotifications(stats.total)
       setUnreadNotifications(stats.unread)
       setQueueItems(recentItems)
+      setAdminSettings(settings)
+      setAdminNotificationEmail(settings.admin_notification_email ?? '')
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : 'Não foi possível carregar notificações.')
     } finally {
@@ -138,6 +147,28 @@ export function AdminNotificationsPage() {
         ? current.filter((item) => item !== channel)
         : [...current, channel],
     )
+  }
+
+  async function handleSaveAdminSettings(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    setErrorMessage(null)
+    setSuccessMessage(null)
+    setIsSavingSettings(true)
+
+    try {
+      const savedSettings = await saveNotificationAdminSettings(adminNotificationEmail)
+      setAdminSettings(savedSettings)
+      setAdminNotificationEmail(savedSettings.admin_notification_email ?? '')
+      setSuccessMessage(
+        savedSettings.admin_notification_email
+          ? `E-mail administrativo padrÃ£o salvo: ${savedSettings.admin_notification_email}.`
+          : 'E-mail administrativo padrÃ£o removido.',
+      )
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : 'NÃ£o foi possÃ­vel salvar o e-mail administrativo.')
+    } finally {
+      setIsSavingSettings(false)
+    }
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -247,6 +278,52 @@ export function AdminNotificationsPage() {
         Enquanto SMTP/domínio não estiverem configurados, itens de e-mail permanecem em nova tentativa ou falha controlada.
         Acompanhe essa dependência em <a href="/admin/pendencias" className="font-black text-[#1398B7] underline">Pendências Operacionais</a>.
       </div>
+
+      <section className="border border-[#D8E6EB] bg-white p-6 shadow-[0_18px_42px_rgba(10,54,64,0.05)]">
+        <div className="flex flex-col gap-4 border-b border-[#D8E6EB] pb-5 md:flex-row md:items-end md:justify-between">
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#1398B7]">Configuração global</p>
+            <h2 className="mt-2 font-readex text-2xl font-semibold text-[#15323b]">
+              E-mail padrão para notificações administrativas
+            </h2>
+            <p className="mt-2 max-w-3xl text-sm font-medium leading-6 text-[#6d7f84]">
+              Use este endereço como caixa de destino principal para alertas internos, operacionais e avisos que
+              precisem chegar fora do painel.
+            </p>
+          </div>
+          <div className="border border-[#D8E6EB] bg-[#F2F7F9] px-4 py-3">
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#5F7077]">Atual</p>
+            <p className="mt-1 font-readex text-sm font-semibold text-[#15323b]">
+              {adminSettings?.admin_notification_email ?? 'Não configurado'}
+            </p>
+          </div>
+        </div>
+
+        <form onSubmit={(event) => void handleSaveAdminSettings(event)} className="mt-5 flex flex-col gap-3 lg:flex-row lg:items-end">
+          <label className="flex-1">
+            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#5F7077]">E-mail administrativo</span>
+            <input
+              type="email"
+              value={adminNotificationEmail}
+              onChange={(event) => setAdminNotificationEmail(event.target.value)}
+              className="mt-2 h-12 w-full border border-[#D8E6EB] bg-white px-4 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]"
+              placeholder="ex.: operacao@genflix.com.br"
+            />
+          </label>
+
+          <Button
+            type="submit"
+            disabled={isLoading || isSavingSettings}
+            className="h-12 rounded-none bg-gradient-to-b from-[#1398B7] to-[#0A3640] px-6 font-black text-white hover:opacity-95"
+          >
+            {isSavingSettings ? 'Salvando...' : 'Salvar e-mail'}
+          </Button>
+        </form>
+
+        <p className="mt-3 text-xs font-semibold leading-6 text-[#6d7f84]">
+          Se vazio, a plataforma continua operando sem um e-mail administrativo padrão.
+        </p>
+      </section>
 
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {[

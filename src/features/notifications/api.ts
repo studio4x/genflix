@@ -84,6 +84,14 @@ export interface NotificationPreferencesInput {
   email_digest: EmailDigestFrequency
 }
 
+export interface NotificationAdminSettings {
+  id: number
+  admin_notification_email: string | null
+  updated_by: string | null
+  created_at: string
+  updated_at: string
+}
+
 export interface NotificationQueueProcessResult {
   processed: number
   sent: number
@@ -271,6 +279,52 @@ export async function saveNotificationPreferences(userId: string, input: Notific
   }
 
   return data as NotificationPreferences
+}
+
+export async function fetchNotificationAdminSettings() {
+  const { data, error } = await supabase
+    .from('notification_admin_settings')
+    .select('id, admin_notification_email, updated_by, created_at, updated_at')
+    .eq('id', 1)
+    .maybeSingle()
+
+  if (error) {
+    throw error
+  }
+
+  return (
+    data ?? {
+      id: 1,
+      admin_notification_email: null,
+      updated_by: null,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    }
+  ) as NotificationAdminSettings
+}
+
+export async function saveNotificationAdminSettings(email: string | null) {
+  const { data: sessionData } = await supabase.auth.getSession()
+  const normalizedEmail = email?.trim() || null
+
+  const { data, error } = await supabase
+    .from('notification_admin_settings')
+    .upsert(
+      {
+        id: 1,
+        admin_notification_email: normalizedEmail,
+        updated_by: sessionData.session?.user.id ?? null,
+      },
+      { onConflict: 'id' },
+    )
+    .select('id, admin_notification_email, updated_by, created_at, updated_at')
+    .single()
+
+  if (error) {
+    throw error
+  }
+
+  return data as NotificationAdminSettings
 }
 
 export async function processNotificationQueue(limit = 50) {
