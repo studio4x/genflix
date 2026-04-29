@@ -10,6 +10,7 @@ import type {
   SupportCrisisProtocolConfig,
   SupportFaqItem,
   SupportFaqSuggestionInput,
+  SupportFaqSuggestionItem,
   SupportFaqEventType,
   SupportMessage,
   SupportMessageInput,
@@ -325,6 +326,23 @@ export async function createSupportFaqSuggestion(input: SupportFaqSuggestionInpu
   if (error) {
     throw error
   }
+}
+
+export async function fetchSupportFaqSuggestions(days = 30) {
+  const date = new Date()
+  date.setDate(date.getDate() - days)
+
+  const { data, error } = await supabase
+    .from('support_faq_suggestions')
+    .select('id, category_key, search_query, suggested_question, details, created_at, user_id, session_id')
+    .gte('created_at', date.toISOString())
+    .order('created_at', { ascending: false })
+
+  if (error) {
+    throw error
+  }
+
+  return (data ?? []) as SupportFaqSuggestionItem[]
 }
 
 type SupportFaqEventRow = {

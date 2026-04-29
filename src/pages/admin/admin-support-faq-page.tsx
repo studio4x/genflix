@@ -1,13 +1,21 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Eye, FileText, LifeBuoy, RefreshCw, Save, Search, Trash2 } from 'lucide-react'
+import { FileText, LifeBuoy, RefreshCw, Save, Search, Trash2 } from 'lucide-react'
 import { useSearchParams } from 'react-router-dom'
 
 import { Button } from '@/components/ui/button'
-import { createSupportFaq, deleteSupportFaq, fetchAdminSupportFaqs, fetchSupportFaqEvents, fetchSupportSettings, updateSupportFaq } from '@/features/support/api'
-import type { SupportFaqItem, SupportTicketCategory } from '@/features/support/types'
+import {
+  createSupportFaq,
+  deleteSupportFaq,
+  fetchAdminSupportFaqs,
+  fetchSupportFaqEvents,
+  fetchSupportFaqSuggestions,
+  fetchSupportSettings,
+  updateSupportFaq,
+} from '@/features/support/api'
+import type { SupportFaqItem, SupportFaqSuggestionItem, SupportTicketCategory } from '@/features/support/types'
 import { getOrderedSupportCategories } from '@/lib/support-sla'
 
-type AdminFaqTab = 'artigos' | 'categorias' | 'feedback' | 'analytics'
+type AdminFaqTab = 'artigos' | 'categorias' | 'feedback' | 'sugestoes' | 'analytics'
 type ArticleStatusFilter = 'all' | 'draft' | 'published'
 type PeriodFilter = '7d' | '30d' | '90d'
 
@@ -37,12 +45,17 @@ function normalizeSearchParams(params: URLSearchParams) {
   }
 }
 
+function formatDateTime(value: string) {
+  return new Date(value).toLocaleString('pt-BR')
+}
+
 export function AdminSupportFaqPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const filters = normalizeSearchParams(searchParams)
   const [searchInput, setSearchInput] = useState(filters.query)
 
   const [faqs, setFaqs] = useState<SupportFaqItem[]>([])
+  const [faqSuggestions, setFaqSuggestions] = useState<SupportFaqSuggestionItem[]>([])
   const [settings, setSettings] = useState<Awaited<ReturnType<typeof fetchSupportSettings>> | null>(null)
   const [newDraft, setNewDraft] = useState<FaqDraft>(emptyDraft)
   const [selectedArticleId, setSelectedArticleId] = useState<string | null>(null)
@@ -53,22 +66,28 @@ export function AdminSupportFaqPage() {
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const [faqEvents, setFaqEvents] = useState<Awaited<ReturnType<typeof fetchSupportFaqEvents>>>([])
 
+  const periodDays = filters.period === '7d' ? 7 : filters.period === '90d' ? 90 : 30
+
   async function loadData() {
     setIsRefreshing(true)
     setErrorMessage(null)
+
     try {
-      const [faqRows, supportSettings, events] = await Promise.all([
+      const [faqRows, supportSettings, events, suggestions] = await Promise.all([
         fetchAdminSupportFaqs(),
         fetchSupportSettings(),
-        fetchSupportFaqEvents(filters.period === '7d' ? 7 : filters.period === '90d' ? 90 : 30),
+        fetchSupportFaqEvents(periodDays),
+        fetchSupportFaqSuggestions(periodDays),
       ])
+
       setFaqs(faqRows)
       setSettings(supportSettings)
       setFaqEvents(events)
+      setFaqSuggestions(suggestions)
       setNewDraft((current) => ({ ...current, sort_order: faqRows.length + 1 }))
       setSelectedArticleId((current) => current ?? faqRows[0]?.id ?? null)
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'Não foi possível carregar os dados. Tente novamente.')
+      setErrorMessage(error instanceof Error ? error.message : 'Nao foi possivel carregar os dados. Tente novamente.')
     } finally {
       setIsRefreshing(false)
       setIsLoading(false)
@@ -99,11 +118,7 @@ export function AdminSupportFaqPage() {
     return () => window.clearTimeout(timer)
   }, [searchInput, setSearchParams])
 
-  const categories = useMemo(
-    () => getOrderedSupportCategories(settings?.sla),
-    [settings?.sla],
-  )
-
+  const categories = useMemo(() => getOrderedSupportCategories(settings?.sla), [settings?.sla])
   const categoryLabelMap = useMemo(() => new Map(categories.map((item) => [item.key, item.label])), [categories])
 
   const filteredFaqs = useMemo(() => {
@@ -130,14 +145,12 @@ export function AdminSupportFaqPage() {
   const kpis = useMemo(() => {
     const published = faqs.filter((item) => Boolean(item.is_published)).length
     const drafts = faqs.length - published
-    const views = faqs.reduce((acc, item) => acc + Math.max(0, item.sort_order), 0)
     return {
       published,
       drafts,
-      total: faqs.length,
-      views,
+      suggestions: faqSuggestions.length,
     }
-  }, [faqs])
+  }, [faqs, faqSuggestions.length])
 
   const feedbackSummary = useMemo(() => {
     const helpful = faqEvents.filter((item) => item.event_type === 'helpful').length
@@ -151,16 +164,35 @@ export function AdminSupportFaqPage() {
     const noResultRows = faqEvents.filter((item) => item.event_type === 'search_no_result')
     const noResultCount = noResultRows.length
     const topQueriesMap = new Map<string, number>()
+
     noResultRows.forEach((row) => {
       const key = row.query?.trim().toLowerCase()
-      if (!key) return
+      if (!key) {
+        return
+      }
       topQueriesMap.set(key, (topQueriesMap.get(key) ?? 0) + 1)
     })
+
     const topQueries = [...topQueriesMap.entries()]
       .sort((a, b) => b[1] - a[1])
       .slice(0, 5)
+
     return { noResultCount, topQueries }
   }, [faqEvents])
+
+  const suggestionsSummary = useMemo(() => {
+    const categoryCounts = new Map<string, number>()
+    faqSuggestions.forEach((item) => {
+      categoryCounts.set(item.category_key, (categoryCounts.get(item.category_key) ?? 0) + 1)
+    })
+
+    return {
+      total: faqSuggestions.length,
+      topCategories: [...categoryCounts.entries()]
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 4),
+    }
+  }, [faqSuggestions])
 
   function updateSearchParam(key: string, value: string) {
     setSearchParams((current) => {
@@ -175,7 +207,7 @@ export function AdminSupportFaqPage() {
   }
 
   function updateDraft(id: string, patch: Partial<FaqDraft>) {
-    setFaqs((current) => current.map((item) => item.id === id ? { ...item, ...patch } : item))
+    setFaqs((current) => current.map((item) => (item.id === id ? { ...item, ...patch } : item)))
   }
 
   function toMutationPayload(item: FaqDraft | SupportFaqItem): FaqDraft {
@@ -194,10 +226,10 @@ export function AdminSupportFaqPage() {
     setSuccessMessage(null)
     try {
       const updated = await updateSupportFaq(item.id, toMutationPayload(item))
-      setFaqs((current) => current.map((entry) => entry.id === item.id ? updated : entry))
-      setSuccessMessage('Alterações salvas com sucesso.')
+      setFaqs((current) => current.map((entry) => (entry.id === item.id ? updated : entry)))
+      setSuccessMessage('Alteracoes salvas com sucesso.')
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'Não foi possível salvar a FAQ.')
+      setErrorMessage(error instanceof Error ? error.message : 'Nao foi possivel salvar a FAQ.')
     } finally {
       setIsSaving(null)
     }
@@ -205,13 +237,14 @@ export function AdminSupportFaqPage() {
 
   async function handleCreate() {
     if (!newDraft.question.trim() || !newDraft.answer.trim()) {
-      setErrorMessage('Revise os campos obrigatórios antes de publicar.')
+      setErrorMessage('Revise os campos obrigatorios antes de publicar.')
       return
     }
 
     setIsSaving('new')
     setErrorMessage(null)
     setSuccessMessage(null)
+
     try {
       const created = await createSupportFaq(toMutationPayload(newDraft))
       setFaqs((current) => [...current, created].sort((a, b) => a.sort_order - b.sort_order))
@@ -220,16 +253,16 @@ export function AdminSupportFaqPage() {
         ...emptyDraft,
         sort_order: faqs.length + 2,
       })
-      setSuccessMessage('Alterações salvas com sucesso.')
+      setSuccessMessage('Alteracoes salvas com sucesso.')
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'Não foi possível criar a FAQ.')
+      setErrorMessage(error instanceof Error ? error.message : 'Nao foi possivel criar a FAQ.')
     } finally {
       setIsSaving(null)
     }
   }
 
   async function handleDelete(id: string) {
-    if (!window.confirm('Confirmar exclusão do artigo de FAQ?')) {
+    if (!window.confirm('Confirmar exclusao do artigo de FAQ?')) {
       return
     }
 
@@ -239,10 +272,10 @@ export function AdminSupportFaqPage() {
     try {
       await deleteSupportFaq(id)
       setFaqs((current) => current.filter((item) => item.id !== id))
-      setSelectedArticleId((current) => current === id ? null : current)
-      setSuccessMessage('Alterações salvas com sucesso.')
+      setSelectedArticleId((current) => (current === id ? null : current))
+      setSuccessMessage('Alteracoes salvas com sucesso.')
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'Não foi possível excluir a FAQ.')
+      setErrorMessage(error instanceof Error ? error.message : 'Nao foi possivel excluir a FAQ.')
     } finally {
       setIsSaving(null)
     }
@@ -253,8 +286,8 @@ export function AdminSupportFaqPage() {
       <header className="flex flex-col gap-4 rounded-[26px] border border-[#D8E6EB] bg-white p-5 shadow-sm lg:flex-row lg:items-center lg:justify-between">
         <div>
           <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#1398B7]">FAQ Admin</p>
-          <h1 className="mt-2 font-readex text-3xl font-semibold text-[#15323b]">Módulo de FAQ</h1>
-          <p className="mt-2 text-sm font-medium text-[#5F7077]">Gestão editorial, categorização e visão operacional da base de ajuda.</p>
+          <h1 className="mt-2 font-readex text-3xl font-semibold text-[#15323b]">Modulo de FAQ</h1>
+          <p className="mt-2 text-sm font-medium text-[#5F7077]">Gestao editorial, categorizacao e visao operacional da base de ajuda.</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <select
@@ -262,9 +295,9 @@ export function AdminSupportFaqPage() {
             onChange={(event) => updateSearchParam('period', event.target.value)}
             className="h-11 rounded-2xl border border-[#D8E6EB] bg-white px-4 text-sm font-semibold text-[#15323b] outline-none"
           >
-            <option value="7d">Período: 7 dias</option>
-            <option value="30d">Período: 30 dias</option>
-            <option value="90d">Período: 90 dias</option>
+            <option value="7d">Periodo: 7 dias</option>
+            <option value="30d">Periodo: 30 dias</option>
+            <option value="90d">Periodo: 90 dias</option>
           </select>
           <Button type="button" variant="outline" className="h-11 rounded-2xl border-[#D8E6EB] bg-white font-black text-[#15323b]">
             Exportar
@@ -296,14 +329,14 @@ export function AdminSupportFaqPage() {
           <p className="mt-2 font-readex text-3xl font-semibold text-[#15323b]">--</p>
         </article>
         <article className="rounded-[24px] border border-[#D8E6EB] bg-white p-4 shadow-sm">
-          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#5F7077]">Views</p>
-          <p className="mt-2 font-readex text-3xl font-semibold text-[#15323b]">{kpis.views}</p>
+          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#5F7077]">Sugestoes recebidas</p>
+          <p className="mt-2 font-readex text-3xl font-semibold text-[#15323b]">{kpis.suggestions}</p>
         </article>
       </section>
 
       <section className="rounded-[30px] border border-[#D8E6EB] bg-white p-5 shadow-sm">
         <div className="flex flex-wrap gap-2">
-          {(['artigos', 'categorias', 'feedback', 'analytics'] as AdminFaqTab[]).map((tab) => (
+          {(['artigos', 'categorias', 'feedback', 'sugestoes', 'analytics'] as AdminFaqTab[]).map((tab) => (
             <button
               key={tab}
               type="button"
@@ -359,7 +392,6 @@ export function AdminSupportFaqPage() {
                   className="w-full bg-transparent text-sm font-semibold text-[#15323b] outline-none"
                 />
               </label>
-
             </div>
 
             <div className="grid gap-4 xl:grid-cols-[1.5fr_0.9fr]">
@@ -375,8 +407,7 @@ export function AdminSupportFaqPage() {
                         <th className="px-4 py-3 text-xs font-semibold uppercase tracking-[0.08em] text-[#8BA0A7]">Pergunta</th>
                         <th className="px-4 py-3 text-xs font-semibold uppercase tracking-[0.08em] text-[#8BA0A7]">Categoria</th>
                         <th className="px-4 py-3 text-xs font-semibold uppercase tracking-[0.08em] text-[#8BA0A7]">Status</th>
-                        <th className="px-4 py-3 text-xs font-semibold uppercase tracking-[0.08em] text-[#8BA0A7]">Views</th>
-                        <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-[0.08em] text-[#8BA0A7]">Ações</th>
+                        <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-[0.08em] text-[#8BA0A7]">Acoes</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -389,21 +420,39 @@ export function AdminSupportFaqPage() {
                           <td className="px-4 py-3 font-semibold text-[#15323b]">{item.question}</td>
                           <td className="px-4 py-3 text-[#5F7077]">{categoryLabelMap.get(item.category_key) ?? item.category_key}</td>
                           <td className="px-4 py-3">
-                            <span className={`inline-flex rounded-full px-3 py-1 text-[11px] font-black uppercase tracking-[0.12em] ${
-                              item.is_published ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
-                            }`}
+                            <span
+                              className={`inline-flex rounded-full px-3 py-1 text-[11px] font-black uppercase tracking-[0.12em] ${
+                                item.is_published ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
+                              }`}
                             >
                               {item.is_published ? 'published' : 'draft'}
                             </span>
                           </td>
-                          <td className="px-4 py-3 text-[#5F7077]">{item.sort_order}</td>
                           <td className="px-4 py-3">
                             <div className="flex justify-end gap-2">
-                              <Button type="button" variant="outline" onClick={(event) => { event.stopPropagation(); void handleSaveExisting(item) }} disabled={isSaving === item.id} className="h-8 rounded-full border-[#D8E6EB] bg-white px-3 text-xs font-black text-[#15323b]">
+                              <Button
+                                type="button"
+                                variant="outline"
+                                onClick={(event) => {
+                                  event.stopPropagation()
+                                  void handleSaveExisting(item)
+                                }}
+                                disabled={isSaving === item.id}
+                                className="h-8 rounded-full border-[#D8E6EB] bg-white px-3 text-xs font-black text-[#15323b]"
+                              >
                                 <Save className="mr-1 h-3.5 w-3.5" />
                                 Salvar
                               </Button>
-                              <Button type="button" variant="destructive" onClick={(event) => { event.stopPropagation(); void handleDelete(item.id) }} disabled={isSaving === item.id} className="h-8 rounded-full px-3 text-xs font-black">
+                              <Button
+                                type="button"
+                                variant="destructive"
+                                onClick={(event) => {
+                                  event.stopPropagation()
+                                  void handleDelete(item.id)
+                                }}
+                                disabled={isSaving === item.id}
+                                className="h-8 rounded-full px-3 text-xs font-black"
+                              >
                                 <Trash2 className="mr-1 h-3.5 w-3.5" />
                                 Excluir
                               </Button>
@@ -419,7 +468,7 @@ export function AdminSupportFaqPage() {
               <aside className="rounded-[22px] border border-[#D8E6EB] bg-[#F8FBFC] p-4">
                 <h3 className="font-readex text-lg font-semibold text-[#15323b]">Painel de detalhes</h3>
                 {!selectedArticle ? (
-                  <p className="mt-3 text-sm font-semibold text-[#5F7077]">Selecione um artigo para editar o conteúdo.</p>
+                  <p className="mt-3 text-sm font-semibold text-[#5F7077]">Selecione um artigo para editar o conteudo.</p>
                 ) : (
                   <div className="mt-4 space-y-3">
                     <select
@@ -522,7 +571,7 @@ export function AdminSupportFaqPage() {
               <LifeBuoy className="h-4 w-4 text-[#1398B7]" />
               <p className="text-sm font-semibold text-[#15323b]">FAQ Admin / Categorias</p>
             </div>
-            <p className="mt-2 text-sm text-[#5F7077]">Categorias carregadas da configuração de SLA atual. A estrutura visual segue a spec e pode ser conectada à tabela `faq_categories` quando disponível.</p>
+            <p className="mt-2 text-sm text-[#5F7077]">Categorias carregadas da configuracao de SLA atual. A estrutura visual segue a spec e pode ser conectada a tabela `faq_categories` quando disponivel.</p>
             <div className="mt-4 space-y-2">
               {categories.map((category) => (
                 <div key={category.key} className="flex items-center justify-between rounded-[12px] border border-[#D8E6EB] bg-white px-3 py-2">
@@ -543,14 +592,14 @@ export function AdminSupportFaqPage() {
               <FileText className="h-4 w-4 text-[#1398B7]" />
               <p className="text-sm font-semibold text-[#15323b]">FAQ Admin / Feedback</p>
             </div>
-            <p className="mt-2 text-sm text-[#5F7077]">Esta aba mostra votos de utilidade enviados na seção de perguntas frequentes da página pública de suporte.</p>
+            <p className="mt-2 text-sm text-[#5F7077]">Esta aba mostra votos de utilidade enviados na secao de perguntas frequentes da pagina publica de suporte.</p>
             <div className="mt-4 grid gap-3 sm:grid-cols-3">
               <article className="rounded-[14px] border border-[#D8E6EB] bg-white p-3">
-                <p className="text-xs font-semibold text-[#5F7077]">Votos úteis</p>
+                <p className="text-xs font-semibold text-[#5F7077]">Votos uteis</p>
                 <p className="mt-1 text-xl font-black text-emerald-700">{feedbackSummary.helpful}</p>
               </article>
               <article className="rounded-[14px] border border-[#D8E6EB] bg-white p-3">
-                <p className="text-xs font-semibold text-[#5F7077]">Votos não úteis</p>
+                <p className="text-xs font-semibold text-[#5F7077]">Votos nao uteis</p>
                 <p className="mt-1 text-xl font-black text-rose-700">{feedbackSummary.notHelpful}</p>
               </article>
               <article className="rounded-[14px] border border-[#D8E6EB] bg-white p-3">
@@ -561,21 +610,70 @@ export function AdminSupportFaqPage() {
           </div>
         ) : null}
 
+        {filters.tab === 'sugestoes' ? (
+          <div className="mt-5 rounded-[22px] border border-[#D8E6EB] bg-[#F8FBFC] p-4">
+            <div className="flex items-center gap-2">
+              <FileText className="h-4 w-4 text-[#1398B7]" />
+              <p className="text-sm font-semibold text-[#15323b]">FAQ Admin / Sugestoes</p>
+            </div>
+            <p className="mt-2 text-sm text-[#5F7077]">Sugestoes enviadas pelos usuarios quando a busca nao encontra correspondencia na pagina publica de suporte.</p>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+              <article className="rounded-[14px] border border-[#D8E6EB] bg-white p-3">
+                <p className="text-xs font-semibold text-[#5F7077]">Total de sugestoes</p>
+                <p className="mt-1 text-xl font-black text-[#15323b]">{suggestionsSummary.total}</p>
+              </article>
+              <article className="rounded-[14px] border border-[#D8E6EB] bg-white p-3">
+                <p className="text-xs font-semibold text-[#5F7077]">Categorias mais pedidas</p>
+                <p className="mt-1 text-sm font-semibold text-[#15323b]">
+                  {suggestionsSummary.topCategories.length > 0
+                    ? suggestionsSummary.topCategories.map(([key]) => categoryLabelMap.get(key as SupportTicketCategory) ?? key).join(', ')
+                    : '-'}
+                </p>
+              </article>
+            </div>
+            <div className="mt-4 overflow-hidden rounded-[18px] border border-[#D8E6EB] bg-white">
+              {faqSuggestions.length === 0 ? (
+                <p className="p-4 text-sm font-semibold text-[#5F7077]">Nenhuma sugestao recebida no periodo.</p>
+              ) : (
+                <table className="w-full border-collapse text-sm">
+                  <thead className="bg-[#F2F7F9] text-left">
+                    <tr>
+                      <th className="px-4 py-3 text-xs font-semibold uppercase tracking-[0.08em] text-[#8BA0A7]">Busca</th>
+                      <th className="px-4 py-3 text-xs font-semibold uppercase tracking-[0.08em] text-[#8BA0A7]">Sugestao</th>
+                      <th className="px-4 py-3 text-xs font-semibold uppercase tracking-[0.08em] text-[#8BA0A7]">Categoria</th>
+                      <th className="px-4 py-3 text-xs font-semibold uppercase tracking-[0.08em] text-[#8BA0A7]">Data</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {faqSuggestions.map((item) => (
+                      <tr key={item.id} className="border-t border-[#D8E6EB]">
+                        <td className="px-4 py-3 font-semibold text-[#15323b]">{item.search_query}</td>
+                        <td className="px-4 py-3 text-[#5F7077]">{item.suggested_question}</td>
+                        <td className="px-4 py-3 text-[#5F7077]">{categoryLabelMap.get(item.category_key) ?? item.category_key}</td>
+                        <td className="px-4 py-3 text-[#5F7077]">{formatDateTime(item.created_at)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          </div>
+        ) : null}
+
         {filters.tab === 'analytics' ? (
           <div className="mt-5 rounded-[22px] border border-[#D8E6EB] bg-[#F8FBFC] p-4">
             <div className="flex items-center gap-2">
-              <Eye className="h-4 w-4 text-[#1398B7]" />
               <p className="text-sm font-semibold text-[#15323b]">FAQ Admin / Analytics</p>
             </div>
-            <p className="mt-2 text-sm text-[#5F7077]">Esta aba consolida eventos de busca sem resultado capturados na busca de FAQ da página pública de suporte.</p>
+            <p className="mt-2 text-sm text-[#5F7077]">Esta aba consolida eventos de busca sem resultado capturados na busca de FAQ da pagina publica de suporte.</p>
             <div className="mt-4 rounded-[14px] border border-[#D8E6EB] bg-white p-3">
-              <p className="text-xs font-semibold text-[#5F7077]">Buscas sem resultado no período</p>
+              <p className="text-xs font-semibold text-[#5F7077]">Buscas sem resultado no periodo</p>
               <p className="mt-1 text-xl font-black text-[#15323b]">{analyticsSummary.noResultCount}</p>
             </div>
             <div className="mt-3 rounded-[14px] border border-[#D8E6EB] bg-white p-3">
               <p className="text-xs font-semibold text-[#5F7077]">Top termos sem resposta</p>
               {analyticsSummary.topQueries.length === 0 ? (
-                <p className="mt-2 text-sm text-[#5F7077]">Nenhuma busca sem resultado registrada no período.</p>
+                <p className="mt-2 text-sm text-[#5F7077]">Nenhuma busca sem resultado registrada no periodo.</p>
               ) : (
                 <ul className="mt-2 space-y-1 text-sm text-[#15323b]">
                   {analyticsSummary.topQueries.map(([query, count]) => (
