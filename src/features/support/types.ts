@@ -39,6 +39,14 @@ export interface SupportFaqItem {
   is_published?: boolean
 }
 
+export interface SupportFaqSuggestionInput {
+  category_key: SupportTicketCategory
+  search_query: string
+  suggested_question: string
+  details?: string
+  session_id?: string
+}
+
 export type SupportFaqEventType = 'view' | 'helpful' | 'not_helpful' | 'search_no_result'
 
 export interface SupportTicketUserSummary {

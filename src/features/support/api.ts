@@ -9,6 +9,7 @@ import type {
   SupportBusinessHoursConfig,
   SupportCrisisProtocolConfig,
   SupportFaqItem,
+  SupportFaqSuggestionInput,
   SupportFaqEventType,
   SupportMessage,
   SupportMessageInput,
@@ -297,6 +298,28 @@ export async function trackSupportFaqEvent(input: SupportFaqEventInput) {
       event_type: input.eventType,
       query: input.query?.trim() ? input.query.trim() : null,
       session_id: input.sessionId ?? null,
+    })
+
+  if (error) {
+    throw error
+  }
+}
+
+export async function createSupportFaqSuggestion(input: SupportFaqSuggestionInput) {
+  const { data: sessionData, error: sessionError } = await supabase.auth.getSession()
+  if (sessionError) {
+    throw sessionError
+  }
+
+  const { error } = await supabase
+    .from('support_faq_suggestions')
+    .insert({
+      category_key: input.category_key,
+      search_query: input.search_query.trim(),
+      suggested_question: input.suggested_question.trim(),
+      details: input.details?.trim() ? input.details.trim() : null,
+      user_id: sessionData.session?.user.id ?? null,
+      session_id: input.session_id ?? crypto.randomUUID(),
     })
 
   if (error) {

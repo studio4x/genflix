@@ -9,7 +9,7 @@ import { GenflixPublicFooter } from '@/components/public/genflix-public-footer'
 import { GenflixPublicHeader } from '@/components/public/genflix-public-header'
 import { PublicTextBlocksSection } from '@/components/public/public-text-blocks-section'
 import { BannerPlacementSlot } from '@/features/banners/banner-placement-slot'
-import { fetchSupportFaqs, fetchSupportSettings, trackSupportFaqEvent } from '@/features/support/api'
+import { createSupportFaqSuggestion, fetchSupportFaqs, fetchSupportSettings, trackSupportFaqEvent } from '@/features/support/api'
 import { genflixNavLinks } from '@/features/public/genflix-site-content'
 import { formatSupportBusinessHours, getOrderedSupportCategories, getSupportListRoute } from '@/lib/support-sla'
 import type { SupportFaqItem, SupportTicketCategory } from '@/features/support/types'
@@ -23,6 +23,10 @@ export function PublicSupportPage() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [settings, setSettings] = useState<Awaited<ReturnType<typeof fetchSupportSettings>> | null>(null)
   const [voteState, setVoteState] = useState<Record<string, 'helpful' | 'not_helpful'>>({})
+  const [suggestedQuestion, setSuggestedQuestion] = useState('')
+  const [suggestionDetails, setSuggestionDetails] = useState('')
+  const [suggestionStatus, setSuggestionStatus] = useState<string | null>(null)
+  const [isSubmittingSuggestion, setIsSubmittingSuggestion] = useState(false)
 
   const faqSessionId = useMemo(() => {
     const storageKey = 'genflix_support_faq_session_id'
@@ -30,6 +34,7 @@ export function PublicSupportPage() {
     if (existing) {
       return existing
     }
+
     const created = crypto.randomUUID()
     window.localStorage.setItem(storageKey, created)
     return created
@@ -64,18 +69,18 @@ export function PublicSupportPage() {
     [settings?.sla],
   )
 
-  const filteredFaqs = useMemo(() => {
-    const normalizedQuery = searchQuery.trim().toLowerCase()
+  const normalizedSearchQuery = searchQuery.trim().toLowerCase()
 
+  const filteredFaqs = useMemo(() => {
     return faqs.filter((item) => {
-      const matchesCategory = normalizedQuery.length > 0 ? true : item.category_key === activeCategory
-      const matchesQuery = normalizedQuery.length === 0
-        || item.question.toLowerCase().includes(normalizedQuery)
-        || item.answer.toLowerCase().includes(normalizedQuery)
+      const matchesCategory = normalizedSearchQuery.length > 0 ? true : item.category_key === activeCategory
+      const matchesQuery = normalizedSearchQuery.length === 0
+        || item.question.toLowerCase().includes(normalizedSearchQuery)
+        || item.answer.toLowerCase().includes(normalizedSearchQuery)
 
       return matchesCategory && matchesQuery
     })
-  }, [activeCategory, faqs, searchQuery])
+  }, [activeCategory, faqs, normalizedSearchQuery])
 
   useEffect(() => {
     const hasNoResult = searchQuery.trim().length > 0 && filteredFaqs.length === 0
@@ -90,6 +95,15 @@ export function PublicSupportPage() {
     }).catch(() => undefined)
   }, [faqSessionId, filteredFaqs.length, searchQuery])
 
+  useEffect(() => {
+    if (filteredFaqs.length > 0 || searchQuery.trim().length === 0) {
+      return
+    }
+
+    setSuggestedQuestion((current) => (current.trim().length > 0 ? current : searchQuery.trim()))
+    setSuggestionStatus(null)
+  }, [filteredFaqs.length, searchQuery])
+
   async function handleFaqVote(faqId: string, vote: 'helpful' | 'not_helpful') {
     setVoteState((current) => ({ ...current, [faqId]: vote }))
     await trackSupportFaqEvent({
@@ -97,6 +111,35 @@ export function PublicSupportPage() {
       eventType: vote,
       sessionId: faqSessionId,
     })
+  }
+
+  async function handleFaqSuggestionSubmit() {
+    const trimmedSearch = searchQuery.trim()
+    const trimmedSuggestion = suggestedQuestion.trim()
+    const trimmedDetails = suggestionDetails.trim()
+
+    if (!trimmedSearch || !trimmedSuggestion) {
+      setSuggestionStatus('Preencha a sugestão antes de enviar.')
+      return
+    }
+
+    try {
+      setIsSubmittingSuggestion(true)
+      await createSupportFaqSuggestion({
+        category_key: activeCategory,
+        search_query: trimmedSearch,
+        suggested_question: trimmedSuggestion,
+        details: trimmedDetails,
+        session_id: faqSessionId,
+      })
+      setSuggestedQuestion('')
+      setSuggestionDetails('')
+      setSuggestionStatus('Sugestão enviada. Obrigado por ajudar a expandir a FAQ.')
+    } catch {
+      setSuggestionStatus('Nao foi possivel enviar agora. Tente novamente em instantes.')
+    } finally {
+      setIsSubmittingSuggestion(false)
+    }
   }
 
   return (
@@ -116,16 +159,6 @@ export function PublicSupportPage() {
             <p className="mx-auto mt-4 max-w-[620px] text-base leading-8 text-[#5F7077]">
               Consulte perguntas frequentes, entenda o SLA de primeira resposta e abra um chamado quando precisar de atendimento humano.
             </p>
-
-            <label className="relative mx-auto mt-8 block max-w-[640px]">
-              <Search className="pointer-events-none absolute left-5 top-1/2 h-5 w-5 -translate-y-1/2 text-[#8BA0A7]" />
-              <input
-                value={searchQuery}
-                onChange={(event) => setSearchQuery(event.target.value)}
-                placeholder="Busque por pagamentos, acesso, erro tecnico, conta..."
-                className="h-14 w-full rounded-full border border-[#D8E6EB] bg-[#F8FBFC] pl-14 pr-6 text-sm font-semibold text-[#15323b] outline-none"
-              />
-            </label>
           </div>
         </div>
       </section>
@@ -202,7 +235,21 @@ export function PublicSupportPage() {
 
       <section id="perguntas-frequentes" className="public-site-container pb-10 sm:pb-14">
         <div className="grid gap-6 lg:grid-cols-[260px_minmax(0,1fr)]">
-          <aside className="space-y-4">
+          <aside className="space-y-4 lg:sticky lg:top-28 lg:self-start">
+            <label className="relative block">
+              <span className="mb-2 block text-[10px] font-black uppercase tracking-[0.18em] text-[#5F7077]">Pesquisar</span>
+              <Search className="pointer-events-none absolute left-5 top-[43px] h-5 w-5 -translate-y-1/2 text-[#8BA0A7]" />
+              <input
+                value={searchQuery}
+                onChange={(event) => {
+                  setSearchQuery(event.target.value)
+                  setSuggestionStatus(null)
+                }}
+                placeholder="Busque por pagamentos, acesso, erro tecnico, conta..."
+                className="h-14 w-full rounded-[18px] border border-[#D8E6EB] bg-white pl-14 pr-6 text-sm font-semibold text-[#15323b] outline-none shadow-sm"
+              />
+            </label>
+
             <div className="hidden rounded-[28px] border border-[#D8E6EB] bg-white p-4 shadow-sm lg:block">
               <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#5F7077]">Categorias</p>
               <div className="mt-4 space-y-2">
@@ -246,8 +293,48 @@ export function PublicSupportPage() {
             {isLoading ? (
               <p className="mt-6 text-sm font-semibold text-[#5F7077]">Carregando FAQ...</p>
             ) : filteredFaqs.length === 0 ? (
-              <div className="mt-6 rounded-[24px] border border-dashed border-[#D8E6EB] bg-[#F8FBFC] px-5 py-8 text-center">
+              <div className="mt-6 rounded-[24px] border border-dashed border-[#D8E6EB] bg-[#F8FBFC] px-5 py-8">
                 <p className="text-sm font-semibold text-[#5F7077]">Nenhuma resposta encontrada para essa busca.</p>
+                <p className="mt-2 text-sm leading-7 text-[#5F7077]">
+                  Envie uma sugestão para incluirmos essa duvida na FAQ.
+                </p>
+
+                <div className="mt-6 grid gap-4">
+                  <label className="grid gap-2 text-left">
+                    <span className="text-xs font-black uppercase tracking-[0.16em] text-[#5F7077]">Que pergunta frequente voce quer ver?</span>
+                    <input
+                      value={suggestedQuestion}
+                      onChange={(event) => setSuggestedQuestion(event.target.value)}
+                      placeholder="Ex.: Como recuperar o acesso ao curso depois da compra?"
+                      className="h-12 rounded-[16px] border border-[#D8E6EB] bg-white px-4 text-sm font-semibold text-[#15323b] outline-none"
+                    />
+                  </label>
+
+                  <label className="grid gap-2 text-left">
+                    <span className="text-xs font-black uppercase tracking-[0.16em] text-[#5F7077]">Contexto adicional</span>
+                    <textarea
+                      value={suggestionDetails}
+                      onChange={(event) => setSuggestionDetails(event.target.value)}
+                      placeholder="Explique o que faltou, quando aconteceu ou por que a FAQ deveria ter essa resposta."
+                      rows={4}
+                      className="rounded-[16px] border border-[#D8E6EB] bg-white px-4 py-3 text-sm font-semibold text-[#15323b] outline-none"
+                    />
+                  </label>
+
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                    <GenflixCtaButton
+                      type="button"
+                      className="h-12 px-5"
+                      onClick={() => void handleFaqSuggestionSubmit()}
+                      disabled={isSubmittingSuggestion}
+                    >
+                      {isSubmittingSuggestion ? 'Enviando...' : 'Enviar sugestao'}
+                    </GenflixCtaButton>
+                    {suggestionStatus ? (
+                      <p className="text-sm font-semibold text-[#5F7077]">{suggestionStatus}</p>
+                    ) : null}
+                  </div>
+                </div>
               </div>
             ) : (
               <div className="mt-6 space-y-4">
