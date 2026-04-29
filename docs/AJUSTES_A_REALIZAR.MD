@@ -60,7 +60,7 @@
 
 [OK] T17 - Nos cards de curso da home, transformar o nome da categoria em badge com fundo no canto superior esquerdo.
 
-[ ] T18 - Remover a borda do rodapé.
+[OK] T18 - Remover a borda do rodapé.
 
 [ ] T19 - Corrigir edição da coluna de mídias sociais do rodapé no editor visual.
 
