@@ -2203,7 +2203,7 @@ function EditorModal({
                           <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[#1398B7]">Responsividade do header</p>
                           <p className="mt-1 text-sm font-semibold text-[#15323b]">
                             {appearanceDraft.responsiveMode === 'linked'
-                              ? 'Os ajustes sÃ£o replicados automaticamente para desktop, tablet e mobile.'
+                              ? 'Os ajustes são replicados automaticamente para desktop, tablet e mobile.'
                               : 'Cada dispositivo pode ter valores diferentes.'}
                           </p>
                         </div>
@@ -2412,7 +2412,7 @@ function EditorModal({
                         <div className="border-t border-[#D8E6EB] px-4 py-4 text-sm font-semibold text-[#15323b]">
                           {appearanceDraft.responsiveMode === 'split'
                             ? 'O layout exibido abaixo corresponde ao dispositivo selecionado.'
-                            : 'Os valores sÃ£o espelhados automaticamente entre desktop, tablet e mobile.'}
+                            : 'Os valores são espelhados automaticamente entre desktop, tablet e mobile.'}
                         </div>
                       </div>
                     </div>
@@ -2601,7 +2601,7 @@ function EditorModal({
                     />
                   </label>
                   <label className="grid gap-1.5">
-                    <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Largura mÃ­nima</span>
+                    <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Largura mínima</span>
                     <div className="flex items-center gap-2">
                       <input
                         value={textStyle.minWidth ?? ''}
@@ -2613,7 +2613,7 @@ function EditorModal({
                     </div>
                   </label>
                   <label className="grid gap-1.5">
-                    <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Altura mÃ­nima</span>
+                    <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Altura mínima</span>
                     <div className="flex items-center gap-2">
                       <input
                         value={textStyle.minHeight ?? ''}
@@ -2664,7 +2664,7 @@ function EditorModal({
                       }))}
                       className="h-11 rounded-[14px] border border-[#D8E6EB] bg-white px-3 text-sm font-semibold text-[#15323b] outline-none"
                     >
-                      <option value="">PadrÃ£o</option>
+                      <option value="">Padrão</option>
                       <option value="left">Esquerda</option>
                       <option value="center">Centro</option>
                       <option value="right">Direita</option>
@@ -2675,7 +2675,7 @@ function EditorModal({
                     <>
                   {isTitleEditor ? (
                     <label className="grid gap-1.5 md:col-span-2">
-                      <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Tag do tÃ­tulo</span>
+                      <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Tag do título</span>
                       <select
                         value={getHeadingTagLabel(textStyle.headingTag).toLowerCase()}
                         onChange={(event) => setTextStyle((current) => ({
@@ -2865,7 +2865,7 @@ function EditorModal({
                     type="button"
                     onClick={() => {
                       void navigator.clipboard.writeText(`${editor.pageKey}/${editor.entryKey}`)
-                      setMessage('Chave copiada para a Ã¡rea de transferÃªncia.')
+                      setMessage('Chave copiada para a área de transferência.')
                     }}
                     className="inline-flex items-center gap-2 rounded-full border border-[#D8E6EB] px-3 py-2 text-xs font-black uppercase tracking-[0.14em] text-[#0A3640] hover:bg-[#F2F7F9]"
                   >
@@ -2878,9 +2878,9 @@ function EditorModal({
               {usesRichTextToolbar ? (
                 <div className="flex flex-wrap gap-2 border-b border-[#D8E6EB] px-4 py-3">
                   <button type="button" onClick={() => applyRichTextFormat('<strong>', '</strong>')} className="rounded-full border border-[#D8E6EB] px-3 py-2 text-xs font-black uppercase tracking-[0.14em] text-[#0A3640] hover:bg-[#F2F7F9]">Negrito</button>
-                  <button type="button" onClick={() => applyRichTextFormat('<em>', '</em>')} className="rounded-full border border-[#D8E6EB] px-3 py-2 text-xs font-black uppercase tracking-[0.14em] text-[#0A3640] hover:bg-[#F2F7F9]">ItÃ¡lico</button>
-                  <button type="button" onClick={() => applyRichTextFormat('<p>', '</p>')} className="rounded-full border border-[#D8E6EB] px-3 py-2 text-xs font-black uppercase tracking-[0.14em] text-[#0A3640] hover:bg-[#F2F7F9]">ParÃ¡grafo</button>
-                  <button type="button" onClick={() => applyRichTextFormat('<h3>', '</h3>')} className="rounded-full border border-[#D8E6EB] px-3 py-2 text-xs font-black uppercase tracking-[0.14em] text-[#0A3640] hover:bg-[#F2F7F9]">TÃ­tulo</button>
+                  <button type="button" onClick={() => applyRichTextFormat('<em>', '</em>')} className="rounded-full border border-[#D8E6EB] px-3 py-2 text-xs font-black uppercase tracking-[0.14em] text-[#0A3640] hover:bg-[#F2F7F9]">Itálico</button>
+                  <button type="button" onClick={() => applyRichTextFormat('<p>', '</p>')} className="rounded-full border border-[#D8E6EB] px-3 py-2 text-xs font-black uppercase tracking-[0.14em] text-[#0A3640] hover:bg-[#F2F7F9]">Parágrafo</button>
+                  <button type="button" onClick={() => applyRichTextFormat('<h3>', '</h3>')} className="rounded-full border border-[#D8E6EB] px-3 py-2 text-xs font-black uppercase tracking-[0.14em] text-[#0A3640] hover:bg-[#F2F7F9]">Título</button>
                   <button type="button" onClick={() => applyRichTextFormat('<ul><li>', '</li></ul>')} className="rounded-full border border-[#D8E6EB] px-3 py-2 text-xs font-black uppercase tracking-[0.14em] text-[#0A3640] hover:bg-[#F2F7F9]">Lista</button>
                 </div>
               ) : null}
@@ -2888,7 +2888,7 @@ function EditorModal({
               {isRichTextListEditor ? (
                 <div className="grid gap-2 p-4">
                   <div className="rounded-[18px] border border-[#D8E6EB] bg-[#F8FCFD] px-4 py-4 text-sm leading-6 text-[#5F7077]">
-                    Cada bloco de texto Ã© editado individualmente no editor rico abaixo. A estrutura da lista continua interna, mas nÃ£o Ã© mais exposta como JSON neste fluxo.
+                    Cada bloco de texto é editado individualmente no editor rico abaixo. A estrutura da lista continua interna, mas não é mais exposta como JSON neste fluxo.
                   </div>
                   {message ? (
                     <div className="rounded-[16px] border border-[#D8E6EB] bg-[#F2F7F9] p-3 text-sm font-bold text-[#15323b]">
