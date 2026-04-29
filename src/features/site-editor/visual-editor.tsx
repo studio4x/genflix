@@ -2805,22 +2805,8 @@ function EditorModal({
               </div>
             ) : null}
 
-            <div className="rounded-[22px] border border-[#D8E6EB] bg-white">
-              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#D8E6EB] px-4 py-3">
-                <div>
-                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#5F7077]">
-                    {isRichTextListEditor ? 'Construtor de conteúdo' : usesRichTextToolbar ? 'Editor rico' : 'Conteúdo'}
-                  </p>
-                  <p className="mt-1 text-sm font-semibold text-[#15323b]">
-                    {isRichTextListEditor
-                      ? 'Use os blocos abaixo para editar cada texto em um fluxo visual, no estilo builder.'
-                      : usesJsonEditor
-                      ? 'Edite o valor com estrutura válida e publique em seguida.'
-                      : usesRichTextToolbar
-                        ? 'Use os atalhos e os botões de formatação para compor conteúdo rico sem trocar a estrutura da página.'
-                        : 'Edite o texto bruto com atualização imediata no site.'}
-                  </p>
-                </div>
+            <div className="space-y-0">
+              <div className="flex flex-wrap gap-2 border-b border-[#D8E6EB] px-4 py-3">
                 <div className="flex flex-wrap gap-2">
                   <button
                     type="button"
@@ -3826,3 +3812,4 @@ export function EditableControlsHint() {
     </div>
   )
 }
+

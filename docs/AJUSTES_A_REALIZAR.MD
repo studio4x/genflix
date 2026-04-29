@@ -194,7 +194,7 @@
 
 [OK] T60 - Além de editar os textos das páginas, insira também a possibilidade de inserir novos textos (bloco de textos). Isso deve ser aplicada em todas as páginas públicas, principalmente nas páginas: politica de privacidade, termos de uso, fsuporte, etc.
 
-[ ] T61 - Na Tarefa T57 foi solicitado para remover também o card "conteúdo" do modal do editor. Ele ainda está aparecendo, não foi removido.
+[OK] T61 - Na Tarefa T57 foi solicitado para remover também o card "conteúdo" do modal do editor. Ele ainda está aparecendo, não foi removido.
 
 [ ] T62 -  Alguns botões do site, ao clicar para editar no editor visual, não estão sendo identificados como botão, mas sim como texto, ex.: Botão de "Acessar painel/entrar" no header, "Ver todos os recursos" na página de cursos, entre outros; Faça os botões abrirem como botões no editor visual.
 
