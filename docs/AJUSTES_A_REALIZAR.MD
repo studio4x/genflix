@@ -207,7 +207,7 @@
 
 [ ] T65 - O layout da página https://genflix-omega.vercel.app/privacidade está com a estrutura diferente das demais páginas do site, a página está no formato box. AJuste esta página.
 
-[ ] T66 - NA TAREFA [T16] foi implementada a funcionalidade de expandir e recoelher todos, porém, a ideia que eu quero mesmo, é que cada item tenha a opção de clicar para recolher ele mas manter o titulo do item aparecendo, exatamente igual a um acordeão/sanfona.
+[OK] T66 - NA TAREFA [T16] foi implementada a funcionalidade de expandir e recoelher todos, porém, a ideia que eu quero mesmo, é que cada item tenha a opção de clicar para recolher ele mas manter o titulo do item aparecendo, exatamente igual a um acordeão/sanfona.
 ---
 
 

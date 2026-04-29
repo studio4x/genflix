@@ -13,7 +13,7 @@
   type ReactNode,
 } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { CheckCircle2, Copy, Edit3, Image as ImageIcon, LayoutTemplate, MessageSquare, PanelBottomOpen, Plus, Redo2, RotateCcw, Save, Send, Settings, Sparkles, Undo2, Wand2, X } from 'lucide-react'
+import { CheckCircle2, Copy, Edit3, ChevronDown, Image as ImageIcon, LayoutTemplate, MessageSquare, PanelBottomOpen, Plus, Redo2, RotateCcw, Save, Send, Settings, Sparkles, Undo2, Wand2, X } from 'lucide-react'
 
 import { useAuth } from '@/app/providers/auth-provider'
 import ReactQuill from '@/components/forms/react-quill'
@@ -759,6 +759,7 @@ function ListItemEditorCard({
   onUploadIcon?: (index: number, file: File) => void
   editorConfig: NormalizedListEditorSchema
 }) {
+  const [isCollapsed, setIsCollapsed] = useState(false)
   const metadata: Record<string, unknown> = isStringRecord(item.metadata) ? { ...item.metadata } : {}
   const nestedItems = normalizeEditableListItems(metadata.items)
   const metadataWithoutItems: Record<string, unknown> = { ...metadata }
@@ -888,64 +889,72 @@ function ListItemEditorCard({
           </div>
         </div>
 
-        <div className="mt-4 grid gap-3 md:grid-cols-2">
-          <label className="grid gap-1.5">
-            <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">ID</span>
-            <input
-              value={item.id}
-              onChange={(event) => updateField('id', event.target.value)}
-              className="h-11 rounded-[14px] border border-[#D8E6EB] px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]"
-            />
-          </label>
-          <label className="grid gap-1.5">
-            <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Label</span>
-            <input
-              value={item.label ?? ''}
-              onChange={(event) => updateField('label', event.target.value)}
-              className="h-11 rounded-[14px] border border-[#D8E6EB] px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]"
-              placeholder="Nome exibido no editor"
-            />
-          </label>
-          <label className="grid gap-1.5 md:col-span-2">
-            <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Título opcional</span>
-            <input
-              value={item.title ?? ''}
-              onChange={(event) => updateField('title', event.target.value)}
-              className="h-11 rounded-[14px] border border-[#D8E6EB] px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]"
-              placeholder="Exibido antes do texto, se houver"
-            />
-          </label>
-        </div>
-
-        <div className="mt-4 rounded-[18px] border border-[#D8E6EB] bg-[#F8FCFD] p-4">
-          <div className="mb-3">
-            <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[#1398B7]">Conteúdo rico</p>
-            <p className="mt-1 text-xs leading-5 text-[#5F7077]">
-              Este bloco usa o mesmo editor rico base do construtor de cursos, sem precisar editar JSON.
-            </p>
+        {isCollapsed ? (
+          <div className="mt-4 rounded-[18px] border border-dashed border-[#D8E6EB] bg-[#F8FCFD] px-4 py-4">
+            <p className="text-sm font-semibold text-[#15323b]">Conteúdo recolhido. Clique no cabeçalho para expandir este item.</p>
           </div>
-          <div className="overflow-hidden rounded-[18px] border border-[#D8E6EB] bg-white">
-            <ReactQuill
-              value={item.description ?? ''}
-              onChange={updateRichTextField}
-              placeholder="Escreva o conteúdo aqui..."
-              modules={richTextToolbarModules}
-              className="[&_.react-quill-local]:rounded-none [&_.react-quill-local]:border-0 [&_.react-quill-local_.ql-container]:border-0"
-            />
-          </div>
-          {onInsertBelow ? (
-            <div className="mt-4 flex justify-center">
-              <button
-                type="button"
-                onClick={() => onInsertBelow(index)}
-                className="inline-flex items-center gap-2 rounded-full border border-[#D8E6EB] bg-white px-4 py-2 text-[10px] font-black uppercase tracking-[0.14em] text-[#0A3640] transition hover:border-[#1398B7] hover:bg-[#EAF8FB]"
-              >
-                <Plus className="h-3.5 w-3.5" />
-                Inserir bloco abaixo
-              </button>
+        ) : (
+          <>
+            <div className="mt-4 grid gap-3 md:grid-cols-2">
+              <label className="grid gap-1.5">
+                <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">ID</span>
+                <input
+                  value={item.id}
+                  onChange={(event) => updateField('id', event.target.value)}
+                  className="h-11 rounded-[14px] border border-[#D8E6EB] px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]"
+                />
+              </label>
+              <label className="grid gap-1.5">
+                <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Label</span>
+                <input
+                  value={item.label ?? ''}
+                  onChange={(event) => updateField('label', event.target.value)}
+                  className="h-11 rounded-[14px] border border-[#D8E6EB] px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]"
+                  placeholder="Nome exibido no editor"
+                />
+              </label>
+              <label className="grid gap-1.5 md:col-span-2">
+                <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Título opcional</span>
+                <input
+                  value={item.title ?? ''}
+                  onChange={(event) => updateField('title', event.target.value)}
+                  className="h-11 rounded-[14px] border border-[#D8E6EB] px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]"
+                  placeholder="Exibido antes do texto, se houver"
+                />
+              </label>
             </div>
-          ) : null}
-        </div>
+
+            <div className="mt-4 rounded-[18px] border border-[#D8E6EB] bg-[#F8FCFD] p-4">
+              <div className="mb-3">
+                <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[#1398B7]">Conteúdo rico</p>
+                <p className="mt-1 text-xs leading-5 text-[#5F7077]">
+                  Este bloco usa o mesmo editor rico base do construtor de cursos, sem precisar editar JSON.
+                </p>
+              </div>
+              <div className="overflow-hidden rounded-[18px] border border-[#D8E6EB] bg-white">
+                <ReactQuill
+                  value={item.description ?? ''}
+                  onChange={updateRichTextField}
+                  placeholder="Escreva o conteúdo aqui..."
+                  modules={richTextToolbarModules}
+                  className="[&_.react-quill-local]:rounded-none [&_.react-quill-local]:border-0 [&_.react-quill-local_.ql-container]:border-0"
+                />
+              </div>
+              {onInsertBelow ? (
+                <div className="mt-4 flex justify-center">
+                  <button
+                    type="button"
+                    onClick={() => onInsertBelow(index)}
+                    className="inline-flex items-center gap-2 rounded-full border border-[#D8E6EB] bg-white px-4 py-2 text-[10px] font-black uppercase tracking-[0.14em] text-[#0A3640] transition hover:border-[#1398B7] hover:bg-[#EAF8FB]"
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                    Inserir bloco abaixo
+                  </button>
+                </div>
+              ) : null}
+            </div>
+          </>
+        )}
       </div>
     )
   }
@@ -973,9 +982,14 @@ function ListItemEditorCard({
     return (
       <div className={cn('rounded-[20px] border border-[#D8E6EB] bg-white p-4', depth > 0 && 'bg-[#FCFEFF]')}>
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => setIsCollapsed((current) => !current)}
+            aria-expanded={!isCollapsed}
+            className="flex min-w-0 flex-1 items-center gap-3 rounded-[18px] border border-[#D8E6EB] bg-[#F8FCFD] px-4 py-3 text-left transition hover:border-[#1398B7] hover:bg-white"
+          >
             <div
-              className="flex h-10 w-10 items-center justify-center rounded-2xl border bg-[#F8FCFD]"
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border bg-white"
               style={{ borderColor: colorValue || '#D8E6EB', color: colorValue || '#0A3640' }}
             >
               {renderSiteIconVisual({
@@ -985,13 +999,16 @@ function ListItemEditorCard({
                 className: 'h-4 w-4',
               })}
             </div>
-            <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[#1398B7]">
-              {depth > 0 ? `Bloco interno ${index + 1}` : `Bloco ${index + 1}`}
-            </p>
-            <p className="mt-1 text-sm font-semibold text-[#15323b]">
-              {item.label || templateDefinition?.label || item.id}
-            </p>
-          </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[#1398B7]">
+                {depth > 0 ? `Bloco interno ${index + 1}` : `Bloco ${index + 1}`}
+              </p>
+              <p className="mt-1 truncate text-sm font-semibold text-[#15323b]">
+                {item.label || templateDefinition?.label || item.id}
+              </p>
+            </div>
+            <ChevronDown className={cn('h-4 w-4 shrink-0 text-[#5F7077] transition-transform', !isCollapsed && 'rotate-180')} />
+          </button>
           <div className="flex flex-wrap gap-2">
             <button
               type="button"
@@ -1026,6 +1043,12 @@ function ListItemEditorCard({
           </div>
         </div>
 
+        {isCollapsed ? (
+          <div className="mt-4 rounded-[18px] border border-dashed border-[#D8E6EB] bg-[#F8FCFD] px-4 py-4">
+            <p className="text-sm font-semibold text-[#15323b]">Bloco recolhido. Clique no cabeçalho para expandir este item.</p>
+          </div>
+        ) : (
+          <>
         <div className="mt-4 grid gap-3 md:grid-cols-2">
           <label className="grid gap-1.5">
             <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Nome do bloco</span>
@@ -1165,6 +1188,8 @@ function ListItemEditorCard({
             />
           </label>
         </div>
+          </>
+        )}
       </div>
     )
   }
@@ -1172,14 +1197,22 @@ function ListItemEditorCard({
   return (
     <div className={cn('rounded-[20px] border border-[#D8E6EB] bg-white p-4', depth > 0 && 'bg-[#FCFEFF]')}>
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[#1398B7]">
-            {depth > 0 ? `Elemento interno ${index + 1}` : `Elemento ${index + 1}`}
-          </p>
-          <p className="mt-1 text-sm font-semibold text-[#15323b]">
-            {item.title || item.label || item.id}
-          </p>
-        </div>
+        <button
+          type="button"
+          onClick={() => setIsCollapsed((current) => !current)}
+          aria-expanded={!isCollapsed}
+          className="flex min-w-0 flex-1 items-center gap-3 rounded-[18px] border border-[#D8E6EB] bg-[#F8FCFD] px-4 py-3 text-left transition hover:border-[#1398B7] hover:bg-white"
+        >
+          <div className="min-w-0 flex-1">
+            <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[#1398B7]">
+              {depth > 0 ? `Elemento interno ${index + 1}` : `Elemento ${index + 1}`}
+            </p>
+            <p className="mt-1 truncate text-sm font-semibold text-[#15323b]">
+              {item.title || item.label || item.id}
+            </p>
+          </div>
+          <ChevronDown className={cn('h-4 w-4 shrink-0 text-[#5F7077] transition-transform', !isCollapsed && 'rotate-180')} />
+        </button>
         <div className="flex flex-wrap gap-2">
           <button
             type="button"
@@ -1214,7 +1247,7 @@ function ListItemEditorCard({
         </div>
       </div>
 
-      <div className="mt-4 grid gap-3 md:grid-cols-2">
+      <div className={cn('mt-4 grid gap-3 md:grid-cols-2', isCollapsed && 'hidden')}>
         <label className="grid gap-1.5">
           <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">ID</span>
           <input
@@ -1283,7 +1316,7 @@ function ListItemEditorCard({
         </label>
       </div>
 
-      <div className="mt-4 grid gap-3 md:grid-cols-2">
+      <div className={cn('mt-4 grid gap-3 md:grid-cols-2', isCollapsed && 'hidden')}>
         <label className="grid gap-1.5">
           <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Texto do botao opcional</span>
           <input
@@ -1321,7 +1354,7 @@ function ListItemEditorCard({
         </div>
       </div>
 
-      {nestedItems.length > 0 ? (
+      {!isCollapsed && nestedItems.length > 0 ? (
         <div className="mt-4 rounded-[18px] border border-[#D8E6EB] bg-[#F8FCFD] p-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
@@ -1369,7 +1402,7 @@ function ListItemEditorCard({
         </div>
       ) : null}
 
-      {Object.keys(metadataWithoutItems).length > 0 ? (
+      {!isCollapsed && Object.keys(metadataWithoutItems).length > 0 ? (
         <label className="mt-4 grid gap-1.5">
           <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Metadata JSON</span>
           <textarea
@@ -1412,7 +1445,6 @@ function EditorModal({
   const [draftComment, setDraftComment] = useState('')
   const [workspaceState, setWorkspaceState] = useState<SiteEditorWorkspaceMap>({})
   const [isLoadingWorkspace, setIsLoadingWorkspace] = useState(false)
-  const [areAllListItemsCollapsed, setAreAllListItemsCollapsed] = useState(false)
   const workspaceKey = useMemo(() => createSiteEditorWorkspaceKey(editor.pageKey, editor.entryKey), [editor.entryKey, editor.pageKey])
   const workspaceRecord = workspaceState[workspaceKey] ?? getDefaultWorkspaceRecord(editor.pageKey, editor.entryKey)
   const [history, setHistory] = useState<Array<{ rawValue: string; textStyle: TextStyleValue }>>([])
@@ -1993,20 +2025,6 @@ function EditorModal({
                     </p>
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setAreAllListItemsCollapsed(true)}
-                      className="rounded-full border border-[#D8E6EB] px-4 py-2 text-[10px] font-black uppercase tracking-[0.14em] text-[#0A3640] hover:bg-white"
-                    >
-                      Recolher todos
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setAreAllListItemsCollapsed(false)}
-                      className="rounded-full border border-[#D8E6EB] px-4 py-2 text-[10px] font-black uppercase tracking-[0.14em] text-[#0A3640] hover:bg-white"
-                    >
-                      Expandir todos
-                    </button>
                     {listEditorConfig.templates.length === 0 ? (
                       <button
                         type="button"
@@ -2053,50 +2071,44 @@ function EditorModal({
                   </div>
                 ) : null}
 
-                {areAllListItemsCollapsed ? (
-                  <div className="mt-4 rounded-[18px] border border-dashed border-[#D8E6EB] bg-white px-4 py-6 text-sm font-semibold text-[#5F7077]">
-                    Todos os elementos da listagem estão recolhidos. Use Expandir todos para voltar a ver os cartões.
-                  </div>
-                ) : (
-                  <div className="mt-4 grid gap-3">
-                    {normalizeEditableListItems(parsedPreview.value).map((item, index) => (
-                      <ListItemEditorCard
-                        key={item.id}
-                        item={item}
-                        index={index}
-                        total={previewList.length}
-                        onChange={(nextItem) => {
-                          const nextItems = normalizeEditableListItems(parsedPreview.value)
-                          nextItems[index] = nextItem
-                          updateListEditor(nextItems)
-                        }}
-                        onMove={(fromIndex, delta) => updateListEditor(moveArrayItem(normalizeEditableListItems(parsedPreview.value), fromIndex, fromIndex + delta))}
-                        onDuplicate={(duplicateIndex) => {
-                          const nextItems = normalizeEditableListItems(parsedPreview.value)
-                          const currentItem = nextItems[duplicateIndex]
-                          nextItems.splice(duplicateIndex + 1, 0, cloneEditableListItem(currentItem, listEditorConfig))
-                          updateListEditor(nextItems)
-                        }}
-                        onInsertBelow={(insertIndex) => {
-                          const nextItems = normalizeEditableListItems(parsedPreview.value)
-                          const template = listEditorConfig.templates[0]
-                          const nextItem = template
-                            ? createListItemFromTemplate(template, listEditorConfig)
-                            : {
-                                id: `item-${Date.now()}`,
-                                label: 'Novo bloco',
-                                description: '',
-                              }
-                          nextItems.splice(insertIndex + 1, 0, nextItem)
-                          updateListEditor(nextItems)
-                        }}
-                        onRemove={(removeIndex) => updateListEditor(normalizeEditableListItems(parsedPreview.value).filter((_, currentIndex) => currentIndex !== removeIndex))}
-                        onUploadIcon={(uploadIndex, file) => void handleListIconUpload(uploadIndex, file)}
-                        editorConfig={listEditorConfig}
-                      />
-                    ))}
-                  </div>
-                )}
+                <div className="mt-4 grid gap-3">
+                  {normalizeEditableListItems(parsedPreview.value).map((item, index) => (
+                    <ListItemEditorCard
+                      key={item.id}
+                      item={item}
+                      index={index}
+                      total={previewList.length}
+                      onChange={(nextItem) => {
+                        const nextItems = normalizeEditableListItems(parsedPreview.value)
+                        nextItems[index] = nextItem
+                        updateListEditor(nextItems)
+                      }}
+                      onMove={(fromIndex, delta) => updateListEditor(moveArrayItem(normalizeEditableListItems(parsedPreview.value), fromIndex, fromIndex + delta))}
+                      onDuplicate={(duplicateIndex) => {
+                        const nextItems = normalizeEditableListItems(parsedPreview.value)
+                        const currentItem = nextItems[duplicateIndex]
+                        nextItems.splice(duplicateIndex + 1, 0, cloneEditableListItem(currentItem, listEditorConfig))
+                        updateListEditor(nextItems)
+                      }}
+                      onInsertBelow={(insertIndex) => {
+                        const nextItems = normalizeEditableListItems(parsedPreview.value)
+                        const template = listEditorConfig.templates[0]
+                        const nextItem = template
+                          ? createListItemFromTemplate(template, listEditorConfig)
+                          : {
+                              id: `item-${Date.now()}`,
+                              label: 'Novo bloco',
+                              description: '',
+                            }
+                        nextItems.splice(insertIndex + 1, 0, nextItem)
+                        updateListEditor(nextItems)
+                      }}
+                      onRemove={(removeIndex) => updateListEditor(normalizeEditableListItems(parsedPreview.value).filter((_, currentIndex) => currentIndex !== removeIndex))}
+                      onUploadIcon={(uploadIndex, file) => void handleListIconUpload(uploadIndex, file)}
+                      editorConfig={listEditorConfig}
+                    />
+                  ))}
+                </div>
               </div>
             ) : null}
 
