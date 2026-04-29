@@ -70,7 +70,7 @@
 
 ## CHAT 6 — Notificações e operações
 
-[ ] T21 - Na página de notificações, permitir configurar o e-mail padrão que receberá notificações administrativas da plataforma.
+[OK] T21 - Na página de notificações, permitir configurar o e-mail padrão que receberá notificações administrativas da plataforma.
 
 [ ] T22 - Na página atual de notificações, exibir somente notificações enviadas manualmente.
 
