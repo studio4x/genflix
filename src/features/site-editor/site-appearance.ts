@@ -2,7 +2,13 @@ import type { GenflixPageKey } from '@/features/public/genflix-site-content'
 
 export type SiteAppearanceScopeKey = GenflixPageKey | 'global'
 
-export type SiteAppearanceValue = {
+export type SiteAppearanceViewport = 'desktop' | 'tablet' | 'mobile'
+
+export type SiteAppearanceScopeMode = 'page' | 'global'
+
+export type SiteAppearanceResponsiveMode = 'linked' | 'split'
+
+export type SiteAppearanceFields = {
   logoScale?: number
   headerHeight?: string
   menuColor?: string
@@ -15,9 +21,21 @@ export type SiteAppearanceValue = {
   pageBackgroundColor?: string
 }
 
+export type SiteAppearanceValue = SiteAppearanceFields & {
+  scope?: SiteAppearanceScopeMode
+  responsiveMode?: SiteAppearanceResponsiveMode
+  variants?: Partial<Record<SiteAppearanceViewport, SiteAppearanceFields>>
+}
+
+export type NormalizedSiteAppearance = SiteAppearanceFields & {
+  scope: SiteAppearanceScopeMode
+  responsiveMode: SiteAppearanceResponsiveMode
+  variants: Record<SiteAppearanceViewport, SiteAppearanceFields>
+}
+
 export type SiteAppearanceTheme = 'home' | 'light'
 
-export const defaultSiteAppearance: SiteAppearanceValue = {
+export const defaultSiteAppearance: SiteAppearanceFields = {
   logoScale: 1,
   headerHeight: '72px',
   menuColor: '#15323B',
@@ -30,25 +48,14 @@ export const defaultSiteAppearance: SiteAppearanceValue = {
   pageBackgroundColor: '#F2F7F9',
 }
 
-export function createDefaultSiteAppearance(theme: SiteAppearanceTheme): SiteAppearanceValue {
-  if (theme === 'home') {
-    return {
-      ...defaultSiteAppearance,
-      menuColor: '#FFFFFF',
-      menuActiveColor: '#FFFFFF',
-      menuHoverColor: '#FFFFFF',
-    }
-  }
-
-  return defaultSiteAppearance
+function isStringRecord(value: unknown): value is Record<string, unknown> {
+  return !!value && typeof value === 'object' && !Array.isArray(value)
 }
 
-export function normalizeSiteAppearance(value: unknown, fallback: SiteAppearanceValue = defaultSiteAppearance): SiteAppearanceValue {
-  const source = value && typeof value === 'object' && !Array.isArray(value)
-    ? value as Record<string, unknown>
-    : {}
+function normalizeSiteAppearanceFields(value: unknown, fallback: SiteAppearanceFields = defaultSiteAppearance): SiteAppearanceFields {
+  const source = isStringRecord(value) ? value : {}
 
-  const readString = (field: keyof SiteAppearanceValue) => {
+  const readString = (field: keyof SiteAppearanceFields) => {
     const current = source[field]
     const fallbackValue = fallback[field]
     if (typeof current === 'string' && current.trim() !== '') {
@@ -58,7 +65,7 @@ export function normalizeSiteAppearance(value: unknown, fallback: SiteAppearance
     return typeof fallbackValue === 'string' ? fallbackValue : undefined
   }
 
-  const readNumber = (field: keyof SiteAppearanceValue) => {
+  const readNumber = (field: keyof SiteAppearanceFields) => {
     const current = source[field]
     const fallbackValue = fallback[field]
     const numericValue = typeof current === 'number'
@@ -85,6 +92,76 @@ export function normalizeSiteAppearance(value: unknown, fallback: SiteAppearance
     menuFontWeight: readString('menuFontWeight'),
     menuLetterSpacing: readString('menuLetterSpacing'),
     pageBackgroundColor: readString('pageBackgroundColor'),
+  }
+}
+
+export function createDefaultSiteAppearance(theme: SiteAppearanceTheme): SiteAppearanceValue {
+  if (theme === 'home') {
+    return {
+      ...defaultSiteAppearance,
+      menuColor: '#FFFFFF',
+      menuActiveColor: '#FFFFFF',
+      menuHoverColor: '#FFFFFF',
+    }
+  }
+
+  return defaultSiteAppearance
+}
+
+export function normalizeSiteAppearance(
+  value: unknown,
+  fallback: SiteAppearanceFields = defaultSiteAppearance,
+  defaultScope: SiteAppearanceScopeMode = 'page',
+): NormalizedSiteAppearance {
+  const source = isStringRecord(value) ? value : {}
+  const normalizedFallback = normalizeSiteAppearanceFields(fallback, defaultSiteAppearance)
+  const base = normalizeSiteAppearanceFields(source, normalizedFallback)
+  const scope = source.scope === 'global' || source.scope === 'page'
+    ? source.scope
+    : defaultScope
+  const responsiveMode = source.responsiveMode === 'split' ? 'split' : 'linked'
+  const variantsSource = isStringRecord(source.variants) ? source.variants : {}
+  const desktop = normalizeSiteAppearanceFields(variantsSource.desktop, base)
+  const tablet = normalizeSiteAppearanceFields(variantsSource.tablet, desktop)
+  const mobile = normalizeSiteAppearanceFields(variantsSource.mobile, desktop)
+
+  return {
+    ...base,
+    scope,
+    responsiveMode,
+    variants: {
+      desktop,
+      tablet,
+      mobile,
+    },
+  }
+}
+
+export function resolveSiteAppearanceVariant(
+  value: NormalizedSiteAppearance,
+  viewport: SiteAppearanceViewport,
+): SiteAppearanceFields {
+  if (value.responsiveMode === 'split') {
+    return value.variants[viewport]
+  }
+
+  return value.variants.desktop
+}
+
+export function buildSiteAppearanceValue(value: NormalizedSiteAppearance): SiteAppearanceValue {
+  const desktop = value.variants.desktop
+  const tablet = value.responsiveMode === 'split' ? value.variants.tablet : desktop
+  const mobile = value.responsiveMode === 'split' ? value.variants.mobile : desktop
+
+  return {
+    scope: value.scope,
+    responsiveMode: value.responsiveMode,
+    ...desktop,
+    variants: {
+      desktop,
+      tablet,
+      mobile,
+    },
   }
 }
 

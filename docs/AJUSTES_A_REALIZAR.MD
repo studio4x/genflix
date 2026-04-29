@@ -178,9 +178,13 @@
 
 ## Chat 17 - Ajustes no Header
 
-[ ] T53 - no editor do header, precisamos pensar em algo para definir qual tipo de definição (da página ou global) tem prevalência... Penso que no editor do header da página, deve ter um toogle para selecionar "configurações desta página e configurações global". Ao seleciona da página, os ajustes serão apenas para a pagina aberta.. se for global, todos os campos de ajustes ficam inativos e a página assume as configurações globais. As definir as configurações do header para aquela página, essas definições devem de fato ficar salvos, sem ser sobrescritas pelas configurações globais. Precisamos também ter a opção de replicar configurações para desktop, tablet e mobile, ou então definir valores diferentes para cada.
+[OK] T53 - no editor do header, precisamos pensar em algo para definir qual tipo de definição (da página ou global) tem prevalência... Penso que no editor do header da página, deve ter um toogle para selecionar "configurações desta página e configurações global". Ao seleciona da página, os ajustes serão apenas para a pagina aberta.. se for global, todos os campos de ajustes ficam inativos e a página assume as configurações globais. As definir as configurações do header para aquela página, essas definições devem de fato ficar salvos, sem ser sobrescritas pelas configurações globais. Precisamos também ter a opção de replicar configurações para desktop, tablet e mobile, ou então definir valores diferentes para cada.
 
 [OK] T54 - Ao finalizar o editor, clicando no botão "sair da Edição", a página a ser editada deve ser recarregada limpando o cache.
+
+[ ] T55 - A implementação feita na T54 não está surtindo efeito. ao sair do editor, realmente a tela recarregada, porém, os ajustes feitos não aparecem.. Se eu acessar de outro navegador, ai sim vejo os ajustes feitos.. Se eu acessar o admin e depois voltar para a página, eu também consigo ver os ajustes, mas, se eu recarrego a página após sair do admin, os ajustes somem.. Dev ter algum cache da página que ainda não foi limpo no navegador.
+
+---
 
 Parcial
 

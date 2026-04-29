@@ -41,7 +41,17 @@ import {
   type SitePageKey,
 } from '@/features/site-editor/types'
 import { renderSiteIcon, renderSiteIconVisual, SITE_ICON_OPTIONS } from '@/features/site-editor/site-icons'
-import { defaultSiteAppearance, normalizeSiteAppearance } from '@/features/site-editor/site-appearance'
+import {
+  buildSiteAppearanceValue,
+  defaultSiteAppearance,
+  normalizeSiteAppearance,
+  resolveSiteAppearanceVariant,
+  type NormalizedSiteAppearance,
+  type SiteAppearanceFields,
+  type SiteAppearanceResponsiveMode,
+  type SiteAppearanceScopeMode,
+  type SiteAppearanceViewport,
+} from '@/features/site-editor/site-appearance'
 import {
   createSiteEditorWorkspaceKey,
   formatWorkflowStatus,
@@ -351,6 +361,73 @@ function isTitleEditorEntry(label: string, entryKey: string) {
 
 function getHeadingTagLabel(tag?: string) {
   return (typeof tag === 'string' && /^h[1-6]$/.test(tag) ? tag.toUpperCase() : 'H2')
+}
+
+function cloneAppearanceDraft(value: NormalizedSiteAppearance): NormalizedSiteAppearance {
+  return normalizeSiteAppearance(buildSiteAppearanceValue(value), defaultSiteAppearance, value.scope)
+}
+
+function setAppearanceScope(value: NormalizedSiteAppearance, scope: SiteAppearanceScopeMode): NormalizedSiteAppearance {
+  return {
+    ...value,
+    scope,
+  }
+}
+
+function setAppearanceResponsiveMode(value: NormalizedSiteAppearance, responsiveMode: SiteAppearanceResponsiveMode): NormalizedSiteAppearance {
+  if (responsiveMode === 'linked') {
+    const sharedVariant = { ...value.variants.desktop }
+    return {
+      ...value,
+      responsiveMode,
+      variants: {
+        desktop: sharedVariant,
+        tablet: { ...sharedVariant },
+        mobile: { ...sharedVariant },
+      },
+      ...sharedVariant,
+    }
+  }
+
+  return {
+    ...value,
+    responsiveMode,
+  }
+}
+
+function setAppearanceVariantField(
+  value: NormalizedSiteAppearance,
+  viewport: SiteAppearanceViewport,
+  field: keyof SiteAppearanceFields,
+  nextValue: string | number | undefined,
+): NormalizedSiteAppearance {
+  const patch = {
+    ...value.variants[viewport],
+    [field]: nextValue,
+  }
+
+  if (value.responsiveMode === 'linked') {
+    return {
+      ...value,
+      variants: {
+        desktop: { ...patch },
+        tablet: { ...patch },
+        mobile: { ...patch },
+      },
+      ...patch,
+    }
+  }
+
+  const nextVariants = {
+    ...value.variants,
+    [viewport]: patch,
+  } as NormalizedSiteAppearance['variants']
+
+  return {
+    ...value,
+    variants: nextVariants,
+    ...(viewport === 'desktop' ? patch : value.variants.desktop),
+  }
 }
 
 function normalizeEditableListItems(value: unknown): EditableListItem[] {
@@ -1189,17 +1266,29 @@ function EditorModal({
   const previewImage = isStringRecord(parsedPreview.value) ? parsedPreview.value : null
   const previewList = Array.isArray(parsedPreview.value) ? parsedPreview.value : null
   const previewRecord = isStringRecord(parsedPreview.value) ? parsedPreview.value : null
-  const appearancePreview = useMemo(() => normalizeSiteAppearance(previewRecord, defaultSiteAppearance), [previewRecord])
+  const appearanceDraft = useMemo(
+    () => normalizeSiteAppearance(previewRecord, defaultSiteAppearance, editor.pageKey === 'global' ? 'global' : 'page'),
+    [editor.pageKey, previewRecord],
+  )
+  const appearancePreview = useMemo(
+    () => resolveSiteAppearanceVariant(appearanceDraft, previewViewport),
+    [appearanceDraft, previewViewport],
+  )
   const previewTextStyle = useMemo(() => textStyleToCss(textStyle), [textStyle])
   const previewHeadingTag = getHeadingTagLabel(textStyle.headingTag)
   const isSeoEditor = editor.entryType === 'json' && editor.schema?.kind === 'seo'
   const isSiteAppearanceEditor = editor.entryType === 'json' && editor.schema?.kind === 'site-appearance'
+  const isGlobalHeaderEditor = editor.pageKey === 'global'
+  const isAppearanceLockedToGlobal = isSiteAppearanceEditor && !isGlobalHeaderEditor && appearanceDraft.scope === 'global'
   const listEditorConfig = useMemo(() => normalizeListEditorSchema(editor.schema), [editor.schema])
   const previewImagePresentation = useMemo(() => getEditableImagePresentation(previewImage), [previewImage])
   const showTypographyControls = editor.entryType === 'text' || editor.entryType === 'rich_text' || editor.entryType === 'button' || editor.entryType === 'link'
   const workflowStatus = workspaceRecord.status
   const comments = workspaceRecord.comments
   const draftAvailable = typeof workspaceRecord.draftRawValue === 'string' && workspaceRecord.draftRawValue.trim() !== ''
+  const updateAppearanceDraft = useCallback((nextAppearance: NormalizedSiteAppearance) => {
+    setRawValue(JSON.stringify(buildSiteAppearanceValue(nextAppearance), null, 2))
+  }, [])
 
   function replaceWorkspaceRecord(nextRecord: SiteEditorWorkspaceRecord) {
     setWorkspaceState((current) => ({
@@ -1861,7 +1950,115 @@ function EditorModal({
                 ) : null}
                 {isSiteAppearanceEditor ? (
                   <div className="mt-4 grid gap-4">
-                    <div className="grid gap-3 md:grid-cols-2">
+                    <div className="rounded-[18px] border border-[#D8E6EB] bg-white p-4">
+                      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                        <div>
+                          <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[#1398B7]">Prevalência do header</p>
+                          <p className="mt-1 text-sm font-semibold text-[#15323b]">
+                            {isGlobalHeaderEditor
+                              ? 'Este editor controla o header global.'
+                              : appearanceDraft.scope === 'global'
+                                ? 'Esta página está herdando o header global. Mude para "Esta página" para liberar os campos.'
+                                : 'As configurações abaixo valem apenas para a página aberta.'}
+                          </p>
+                        </div>
+                        {isGlobalHeaderEditor ? (
+                          <span className="inline-flex items-center rounded-full border border-[#D8E6EB] bg-[#F8FCFD] px-3 py-2 text-[10px] font-black uppercase tracking-[0.14em] text-[#15323b]">
+                            Configuração global
+                          </span>
+                        ) : (
+                          <div className="inline-flex overflow-hidden rounded-full border border-[#D8E6EB] bg-[#F8FCFD]">
+                            <button
+                              type="button"
+                              onClick={() => updateAppearanceDraft(setAppearanceScope(cloneAppearanceDraft(appearanceDraft), 'page'))}
+                              className={cn(
+                                'px-4 py-2 text-[10px] font-black uppercase tracking-[0.14em] transition',
+                                appearanceDraft.scope === 'page' ? 'bg-[#0A3640] text-white' : 'text-[#5F7077]',
+                              )}
+                            >
+                              Esta página
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => updateAppearanceDraft(setAppearanceScope(cloneAppearanceDraft(appearanceDraft), 'global'))}
+                              className={cn(
+                                'px-4 py-2 text-[10px] font-black uppercase tracking-[0.14em] transition',
+                                appearanceDraft.scope === 'global' ? 'bg-[#0A3640] text-white' : 'text-[#5F7077]',
+                              )}
+                            >
+                              Global
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                      {!isGlobalHeaderEditor ? (
+                        <p className="mt-3 text-xs font-semibold leading-5 text-[#5F7077]">
+                          Quando a página estiver em modo global, os campos ficam bloqueados e ela passa a usar o header global automaticamente.
+                        </p>
+                      ) : null}
+                    </div>
+
+                    <div className="rounded-[18px] border border-[#D8E6EB] bg-white p-4">
+                      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                        <div>
+                          <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[#1398B7]">Responsividade do header</p>
+                          <p className="mt-1 text-sm font-semibold text-[#15323b]">
+                            {appearanceDraft.responsiveMode === 'linked'
+                              ? 'Os ajustes são replicados automaticamente para desktop, tablet e mobile.'
+                              : 'Cada dispositivo pode ter valores diferentes.'}
+                          </p>
+                        </div>
+                        <div className="inline-flex overflow-hidden rounded-full border border-[#D8E6EB] bg-[#F8FCFD]">
+                          <button
+                            type="button"
+                            disabled={isAppearanceLockedToGlobal}
+                            onClick={() => updateAppearanceDraft(setAppearanceResponsiveMode(cloneAppearanceDraft(appearanceDraft), 'linked'))}
+                            className={cn(
+                              'px-4 py-2 text-[10px] font-black uppercase tracking-[0.14em]',
+                              appearanceDraft.responsiveMode === 'linked' ? 'bg-[#1398B7] text-white' : 'text-[#5F7077]',
+                            )}
+                          >
+                            Replicar aos 3
+                          </button>
+                          <button
+                            type="button"
+                            disabled={isAppearanceLockedToGlobal}
+                            onClick={() => updateAppearanceDraft(setAppearanceResponsiveMode(cloneAppearanceDraft(appearanceDraft), 'split'))}
+                            className={cn(
+                              'px-4 py-2 text-[10px] font-black uppercase tracking-[0.14em]',
+                              appearanceDraft.responsiveMode === 'split' ? 'bg-[#1398B7] text-white' : 'text-[#5F7077]',
+                            )}
+                          >
+                            Editar por dispositivo
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {([
+                          ['desktop', 'Desktop'],
+                          ['tablet', 'Tablet'],
+                          ['mobile', 'Mobile'],
+                        ] as const).map(([viewport, label]) => (
+                          <button
+                            key={viewport}
+                            type="button"
+                            disabled={isAppearanceLockedToGlobal}
+                            onClick={() => setPreviewViewport(viewport)}
+                            className={cn(
+                              'rounded-full border px-3 py-2 text-[10px] font-black uppercase tracking-[0.14em]',
+                              previewViewport === viewport
+                                ? 'border-[#1398B7] bg-[#EAF8FB] text-[#0A3640]'
+                                : 'border-[#D8E6EB] bg-[#F8FCFD] text-[#5F7077] hover:bg-white',
+                            )}
+                          >
+                            {label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className={cn('grid gap-3 md:grid-cols-2', isAppearanceLockedToGlobal && 'pointer-events-none opacity-60')}>
                       <label className="grid gap-1.5">
                         <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Tamanho da logo</span>
                         <input
@@ -1870,7 +2067,10 @@ function EditorModal({
                           max="2"
                           step="0.05"
                           value={appearancePreview.logoScale ?? defaultSiteAppearance.logoScale}
-                          onChange={(event) => updateRecordEditor({ ...appearancePreview, logoScale: Number.isFinite(event.target.valueAsNumber) ? event.target.valueAsNumber : defaultSiteAppearance.logoScale })}
+                          onChange={(event) => {
+                            const nextValue = Number.isFinite(event.target.valueAsNumber) ? event.target.valueAsNumber : defaultSiteAppearance.logoScale
+                            updateAppearanceDraft(setAppearanceVariantField(cloneAppearanceDraft(appearanceDraft), previewViewport, 'logoScale', nextValue))
+                          }}
                           className="h-11 rounded-[14px] border border-[#D8E6EB] bg-white px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]"
                         />
                       </label>
@@ -1878,13 +2078,14 @@ function EditorModal({
                         <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Altura do header</span>
                         <input
                           value={appearancePreview.headerHeight ?? defaultSiteAppearance.headerHeight}
-                          onChange={(event) => updateRecordEditor({ ...appearancePreview, headerHeight: event.target.value })}
+                          onChange={(event) => updateAppearanceDraft(setAppearanceVariantField(cloneAppearanceDraft(appearanceDraft), previewViewport, 'headerHeight', event.target.value))}
                           placeholder="72px"
                           className="h-11 rounded-[14px] border border-[#D8E6EB] bg-white px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]"
                         />
                       </label>
                     </div>
-                    <div className="grid gap-3 md:grid-cols-2">
+
+                    <div className={cn('grid gap-3 md:grid-cols-2', isAppearanceLockedToGlobal && 'pointer-events-none opacity-60')}>
                       {([
                         ['menuColor', 'Cor do menu'],
                         ['menuActiveColor', 'Cor ativa do menu'],
@@ -1897,12 +2098,12 @@ function EditorModal({
                             <input
                               type="color"
                               value={typeof appearancePreview[field] === 'string' ? appearancePreview[field] as string : '#ffffff'}
-                              onChange={(event) => updateRecordEditor({ ...appearancePreview, [field]: event.target.value })}
+                              onChange={(event) => updateAppearanceDraft(setAppearanceVariantField(cloneAppearanceDraft(appearanceDraft), previewViewport, field, event.target.value))}
                               className="h-11 w-14 rounded-[14px] border border-[#D8E6EB] bg-white p-1 outline-none focus:border-[#1398B7]"
                             />
                             <input
                               value={typeof appearancePreview[field] === 'string' ? appearancePreview[field] as string : ''}
-                              onChange={(event) => updateRecordEditor({ ...appearancePreview, [field]: event.target.value })}
+                              onChange={(event) => updateAppearanceDraft(setAppearanceVariantField(cloneAppearanceDraft(appearanceDraft), previewViewport, field, event.target.value))}
                               placeholder="#ffffff"
                               className="h-11 flex-1 rounded-[14px] border border-[#D8E6EB] bg-white px-3 text-sm font-semibold uppercase tracking-[0.06em] text-[#15323b] outline-none focus:border-[#1398B7]"
                             />
@@ -1910,12 +2111,13 @@ function EditorModal({
                         </label>
                       ))}
                     </div>
-                    <div className="grid gap-3 md:grid-cols-2">
+
+                    <div className={cn('grid gap-3 md:grid-cols-2', isAppearanceLockedToGlobal && 'pointer-events-none opacity-60')}>
                       <label className="grid gap-1.5">
                         <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Fonte do menu</span>
                         <input
                           value={appearancePreview.menuFontFamily ?? defaultSiteAppearance.menuFontFamily}
-                          onChange={(event) => updateRecordEditor({ ...appearancePreview, menuFontFamily: event.target.value })}
+                          onChange={(event) => updateAppearanceDraft(setAppearanceVariantField(cloneAppearanceDraft(appearanceDraft), previewViewport, 'menuFontFamily', event.target.value))}
                           placeholder="inherit"
                           className="h-11 rounded-[14px] border border-[#D8E6EB] bg-white px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]"
                         />
@@ -1924,7 +2126,7 @@ function EditorModal({
                         <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Tamanho da fonte do menu</span>
                         <input
                           value={appearancePreview.menuFontSize ?? defaultSiteAppearance.menuFontSize}
-                          onChange={(event) => updateRecordEditor({ ...appearancePreview, menuFontSize: event.target.value })}
+                          onChange={(event) => updateAppearanceDraft(setAppearanceVariantField(cloneAppearanceDraft(appearanceDraft), previewViewport, 'menuFontSize', event.target.value))}
                           placeholder="15px"
                           className="h-11 rounded-[14px] border border-[#D8E6EB] bg-white px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]"
                         />
@@ -1933,7 +2135,7 @@ function EditorModal({
                         <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Peso da fonte do menu</span>
                         <input
                           value={appearancePreview.menuFontWeight ?? defaultSiteAppearance.menuFontWeight}
-                          onChange={(event) => updateRecordEditor({ ...appearancePreview, menuFontWeight: event.target.value })}
+                          onChange={(event) => updateAppearanceDraft(setAppearanceVariantField(cloneAppearanceDraft(appearanceDraft), previewViewport, 'menuFontWeight', event.target.value))}
                           placeholder="600"
                           className="h-11 rounded-[14px] border border-[#D8E6EB] bg-white px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]"
                         />
@@ -1942,12 +2144,13 @@ function EditorModal({
                         <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Espacamento do menu</span>
                         <input
                           value={appearancePreview.menuLetterSpacing ?? defaultSiteAppearance.menuLetterSpacing}
-                          onChange={(event) => updateRecordEditor({ ...appearancePreview, menuLetterSpacing: event.target.value })}
+                          onChange={(event) => updateAppearanceDraft(setAppearanceVariantField(cloneAppearanceDraft(appearanceDraft), previewViewport, 'menuLetterSpacing', event.target.value))}
                           placeholder="-0.02em"
                           className="h-11 rounded-[14px] border border-[#D8E6EB] bg-white px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]"
                         />
                       </label>
                     </div>
+
                     <div className="rounded-[18px] border border-[#D8E6EB] bg-white p-4">
                       <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Preview rapido</p>
                       <div
@@ -1992,7 +2195,9 @@ function EditorModal({
                           </div>
                         </div>
                         <div className="border-t border-[#D8E6EB] px-4 py-4 text-sm font-semibold text-[#15323b]">
-                          O fundo da pagina e o estilo do menu seguem os valores salvos nesta entrada.
+                          {appearanceDraft.responsiveMode === 'split'
+                            ? 'O layout exibido abaixo corresponde ao dispositivo selecionado.'
+                            : 'Os valores são espelhados automaticamente entre desktop, tablet e mobile.'}
                         </div>
                       </div>
                     </div>

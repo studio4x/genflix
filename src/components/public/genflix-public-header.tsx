@@ -7,7 +7,16 @@ import { GenflixCtaButton } from '@/components/public/genflix-cta-button'
 import { GenflixLogo } from '@/components/public/genflix-logo'
 import { getDashboardPathForRoles } from '@/features/auth/dashboard-path'
 import type { GenflixNavLink, GenflixPageKey } from '@/features/public/genflix-public-types'
-import { createDefaultSiteAppearance, normalizeSiteAppearance, resolveSiteAppearancePageKey, type SiteAppearanceScopeKey, type SiteAppearanceTheme } from '@/features/site-editor/site-appearance'
+import {
+  createDefaultSiteAppearance,
+  normalizeSiteAppearance,
+  resolveSiteAppearancePageKey,
+  resolveSiteAppearanceVariant,
+  type SiteAppearanceFields,
+  type SiteAppearanceScopeKey,
+  type SiteAppearanceTheme,
+  type SiteAppearanceViewport,
+} from '@/features/site-editor/site-appearance'
 import { useSiteContentScope, useVisualEditorState, EditableList, EditableText, isEditableItemVisible, useEditableValue } from '@/features/site-editor/visual-editor'
 import { cn } from '@/lib/utils'
 
@@ -22,7 +31,7 @@ function HeaderNavLink({
   isActive: boolean
   className?: string
   variant: 'home' | 'light'
-  appearance: ReturnType<typeof normalizeSiteAppearance>
+  appearance: SiteAppearanceFields
 }) {
   const defaultColor = variant === 'home' ? '#FFFFFF' : '#15323B'
   const resolvedColor = appearance.menuColor ?? defaultColor
@@ -88,16 +97,25 @@ export function GenflixPublicHeader({
   const editor = useVisualEditorState()
   const scope = useSiteContentScope()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const [viewport, setViewport] = useState<SiteAppearanceViewport>('desktop')
   const isHome = currentPage === 'home'
   const headerTheme: SiteAppearanceTheme = isHome ? 'home' : 'light'
   const appearanceScopePageKey = resolveSiteAppearancePageKey(currentPage)
-  const currentScopeAppearance = normalizeSiteAppearance(
-    useEditableValue('site.appearance', createDefaultSiteAppearance(headerTheme), { pageKey: appearanceScopePageKey }),
+  const pageAppearanceEntry = scope?.entries.get(`${appearanceScopePageKey}:site.appearance`)?.value
+  const globalAppearanceEntry = scope?.entries.get('global:site.appearance')?.value
+  const pageAppearanceRecord = normalizeSiteAppearance(
+    pageAppearanceEntry ?? globalAppearanceEntry ?? createDefaultSiteAppearance(headerTheme),
     createDefaultSiteAppearance(headerTheme),
+    pageAppearanceEntry ? 'page' : 'global',
   )
-  const globalAppearance = normalizeSiteAppearance(
-    useEditableValue('site.appearance', createDefaultSiteAppearance('light'), { pageKey: 'global' }),
+  const globalAppearanceRecord = normalizeSiteAppearance(
+    globalAppearanceEntry ?? createDefaultSiteAppearance('light'),
     createDefaultSiteAppearance('light'),
+    'global',
+  )
+  const currentScopeAppearance = resolveSiteAppearanceVariant(
+    pageAppearanceRecord.scope === 'global' ? globalAppearanceRecord : pageAppearanceRecord,
+    viewport,
   )
   const ctaPath = user ? getDashboardPathForRoles(roles) : '/login'
   const ctaLabel = useEditableValue(
@@ -126,6 +144,29 @@ export function GenflixPublicHeader({
   }, [pathname])
 
   useEffect(() => {
+    function updateViewport() {
+      if (window.innerWidth < 768) {
+        setViewport('mobile')
+        return
+      }
+
+      if (window.innerWidth < 1280) {
+        setViewport('tablet')
+        return
+      }
+
+      setViewport('desktop')
+    }
+
+    updateViewport()
+    window.addEventListener('resize', updateViewport)
+
+    return () => {
+      window.removeEventListener('resize', updateViewport)
+    }
+  }, [])
+
+  useEffect(() => {
     if (typeof document === 'undefined') {
       return
     }
@@ -146,12 +187,18 @@ export function GenflixPublicHeader({
       return
     }
 
+    const fallbackAppearance = scopePageKey === 'global'
+      ? globalAppearanceRecord
+      : pageAppearanceRecord.scope === 'global'
+        ? globalAppearanceRecord
+        : pageAppearanceRecord
+
     editor.openEditor({
       pageKey: scopePageKey,
       entryKey: 'site.appearance',
       entryType: 'json',
       label: scopePageKey === 'global' ? 'Header global' : 'Header da pagina',
-      fallback: scopePageKey === 'global' ? globalAppearance : currentScopeAppearance,
+      fallback: fallbackAppearance,
       schema: { kind: 'site-appearance' },
       reload: scope.reload,
     })
