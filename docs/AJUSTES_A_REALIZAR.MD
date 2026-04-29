@@ -188,20 +188,25 @@
 
 [OK] T57 - No editor do header, remova o card "preview rapido", ele não está servindo para nada.. Faça o card "editor Guiado" ocultar a largura toda do container. Remova também o card "Conteúdo".
 
-[ ] T58 - As edições que faço no header global não estão sendo aplicadas à todas as páginas. Onde tem header inserido deve ser substituído pelo header global, com exceção das páginas que a configuração do header foi selecionada para "Esta página"
+[OK] T58 - As edições que faço no header global não estão sendo aplicadas à todas as páginas. Onde tem header inserido deve ser substituído pelo header global, com exceção das páginas que a configuração do header foi selecionada para "Esta página"
 
 [ ] T59 - Implemente no site e no editor visual o pack de fontes do Google, para através do editor das páginas e do editor global, poder selecionar a fonte em cada texto que quer alterar/ajustar.
 
+[ ] T60 - Além de editar os textos das páginas, insira também a possibilidade de inserir novos textos (bloco de textos). Isso deve ser aplicada em todas as páginas públicas, principalmente nas páginas: politica de privacidade, termos de uso, fsuporte, etc.
+
+[ ] T61 - Na Tarefa T57 foi solicitado para remover também o card "conteúdo" do modal do editor. Ele ainda está aparecendo, não foi removido.
+
 ## Chat 18 - Ajustes Gerais
 
-[ ] T60 - poder mostrar a senha nos campos de senha. Isso é bom para quem usa senhas complexas como eu, é velho e digita mal.
+[ ] T61 - poder mostrar a senha nos campos de senha. Isso é bom para quem usa senhas complexas como eu, é velho e digita mal.
+
+[ ] T62 - Implemente o módulo de FAQ/Ajuda para criar as perguntas e respostas diretamente pelo painel admin. Importe as perguntas frequentes já existentes nesse módulo. Utilize o arquivo "SPEC_FAQ.md" como referência de implementação.
 ---
 
 
 
-Parcial
 
-Fontes podem ser alteradas por campo livre, mas ainda não há combo/lista de fontes pronta.
+
 Política de privacidade e Termos de uso têm estrutura de conteúdo pronta, mas o corpo principal ainda está hardcoded no código, não totalmente via CMS/editor.
 Não existe
 
