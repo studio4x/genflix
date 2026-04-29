@@ -10,6 +10,7 @@ const cookieTopics = [
 export function CookiesPage() {
   return (
     <PublicLegalPageShell
+      documentKey="cookies"
       eyebrow="Cookies"
       title="Uso de Cookies"
       summary="Esta página explica, de forma objetiva, como a GenFlix pode utilizar cookies e tecnologias semelhantes para autenticação, segurança, desempenho e funcionamento do serviço."

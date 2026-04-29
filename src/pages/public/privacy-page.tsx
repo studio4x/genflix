@@ -6,6 +6,7 @@ export function PrivacyPage() {
 
   return (
     <PublicLegalPageShell
+      documentKey="privacy"
       eyebrow={document.eyebrow}
       title={document.title}
       summary={document.summary}

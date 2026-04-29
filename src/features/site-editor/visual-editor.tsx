@@ -3503,6 +3503,32 @@ export function EditableList({
     return <>{children(value)}</>
   }
 
+  if (value.length === 0) {
+    return (
+      <EditableMarker
+        label={label}
+        display="block"
+        onClick={() => editor.openEditor({
+          pageKey: resolvedPageKey,
+          entryKey,
+          entryType: 'list',
+          label,
+          fallback: value,
+          schema,
+          reload: scope.reload,
+        })}
+      >
+        <div className="rounded-[22px] border border-dashed border-[#BEE3EA] bg-white px-5 py-8 text-center shadow-[0_12px_24px_rgba(21,50,59,0.04)]">
+          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#1398B7]">Bloco vazio</p>
+          <p className="mt-2 text-sm font-semibold text-[#15323b]">{label}</p>
+          <p className="mt-2 text-sm leading-6 text-[#5F7077]">
+            Clique aqui para adicionar o primeiro bloco de texto.
+          </p>
+        </div>
+      </EditableMarker>
+    )
+  }
+
   return (
     <EditableMarker
       label={label}

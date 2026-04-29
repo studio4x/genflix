@@ -192,17 +192,20 @@
 
 [OK] T59 - Implemente no site e no editor visual o pack de fontes do Google, para através do editor das páginas e do editor global, poder selecionar a fonte em cada texto que quer alterar/ajustar.
 
-[ ] T60 - Além de editar os textos das páginas, insira também a possibilidade de inserir novos textos (bloco de textos). Isso deve ser aplicada em todas as páginas públicas, principalmente nas páginas: politica de privacidade, termos de uso, fsuporte, etc.
+[OK] T60 - Além de editar os textos das páginas, insira também a possibilidade de inserir novos textos (bloco de textos). Isso deve ser aplicada em todas as páginas públicas, principalmente nas páginas: politica de privacidade, termos de uso, fsuporte, etc.
 
 [ ] T61 - Na Tarefa T57 foi solicitado para remover também o card "conteúdo" do modal do editor. Ele ainda está aparecendo, não foi removido.
 
 [ ] T62 -  Alguns botões do site, ao clicar para editar no editor visual, não estão sendo identificados como botão, mas sim como texto, ex.: Botão de "Acessar painel/entrar" no header, "Ver todos os recursos" na página de cursos, entre outros; Faça os botões abrirem como botões no editor visual.
 
+
 ## Chat 18 - Ajustes Gerais
 
-[ ] T62 - poder mostrar a senha nos campos de senha. Isso é bom para quem usa senhas complexas como eu, é velho e digita mal.
+[ ] T63 - poder mostrar a senha nos campos de senha. Isso é bom para quem usa senhas complexas como eu, é velho e digita mal.
 
-[ ] T63 - Implemente o módulo de FAQ/Ajuda para criar as perguntas e respostas diretamente pelo painel admin. Importe as perguntas frequentes já existentes nesse módulo. Utilize o arquivo "SPEC_FAQ.md" como referência de implementação.
+[ ] T64 - Implemente o módulo de FAQ/Ajuda para criar as perguntas e respostas diretamente pelo painel admin. Importe as perguntas frequentes já existentes nesse módulo. Utilize o arquivo "SPEC_FAQ.md" como referência de implementação.
+
+[ ] T65 - O layout da página https://genflix-omega.vercel.app/privacidade está com a estrutura diferente das demais páginas do site, a página está no formato box. AJuste esta página.
 ---
 
 

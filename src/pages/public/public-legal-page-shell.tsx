@@ -6,9 +6,11 @@ import { GenflixPublicFooter } from '@/components/public/genflix-public-footer'
 import { GenflixPublicHeader } from '@/components/public/genflix-public-header'
 import { BannerPlacementSlot } from '@/features/banners/banner-placement-slot'
 import { genflixNavLinks } from '@/features/public/genflix-public-shell-content'
+import { PublicTextBlocksSection } from '@/components/public/public-text-blocks-section'
 import { EditableButton, EditableText } from '@/features/site-editor/visual-editor'
 
 interface PublicLegalPageShellProps {
+  documentKey: string
   eyebrow: string
   title: string
   summary: string
@@ -18,6 +20,7 @@ interface PublicLegalPageShellProps {
 }
 
 export function PublicLegalPageShell({
+  documentKey,
   eyebrow,
   title,
   summary,
@@ -69,7 +72,18 @@ export function PublicLegalPageShell({
 
           <section className="px-6 py-8 sm:px-10 lg:px-12 lg:py-10">
             <article className="rounded-[28px] border border-[#D8E6EB] bg-white p-6 shadow-sm sm:p-8 lg:p-10">
-              <div className="space-y-8">{children}</div>
+              <div className="space-y-8">
+                {children}
+                <div className="border-t border-[#D8E6EB] pt-8">
+                  <PublicTextBlocksSection
+                    entryKey={`legal.${documentKey}.textBlocks`}
+                    label="Blocos de texto"
+                    title="Adicionar novos textos"
+                    description="Use este bloco para incluir trechos adicionais, observacoes, avisos ou complementos ao documento."
+                    fallback={[]}
+                  />
+                </div>
+              </div>
             </article>
           </section>
         </div>

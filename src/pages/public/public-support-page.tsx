@@ -7,6 +7,7 @@ import { SupportTicketModal } from '@/components/support/support-ticket-modal'
 import { GenflixCtaButton, normalizeGenflixCtaTone } from '@/components/public/genflix-cta-button'
 import { GenflixPublicFooter } from '@/components/public/genflix-public-footer'
 import { GenflixPublicHeader } from '@/components/public/genflix-public-header'
+import { PublicTextBlocksSection } from '@/components/public/public-text-blocks-section'
 import { BannerPlacementSlot } from '@/features/banners/banner-placement-slot'
 import { fetchSupportFaqs, fetchSupportSettings } from '@/features/support/api'
 import { genflixNavLinks } from '@/features/public/genflix-site-content'
@@ -152,6 +153,17 @@ export function PublicSupportPage() {
             </GenflixCtaButton>
           </article>
         </div>
+      </section>
+
+      <section className="public-site-container pb-10 sm:pb-12">
+        <PublicTextBlocksSection
+          entryKey="support.textBlocks"
+          label="Blocos de texto"
+          title="Adicionar novos textos de suporte"
+          description="Use esta area para incluir avisos, orientacoes, mensagens institucionais ou qualquer bloco de apoio adicional."
+          fallback={[]}
+          pageKey="support"
+        />
       </section>
 
       <section className="public-site-container pb-10 sm:pb-14">
