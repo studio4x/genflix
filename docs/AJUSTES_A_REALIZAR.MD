@@ -186,13 +186,15 @@
 
 [OK] T56 - Nos campos do editor visual, principalmente do header, onde tem as dimensões em pixels, se eu inserir por exemplo "100", o ajuste não é feito e nenhuma mensagem de erro aparece.. Para funcionar tenho que inserir "100px". Vamos manter por padrão esses campos com pixel, sem precisar inserir o "px", e insira ao lado do campo, o texto "px" bem pequeno apenas para indicar a unidade de medida.
 
-[ ] T57 - No editor do header, remova o card "preview rapido", ele não está servindo para nada.. Faça o card "editor Guiado" ocultar a largura toda do container. Remova também o card "Conteúdo".
+[OK] T57 - No editor do header, remova o card "preview rapido", ele não está servindo para nada.. Faça o card "editor Guiado" ocultar a largura toda do container. Remova também o card "Conteúdo".
 
 [ ] T58 - As edições que faço no header global não estão sendo aplicadas à todas as páginas. Onde tem header inserido deve ser substituído pelo header global, com exceção das páginas que a configuração do header foi selecionada para "Esta página"
 
+[ ] T59 - Implemente no site e no editor visual o pack de fontes do Google, para através do editor das páginas e do editor global, poder selecionar a fonte em cada texto que quer alterar/ajustar.
+
 ## Chat 18 - Ajustes Gerais
 
-[ ] T58 - poder mostrar a senha nos campos de senha. Isso é bom para quem usa senhas complexas como eu, é velho e digita mal.
+[ ] T60 - poder mostrar a senha nos campos de senha. Isso é bom para quem usa senhas complexas como eu, é velho e digita mal.
 ---
 
 
