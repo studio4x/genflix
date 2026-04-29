@@ -3,6 +3,7 @@ import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 const npxCommand = process.platform === 'win32' ? 'npx.cmd' : 'npx'
 const isWindows = process.platform === 'win32'
+const vercelApiBase = 'https://api.vercel.com'
 
 function loadEnvFile(filePath) {
   if (!existsSync(filePath)) {
@@ -80,6 +81,88 @@ function run(command, args, options = {}) {
   }
 }
 
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
+async function fetchJson(pathname) {
+  const response = await fetch(`${vercelApiBase}${pathname}`, {
+    headers: {
+      Authorization: `Bearer ${vercelToken}`,
+    },
+  })
+
+  if (!response.ok) {
+    const body = await response.text()
+    throw new Error(`Falha ao consultar Vercel API (${response.status}): ${body}`)
+  }
+
+  return response.json()
+}
+
+function getGitHeadSha() {
+  const result = run('git', ['rev-parse', 'HEAD'], { captureOutput: true })
+
+  if (result.status !== 0) {
+    process.stderr.write('Nao foi possivel obter o SHA atual do git.\n')
+    process.exit(result.status ?? 1)
+  }
+
+  return (result.stdout ?? '').trim()
+}
+
+async function getLatestProductionDeployment() {
+  const data = await fetchJson(`/v6/deployments?projectId=${encodeURIComponent(process.env.VERCEL_PROJECT_ID ?? '')}&limit=1`)
+  return data.deployments?.[0] ?? null
+}
+
+async function waitForDeploymentBySha(expectedSha, timeoutMs = 10 * 60 * 1000) {
+  const deadline = Date.now() + timeoutMs
+  let lastDeployment = null
+
+  while (Date.now() < deadline) {
+    const deployment = await getLatestProductionDeployment()
+    lastDeployment = deployment
+
+    if (
+      deployment
+      && deployment.readyState === 'READY'
+      && deployment.target === 'production'
+      && deployment.meta?.githubCommitSha === expectedSha
+    ) {
+      return deployment
+    }
+
+    await sleep(15000)
+  }
+
+  const lastSha = lastDeployment?.meta?.githubCommitSha ?? 'desconhecido'
+  const lastUrl = lastDeployment?.url ? `https://${lastDeployment.url}` : 'desconhecida'
+  throw new Error(`Timeout aguardando deploy da producao para o SHA ${expectedSha}. Ultimo visto: ${lastSha} em ${lastUrl}`)
+}
+
+async function ensureAliasPointsTo(deploymentUrl, canonicalDomain, maxAttempts = 8) {
+  const deploymentHost = deploymentUrl.replace(/^https?:\/\//, '')
+  const escapedDeploymentHost = deploymentHost.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  const escapedCanonicalDomain = canonicalDomain.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  const aliasRegex = new RegExp(`${escapedDeploymentHost}\\s+${escapedCanonicalDomain}`)
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    const aliasResult = run(npxCommand, withVercelAuthArgs(['vercel', 'alias', 'ls']), { captureOutput: true })
+    const aliasOutput = aliasResult.stdout ?? ''
+
+    if (aliasRegex.test(aliasOutput)) {
+      return
+    }
+
+    if (attempt < maxAttempts) {
+      await sleep(5000)
+    }
+  }
+
+  throw new Error(`Falha ao validar alias canonico apos ${maxAttempts} tentativas: ${deploymentHost} -> ${canonicalDomain}`)
+}
+
 function ensureCleanGitWorktree() {
   const result = run('git', ['status', '--short'], { captureOutput: true })
 
@@ -98,66 +181,54 @@ function ensureCleanGitWorktree() {
   }
 }
 
-ensureCleanGitWorktree()
+async function main() {
+  ensureCleanGitWorktree()
 
-process.stdout.write('Gerando output prebuilt da Vercel sem bump adicional de build...\n')
-run(npxCommand, withVercelAuthArgs(['vercel', 'build', '--prod']), {
-  env: {
-    CI: 'true',
-  },
-})
+  const headSha = getGitHeadSha()
+  const canonicalDomain = canonicalProductionUrl.replace(/^https?:\/\//, '').replace(/\/+$/, '')
 
-process.stdout.write(`Publicando output prebuilt em producao na Vercel pelo projeto canonico (${vercelScope})...\n`)
-const deployResult = run(npxCommand, withVercelAuthArgs(['vercel', 'deploy', '--prebuilt', '--prod', '--yes']), {
-  captureOutput: true,
-})
+  process.stdout.write('Gerando output prebuilt da Vercel sem bump adicional de build...\n')
+  run(npxCommand, withVercelAuthArgs(['vercel', 'build', '--prod']), {
+    env: {
+      CI: 'true',
+    },
+  })
 
-if (deployResult.status !== 0) {
+  process.stdout.write(`Publicando output prebuilt em producao na Vercel pelo projeto canonico (${vercelScope})...\n`)
+  const deployResult = run(npxCommand, withVercelAuthArgs(['vercel', 'deploy', '--prebuilt', '--prod', '--yes']), {
+    captureOutput: true,
+  })
+
+  if (deployResult.status !== 0) {
+    process.stdout.write(deployResult.stdout ?? '')
+    process.stderr.write(deployResult.stderr ?? '')
+    process.exit(deployResult.status ?? 1)
+  }
+
   process.stdout.write(deployResult.stdout ?? '')
   process.stderr.write(deployResult.stderr ?? '')
-  process.exit(deployResult.status ?? 1)
-}
 
-process.stdout.write(deployResult.stdout ?? '')
-process.stderr.write(deployResult.stderr ?? '')
+  const deployment = await waitForDeploymentBySha(headSha)
+  const deploymentUrl = `https://${deployment.url}`
 
-const deployOutput = `${deployResult.stdout ?? ''}\n${deployResult.stderr ?? ''}`
-let deploymentUrl = ''
-const productionMatch = deployOutput.match(/Production:\s+(https?:\/\/[^\s]+)/)
-if (productionMatch?.[1]) {
-  deploymentUrl = productionMatch[1]
-} else {
-  const inspectMatch = deployOutput.match(/Inspect:\s+(https?:\/\/vercel\.com\/[^\s]+)/)
-  if (inspectMatch?.[1]) {
-    const slug = inspectMatch[1].split('/').pop() || ''
-    if (slug) {
-      deploymentUrl = `https://${slug}.vercel.app`
-    }
+  if (!canonicalDomain) {
+    throw new Error('APP_PUBLIC_URL nao configurado; nao foi possivel validar alias canonico.')
   }
-}
-const canonicalDomain = canonicalProductionUrl.replace(/^https?:\/\//, '').replace(/\/+$/, '')
 
-if (deploymentUrl && canonicalDomain) {
   process.stdout.write(`Atualizando alias canonico ${canonicalDomain} -> ${deploymentUrl}\n`)
   run(npxCommand, withVercelAuthArgs(['vercel', 'alias', 'set', deploymentUrl, canonicalDomain]))
 
-  const aliasResult = run(npxCommand, withVercelAuthArgs(['vercel', 'alias', 'ls']), { captureOutput: true })
-  const deploymentHost = deploymentUrl.replace(/^https?:\/\//, '')
-  const aliasOutput = aliasResult.stdout ?? ''
-  const aliasRegex = new RegExp(`${deploymentHost.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s+${canonicalDomain.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`)
+  await ensureAliasPointsTo(deploymentUrl, canonicalDomain)
 
-  if (!aliasRegex.test(aliasOutput)) {
-    process.stderr.write(`Falha ao validar alias canonico. Esperado: ${deploymentHost} -> ${canonicalDomain}\n`)
-    process.exit(1)
+  const currentDeployment = await getLatestProductionDeployment()
+  if (!currentDeployment || currentDeployment.meta?.githubCommitSha !== headSha || currentDeployment.readyState !== 'READY') {
+    throw new Error(`Falha ao validar deployment atual. Esperado SHA ${headSha}, encontrado ${currentDeployment?.meta?.githubCommitSha ?? 'desconhecido'}.`)
   }
 
-  const currentResult = run(npxCommand, withVercelAuthArgs(['vercel', 'ls', 'genflix']), { captureOutput: true })
-  const currentOutput = currentResult.stdout ?? ''
-  if (!currentOutput.includes(deploymentUrl)) {
-    process.stderr.write(`Falha ao validar deployment atual. Ultimo deploy nao aparece como current: ${deploymentUrl}\n`)
-    process.exit(1)
-  }
-} else {
-  process.stderr.write('Falha ao extrair URL do deploy para validar alias/current.\n')
-  process.exit(1)
+  process.stdout.write(`Deploy confirmado para ${deploymentUrl} com alias ${canonicalDomain}\n`)
 }
+
+main().catch((error) => {
+  process.stderr.write(`${error instanceof Error ? error.message : String(error)}\n`)
+  process.exit(1)
+})
