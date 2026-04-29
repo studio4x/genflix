@@ -176,5 +176,18 @@
 
 ---
 
+## Chat 17 - Ajustes no Header
 
+[ ] T53 - no editor do header, precisamos pensar em algo para definir qual tipo de definição (da página ou global) tem prevalência... Penso que no editor do header da página, deve ter um toogle para selecionar "configurações desta página e configurações global". Ao seleciona da página, os ajustes serão apenas para a pagina aberta.. se for global, todos os campos de ajustes ficam inativos e a página assume as configurações globais. As definir as configurações do header para aquela página, essas definições devem de fato ficar salvos, sem ser sobrescritas pelas configurações globais. Precisamos também ter a opção de replicar configurações para desktop, tablet e mobile, ou então definir valores diferentes para cada.
 
+[OK] T54 - Ao finalizar o editor, clicando no botão "sair da Edição", a página a ser editada deve ser recarregada limpando o cache.
+
+Parcial
+
+Fontes podem ser alteradas por campo livre, mas ainda não há combo/lista de fontes pronta.
+Política de privacidade e Termos de uso têm estrutura de conteúdo pronta, mas o corpo principal ainda está hardcoded no código, não totalmente via CMS/editor.
+Não existe
+
+Lista visual de fontes para seleção no editor.
+Fluxo totalmente padronizado para inserir todo o texto de páginas legais diretamente pelo editor sem editar código.
+Se quiser, eu também posso transformar isso em uma mensagem mais “comercial”, em linguagem de atendimento ao cliente.

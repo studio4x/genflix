@@ -2795,12 +2795,27 @@ export function VisualEditorProvider({ children }: { children: ReactNode }) {
     setIsTrayExpanded(false)
   }, [location.pathname])
 
+  const handleToggleEditing = useCallback(() => {
+    if (isEditing) {
+      setEditor(null)
+      setIsEditing(false)
+      window.location.reload()
+      return
+    }
+
+    setIsEditing(true)
+  }, [isEditing])
+
   const value = useMemo<VisualEditorContextValue>(() => ({
     isAdmin,
     isEditing: canShowEditor && isEditing && settings.is_enabled && settings.editing_enabled && !settings.fallback_mode,
     settings,
     startEditing: () => setIsEditing(true),
-    stopEditing: () => setIsEditing(false),
+    stopEditing: () => {
+      setEditor(null)
+      setIsEditing(false)
+      window.location.reload()
+    },
     openEditor: setEditor,
     resolveValue: (_entryKey, fallback) => fallback,
   }), [canShowEditor, isAdmin, isEditing, settings])
@@ -2830,11 +2845,11 @@ export function VisualEditorProvider({ children }: { children: ReactNode }) {
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setIsEditing((current) => !current)}
-                    className={cn(
-                      'inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-black uppercase tracking-[0.16em]',
+                <button
+                  type="button"
+                  onClick={() => handleToggleEditing()}
+                  className={cn(
+                    'inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-black uppercase tracking-[0.16em]',
                   isEditing ? 'bg-[#0A3640] text-white' : 'bg-[#1398B7] text-white',
                 )}
               >
