@@ -83,3 +83,12 @@ Ao concluir qualquer tarefa de implementacao neste repositorio, o agente deve:
 
 1. Publicar as alteracoes no GitHub (commit + push).
 2. Publicar as alteracoes de banco no Supabase (migracoes/funcoes/policies), quando houver mudancas em `supabase/`.
+
+## Deploy Vercel
+
+Fluxo recomendado para evitar deploys em dominio antigo:
+
+1. Garantir que o `git status` esteja limpo.
+2. Executar `npm run deploy:vercel`.
+3. Confirmar que `genflix-omega.vercel.app` aponta para o deploy mais recente com `READY`.
+4. Se o alias nao atualizar, verificar o `HEAD` local, o ultimo deploy da Vercel e o vinculo em `.vercel/project.json`.
