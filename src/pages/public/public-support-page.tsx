@@ -70,6 +70,7 @@ export function PublicSupportPage() {
   )
 
   const normalizedSearchQuery = searchQuery.trim().toLowerCase()
+  const hasActiveSearch = normalizedSearchQuery.length > 0
 
   const filteredFaqs = useMemo(() => {
     return faqs.filter((item) => {
@@ -338,6 +339,12 @@ export function PublicSupportPage() {
               </div>
             ) : (
               <div className="mt-6 space-y-4">
+                {hasActiveSearch ? (
+                  <div className="rounded-[18px] border border-[#BEE3EA] bg-[#E8F6FA] px-4 py-3 text-sm font-semibold text-[#15323b]">
+                    Resultados para "<span className="font-black text-[#1398B7]">{searchQuery.trim()}</span>"
+                    {filteredFaqs.length === 1 ? ' - 1 pergunta encontrada' : ` - ${filteredFaqs.length} perguntas encontradas`}
+                  </div>
+                ) : null}
                 {filteredFaqs.map((item) => (
                   <article key={item.id} className="rounded-[22px] border border-[#D8E6EB] bg-[#F8FBFC] px-5 py-4">
                     <h3 className="text-base font-black text-[#15323b]">{item.question}</h3>
