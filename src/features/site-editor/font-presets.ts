@@ -13,6 +13,12 @@ export const SITE_TEXT_FONT_PRESETS: SiteTextFontPreset[] = [
     description: 'Boa para texto corrido e interfaces.',
   },
   {
+    label: 'DM Sans',
+    family: 'DM Sans, sans-serif',
+    sample: 'Equilibrado e leve',
+    description: 'Boa leitura em blocos curtos e UI.',
+  },
+  {
     label: 'Readex Pro',
     family: 'Readex Pro, sans-serif',
     sample: 'Mais editorial',
@@ -31,10 +37,28 @@ export const SITE_TEXT_FONT_PRESETS: SiteTextFontPreset[] = [
     description: 'Boa para titulos com presenca forte.',
   },
   {
+    label: 'Oswald',
+    family: 'Oswald, sans-serif',
+    sample: 'Alto contraste',
+    description: 'Boa para destaque compacto e forte.',
+  },
+  {
     label: 'Poppins',
     family: 'Poppins, sans-serif',
     sample: 'Curva e amigavel',
     description: 'Ajuda a dar tom leve e humano ao texto.',
+  },
+  {
+    label: 'Lora',
+    family: 'Lora, serif',
+    sample: 'Serif editorial',
+    description: 'Boa para leitura longa e paginas legais.',
+  },
+  {
+    label: 'Merriweather',
+    family: 'Merriweather, serif',
+    sample: 'Clara e robusta',
+    description: 'Funciona bem em textos extensos.',
   },
   {
     label: 'Playfair Display',

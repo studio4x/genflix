@@ -2542,15 +2542,15 @@ function EditorModal({
                       />
                     </div>
                   </label>
-                  <div className="grid gap-1.5">
+                  <div className="grid gap-1.5 md:col-span-2">
                     <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Fonte</span>
                     <div className="grid gap-3">
-                      <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+                      <div className="grid w-full gap-2 sm:grid-cols-2 xl:grid-cols-3">
                         <button
                           type="button"
                           onClick={() => setTextStyle((current) => ({ ...current, fontFamily: undefined }))}
                           className={cn(
-                            'rounded-[16px] border px-4 py-3 text-left transition-all',
+                            'w-full rounded-[16px] border px-4 py-3 text-left transition-all',
                             textStyle.fontFamily ? 'border-[#D8E6EB] bg-white text-[#15323b] hover:bg-[#F2F7F9]' : 'border-[#1398B7] bg-[#E8F6FA] text-[#0A3640]',
                           )}
                         >
@@ -2566,7 +2566,7 @@ function EditorModal({
                               type="button"
                               onClick={() => setTextStyle((current) => ({ ...current, fontFamily: fontPreset.family }))}
                               className={cn(
-                                'rounded-[16px] border px-4 py-3 text-left transition-all',
+                                'w-full rounded-[16px] border px-4 py-3 text-left transition-all',
                                 isSelected ? 'border-[#1398B7] bg-[#E8F6FA] text-[#0A3640]' : 'border-[#D8E6EB] bg-white text-[#15323b] hover:bg-[#F2F7F9]',
                               )}
                               style={{ fontFamily: fontPreset.family }}
@@ -2580,7 +2580,7 @@ function EditorModal({
                           )
                         })}
                       </div>
-                      <label className="grid gap-1.5">
+                      <label className="grid w-full gap-1.5">
                         <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Fonte personalizada</span>
                         <input
                           value={textStyle.fontFamily ?? ''}
@@ -2591,9 +2591,9 @@ function EditorModal({
                       </label>
                     </div>
                   </div>
-                  <label className="grid gap-1.5">
+                  <label className="grid gap-1.5 md:col-span-2">
                     <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Tamanho</span>
-                    <div className="flex items-center gap-2">
+                    <div className="flex w-full items-center gap-2">
                       <input
                         value={textStyle.fontSize ?? ''}
                         onChange={(event) => setTextStyle((current) => ({ ...current, fontSize: event.target.value }))}
