@@ -117,6 +117,7 @@ export function GenflixPublicHeader({
     pageAppearanceRecord.scope === 'global' ? globalAppearanceRecord : pageAppearanceRecord,
     viewport,
   )
+  const useHomeTheme = isHome && pageAppearanceRecord.scope !== 'global'
   const ctaPath = user ? getDashboardPathForRoles(roles) : '/login'
   const ctaLabel = useEditableValue(
     user ? 'global.header.cta.authenticated.label' : 'global.header.cta.anonymous.label',
@@ -213,14 +214,19 @@ export function GenflixPublicHeader({
     transformOrigin: 'left center',
   }
 
+  const headerSectionStyle = {
+    backgroundColor: currentScopeAppearance.pageBackgroundColor ?? (useHomeTheme ? undefined : '#F2F8FA'),
+  }
+
   return (
     <section
       className={cn(
         'border-b',
-        isHome
+        useHomeTheme
           ? 'border-white/10 bg-[linear-gradient(90deg,#1C7082_0%,#0F5562_100%)] text-white'
-          : 'border-[#D8E6EB] bg-[#F2F8FA] text-[#183139]',
+          : 'border-[#D8E6EB] text-[#183139]',
       )}
+      style={headerSectionStyle}
     >
       <div className="public-site-container">
         <header className="relative">
@@ -249,7 +255,7 @@ export function GenflixPublicHeader({
                       key={`${navItem.label}-${navItem.href}`}
                       item={navItem}
                       isActive={navItem.pageKey === currentPage}
-                      variant={isHome ? 'home' : 'light'}
+                      variant={useHomeTheme ? 'home' : 'light'}
                       appearance={currentScopeAppearance}
                     />
                   )
@@ -292,7 +298,7 @@ export function GenflixPublicHeader({
                 onClick={() => setIsMenuOpen((open) => !open)}
                 className={cn(
                   'inline-flex h-11 w-11 items-center justify-center rounded-full border transition-colors backdrop-blur-sm xl:hidden',
-                  isHome
+                  useHomeTheme
                     ? 'border-white/18 bg-white/10 text-white hover:bg-white/16'
                     : 'border-[#D8E6EB] bg-white text-[#15323B] hover:bg-[#EBF3F5]',
                 )}
@@ -308,7 +314,7 @@ export function GenflixPublicHeader({
             <div
               className={cn(
                 'absolute inset-x-0 top-full z-30 mt-2 overflow-hidden rounded-[20px] p-4 backdrop-blur-xl xl:hidden',
-                isHome
+                useHomeTheme
                   ? 'border border-white/12 bg-[#0D4651]/96 shadow-[0_28px_56px_rgba(6,27,33,0.26)]'
                   : 'border border-[#D8E6EB] bg-[#F2F8FA]/98 shadow-[0_28px_56px_rgba(21,50,59,0.12)]',
               )}
@@ -333,7 +339,7 @@ export function GenflixPublicHeader({
                         key={`mobile-${navItem.label}-${navItem.href}`}
                         item={navItem}
                         isActive={navItem.pageKey === currentPage}
-                        variant={isHome ? 'home' : 'light'}
+                        variant={useHomeTheme ? 'home' : 'light'}
                         appearance={currentScopeAppearance}
                         className="rounded-[14px] px-3 py-3 text-[15px]"
                       />
@@ -342,7 +348,7 @@ export function GenflixPublicHeader({
                 </EditableList>
               </nav>
 
-              <div className={cn('mt-4 border-t pt-4 sm:hidden', isHome ? 'border-white/10' : 'border-[#D8E6EB]')}>
+              <div className={cn('mt-4 border-t pt-4 sm:hidden', useHomeTheme ? 'border-white/10' : 'border-[#D8E6EB]')}>
                 <GenflixCtaButton asChild tone="warm" className="h-11 w-full px-5">
                   <Link to={ctaPath}>
                     <EditableText
