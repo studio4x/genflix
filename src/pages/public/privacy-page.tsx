@@ -7,6 +7,7 @@ export function PrivacyPage() {
       eyebrow="Privacidade"
       title="Privacidade e Protecao de Dados"
       description="Esta pagina resume como a GenFlix coleta, utiliza, protege e trata dados pessoais no contexto do acesso a plataforma, aos cursos e aos recursos educacionais."
+      backgroundClassName="bg-white"
       sections={[
         {
           title: 'Como tratamos seus dados',

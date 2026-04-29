@@ -35,6 +35,7 @@ export function PublicGenericPage({
   eyebrow,
   sections,
   cta,
+  backgroundClassName = 'bg-[#F2F7F9]',
 }: {
   entryPrefix: string
   title: string
@@ -46,9 +47,10 @@ export function PublicGenericPage({
     href: string
     isInternal?: boolean
   }
+  backgroundClassName?: string
 }) {
   return (
-    <main className="min-h-screen bg-[#F2F7F9] font-manrope text-[#163138]">
+    <main className={`min-h-screen font-manrope text-[#163138] ${backgroundClassName}`}>
       <GenflixPublicHeader navLinks={genflixNavLinks} />
 
       <section className="pb-16 pt-6">

@@ -7,6 +7,7 @@ export function PublicFaqPage() {
       eyebrow="Ajuda rápida"
       title="Perguntas frequentes"
       description="Reunimos aqui os principais tópicos que serão expandidos conforme a central de ajuda pública da GenFlix evoluir."
+      backgroundClassName="bg-white"
       sections={[
         {
           title: 'O que você vai encontrar aqui',

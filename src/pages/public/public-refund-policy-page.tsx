@@ -7,6 +7,7 @@ export function PublicRefundPolicyPage() {
       eyebrow="Política institucional"
       title="Política de reembolso"
       description="Esta página organiza, de forma clara e objetiva, como a GenFlix tratará solicitações de cancelamento e reembolso."
+      backgroundClassName="bg-white"
       sections={[
         {
           title: 'Como funciona hoje',
