@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react'
 import { Link } from 'react-router-dom'
 
 import { GenflixCtaButton, normalizeGenflixCtaTone } from '@/components/public/genflix-cta-button'
@@ -49,8 +50,12 @@ export function PublicGenericPage({
   }
   backgroundClassName?: string
 }) {
+  const pageStyle: CSSProperties | undefined = backgroundClassName === 'bg-white'
+    ? ({ '--genflix-page-background': '#ffffff' } as CSSProperties)
+    : undefined
+
   return (
-    <main className={`min-h-screen font-manrope text-[#163138] ${backgroundClassName}`}>
+    <main className={`min-h-screen font-manrope text-[#163138] ${backgroundClassName}`} style={pageStyle}>
       <GenflixPublicHeader navLinks={genflixNavLinks} />
 
       <section className="pb-16 pt-6">
