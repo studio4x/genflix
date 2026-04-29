@@ -742,6 +742,7 @@ function ListItemEditorCard({
   onChange,
   onMove,
   onDuplicate,
+  onInsertBelow,
   onRemove,
   onUploadIcon,
   editorConfig,
@@ -753,6 +754,7 @@ function ListItemEditorCard({
   onChange: (nextItem: EditableListItem) => void
   onMove: (fromIndex: number, delta: number) => void
   onDuplicate: (index: number) => void
+  onInsertBelow?: (index: number) => void
   onRemove: (index: number) => void
   onUploadIcon?: (index: number, file: File) => void
   editorConfig: NormalizedListEditorSchema
@@ -931,6 +933,18 @@ function ListItemEditorCard({
               className="[&_.react-quill-local]:rounded-none [&_.react-quill-local]:border-0 [&_.react-quill-local_.ql-container]:border-0"
             />
           </div>
+          {onInsertBelow ? (
+            <div className="mt-4 flex justify-center">
+              <button
+                type="button"
+                onClick={() => onInsertBelow(index)}
+                className="inline-flex items-center gap-2 rounded-full border border-[#D8E6EB] bg-white px-4 py-2 text-[10px] font-black uppercase tracking-[0.14em] text-[#0A3640] transition hover:border-[#1398B7] hover:bg-[#EAF8FB]"
+              >
+                <Plus className="h-3.5 w-3.5" />
+                Inserir bloco abaixo
+              </button>
+            </div>
+          ) : null}
         </div>
       </div>
     )
@@ -1847,10 +1861,7 @@ function EditorModal({
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden">
-          <div className={cn(
-            'grid gap-6 p-4 sm:p-6',
-            isSeoEditor || isSiteAppearanceEditor ? 'xl:grid-cols-1' : 'xl:grid-cols-[minmax(0,1.15fr)_minmax(320px,0.85fr)]',
-          )}>
+          <div className="grid gap-6 p-4 sm:p-6">
             <div className="min-w-0 grid gap-4">
             {editor.entryType === 'image' ? (
               <div className="grid gap-3 rounded-[22px] border border-[#D8E6EB] bg-[#F2F7F9] p-4">
@@ -2064,6 +2075,19 @@ function EditorModal({
                           const nextItems = normalizeEditableListItems(parsedPreview.value)
                           const currentItem = nextItems[duplicateIndex]
                           nextItems.splice(duplicateIndex + 1, 0, cloneEditableListItem(currentItem, listEditorConfig))
+                          updateListEditor(nextItems)
+                        }}
+                        onInsertBelow={(insertIndex) => {
+                          const nextItems = normalizeEditableListItems(parsedPreview.value)
+                          const template = listEditorConfig.templates[0]
+                          const nextItem = template
+                            ? createListItemFromTemplate(template, listEditorConfig)
+                            : {
+                                id: `item-${Date.now()}`,
+                                label: 'Novo bloco',
+                                description: '',
+                              }
+                          nextItems.splice(insertIndex + 1, 0, nextItem)
                           updateListEditor(nextItems)
                         }}
                         onRemove={(removeIndex) => updateListEditor(normalizeEditableListItems(parsedPreview.value).filter((_, currentIndex) => currentIndex !== removeIndex))}
