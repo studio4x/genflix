@@ -1,4 +1,4 @@
-import {
+﻿import {
   createContext,
   cloneElement,
   isValidElement,
@@ -334,22 +334,22 @@ const BUTTON_STYLE_PRESETS = [
   {
     tone: 'solid' as const,
     label: 'Principal',
-    description: 'Botão forte, para chamada primária.',
+    description: 'BotÃ£o forte, para chamada primÃ¡ria.',
   },
   {
     tone: 'warm' as const,
     label: 'Aquecido',
-    description: 'Botão com destaque verde para ações positivas.',
+    description: 'BotÃ£o com destaque verde para aÃ§Ãµes positivas.',
   },
   {
     tone: 'surface' as const,
-    label: 'Superfície',
-    description: 'Botão claro, ideal para ações secundárias.',
+    label: 'SuperfÃ­cie',
+    description: 'BotÃ£o claro, ideal para aÃ§Ãµes secundÃ¡rias.',
   },
   {
     tone: 'ghost' as const,
     label: 'Discreto',
-    description: 'Botão translúcido para fundos escuros.',
+    description: 'BotÃ£o translÃºcido para fundos escuros.',
   },
 ] as const
 
@@ -366,7 +366,7 @@ function isTitleEditorEntry(label: string, entryKey: string) {
   const normalizedLabel = label.toLowerCase()
   const normalizedEntryKey = entryKey.toLowerCase()
   return (
-    normalizedLabel.includes('título')
+    normalizedLabel.includes('tÃ­tulo')
     || normalizedLabel.includes('titulo')
     || normalizedEntryKey.endsWith('.title')
     || normalizedEntryKey.includes('.title.')
@@ -848,7 +848,7 @@ function ListItemEditorCard({
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[#1398B7]">
-              {depth > 0 ? `Parágrafo interno ${index + 1}` : `Parágrafo ${index + 1}`}
+              {depth > 0 ? `ParÃ¡grafo interno ${index + 1}` : `ParÃ¡grafo ${index + 1}`}
             </p>
             <p className="mt-1 text-sm font-semibold text-[#15323b]">
               {item.title || item.label || item.id}
@@ -907,7 +907,7 @@ function ListItemEditorCard({
             />
           </label>
           <label className="grid gap-1.5 md:col-span-2">
-            <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Título opcional</span>
+            <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">TÃ­tulo opcional</span>
             <input
               value={item.title ?? ''}
               onChange={(event) => updateField('title', event.target.value)}
@@ -919,7 +919,7 @@ function ListItemEditorCard({
 
         <div className="mt-4 rounded-[18px] border border-[#D8E6EB] bg-[#F8FCFD] p-4">
           <div className="mb-3">
-            <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[#1398B7]">Conteúdo rico</p>
+            <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[#1398B7]">ConteÃºdo rico</p>
             <p className="mt-1 text-xs leading-5 text-[#5F7077]">
               Este bloco usa o mesmo editor rico base do construtor de cursos, sem precisar editar JSON.
             </p>
@@ -928,7 +928,7 @@ function ListItemEditorCard({
             <ReactQuill
               value={item.description ?? ''}
               onChange={updateRichTextField}
-              placeholder="Escreva o conteúdo aqui..."
+              placeholder="Escreva o conteÃºdo aqui..."
               modules={richTextToolbarModules}
               className="[&_.react-quill-local]:rounded-none [&_.react-quill-local]:border-0 [&_.react-quill-local_.ql-container]:border-0"
             />
@@ -1036,12 +1036,12 @@ function ListItemEditorCard({
             />
           </label>
           <label className="grid gap-1.5">
-            <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Título</span>
+            <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">TÃ­tulo</span>
             <input
               value={item.title ?? ''}
               onChange={(event) => updateField('title', event.target.value)}
               className="h-11 rounded-[14px] border border-[#D8E6EB] px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]"
-              placeholder="Título exibido para a equipe"
+              placeholder="TÃ­tulo exibido para a equipe"
             />
           </label>
           <div className="rounded-[14px] border border-[#D8E6EB] bg-[#F8FCFD] px-3 py-3">
@@ -1053,13 +1053,13 @@ function ListItemEditorCard({
           </div>
           {shouldShowIconField ? (
             <label className="grid gap-1.5 md:col-span-2">
-              <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Ícone</span>
+              <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Ãcone</span>
               <select
                 value={iconKey}
                 onChange={(event) => updateMetadataField('iconKey', event.target.value)}
                 className="h-11 rounded-[14px] border border-[#D8E6EB] bg-white px-3 text-sm font-semibold text-[#15323b] outline-none"
               >
-                <option value="">Sem ícone</option>
+                <option value="">Sem Ã­cone</option>
                 {SITE_ICON_OPTIONS.map((option) => (
                   <option key={option.value} value={option.value}>
                     {option.label}
@@ -1077,18 +1077,18 @@ function ListItemEditorCard({
                   </div>
                   <div className="min-w-0">
                     <p className="text-xs font-bold text-[#15323b]">
-                      {iconImageUrl ? 'Ícone enviado' : 'Ícone da biblioteca'}
+                      {iconImageUrl ? 'Ãcone enviado' : 'Ãcone da biblioteca'}
                     </p>
                     <p className="text-[11px] leading-5 text-[#5F7077]">
                       {iconImageUrl
                         ? (iconImageAlt || 'Imagem carregada para este card.')
-                        : 'Use um arquivo de imagem para substituir o ícone atual.'}
+                        : 'Use um arquivo de imagem para substituir o Ã­cone atual.'}
                     </p>
                   </div>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   <label className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-[#1398B7] bg-white px-3 py-2 text-[10px] font-black uppercase tracking-[0.14em] text-[#0A3640] hover:bg-[#E8F6FA]">
-                    Upload de ícone
+                    Upload de Ã­cone
                     <input type="file" accept="image/*" className="hidden" onChange={(event) => handleIconUpload(event.target.files?.[0] ?? null)} />
                   </label>
                   {iconImageUrl ? (
@@ -1142,22 +1142,22 @@ function ListItemEditorCard({
               onChange={(event) => updateField('description', event.target.value)}
               rows={3}
               className="rounded-[14px] border border-[#D8E6EB] px-3 py-2 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]"
-              placeholder="Descreva a função deste bloco para a equipe."
+              placeholder="Descreva a funÃ§Ã£o deste bloco para a equipe."
             />
           </label>
         </div>
 
         <div className="mt-4 grid gap-3 md:grid-cols-2">
           <div className="rounded-[14px] border border-[#D8E6EB] bg-[#F8FCFD] px-3 py-3">
-            <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Prefixo de conteúdo</p>
-            <p className="mt-1 text-sm font-semibold text-[#15323b]">{entryPrefix || 'Usando o conteúdo padrão da seção original.'}</p>
+            <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Prefixo de conteÃºdo</p>
+            <p className="mt-1 text-sm font-semibold text-[#15323b]">{entryPrefix || 'Usando o conteÃºdo padrÃ£o da seÃ§Ã£o original.'}</p>
           </div>
           <div className="rounded-[14px] border border-[#D8E6EB] bg-[#F8FCFD] px-3 py-3">
-            <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Escopo da página</p>
-            <p className="mt-1 text-sm font-semibold text-[#15323b]">{pageKeyOverride || 'Mantém o escopo original do bloco.'}</p>
+            <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Escopo da pÃ¡gina</p>
+            <p className="mt-1 text-sm font-semibold text-[#15323b]">{pageKeyOverride || 'MantÃ©m o escopo original do bloco.'}</p>
           </div>
           <label className="flex items-center justify-between rounded-[14px] border border-[#D8E6EB] px-3 py-3 text-sm font-semibold text-[#15323b] md:col-span-2">
-            <span>Ocultar este bloco sem apagar o conteúdo</span>
+            <span>Ocultar este bloco sem apagar o conteÃºdo</span>
             <input
               type="checkbox"
               checked={isHidden}
@@ -1232,7 +1232,7 @@ function ListItemEditorCard({
           />
         </label>
         <label className="grid gap-1.5">
-          <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Título</span>
+          <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">TÃ­tulo</span>
           <input
             value={item.title ?? ''}
             onChange={(event) => updateField('title', event.target.value)}
@@ -1257,13 +1257,13 @@ function ListItemEditorCard({
         </label>
         {shouldShowIconField ? (
           <label className="grid gap-1.5 md:col-span-2">
-            <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Ícone</span>
+            <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Ãcone</span>
             <select
               value={iconKey}
               onChange={(event) => updateMetadataField('iconKey', event.target.value)}
               className="h-11 rounded-[14px] border border-[#D8E6EB] bg-white px-3 text-sm font-semibold text-[#15323b] outline-none"
             >
-              <option value="">Sem ícone</option>
+              <option value="">Sem Ã­cone</option>
               {SITE_ICON_OPTIONS.map((option) => (
                 <option key={option.value} value={option.value}>
                   {option.label}
@@ -1273,7 +1273,7 @@ function ListItemEditorCard({
           </label>
         ) : null}
         <label className="grid gap-1.5 md:col-span-2">
-          <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Descrição</span>
+          <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">DescriÃ§Ã£o</span>
           <textarea
             value={item.description ?? ''}
             onChange={(event) => updateField('description', event.target.value)}
@@ -1326,7 +1326,7 @@ function ListItemEditorCard({
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[#1398B7]">Itens internos</p>
-              <p className="mt-1 text-sm font-semibold text-[#15323b]">Use esta área para mover links ou subelementos sem alterar o layout.</p>
+              <p className="mt-1 text-sm font-semibold text-[#15323b]">Use esta Ã¡rea para mover links ou subelementos sem alterar o layout.</p>
             </div>
             <button
               type="button"
@@ -1441,7 +1441,7 @@ function EditorModal({
     } catch (error) {
       return {
         value: null,
-        error: error instanceof Error ? error.message : 'JSON inválido.',
+        error: error instanceof Error ? error.message : 'JSON invÃ¡lido.',
       }
     }
   }, [rawValue, shouldParseJsonValue])
@@ -1468,7 +1468,7 @@ function EditorModal({
   const comments = workspaceRecord.comments
   const draftAvailable = typeof workspaceRecord.draftRawValue === 'string' && workspaceRecord.draftRawValue.trim() !== ''
   const displayEntryTypeLabel = isRichTextListEditor ? 'content' : editor.entryType
-  const displayStructureLabel = isRichTextListEditor ? 'blocos de conteúdo' : describeValueShape(parsedPreview.value)
+  const displayStructureLabel = isRichTextListEditor ? 'blocos de conteÃºdo' : describeValueShape(parsedPreview.value)
   const updateAppearanceDraft = useCallback((nextAppearance: NormalizedSiteAppearance) => {
     setRawValue(JSON.stringify(buildSiteAppearanceValue(nextAppearance), null, 2))
   }, [])
@@ -1509,9 +1509,9 @@ function EditorModal({
         metadata: nextMetadata,
       }
       updateListEditor(nextItems)
-      setMessage('Ícone enviado. Clique em salvar para publicar.')
+      setMessage('Ãcone enviado. Clique em salvar para publicar.')
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Não foi possível enviar o ícone.')
+      setMessage(error instanceof Error ? error.message : 'NÃ£o foi possÃ­vel enviar o Ã­cone.')
     } finally {
       setIsSaving(false)
     }
@@ -1546,7 +1546,7 @@ function EditorModal({
   }
 
   const handleCloseRequest = useCallback(() => {
-    if (isDirty && !window.confirm('Existem alterações não salvas. Deseja fechar mesmo assim?')) {
+    if (isDirty && !window.confirm('Existem alteraÃ§Ãµes nÃ£o salvas. Deseja fechar mesmo assim?')) {
       return
     }
 
@@ -1738,7 +1738,7 @@ function EditorModal({
 
     try {
       if (parsedPreview.error) {
-        throw new Error(`JSON inválido: ${parsedPreview.error}`)
+        throw new Error(`JSON invÃ¡lido: ${parsedPreview.error}`)
       }
 
       const value = usesJsonEditor
@@ -1771,9 +1771,9 @@ function EditorModal({
       replaceWorkspaceRecord(nextRecord)
       await editor.reload()
       onSaved()
-      setMessage('Conteúdo publicado com sucesso.')
+      setMessage('ConteÃºdo publicado com sucesso.')
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Não foi possível salvar o conteúdo.')
+      setMessage(error instanceof Error ? error.message : 'NÃ£o foi possÃ­vel salvar o conteÃºdo.')
     } finally {
       setIsSaving(false)
     }
@@ -1802,7 +1802,7 @@ function EditorModal({
       setAssetLibrary((current) => [asset, ...current.filter((currentAsset) => currentAsset.id !== asset.id)].slice(0, 18))
       setMessage('Imagem enviada. Clique em salvar para publicar.')
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Não foi possível enviar a imagem.')
+      setMessage(error instanceof Error ? error.message : 'NÃ£o foi possÃ­vel enviar a imagem.')
     } finally {
       setIsSaving(false)
     }
@@ -1850,7 +1850,7 @@ function EditorModal({
               </span>
               {isDirty ? (
                 <span className="inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-amber-700">
-                  Alterações não salvas
+                  AlteraÃ§Ãµes nÃ£o salvas
                 </span>
               ) : null}
             </div>
@@ -1868,7 +1868,7 @@ function EditorModal({
                 <div className="flex items-center justify-between gap-3">
                   <div>
                     <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#5F7077]">Ativo visual</p>
-                    <p className="mt-1 text-sm font-semibold text-[#15323b]">Substitua a mídia e ajuste o texto alternativo sem sair da página.</p>
+                    <p className="mt-1 text-sm font-semibold text-[#15323b]">Substitua a mÃ­dia e ajuste o texto alternativo sem sair da pÃ¡gina.</p>
                   </div>
                   <ImageIcon className="h-5 w-5 text-[#1398B7]" />
                 </div>
@@ -1878,7 +1878,7 @@ function EditorModal({
                     value={uploadAlt}
                     onChange={(event) => setUploadAlt(event.target.value)}
                     className="h-11 rounded-[14px] border border-[#D8E6EB] bg-white px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]"
-                    placeholder="Descrição da imagem"
+                    placeholder="DescriÃ§Ã£o da imagem"
                   />
                 </label>
                 <div className="grid gap-3 md:grid-cols-3">
@@ -1939,8 +1939,8 @@ function EditorModal({
                 <div className="rounded-[18px] border border-[#D8E6EB] bg-white p-4">
                   <div className="flex items-center justify-between gap-3">
                     <div>
-                      <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#1398B7]">Biblioteca de mídia</p>
-                      <p className="mt-1 text-sm font-semibold text-[#15323b]">Reutilize ativos já enviados sem subir a mesma imagem novamente.</p>
+                      <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#1398B7]">Biblioteca de mÃ­dia</p>
+                      <p className="mt-1 text-sm font-semibold text-[#15323b]">Reutilize ativos jÃ¡ enviados sem subir a mesma imagem novamente.</p>
                     </div>
                     {isLoadingAssetLibrary ? <p className="text-xs font-semibold text-[#5F7077]">Carregando...</p> : null}
                   </div>
@@ -1965,7 +1965,7 @@ function EditorModal({
                         )}
                         <div className="px-3 py-3">
                           <p className="line-clamp-2 text-sm font-semibold text-[#15323b]">{asset.alt || 'Sem texto alternativo'}</p>
-                          <p className="mt-1 text-xs font-semibold text-[#5F7077]">{asset.width && asset.height ? `${asset.width}x${asset.height}px` : 'Dimensões não disponíveis'}</p>
+                          <p className="mt-1 text-xs font-semibold text-[#5F7077]">{asset.width && asset.height ? `${asset.width}x${asset.height}px` : 'DimensÃµes nÃ£o disponÃ­veis'}</p>
                         </div>
                       </button>
                     ))}
@@ -1984,12 +1984,12 @@ function EditorModal({
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
                     <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#1398B7]">
-                      {isRichTextListEditor ? 'Editor de conteúdo' : 'Editor de listagem'}
+                      {isRichTextListEditor ? 'Editor de conteÃºdo' : 'Editor de listagem'}
                     </p>
                     <p className="mt-1 text-sm font-semibold text-[#15323b]">
                       {isRichTextListEditor
-                        ? 'Edite textos ricos, reorganize blocos e publique o conteúdo no mesmo fluxo visual.'
-                        : 'Edite itens, mova ordem e reorganize elementos sem alterar a estrutura visual da página.'}
+                        ? 'Edite textos ricos, reorganize blocos e publique o conteÃºdo no mesmo fluxo visual.'
+                        : 'Edite itens, mova ordem e reorganize elementos sem alterar a estrutura visual da pÃ¡gina.'}
                     </p>
                   </div>
                   <div className="flex flex-wrap gap-2">
@@ -2055,7 +2055,7 @@ function EditorModal({
 
                 {areAllListItemsCollapsed ? (
                   <div className="mt-4 rounded-[18px] border border-dashed border-[#D8E6EB] bg-white px-4 py-6 text-sm font-semibold text-[#5F7077]">
-                    Todos os elementos da listagem estão recolhidos. Use Expandir todos para voltar a ver os cartões.
+                    Todos os elementos da listagem estÃ£o recolhidos. Use Expandir todos para voltar a ver os cartÃµes.
                   </div>
                 ) : (
                   <div className="mt-4 grid gap-3">
@@ -2109,7 +2109,7 @@ function EditorModal({
                 {editor.entryType === 'json' && editor.schema?.kind === 'seo' ? (
                   <div className="mt-4 grid gap-3">
                     <label className="grid gap-1.5">
-                      <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Título SEO</span>
+                      <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">TÃ­tulo SEO</span>
                       <input
                         value={typeof previewRecord.title === 'string' ? previewRecord.title : ''}
                         onChange={(event) => updateRecordEditor({ ...previewRecord, title: event.target.value })}
@@ -2117,7 +2117,7 @@ function EditorModal({
                       />
                     </label>
                     <label className="grid gap-1.5">
-                      <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Descrição SEO</span>
+                      <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">DescriÃ§Ã£o SEO</span>
                       <textarea
                         value={typeof previewRecord.description === 'string' ? previewRecord.description : ''}
                         onChange={(event) => updateRecordEditor({ ...previewRecord, description: event.target.value })}
@@ -2127,7 +2127,7 @@ function EditorModal({
                     </label>
                     <div className="grid gap-3 md:grid-cols-2">
                       <label className="grid gap-1.5">
-                        <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Slug canônico</span>
+                        <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Slug canÃ´nico</span>
                         <input
                           value={typeof previewRecord.slug === 'string' ? previewRecord.slug : ''}
                           onChange={(event) => updateRecordEditor({ ...previewRecord, slug: event.target.value })}
@@ -2152,18 +2152,18 @@ function EditorModal({
                     <div className="rounded-[18px] border border-[#D8E6EB] bg-white p-4">
                       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                         <div>
-                          <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[#1398B7]">Prevalência do header</p>
+                          <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[#1398B7]">PrevalÃªncia do header</p>
                           <p className="mt-1 text-sm font-semibold text-[#15323b]">
                             {isGlobalHeaderEditor
                               ? 'Este editor controla o header global.'
                               : appearanceDraft.scope === 'global'
-                                ? 'Esta página está herdando o header global. Mude para "Esta página" para liberar os campos.'
-                                : 'As configurações abaixo valem apenas para a página aberta.'}
+                                ? 'Esta pÃ¡gina estÃ¡ herdando o header global. Mude para "Esta pÃ¡gina" para liberar os campos.'
+                                : 'As configuraÃ§Ãµes abaixo valem apenas para a pÃ¡gina aberta.'}
                           </p>
                         </div>
                         {isGlobalHeaderEditor ? (
                           <span className="inline-flex items-center rounded-full border border-[#D8E6EB] bg-[#F8FCFD] px-3 py-2 text-[10px] font-black uppercase tracking-[0.14em] text-[#15323b]">
-                            Configuração global
+                            ConfiguraÃ§Ã£o global
                           </span>
                         ) : (
                           <div className="inline-flex overflow-hidden rounded-full border border-[#D8E6EB] bg-[#F8FCFD]">
@@ -2175,7 +2175,7 @@ function EditorModal({
                                 appearanceDraft.scope === 'page' ? 'bg-[#0A3640] text-white' : 'text-[#5F7077]',
                               )}
                             >
-                              Esta página
+                              Esta pÃ¡gina
                             </button>
                             <button
                               type="button"
@@ -2192,7 +2192,7 @@ function EditorModal({
                       </div>
                       {!isGlobalHeaderEditor ? (
                         <p className="mt-3 text-xs font-semibold leading-5 text-[#5F7077]">
-                          Quando a página estiver em modo global, os campos ficam bloqueados e ela passa a usar o header global automaticamente.
+                          Quando a pÃ¡gina estiver em modo global, os campos ficam bloqueados e ela passa a usar o header global automaticamente.
                         </p>
                       ) : null}
                     </div>
@@ -2203,7 +2203,7 @@ function EditorModal({
                           <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[#1398B7]">Responsividade do header</p>
                           <p className="mt-1 text-sm font-semibold text-[#15323b]">
                             {appearanceDraft.responsiveMode === 'linked'
-                              ? 'Os ajustes são replicados automaticamente para desktop, tablet e mobile.'
+                              ? 'Os ajustes sÃ£o replicados automaticamente para desktop, tablet e mobile.'
                               : 'Cada dispositivo pode ter valores diferentes.'}
                           </p>
                         </div>
@@ -2412,7 +2412,7 @@ function EditorModal({
                         <div className="border-t border-[#D8E6EB] px-4 py-4 text-sm font-semibold text-[#15323b]">
                           {appearanceDraft.responsiveMode === 'split'
                             ? 'O layout exibido abaixo corresponde ao dispositivo selecionado.'
-                            : 'Os valores são espelhados automaticamente entre desktop, tablet e mobile.'}
+                            : 'Os valores sÃ£o espelhados automaticamente entre desktop, tablet e mobile.'}
                         </div>
                       </div>
                     </div>
@@ -2601,7 +2601,7 @@ function EditorModal({
                     />
                   </label>
                   <label className="grid gap-1.5">
-                    <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Largura mínima</span>
+                    <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Largura mÃ­nima</span>
                     <div className="flex items-center gap-2">
                       <input
                         value={textStyle.minWidth ?? ''}
@@ -2613,7 +2613,7 @@ function EditorModal({
                     </div>
                   </label>
                   <label className="grid gap-1.5">
-                    <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Altura mínima</span>
+                    <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Altura mÃ­nima</span>
                     <div className="flex items-center gap-2">
                       <input
                         value={textStyle.minHeight ?? ''}
@@ -2664,7 +2664,7 @@ function EditorModal({
                       }))}
                       className="h-11 rounded-[14px] border border-[#D8E6EB] bg-white px-3 text-sm font-semibold text-[#15323b] outline-none"
                     >
-                      <option value="">Padrão</option>
+                      <option value="">PadrÃ£o</option>
                       <option value="left">Esquerda</option>
                       <option value="center">Centro</option>
                       <option value="right">Direita</option>
@@ -2675,7 +2675,7 @@ function EditorModal({
                     <>
                   {isTitleEditor ? (
                     <label className="grid gap-1.5 md:col-span-2">
-                      <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Tag do título</span>
+                      <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Tag do tÃ­tulo</span>
                       <select
                         value={getHeadingTagLabel(textStyle.headingTag).toLowerCase()}
                         onChange={(event) => setTextStyle((current) => ({
@@ -2865,7 +2865,7 @@ function EditorModal({
                     type="button"
                     onClick={() => {
                       void navigator.clipboard.writeText(`${editor.pageKey}/${editor.entryKey}`)
-                      setMessage('Chave copiada para a área de transferência.')
+                      setMessage('Chave copiada para a Ã¡rea de transferÃªncia.')
                     }}
                     className="inline-flex items-center gap-2 rounded-full border border-[#D8E6EB] px-3 py-2 text-xs font-black uppercase tracking-[0.14em] text-[#0A3640] hover:bg-[#F2F7F9]"
                   >
@@ -2878,9 +2878,9 @@ function EditorModal({
               {usesRichTextToolbar ? (
                 <div className="flex flex-wrap gap-2 border-b border-[#D8E6EB] px-4 py-3">
                   <button type="button" onClick={() => applyRichTextFormat('<strong>', '</strong>')} className="rounded-full border border-[#D8E6EB] px-3 py-2 text-xs font-black uppercase tracking-[0.14em] text-[#0A3640] hover:bg-[#F2F7F9]">Negrito</button>
-                  <button type="button" onClick={() => applyRichTextFormat('<em>', '</em>')} className="rounded-full border border-[#D8E6EB] px-3 py-2 text-xs font-black uppercase tracking-[0.14em] text-[#0A3640] hover:bg-[#F2F7F9]">Itálico</button>
-                  <button type="button" onClick={() => applyRichTextFormat('<p>', '</p>')} className="rounded-full border border-[#D8E6EB] px-3 py-2 text-xs font-black uppercase tracking-[0.14em] text-[#0A3640] hover:bg-[#F2F7F9]">Parágrafo</button>
-                  <button type="button" onClick={() => applyRichTextFormat('<h3>', '</h3>')} className="rounded-full border border-[#D8E6EB] px-3 py-2 text-xs font-black uppercase tracking-[0.14em] text-[#0A3640] hover:bg-[#F2F7F9]">Título</button>
+                  <button type="button" onClick={() => applyRichTextFormat('<em>', '</em>')} className="rounded-full border border-[#D8E6EB] px-3 py-2 text-xs font-black uppercase tracking-[0.14em] text-[#0A3640] hover:bg-[#F2F7F9]">ItÃ¡lico</button>
+                  <button type="button" onClick={() => applyRichTextFormat('<p>', '</p>')} className="rounded-full border border-[#D8E6EB] px-3 py-2 text-xs font-black uppercase tracking-[0.14em] text-[#0A3640] hover:bg-[#F2F7F9]">ParÃ¡grafo</button>
+                  <button type="button" onClick={() => applyRichTextFormat('<h3>', '</h3>')} className="rounded-full border border-[#D8E6EB] px-3 py-2 text-xs font-black uppercase tracking-[0.14em] text-[#0A3640] hover:bg-[#F2F7F9]">TÃ­tulo</button>
                   <button type="button" onClick={() => applyRichTextFormat('<ul><li>', '</li></ul>')} className="rounded-full border border-[#D8E6EB] px-3 py-2 text-xs font-black uppercase tracking-[0.14em] text-[#0A3640] hover:bg-[#F2F7F9]">Lista</button>
                 </div>
               ) : null}
@@ -2888,8 +2888,16 @@ function EditorModal({
               {isRichTextListEditor ? (
                 <div className="grid gap-2 p-4">
                   <div className="rounded-[18px] border border-[#D8E6EB] bg-[#F8FCFD] px-4 py-4 text-sm leading-6 text-[#5F7077]">
-                    Cada bloco de texto é editado individualmente no editor rico abaixo. A estrutura da lista continua interna, mas não é mais exposta como JSON neste fluxo.
+                    Cada bloco de texto Ã© editado individualmente no editor rico abaixo. A estrutura da lista continua interna, mas nÃ£o Ã© mais exposta como JSON neste fluxo.
                   </div>
+                  {message ? (
+                    <div className="rounded-[16px] border border-[#D8E6EB] bg-[#F2F7F9] p-3 text-sm font-bold text-[#15323b]">
+                      {message}
+                    </div>
+                  ) : null}
+                </div>
+              ) : isSiteAppearanceEditor ? (
+                <div className="grid gap-2 p-4">
                   {message ? (
                     <div className="rounded-[16px] border border-[#D8E6EB] bg-[#F2F7F9] p-3 text-sm font-bold text-[#15323b]">
                       {message}
@@ -2907,7 +2915,7 @@ function EditorModal({
                   />
                   {parsedPreview.error ? (
                     <div className="rounded-[16px] border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-bold text-rose-700">
-                      JSON inválido: {parsedPreview.error}
+                      JSON invÃ¡lido: {parsedPreview.error}
                     </div>
                   ) : null}
                   {message ? (
@@ -2926,7 +2934,7 @@ function EditorModal({
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="flex items-center gap-2">
                   <Sparkles className="h-4 w-4 text-[#1398B7]" />
-                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#1398B7]">Preview rápido</p>
+                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#1398B7]">Preview rÃ¡pido</p>
                 </div>
                 <div className="flex rounded-full border border-[#D8E6EB] bg-white p-1">
                   {([
@@ -3008,7 +3016,7 @@ function EditorModal({
                                     ? item.label
                                     : typeof item.title === 'string' && item.title.trim() !== ''
                                       ? item.title
-                                      : 'Item sem título'}
+                                      : 'Item sem tÃ­tulo'}
                                 </p>
                               </div>
                             </div>
@@ -3046,10 +3054,10 @@ function EditorModal({
                     <div className="space-y-2">
                       <p className="text-sm text-[#5F7077]">genflix.com{typeof previewRecord.slug === 'string' && previewRecord.slug ? previewRecord.slug : '/pagina'}</p>
                       <h3 className="text-[1.1rem] font-bold leading-tight text-[#1398B7]">
-                        {typeof previewRecord.title === 'string' && previewRecord.title ? previewRecord.title : 'Título SEO'}
+                        {typeof previewRecord.title === 'string' && previewRecord.title ? previewRecord.title : 'TÃ­tulo SEO'}
                       </h3>
                       <p className="text-sm leading-6 text-[#5F7077]">
-                        {typeof previewRecord.description === 'string' && previewRecord.description ? previewRecord.description : 'Descrição SEO'}
+                        {typeof previewRecord.description === 'string' && previewRecord.description ? previewRecord.description : 'DescriÃ§Ã£o SEO'}
                       </p>
                     </div>
                     {typeof previewRecord.image === 'string' && previewRecord.image ? (
@@ -3068,7 +3076,7 @@ function EditorModal({
                             tone={normalizeGenflixCtaTone(previewRecord.tone)}
                             className="h-12 w-full justify-between px-5 text-[14px]"
                           >
-                            {typeof previewRecord.label === 'string' && previewRecord.label ? previewRecord.label : 'Botão'}
+                            {typeof previewRecord.label === 'string' && previewRecord.label ? previewRecord.label : 'BotÃ£o'}
                           </GenflixCtaButton>
                         ) : (
                           <div
@@ -3099,7 +3107,7 @@ function EditorModal({
                   </div>
                 ) : (
                   <div className="rounded-[18px] border border-[#D8E6EB] bg-white p-4">
-                    <p className="break-words text-sm leading-7 text-[#15323b]" style={previewTextStyle}>{String(parsedPreview.value ?? '') || 'Sem conteúdo.'}</p>
+                    <p className="break-words text-sm leading-7 text-[#15323b]" style={previewTextStyle}>{String(parsedPreview.value ?? '') || 'Sem conteÃºdo.'}</p>
                   </div>
                 )}
               </div>
@@ -3109,7 +3117,7 @@ function EditorModal({
             <div className="rounded-[22px] border border-[#D8E6EB] bg-white p-4">
               <div className="flex items-center gap-2">
                 <CheckCircle2 className="h-4 w-4 text-[#1398B7]" />
-                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#1398B7]">Fluxo de publicação</p>
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#1398B7]">Fluxo de publicaÃ§Ã£o</p>
               </div>
               <div className="mt-4 grid gap-3">
                 <div className={cn('inline-flex w-fit items-center rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em]', workflowStatusClasses(workflowStatus))}>
@@ -3148,7 +3156,7 @@ function EditorModal({
                     className="inline-flex items-center justify-center gap-2 rounded-full border border-[#D8E6EB] px-4 py-2 text-xs font-black uppercase tracking-[0.14em] text-[#0A3640] hover:bg-[#F2F7F9] disabled:opacity-60"
                   >
                     <Send className="h-3.5 w-3.5" />
-                    Enviar para revisão
+                    Enviar para revisÃ£o
                   </button>
                   <button
                     type="button"
@@ -3157,15 +3165,15 @@ function EditorModal({
                     className="inline-flex items-center justify-center gap-2 rounded-full border border-[#D8E6EB] px-4 py-2 text-xs font-black uppercase tracking-[0.14em] text-[#0A3640] hover:bg-[#F2F7F9] disabled:opacity-60"
                   >
                     <CheckCircle2 className="h-3.5 w-3.5" />
-                    Aprovar conteúdo
+                    Aprovar conteÃºdo
                   </button>
                 </div>
                 <div className="rounded-[16px] border border-[#D8E6EB] bg-[#F8FCFD] p-3 text-xs font-semibold leading-5 text-[#5F7077]">
                   {workflowStatus === 'published'
-                    ? 'Conteúdo já publicado neste navegador.'
+                    ? 'ConteÃºdo jÃ¡ publicado neste navegador.'
                     : workflowStatus === 'approved'
-                      ? 'O conteúdo está aprovado e pronto para publicação.'
-                      : 'Use rascunho e revisão antes de publicar para reduzir risco operacional.'}
+                      ? 'O conteÃºdo estÃ¡ aprovado e pronto para publicaÃ§Ã£o.'
+                      : 'Use rascunho e revisÃ£o antes de publicar para reduzir risco operacional.'}
                 </div>
               </div>
             </div>
@@ -3173,14 +3181,14 @@ function EditorModal({
             <div className="rounded-[22px] border border-[#D8E6EB] bg-white p-4">
               <div className="flex items-center gap-2">
                 <MessageSquare className="h-4 w-4 text-[#1398B7]" />
-                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#1398B7]">Comentários internos</p>
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#1398B7]">ComentÃ¡rios internos</p>
               </div>
               <div className="mt-4 grid gap-3">
                 <textarea
                   value={draftComment}
                   onChange={(event) => setDraftComment(event.target.value)}
                   rows={3}
-                  placeholder="Registre observações internas para esta entrada."
+                  placeholder="Registre observaÃ§Ãµes internas para esta entrada."
                   className="rounded-[14px] border border-[#D8E6EB] px-3 py-2 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]"
                 />
                 <button
@@ -3190,17 +3198,17 @@ function EditorModal({
                   className="inline-flex items-center justify-center gap-2 rounded-full border border-[#D8E6EB] px-4 py-2 text-xs font-black uppercase tracking-[0.14em] text-[#0A3640] hover:bg-[#F2F7F9] disabled:opacity-60"
                 >
                   <MessageSquare className="h-3.5 w-3.5" />
-                  Adicionar comentário
+                  Adicionar comentÃ¡rio
                 </button>
                 <div className="grid gap-2">
                   {comments.length === 0 ? (
                     <div className="rounded-[16px] border border-dashed border-[#D8E6EB] bg-[#F8FCFD] px-4 py-4 text-sm font-semibold text-[#5F7077]">
-                      Nenhum comentário interno registrado.
+                      Nenhum comentÃ¡rio interno registrado.
                     </div>
                   ) : comments.map((comment) => (
                     <div key={comment.id} className="rounded-[16px] border border-[#D8E6EB] bg-[#F8FCFD] px-4 py-3">
                       <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[#1398B7]">
-                        {comment.authorRole} · {new Date(comment.createdAt).toLocaleString('pt-BR')}
+                        {comment.authorRole} Â· {new Date(comment.createdAt).toLocaleString('pt-BR')}
                       </p>
                       <p className="mt-2 text-sm font-semibold leading-6 text-[#15323b]">{comment.body}</p>
                     </div>
@@ -3215,7 +3223,7 @@ function EditorModal({
 
         <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[#D8E6EB] bg-[#FCFEFF] p-5">
           <p className="text-xs font-semibold text-[#5F7077]">
-            O fluxo agora separa rascunho local, revisão e publicação final.
+            O fluxo agora separa rascunho local, revisÃ£o e publicaÃ§Ã£o final.
           </p>
           <div className="flex flex-wrap justify-end gap-3">
             <button type="button" onClick={handleCloseRequest} className="rounded-full border border-[#D8E6EB] bg-white px-5 py-3 text-sm font-black text-[#5F7077] hover:bg-[#F2F7F9]">
@@ -3316,7 +3324,7 @@ export function VisualEditorProvider({ children }: { children: ReactNode }) {
                       'inline-flex items-center rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em]',
                       isEditing ? 'bg-[#0A3640] text-white' : 'bg-[#E8F6FA] text-[#0A3640]',
                     )}>
-                      {isEditing ? 'Modo edição ativo' : 'Modo navegação'}
+                      {isEditing ? 'Modo ediÃ§Ã£o ativo' : 'Modo navegaÃ§Ã£o'}
                     </span>
                     <span className="inline-flex items-center rounded-full border border-[#BEE3EA] bg-[#F8FCFD] px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-[#0A3640]">
                       {location.pathname}
@@ -3336,11 +3344,11 @@ export function VisualEditorProvider({ children }: { children: ReactNode }) {
                 )}
               >
                 <Edit3 className="h-3.5 w-3.5" />
-                {isEditing ? 'Sair da edição' : 'Ativar edição'}
+                {isEditing ? 'Sair da ediÃ§Ã£o' : 'Ativar ediÃ§Ã£o'}
                   </button>
                   <Link to="/admin/site-editor" className="inline-flex items-center gap-2 rounded-full border border-[#BEE3EA] bg-white px-4 py-2 text-xs font-black uppercase tracking-[0.16em] text-[#15323b] hover:bg-[#F2F7F9]">
                     <Settings className="h-3.5 w-3.5" />
-                    Gestão
+                    GestÃ£o
                   </Link>
               </div>
             </div>
@@ -3761,7 +3769,7 @@ export function EditableControlsHintPanel() {
             type="button"
             onClick={() => setIsDismissed(true)}
             className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-[#D8E6EB] text-[#5F7077] hover:bg-[#F2F7F9]"
-            aria-label="Fechar balão de ajuda"
+            aria-label="Fechar balÃ£o de ajuda"
           >
             <X className="h-4 w-4" />
           </button>
@@ -3775,7 +3783,7 @@ export function EditableControlsHintPanel() {
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-start gap-2">
           <RotateCcw className="mt-0.5 h-4 w-4 text-[#1398B7]" />
-          <p>Clique nos itens destacados para editar. O site público continua intacto fora do modo edição e cada salvamento publica imediatamente.</p>
+          <p>Clique nos itens destacados para editar. O site pÃºblico continua intacto fora do modo ediÃ§Ã£o e cada salvamento publica imediatamente.</p>
         </div>
         <div className="flex items-center gap-1">
           <button
@@ -3789,7 +3797,7 @@ export function EditableControlsHintPanel() {
             type="button"
             onClick={() => setIsDismissed(true)}
             className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-[#D8E6EB] text-[#5F7077] hover:bg-[#F2F7F9]"
-            aria-label="Fechar balão de ajuda"
+            aria-label="Fechar balÃ£o de ajuda"
           >
             <X className="h-4 w-4" />
           </button>
@@ -3807,9 +3815,10 @@ export function EditableControlsHint() {
     <div className="fixed right-5 top-5 z-[110] max-w-xs rounded-[22px] border border-[#D8E6EB] bg-white p-4 text-xs font-bold leading-5 text-[#15323b] shadow-[0_18px_50px_rgba(6,27,33,0.12)]">
       <div className="flex items-start gap-2">
         <RotateCcw className="mt-0.5 h-4 w-4 text-[#1398B7]" />
-        <p>Clique nos itens destacados para editar. O site público continua intacto fora do modo edição e cada salvamento publica imediatamente.</p>
+        <p>Clique nos itens destacados para editar. O site pÃºblico continua intacto fora do modo ediÃ§Ã£o e cada salvamento publica imediatamente.</p>
       </div>
     </div>
   )
 }
+
 
