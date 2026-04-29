@@ -58,7 +58,7 @@
 
 ## CHAT 5 — Home e layout público
 
-[ ] T17 - Nos cards de curso da home, transformar o nome da categoria em badge com fundo no canto superior esquerdo.
+[OK] T17 - Nos cards de curso da home, transformar o nome da categoria em badge com fundo no canto superior esquerdo.
 
 [ ] T18 - Remover a borda do rodapé.
 
