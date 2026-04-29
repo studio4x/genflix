@@ -1683,7 +1683,7 @@ function EditorModal({
         <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden">
           <div className={cn(
             'grid gap-6 p-4 sm:p-6',
-            isSeoEditor ? 'xl:grid-cols-1' : 'xl:grid-cols-[minmax(0,1.15fr)_minmax(320px,0.85fr)]',
+            isSeoEditor || isSiteAppearanceEditor ? 'xl:grid-cols-1' : 'xl:grid-cols-[minmax(0,1.15fr)_minmax(320px,0.85fr)]',
           )}>
             <div className="min-w-0 grid gap-4">
             {editor.entryType === 'image' ? (
@@ -2674,6 +2674,7 @@ function EditorModal({
           </div>
 
           <aside className="min-w-0 grid gap-4">
+            {!isSiteAppearanceEditor ? (
             <div className="rounded-[22px] border border-[#D8E6EB] bg-[#F8FCFD] p-4">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="flex items-center gap-2">
@@ -2849,6 +2850,7 @@ function EditorModal({
                 )}
               </div>
             </div>
+            ) : null}
 
             <div className="rounded-[22px] border border-[#D8E6EB] bg-white p-4">
               <div className="flex items-center gap-2">
