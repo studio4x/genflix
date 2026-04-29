@@ -203,7 +203,7 @@
 
 [OK] T63 - poder mostrar a senha nos campos de senha. Isso é bom para quem usa senhas complexas como eu, é velho e digita mal.
 
-[ ] T64 - Implemente o módulo de FAQ/Ajuda para criar as perguntas e respostas diretamente pelo painel admin. Importe as perguntas frequentes já existentes nesse módulo. Utilize o arquivo "SPEC_FAQ.md" como referência de implementação.
+[OK] T64 - Implemente o módulo de FAQ/Ajuda para criar as perguntas e respostas diretamente pelo painel admin. Importe as perguntas frequentes já existentes nesse módulo. Utilize o arquivo "SPEC_FAQ.md" como referência de implementação.
 
 [OK] T65 - O layout da página https://genflix-omega.vercel.app/privacidade está com a estrutura diferente das demais páginas do site, a página está no formato box. AJuste esta página.
 

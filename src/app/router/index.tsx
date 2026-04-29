@@ -62,6 +62,7 @@ const AdminReportsPage = lazy(async () => ({ default: (await import('@/pages/adm
 const AdminPublicFormsPage = lazy(async () => ({ default: (await import('@/pages/admin/admin-public-forms-page')).AdminPublicFormsPage }))
 const AdminNotificationsPage = lazy(async () => ({ default: (await import('@/pages/admin/admin-notifications-page')).AdminNotificationsPage }))
 const AdminSupportTicketsPage = lazy(async () => ({ default: (await import('@/pages/admin/admin-support-tickets-page')).AdminSupportTicketsPage }))
+const AdminSupportFaqPage = lazy(async () => ({ default: (await import('@/pages/admin/admin-support-faq-page')).AdminSupportFaqPage }))
 const AdminReviewsPage = lazy(async () => ({ default: (await import('@/pages/admin/admin-reviews-page')).AdminReviewsPage }))
 const AdminPaymentSettingsPage = lazy(async () => ({ default: (await import('@/pages/admin/admin-payment-settings-page')).AdminPaymentSettingsPage }))
 const AdminCreatorPayoutsPage = lazy(async () => ({ default: (await import('@/pages/admin/admin-creator-payouts-page')).AdminCreatorPayoutsPage }))
@@ -447,6 +448,10 @@ export const appRouter = createBrowserRouter([
           {
             path: '/admin/suporte',
             element: withRouteSuspense(<AdminSupportTicketsPage />),
+          },
+          {
+            path: '/admin/suporte/faq',
+            element: withRouteSuspense(<AdminSupportFaqPage />),
           },
           {
             path: '/admin/suporte/:ticketId',

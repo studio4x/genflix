@@ -36,6 +36,7 @@ export interface SupportFaqItem {
   question: string
   answer: string
   sort_order: number
+  is_published?: boolean
 }
 
 export interface SupportTicketUserSummary {

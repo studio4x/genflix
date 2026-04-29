@@ -54,6 +54,7 @@ const adminNavGroups: AdminNavGroup[] = [
       { to: '/admin/notificacoes', label: 'Notificacoes' },
       { to: '/admin/mensagens', label: 'Mensagens' },
       { to: '/admin/suporte', label: 'Tickets' },
+      { to: '/admin/suporte/faq', label: 'FAQ/Ajuda' },
       { to: '/admin/reviews', label: 'Reviews' },
     ],
   },

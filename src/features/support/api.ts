@@ -204,6 +204,83 @@ export async function fetchSupportFaqs() {
   }))
 }
 
+export async function fetchAdminSupportFaqs() {
+  const { data, error } = await supabase
+    .from('support_faqs')
+    .select('id, category_key, question, answer, sort_order, is_published')
+    .order('sort_order', { ascending: true })
+    .order('created_at', { ascending: true })
+
+  if (error) {
+    throw error
+  }
+
+  return ((data ?? []) as SupportFaqItem[]).map((item) => ({
+    ...item,
+    category_key: item.category_key,
+  }))
+}
+
+type SupportFaqMutationInput = {
+  category_key: SupportFaqItem['category_key']
+  question: string
+  answer: string
+  sort_order: number
+  is_published: boolean
+}
+
+export async function createSupportFaq(input: SupportFaqMutationInput) {
+  const { data, error } = await supabase
+    .from('support_faqs')
+    .insert({
+      category_key: input.category_key,
+      question: input.question.trim(),
+      answer: input.answer.trim(),
+      sort_order: input.sort_order,
+      is_published: input.is_published,
+    })
+    .select('id, category_key, question, answer, sort_order, is_published')
+    .single()
+
+  if (error) {
+    throw error
+  }
+
+  return data as SupportFaqItem
+}
+
+export async function updateSupportFaq(id: string, input: SupportFaqMutationInput) {
+  const { data, error } = await supabase
+    .from('support_faqs')
+    .update({
+      category_key: input.category_key,
+      question: input.question.trim(),
+      answer: input.answer.trim(),
+      sort_order: input.sort_order,
+      is_published: input.is_published,
+    })
+    .eq('id', id)
+    .select('id, category_key, question, answer, sort_order, is_published')
+    .single()
+
+  if (error) {
+    throw error
+  }
+
+  return data as SupportFaqItem
+}
+
+export async function deleteSupportFaq(id: string) {
+  const { error } = await supabase
+    .from('support_faqs')
+    .delete()
+    .eq('id', id)
+
+  if (error) {
+    throw error
+  }
+}
+
 export async function fetchMySupportTickets() {
   const { data, error } = await supabase
     .from('support_tickets')
