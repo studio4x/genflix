@@ -23,7 +23,6 @@ const PublicContactPage = lazy(async () => ({ default: (await import('@/pages/pu
 const PublicResourcesPage = lazy(async () => ({ default: (await import('@/pages/public/public-resources-page')).PublicResourcesPage }))
 const PublicSupportPage = lazy(async () => ({ default: (await import('@/pages/public/public-support-page')).PublicSupportPage }))
 const PublicRefundPolicyPage = lazy(async () => ({ default: (await import('@/pages/public/public-refund-policy-page')).PublicRefundPolicyPage }))
-const PublicFaqPage = lazy(async () => ({ default: (await import('@/pages/public/public-faq-page')).PublicFaqPage }))
 const PublicHelpPage = lazy(async () => ({ default: (await import('@/pages/public/public-help-page')).PublicHelpPage }))
 const PublicReferPage = lazy(async () => ({ default: (await import('@/pages/public/public-refer-page')).PublicReferPage }))
 const PublicTeachPage = lazy(async () => ({ default: (await import('@/pages/public/public-teach-page')).PublicTeachPage }))
@@ -173,7 +172,7 @@ export const appRouter = createBrowserRouter([
   },
   {
     path: '/perguntas-frequentes',
-    element: <PublicEditableRoute pageKey="global" seo={{ entryKey: 'global.faq.seo', fallback: { title: 'GenFlix | Perguntas frequentes', description: 'Veja respostas rápidas para as dúvidas mais comuns sobre a GenFlix.', slug: '/perguntas-frequentes', image: '' } }}><PublicFaqPage /></PublicEditableRoute>,
+    element: <Navigate to="/suporte#perguntas-frequentes" replace />,
   },
   {
     path: '/ajuda',

@@ -117,7 +117,7 @@ const footerColumnsFallback = [
     metadata: {
       items: [
         { label: 'Sobre a GenFlix', href: '/sobre', isInternal: true },
-        { label: 'Perguntas frequentes', href: '/perguntas-frequentes', isInternal: true },
+        { label: 'Perguntas frequentes', href: '/suporte#perguntas-frequentes', isInternal: true },
         { label: 'Suporte', href: '/suporte', isInternal: true },
         { label: 'Política de privacidade', href: '/privacidade', isInternal: true },
         { label: 'Política de reembolso', href: '/politica-de-reembolso', isInternal: true },

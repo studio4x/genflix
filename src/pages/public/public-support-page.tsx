@@ -166,7 +166,7 @@ export function PublicSupportPage() {
         />
       </section>
 
-      <section className="public-site-container pb-10 sm:pb-14">
+      <section id="perguntas-frequentes" className="public-site-container pb-10 sm:pb-14">
         <div className="grid gap-6 lg:grid-cols-[260px_minmax(0,1fr)]">
           <aside className="space-y-4">
             <div className="hidden rounded-[28px] border border-[#D8E6EB] bg-white p-4 shadow-sm lg:block">

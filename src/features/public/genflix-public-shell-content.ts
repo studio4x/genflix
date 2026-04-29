@@ -39,7 +39,7 @@ export const genflixFooterColumns: GenflixFooterColumn[] = [
     items: [
       { label: 'PolÃ­tica de privacidade', href: '/privacidade', isInternal: true },
       { label: 'PolÃ­tica de reembolso', href: '/politica-de-reembolso', isInternal: true },
-      { label: 'Perguntas frequentes', href: '/perguntas-frequentes', isInternal: true },
+      { label: 'Perguntas frequentes', href: '/suporte#perguntas-frequentes', isInternal: true },
       { label: 'Ajuda / Como usar', href: '/ajuda', isInternal: true },
     ],
   },

@@ -302,7 +302,7 @@ export function AdminSupportFaqPage() {
 
         {filters.tab === 'artigos' ? (
           <div className="mt-5 space-y-4">
-            <div className="grid gap-3 xl:grid-cols-[180px_180px_1fr_auto]">
+            <div className="grid gap-3 xl:grid-cols-[180px_180px_1fr]">
               <select
                 value={filters.status}
                 onChange={(event) => updateSearchParam('status', event.target.value)}
@@ -334,9 +334,6 @@ export function AdminSupportFaqPage() {
                 />
               </label>
 
-              <Button type="button" onClick={() => void handleCreate()} disabled={isSaving === 'new'} className="h-11 rounded-[14px] px-4 text-sm font-black">
-                Novo Artigo
-              </Button>
             </div>
 
             <div className="grid gap-4 xl:grid-cols-[1.5fr_0.9fr]">
@@ -447,7 +444,7 @@ export function AdminSupportFaqPage() {
             </div>
 
             <article className="rounded-[22px] border border-[#D8E6EB] bg-[#F8FBFC] p-4">
-              <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#5F7077]">Novo artigo</p>
+              <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#5F7077]">Nova pergunta frequente</p>
               <div className="mt-3 grid gap-2 lg:grid-cols-[180px_120px_1fr]">
                 <select
                   value={newDraft.category_key}
@@ -486,6 +483,9 @@ export function AdminSupportFaqPage() {
                 placeholder="Resposta"
                 className="mt-2 min-h-24 w-full rounded-[12px] border border-[#D8E6EB] bg-white px-3 py-2 text-sm font-medium text-[#15323b] outline-none"
               />
+              <Button type="button" onClick={() => void handleCreate()} disabled={isSaving === 'new'} className="mt-3 h-11 w-full rounded-[12px] px-4 text-sm font-black">
+                Nova pergunta frequente
+              </Button>
             </article>
           </div>
         ) : null}
