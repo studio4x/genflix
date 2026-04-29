@@ -3,6 +3,7 @@ import type { ChangeEvent, FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 
 import { useAuth } from '@/app/providers/auth-provider'
+import { PasswordField } from '@/components/forms/password-field'
 import { Button } from '@/components/ui/button'
 import { uploadProfileAvatar } from '@/features/account/avatar-api'
 
@@ -362,9 +363,8 @@ export function StudentAccountPage() {
             <div className="mt-6 space-y-5">
               <label className="block space-y-2">
                 <span className="text-sm font-bold text-slate-700">Nova senha</span>
-                <input
+                <PasswordField
                   className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm font-medium text-slate-800 outline-none transition focus:border-blue-400 focus:bg-white"
-                  type="password"
                   value={password}
                   onChange={(event) => setPassword(event.target.value)}
                   placeholder="Mínimo de 8 caracteres"
@@ -374,9 +374,8 @@ export function StudentAccountPage() {
 
               <label className="block space-y-2">
                 <span className="text-sm font-bold text-slate-700">Confirmar nova senha</span>
-                <input
+                <PasswordField
                   className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm font-medium text-slate-800 outline-none transition focus:border-blue-400 focus:bg-white"
-                  type="password"
                   value={confirmPassword}
                   onChange={(event) => setConfirmPassword(event.target.value)}
                   placeholder="Repita a nova senha"

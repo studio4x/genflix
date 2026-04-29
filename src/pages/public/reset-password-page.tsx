@@ -4,6 +4,7 @@ import { ArrowRight, CheckCircle2, LockKeyhole } from 'lucide-react'
 import { Link, Navigate, useNavigate } from 'react-router-dom'
 
 import { useAuth } from '@/app/providers/auth-provider'
+import { PasswordField } from '@/components/forms/password-field'
 import { GenflixCtaButton } from '@/components/public/genflix-cta-button'
 import { GenflixAuthLayout } from '@/components/public/genflix-auth-layout'
 import { getDashboardPathForRoles } from '@/features/auth/dashboard-path'
@@ -137,9 +138,8 @@ export function ResetPasswordPage() {
             <div className="mt-7 space-y-4">
               <label className="block space-y-2">
                 <span className="text-sm font-bold text-[#4f656c]">Nova senha</span>
-                <input
+                <PasswordField
                   className="h-12 w-full rounded-[16px] border border-[#D8E6EB] bg-white px-4 text-sm font-semibold text-[#183139] outline-none transition placeholder:text-[#8BA0A7] focus:border-[#1398B7] focus:ring-4 focus:ring-[#E8F6FA]"
-                  type="password"
                   value={password}
                   onChange={(event) => setPassword(event.target.value)}
                   placeholder="Digite a nova senha"
@@ -150,9 +150,8 @@ export function ResetPasswordPage() {
 
               <label className="block space-y-2">
                 <span className="text-sm font-bold text-[#4f656c]">Confirmar senha</span>
-                <input
+                <PasswordField
                   className="h-12 w-full rounded-[16px] border border-[#D8E6EB] bg-white px-4 text-sm font-semibold text-[#183139] outline-none transition placeholder:text-[#8BA0A7] focus:border-[#1398B7] focus:ring-4 focus:ring-[#E8F6FA]"
-                  type="password"
                   value={confirmPassword}
                   onChange={(event) => setConfirmPassword(event.target.value)}
                   placeholder="Repita a nova senha"

@@ -4,6 +4,7 @@ import { Link, Navigate } from 'react-router-dom'
 import { ArrowRight, KeyRound, MailCheck } from 'lucide-react'
 
 import { useAuth } from '@/app/providers/auth-provider'
+import { PasswordField } from '@/components/forms/password-field'
 import { GenflixCtaButton } from '@/components/public/genflix-cta-button'
 import { GenflixAuthLayout } from '@/components/public/genflix-auth-layout'
 import { getDashboardPathForRoles } from '@/features/auth/dashboard-path'
@@ -175,9 +176,8 @@ export function LoginPage() {
 
           <label className="block space-y-2">
             <span className="text-sm font-medium text-[#4f656c]">Senha:</span>
-            <input
+            <PasswordField
               className="h-12 w-full rounded-[12px] border border-[#D8E6EB] bg-[#EDF4F6] px-4 text-sm text-[#183139] outline-none transition-colors placeholder:text-[#8BA0A7] focus:border-[#1398B7] focus:bg-white"
-              type="password"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
               placeholder="Digite sua senha"

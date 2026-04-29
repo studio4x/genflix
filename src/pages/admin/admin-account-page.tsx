@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react'
 
 import { useAuth } from '@/app/providers/auth-provider'
+import { PasswordField } from '@/components/forms/password-field'
 import { Button } from '@/components/ui/button'
 
 export function AdminAccountPage() {
@@ -148,8 +149,7 @@ export function AdminAccountPage() {
           <div className="mt-5 space-y-4">
             <label className="block">
               <span className="text-xs font-black uppercase tracking-[0.2em] text-[#5F7077]">Nova senha</span>
-              <input
-                type="password"
+              <PasswordField
                 value={newPassword}
                 onChange={(event) => setNewPassword(event.target.value)}
                 minLength={8}
@@ -161,8 +161,7 @@ export function AdminAccountPage() {
 
             <label className="block">
               <span className="text-xs font-black uppercase tracking-[0.2em] text-[#5F7077]">Confirmar senha</span>
-              <input
-                type="password"
+              <PasswordField
                 value={confirmPassword}
                 onChange={(event) => setConfirmPassword(event.target.value)}
                 minLength={8}
