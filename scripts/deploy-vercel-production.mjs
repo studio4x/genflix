@@ -117,7 +117,7 @@ async function getLatestProductionDeployment() {
   return data.deployments?.[0] ?? null
 }
 
-async function waitForDeploymentBySha(expectedSha, timeoutMs = 10 * 60 * 1000) {
+async function waitForDeploymentBySha(expectedSha, timeoutMs = 3 * 60 * 1000) {
   const deadline = Date.now() + timeoutMs
   let lastDeployment = null
 
@@ -134,12 +134,42 @@ async function waitForDeploymentBySha(expectedSha, timeoutMs = 10 * 60 * 1000) {
       return deployment
     }
 
-    await sleep(15000)
+    await sleep(5000)
   }
 
   const lastSha = lastDeployment?.meta?.githubCommitSha ?? 'desconhecido'
   const lastUrl = lastDeployment?.url ? `https://${lastDeployment.url}` : 'desconhecida'
   throw new Error(`Timeout aguardando deploy da producao para o SHA ${expectedSha}. Ultimo visto: ${lastSha} em ${lastUrl}`)
+}
+
+function extractDeploymentHost(output) {
+  const matches = output.match(/https:\/\/([a-z0-9-]+\.vercel\.app)/ig)
+  if (!matches || matches.length === 0) {
+    return null
+  }
+
+  const lastMatch = matches[matches.length - 1]
+  return lastMatch.replace(/^https:\/\//i, '').toLowerCase()
+}
+
+async function waitForDeploymentReadyByHost(expectedHost, timeoutMs = 3 * 60 * 1000) {
+  const deadline = Date.now() + timeoutMs
+  let lastDeployment = null
+
+  while (Date.now() < deadline) {
+    const deployment = await getLatestProductionDeployment()
+    lastDeployment = deployment
+    const deploymentHost = deployment?.url?.toLowerCase()
+
+    if (deployment?.readyState === 'READY' && deployment?.target === 'production' && deploymentHost === expectedHost) {
+      return deployment
+    }
+
+    await sleep(5000)
+  }
+
+  const lastHost = lastDeployment?.url ? `https://${lastDeployment.url}` : 'desconhecida'
+  throw new Error(`Timeout aguardando deploy READY para ${expectedHost}. Ultimo visto: ${lastHost}`)
 }
 
 async function ensureAliasPointsTo(deploymentUrl, canonicalDomain, maxAttempts = 8) {
@@ -202,7 +232,17 @@ async function main() {
     const tempOutputDir = join(tempWorkspace, '.vercel', 'output')
     cpSync(join(process.cwd(), '.vercel', 'output'), tempOutputDir, { recursive: true })
 
-    const deployResult = run(npxCommand, withVercelAuthArgs(['vercel', 'deploy', '--prebuilt', '--prod', '--yes']), {
+    const deployResult = run(npxCommand, withVercelAuthArgs([
+      'vercel',
+      'deploy',
+      '--prebuilt',
+      '--prod',
+      '--yes',
+      '--meta',
+      `githubCommitSha=${headSha}`,
+      '--meta',
+      `gitCommitSha=${headSha}`,
+    ]), {
       captureOutput: true,
       cwd: tempWorkspace,
     })
@@ -216,7 +256,10 @@ async function main() {
     process.stdout.write(deployResult.stdout ?? '')
     process.stderr.write(deployResult.stderr ?? '')
 
-    const deployment = await waitForDeploymentBySha(headSha)
+    const deploymentHost = extractDeploymentHost(deployResult.stdout ?? '')
+    const deployment = deploymentHost
+      ? await waitForDeploymentReadyByHost(deploymentHost)
+      : await waitForDeploymentBySha(headSha)
     const deploymentUrl = `https://${deployment.url}`
 
     if (!canonicalDomain) {
