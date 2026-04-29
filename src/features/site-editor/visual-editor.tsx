@@ -3210,6 +3210,72 @@ export function useSiteContentScope() {
   return useContext(SiteContentContext)
 }
 
+export function EditableControlsHintPanel() {
+  const editor = useContext(VisualEditorContext)
+  const [isCollapsed, setIsCollapsed] = useState(false)
+  const [isDismissed, setIsDismissed] = useState(false)
+
+  if (!editor?.isEditing || isDismissed) {
+    return null
+  }
+
+  if (isCollapsed) {
+    return (
+      <div className="fixed right-5 top-28 z-[110]">
+        <div className="flex items-center gap-2 rounded-full border border-[#D8E6EB] bg-white px-3 py-2 shadow-[0_18px_50px_rgba(6,27,33,0.12)]">
+          <span className="inline-flex items-center gap-2 text-xs font-bold text-[#15323b]">
+            <RotateCcw className="h-4 w-4 text-[#1398B7]" />
+            Ajuda do editor
+          </span>
+          <button
+            type="button"
+            onClick={() => setIsCollapsed(false)}
+            className="rounded-full border border-[#D8E6EB] px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.14em] text-[#163138] hover:bg-[#F2F7F9]"
+          >
+            Mostrar
+          </button>
+          <button
+            type="button"
+            onClick={() => setIsDismissed(true)}
+            className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-[#D8E6EB] text-[#5F7077] hover:bg-[#F2F7F9]"
+            aria-label="Fechar balão de ajuda"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="fixed right-5 top-28 z-[110] max-w-xs rounded-[22px] border border-[#D8E6EB] bg-white p-4 text-xs font-bold leading-5 text-[#15323b] shadow-[0_18px_50px_rgba(6,27,33,0.12)]">
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex items-start gap-2">
+          <RotateCcw className="mt-0.5 h-4 w-4 text-[#1398B7]" />
+          <p>Clique nos itens destacados para editar. O site público continua intacto fora do modo edição e cada salvamento publica imediatamente.</p>
+        </div>
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={() => setIsCollapsed(true)}
+            className="rounded-full border border-[#D8E6EB] px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.14em] text-[#163138] hover:bg-[#F2F7F9]"
+          >
+            Ocultar
+          </button>
+          <button
+            type="button"
+            onClick={() => setIsDismissed(true)}
+            className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-[#D8E6EB] text-[#5F7077] hover:bg-[#F2F7F9]"
+            aria-label="Fechar balão de ajuda"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export function EditableControlsHint() {
   const editor = useContext(VisualEditorContext)
   if (!editor?.isEditing) return null

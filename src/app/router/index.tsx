@@ -9,7 +9,7 @@ import { ProtectedRoute } from '@/app/router/protected-route'
 import { MessagesPage } from '@/pages/shared/messages-page'
 import { MessagesRedirectPage } from '@/pages/shared/messages-redirect-page'
 import { EditablePageSeo } from '@/features/site-editor/editable-page-seo'
-import { EditableControlsHint, SiteContentScope, VisualEditorProvider } from '@/features/site-editor/visual-editor'
+import { EditableControlsHintPanel, SiteContentScope, VisualEditorProvider } from '@/features/site-editor/visual-editor'
 import type { SitePageKey } from '@/features/site-editor/types'
 
 const PublicHomePage = lazy(async () => ({ default: (await import('@/pages/public/public-home-page')).PublicHomePage }))
@@ -117,7 +117,7 @@ function PublicEditableRoute({
   return (
     <VisualEditorProvider>
       <SiteContentScope pageKey={pageKey}>
-        <EditableControlsHint />
+        <EditableControlsHintPanel />
         {seo ? <EditablePageSeo pageKey={pageKey} entryKey={seo.entryKey} fallback={seo.fallback} label={seo.label} /> : null}
         {withRouteSuspense(children)}
       </SiteContentScope>
