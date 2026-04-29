@@ -39,6 +39,8 @@ export interface SupportFaqItem {
   is_published?: boolean
 }
 
+export type SupportFaqEventType = 'view' | 'helpful' | 'not_helpful' | 'search_no_result'
+
 export interface SupportTicketUserSummary {
   id: string
   email: string

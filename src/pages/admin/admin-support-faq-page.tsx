@@ -3,7 +3,7 @@ import { Eye, FileText, LifeBuoy, RefreshCw, Save, Search, Trash2 } from 'lucide
 import { useSearchParams } from 'react-router-dom'
 
 import { Button } from '@/components/ui/button'
-import { createSupportFaq, deleteSupportFaq, fetchAdminSupportFaqs, fetchSupportSettings, updateSupportFaq } from '@/features/support/api'
+import { createSupportFaq, deleteSupportFaq, fetchAdminSupportFaqs, fetchSupportFaqEvents, fetchSupportSettings, updateSupportFaq } from '@/features/support/api'
 import type { SupportFaqItem, SupportTicketCategory } from '@/features/support/types'
 import { getOrderedSupportCategories } from '@/lib/support-sla'
 
@@ -51,17 +51,20 @@ export function AdminSupportFaqPage() {
   const [isSaving, setIsSaving] = useState<string | 'new' | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
+  const [faqEvents, setFaqEvents] = useState<Awaited<ReturnType<typeof fetchSupportFaqEvents>>>([])
 
   async function loadData() {
     setIsRefreshing(true)
     setErrorMessage(null)
     try {
-      const [faqRows, supportSettings] = await Promise.all([
+      const [faqRows, supportSettings, events] = await Promise.all([
         fetchAdminSupportFaqs(),
         fetchSupportSettings(),
+        fetchSupportFaqEvents(filters.period === '7d' ? 7 : filters.period === '90d' ? 90 : 30),
       ])
       setFaqs(faqRows)
       setSettings(supportSettings)
+      setFaqEvents(events)
       setNewDraft((current) => ({ ...current, sort_order: faqRows.length + 1 }))
       setSelectedArticleId((current) => current ?? faqRows[0]?.id ?? null)
     } catch (error) {
@@ -74,7 +77,7 @@ export function AdminSupportFaqPage() {
 
   useEffect(() => {
     void loadData()
-  }, [])
+  }, [filters.period])
 
   useEffect(() => {
     setSearchInput(filters.query)
@@ -135,6 +138,29 @@ export function AdminSupportFaqPage() {
       views,
     }
   }, [faqs])
+
+  const feedbackSummary = useMemo(() => {
+    const helpful = faqEvents.filter((item) => item.event_type === 'helpful').length
+    const notHelpful = faqEvents.filter((item) => item.event_type === 'not_helpful').length
+    const totalVotes = helpful + notHelpful
+    const helpfulRate = totalVotes > 0 ? Math.round((helpful / totalVotes) * 100) : 0
+    return { helpful, notHelpful, totalVotes, helpfulRate }
+  }, [faqEvents])
+
+  const analyticsSummary = useMemo(() => {
+    const noResultRows = faqEvents.filter((item) => item.event_type === 'search_no_result')
+    const noResultCount = noResultRows.length
+    const topQueriesMap = new Map<string, number>()
+    noResultRows.forEach((row) => {
+      const key = row.query?.trim().toLowerCase()
+      if (!key) return
+      topQueriesMap.set(key, (topQueriesMap.get(key) ?? 0) + 1)
+    })
+    const topQueries = [...topQueriesMap.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+    return { noResultCount, topQueries }
+  }, [faqEvents])
 
   function updateSearchParam(key: string, value: string) {
     setSearchParams((current) => {
@@ -517,7 +543,21 @@ export function AdminSupportFaqPage() {
               <FileText className="h-4 w-4 text-[#1398B7]" />
               <p className="text-sm font-semibold text-[#15323b]">FAQ Admin / Feedback</p>
             </div>
-            <p className="mt-3 text-sm font-semibold text-[#5F7077]">Nenhum item encontrado com os filtros atuais.</p>
+            <p className="mt-2 text-sm text-[#5F7077]">Esta aba mostra votos de utilidade enviados na seção de perguntas frequentes da página pública de suporte.</p>
+            <div className="mt-4 grid gap-3 sm:grid-cols-3">
+              <article className="rounded-[14px] border border-[#D8E6EB] bg-white p-3">
+                <p className="text-xs font-semibold text-[#5F7077]">Votos úteis</p>
+                <p className="mt-1 text-xl font-black text-emerald-700">{feedbackSummary.helpful}</p>
+              </article>
+              <article className="rounded-[14px] border border-[#D8E6EB] bg-white p-3">
+                <p className="text-xs font-semibold text-[#5F7077]">Votos não úteis</p>
+                <p className="mt-1 text-xl font-black text-rose-700">{feedbackSummary.notHelpful}</p>
+              </article>
+              <article className="rounded-[14px] border border-[#D8E6EB] bg-white p-3">
+                <p className="text-xs font-semibold text-[#5F7077]">Helpful rate</p>
+                <p className="mt-1 text-xl font-black text-[#15323b]">{feedbackSummary.helpfulRate}%</p>
+              </article>
+            </div>
           </div>
         ) : null}
 
@@ -527,7 +567,26 @@ export function AdminSupportFaqPage() {
               <Eye className="h-4 w-4 text-[#1398B7]" />
               <p className="text-sm font-semibold text-[#15323b]">FAQ Admin / Analytics</p>
             </div>
-            <p className="mt-3 text-sm text-[#5F7077]">Top 20 queries sem resultado, helpful rate por artigo e correlação com tickets serão exibidos aqui quando os dados analíticos forem conectados.</p>
+            <p className="mt-2 text-sm text-[#5F7077]">Esta aba consolida eventos de busca sem resultado capturados na busca de FAQ da página pública de suporte.</p>
+            <div className="mt-4 rounded-[14px] border border-[#D8E6EB] bg-white p-3">
+              <p className="text-xs font-semibold text-[#5F7077]">Buscas sem resultado no período</p>
+              <p className="mt-1 text-xl font-black text-[#15323b]">{analyticsSummary.noResultCount}</p>
+            </div>
+            <div className="mt-3 rounded-[14px] border border-[#D8E6EB] bg-white p-3">
+              <p className="text-xs font-semibold text-[#5F7077]">Top termos sem resposta</p>
+              {analyticsSummary.topQueries.length === 0 ? (
+                <p className="mt-2 text-sm text-[#5F7077]">Nenhuma busca sem resultado registrada no período.</p>
+              ) : (
+                <ul className="mt-2 space-y-1 text-sm text-[#15323b]">
+                  {analyticsSummary.topQueries.map(([query, count]) => (
+                    <li key={query} className="flex items-center justify-between">
+                      <span>{query}</span>
+                      <span className="font-black">{count}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
           </div>
         ) : null}
       </section>

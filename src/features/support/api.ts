@@ -9,6 +9,7 @@ import type {
   SupportBusinessHoursConfig,
   SupportCrisisProtocolConfig,
   SupportFaqItem,
+  SupportFaqEventType,
   SupportMessage,
   SupportMessageInput,
   SupportSlaConfig,
@@ -279,6 +280,52 @@ export async function deleteSupportFaq(id: string) {
   if (error) {
     throw error
   }
+}
+
+type SupportFaqEventInput = {
+  faqId?: string | null
+  eventType: SupportFaqEventType
+  query?: string | null
+  sessionId?: string | null
+}
+
+export async function trackSupportFaqEvent(input: SupportFaqEventInput) {
+  const { error } = await supabase
+    .from('support_faq_events')
+    .insert({
+      faq_id: input.faqId ?? null,
+      event_type: input.eventType,
+      query: input.query?.trim() ? input.query.trim() : null,
+      session_id: input.sessionId ?? null,
+    })
+
+  if (error) {
+    throw error
+  }
+}
+
+type SupportFaqEventRow = {
+  faq_id: string | null
+  event_type: SupportFaqEventType
+  query: string | null
+  created_at: string
+}
+
+export async function fetchSupportFaqEvents(days = 30) {
+  const date = new Date()
+  date.setDate(date.getDate() - days)
+
+  const { data, error } = await supabase
+    .from('support_faq_events')
+    .select('faq_id, event_type, query, created_at')
+    .gte('created_at', date.toISOString())
+    .order('created_at', { ascending: false })
+
+  if (error) {
+    throw error
+  }
+
+  return (data ?? []) as SupportFaqEventRow[]
 }
 
 export async function fetchMySupportTickets() {

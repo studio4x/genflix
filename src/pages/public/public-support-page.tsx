@@ -9,7 +9,7 @@ import { GenflixPublicFooter } from '@/components/public/genflix-public-footer'
 import { GenflixPublicHeader } from '@/components/public/genflix-public-header'
 import { PublicTextBlocksSection } from '@/components/public/public-text-blocks-section'
 import { BannerPlacementSlot } from '@/features/banners/banner-placement-slot'
-import { fetchSupportFaqs, fetchSupportSettings } from '@/features/support/api'
+import { fetchSupportFaqs, fetchSupportSettings, trackSupportFaqEvent } from '@/features/support/api'
 import { genflixNavLinks } from '@/features/public/genflix-site-content'
 import { formatSupportBusinessHours, getOrderedSupportCategories, getSupportListRoute } from '@/lib/support-sla'
 import type { SupportFaqItem, SupportTicketCategory } from '@/features/support/types'
@@ -22,6 +22,18 @@ export function PublicSupportPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [settings, setSettings] = useState<Awaited<ReturnType<typeof fetchSupportSettings>> | null>(null)
+  const [voteState, setVoteState] = useState<Record<string, 'helpful' | 'not_helpful'>>({})
+
+  const faqSessionId = useMemo(() => {
+    const storageKey = 'genflix_support_faq_session_id'
+    const existing = window.localStorage.getItem(storageKey)
+    if (existing) {
+      return existing
+    }
+    const created = crypto.randomUUID()
+    window.localStorage.setItem(storageKey, created)
+    return created
+  }, [])
 
   useEffect(() => {
     let isMounted = true
@@ -64,6 +76,28 @@ export function PublicSupportPage() {
       return matchesCategory && matchesQuery
     })
   }, [activeCategory, faqs, searchQuery])
+
+  useEffect(() => {
+    const hasNoResult = searchQuery.trim().length > 0 && filteredFaqs.length === 0
+    if (!hasNoResult) {
+      return
+    }
+
+    void trackSupportFaqEvent({
+      eventType: 'search_no_result',
+      query: searchQuery,
+      sessionId: faqSessionId,
+    }).catch(() => undefined)
+  }, [faqSessionId, filteredFaqs.length, searchQuery])
+
+  async function handleFaqVote(faqId: string, vote: 'helpful' | 'not_helpful') {
+    setVoteState((current) => ({ ...current, [faqId]: vote }))
+    await trackSupportFaqEvent({
+      faqId,
+      eventType: vote,
+      sessionId: faqSessionId,
+    })
+  }
 
   return (
     <main className="min-h-screen bg-[#F2F7F9] font-manrope text-[#163138]">
@@ -221,6 +255,27 @@ export function PublicSupportPage() {
                   <article key={item.id} className="rounded-[22px] border border-[#D8E6EB] bg-[#F8FBFC] px-5 py-4">
                     <h3 className="text-base font-black text-[#15323b]">{item.question}</h3>
                     <p className="mt-3 text-sm leading-7 text-[#5F7077]">{item.answer}</p>
+                    <div className="mt-4 flex flex-wrap items-center gap-2">
+                      <p className="text-xs font-semibold text-[#5F7077]">Essa resposta foi útil?</p>
+                      <button
+                        type="button"
+                        onClick={() => void handleFaqVote(item.id, 'helpful')}
+                        className={`rounded-full px-3 py-1 text-xs font-black transition-colors ${
+                          voteState[item.id] === 'helpful' ? 'bg-emerald-600 text-white' : 'bg-white text-[#15323b] hover:bg-emerald-50'
+                        }`}
+                      >
+                        Sim
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => void handleFaqVote(item.id, 'not_helpful')}
+                        className={`rounded-full px-3 py-1 text-xs font-black transition-colors ${
+                          voteState[item.id] === 'not_helpful' ? 'bg-rose-600 text-white' : 'bg-white text-[#15323b] hover:bg-rose-50'
+                        }`}
+                      >
+                        Não
+                      </button>
+                    </div>
                   </article>
                 ))}
               </div>
