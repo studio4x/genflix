@@ -16,6 +16,7 @@ import { Link, useLocation } from 'react-router-dom'
 import { CheckCircle2, Copy, Edit3, Image as ImageIcon, LayoutTemplate, MessageSquare, PanelBottomOpen, Plus, Redo2, RotateCcw, Save, Send, Settings, Sparkles, Undo2, Wand2, X } from 'lucide-react'
 
 import { useAuth } from '@/app/providers/auth-provider'
+import ReactQuill from '@/components/forms/react-quill'
 import { GenflixCtaButton, normalizeGenflixCtaTone } from '@/components/public/genflix-cta-button'
 import { GenflixLogo } from '@/components/public/genflix-logo'
 import { supabase } from '@/services/supabase/client'
@@ -351,6 +352,15 @@ const BUTTON_STYLE_PRESETS = [
     description: 'Botão translúcido para fundos escuros.',
   },
 ] as const
+
+const richTextToolbarModules = {
+  toolbar: [
+    [{ header: [1, 2, 3, false] }],
+    ['bold', 'italic', 'underline', 'strike'],
+    [{ list: 'ordered' }, { list: 'bullet' }],
+    ['link', 'clean'],
+  ],
+}
 
 function isTitleEditorEntry(label: string, entryKey: string) {
   const normalizedLabel = label.toLowerCase()
@@ -747,7 +757,6 @@ function ListItemEditorCard({
   onUploadIcon?: (index: number, file: File) => void
   editorConfig: NormalizedListEditorSchema
 }) {
-  const descriptionRef = useRef<HTMLTextAreaElement | null>(null)
   const metadata: Record<string, unknown> = isStringRecord(item.metadata) ? { ...item.metadata } : {}
   const nestedItems = normalizeEditableListItems(metadata.items)
   const metadataWithoutItems: Record<string, unknown> = { ...metadata }
@@ -814,25 +823,6 @@ function ListItemEditorCard({
     onChange({
       ...item,
       description: value,
-    })
-  }
-
-  function applyRichTextFormat(before: string, after = before.replace('<', '</')) {
-    const textarea = descriptionRef.current
-    if (!textarea) return
-
-    const currentValue = item.description ?? ''
-    const selectionStart = textarea.selectionStart ?? 0
-    const selectionEnd = textarea.selectionEnd ?? selectionStart
-    const selectedText = currentValue.slice(selectionStart, selectionEnd)
-    const nextValue = `${currentValue.slice(0, selectionStart)}${before}${selectedText || 'texto'}${after}${currentValue.slice(selectionEnd)}`
-
-    updateRichTextField(nextValue)
-    queueMicrotask(() => {
-      textarea.focus()
-      const cursorStart = selectionStart + before.length
-      const cursorEnd = cursorStart + (selectedText || 'texto').length
-      textarea.setSelectionRange(cursorStart, cursorEnd)
     })
   }
 
@@ -925,26 +915,21 @@ function ListItemEditorCard({
           </label>
         </div>
 
-        <div className="mt-4 rounded-[18px] border border-[#D8E6EB] bg-[#F8FCFD]">
-          <div className="flex flex-wrap gap-2 border-b border-[#D8E6EB] px-4 py-3">
-            <button type="button" onClick={() => applyRichTextFormat('<strong>', '</strong>')} className="rounded-full border border-[#D8E6EB] px-3 py-2 text-xs font-black uppercase tracking-[0.14em] text-[#0A3640] hover:bg-[#F2F7F9]">Negrito</button>
-            <button type="button" onClick={() => applyRichTextFormat('<em>', '</em>')} className="rounded-full border border-[#D8E6EB] px-3 py-2 text-xs font-black uppercase tracking-[0.14em] text-[#0A3640] hover:bg-[#F2F7F9]">Itálico</button>
-            <button type="button" onClick={() => applyRichTextFormat('<p>', '</p>')} className="rounded-full border border-[#D8E6EB] px-3 py-2 text-xs font-black uppercase tracking-[0.14em] text-[#0A3640] hover:bg-[#F2F7F9]">Parágrafo</button>
-            <button type="button" onClick={() => applyRichTextFormat('<h3>', '</h3>')} className="rounded-full border border-[#D8E6EB] px-3 py-2 text-xs font-black uppercase tracking-[0.14em] text-[#0A3640] hover:bg-[#F2F7F9]">Título</button>
-            <button type="button" onClick={() => applyRichTextFormat('<ul><li>', '</li></ul>')} className="rounded-full border border-[#D8E6EB] px-3 py-2 text-xs font-black uppercase tracking-[0.14em] text-[#0A3640] hover:bg-[#F2F7F9]">Lista</button>
-          </div>
-          <div className="grid gap-2 p-4">
-            <textarea
-              ref={descriptionRef}
-              value={item.description ?? ''}
-              onChange={(event) => updateRichTextField(event.target.value)}
-              rows={8}
-              className="w-full resize-y rounded-[18px] border border-[#D8E6EB] bg-white px-4 py-3 text-sm leading-6 text-[#15323b] outline-none focus:border-[#1398B7]"
-              placeholder="Escreva o texto do parágrafo aqui..."
-            />
-            <p className="text-xs leading-5 text-[#5F7077]">
-              Use os botões acima para formatar o conteúdo sem abrir JSON.
+        <div className="mt-4 rounded-[18px] border border-[#D8E6EB] bg-[#F8FCFD] p-4">
+          <div className="mb-3">
+            <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[#1398B7]">Conteúdo rico</p>
+            <p className="mt-1 text-xs leading-5 text-[#5F7077]">
+              Este bloco usa o mesmo editor rico base do construtor de cursos, sem precisar editar JSON.
             </p>
+          </div>
+          <div className="overflow-hidden rounded-[18px] border border-[#D8E6EB] bg-white">
+            <ReactQuill
+              value={item.description ?? ''}
+              onChange={updateRichTextField}
+              placeholder="Escreva o conteúdo aqui..."
+              modules={richTextToolbarModules}
+              className="[&_.react-quill-local]:rounded-none [&_.react-quill-local]:border-0 [&_.react-quill-local_.ql-container]:border-0"
+            />
           </div>
         </div>
       </div>
@@ -1468,6 +1453,8 @@ function EditorModal({
   const workflowStatus = workspaceRecord.status
   const comments = workspaceRecord.comments
   const draftAvailable = typeof workspaceRecord.draftRawValue === 'string' && workspaceRecord.draftRawValue.trim() !== ''
+  const displayEntryTypeLabel = isRichTextListEditor ? 'content' : editor.entryType
+  const displayStructureLabel = isRichTextListEditor ? 'blocos de conteúdo' : describeValueShape(parsedPreview.value)
   const updateAppearanceDraft = useCallback((nextAppearance: NormalizedSiteAppearance) => {
     setRawValue(JSON.stringify(buildSiteAppearanceValue(nextAppearance), null, 2))
   }, [])
@@ -1834,10 +1821,10 @@ function EditorModal({
             <p className="mt-1 text-xs font-semibold text-[#5F7077]">{editor.pageKey}/{editor.entryKey}</p>
             <div className="mt-3 flex flex-wrap gap-2">
               <span className="inline-flex items-center rounded-full border border-[#0A3640] bg-[#0A3640] px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-white">
-                Tipo: {editor.entryType}
+                Tipo: {displayEntryTypeLabel}
               </span>
               <span className="inline-flex items-center rounded-full border border-[#0A3640] bg-[#0A3640] px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-white">
-                Estrutura: {describeValueShape(parsedPreview.value)}
+                Estrutura: {displayStructureLabel}
               </span>
               {isTitleEditor ? (
                 <span className="inline-flex items-center rounded-full border border-[#0A3640] bg-[#0A3640] px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-white">
@@ -1985,8 +1972,14 @@ function EditorModal({
               <div className="rounded-[22px] border border-[#D8E6EB] bg-[#F8FCFD] p-4">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
-                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#1398B7]">Editor de listagem</p>
-                    <p className="mt-1 text-sm font-semibold text-[#15323b]">Edite itens, mova ordem e reorganize elementos sem alterar a estrutura visual da página.</p>
+                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#1398B7]">
+                      {isRichTextListEditor ? 'Editor de conteúdo' : 'Editor de listagem'}
+                    </p>
+                    <p className="mt-1 text-sm font-semibold text-[#15323b]">
+                      {isRichTextListEditor
+                        ? 'Edite textos ricos, reorganize blocos e publique o conteúdo no mesmo fluxo visual.'
+                        : 'Edite itens, mova ordem e reorganize elementos sem alterar a estrutura visual da página.'}
+                    </p>
                   </div>
                   <div className="flex flex-wrap gap-2">
                     <button
@@ -2792,10 +2785,12 @@ function EditorModal({
               <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#D8E6EB] px-4 py-3">
                 <div>
                   <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#5F7077]">
-                    {usesRichTextToolbar ? 'Editor rico' : 'Conteúdo'}
+                    {isRichTextListEditor ? 'Construtor de conteúdo' : usesRichTextToolbar ? 'Editor rico' : 'Conteúdo'}
                   </p>
                   <p className="mt-1 text-sm font-semibold text-[#15323b]">
-                    {usesJsonEditor
+                    {isRichTextListEditor
+                      ? 'Use os blocos abaixo para editar cada texto em um fluxo visual, no estilo builder.'
+                      : usesJsonEditor
                       ? 'Edite o valor com estrutura válida e publique em seguida.'
                       : usesRichTextToolbar
                         ? 'Use os atalhos e os botões de formatação para compor conteúdo rico sem trocar a estrutura da página.'
@@ -2880,25 +2875,38 @@ function EditorModal({
                 </div>
               ) : null}
 
-              <div className="grid gap-2 p-4">
-                <textarea
-                  ref={textareaRef}
-                  value={rawValue}
-                  onChange={(event) => setRawValue(event.target.value)}
-                  rows={usesJsonEditor ? 18 : usesRichTextToolbar ? 14 : 10}
-                  className="w-full resize-y rounded-[18px] border border-[#D8E6EB] bg-white px-4 py-3 font-mono text-sm leading-6 text-[#15323b] outline-none focus:border-[#1398B7]"
-                />
-                {parsedPreview.error ? (
-                  <div className="rounded-[16px] border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-bold text-rose-700">
-                    JSON inválido: {parsedPreview.error}
+              {isRichTextListEditor ? (
+                <div className="grid gap-2 p-4">
+                  <div className="rounded-[18px] border border-[#D8E6EB] bg-[#F8FCFD] px-4 py-4 text-sm leading-6 text-[#5F7077]">
+                    Cada bloco de texto é editado individualmente no editor rico abaixo. A estrutura da lista continua interna, mas não é mais exposta como JSON neste fluxo.
                   </div>
-                ) : null}
-                {message ? (
-                  <div className="rounded-[16px] border border-[#D8E6EB] bg-[#F2F7F9] p-3 text-sm font-bold text-[#15323b]">
-                    {message}
-                  </div>
-                ) : null}
-              </div>
+                  {message ? (
+                    <div className="rounded-[16px] border border-[#D8E6EB] bg-[#F2F7F9] p-3 text-sm font-bold text-[#15323b]">
+                      {message}
+                    </div>
+                  ) : null}
+                </div>
+              ) : (
+                <div className="grid gap-2 p-4">
+                  <textarea
+                    ref={textareaRef}
+                    value={rawValue}
+                    onChange={(event) => setRawValue(event.target.value)}
+                    rows={usesJsonEditor ? 18 : usesRichTextToolbar ? 14 : 10}
+                    className="w-full resize-y rounded-[18px] border border-[#D8E6EB] bg-white px-4 py-3 font-mono text-sm leading-6 text-[#15323b] outline-none focus:border-[#1398B7]"
+                  />
+                  {parsedPreview.error ? (
+                    <div className="rounded-[16px] border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-bold text-rose-700">
+                      JSON inválido: {parsedPreview.error}
+                    </div>
+                  ) : null}
+                  {message ? (
+                    <div className="rounded-[16px] border border-[#D8E6EB] bg-[#F2F7F9] p-3 text-sm font-bold text-[#15323b]">
+                      {message}
+                    </div>
+                  ) : null}
+                </div>
+              )}
             </div>
           </div>
 
