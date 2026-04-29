@@ -126,8 +126,9 @@ export async function fetchSiteContent(pageKey: SitePageKey) {
   const { data, error } = await supabase
     .from('site_content_entries')
     .select('id, page_key, entry_key, entry_type, value, schema, is_enabled, updated_by, created_at, updated_at')
-    .in('page_key', ['global', pageKey])
     .eq('is_enabled', true)
+    .in('page_key', ['global', pageKey])
+    .order('updated_at', { ascending: false })
 
   if (error) {
     throw error

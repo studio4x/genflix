@@ -41,8 +41,11 @@ async function fetchPublicRows<T>(path: string, searchParams: URLSearchParams): 
   }
 
   const response = await fetch(`${supabaseUrl}/rest/v1/${path}?${searchParams.toString()}`, {
+    cache: 'no-store',
     headers: {
       apikey: supabaseAnonKey,
+      'cache-control': 'no-store, max-age=0',
+      pragma: 'no-cache',
     },
   })
 
@@ -89,9 +92,12 @@ async function fetchPublicCourseOutline(courseId: string): Promise<GenflixCourse
 
   const response = await fetch(`${supabaseUrl}/rest/v1/rpc/get_public_course_outline`, {
     method: 'POST',
+    cache: 'no-store',
     headers: {
       'Content-Type': 'application/json',
       apikey: supabaseAnonKey,
+      'cache-control': 'no-store, max-age=0',
+      pragma: 'no-cache',
     },
     body: JSON.stringify({ _course_id: courseId }),
   })
