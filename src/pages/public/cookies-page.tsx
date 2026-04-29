@@ -14,6 +14,7 @@ export function CookiesPage() {
       title="Uso de Cookies"
       summary="Esta página explica, de forma objetiva, como a GenFlix pode utilizar cookies e tecnologias semelhantes para autenticação, segurança, desempenho e funcionamento do serviço."
       updatedAt="10/04/2026"
+      currentPage="cookies"
     >
       <section className="space-y-4">
         <h2 className="text-xl font-black tracking-tight text-[#183139]">

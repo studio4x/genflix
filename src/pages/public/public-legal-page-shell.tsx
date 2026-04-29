@@ -14,6 +14,7 @@ interface PublicLegalPageShellProps {
   summary: string
   updatedAt: string
   children: ReactNode
+  currentPage?: string
 }
 
 export function PublicLegalPageShell({
@@ -22,10 +23,11 @@ export function PublicLegalPageShell({
   summary,
   updatedAt,
   children,
+  currentPage,
 }: PublicLegalPageShellProps) {
   return (
     <main className="min-h-screen bg-[#F2F7F9] font-manrope text-[#163138]">
-      <GenflixPublicHeader navLinks={genflixNavLinks} />
+      <GenflixPublicHeader currentPage={currentPage as never} navLinks={genflixNavLinks} />
       <BannerPlacementSlot pageKey="global" placementKey="hero" />
 
       <div className="public-site-container pt-4">

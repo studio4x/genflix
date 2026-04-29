@@ -10,6 +10,7 @@ export function PrivacyPage() {
       title={document.title}
       summary={document.summary}
       updatedAt={document.updatedAt}
+      currentPage="privacy"
     >
       {document.content}
     </PublicLegalPageShell>
