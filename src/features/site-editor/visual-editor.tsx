@@ -62,6 +62,7 @@ import {
   type SiteEditorWorkspaceMap,
   type SiteEditorWorkspaceRecord,
 } from '@/features/site-editor/collaboration'
+import { SITE_TEXT_FONT_PRESETS } from '@/features/site-editor/font-presets'
 
 type EditableValue = string | EditableListItem[] | Record<string, unknown> | null
 type TextStyleValue = {
@@ -257,7 +258,9 @@ function normalizeTextStyle(value: unknown): TextStyleValue {
   for (const field of fields) {
     const currentValue = value[field]
     if (typeof currentValue === 'string' && currentValue.trim() !== '') {
-      if (['minWidth', 'minHeight', 'maxWidth', 'maxHeight', 'borderRadius', 'fontSize'].includes(field)) {
+      if (field === 'fontFamily') {
+        nextStyle[field] = currentValue.trim()
+      } else if (['minWidth', 'minHeight', 'maxWidth', 'maxHeight', 'borderRadius', 'fontSize'].includes(field)) {
         nextStyle[field] = normalizeCssLengthValue(currentValue, currentValue)
       } else {
         nextStyle[field] = currentValue
@@ -2539,15 +2542,55 @@ function EditorModal({
                       />
                     </div>
                   </label>
-                  <label className="grid gap-1.5">
+                  <div className="grid gap-1.5">
                     <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Fonte</span>
-                    <input
-                      value={textStyle.fontFamily ?? ''}
-                      onChange={(event) => setTextStyle((current) => ({ ...current, fontFamily: event.target.value }))}
-                      placeholder="readex-pro, serif"
-                      className="h-11 rounded-[14px] border border-[#D8E6EB] px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]"
-                    />
-                  </label>
+                    <div className="grid gap-3">
+                      <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+                        <button
+                          type="button"
+                          onClick={() => setTextStyle((current) => ({ ...current, fontFamily: undefined }))}
+                          className={cn(
+                            'rounded-[16px] border px-4 py-3 text-left transition-all',
+                            textStyle.fontFamily ? 'border-[#D8E6EB] bg-white text-[#15323b] hover:bg-[#F2F7F9]' : 'border-[#1398B7] bg-[#E8F6FA] text-[#0A3640]',
+                          )}
+                        >
+                          <span className="block text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Padrao</span>
+                          <span className="mt-1 block text-sm font-semibold">Herda a fonte base do site</span>
+                        </button>
+                        {SITE_TEXT_FONT_PRESETS.map((fontPreset) => {
+                          const isSelected = textStyle.fontFamily === fontPreset.family
+
+                          return (
+                            <button
+                              key={fontPreset.family}
+                              type="button"
+                              onClick={() => setTextStyle((current) => ({ ...current, fontFamily: fontPreset.family }))}
+                              className={cn(
+                                'rounded-[16px] border px-4 py-3 text-left transition-all',
+                                isSelected ? 'border-[#1398B7] bg-[#E8F6FA] text-[#0A3640]' : 'border-[#D8E6EB] bg-white text-[#15323b] hover:bg-[#F2F7F9]',
+                              )}
+                              style={{ fontFamily: fontPreset.family }}
+                            >
+                              <span className="block text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">{fontPreset.label}</span>
+                              <span className="mt-1 block text-sm font-semibold">{fontPreset.sample}</span>
+                              <span className="mt-1 block text-[11px] font-medium leading-4 text-[#5F7077]" style={{ fontFamily: 'inherit' }}>
+                                {fontPreset.description}
+                              </span>
+                            </button>
+                          )
+                        })}
+                      </div>
+                      <label className="grid gap-1.5">
+                        <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Fonte personalizada</span>
+                        <input
+                          value={textStyle.fontFamily ?? ''}
+                          onChange={(event) => setTextStyle((current) => ({ ...current, fontFamily: event.target.value.trim() || undefined }))}
+                          placeholder="Ex.: Playfair Display, serif"
+                          className="h-11 rounded-[14px] border border-[#D8E6EB] px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]"
+                        />
+                      </label>
+                    </div>
+                  </div>
                   <label className="grid gap-1.5">
                     <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Tamanho</span>
                     <div className="flex items-center gap-2">
