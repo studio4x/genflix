@@ -184,6 +184,9 @@
 
 [OK] T55 - A implementação feita na T54 não está surtindo efeito. ao sair do editor, realmente a tela recarregada, porém, os ajustes feitos não aparecem.. Se eu acessar de outro navegador, ai sim vejo os ajustes feitos.. Se eu acessar o admin e depois voltar para a página, eu também consigo ver os ajustes, mas, se eu recarrego a página após sair do admin, os ajustes somem.. Dev ter algum cache da página que ainda não foi limpo no navegador.
 
+[ ] T56 - Nos campos do editor visual, principalmente do header, onde tem as dimensões em pixels, se eu inserir por exemplo "100", o ajuste não é feito e nenhuma mensagem de erro aparece.. Para funcionar tenho que inserir "100px". Vamos manter por padrão esses campos com pixel, sem precisar inserir o "px", e insira ao lado do campo, o texto "px" bem pequeno apenas para indicar a unidade de medida.
+
+[ ] T57 - No editor do header, remova o card "preview rapido", ele não está servindo para nada.. Faça o card "editor Guiado" ocultar a largura toda do container. Remova também o card "Conteúdo".
 ---
 
 Parcial
