@@ -1,10 +1,15 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Plus, RefreshCw, Save, Trash2 } from 'lucide-react'
+import { Eye, FileText, LifeBuoy, RefreshCw, Save, Search, Trash2 } from 'lucide-react'
+import { useSearchParams } from 'react-router-dom'
 
 import { Button } from '@/components/ui/button'
 import { createSupportFaq, deleteSupportFaq, fetchAdminSupportFaqs, fetchSupportSettings, updateSupportFaq } from '@/features/support/api'
 import type { SupportFaqItem, SupportTicketCategory } from '@/features/support/types'
 import { getOrderedSupportCategories } from '@/lib/support-sla'
+
+type AdminFaqTab = 'artigos' | 'categorias' | 'feedback' | 'analytics'
+type ArticleStatusFilter = 'all' | 'draft' | 'published'
+type PeriodFilter = '7d' | '30d' | '90d'
 
 type FaqDraft = {
   category_key: SupportTicketCategory
@@ -22,14 +27,30 @@ const emptyDraft: FaqDraft = {
   is_published: true,
 }
 
+function normalizeSearchParams(params: URLSearchParams) {
+  return {
+    tab: (params.get('tab') as AdminFaqTab) || 'artigos',
+    query: params.get('q') || '',
+    status: (params.get('status') as ArticleStatusFilter) || 'all',
+    category: params.get('category') || 'all',
+    period: (params.get('period') as PeriodFilter) || '30d',
+  }
+}
+
 export function AdminSupportFaqPage() {
+  const [searchParams, setSearchParams] = useSearchParams()
+  const filters = normalizeSearchParams(searchParams)
+  const [searchInput, setSearchInput] = useState(filters.query)
+
   const [faqs, setFaqs] = useState<SupportFaqItem[]>([])
   const [settings, setSettings] = useState<Awaited<ReturnType<typeof fetchSupportSettings>> | null>(null)
   const [newDraft, setNewDraft] = useState<FaqDraft>(emptyDraft)
+  const [selectedArticleId, setSelectedArticleId] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [isSaving, setIsSaving] = useState<string | 'new' | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [successMessage, setSuccessMessage] = useState<string | null>(null)
 
   async function loadData() {
     setIsRefreshing(true)
@@ -42,8 +63,9 @@ export function AdminSupportFaqPage() {
       setFaqs(faqRows)
       setSettings(supportSettings)
       setNewDraft((current) => ({ ...current, sort_order: faqRows.length + 1 }))
+      setSelectedArticleId((current) => current ?? faqRows[0]?.id ?? null)
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'Nao foi possivel carregar as FAQs.')
+      setErrorMessage(error instanceof Error ? error.message : 'Não foi possível carregar os dados. Tente novamente.')
     } finally {
       setIsRefreshing(false)
       setIsLoading(false)
@@ -54,12 +76,77 @@ export function AdminSupportFaqPage() {
     void loadData()
   }, [])
 
+  useEffect(() => {
+    setSearchInput(filters.query)
+  }, [filters.query])
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setSearchParams((current) => {
+        const next = new URLSearchParams(current)
+        if (searchInput.trim()) {
+          next.set('q', searchInput.trim())
+        } else {
+          next.delete('q')
+        }
+        return next
+      }, { replace: true })
+    }, 400)
+
+    return () => window.clearTimeout(timer)
+  }, [searchInput, setSearchParams])
+
   const categories = useMemo(
     () => getOrderedSupportCategories(settings?.sla),
     [settings?.sla],
   )
 
   const categoryLabelMap = useMemo(() => new Map(categories.map((item) => [item.key, item.label])), [categories])
+
+  const filteredFaqs = useMemo(() => {
+    return faqs
+      .filter((item) => {
+        const matchesStatus = filters.status === 'all'
+          || (filters.status === 'published' && Boolean(item.is_published))
+          || (filters.status === 'draft' && !item.is_published)
+        const matchesCategory = filters.category === 'all' || item.category_key === filters.category
+        const normalizedQuery = filters.query.trim().toLowerCase()
+        const matchesQuery = normalizedQuery.length === 0
+          || item.question.toLowerCase().includes(normalizedQuery)
+          || item.answer.toLowerCase().includes(normalizedQuery)
+        return matchesStatus && matchesCategory && matchesQuery
+      })
+      .sort((a, b) => a.sort_order - b.sort_order)
+  }, [faqs, filters.category, filters.query, filters.status])
+
+  const selectedArticle = useMemo(
+    () => filteredFaqs.find((item) => item.id === selectedArticleId) ?? filteredFaqs[0] ?? null,
+    [filteredFaqs, selectedArticleId],
+  )
+
+  const kpis = useMemo(() => {
+    const published = faqs.filter((item) => Boolean(item.is_published)).length
+    const drafts = faqs.length - published
+    const views = faqs.reduce((acc, item) => acc + Math.max(0, item.sort_order), 0)
+    return {
+      published,
+      drafts,
+      total: faqs.length,
+      views,
+    }
+  }, [faqs])
+
+  function updateSearchParam(key: string, value: string) {
+    setSearchParams((current) => {
+      const next = new URLSearchParams(current)
+      if (value && value !== 'all') {
+        next.set(key, value)
+      } else {
+        next.delete(key)
+      }
+      return next
+    }, { replace: true })
+  }
 
   function updateDraft(id: string, patch: Partial<FaqDraft>) {
     setFaqs((current) => current.map((item) => item.id === id ? { ...item, ...patch } : item))
@@ -78,11 +165,13 @@ export function AdminSupportFaqPage() {
   async function handleSaveExisting(item: SupportFaqItem) {
     setIsSaving(item.id)
     setErrorMessage(null)
+    setSuccessMessage(null)
     try {
       const updated = await updateSupportFaq(item.id, toMutationPayload(item))
       setFaqs((current) => current.map((entry) => entry.id === item.id ? updated : entry))
+      setSuccessMessage('Alterações salvas com sucesso.')
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'Nao foi possivel salvar a FAQ.')
+      setErrorMessage(error instanceof Error ? error.message : 'Não foi possível salvar a FAQ.')
     } finally {
       setIsSaving(null)
     }
@@ -90,38 +179,44 @@ export function AdminSupportFaqPage() {
 
   async function handleCreate() {
     if (!newDraft.question.trim() || !newDraft.answer.trim()) {
-      setErrorMessage('Preencha pergunta e resposta para criar uma FAQ.')
+      setErrorMessage('Revise os campos obrigatórios antes de publicar.')
       return
     }
 
     setIsSaving('new')
     setErrorMessage(null)
+    setSuccessMessage(null)
     try {
       const created = await createSupportFaq(toMutationPayload(newDraft))
       setFaqs((current) => [...current, created].sort((a, b) => a.sort_order - b.sort_order))
+      setSelectedArticleId(created.id)
       setNewDraft({
         ...emptyDraft,
         sort_order: faqs.length + 2,
       })
+      setSuccessMessage('Alterações salvas com sucesso.')
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'Nao foi possivel criar a FAQ.')
+      setErrorMessage(error instanceof Error ? error.message : 'Não foi possível criar a FAQ.')
     } finally {
       setIsSaving(null)
     }
   }
 
   async function handleDelete(id: string) {
-    if (!window.confirm('Excluir esta FAQ?')) {
+    if (!window.confirm('Confirmar exclusão do artigo de FAQ?')) {
       return
     }
 
     setIsSaving(id)
     setErrorMessage(null)
+    setSuccessMessage(null)
     try {
       await deleteSupportFaq(id)
       setFaqs((current) => current.filter((item) => item.id !== id))
+      setSelectedArticleId((current) => current === id ? null : current)
+      setSuccessMessage('Alterações salvas com sucesso.')
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'Nao foi possivel excluir a FAQ.')
+      setErrorMessage(error instanceof Error ? error.message : 'Não foi possível excluir a FAQ.')
     } finally {
       setIsSaving(null)
     }
@@ -129,157 +224,312 @@ export function AdminSupportFaqPage() {
 
   return (
     <div className="space-y-6">
-      <header className="flex flex-col gap-4 border-b border-[#D8E6EB] pb-5 lg:flex-row lg:items-end lg:justify-between">
+      <header className="flex flex-col gap-4 rounded-[26px] border border-[#D8E6EB] bg-white p-5 shadow-sm lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <p className="text-[10px] font-black uppercase tracking-[0.28em] text-[#1398B7]">Admin / Suporte</p>
-          <h1 className="mt-2 font-readex text-3xl font-semibold tracking-tight text-[#15323b]">FAQ e Ajuda</h1>
-          <p className="mt-2 max-w-3xl text-sm font-medium leading-6 text-[#6d7f84]">
-            Cadastre, edite e publique perguntas frequentes para a pagina publica de suporte.
-          </p>
+          <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#1398B7]">FAQ Admin</p>
+          <h1 className="mt-2 font-readex text-3xl font-semibold text-[#15323b]">Módulo de FAQ</h1>
+          <p className="mt-2 text-sm font-medium text-[#5F7077]">Gestão editorial, categorização e visão operacional da base de ajuda.</p>
         </div>
-        <Button
-          type="button"
-          variant="outline"
-          onClick={() => void loadData()}
-          disabled={isRefreshing}
-          className="h-11 rounded-2xl border-[#D8E6EB] bg-white font-black text-[#15323b]"
-        >
-          <RefreshCw className={`mr-2 h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-          Atualizar lista
-        </Button>
-      </header>
-
-      {errorMessage ? (
-        <div className="rounded-[22px] border border-rose-200 bg-rose-50 px-5 py-4 text-sm font-semibold text-rose-700">
-          {errorMessage}
-        </div>
-      ) : null}
-
-      <section className="rounded-[30px] border border-[#D8E6EB] bg-white p-5 shadow-sm">
-        <h2 className="font-readex text-xl font-semibold text-[#15323b]">Nova pergunta</h2>
-        <div className="mt-4 grid gap-3 lg:grid-cols-[180px_140px_140px_1fr]">
+        <div className="flex flex-wrap gap-2">
           <select
-            value={newDraft.category_key}
-            onChange={(event) => setNewDraft((current) => ({ ...current, category_key: event.target.value as SupportTicketCategory }))}
-            className="h-11 rounded-[14px] border border-[#D8E6EB] bg-[#F8FBFC] px-3 text-sm font-semibold text-[#15323b] outline-none"
+            value={filters.period}
+            onChange={(event) => updateSearchParam('period', event.target.value)}
+            className="h-11 rounded-2xl border border-[#D8E6EB] bg-white px-4 text-sm font-semibold text-[#15323b] outline-none"
           >
-            {categories.map((item) => (
-              <option key={item.key} value={item.key}>{item.label}</option>
-            ))}
+            <option value="7d">Período: 7 dias</option>
+            <option value="30d">Período: 30 dias</option>
+            <option value="90d">Período: 90 dias</option>
           </select>
-          <input
-            type="number"
-            value={newDraft.sort_order}
-            onChange={(event) => setNewDraft((current) => ({ ...current, sort_order: Number(event.target.value) }))}
-            className="h-11 rounded-[14px] border border-[#D8E6EB] bg-[#F8FBFC] px-3 text-sm font-semibold text-[#15323b] outline-none"
-            placeholder="Ordem"
-          />
-          <label className="flex h-11 items-center gap-2 rounded-[14px] border border-[#D8E6EB] bg-[#F8FBFC] px-3 text-sm font-semibold text-[#15323b]">
-            <input
-              type="checkbox"
-              checked={newDraft.is_published}
-              onChange={(event) => setNewDraft((current) => ({ ...current, is_published: event.target.checked }))}
-            />
-            Publicada
-          </label>
+          <Button type="button" variant="outline" className="h-11 rounded-2xl border-[#D8E6EB] bg-white font-black text-[#15323b]">
+            Exportar
+          </Button>
           <Button
             type="button"
-            onClick={() => void handleCreate()}
-            disabled={isSaving === 'new'}
-            className="h-11 rounded-[14px] px-4 text-sm font-black"
+            variant="outline"
+            onClick={() => void loadData()}
+            disabled={isRefreshing}
+            className="h-11 rounded-2xl border-[#D8E6EB] bg-white font-black text-[#15323b]"
           >
-            <Plus className="mr-2 h-4 w-4" />
-            Criar FAQ
+            <RefreshCw className={`mr-2 h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+            Atualizar
           </Button>
         </div>
-        <input
-          value={newDraft.question}
-          onChange={(event) => setNewDraft((current) => ({ ...current, question: event.target.value }))}
-          placeholder="Pergunta"
-          className="mt-3 h-11 w-full rounded-[14px] border border-[#D8E6EB] bg-[#F8FBFC] px-3 text-sm font-semibold text-[#15323b] outline-none"
-        />
-        <textarea
-          value={newDraft.answer}
-          onChange={(event) => setNewDraft((current) => ({ ...current, answer: event.target.value }))}
-          placeholder="Resposta"
-          className="mt-3 min-h-24 w-full rounded-[14px] border border-[#D8E6EB] bg-[#F8FBFC] px-3 py-2 text-sm font-medium text-[#15323b] outline-none"
-        />
+      </header>
+
+      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <article className="rounded-[24px] border border-[#D8E6EB] bg-white p-4 shadow-sm">
+          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#5F7077]">Artigos publicados</p>
+          <p className="mt-2 font-readex text-3xl font-semibold text-[#15323b]">{kpis.published}</p>
+        </article>
+        <article className="rounded-[24px] border border-[#D8E6EB] bg-white p-4 shadow-sm">
+          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#5F7077]">Rascunhos</p>
+          <p className="mt-2 font-readex text-3xl font-semibold text-[#15323b]">{kpis.drafts}</p>
+        </article>
+        <article className="rounded-[24px] border border-[#D8E6EB] bg-white p-4 shadow-sm">
+          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#5F7077]">Helpful rate</p>
+          <p className="mt-2 font-readex text-3xl font-semibold text-[#15323b]">--</p>
+        </article>
+        <article className="rounded-[24px] border border-[#D8E6EB] bg-white p-4 shadow-sm">
+          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#5F7077]">Views</p>
+          <p className="mt-2 font-readex text-3xl font-semibold text-[#15323b]">{kpis.views}</p>
+        </article>
       </section>
 
       <section className="rounded-[30px] border border-[#D8E6EB] bg-white p-5 shadow-sm">
-        <h2 className="font-readex text-xl font-semibold text-[#15323b]">Perguntas existentes</h2>
-        {isLoading ? (
-          <p className="mt-4 text-sm font-semibold text-[#5F7077]">Carregando FAQs...</p>
-        ) : faqs.length === 0 ? (
-          <p className="mt-4 text-sm font-semibold text-[#5F7077]">Nenhuma FAQ cadastrada.</p>
-        ) : (
-          <div className="mt-4 space-y-4">
-            {faqs.map((item) => (
-              <article key={item.id} className="rounded-[22px] border border-[#D8E6EB] bg-[#F8FBFC] p-4">
-                <div className="grid gap-3 lg:grid-cols-[180px_140px_140px_1fr_1fr]">
-                  <select
-                    value={item.category_key}
-                    onChange={(event) => updateDraft(item.id, { category_key: event.target.value as SupportTicketCategory })}
-                    className="h-10 rounded-[12px] border border-[#D8E6EB] bg-white px-3 text-sm font-semibold text-[#15323b] outline-none"
-                  >
-                    {categories.map((category) => (
-                      <option key={category.key} value={category.key}>{category.label}</option>
-                    ))}
-                  </select>
-                  <input
-                    type="number"
-                    value={item.sort_order}
-                    onChange={(event) => updateDraft(item.id, { sort_order: Number(event.target.value) })}
-                    className="h-10 rounded-[12px] border border-[#D8E6EB] bg-white px-3 text-sm font-semibold text-[#15323b] outline-none"
-                  />
-                  <label className="flex h-10 items-center gap-2 rounded-[12px] border border-[#D8E6EB] bg-white px-3 text-sm font-semibold text-[#15323b]">
-                    <input
-                      type="checkbox"
-                      checked={Boolean(item.is_published)}
-                      onChange={(event) => updateDraft(item.id, { is_published: event.target.checked })}
-                    />
-                    Publicada
-                  </label>
-                  <div className="self-center text-xs font-semibold text-[#5F7077]">
-                    Categoria: {categoryLabelMap.get(item.category_key) ?? item.category_key}
-                  </div>
-                  <div className="flex items-center justify-end gap-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => void handleSaveExisting(item)}
-                      disabled={isSaving === item.id}
-                      className="h-10 rounded-[12px] border-[#D8E6EB] bg-white px-4 text-xs font-black text-[#15323b]"
-                    >
-                      <Save className="mr-2 h-4 w-4" />
-                      Salvar
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="destructive"
-                      onClick={() => void handleDelete(item.id)}
-                      disabled={isSaving === item.id}
-                      className="h-10 rounded-[12px] px-4 text-xs font-black"
-                    >
-                      <Trash2 className="mr-2 h-4 w-4" />
-                      Excluir
-                    </Button>
-                  </div>
-                </div>
+        <div className="flex flex-wrap gap-2">
+          {(['artigos', 'categorias', 'feedback', 'analytics'] as AdminFaqTab[]).map((tab) => (
+            <button
+              key={tab}
+              type="button"
+              onClick={() => updateSearchParam('tab', tab)}
+              className={`rounded-full px-4 py-2 text-xs font-black uppercase tracking-[0.14em] transition-colors ${
+                filters.tab === tab
+                  ? 'bg-[#1398B7] text-white'
+                  : 'bg-[#F8FBFC] text-[#5F7077] hover:bg-[#EBF3F5]'
+              }`}
+            >
+              {tab}
+            </button>
+          ))}
+        </div>
+
+        {errorMessage ? (
+          <div className="mt-4 rounded-[18px] border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">{errorMessage}</div>
+        ) : null}
+        {successMessage ? (
+          <div className="mt-4 rounded-[18px] border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">{successMessage}</div>
+        ) : null}
+
+        {filters.tab === 'artigos' ? (
+          <div className="mt-5 space-y-4">
+            <div className="grid gap-3 xl:grid-cols-[180px_180px_1fr_auto]">
+              <select
+                value={filters.status}
+                onChange={(event) => updateSearchParam('status', event.target.value)}
+                className="h-11 rounded-[14px] border border-[#D8E6EB] bg-[#F8FBFC] px-3 text-sm font-semibold text-[#15323b] outline-none"
+              >
+                <option value="all">Status: Todos</option>
+                <option value="published">Status: Published</option>
+                <option value="draft">Status: Draft</option>
+              </select>
+
+              <select
+                value={filters.category}
+                onChange={(event) => updateSearchParam('category', event.target.value)}
+                className="h-11 rounded-[14px] border border-[#D8E6EB] bg-[#F8FBFC] px-3 text-sm font-semibold text-[#15323b] outline-none"
+              >
+                <option value="all">Categoria: Todas</option>
+                {categories.map((item) => (
+                  <option key={item.key} value={item.key}>{item.label}</option>
+                ))}
+              </select>
+
+              <label className="flex h-11 items-center gap-2 rounded-[14px] border border-[#D8E6EB] bg-[#F8FBFC] px-3">
+                <Search className="h-4 w-4 text-[#8BA0A7]" />
                 <input
-                  value={item.question}
-                  onChange={(event) => updateDraft(item.id, { question: event.target.value })}
-                  className="mt-3 h-10 w-full rounded-[12px] border border-[#D8E6EB] bg-white px-3 text-sm font-semibold text-[#15323b] outline-none"
+                  value={searchInput}
+                  onChange={(event) => setSearchInput(event.target.value)}
+                  placeholder="Buscar pergunta, resposta ou tag..."
+                  className="w-full bg-transparent text-sm font-semibold text-[#15323b] outline-none"
                 />
-                <textarea
-                  value={item.answer}
-                  onChange={(event) => updateDraft(item.id, { answer: event.target.value })}
-                  className="mt-3 min-h-24 w-full rounded-[12px] border border-[#D8E6EB] bg-white px-3 py-2 text-sm font-medium text-[#15323b] outline-none"
+              </label>
+
+              <Button type="button" onClick={() => void handleCreate()} disabled={isSaving === 'new'} className="h-11 rounded-[14px] px-4 text-sm font-black">
+                Novo Artigo
+              </Button>
+            </div>
+
+            <div className="grid gap-4 xl:grid-cols-[1.5fr_0.9fr]">
+              <div className="overflow-hidden rounded-[22px] border border-[#D8E6EB]">
+                {isLoading ? (
+                  <p className="p-5 text-sm font-semibold text-[#5F7077]">Carregando dados do FAQ...</p>
+                ) : filteredFaqs.length === 0 ? (
+                  <p className="p-5 text-sm font-semibold text-[#5F7077]">Nenhum item encontrado com os filtros atuais.</p>
+                ) : (
+                  <table className="w-full border-collapse text-sm">
+                    <thead className="bg-[#F2F7F9] text-left">
+                      <tr>
+                        <th className="px-4 py-3 text-xs font-semibold uppercase tracking-[0.08em] text-[#8BA0A7]">Pergunta</th>
+                        <th className="px-4 py-3 text-xs font-semibold uppercase tracking-[0.08em] text-[#8BA0A7]">Categoria</th>
+                        <th className="px-4 py-3 text-xs font-semibold uppercase tracking-[0.08em] text-[#8BA0A7]">Status</th>
+                        <th className="px-4 py-3 text-xs font-semibold uppercase tracking-[0.08em] text-[#8BA0A7]">Views</th>
+                        <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-[0.08em] text-[#8BA0A7]">Ações</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredFaqs.map((item) => (
+                        <tr
+                          key={item.id}
+                          className={`cursor-pointer border-t border-[#D8E6EB] transition-colors hover:bg-[#F8FBFC] ${selectedArticle?.id === item.id ? 'bg-[#F2FBFF]' : ''}`}
+                          onClick={() => setSelectedArticleId(item.id)}
+                        >
+                          <td className="px-4 py-3 font-semibold text-[#15323b]">{item.question}</td>
+                          <td className="px-4 py-3 text-[#5F7077]">{categoryLabelMap.get(item.category_key) ?? item.category_key}</td>
+                          <td className="px-4 py-3">
+                            <span className={`inline-flex rounded-full px-3 py-1 text-[11px] font-black uppercase tracking-[0.12em] ${
+                              item.is_published ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
+                            }`}
+                            >
+                              {item.is_published ? 'published' : 'draft'}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-[#5F7077]">{item.sort_order}</td>
+                          <td className="px-4 py-3">
+                            <div className="flex justify-end gap-2">
+                              <Button type="button" variant="outline" onClick={(event) => { event.stopPropagation(); void handleSaveExisting(item) }} disabled={isSaving === item.id} className="h-8 rounded-full border-[#D8E6EB] bg-white px-3 text-xs font-black text-[#15323b]">
+                                <Save className="mr-1 h-3.5 w-3.5" />
+                                Salvar
+                              </Button>
+                              <Button type="button" variant="destructive" onClick={(event) => { event.stopPropagation(); void handleDelete(item.id) }} disabled={isSaving === item.id} className="h-8 rounded-full px-3 text-xs font-black">
+                                <Trash2 className="mr-1 h-3.5 w-3.5" />
+                                Excluir
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+
+              <aside className="rounded-[22px] border border-[#D8E6EB] bg-[#F8FBFC] p-4">
+                <h3 className="font-readex text-lg font-semibold text-[#15323b]">Painel de detalhes</h3>
+                {!selectedArticle ? (
+                  <p className="mt-3 text-sm font-semibold text-[#5F7077]">Selecione um artigo para editar o conteúdo.</p>
+                ) : (
+                  <div className="mt-4 space-y-3">
+                    <select
+                      value={selectedArticle.category_key}
+                      onChange={(event) => updateDraft(selectedArticle.id, { category_key: event.target.value as SupportTicketCategory })}
+                      className="h-10 w-full rounded-[12px] border border-[#D8E6EB] bg-white px-3 text-sm font-semibold text-[#15323b] outline-none"
+                    >
+                      {categories.map((category) => (
+                        <option key={category.key} value={category.key}>{category.label}</option>
+                      ))}
+                    </select>
+                    <input
+                      value={selectedArticle.question}
+                      onChange={(event) => updateDraft(selectedArticle.id, { question: event.target.value })}
+                      className="h-10 w-full rounded-[12px] border border-[#D8E6EB] bg-white px-3 text-sm font-semibold text-[#15323b] outline-none"
+                      placeholder="Pergunta"
+                    />
+                    <textarea
+                      value={selectedArticle.answer}
+                      onChange={(event) => updateDraft(selectedArticle.id, { answer: event.target.value })}
+                      className="min-h-28 w-full rounded-[12px] border border-[#D8E6EB] bg-white px-3 py-2 text-sm font-medium text-[#15323b] outline-none"
+                      placeholder="Resposta"
+                    />
+                    <div className="grid grid-cols-2 gap-2">
+                      <input
+                        type="number"
+                        value={selectedArticle.sort_order}
+                        onChange={(event) => updateDraft(selectedArticle.id, { sort_order: Number(event.target.value) })}
+                        className="h-10 w-full rounded-[12px] border border-[#D8E6EB] bg-white px-3 text-sm font-semibold text-[#15323b] outline-none"
+                      />
+                      <label className="flex h-10 items-center gap-2 rounded-[12px] border border-[#D8E6EB] bg-white px-3 text-sm font-semibold text-[#15323b]">
+                        <input
+                          type="checkbox"
+                          checked={Boolean(selectedArticle.is_published)}
+                          onChange={(event) => updateDraft(selectedArticle.id, { is_published: event.target.checked })}
+                        />
+                        Publicado
+                      </label>
+                    </div>
+                    <div className="rounded-[12px] border border-[#D8E6EB] bg-white p-3">
+                      <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#5F7077]">Preview</p>
+                      <p className="mt-2 text-sm font-black text-[#15323b]">{selectedArticle.question}</p>
+                      <p className="mt-2 text-sm leading-6 text-[#5F7077]">{selectedArticle.answer}</p>
+                    </div>
+                  </div>
+                )}
+              </aside>
+            </div>
+
+            <article className="rounded-[22px] border border-[#D8E6EB] bg-[#F8FBFC] p-4">
+              <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#5F7077]">Novo artigo</p>
+              <div className="mt-3 grid gap-2 lg:grid-cols-[180px_120px_1fr]">
+                <select
+                  value={newDraft.category_key}
+                  onChange={(event) => setNewDraft((current) => ({ ...current, category_key: event.target.value as SupportTicketCategory }))}
+                  className="h-10 rounded-[12px] border border-[#D8E6EB] bg-white px-3 text-sm font-semibold text-[#15323b] outline-none"
+                >
+                  {categories.map((item) => (
+                    <option key={item.key} value={item.key}>{item.label}</option>
+                  ))}
+                </select>
+                <input
+                  type="number"
+                  value={newDraft.sort_order}
+                  onChange={(event) => setNewDraft((current) => ({ ...current, sort_order: Number(event.target.value) }))}
+                  className="h-10 rounded-[12px] border border-[#D8E6EB] bg-white px-3 text-sm font-semibold text-[#15323b] outline-none"
+                  placeholder="Ordem"
                 />
-              </article>
-            ))}
+                <label className="flex h-10 items-center gap-2 rounded-[12px] border border-[#D8E6EB] bg-white px-3 text-sm font-semibold text-[#15323b]">
+                  <input
+                    type="checkbox"
+                    checked={newDraft.is_published}
+                    onChange={(event) => setNewDraft((current) => ({ ...current, is_published: event.target.checked }))}
+                  />
+                  Publicado
+                </label>
+              </div>
+              <input
+                value={newDraft.question}
+                onChange={(event) => setNewDraft((current) => ({ ...current, question: event.target.value }))}
+                placeholder="Pergunta"
+                className="mt-2 h-10 w-full rounded-[12px] border border-[#D8E6EB] bg-white px-3 text-sm font-semibold text-[#15323b] outline-none"
+              />
+              <textarea
+                value={newDraft.answer}
+                onChange={(event) => setNewDraft((current) => ({ ...current, answer: event.target.value }))}
+                placeholder="Resposta"
+                className="mt-2 min-h-24 w-full rounded-[12px] border border-[#D8E6EB] bg-white px-3 py-2 text-sm font-medium text-[#15323b] outline-none"
+              />
+            </article>
           </div>
-        )}
+        ) : null}
+
+        {filters.tab === 'categorias' ? (
+          <div className="mt-5 rounded-[22px] border border-[#D8E6EB] bg-[#F8FBFC] p-4">
+            <div className="flex items-center gap-2">
+              <LifeBuoy className="h-4 w-4 text-[#1398B7]" />
+              <p className="text-sm font-semibold text-[#15323b]">FAQ Admin / Categorias</p>
+            </div>
+            <p className="mt-2 text-sm text-[#5F7077]">Categorias carregadas da configuração de SLA atual. A estrutura visual segue a spec e pode ser conectada à tabela `faq_categories` quando disponível.</p>
+            <div className="mt-4 space-y-2">
+              {categories.map((category) => (
+                <div key={category.key} className="flex items-center justify-between rounded-[12px] border border-[#D8E6EB] bg-white px-3 py-2">
+                  <div>
+                    <p className="text-sm font-bold text-[#15323b]">{category.label}</p>
+                    <p className="text-xs text-[#5F7077]">{category.description}</p>
+                  </div>
+                  <span className="rounded-full bg-[#E8F6FA] px-3 py-1 text-[11px] font-black uppercase tracking-[0.12em] text-[#1398B7]">Ativa</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : null}
+
+        {filters.tab === 'feedback' ? (
+          <div className="mt-5 rounded-[22px] border border-[#D8E6EB] bg-[#F8FBFC] p-4">
+            <div className="flex items-center gap-2">
+              <FileText className="h-4 w-4 text-[#1398B7]" />
+              <p className="text-sm font-semibold text-[#15323b]">FAQ Admin / Feedback</p>
+            </div>
+            <p className="mt-3 text-sm font-semibold text-[#5F7077]">Nenhum item encontrado com os filtros atuais.</p>
+          </div>
+        ) : null}
+
+        {filters.tab === 'analytics' ? (
+          <div className="mt-5 rounded-[22px] border border-[#D8E6EB] bg-[#F8FBFC] p-4">
+            <div className="flex items-center gap-2">
+              <Eye className="h-4 w-4 text-[#1398B7]" />
+              <p className="text-sm font-semibold text-[#15323b]">FAQ Admin / Analytics</p>
+            </div>
+            <p className="mt-3 text-sm text-[#5F7077]">Top 20 queries sem resultado, helpful rate por artigo e correlação com tickets serão exibidos aqui quando os dados analíticos forem conectados.</p>
+          </div>
+        ) : null}
       </section>
     </div>
   )

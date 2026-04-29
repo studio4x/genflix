@@ -450,8 +450,12 @@ export const appRouter = createBrowserRouter([
             element: withRouteSuspense(<AdminSupportTicketsPage />),
           },
           {
-            path: '/admin/suporte/faq',
+            path: '/admin/faq',
             element: withRouteSuspense(<AdminSupportFaqPage />),
+          },
+          {
+            path: '/admin/suporte/faq',
+            element: <Navigate to="/admin/faq" replace />,
           },
           {
             path: '/admin/suporte/:ticketId',
