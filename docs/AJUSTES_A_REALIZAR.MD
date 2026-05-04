@@ -88,11 +88,11 @@
 
 [OK] T25 - Implementar banner de aceitação de cookies.
 
-[OK] T26 - Implementar painel de prefer�ncias de cookies.
+[OK] T26 - Implementar painel de prefer�ncias de cookies.
 
-[OK] T27 - Criar aba no admin/configura��es para inserir Google Tag Manager, Meta Pixel e c�digos customizados no header, body e footer.
+[OK] T27 - Criar aba no admin/configura��es para inserir Google Tag Manager, Meta Pixel e c�digos customizados no header, body e footer.
 
-[OK] T28 - Criar valida��o b�sica para verificar se GTM e Meta Pixel foram configurados.
+[OK] T28 - Criar valida��o b�sica para verificar se GTM e Meta Pixel foram configurados.
 
 [ ] T29 - Garantir disparo correto dos principais eventos da plataforma.
 
@@ -202,6 +202,7 @@
 
 [OK] T62 -  Alguns botões do site, ao clicar para editar no editor visual, não estão sendo identificados como botão, mas sim como texto, ex.: Botão de "Acessar painel/entrar" no header, "Ver todos os recursos" na página de cursos, entre outros; Faça os botões abrirem como botões no editor visual.
 
+---
 
 ## Chat 18 - Ajustes Gerais
 
@@ -214,16 +215,13 @@
 [OK] T66 - NA TAREFA [T16] foi implementada a funcionalidade de expandir e recoelher todos, porém, a ideia que eu quero mesmo, é que cada item tenha a opção de clicar para recolher ele mas manter o titulo do item aparecendo, exatamente igual a um acordeão/sanfona.
 ---
 
+## Chat 19 - Ajustes Gerais
 
+[ ] T67 - Implementar a Comunidade
 
+[ ] T68 - Centralizar horizontalmente os cards da seção da home "Cursos por área de conhecimento"
 
-
-Política de privacidade e Termos de uso têm estrutura de conteúdo pronta, mas o corpo principal ainda está hardcoded no código, não totalmente via CMS/editor.
-Não existe
-
-Lista visual de fontes para seleção no editor.
-Fluxo totalmente padronizado para inserir todo o texto de páginas legais diretamente pelo editor sem editar código.
-Se quiser, eu também posso transformar isso em uma mensagem mais “comercial”, em linguagem de atendimento ao cliente.
+[ ] t69 - Na pagina "admin/site-editor", no card de Biblioteca de icones, insira a opção de subir icones SVG manualmente (um a um) e também subir vários icones de uma vez, adotando como nome do Icone, o nome do arquivo.
 
 
 

@@ -247,7 +247,7 @@ function HomeCategoriesSection({
           </h2>
         </div>
 
-        <div className="mt-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
+        <div className="mx-auto mt-10 grid max-w-[1160px] gap-3 sm:grid-cols-2 lg:grid-cols-4 xl:justify-center xl:[grid-template-columns:repeat(7,160px)]">
           <EditableList
             entryKey={`${entryPrefix}.items`}
             fallback={categoryItems}
