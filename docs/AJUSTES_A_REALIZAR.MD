@@ -219,9 +219,9 @@
 
 [ ] T67 - Implementar a Comunidade
 
-[ ] T68 - Centralizar horizontalmente os cards da seção da home "Cursos por área de conhecimento"
+[OK] T68 - Centralizar horizontalmente os cards da seção da home "Cursos por área de conhecimento"
 
-[ ] t69 - Na pagina "admin/site-editor", no card de Biblioteca de icones, insira a opção de subir icones SVG manualmente (um a um) e também subir vários icones de uma vez, adotando como nome do Icone, o nome do arquivo.
+[ ] t69 - Na pagina "admin/site-editor", no card de Biblioteca de icones, insira a opção de subir icones SVG manualmente (um a um) e também subir vários icones de uma vez, adotando como nome do Icone, o nome do arquivo. Mova esa seção de biblioteca de icones para uma aba dentro da página "admin/site-editor"
 
 
 
