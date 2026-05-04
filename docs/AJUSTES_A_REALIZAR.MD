@@ -88,7 +88,7 @@
 
 [OK] T25 - Implementar banner de aceitação de cookies.
 
-[ ] T26 - Implementar painel de preferências de cookies.
+[OK] T26 - Implementar painel de prefer�ncias de cookies.
 
 [ ] T27 - Criar aba no admin/configurações para inserir Google Tag Manager, Meta Pixel e códigos customizados no header, body e footer.
 
@@ -224,3 +224,5 @@ Não existe
 Lista visual de fontes para seleção no editor.
 Fluxo totalmente padronizado para inserir todo o texto de páginas legais diretamente pelo editor sem editar código.
 Se quiser, eu também posso transformar isso em uma mensagem mais “comercial”, em linguagem de atendimento ao cliente.
+
+
