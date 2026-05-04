@@ -92,7 +92,7 @@
 
 [OK] T27 - Criar aba no admin/configuraÁıes para inserir Google Tag Manager, Meta Pixel e cÛdigos customizados no header, body e footer.
 
-[ ] T28 - Criar valida√ß√£o b√°sica para verificar se GTM e Meta Pixel foram configurados.
+[OK] T28 - Criar validaÁ„o b·sica para verificar se GTM e Meta Pixel foram configurados.
 
 [ ] T29 - Garantir disparo correto dos principais eventos da plataforma.
 
@@ -224,6 +224,7 @@ N√£o existe
 Lista visual de fontes para sele√ß√£o no editor.
 Fluxo totalmente padronizado para inserir todo o texto de p√°ginas legais diretamente pelo editor sem editar c√≥digo.
 Se quiser, eu tamb√©m posso transformar isso em uma mensagem mais ‚Äúcomercial‚Äù, em linguagem de atendimento ao cliente.
+
 
 
 

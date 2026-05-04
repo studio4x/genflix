@@ -7,6 +7,7 @@ import {
   fetchSiteTrackingSettings,
   normalizeSiteTracking,
   SITE_TRACKING_ENTRY_KEY,
+  validateSiteTrackingSettings,
   type SiteTrackingSettings,
 } from '@/features/site-editor/site-tracking'
 
@@ -16,6 +17,7 @@ export function AdminSiteTrackingPanel() {
   const [isSaving, setIsSaving] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const validation = validateSiteTrackingSettings(tracking)
 
   useEffect(() => {
     let isMounted = true
@@ -106,6 +108,37 @@ export function AdminSiteTrackingPanel() {
           <p className="mt-2 text-xs font-semibold text-[#5F7077]">Header, body e footer personalizados.</p>
         </article>
       </section>
+
+      <section className="grid gap-4 xl:grid-cols-2">
+        <article className={`border p-5 shadow-sm ${validation.gtm.valid ? 'border-emerald-200 bg-emerald-50' : 'border-amber-200 bg-amber-50'}`}>
+          <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#5F7077]">Validacao GTM</p>
+          <p className={`mt-3 font-readex text-2xl font-semibold tracking-tight ${validation.gtm.valid ? 'text-emerald-700' : 'text-amber-700'}`}>
+            {validation.gtm.configured ? 'Configurado' : 'Pendente'}
+          </p>
+          <p className={`mt-2 text-xs font-semibold ${validation.gtm.valid ? 'text-emerald-700' : 'text-amber-700'}`}>
+            {validation.gtm.message}
+          </p>
+        </article>
+        <article className={`border p-5 shadow-sm ${validation.metaPixel.valid ? 'border-emerald-200 bg-emerald-50' : 'border-amber-200 bg-amber-50'}`}>
+          <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#5F7077]">Validacao Meta Pixel</p>
+          <p className={`mt-3 font-readex text-2xl font-semibold tracking-tight ${validation.metaPixel.valid ? 'text-emerald-700' : 'text-amber-700'}`}>
+            {validation.metaPixel.configured ? 'Configurado' : 'Pendente'}
+          </p>
+          <p className={`mt-2 text-xs font-semibold ${validation.metaPixel.valid ? 'text-emerald-700' : 'text-amber-700'}`}>
+            {validation.metaPixel.message}
+          </p>
+        </article>
+      </section>
+
+      {validation.hasIssues ? (
+        <div className="border border-amber-200 bg-amber-50 px-5 py-4 text-sm font-semibold text-amber-800">
+          A validacao basica encontrou dados incompletos ou com formato invalido. Isso nao bloqueia o salvamento, mas o rastreamento pode nao funcionar corretamente.
+        </div>
+      ) : (
+        <div className="border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm font-semibold text-emerald-700">
+          Validacao basica concluida: GTM e Meta Pixel estao configurados com formato valido.
+        </div>
+      )}
 
       <form onSubmit={(event) => void handleSubmit(event)} className="space-y-5">
         <div className="grid gap-5 xl:grid-cols-2">

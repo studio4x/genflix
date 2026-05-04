@@ -38,6 +38,45 @@ export function normalizeSiteTracking(value: unknown): SiteTrackingSettings {
   }
 }
 
+export function isValidGtmId(value: string) {
+  return /^GTM-[A-Z0-9]+$/i.test(value.trim())
+}
+
+export function isValidMetaPixelId(value: string) {
+  return /^\d+$/.test(value.trim())
+}
+
+export function validateSiteTrackingSettings(value: SiteTrackingSettings) {
+  const gtmId = value.gtmId.trim()
+  const metaPixelId = value.metaPixelId.trim()
+  const hasGtm = gtmId.length > 0
+  const hasMetaPixel = metaPixelId.length > 0
+  const gtmValid = !hasGtm || isValidGtmId(gtmId)
+  const metaPixelValid = !hasMetaPixel || isValidMetaPixelId(metaPixelId)
+
+  return {
+    gtm: {
+      configured: hasGtm,
+      valid: gtmValid,
+      message: !hasGtm
+        ? 'Nao configurado'
+        : gtmValid
+          ? 'Formato valido'
+          : 'Formato invalido. Use algo como GTM-XXXXXXX.',
+    },
+    metaPixel: {
+      configured: hasMetaPixel,
+      valid: metaPixelValid,
+      message: !hasMetaPixel
+        ? 'Nao configurado'
+        : metaPixelValid
+          ? 'Formato valido'
+          : 'Formato invalido. Use apenas numeros.',
+    },
+    hasIssues: !gtmValid || !metaPixelValid,
+  }
+}
+
 export async function fetchSiteTrackingSettings() {
   const { data, error } = await supabase
     .from('site_content_entries')
@@ -52,4 +91,3 @@ export async function fetchSiteTrackingSettings() {
 
   return normalizeSiteTracking(data?.value ?? defaultSiteTrackingSettings)
 }
-
