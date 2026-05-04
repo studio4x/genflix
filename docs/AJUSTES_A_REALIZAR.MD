@@ -78,6 +78,10 @@
 
 [OK] T24 - Criar aba “Operações” para monitorar status da fila de e-mails, crons, jobs e outros processos críticos.
 
+[OK] T24.2 - Enviar notificação para o e-mail configurado do admin, quando um novo formulário for preenchido. Essa notificação deverá aparecer na aba de "notificações da plataforma".
+
+[ ] T24.3 - Na aba de Operações, ajuste o card "fila de e-mails" para ele ocupar 100% a largura do container. Os demais cards que hoje estão na coluna ao lado devem ficar divididos em 3 colunas, abaixo do card fila de e-mails"
+
 ---
 
 ## CHAT 7 — Cookies, rastreamento e eventos
