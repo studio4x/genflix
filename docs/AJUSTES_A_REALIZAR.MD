@@ -72,7 +72,7 @@
 
 [OK] T21 - Na página de notificações, permitir configurar o e-mail padrão que receberá notificações administrativas da plataforma.
 
-[ ] T22 - Na página atual de notificações, exibir somente notificações enviadas manualmente.
+[OK] T22 - Na página atual de notificações, exibir somente notificações enviadas manualmente.
 
 [ ] T23 - Criar uma nova aba/página para listar todas as notificações enviadas pela plataforma, incluindo e-mails e notificações internas.
 
