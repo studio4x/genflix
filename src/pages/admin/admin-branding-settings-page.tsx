@@ -5,6 +5,7 @@ import { GenflixLogo } from '@/components/public/genflix-logo'
 import { createBrandingAssetValue } from '@/features/branding/api'
 import { brandingEntryKeys, type BrandingSlotKey } from '@/features/branding/types'
 import { saveSiteContentEntry, uploadSiteAsset } from '@/features/site-editor/api'
+import { AdminSiteTrackingPanel } from '@/pages/admin/admin-site-tracking-panel'
 
 const brandingCards: Array<{
   slot: BrandingSlotKey
@@ -42,6 +43,7 @@ const brandingCards: Array<{
 
 export function AdminBrandingSettingsPage() {
   const { branding, setBrandingAsset } = useBranding()
+  const [activeTab, setActiveTab] = useState<'branding' | 'tracking'>('branding')
   const [uploadingSlot, setUploadingSlot] = useState<BrandingSlotKey | null>(null)
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -106,6 +108,30 @@ export function AdminBrandingSettingsPage() {
           Envie aqui os arquivos oficiais da marca. O sistema escolhe automaticamente o logotipo light ou dark de
           acordo com o fundo em cada area da plataforma.
         </p>
+        <div className="flex flex-wrap gap-2 pt-2">
+          <button
+            type="button"
+            onClick={() => setActiveTab('branding')}
+            className={`inline-flex h-11 items-center justify-center rounded-full border px-5 text-xs font-black uppercase tracking-[0.16em] ${
+              activeTab === 'branding'
+                ? 'border-[#1398B7] bg-[#1398B7] text-white'
+                : 'border-[#D8E6EB] bg-white text-[#5F7077] hover:bg-[#F2F7F9]'
+            }`}
+          >
+            Branding
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('tracking')}
+            className={`inline-flex h-11 items-center justify-center rounded-full border px-5 text-xs font-black uppercase tracking-[0.16em] ${
+              activeTab === 'tracking'
+                ? 'border-[#1398B7] bg-[#1398B7] text-white'
+                : 'border-[#D8E6EB] bg-white text-[#5F7077] hover:bg-[#F2F7F9]'
+            }`}
+          >
+            Rastreamento e scripts
+          </button>
+        </div>
       </header>
 
       {error ? (
@@ -120,7 +146,9 @@ export function AdminBrandingSettingsPage() {
         </div>
       ) : null}
 
-      <section className="grid gap-4 md:grid-cols-3">
+      {activeTab === 'branding' ? (
+        <>
+          <section className="grid gap-4 md:grid-cols-3">
         <article className="border border-[#D8E6EB] bg-white p-5 shadow-sm">
           <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#5F7077]">Status</p>
           <p className="mt-3 font-readex text-2xl font-semibold tracking-tight text-[#15323b]">
@@ -140,9 +168,9 @@ export function AdminBrandingSettingsPage() {
           </p>
           <p className="mt-2 text-xs font-semibold text-[#5F7077]">Atualizado em runtime no navegador.</p>
         </article>
-      </section>
+          </section>
 
-      <section className="grid gap-5 xl:grid-cols-3">
+          <section className="grid gap-5 xl:grid-cols-3">
         {brandingCards.map((card) => {
           const currentAsset = branding[card.slot]
           const isUploading = uploadingSlot === card.slot
@@ -208,7 +236,11 @@ export function AdminBrandingSettingsPage() {
             </article>
           )
         })}
-      </section>
+          </section>
+        </>
+      ) : (
+        <AdminSiteTrackingPanel />
+      )}
     </div>
   )
 }

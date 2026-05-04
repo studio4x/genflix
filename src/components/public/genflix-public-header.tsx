@@ -18,6 +18,7 @@ import {
   type SiteAppearanceTheme,
   type SiteAppearanceViewport,
 } from '@/features/site-editor/site-appearance'
+import { SiteTrackingInjector } from '@/features/site-editor/site-tracking-injector'
 import { useSiteContentScope, useVisualEditorState, EditableButton, EditableList, isEditableItemVisible, useEditableValue } from '@/features/site-editor/visual-editor'
 import { cn } from '@/lib/utils'
 
@@ -458,6 +459,7 @@ export function GenflixPublicHeader({
       </section>
 
       <GenflixCookieConsentBanner />
+      <SiteTrackingInjector />
     </>
   )
 }
