@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type FormEvent } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { BadgeCheck, ChevronDown, CirclePlay, Play, Sparkles } from 'lucide-react'
 import { Link, Navigate, useParams } from 'react-router-dom'
 
@@ -35,8 +35,6 @@ export function PublicCourseDetailsPage() {
   const [detail, setDetail] = useState<GenflixCourseDetail | null>(staticDetail)
   const [isLoadingDetail, setIsLoadingDetail] = useState(true)
   const [openModule, setOpenModule] = useState(0)
-  const [buyerName, setBuyerName] = useState('')
-  const [buyerEmail, setBuyerEmail] = useState('')
   const [checkoutError, setCheckoutError] = useState<string | null>(null)
   const [isStartingCheckout, setIsStartingCheckout] = useState(false)
 
@@ -68,8 +66,7 @@ export function PublicCourseDetailsPage() {
     }
   }, [slug, staticDetail])
 
-  async function handleCheckoutSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
+  async function handleCheckoutSubmit() {
     if (!detail) {
       return
     }
@@ -87,8 +84,8 @@ export function PublicCourseDetailsPage() {
       }
 
       const checkoutUrl = await startCourseCheckout(detail.id, session.access_token, {
-        buyerName: buyerName || profile?.full_name || user?.user_metadata?.full_name,
-        buyerEmail: buyerEmail || profile?.email || user?.email,
+        buyerName: profile?.full_name || user?.user_metadata?.full_name,
+        buyerEmail: profile?.email || user?.email,
       })
       window.location.href = checkoutUrl
     } catch (error) {
@@ -265,37 +262,22 @@ export function PublicCourseDetailsPage() {
                     <p className="mt-2 text-sm text-[#6a7b81]">{detail.secondaryPriceLabel}</p>
                   </div>
 
-                  <form className="space-y-3" onSubmit={(event) => void handleCheckoutSubmit(event)}>
-                    <label className="block space-y-2">
-                      <span className="text-xs font-bold uppercase tracking-[0.18em] text-[#5F7077]">Nome</span>
-                      <input
-                        value={buyerName}
-                        onChange={(event) => setBuyerName(event.target.value)}
-                        className="h-12 w-full rounded-2xl border border-[#D8E6EB] bg-[#F2F7F9] px-4 text-sm font-semibold outline-none focus:border-[#1398B7]"
-                        placeholder={profile?.full_name ?? 'Seu nome'}
-                      />
-                    </label>
-                    <label className="block space-y-2">
-                      <span className="text-xs font-bold uppercase tracking-[0.18em] text-[#5F7077]">E-mail</span>
-                      <input
-                        type="email"
-                        value={buyerEmail}
-                        onChange={(event) => setBuyerEmail(event.target.value)}
-                        className="h-12 w-full rounded-2xl border border-[#D8E6EB] bg-[#F2F7F9] px-4 text-sm font-semibold outline-none focus:border-[#1398B7]"
-                        placeholder={profile?.email ?? user?.email ?? 'seu@email.com'}
-                      />
-                    </label>
-
+                  <div className="space-y-3">
                     {checkoutError ? (
                       <p className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-bold text-rose-700">
                         {checkoutError}
                       </p>
                     ) : null}
 
-                    <GenflixCtaButton type="submit" disabled={isStartingCheckout} className="w-full px-5 py-3">
+                    <GenflixCtaButton
+                      type="button"
+                      disabled={isStartingCheckout}
+                      onClick={() => void handleCheckoutSubmit()}
+                      className="w-full px-5 py-3"
+                    >
                       {isStartingCheckout ? 'Abrindo checkout...' : 'Comprar agora'}
                     </GenflixCtaButton>
-                  </form>
+                  </div>
 
                   <div className="grid gap-3 sm:grid-cols-2">
                     {detail.includedItems.map((item) => (

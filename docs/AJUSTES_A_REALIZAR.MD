@@ -110,7 +110,7 @@
 
 ## CHAT 9 — Checkout: página intermediária e compra
 
-[ ] T33 - Na página do curso, remover campos de nome e e-mail, deixando apenas botão “Comprar agora”.
+[OK] T33 - Na página do curso, remover campos de nome e e-mail, deixando apenas botão “Comprar agora”.
 
 [ ] T34 - Criar página intermediária de checkout baseada no arquivo `modelo.checkout.html`.
 
@@ -149,6 +149,8 @@
 [ ] T43 - No formulário de contato, adicionar campo “Reinsira seu e-mail”.
 
 [ ] T44 - Validar se os dois campos de e-mail do formulário de contato são iguais.
+
+[ ] T44.2 - Criar uma página com um formulário para os produtores de cursos poderem publicar o curso dele. O formulário deve ser apenas para enviar os dados iniciais. Vamos adicionar no rodapé, na coluna "fale conosco", o menu "Ensine na Genflix".
 
 ---
 
@@ -224,5 +226,34 @@
 [ ] t69 - Na pagina "admin/site-editor", no card de Biblioteca de icones, insira a opção de subir icones SVG manualmente (um a um) e também subir vários icones de uma vez, adotando como nome do Icone, o nome do arquivo. Mova esa seção de biblioteca de icones para uma aba dentro da página "admin/site-editor"
 
 
+[ ] t70 - No card do curso que esta no grid, insirir um fundo na categoria do curso. Ref.: <div class="absolute left-4 top-4 rounded-[2px] bg-[#EBF3F5]/92 px-2 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-[#15323B]">Saúde</div> Deixar as bordas arredondadas.
 
+[ ] T71 - No editor visual, para o tipo "content" e estrutura "blocos de conteúdo", deve ter a possibilidade a ajustar fonte, tamanhos e todos os outros elementos disponiveis para o tipo "text".
 
+[ ] T72 - Inserir no editor, a possibilidade de adicionar/alterar colunas no conteúdo das páginas...
+
+[ ] T73 - Inserir a posisibilidade de adicionar imagens no editor dos textos dentro do editor visual.
+
+[ ] T74 - Inserir a possibilidade de excluir um conteúdo da página via editor visual.
+
+[ ] T75 - Na página de cursos, os botões do filtro deverão corresponder às categorias reais dos cursos adicionados.
+
+[ ] T76 - Ajustar alinhamento dos elementos do banner "veja em detakhes...". Inserir possibilidade de excluir o campo de e-mail.
+
+[ ] T77 - Elimitar a sombra do contorno do rodapé.
+
+[ ] T78 - Alterar o layout do blog para ser igual ao da zapflix.
+
+[ ] T79 - A Abertura de ticket, só deverá ser permitida para usuário logado. Remover da página de suporte, a primeira seção de sla publico e o botão de abrir ticket. Inserir uma faq para inserir o acesso ao suporte via ticket.
+
+[ ] T80 - Implementar chatbot igual da homecarematch.
+
+[ ] T81 - no admin, na pagina de criar faq, amova o botão de salvar para o painel de detalhes.
+
+[ ] T82 - no admin, na página de faz, insira a opção de adicionar nova categoria dentro da aba de categorias.
+
+[ ] T83 - Inserir a possibilidade de inserir uma seção de bonus na página do curso. Essa inserção será pela página "pagina publica do curso" dentro do construtor de curso.  Na pagina publica do curso, esse bonus deverá aparecer abaixo do botão comprar. Ex.: quadro "Prévia de conteúdo"
+
+[OK] T84 - ALTERAR A COR DO FUNDO DA SEÇÃO "CUYRSOS POR AREA DE CONHECIMENTO" NA HOME. INSERIR AZUL CLARO.
+
+[ ] t85 - Na página recursos, o editor visual deverá ter a opção de trocar/inserir icones no quadros existentes. Além disso, precisamos implementar um botão para abrir um video de instrução. Precisa também adicionar na página admin uma página para inserir os videos de cada recurso.. Os recursos que não tiverem videos adicionados, não aparecerá o botão de ver video.
