@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react'
+﻿import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react'
 import {
   ArrowLeft,
   CheckCircle2,
@@ -269,16 +269,16 @@ export function PublicCheckoutPage() {
               </aside>
 
               <div className="px-7 py-8 sm:px-10 sm:py-10">
-                <p className="text-[11px] font-black uppercase tracking-[0.28em] text-[#1398b7]">Proximos passos</p>
-                <h2 className="mt-4 text-2xl font-extrabold tracking-[-0.05em] text-[#183139]">
+                <p className="hidden text-[11px] font-black uppercase tracking-[0.28em] text-[#1398b7]">Proximos passos</p>
+                <h2 className="hidden mt-4 text-2xl font-extrabold tracking-[-0.05em] text-[#183139]">
                   Fique atento aos detalhes da sua inscricao
                 </h2>
-                <p className="mt-3 max-w-[520px] text-sm leading-7 text-[#5f7077]">
+                <p className="hidden mt-3 max-w-[520px] text-sm leading-7 text-[#5f7077]">
                   Revise o investimento, siga para o checkout e conclua o pagamento. Assim que o Asaas confirmar a transacao, o acesso ao curso sera liberado automaticamente.
                 </p>
 
                 <div className="mt-8 grid gap-4">
-                  <div className="flex gap-4 rounded-[22px] border border-[#d8e6eb] bg-[#f2f7f9] p-4">
+                  <div className="hidden flex gap-4 rounded-[22px] border border-[#d8e6eb] bg-[#f2f7f9] p-4">
                     <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white text-[#1398b7]">
                       <Mail className="h-5 w-5" />
                     </div>
@@ -290,7 +290,7 @@ export function PublicCheckoutPage() {
                     </div>
                   </div>
 
-                  <div className="flex gap-4 rounded-[22px] border border-[#d8e6eb] bg-[#f2f7f9] p-4">
+                  <div className="hidden flex gap-4 rounded-[22px] border border-[#d8e6eb] bg-[#f2f7f9] p-4">
                     <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white text-[#1398b7]">
                       <ShieldCheck className="h-5 w-5" />
                     </div>
@@ -302,7 +302,7 @@ export function PublicCheckoutPage() {
                     </div>
                   </div>
 
-                  <div className="flex gap-4 rounded-[22px] border border-[#d8e6eb] bg-[#f2f7f9] p-4">
+                  <div className="hidden flex gap-4 rounded-[22px] border border-[#d8e6eb] bg-[#f2f7f9] p-4">
                     <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white text-[#1398b7]">
                       <Clock3 className="h-5 w-5" />
                     </div>
