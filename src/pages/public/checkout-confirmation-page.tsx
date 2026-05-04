@@ -1,7 +1,8 @@
 import { CheckCircle2, Clock3, Mail, ShieldCheck } from 'lucide-react'
-import { useSearchParams } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 
 import { GenflixPublicFooter } from '@/components/public/genflix-public-footer'
+import { GenflixCtaButton } from '@/components/public/genflix-cta-button'
 import { GenflixPublicHeader } from '@/components/public/genflix-public-header'
 import { genflixNavLinks } from '@/features/public/genflix-public-shell-content'
 
@@ -12,7 +13,9 @@ function readParam(value: string | null, fallback: string) {
 
 export function PublicCheckoutConfirmationPage() {
   const [searchParams] = useSearchParams()
+  const courseId = searchParams.get('courseId')?.trim() ?? ''
   const courseTitle = readParam(searchParams.get('courseTitle'), 'seu curso')
+  const courseRoute = courseId ? `/aluno/cursos/${courseId}` : '/aluno/cursos'
 
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(19,152,183,0.12),_transparent_34%),linear-gradient(180deg,#ffffff_0%,#f2f7f9_42%,#eef5f7_100%)] font-manrope text-[#163138]">
@@ -88,6 +91,12 @@ export function PublicCheckoutConfirmationPage() {
                       </p>
                     </div>
                   </div>
+
+                  <GenflixCtaButton asChild className="mt-2 h-12 px-5">
+                    <Link to={courseRoute}>
+                      Acessar curso comprado
+                    </Link>
+                  </GenflixCtaButton>
                 </div>
               </div>
             </div>

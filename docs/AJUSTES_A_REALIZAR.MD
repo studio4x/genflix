@@ -102,7 +102,7 @@
 
 [OK] T30 - Criar página de confirmação de inscrição após checkout concluído com sucesso.
 
-[ ] T31 - Na página de confirmação, inserir botão para acessar diretamente o curso comprado.
+[OK] T31 - Na página de confirmação, inserir botão para acessar diretamente o curso comprado.
 
 [ ] T32 - Preparar a página de confirmação para disparo de evento purchase no Google Ads e Meta Ads.
 
