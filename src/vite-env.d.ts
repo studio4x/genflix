@@ -11,3 +11,9 @@ interface ImportMetaEnv {
 interface ImportMeta {
   readonly env: ImportMetaEnv
 }
+
+interface Window {
+  dataLayer?: Array<Record<string, unknown>>
+  fbq?: (...args: unknown[]) => void
+  gtag?: (...args: unknown[]) => void
+}

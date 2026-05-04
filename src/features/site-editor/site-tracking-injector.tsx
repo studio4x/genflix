@@ -3,6 +3,8 @@ import { useEffect, useState } from 'react'
 import {
   defaultSiteTrackingSettings,
   fetchSiteTrackingSettings,
+  SITE_PURCHASE_EVENT_NAME,
+  type SitePurchaseTrackingEventDetail,
   type SiteTrackingSettings,
 } from '@/features/site-editor/site-tracking'
 
@@ -113,6 +115,51 @@ function injectMetaPixel(pixelId: string) {
   }
 }
 
+function trackPurchaseEvent(detail: SitePurchaseTrackingEventDetail) {
+  if (typeof window === 'undefined') {
+    return
+  }
+
+  const purchasePayload = {
+    transaction_id: detail.transactionId,
+    value: detail.value,
+    currency: detail.currency,
+    items: [
+      {
+        item_id: detail.courseId,
+        item_name: detail.courseTitle,
+        quantity: 1,
+        price: detail.value,
+      },
+    ],
+  }
+
+  if (Array.isArray(window.dataLayer)) {
+    window.dataLayer.push({
+      event: 'purchase',
+      ecommerce: purchasePayload,
+      genflix: {
+        courseId: detail.courseId,
+        courseTitle: detail.courseTitle,
+      },
+    })
+  }
+
+  if (typeof window.gtag === 'function') {
+    window.gtag('event', 'purchase', purchasePayload)
+  }
+
+  if (typeof window.fbq === 'function') {
+    window.fbq('track', 'Purchase', {
+      content_type: 'product',
+      content_ids: [detail.courseId],
+      content_name: detail.courseTitle,
+      currency: detail.currency,
+      value: detail.value,
+    })
+  }
+}
+
 function injectCustomCode(target: HTMLElement | HTMLHeadElement, code: string, location: 'header' | 'body' | 'footer') {
   const normalizedCode = code.trim()
   if (!normalizedCode) {
@@ -163,6 +210,38 @@ export function SiteTrackingInjector() {
       cleanups.reverse().forEach((cleanup) => cleanup())
     }
   }, [tracking.customBodyCode, tracking.customFooterCode, tracking.customHeaderCode, tracking.gtmId, tracking.metaPixelId])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return undefined
+    }
+
+    function handlePurchaseEvent(event: Event) {
+      const customEvent = event as CustomEvent<SitePurchaseTrackingEventDetail>
+      const detail = customEvent.detail
+
+      if (
+        !detail ||
+        typeof detail.courseId !== 'string' ||
+        typeof detail.courseTitle !== 'string' ||
+        typeof detail.currency !== 'string' ||
+        typeof detail.transactionId !== 'string' ||
+        typeof detail.value !== 'number' ||
+        !Number.isFinite(detail.value) ||
+        detail.value <= 0
+      ) {
+        return
+      }
+
+      trackPurchaseEvent(detail)
+    }
+
+    window.addEventListener(SITE_PURCHASE_EVENT_NAME, handlePurchaseEvent as EventListener)
+
+    return () => {
+      window.removeEventListener(SITE_PURCHASE_EVENT_NAME, handlePurchaseEvent as EventListener)
+    }
+  }, [])
 
   return null
 }

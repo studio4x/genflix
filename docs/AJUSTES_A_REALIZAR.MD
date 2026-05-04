@@ -104,7 +104,7 @@
 
 [OK] T31 - Na página de confirmação, inserir botão para acessar diretamente o curso comprado.
 
-[ ] T32 - Preparar a página de confirmação para disparo de evento purchase no Google Ads e Meta Ads.
+[OK] T32 - Preparar a página de confirmação para disparo de evento purchase no Google Ads e Meta Ads.
 
 ---
 

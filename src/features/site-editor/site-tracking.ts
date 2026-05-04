@@ -10,6 +10,16 @@ export type SiteTrackingSettings = {
   customFooterCode: string
 }
 
+export type SitePurchaseTrackingEventDetail = {
+  courseId: string
+  courseTitle: string
+  currency: string
+  transactionId: string
+  value: number
+}
+
+export const SITE_PURCHASE_EVENT_NAME = 'genflix:purchase'
+
 export const defaultSiteTrackingSettings: SiteTrackingSettings = {
   gtmId: '',
   metaPixelId: '',

@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react'
 import { CheckCircle2, Clock3, Mail, ShieldCheck } from 'lucide-react'
 import { Link, useSearchParams } from 'react-router-dom'
 
@@ -5,6 +6,10 @@ import { GenflixPublicFooter } from '@/components/public/genflix-public-footer'
 import { GenflixCtaButton } from '@/components/public/genflix-cta-button'
 import { GenflixPublicHeader } from '@/components/public/genflix-public-header'
 import { genflixNavLinks } from '@/features/public/genflix-public-shell-content'
+import {
+  SITE_PURCHASE_EVENT_NAME,
+  type SitePurchaseTrackingEventDetail,
+} from '@/features/site-editor/site-tracking'
 
 function readParam(value: string | null, fallback: string) {
   const normalized = value?.trim()
@@ -13,9 +18,33 @@ function readParam(value: string | null, fallback: string) {
 
 export function PublicCheckoutConfirmationPage() {
   const [searchParams] = useSearchParams()
+  const purchaseDispatchedRef = useRef(false)
   const courseId = searchParams.get('courseId')?.trim() ?? ''
   const courseTitle = readParam(searchParams.get('courseTitle'), 'seu curso')
+  const courseCurrency = readParam(searchParams.get('currency'), 'BRL')
+  const courseValue = Number.parseFloat(searchParams.get('courseValue')?.trim() ?? '')
   const courseRoute = courseId ? `/aluno/cursos/${courseId}` : '/aluno/cursos'
+
+  useEffect(() => {
+    if (purchaseDispatchedRef.current || typeof window === 'undefined' || !courseId) {
+      return
+    }
+
+    if (!Number.isFinite(courseValue) || courseValue <= 0) {
+      return
+    }
+
+    const purchaseEvent: SitePurchaseTrackingEventDetail = {
+      courseId,
+      courseTitle,
+      currency: courseCurrency,
+      transactionId: courseId,
+      value: courseValue,
+    }
+
+    purchaseDispatchedRef.current = true
+    window.dispatchEvent(new CustomEvent(SITE_PURCHASE_EVENT_NAME, { detail: purchaseEvent }))
+  }, [courseCurrency, courseId, courseTitle, courseValue])
 
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(19,152,183,0.12),_transparent_34%),linear-gradient(180deg,#ffffff_0%,#f2f7f9_42%,#eef5f7_100%)] font-manrope text-[#163138]">
