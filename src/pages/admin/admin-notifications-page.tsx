@@ -758,8 +758,8 @@ export function AdminNotificationsPage() {
             ))}
           </section>
 
-          <section className="grid gap-6 xl:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)]">
-            <article className="border border-[#D8E6EB] bg-white p-6 shadow-[0_18px_42px_rgba(10,54,64,0.05)]">
+          <section className="space-y-6">
+            <article className="w-full border border-[#D8E6EB] bg-white p-6 shadow-[0_18px_42px_rgba(10,54,64,0.05)]">
               <div className="flex flex-col gap-4 border-b border-[#D8E6EB] pb-5 md:flex-row md:items-end md:justify-between">
                 <div>
                   <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#1398B7]">Fila de e-mails</p>
@@ -842,7 +842,7 @@ export function AdminNotificationsPage() {
               </div>
             </article>
 
-            <aside className="space-y-4">
+            <aside className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               {[
                 {
                   title: 'Crons e jobs críticos',
