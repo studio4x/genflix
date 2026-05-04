@@ -74,7 +74,7 @@
 
 [OK] T22 - Na página atual de notificações, exibir somente notificações enviadas manualmente.
 
-[ ] T23 - Criar uma nova aba/página para listar todas as notificações enviadas pela plataforma, incluindo e-mails e notificações internas.
+[OK] T23 - Criar uma nova aba/página para listar todas as notificações enviadas pela plataforma, incluindo e-mails e notificações internas.
 
 [ ] T24 - Criar aba “Operações” para monitorar status da fila de e-mails, crons, jobs e outros processos críticos.
 

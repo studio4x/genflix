@@ -19,6 +19,12 @@ export interface AppNotification {
   created_at: string
 }
 
+export interface PlatformNotification extends AppNotification {
+  recipient_full_name: string | null
+  recipient_email: string | null
+  channels: NotificationChannel[]
+}
+
 export interface NotificationQueueItem {
   id: string
   notification_id: string | null
@@ -141,6 +147,75 @@ export async function fetchNotifications(limit = 20) {
   }
 
   return (data ?? []) as AppNotification[]
+}
+
+export async function fetchPlatformNotifications(limit = 25) {
+  const { data: notifications, error: notificationsError } = await supabase
+    .from('notifications')
+    .select('id, user_id, title, body, action_url, category, priority, is_actionable, metadata, read_at, created_at')
+    .order('created_at', { ascending: false })
+    .limit(limit)
+
+  if (notificationsError) {
+    throw notificationsError
+  }
+
+  const notificationRows = (notifications ?? []) as AppNotification[]
+  const notificationIds = notificationRows.map((notification) => notification.id)
+  const userIds = [...new Set(notificationRows.map((notification) => notification.user_id))]
+  const emptyProfileResult = { data: [] as Array<{ id: string; full_name: string | null; email: string | null }>, error: null }
+  const emptyQueueResult = { data: [] as Array<{ notification_id: string | null; channel: NotificationChannel }>, error: null }
+
+  const [profilesResult, queueResult] = await Promise.all([
+    userIds.length > 0
+      ? supabase.from('profiles').select('id, full_name, email').in('id', userIds)
+      : Promise.resolve(emptyProfileResult),
+    notificationIds.length > 0
+      ? supabase.from('notification_queue').select('notification_id, channel').in('notification_id', notificationIds)
+      : Promise.resolve(emptyQueueResult),
+  ])
+
+  if (profilesResult.error) {
+    throw profilesResult.error
+  }
+
+  if (queueResult.error) {
+    throw queueResult.error
+  }
+
+  const profilesById = new Map<string, { full_name: string | null; email: string | null }>()
+  for (const profile of profilesResult.data ?? []) {
+    profilesById.set(profile.id, {
+      full_name: profile.full_name ?? null,
+      email: profile.email ?? null,
+    })
+  }
+
+  const channelsByNotificationId = new Map<string, Set<NotificationChannel>>()
+  for (const queueItem of queueResult.data ?? []) {
+    if (!queueItem.notification_id) {
+      continue
+    }
+
+    const channel = queueItem.channel as NotificationChannel
+    if (!channelsByNotificationId.has(queueItem.notification_id)) {
+      channelsByNotificationId.set(queueItem.notification_id, new Set())
+    }
+
+    channelsByNotificationId.get(queueItem.notification_id)?.add(channel)
+  }
+
+  return notificationRows.map((notification) => {
+    const profile = profilesById.get(notification.user_id) ?? null
+    const channels = [...(channelsByNotificationId.get(notification.id) ?? new Set<NotificationChannel>())]
+
+    return {
+      ...notification,
+      recipient_full_name: profile?.full_name ?? null,
+      recipient_email: profile?.email ?? null,
+      channels,
+    } satisfies PlatformNotification
+  })
 }
 
 export async function fetchUnreadNotificationCount() {
