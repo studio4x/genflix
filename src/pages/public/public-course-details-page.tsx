@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from 'react'
 import { BadgeCheck, ChevronDown, CirclePlay, Play, Sparkles } from 'lucide-react'
 import { Link, Navigate, useParams } from 'react-router-dom'
 
-import { useAuth } from '@/app/providers/auth-provider'
 import { CourseCoverMedia } from '@/components/public/course-cover-media'
 import { GenflixCtaButton } from '@/components/public/genflix-cta-button'
 import { GenflixPublicFooter } from '@/components/public/genflix-public-footer'
@@ -20,7 +19,6 @@ import {
   resolveStudyFeatureIconKey,
 } from '@/features/public/genflix-study-feature-editor'
 import { fetchPublicCourseDetailFromSupabase } from '@/features/public/genflix-public-content-api'
-import { startCourseCheckout } from '@/features/public/courses/api'
 import { CourseReviewsSection } from '@/features/reviews/course-reviews-section'
 import { cn } from '@/lib/utils'
 import { EditableList, isEditableItemVisible } from '@/features/site-editor/visual-editor'
@@ -28,15 +26,11 @@ import { renderSiteIconVisual } from '@/features/site-editor/site-icons'
 
 export function PublicCourseDetailsPage() {
   const { slug = '' } = useParams()
-  const { isLoading, user, roles, session, profile } = useAuth()
-  const waitingRoleResolution = !!user && roles.length === 0
   const staticCourse = useMemo(() => getGenflixCourseBySlug(slug), [slug])
   const staticDetail = useMemo(() => getGenflixCourseDetailBySlug(slug), [slug])
   const [detail, setDetail] = useState<GenflixCourseDetail | null>(staticDetail)
   const [isLoadingDetail, setIsLoadingDetail] = useState(true)
   const [openModule, setOpenModule] = useState(0)
-  const [checkoutError, setCheckoutError] = useState<string | null>(null)
-  const [isStartingCheckout, setIsStartingCheckout] = useState(false)
 
   useEffect(() => {
     let isMounted = true
@@ -66,42 +60,6 @@ export function PublicCourseDetailsPage() {
     }
   }, [slug, staticDetail])
 
-  async function handleCheckoutSubmit() {
-    if (!detail) {
-      return
-    }
-
-    setCheckoutError(null)
-    setIsStartingCheckout(true)
-
-    try {
-      if (!session?.access_token) {
-        throw new Error('Entre na sua conta GenFlix para iniciar a compra com segurança.')
-      }
-
-      if (!detail.id) {
-        throw new Error('Este curso ainda não está disponível para checkout.')
-      }
-
-      const checkoutUrl = await startCourseCheckout(detail.id, session.access_token, {
-        buyerName: profile?.full_name || user?.user_metadata?.full_name,
-        buyerEmail: profile?.email || user?.email,
-      })
-      window.location.href = checkoutUrl
-    } catch (error) {
-      setCheckoutError(error instanceof Error ? error.message : 'Não foi possível iniciar o checkout.')
-    } finally {
-      setIsStartingCheckout(false)
-    }
-  }
-
-  if (isLoading || waitingRoleResolution) {
-    return (
-      <main className="flex min-h-screen items-center justify-center bg-[#10242b] p-6 font-manrope">
-        <p className="text-sm font-extrabold uppercase tracking-[0.28em] text-white/72">Carregando GenFlix...</p>
-      </main>
-    )
-  }
 
   if (!isLoadingDetail && !staticCourse && !detail) {
     return <Navigate to="/cursos" replace />
@@ -262,22 +220,9 @@ export function PublicCourseDetailsPage() {
                     <p className="mt-2 text-sm text-[#6a7b81]">{detail.secondaryPriceLabel}</p>
                   </div>
 
-                  <div className="space-y-3">
-                    {checkoutError ? (
-                      <p className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-bold text-rose-700">
-                        {checkoutError}
-                      </p>
-                    ) : null}
-
-                    <GenflixCtaButton
-                      type="button"
-                      disabled={isStartingCheckout}
-                      onClick={() => void handleCheckoutSubmit()}
-                      className="w-full px-5 py-3"
-                    >
-                      {isStartingCheckout ? 'Abrindo checkout...' : 'Comprar agora'}
-                    </GenflixCtaButton>
-                  </div>
+                                    <GenflixCtaButton asChild className="w-full px-5 py-3">
+                    <Link to={`/checkout/pagamento/${slug}`}>Comprar agora</Link>
+                  </GenflixCtaButton>
 
                   <div className="grid gap-3 sm:grid-cols-2">
                     {detail.includedItems.map((item) => (
@@ -357,3 +302,4 @@ export function PublicCourseDetailsPage() {
     </main>
   )
 }
+

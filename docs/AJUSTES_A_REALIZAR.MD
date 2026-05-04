@@ -112,7 +112,9 @@
 
 [OK] T33 - Na página do curso, remover campos de nome e e-mail, deixando apenas botão “Comprar agora”.
 
-[ ] T34 - Criar página intermediária de checkout baseada no arquivo `modelo.checkout.html`.
+[OK] T34 - Criar página intermediária de checkout baseada no arquivo `modelo.checkout.html`.
+
+[ ] t34.5 - Na página pública do curso, ao clicar no botão de comprar agora, aparece a mensagem "Entre na sua conta GenFlix para iniciar a compra com segurança.". Não deve funcionar assim. Ao clicar nesse botão, a página de checkout deverá ser aberta. Nessa página do checkout deverá ter a opção de fazer login caso já tenha um cadastro criado, ou então inserir os dados: Nome completo, e-mail, confirmar e-mail, CPF e um campo para aceitar os termos e condições (inserir um link com modal para ele). Deverá ter também um botão de "ir para pagamento" para então o checkout do asaas ser aberto.
 
 ---
 
