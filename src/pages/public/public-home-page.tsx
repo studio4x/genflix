@@ -234,7 +234,7 @@ function HomeCategoriesSection({
   )
 
   return (
-    <section className="border-b border-[#D8E6EB] bg-[#FFF9F3] py-14 sm:py-16">
+    <section className="border-b border-[#D8E6EB] bg-[#f2f8fa] py-14 sm:py-16">
       <div className="public-site-container">
         <div className="mx-auto max-w-[640px] text-center">
           <h2 className="text-[2rem] font-bold tracking-[-0.04em] text-[#15323B] sm:text-[2.25rem]">
@@ -247,7 +247,7 @@ function HomeCategoriesSection({
           </h2>
         </div>
 
-        <div className="mx-auto mt-10 grid max-w-[1160px] gap-3 sm:grid-cols-2 lg:grid-cols-4 xl:justify-center xl:[grid-template-columns:repeat(7,160px)]">
+        <div className="mx-auto mt-10 flex max-w-[1160px] flex-wrap justify-center gap-3">
           <EditableList
             entryKey={`${entryPrefix}.items`}
             fallback={categoryItems}
@@ -265,7 +265,7 @@ function HomeCategoriesSection({
               return (
                 <article
                   key={item.id}
-                  className="min-h-[124px] rounded-[4px] bg-[linear-gradient(180deg,#1BA8C5_0%,#0A3640_100%)] px-4 py-4 text-white shadow-[0_18px_30px_rgba(10,54,64,0.14)]"
+                  className="min-h-[124px] w-[145px] rounded-[4px] bg-[linear-gradient(180deg,#1BA8C5_0%,#0A3640_100%)] px-4 py-4 text-white shadow-[0_18px_30px_rgba(10,54,64,0.14)] sm:w-[150px]"
                 >
                   <div className="flex h-11 w-11 items-center justify-center text-white/95">
                     {renderSiteIconVisual({
