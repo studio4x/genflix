@@ -86,7 +86,7 @@
 
 ## CHAT 7 — Cookies, rastreamento e eventos
 
-[ ] T25 - Implementar banner de aceitação de cookies.
+[OK] T25 - Implementar banner de aceitação de cookies.
 
 [ ] T26 - Implementar painel de preferências de cookies.
 

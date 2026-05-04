@@ -4,6 +4,7 @@ import { Menu, Settings2, X } from 'lucide-react'
 
 import { useAuth } from '@/app/providers/auth-provider'
 import { GenflixCtaButton } from '@/components/public/genflix-cta-button'
+import { GenflixCookieConsentBanner } from '@/components/public/genflix-cookie-consent-banner'
 import { GenflixLogo } from '@/components/public/genflix-logo'
 import { getDashboardPathForRoles } from '@/features/auth/dashboard-path'
 import type { GenflixNavLink, GenflixPageKey } from '@/features/public/genflix-public-types'
@@ -252,127 +253,25 @@ export function GenflixPublicHeader({
   }
 
   return (
-    <section
-      className={cn(
-        'border-b',
-        useHomeTheme
-          ? 'border-white/10 bg-[linear-gradient(90deg,#1C7082_0%,#0F5562_100%)] text-white'
-          : 'border-[#D8E6EB] text-[#183139]',
-      )}
-      style={headerSectionStyle}
-    >
-      <div className="public-site-container">
-        <header className="relative">
-          <div className="flex items-center justify-between gap-4" style={headerChromeStyle}>
-            <Link to="/" aria-label="Ir para a home da GenFlix" className="shrink-0">
-              <GenflixLogo theme={logoTheme} className="origin-left" style={logoStyle} />
-            </Link>
+    <>
+      <section
+        className={cn(
+          'border-b',
+          useHomeTheme
+            ? 'border-white/10 bg-[linear-gradient(90deg,#1C7082_0%,#0F5562_100%)] text-white'
+            : 'border-[#D8E6EB] text-[#183139]',
+        )}
+        style={headerSectionStyle}
+      >
+        <div className="public-site-container">
+          <header className="relative">
+            <div className="flex items-center justify-between gap-4" style={headerChromeStyle}>
+              <Link to="/" aria-label="Ir para a home da GenFlix" className="shrink-0">
+                <GenflixLogo theme={logoTheme} className="origin-left" style={logoStyle} />
+              </Link>
 
-            <nav className="hidden items-center gap-8 xl:flex">
-              <EditableList entryKey="global.header.navLinks" fallback={visibleNavLinks} label="Menu principal" pageKey="global">
-                {(items) => items.filter(isEditableItemVisible).map((item) => {
-                  const navItem = {
-                    label: item.label ?? '',
-                    href: item.href ?? '#',
-                    isInternal: item.metadata?.isInternal === true,
-                    pageKey: typeof item.metadata?.pageKey === 'string' ? item.metadata.pageKey as GenflixPageKey : undefined,
-                    requiresAuth: item.metadata?.requiresAuth === true,
-                  }
-
-                  if (navItem.requiresAuth && !user) {
-                    return null
-                  }
-
-                  return (
-                    <HeaderNavLink
-                      key={`${navItem.label}-${navItem.href}`}
-                      item={navItem}
-                      isActive={navItem.pageKey === currentPage}
-                      variant={useHomeTheme ? 'home' : 'light'}
-                      appearance={currentScopeAppearance}
-                    />
-                  )
-                })}
-              </EditableList>
-            </nav>
-
-            <div className="flex items-center gap-3">
-              <EditableButton
-                entryKey={user ? 'global.header.cta.authenticated.label' : 'global.header.cta.anonymous.label'}
-                fallback={{
-                  label: ctaLabel,
-                  href: ctaPath,
-                  isInternal: ctaPath.startsWith('/'),
-                  tone: 'warm',
-                }}
-                label="Botao do cabecalho"
-                pageKey="global"
-              >
-                {(buttonValue) => buttonValue.isHidden === true ? null : (
-                  <GenflixCtaButton asChild tone="warm" className="hidden h-11 px-5 sm:inline-flex">
-                    {buttonValue.isInternal === true ? (
-                      <Link to={typeof buttonValue.href === 'string' ? buttonValue.href : ctaPath}>
-                        {typeof buttonValue.label === 'string' ? buttonValue.label : ctaLabel}
-                      </Link>
-                    ) : (
-                      <a
-                        href={typeof buttonValue.href === 'string' ? buttonValue.href : ctaPath}
-                        target={buttonValue.openInNewTab === true ? '_blank' : undefined}
-                        rel={buttonValue.openInNewTab === true ? 'noreferrer' : undefined}
-                      >
-                        {typeof buttonValue.label === 'string' ? buttonValue.label : ctaLabel}
-                      </a>
-                    )}
-                  </GenflixCtaButton>
-                )}
-              </EditableButton>
-
-              {editor?.isEditing && scope ? (
-                <div className="hidden items-center gap-2 xl:flex">
-                  <HeaderAppearanceControl
-                    label={appearanceScopePageKey === 'global' ? 'Header global' : 'Header desta pagina'}
-                    onClick={() => openAppearanceEditor(appearanceScopePageKey)}
-                  />
-                  {appearanceScopePageKey !== 'global' ? (
-                    <button
-                      type="button"
-                      onClick={() => openAppearanceEditor('global')}
-                      className="inline-flex items-center gap-2 rounded-full border border-[#D8E6EB] bg-[#F8FCFD] px-4 py-2 text-xs font-black uppercase tracking-[0.14em] text-[#163138] hover:bg-white"
-                    >
-                      Global
-                    </button>
-                  ) : null}
-                </div>
-              ) : null}
-
-              <button
-                type="button"
-                onClick={() => setIsMenuOpen((open) => !open)}
-                className={cn(
-                  'inline-flex h-11 w-11 items-center justify-center rounded-full border transition-colors backdrop-blur-sm xl:hidden',
-                  useHomeTheme
-                    ? 'border-white/18 bg-white/10 text-white hover:bg-white/16'
-                    : 'border-[#D8E6EB] bg-white text-[#15323B] hover:bg-[#EBF3F5]',
-                )}
-                aria-expanded={isMenuOpen}
-                aria-label={isMenuOpen ? 'Fechar menu' : 'Abrir menu'}
-              >
-                {isMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-              </button>
-            </div>
-          </div>
-
-          {isMenuOpen ? (
-            <div
-              className={cn(
-                'absolute inset-x-0 top-full z-30 mt-2 overflow-hidden rounded-[20px] p-4 backdrop-blur-xl xl:hidden',
-                useHomeTheme
-                  ? 'border border-white/12 bg-[#0D4651]/96 shadow-[0_28px_56px_rgba(6,27,33,0.26)]'
-                  : 'border border-[#D8E6EB] bg-[#F2F8FA]/98 shadow-[0_28px_56px_rgba(21,50,59,0.12)]',
-              )}
-            >
-              <nav className="flex flex-col gap-1">
-                <EditableList entryKey="global.header.navLinks" fallback={visibleNavLinks} label="Menu principal mobile" pageKey="global">
+              <nav className="hidden items-center gap-8 xl:flex">
+                <EditableList entryKey="global.header.navLinks" fallback={visibleNavLinks} label="Menu principal" pageKey="global">
                   {(items) => items.filter(isEditableItemVisible).map((item) => {
                     const navItem = {
                       label: item.label ?? '',
@@ -388,19 +287,18 @@ export function GenflixPublicHeader({
 
                     return (
                       <HeaderNavLink
-                        key={`mobile-${navItem.label}-${navItem.href}`}
+                        key={`${navItem.label}-${navItem.href}`}
                         item={navItem}
                         isActive={navItem.pageKey === currentPage}
                         variant={useHomeTheme ? 'home' : 'light'}
                         appearance={currentScopeAppearance}
-                        className="rounded-[14px] px-3 py-3 text-[15px]"
                       />
                     )
                   })}
                 </EditableList>
               </nav>
 
-              <div className={cn('mt-4 border-t pt-4 sm:hidden', useHomeTheme ? 'border-white/10' : 'border-[#D8E6EB]')}>
+              <div className="flex items-center gap-3">
                 <EditableButton
                   entryKey={user ? 'global.header.cta.authenticated.label' : 'global.header.cta.anonymous.label'}
                   fallback={{
@@ -409,11 +307,11 @@ export function GenflixPublicHeader({
                     isInternal: ctaPath.startsWith('/'),
                     tone: 'warm',
                   }}
-                  label="Botao do cabecalho mobile"
+                  label="Botao do cabecalho"
                   pageKey="global"
                 >
                   {(buttonValue) => buttonValue.isHidden === true ? null : (
-                    <GenflixCtaButton asChild tone="warm" className="h-11 w-full px-5">
+                    <GenflixCtaButton asChild tone="warm" className="hidden h-11 px-5 sm:inline-flex">
                       {buttonValue.isInternal === true ? (
                         <Link to={typeof buttonValue.href === 'string' ? buttonValue.href : ctaPath}>
                           {typeof buttonValue.label === 'string' ? buttonValue.label : ctaLabel}
@@ -430,29 +328,136 @@ export function GenflixPublicHeader({
                     </GenflixCtaButton>
                   )}
                 </EditableButton>
-              </div>
-            </div>
-          ) : null}
 
-          {editor?.isEditing && scope ? (
-            <div className="mt-3 flex flex-wrap gap-2 xl:hidden">
-              <HeaderAppearanceControl
-                label={appearanceScopePageKey === 'global' ? 'Header global' : 'Header desta pagina'}
-                onClick={() => openAppearanceEditor(appearanceScopePageKey)}
-              />
-              {appearanceScopePageKey !== 'global' ? (
+                {editor?.isEditing && scope ? (
+                  <div className="hidden items-center gap-2 xl:flex">
+                    <HeaderAppearanceControl
+                      label={appearanceScopePageKey === 'global' ? 'Header global' : 'Header desta pagina'}
+                      onClick={() => openAppearanceEditor(appearanceScopePageKey)}
+                    />
+                    {appearanceScopePageKey !== 'global' ? (
+                      <button
+                        type="button"
+                        onClick={() => openAppearanceEditor('global')}
+                        className="inline-flex items-center gap-2 rounded-full border border-[#D8E6EB] bg-[#F8FCFD] px-4 py-2 text-xs font-black uppercase tracking-[0.14em] text-[#163138] hover:bg-white"
+                      >
+                        Global
+                      </button>
+                    ) : null}
+                  </div>
+                ) : null}
+
                 <button
                   type="button"
-                  onClick={() => openAppearanceEditor('global')}
-                  className="inline-flex items-center gap-2 rounded-full border border-[#D8E6EB] bg-[#F8FCFD] px-4 py-2 text-xs font-black uppercase tracking-[0.14em] text-[#163138] hover:bg-white"
+                  onClick={() => setIsMenuOpen((open) => !open)}
+                  className={cn(
+                    'inline-flex h-11 w-11 items-center justify-center rounded-full border transition-colors backdrop-blur-sm xl:hidden',
+                    useHomeTheme
+                      ? 'border-white/18 bg-white/10 text-white hover:bg-white/16'
+                      : 'border-[#D8E6EB] bg-white text-[#15323B] hover:bg-[#EBF3F5]',
+                  )}
+                  aria-expanded={isMenuOpen}
+                  aria-label={isMenuOpen ? 'Fechar menu' : 'Abrir menu'}
                 >
-                  Global
+                  {isMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
                 </button>
-              ) : null}
+              </div>
             </div>
-          ) : null}
-        </header>
-      </div>
-    </section>
+
+            {isMenuOpen ? (
+              <div
+                className={cn(
+                  'absolute inset-x-0 top-full z-30 mt-2 overflow-hidden rounded-[20px] p-4 backdrop-blur-xl xl:hidden',
+                  useHomeTheme
+                    ? 'border border-white/12 bg-[#0D4651]/96 shadow-[0_28px_56px_rgba(6,27,33,0.26)]'
+                    : 'border border-[#D8E6EB] bg-[#F2F8FA]/98 shadow-[0_28px_56px_rgba(21,50,59,0.12)]',
+                )}
+              >
+                <nav className="flex flex-col gap-1">
+                  <EditableList entryKey="global.header.navLinks" fallback={visibleNavLinks} label="Menu principal mobile" pageKey="global">
+                    {(items) => items.filter(isEditableItemVisible).map((item) => {
+                      const navItem = {
+                        label: item.label ?? '',
+                        href: item.href ?? '#',
+                        isInternal: item.metadata?.isInternal === true,
+                        pageKey: typeof item.metadata?.pageKey === 'string' ? item.metadata.pageKey as GenflixPageKey : undefined,
+                        requiresAuth: item.metadata?.requiresAuth === true,
+                      }
+
+                      if (navItem.requiresAuth && !user) {
+                        return null
+                      }
+
+                      return (
+                        <HeaderNavLink
+                          key={`mobile-${navItem.label}-${navItem.href}`}
+                          item={navItem}
+                          isActive={navItem.pageKey === currentPage}
+                          variant={useHomeTheme ? 'home' : 'light'}
+                          appearance={currentScopeAppearance}
+                          className="rounded-[14px] px-3 py-3 text-[15px]"
+                        />
+                      )
+                    })}
+                  </EditableList>
+                </nav>
+
+                <div className={cn('mt-4 border-t pt-4 sm:hidden', useHomeTheme ? 'border-white/10' : 'border-[#D8E6EB]')}>
+                  <EditableButton
+                    entryKey={user ? 'global.header.cta.authenticated.label' : 'global.header.cta.anonymous.label'}
+                    fallback={{
+                      label: ctaLabel,
+                      href: ctaPath,
+                      isInternal: ctaPath.startsWith('/'),
+                      tone: 'warm',
+                    }}
+                    label="Botao do cabecalho mobile"
+                    pageKey="global"
+                  >
+                    {(buttonValue) => buttonValue.isHidden === true ? null : (
+                      <GenflixCtaButton asChild tone="warm" className="h-11 w-full px-5">
+                        {buttonValue.isInternal === true ? (
+                          <Link to={typeof buttonValue.href === 'string' ? buttonValue.href : ctaPath}>
+                            {typeof buttonValue.label === 'string' ? buttonValue.label : ctaLabel}
+                          </Link>
+                        ) : (
+                          <a
+                            href={typeof buttonValue.href === 'string' ? buttonValue.href : ctaPath}
+                            target={buttonValue.openInNewTab === true ? '_blank' : undefined}
+                            rel={buttonValue.openInNewTab === true ? 'noreferrer' : undefined}
+                          >
+                            {typeof buttonValue.label === 'string' ? buttonValue.label : ctaLabel}
+                          </a>
+                        )}
+                      </GenflixCtaButton>
+                    )}
+                  </EditableButton>
+                </div>
+              </div>
+            ) : null}
+
+            {editor?.isEditing && scope ? (
+              <div className="mt-3 flex flex-wrap gap-2 xl:hidden">
+                <HeaderAppearanceControl
+                  label={appearanceScopePageKey === 'global' ? 'Header global' : 'Header desta pagina'}
+                  onClick={() => openAppearanceEditor(appearanceScopePageKey)}
+                />
+                {appearanceScopePageKey !== 'global' ? (
+                  <button
+                    type="button"
+                    onClick={() => openAppearanceEditor('global')}
+                    className="inline-flex items-center gap-2 rounded-full border border-[#D8E6EB] bg-[#F8FCFD] px-4 py-2 text-xs font-black uppercase tracking-[0.14em] text-[#163138] hover:bg-white"
+                  >
+                    Global
+                  </button>
+                ) : null}
+              </div>
+            ) : null}
+          </header>
+        </div>
+      </section>
+
+      <GenflixCookieConsentBanner />
+    </>
   )
 }
