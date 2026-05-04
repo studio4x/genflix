@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react'
-import { useSearchParams } from 'react-router-dom'
-import { BellRing, Mail, MessageCircle, MonitorSmartphone, RefreshCw, Send } from 'lucide-react'
+import { Link, useSearchParams } from 'react-router-dom'
+import { AlertTriangle, BellRing, CheckCircle2, Clock3, ExternalLink, Mail, MessageCircle, MonitorSmartphone, RefreshCw, Send } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import {
@@ -105,11 +105,36 @@ function formatRecipientLabel(notification: PlatformNotification) {
   return notification.user_id
 }
 
-type AdminNotificationsTab = 'manuais' | 'plataforma'
+type AdminNotificationsTab = 'manuais' | 'plataforma' | 'operacoes'
+
+function getQueueHealthMeta(pending: number, failed: number) {
+  if (failed > 0) {
+    return {
+      label: 'Em atenção',
+      icon: AlertTriangle,
+      className: 'border-rose-200 bg-rose-50 text-rose-700',
+    }
+  }
+
+  if (pending > 0) {
+    return {
+      label: 'Processando',
+      icon: Clock3,
+      className: 'border-amber-200 bg-amber-50 text-amber-700',
+    }
+  }
+
+  return {
+    label: 'Estável',
+    icon: CheckCircle2,
+    className: 'border-emerald-200 bg-emerald-50 text-emerald-700',
+  }
+}
 
 export function AdminNotificationsPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const [queueItems, setQueueItems] = useState<NotificationQueueItem[]>([])
+  const [operationsQueueItems, setOperationsQueueItems] = useState<NotificationQueueItem[]>([])
   const [platformItems, setPlatformItems] = useState<PlatformNotification[]>([])
   const [adminSettings, setAdminSettings] = useState<NotificationAdminSettings | null>(null)
   const [queueStats, setQueueStats] = useState({
@@ -139,7 +164,8 @@ export function AdminNotificationsPage() {
   const [selectedChannels, setSelectedChannels] = useState<NotificationChannel[]>(['in-app'])
 
   const requestedTab = searchParams.get('tab')
-  const activeTab = requestedTab === 'plataforma' ? 'plataforma' : 'manuais'
+  const activeTab: AdminNotificationsTab =
+    requestedTab === 'plataforma' || requestedTab === 'operacoes' ? requestedTab : 'manuais'
 
   const pendingQueue = queueStats.pending + queueStats.retry
   const failedQueue = queueStats.failed + queueStats.bounced
@@ -156,6 +182,32 @@ export function AdminNotificationsPage() {
       withMultipleChannels,
     }
   }, [platformItems])
+
+  const operationsSummary = useMemo(() => {
+    const uniqueChannels = new Set<NotificationChannel>()
+    let lastActivityAt: string | null = null
+    let retryingCount = 0
+
+    for (const item of operationsQueueItems) {
+      uniqueChannels.add(item.channel)
+      if (!lastActivityAt || new Date(item.created_at).getTime() > new Date(lastActivityAt).getTime()) {
+        lastActivityAt = item.created_at
+      }
+
+      if (item.status === 'retry') {
+        retryingCount += 1
+      }
+    }
+
+    const health = getQueueHealthMeta(pendingQueue, failedQueue)
+
+    return {
+      uniqueChannels: uniqueChannels.size,
+      lastActivityAt,
+      retryingCount,
+      health,
+    }
+  }, [failedQueue, operationsQueueItems, pendingQueue])
 
   function renderTabButton(tab: AdminNotificationsTab, label: string) {
     const isActive = activeTab === tab
@@ -195,6 +247,16 @@ export function AdminNotificationsPage() {
         setTotalNotifications(stats.total)
         setUnreadNotifications(stats.unread)
         setPlatformItems(recentItems)
+      } else if (activeTab === 'operacoes') {
+        const [stats, recentItems] = await Promise.all([
+          fetchNotificationStats(false),
+          fetchRecentQueueItems(25, false),
+        ])
+
+        setQueueStats(stats.queue)
+        setTotalNotifications(stats.total)
+        setUnreadNotifications(stats.unread)
+        setOperationsQueueItems(recentItems)
       } else {
         const [stats, recentItems, settings] = await Promise.all([
           fetchNotificationStats(true),
@@ -320,6 +382,8 @@ export function AdminNotificationsPage() {
     }
   }
 
+  const HealthIcon = operationsSummary.health.icon
+
   return (
     <div className="space-y-7">
       <header className="flex flex-col gap-4 border-b border-[#D8E6EB] pb-6 lg:flex-row lg:items-end lg:justify-between">
@@ -329,11 +393,14 @@ export function AdminNotificationsPage() {
           <p className="mt-2 max-w-3xl text-sm font-medium leading-6 text-[#6d7f84]">
             {activeTab === 'plataforma'
               ? 'Consulte o histórico completo de notificações enviadas pela plataforma, incluindo e-mails e mensagens internas.'
+              : activeTab === 'operacoes'
+                ? 'Monitore a fila de e-mails e acompanhe os processos críticos que dependem de processamento contínuo.'
               : 'Envie avisos para usuários e acompanhe apenas os envios manuais registrados nesta área.'}
           </p>
           <div className="mt-4 flex flex-wrap gap-3">
             {renderTabButton('manuais', 'Manuais')}
             {renderTabButton('plataforma', 'Plataforma')}
+            {renderTabButton('operacoes', 'Operações')}
           </div>
         </div>
 
@@ -349,6 +416,15 @@ export function AdminNotificationsPage() {
               <Send className="mr-2 h-4 w-4" />
               {isProcessingQueue ? 'Processando...' : 'Processar fila'}
             </Button>
+          ) : null}
+          {activeTab === 'operacoes' ? (
+            <Link
+              to="/admin/pendencias"
+              className="inline-flex h-11 items-center justify-center rounded-none border border-[#D8E6EB] bg-white px-4 font-black text-[#0A3640] transition hover:border-[#1398B7] hover:bg-[#F2F7F9]"
+            >
+              Pendências operacionais
+              <ExternalLink className="ml-2 h-4 w-4" />
+            </Link>
           ) : null}
           <Button
             type="button"
@@ -642,6 +718,183 @@ export function AdminNotificationsPage() {
                 )}
               </div>
             </section>
+          </section>
+        </>
+      ) : activeTab === 'operacoes' ? (
+        <>
+          <div className="border border-[#D8E6EB] bg-[#F2F7F9] p-4 text-sm font-semibold leading-6 text-[#15323b]">
+            Esta aba consolida o pulso operacional da plataforma: fila de e-mails, reprocessamentos, pontos de falha
+            e atalhos para os fluxos críticos que precisam estar saudáveis no dia a dia.
+          </div>
+
+          <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            {[
+              {
+                label: 'Pendente / retry',
+                value: pendingQueue,
+                helper: 'Entregas aguardando processamento',
+              },
+              {
+                label: 'Falhas / bounced',
+                value: failedQueue,
+                helper: 'Entregas que exigem revisão',
+              },
+              {
+                label: 'Concluídos',
+                value: sentQueue,
+                helper: 'Itens enviados ou entregues',
+              },
+              {
+                label: 'Canais monitorados',
+                value: operationsSummary.uniqueChannels,
+                helper: 'Presença recente na fila',
+              },
+            ].map((card) => (
+              <article key={card.label} className="border border-[#D8E6EB] bg-white p-5 shadow-[0_14px_34px_rgba(10,54,64,0.05)]">
+                <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#5F7077]">{card.label}</p>
+                <p className="mt-3 font-readex text-4xl font-semibold text-[#0A3640]">{card.value}</p>
+                <p className="mt-2 text-sm font-semibold text-[#6d7f84]">{card.helper}</p>
+              </article>
+            ))}
+          </section>
+
+          <section className="grid gap-6 xl:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)]">
+            <article className="border border-[#D8E6EB] bg-white p-6 shadow-[0_18px_42px_rgba(10,54,64,0.05)]">
+              <div className="flex flex-col gap-4 border-b border-[#D8E6EB] pb-5 md:flex-row md:items-end md:justify-between">
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#1398B7]">Fila de e-mails</p>
+                  <h2 className="mt-2 font-readex text-2xl font-semibold text-[#15323b]">Monitoramento operacional</h2>
+                  <p className="mt-2 max-w-3xl text-sm font-medium leading-6 text-[#6d7f84]">
+                    Acompanhe os itens recentes da fila técnica, o volume de retries e o último momento de atividade
+                    para detectar interrupções rapidamente.
+                  </p>
+                </div>
+                <span
+                  className={cn(
+                    'inline-flex items-center gap-2 border px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.18em]',
+                    operationsSummary.health.className,
+                  )}
+                >
+                  <HealthIcon className="h-3.5 w-3.5" />
+                  {operationsSummary.health.label}
+                </span>
+              </div>
+
+              <div className="mt-5 grid gap-3 md:grid-cols-3">
+                <div className="border border-[#D8E6EB] bg-[#F2F7F9] px-4 py-3">
+                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#5F7077]">Em retry</p>
+                  <p className="mt-1 font-readex text-2xl font-semibold text-[#15323b]">{operationsSummary.retryingCount}</p>
+                </div>
+                <div className="border border-[#D8E6EB] bg-[#F2F7F9] px-4 py-3">
+                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#5F7077]">Última atividade</p>
+                  <p className="mt-1 font-readex text-sm font-semibold text-[#15323b]">
+                    {formatDateTime(operationsSummary.lastActivityAt)}
+                  </p>
+                </div>
+                <div className="border border-[#D8E6EB] bg-[#F2F7F9] px-4 py-3">
+                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#5F7077]">Monitorados</p>
+                  <p className="mt-1 font-readex text-2xl font-semibold text-[#15323b]">{operationsQueueItems.length}</p>
+                </div>
+              </div>
+
+              <div className="mt-5 overflow-hidden border border-[#D8E6EB]">
+                {isLoading ? (
+                  <p className="p-5 text-sm font-semibold text-[#6d7f84]">Carregando operação...</p>
+                ) : operationsQueueItems.length === 0 ? (
+                  <p className="p-5 text-sm font-semibold text-[#6d7f84]">Nenhuma atividade operacional recente encontrada.</p>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-[#D8E6EB] text-left text-sm">
+                      <thead className="bg-[#F2F7F9] text-[10px] font-black uppercase tracking-[0.2em] text-[#5F7077]">
+                        <tr>
+                          <th className="px-4 py-3">Canal</th>
+                          <th className="px-4 py-3">Status</th>
+                          <th className="px-4 py-3">Título</th>
+                          <th className="px-4 py-3">Tentativas</th>
+                          <th className="px-4 py-3">Próxima</th>
+                          <th className="px-4 py-3">Erro</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-[#D8E6EB]">
+                        {operationsQueueItems.map((item) => (
+                          <tr key={item.id} className="align-top">
+                            <td className="px-4 py-3 text-xs font-black uppercase text-[#0A3640]">{item.channel}</td>
+                            <td className="px-4 py-3">
+                              <span className={cn('inline-flex border px-2 py-1 text-[10px] font-black uppercase tracking-[0.16em]', getStatusClassName(item.status))}>
+                                {item.status}
+                              </span>
+                            </td>
+                            <td className="max-w-[260px] px-4 py-3">
+                              <p className="line-clamp-1 font-black text-[#15323b]">{item.title}</p>
+                              <p className="mt-1 line-clamp-2 text-xs font-semibold text-[#6d7f84]">{item.body}</p>
+                            </td>
+                            <td className="px-4 py-3 text-xs font-semibold text-[#6d7f84]">{item.attempt_count}</td>
+                            <td className="px-4 py-3 text-xs font-semibold text-[#6d7f84]">{formatDateTime(item.next_retry_at)}</td>
+                            <td className="max-w-[220px] px-4 py-3 text-xs font-semibold text-red-700">
+                              {item.final_error || '-'}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            </article>
+
+            <aside className="space-y-4">
+              {[
+                {
+                  title: 'Crons e jobs críticos',
+                  description:
+                    'Use esta área para acompanhar os processos que alimentam a operação, como envio automático, rotinas agendadas e reprocessamentos.',
+                  status: 'Vinculado',
+                  tone: 'border-emerald-200 bg-emerald-50 text-emerald-700',
+                  actionLabel: 'Abrir pendências',
+                  actionTo: '/admin/pendencias',
+                },
+                {
+                  title: 'Pagamentos e webhooks',
+                  description:
+                    'Quando um processo crítico não for da fila de notificação, verifique o ciclo financeiro e os eventos recebidos do gateway.',
+                  status: 'Monitorar',
+                  tone: 'border-amber-200 bg-amber-50 text-amber-700',
+                  actionLabel: 'Abrir pagamentos',
+                  actionTo: '/admin/pagamentos',
+                },
+                {
+                  title: 'Repasses e sincronizações',
+                  description:
+                    'Repasses e sincronizações em segundo plano continuam como ponto de atenção operacional até a rotina ficar totalmente estável.',
+                  status: 'Acompanhar',
+                  tone: 'border-[#BEE3EA] bg-[#E8F6FA] text-[#0A3640]',
+                  actionLabel: 'Abrir repasses',
+                  actionTo: '/admin/repasses',
+                },
+              ].map((item) => (
+                <article key={item.title} className="border border-[#D8E6EB] bg-white p-5 shadow-[0_14px_34px_rgba(10,54,64,0.05)]">
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#1398B7]">Processo crítico</p>
+                      <h3 className="mt-2 font-readex text-xl font-semibold text-[#15323b]">{item.title}</h3>
+                    </div>
+                    <span className={cn('inline-flex border px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.16em]', item.tone)}>
+                      {item.status}
+                    </span>
+                  </div>
+
+                  <p className="mt-3 text-sm font-medium leading-6 text-[#6d7f84]">{item.description}</p>
+
+                  <Link
+                    to={item.actionTo}
+                    className="mt-4 inline-flex items-center gap-2 text-sm font-black text-[#1398B7] underline decoration-[#1398B7]/40 underline-offset-4"
+                  >
+                    {item.actionLabel}
+                    <ExternalLink className="h-4 w-4" />
+                  </Link>
+                </article>
+              ))}
+            </aside>
           </section>
         </>
       ) : (

@@ -76,7 +76,7 @@
 
 [OK] T23 - Criar uma nova aba/página para listar todas as notificações enviadas pela plataforma, incluindo e-mails e notificações internas.
 
-[ ] T24 - Criar aba “Operações” para monitorar status da fila de e-mails, crons, jobs e outros processos críticos.
+[OK] T24 - Criar aba “Operações” para monitorar status da fila de e-mails, crons, jobs e outros processos críticos.
 
 ---
 
