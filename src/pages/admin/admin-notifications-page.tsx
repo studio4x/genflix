@@ -104,8 +104,8 @@ export function AdminNotificationsPage() {
 
     try {
       const [stats, recentItems, settings] = await Promise.all([
-        fetchNotificationStats(),
-        fetchRecentQueueItems(),
+        fetchNotificationStats(true),
+        fetchRecentQueueItems(25, true),
         fetchNotificationAdminSettings(),
       ])
       setQueueStats(stats.queue)
@@ -233,7 +233,7 @@ export function AdminNotificationsPage() {
           <p className="text-[10px] font-black uppercase tracking-[0.28em] text-[#1398B7]">Admin / Comunicação</p>
           <h1 className="mt-2 font-readex text-3xl font-semibold tracking-tight text-[#15323b]">Notificações</h1>
           <p className="mt-2 max-w-3xl text-sm font-medium leading-6 text-[#6d7f84]">
-            Envie avisos para usuários, acompanhe a fila multi-canal e monitore falhas de entrega.
+            Envie avisos para usuários e acompanhe apenas os envios manuais registrados nesta área.
           </p>
         </div>
 
@@ -274,6 +274,7 @@ export function AdminNotificationsPage() {
       ) : null}
 
       <div className="border border-[#D8E6EB] bg-[#F2F7F9] p-4 text-sm font-semibold leading-6 text-[#15323b]">
+        Esta página exibe apenas notificações enviadas manualmente a partir do painel.
         O envio externo por e-mail já usa a fila técnica da GenFlix, mas depende das variáveis SMTP definitivas.
         Enquanto SMTP/domínio não estiverem configurados, itens de e-mail permanecem em nova tentativa ou falha controlada.
         Acompanhe essa dependência em <a href="/admin/pendencias" className="font-black text-[#1398B7] underline">Pendências Operacionais</a>.
@@ -327,9 +328,9 @@ export function AdminNotificationsPage() {
 
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {[
-          { label: 'Total in-app', value: totalNotifications, helper: 'Notificações criadas' },
+          { label: 'Total manual', value: totalNotifications, helper: 'Notificações enviadas manualmente' },
           { label: 'Não lidas', value: unreadNotifications, helper: 'Aguardando leitura' },
-          { label: 'Fila pendente', value: pendingQueue, helper: 'Canais externos' },
+          { label: 'Fila manual', value: pendingQueue, helper: 'Canais externos registrados manualmente' },
           { label: 'Falhas', value: failedQueue, helper: 'Exigem análise' },
         ].map((card) => (
           <article key={card.label} className="border border-[#D8E6EB] bg-white p-5 shadow-[0_14px_34px_rgba(10,54,64,0.05)]">
@@ -477,7 +478,7 @@ export function AdminNotificationsPage() {
           <div className="flex flex-col gap-4 border-b border-[#D8E6EB] pb-5 md:flex-row md:items-end md:justify-between">
             <div>
               <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#1398B7]">Fila de entrega</p>
-              <h2 className="mt-2 font-readex text-2xl font-semibold text-[#15323b]">Monitoramento</h2>
+              <h2 className="mt-2 font-readex text-2xl font-semibold text-[#15323b]">Monitoramento manual</h2>
             </div>
             <div className="grid grid-cols-3 gap-2 text-center">
               <div className="border border-[#D8E6EB] bg-[#F2F7F9] px-3 py-2">

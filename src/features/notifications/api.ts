@@ -174,11 +174,30 @@ export async function markAllNotificationsRead() {
   }
 }
 
-export async function fetchNotificationStats() {
+export async function fetchNotificationStats(manualOnly = false) {
+  const notificationsQuery = supabase
+    .from('notifications')
+    .select('id', { count: 'exact', head: true })
+
+  const unreadQuery = supabase
+    .from('notifications')
+    .select('id', { count: 'exact', head: true })
+    .is('read_at', null)
+
+  const queueQuery = supabase
+    .from('notification_queue')
+    .select('status')
+
+  if (manualOnly) {
+    notificationsQuery.contains('metadata', { broadcast: true })
+    unreadQuery.contains('metadata', { broadcast: true })
+    queueQuery.contains('payload', { metadata: { broadcast: true } })
+  }
+
   const [{ count: total, error: totalError }, { count: unread, error: unreadError }, queueResult] = await Promise.all([
-    supabase.from('notifications').select('id', { count: 'exact', head: true }),
-    supabase.from('notifications').select('id', { count: 'exact', head: true }).is('read_at', null),
-    supabase.from('notification_queue').select('status'),
+    notificationsQuery,
+    unreadQuery,
+    queueQuery,
   ])
 
   if (totalError) {
@@ -208,12 +227,18 @@ export async function fetchNotificationStats() {
   } satisfies NotificationStats
 }
 
-export async function fetchRecentQueueItems(limit = 25) {
-  const { data, error } = await supabase
+export async function fetchRecentQueueItems(limit = 25, manualOnly = false) {
+  const query = supabase
     .from('notification_queue')
     .select('id, notification_id, user_id, channel, title, body, status, attempt_count, last_attempt_at, next_retry_at, final_error, provider_message_id, created_at, updated_at')
     .order('created_at', { ascending: false })
     .limit(limit)
+
+  if (manualOnly) {
+    query.contains('payload', { metadata: { broadcast: true } })
+  }
+
+  const { data, error } = await query
 
   if (error) {
     throw error
