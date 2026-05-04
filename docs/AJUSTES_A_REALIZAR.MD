@@ -100,7 +100,7 @@
 
 ## CHAT 8 — Checkout: confirmação e eventos
 
-[ ] T30 - Criar página de confirmação de inscrição após checkout concluído com sucesso.
+[OK] T30 - Criar página de confirmação de inscrição após checkout concluído com sucesso.
 
 [ ] T31 - Na página de confirmação, inserir botão para acessar diretamente o curso comprado.
 

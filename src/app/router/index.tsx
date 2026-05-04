@@ -26,6 +26,7 @@ const PublicRefundPolicyPage = lazy(async () => ({ default: (await import('@/pag
 const PublicHelpPage = lazy(async () => ({ default: (await import('@/pages/public/public-help-page')).PublicHelpPage }))
 const PublicReferPage = lazy(async () => ({ default: (await import('@/pages/public/public-refer-page')).PublicReferPage }))
 const PublicTeachPage = lazy(async () => ({ default: (await import('@/pages/public/public-teach-page')).PublicTeachPage }))
+const PublicCheckoutConfirmationPage = lazy(async () => ({ default: (await import('@/pages/public/checkout-confirmation-page')).PublicCheckoutConfirmationPage }))
 const LoginPage = lazy(async () => ({ default: (await import('@/pages/public/login-page')).LoginPage }))
 const AuthCallbackPage = lazy(async () => ({ default: (await import('@/pages/public/auth-callback-page')).AuthCallbackPage }))
 const SignUpPage = lazy(async () => ({ default: (await import('@/pages/public/sign-up-page')).SignUpPage }))
@@ -185,6 +186,10 @@ export const appRouter = createBrowserRouter([
   {
     path: '/ensine-na-genflix',
     element: <PublicEditableRoute pageKey="global" seo={{ entryKey: 'global.teach.seo', fallback: { title: 'GenFlix | Ensine na GenFlix', description: 'Apresente sua proposta de curso e conheça a frente de parcerias educacionais da GenFlix.', slug: '/ensine-na-genflix', image: '' } }}><PublicTeachPage /></PublicEditableRoute>,
+  },
+  {
+    path: '/checkout/confirmacao',
+    element: withRouteSuspense(<PublicCheckoutConfirmationPage />),
   },
   {
     path: '/login',

@@ -272,7 +272,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
     minutesToExpire: 1440,
     externalReference: checkoutSessionId,
     callback: {
-      successUrl: `${origin}/aluno/cursos/${course.id}?checkout=success`,
+      successUrl: `${origin}/checkout/confirmacao?courseId=${course.id}&courseTitle=${encodeURIComponent(course.title)}`,
       cancelUrl: `${origin}/aluno/cursos/${course.id}?checkout=cancel`,
       expiredUrl: `${origin}/aluno/cursos/${course.id}?checkout=expired`,
     },
