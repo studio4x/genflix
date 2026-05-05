@@ -40,6 +40,7 @@ const TermsOfUsePage = lazy(async () => ({ default: (await import('@/pages/publi
 const StudentDashboardPage = lazy(async () => ({ default: (await import('@/pages/student/student-dashboard-page')).StudentDashboardPage }))
 const StudentCoursesPage = lazy(async () => ({ default: (await import('@/pages/student/student-courses-page')).StudentCoursesPage }))
 const StudentCourseDetailsPage = lazy(async () => ({ default: (await import('@/pages/student/student-course-details-page')).StudentCourseDetailsPage }))
+const StudentPaymentsPage = lazy(async () => ({ default: (await import('@/pages/student/student-payments-page')).StudentPaymentsPage }))
 const StudentAccountPage = lazy(async () => ({ default: (await import('@/pages/student/student-account-page')).StudentAccountPage }))
 const StudentSupportTicketsPage = lazy(async () => ({ default: (await import('@/pages/student/student-support-tickets-page')).StudentSupportTicketsPage }))
 const CreatorSupportTicketsPage = lazy(async () => ({ default: (await import('@/pages/creator/creator-support-tickets-page')).CreatorSupportTicketsPage }))
@@ -258,6 +259,10 @@ export const appRouter = createBrowserRouter([
           {
             path: '/aluno/minha-conta',
             element: withRouteSuspense(<StudentAccountPage />),
+          },
+          {
+            path: '/aluno/pagamentos',
+            element: withRouteSuspense(<StudentPaymentsPage />),
           },
           {
             path: '/aluno/suporte',
