@@ -27,6 +27,7 @@ const startCheckoutSchema = z.object({
   courseId: z.string().uuid('Curso inválido.'),
   buyerName: z.string().trim().max(160).optional(),
   buyerEmail: z.string().trim().email('E-mail inválido.').optional().or(z.literal('')),
+  buyerDocument: z.string().trim().optional(),
 })
 
 function getErrorMessage(error: unknown) {
@@ -90,6 +91,11 @@ function jsonResponse(res: ApiResponse, statusCode: number, payload: unknown) {
 function normalizeOptionalText(value: string | null | undefined) {
   const normalized = value?.trim()
   return normalized && normalized.length > 0 ? normalized : null
+}
+
+function normalizeDocument(value: string | null | undefined) {
+  const digits = (value ?? '').replace(/\D/g, '')
+  return digits.length > 0 ? digits : null
 }
 
 export default async function handler(req: ApiRequest, res: ApiResponse) {
@@ -198,9 +204,17 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
     normalizeOptionalText(parsed.data.buyerEmail) ??
     normalizeOptionalText(profile?.email) ??
     normalizeOptionalText(userData.user.email)
+  const buyerDocument =
+    normalizeDocument(parsed.data.buyerDocument) ??
+    normalizeDocument((userData.user.user_metadata as Record<string, unknown> | null | undefined)?.document as string | undefined)
 
   if (!buyerEmail) {
     jsonResponse(res, 400, { error: 'Informe um e-mail válido para iniciar o checkout.' })
+    return
+  }
+
+  if (!buyerDocument || buyerDocument.length !== 11) {
+    jsonResponse(res, 400, { error: 'Informe um CPF válido para iniciar o checkout.' })
     return
   }
 
@@ -267,7 +281,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
 
   const checkoutSessionId = crypto.randomUUID()
   const checkoutRequest = {
-    billingTypes: ['PIX', 'CREDIT_CARD'],
+    billingTypes: ['CREDIT_CARD'],
     chargeTypes: ['DETACHED'],
     minutesToExpire: 1440,
     externalReference: checkoutSessionId,
@@ -287,6 +301,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
     customerData: {
       name: buyerName,
       email: buyerEmail,
+      cpfCnpj: buyerDocument,
     },
   }
 
@@ -323,6 +338,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
     user_id: userData.user.id,
     buyer_name: buyerName,
     buyer_email: buyerEmail,
+    buyer_document: buyerDocument,
     gateway_code: 'asaas',
     gateway_environment: gatewayConfig.environment,
     external_reference: checkoutSessionId,

@@ -52,6 +52,7 @@ export function PublicCheckoutPage() {
   const [isStartingCheckout, setIsStartingCheckout] = useState(false)
   const [checkoutFullName, setCheckoutFullName] = useState('')
   const [checkoutEmail, setCheckoutEmail] = useState('')
+  const [checkoutDocument, setCheckoutDocument] = useState('')
   const [openDocument, setOpenDocument] = useState<LegalDocumentKey | null>(null)
 
   const courseRoute = `/cursos/${slug}`
@@ -65,7 +66,19 @@ export function PublicCheckoutPage() {
 
     setCheckoutFullName(profile?.full_name?.trim() || user?.user_metadata?.full_name || '')
     setCheckoutEmail(profile?.email?.trim() || user?.email || '')
-  }, [canContinue, profile?.email, profile?.full_name, user?.email, user?.user_metadata?.full_name])
+    setCheckoutDocument(
+      typeof user?.user_metadata?.document === 'string'
+        ? user.user_metadata.document.trim()
+        : '',
+    )
+  }, [
+    canContinue,
+    profile?.email,
+    profile?.full_name,
+    user?.email,
+    user?.user_metadata?.document,
+    user?.user_metadata?.full_name,
+  ])
 
   useEffect(() => {
     let isMounted = true
@@ -108,6 +121,11 @@ export function PublicCheckoutPage() {
         throw new Error('Entre ou crie sua conta para continuar a compra.')
       }
 
+      const normalizedDocument = checkoutDocument.replace(/\D/g, '')
+      if (normalizedDocument.length !== 11) {
+        throw new Error('Informe um CPF válido para continuar.')
+      }
+
       if (!detail.id) {
         throw new Error('Este curso ainda nao esta disponivel para checkout.')
       }
@@ -115,6 +133,7 @@ export function PublicCheckoutPage() {
       const checkoutUrl = await startCourseCheckout(detail.id, session.access_token, {
         buyerName: checkoutFullName.trim() || profile?.full_name || user?.user_metadata?.full_name,
         buyerEmail: checkoutEmail.trim() || profile?.email || user?.email,
+        buyerDocument: normalizedDocument,
       })
 
       window.location.href = checkoutUrl
@@ -131,7 +150,9 @@ export function PublicCheckoutPage() {
     profile?.full_name,
     session?.access_token,
     user?.email,
+    user?.user_metadata?.document,
     user?.user_metadata?.full_name,
+    checkoutDocument,
   ])
 
   async function handleLoginSubmit(event: FormEvent<HTMLFormElement>) {
@@ -401,6 +422,19 @@ export function PublicCheckoutPage() {
                             onChange={(event) => setCheckoutEmail(event.target.value)}
                             placeholder="seu@email.com"
                             autoComplete="email"
+                          />
+                        </label>
+
+                        <label className="block space-y-2">
+                          <span className="text-sm font-semibold text-[#4f656c]">CPF</span>
+                          <input
+                            className="h-12 w-full rounded-[12px] border border-[#D8E6EB] bg-[#EDF4F6] px-4 text-sm text-[#183139] outline-none transition-colors placeholder:text-[#8BA0A7] focus:border-[#1398B7] focus:bg-white"
+                            type="text"
+                            value={checkoutDocument}
+                            onChange={(event) => setCheckoutDocument(event.target.value)}
+                            placeholder="000.000.000-00"
+                            inputMode="numeric"
+                            autoComplete="off"
                           />
                         </label>
                       </div>

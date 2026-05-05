@@ -1169,11 +1169,12 @@ Payload:
 {
   "courseId": "uuid-do-curso",
   "buyerName": "Nome do comprador opcional",
-  "buyerEmail": "comprador@email.com"
+  "buyerEmail": "comprador@email.com",
+  "buyerDocument": "00000000000"
 }
 ```
 
-`buyerName` e `buyerEmail` são opcionais no contrato público. Quando vierem preenchidos pelo formulário de compra, o backend envia esses dados para o checkout hospedado do Asaas e também registra em `commerce_checkout_sessions`. Se vierem vazios, o backend usa o perfil autenticado do usuário como fallback.
+`buyerName`, `buyerEmail` e `buyerDocument` são opcionais no contrato público. Quando vierem preenchidos pelo formulário de compra, o backend envia esses dados para o checkout hospedado do Asaas e também registra em `commerce_checkout_sessions`. Se vierem vazios, o backend usa o perfil autenticado do usuário como fallback. O checkout do Asaas é criado apenas com `billingTypes: ["CREDIT_CARD"]`, mantendo o fluxo sem Pix.
 
 Resposta para curso pago:
 

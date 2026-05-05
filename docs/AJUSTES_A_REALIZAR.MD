@@ -120,9 +120,9 @@
 
 ## CHAT 10 — Pagamento
 
-[ ] T35 - Desativar pagamento via Pix.
+[OK] T35 - Desativar pagamento via Pix.
 
-[ ] T36 - Manter pagamento somente por cartão de crédito.
+[OK] T36 - Manter pagamento somente por cartão de crédito.
 
 [ ] T37 - Configurar parcelamento sem juros em até 3x, com parcela mínima de R$ 50.
 

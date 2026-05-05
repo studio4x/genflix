@@ -39,6 +39,7 @@ export async function fetchPublicCatalogCourses(): Promise<Course[]> {
 export type StartCourseCheckoutBuyer = {
   buyerName?: string
   buyerEmail?: string
+  buyerDocument?: string
 }
 
 export async function startCourseCheckout(
@@ -56,6 +57,7 @@ export async function startCourseCheckout(
       courseId,
       buyerName: buyer?.buyerName,
       buyerEmail: buyer?.buyerEmail,
+      buyerDocument: buyer?.buyerDocument,
     }),
   })
 
