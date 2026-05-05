@@ -174,11 +174,20 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
 
   const gatewayConfig = await fetchPaymentGatewayConfiguration(supabaseUrl, serviceRoleKey)
   const environment = gatewayConfig.environment ?? 'sandbox'
-  const eventExists = await adminClient
+  let eventExists = await adminClient
     .from('commerce_events')
     .select('id')
     .eq('external_event_id', eventId)
     .maybeSingle()
+
+  if (eventExists.error) {
+    // Compatibilidade com bases legadas que usam event_id como chave canônica.
+    eventExists = await adminClient
+      .from('commerce_events')
+      .select('id')
+      .eq('event_id', eventId)
+      .maybeSingle()
+  }
 
   if (eventExists.data?.id) {
     jsonResponse(res, 200, { ok: true, ignored: true })
@@ -339,6 +348,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
   }
 
   const insertEvent = await adminClient.from('commerce_events').insert({
+    event_id: eventId,
     gateway_code: 'asaas',
     gateway_environment: environment,
     external_event_id: eventId,
