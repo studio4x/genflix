@@ -7,7 +7,6 @@ import {
   LogIn,
   Mail,
   ShieldCheck,
-  Sparkles,
   UserPlus,
 } from 'lucide-react'
 import { Link, Navigate, useParams } from 'react-router-dom'
@@ -226,15 +225,15 @@ export function PublicCheckoutPage() {
           <div className="mx-auto max-w-[1120px] overflow-hidden rounded-[32px] border border-[#d8e6eb] bg-white shadow-[0_28px_70px_rgba(21,50,59,0.08)]">
             <div className="grid lg:grid-cols-[0.92fr_1.08fr]">
               <aside className="flex min-h-[320px] flex-col justify-between bg-[linear-gradient(160deg,#0a3640_0%,#1398b7_100%)] px-7 py-8 text-white sm:px-10 sm:py-10">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/14">
-                    <CheckCircle2 className="h-6 w-6" />
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/14">
+                      <CheckCircle2 className="h-6 w-6" />
+                    </div>
+                    <div>
+                      <p className="text-[11px] font-black uppercase tracking-[0.3em] text-white/72">Confirmação de pedido</p>
+                      <p className="mt-1 text-sm font-medium text-white/84">Seu acesso esta quase pronto.</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-[11px] font-black uppercase tracking-[0.3em] text-white/72">Checkout intermediario</p>
-                    <p className="mt-1 text-sm font-medium text-white/84">Seu acesso esta quase pronto.</p>
-                  </div>
-                </div>
 
                 <div className="mt-8 max-w-[340px] space-y-5">
                   <h1 className="text-[2.55rem] font-extrabold leading-[0.94] tracking-[-0.06em] sm:text-[3rem]">
@@ -257,13 +256,6 @@ export function PublicCheckoutPage() {
                       placeholderClassName="p-6"
                     />
                     <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(10,54,64,0.04)_0%,rgba(10,54,64,0.58)_100%)]" />
-                  </div>
-                  <div className="space-y-4 p-5">
-                    <div>
-                      <p className="text-[11px] font-black uppercase tracking-[0.24em] text-white/70">Resumo do curso</p>
-                      <p className="mt-2 text-xl font-bold leading-tight text-white">{detail.title}</p>
-                    </div>
-                    <p className="text-sm leading-7 text-white/80">{detail.description}</p>
                   </div>
                 </div>
               </aside>
@@ -322,21 +314,13 @@ export function PublicCheckoutPage() {
                       </div>
                       <CreditCard className="h-7 w-7 text-[#1398b7]" />
                     </div>
-                    <div className="mt-6 space-y-3 rounded-[20px] bg-[#f2f7f9] p-4">
-                      <div className="flex items-center justify-between gap-4 text-sm font-semibold text-[#5f7077]">
-                        <span>Valor do curso</span>
-                        <span>{formatPriceLabel(detail.priceLabel)}</span>
-                      </div>
-                      <div className="flex items-center justify-between gap-4 text-sm font-semibold text-[#5f7077]">
-                        <span>Condição</span>
-                        <span>{detail.secondaryPriceLabel}</span>
-                      </div>
-                    </div>
-                    <div className="mt-4 flex items-center gap-2 rounded-2xl border border-[#d8e6eb] bg-[#f8fbfc] px-4 py-3 text-sm text-[#5f7077]">
-                      <Sparkles className="h-4 w-4 text-[#1398b7]" />
-                      <span>Ambiente seguro, confirmacao automatica e acesso liberado apos o pagamento.</span>
+                  <div className="mt-6 space-y-3 rounded-[20px] bg-[#f2f7f9] p-4">
+                    <div className="flex items-center justify-between gap-4 text-sm font-semibold text-[#5f7077]">
+                      <span>Valor do curso</span>
+                      <span>{formatPriceLabel(detail.priceLabel)}</span>
                     </div>
                   </div>
+                </div>
 
                   {checkoutError ? (
                     <p className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-bold text-rose-700">
@@ -607,6 +591,14 @@ export function PublicCheckoutPage() {
                   </Link>
                 </div>
               </div>
+            </div>
+          </div>
+
+          <div className="mx-auto mt-6 max-w-[1120px] rounded-[24px] border border-[#d8e6eb] bg-white px-6 py-5 shadow-[0_14px_32px_rgba(21,50,59,0.05)] sm:px-8 sm:py-6">
+            <div className="max-w-[760px]">
+              <p className="text-[11px] font-black uppercase tracking-[0.24em] text-[#1398b7]">Resumo do curso</p>
+              <h2 className="mt-2 text-2xl font-extrabold tracking-[-0.05em] text-[#163138]">{detail.title}</h2>
+              <p className="mt-3 text-sm leading-7 text-[#4f656c]">{detail.description}</p>
             </div>
           </div>
         </div>
