@@ -319,13 +319,30 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
   }
 
   if (priceCents <= 0) {
-    const releaseResult = await activateCourseRelease(adminClient, {
-      courseId: course.id,
-      userId: resolvedUserId,
-      referenceId: `free-${course.id}-${resolvedUserId}`,
-    })
+  if (priceCents <= 0) {
+    const releaseResult = await adminClient
+      .from('course_releases')
+      .upsert(
+        {
+          course_id: course.id,
+          release_type: 'user',
+          user_id: resolvedUserId,
+          group_id: null,
+          starts_at: null,
+          ends_at: null,
+          is_active: true,
+          created_by: resolvedUserId,
+          release_source: 'purchase',
+          release_status: 'active',
+          source_system: 'asaas',
+          external_reference_id: ree--,
+          managed_by_integration: true,
+          last_synced_at: new Date().toISOString(),
+        },
+        { onConflict: 'course_id,user_id' },
+      )
 
-    if (!releaseResult.ok) {
+    if (releaseResult.error) {
       jsonResponse(res, 500, { error: 'Não foi possível liberar o curso gratuito.' })
       return
     }
