@@ -34,7 +34,7 @@ type CheckoutRow = {
   buyer_name: string | null
   currency: string | null
   amount_cents: number | null
-  courses: { title: string | null } | null
+  courses: { title: string | null } | Array<{ title: string | null }> | null
 }
 
 export default async function handler(req: ApiRequest, res: ApiResponse) {
@@ -107,6 +107,8 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
 
     const amount = typeof row.amount_cents === 'number' ? row.amount_cents / 100 : 0
 
+    const courseRelation = Array.isArray(row.courses) ? row.courses[0] : row.courses
+
     return {
       id: row.id,
       date: Date.parse(row.created_at),
@@ -114,7 +116,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
       currency: parseCurrency(row.currency),
       status: row.status,
       raw_status: row.status,
-      description: row.courses?.title?.trim() || 'Pedido na GenFlix',
+      description: courseRelation?.title?.trim() || 'Pedido na GenFlix',
       pdf_url: invoiceUrl,
       type: 'one_time' as const,
       asaas_checkout_id: row.external_payment_id,
@@ -136,4 +138,3 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
     },
   })
 }
-
