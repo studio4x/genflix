@@ -19,6 +19,7 @@ import { GenflixPublicFooter } from '@/components/public/genflix-public-footer'
 import { GenflixPublicHeader } from '@/components/public/genflix-public-header'
 import { LegalDocumentModal } from '@/components/public/legal-document-modal'
 import { brazilStateOptions, useBrazilCities } from '@/features/address/brazil-address'
+import { useBrazilCepLookup } from '@/features/address/brazil-cep'
 import { fetchPublicCourseDetailFromSupabase } from '@/features/public/genflix-public-content-api'
 import { genflixNavLinks, getGenflixCourseDetailBySlug, type GenflixCourseDetail } from '@/features/public/genflix-site-content'
 import { startCourseCheckout } from '@/features/public/courses/api'
@@ -123,6 +124,11 @@ export function PublicCheckoutPage() {
   const [checkoutCity, setCheckoutCity] = useState('')
   const [openDocument, setOpenDocument] = useState<LegalDocumentKey | null>(null)
   const { cities: checkoutCities, isLoadingCities } = useBrazilCities(checkoutState)
+  const {
+    address: checkoutCepAddress,
+    addressError: checkoutCepError,
+    isLoadingAddress: isLoadingCheckoutCepAddress,
+  } = useBrazilCepLookup(checkoutPostalCode)
 
   const courseRoute = `/cursos/${slug}`
   const canContinue = Boolean(session?.access_token && detail?.id)
@@ -207,6 +213,17 @@ export function PublicCheckoutPage() {
     user?.user_metadata?.phone,
     user?.user_metadata?.phone_number,
   ])
+
+  useEffect(() => {
+    if (!checkoutCepAddress) {
+      return
+    }
+
+    setCheckoutAddress(checkoutCepAddress.street)
+    setCheckoutProvince(checkoutCepAddress.district)
+    setCheckoutState(checkoutCepAddress.stateCode)
+    setCheckoutCity(checkoutCepAddress.cityCode)
+  }, [checkoutCepAddress])
 
   useEffect(() => {
     let isMounted = true
@@ -627,64 +644,21 @@ export function PublicCheckoutPage() {
 
                         <div className="grid gap-4 md:grid-cols-2">
                           <label className="block space-y-2 md:col-span-2">
-                            <span className="text-sm font-semibold text-[#4f656c]">Endereço</span>
-                            <input
-                              className="h-12 w-full rounded-[12px] border border-[#D8E6EB] bg-[#EDF4F6] px-4 text-sm text-[#183139] outline-none transition-colors placeholder:text-[#8BA0A7] focus:border-[#1398B7] focus:bg-white"
-                              type="text"
-                              value={checkoutAddress}
-                              onChange={(event) => setCheckoutAddress(event.target.value)}
-                              placeholder="Rua, avenida, praça..."
-                              autoComplete="address-line1"
-                            />
-                          </label>
-
-                          <label className="block space-y-2">
-                            <span className="text-sm font-semibold text-[#4f656c]">Número</span>
-                            <input
-                              className="h-12 w-full rounded-[12px] border border-[#D8E6EB] bg-[#EDF4F6] px-4 text-sm text-[#183139] outline-none transition-colors placeholder:text-[#8BA0A7] focus:border-[#1398B7] focus:bg-white"
-                              type="text"
-                              value={checkoutAddressNumber}
-                              onChange={(event) => setCheckoutAddressNumber(event.target.value)}
-                              placeholder="123"
-                              autoComplete="address-line2"
-                            />
-                          </label>
-
-                          <label className="block space-y-2">
-                            <span className="text-sm font-semibold text-[#4f656c]">Complemento</span>
-                            <input
-                              className="h-12 w-full rounded-[12px] border border-[#D8E6EB] bg-[#EDF4F6] px-4 text-sm text-[#183139] outline-none transition-colors placeholder:text-[#8BA0A7] focus:border-[#1398B7] focus:bg-white"
-                              type="text"
-                              value={checkoutAddressComplement}
-                              onChange={(event) => setCheckoutAddressComplement(event.target.value)}
-                              placeholder="Apto, bloco..."
-                              autoComplete="address-line3"
-                            />
-                          </label>
-
-                          <label className="block space-y-2">
                             <span className="text-sm font-semibold text-[#4f656c]">CEP</span>
                             <input
                               className="h-12 w-full rounded-[12px] border border-[#D8E6EB] bg-[#EDF4F6] px-4 text-sm text-[#183139] outline-none transition-colors placeholder:text-[#8BA0A7] focus:border-[#1398B7] focus:bg-white"
-                            type="text"
-                            value={checkoutPostalCode}
-                            onChange={(event) => setCheckoutPostalCode(formatPostalCode(event.target.value))}
-                            placeholder="00000-000"
-                            inputMode="numeric"
-                            autoComplete="postal-code"
-                          />
-                          </label>
-
-                          <label className="block space-y-2">
-                            <span className="text-sm font-semibold text-[#4f656c]">Bairro</span>
-                            <input
-                              className="h-12 w-full rounded-[12px] border border-[#D8E6EB] bg-[#EDF4F6] px-4 text-sm text-[#183139] outline-none transition-colors placeholder:text-[#8BA0A7] focus:border-[#1398B7] focus:bg-white"
                               type="text"
-                              value={checkoutProvince}
-                              onChange={(event) => setCheckoutProvince(event.target.value)}
-                              placeholder="Centro"
-                              autoComplete="address-level3"
+                              value={checkoutPostalCode}
+                              onChange={(event) => setCheckoutPostalCode(formatPostalCode(event.target.value))}
+                              placeholder="00000-000"
+                              inputMode="numeric"
+                              autoComplete="postal-code"
                             />
+                            <p className="text-xs text-[#6f838a]">
+                              {isLoadingCheckoutCepAddress
+                                ? 'Buscando endereco pelo CEP...'
+                                : checkoutCepError || 'Preencha o CEP para autocompletar seus dados.'}
+                            </p>
                           </label>
 
                           <label className="block space-y-2">
@@ -729,6 +703,54 @@ export function PublicCheckoutPage() {
                                 </option>
                               ))}
                             </select>
+                          </label>
+
+                          <label className="block space-y-2 md:col-span-2">
+                            <span className="text-sm font-semibold text-[#4f656c]">Endereço</span>
+                            <input
+                              className="h-12 w-full rounded-[12px] border border-[#D8E6EB] bg-[#EDF4F6] px-4 text-sm text-[#183139] outline-none transition-colors placeholder:text-[#8BA0A7] focus:border-[#1398B7] focus:bg-white"
+                              type="text"
+                              value={checkoutAddress}
+                              onChange={(event) => setCheckoutAddress(event.target.value)}
+                              placeholder="Rua, avenida, praça..."
+                              autoComplete="address-line1"
+                            />
+                          </label>
+
+                          <label className="block space-y-2">
+                            <span className="text-sm font-semibold text-[#4f656c]">Número</span>
+                            <input
+                              className="h-12 w-full rounded-[12px] border border-[#D8E6EB] bg-[#EDF4F6] px-4 text-sm text-[#183139] outline-none transition-colors placeholder:text-[#8BA0A7] focus:border-[#1398B7] focus:bg-white"
+                              type="text"
+                              value={checkoutAddressNumber}
+                              onChange={(event) => setCheckoutAddressNumber(event.target.value)}
+                              placeholder="123"
+                              autoComplete="address-line2"
+                            />
+                          </label>
+
+                          <label className="block space-y-2">
+                            <span className="text-sm font-semibold text-[#4f656c]">Complemento</span>
+                            <input
+                              className="h-12 w-full rounded-[12px] border border-[#D8E6EB] bg-[#EDF4F6] px-4 text-sm text-[#183139] outline-none transition-colors placeholder:text-[#8BA0A7] focus:border-[#1398B7] focus:bg-white"
+                              type="text"
+                              value={checkoutAddressComplement}
+                              onChange={(event) => setCheckoutAddressComplement(event.target.value)}
+                              placeholder="Apto, bloco..."
+                              autoComplete="address-line3"
+                            />
+                          </label>
+
+                          <label className="block space-y-2">
+                            <span className="text-sm font-semibold text-[#4f656c]">Bairro</span>
+                            <input
+                              className="h-12 w-full rounded-[12px] border border-[#D8E6EB] bg-[#EDF4F6] px-4 text-sm text-[#183139] outline-none transition-colors placeholder:text-[#8BA0A7] focus:border-[#1398B7] focus:bg-white"
+                              type="text"
+                              value={checkoutProvince}
+                              onChange={(event) => setCheckoutProvince(event.target.value)}
+                              placeholder="Centro"
+                              autoComplete="address-level3"
+                            />
                           </label>
                         </div>
                       </div>

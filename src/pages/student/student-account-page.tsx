@@ -6,6 +6,7 @@ import { useAuth } from '@/app/providers/auth-provider'
 import { PasswordField } from '@/components/forms/password-field'
 import { Button } from '@/components/ui/button'
 import { brazilStateOptions, useBrazilCities } from '@/features/address/brazil-address'
+import { useBrazilCepLookup } from '@/features/address/brazil-cep'
 import { uploadProfileAvatar } from '@/features/account/avatar-api'
 
 const localeOptions = [
@@ -111,6 +112,11 @@ export function StudentAccountPage() {
   const [isSavingPassword, setIsSavingPassword] = useState(false)
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false)
   const { cities, isLoadingCities } = useBrazilCities(state)
+  const {
+    address: cepAddress,
+    addressError: cepError,
+    isLoadingAddress: isLoadingCepAddress,
+  } = useBrazilCepLookup(postalCode)
 
   useEffect(() => {
     if (!profile) {
@@ -130,6 +136,17 @@ export function StudentAccountPage() {
     setLocale(profile.locale)
     setTimezone(profile.timezone)
   }, [profile])
+
+  useEffect(() => {
+    if (!cepAddress) {
+      return
+    }
+
+    setAddress(cepAddress.street)
+    setProvince(cepAddress.district)
+    setState(cepAddress.stateCode)
+    setCity(cepAddress.cityCode)
+  }, [cepAddress])
 
   const hasProfileChanges = useMemo(() => {
     if (!profile) {
@@ -347,42 +364,6 @@ export function StudentAccountPage() {
             </label>
 
             <label className="block space-y-2 md:col-span-2">
-              <span className="text-sm font-bold text-slate-700">Endereço</span>
-              <input
-                className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm font-medium text-slate-800 outline-none transition focus:border-blue-400 focus:bg-white"
-                type="text"
-                value={address}
-                onChange={(event) => setAddress(event.target.value)}
-                placeholder="Rua, avenida, praça..."
-                autoComplete="address-line1"
-              />
-            </label>
-
-            <label className="block space-y-2">
-              <span className="text-sm font-bold text-slate-700">Número</span>
-              <input
-                className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm font-medium text-slate-800 outline-none transition focus:border-blue-400 focus:bg-white"
-                type="text"
-                value={addressNumber}
-                onChange={(event) => setAddressNumber(event.target.value)}
-                placeholder="123"
-                autoComplete="address-line2"
-              />
-            </label>
-
-            <label className="block space-y-2">
-              <span className="text-sm font-bold text-slate-700">Complemento</span>
-              <input
-                className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm font-medium text-slate-800 outline-none transition focus:border-blue-400 focus:bg-white"
-                type="text"
-                value={addressComplement}
-                onChange={(event) => setAddressComplement(event.target.value)}
-                placeholder="Apto, bloco..."
-                autoComplete="address-line3"
-              />
-            </label>
-
-            <label className="block space-y-2">
               <span className="text-sm font-bold text-slate-700">CEP</span>
               <input
                 className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm font-medium text-slate-800 outline-none transition focus:border-blue-400 focus:bg-white"
@@ -393,18 +374,9 @@ export function StudentAccountPage() {
                 inputMode="numeric"
                 autoComplete="postal-code"
               />
-            </label>
-
-            <label className="block space-y-2">
-              <span className="text-sm font-bold text-slate-700">Bairro</span>
-              <input
-                className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm font-medium text-slate-800 outline-none transition focus:border-blue-400 focus:bg-white"
-                type="text"
-                value={province}
-                onChange={(event) => setProvince(event.target.value)}
-                placeholder="Centro"
-                autoComplete="address-level3"
-              />
+              <p className="text-xs font-medium text-slate-500">
+                {isLoadingCepAddress ? 'Buscando endereco pelo CEP...' : cepError || 'Digite o CEP para preencher os dados automaticamente.'}
+              </p>
             </label>
 
             <label className="block space-y-2">
@@ -445,6 +417,54 @@ export function StudentAccountPage() {
                   </option>
                 ))}
               </select>
+            </label>
+
+            <label className="block space-y-2 md:col-span-2">
+              <span className="text-sm font-bold text-slate-700">Endereço</span>
+              <input
+                className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm font-medium text-slate-800 outline-none transition focus:border-blue-400 focus:bg-white"
+                type="text"
+                value={address}
+                onChange={(event) => setAddress(event.target.value)}
+                placeholder="Rua, avenida, praça..."
+                autoComplete="address-line1"
+              />
+            </label>
+
+            <label className="block space-y-2">
+              <span className="text-sm font-bold text-slate-700">Número</span>
+              <input
+                className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm font-medium text-slate-800 outline-none transition focus:border-blue-400 focus:bg-white"
+                type="text"
+                value={addressNumber}
+                onChange={(event) => setAddressNumber(event.target.value)}
+                placeholder="123"
+                autoComplete="address-line2"
+              />
+            </label>
+
+            <label className="block space-y-2">
+              <span className="text-sm font-bold text-slate-700">Complemento</span>
+              <input
+                className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm font-medium text-slate-800 outline-none transition focus:border-blue-400 focus:bg-white"
+                type="text"
+                value={addressComplement}
+                onChange={(event) => setAddressComplement(event.target.value)}
+                placeholder="Apto, bloco..."
+                autoComplete="address-line3"
+              />
+            </label>
+
+            <label className="block space-y-2">
+              <span className="text-sm font-bold text-slate-700">Bairro</span>
+              <input
+                className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm font-medium text-slate-800 outline-none transition focus:border-blue-400 focus:bg-white"
+                type="text"
+                value={province}
+                onChange={(event) => setProvince(event.target.value)}
+                placeholder="Centro"
+                autoComplete="address-level3"
+              />
             </label>
 
             <label className="block space-y-2">
