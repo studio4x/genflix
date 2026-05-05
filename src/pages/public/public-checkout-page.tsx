@@ -50,12 +50,22 @@ export function PublicCheckoutPage() {
   const [checkoutError, setCheckoutError] = useState<string | null>(null)
   const [isAuthSubmitting, setIsAuthSubmitting] = useState(false)
   const [isStartingCheckout, setIsStartingCheckout] = useState(false)
-  const [pendingContinuation, setPendingContinuation] = useState(false)
+  const [checkoutFullName, setCheckoutFullName] = useState('')
+  const [checkoutEmail, setCheckoutEmail] = useState('')
   const [openDocument, setOpenDocument] = useState<LegalDocumentKey | null>(null)
 
   const courseRoute = `/cursos/${slug}`
   const canContinue = Boolean(session?.access_token && detail?.id)
   const userLabel = profile?.full_name?.trim() || user?.email || 'Conta autenticada'
+
+  useEffect(() => {
+    if (!canContinue) {
+      return
+    }
+
+    setCheckoutFullName(profile?.full_name?.trim() || user?.user_metadata?.full_name || '')
+    setCheckoutEmail(profile?.email?.trim() || user?.email || '')
+  }, [canContinue, profile?.email, profile?.full_name, user?.email, user?.user_metadata?.full_name])
 
   useEffect(() => {
     let isMounted = true
@@ -103,8 +113,8 @@ export function PublicCheckoutPage() {
       }
 
       const checkoutUrl = await startCourseCheckout(detail.id, session.access_token, {
-        buyerName: profile?.full_name || user?.user_metadata?.full_name,
-        buyerEmail: profile?.email || user?.email,
+        buyerName: checkoutFullName.trim() || profile?.full_name || user?.user_metadata?.full_name,
+        buyerEmail: checkoutEmail.trim() || profile?.email || user?.email,
       })
 
       window.location.href = checkoutUrl
@@ -113,16 +123,16 @@ export function PublicCheckoutPage() {
     } finally {
       setIsStartingCheckout(false)
     }
-  }, [detail, profile?.email, profile?.full_name, session?.access_token, user?.email, user?.user_metadata?.full_name])
-
-  useEffect(() => {
-    if (!pendingContinuation || !canContinue || isStartingCheckout) {
-      return
-    }
-
-    setPendingContinuation(false)
-    void handleContinue()
-  }, [canContinue, handleContinue, isStartingCheckout, pendingContinuation])
+  }, [
+    checkoutEmail,
+    checkoutFullName,
+    detail,
+    profile?.email,
+    profile?.full_name,
+    session?.access_token,
+    user?.email,
+    user?.user_metadata?.full_name,
+  ])
 
   async function handleLoginSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -134,7 +144,6 @@ export function PublicCheckoutPage() {
     try {
       await signIn(loginEmail, loginPassword)
       setAuthMessage('Login concluido. Preparando seu acesso ao checkout.')
-      setPendingContinuation(true)
     } catch (submitError) {
       setAuthError(submitError instanceof Error ? submitError.message : 'Falha no login.')
     } finally {
@@ -187,7 +196,6 @@ export function PublicCheckoutPage() {
         setAuthMessage('Conta criada. Confira seu e-mail para confirmar o acesso e depois volte para concluir a compra.')
       } else {
         setAuthMessage('Conta criada com sucesso. Preparando seu acesso ao checkout.')
-        setPendingContinuation(true)
       }
     } catch (submitError) {
       setAuthError(submitError instanceof Error ? submitError.message : 'Falha ao criar a conta.')
@@ -351,29 +359,60 @@ export function PublicCheckoutPage() {
                   ) : null}
 
                   {canContinue ? (
-                    <div className="rounded-[24px] border border-emerald-200 bg-emerald-50/70 p-5">
+                    <form
+                      className="rounded-[24px] border border-emerald-200 bg-emerald-50/70 p-5"
+                      onSubmit={(event) => {
+                        event.preventDefault()
+                        void handleContinue()
+                      }}
+                    >
                       <div className="flex items-start gap-3">
                         <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white text-emerald-600 shadow-sm">
                           <LogIn className="h-5 w-5" />
                         </div>
                         <div className="min-w-0">
-                          <p className="text-[11px] font-black uppercase tracking-[0.22em] text-emerald-700">Conta detectada</p>
+                          <p className="text-[11px] font-black uppercase tracking-[0.22em] text-emerald-700">Checkout liberado</p>
                           <h3 className="mt-2 text-xl font-black tracking-[-0.04em] text-[#183139]">{userLabel}</h3>
                           <p className="mt-2 text-sm leading-6 text-[#5f7077]">
-                            Voce ja pode seguir para o pagamento com a sua conta autenticada.
+                            Confira seus dados e siga para o pagamento.
                           </p>
                         </div>
                       </div>
 
+                      <div className="mt-5 space-y-4">
+                        <label className="block space-y-2">
+                          <span className="text-sm font-semibold text-[#4f656c]">Nome completo</span>
+                          <input
+                            className="h-12 w-full rounded-[12px] border border-[#D8E6EB] bg-[#EDF4F6] px-4 text-sm text-[#183139] outline-none transition-colors placeholder:text-[#8BA0A7] focus:border-[#1398B7] focus:bg-white"
+                            type="text"
+                            value={checkoutFullName}
+                            onChange={(event) => setCheckoutFullName(event.target.value)}
+                            placeholder="Seu nome"
+                            autoComplete="name"
+                          />
+                        </label>
+
+                        <label className="block space-y-2">
+                          <span className="text-sm font-semibold text-[#4f656c]">E-mail</span>
+                          <input
+                            className="h-12 w-full rounded-[12px] border border-[#D8E6EB] bg-[#EDF4F6] px-4 text-sm text-[#183139] outline-none transition-colors placeholder:text-[#8BA0A7] focus:border-[#1398B7] focus:bg-white"
+                            type="email"
+                            value={checkoutEmail}
+                            onChange={(event) => setCheckoutEmail(event.target.value)}
+                            placeholder="seu@email.com"
+                            autoComplete="email"
+                          />
+                        </label>
+                      </div>
+
                       <GenflixCtaButton
-                        type="button"
+                        type="submit"
                         disabled={isStartingCheckout}
-                        onClick={() => void handleContinue()}
                         className="mt-5 w-full px-5 py-3"
                       >
                         {isStartingCheckout ? 'Abrindo checkout...' : 'Continuar para pagamento'}
                       </GenflixCtaButton>
-                    </div>
+                    </form>
                   ) : (
                     <div className="rounded-[24px] border border-[#d8e6eb] bg-white p-5 shadow-[0_18px_42px_rgba(21,50,59,0.05)]">
                       <div className="grid gap-2 rounded-[18px] border border-[#D8E6EB] bg-[#F2F7F9] p-1 sm:grid-cols-2">
@@ -585,8 +624,11 @@ export function PublicCheckoutPage() {
                       </div>
                     </div>
                   )}
-
-                  {canContinue ? null : (
+                  {canContinue ? (
+                    <p className="text-xs leading-6 text-[#8a9aa0]">
+                      Os dados acima podem ser ajustados antes de seguir para o pagamento.
+                    </p>
+                  ) : (
                     <p className="text-xs leading-6 text-[#8a9aa0]">
                       Se voce ainda nao tem cadastro, crie sua conta aqui mesmo. Se ja possui, entre com seus dados e continuaremos o checkout em seguida.
                     </p>
