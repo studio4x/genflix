@@ -319,7 +319,6 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
   }
 
   if (priceCents <= 0) {
-  if (priceCents <= 0) {
     const releaseResult = await adminClient
       .from('course_releases')
       .upsert(
@@ -335,7 +334,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
           release_source: 'purchase',
           release_status: 'active',
           source_system: 'asaas',
-          external_reference_id: ree--,
+          external_reference_id: `free-${course.id}-${resolvedUserId}`,
           managed_by_integration: true,
           last_synced_at: new Date().toISOString(),
         },
