@@ -230,7 +230,7 @@ export function PublicCheckoutPage() {
 
       <section className="pb-16 pt-8 sm:pt-12">
         <div className="public-site-container">
-          <div className="mx-auto max-w-[1120px] overflow-hidden rounded-[32px] border border-[#d8e6eb] bg-white shadow-[0_28px_70px_rgba(21,50,59,0.08)]">
+          <div className="mx-auto max-w-[1120px] overflow-hidden rounded-[32px] border border-transparent bg-transparent shadow-none">
             <div className="grid gap-6 lg:grid-cols-[0.92fr_1.08fr]">
               <div className="space-y-6">
                 <aside className="flex min-h-[320px] flex-col justify-between rounded-[32px] bg-[linear-gradient(160deg,#0a3640_0%,#1398b7_100%)] px-7 py-8 text-white sm:px-10 sm:py-10">
@@ -255,7 +255,7 @@ export function PublicCheckoutPage() {
 
                 </aside>
 
-                <div className="overflow-hidden rounded-[24px] border border-[#d8e6eb] bg-[#f2f7f9] shadow-[0_14px_32px_rgba(21,50,59,0.03)]">
+                <div className="overflow-hidden rounded-[24px] border border-[#d8e6eb] bg-[#eef5f7] shadow-[0_14px_32px_rgba(21,50,59,0.03)]">
                   <div className="relative aspect-[4/3] bg-[#173039]">
                     <CourseCoverMedia
                       src={detail.coverImage}
@@ -278,7 +278,7 @@ export function PublicCheckoutPage() {
                 </div>
               </div>
 
-              <div className="px-7 py-8 sm:px-10 sm:py-10">
+              <div className="rounded-[32px] border border-[#d8e6eb] bg-white px-7 py-8 shadow-[0_28px_70px_rgba(21,50,59,0.08)] sm:px-10 sm:py-10">
                 <p className="hidden text-[11px] font-black uppercase tracking-[0.28em] text-[#1398b7]">Proximos passos</p>
                 <h2 className="hidden mt-4 text-2xl font-extrabold tracking-[-0.05em] text-[#183139]">
                   Fique atento aos detalhes da sua inscricao
