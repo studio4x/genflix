@@ -33,6 +33,7 @@ const startCheckoutSchema = z.object({
   buyerAddressNumber: z.string().trim().optional(),
   buyerAddressComplement: z.string().trim().optional(),
   buyerPostalCode: z.string().trim().optional(),
+  buyerState: z.string().trim().optional(),
   buyerProvince: z.string().trim().optional(),
   buyerCity: z.string().trim().optional(),
 })
@@ -120,6 +121,11 @@ function normalizePostalCode(value: string | null | undefined) {
   return digits.length > 0 ? digits : null
 }
 
+function normalizeStateCode(value: string | null | undefined) {
+  const normalized = normalizeOptionalText(value)?.toUpperCase()
+  return normalized && normalized.length > 0 ? normalized.slice(0, 2) : null
+}
+
 function limitAsaasName(value: string, fallback: string) {
   const normalized = normalizeOptionalText(value) ?? normalizeOptionalText(fallback) ?? ''
   return normalized.slice(0, 30)
@@ -169,7 +175,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
 
   const { data: profile, error: profileError } = await adminClient
     .from('profiles')
-    .select('id, email, full_name, cpf, whatsapp_number, address, address_number, address_complement, postal_code, province, city')
+    .select('id, email, full_name, cpf, whatsapp_number, address, address_number, address_complement, postal_code, state, province, city')
     .eq('id', userData.user.id)
     .maybeSingle()
 
@@ -247,6 +253,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
   const buyerAddressNumber = normalizeOptionalText(parsed.data.buyerAddressNumber) ?? normalizeOptionalText(profile?.address_number)
   const buyerAddressComplement = normalizeOptionalText(parsed.data.buyerAddressComplement) ?? normalizeOptionalText(profile?.address_complement)
   const buyerPostalCode = normalizePostalCode(parsed.data.buyerPostalCode) ?? normalizePostalCode(profile?.postal_code)
+  const buyerState = normalizeStateCode(parsed.data.buyerState) ?? normalizeStateCode(profile?.state)
   const buyerProvince = normalizeOptionalText(parsed.data.buyerProvince) ?? normalizeOptionalText(profile?.province)
   const buyerCity = normalizeCityCode(parsed.data.buyerCity) ?? normalizeCityCode(profile?.city)
 
@@ -265,7 +272,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
     return
   }
 
-  if (!buyerAddress || !buyerAddressNumber || !buyerPostalCode || buyerPostalCode.length !== 8 || !buyerProvince || !buyerCity) {
+  if (!buyerAddress || !buyerAddressNumber || !buyerPostalCode || buyerPostalCode.length !== 8 || !buyerState || !buyerProvince || !buyerCity) {
     jsonResponse(res, 400, { error: 'Informe o endereço completo para iniciar o checkout.' })
     return
   }
@@ -403,6 +410,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
     buyer_address_number: buyerAddressNumber,
     buyer_address_complement: buyerAddressComplement,
     buyer_postal_code: buyerPostalCode,
+    buyer_state: buyerState,
     buyer_province: buyerProvince,
     buyer_city: buyerCity,
     gateway_code: 'asaas',

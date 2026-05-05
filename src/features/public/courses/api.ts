@@ -45,6 +45,7 @@ export type StartCourseCheckoutBuyer = {
   buyerAddressNumber?: string
   buyerAddressComplement?: string
   buyerPostalCode?: string
+  buyerState?: string
   buyerProvince?: string
   buyerCity?: string
 }
@@ -70,6 +71,7 @@ export async function startCourseCheckout(
       buyerAddressNumber: buyer?.buyerAddressNumber,
       buyerAddressComplement: buyer?.buyerAddressComplement,
       buyerPostalCode: buyer?.buyerPostalCode,
+      buyerState: buyer?.buyerState,
       buyerProvince: buyer?.buyerProvince,
       buyerCity: buyer?.buyerCity,
     }),

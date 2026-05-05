@@ -11,6 +11,7 @@ export interface Profile {
   address_number: string | null
   address_complement: string | null
   postal_code: string | null
+  state: string | null
   province: string | null
   city: string | null
   timezone: string
@@ -25,6 +26,7 @@ export interface UpdateProfileInput {
   address_number?: string | null
   address_complement?: string | null
   postal_code?: string | null
+  state?: string | null
   province?: string | null
   city?: string | null
   timezone?: string

@@ -66,7 +66,7 @@ async function loadProfileAndRoles(userId: string) {
   const [profileResult, rolesResult] = await Promise.all([
     supabase
       .from('profiles')
-      .select('id, email, full_name, avatar_url, cpf, whatsapp_number, address, address_number, address_complement, postal_code, province, city, timezone, locale')
+      .select('id, email, full_name, avatar_url, cpf, whatsapp_number, address, address_number, address_complement, postal_code, state, province, city, timezone, locale')
       .eq('id', userId)
       .maybeSingle(),
     supabase
@@ -92,7 +92,7 @@ async function loadProfileAndRoles(userId: string) {
 async function loadProfile(userId: string) {
   const profileResult = await supabase
     .from('profiles')
-    .select('id, email, full_name, avatar_url, cpf, whatsapp_number, address, address_number, address_complement, postal_code, province, city, timezone, locale')
+    .select('id, email, full_name, avatar_url, cpf, whatsapp_number, address, address_number, address_complement, postal_code, state, province, city, timezone, locale')
     .eq('id', userId)
     .maybeSingle()
 
@@ -117,7 +117,7 @@ async function syncProfileNameFromMetadata(userId: string, profile: Profile | nu
     .from('profiles')
     .update({ full_name: metadataName })
     .eq('id', userId)
-    .select('id, email, full_name, avatar_url, cpf, whatsapp_number, address, address_number, address_complement, postal_code, province, city, timezone, locale')
+    .select('id, email, full_name, avatar_url, cpf, whatsapp_number, address, address_number, address_complement, postal_code, state, province, city, timezone, locale')
     .single()
 
   if (updateResult.error) {
@@ -362,6 +362,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       ...(Object.prototype.hasOwnProperty.call(payload, 'postal_code')
         ? { postal_code: payload.postal_code }
         : {}),
+      ...(Object.prototype.hasOwnProperty.call(payload, 'state')
+        ? { state: payload.state }
+        : {}),
       ...(Object.prototype.hasOwnProperty.call(payload, 'province')
         ? { province: payload.province }
         : {}),
@@ -387,7 +390,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .from('profiles')
       .update(nextPayload)
       .eq('id', currentUserIdRef.current)
-      .select('id, email, full_name, avatar_url, cpf, whatsapp_number, address, address_number, address_complement, postal_code, province, city, timezone, locale')
+      .select('id, email, full_name, avatar_url, cpf, whatsapp_number, address, address_number, address_complement, postal_code, state, province, city, timezone, locale')
       .single()
 
     if (result.error) {

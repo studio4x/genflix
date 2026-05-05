@@ -5,6 +5,7 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '@/app/providers/auth-provider'
 import { PasswordField } from '@/components/forms/password-field'
 import { Button } from '@/components/ui/button'
+import { brazilStateOptions, useBrazilCities } from '@/features/address/brazil-address'
 import { uploadProfileAvatar } from '@/features/account/avatar-api'
 
 const localeOptions = [
@@ -80,6 +81,10 @@ function formatPostalCode(value: string) {
   return `${digits.slice(0, 5)}-${digits.slice(5)}`
 }
 
+function normalizeStateCode(value: string) {
+  return value.trim().toUpperCase().slice(0, 2)
+}
+
 export function StudentAccountPage() {
   const { profile, updatePassword, updateProfile, user } = useAuth()
   const [fullName, setFullName] = useState('')
@@ -89,6 +94,7 @@ export function StudentAccountPage() {
   const [addressNumber, setAddressNumber] = useState('')
   const [addressComplement, setAddressComplement] = useState('')
   const [postalCode, setPostalCode] = useState('')
+  const [state, setState] = useState('')
   const [province, setProvince] = useState('')
   const [city, setCity] = useState('')
   const [locale, setLocale] = useState('pt-BR')
@@ -104,6 +110,7 @@ export function StudentAccountPage() {
   const [isSavingProfile, setIsSavingProfile] = useState(false)
   const [isSavingPassword, setIsSavingPassword] = useState(false)
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false)
+  const { cities, isLoadingCities } = useBrazilCities(state)
 
   useEffect(() => {
     if (!profile) {
@@ -117,6 +124,7 @@ export function StudentAccountPage() {
     setAddressNumber(profile.address_number ?? '')
     setAddressComplement(profile.address_complement ?? '')
     setPostalCode(formatPostalCode(profile.postal_code ?? ''))
+    setState(normalizeStateCode(profile.state ?? ''))
     setProvince(profile.province ?? '')
     setCity(profile.city ?? '')
     setLocale(profile.locale)
@@ -136,6 +144,7 @@ export function StudentAccountPage() {
       normalizeText(addressNumber) !== (profile.address_number ?? '') ||
       normalizeText(addressComplement) !== (profile.address_complement ?? '') ||
       normalizeDigits(postalCode) !== normalizeDigits(profile.postal_code ?? '') ||
+      normalizeStateCode(state) !== (profile.state ?? '') ||
       normalizeText(province) !== (profile.province ?? '') ||
       normalizeDigits(city) !== normalizeDigits(profile.city ?? '') ||
       locale !== profile.locale ||
@@ -151,6 +160,7 @@ export function StudentAccountPage() {
     locale,
     postalCode,
     profile,
+    state,
     province,
     timezone,
     whatsAppNumber,
@@ -177,6 +187,7 @@ export function StudentAccountPage() {
         address_number: normalizeText(addressNumber) || null,
         address_complement: normalizeText(addressComplement) || null,
         postal_code: normalizeDigits(postalCode) || null,
+        state: normalizeStateCode(state) || null,
         province: normalizeText(province) || null,
         city: normalizeDigits(city) || null,
         locale,
@@ -397,16 +408,43 @@ export function StudentAccountPage() {
             </label>
 
             <label className="block space-y-2">
-              <span className="text-sm font-bold text-slate-700">Cidade (código IBGE)</span>
-              <input
+              <span className="text-sm font-bold text-slate-700">Estado</span>
+              <select
                 className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm font-medium text-slate-800 outline-none transition focus:border-blue-400 focus:bg-white"
-                type="text"
+                value={state}
+                onChange={(event) => {
+                  setState(event.target.value)
+                  setCity('')
+                }}
+                autoComplete="address-level1"
+              >
+                <option value="">Selecione</option>
+                {brazilStateOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="block space-y-2">
+              <span className="text-sm font-bold text-slate-700">Cidade</span>
+              <select
+                className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm font-medium text-slate-800 outline-none transition focus:border-blue-400 focus:bg-white disabled:cursor-not-allowed disabled:opacity-60"
                 value={city}
                 onChange={(event) => setCity(event.target.value)}
-                placeholder="4205407"
-                inputMode="numeric"
+                disabled={!state || isLoadingCities}
                 autoComplete="address-level2"
-              />
+              >
+                <option value="">
+                  {!state ? 'Selecione o estado' : isLoadingCities ? 'Carregando cidades...' : 'Selecione a cidade'}
+                </option>
+                {cities.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
             </label>
 
             <label className="block space-y-2">

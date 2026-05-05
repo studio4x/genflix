@@ -18,6 +18,7 @@ import { GenflixCtaButton } from '@/components/public/genflix-cta-button'
 import { GenflixPublicFooter } from '@/components/public/genflix-public-footer'
 import { GenflixPublicHeader } from '@/components/public/genflix-public-header'
 import { LegalDocumentModal } from '@/components/public/legal-document-modal'
+import { brazilStateOptions, useBrazilCities } from '@/features/address/brazil-address'
 import { fetchPublicCourseDetailFromSupabase } from '@/features/public/genflix-public-content-api'
 import { genflixNavLinks, getGenflixCourseDetailBySlug, type GenflixCourseDetail } from '@/features/public/genflix-site-content'
 import { startCourseCheckout } from '@/features/public/courses/api'
@@ -84,6 +85,10 @@ function formatPostalCode(value: string) {
   return `${digits.slice(0, 5)}-${digits.slice(5)}`
 }
 
+function normalizeStateCode(value: string) {
+  return value.trim().toUpperCase().slice(0, 2)
+}
+
 export function PublicCheckoutPage() {
   const { slug = '' } = useParams()
   const { isLoading, session, user, roles, profile, signIn, signUp, updateProfile } = useAuth()
@@ -113,9 +118,11 @@ export function PublicCheckoutPage() {
   const [checkoutAddressNumber, setCheckoutAddressNumber] = useState('')
   const [checkoutAddressComplement, setCheckoutAddressComplement] = useState('')
   const [checkoutPostalCode, setCheckoutPostalCode] = useState('')
+  const [checkoutState, setCheckoutState] = useState('')
   const [checkoutProvince, setCheckoutProvince] = useState('')
   const [checkoutCity, setCheckoutCity] = useState('')
   const [openDocument, setOpenDocument] = useState<LegalDocumentKey | null>(null)
+  const { cities: checkoutCities, isLoadingCities } = useBrazilCities(checkoutState)
 
   const courseRoute = `/cursos/${slug}`
   const canContinue = Boolean(session?.access_token && detail?.id)
@@ -159,6 +166,12 @@ export function PublicCheckoutPage() {
           (typeof user?.user_metadata?.postal_code === 'string' ? user.user_metadata.postal_code.trim() : ''),
       ),
     )
+    setCheckoutState(
+      normalizeStateCode(
+        profile?.state?.trim() ||
+          (typeof user?.user_metadata?.state === 'string' ? user.user_metadata.state.trim() : ''),
+      ),
+    )
     setCheckoutProvince(
       profile?.province?.trim() ||
         (typeof user?.user_metadata?.province === 'string' ? user.user_metadata.province.trim() : ''),
@@ -177,12 +190,14 @@ export function PublicCheckoutPage() {
     profile?.cpf,
     profile?.city,
     profile?.postal_code,
+    profile?.state,
     profile?.province,
     profile?.whatsapp_number,
     user?.user_metadata?.address,
     user?.user_metadata?.address_number,
     user?.user_metadata?.address_complement,
     user?.user_metadata?.postal_code,
+    user?.user_metadata?.state,
     user?.user_metadata?.province,
     user?.user_metadata?.city,
     user?.email,
@@ -247,9 +262,10 @@ export function PublicCheckoutPage() {
       const normalizedAddress = normalizeText(checkoutAddress)
       const normalizedAddressNumber = normalizeText(checkoutAddressNumber)
       const normalizedPostalCode = checkoutPostalCode.replace(/\D/g, '')
+      const normalizedState = normalizeStateCode(checkoutState)
       const normalizedProvince = normalizeText(checkoutProvince)
       const normalizedCity = checkoutCity.replace(/\D/g, '')
-      if (!normalizedAddress || !normalizedAddressNumber || normalizedPostalCode.length !== 8 || !normalizedProvince || !normalizedCity) {
+      if (!normalizedAddress || !normalizedAddressNumber || normalizedPostalCode.length !== 8 || !normalizedState || !normalizedProvince || !normalizedCity) {
         throw new Error('Informe os dados de endereço para continuar.')
       }
 
@@ -265,6 +281,7 @@ export function PublicCheckoutPage() {
         address_number: normalizedAddressNumber,
         address_complement: normalizeText(checkoutAddressComplement) || null,
         postal_code: normalizedPostalCode,
+        state: normalizedState,
         province: normalizedProvince,
         city: normalizedCity,
       })
@@ -278,6 +295,7 @@ export function PublicCheckoutPage() {
         buyerAddressNumber: normalizedAddressNumber,
         buyerAddressComplement: normalizeText(checkoutAddressComplement) || undefined,
         buyerPostalCode: normalizedPostalCode,
+        buyerState: normalizedState,
         buyerProvince: normalizedProvince,
         buyerCity: normalizedCity,
       })
@@ -305,6 +323,7 @@ export function PublicCheckoutPage() {
     checkoutAddressNumber,
     checkoutAddressComplement,
     checkoutPostalCode,
+    checkoutState,
     checkoutProvince,
     checkoutCity,
     updateProfile,
@@ -669,16 +688,47 @@ export function PublicCheckoutPage() {
                           </label>
 
                           <label className="block space-y-2">
-                            <span className="text-sm font-semibold text-[#4f656c]">Cidade (código IBGE)</span>
-                            <input
-                              className="h-12 w-full rounded-[12px] border border-[#D8E6EB] bg-[#EDF4F6] px-4 text-sm text-[#183139] outline-none transition-colors placeholder:text-[#8BA0A7] focus:border-[#1398B7] focus:bg-white"
-                              type="text"
+                            <span className="text-sm font-semibold text-[#4f656c]">Estado</span>
+                            <select
+                              className="h-12 w-full rounded-[12px] border border-[#D8E6EB] bg-[#EDF4F6] px-4 text-sm text-[#183139] outline-none transition-colors focus:border-[#1398B7] focus:bg-white"
+                              value={checkoutState}
+                              onChange={(event) => {
+                                setCheckoutState(event.target.value)
+                                setCheckoutCity('')
+                              }}
+                              autoComplete="address-level1"
+                            >
+                              <option value="">Selecione</option>
+                              {brazilStateOptions.map((option) => (
+                                <option key={option.value} value={option.value}>
+                                  {option.label}
+                                </option>
+                              ))}
+                            </select>
+                          </label>
+
+                          <label className="block space-y-2">
+                            <span className="text-sm font-semibold text-[#4f656c]">Cidade</span>
+                            <select
+                              className="h-12 w-full rounded-[12px] border border-[#D8E6EB] bg-[#EDF4F6] px-4 text-sm text-[#183139] outline-none transition-colors focus:border-[#1398B7] focus:bg-white disabled:cursor-not-allowed disabled:opacity-60"
                               value={checkoutCity}
                               onChange={(event) => setCheckoutCity(event.target.value)}
-                              placeholder="4205407"
-                              inputMode="numeric"
+                              disabled={!checkoutState || isLoadingCities}
                               autoComplete="address-level2"
-                            />
+                            >
+                              <option value="">
+                                {!checkoutState
+                                  ? 'Selecione o estado'
+                                  : isLoadingCities
+                                    ? 'Carregando cidades...'
+                                    : 'Selecione a cidade'}
+                              </option>
+                              {checkoutCities.map((option) => (
+                                <option key={option.value} value={option.value}>
+                                  {option.label}
+                                </option>
+                              ))}
+                            </select>
                           </label>
                         </div>
                       </div>
