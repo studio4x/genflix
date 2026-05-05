@@ -24,6 +24,7 @@ import { fetchPublicCourseDetailFromSupabase } from '@/features/public/genflix-p
 import { genflixNavLinks, getGenflixCourseDetailBySlug, type GenflixCourseDetail } from '@/features/public/genflix-site-content'
 import { startCourseCheckout } from '@/features/public/courses/api'
 import type { LegalDocumentKey } from '@/features/public/legal-documents'
+import { supabase } from '@/services/supabase/client'
 
 type CheckoutAuthMode = 'login' | 'signup'
 
@@ -490,8 +491,15 @@ export function PublicCheckoutPage() {
 
     try {
       const result = await signUp(signupFullName, signupEmail, signupPassword)
+      let checkoutAccessToken = result.accessToken ?? null
 
-      const checkoutUrl = await startCourseCheckout(detail.id, result.accessToken, {
+      if (!checkoutAccessToken) {
+        await signIn(signupEmail.trim(), signupPassword)
+        const sessionResult = await supabase.auth.getSession()
+        checkoutAccessToken = sessionResult.data.session?.access_token ?? null
+      }
+
+      const checkoutUrl = await startCourseCheckout(detail.id, checkoutAccessToken, {
         buyerName: signupFullName.trim(),
         buyerEmail: signupEmail.trim(),
         buyerDocument: normalizedDocument,
@@ -1026,34 +1034,6 @@ export function PublicCheckoutPage() {
                               </label>
                             </div>
 
-                            <label className="flex items-start gap-3 rounded-[14px] border border-[#D8E6EB] bg-[#F2F7F9] px-4 py-3 text-sm leading-6 text-[#5a6d73]">
-                              <input
-                                type="checkbox"
-                                checked={acceptTerms}
-                                onChange={(event) => setAcceptTerms(event.target.checked)}
-                                className="mt-1 h-4 w-4 rounded border-[#D8E6EB] text-[#1398B7] focus:ring-[#1398B7]"
-                              />
-                              <span>
-                                Concordo com os{' '}
-                                <button
-                                  type="button"
-                                  onClick={() => setOpenDocument('terms')}
-                                  className="font-semibold text-[#1398B7] hover:text-[#0a3640]"
-                                >
-                                  Termos de Uso
-                                </button>{' '}
-                                e{' '}
-                                <button
-                                  type="button"
-                                  onClick={() => setOpenDocument('privacy')}
-                                  className="font-semibold text-[#1398B7] hover:text-[#0a3640]"
-                                >
-                                  Politica de Privacidade
-                                </button>
-                                .
-                              </span>
-                            </label>
-
                             <div className="space-y-3 rounded-[20px] border border-[#D8E6EB] bg-[#F2F7F9] p-3">
                               <div>
                                 <p className="text-[11px] font-black uppercase tracking-[0.22em] text-[#1398b7]">Dados para o pagamento</p>
@@ -1210,6 +1190,34 @@ export function PublicCheckoutPage() {
                                 Ja tenho conta
                               </button>
                             </div>
+
+                            <label className="flex items-start gap-3 rounded-[14px] border border-[#D8E6EB] bg-[#F2F7F9] px-4 py-3 text-sm leading-6 text-[#5a6d73]">
+                              <input
+                                type="checkbox"
+                                checked={acceptTerms}
+                                onChange={(event) => setAcceptTerms(event.target.checked)}
+                                className="mt-1 h-4 w-4 rounded border-[#D8E6EB] text-[#1398B7] focus:ring-[#1398B7]"
+                              />
+                              <span>
+                                Concordo com os{' '}
+                                <button
+                                  type="button"
+                                  onClick={() => setOpenDocument('terms')}
+                                  className="font-semibold text-[#1398B7] hover:text-[#0a3640]"
+                                >
+                                  Termos de Uso
+                                </button>{' '}
+                                e{' '}
+                                <button
+                                  type="button"
+                                  onClick={() => setOpenDocument('privacy')}
+                                  className="font-semibold text-[#1398B7] hover:text-[#0a3640]"
+                                >
+                                  Politica de Privacidade
+                                </button>
+                                .
+                              </span>
+                            </label>
 
                             <GenflixCtaButton type="submit" disabled={isAuthSubmitting} className="h-12 w-full px-5">
                               {isAuthSubmitting ? 'Criando conta...' : 'Criar conta e continuar'}
