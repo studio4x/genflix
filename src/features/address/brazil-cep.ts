@@ -14,7 +14,7 @@ function normalizeDigits(value: string) {
   return value.replace(/\D/g, '')
 }
 
-async function fetchBrazilCepAddress(postalCode: string) {
+export async function resolveBrazilCepAddress(postalCode: string) {
   const normalizedPostalCode = normalizeDigits(postalCode)
   const cachedAddress = cepCache.get(normalizedPostalCode)
 
@@ -75,7 +75,7 @@ export function useBrazilCepLookup(postalCode: string) {
       setIsLoadingAddress(true)
       setAddressError(null)
 
-      void fetchBrazilCepAddress(normalizedPostalCode)
+      void resolveBrazilCepAddress(normalizedPostalCode)
         .then((nextAddress) => {
           if (isActive) {
             setAddress(nextAddress)

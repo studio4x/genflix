@@ -19,7 +19,7 @@ import { GenflixPublicFooter } from '@/components/public/genflix-public-footer'
 import { GenflixPublicHeader } from '@/components/public/genflix-public-header'
 import { LegalDocumentModal } from '@/components/public/legal-document-modal'
 import { brazilStateOptions, useBrazilCities } from '@/features/address/brazil-address'
-import { useBrazilCepLookup } from '@/features/address/brazil-cep'
+import { resolveBrazilCepAddress, useBrazilCepLookup } from '@/features/address/brazil-cep'
 import { fetchPublicCourseDetailFromSupabase } from '@/features/public/genflix-public-content-api'
 import { genflixNavLinks, getGenflixCourseDetailBySlug, type GenflixCourseDetail } from '@/features/public/genflix-site-content'
 import { startCourseCheckout } from '@/features/public/courses/api'
@@ -282,7 +282,36 @@ export function PublicCheckoutPage() {
       const normalizedState = normalizeStateCode(checkoutState)
       const normalizedProvince = normalizeText(checkoutProvince)
       const normalizedCity = checkoutCity.replace(/\D/g, '')
-      if (!normalizedAddress || !normalizedAddressNumber || normalizedPostalCode.length !== 8 || !normalizedState || !normalizedProvince || !normalizedCity) {
+      let resolvedAddress = normalizedAddress
+      let resolvedState = normalizedState
+      let resolvedProvince = normalizedProvince
+      let resolvedCity = normalizedCity
+
+      if (normalizedPostalCode.length === 8 && (!resolvedAddress || !resolvedState || !resolvedProvince || !resolvedCity)) {
+        try {
+          const cepAddress = await resolveBrazilCepAddress(normalizedPostalCode)
+          if (!resolvedAddress && cepAddress.street) {
+            resolvedAddress = cepAddress.street
+            setCheckoutAddress(cepAddress.street)
+          }
+          if (!resolvedProvince && cepAddress.district) {
+            resolvedProvince = cepAddress.district
+            setCheckoutProvince(cepAddress.district)
+          }
+          if (!resolvedState && cepAddress.stateCode) {
+            resolvedState = cepAddress.stateCode
+            setCheckoutState(cepAddress.stateCode)
+          }
+          if (!resolvedCity && cepAddress.cityCode) {
+            resolvedCity = cepAddress.cityCode
+            setCheckoutCity(cepAddress.cityCode)
+          }
+        } catch {
+          // Mantemos a validacao normal abaixo para exibir um erro amigavel.
+        }
+      }
+
+      if (!resolvedAddress || !normalizedAddressNumber || normalizedPostalCode.length !== 8 || !resolvedState || !resolvedProvince || !resolvedCity) {
         throw new Error('Informe os dados de endereço para continuar.')
       }
 
@@ -294,13 +323,13 @@ export function PublicCheckoutPage() {
         full_name: checkoutFullName.trim() || profile?.full_name || user?.user_metadata?.full_name || null,
         cpf: normalizedDocument,
         whatsapp_number: normalizedPhone,
-        address: normalizedAddress,
+        address: resolvedAddress,
         address_number: normalizedAddressNumber,
         address_complement: normalizeText(checkoutAddressComplement) || null,
         postal_code: normalizedPostalCode,
-        state: normalizedState,
-        province: normalizedProvince,
-        city: normalizedCity,
+        state: resolvedState,
+        province: resolvedProvince,
+        city: resolvedCity,
       })
 
       const checkoutUrl = await startCourseCheckout(detail.id, session.access_token, {
@@ -308,13 +337,13 @@ export function PublicCheckoutPage() {
         buyerEmail: checkoutEmail.trim() || profile?.email || user?.email,
         buyerDocument: normalizedDocument,
         buyerPhone: normalizedPhone,
-        buyerAddress: normalizedAddress,
+        buyerAddress: resolvedAddress,
         buyerAddressNumber: normalizedAddressNumber,
         buyerAddressComplement: normalizeText(checkoutAddressComplement) || undefined,
         buyerPostalCode: normalizedPostalCode,
-        buyerState: normalizedState,
-        buyerProvince: normalizedProvince,
-        buyerCity: normalizedCity,
+        buyerState: resolvedState,
+        buyerProvince: resolvedProvince,
+        buyerCity: resolvedCity,
       })
 
       window.location.href = checkoutUrl
