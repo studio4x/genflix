@@ -29,6 +29,12 @@ const startCheckoutSchema = z.object({
   buyerEmail: z.string().trim().email('E-mail inválido.').optional().or(z.literal('')),
   buyerDocument: z.string().trim().optional(),
   buyerPhone: z.string().trim().optional(),
+  buyerAddress: z.string().trim().optional(),
+  buyerAddressNumber: z.string().trim().optional(),
+  buyerAddressComplement: z.string().trim().optional(),
+  buyerPostalCode: z.string().trim().optional(),
+  buyerProvince: z.string().trim().optional(),
+  buyerCity: z.string().trim().optional(),
 })
 
 function getErrorMessage(error: unknown) {
@@ -104,6 +110,16 @@ function normalizePhoneNumber(value: string | null | undefined) {
   return digits.length > 0 ? digits : null
 }
 
+function normalizeCityCode(value: string | null | undefined) {
+  const digits = (value ?? '').replace(/\D/g, '')
+  return digits.length > 0 ? digits : null
+}
+
+function normalizePostalCode(value: string | null | undefined) {
+  const digits = (value ?? '').replace(/\D/g, '')
+  return digits.length > 0 ? digits : null
+}
+
 function limitAsaasName(value: string, fallback: string) {
   const normalized = normalizeOptionalText(value) ?? normalizeOptionalText(fallback) ?? ''
   return normalized.slice(0, 30)
@@ -153,7 +169,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
 
   const { data: profile, error: profileError } = await adminClient
     .from('profiles')
-    .select('id, email, full_name, cpf, whatsapp_number')
+    .select('id, email, full_name, cpf, whatsapp_number, address, address_number, address_complement, postal_code, province, city')
     .eq('id', userData.user.id)
     .maybeSingle()
 
@@ -227,6 +243,12 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
     normalizePhoneNumber(profile?.whatsapp_number) ??
     normalizePhoneNumber((userData.user.user_metadata as Record<string, unknown> | null | undefined)?.phone as string | undefined) ??
     normalizePhoneNumber((userData.user.user_metadata as Record<string, unknown> | null | undefined)?.phone_number as string | undefined)
+  const buyerAddress = normalizeOptionalText(parsed.data.buyerAddress) ?? normalizeOptionalText(profile?.address)
+  const buyerAddressNumber = normalizeOptionalText(parsed.data.buyerAddressNumber) ?? normalizeOptionalText(profile?.address_number)
+  const buyerAddressComplement = normalizeOptionalText(parsed.data.buyerAddressComplement) ?? normalizeOptionalText(profile?.address_complement)
+  const buyerPostalCode = normalizePostalCode(parsed.data.buyerPostalCode) ?? normalizePostalCode(profile?.postal_code)
+  const buyerProvince = normalizeOptionalText(parsed.data.buyerProvince) ?? normalizeOptionalText(profile?.province)
+  const buyerCity = normalizeCityCode(parsed.data.buyerCity) ?? normalizeCityCode(profile?.city)
 
   if (!buyerEmail) {
     jsonResponse(res, 400, { error: 'Informe um e-mail válido para iniciar o checkout.' })
@@ -240,6 +262,11 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
 
   if (!buyerPhone || buyerPhone.length < 10) {
     jsonResponse(res, 400, { error: 'Informe um celular válido para iniciar o checkout.' })
+    return
+  }
+
+  if (!buyerAddress || !buyerAddressNumber || !buyerPostalCode || buyerPostalCode.length !== 8 || !buyerProvince || !buyerCity) {
+    jsonResponse(res, 400, { error: 'Informe o endereço completo para iniciar o checkout.' })
     return
   }
 
@@ -328,6 +355,12 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
       email: buyerEmail,
       cpfCnpj: buyerDocument,
       phone: buyerPhone,
+      address: buyerAddress,
+      addressNumber: buyerAddressNumber,
+      complement: buyerAddressComplement,
+      postalCode: buyerPostalCode,
+      province: buyerProvince,
+      city: Number(buyerCity),
     },
   }
 
@@ -366,6 +399,12 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
     buyer_email: buyerEmail,
     buyer_document: buyerDocument,
     buyer_phone: buyerPhone,
+    buyer_address: buyerAddress,
+    buyer_address_number: buyerAddressNumber,
+    buyer_address_complement: buyerAddressComplement,
+    buyer_postal_code: buyerPostalCode,
+    buyer_province: buyerProvince,
+    buyer_city: buyerCity,
     gateway_code: 'asaas',
     gateway_environment: gatewayConfig.environment,
     external_reference: checkoutSessionId,

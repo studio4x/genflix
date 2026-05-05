@@ -29,6 +29,11 @@ function normalizeDigits(value: string) {
   return value.replace(/\D/g, '')
 }
 
+function normalizeText(value: string) {
+  const trimmed = value.trim()
+  return trimmed.length > 0 ? trimmed : ''
+}
+
 function formatCpf(value: string) {
   const digits = normalizeDigits(value).slice(0, 11)
 
@@ -65,11 +70,27 @@ function formatPhone(value: string) {
   return `(${ddd}) ${remaining.slice(0, firstPartLength)}-${remaining.slice(firstPartLength)}`
 }
 
+function formatPostalCode(value: string) {
+  const digits = normalizeDigits(value).slice(0, 8)
+
+  if (digits.length <= 5) {
+    return digits
+  }
+
+  return `${digits.slice(0, 5)}-${digits.slice(5)}`
+}
+
 export function StudentAccountPage() {
   const { profile, updatePassword, updateProfile, user } = useAuth()
   const [fullName, setFullName] = useState('')
   const [cpf, setCpf] = useState('')
   const [whatsAppNumber, setWhatsAppNumber] = useState('')
+  const [address, setAddress] = useState('')
+  const [addressNumber, setAddressNumber] = useState('')
+  const [addressComplement, setAddressComplement] = useState('')
+  const [postalCode, setPostalCode] = useState('')
+  const [province, setProvince] = useState('')
+  const [city, setCity] = useState('')
   const [locale, setLocale] = useState('pt-BR')
   const [timezone, setTimezone] = useState('America/Sao_Paulo')
   const [password, setPassword] = useState('')
@@ -92,6 +113,12 @@ export function StudentAccountPage() {
     setFullName(profile.full_name ?? '')
     setCpf(formatCpf(profile.cpf ?? ''))
     setWhatsAppNumber(formatPhone(profile.whatsapp_number ?? ''))
+    setAddress(profile.address ?? '')
+    setAddressNumber(profile.address_number ?? '')
+    setAddressComplement(profile.address_complement ?? '')
+    setPostalCode(formatPostalCode(profile.postal_code ?? ''))
+    setProvince(profile.province ?? '')
+    setCity(profile.city ?? '')
     setLocale(profile.locale)
     setTimezone(profile.timezone)
   }, [profile])
@@ -105,10 +132,29 @@ export function StudentAccountPage() {
       normalizeFullName(fullName) !== profile.full_name ||
       normalizeDigits(cpf) !== normalizeDigits(profile.cpf ?? '') ||
       normalizeDigits(whatsAppNumber) !== normalizeDigits(profile.whatsapp_number ?? '') ||
+      normalizeText(address) !== (profile.address ?? '') ||
+      normalizeText(addressNumber) !== (profile.address_number ?? '') ||
+      normalizeText(addressComplement) !== (profile.address_complement ?? '') ||
+      normalizeDigits(postalCode) !== normalizeDigits(profile.postal_code ?? '') ||
+      normalizeText(province) !== (profile.province ?? '') ||
+      normalizeDigits(city) !== normalizeDigits(profile.city ?? '') ||
       locale !== profile.locale ||
       timezone !== profile.timezone
     )
-  }, [cpf, fullName, locale, profile, timezone, whatsAppNumber])
+  }, [
+    address,
+    addressComplement,
+    addressNumber,
+    city,
+    cpf,
+    fullName,
+    locale,
+    postalCode,
+    profile,
+    province,
+    timezone,
+    whatsAppNumber,
+  ])
 
   async function handleProfileSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -127,6 +173,12 @@ export function StudentAccountPage() {
         full_name: normalizeFullName(fullName),
         cpf: normalizeDigits(cpf) || null,
         whatsapp_number: normalizeDigits(whatsAppNumber) || null,
+        address: normalizeText(address) || null,
+        address_number: normalizeText(addressNumber) || null,
+        address_complement: normalizeText(addressComplement) || null,
+        postal_code: normalizeDigits(postalCode) || null,
+        province: normalizeText(province) || null,
+        city: normalizeDigits(city) || null,
         locale,
         timezone,
       })
@@ -281,6 +333,80 @@ export function StudentAccountPage() {
               <p className="text-xs font-medium text-slate-500">
                 Esse numero podera ser usado nas notificacoes e no checkout da compra.
               </p>
+            </label>
+
+            <label className="block space-y-2 md:col-span-2">
+              <span className="text-sm font-bold text-slate-700">Endereço</span>
+              <input
+                className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm font-medium text-slate-800 outline-none transition focus:border-blue-400 focus:bg-white"
+                type="text"
+                value={address}
+                onChange={(event) => setAddress(event.target.value)}
+                placeholder="Rua, avenida, praça..."
+                autoComplete="address-line1"
+              />
+            </label>
+
+            <label className="block space-y-2">
+              <span className="text-sm font-bold text-slate-700">Número</span>
+              <input
+                className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm font-medium text-slate-800 outline-none transition focus:border-blue-400 focus:bg-white"
+                type="text"
+                value={addressNumber}
+                onChange={(event) => setAddressNumber(event.target.value)}
+                placeholder="123"
+                autoComplete="address-line2"
+              />
+            </label>
+
+            <label className="block space-y-2">
+              <span className="text-sm font-bold text-slate-700">Complemento</span>
+              <input
+                className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm font-medium text-slate-800 outline-none transition focus:border-blue-400 focus:bg-white"
+                type="text"
+                value={addressComplement}
+                onChange={(event) => setAddressComplement(event.target.value)}
+                placeholder="Apto, bloco..."
+                autoComplete="address-line3"
+              />
+            </label>
+
+            <label className="block space-y-2">
+              <span className="text-sm font-bold text-slate-700">CEP</span>
+              <input
+                className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm font-medium text-slate-800 outline-none transition focus:border-blue-400 focus:bg-white"
+                type="text"
+                value={postalCode}
+                onChange={(event) => setPostalCode(formatPostalCode(event.target.value))}
+                placeholder="00000-000"
+                inputMode="numeric"
+                autoComplete="postal-code"
+              />
+            </label>
+
+            <label className="block space-y-2">
+              <span className="text-sm font-bold text-slate-700">Bairro</span>
+              <input
+                className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm font-medium text-slate-800 outline-none transition focus:border-blue-400 focus:bg-white"
+                type="text"
+                value={province}
+                onChange={(event) => setProvince(event.target.value)}
+                placeholder="Centro"
+                autoComplete="address-level3"
+              />
+            </label>
+
+            <label className="block space-y-2">
+              <span className="text-sm font-bold text-slate-700">Cidade (código IBGE)</span>
+              <input
+                className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm font-medium text-slate-800 outline-none transition focus:border-blue-400 focus:bg-white"
+                type="text"
+                value={city}
+                onChange={(event) => setCity(event.target.value)}
+                placeholder="4205407"
+                inputMode="numeric"
+                autoComplete="address-level2"
+              />
             </label>
 
             <label className="block space-y-2">

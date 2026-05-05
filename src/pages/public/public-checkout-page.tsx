@@ -33,6 +33,11 @@ function normalizeDigits(value: string) {
   return value.replace(/\D/g, '')
 }
 
+function normalizeText(value: string) {
+  const trimmed = value.trim()
+  return trimmed.length > 0 ? trimmed : ''
+}
+
 function formatCpf(value: string) {
   const digits = normalizeDigits(value).slice(0, 11)
 
@@ -69,6 +74,16 @@ function formatPhone(value: string) {
   return `(${ddd}) ${remaining.slice(0, firstPartLength)}-${remaining.slice(firstPartLength)}`
 }
 
+function formatPostalCode(value: string) {
+  const digits = normalizeDigits(value).slice(0, 8)
+
+  if (digits.length <= 5) {
+    return digits
+  }
+
+  return `${digits.slice(0, 5)}-${digits.slice(5)}`
+}
+
 export function PublicCheckoutPage() {
   const { slug = '' } = useParams()
   const { isLoading, session, user, roles, profile, signIn, signUp, updateProfile } = useAuth()
@@ -94,11 +109,16 @@ export function PublicCheckoutPage() {
   const [checkoutEmail, setCheckoutEmail] = useState('')
   const [checkoutDocument, setCheckoutDocument] = useState('')
   const [checkoutPhone, setCheckoutPhone] = useState('')
+  const [checkoutAddress, setCheckoutAddress] = useState('')
+  const [checkoutAddressNumber, setCheckoutAddressNumber] = useState('')
+  const [checkoutAddressComplement, setCheckoutAddressComplement] = useState('')
+  const [checkoutPostalCode, setCheckoutPostalCode] = useState('')
+  const [checkoutProvince, setCheckoutProvince] = useState('')
+  const [checkoutCity, setCheckoutCity] = useState('')
   const [openDocument, setOpenDocument] = useState<LegalDocumentKey | null>(null)
 
   const courseRoute = `/cursos/${slug}`
   const canContinue = Boolean(session?.access_token && detail?.id)
-  const userLabel = profile?.full_name?.trim() || user?.email || 'Conta autenticada'
 
   useEffect(() => {
     if (!canContinue) {
@@ -121,12 +141,50 @@ export function PublicCheckoutPage() {
           (typeof user?.user_metadata?.phone_number === 'string' ? user.user_metadata.phone_number.trim() : ''),
       ),
     )
+    setCheckoutAddress(
+      profile?.address?.trim() ||
+        (typeof user?.user_metadata?.address === 'string' ? user.user_metadata.address.trim() : ''),
+    )
+    setCheckoutAddressNumber(
+      profile?.address_number?.trim() ||
+        (typeof user?.user_metadata?.address_number === 'string' ? user.user_metadata.address_number.trim() : ''),
+    )
+    setCheckoutAddressComplement(
+      profile?.address_complement?.trim() ||
+        (typeof user?.user_metadata?.address_complement === 'string' ? user.user_metadata.address_complement.trim() : ''),
+    )
+    setCheckoutPostalCode(
+      formatPostalCode(
+        profile?.postal_code?.trim() ||
+          (typeof user?.user_metadata?.postal_code === 'string' ? user.user_metadata.postal_code.trim() : ''),
+      ),
+    )
+    setCheckoutProvince(
+      profile?.province?.trim() ||
+        (typeof user?.user_metadata?.province === 'string' ? user.user_metadata.province.trim() : ''),
+    )
+    setCheckoutCity(
+      profile?.city?.trim() ||
+        (typeof user?.user_metadata?.city === 'string' ? user.user_metadata.city.trim() : ''),
+    )
   }, [
     canContinue,
+    profile?.address,
+    profile?.address_complement,
+    profile?.address_number,
     profile?.email,
     profile?.full_name,
     profile?.cpf,
+    profile?.city,
+    profile?.postal_code,
+    profile?.province,
     profile?.whatsapp_number,
+    user?.user_metadata?.address,
+    user?.user_metadata?.address_number,
+    user?.user_metadata?.address_complement,
+    user?.user_metadata?.postal_code,
+    user?.user_metadata?.province,
+    user?.user_metadata?.city,
     user?.email,
     user?.user_metadata?.document,
     user?.user_metadata?.cpf,
@@ -186,6 +244,15 @@ export function PublicCheckoutPage() {
         throw new Error('Informe um celular válido para continuar.')
       }
 
+      const normalizedAddress = normalizeText(checkoutAddress)
+      const normalizedAddressNumber = normalizeText(checkoutAddressNumber)
+      const normalizedPostalCode = checkoutPostalCode.replace(/\D/g, '')
+      const normalizedProvince = normalizeText(checkoutProvince)
+      const normalizedCity = checkoutCity.replace(/\D/g, '')
+      if (!normalizedAddress || !normalizedAddressNumber || normalizedPostalCode.length !== 8 || !normalizedProvince || !normalizedCity) {
+        throw new Error('Informe os dados de endereço para continuar.')
+      }
+
       if (!detail.id) {
         throw new Error('Este curso ainda nao esta disponivel para checkout.')
       }
@@ -194,6 +261,12 @@ export function PublicCheckoutPage() {
         full_name: checkoutFullName.trim() || profile?.full_name || user?.user_metadata?.full_name || null,
         cpf: normalizedDocument,
         whatsapp_number: normalizedPhone,
+        address: normalizedAddress,
+        address_number: normalizedAddressNumber,
+        address_complement: normalizeText(checkoutAddressComplement) || null,
+        postal_code: normalizedPostalCode,
+        province: normalizedProvince,
+        city: normalizedCity,
       })
 
       const checkoutUrl = await startCourseCheckout(detail.id, session.access_token, {
@@ -201,6 +274,12 @@ export function PublicCheckoutPage() {
         buyerEmail: checkoutEmail.trim() || profile?.email || user?.email,
         buyerDocument: normalizedDocument,
         buyerPhone: normalizedPhone,
+        buyerAddress: normalizedAddress,
+        buyerAddressNumber: normalizedAddressNumber,
+        buyerAddressComplement: normalizeText(checkoutAddressComplement) || undefined,
+        buyerPostalCode: normalizedPostalCode,
+        buyerProvince: normalizedProvince,
+        buyerCity: normalizedCity,
       })
 
       window.location.href = checkoutUrl
@@ -222,6 +301,12 @@ export function PublicCheckoutPage() {
     user?.user_metadata?.full_name,
     checkoutDocument,
     checkoutPhone,
+    checkoutAddress,
+    checkoutAddressNumber,
+    checkoutAddressComplement,
+    checkoutPostalCode,
+    checkoutProvince,
+    checkoutCity,
     updateProfile,
   ])
 
@@ -462,8 +547,8 @@ export function PublicCheckoutPage() {
                           <LogIn className="h-5 w-5" />
                         </div>
                         <div className="min-w-0">
-                          <p className="text-[11px] font-black uppercase tracking-[0.22em] text-emerald-700">Checkout liberado</p>
-                          <h3 className="mt-2 text-xl font-black tracking-[-0.04em] text-[#183139]">{userLabel}</h3>
+                          <p className="text-[11px] font-black uppercase tracking-[0.22em] text-emerald-700">Checkout</p>
+                          <h3 className="mt-2 text-xl font-black tracking-[-0.04em] text-[#183139]">Confirme seus dados</h3>
                           <p className="mt-2 text-sm leading-6 text-[#5f7077]">
                             Confira seus dados e siga para o pagamento.
                           </p>
@@ -520,6 +605,82 @@ export function PublicCheckoutPage() {
                             autoComplete="tel"
                           />
                         </label>
+
+                        <div className="grid gap-4 md:grid-cols-2">
+                          <label className="block space-y-2 md:col-span-2">
+                            <span className="text-sm font-semibold text-[#4f656c]">Endereço</span>
+                            <input
+                              className="h-12 w-full rounded-[12px] border border-[#D8E6EB] bg-[#EDF4F6] px-4 text-sm text-[#183139] outline-none transition-colors placeholder:text-[#8BA0A7] focus:border-[#1398B7] focus:bg-white"
+                              type="text"
+                              value={checkoutAddress}
+                              onChange={(event) => setCheckoutAddress(event.target.value)}
+                              placeholder="Rua, avenida, praça..."
+                              autoComplete="address-line1"
+                            />
+                          </label>
+
+                          <label className="block space-y-2">
+                            <span className="text-sm font-semibold text-[#4f656c]">Número</span>
+                            <input
+                              className="h-12 w-full rounded-[12px] border border-[#D8E6EB] bg-[#EDF4F6] px-4 text-sm text-[#183139] outline-none transition-colors placeholder:text-[#8BA0A7] focus:border-[#1398B7] focus:bg-white"
+                              type="text"
+                              value={checkoutAddressNumber}
+                              onChange={(event) => setCheckoutAddressNumber(event.target.value)}
+                              placeholder="123"
+                              autoComplete="address-line2"
+                            />
+                          </label>
+
+                          <label className="block space-y-2">
+                            <span className="text-sm font-semibold text-[#4f656c]">Complemento</span>
+                            <input
+                              className="h-12 w-full rounded-[12px] border border-[#D8E6EB] bg-[#EDF4F6] px-4 text-sm text-[#183139] outline-none transition-colors placeholder:text-[#8BA0A7] focus:border-[#1398B7] focus:bg-white"
+                              type="text"
+                              value={checkoutAddressComplement}
+                              onChange={(event) => setCheckoutAddressComplement(event.target.value)}
+                              placeholder="Apto, bloco..."
+                              autoComplete="address-line3"
+                            />
+                          </label>
+
+                          <label className="block space-y-2">
+                            <span className="text-sm font-semibold text-[#4f656c]">CEP</span>
+                            <input
+                              className="h-12 w-full rounded-[12px] border border-[#D8E6EB] bg-[#EDF4F6] px-4 text-sm text-[#183139] outline-none transition-colors placeholder:text-[#8BA0A7] focus:border-[#1398B7] focus:bg-white"
+                            type="text"
+                            value={checkoutPostalCode}
+                            onChange={(event) => setCheckoutPostalCode(formatPostalCode(event.target.value))}
+                            placeholder="00000-000"
+                            inputMode="numeric"
+                            autoComplete="postal-code"
+                          />
+                          </label>
+
+                          <label className="block space-y-2">
+                            <span className="text-sm font-semibold text-[#4f656c]">Bairro</span>
+                            <input
+                              className="h-12 w-full rounded-[12px] border border-[#D8E6EB] bg-[#EDF4F6] px-4 text-sm text-[#183139] outline-none transition-colors placeholder:text-[#8BA0A7] focus:border-[#1398B7] focus:bg-white"
+                              type="text"
+                              value={checkoutProvince}
+                              onChange={(event) => setCheckoutProvince(event.target.value)}
+                              placeholder="Centro"
+                              autoComplete="address-level3"
+                            />
+                          </label>
+
+                          <label className="block space-y-2">
+                            <span className="text-sm font-semibold text-[#4f656c]">Cidade (código IBGE)</span>
+                            <input
+                              className="h-12 w-full rounded-[12px] border border-[#D8E6EB] bg-[#EDF4F6] px-4 text-sm text-[#183139] outline-none transition-colors placeholder:text-[#8BA0A7] focus:border-[#1398B7] focus:bg-white"
+                              type="text"
+                              value={checkoutCity}
+                              onChange={(event) => setCheckoutCity(event.target.value)}
+                              placeholder="4205407"
+                              inputMode="numeric"
+                              autoComplete="address-level2"
+                            />
+                          </label>
+                        </div>
                       </div>
 
                       <GenflixCtaButton

@@ -41,6 +41,12 @@ export type StartCourseCheckoutBuyer = {
   buyerEmail?: string
   buyerDocument?: string
   buyerPhone?: string
+  buyerAddress?: string
+  buyerAddressNumber?: string
+  buyerAddressComplement?: string
+  buyerPostalCode?: string
+  buyerProvince?: string
+  buyerCity?: string
 }
 
 export async function startCourseCheckout(
@@ -60,6 +66,12 @@ export async function startCourseCheckout(
       buyerEmail: buyer?.buyerEmail,
       buyerDocument: buyer?.buyerDocument,
       buyerPhone: buyer?.buyerPhone,
+      buyerAddress: buyer?.buyerAddress,
+      buyerAddressNumber: buyer?.buyerAddressNumber,
+      buyerAddressComplement: buyer?.buyerAddressComplement,
+      buyerPostalCode: buyer?.buyerPostalCode,
+      buyerProvince: buyer?.buyerProvince,
+      buyerCity: buyer?.buyerCity,
     }),
   })
 
