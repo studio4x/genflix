@@ -247,7 +247,7 @@ export function PublicCheckoutPage() {
 
                 </aside>
 
-                <div className="overflow-hidden rounded-[24px] border border-[#d8e6eb] bg-white shadow-[0_14px_32px_rgba(21,50,59,0.05)]">
+                <div className="overflow-hidden rounded-[24px] border border-[#d8e6eb] bg-[#f2f7f9] shadow-[0_14px_32px_rgba(21,50,59,0.03)]">
                   <div className="relative aspect-[4/3] bg-[#173039]">
                     <CourseCoverMedia
                       src={detail.coverImage}
