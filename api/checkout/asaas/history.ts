@@ -34,7 +34,23 @@ type CheckoutRow = {
   buyer_name: string | null
   currency: string | null
   amount_cents: number | null
+  gateway_environment: string | null
   courses: { title: string | null } | Array<{ title: string | null }> | null
+}
+
+function readString(value: unknown) {
+  return typeof value === 'string' && value.trim().length > 0 ? value.trim() : null
+}
+
+function readNestedString(source: Record<string, unknown> | null, path: string[]) {
+  let cursor: unknown = source
+  for (const key of path) {
+    if (!cursor || typeof cursor !== 'object') {
+      return null
+    }
+    cursor = (cursor as Record<string, unknown>)[key]
+  }
+  return readString(cursor)
 }
 
 export default async function handler(req: ApiRequest, res: ApiResponse) {
@@ -85,6 +101,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
       buyer_name,
       currency,
       amount_cents,
+      gateway_environment,
       courses:course_id ( title )
     `)
     .eq('user_id', userData.user.id)
@@ -97,13 +114,19 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
 
   const records = ((data ?? []) as CheckoutRow[]).map((row) => {
     const rawResponse = row.raw_response ?? {}
-    const invoiceUrl = typeof rawResponse.invoiceUrl === 'string'
-      ? rawResponse.invoiceUrl
-      : typeof rawResponse.bankSlipUrl === 'string'
-        ? rawResponse.bankSlipUrl
-        : typeof rawResponse.transactionReceiptUrl === 'string'
-          ? rawResponse.transactionReceiptUrl
-          : null
+    const paymentId = readString(row.external_payment_id)
+    const invoiceCode = paymentId?.replace(/^pay_/i, '')
+    const asaasBaseUrl = row.gateway_environment === 'production' ? 'https://www.asaas.com' : 'https://sandbox.asaas.com'
+
+    const invoiceUrl = (
+      readNestedString(rawResponse, ['payment', 'invoiceUrl']) ??
+      readNestedString(rawResponse, ['invoiceUrl']) ??
+      readNestedString(rawResponse, ['payment', 'bankSlipUrl']) ??
+      readNestedString(rawResponse, ['bankSlipUrl']) ??
+      readNestedString(rawResponse, ['payment', 'transactionReceiptUrl']) ??
+      readNestedString(rawResponse, ['transactionReceiptUrl']) ??
+      (invoiceCode ? `${asaasBaseUrl}/i/${invoiceCode}` : null)
+    )
 
     const amount = typeof row.amount_cents === 'number' ? row.amount_cents / 100 : 0
 
