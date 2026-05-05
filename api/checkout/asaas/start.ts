@@ -455,6 +455,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
     buyer_city: buyerCity,
     gateway_code: 'asaas',
     gateway_environment: gatewayConfig.environment,
+    external_reference_id: checkoutSessionId,
     external_reference: checkoutSessionId,
     external_checkout_id: checkoutPayload.id,
     checkout_url: checkoutUrl,
@@ -465,6 +466,8 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
 
   if (sessionInsert.error) {
     console.error('checkout_session_insert_failed', sessionInsert.error)
+    jsonResponse(res, 500, { error: 'Nao foi possivel registrar o pedido antes de enviar ao pagamento.' })
+    return
   }
 
   jsonResponse(res, 200, {

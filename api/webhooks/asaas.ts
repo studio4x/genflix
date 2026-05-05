@@ -79,6 +79,16 @@ async function findSessionByKeys(
     if (byReference.data) {
       return byReference.data as Record<string, unknown>
     }
+
+    const byLegacyReference = await adminClient
+      .from('commerce_checkout_sessions')
+      .select('*')
+      .eq('external_reference_id', externalReference)
+      .maybeSingle()
+
+    if (byLegacyReference.data) {
+      return byLegacyReference.data as Record<string, unknown>
+    }
   }
 
   return null
