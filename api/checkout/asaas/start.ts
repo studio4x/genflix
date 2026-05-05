@@ -28,6 +28,7 @@ const startCheckoutSchema = z.object({
   buyerName: z.string().trim().max(160).optional(),
   buyerEmail: z.string().trim().email('E-mail inválido.').optional().or(z.literal('')),
   buyerDocument: z.string().trim().optional(),
+  buyerPhone: z.string().trim().optional(),
 })
 
 function getErrorMessage(error: unknown) {
@@ -98,6 +99,11 @@ function normalizeDocument(value: string | null | undefined) {
   return digits.length > 0 ? digits : null
 }
 
+function normalizePhoneNumber(value: string | null | undefined) {
+  const digits = (value ?? '').replace(/\D/g, '')
+  return digits.length > 0 ? digits : null
+}
+
 function limitAsaasName(value: string, fallback: string) {
   const normalized = normalizeOptionalText(value) ?? normalizeOptionalText(fallback) ?? ''
   return normalized.slice(0, 30)
@@ -147,7 +153,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
 
   const { data: profile, error: profileError } = await adminClient
     .from('profiles')
-    .select('id, email, full_name')
+    .select('id, email, full_name, cpf, whatsapp_number')
     .eq('id', userData.user.id)
     .maybeSingle()
 
@@ -213,7 +219,14 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
     normalizeOptionalText(userData.user.email)
   const buyerDocument =
     normalizeDocument(parsed.data.buyerDocument) ??
-    normalizeDocument((userData.user.user_metadata as Record<string, unknown> | null | undefined)?.document as string | undefined)
+    normalizeDocument(profile?.cpf) ??
+    normalizeDocument((userData.user.user_metadata as Record<string, unknown> | null | undefined)?.document as string | undefined) ??
+    normalizeDocument((userData.user.user_metadata as Record<string, unknown> | null | undefined)?.cpf as string | undefined)
+  const buyerPhone =
+    normalizePhoneNumber(parsed.data.buyerPhone) ??
+    normalizePhoneNumber(profile?.whatsapp_number) ??
+    normalizePhoneNumber((userData.user.user_metadata as Record<string, unknown> | null | undefined)?.phone as string | undefined) ??
+    normalizePhoneNumber((userData.user.user_metadata as Record<string, unknown> | null | undefined)?.phone_number as string | undefined)
 
   if (!buyerEmail) {
     jsonResponse(res, 400, { error: 'Informe um e-mail válido para iniciar o checkout.' })
@@ -222,6 +235,11 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
 
   if (!buyerDocument || buyerDocument.length !== 11) {
     jsonResponse(res, 400, { error: 'Informe um CPF válido para iniciar o checkout.' })
+    return
+  }
+
+  if (!buyerPhone || buyerPhone.length < 10) {
+    jsonResponse(res, 400, { error: 'Informe um celular válido para iniciar o checkout.' })
     return
   }
 
@@ -309,6 +327,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
       name: buyerName,
       email: buyerEmail,
       cpfCnpj: buyerDocument,
+      phone: buyerPhone,
     },
   }
 
@@ -346,6 +365,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
     buyer_name: buyerName,
     buyer_email: buyerEmail,
     buyer_document: buyerDocument,
+    buyer_phone: buyerPhone,
     gateway_code: 'asaas',
     gateway_environment: gatewayConfig.environment,
     external_reference: checkoutSessionId,

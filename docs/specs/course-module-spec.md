@@ -1174,7 +1174,7 @@ Payload:
 }
 ```
 
-`buyerName`, `buyerEmail` e `buyerDocument` são opcionais no contrato público. Quando vierem preenchidos pelo formulário de compra, o backend envia esses dados para o checkout hospedado do Asaas e também registra em `commerce_checkout_sessions`. Se vierem vazios, o backend usa o perfil autenticado do usuário como fallback. O checkout do Asaas é criado apenas com `billingTypes: ["CREDIT_CARD"]`, mantendo o fluxo sem Pix.
+`buyerName`, `buyerEmail`, `buyerDocument` e `buyerPhone` são opcionais no contrato público. Quando vierem preenchidos pelo formulário de compra, o backend envia esses dados para o checkout hospedado do Asaas e também registra em `commerce_checkout_sessions`. Se vierem vazios, o backend usa o perfil autenticado do usuário como fallback. O checkout do Asaas é criado apenas com `billingTypes: ["CREDIT_CARD"]`, mantendo o fluxo sem Pix.
 
 Resposta para curso pago:
 

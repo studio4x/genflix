@@ -25,14 +25,50 @@ function normalizeFullName(value: string) {
   return trimmed.length > 0 ? trimmed : null
 }
 
-function normalizeWhatsAppNumber(value: string) {
-  const trimmed = value.trim()
-  return trimmed.length > 0 ? trimmed : null
+function normalizeDigits(value: string) {
+  return value.replace(/\D/g, '')
+}
+
+function formatCpf(value: string) {
+  const digits = normalizeDigits(value).slice(0, 11)
+
+  if (digits.length <= 3) {
+    return digits
+  }
+
+  if (digits.length <= 6) {
+    return `${digits.slice(0, 3)}.${digits.slice(3)}`
+  }
+
+  if (digits.length <= 9) {
+    return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6)}`
+  }
+
+  return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9)}`
+}
+
+function formatPhone(value: string) {
+  const digits = normalizeDigits(value).slice(0, 11)
+
+  if (digits.length <= 2) {
+    return digits.length > 0 ? `(${digits}` : ''
+  }
+
+  const ddd = digits.slice(0, 2)
+  const remaining = digits.slice(2)
+  const firstPartLength = digits.length > 10 ? 5 : 4
+
+  if (remaining.length <= firstPartLength) {
+    return `(${ddd}) ${remaining}`
+  }
+
+  return `(${ddd}) ${remaining.slice(0, firstPartLength)}-${remaining.slice(firstPartLength)}`
 }
 
 export function StudentAccountPage() {
   const { profile, updatePassword, updateProfile, user } = useAuth()
   const [fullName, setFullName] = useState('')
+  const [cpf, setCpf] = useState('')
   const [whatsAppNumber, setWhatsAppNumber] = useState('')
   const [locale, setLocale] = useState('pt-BR')
   const [timezone, setTimezone] = useState('America/Sao_Paulo')
@@ -54,7 +90,8 @@ export function StudentAccountPage() {
     }
 
     setFullName(profile.full_name ?? '')
-    setWhatsAppNumber(profile.whatsapp_number ?? '')
+    setCpf(formatCpf(profile.cpf ?? ''))
+    setWhatsAppNumber(formatPhone(profile.whatsapp_number ?? ''))
     setLocale(profile.locale)
     setTimezone(profile.timezone)
   }, [profile])
@@ -66,11 +103,12 @@ export function StudentAccountPage() {
 
     return (
       normalizeFullName(fullName) !== profile.full_name ||
-      normalizeWhatsAppNumber(whatsAppNumber) !== profile.whatsapp_number ||
+      normalizeDigits(cpf) !== normalizeDigits(profile.cpf ?? '') ||
+      normalizeDigits(whatsAppNumber) !== normalizeDigits(profile.whatsapp_number ?? '') ||
       locale !== profile.locale ||
       timezone !== profile.timezone
     )
-  }, [fullName, locale, profile, timezone, whatsAppNumber])
+  }, [cpf, fullName, locale, profile, timezone, whatsAppNumber])
 
   async function handleProfileSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -87,7 +125,8 @@ export function StudentAccountPage() {
     try {
       await updateProfile({
         full_name: normalizeFullName(fullName),
-        whatsapp_number: normalizeWhatsAppNumber(whatsAppNumber),
+        cpf: normalizeDigits(cpf) || null,
+        whatsapp_number: normalizeDigits(whatsAppNumber) || null,
         locale,
         timezone,
       })
@@ -212,18 +251,35 @@ export function StudentAccountPage() {
               />
             </label>
 
-            <label className="block space-y-2 md:col-span-2">
-              <span className="text-sm font-bold text-slate-700">WhatsApp</span>
+            <label className="block space-y-2">
+              <span className="text-sm font-bold text-slate-700">CPF</span>
+              <input
+                className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm font-medium text-slate-800 outline-none transition focus:border-blue-400 focus:bg-white"
+                type="text"
+                inputMode="numeric"
+                value={cpf}
+                onChange={(event) => setCpf(formatCpf(event.target.value))}
+                placeholder="000.000.000-00"
+                autoComplete="off"
+              />
+              <p className="text-xs font-medium text-slate-500">
+                O CPF sera usado no checkout e na validacao cadastral da conta.
+              </p>
+            </label>
+
+            <label className="block space-y-2">
+              <span className="text-sm font-bold text-slate-700">Celular</span>
               <input
                 className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm font-medium text-slate-800 outline-none transition focus:border-blue-400 focus:bg-white"
                 type="tel"
                 inputMode="tel"
                 value={whatsAppNumber}
-                onChange={(event) => setWhatsAppNumber(event.target.value)}
-                placeholder="+55 (11) 99999-9999"
+                onChange={(event) => setWhatsAppNumber(formatPhone(event.target.value))}
+                placeholder="(99) 99999-9999"
+                autoComplete="tel"
               />
               <p className="text-xs font-medium text-slate-500">
-                Esse numero podera ser usado nas notificacoes por WhatsApp quando esse canal estiver ativo.
+                Esse numero podera ser usado nas notificacoes e no checkout da compra.
               </p>
             </label>
 

@@ -40,6 +40,7 @@ export type StartCourseCheckoutBuyer = {
   buyerName?: string
   buyerEmail?: string
   buyerDocument?: string
+  buyerPhone?: string
 }
 
 export async function startCourseCheckout(
@@ -58,6 +59,7 @@ export async function startCourseCheckout(
       buyerName: buyer?.buyerName,
       buyerEmail: buyer?.buyerEmail,
       buyerDocument: buyer?.buyerDocument,
+      buyerPhone: buyer?.buyerPhone,
     }),
   })
 

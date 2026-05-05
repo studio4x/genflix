@@ -29,9 +29,49 @@ function formatPriceLabel(label: string) {
   return label.trim() || 'Investimento disponivel'
 }
 
+function normalizeDigits(value: string) {
+  return value.replace(/\D/g, '')
+}
+
+function formatCpf(value: string) {
+  const digits = normalizeDigits(value).slice(0, 11)
+
+  if (digits.length <= 3) {
+    return digits
+  }
+
+  if (digits.length <= 6) {
+    return `${digits.slice(0, 3)}.${digits.slice(3)}`
+  }
+
+  if (digits.length <= 9) {
+    return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6)}`
+  }
+
+  return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9)}`
+}
+
+function formatPhone(value: string) {
+  const digits = normalizeDigits(value).slice(0, 11)
+
+  if (digits.length <= 2) {
+    return digits.length > 0 ? `(${digits}` : ''
+  }
+
+  const ddd = digits.slice(0, 2)
+  const remaining = digits.slice(2)
+  const firstPartLength = digits.length > 10 ? 5 : 4
+
+  if (remaining.length <= firstPartLength) {
+    return `(${ddd}) ${remaining}`
+  }
+
+  return `(${ddd}) ${remaining.slice(0, firstPartLength)}-${remaining.slice(firstPartLength)}`
+}
+
 export function PublicCheckoutPage() {
   const { slug = '' } = useParams()
-  const { isLoading, session, user, roles, profile, signIn, signUp } = useAuth()
+  const { isLoading, session, user, roles, profile, signIn, signUp, updateProfile } = useAuth()
   const waitingRoleResolution = !!user && roles.length === 0
   const staticDetail = useMemo(() => getGenflixCourseDetailBySlug(slug), [slug])
   const [detail, setDetail] = useState<GenflixCourseDetail | null>(staticDetail)
@@ -53,6 +93,7 @@ export function PublicCheckoutPage() {
   const [checkoutFullName, setCheckoutFullName] = useState('')
   const [checkoutEmail, setCheckoutEmail] = useState('')
   const [checkoutDocument, setCheckoutDocument] = useState('')
+  const [checkoutPhone, setCheckoutPhone] = useState('')
   const [openDocument, setOpenDocument] = useState<LegalDocumentKey | null>(null)
 
   const courseRoute = `/cursos/${slug}`
@@ -67,17 +108,31 @@ export function PublicCheckoutPage() {
     setCheckoutFullName(profile?.full_name?.trim() || user?.user_metadata?.full_name || '')
     setCheckoutEmail(profile?.email?.trim() || user?.email || '')
     setCheckoutDocument(
-      typeof user?.user_metadata?.document === 'string'
-        ? user.user_metadata.document.trim()
-        : '',
+      formatCpf(
+        profile?.cpf?.trim() ||
+          (typeof user?.user_metadata?.document === 'string' ? user.user_metadata.document.trim() : '') ||
+          (typeof user?.user_metadata?.cpf === 'string' ? user.user_metadata.cpf.trim() : ''),
+      ),
+    )
+    setCheckoutPhone(
+      formatPhone(
+        profile?.whatsapp_number?.trim() ||
+          (typeof user?.user_metadata?.phone === 'string' ? user.user_metadata.phone.trim() : '') ||
+          (typeof user?.user_metadata?.phone_number === 'string' ? user.user_metadata.phone_number.trim() : ''),
+      ),
     )
   }, [
     canContinue,
     profile?.email,
     profile?.full_name,
+    profile?.cpf,
+    profile?.whatsapp_number,
     user?.email,
     user?.user_metadata?.document,
+    user?.user_metadata?.cpf,
     user?.user_metadata?.full_name,
+    user?.user_metadata?.phone,
+    user?.user_metadata?.phone_number,
   ])
 
   useEffect(() => {
@@ -126,14 +181,26 @@ export function PublicCheckoutPage() {
         throw new Error('Informe um CPF válido para continuar.')
       }
 
+      const normalizedPhone = checkoutPhone.replace(/\D/g, '')
+      if (normalizedPhone.length !== 11) {
+        throw new Error('Informe um celular válido para continuar.')
+      }
+
       if (!detail.id) {
         throw new Error('Este curso ainda nao esta disponivel para checkout.')
       }
+
+      await updateProfile({
+        full_name: checkoutFullName.trim() || profile?.full_name || user?.user_metadata?.full_name || null,
+        cpf: normalizedDocument,
+        whatsapp_number: normalizedPhone,
+      })
 
       const checkoutUrl = await startCourseCheckout(detail.id, session.access_token, {
         buyerName: checkoutFullName.trim() || profile?.full_name || user?.user_metadata?.full_name,
         buyerEmail: checkoutEmail.trim() || profile?.email || user?.email,
         buyerDocument: normalizedDocument,
+        buyerPhone: normalizedPhone,
       })
 
       window.location.href = checkoutUrl
@@ -151,8 +218,11 @@ export function PublicCheckoutPage() {
     session?.access_token,
     user?.email,
     user?.user_metadata?.document,
+    user?.user_metadata?.cpf,
     user?.user_metadata?.full_name,
     checkoutDocument,
+    checkoutPhone,
+    updateProfile,
   ])
 
   async function handleLoginSubmit(event: FormEvent<HTMLFormElement>) {
@@ -431,10 +501,23 @@ export function PublicCheckoutPage() {
                             className="h-12 w-full rounded-[12px] border border-[#D8E6EB] bg-[#EDF4F6] px-4 text-sm text-[#183139] outline-none transition-colors placeholder:text-[#8BA0A7] focus:border-[#1398B7] focus:bg-white"
                             type="text"
                             value={checkoutDocument}
-                            onChange={(event) => setCheckoutDocument(event.target.value)}
+                            onChange={(event) => setCheckoutDocument(formatCpf(event.target.value))}
                             placeholder="000.000.000-00"
                             inputMode="numeric"
                             autoComplete="off"
+                          />
+                        </label>
+
+                        <label className="block space-y-2">
+                          <span className="text-sm font-semibold text-[#4f656c]">Celular</span>
+                          <input
+                            className="h-12 w-full rounded-[12px] border border-[#D8E6EB] bg-[#EDF4F6] px-4 text-sm text-[#183139] outline-none transition-colors placeholder:text-[#8BA0A7] focus:border-[#1398B7] focus:bg-white"
+                            type="tel"
+                            value={checkoutPhone}
+                            onChange={(event) => setCheckoutPhone(formatPhone(event.target.value))}
+                            placeholder="(99) 99999-9999"
+                            inputMode="tel"
+                            autoComplete="tel"
                           />
                         </label>
                       </div>
