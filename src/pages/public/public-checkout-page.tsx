@@ -223,8 +223,9 @@ export function PublicCheckoutPage() {
       <section className="pb-16 pt-8 sm:pt-12">
         <div className="public-site-container">
           <div className="mx-auto max-w-[1120px] overflow-hidden rounded-[32px] border border-[#d8e6eb] bg-white shadow-[0_28px_70px_rgba(21,50,59,0.08)]">
-            <div className="grid lg:grid-cols-[0.92fr_1.08fr]">
-              <aside className="flex min-h-[320px] flex-col justify-between bg-[linear-gradient(160deg,#0a3640_0%,#1398b7_100%)] px-7 py-8 text-white sm:px-10 sm:py-10">
+            <div className="grid gap-6 lg:grid-cols-[0.92fr_1.08fr]">
+              <div className="space-y-6">
+                <aside className="flex min-h-[320px] flex-col justify-between rounded-[32px] bg-[linear-gradient(160deg,#0a3640_0%,#1398b7_100%)] px-7 py-8 text-white sm:px-10 sm:py-10">
                   <div className="flex items-center gap-3">
                     <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/14">
                       <CheckCircle2 className="h-6 w-6" />
@@ -244,7 +245,9 @@ export function PublicCheckoutPage() {
                   </p>
                 </div>
 
-                <div className="mt-8 overflow-hidden rounded-[24px] border border-white/14 bg-white/8 backdrop-blur-sm">
+                </aside>
+
+                <div className="overflow-hidden rounded-[24px] border border-[#d8e6eb] bg-white shadow-[0_14px_32px_rgba(21,50,59,0.05)]">
                   <div className="relative aspect-[4/3] bg-[#173039]">
                     <CourseCoverMedia
                       src={detail.coverImage}
@@ -255,10 +258,17 @@ export function PublicCheckoutPage() {
                       imageClassName="grayscale"
                       placeholderClassName="p-6"
                     />
-                    <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(10,54,64,0.04)_0%,rgba(10,54,64,0.58)_100%)]" />
+                    <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(10,54,64,0.08)_0%,rgba(10,54,64,0.42)_100%)]" />
+                  </div>
+                  <div className="space-y-4 p-5">
+                    <div>
+                      <p className="text-[11px] font-black uppercase tracking-[0.24em] text-[#1398b7]">Resumo do curso</p>
+                      <p className="mt-2 text-xl font-bold leading-tight text-[#163138]">{detail.title}</p>
+                    </div>
+                    <p className="text-sm leading-7 text-[#4f656c]">{detail.description}</p>
                   </div>
                 </div>
-              </aside>
+              </div>
 
               <div className="px-7 py-8 sm:px-10 sm:py-10">
                 <p className="hidden text-[11px] font-black uppercase tracking-[0.28em] text-[#1398b7]">Proximos passos</p>
@@ -591,14 +601,6 @@ export function PublicCheckoutPage() {
                   </Link>
                 </div>
               </div>
-            </div>
-          </div>
-
-          <div className="mx-auto mt-6 max-w-[1120px] rounded-[24px] border border-[#d8e6eb] bg-white px-6 py-5 shadow-[0_14px_32px_rgba(21,50,59,0.05)] sm:px-8 sm:py-6">
-            <div className="max-w-[760px]">
-              <p className="text-[11px] font-black uppercase tracking-[0.24em] text-[#1398b7]">Resumo do curso</p>
-              <h2 className="mt-2 text-2xl font-extrabold tracking-[-0.05em] text-[#163138]">{detail.title}</h2>
-              <p className="mt-3 text-sm leading-7 text-[#4f656c]">{detail.description}</p>
             </div>
           </div>
         </div>
