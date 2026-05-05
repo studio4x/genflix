@@ -110,6 +110,84 @@ async function fetchCourseTitle(adminClient: SupabaseClient, courseId: string | 
     : 'seu curso'
 }
 
+async function activateCourseRelease(adminClient: SupabaseClient, input: {
+  courseId: string
+  userId: string
+  referenceId: string
+  releasedAt: string
+}) {
+  const payload = {
+    course_id: input.courseId,
+    release_type: 'user',
+    user_id: input.userId,
+    group_id: null,
+    starts_at: null,
+    ends_at: null,
+    is_active: true,
+    created_by: null,
+    release_source: 'purchase',
+    release_status: 'active',
+    source_system: 'asaas',
+    external_reference_id: input.referenceId,
+    managed_by_integration: true,
+    last_synced_at: input.releasedAt,
+    revoked_at: null,
+    revoked_reason: null,
+  }
+
+  const upsertResult = await adminClient
+    .from('course_releases')
+    .upsert(payload, { onConflict: 'course_id,user_id' })
+
+  if (!upsertResult.error) {
+    return { ok: true as const }
+  }
+
+  const message = (upsertResult.error.message ?? '').toLowerCase()
+  const isLegacyConflictError =
+    message.includes('no unique or exclusion constraint') ||
+    message.includes('there is no unique or exclusion constraint')
+
+  if (!isLegacyConflictError) {
+    return { ok: false as const, error: upsertResult.error }
+  }
+
+  const existing = await adminClient
+    .from('course_releases')
+    .select('id')
+    .eq('course_id', input.courseId)
+    .eq('user_id', input.userId)
+    .limit(1)
+    .maybeSingle()
+
+  if (existing.error) {
+    return { ok: false as const, error: existing.error }
+  }
+
+  if (existing.data?.id) {
+    const updateResult = await adminClient
+      .from('course_releases')
+      .update(payload)
+      .eq('id', existing.data.id)
+
+    if (updateResult.error) {
+      return { ok: false as const, error: updateResult.error }
+    }
+
+    return { ok: true as const }
+  }
+
+  const insertResult = await adminClient
+    .from('course_releases')
+    .insert(payload)
+
+  if (insertResult.error) {
+    return { ok: false as const, error: insertResult.error }
+  }
+
+  return { ok: true as const }
+}
+
 export default async function handler(req: ApiRequest, res: ApiResponse) {
   if (req.method === 'OPTIONS') {
     jsonResponse(res, 200, { ok: true })
@@ -219,31 +297,14 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
     releasedAt = new Date().toISOString()
 
     if (sessionId && courseId && userId) {
-      const releaseResult = await adminClient
-        .from('course_releases')
-        .upsert(
-          {
-            course_id: courseId,
-            release_type: 'user',
-            user_id: userId,
-            group_id: null,
-            starts_at: null,
-            ends_at: null,
-            is_active: true,
-            created_by: null,
-            release_source: 'purchase',
-            release_status: 'active',
-            source_system: 'asaas',
-            external_reference_id: externalReference ?? sessionId,
-            managed_by_integration: true,
-            last_synced_at: releasedAt,
-            revoked_at: null,
-            revoked_reason: null,
-          },
-          { onConflict: 'course_id,user_id' },
-        )
+      const releaseResult = await activateCourseRelease(adminClient, {
+        courseId,
+        userId,
+        referenceId: externalReference ?? sessionId,
+        releasedAt,
+      })
 
-      if (releaseResult.error) {
+      if (!releaseResult.ok) {
         nextStatus = 'failed'
       } else {
         await adminClient
