@@ -952,29 +952,29 @@ export function PublicCheckoutPage() {
                             </GenflixCtaButton>
                           </form>
                         ) : (
-                          <form className="space-y-4" onSubmit={(event) => void handleSignupSubmit(event)}>
+                          <form className="space-y-3" onSubmit={(event) => void handleSignupSubmit(event)}>
                             <div>
                               <p className="text-[11px] font-black uppercase tracking-[0.22em] text-[#1398b7]">Criar conta</p>
-                              <h3 className="mt-2 text-xl font-black tracking-[-0.04em] text-[#183139]">Cadastre-se e siga para o pagamento</h3>
-                              <p className="mt-2 text-sm leading-6 text-[#5f7077]">
-                                Se voce ainda nao tem conta, crie uma agora e continue sem sair desta pagina.
+                              <h3 className="mt-1 text-lg font-black tracking-[-0.04em] text-[#183139]">Cadastre-se e siga para o pagamento</h3>
+                              <p className="mt-1 text-sm leading-5 text-[#5f7077]">
+                                Crie sua conta e conclua a compra sem sair da pagina.
                               </p>
                             </div>
 
-                            <label className="block space-y-2">
-                              <span className="text-sm font-semibold text-[#4f656c]">Nome completo</span>
-                              <input
-                                className="h-12 w-full rounded-[12px] border border-[#D8E6EB] bg-[#EDF4F6] px-4 text-sm text-[#183139] outline-none transition-colors placeholder:text-[#8BA0A7] focus:border-[#1398B7] focus:bg-white"
-                                type="text"
-                                value={signupFullName}
-                                onChange={(event) => setSignupFullName(event.target.value)}
-                                placeholder="Seu nome"
-                                autoComplete="name"
-                                required
-                              />
-                            </label>
+                            <div className="grid gap-3 sm:grid-cols-2">
+                              <label className="block space-y-2 sm:col-span-2">
+                                <span className="text-sm font-semibold text-[#4f656c]">Nome completo</span>
+                                <input
+                                  className="h-12 w-full rounded-[12px] border border-[#D8E6EB] bg-[#EDF4F6] px-4 text-sm text-[#183139] outline-none transition-colors placeholder:text-[#8BA0A7] focus:border-[#1398B7] focus:bg-white"
+                                  type="text"
+                                  value={signupFullName}
+                                  onChange={(event) => setSignupFullName(event.target.value)}
+                                  placeholder="Seu nome"
+                                  autoComplete="name"
+                                  required
+                                />
+                              </label>
 
-                            <div className="grid gap-4 sm:grid-cols-2">
                               <label className="block space-y-2">
                                 <span className="text-sm font-semibold text-[#4f656c]">E-mail</span>
                                 <input
@@ -1000,31 +1000,31 @@ export function PublicCheckoutPage() {
                                   required
                                 />
                               </label>
+
+                              <label className="block space-y-2">
+                                <span className="text-sm font-semibold text-[#4f656c]">Senha</span>
+                                <PasswordField
+                                  className="h-12 w-full rounded-[12px] border border-[#D8E6EB] bg-[#EDF4F6] px-4 text-sm text-[#183139] outline-none transition-colors placeholder:text-[#8BA0A7] focus:border-[#1398B7] focus:bg-white"
+                                  value={signupPassword}
+                                  onChange={(event) => setSignupPassword(event.target.value)}
+                                  placeholder="Crie uma senha"
+                                  autoComplete="new-password"
+                                  required
+                                />
+                              </label>
+
+                              <label className="block space-y-2">
+                                <span className="text-sm font-semibold text-[#4f656c]">Confirmar senha</span>
+                                <PasswordField
+                                  className="h-12 w-full rounded-[12px] border border-[#D8E6EB] bg-[#EDF4F6] px-4 text-sm text-[#183139] outline-none transition-colors placeholder:text-[#8BA0A7] focus:border-[#1398B7] focus:bg-white"
+                                  value={signupConfirmPassword}
+                                  onChange={(event) => setSignupConfirmPassword(event.target.value)}
+                                  placeholder="Digite a senha novamente"
+                                  autoComplete="new-password"
+                                  required
+                                />
+                              </label>
                             </div>
-
-                            <label className="block space-y-2">
-                              <span className="text-sm font-semibold text-[#4f656c]">Senha</span>
-                              <PasswordField
-                                className="h-12 w-full rounded-[12px] border border-[#D8E6EB] bg-[#EDF4F6] px-4 text-sm text-[#183139] outline-none transition-colors placeholder:text-[#8BA0A7] focus:border-[#1398B7] focus:bg-white"
-                                value={signupPassword}
-                                onChange={(event) => setSignupPassword(event.target.value)}
-                                placeholder="Crie uma senha"
-                                autoComplete="new-password"
-                                required
-                              />
-                            </label>
-
-                            <label className="block space-y-2">
-                              <span className="text-sm font-semibold text-[#4f656c]">Confirmar senha</span>
-                              <PasswordField
-                                className="h-12 w-full rounded-[12px] border border-[#D8E6EB] bg-[#EDF4F6] px-4 text-sm text-[#183139] outline-none transition-colors placeholder:text-[#8BA0A7] focus:border-[#1398B7] focus:bg-white"
-                                value={signupConfirmPassword}
-                                onChange={(event) => setSignupConfirmPassword(event.target.value)}
-                                placeholder="Digite a senha novamente"
-                                autoComplete="new-password"
-                                required
-                              />
-                            </label>
 
                             <label className="flex items-start gap-3 rounded-[14px] border border-[#D8E6EB] bg-[#F2F7F9] px-4 py-3 text-sm leading-6 text-[#5a6d73]">
                               <input
@@ -1054,45 +1054,45 @@ export function PublicCheckoutPage() {
                               </span>
                             </label>
 
-                            <div className="space-y-4 rounded-[20px] border border-[#D8E6EB] bg-[#F2F7F9] p-4">
+                            <div className="space-y-3 rounded-[20px] border border-[#D8E6EB] bg-[#F2F7F9] p-3">
                               <div>
                                 <p className="text-[11px] font-black uppercase tracking-[0.22em] text-[#1398b7]">Dados para o pagamento</p>
-                                <p className="mt-2 text-sm leading-6 text-[#5f7077]">
-                                  Esses dados serão usados para concluir a compra e salvar seu cadastro.
+                                <p className="mt-1 text-sm leading-5 text-[#5f7077]">
+                                  Usaremos estes dados para concluir a compra e salvar seu cadastro.
                                 </p>
                               </div>
 
-                              <label className="block space-y-2">
-                                <span className="text-sm font-semibold text-[#4f656c]">CPF</span>
-                                <input
-                                  className="h-12 w-full rounded-[12px] border border-[#D8E6EB] bg-[#EDF4F6] px-4 text-sm text-[#183139] outline-none transition-colors placeholder:text-[#8BA0A7] focus:border-[#1398B7] focus:bg-white"
-                                  type="text"
-                                  value={checkoutDocument}
-                                  onChange={(event) => setCheckoutDocument(formatCpf(event.target.value))}
-                                  placeholder="000.000.000-00"
-                                  inputMode="numeric"
-                                  autoComplete="off"
-                                />
-                              </label>
+                              <div className="grid gap-3 sm:grid-cols-2">
+                                <label className="block space-y-2">
+                                  <span className="text-sm font-semibold text-[#4f656c]">CPF</span>
+                                  <input
+                                    className="h-11 w-full rounded-[12px] border border-[#D8E6EB] bg-[#EDF4F6] px-4 text-sm text-[#183139] outline-none transition-colors placeholder:text-[#8BA0A7] focus:border-[#1398B7] focus:bg-white"
+                                    type="text"
+                                    value={checkoutDocument}
+                                    onChange={(event) => setCheckoutDocument(formatCpf(event.target.value))}
+                                    placeholder="000.000.000-00"
+                                    inputMode="numeric"
+                                    autoComplete="off"
+                                  />
+                                </label>
 
-                              <label className="block space-y-2">
-                                <span className="text-sm font-semibold text-[#4f656c]">Celular</span>
-                                <input
-                                  className="h-12 w-full rounded-[12px] border border-[#D8E6EB] bg-[#EDF4F6] px-4 text-sm text-[#183139] outline-none transition-colors placeholder:text-[#8BA0A7] focus:border-[#1398B7] focus:bg-white"
-                                  type="tel"
-                                  value={checkoutPhone}
-                                  onChange={(event) => setCheckoutPhone(formatPhone(event.target.value))}
-                                  placeholder="(99) 99999-9999"
-                                  inputMode="tel"
-                                  autoComplete="tel"
-                                />
-                              </label>
+                                <label className="block space-y-2">
+                                  <span className="text-sm font-semibold text-[#4f656c]">Celular</span>
+                                  <input
+                                    className="h-11 w-full rounded-[12px] border border-[#D8E6EB] bg-[#EDF4F6] px-4 text-sm text-[#183139] outline-none transition-colors placeholder:text-[#8BA0A7] focus:border-[#1398B7] focus:bg-white"
+                                    type="tel"
+                                    value={checkoutPhone}
+                                    onChange={(event) => setCheckoutPhone(formatPhone(event.target.value))}
+                                    placeholder="(99) 99999-9999"
+                                    inputMode="tel"
+                                    autoComplete="tel"
+                                  />
+                                </label>
 
-                              <div className="grid gap-4 md:grid-cols-2">
-                                <label className="block space-y-2 md:col-span-2">
+                                <label className="block space-y-2 sm:col-span-2">
                                   <span className="text-sm font-semibold text-[#4f656c]">CEP</span>
                                   <input
-                                    className="h-12 w-full rounded-[12px] border border-[#D8E6EB] bg-[#EDF4F6] px-4 text-sm text-[#183139] outline-none transition-colors placeholder:text-[#8BA0A7] focus:border-[#1398B7] focus:bg-white"
+                                    className="h-11 w-full rounded-[12px] border border-[#D8E6EB] bg-[#EDF4F6] px-4 text-sm text-[#183139] outline-none transition-colors placeholder:text-[#8BA0A7] focus:border-[#1398B7] focus:bg-white"
                                     type="text"
                                     value={checkoutPostalCode}
                                     onChange={(event) => setCheckoutPostalCode(formatPostalCode(event.target.value))}
@@ -1110,7 +1110,7 @@ export function PublicCheckoutPage() {
                                 <label className="block space-y-2">
                                   <span className="text-sm font-semibold text-[#4f656c]">Estado</span>
                                   <select
-                                    className="h-12 w-full rounded-[12px] border border-[#D8E6EB] bg-[#EDF4F6] px-4 text-sm text-[#183139] outline-none transition-colors focus:border-[#1398B7] focus:bg-white"
+                                    className="h-11 w-full rounded-[12px] border border-[#D8E6EB] bg-[#EDF4F6] px-4 text-sm text-[#183139] outline-none transition-colors focus:border-[#1398B7] focus:bg-white"
                                     value={checkoutState}
                                     onChange={(event) => {
                                       setCheckoutState(event.target.value)
@@ -1130,7 +1130,7 @@ export function PublicCheckoutPage() {
                                 <label className="block space-y-2">
                                   <span className="text-sm font-semibold text-[#4f656c]">Cidade</span>
                                   <select
-                                    className="h-12 w-full rounded-[12px] border border-[#D8E6EB] bg-[#EDF4F6] px-4 text-sm text-[#183139] outline-none transition-colors focus:border-[#1398B7] focus:bg-white disabled:cursor-not-allowed disabled:opacity-60"
+                                    className="h-11 w-full rounded-[12px] border border-[#D8E6EB] bg-[#EDF4F6] px-4 text-sm text-[#183139] outline-none transition-colors focus:border-[#1398B7] focus:bg-white disabled:cursor-not-allowed disabled:opacity-60"
                                     value={checkoutCity}
                                     onChange={(event) => setCheckoutCity(event.target.value)}
                                     disabled={!checkoutState || isLoadingCities}
@@ -1151,10 +1151,10 @@ export function PublicCheckoutPage() {
                                   </select>
                                 </label>
 
-                                <label className="block space-y-2 md:col-span-2">
+                                <label className="block space-y-2 sm:col-span-2">
                                   <span className="text-sm font-semibold text-[#4f656c]">Endereço</span>
                                   <input
-                                    className="h-12 w-full rounded-[12px] border border-[#D8E6EB] bg-[#EDF4F6] px-4 text-sm text-[#183139] outline-none transition-colors placeholder:text-[#8BA0A7] focus:border-[#1398B7] focus:bg-white"
+                                    className="h-11 w-full rounded-[12px] border border-[#D8E6EB] bg-[#EDF4F6] px-4 text-sm text-[#183139] outline-none transition-colors placeholder:text-[#8BA0A7] focus:border-[#1398B7] focus:bg-white"
                                     type="text"
                                     value={checkoutAddress}
                                     onChange={(event) => setCheckoutAddress(event.target.value)}
@@ -1166,7 +1166,7 @@ export function PublicCheckoutPage() {
                                 <label className="block space-y-2">
                                   <span className="text-sm font-semibold text-[#4f656c]">Número</span>
                                   <input
-                                    className="h-12 w-full rounded-[12px] border border-[#D8E6EB] bg-[#EDF4F6] px-4 text-sm text-[#183139] outline-none transition-colors placeholder:text-[#8BA0A7] focus:border-[#1398B7] focus:bg-white"
+                                    className="h-11 w-full rounded-[12px] border border-[#D8E6EB] bg-[#EDF4F6] px-4 text-sm text-[#183139] outline-none transition-colors placeholder:text-[#8BA0A7] focus:border-[#1398B7] focus:bg-white"
                                     type="text"
                                     value={checkoutAddressNumber}
                                     onChange={(event) => setCheckoutAddressNumber(event.target.value)}
@@ -1178,7 +1178,7 @@ export function PublicCheckoutPage() {
                                 <label className="block space-y-2">
                                   <span className="text-sm font-semibold text-[#4f656c]">Complemento</span>
                                   <input
-                                    className="h-12 w-full rounded-[12px] border border-[#D8E6EB] bg-[#EDF4F6] px-4 text-sm text-[#183139] outline-none transition-colors placeholder:text-[#8BA0A7] focus:border-[#1398B7] focus:bg-white"
+                                    className="h-11 w-full rounded-[12px] border border-[#D8E6EB] bg-[#EDF4F6] px-4 text-sm text-[#183139] outline-none transition-colors placeholder:text-[#8BA0A7] focus:border-[#1398B7] focus:bg-white"
                                     type="text"
                                     value={checkoutAddressComplement}
                                     onChange={(event) => setCheckoutAddressComplement(event.target.value)}
@@ -1187,10 +1187,10 @@ export function PublicCheckoutPage() {
                                   />
                                 </label>
 
-                                <label className="block space-y-2">
+                                <label className="block space-y-2 sm:col-span-2">
                                   <span className="text-sm font-semibold text-[#4f656c]">Bairro</span>
                                   <input
-                                    className="h-12 w-full rounded-[12px] border border-[#D8E6EB] bg-[#EDF4F6] px-4 text-sm text-[#183139] outline-none transition-colors placeholder:text-[#8BA0A7] focus:border-[#1398B7] focus:bg-white"
+                                    className="h-11 w-full rounded-[12px] border border-[#D8E6EB] bg-[#EDF4F6] px-4 text-sm text-[#183139] outline-none transition-colors placeholder:text-[#8BA0A7] focus:border-[#1398B7] focus:bg-white"
                                     type="text"
                                     value={checkoutProvince}
                                     onChange={(event) => setCheckoutProvince(event.target.value)}

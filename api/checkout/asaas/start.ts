@@ -314,8 +314,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
   )
 
   if (profileUpsertResult.error) {
-    jsonResponse(res, 500, { error: 'Não foi possível atualizar os dados do perfil.' })
-    return
+    console.error('checkout_profile_upsert_failed', profileUpsertResult.error)
   }
 
   if (priceCents <= 0) {
@@ -465,8 +464,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
   })
 
   if (sessionInsert.error) {
-    jsonResponse(res, 500, { error: 'Não foi possível registrar o checkout.' })
-    return
+    console.error('checkout_session_insert_failed', sessionInsert.error)
   }
 
   jsonResponse(res, 200, {
