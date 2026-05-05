@@ -48,19 +48,25 @@ export type StartCourseCheckoutBuyer = {
   buyerState?: string
   buyerProvince?: string
   buyerCity?: string
+  buyerUserId?: string
 }
 
 export async function startCourseCheckout(
   courseId: string,
-  accessToken: string,
+  accessToken?: string | null,
   buyer?: StartCourseCheckoutBuyer,
 ) {
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  }
+
+  if (accessToken) {
+    headers.Authorization = `Bearer ${accessToken}`
+  }
+
   const response = await fetch('/api/checkout/asaas/start', {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${accessToken}`,
-    },
+    headers,
     body: JSON.stringify({
       courseId,
       buyerName: buyer?.buyerName,
@@ -74,6 +80,7 @@ export async function startCourseCheckout(
       buyerState: buyer?.buyerState,
       buyerProvince: buyer?.buyerProvince,
       buyerCity: buyer?.buyerCity,
+      buyerUserId: buyer?.buyerUserId,
     }),
   })
 

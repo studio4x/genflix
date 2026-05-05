@@ -344,6 +344,7 @@ export function PublicCheckoutPage() {
         buyerState: resolvedState,
         buyerProvince: resolvedProvince,
         buyerCity: resolvedCity,
+        buyerUserId: session.user.id,
       })
 
       window.location.href = checkoutUrl
@@ -428,16 +429,84 @@ export function PublicCheckoutPage() {
       return
     }
 
+    if (!detail?.id) {
+      setAuthError('Este curso ainda nao esta disponivel para checkout.')
+      return
+    }
+
+    const normalizedDocument = checkoutDocument.replace(/\D/g, '')
+    if (normalizedDocument.length !== 11) {
+      setAuthError('Informe um CPF válido para continuar.')
+      return
+    }
+
+    const normalizedPhone = checkoutPhone.replace(/\D/g, '')
+    if (normalizedPhone.length !== 11) {
+      setAuthError('Informe um celular válido para continuar.')
+      return
+    }
+
+    const normalizedAddress = normalizeText(checkoutAddress)
+    const normalizedAddressNumber = normalizeText(checkoutAddressNumber)
+    const normalizedPostalCode = checkoutPostalCode.replace(/\D/g, '')
+    const normalizedState = normalizeStateCode(checkoutState)
+    const normalizedProvince = normalizeText(checkoutProvince)
+    const normalizedCity = checkoutCity.replace(/\D/g, '')
+    let resolvedAddress = normalizedAddress
+    let resolvedState = normalizedState
+    let resolvedProvince = normalizedProvince
+    let resolvedCity = normalizedCity
+
+    if (normalizedPostalCode.length === 8 && (!resolvedAddress || !resolvedState || !resolvedProvince || !resolvedCity)) {
+      try {
+        const cepAddress = await resolveBrazilCepAddress(normalizedPostalCode)
+        if (!resolvedAddress && cepAddress.street) {
+          resolvedAddress = cepAddress.street
+          setCheckoutAddress(cepAddress.street)
+        }
+        if (!resolvedProvince && cepAddress.district) {
+          resolvedProvince = cepAddress.district
+          setCheckoutProvince(cepAddress.district)
+        }
+        if (!resolvedState && cepAddress.stateCode) {
+          resolvedState = cepAddress.stateCode
+          setCheckoutState(cepAddress.stateCode)
+        }
+        if (!resolvedCity && cepAddress.cityCode) {
+          resolvedCity = cepAddress.cityCode
+          setCheckoutCity(cepAddress.cityCode)
+        }
+      } catch {
+        // Mantemos a validacao normal abaixo para exibir um erro amigavel.
+      }
+    }
+
+    if (!resolvedAddress || !normalizedAddressNumber || normalizedPostalCode.length !== 8 || !resolvedState || !resolvedProvince || !resolvedCity) {
+      setAuthError('Informe os dados de endereço para continuar.')
+      return
+    }
+
     setIsAuthSubmitting(true)
 
     try {
       const result = await signUp(signupFullName, signupEmail, signupPassword)
 
-      if (result.needsEmailConfirmation) {
-        setAuthMessage('Conta criada. Confira seu e-mail para confirmar o acesso e depois volte para concluir a compra.')
-      } else {
-        setAuthMessage('Conta criada com sucesso. Preparando seu acesso ao checkout.')
-      }
+      const checkoutUrl = await startCourseCheckout(detail.id, result.accessToken, {
+        buyerName: signupFullName.trim(),
+        buyerEmail: signupEmail.trim(),
+        buyerDocument: normalizedDocument,
+        buyerPhone: normalizedPhone,
+        buyerAddress: resolvedAddress,
+        buyerAddressNumber: normalizedAddressNumber,
+        buyerAddressComplement: normalizeText(checkoutAddressComplement) || undefined,
+        buyerPostalCode: normalizedPostalCode,
+        buyerState: resolvedState,
+        buyerProvince: resolvedProvince,
+        buyerCity: resolvedCity,
+        buyerUserId: result.userId ?? undefined,
+      })
+
+      window.location.href = checkoutUrl
     } catch (submitError) {
       setAuthError(submitError instanceof Error ? submitError.message : 'Falha ao criar a conta.')
     } finally {
@@ -984,6 +1053,153 @@ export function PublicCheckoutPage() {
                                 .
                               </span>
                             </label>
+
+                            <div className="space-y-4 rounded-[20px] border border-[#D8E6EB] bg-[#F2F7F9] p-4">
+                              <div>
+                                <p className="text-[11px] font-black uppercase tracking-[0.22em] text-[#1398b7]">Dados para o pagamento</p>
+                                <p className="mt-2 text-sm leading-6 text-[#5f7077]">
+                                  Esses dados serão usados para concluir a compra e salvar seu cadastro.
+                                </p>
+                              </div>
+
+                              <label className="block space-y-2">
+                                <span className="text-sm font-semibold text-[#4f656c]">CPF</span>
+                                <input
+                                  className="h-12 w-full rounded-[12px] border border-[#D8E6EB] bg-[#EDF4F6] px-4 text-sm text-[#183139] outline-none transition-colors placeholder:text-[#8BA0A7] focus:border-[#1398B7] focus:bg-white"
+                                  type="text"
+                                  value={checkoutDocument}
+                                  onChange={(event) => setCheckoutDocument(formatCpf(event.target.value))}
+                                  placeholder="000.000.000-00"
+                                  inputMode="numeric"
+                                  autoComplete="off"
+                                />
+                              </label>
+
+                              <label className="block space-y-2">
+                                <span className="text-sm font-semibold text-[#4f656c]">Celular</span>
+                                <input
+                                  className="h-12 w-full rounded-[12px] border border-[#D8E6EB] bg-[#EDF4F6] px-4 text-sm text-[#183139] outline-none transition-colors placeholder:text-[#8BA0A7] focus:border-[#1398B7] focus:bg-white"
+                                  type="tel"
+                                  value={checkoutPhone}
+                                  onChange={(event) => setCheckoutPhone(formatPhone(event.target.value))}
+                                  placeholder="(99) 99999-9999"
+                                  inputMode="tel"
+                                  autoComplete="tel"
+                                />
+                              </label>
+
+                              <div className="grid gap-4 md:grid-cols-2">
+                                <label className="block space-y-2 md:col-span-2">
+                                  <span className="text-sm font-semibold text-[#4f656c]">CEP</span>
+                                  <input
+                                    className="h-12 w-full rounded-[12px] border border-[#D8E6EB] bg-[#EDF4F6] px-4 text-sm text-[#183139] outline-none transition-colors placeholder:text-[#8BA0A7] focus:border-[#1398B7] focus:bg-white"
+                                    type="text"
+                                    value={checkoutPostalCode}
+                                    onChange={(event) => setCheckoutPostalCode(formatPostalCode(event.target.value))}
+                                    placeholder="00000-000"
+                                    inputMode="numeric"
+                                    autoComplete="postal-code"
+                                  />
+                                  <p className="text-xs text-[#6f838a]">
+                                    {isLoadingCheckoutCepAddress
+                                      ? 'Buscando endereco pelo CEP...'
+                                      : checkoutCepError || 'Preencha o CEP para autocompletar seus dados.'}
+                                  </p>
+                                </label>
+
+                                <label className="block space-y-2">
+                                  <span className="text-sm font-semibold text-[#4f656c]">Estado</span>
+                                  <select
+                                    className="h-12 w-full rounded-[12px] border border-[#D8E6EB] bg-[#EDF4F6] px-4 text-sm text-[#183139] outline-none transition-colors focus:border-[#1398B7] focus:bg-white"
+                                    value={checkoutState}
+                                    onChange={(event) => {
+                                      setCheckoutState(event.target.value)
+                                      setCheckoutCity('')
+                                    }}
+                                    autoComplete="address-level1"
+                                  >
+                                    <option value="">Selecione</option>
+                                    {brazilStateOptions.map((option) => (
+                                      <option key={option.value} value={option.value}>
+                                        {option.label}
+                                      </option>
+                                    ))}
+                                  </select>
+                                </label>
+
+                                <label className="block space-y-2">
+                                  <span className="text-sm font-semibold text-[#4f656c]">Cidade</span>
+                                  <select
+                                    className="h-12 w-full rounded-[12px] border border-[#D8E6EB] bg-[#EDF4F6] px-4 text-sm text-[#183139] outline-none transition-colors focus:border-[#1398B7] focus:bg-white disabled:cursor-not-allowed disabled:opacity-60"
+                                    value={checkoutCity}
+                                    onChange={(event) => setCheckoutCity(event.target.value)}
+                                    disabled={!checkoutState || isLoadingCities}
+                                    autoComplete="address-level2"
+                                  >
+                                    <option value="">
+                                      {!checkoutState
+                                        ? 'Selecione o estado'
+                                        : isLoadingCities
+                                          ? 'Carregando cidades...'
+                                          : 'Selecione a cidade'}
+                                    </option>
+                                    {checkoutCities.map((option) => (
+                                      <option key={option.value} value={option.value}>
+                                        {option.label}
+                                      </option>
+                                    ))}
+                                  </select>
+                                </label>
+
+                                <label className="block space-y-2 md:col-span-2">
+                                  <span className="text-sm font-semibold text-[#4f656c]">Endereço</span>
+                                  <input
+                                    className="h-12 w-full rounded-[12px] border border-[#D8E6EB] bg-[#EDF4F6] px-4 text-sm text-[#183139] outline-none transition-colors placeholder:text-[#8BA0A7] focus:border-[#1398B7] focus:bg-white"
+                                    type="text"
+                                    value={checkoutAddress}
+                                    onChange={(event) => setCheckoutAddress(event.target.value)}
+                                    placeholder="Rua, avenida, praça..."
+                                    autoComplete="address-line1"
+                                  />
+                                </label>
+
+                                <label className="block space-y-2">
+                                  <span className="text-sm font-semibold text-[#4f656c]">Número</span>
+                                  <input
+                                    className="h-12 w-full rounded-[12px] border border-[#D8E6EB] bg-[#EDF4F6] px-4 text-sm text-[#183139] outline-none transition-colors placeholder:text-[#8BA0A7] focus:border-[#1398B7] focus:bg-white"
+                                    type="text"
+                                    value={checkoutAddressNumber}
+                                    onChange={(event) => setCheckoutAddressNumber(event.target.value)}
+                                    placeholder="123"
+                                    autoComplete="address-line2"
+                                  />
+                                </label>
+
+                                <label className="block space-y-2">
+                                  <span className="text-sm font-semibold text-[#4f656c]">Complemento</span>
+                                  <input
+                                    className="h-12 w-full rounded-[12px] border border-[#D8E6EB] bg-[#EDF4F6] px-4 text-sm text-[#183139] outline-none transition-colors placeholder:text-[#8BA0A7] focus:border-[#1398B7] focus:bg-white"
+                                    type="text"
+                                    value={checkoutAddressComplement}
+                                    onChange={(event) => setCheckoutAddressComplement(event.target.value)}
+                                    placeholder="Apto, bloco..."
+                                    autoComplete="address-line3"
+                                  />
+                                </label>
+
+                                <label className="block space-y-2">
+                                  <span className="text-sm font-semibold text-[#4f656c]">Bairro</span>
+                                  <input
+                                    className="h-12 w-full rounded-[12px] border border-[#D8E6EB] bg-[#EDF4F6] px-4 text-sm text-[#183139] outline-none transition-colors placeholder:text-[#8BA0A7] focus:border-[#1398B7] focus:bg-white"
+                                    type="text"
+                                    value={checkoutProvince}
+                                    onChange={(event) => setCheckoutProvince(event.target.value)}
+                                    placeholder="Centro"
+                                    autoComplete="address-level3"
+                                  />
+                                </label>
+                              </div>
+                            </div>
 
                             <div className="flex items-center justify-between gap-4 text-xs font-medium text-[#8a9aa0]">
                               <button

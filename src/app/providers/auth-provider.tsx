@@ -32,7 +32,7 @@ interface AuthContextValue {
     fullName: string,
     email: string,
     password: string,
-  ) => Promise<{ needsEmailConfirmation: boolean }>
+  ) => Promise<{ needsEmailConfirmation: boolean; userId: string | null; accessToken: string | null }>
   signOut: () => Promise<void>
   requestPasswordReset: (email: string) => Promise<void>
   updatePassword: (newPassword: string) => Promise<void>
@@ -280,6 +280,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       return {
         needsEmailConfirmation: !result.data.session,
+        userId: result.data.user?.id ?? null,
+        accessToken: result.data.session?.access_token ?? null,
       }
     },
     [],

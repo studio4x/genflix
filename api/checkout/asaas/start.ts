@@ -36,6 +36,7 @@ const startCheckoutSchema = z.object({
   buyerState: z.string().trim().optional(),
   buyerProvince: z.string().trim().optional(),
   buyerCity: z.string().trim().optional(),
+  buyerUserId: z.string().trim().uuid().optional().or(z.literal('')),
 })
 
 function getErrorMessage(error: unknown) {
@@ -158,25 +159,41 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
   }
 
   const accessToken = getBearerToken(getHeaderValue(req.headers.authorization) ?? getHeaderValue(req.headers.Authorization))
-  if (!accessToken) {
-    jsonResponse(res, 401, { error: 'Token ausente ou inválido.' })
-    return
-  }
 
   const adminClient = createClient(supabaseUrl, serviceRoleKey, {
     auth: { persistSession: false, autoRefreshToken: false },
   })
 
-  const { data: userData, error: userError } = await adminClient.auth.getUser(accessToken)
-  if (userError || !userData.user) {
+  const buyerUserId = normalizeOptionalText(parsed.data.buyerUserId)
+  let authUser: { id: string; email?: string | null; user_metadata?: Record<string, unknown> | null } | null = null
+
+  if (accessToken) {
+    const { data: userData, error: userError } = await adminClient.auth.getUser(accessToken)
+    if (userError || !userData.user) {
+      jsonResponse(res, 401, { error: 'Token ausente ou inválido.' })
+      return
+    }
+
+    authUser = userData.user
+  } else if (buyerUserId) {
+    const { data: userData, error: userError } = await adminClient.auth.admin.getUserById(buyerUserId)
+    if (userError || !userData.user) {
+      jsonResponse(res, 401, { error: 'Conta não encontrada para iniciar o checkout.' })
+      return
+    }
+
+    authUser = userData.user
+  } else {
     jsonResponse(res, 401, { error: 'Token ausente ou inválido.' })
     return
   }
 
+  const resolvedUserId = authUser.id
+
   const { data: profile, error: profileError } = await adminClient
     .from('profiles')
     .select('id, email, full_name, cpf, whatsapp_number, address, address_number, address_complement, postal_code, state, province, city')
-    .eq('id', userData.user.id)
+    .eq('id', resolvedUserId)
     .maybeSingle()
 
   if (profileError) {
@@ -230,25 +247,25 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
   const buyerName = limitAsaasName(
     parsed.data.buyerName ??
       profile?.full_name ??
-      (userData.user.user_metadata?.full_name as string | undefined) ??
-      userData.user.email ??
+      (authUser.user_metadata?.full_name as string | undefined) ??
+      authUser.email ??
       'Aluno GenFlix',
     'Aluno GenFlix',
   )
   const buyerEmail =
     normalizeOptionalText(parsed.data.buyerEmail) ??
     normalizeOptionalText(profile?.email) ??
-    normalizeOptionalText(userData.user.email)
+    normalizeOptionalText(authUser.email)
   const buyerDocument =
     normalizeDocument(parsed.data.buyerDocument) ??
     normalizeDocument(profile?.cpf) ??
-    normalizeDocument((userData.user.user_metadata as Record<string, unknown> | null | undefined)?.document as string | undefined) ??
-    normalizeDocument((userData.user.user_metadata as Record<string, unknown> | null | undefined)?.cpf as string | undefined)
+    normalizeDocument((authUser.user_metadata as Record<string, unknown> | null | undefined)?.document as string | undefined) ??
+    normalizeDocument((authUser.user_metadata as Record<string, unknown> | null | undefined)?.cpf as string | undefined)
   const buyerPhone =
     normalizePhoneNumber(parsed.data.buyerPhone) ??
     normalizePhoneNumber(profile?.whatsapp_number) ??
-    normalizePhoneNumber((userData.user.user_metadata as Record<string, unknown> | null | undefined)?.phone as string | undefined) ??
-    normalizePhoneNumber((userData.user.user_metadata as Record<string, unknown> | null | undefined)?.phone_number as string | undefined)
+    normalizePhoneNumber((authUser.user_metadata as Record<string, unknown> | null | undefined)?.phone as string | undefined) ??
+    normalizePhoneNumber((authUser.user_metadata as Record<string, unknown> | null | undefined)?.phone_number as string | undefined)
   const buyerAddress = normalizeOptionalText(parsed.data.buyerAddress) ?? normalizeOptionalText(profile?.address)
   const buyerAddressNumber = normalizeOptionalText(parsed.data.buyerAddressNumber) ?? normalizeOptionalText(profile?.address_number)
   const buyerAddressComplement = normalizeOptionalText(parsed.data.buyerAddressComplement) ?? normalizeOptionalText(profile?.address_complement)
@@ -277,6 +294,30 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
     return
   }
 
+
+  const profileUpsertResult = await adminClient.from('profiles').upsert(
+    {
+      id: resolvedUserId,
+      email: buyerEmail,
+      full_name: buyerName,
+      cpf: buyerDocument,
+      whatsapp_number: buyerPhone,
+      address: buyerAddress,
+      address_number: buyerAddressNumber,
+      address_complement: buyerAddressComplement,
+      postal_code: buyerPostalCode,
+      state: buyerState,
+      province: buyerProvince,
+      city: buyerCity,
+    },
+    { onConflict: 'id' },
+  )
+
+  if (profileUpsertResult.error) {
+    jsonResponse(res, 500, { error: 'Não foi possível atualizar os dados do perfil.' })
+    return
+  }
+
   if (priceCents <= 0) {
     const releaseResult = await adminClient
       .from('course_releases')
@@ -284,16 +325,16 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
         {
           course_id: course.id,
           release_type: 'user',
-          user_id: userData.user.id,
+          user_id: resolvedUserId,
           group_id: null,
           starts_at: null,
           ends_at: null,
           is_active: true,
-          created_by: userData.user.id,
+          created_by: resolvedUserId,
           release_source: 'purchase',
           release_status: 'active',
           source_system: 'asaas',
-          external_reference_id: `free-${course.id}-${userData.user.id}`,
+          external_reference_id: `free-${course.id}-${resolvedUserId}`,
           managed_by_integration: true,
           last_synced_at: new Date().toISOString(),
         },
@@ -306,7 +347,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
     }
 
     await queueUserNotification(adminClient, {
-      userId: userData.user.id,
+      userId: resolvedUserId,
       title: 'Curso liberado com sucesso',
       body: `O acesso ao curso ${course.title ?? 'selecionado'} ja esta disponivel na sua area do aluno.`,
       category: 'payment',
@@ -401,7 +442,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
   const sessionInsert = await adminClient.from('commerce_checkout_sessions').insert({
     id: checkoutSessionId,
     course_id: course.id,
-    user_id: userData.user.id,
+    user_id: resolvedUserId,
     buyer_name: buyerName,
     buyer_email: buyerEmail,
     buyer_document: buyerDocument,
