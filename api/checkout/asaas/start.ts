@@ -98,6 +98,11 @@ function normalizeDocument(value: string | null | undefined) {
   return digits.length > 0 ? digits : null
 }
 
+function limitAsaasName(value: string, fallback: string) {
+  const normalized = normalizeOptionalText(value) ?? normalizeOptionalText(fallback) ?? ''
+  return normalized.slice(0, 30)
+}
+
 export default async function handler(req: ApiRequest, res: ApiResponse) {
   if (req.method === 'OPTIONS') {
     jsonResponse(res, 200, { ok: true })
@@ -194,12 +199,14 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
 
   const priceCents = Number(course.price_cents ?? 0)
   const origin = getRequestOrigin(req)
-  const buyerName =
-    normalizeOptionalText(parsed.data.buyerName) ??
-    normalizeOptionalText(profile?.full_name) ??
-    normalizeOptionalText(userData.user.user_metadata?.full_name as string | undefined) ??
-    normalizeOptionalText(userData.user.email) ??
-    'Aluno GenFlix'
+  const buyerName = limitAsaasName(
+    parsed.data.buyerName ??
+      profile?.full_name ??
+      (userData.user.user_metadata?.full_name as string | undefined) ??
+      userData.user.email ??
+      'Aluno GenFlix',
+    'Aluno GenFlix',
+  )
   const buyerEmail =
     normalizeOptionalText(parsed.data.buyerEmail) ??
     normalizeOptionalText(profile?.email) ??
@@ -292,7 +299,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
     },
     items: [
       {
-        name: course.title,
+        name: limitAsaasName(course.title, 'Curso GenFlix'),
         description: course.description?.replace(/<[^>]*>?/gm, ' ').trim() || course.title,
         quantity: 1,
         value: priceCents / 100,
