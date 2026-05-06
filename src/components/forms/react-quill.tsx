@@ -7,6 +7,7 @@ type ReactQuillProps = {
   onChange: (value: string) => void
   placeholder?: string
   className?: string
+  minHeightClassName?: string
   theme?: string
   modules?: {
     toolbar?: ToolbarItem[]
@@ -23,6 +24,7 @@ export default function ReactQuill({
   onChange,
   placeholder,
   className = '',
+  minHeightClassName = 'min-h-[180px]',
   modules,
 }: ReactQuillProps) {
   const editorRef = useRef<HTMLDivElement | null>(null)
@@ -56,7 +58,10 @@ export default function ReactQuill({
       strike: labels.has('strike'),
       ordered: labels.has('list'),
       bullet: labels.has('list'),
+      align: labels.has('align'),
       link: labels.has('link'),
+      image: labels.has('image'),
+      video: labels.has('video'),
       clean: labels.has('clean'),
       header: labels.has('header'),
     }
@@ -109,8 +114,46 @@ export default function ReactQuill({
             Link
           </button>
         ) : null}
+        {toolbarButtons.image ? (
+          <button
+            type="button"
+            className="rounded-lg border border-slate-200 bg-white px-3 py-1.5"
+            onClick={() => {
+              const imageUrl = window.prompt('Digite a URL da imagem')
+              if (imageUrl) {
+                execFormat('insertImage', imageUrl)
+              }
+            }}
+          >
+            Imagem
+          </button>
+        ) : null}
+        {toolbarButtons.video ? (
+          <button
+            type="button"
+            className="rounded-lg border border-slate-200 bg-white px-3 py-1.5"
+            onClick={() => {
+              const videoUrl = window.prompt('Digite a URL do vídeo')
+              if (!videoUrl) {
+                return
+              }
+
+              const iframe = `<iframe src="${videoUrl}" frameborder="0" allowfullscreen></iframe><p></p>`
+              execFormat('insertHTML', iframe)
+            }}
+          >
+            Vídeo
+          </button>
+        ) : null}
         {toolbarButtons.clean ? (
-          <button type="button" className="rounded-lg border border-slate-200 bg-white px-3 py-1.5" onClick={() => execFormat('removeFormat')}>
+          <button
+            type="button"
+            className="rounded-lg border border-slate-200 bg-white px-3 py-1.5"
+            onClick={() => {
+              execFormat('removeFormat')
+              execFormat('unlink')
+            }}
+          >
             Limpar
           </button>
         ) : null}
@@ -133,13 +176,50 @@ export default function ReactQuill({
             <option value="1">H1</option>
             <option value="2">H2</option>
             <option value="3">H3</option>
+            <option value="4">H4</option>
+            <option value="5">H5</option>
+            <option value="6">H6</option>
             <option value="false">Parágrafo</option>
+          </select>
+        ) : null}
+        {toolbarButtons.align ? (
+          <select
+            className="rounded-lg border border-slate-200 bg-white px-3 py-1.5"
+            onChange={(event) => {
+              const alignment = event.target.value
+              if (!alignment) {
+                return
+              }
+
+              if (alignment === 'left') {
+                execFormat('justifyLeft')
+              }
+              if (alignment === 'center') {
+                execFormat('justifyCenter')
+              }
+              if (alignment === 'right') {
+                execFormat('justifyRight')
+              }
+              if (alignment === 'justify') {
+                execFormat('justifyFull')
+              }
+              event.currentTarget.value = ''
+            }}
+            defaultValue=""
+          >
+            <option value="" disabled>
+              Alinhar
+            </option>
+            <option value="left">Esquerda</option>
+            <option value="center">Centro</option>
+            <option value="right">Direita</option>
+            <option value="justify">Justificado</option>
           </select>
         ) : null}
       </div>
       <div
         ref={editorRef}
-        className="min-h-[180px] w-full px-4 py-4 text-sm leading-7 outline-none"
+        className={`${minHeightClassName} w-full px-4 py-4 text-sm leading-7 outline-none`}
         contentEditable
         suppressContentEditableWarning
         data-placeholder={placeholder}
