@@ -609,6 +609,41 @@ export function AdminBlogPage() {
     setArticleView('editor')
   }
 
+  function handleOpenArticlePreview() {
+    if (!articleForm.slug) {
+      return
+    }
+
+    const previewKey = selectedArticleId ? `id:${selectedArticleId}` : `slug:${articleForm.slug}`
+    const previewPayload = {
+      slug: articleForm.slug,
+      title: articleForm.title.trim() || 'Rascunho sem título',
+      category: 'Sem categoria',
+      excerpt: articleForm.excerpt.trim(),
+      image: articleForm.coverImageUrl.trim() || '/images/genflix/home/featured-2.jpg',
+      readTime: `${Math.max(1, articleForm.readingTimeMinutes)} min`,
+      author: user?.email ?? 'Admin GenFlix',
+      publishedAt: articleForm.publishedAt || null,
+      contentHtml: articleForm.contentHtml,
+      status: articleForm.status,
+      savedAt: Date.now(),
+    }
+
+    try {
+      localStorage.setItem(`admin_blog_preview:${previewKey}`, JSON.stringify(previewPayload))
+      localStorage.setItem(`admin_blog_preview:slug:${articleForm.slug}`, JSON.stringify(previewPayload))
+    } catch {
+      // noop
+    }
+
+    const params = new URLSearchParams({
+      preview: 'admin',
+      previewKey,
+    })
+
+    window.open(`/blog/${articleForm.slug}?${params.toString()}`, '_blank', 'noopener,noreferrer')
+  }
+
   function resetCategoryForm() {
     setSelectedCategoryId(null)
     setIsCategorySlugTouched(false)
@@ -1157,7 +1192,7 @@ export function AdminBlogPage() {
                   <Button type="button" variant="outline" className="rounded-xl" onClick={() => setArticleView('list')}>Voltar para lista</Button>
                   <Button type="button" variant="outline" className="rounded-xl" onClick={resetArticleForm}>Limpar</Button>
                   {articleForm.slug ? (
-                    <Button type="button" variant="outline" className="rounded-xl" onClick={() => window.open(`/blog/${articleForm.slug}`, '_blank', 'noopener,noreferrer')}>
+                    <Button type="button" variant="outline" className="rounded-xl" onClick={handleOpenArticlePreview}>
                       Visualizar
                     </Button>
                   ) : null}

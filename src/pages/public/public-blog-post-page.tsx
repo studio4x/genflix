@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { ArrowLeft, ArrowRight, CalendarDays, Clock3 } from 'lucide-react'
-import { Link, Navigate, useParams } from 'react-router-dom'
+import { Link, Navigate, useParams, useSearchParams } from 'react-router-dom'
 
 import { useAuth } from '@/app/providers/auth-provider'
 import { GenflixNewsletterSection } from '@/components/public/genflix-newsletter-section'
@@ -20,6 +20,7 @@ import {
 import { supabase } from '@/services/supabase/client'
 
 type DraftBlogPostRow = {
+  id?: string
   slug: string
   title: string
   category: string | null
@@ -31,6 +32,20 @@ type DraftBlogPostRow = {
   content: unknown
   featured: boolean | null
   status: string | null
+}
+
+type AdminPreviewPayload = {
+  slug: string
+  title: string
+  category?: string
+  excerpt?: string
+  image?: string
+  readTime?: string
+  author?: string
+  publishedAt?: string | null
+  contentHtml?: string
+  status?: string
+  savedAt?: number
 }
 
 function toPostContent(value: unknown) {
@@ -47,6 +62,29 @@ function toPostContent(value: unknown) {
       return typeof item === 'string' ? item : ''
     })
     .filter(Boolean)
+}
+
+function contentHtmlToParagraphs(html: string) {
+  if (!html.trim()) {
+    return []
+  }
+
+  const parser = new DOMParser()
+  const doc = parser.parseFromString(html, 'text/html')
+  const blocks = Array.from(doc.body.querySelectorAll('p,li,h2,h3,h4,h5,h6'))
+    .map((item) => item.textContent?.trim() ?? '')
+    .filter(Boolean)
+
+  if (blocks.length > 0) {
+    return blocks
+  }
+
+  const fallback = (doc.body.textContent ?? '')
+    .split('\n')
+    .map((item) => item.trim())
+    .filter(Boolean)
+
+  return fallback
 }
 
 function mapDraftRowToBlogPost(row: DraftBlogPostRow): GenflixBlogPost {
@@ -70,10 +108,34 @@ function mapDraftRowToBlogPost(row: DraftBlogPostRow): GenflixBlogPost {
   }
 }
 
+function mapAdminPreviewToBlogPost(preview: AdminPreviewPayload): GenflixBlogPost {
+  return {
+    slug: preview.slug,
+    title: preview.title || 'Rascunho sem título',
+    category: preview.category || 'Sem categoria',
+    excerpt: preview.excerpt || '',
+    image: preview.image || '/images/genflix/home/featured-2.jpg',
+    readTime: preview.readTime || '1 min',
+    author: preview.author || 'Admin GenFlix',
+    publishedAt: preview.publishedAt
+      ? new Intl.DateTimeFormat('pt-BR', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+      }).format(new Date(preview.publishedAt))
+      : '',
+    content: contentHtmlToParagraphs(preview.contentHtml ?? ''),
+    featured: false,
+  }
+}
+
 export function PublicBlogPostPage() {
   const { slug = '' } = useParams()
+  const [searchParams] = useSearchParams()
   const { isLoading, user, roles } = useAuth()
   const isAdmin = roles.includes('admin')
+  const isAdminPreviewRequest = searchParams.get('preview') === 'admin'
+  const previewKey = searchParams.get('previewKey') || `slug:${slug}`
   const waitingRoleResolution = !!user && roles.length === 0
   const [post, setPost] = useState<GenflixBlogPost | null>(() => getGenflixBlogPostBySlug(slug))
   const [relatedPosts, setRelatedPosts] = useState<GenflixBlogPost[]>(() =>
@@ -87,25 +149,55 @@ export function PublicBlogPostPage() {
 
     async function loadPost() {
       setIsLoadingPost(true)
+      let publicPosts: GenflixBlogPost[] = []
       try {
-        const [publicPost, publicPosts] = await Promise.all([
-          fetchPublicBlogPostFromSupabase(slug),
-          fetchPublicBlogPostsFromSupabase(),
-        ])
-
-        let resolvedPost = publicPost
+        let resolvedPost: GenflixBlogPost | null = null
         let draftPreview = false
 
+        try {
+          resolvedPost = await fetchPublicBlogPostFromSupabase(slug)
+        } catch {
+          resolvedPost = null
+        }
+
+        try {
+          publicPosts = await fetchPublicBlogPostsFromSupabase()
+        } catch {
+          publicPosts = []
+        }
+
         if (!resolvedPost && isAdmin) {
-          const previewResult = await supabase
+          const previewQuery = supabase
             .from('blog_posts')
-            .select('slug, title, category, excerpt, image_url, read_time, author, published_at, content, featured, status')
-            .eq('slug', slug)
-            .maybeSingle()
+            .select('id, slug, title, category, excerpt, image_url, read_time, author, published_at, content, featured, status')
+
+          const previewResult = previewKey.startsWith('id:')
+            ? await previewQuery.eq('id', previewKey.slice(3)).maybeSingle()
+            : await previewQuery.eq('slug', slug).maybeSingle()
 
           if (!previewResult.error && previewResult.data) {
             resolvedPost = mapDraftRowToBlogPost(previewResult.data as DraftBlogPostRow)
             draftPreview = (previewResult.data as DraftBlogPostRow).status !== 'published'
+          }
+        }
+
+        if (!resolvedPost && isAdminPreviewRequest) {
+          const keys = [`admin_blog_preview:${previewKey}`, `admin_blog_preview:slug:${slug}`]
+          for (const storageKey of keys) {
+            try {
+              const raw = localStorage.getItem(storageKey)
+              if (!raw) {
+                continue
+              }
+              const parsed = JSON.parse(raw) as AdminPreviewPayload
+              if (parsed?.slug === slug) {
+                resolvedPost = mapAdminPreviewToBlogPost(parsed)
+                draftPreview = (parsed.status ?? 'draft') !== 'published'
+                break
+              }
+            } catch {
+              // noop
+            }
           }
         }
 
@@ -115,7 +207,7 @@ export function PublicBlogPostPage() {
           setRelatedPosts(
             (publicPosts.length > 0 ? publicPosts : genflixBlogPosts)
               .filter((item) => item.slug !== slug)
-              .slice(0, 3),
+            .slice(0, 3),
           )
         }
       } catch {
@@ -136,7 +228,7 @@ export function PublicBlogPostPage() {
     return () => {
       isMounted = false
     }
-  }, [isAdmin, slug])
+  }, [isAdmin, isAdminPreviewRequest, previewKey, slug])
 
   if (isLoading || waitingRoleResolution) {
     return (
@@ -254,3 +346,4 @@ export function PublicBlogPostPage() {
     </main>
   )
 }
+
