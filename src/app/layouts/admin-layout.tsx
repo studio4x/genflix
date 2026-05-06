@@ -37,6 +37,7 @@ const adminNavGroups: AdminNavGroup[] = [
     description: 'Catalogo, experiencia publica e edicao da plataforma.',
     links: [
       { to: '/admin/cursos', label: 'Catalogo de Cursos' },
+      { to: '/admin/blog', label: 'Blog' },
       { to: '/admin/botoes-aula', label: 'Botoes de Aula' },
       { to: '/admin/banners', label: 'Banners' },
       { to: '/admin/site-editor', label: 'Editor Visual' },

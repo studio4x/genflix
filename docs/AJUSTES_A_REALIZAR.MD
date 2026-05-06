@@ -143,11 +143,7 @@
 
 ## CHAT 12 — Blog
 
-[ ] T40 - Criar módulo de Blog no admin e na área pública.
-
-[ ] T41 - Usar como referência a spec de blog da HomeCare Match.
-
-[ ] T42 - Remover qualquer funcionalidade de IA do módulo de Blog.
+[OK] T40 - Criar módulo de Blog no admin e na área pública. Use como referência de criação o arquivo "SPEC_BLOG.md". Não implemente as funcionalidades de criação/revisão de conteúdo com IA.
 
 ---
 

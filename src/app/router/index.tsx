@@ -66,6 +66,7 @@ const AdminNotificationsPage = lazy(async () => ({ default: (await import('@/pag
 const AdminSupportTicketsPage = lazy(async () => ({ default: (await import('@/pages/admin/admin-support-tickets-page')).AdminSupportTicketsPage }))
 const AdminSupportFaqPage = lazy(async () => ({ default: (await import('@/pages/admin/admin-support-faq-page')).AdminSupportFaqPage }))
 const AdminReviewsPage = lazy(async () => ({ default: (await import('@/pages/admin/admin-reviews-page')).AdminReviewsPage }))
+const AdminBlogPage = lazy(async () => ({ default: (await import('@/pages/admin/admin-blog-page')).AdminBlogPage }))
 const AdminPaymentSettingsPage = lazy(async () => ({ default: (await import('@/pages/admin/admin-payment-settings-page')).AdminPaymentSettingsPage }))
 const AdminCreatorPayoutsPage = lazy(async () => ({ default: (await import('@/pages/admin/admin-creator-payouts-page')).AdminCreatorPayoutsPage }))
 const AdminQuizTypesPage = lazy(async () => ({ default: (await import('@/pages/admin/admin-quiz-types-page')).AdminQuizTypesPage }))
@@ -478,6 +479,10 @@ export const appRouter = createBrowserRouter([
           {
             path: '/admin/reviews',
             element: withRouteSuspense(<AdminReviewsPage />),
+          },
+          {
+            path: '/admin/blog',
+            element: withRouteSuspense(<AdminBlogPage />),
           },
           {
             path: '/admin/pagamentos',
