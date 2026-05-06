@@ -10,6 +10,7 @@ import {
   UserPlus,
 } from 'lucide-react'
 import { Link, Navigate, useParams } from 'react-router-dom'
+import { useRef } from 'react'
 
 import { useAuth } from '@/app/providers/auth-provider'
 import { PasswordField } from '@/components/forms/password-field'
@@ -124,6 +125,7 @@ export function PublicCheckoutPage() {
   const [checkoutProvince, setCheckoutProvince] = useState('')
   const [checkoutCity, setCheckoutCity] = useState('')
   const [openDocument, setOpenDocument] = useState<LegalDocumentKey | null>(null)
+  const hydratedCheckoutUserIdRef = useRef<string | null>(null)
   const { cities: checkoutCities, isLoadingCities } = useBrazilCities(checkoutState)
   const {
     address: checkoutCepAddress,
@@ -136,8 +138,20 @@ export function PublicCheckoutPage() {
 
   useEffect(() => {
     if (!canContinue) {
+      hydratedCheckoutUserIdRef.current = null
       return
     }
+
+    const currentUserId = user?.id ?? null
+    if (!currentUserId) {
+      return
+    }
+
+    if (hydratedCheckoutUserIdRef.current === currentUserId) {
+      return
+    }
+
+    hydratedCheckoutUserIdRef.current = currentUserId
 
     setCheckoutFullName(profile?.full_name?.trim() || user?.user_metadata?.full_name || '')
     setCheckoutEmail(profile?.email?.trim() || user?.email || '')
@@ -189,6 +203,7 @@ export function PublicCheckoutPage() {
     )
   }, [
     canContinue,
+    user?.id,
     profile?.address,
     profile?.address_complement,
     profile?.address_number,
