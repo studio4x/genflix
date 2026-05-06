@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { z } from 'zod'
 
-import { getBearerToken, getHeaderValue } from '../../_shared/asaas.js'
+import { getAsaasAccessToken, getAsaasBaseUrl, getBearerToken, getHeaderValue } from '../../_shared/asaas.js'
 
 type ApiRequest = {
   method?: string
@@ -51,7 +51,46 @@ type CheckoutSessionRow = {
   user_id: string | null
   status: string
   course_id: string | null
+  created_at: string
+  released_at: string | null
+  external_payment_id: string | null
+  gateway_environment: 'sandbox' | 'production'
+  raw_response: Record<string, unknown> | null
   courses: { title: string | null } | Array<{ title: string | null }> | null
+}
+
+const REFUND_WINDOW_DAYS = 7
+const REFUND_WINDOW_MS = REFUND_WINDOW_DAYS * 24 * 60 * 60 * 1000
+
+function canRefundWithinWindow(referenceIsoDate: string | null | undefined) {
+  if (!referenceIsoDate) {
+    return false
+  }
+
+  const referenceTime = Date.parse(referenceIsoDate)
+  if (!Number.isFinite(referenceTime)) {
+    return false
+  }
+
+  return Date.now() - referenceTime <= REFUND_WINDOW_MS
+}
+
+function getAsaasRefundError(payload: unknown) {
+  if (!payload || typeof payload !== 'object') {
+    return null
+  }
+
+  const typed = payload as { message?: unknown; errors?: Array<{ description?: unknown }> }
+  if (typeof typed.message === 'string' && typed.message.trim().length > 0) {
+    return typed.message.trim()
+  }
+
+  const description = typed.errors?.[0]?.description
+  if (typeof description === 'string' && description.trim().length > 0) {
+    return description.trim()
+  }
+
+  return null
 }
 
 export default async function handler(req: ApiRequest, res: ApiResponse) {
@@ -102,6 +141,11 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
       user_id,
       status,
       course_id,
+      created_at,
+      released_at,
+      external_payment_id,
+      gateway_environment,
+      raw_response,
       courses:course_id ( title )
     `)
     .eq('id', parsed.data.checkoutSessionId)
@@ -132,19 +176,67 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
     return
   }
 
+  const referenceDate = checkout.released_at ?? checkout.created_at
+  if (!canRefundWithinWindow(referenceDate)) {
+    jsonResponse(res, 409, { error: 'O prazo de 7 dias para solicitar reembolso deste pedido ja expirou.' })
+    return
+  }
+
+  if (!checkout.external_payment_id) {
+    jsonResponse(res, 409, { error: 'Nao foi possivel identificar o pagamento no gateway para estorno automatico.' })
+    return
+  }
+
+  const asaasAccessToken = getAsaasAccessToken(checkout.gateway_environment)
+  if (!asaasAccessToken) {
+    jsonResponse(res, 500, { error: 'Token do gateway de pagamento ausente para processar o estorno.' })
+    return
+  }
+
   const nowIso = new Date().toISOString()
   const requestedReason = parsed.data.reason?.trim() ?? ''
-  const reasonSection = requestedReason.length > 0
-    ? `Motivo informado pelo aluno:\n${requestedReason}`
-    : 'Motivo informado pelo aluno: nao informado.'
+  const refundDescription = requestedReason.length > 0
+    ? requestedReason.slice(0, 240)
+    : 'Solicitacao automatica de reembolso via painel do aluno.'
 
   const courseRelation = Array.isArray(checkout.courses) ? checkout.courses[0] : checkout.courses
   const courseTitle = courseRelation?.title?.trim() || 'Curso sem titulo'
+
+  const asaasRefundResponse = await fetch(
+    `${getAsaasBaseUrl(checkout.gateway_environment)}/v3/payments/${checkout.external_payment_id}/refund`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        access_token: asaasAccessToken,
+      },
+      body: JSON.stringify({
+        description: refundDescription,
+      }),
+    },
+  )
+
+  const asaasRefundPayload = await asaasRefundResponse.json().catch(() => null) as unknown
+  if (!asaasRefundResponse.ok) {
+    jsonResponse(res, 502, {
+      error: getAsaasRefundError(asaasRefundPayload) ?? 'Nao foi possivel processar o estorno automatico no gateway de pagamento.',
+    })
+    return
+  }
 
   const updateSessionResult = await adminClient
     .from('commerce_checkout_sessions')
     .update({
       status: 'refund_pending',
+      raw_response: {
+        ...(checkout.raw_response ?? {}),
+        refundRequest: {
+          requestedAt: nowIso,
+          description: refundDescription,
+          gatewayResponse: asaasRefundPayload ?? {},
+          source: 'student_dashboard',
+        },
+      },
       updated_at: nowIso,
     })
     .eq('id', checkout.id)
@@ -154,33 +246,30 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
     return
   }
 
-  const supportSubject = `Solicitacao de reembolso - Pedido ${checkout.id.slice(0, 8)}`
-  const supportDescription = [
-    'Solicitacao criada pelo aluno via dashboard de pagamentos.',
-    '',
-    `Pedido: ${checkout.id}`,
-    `Curso: ${courseTitle}`,
-    `Course ID: ${checkout.course_id ?? 'nao informado'}`,
-    '',
-    reasonSection,
-  ].join('\n')
+  await adminClient.rpc('cancel_creator_commission_for_checkout', {
+    _checkout_session_id: checkout.id,
+    _reason: 'student_refund_requested',
+  })
 
-  const supportInsert = await adminClient.from('support_tickets').insert({
-    user_id: userData.user.id,
-    category: 'payment',
-    priority: 'high',
-    subject: supportSubject,
-    description: supportDescription,
-  }).select('id').maybeSingle()
-
-  if (supportInsert.error) {
-    jsonResponse(res, 500, { error: 'Solicitacao registrada, mas nao foi possivel abrir ticket de suporte.' })
-    return
+  if (checkout.course_id) {
+    await adminClient
+      .from('course_releases')
+      .update({
+        is_active: false,
+        release_status: 'revoked',
+        revoked_at: nowIso,
+        revoked_reason: 'refund_requested_by_student',
+      })
+      .eq('course_id', checkout.course_id)
+      .eq('user_id', userData.user.id)
+      .eq('source_system', 'asaas')
+      .eq('managed_by_integration', true)
   }
 
   jsonResponse(res, 200, {
     ok: true,
     status: 'refund_pending',
-    supportTicketId: supportInsert.data?.id ?? null,
+    message: `Estorno solicitado automaticamente para o curso ${courseTitle}.`,
+    supportTicketId: null,
   })
 }

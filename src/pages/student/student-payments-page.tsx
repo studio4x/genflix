@@ -24,8 +24,19 @@ function formatDate(dateValue: number) {
   }).format(new Date(dateValue))
 }
 
-function canRequestRefund(status: string) {
-  return status.trim().toLowerCase() === 'paid'
+const REFUND_WINDOW_DAYS = 7
+const REFUND_WINDOW_MS = REFUND_WINDOW_DAYS * 24 * 60 * 60 * 1000
+
+function canRequestRefund(status: string, paymentDate: number) {
+  if (status.trim().toLowerCase() !== 'paid') {
+    return false
+  }
+
+  if (!Number.isFinite(paymentDate)) {
+    return false
+  }
+
+  return Date.now() - paymentDate <= REFUND_WINDOW_MS
 }
 
 type PaymentRowProps = {
@@ -38,6 +49,7 @@ function PaymentRow({ payment, onOpenRefundModal }: PaymentRowProps) {
   const isPendingPayment = payment.status.toLowerCase() === 'open' || payment.status.toLowerCase() === 'pending' || payment.status.toLowerCase() === 'active'
   const invoiceUrl = payment.pdf_url || payment.checkout_url || null
   const actionLabel = isPendingPayment ? 'Pagar' : 'Ver fatura'
+  const refundAllowed = canRequestRefund(payment.status, payment.date)
 
   return (
     <tr className="border-b border-slate-100 last:border-0">
@@ -73,7 +85,7 @@ function PaymentRow({ payment, onOpenRefundModal }: PaymentRowProps) {
           <button
             type="button"
             onClick={() => onOpenRefundModal(payment)}
-            disabled={!canRequestRefund(payment.status)}
+            disabled={!refundAllowed}
             className="inline-flex items-center gap-2 rounded-full border border-[#E6C87B] bg-[#FFF8E8] px-4 py-2 text-xs font-black tracking-[0.02em] text-[#8A5B00] transition-colors hover:bg-[#FDEEC6] disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-400"
           >
             Solicitar reembolso
@@ -169,7 +181,7 @@ function RefundRequestModal({
               <p className="text-[12px] font-black uppercase tracking-[0.3em] text-[#D31C4B]">Confirmar solicitacao</p>
               <h3 className="mt-3 max-w-[520px] text-4xl font-black leading-[1.05] tracking-tight text-[#09142A]">Tens certeza que queres pedir o reembolso?</h3>
               <p className="mt-4 text-lg leading-8 text-[#445166]">
-                Vamos abrir uma solicitacao para a equipe analisar. Se aprovada, o acesso ao curso sera removido.
+                O estorno sera solicitado automaticamente no gateway de pagamento. O acesso ao curso sera removido apos a confirmacao.
               </p>
             </div>
 

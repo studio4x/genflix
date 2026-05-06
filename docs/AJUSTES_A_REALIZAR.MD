@@ -116,6 +116,8 @@
 
 [OK] t34.5 - Na página pública do curso, ao clicar no botão de comprar agora, aparece a mensagem "Entre na sua conta GenFlix para iniciar a compra com segurança.". Não deve funcionar assim. Ao clicar nesse botão, a página de checkout deverá ser aberta. Nessa página do checkout deverá ter a opção de fazer login caso já tenha um cadastro criado, ou então inserir os dados: Nome completo, e-mail, confirmar e-mail, CPF e um campo para aceitar os termos e condições (inserir um link com modal para ele). Deverá ter também um botão de "ir para pagamento" para então o checkout do asaas ser aberto.
 
+[OK] T34.6 - Solicitei o reembolso de um pedido no painel do aluno.. apareceu como "estorno pendente". No asaas, o pedido não teve alteração.. No painel do admin, aparece como estorno pendente, porém, não tenho como concluir o reembolso. Quando um reembolso for solicitado pelo usuário, se estiver dentro de 7 dias, faça o reembolso automaticamente. O botão de reembolso só deve estar disponivel em até 7 dias após a realização do pedido.
+
 ---
 
 ## CHAT 10 — Pagamento
