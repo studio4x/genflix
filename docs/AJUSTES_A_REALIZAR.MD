@@ -128,6 +128,8 @@
 
 [OK] T37 - Configurar parcelamento sem juros em até 3x, com parcela mínima de R$ 50. Acima de 3x, inserir juros.
 
+[OK] T37.5 - Na página do curso, abaixo do valor do curso, insira o texto "em até 12x no cartão". Utilize uma fonte compatível com a fonte do valor para não se sobressair mais que o valor do curso.
+
 ---
 
 ## CHAT 11 — Editor de conteúdo de curso
