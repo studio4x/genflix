@@ -218,6 +218,16 @@ function formatDateTime(value: string | null) {
   }).format(new Date(value))
 }
 
+function statusLabel(status: ArticleStatus | null) {
+  if (status === 'scheduled') {
+    return 'Agendado'
+  }
+  if (status === 'published') {
+    return 'Publicado'
+  }
+  return 'Rascunho'
+}
+
 function removeInternalH1(html: string) {
   if (!html.trim()) {
     return ''
@@ -246,15 +256,6 @@ function calculateReadingTimeMinutes(contentHtml: string) {
   const words = plainText ? plainText.split(' ').length : 0
   const minutes = Math.ceil(words / 200)
   return Math.max(1, minutes)
-}
-
-function isMissingTableError(message?: string | null) {
-  if (!message) {
-    return false
-  }
-
-  const normalized = message.toLowerCase()
-  return normalized.includes("could not find the table") || normalized.includes('pgrst205')
 }
 
 function legacyContentToHtml(value: unknown) {
@@ -401,7 +402,7 @@ function getSeoValidationHints(form: ArticleFormState) {
   }
 
   if (form.seo_title.trim().length < 25 || form.seo_title.trim().length > 60) {
-    hints.push('O SEO title ideal fica entre 25 e 60 caracteres.')
+    hints.push('O título SEO ideal fica entre 25 e 60 caracteres.')
   }
 
   if (form.seo_description.trim().length < 70 || form.seo_description.trim().length > 160) {
@@ -471,7 +472,7 @@ export function AdminBlogPage() {
   const { user } = useAuth()
   const [activeTab, setActiveTab] = useState<'articles' | 'categories' | 'tags'>('articles')
   const [articleView, setArticleView] = useState<'list' | 'editor'>('list')
-  const [isLegacyMode, setIsLegacyMode] = useState(false)
+  const [isLegacyMode, setIsLegacyMode] = useState(true)
   const [isLoading, setIsLoading] = useState(true)
   const [isSavingArticle, setIsSavingArticle] = useState(false)
   const [isSavingCategory, setIsSavingCategory] = useState(false)
@@ -588,37 +589,7 @@ export function AdminBlogPage() {
   async function loadAllData() {
     setIsLoading(true)
     setErrorMessage(null)
-
-    const [articlesResult, categoriesResult, tagsResult, articleTagsResult] = await Promise.all([
-      supabase.from(TABLES.articles).select('*').order('updated_at', { ascending: false }).limit(300),
-      supabase.from(TABLES.categories).select('*').order('display_order', { ascending: true, nullsFirst: false }).limit(300),
-      supabase.from(TABLES.tags).select('*').order('name', { ascending: true }).limit(500),
-      supabase.from(TABLES.articleTags).select('article_id,tag_id').limit(5000),
-    ])
-
-    const firstError = articlesResult.error ?? categoriesResult.error ?? tagsResult.error ?? articleTagsResult.error
-    if (firstError) {
-      if (isMissingTableError(firstError.message)) {
-        await loadLegacyData()
-        return
-      }
-
-      setErrorMessage(firstError.message ?? 'Falha ao carregar módulo de blog.')
-      setIsLoading(false)
-      return
-    }
-
-    const nextArticles = (articlesResult.data ?? []) as BlogArticleRow[]
-    const nextCategories = (categoriesResult.data ?? []) as BlogCategoryRow[]
-    const nextTags = (tagsResult.data ?? []) as BlogTagRow[]
-    const nextArticleTags = (articleTagsResult.data ?? []) as BlogArticleTagRow[]
-
-    setArticles(nextArticles)
-    setCategories(nextCategories)
-    setTags(nextTags)
-    setArticleTagRows(nextArticleTags)
-    setIsLegacyMode(false)
-    setIsLoading(false)
+    await loadLegacyData()
   }
   useEffect(() => {
     void loadAllData()
@@ -719,53 +690,6 @@ export function AdminBlogPage() {
     })
   }
 
-  async function syncLegacyBlogPost(article: BlogArticleRow, selectedCategoryPath: string) {
-    const payload = {
-      slug: article.slug,
-      title: article.title,
-      category: selectedCategoryPath || null,
-      excerpt: article.excerpt ?? null,
-      image_url: article.cover_image_url ?? null,
-      read_time: `${article.reading_time_minutes ?? 1} min`,
-      author: article.author_id ?? null,
-      published_at: article.published_at,
-      content: stripHtml(article.content_html ?? '')
-        .split('. ')
-        .map((entry) => entry.trim())
-        .filter(Boolean),
-      featured: article.featured ?? false,
-      status: article.status,
-    }
-
-    const result = await supabase
-      .from('blog_posts')
-      .upsert(payload, { onConflict: 'slug' })
-      .select('id')
-      .maybeSingle()
-
-    if (result.error) {
-      return
-    }
-  }
-
-  async function persistArticleTags(articleId: string, tagIds: string[]) {
-    const deleteResult = await supabase.from(TABLES.articleTags).delete().eq('article_id', articleId)
-    if (deleteResult.error) {
-      throw deleteResult.error
-    }
-
-    const uniqueTagIds = Array.from(new Set(tagIds))
-    if (uniqueTagIds.length === 0) {
-      return
-    }
-
-    const insertPayload = uniqueTagIds.map((tagId) => ({ article_id: articleId, tag_id: tagId }))
-    const insertResult = await supabase.from(TABLES.articleTags).insert(insertPayload)
-    if (insertResult.error) {
-      throw insertResult.error
-    }
-  }
-
   async function saveArticleWithStatus(nextStatus?: ArticleStatus | null) {
     setErrorMessage(null)
     setSuccessMessage(null)
@@ -776,15 +700,9 @@ export function AdminBlogPage() {
     const cleanedHtml = removeInternalH1(articleForm.contentHtml)
     const readingTime = calculateReadingTimeMinutes(cleanedHtml)
     const effectiveStatus = nextStatus ?? articleForm.status
-    const focusKeyword = articleForm.focusKeyword.trim()
 
     if (!title || !slug) {
       setErrorMessage('Informe título e slug do artigo.')
-      return
-    }
-
-    if (!isLegacyMode && effectiveStatus === 'published' && !focusKeyword) {
-      setErrorMessage('Para publicar, defina a palavra-chave de foco.')
       return
     }
 
@@ -795,101 +713,38 @@ export function AdminBlogPage() {
 
     setIsSavingArticle(true)
 
-    const payload = {
+    const legacyPayload = {
       title,
       slug,
+      category: null,
       excerpt: articleForm.excerpt.trim() || null,
-      content_html: cleanedHtml || null,
-      cover_image_url: articleForm.coverImageUrl.trim() || null,
-      status: effectiveStatus,
-      featured: articleForm.featured,
-      author_id: user?.id ?? null,
-      category_id: articleForm.categoryId === '__none__' ? null : articleForm.categoryId,
+      image_url: articleForm.coverImageUrl.trim() || null,
+      read_time: `${readingTime} min`,
+      author: user?.id ?? null,
       published_at: effectiveStatus === 'published'
         ? (articleForm.publishedAt ? new Date(articleForm.publishedAt).toISOString() : new Date().toISOString())
         : null,
-      scheduled_publish_at: effectiveStatus === 'scheduled'
-        ? new Date(articleForm.scheduledPublishAt).toISOString()
-        : null,
-      reading_time_minutes: readingTime,
-      focus_keyword: focusKeyword || null,
-      seo_title: articleForm.seo_title.trim() || null,
-      seo_description: articleForm.seo_description.trim() || null,
-      seo_canonical_url: articleForm.seo_canonical_url.trim() || null,
-      seo_robots: articleForm.seo_robots.trim() || 'index,follow',
-      seo_og_title: articleForm.seo_og_title.trim() || null,
-      seo_og_description: articleForm.seo_og_description.trim() || null,
-      seo_og_image_url: articleForm.seo_og_image_url.trim() || null,
+      content: stripHtml(cleanedHtml)
+        .split('. ')
+        .map((entry) => entry.trim())
+        .filter(Boolean),
+      featured: articleForm.featured,
+      status: effectiveStatus,
     }
 
-    if (isLegacyMode) {
-      const legacyPayload = {
-        title,
-        slug,
-        category: null,
-        excerpt: articleForm.excerpt.trim() || null,
-        image_url: articleForm.coverImageUrl.trim() || null,
-        read_time: `${readingTime} min`,
-        author: user?.id ?? null,
-        published_at: effectiveStatus === 'published'
-          ? (articleForm.publishedAt ? new Date(articleForm.publishedAt).toISOString() : new Date().toISOString())
-          : null,
-        content: stripHtml(cleanedHtml)
-          .split('. ')
-          .map((entry) => entry.trim())
-          .filter(Boolean),
-        featured: articleForm.featured,
-        status: effectiveStatus,
-      }
+    const legacyResult = selectedArticleId
+      ? await supabase.from('blog_posts').update(legacyPayload).eq('id', selectedArticleId).select('*').single()
+      : await supabase.from('blog_posts').insert(legacyPayload).select('*').single()
 
-      const legacyResult = selectedArticleId
-        ? await supabase.from('blog_posts').update(legacyPayload).eq('id', selectedArticleId).select('*').single()
-        : await supabase.from('blog_posts').insert(legacyPayload).select('*').single()
-
-      if (legacyResult.error) {
-        setErrorMessage(legacyResult.error.message)
-        setIsSavingArticle(false)
-        return
-      }
-
-      await loadAllData()
-      const savedLegacy = mapLegacyPostToArticle(legacyResult.data as LegacyBlogPostRow)
-      populateArticleForm(savedLegacy)
-      setArticleForm((current) => ({
-        ...current,
-        status: effectiveStatus,
-        contentHtml: cleanedHtml,
-        readingTimeMinutes: readingTime,
-      }))
-      setArticleSuccessMessage('Artigo salvo com sucesso.')
-      setIsSavingArticle(false)
-      return
-    }
-
-    const result = selectedArticleId
-      ? await supabase.from(TABLES.articles).update(payload).eq('id', selectedArticleId).select('*').single()
-      : await supabase.from(TABLES.articles).insert(payload).select('*').single()
-
-    if (result.error) {
-      setErrorMessage(result.error.message)
-      setIsSavingArticle(false)
-      return
-    }
-
-    const savedArticle = result.data as BlogArticleRow
-
-    try {
-      await persistArticleTags(savedArticle.id, articleForm.tagIds)
-      const selectedCategory = categories.find((item) => item.id === savedArticle.category_id)
-      await syncLegacyBlogPost(savedArticle, selectedCategory ? getCategoryPath(selectedCategory, categories) : '')
-    } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'Falha ao persistir relacionamento de tags.')
+    if (legacyResult.error) {
+      setErrorMessage(legacyResult.error.message)
       setIsSavingArticle(false)
       return
     }
 
     await loadAllData()
-    populateArticleForm(savedArticle)
+    const savedLegacy = mapLegacyPostToArticle(legacyResult.data as LegacyBlogPostRow)
+    populateArticleForm(savedLegacy)
     setArticleForm((current) => ({
       ...current,
       status: effectiveStatus,
@@ -918,26 +773,10 @@ export function AdminBlogPage() {
     setErrorMessage(null)
     setSuccessMessage(null)
 
-    if (isLegacyMode) {
-      const deleteLegacy = await supabase.from('blog_posts').delete().eq('id', selectedArticleId)
-      if (deleteLegacy.error) {
-        setErrorMessage(deleteLegacy.error.message)
-        return
-      }
-    } else {
-      const deleteLinks = await supabase.from(TABLES.articleTags).delete().eq('article_id', selectedArticleId)
-      if (deleteLinks.error) {
-        setErrorMessage(deleteLinks.error.message)
-        return
-      }
-
-      const deleteArticle = await supabase.from(TABLES.articles).delete().eq('id', selectedArticleId)
-      if (deleteArticle.error) {
-        setErrorMessage(deleteArticle.error.message)
-        return
-      }
-
-      await supabase.from('blog_posts').delete().eq('slug', found.slug)
+    const deleteLegacy = await supabase.from('blog_posts').delete().eq('id', selectedArticleId)
+    if (deleteLegacy.error) {
+      setErrorMessage(deleteLegacy.error.message)
+      return
     }
 
     await loadAllData()
@@ -1173,7 +1012,7 @@ export function AdminBlogPage() {
       <div className="grid gap-3">
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
-            {labelPrefix} SEO title
+            {labelPrefix} Título SEO
             <input
               value={value.seo_title}
               onChange={(event) => onChange({ ...value, seo_title: event.target.value })}
@@ -1181,7 +1020,7 @@ export function AdminBlogPage() {
             />
           </label>
           <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
-            {labelPrefix} canonical URL
+            {labelPrefix} URL canônica
             <input
               value={value.seo_canonical_url}
               onChange={(event) => onChange({ ...value, seo_canonical_url: event.target.value })}
@@ -1191,7 +1030,7 @@ export function AdminBlogPage() {
         </div>
 
         <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
-          {labelPrefix} SEO description
+          {labelPrefix} Descrição SEO
           <textarea
             value={value.seo_description}
             onChange={(event) => onChange({ ...value, seo_description: event.target.value })}
@@ -1202,7 +1041,7 @@ export function AdminBlogPage() {
 
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
-            {labelPrefix} robots
+            {labelPrefix} Robots
             <input
               value={value.seo_robots}
               onChange={(event) => onChange({ ...value, seo_robots: event.target.value })}
@@ -1211,7 +1050,7 @@ export function AdminBlogPage() {
             />
           </label>
           <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
-            {labelPrefix} OG image URL
+            {labelPrefix} URL da imagem OG
             <input
               value={value.seo_og_image_url}
               onChange={(event) => onChange({ ...value, seo_og_image_url: event.target.value })}
@@ -1222,7 +1061,7 @@ export function AdminBlogPage() {
 
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
-            {labelPrefix} OG title
+            {labelPrefix} Título OG
             <input
               value={value.seo_og_title}
               onChange={(event) => onChange({ ...value, seo_og_title: event.target.value })}
@@ -1230,7 +1069,7 @@ export function AdminBlogPage() {
             />
           </label>
           <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
-            {labelPrefix} OG description
+            {labelPrefix} Descrição OG
             <input
               value={value.seo_og_description}
               onChange={(event) => onChange({ ...value, seo_og_description: event.target.value })}
@@ -1303,9 +1142,9 @@ export function AdminBlogPage() {
         <section className="space-y-6">
           <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
             <div className="rounded-2xl border border-[#D8E6EB] bg-white p-4"><p className="text-xs font-bold uppercase text-[#5F7077]">Total</p><p className="mt-2 text-2xl font-black text-[#15323b]">{statusSummary.total}</p></div>
-            <div className="rounded-2xl border border-[#D8E6EB] bg-white p-4"><p className="text-xs font-bold uppercase text-[#5F7077]">Draft</p><p className="mt-2 text-2xl font-black text-[#15323b]">{statusSummary.draft}</p></div>
-            <div className="rounded-2xl border border-[#D8E6EB] bg-white p-4"><p className="text-xs font-bold uppercase text-[#5F7077]">Scheduled</p><p className="mt-2 text-2xl font-black text-[#15323b]">{statusSummary.scheduled}</p></div>
-            <div className="rounded-2xl border border-[#D8E6EB] bg-white p-4"><p className="text-xs font-bold uppercase text-[#5F7077]">Published</p><p className="mt-2 text-2xl font-black text-[#15323b]">{statusSummary.published}</p></div>
+            <div className="rounded-2xl border border-[#D8E6EB] bg-white p-4"><p className="text-xs font-bold uppercase text-[#5F7077]">Rascunhos</p><p className="mt-2 text-2xl font-black text-[#15323b]">{statusSummary.draft}</p></div>
+            <div className="rounded-2xl border border-[#D8E6EB] bg-white p-4"><p className="text-xs font-bold uppercase text-[#5F7077]">Agendados</p><p className="mt-2 text-2xl font-black text-[#15323b]">{statusSummary.scheduled}</p></div>
+            <div className="rounded-2xl border border-[#D8E6EB] bg-white p-4"><p className="text-xs font-bold uppercase text-[#5F7077]">Publicados</p><p className="mt-2 text-2xl font-black text-[#15323b]">{statusSummary.published}</p></div>
             <div className="rounded-2xl border border-[#D8E6EB] bg-white p-4"><p className="text-xs font-bold uppercase text-[#5F7077]">Destaque</p><p className="mt-2 text-2xl font-black text-[#15323b]">{statusSummary.featured}</p></div>
           </section>
 
@@ -1319,7 +1158,7 @@ export function AdminBlogPage() {
                   <Button type="button" variant="outline" className="rounded-xl" onClick={resetArticleForm}>Limpar</Button>
                   {articleForm.slug ? (
                     <Button type="button" variant="outline" className="rounded-xl" onClick={() => window.open(`/blog/${articleForm.slug}`, '_blank', 'noopener,noreferrer')}>
-                      Preview
+                      Visualizar
                     </Button>
                   ) : null}
                 </div>
@@ -1362,9 +1201,9 @@ export function AdminBlogPage() {
                       onChange={(event) => setArticleForm((current) => ({ ...current, status: event.target.value as ArticleStatus }))}
                       className="h-11 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800 outline-none focus:border-[#1398B7]"
                     >
-                      <option value="draft">Draft</option>
-                      <option value="scheduled">Scheduled</option>
-                      <option value="published">Published</option>
+                      <option value="draft">Rascunho</option>
+                      <option value="scheduled">Agendado</option>
+                      <option value="published">Publicado</option>
                     </select>
                   </label>
 
@@ -1476,7 +1315,7 @@ export function AdminBlogPage() {
 
                 <div className="grid gap-3 sm:grid-cols-2">
                   <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
-                    Capa (cover_image_url)
+                    Imagem de capa
                     <input
                       value={articleForm.coverImageUrl}
                       onChange={(event) => setArticleForm((current) => ({ ...current, coverImageUrl: event.target.value }))}
@@ -1494,7 +1333,7 @@ export function AdminBlogPage() {
                 </div>
 
                 <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
-                  Excerpt
+                  Resumo
                   <textarea
                     value={articleForm.excerpt}
                     onChange={(event) => setArticleForm((current) => ({ ...current, excerpt: event.target.value }))}
@@ -1508,7 +1347,7 @@ export function AdminBlogPage() {
                   <div className="space-y-2">
                     <div className="flex flex-wrap items-center gap-2">
                       <label className="grid flex-1 gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
-                        focus_keyword
+                        Palavra-chave foco
                         <input
                           value={articleForm.focusKeyword}
                           onChange={(event) => setArticleForm((current) => ({ ...current, focusKeyword: event.target.value }))}
@@ -1580,7 +1419,7 @@ export function AdminBlogPage() {
                   </div>
                 ) : (
                   <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs font-semibold text-slate-600">
-                    Tags e relacionamento avançado estão indisponíveis no modo legado (schema atual: blog_posts).
+                    Tags e relacionamento avançado estão indisponíveis no modelo atual do blog.
                   </div>
                 )}
 
@@ -1658,10 +1497,10 @@ export function AdminBlogPage() {
                     onChange={(event) => setArticleStatusFilter(event.target.value as 'all' | ArticleStatus)}
                     className="h-10 rounded-xl border border-[#D8E6EB] bg-white px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]"
                   >
-                    <option value="all">Todos status</option>
-                    <option value="draft">Draft</option>
-                    <option value="scheduled">Scheduled</option>
-                    <option value="published">Published</option>
+                    <option value="all">Todos os status</option>
+                    <option value="draft">Rascunho</option>
+                    <option value="scheduled">Agendado</option>
+                    <option value="published">Publicado</option>
                   </select>
                 </div>
               </div>
@@ -1696,7 +1535,7 @@ export function AdminBlogPage() {
                               <p className="font-black text-[#15323b]">{article.title}</p>
                               <p className="mt-1 text-xs font-semibold text-[#6d7f84]">/{article.slug}</p>
                             </td>
-                            <td className="px-4 py-3 font-semibold text-[#15323b]">{article.status ?? 'draft'}</td>
+                            <td className="px-4 py-3 font-semibold text-[#15323b]">{statusLabel(article.status)}</td>
                             <td className="px-4 py-3 font-semibold text-[#5F7077]">{categoryLabel}</td>
                             <td className="px-4 py-3 font-semibold text-[#5F7077]">{formatDateTime(article.published_at)}</td>
                             <td className="px-4 py-3 font-semibold text-[#5F7077]">{article.reading_time_minutes ?? 1} min</td>
