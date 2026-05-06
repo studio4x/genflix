@@ -387,16 +387,16 @@ function getSeoValidationHints(form: ArticleFormState) {
   const focus = form.focusKeyword.trim().toLowerCase()
 
   if (!focus) {
-    hints.push('Defina uma palavra-chave de foco para melhorar as sugestÃµes de SEO.')
+    hints.push('Defina uma palavra-chave de foco para melhorar as sugestões de SEO.')
   } else {
     if (!slug.includes(slugify(focus))) {
-      hints.push('A palavra-chave de foco ainda nÃ£o aparece no slug.')
+      hints.push('A palavra-chave de foco ainda não aparece no slug.')
     }
     if (!title.includes(focus)) {
-      hints.push('A palavra-chave de foco nÃ£o estÃ¡ presente no tÃ­tulo do artigo.')
+      hints.push('A palavra-chave de foco não está presente no título do artigo.')
     }
     if (!excerpt.includes(focus)) {
-      hints.push('A palavra-chave de foco nÃ£o aparece no excerpt.')
+      hints.push('A palavra-chave de foco não aparece no excerpt.')
     }
   }
 
@@ -419,7 +419,7 @@ function suggestFocusKeyword(form: ArticleFormState) {
 
   const words = base
     .toLowerCase()
-    .split(/[^a-z0-9Ã -Ã¿]+/i)
+    .split(/[^a-z0-9à-ÿ]+/i)
     .map((entry) => entry.trim())
     .filter((entry) => entry.length > 3)
 
@@ -446,7 +446,7 @@ function suggestNewTagNames(form: ArticleFormState, tags: BlogTagRow[]) {
   const stopWords = new Set(['para', 'como', 'com', 'sem', 'uma', 'das', 'dos', 'que', 'sobre', 'pela', 'pelo', 'mais', 'este', 'essa'])
 
   const candidates = corpus
-    .split(/[^a-z0-9Ã -Ã¿]+/i)
+    .split(/[^a-z0-9à-ÿ]+/i)
     .map((entry) => entry.trim())
     .filter((entry) => entry.length >= 5 && !stopWords.has(entry))
 
@@ -470,8 +470,8 @@ function suggestNewTagNames(form: ArticleFormState, tags: BlogTagRow[]) {
 export function AdminBlogPage() {
   const { user } = useAuth()
   const [activeTab, setActiveTab] = useState<'articles' | 'categories' | 'tags'>('articles')
+  const [articleView, setArticleView] = useState<'list' | 'editor'>('list')
   const [isLegacyMode, setIsLegacyMode] = useState(false)
-  const [schemaWarning, setSchemaWarning] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isSavingArticle, setIsSavingArticle] = useState(false)
   const [isSavingCategory, setIsSavingCategory] = useState(false)
@@ -581,14 +581,12 @@ export function AdminBlogPage() {
     setArticleTagRows([])
     setIsLegacyMode(true)
     setActiveTab('articles')
-    setSchemaWarning('Modo legado ativo: tabelas blog_articles/blog_categories/blog_tags/blog_article_tags não existem neste projeto. O admin está usando blog_posts para manter operação.')
     setIsLoading(false)
   }
 
   async function loadAllData() {
     setIsLoading(true)
     setErrorMessage(null)
-    setSchemaWarning(null)
 
     const [articlesResult, categoriesResult, tagsResult, articleTagsResult] = await Promise.all([
       supabase.from(TABLES.articles).select('*').order('updated_at', { ascending: false }).limit(300),
@@ -633,6 +631,11 @@ export function AdminBlogPage() {
     setInlineCategoryForm(DEFAULT_INLINE_CATEGORY_FORM)
   }
 
+  function handleCreateArticle() {
+    resetArticleForm()
+    setArticleView('editor')
+  }
+
   function resetCategoryForm() {
     setSelectedCategoryId(null)
     setIsCategorySlugTouched(false)
@@ -672,6 +675,7 @@ export function AdminBlogPage() {
     })
     setSuccessMessage(null)
     setErrorMessage(null)
+    setArticleView('editor')
   }
 
   function populateCategoryForm(category: BlogCategoryRow) {
@@ -771,7 +775,7 @@ export function AdminBlogPage() {
     const focusKeyword = articleForm.focusKeyword.trim()
 
     if (!title || !slug) {
-      setErrorMessage('Informe tÃ­tulo e slug do artigo.')
+      setErrorMessage('Informe título e slug do artigo.')
       return
     }
 
@@ -934,7 +938,8 @@ export function AdminBlogPage() {
 
     await loadAllData()
     resetArticleForm()
-    setSuccessMessage('Artigo excluÃ­do com sucesso.')
+    setArticleView('list')
+    setSuccessMessage('Artigo excluído com sucesso.')
   }
 
   async function handleSaveCategory(inline = false) {
@@ -970,7 +975,7 @@ export function AdminBlogPage() {
     }
 
     if (payload.display_order != null && Number.isNaN(payload.display_order)) {
-      setErrorMessage('Ordem da categoria invÃ¡lida.')
+      setErrorMessage('Ordem da categoria inválida.')
       setIsSavingCategory(false)
       return
     }
@@ -1025,7 +1030,7 @@ export function AdminBlogPage() {
 
     await loadAllData()
     resetCategoryForm()
-    setSuccessMessage('Categoria excluÃ­da com sucesso.')
+    setSuccessMessage('Categoria excluída com sucesso.')
   }
 
   async function handleSaveTag() {
@@ -1101,7 +1106,7 @@ export function AdminBlogPage() {
 
     await loadAllData()
     resetTagForm()
-    setSuccessMessage('Tag excluÃ­da sem quebrar relacionamentos de artigos.')
+    setSuccessMessage('Tag excluída sem quebrar relacionamentos de artigos.')
   }
 
   async function handleFillTagsWithAI() {
@@ -1115,7 +1120,7 @@ export function AdminBlogPage() {
       ...current,
       tagIds: Array.from(new Set([...current.tagIds, ...suggestedIds])),
     }))
-    setSuccessMessage('Tags existentes preenchidas com IA (heurÃ­stica semÃ¢ntica local).')
+    setSuccessMessage('Tags existentes preenchidas com IA (heurística semântica local).')
   }
 
   async function handleSuggestAndCreateTags() {
@@ -1238,11 +1243,7 @@ export function AdminBlogPage() {
       <header className="flex flex-col gap-4 border-b border-[#D8E6EB] pb-5 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <p className="text-[10px] font-black uppercase tracking-[0.28em] text-[#1398B7]">Admin / Blog</p>
-          <h1 className="mt-2 font-readex text-3xl font-semibold tracking-tight text-[#15323b]">Blog e conteÃºdo</h1>
-          <p className="mt-2 max-w-4xl text-sm font-medium leading-6 text-[#6d7f84]">
-            CRUD aderente ao spec atual: artigos em HTML com ReactQuill, categorias/subcategorias com SEO e schema_json, tags com relacionamento em
-            <code className="mx-1 rounded bg-slate-100 px-1 py-0.5">blog_article_tags</code>.
-          </p>
+          <h1 className="mt-2 font-readex text-3xl font-semibold tracking-tight text-[#15323b]">Blog e conteúdo</h1>
         </div>
 
         <div className="flex flex-wrap gap-3">
@@ -1262,16 +1263,14 @@ export function AdminBlogPage() {
           {successMessage}
         </div>
       ) : null}
-      {schemaWarning ? (
-        <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm font-semibold text-amber-800">
-          {schemaWarning}
-        </div>
-      ) : null}
 
       <section className="flex flex-wrap gap-2">
         <button
           type="button"
-          onClick={() => setActiveTab('articles')}
+          onClick={() => {
+            setActiveTab('articles')
+            setArticleView('list')
+          }}
           className={`rounded-full border px-4 py-2 text-sm font-bold ${activeTab === 'articles' ? 'border-[#1398B7] bg-[#1398B7] text-white' : 'border-[#D8E6EB] bg-white text-[#15323b]'}`}
         >
           Artigos
@@ -1306,11 +1305,13 @@ export function AdminBlogPage() {
             <div className="rounded-2xl border border-[#D8E6EB] bg-white p-4"><p className="text-xs font-bold uppercase text-[#5F7077]">Destaque</p><p className="mt-2 text-2xl font-black text-[#15323b]">{statusSummary.featured}</p></div>
           </section>
 
-          <section className="grid gap-6 xl:grid-cols-[minmax(0,1.2fr)_minmax(0,1.3fr)]">
-            <article className="rounded-[28px] border border-[#D8E6EB] bg-white p-5">
+          <section className="grid gap-6">
+            {articleView === 'editor' ? (
+              <article className="rounded-[28px] border border-[#D8E6EB] bg-white p-5">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <h2 className="text-lg font-black tracking-tight text-[#15323b]">{selectedArticleId ? 'Editar artigo' : 'Novo artigo'}</h2>
                 <div className="flex gap-2">
+                  <Button type="button" variant="outline" className="rounded-xl" onClick={() => setArticleView('list')}>Voltar para lista</Button>
                   <Button type="button" variant="outline" className="rounded-xl" onClick={resetArticleForm}>Limpar</Button>
                   {articleForm.slug ? (
                     <Button type="button" variant="outline" className="rounded-xl" onClick={() => window.open(`/blog/${articleForm.slug}`, '_blank', 'noopener,noreferrer')}>
@@ -1322,7 +1323,7 @@ export function AdminBlogPage() {
 
               <div className="mt-4 grid gap-4">
                 <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
-                  TÃ­tulo
+                  Título
                   <input
                     value={articleForm.title}
                     onChange={(event) => {
@@ -1498,44 +1499,47 @@ export function AdminBlogPage() {
                   />
                 </label>
 
-                <div className="space-y-2">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <label className="grid flex-1 gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
-                      focus_keyword
-                      <input
-                        value={articleForm.focusKeyword}
-                        onChange={(event) => setArticleForm((current) => ({ ...current, focusKeyword: event.target.value }))}
-                        className="h-11 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800"
-                      />
-                    </label>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="mt-5 rounded-xl"
-                      onClick={() => setArticleForm((current) => ({ ...current, focusKeyword: suggestFocusKeyword(current) }))}
-                    >
-                      Sugerir palavra-chave
-                    </Button>
+                <section className="space-y-3 rounded-2xl border border-[#D8E6EB] bg-[#F8FBFC] p-4">
+                  <p className="text-xs font-black uppercase tracking-[0.2em] text-[#1398B7]">SEO do artigo</p>
+                  <div className="space-y-2">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <label className="grid flex-1 gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
+                        focus_keyword
+                        <input
+                          value={articleForm.focusKeyword}
+                          onChange={(event) => setArticleForm((current) => ({ ...current, focusKeyword: event.target.value }))}
+                          className="h-11 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800"
+                        />
+                      </label>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="mt-5 rounded-xl"
+                        onClick={() => setArticleForm((current) => ({ ...current, focusKeyword: suggestFocusKeyword(current) }))}
+                      >
+                        Sugerir palavra-chave
+                      </Button>
+                    </div>
                   </div>
-                </div>
 
-                {seoHints.length > 0 ? (
-                  <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs font-semibold text-amber-800">
-                    {seoHints.map((hint) => (
-                      <p key={hint}>{hint}</p>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-xs font-semibold text-emerald-700">
-                    SEO bÃ¡sico do artigo estÃ¡ consistente com a palavra-chave de foco.
-                  </div>
-                )}
+                  {seoHints.length > 0 ? (
+                    <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs font-semibold text-amber-800">
+                      {seoHints.map((hint) => (
+                        <p key={hint}>{hint}</p>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-xs font-semibold text-emerald-700">
+                      SEO básico do artigo está consistente com a palavra-chave de foco.
+                    </div>
+                  )}
 
-                {renderSeoFields(
-                  articleForm,
-                  (next) => setArticleForm((current) => ({ ...current, ...next })),
-                  'Artigo',
-                )}
+                  {renderSeoFields(
+                    articleForm,
+                    (next) => setArticleForm((current) => ({ ...current, ...next })),
+                    'Artigo',
+                  )}
+                </section>
 
                 {!isLegacyMode ? (
                   <div className="space-y-2">
@@ -1587,7 +1591,7 @@ export function AdminBlogPage() {
                 </label>
 
                 <div className="space-y-1">
-                  <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-500">ConteÃºdo (content_html)</p>
+                  <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-500">Conteúdo (content_html)</p>
                   <RichTextEditor
                     value={articleForm.contentHtml}
                     onChange={(nextHtml) => {
@@ -1623,16 +1627,21 @@ export function AdminBlogPage() {
                   ) : null}
                 </div>
               </div>
-            </article>
+              </article>
+            ) : null}
 
-            <article className="rounded-[28px] border border-[#D8E6EB] bg-white p-5">
+            {articleView === 'list' ? (
+              <article className="rounded-[28px] border border-[#D8E6EB] bg-white p-5">
               <div className="flex flex-col gap-3 border-b border-[#D8E6EB] pb-4 sm:flex-row sm:items-center sm:justify-between">
                 <h2 className="text-lg font-black tracking-tight text-[#15323b]">Lista de artigos</h2>
                 <div className="flex flex-wrap gap-2">
+                  <Button type="button" className="rounded-xl bg-[#1398B7] hover:bg-[#0A3640]" onClick={handleCreateArticle}>
+                    Novo artigo
+                  </Button>
                   <input
                     value={articleSearch}
                     onChange={(event) => setArticleSearch(event.target.value)}
-                    placeholder="Buscar por tÃ­tulo, slug ou categoria..."
+                    placeholder="Buscar por título, slug ou categoria..."
                     className="h-10 min-w-[220px] rounded-xl border border-[#D8E6EB] bg-white px-3 text-sm font-medium text-[#15323b] outline-none focus:border-[#1398B7]"
                   />
                   <select
@@ -1657,10 +1666,10 @@ export function AdminBlogPage() {
                   <table className="min-w-full divide-y divide-[#D8E6EB] text-left text-sm">
                     <thead className="bg-[#F2F7F9] text-[10px] font-black uppercase tracking-[0.2em] text-[#5F7077]">
                       <tr>
-                        <th className="px-4 py-3">TÃ­tulo</th>
+                        <th className="px-4 py-3">Título</th>
                         <th className="px-4 py-3">Status</th>
                         <th className="px-4 py-3">Categoria</th>
-                        <th className="px-4 py-3">PublicaÃ§Ã£o</th>
+                        <th className="px-4 py-3">Publicação</th>
                         <th className="px-4 py-3">Leitura</th>
                       </tr>
                     </thead>
@@ -1689,7 +1698,8 @@ export function AdminBlogPage() {
                   </table>
                 </div>
               )}
-            </article>
+              </article>
+            ) : null}
           </section>
         </section>
       ) : null}
@@ -1754,7 +1764,7 @@ export function AdminBlogPage() {
                 </label>
               </div>
               <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
-                DescriÃ§Ã£o
+                Descrição
                 <textarea
                   value={categoryForm.description}
                   onChange={(event) => setCategoryForm((current) => ({ ...current, description: event.target.value }))}
@@ -1815,7 +1825,7 @@ export function AdminBlogPage() {
                 >
                   <p className="text-sm font-black text-[#15323b]">{getCategoryPath(category, categories)}</p>
                   <p className="mt-1 text-xs font-semibold text-[#6d7f84]">
-                    /{category.slug} Â· SEO robots: {category.seo_robots ?? 'index,follow'}
+                    /{category.slug} · SEO robots: {category.seo_robots ?? 'index,follow'}
                   </p>
                 </button>
               ))}
@@ -1861,7 +1871,7 @@ export function AdminBlogPage() {
                 </label>
               </div>
               <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
-                DescriÃ§Ã£o
+                Descrição
                 <textarea
                   value={tagForm.description}
                   onChange={(event) => setTagForm((current) => ({ ...current, description: event.target.value }))}
@@ -1902,7 +1912,7 @@ export function AdminBlogPage() {
                   className={`rounded-xl border px-3 py-3 text-left transition ${selectedTagId === tag.id ? 'border-[#1398B7] bg-[#E8F6FA]' : 'border-[#D8E6EB] bg-white hover:bg-[#F8FBFC]'}`}
                 >
                   <p className="text-sm font-black text-[#15323b]">#{tag.name}</p>
-                  <p className="mt-1 text-xs font-semibold text-[#6d7f84]">/{tag.slug} Â· robots: {tag.seo_robots ?? 'index,follow'}</p>
+                  <p className="mt-1 text-xs font-semibold text-[#6d7f84]">/{tag.slug} · robots: {tag.seo_robots ?? 'index,follow'}</p>
                 </button>
               ))}
             </div>
