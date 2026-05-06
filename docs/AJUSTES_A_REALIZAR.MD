@@ -118,6 +118,7 @@
 
 [OK] T34.6 - Solicitei o reembolso de um pedido no painel do aluno.. apareceu como "estorno pendente". No asaas, o pedido não teve alteração.. No painel do admin, aparece como estorno pendente, porém, não tenho como concluir o reembolso. Quando um reembolso for solicitado pelo usuário, se estiver dentro de 7 dias, faça o reembolso automaticamente. O botão de reembolso só deve estar disponivel em até 7 dias após a realização do pedido.
 
+[OK] t34.7 - Na seção de endereço dentro da página de checkout, quando eu insiro o cep, os campos do endereço são preenchidos corretamente e a cor do campo ficam todos iguais, como se realmente estivesse com conteúdo inserido. Isso está OK. Porém, no campo de Número, a cor do campo deverá ser branco e deverá ter um placeholder em vermelho escrito "insira o número aqui..". No campo de Complemento, mantenha o placeholder atual e só mude a cor do campo para branco...
 ---
 
 ## CHAT 10 — Pagamento
