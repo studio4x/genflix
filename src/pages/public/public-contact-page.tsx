@@ -34,27 +34,33 @@ const contactLayoutSchema = createSectionRegistrySchema({
 function ContactFormSection({
   name,
   email,
+  emailConfirmation,
   message,
   feedback,
   isSubmitting,
   namePlaceholder,
   emailPlaceholder,
+  emailConfirmationPlaceholder,
   messagePlaceholder,
   onNameChange,
   onEmailChange,
+  onEmailConfirmationChange,
   onMessageChange,
   onSubmit,
 }: {
   name: string
   email: string
+  emailConfirmation: string
   message: string
   feedback: string | null
   isSubmitting: boolean
   namePlaceholder: string
   emailPlaceholder: string
+  emailConfirmationPlaceholder: string
   messagePlaceholder: string
   onNameChange: (value: string) => void
   onEmailChange: (value: string) => void
+  onEmailConfirmationChange: (value: string) => void
   onMessageChange: (value: string) => void
   onSubmit: (event: FormEvent<HTMLFormElement>) => void
 }) {
@@ -116,6 +122,25 @@ function ContactFormSection({
                 </div>
 
                 <div>
+                  <label htmlFor="contact-email-confirmation" className="mb-2 block text-sm font-medium text-[#4f656c]">
+                    <EditableText
+                      entryKey="contact.form.email_confirmation.label"
+                      fallback="Reinsira seu e-mail:"
+                      label="Rotulo de reinsira e-mail"
+                    />
+                  </label>
+                  <input
+                    id="contact-email-confirmation"
+                    type="email"
+                    value={emailConfirmation}
+                    onChange={(event) => onEmailConfirmationChange(event.target.value)}
+                    required
+                    placeholder={emailConfirmationPlaceholder}
+                    className="h-12 w-full rounded-[12px] border border-[#D8E6EB] bg-[#EDF4F6] px-4 text-sm text-[#183139] outline-none transition-colors placeholder:text-[#9babb0] focus:border-[#1398B7] focus:bg-white"
+                  />
+                </div>
+
+                <div>
                   <label htmlFor="contact-message" className="mb-2 block text-sm font-medium text-[#4f656c]">
                     <EditableText entryKey="contact.form.message.label" fallback="Assunto:" label="Rotulo do assunto" />
                   </label>
@@ -148,12 +173,14 @@ export function PublicContactPage() {
   const waitingRoleResolution = !!user && roles.length === 0
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
+  const [emailConfirmation, setEmailConfirmation] = useState('')
   const [message, setMessage] = useState('')
   const [feedback, setFeedback] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const contactSections = useEditableValue('contact.layout.sections', contactLayoutFallback)
   const namePlaceholder = useEditableValue('contact.form.name.placeholder', 'Seu nome')
   const emailPlaceholder = useEditableValue('contact.form.email.placeholder', 'Seu@e-mail.com')
+  const emailConfirmationPlaceholder = useEditableValue('contact.form.email_confirmation.placeholder', 'Seu@e-mail.com')
   const messagePlaceholder = useEditableValue('contact.form.message.placeholder', 'Escreva sua mensagem')
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -182,6 +209,7 @@ export function PublicContactPage() {
 
       setName('')
       setEmail('')
+      setEmailConfirmation('')
       setMessage('')
       setFeedback('Mensagem enviada com sucesso. Em breve entraremos em contato.')
     } catch (error) {
@@ -219,14 +247,17 @@ export function PublicContactPage() {
             <ContactFormSection
               name={name}
               email={email}
+              emailConfirmation={emailConfirmation}
               message={message}
               feedback={feedback}
               isSubmitting={isSubmitting}
               namePlaceholder={namePlaceholder}
               emailPlaceholder={emailPlaceholder}
+              emailConfirmationPlaceholder={emailConfirmationPlaceholder}
               messagePlaceholder={messagePlaceholder}
               onNameChange={setName}
               onEmailChange={setEmail}
+              onEmailConfirmationChange={setEmailConfirmation}
               onMessageChange={setMessage}
               onSubmit={handleSubmit}
             />

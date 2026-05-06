@@ -149,7 +149,7 @@
 
 ## CHAT 13 — Contato
 
-[ ] T43 - No formulário de contato, adicionar campo “Reinsira seu e-mail”.
+[OK] T43 - No formulário de contato, adicionar campo “Reinsira seu e-mail”.
 
 [ ] T44 - Validar se os dois campos de e-mail do formulário de contato são iguais.
 
