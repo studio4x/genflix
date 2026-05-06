@@ -478,6 +478,7 @@ export function AdminBlogPage() {
   const [isSavingTag, setIsSavingTag] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
+  const [articleSuccessMessage, setArticleSuccessMessage] = useState<string | null>(null)
 
   const [articles, setArticles] = useState<BlogArticleRow[]>([])
   const [categories, setCategories] = useState<BlogCategoryRow[]>([])
@@ -629,6 +630,7 @@ export function AdminBlogPage() {
     setArticleForm(DEFAULT_ARTICLE_FORM)
     setShowInlineCategoryForm(false)
     setInlineCategoryForm(DEFAULT_INLINE_CATEGORY_FORM)
+    setArticleSuccessMessage(null)
   }
 
   function handleCreateArticle() {
@@ -675,6 +677,7 @@ export function AdminBlogPage() {
     })
     setSuccessMessage(null)
     setErrorMessage(null)
+    setArticleSuccessMessage(null)
     setArticleView('editor')
   }
 
@@ -766,6 +769,7 @@ export function AdminBlogPage() {
   async function saveArticleWithStatus(nextStatus?: ArticleStatus | null) {
     setErrorMessage(null)
     setSuccessMessage(null)
+    setArticleSuccessMessage(null)
 
     const title = articleForm.title.trim()
     const slug = articleForm.slug.trim()
@@ -857,7 +861,7 @@ export function AdminBlogPage() {
         contentHtml: cleanedHtml,
         readingTimeMinutes: readingTime,
       }))
-      setSuccessMessage('Artigo salvo com sucesso (modo legado).')
+      setArticleSuccessMessage('Artigo salvo com sucesso.')
       setIsSavingArticle(false)
       return
     }
@@ -892,7 +896,7 @@ export function AdminBlogPage() {
       contentHtml: cleanedHtml,
       readingTimeMinutes: readingTime,
     }))
-    setSuccessMessage('Artigo salvo com sucesso.')
+    setArticleSuccessMessage('Artigo salvo com sucesso.')
     setIsSavingArticle(false)
   }
 
@@ -1626,6 +1630,11 @@ export function AdminBlogPage() {
                     </Button>
                   ) : null}
                 </div>
+                {articleSuccessMessage ? (
+                  <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm font-bold text-emerald-700">
+                    {articleSuccessMessage}
+                  </div>
+                ) : null}
               </div>
               </article>
             ) : null}
