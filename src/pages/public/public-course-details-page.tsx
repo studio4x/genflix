@@ -217,7 +217,7 @@ export function PublicCourseDetailsPage() {
                     <p className="text-[2rem] font-extrabold leading-none tracking-[-0.05em] text-[#1398B7]">
                       {detail.priceLabel}
                     </p>
-                    <p className="mt-1 text-xs font-semibold uppercase tracking-[0.08em] text-[#5f7178]">em ate 12x no cartao</p>
+                    <p className="mt-1 text-xs font-semibold uppercase tracking-[0.08em] text-[#5f7178]">em ate 12x no cartao de credito</p>
                     <p className="mt-2 text-sm text-[#6a7b81]">{detail.secondaryPriceLabel}</p>
                   </div>
 

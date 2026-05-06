@@ -655,6 +655,7 @@ export function PublicCheckoutPage() {
                       <span>Valor do curso</span>
                       <span>{formatPriceLabel(detail.priceLabel)}</span>
                     </div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[#5f7077]">em ate 12x no cartao de credito</p>
                   </div>
                 </div>
 
