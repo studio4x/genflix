@@ -464,6 +464,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
     id: checkoutSessionId,
     course_id: course.id,
     user_id: resolvedUserId,
+    amount_cents: priceCents,
     buyer_name: buyerName,
     buyer_email: buyerEmail,
     buyer_document: buyerDocument,
