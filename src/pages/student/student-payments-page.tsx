@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom'
 
 import { Button } from '@/components/ui/button'
 import { fetchStudentPaymentHistory, requestStudentRefund, type StudentPaymentRecord } from '@/features/student/payments/api'
+import { normalizePaymentStatus, paymentStatusClassName } from '@/lib/payment-status'
 
 function formatCurrency(amount: number, currency: string) {
   return new Intl.NumberFormat('pt-BR', {
@@ -23,41 +24,6 @@ function formatDate(dateValue: number) {
   }).format(new Date(dateValue))
 }
 
-function normalizeStatus(status: string) {
-  const normalized = status.trim().toLowerCase()
-
-  if (normalized === 'paid' || normalized === 'succeeded') {
-    return { label: 'Pago', tone: 'green' as const }
-  }
-  if (normalized === 'open' || normalized === 'pending' || normalized === 'active') {
-    return { label: 'Pendente', tone: 'amber' as const }
-  }
-  if (normalized === 'refund_pending') {
-    return { label: 'Estorno pendente', tone: 'amber' as const }
-  }
-  if (normalized === 'refunded') {
-    return { label: 'Estornado', tone: 'slate' as const }
-  }
-  if (normalized === 'void' || normalized === 'canceled' || normalized === 'cancelled' || normalized === 'expired') {
-    return { label: 'Cancelado', tone: 'red' as const }
-  }
-
-  return { label: status, tone: 'slate' as const }
-}
-
-function statusClassName(tone: 'green' | 'amber' | 'red' | 'slate') {
-  if (tone === 'green') {
-    return 'border-emerald-200 bg-emerald-50 text-emerald-700'
-  }
-  if (tone === 'amber') {
-    return 'border-amber-200 bg-amber-50 text-amber-700'
-  }
-  if (tone === 'red') {
-    return 'border-red-200 bg-red-50 text-red-700'
-  }
-  return 'border-slate-200 bg-slate-100 text-slate-700'
-}
-
 function canRequestRefund(status: string) {
   return status.trim().toLowerCase() === 'paid'
 }
@@ -68,7 +34,7 @@ type PaymentRowProps = {
 }
 
 function PaymentRow({ payment, onOpenRefundModal }: PaymentRowProps) {
-  const status = normalizeStatus(payment.status)
+  const status = normalizePaymentStatus(payment.status)
   const isPendingPayment = payment.status.toLowerCase() === 'open' || payment.status.toLowerCase() === 'pending' || payment.status.toLowerCase() === 'active'
   const invoiceUrl = payment.pdf_url || payment.checkout_url || null
   const actionLabel = isPendingPayment ? 'Pagar' : 'Ver fatura'
@@ -82,7 +48,7 @@ function PaymentRow({ payment, onOpenRefundModal }: PaymentRowProps) {
       </td>
       <td className="px-4 py-3 text-sm font-bold text-slate-900">{formatCurrency(payment.amount, payment.currency)}</td>
       <td className="px-4 py-3">
-        <span className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-black uppercase tracking-[0.12em] ${statusClassName(status.tone)}`}>
+        <span className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-black uppercase tracking-[0.12em] ${paymentStatusClassName(status.tone)}`}>
           {status.label}
         </span>
       </td>

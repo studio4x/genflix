@@ -4,6 +4,7 @@ import { AlertTriangle, CheckCircle2, RefreshCw, XCircle } from 'lucide-react'
 import { useAuth } from '@/app/providers/auth-provider'
 import { Button } from '@/components/ui/button'
 import {
+  fetchAdminPaymentInvoiceUrl,
   fetchCommerceDashboardSummaries,
   fetchPaymentGatewayDiagnostics,
   fetchPaymentGatewaySettings,
@@ -15,6 +16,7 @@ import {
   type PaymentGatewayDiagnostics,
   type PaymentGatewayEnvironment,
 } from '@/features/admin/commerce/api'
+import { normalizePaymentStatus, paymentStatusClassName } from '@/lib/payment-status'
 
 function buildWebhookUrl() {
   if (typeof window === 'undefined') {
@@ -48,39 +50,6 @@ function formatDateTime(value: string | null | undefined) {
     dateStyle: 'short',
     timeStyle: 'short',
   }).format(new Date(value))
-}
-
-function formatStatusLabel(status: string) {
-  const labels: Record<string, string> = {
-    active: 'Pendente',
-    paid: 'Pago',
-    canceled: 'Cancelado',
-    expired: 'Expirado',
-    failed: 'Falhou',
-    refunded: 'Reembolsado',
-    chargeback: 'Chargeback',
-    received: 'Recebido',
-    processed: 'Processado',
-    ignored: 'Ignorado',
-  }
-
-  return labels[status] ?? status
-}
-
-function statusTone(status: string) {
-  if (status === 'paid' || status === 'processed') {
-    return 'bg-emerald-50 text-emerald-700 border-emerald-200'
-  }
-
-  if (status === 'active' || status === 'received') {
-    return 'bg-amber-50 text-amber-700 border-amber-200'
-  }
-
-  if (status === 'failed' || status === 'chargeback' || status === 'refunded') {
-    return 'bg-rose-50 text-rose-700 border-rose-200'
-  }
-
-  return 'bg-[#E8F6FA] text-[#0A3640] border-[#D8E6EB]'
 }
 
 function diagnosticTone(status: PaymentDiagnosticCheck['status']) {
@@ -124,6 +93,7 @@ export function AdminPaymentSettingsPage() {
   const [isSaving, setIsSaving] = useState(false)
   const [isDiagnosing, setIsDiagnosing] = useState(false)
   const [copySuccess, setCopySuccess] = useState(false)
+  const [openingInvoiceId, setOpeningInvoiceId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [diagnosticError, setDiagnosticError] = useState<string | null>(null)
   const [metrics, setMetrics] = useState<CommerceDashboardMetrics>(emptyMetrics)
@@ -199,6 +169,22 @@ export function AdminPaymentSettingsPage() {
     window.setTimeout(() => setCopySuccess(false), 2000)
   }
 
+  async function openInvoice(session: CommerceCheckoutSessionSummary) {
+    setOpeningInvoiceId(session.id)
+    try {
+      const resolvedUrl = await fetchAdminPaymentInvoiceUrl(session.id)
+      window.open(resolvedUrl, '_blank', 'noopener,noreferrer')
+    } catch (openError) {
+      if (session.checkout_url) {
+        window.open(session.checkout_url, '_blank', 'noopener,noreferrer')
+        return
+      }
+      setError(openError instanceof Error ? openError.message : 'Nao foi possivel abrir a fatura do pedido.')
+    } finally {
+      setOpeningInvoiceId(null)
+    }
+  }
+
   const metricCards = [
     { label: 'Total de pedidos', value: metrics.totalSessions.toString(), detail: 'checkouts registrados' },
     { label: 'Pagos', value: metrics.paidSessions.toString(), detail: `${metrics.activeSessions} ativo(s)` },
@@ -230,15 +216,18 @@ export function AdminPaymentSettingsPage() {
   const normalizedSearch = searchTerm.trim().toLowerCase()
   const filteredSessions = useMemo(() => {
     return recentSessions.filter((session) => {
-      if (statusFilter === 'pending' && session.status !== 'active') {
+      const normalized = normalizePaymentStatus(session.status)
+      const normalizedLabel = normalized.label.toLowerCase()
+
+      if (statusFilter === 'pending' && normalizedLabel !== 'pendente') {
         return false
       }
 
-      if (statusFilter === 'paid' && session.status !== 'paid') {
+      if (statusFilter === 'paid' && normalizedLabel !== 'pago') {
         return false
       }
 
-      if (statusFilter === 'refunded' && session.status !== 'refunded' && session.status !== 'chargeback') {
+      if (statusFilter === 'refunded' && normalizedLabel !== 'reembolsado') {
         return false
       }
 
@@ -400,28 +389,24 @@ export function AdminPaymentSettingsPage() {
                         <td className="px-5 py-4 text-base text-[#1A3354]">{formatDateTime(session.created_at)}</td>
                         <td className="px-5 py-4">
                           <span
-                            className={`inline-flex rounded-full border px-3 py-1 text-xs font-black uppercase tracking-widest ${statusTone(session.status)}`}
+                            className={`inline-flex rounded-full border px-3 py-1 text-xs font-black uppercase tracking-widest ${paymentStatusClassName(normalizePaymentStatus(session.status).tone)}`}
                           >
-                            {formatStatusLabel(session.status)}
+                            {normalizePaymentStatus(session.status).label}
                           </span>
                         </td>
                         <td className="px-5 py-4 text-base font-bold text-[#031437]">
                           {session.courses?.price_cents != null ? formatMoney(session.courses.price_cents) : '-'}
                         </td>
                         <td className="px-5 py-4">
-                          {session.checkout_url ? (
-                            <Button
-                              asChild
-                              variant="outline"
-                              className="h-10 rounded-full border-[#B7CFDF] px-4 font-semibold text-[#0A2A49]"
-                            >
-                              <a href={session.checkout_url} target="_blank" rel="noreferrer">
-                                Abrir pedido
-                              </a>
-                            </Button>
-                          ) : (
-                            <span className="text-sm text-[#8A9CA4]">Sem link externo</span>
-                          )}
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => void openInvoice(session)}
+                            disabled={openingInvoiceId === session.id}
+                            className="h-10 rounded-full border-[#B7CFDF] px-4 font-semibold text-[#0A2A49] disabled:opacity-60"
+                          >
+                            {openingInvoiceId === session.id ? 'Abrindo...' : 'Abrir pedido'}
+                          </Button>
                         </td>
                       </tr>
                     ))
@@ -449,9 +434,9 @@ export function AdminPaymentSettingsPage() {
                       <p className="text-base font-bold text-[#021B41]">{event.event_type}</p>
                       <div className="mt-2 flex flex-wrap items-center gap-2">
                         <span
-                          className={`inline-flex rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-widest ${statusTone(event.status)}`}
+                          className={`inline-flex rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-widest ${paymentStatusClassName(normalizePaymentStatus(event.status).tone)}`}
                         >
-                          {formatStatusLabel(event.status)}
+                          {normalizePaymentStatus(event.status).label}
                         </span>
                         <span className="text-sm text-[#5F7077]">
                           {formatEnvironmentLabel(event.gateway_environment ?? null)} - {formatDateTime(event.received_at)}

@@ -205,6 +205,32 @@ export async function fetchPaymentGatewayDiagnostics(): Promise<PaymentGatewayDi
   return payload
 }
 
+export async function fetchAdminPaymentInvoiceUrl(sessionId: string) {
+  const sessionResult = await supabase.auth.getSession()
+  const accessToken = sessionResult.data.session?.access_token
+
+  if (!accessToken) {
+    throw new Error('Sessao expirada. Entre novamente para abrir a fatura.')
+  }
+
+  const response = await fetch('/api/admin/payments/invoice-link', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify({ sessionId }),
+  })
+
+  const payload = await response.json().catch(() => null) as { url?: string; error?: string } | null
+
+  if (!response.ok || !payload?.url) {
+    throw new Error(payload?.error ?? 'Nao foi possivel abrir a fatura do pedido.')
+  }
+
+  return payload.url
+}
+
 export async function fetchPublicCatalogCourses() {
   const result = await supabase
     .from('courses')
