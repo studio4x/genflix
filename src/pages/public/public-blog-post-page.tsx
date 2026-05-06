@@ -137,6 +137,7 @@ export function PublicBlogPostPage() {
   const isAdminPreviewRequest = searchParams.get('preview') === 'admin'
   const previewKey = searchParams.get('previewKey') || `slug:${slug}`
   const waitingRoleResolution = !!user && roles.length === 0
+  const canUseAdminPreviewPayload = isAdmin || (isAdminPreviewRequest && !!user && waitingRoleResolution)
   const [post, setPost] = useState<GenflixBlogPost | null>(() => getGenflixBlogPostBySlug(slug))
   const [relatedPosts, setRelatedPosts] = useState<GenflixBlogPost[]>(() =>
     genflixBlogPosts.filter((item) => item.slug !== slug).slice(0, 3),
@@ -181,7 +182,7 @@ export function PublicBlogPostPage() {
           }
         }
 
-        if (!resolvedPost && isAdminPreviewRequest) {
+        if (!resolvedPost && isAdminPreviewRequest && canUseAdminPreviewPayload) {
           const keys = [`admin_blog_preview:${previewKey}`, `admin_blog_preview:slug:${slug}`]
           for (const storageKey of keys) {
             try {
@@ -228,7 +229,7 @@ export function PublicBlogPostPage() {
     return () => {
       isMounted = false
     }
-  }, [isAdmin, isAdminPreviewRequest, previewKey, slug])
+  }, [canUseAdminPreviewPayload, isAdmin, isAdminPreviewRequest, previewKey, slug])
 
   if (isLoading || waitingRoleResolution) {
     return (
