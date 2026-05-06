@@ -213,7 +213,7 @@ export async function fetchAdminPaymentInvoiceUrl(sessionId: string) {
     throw new Error('Sessao expirada. Entre novamente para abrir a fatura.')
   }
 
-  const response = await fetch('/api/admin/payments/invoice-link', {
+  const response = await fetch('/api/admin/payments/diagnostics', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
