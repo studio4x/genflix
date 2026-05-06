@@ -126,7 +126,7 @@
 
 [OK] T36 - Manter pagamento somente por cartão de crédito.
 
-[ ] T37 - Configurar parcelamento sem juros em até 3x, com parcela mínima de R$ 50.
+[OK] T37 - Configurar parcelamento sem juros em até 3x, com parcela mínima de R$ 50. Acima de 3x, inserir juros.
 
 ---
 

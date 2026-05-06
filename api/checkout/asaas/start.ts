@@ -132,6 +132,17 @@ function limitAsaasName(value: string, fallback: string) {
   return normalized.slice(0, 30)
 }
 
+const MIN_INSTALLMENT_VALUE = 50
+const MAX_INSTALLMENTS_ALLOWED = 12
+
+function resolveMaxInstallmentCount(totalAmount: number) {
+  const byMinimumValue = Math.floor(totalAmount / MIN_INSTALLMENT_VALUE)
+  if (!Number.isFinite(byMinimumValue) || byMinimumValue < 2) {
+    return null
+  }
+
+  return Math.max(2, Math.min(MAX_INSTALLMENTS_ALLOWED, byMinimumValue))
+}
 
 export default async function handler(req: ApiRequest, res: ApiResponse) {
   if (req.method === 'OPTIONS') {
@@ -380,9 +391,12 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
   }
 
   const checkoutSessionId = crypto.randomUUID()
+  const totalAmount = priceCents / 100
+  const maxInstallmentCount = resolveMaxInstallmentCount(totalAmount)
+  const chargeTypes = maxInstallmentCount ? ['DETACHED', 'INSTALLMENT'] : ['DETACHED']
   const checkoutRequest = {
     billingTypes: ['CREDIT_CARD'],
-    chargeTypes: ['DETACHED'],
+    chargeTypes,
     minutesToExpire: 1440,
     externalReference: checkoutSessionId,
     callback: {
@@ -395,9 +409,16 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
         name: limitAsaasName(course.title, 'Curso GenFlix'),
         description: course.description?.replace(/<[^>]*>?/gm, ' ').trim() || course.title,
         quantity: 1,
-        value: priceCents / 100,
+        value: totalAmount,
       },
     ],
+    ...(maxInstallmentCount
+      ? {
+        installment: {
+          maxInstallmentCount,
+        },
+      }
+      : {}),
     customerData: {
       name: buyerName,
       email: buyerEmail,
