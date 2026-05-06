@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+﻿import { useEffect, useMemo, useState } from 'react'
 
 import { useAuth } from '@/app/providers/auth-provider'
 import { RichTextEditor } from '@/components/ui/RichTextEditor'
@@ -78,6 +78,23 @@ type BlogTagRow = {
 type BlogArticleTagRow = {
   article_id: string
   tag_id: string
+}
+
+type LegacyBlogPostRow = {
+  id: string
+  slug: string
+  title: string
+  category: string | null
+  excerpt: string | null
+  image_url: string | null
+  read_time: string | null
+  author: string | null
+  published_at: string | null
+  content: unknown
+  featured: boolean | null
+  status: string | null
+  created_at: string
+  updated_at: string
 }
 
 type ArticleFormState = SeoFields & {
@@ -231,6 +248,80 @@ function calculateReadingTimeMinutes(contentHtml: string) {
   return Math.max(1, minutes)
 }
 
+function isMissingTableError(message?: string | null) {
+  if (!message) {
+    return false
+  }
+
+  const normalized = message.toLowerCase()
+  return normalized.includes("could not find the table") || normalized.includes('pgrst205')
+}
+
+function legacyContentToHtml(value: unknown) {
+  if (Array.isArray(value)) {
+    const paragraphs = value
+      .map((entry) => (typeof entry === 'string' ? entry.trim() : ''))
+      .filter(Boolean)
+    return paragraphs.map((paragraph) => `<p>${paragraph}</p>`).join('')
+  }
+
+  if (typeof value === 'string') {
+    return `<p>${value.trim()}</p>`
+  }
+
+  return ''
+}
+
+function parseLegacyReadTime(readTime: string | null, fallbackHtml: string) {
+  const extracted = readTime?.match(/\d+/)?.[0]
+  if (!extracted) {
+    return calculateReadingTimeMinutes(fallbackHtml)
+  }
+
+  const numeric = Number(extracted)
+  return Number.isNaN(numeric) ? calculateReadingTimeMinutes(fallbackHtml) : Math.max(1, numeric)
+}
+
+function normalizeLegacyStatus(status: string | null, publishedAt: string | null): ArticleStatus {
+  if (status === 'scheduled') {
+    return 'scheduled'
+  }
+  if (status === 'published' || publishedAt) {
+    return 'published'
+  }
+  return 'draft'
+}
+
+function mapLegacyPostToArticle(post: LegacyBlogPostRow): BlogArticleRow {
+  const contentHtml = legacyContentToHtml(post.content)
+  const readingTime = parseLegacyReadTime(post.read_time, contentHtml)
+  return {
+    id: post.id,
+    title: post.title,
+    slug: post.slug,
+    excerpt: post.excerpt ?? '',
+    content_html: contentHtml,
+    cover_image_url: post.image_url ?? null,
+    status: normalizeLegacyStatus(post.status, post.published_at),
+    featured: Boolean(post.featured),
+    author_id: post.author ?? null,
+    category_id: null,
+    published_at: post.published_at,
+    scheduled_publish_at: null,
+    reading_time_minutes: readingTime,
+    focus_keyword: null,
+    seo_title: null,
+    seo_description: null,
+    seo_canonical_url: null,
+    seo_robots: 'index,follow',
+    seo_og_title: null,
+    seo_og_description: null,
+    seo_og_image_url: null,
+    created_at: post.created_at,
+    updated_at: post.updated_at,
+  }
+}
+
 function getCategoryPath(category: BlogCategoryRow, categories: BlogCategoryRow[]) {
   const byId = new Map(categories.map((item) => [item.id, item]))
   const path: string[] = [category.name]
@@ -296,16 +387,16 @@ function getSeoValidationHints(form: ArticleFormState) {
   const focus = form.focusKeyword.trim().toLowerCase()
 
   if (!focus) {
-    hints.push('Defina uma palavra-chave de foco para melhorar as sugestões de SEO.')
+    hints.push('Defina uma palavra-chave de foco para melhorar as sugestÃµes de SEO.')
   } else {
     if (!slug.includes(slugify(focus))) {
-      hints.push('A palavra-chave de foco ainda não aparece no slug.')
+      hints.push('A palavra-chave de foco ainda nÃ£o aparece no slug.')
     }
     if (!title.includes(focus)) {
-      hints.push('A palavra-chave de foco não está presente no título do artigo.')
+      hints.push('A palavra-chave de foco nÃ£o estÃ¡ presente no tÃ­tulo do artigo.')
     }
     if (!excerpt.includes(focus)) {
-      hints.push('A palavra-chave de foco não aparece no excerpt.')
+      hints.push('A palavra-chave de foco nÃ£o aparece no excerpt.')
     }
   }
 
@@ -328,7 +419,7 @@ function suggestFocusKeyword(form: ArticleFormState) {
 
   const words = base
     .toLowerCase()
-    .split(/[^a-z0-9à-ÿ]+/i)
+    .split(/[^a-z0-9Ã -Ã¿]+/i)
     .map((entry) => entry.trim())
     .filter((entry) => entry.length > 3)
 
@@ -355,7 +446,7 @@ function suggestNewTagNames(form: ArticleFormState, tags: BlogTagRow[]) {
   const stopWords = new Set(['para', 'como', 'com', 'sem', 'uma', 'das', 'dos', 'que', 'sobre', 'pela', 'pelo', 'mais', 'este', 'essa'])
 
   const candidates = corpus
-    .split(/[^a-z0-9à-ÿ]+/i)
+    .split(/[^a-z0-9Ã -Ã¿]+/i)
     .map((entry) => entry.trim())
     .filter((entry) => entry.length >= 5 && !stopWords.has(entry))
 
@@ -379,6 +470,8 @@ function suggestNewTagNames(form: ArticleFormState, tags: BlogTagRow[]) {
 export function AdminBlogPage() {
   const { user } = useAuth()
   const [activeTab, setActiveTab] = useState<'articles' | 'categories' | 'tags'>('articles')
+  const [isLegacyMode, setIsLegacyMode] = useState(false)
+  const [schemaWarning, setSchemaWarning] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isSavingArticle, setIsSavingArticle] = useState(false)
   const [isSavingCategory, setIsSavingCategory] = useState(false)
@@ -467,9 +560,35 @@ export function AdminBlogPage() {
     })
   }, [articles, articleSearch, articleStatusFilter, categories])
 
+  async function loadLegacyData() {
+    const legacyResult = await supabase
+      .from('blog_posts')
+      .select('*')
+      .order('display_order', { ascending: true, nullsFirst: false })
+      .order('published_at', { ascending: false, nullsFirst: false })
+      .limit(300)
+
+    if (legacyResult.error) {
+      setErrorMessage(legacyResult.error.message)
+      setIsLoading(false)
+      return
+    }
+
+    const mapped = ((legacyResult.data ?? []) as LegacyBlogPostRow[]).map(mapLegacyPostToArticle)
+    setArticles(mapped)
+    setCategories([])
+    setTags([])
+    setArticleTagRows([])
+    setIsLegacyMode(true)
+    setActiveTab('articles')
+    setSchemaWarning('Modo legado ativo: tabelas blog_articles/blog_categories/blog_tags/blog_article_tags não existem neste projeto. O admin está usando blog_posts para manter operação.')
+    setIsLoading(false)
+  }
+
   async function loadAllData() {
     setIsLoading(true)
     setErrorMessage(null)
+    setSchemaWarning(null)
 
     const [articlesResult, categoriesResult, tagsResult, articleTagsResult] = await Promise.all([
       supabase.from(TABLES.articles).select('*').order('updated_at', { ascending: false }).limit(300),
@@ -478,14 +597,14 @@ export function AdminBlogPage() {
       supabase.from(TABLES.articleTags).select('article_id,tag_id').limit(5000),
     ])
 
-    if (articlesResult.error || categoriesResult.error || tagsResult.error || articleTagsResult.error) {
-      setErrorMessage(
-        articlesResult.error?.message
-        ?? categoriesResult.error?.message
-        ?? tagsResult.error?.message
-        ?? articleTagsResult.error?.message
-        ?? 'Falha ao carregar módulo de blog.',
-      )
+    const firstError = articlesResult.error ?? categoriesResult.error ?? tagsResult.error ?? articleTagsResult.error
+    if (firstError) {
+      if (isMissingTableError(firstError.message)) {
+        await loadLegacyData()
+        return
+      }
+
+      setErrorMessage(firstError.message ?? 'Falha ao carregar módulo de blog.')
       setIsLoading(false)
       return
     }
@@ -499,9 +618,9 @@ export function AdminBlogPage() {
     setCategories(nextCategories)
     setTags(nextTags)
     setArticleTagRows(nextArticleTags)
+    setIsLegacyMode(false)
     setIsLoading(false)
   }
-
   useEffect(() => {
     void loadAllData()
   }, [])
@@ -652,11 +771,11 @@ export function AdminBlogPage() {
     const focusKeyword = articleForm.focusKeyword.trim()
 
     if (!title || !slug) {
-      setErrorMessage('Informe título e slug do artigo.')
+      setErrorMessage('Informe tÃ­tulo e slug do artigo.')
       return
     }
 
-    if (effectiveStatus === 'published' && !focusKeyword) {
+    if (!isLegacyMode && effectiveStatus === 'published' && !focusKeyword) {
       setErrorMessage('Para publicar, defina a palavra-chave de foco.')
       return
     }
@@ -693,6 +812,50 @@ export function AdminBlogPage() {
       seo_og_title: articleForm.seo_og_title.trim() || null,
       seo_og_description: articleForm.seo_og_description.trim() || null,
       seo_og_image_url: articleForm.seo_og_image_url.trim() || null,
+    }
+
+    if (isLegacyMode) {
+      const legacyPayload = {
+        title,
+        slug,
+        category: null,
+        excerpt: articleForm.excerpt.trim() || null,
+        image_url: articleForm.coverImageUrl.trim() || null,
+        read_time: `${readingTime} min`,
+        author: user?.id ?? null,
+        published_at: effectiveStatus === 'published'
+          ? (articleForm.publishedAt ? new Date(articleForm.publishedAt).toISOString() : new Date().toISOString())
+          : null,
+        content: stripHtml(cleanedHtml)
+          .split('. ')
+          .map((entry) => entry.trim())
+          .filter(Boolean),
+        featured: articleForm.featured,
+        status: effectiveStatus,
+      }
+
+      const legacyResult = selectedArticleId
+        ? await supabase.from('blog_posts').update(legacyPayload).eq('id', selectedArticleId).select('*').single()
+        : await supabase.from('blog_posts').insert(legacyPayload).select('*').single()
+
+      if (legacyResult.error) {
+        setErrorMessage(legacyResult.error.message)
+        setIsSavingArticle(false)
+        return
+      }
+
+      await loadAllData()
+      const savedLegacy = mapLegacyPostToArticle(legacyResult.data as LegacyBlogPostRow)
+      populateArticleForm(savedLegacy)
+      setArticleForm((current) => ({
+        ...current,
+        status: effectiveStatus,
+        contentHtml: cleanedHtml,
+        readingTimeMinutes: readingTime,
+      }))
+      setSuccessMessage('Artigo salvo com sucesso (modo legado).')
+      setIsSavingArticle(false)
+      return
     }
 
     const result = selectedArticleId
@@ -747,23 +910,31 @@ export function AdminBlogPage() {
     setErrorMessage(null)
     setSuccessMessage(null)
 
-    const deleteLinks = await supabase.from(TABLES.articleTags).delete().eq('article_id', selectedArticleId)
-    if (deleteLinks.error) {
-      setErrorMessage(deleteLinks.error.message)
-      return
-    }
+    if (isLegacyMode) {
+      const deleteLegacy = await supabase.from('blog_posts').delete().eq('id', selectedArticleId)
+      if (deleteLegacy.error) {
+        setErrorMessage(deleteLegacy.error.message)
+        return
+      }
+    } else {
+      const deleteLinks = await supabase.from(TABLES.articleTags).delete().eq('article_id', selectedArticleId)
+      if (deleteLinks.error) {
+        setErrorMessage(deleteLinks.error.message)
+        return
+      }
 
-    const deleteArticle = await supabase.from(TABLES.articles).delete().eq('id', selectedArticleId)
-    if (deleteArticle.error) {
-      setErrorMessage(deleteArticle.error.message)
-      return
-    }
+      const deleteArticle = await supabase.from(TABLES.articles).delete().eq('id', selectedArticleId)
+      if (deleteArticle.error) {
+        setErrorMessage(deleteArticle.error.message)
+        return
+      }
 
-    await supabase.from('blog_posts').delete().eq('slug', found.slug)
+      await supabase.from('blog_posts').delete().eq('slug', found.slug)
+    }
 
     await loadAllData()
     resetArticleForm()
-    setSuccessMessage('Artigo excluído com sucesso.')
+    setSuccessMessage('Artigo excluÃ­do com sucesso.')
   }
 
   async function handleSaveCategory(inline = false) {
@@ -799,7 +970,7 @@ export function AdminBlogPage() {
     }
 
     if (payload.display_order != null && Number.isNaN(payload.display_order)) {
-      setErrorMessage('Ordem da categoria inválida.')
+      setErrorMessage('Ordem da categoria invÃ¡lida.')
       setIsSavingCategory(false)
       return
     }
@@ -854,7 +1025,7 @@ export function AdminBlogPage() {
 
     await loadAllData()
     resetCategoryForm()
-    setSuccessMessage('Categoria excluída com sucesso.')
+    setSuccessMessage('Categoria excluÃ­da com sucesso.')
   }
 
   async function handleSaveTag() {
@@ -930,7 +1101,7 @@ export function AdminBlogPage() {
 
     await loadAllData()
     resetTagForm()
-    setSuccessMessage('Tag excluída sem quebrar relacionamentos de artigos.')
+    setSuccessMessage('Tag excluÃ­da sem quebrar relacionamentos de artigos.')
   }
 
   async function handleFillTagsWithAI() {
@@ -944,7 +1115,7 @@ export function AdminBlogPage() {
       ...current,
       tagIds: Array.from(new Set([...current.tagIds, ...suggestedIds])),
     }))
-    setSuccessMessage('Tags existentes preenchidas com IA (heurística semântica local).')
+    setSuccessMessage('Tags existentes preenchidas com IA (heurÃ­stica semÃ¢ntica local).')
   }
 
   async function handleSuggestAndCreateTags() {
@@ -1067,7 +1238,7 @@ export function AdminBlogPage() {
       <header className="flex flex-col gap-4 border-b border-[#D8E6EB] pb-5 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <p className="text-[10px] font-black uppercase tracking-[0.28em] text-[#1398B7]">Admin / Blog</p>
-          <h1 className="mt-2 font-readex text-3xl font-semibold tracking-tight text-[#15323b]">Blog e conteúdo</h1>
+          <h1 className="mt-2 font-readex text-3xl font-semibold tracking-tight text-[#15323b]">Blog e conteÃºdo</h1>
           <p className="mt-2 max-w-4xl text-sm font-medium leading-6 text-[#6d7f84]">
             CRUD aderente ao spec atual: artigos em HTML com ReactQuill, categorias/subcategorias com SEO e schema_json, tags com relacionamento em
             <code className="mx-1 rounded bg-slate-100 px-1 py-0.5">blog_article_tags</code>.
@@ -1091,6 +1262,11 @@ export function AdminBlogPage() {
           {successMessage}
         </div>
       ) : null}
+      {schemaWarning ? (
+        <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm font-semibold text-amber-800">
+          {schemaWarning}
+        </div>
+      ) : null}
 
       <section className="flex flex-wrap gap-2">
         <button
@@ -1100,20 +1276,24 @@ export function AdminBlogPage() {
         >
           Artigos
         </button>
-        <button
-          type="button"
-          onClick={() => setActiveTab('categories')}
-          className={`rounded-full border px-4 py-2 text-sm font-bold ${activeTab === 'categories' ? 'border-[#1398B7] bg-[#1398B7] text-white' : 'border-[#D8E6EB] bg-white text-[#15323b]'}`}
-        >
-          Categorias
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveTab('tags')}
-          className={`rounded-full border px-4 py-2 text-sm font-bold ${activeTab === 'tags' ? 'border-[#1398B7] bg-[#1398B7] text-white' : 'border-[#D8E6EB] bg-white text-[#15323b]'}`}
-        >
-          Tags
-        </button>
+        {!isLegacyMode ? (
+          <button
+            type="button"
+            onClick={() => setActiveTab('categories')}
+            className={`rounded-full border px-4 py-2 text-sm font-bold ${activeTab === 'categories' ? 'border-[#1398B7] bg-[#1398B7] text-white' : 'border-[#D8E6EB] bg-white text-[#15323b]'}`}
+          >
+            Categorias
+          </button>
+        ) : null}
+        {!isLegacyMode ? (
+          <button
+            type="button"
+            onClick={() => setActiveTab('tags')}
+            className={`rounded-full border px-4 py-2 text-sm font-bold ${activeTab === 'tags' ? 'border-[#1398B7] bg-[#1398B7] text-white' : 'border-[#D8E6EB] bg-white text-[#15323b]'}`}
+          >
+            Tags
+          </button>
+        ) : null}
       </section>
 
       {activeTab === 'articles' ? (
@@ -1142,7 +1322,7 @@ export function AdminBlogPage() {
 
               <div className="mt-4 grid gap-4">
                 <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
-                  Título
+                  TÃ­tulo
                   <input
                     value={articleForm.title}
                     onChange={(event) => {
@@ -1190,23 +1370,26 @@ export function AdminBlogPage() {
                       onChange={(event) => {
                         const selected = event.target.value
                         if (selected === '__create__') {
-                          setShowInlineCategoryForm(true)
+                          if (!isLegacyMode) {
+                            setShowInlineCategoryForm(true)
+                          }
                           return
                         }
                         setArticleForm((current) => ({ ...current, categoryId: selected }))
                       }}
-                      className="h-11 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800 outline-none focus:border-[#1398B7]"
+                      disabled={isLegacyMode}
+                      className="h-11 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800 outline-none focus:border-[#1398B7] disabled:bg-slate-100 disabled:text-slate-500"
                     >
                       <option value="__none__">Sem categoria</option>
-                      {categoryOptions.map((option) => (
+                      {!isLegacyMode ? categoryOptions.map((option) => (
                         <option key={option.id} value={option.id}>{option.label}</option>
-                      ))}
-                      <option value="__create__">+ Criar categoria/subcategoria</option>
+                      )) : null}
+                      {!isLegacyMode ? <option value="__create__">+ Criar categoria/subcategoria</option> : null}
                     </select>
                   </label>
                 </div>
 
-                {showInlineCategoryForm ? (
+                {showInlineCategoryForm && !isLegacyMode ? (
                   <div className="space-y-3 rounded-2xl border border-dashed border-[#BEE3EA] bg-[#F4FBFD] p-4">
                     <p className="text-xs font-black uppercase tracking-[0.2em] text-[#1398B7]">Criar categoria inline</p>
                     <div className="grid gap-3 sm:grid-cols-2">
@@ -1344,7 +1527,7 @@ export function AdminBlogPage() {
                   </div>
                 ) : (
                   <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-xs font-semibold text-emerald-700">
-                    SEO básico do artigo está consistente com a palavra-chave de foco.
+                    SEO bÃ¡sico do artigo estÃ¡ consistente com a palavra-chave de foco.
                   </div>
                 )}
 
@@ -1354,38 +1537,44 @@ export function AdminBlogPage() {
                   'Artigo',
                 )}
 
-                <div className="space-y-2">
-                  <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-500">Tags (relacionamento em blog_article_tags)</p>
-                  <div className="grid gap-2 sm:grid-cols-2">
-                    {tags.map((tag) => {
-                      const checked = articleForm.tagIds.includes(tag.id)
-                      return (
-                        <label key={tag.id} className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700">
-                          <input
-                            type="checkbox"
-                            checked={checked}
-                            onChange={(event) => setArticleForm((current) => ({
-                              ...current,
-                              tagIds: event.target.checked
-                                ? [...current.tagIds, tag.id]
-                                : current.tagIds.filter((entry) => entry !== tag.id),
-                            }))}
-                            className="h-4 w-4 rounded border-slate-300"
-                          />
-                          #{tag.name}
-                        </label>
-                      )
-                    })}
+                {!isLegacyMode ? (
+                  <div className="space-y-2">
+                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-500">Tags (relacionamento em blog_article_tags)</p>
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      {tags.map((tag) => {
+                        const checked = articleForm.tagIds.includes(tag.id)
+                        return (
+                          <label key={tag.id} className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700">
+                            <input
+                              type="checkbox"
+                              checked={checked}
+                              onChange={(event) => setArticleForm((current) => ({
+                                ...current,
+                                tagIds: event.target.checked
+                                  ? [...current.tagIds, tag.id]
+                                  : current.tagIds.filter((entry) => entry !== tag.id),
+                              }))}
+                              className="h-4 w-4 rounded border-slate-300"
+                            />
+                            #{tag.name}
+                          </label>
+                        )
+                      })}
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <Button type="button" variant="outline" className="rounded-xl" onClick={() => void handleFillTagsWithAI()}>
+                        Preencher tags com IA
+                      </Button>
+                      <Button type="button" variant="outline" className="rounded-xl" onClick={() => void handleSuggestAndCreateTags()}>
+                        Sugerir e criar novas tags
+                      </Button>
+                    </div>
                   </div>
-                  <div className="flex flex-wrap gap-2">
-                    <Button type="button" variant="outline" className="rounded-xl" onClick={() => void handleFillTagsWithAI()}>
-                      Preencher tags com IA
-                    </Button>
-                    <Button type="button" variant="outline" className="rounded-xl" onClick={() => void handleSuggestAndCreateTags()}>
-                      Sugerir e criar novas tags
-                    </Button>
+                ) : (
+                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs font-semibold text-slate-600">
+                    Tags e relacionamento avançado estão indisponíveis no modo legado (schema atual: blog_posts).
                   </div>
-                </div>
+                )}
 
                 <label className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-700">
                   <input
@@ -1398,7 +1587,7 @@ export function AdminBlogPage() {
                 </label>
 
                 <div className="space-y-1">
-                  <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-500">Conteúdo (content_html)</p>
+                  <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-500">ConteÃºdo (content_html)</p>
                   <RichTextEditor
                     value={articleForm.contentHtml}
                     onChange={(nextHtml) => {
@@ -1443,7 +1632,7 @@ export function AdminBlogPage() {
                   <input
                     value={articleSearch}
                     onChange={(event) => setArticleSearch(event.target.value)}
-                    placeholder="Buscar por título, slug ou categoria..."
+                    placeholder="Buscar por tÃ­tulo, slug ou categoria..."
                     className="h-10 min-w-[220px] rounded-xl border border-[#D8E6EB] bg-white px-3 text-sm font-medium text-[#15323b] outline-none focus:border-[#1398B7]"
                   />
                   <select
@@ -1468,10 +1657,10 @@ export function AdminBlogPage() {
                   <table className="min-w-full divide-y divide-[#D8E6EB] text-left text-sm">
                     <thead className="bg-[#F2F7F9] text-[10px] font-black uppercase tracking-[0.2em] text-[#5F7077]">
                       <tr>
-                        <th className="px-4 py-3">Título</th>
+                        <th className="px-4 py-3">TÃ­tulo</th>
                         <th className="px-4 py-3">Status</th>
                         <th className="px-4 py-3">Categoria</th>
-                        <th className="px-4 py-3">Publicação</th>
+                        <th className="px-4 py-3">PublicaÃ§Ã£o</th>
                         <th className="px-4 py-3">Leitura</th>
                       </tr>
                     </thead>
@@ -1565,7 +1754,7 @@ export function AdminBlogPage() {
                 </label>
               </div>
               <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
-                Descrição
+                DescriÃ§Ã£o
                 <textarea
                   value={categoryForm.description}
                   onChange={(event) => setCategoryForm((current) => ({ ...current, description: event.target.value }))}
@@ -1626,7 +1815,7 @@ export function AdminBlogPage() {
                 >
                   <p className="text-sm font-black text-[#15323b]">{getCategoryPath(category, categories)}</p>
                   <p className="mt-1 text-xs font-semibold text-[#6d7f84]">
-                    /{category.slug} · SEO robots: {category.seo_robots ?? 'index,follow'}
+                    /{category.slug} Â· SEO robots: {category.seo_robots ?? 'index,follow'}
                   </p>
                 </button>
               ))}
@@ -1672,7 +1861,7 @@ export function AdminBlogPage() {
                 </label>
               </div>
               <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
-                Descrição
+                DescriÃ§Ã£o
                 <textarea
                   value={tagForm.description}
                   onChange={(event) => setTagForm((current) => ({ ...current, description: event.target.value }))}
@@ -1713,7 +1902,7 @@ export function AdminBlogPage() {
                   className={`rounded-xl border px-3 py-3 text-left transition ${selectedTagId === tag.id ? 'border-[#1398B7] bg-[#E8F6FA]' : 'border-[#D8E6EB] bg-white hover:bg-[#F8FBFC]'}`}
                 >
                   <p className="text-sm font-black text-[#15323b]">#{tag.name}</p>
-                  <p className="mt-1 text-xs font-semibold text-[#6d7f84]">/{tag.slug} · robots: {tag.seo_robots ?? 'index,follow'}</p>
+                  <p className="mt-1 text-xs font-semibold text-[#6d7f84]">/{tag.slug} Â· robots: {tag.seo_robots ?? 'index,follow'}</p>
                 </button>
               ))}
             </div>
@@ -1723,3 +1912,5 @@ export function AdminBlogPage() {
     </div>
   )
 }
+
+
