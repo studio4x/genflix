@@ -35,7 +35,7 @@ type CheckoutRow = {
   currency: string | null
   amount_cents: number | null
   gateway_environment: string | null
-  courses: { title: string | null } | Array<{ title: string | null }> | null
+  courses: { title: string | null; price_cents: number | null } | Array<{ title: string | null; price_cents: number | null }> | null
 }
 
 function readString(value: unknown) {
@@ -51,6 +51,54 @@ function readNestedString(source: Record<string, unknown> | null, path: string[]
     cursor = (cursor as Record<string, unknown>)[key]
   }
   return readString(cursor)
+}
+
+function parseAmountToCents(value: unknown) {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return Math.round(value * 100)
+  }
+
+  if (typeof value === 'string') {
+    const normalized = value.trim().replace(',', '.')
+    const asNumber = Number(normalized)
+    if (Number.isFinite(asNumber)) {
+      return Math.round(asNumber * 100)
+    }
+  }
+
+  return null
+}
+
+function resolveAmountCents(row: CheckoutRow) {
+  if (typeof row.amount_cents === 'number' && Number.isFinite(row.amount_cents) && row.amount_cents > 0) {
+    return row.amount_cents
+  }
+
+  const rawResponse = row.raw_response
+  const amountFromPayment =
+    parseAmountToCents(rawResponse?.payment && typeof rawResponse.payment === 'object' ? (rawResponse.payment as Record<string, unknown>).value : null) ??
+    parseAmountToCents(rawResponse?.payment && typeof rawResponse.payment === 'object' ? (rawResponse.payment as Record<string, unknown>).originalValue : null)
+
+  if (typeof amountFromPayment === 'number' && amountFromPayment > 0) {
+    return amountFromPayment
+  }
+
+  const amountFromCheckout =
+    parseAmountToCents(rawResponse?.value) ??
+    parseAmountToCents(rawResponse?.totalValue) ??
+    parseAmountToCents(rawResponse?.amount)
+
+  if (typeof amountFromCheckout === 'number' && amountFromCheckout > 0) {
+    return amountFromCheckout
+  }
+
+  const courseRelation = Array.isArray(row.courses) ? row.courses[0] : row.courses
+  const coursePriceCents = courseRelation?.price_cents
+  if (typeof coursePriceCents === 'number' && Number.isFinite(coursePriceCents) && coursePriceCents > 0) {
+    return coursePriceCents
+  }
+
+  return 0
 }
 
 export default async function handler(req: ApiRequest, res: ApiResponse) {
@@ -102,7 +150,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
       currency,
       amount_cents,
       gateway_environment,
-      courses:course_id ( title )
+      courses:course_id ( title, price_cents )
     `)
     .eq('user_id', userData.user.id)
     .order('created_at', { ascending: false })
@@ -128,7 +176,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
       (invoiceCode ? `${asaasBaseUrl}/i/${invoiceCode}` : null)
     )
 
-    const amount = typeof row.amount_cents === 'number' ? row.amount_cents / 100 : 0
+    const amount = resolveAmountCents(row) / 100
 
     const courseRelation = Array.isArray(row.courses) ? row.courses[0] : row.courses
 
