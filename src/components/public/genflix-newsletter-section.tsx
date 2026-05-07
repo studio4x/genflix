@@ -77,7 +77,7 @@ export function GenflixNewsletterSection({
           >
             <div className="public-site-container py-20 sm:py-24">
               <div className="mx-auto flex max-w-[760px] flex-col items-center text-center">
-                <h2 className="mx-auto max-w-[620px] text-[2.2rem] font-bold leading-[0.98] tracking-[-0.05em] text-white sm:text-[2.8rem]">
+                <h2 className="mx-auto w-full max-w-[760px] text-center text-[2.2rem] font-bold leading-[1.02] tracking-[-0.05em] text-white sm:text-[2.8rem]">
                   <EditableText
                     entryKey={`${entryPrefix}.title`}
                     fallback={variant === 'cta' ? 'Veja em detalhes a mais completa plataforma EAD.' : 'Assine nossa newsletter'}
