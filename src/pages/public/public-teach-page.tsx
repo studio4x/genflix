@@ -62,7 +62,7 @@ export function PublicTeachPage() {
 
       <section className="bg-white pb-16 pt-4">
         <div className="public-site-container">
-          <div className="rounded-[28px] border border-[#D8E6EB] bg-[linear-gradient(180deg,#F8FBFC_0%,#F2F7F9_100%)] px-6 py-10 shadow-[0_20px_44px_rgba(21,50,59,0.04)] sm:px-10">
+          <div className="rounded-[28px] border border-[#D8E6EB] bg-[#F8FBFC] px-6 py-10 shadow-[0_20px_44px_rgba(21,50,59,0.04)] sm:px-10">
             <p className="text-[11px] font-black uppercase tracking-[0.28em] text-[#1398B7]">
               <EditableText entryKey="global.teach.eyebrow" fallback="Parcerias com criadores" label="Chamada da página Ensine na GenFlix" pageKey="global" />
             </p>
