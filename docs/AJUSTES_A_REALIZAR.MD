@@ -167,7 +167,7 @@
 
 [OK] T47 - Na newsletter, incluir opção “Todas as áreas”.
 
-[ ] T48 - No admin/formulários, adicionar filtro para separar inscritos por área de interesse.
+[OK] T48 - No admin/formulários, adicionar filtro para separar inscritos por área de interesse.
 
 ---
 

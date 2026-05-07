@@ -27,11 +27,23 @@ function escapeCsvValue(value: unknown) {
   return `"${stringValue.replace(/"/g, '""')}"`
 }
 
+function readInterestAreas(item: PublicFormSubmission) {
+  const interestAreas = item.payload.interest_areas
+  if (!Array.isArray(interestAreas)) {
+    return []
+  }
+
+  return interestAreas
+    .map((area) => (typeof area === 'string' ? area.trim() : ''))
+    .filter((area) => area.length > 0)
+}
+
 export function AdminPublicFormsPage() {
   const [items, setItems] = useState<PublicFormSubmission[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [formFilter, setFormFilter] = useState('all')
+  const [interestAreaFilter, setInterestAreaFilter] = useState('all')
 
   async function loadSubmissions() {
     setIsLoading(true)
@@ -60,20 +72,44 @@ export function AdminPublicFormsPage() {
     void loadSubmissions()
   }, [])
 
-  const filteredItems = useMemo(() => {
-    if (formFilter === 'all') {
-      return items
+  useEffect(() => {
+    if (formFilter !== 'newsletter') {
+      setInterestAreaFilter('all')
     }
-    return items.filter((item) => item.form_type === formFilter)
-  }, [formFilter, items])
+  }, [formFilter])
+
+  const filteredItems = useMemo(() => {
+    let currentItems = formFilter === 'all'
+      ? items
+      : items.filter((item) => item.form_type === formFilter)
+
+    if (formFilter === 'newsletter' && interestAreaFilter !== 'all') {
+      currentItems = currentItems.filter((item) => readInterestAreas(item).includes(interestAreaFilter))
+    }
+
+    return currentItems
+  }, [formFilter, interestAreaFilter, items])
+
+  const newsletterInterestAreas = useMemo(() => {
+    const areaSet = new Set<string>()
+
+    items
+      .filter((item) => item.form_type === 'newsletter')
+      .forEach((item) => {
+        readInterestAreas(item).forEach((area) => areaSet.add(area))
+      })
+
+    return Array.from(areaSet).sort((a, b) => a.localeCompare(b, 'pt-BR'))
+  }, [items])
 
   function exportCsv() {
-    const header = ['id', 'tipo', 'nome', 'email', 'mensagem', 'origem', 'criado_em']
+    const header = ['id', 'tipo', 'nome', 'email', 'areas_interesse', 'mensagem', 'origem', 'criado_em']
     const rows = filteredItems.map((item) => [
       item.id,
       item.form_type,
       item.name ?? '',
       item.email ?? '',
+      readInterestAreas(item).join(' | '),
       item.message ?? '',
       item.source_url ?? item.source_path ?? '',
       item.created_at,
@@ -113,6 +149,20 @@ export function AdminPublicFormsPage() {
             <option value="lead">Lead</option>
             <option value="support">Suporte</option>
           </select>
+          {formFilter === 'newsletter' ? (
+            <select
+              value={interestAreaFilter}
+              onChange={(event) => setInterestAreaFilter(event.target.value)}
+              className="h-11 rounded-2xl border border-[#D8E6EB] bg-white px-4 text-sm font-black text-[#15323b] outline-none"
+            >
+              <option value="all">Todas as áreas</option>
+              {newsletterInterestAreas.map((area) => (
+                <option key={area} value={area}>
+                  {area}
+                </option>
+              ))}
+            </select>
+          ) : null}
           <Button type="button" variant="outline" onClick={() => void loadSubmissions()} className="rounded-2xl border-[#D8E6EB]">
             Atualizar
           </Button>
@@ -152,6 +202,11 @@ export function AdminPublicFormsPage() {
                     <td className="px-5 py-4">
                       <p className="font-black text-[#15323b]">{item.name || 'Sem nome'}</p>
                       <p className="mt-1 text-xs font-semibold text-[#6d7f84]">{item.email || 'Sem e-mail'}</p>
+                      {readInterestAreas(item).length > 0 ? (
+                        <p className="mt-2 inline-flex rounded-full border border-[#D8E6EB] bg-[#F2F7F9] px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-[#5F7077]">
+                          Áreas: {readInterestAreas(item).join(', ')}
+                        </p>
+                      ) : null}
                     </td>
                     <td className="max-w-[360px] px-5 py-4 text-[#5f7077]">
                       {item.message || JSON.stringify(item.payload)}

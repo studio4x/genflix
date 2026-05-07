@@ -141,90 +141,100 @@ export function GenflixNewsletterSection({
                     )}
                   </EditableButton>
                 ) : (
-                  <form onSubmit={handleNewsletterSubmit} className="mt-8 w-full max-w-[640px] space-y-4">
-                    <div className="rounded-[24px] border border-white/12 bg-white/8 p-4 text-left shadow-[0_24px_60px_rgba(0,0,0,0.18)] backdrop-blur-sm sm:p-5">
-                      <div className="flex items-start justify-between gap-4">
-                        <div>
-                          <p className="text-[10px] font-black uppercase tracking-[0.22em] text-white/64">Areas de interesse</p>
-                          <p className="mt-2 text-sm leading-6 text-white/78">
-                            Selecione as areas que mais combinam com o seu foco de estudos.
-                          </p>
+                  <form
+                    onSubmit={handleNewsletterSubmit}
+                    className="relative mt-8 w-full max-w-[640px] overflow-hidden rounded-[36px] border border-white/14 bg-[#08141d]/72 p-4 text-left shadow-[0_32px_90px_rgba(0,0,0,0.38)] backdrop-blur-md sm:p-5"
+                  >
+                    <div
+                      aria-hidden="true"
+                      className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(118,223,240,0.16),transparent_42%),linear-gradient(180deg,rgba(8,20,29,0.18)_0%,rgba(8,20,29,0.68)_100%)]"
+                    />
+
+                    <div className="relative space-y-4">
+                      <div className="rounded-[24px] border border-white/12 bg-white/6 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] sm:p-5">
+                        <div className="flex items-start justify-between gap-4">
+                          <div>
+                            <p className="text-[10px] font-black uppercase tracking-[0.22em] text-white/64">Areas de interesse</p>
+                            <p className="mt-2 text-sm leading-6 text-white/78">
+                              Selecione as areas que mais combinam com o seu foco de estudos.
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                          <label
+                            className={[
+                              'flex cursor-pointer items-center gap-3 rounded-2xl border px-4 py-3 text-sm font-semibold transition-colors sm:col-span-2',
+                              areAllInterestAreasSelected
+                                ? 'border-[#76DFF0] bg-white text-[#0A3640]'
+                                : 'border-white/14 bg-white/8 text-white/88 hover:border-white/28 hover:bg-white/12',
+                            ].join(' ')}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={areAllInterestAreasSelected}
+                              onChange={(event) => setAllInterestAreas(event.target.checked)}
+                              className="h-4 w-4 rounded border-white/40 text-[#1398B7] focus:ring-[#1398B7]"
+                            />
+                            <span>{allInterestAreasLabel}</span>
+                          </label>
+
+                          {newsletterInterestAreas.map((area) => {
+                            const isSelected = selectedInterestAreas.includes(area)
+
+                            return (
+                              <label
+                                key={area}
+                                className={[
+                                  'flex cursor-pointer items-center gap-3 rounded-2xl border px-4 py-3 text-sm font-semibold transition-colors',
+                                  isSelected
+                                    ? 'border-[#76DFF0] bg-white text-[#0A3640]'
+                                    : 'border-white/14 bg-white/8 text-white/88 hover:border-white/28 hover:bg-white/12',
+                                ].join(' ')}
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={isSelected}
+                                  onChange={() => toggleInterestArea(area)}
+                                  className="h-4 w-4 rounded border-white/40 text-[#1398B7] focus:ring-[#1398B7]"
+                                />
+                                <span>{area}</span>
+                              </label>
+                            )
+                          })}
                         </div>
                       </div>
 
-                      <div className="mt-4 grid gap-2 sm:grid-cols-2">
-                        <label
-                          className={[
-                            'flex cursor-pointer items-center gap-3 rounded-2xl border px-4 py-3 text-sm font-semibold transition-colors sm:col-span-2',
-                            areAllInterestAreasSelected
-                              ? 'border-[#76DFF0] bg-white text-[#0A3640]'
-                              : 'border-white/14 bg-white/8 text-white/88 hover:border-white/28 hover:bg-white/12',
-                          ].join(' ')}
-                        >
+                      <div className="flex flex-col gap-3 rounded-full border border-white/14 bg-white/10 p-1.5 shadow-[0_24px_60px_rgba(0,0,0,0.18)] backdrop-blur-sm md:flex-row md:items-center">
+                        <div className="flex min-h-[50px] flex-1 items-center rounded-full bg-white px-5 shadow-[inset_0_1px_0_rgba(16,36,43,0.06)]">
                           <input
-                            type="checkbox"
-                            checked={areAllInterestAreasSelected}
-                            onChange={(event) => setAllInterestAreas(event.target.checked)}
-                            className="h-4 w-4 rounded border-white/40 text-[#1398B7] focus:ring-[#1398B7]"
+                            type="email"
+                            value={newsletterEmail}
+                            onChange={(event) => setNewsletterEmail(event.target.value)}
+                            required
+                            placeholder={placeholder}
+                            className="w-full border-0 bg-transparent text-sm font-medium text-[#183139] outline-none placeholder:text-[#8BA0A7]"
                           />
-                          <span>{allInterestAreasLabel}</span>
-                        </label>
+                        </div>
 
-                        {newsletterInterestAreas.map((area) => {
-                          const isSelected = selectedInterestAreas.includes(area)
-
-                          return (
-                            <label
-                              key={area}
-                              className={[
-                                'flex cursor-pointer items-center gap-3 rounded-2xl border px-4 py-3 text-sm font-semibold transition-colors',
-                                isSelected
-                                  ? 'border-[#76DFF0] bg-white text-[#0A3640]'
-                                  : 'border-white/14 bg-white/8 text-white/88 hover:border-white/28 hover:bg-white/12',
-                              ].join(' ')}
+                        <EditableButton
+                          entryKey={`${entryPrefix}.button`}
+                          fallback={{ label: legacyButtonLabel, tone: 'solid' }}
+                          label="Botão da newsletter"
+                          pageKey={pageKey}
+                        >
+                          {(buttonValue) => (
+                            <GenflixCtaButton
+                              type="submit"
+                              disabled={isSubmitting}
+                              className="min-h-[50px] justify-between px-5 md:min-w-[220px]"
+                              tone={normalizeGenflixCtaTone(buttonValue.tone)}
                             >
-                              <input
-                                type="checkbox"
-                                checked={isSelected}
-                                onChange={() => toggleInterestArea(area)}
-                                className="h-4 w-4 rounded border-white/40 text-[#1398B7] focus:ring-[#1398B7]"
-                              />
-                              <span>{area}</span>
-                            </label>
-                          )
-                        })}
+                              {isSubmitting ? 'Enviando...' : (typeof buttonValue.label === 'string' ? buttonValue.label : 'Quero me inscrever')}
+                            </GenflixCtaButton>
+                          )}
+                        </EditableButton>
                       </div>
-                    </div>
-
-                    <div className="flex flex-col gap-3 rounded-full bg-white/14 p-1.5 shadow-[0_24px_60px_rgba(0,0,0,0.18)] backdrop-blur-sm md:flex-row md:items-center">
-                      <div className="flex min-h-[50px] flex-1 items-center rounded-full bg-white px-5">
-                        <input
-                          type="email"
-                          value={newsletterEmail}
-                          onChange={(event) => setNewsletterEmail(event.target.value)}
-                          required
-                          placeholder={placeholder}
-                          className="w-full border-0 bg-transparent text-sm font-medium text-[#183139] outline-none placeholder:text-[#8BA0A7]"
-                        />
-                      </div>
-
-                      <EditableButton
-                        entryKey={`${entryPrefix}.button`}
-                        fallback={{ label: legacyButtonLabel, tone: 'solid' }}
-                        label="Botão da newsletter"
-                        pageKey={pageKey}
-                      >
-                        {(buttonValue) => (
-                          <GenflixCtaButton
-                            type="submit"
-                            disabled={isSubmitting}
-                            className="min-h-[50px] justify-between px-5 md:min-w-[220px]"
-                            tone={normalizeGenflixCtaTone(buttonValue.tone)}
-                          >
-                            {isSubmitting ? 'Enviando...' : (typeof buttonValue.label === 'string' ? buttonValue.label : 'Quero me inscrever')}
-                          </GenflixCtaButton>
-                        )}
-                      </EditableButton>
                     </div>
                   </form>
                 )}
