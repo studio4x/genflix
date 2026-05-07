@@ -239,7 +239,7 @@ export function GenflixNewsletterSection({
                   </form>
                 )}
 
-                {variant === 'form' && message ? <p className="mt-4 text-sm font-semibold text-white/86">{message}</p> : null}
+                {variant === 'form' && message ? <p className="mt-4 text-sm font-semibold !text-white">{message}</p> : null}
               </div>
             </div>
           </div>
