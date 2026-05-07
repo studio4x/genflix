@@ -49,7 +49,7 @@ const homeLayoutFallback: EditableListItem[] = [
   {
     id: 'home-newsletter',
     label: 'Newsletter',
-    description: 'Bloco final de captacao de e-mail.',
+    description: 'Bloco final com chamada para cursos.',
     metadata: {
       templateKey: 'newsletter',
       pageKey: 'global',
@@ -93,11 +93,11 @@ const homeLayoutSchema = {
     {
       id: 'newsletter',
       label: 'Newsletter',
-      description: 'Bloco de captacao com imagem, texto e formulario.',
+      description: 'Bloco de chamada para cursos com imagem e CTA.',
       item: {
         id: 'newsletter',
         label: 'Newsletter',
-        description: 'Bloco final de captacao de e-mail.',
+        description: 'Bloco final com chamada para cursos.',
         metadata: {
           templateKey: 'newsletter',
         },
@@ -384,7 +384,16 @@ export function PublicHomePage() {
         }
 
         if (templateKey === 'newsletter') {
-          return <GenflixNewsletterSection key={section.id} id={occurrence === 0 ? 'newsletter' : `newsletter-${occurrence + 1}`} entryPrefix={entryPrefix} pageKey={pageKey} />
+          return (
+            <GenflixNewsletterSection
+              key={section.id}
+              id={occurrence === 0 ? 'newsletter' : `newsletter-${occurrence + 1}`}
+              entryPrefix={entryPrefix}
+              pageKey={pageKey}
+              variant="cta"
+              ctaHref="/cursos"
+            />
+          )
         }
 
         return null

@@ -275,7 +275,7 @@ export function PublicContactPage() {
 
         return null
       })}
-      <GenflixNewsletterSection />
+      <GenflixNewsletterSection id="newsletter" entryPrefix="contact.newsletter" pageKey="contact" />
       <GenflixPublicFooter />
     </main>
   )
