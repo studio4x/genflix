@@ -44,6 +44,8 @@ const publicFormSchema = z.object({
   form_type: z.string().trim().min(1).max(64),
   name: z.string().trim().max(200).optional().nullable(),
   email: z.string().trim().email().optional().nullable(),
+  email_confirmation: z.string().trim().email().optional().nullable(),
+  subject: z.string().trim().max(200).optional().nullable(),
   message: z.string().trim().max(4000).optional().nullable(),
   source_path: z.string().trim().max(2000).optional().nullable(),
   source_url: z.string().trim().max(2000).optional().nullable(),
@@ -105,6 +107,7 @@ function buildNotificationTemplate(input: z.infer<typeof publicFormSchema>): Not
   const formLabel = formatFormTypeLabel(input.form_type)
   const name = normalizeField(input.name)
   const email = normalizeField(input.email)
+  const subject = normalizeField(input.subject)
   const message = normalizeField(input.message)
 
   const titleMap: Record<string, string> = {
@@ -121,6 +124,7 @@ function buildNotificationTemplate(input: z.infer<typeof publicFormSchema>): Not
     `Tipo: ${formLabel}`,
     name ? `Nome: ${name}` : null,
     email ? `E-mail: ${email}` : null,
+    subject ? `Assunto do curso: ${subject}` : null,
     message ? `Mensagem: ${message.slice(0, 280)}` : null,
     input.source_path ? `Origem: ${input.source_path}` : null,
   ].filter((part): part is string => Boolean(part))
@@ -257,6 +261,8 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
     form_type: parsed.data.form_type,
     name: normalizeField(parsed.data.name),
     email: normalizeField(parsed.data.email),
+    email_confirmation: normalizeField(parsed.data.email_confirmation),
+    subject: normalizeField(parsed.data.subject),
     message: normalizeField(parsed.data.message),
     source_path: normalizeField(parsed.data.source_path),
     source_url: normalizeField(parsed.data.source_url),

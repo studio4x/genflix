@@ -173,11 +173,13 @@
 
 ## CHAT 15 — Página “Ensine na GenFlix”
 
-[ ] T49 - Criar página acessada pelo botão “Ensine na GenFlix” no rodapé.
+[OK] T49 - Criar página acessada pelo botão “Ensine na GenFlix” no rodapé.
 
-[ ] T50 - Criar formulário com os campos: nome completo, e-mail, repetir e-mail e assunto do curso.
+[OK] T50 - AJustar o formulário  da página "ensine na genflix" com a inclusão dos campos: repetir e-mail (com validação de e-mails iguais) e assunto do curso (antes do campo "resumo da proposta).
 
 [ ] T51 - Validar se os dois campos de e-mail são iguais.
+
+[ ] T51.2 - o FUNDO DA PÁGINA https://genflix-omega.vercel.app/indique-a-genflix DEVERÁ SER BRANCO.
 
 ---
 

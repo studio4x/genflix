@@ -188,7 +188,7 @@ export const appRouter = createBrowserRouter([
   },
   {
     path: '/ensine-na-genflix',
-    element: <PublicEditableRoute pageKey="global" seo={{ entryKey: 'global.teach.seo', fallback: { title: 'GenFlix | Ensine na GenFlix', description: 'Apresente sua proposta de curso e conheça a frente de parcerias educacionais da GenFlix.', slug: '/ensine-na-genflix', image: '' } }}><PublicTeachPage /></PublicEditableRoute>,
+    element: <PublicEditableRoute pageKey="global" seo={{ entryKey: 'global.teach.seo', fallback: { title: 'GenFlix | Ensine na GenFlix', description: 'Apresente sua proposta de curso e descubra como publicar seu conteúdo na GenFlix.', slug: '/ensine-na-genflix', image: '' } }}><PublicTeachPage /></PublicEditableRoute>,
   },
   {
     path: '/checkout/pagamento/:slug',
