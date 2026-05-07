@@ -106,9 +106,6 @@ export function PublicTeachPage() {
                   <p className="mt-3 text-sm leading-7 text-[#5f7178]">
                     <EditableText entryKey="global.teach.pdf.description" fallback="Conte o tema, o formato desejado, o público-alvo e o que você espera entregar para os alunos." label="Descrição do bloco PDF" pageKey="global" />
                   </p>
-                  <GenflixCtaButton type="button" tone="surface" disabled className="mt-5 px-5 py-3 text-sm font-semibold">
-                    <EditableText entryKey="global.teach.pdf.ctaLabel" fallback="Falar com a equipe" label="Rótulo do botão PDF" pageKey="global" />
-                  </GenflixCtaButton>
                 </article>
 
                 <article className="rounded-[24px] border border-[#D8E6EB] bg-white px-6 py-6 shadow-[0_16px_36px_rgba(21,50,59,0.04)]">
@@ -121,9 +118,6 @@ export function PublicTeachPage() {
                   <p className="mt-3 text-sm leading-7 text-[#5f7178]">
                     <EditableText entryKey="global.teach.flip.description" fallback="Depois do envio, nossa equipe avalia a proposta e orienta sobre cadastro, estrutura do curso e produção do conteúdo." label="Descrição do bloco FlipPDF" pageKey="global" />
                   </p>
-                  <div className="mt-5 rounded-[20px] border border-dashed border-[#D8E6EB] bg-[#F2F7F9] px-4 py-10 text-center text-sm font-semibold text-[#7c8e94]">
-                    <EditableText entryKey="global.teach.flip.placeholder" fallback="Sua proposta será recebida pela equipe GenFlix" label="Placeholder do bloco FlipPDF" pageKey="global" />
-                  </div>
                 </article>
               </div>
             </div>
