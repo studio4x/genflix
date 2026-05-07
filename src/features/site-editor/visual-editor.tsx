@@ -708,7 +708,7 @@ function EditableMarker({
   return (
     <Wrapper
       className={cn(
-        'group/site-editor relative cursor-pointer rounded-[10px] bg-[#1398B7]/6 outline outline-2 outline-offset-2 outline-[#1398B7]/50 transition hover:bg-[#1398B7]/10 hover:outline-[#1398B7] focus-visible:bg-[#1398B7]/10',
+        'group/site-editor relative cursor-pointer rounded-[10px] bg-[rgba(19,152,183,0.06)] outline outline-2 outline-offset-2 outline-[#1398B7]/50 transition hover:bg-[rgba(19,152,183,0.1)] hover:outline-[#1398B7] focus-visible:bg-[rgba(19,152,183,0.1)]',
         display === 'block' && 'block',
       )}
       onClick={(event) => {
