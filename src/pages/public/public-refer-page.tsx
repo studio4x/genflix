@@ -7,6 +7,7 @@ export function PublicReferPage() {
       eyebrow="Programa futuro"
       title="Indique a GenFlix"
       description="Estamos preparando uma frente dedicada a recomendações, convites e ações de indicação da plataforma."
+      backgroundClassName="bg-white"
       sections={[
         {
           title: 'O que esta página vai receber',
