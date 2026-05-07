@@ -154,8 +154,8 @@ export function GenflixNewsletterSection({
                       <div className="rounded-[24px] border border-white/12 bg-white/6 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] sm:p-5">
                         <div className="flex items-start justify-between gap-4">
                           <div>
-                            <p className="text-[10px] font-black uppercase tracking-[0.22em] text-white">Areas de interesse</p>
-                            <p className="mt-2 text-sm leading-6 text-white/88">
+                            <p className="text-[10px] font-black uppercase tracking-[0.22em] !text-white">Areas de interesse</p>
+                            <p className="mt-2 text-sm leading-6 !text-white">
                               Selecione as areas que mais combinam com o seu foco de estudos.
                             </p>
                           </div>
@@ -164,7 +164,7 @@ export function GenflixNewsletterSection({
                         <div className="mt-4 grid gap-2 sm:grid-cols-2">
                           <label
                             className={[
-                              'flex cursor-pointer items-center gap-3 rounded-2xl border px-4 py-3 text-sm font-semibold transition-colors sm:col-span-2',
+                              'flex cursor-pointer items-center gap-3 rounded-2xl border px-4 py-3 text-sm font-semibold transition-colors sm:col-span-2 !text-white',
                               areAllInterestAreasSelected
                                 ? 'border-white/40 bg-white/12 text-white'
                                 : 'border-white/14 bg-white/8 text-white/92 hover:border-white/28 hover:bg-white/12',
@@ -176,7 +176,7 @@ export function GenflixNewsletterSection({
                               onChange={(event) => setAllInterestAreas(event.target.checked)}
                               className="h-4 w-4 rounded border-white/40 text-[#1398B7] focus:ring-[#1398B7]"
                             />
-                            <span>{allInterestAreasLabel}</span>
+                            <span className="!text-white">{allInterestAreasLabel}</span>
                           </label>
 
                           {newsletterInterestAreas.map((area) => {
@@ -186,7 +186,7 @@ export function GenflixNewsletterSection({
                               <label
                                 key={area}
                                 className={[
-                                  'flex cursor-pointer items-center gap-3 rounded-2xl border px-4 py-3 text-sm font-semibold transition-colors',
+                                  'flex cursor-pointer items-center gap-3 rounded-2xl border px-4 py-3 text-sm font-semibold transition-colors !text-white',
                                   isSelected
                                     ? 'border-white/40 bg-white/12 text-white'
                                     : 'border-white/14 bg-white/8 text-white/92 hover:border-white/28 hover:bg-white/12',
@@ -198,7 +198,7 @@ export function GenflixNewsletterSection({
                                   onChange={() => toggleInterestArea(area)}
                                   className="h-4 w-4 rounded border-white/40 text-[#1398B7] focus:ring-[#1398B7]"
                                 />
-                                <span>{area}</span>
+                                <span className="!text-white">{area}</span>
                               </label>
                             )
                           })}
