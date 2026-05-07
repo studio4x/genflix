@@ -2,6 +2,7 @@ import { type FormEvent, useState } from 'react'
 
 import { useAuth } from '@/app/providers/auth-provider'
 import { GenflixCtaButton } from '@/components/public/genflix-cta-button'
+import { GenflixNewsletterSection } from '@/components/public/genflix-newsletter-section'
 import { GenflixPublicFooter } from '@/components/public/genflix-public-footer'
 import { GenflixPublicHeader } from '@/components/public/genflix-public-header'
 import { BannerPlacementSlot } from '@/features/banners/banner-placement-slot'
@@ -274,6 +275,7 @@ export function PublicContactPage() {
 
         return null
       })}
+      <GenflixNewsletterSection />
       <GenflixPublicFooter />
     </main>
   )
