@@ -10,6 +10,7 @@ import type { SitePageKey } from '@/features/site-editor/types'
 type GenflixNewsletterSectionVariant = 'form' | 'cta'
 
 const newsletterInterestAreas = genflixCategoryTiles.map((category) => category.label)
+const allInterestAreasLabel = 'Todas as áreas'
 
 export function GenflixNewsletterSection({
   id = 'newsletter',
@@ -43,6 +44,14 @@ export function GenflixNewsletterSection({
         : [...currentAreas, area],
     )
   }
+
+  function setAllInterestAreas(selected: boolean) {
+    setSelectedInterestAreas(selected ? [...newsletterInterestAreas] : [])
+  }
+
+  const areAllInterestAreasSelected =
+    newsletterInterestAreas.length > 0 &&
+    newsletterInterestAreas.every((area) => selectedInterestAreas.includes(area))
 
   async function handleNewsletterSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -144,6 +153,23 @@ export function GenflixNewsletterSection({
                       </div>
 
                       <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                        <label
+                          className={[
+                            'flex cursor-pointer items-center gap-3 rounded-2xl border px-4 py-3 text-sm font-semibold transition-colors sm:col-span-2',
+                            areAllInterestAreasSelected
+                              ? 'border-[#76DFF0] bg-white text-[#0A3640]'
+                              : 'border-white/14 bg-white/8 text-white/88 hover:border-white/28 hover:bg-white/12',
+                          ].join(' ')}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={areAllInterestAreasSelected}
+                            onChange={(event) => setAllInterestAreas(event.target.checked)}
+                            className="h-4 w-4 rounded border-white/40 text-[#1398B7] focus:ring-[#1398B7]"
+                          />
+                          <span>{allInterestAreasLabel}</span>
+                        </label>
+
                         {newsletterInterestAreas.map((area) => {
                           const isSelected = selectedInterestAreas.includes(area)
 
