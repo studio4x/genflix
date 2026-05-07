@@ -154,8 +154,8 @@ export function GenflixNewsletterSection({
                       <div className="rounded-[24px] border border-white/12 bg-white/6 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] sm:p-5">
                         <div className="flex items-start justify-between gap-4">
                           <div>
-                            <p className="text-[10px] font-black uppercase tracking-[0.22em] text-white/64">Areas de interesse</p>
-                            <p className="mt-2 text-sm leading-6 text-white/78">
+                            <p className="text-[10px] font-black uppercase tracking-[0.22em] text-white">Areas de interesse</p>
+                            <p className="mt-2 text-sm leading-6 text-white/88">
                               Selecione as areas que mais combinam com o seu foco de estudos.
                             </p>
                           </div>
@@ -166,8 +166,8 @@ export function GenflixNewsletterSection({
                             className={[
                               'flex cursor-pointer items-center gap-3 rounded-2xl border px-4 py-3 text-sm font-semibold transition-colors sm:col-span-2',
                               areAllInterestAreasSelected
-                                ? 'border-[#76DFF0] bg-white text-[#0A3640]'
-                                : 'border-white/14 bg-white/8 text-white/88 hover:border-white/28 hover:bg-white/12',
+                                ? 'border-white/40 bg-white/12 text-white'
+                                : 'border-white/14 bg-white/8 text-white/92 hover:border-white/28 hover:bg-white/12',
                             ].join(' ')}
                           >
                             <input
@@ -188,8 +188,8 @@ export function GenflixNewsletterSection({
                                 className={[
                                   'flex cursor-pointer items-center gap-3 rounded-2xl border px-4 py-3 text-sm font-semibold transition-colors',
                                   isSelected
-                                    ? 'border-[#76DFF0] bg-white text-[#0A3640]'
-                                    : 'border-white/14 bg-white/8 text-white/88 hover:border-white/28 hover:bg-white/12',
+                                    ? 'border-white/40 bg-white/12 text-white'
+                                    : 'border-white/14 bg-white/8 text-white/92 hover:border-white/28 hover:bg-white/12',
                                 ].join(' ')}
                               >
                                 <input
