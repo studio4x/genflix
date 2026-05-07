@@ -186,6 +186,14 @@ export function PublicContactPage() {
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setFeedback(null)
+    const normalizedEmail = email.trim().toLowerCase()
+    const normalizedEmailConfirmation = emailConfirmation.trim().toLowerCase()
+
+    if (normalizedEmail !== normalizedEmailConfirmation) {
+      setFeedback('Os e-mails precisam ser iguais.')
+      return
+    }
+
     setIsSubmitting(true)
 
     try {
@@ -195,7 +203,7 @@ export function PublicContactPage() {
         body: JSON.stringify({
           form_type: 'contact',
           name: name.trim(),
-          email: email.trim(),
+          email: normalizedEmail,
           message: message.trim(),
           source_path: window.location.pathname,
           source_url: window.location.href,
