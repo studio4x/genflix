@@ -705,6 +705,7 @@ export const genflixFooterColumns: GenflixFooterColumn[] = [
     title: 'Fale com a GenFlix',
     items: [
       { label: 'Contato', href: '/contato', isInternal: true },
+      { label: 'Ensine na GenFlix', href: '/ensine-na-genflix', isInternal: true },
       { label: 'Cadastro', href: '/criar-conta', isInternal: true },
     ],
   },

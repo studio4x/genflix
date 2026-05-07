@@ -141,6 +141,7 @@ const footerColumnsFallback = [
     metadata: {
       items: [
         { label: 'Fale conosco', href: '/contato', isInternal: true },
+        { label: 'Ensine na GenFlix', href: '/ensine-na-genflix', isInternal: true },
         { label: 'Abrir chamado', href: '/suporte', isInternal: true },
         { label: 'Ajuda / Como usar', href: '/ajuda', isInternal: true },
         { label: 'Indique a GenFlix', href: '/indique-a-genflix', isInternal: true },

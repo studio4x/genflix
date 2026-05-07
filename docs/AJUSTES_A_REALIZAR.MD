@@ -139,6 +139,8 @@
 
 [ ] T39 - Alterar editor de texto das aulas para seguir `docs/lesson-rich-text-blocks-spec.md`.
 
+[ ] T39.5 - Inserir a opção de inserir colunas nos blocos de conteúdos das aulas.. (add 1 coluna, add 2 colunas, add 3 colunas, etc)
+
 ---
 
 ## CHAT 12 — Blog
@@ -153,7 +155,7 @@
 
 [OK] T44 - Validar se os dois campos de e-mail do formulário de contato são iguais.
 
-[ ] T44.2 - Criar uma página com um formulário para os produtores de cursos poderem publicar o curso dele. O formulário deve ser apenas para enviar os dados iniciais. Vamos adicionar no rodapé, na coluna "fale conosco", o menu "Ensine na Genflix".
+[OK] T44.2 - Criar uma página com um formulário para os produtores de cursos poderem publicar o curso dele. O formulário deve ser apenas para enviar os dados iniciais. Vamos adicionar no rodapé, na coluna "fale conosco", o menu "Ensine na Genflix".
 
 ---
 
