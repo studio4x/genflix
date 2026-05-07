@@ -46,6 +46,7 @@ const publicFormSchema = z.object({
   email: z.string().trim().email().optional().nullable(),
   email_confirmation: z.string().trim().email().optional().nullable(),
   subject: z.string().trim().max(200).optional().nullable(),
+  interest_areas: z.array(z.string().trim().min(1).max(120)).max(20).optional().nullable(),
   message: z.string().trim().max(4000).optional().nullable(),
   source_path: z.string().trim().max(2000).optional().nullable(),
   source_url: z.string().trim().max(2000).optional().nullable(),
@@ -109,6 +110,9 @@ function buildNotificationTemplate(input: z.infer<typeof publicFormSchema>): Not
   const email = normalizeField(input.email)
   const subject = normalizeField(input.subject)
   const message = normalizeField(input.message)
+  const interestAreas = Array.isArray(input.interest_areas)
+    ? input.interest_areas.map((area) => area.trim()).filter((area) => area.length > 0)
+    : []
 
   const titleMap: Record<string, string> = {
     contact: 'Novo formulário de contato recebido',
@@ -124,6 +128,7 @@ function buildNotificationTemplate(input: z.infer<typeof publicFormSchema>): Not
     `Tipo: ${formLabel}`,
     name ? `Nome: ${name}` : null,
     email ? `E-mail: ${email}` : null,
+    interestAreas.length > 0 ? `Areas de interesse: ${interestAreas.join(', ')}` : null,
     subject ? `Assunto do curso: ${subject}` : null,
     message ? `Mensagem: ${message.slice(0, 280)}` : null,
     input.source_path ? `Origem: ${input.source_path}` : null,
@@ -263,6 +268,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
     email: normalizeField(parsed.data.email),
     email_confirmation: normalizeField(parsed.data.email_confirmation),
     subject: normalizeField(parsed.data.subject),
+    interest_areas: Array.isArray(parsed.data.interest_areas) ? parsed.data.interest_areas.map((area) => area.trim()).filter((area) => area.length > 0) : [],
     message: normalizeField(parsed.data.message),
     source_path: normalizeField(parsed.data.source_path),
     source_url: normalizeField(parsed.data.source_url),

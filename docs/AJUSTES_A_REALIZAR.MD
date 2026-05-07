@@ -161,9 +161,9 @@
 
 ## CHAT 14 â€” Newsletter
 
-[ ] T45 - Na pÃ¡gina de contato, inserir seÃ§Ã£o de newsletter acima do rodapÃ©.
+[OK] T45 - Na pÃ¡gina de contato, inserir seÃ§Ã£o de newsletter acima do rodapÃ©.
 
-[ ] T46 - Na newsletter, permitir selecionar Ã¡reas de estudo de interesse.
+[OK] T46 - Na newsletter, permitir selecionar Ã¡reas de estudo de interesse.
 
 [ ] T47 - Na newsletter, incluir opÃ§Ã£o â€œTodas as Ã¡reasâ€.
 
@@ -177,7 +177,7 @@
 
 [OK] T50 - AJustar o formulÃ¡rio  da pÃ¡gina "ensine na genflix" com a inclusÃ£o dos campos: repetir e-mail (com validaÃ§Ã£o de e-mails iguais) e assunto do curso (antes do campo "resumo da proposta).
 
-[ ] T51 - Validar se os dois campos de e-mail sÃ£o iguais.
+[OK] T51 - Validar se os dois campos de e-mail sÃ£o iguais.
 
 [OK] T51.2 - o FUNDO DA PÁGINA https://genflix-omega.vercel.app/indique-a-genflix DEVERÁ SER BRANCO.
 
