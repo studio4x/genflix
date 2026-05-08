@@ -1495,7 +1495,7 @@ function EditorModal({
   const isGlobalHeaderEditor = editor.pageKey === 'global'
   const isAppearanceLockedToGlobal = isSiteAppearanceEditor && !isGlobalHeaderEditor && appearanceDraft.scope === 'global'
   const previewImagePresentation = useMemo(() => getEditableImagePresentation(previewImage), [previewImage])
-  const showTypographyControls = editor.entryType === 'text' || editor.entryType === 'rich_text' || editor.entryType === 'button' || editor.entryType === 'link'
+  const showTypographyControls = editor.entryType === 'text' || editor.entryType === 'rich_text' || editor.entryType === 'button' || editor.entryType === 'link' || isRichTextListEditor
   const workflowStatus = workspaceRecord.status
   const comments = workspaceRecord.comments
   const draftAvailable = typeof workspaceRecord.draftRawValue === 'string' && workspaceRecord.draftRawValue.trim() !== ''
@@ -3698,9 +3698,13 @@ export function EditableList({
   const editor = useContext(VisualEditorContext)
   const resolvedPageKey = pageKey ?? scope?.pageKey ?? 'global'
   const value = useEditableValue(entryKey, fallback, { pageKey: resolvedPageKey })
+  const styleEntryKey = `${entryKey}.__style`
+  const styleValue = normalizeTextStyle(useEditableValue(styleEntryKey, {}, { pageKey: resolvedPageKey }))
+  const contentStyle = textStyleToCss(styleValue)
+  const content = contentStyle ? <div style={contentStyle}>{children(value)}</div> : <>{children(value)}</>
 
   if (!editor?.isEditing || !scope) {
-    return <>{children(value)}</>
+    return <>{content}</>
   }
 
   if (value.length === 0) {
@@ -3714,6 +3718,8 @@ export function EditableList({
           entryType: 'list',
           label,
           fallback: value,
+          styleEntryKey,
+          styleFallback: styleValue,
           schema,
           reload: scope.reload,
         })}
@@ -3739,11 +3745,13 @@ export function EditableList({
         entryType: 'list',
         label,
         fallback: value,
+        styleEntryKey,
+        styleFallback: styleValue,
         schema,
         reload: scope.reload,
       })}
     >
-      {children(value)}
+      {content}
     </EditableMarker>
   )
 }

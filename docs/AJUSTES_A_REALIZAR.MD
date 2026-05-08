@@ -235,7 +235,7 @@
 
 [OK] T70 - No card do curso que esta no grid, insirir um fundo na categoria do curso. Ref.: <div class="absolute left-4 top-4 rounded-[2px] bg-[#EBF3F5]/92 px-2 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-[#15323B]">Saúde</div> Deixar as bordas arredondadas.
 
-[ ] T71 - No editor visual, para o tipo "content" e estrutura "blocos de conteúdo", deve ter a possibilidade a ajustar fonte, tamanhos e todos os outros elementos disponiveis para o tipo "text".
+[OK] T71 - No editor visual, para o tipo "content" e estrutura "blocos de conteúdo", deve ter a possibilidade a ajustar fonte, tamanhos e todos os outros elementos disponiveis para o tipo "text".
 
 [ ] T72 - Inserir no editor, a possibilidade de adicionar/alterar colunas no conteúdo das páginas...
 
