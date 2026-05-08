@@ -136,27 +136,6 @@ export function StudentCoursePlayerLayout() {
     return () => { isMounted = false }
   }, [courseId, roles])
 
-  if (isLoading) {
-    return (
-      <div className="flex min-h-screen flex-col items-center justify-center space-y-4 bg-slate-50">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent" />
-        <p className="animate-pulse text-sm font-medium text-slate-500">Preparando a sala de aula...</p>
-      </div>
-    )
-  }
-
-  if (error || !course) {
-    return (
-      <div className="flex min-h-screen flex-col items-center justify-center bg-slate-50 p-6">
-        <div className="max-w-md space-y-4 text-center">
-          <h2 className="text-xl font-bold text-slate-900">Oops! Algo deu errado.</h2>
-          <p className="text-sm font-medium text-slate-500">{error || 'Curso não encontrado.'}</p>
-          <Button onClick={() => navigate('/aluno/cursos')}>Voltar aos meus cursos</Button>
-        </div>
-      </div>
-    )
-  }
-
   const totalCompleted = modules.filter(m => m.state === 'completed').length
   const totalModules = modules.length
   const courseProgressPercent = totalModules === 0 ? 0 : Math.round((totalCompleted / totalModules) * 100)
@@ -193,6 +172,27 @@ export function StudentCoursePlayerLayout() {
       })
       .filter((entry): entry is { module: StudentCourseModuleProgress; lessons: StudentCourseModuleProgress['lessons']; moduleQuizzes: StudentCourseAssessmentSummary[] } => entry !== null)
   }, [assessments, modules, normalizedSidebarQuery])
+
+  if (isLoading) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center space-y-4 bg-slate-50">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent" />
+        <p className="animate-pulse text-sm font-medium text-slate-500">Preparando a sala de aula...</p>
+      </div>
+    )
+  }
+
+  if (error || !course) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center bg-slate-50 p-6">
+        <div className="max-w-md space-y-4 text-center">
+          <h2 className="text-xl font-bold text-slate-900">Oops! Algo deu errado.</h2>
+          <p className="text-sm font-medium text-slate-500">{error || 'Curso não encontrado.'}</p>
+          <Button onClick={() => navigate('/aluno/cursos')}>Voltar aos meus cursos</Button>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="flex h-screen w-full overflow-hidden bg-slate-50 text-slate-900">
