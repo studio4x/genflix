@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState, type ChangeEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { AlertTriangle, Copy, Eye, EyeOff, ExternalLink, Filter, History, Loader2, MessageSquare, RotateCcw, Save, Search, ShieldCheck, Upload } from 'lucide-react'
+import JSZip from 'jszip'
 
 import { Button } from '@/components/ui/button'
 import {
@@ -40,6 +41,44 @@ function resolveIconNameFromFileName(fileName: string) {
   if (!normalizedName) return 'icone-sem-nome'
   const nameWithoutExtension = normalizedName.replace(/\.[^/.]+$/, '')
   return nameWithoutExtension.trim() || normalizedName
+}
+
+function isSvgUploadFile(file: File) {
+  return file.type === 'image/svg+xml' || file.name.toLowerCase().endsWith('.svg')
+}
+
+function isZipUploadFile(file: File) {
+  const normalizedType = file.type.toLowerCase()
+  const normalizedName = file.name.toLowerCase()
+  return (
+    normalizedType === 'application/zip'
+    || normalizedType === 'application/x-zip-compressed'
+    || normalizedType === 'multipart/x-zip'
+    || normalizedType === 'application/x-compressed'
+    || normalizedName.endsWith('.zip')
+  )
+}
+
+function resolveFileNameFromZipEntry(entryName: string) {
+  const parts = entryName.split('/').filter(Boolean)
+  return parts[parts.length - 1] ?? entryName
+}
+
+async function extractSvgFilesFromZip(file: File) {
+  const zip = await JSZip.loadAsync(await file.arrayBuffer())
+  const files: File[] = []
+
+  for (const entry of Object.values(zip.files)) {
+    if (entry.dir || !entry.name.toLowerCase().endsWith('.svg')) {
+      continue
+    }
+
+    const svgContent = await entry.async('string')
+    const fileName = resolveFileNameFromZipEntry(entry.name)
+    files.push(new File([svgContent], fileName, { type: 'image/svg+xml', lastModified: file.lastModified }))
+  }
+
+  return files
 }
 
 function formatEntryTypeLabel(entryType: SiteContentEntry['entry_type']) {
@@ -365,12 +404,25 @@ export function AdminSiteEditorPage() {
   }
 
   async function handleUploadIconFiles(inputFiles: FileList | null) {
-    const files = Array.from(inputFiles ?? []).filter((file) => (
-      file.type === 'image/svg+xml' || file.name.toLowerCase().endsWith('.svg')
-    ))
+    const selectedFiles = Array.from(inputFiles ?? [])
+    const files: File[] = []
+    let zipFilesCount = 0
+
+    for (const file of selectedFiles) {
+      if (isSvgUploadFile(file)) {
+        files.push(file)
+        continue
+      }
+
+      if (isZipUploadFile(file)) {
+        const zipSvgFiles = await extractSvgFilesFromZip(file)
+        zipFilesCount += 1
+        files.push(...zipSvgFiles)
+      }
+    }
 
     if (files.length === 0) {
-      setMessage('Selecione ao menos um arquivo SVG válido para enviar.')
+      setMessage('Selecione SVGs ou um arquivo ZIP contendo SVGs para enviar.')
       return
     }
 
@@ -388,9 +440,10 @@ export function AdminSiteEditorPage() {
       }
 
       await loadIconLibrary()
-      setMessage(`${files.length} ícone(s) SVG enviado(s) para a biblioteca.`)
+      const zipSummary = zipFilesCount > 0 ? ` (${zipFilesCount} ZIP processado(s))` : ''
+      setMessage(`${files.length} ícone(s) SVG enviado(s) para a biblioteca${zipSummary}.`)
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Não foi possível enviar os ícones SVG.')
+      setMessage(error instanceof Error ? error.message : 'Não foi possível enviar os ícones para a biblioteca.')
     } finally {
       setIsUploadingIcons(false)
     }
@@ -633,10 +686,10 @@ export function AdminSiteEditorPage() {
               </label>
               <label className="grid gap-2 rounded-[16px] border border-[#D8E6EB] bg-[#F8FBFC] p-3">
                 <span className="text-[10px] font-black uppercase tracking-[0.16em] text-[#5F7077]">Subir vários SVGs</span>
-                <span className="text-xs font-semibold text-[#5F7077]">Envio em lote; o nome do ícone vira o nome do arquivo.</span>
+                <span className="text-xs font-semibold text-[#5F7077]">Envio em lote por SVGs ou ZIP; o nome do ícone vira o nome do arquivo.</span>
                 <input
                   type="file"
-                  accept=".svg,image/svg+xml"
+                  accept=".svg,image/svg+xml,.zip,application/zip"
                   multiple
                   onChange={handleBulkIconUpload}
                   disabled={isUploadingIcons}
