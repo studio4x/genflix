@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useMemo, useState, type ChangeEvent } from 'react'
 import { Link } from 'react-router-dom'
-import { AlertTriangle, Copy, Eye, EyeOff, ExternalLink, Filter, History, Loader2, MessageSquare, RotateCcw, Save, Search, ShieldCheck, Upload } from 'lucide-react'
+import { AlertTriangle, Copy, Eye, EyeOff, ExternalLink, Filter, History, Loader2, MessageSquare, RotateCcw, Save, Search, ShieldCheck, Trash2, Upload } from 'lucide-react'
 import JSZip from 'jszip'
 
 import { Button } from '@/components/ui/button'
 import {
   clearPageOverrides,
   clearSiteContentEntryOverride,
+  deleteSiteAsset,
   disableSiteEditorOverrides,
   fetchSiteEditorWorkspace,
   fetchSiteContentVersions,
@@ -41,6 +42,10 @@ function resolveIconNameFromFileName(fileName: string) {
   if (!normalizedName) return 'icone-sem-nome'
   const nameWithoutExtension = normalizedName.replace(/\.[^/.]+$/, '')
   return nameWithoutExtension.trim() || normalizedName
+}
+
+function normalizeIconNameForComparison(iconName: string) {
+  return iconName.trim().toLowerCase()
 }
 
 function isSvgUploadFile(file: File) {
@@ -79,6 +84,16 @@ async function extractSvgFilesFromZip(file: File) {
   }
 
   return files
+}
+
+function summarizeDuplicateNames(iconNames: string[]) {
+  const uniqueNames = Array.from(new Set(iconNames))
+  const preview = uniqueNames.slice(0, 6).join(', ')
+  if (uniqueNames.length <= 6) {
+    return preview
+  }
+
+  return `${preview} e mais ${uniqueNames.length - 6}`
 }
 
 function formatEntryTypeLabel(entryType: SiteContentEntry['entry_type']) {
@@ -139,6 +154,7 @@ export function AdminSiteEditorPage() {
   const [isSaving, setIsSaving] = useState(false)
   const [isLoadingIconLibrary, setIsLoadingIconLibrary] = useState(false)
   const [isUploadingIcons, setIsUploadingIcons] = useState(false)
+  const [isDeletingIconId, setIsDeletingIconId] = useState<string | null>(null)
   const [message, setMessage] = useState<string | null>(null)
   const [workspaceState, setWorkspaceState] = useState<SiteEditorWorkspaceMap>({})
   const [iconLibraryAssets, setIconLibraryAssets] = useState<SiteAsset[]>([])
@@ -403,45 +419,87 @@ export function AdminSiteEditorPage() {
     }
   }
 
+  async function handleDeleteUploadedIcon(asset: SiteAsset) {
+    const originalName = typeof asset.metadata?.original_name === 'string' ? asset.metadata.original_name : ''
+    const iconName = (asset.alt ?? '').trim() || resolveIconNameFromFileName(originalName)
+
+    setIsDeletingIconId(asset.id)
+    setMessage(null)
+
+    try {
+      await deleteSiteAsset({ id: asset.id, storage_path: asset.storage_path })
+      setIconLibraryAssets((currentAssets) => currentAssets.filter((currentAsset) => currentAsset.id !== asset.id))
+      setMessage(`Icone "${iconName}" removido da biblioteca.`)
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Nao foi possivel remover o icone da biblioteca.')
+    } finally {
+      setIsDeletingIconId(null)
+    }
+  }
+
   async function handleUploadIconFiles(inputFiles: FileList | null) {
     const selectedFiles = Array.from(inputFiles ?? [])
-    const files: File[] = []
+    const filesToUpload: File[] = []
+    const duplicateNames: string[] = []
     let zipFilesCount = 0
 
     for (const file of selectedFiles) {
       if (isSvgUploadFile(file)) {
-        files.push(file)
+        filesToUpload.push(file)
         continue
       }
 
       if (isZipUploadFile(file)) {
         const zipSvgFiles = await extractSvgFilesFromZip(file)
         zipFilesCount += 1
-        files.push(...zipSvgFiles)
+        filesToUpload.push(...zipSvgFiles)
       }
     }
 
-    if (files.length === 0) {
+    if (filesToUpload.length === 0) {
       setMessage('Selecione SVGs ou um arquivo ZIP contendo SVGs para enviar.')
       return
+    }
+
+    const reservedIconNames = new Set<string>()
+    for (const nativeIcon of SITE_ICON_OPTIONS) {
+      reservedIconNames.add(normalizeIconNameForComparison(nativeIcon.value))
+    }
+    for (const uploadedAsset of iconLibraryAssets) {
+      const originalName = typeof uploadedAsset.metadata?.original_name === 'string' ? uploadedAsset.metadata.original_name : ''
+      const uploadedIconName = (uploadedAsset.alt ?? '').trim() || resolveIconNameFromFileName(originalName)
+      reservedIconNames.add(normalizeIconNameForComparison(uploadedIconName))
     }
 
     setIsUploadingIcons(true)
     setMessage(null)
 
     try {
-      for (const file of files) {
+      let uploadedCount = 0
+
+      for (const file of filesToUpload) {
         const iconName = resolveIconNameFromFileName(file.name)
+        const normalizedIconName = normalizeIconNameForComparison(iconName)
+
+        if (reservedIconNames.has(normalizedIconName)) {
+          duplicateNames.push(iconName)
+          continue
+        }
         await uploadSiteAsset(file, {
           alt: iconName,
           pageKey: 'global',
           entryKey: 'icon-library',
         })
+        reservedIconNames.add(normalizedIconName)
+        uploadedCount += 1
       }
 
       await loadIconLibrary()
       const zipSummary = zipFilesCount > 0 ? ` (${zipFilesCount} ZIP processado(s))` : ''
-      setMessage(`${files.length} ícone(s) SVG enviado(s) para a biblioteca${zipSummary}.`)
+      const duplicateSummary = duplicateNames.length > 0
+        ? ` ${duplicateNames.length} arquivo(s) ignorado(s) por nome duplicado: ${summarizeDuplicateNames(duplicateNames)}.`
+        : ''
+      setMessage(`${uploadedCount} icone(s) SVG enviado(s) para a biblioteca${zipSummary}.${duplicateSummary}`)
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Não foi possível enviar os ícones para a biblioteca.')
     } finally {
@@ -729,14 +787,25 @@ export function AdminSiteEditorPage() {
                           <p className="truncate text-xs font-semibold text-[#5F7077]">{originalName || iconName}</p>
                         </div>
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => void handleCopyIconKey(iconName)}
-                        className="mt-3 inline-flex items-center gap-2 rounded-full border border-[#D8E6EB] bg-[#F8FBFC] px-3 py-2 text-[10px] font-black uppercase tracking-[0.12em] text-[#0A3640] hover:bg-white"
-                      >
-                        <Copy className="h-3.5 w-3.5" />
-                        Copiar nome
-                      </button>
+                      <div className="mt-3 flex flex-wrap items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => void handleCopyIconKey(iconName)}
+                          className="inline-flex items-center gap-2 rounded-full border border-[#D8E6EB] bg-[#F8FBFC] px-3 py-2 text-[10px] font-black uppercase tracking-[0.12em] text-[#0A3640] hover:bg-white"
+                        >
+                          <Copy className="h-3.5 w-3.5" />
+                          Copiar nome
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => void handleDeleteUploadedIcon(asset)}
+                          disabled={isDeletingIconId === asset.id}
+                          className="inline-flex items-center gap-2 rounded-full border border-rose-200 bg-rose-50 px-3 py-2 text-[10px] font-black uppercase tracking-[0.12em] text-rose-700 hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                          {isDeletingIconId === asset.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
+                          Excluir
+                        </button>
+                      </div>
                     </article>
                   )
                 })}

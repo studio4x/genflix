@@ -299,6 +299,25 @@ export async function fetchSiteAssets(limit = 24) {
   return (data ?? []) as SiteAsset[]
 }
 
+export async function deleteSiteAsset(input: Pick<SiteAsset, 'id' | 'storage_path'>) {
+  const { error: storageError } = await supabase.storage
+    .from(SITE_ASSETS_BUCKET)
+    .remove([input.storage_path])
+
+  if (storageError && !/not found|does not exist/i.test(storageError.message)) {
+    throw storageError
+  }
+
+  const { error } = await supabase
+    .from('site_assets')
+    .delete()
+    .eq('id', input.id)
+
+  if (error) {
+    throw error
+  }
+}
+
 function normalizeWorkspaceComment(row: WorkspaceCommentRow): SiteEditorWorkspaceComment {
   return {
     id: row.id,
