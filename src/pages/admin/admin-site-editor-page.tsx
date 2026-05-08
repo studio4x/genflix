@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState, type ChangeEvent } from 'react'
 import { Link } from 'react-router-dom'
-import { AlertTriangle, Copy, Eye, EyeOff, ExternalLink, Filter, History, MessageSquare, RotateCcw, Save, Search, ShieldCheck } from 'lucide-react'
+import { AlertTriangle, Copy, Eye, EyeOff, ExternalLink, Filter, History, Loader2, MessageSquare, RotateCcw, Save, Search, ShieldCheck, Upload } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import {
@@ -11,9 +11,10 @@ import {
   fetchSiteContentVersions,
   fetchSiteEditorSettings,
   restoreSiteContentVersion,
+  uploadSiteAsset,
   updateSiteEditorSettings,
 } from '@/features/site-editor/api'
-import type { SiteContentEntry, SiteContentVersion, SiteEditorSettings, SitePageKey } from '@/features/site-editor/types'
+import type { SiteAsset, SiteContentEntry, SiteContentVersion, SiteEditorSettings, SitePageKey } from '@/features/site-editor/types'
 import { defaultSiteEditorSettings } from '@/features/site-editor/types'
 import {
   createSiteEditorWorkspaceKey,
@@ -32,6 +33,14 @@ type SitePageRow = {
 }
 
 type SiteEditorMode = 'basic' | 'advanced'
+type AdminSiteEditorTab = 'overrides' | 'icon-library'
+
+function resolveIconNameFromFileName(fileName: string) {
+  const normalizedName = fileName.trim()
+  if (!normalizedName) return 'icone-sem-nome'
+  const nameWithoutExtension = normalizedName.replace(/\.[^/.]+$/, '')
+  return nameWithoutExtension.trim() || normalizedName
+}
 
 function formatEntryTypeLabel(entryType: SiteContentEntry['entry_type']) {
   switch (entryType) {
@@ -80,6 +89,7 @@ export function AdminSiteEditorPage() {
   const [entries, setEntries] = useState<SiteContentEntry[]>([])
   const [selectedPageKey, setSelectedPageKey] = useState<SitePageKey>('home')
   const [editorMode, setEditorMode] = useState<SiteEditorMode>('basic')
+  const [activeTab, setActiveTab] = useState<AdminSiteEditorTab>('overrides')
   const [searchQuery, setSearchQuery] = useState('')
   const [iconSearchQuery, setIconSearchQuery] = useState('')
   const [typeFilter, setTypeFilter] = useState<'all' | SiteContentEntry['entry_type']>('all')
@@ -88,8 +98,11 @@ export function AdminSiteEditorPage() {
   const [selectedEntryId, setSelectedEntryId] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
+  const [isLoadingIconLibrary, setIsLoadingIconLibrary] = useState(false)
+  const [isUploadingIcons, setIsUploadingIcons] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
   const [workspaceState, setWorkspaceState] = useState<SiteEditorWorkspaceMap>({})
+  const [iconLibraryAssets, setIconLibraryAssets] = useState<SiteAsset[]>([])
 
   const selectedPage = useMemo(
     () => pages.find((page) => page.page_key === selectedPageKey) ?? null,
@@ -139,6 +152,25 @@ export function AdminSiteEditorPage() {
       )
     })
   }, [iconSearchQuery])
+  const filteredUploadedIconAssets = useMemo(() => {
+    const normalizedQuery = iconSearchQuery.trim().toLowerCase()
+
+    return iconLibraryAssets.filter((asset) => {
+      const originalName = typeof asset.metadata?.original_name === 'string'
+        ? asset.metadata.original_name
+        : ''
+      const assetName = (asset.alt ?? '').trim() || resolveIconNameFromFileName(originalName)
+
+      if (normalizedQuery.length === 0) {
+        return true
+      }
+
+      return (
+        assetName.toLowerCase().includes(normalizedQuery)
+        || originalName.toLowerCase().includes(normalizedQuery)
+      )
+    })
+  }, [iconLibraryAssets, iconSearchQuery])
 
   useEffect(() => {
     if (pages.length === 0) {
@@ -206,9 +238,35 @@ export function AdminSiteEditorPage() {
     }
   }, [])
 
+  const loadIconLibrary = useCallback(async () => {
+    setIsLoadingIconLibrary(true)
+    try {
+      const { data, error } = await supabase
+        .from('site_assets')
+        .select('id, storage_path, public_url, alt, width, height, mime_type, file_size, metadata, uploaded_by, created_at')
+        .contains('metadata', { entry_key: 'icon-library' })
+        .order('created_at', { ascending: false })
+        .limit(240)
+
+      if (error) throw error
+      setIconLibraryAssets((data ?? []) as SiteAsset[])
+    } catch {
+      setIconLibraryAssets([])
+    } finally {
+      setIsLoadingIconLibrary(false)
+    }
+  }, [])
+
   useEffect(() => {
     void loadData()
   }, [loadData])
+
+  useEffect(() => {
+    if (activeTab !== 'icon-library') {
+      return
+    }
+    void loadIconLibrary()
+  }, [activeTab, loadIconLibrary])
 
   useEffect(() => {
     const channel = supabase
@@ -306,6 +364,48 @@ export function AdminSiteEditorPage() {
     }
   }
 
+  async function handleUploadIconFiles(inputFiles: FileList | null) {
+    const files = Array.from(inputFiles ?? []).filter((file) => (
+      file.type === 'image/svg+xml' || file.name.toLowerCase().endsWith('.svg')
+    ))
+
+    if (files.length === 0) {
+      setMessage('Selecione ao menos um arquivo SVG válido para enviar.')
+      return
+    }
+
+    setIsUploadingIcons(true)
+    setMessage(null)
+
+    try {
+      for (const file of files) {
+        const iconName = resolveIconNameFromFileName(file.name)
+        await uploadSiteAsset(file, {
+          alt: iconName,
+          pageKey: 'global',
+          entryKey: 'icon-library',
+        })
+      }
+
+      await loadIconLibrary()
+      setMessage(`${files.length} ícone(s) SVG enviado(s) para a biblioteca.`)
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Não foi possível enviar os ícones SVG.')
+    } finally {
+      setIsUploadingIcons(false)
+    }
+  }
+
+  function handleSingleIconUpload(event: ChangeEvent<HTMLInputElement>) {
+    void handleUploadIconFiles(event.target.files)
+    event.target.value = ''
+  }
+
+  function handleBulkIconUpload(event: ChangeEvent<HTMLInputElement>) {
+    void handleUploadIconFiles(event.target.files)
+    event.target.value = ''
+  }
+
   async function handleRestoreVersion(version: SiteContentVersion) {
     setIsSaving(true)
     setMessage(null)
@@ -374,6 +474,26 @@ export function AdminSiteEditorPage() {
 
       <section className="grid gap-6 xl:grid-cols-[0.85fr_minmax(0,1.15fr)]">
         <div className="min-w-0 space-y-6">
+          <article className="border border-[#D8E6EB] bg-white p-4 shadow-sm">
+            <div className="inline-flex h-11 overflow-hidden rounded-[14px] border border-[#D8E6EB] bg-[#F8FBFC]">
+              <button
+                type="button"
+                onClick={() => setActiveTab('overrides')}
+                className={`px-4 text-xs font-black uppercase tracking-[0.14em] ${activeTab === 'overrides' ? 'bg-[#0A3640] text-white' : 'text-[#5F7077]'}`}
+              >
+                Overrides
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('icon-library')}
+                className={`inline-flex items-center gap-2 px-4 text-xs font-black uppercase tracking-[0.14em] ${activeTab === 'icon-library' ? 'bg-[#1398B7] text-white' : 'text-[#5F7077]'}`}
+              >
+                <Upload className="h-3.5 w-3.5" />
+                Biblioteca de ícones
+              </button>
+            </div>
+          </article>
+
           <article className="border border-[#D8E6EB] bg-white p-5 shadow-sm">
             <h2 className="font-readex text-xl font-semibold text-[#15323b]">Governança compartilhada</h2>
             <p className="mt-2 text-sm font-semibold leading-6 text-[#5F7077]">
@@ -464,6 +584,7 @@ export function AdminSiteEditorPage() {
             </div>
           </article>
 
+          {activeTab === 'icon-library' ? (
           <article className="border border-[#D8E6EB] bg-white p-5 shadow-sm">
             <div className="flex items-start justify-between gap-3">
               <div>
@@ -491,6 +612,82 @@ export function AdminSiteEditorPage() {
                 />
               </div>
             </label>
+
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              <label className="grid gap-2 rounded-[16px] border border-[#D8E6EB] bg-[#F8FBFC] p-3">
+                <span className="text-[10px] font-black uppercase tracking-[0.16em] text-[#5F7077]">Subir 1 SVG</span>
+                <span className="text-xs font-semibold text-[#5F7077]">Envio manual, um arquivo por vez.</span>
+                <input
+                  type="file"
+                  accept=".svg,image/svg+xml"
+                  onChange={handleSingleIconUpload}
+                  disabled={isUploadingIcons}
+                  className="text-xs font-semibold text-[#15323b] file:mr-3 file:rounded-full file:border file:border-[#D8E6EB] file:bg-white file:px-3 file:py-2 file:text-[10px] file:font-black file:uppercase file:tracking-[0.12em] file:text-[#0A3640]"
+                />
+              </label>
+              <label className="grid gap-2 rounded-[16px] border border-[#D8E6EB] bg-[#F8FBFC] p-3">
+                <span className="text-[10px] font-black uppercase tracking-[0.16em] text-[#5F7077]">Subir vários SVGs</span>
+                <span className="text-xs font-semibold text-[#5F7077]">Envio em lote; o nome do ícone vira o nome do arquivo.</span>
+                <input
+                  type="file"
+                  accept=".svg,image/svg+xml"
+                  multiple
+                  onChange={handleBulkIconUpload}
+                  disabled={isUploadingIcons}
+                  className="text-xs font-semibold text-[#15323b] file:mr-3 file:rounded-full file:border file:border-[#D8E6EB] file:bg-white file:px-3 file:py-2 file:text-[10px] file:font-black file:uppercase file:tracking-[0.12em] file:text-[#0A3640]"
+                />
+              </label>
+            </div>
+
+            <div className="mt-4 rounded-[18px] border border-[#D8E6EB] bg-[#F8FBFC] p-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-[0.16em] text-[#1398B7]">SVGs enviados</p>
+                  <p className="mt-1 text-sm font-semibold text-[#5F7077]">Use "copiar nome" para aplicar no editor visual.</p>
+                </div>
+                <span className="inline-flex items-center rounded-full border border-[#D8E6EB] bg-white px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-[#15323b]">
+                  {iconLibraryAssets.length} cadastrado(s)
+                </span>
+              </div>
+              {isUploadingIcons || isLoadingIconLibrary ? (
+                <div className="mt-3 inline-flex items-center gap-2 text-xs font-semibold text-[#5F7077]">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Atualizando biblioteca de ícones...
+                </div>
+              ) : null}
+              <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                {filteredUploadedIconAssets.map((asset) => {
+                  const originalName = typeof asset.metadata?.original_name === 'string' ? asset.metadata.original_name : ''
+                  const iconName = (asset.alt ?? '').trim() || resolveIconNameFromFileName(originalName)
+                  return (
+                    <article key={asset.id} className="rounded-[14px] border border-[#D8E6EB] bg-white p-3">
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#D8E6EB] bg-[#F8FBFC] p-2">
+                          {asset.public_url ? <img src={asset.public_url} alt={iconName} className="h-full w-full object-contain" /> : null}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-bold text-[#15323b]">{iconName}</p>
+                          <p className="truncate text-xs font-semibold text-[#5F7077]">{originalName || iconName}</p>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => void handleCopyIconKey(iconName)}
+                        className="mt-3 inline-flex items-center gap-2 rounded-full border border-[#D8E6EB] bg-[#F8FBFC] px-3 py-2 text-[10px] font-black uppercase tracking-[0.12em] text-[#0A3640] hover:bg-white"
+                      >
+                        <Copy className="h-3.5 w-3.5" />
+                        Copiar nome
+                      </button>
+                    </article>
+                  )
+                })}
+                {filteredUploadedIconAssets.length === 0 ? (
+                  <div className="rounded-[14px] border border-dashed border-[#D8E6EB] bg-white px-4 py-6 text-xs font-semibold text-[#5F7077] sm:col-span-2">
+                    Nenhum SVG enviado nesta biblioteca.
+                  </div>
+                ) : null}
+              </div>
+            </div>
 
             <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
               {filteredIconOptions.map((option) => (
@@ -520,6 +717,7 @@ export function AdminSiteEditorPage() {
               ) : null}
             </div>
           </article>
+          ) : null}
 
         </div>
 

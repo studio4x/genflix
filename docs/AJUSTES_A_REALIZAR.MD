@@ -230,7 +230,7 @@
 
 [OK] T68 - Centralizar horizontalmente os cards da seção da home "Cursos por área de conhecimento"
 
-[ ] t69 - Na pagina "admin/site-editor", no card de Biblioteca de icones, insira a opção de subir icones SVG manualmente (um a um) e também subir vários icones de uma vez, adotando como nome do Icone, o nome do arquivo. Mova esa seção de biblioteca de icones para uma aba dentro da página "admin/site-editor"
+[OK] T69 - Na pagina "admin/site-editor", no card de Biblioteca de icones, insira a opção de subir icones SVG manualmente (um a um) e também subir vários icones de uma vez, adotando como nome do Icone, o nome do arquivo. Mova esa seção de biblioteca de icones para uma aba dentro da página "admin/site-editor"
 
 
 [ ] t70 - No card do curso que esta no grid, insirir um fundo na categoria do curso. Ref.: <div class="absolute left-4 top-4 rounded-[2px] bg-[#EBF3F5]/92 px-2 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-[#15323B]">Saúde</div> Deixar as bordas arredondadas.
