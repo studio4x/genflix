@@ -69,21 +69,47 @@ function resolveFileNameFromZipEntry(entryName: string) {
   return parts[parts.length - 1] ?? entryName
 }
 
+function isZipMetadataEntry(entryName: string) {
+  const normalizedEntryName = entryName.toLowerCase()
+  const fileName = resolveFileNameFromZipEntry(normalizedEntryName)
+  return normalizedEntryName.includes('__macosx/') || fileName.startsWith('._')
+}
+
+function isValidSvgContent(input: string) {
+  return /<svg[\s>]/i.test(input)
+}
+
 async function extractSvgFilesFromZip(file: File) {
   const zip = await JSZip.loadAsync(await file.arrayBuffer())
   const files: File[] = []
+  let ignoredMetadataCount = 0
+  let ignoredInvalidSvgCount = 0
 
   for (const entry of Object.values(zip.files)) {
     if (entry.dir || !entry.name.toLowerCase().endsWith('.svg')) {
       continue
     }
 
+    if (isZipMetadataEntry(entry.name)) {
+      ignoredMetadataCount += 1
+      continue
+    }
+
     const svgContent = await entry.async('string')
+    if (!isValidSvgContent(svgContent)) {
+      ignoredInvalidSvgCount += 1
+      continue
+    }
+
     const fileName = resolveFileNameFromZipEntry(entry.name)
     files.push(new File([svgContent], fileName, { type: 'image/svg+xml', lastModified: file.lastModified }))
   }
 
-  return files
+  return {
+    files,
+    ignoredMetadataCount,
+    ignoredInvalidSvgCount,
+  }
 }
 
 function summarizeDuplicateNames(iconNames: string[]) {
@@ -155,6 +181,7 @@ export function AdminSiteEditorPage() {
   const [isLoadingIconLibrary, setIsLoadingIconLibrary] = useState(false)
   const [isUploadingIcons, setIsUploadingIcons] = useState(false)
   const [isDeletingIconId, setIsDeletingIconId] = useState<string | null>(null)
+  const [isDeletingAllIcons, setIsDeletingAllIcons] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
   const [workspaceState, setWorkspaceState] = useState<SiteEditorWorkspaceMap>({})
   const [iconLibraryAssets, setIconLibraryAssets] = useState<SiteAsset[]>([])
@@ -437,27 +464,83 @@ export function AdminSiteEditorPage() {
     }
   }
 
+  async function handleDeleteAllUploadedIcons() {
+    if (iconLibraryAssets.length === 0) {
+      setMessage('Nao ha icones enviados para excluir.')
+      return
+    }
+
+    const confirmed = window.confirm(`Excluir todos os ${iconLibraryAssets.length} icones enviados?`)
+    if (!confirmed) {
+      return
+    }
+
+    setIsDeletingAllIcons(true)
+    setMessage(null)
+
+    try {
+      let deletedCount = 0
+      let failedCount = 0
+
+      for (const asset of iconLibraryAssets) {
+        try {
+          await deleteSiteAsset({ id: asset.id, storage_path: asset.storage_path })
+          deletedCount += 1
+        } catch {
+          failedCount += 1
+        }
+      }
+
+      await loadIconLibrary()
+      const failedSummary = failedCount > 0 ? ` ${failedCount} falharam.` : ''
+      setMessage(`Exclusao massiva concluida: ${deletedCount} icone(s) removido(s).${failedSummary}`)
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Nao foi possivel concluir a exclusao massiva dos icones.')
+    } finally {
+      setIsDeletingAllIcons(false)
+      setIsDeletingIconId(null)
+    }
+  }
+
   async function handleUploadIconFiles(inputFiles: FileList | null) {
     const selectedFiles = Array.from(inputFiles ?? [])
     const filesToUpload: File[] = []
     const duplicateNames: string[] = []
+    let ignoredMetadataCount = 0
+    let ignoredInvalidSvgCount = 0
     let zipFilesCount = 0
 
     for (const file of selectedFiles) {
       if (isSvgUploadFile(file)) {
+        if (isZipMetadataEntry(file.name)) {
+          ignoredMetadataCount += 1
+          continue
+        }
+
+        const svgContent = await file.text()
+        if (!isValidSvgContent(svgContent)) {
+          ignoredInvalidSvgCount += 1
+          continue
+        }
+
         filesToUpload.push(file)
         continue
       }
 
       if (isZipUploadFile(file)) {
-        const zipSvgFiles = await extractSvgFilesFromZip(file)
+        const zipExtraction = await extractSvgFilesFromZip(file)
         zipFilesCount += 1
-        filesToUpload.push(...zipSvgFiles)
+        filesToUpload.push(...zipExtraction.files)
+        ignoredMetadataCount += zipExtraction.ignoredMetadataCount
+        ignoredInvalidSvgCount += zipExtraction.ignoredInvalidSvgCount
       }
     }
 
     if (filesToUpload.length === 0) {
-      setMessage('Selecione SVGs ou um arquivo ZIP contendo SVGs para enviar.')
+      const ignoredSummary = ignoredMetadataCount > 0 || ignoredInvalidSvgCount > 0
+        ? ` Ignorados: ${ignoredMetadataCount} metadado(s), ${ignoredInvalidSvgCount} SVG(s) invalido(s).`
+        : ''
+      setMessage(`Selecione SVGs validos ou um arquivo ZIP contendo SVGs validos.${ignoredSummary}`)
       return
     }
 
@@ -499,7 +582,10 @@ export function AdminSiteEditorPage() {
       const duplicateSummary = duplicateNames.length > 0
         ? ` ${duplicateNames.length} arquivo(s) ignorado(s) por nome duplicado: ${summarizeDuplicateNames(duplicateNames)}.`
         : ''
-      setMessage(`${uploadedCount} icone(s) SVG enviado(s) para a biblioteca${zipSummary}.${duplicateSummary}`)
+      const ignoredSummary = ignoredMetadataCount > 0 || ignoredInvalidSvgCount > 0
+        ? ` ${ignoredMetadataCount} metadado(s) e ${ignoredInvalidSvgCount} SVG(s) invalido(s) ignorado(s).`
+        : ''
+      setMessage(`${uploadedCount} icone(s) SVG enviado(s) para a biblioteca${zipSummary}.${duplicateSummary}${ignoredSummary}`)
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Não foi possível enviar os ícones para a biblioteca.')
     } finally {
@@ -738,7 +824,7 @@ export function AdminSiteEditorPage() {
                   type="file"
                   accept=".svg,image/svg+xml"
                   onChange={handleSingleIconUpload}
-                  disabled={isUploadingIcons}
+                  disabled={isUploadingIcons || isDeletingAllIcons}
                   className="text-xs font-semibold text-[#15323b] file:mr-3 file:rounded-full file:border file:border-[#D8E6EB] file:bg-white file:px-3 file:py-2 file:text-[10px] file:font-black file:uppercase file:tracking-[0.12em] file:text-[#0A3640]"
                 />
               </label>
@@ -750,7 +836,7 @@ export function AdminSiteEditorPage() {
                   accept=".svg,image/svg+xml,.zip,application/zip"
                   multiple
                   onChange={handleBulkIconUpload}
-                  disabled={isUploadingIcons}
+                  disabled={isUploadingIcons || isDeletingAllIcons}
                   className="text-xs font-semibold text-[#15323b] file:mr-3 file:rounded-full file:border file:border-[#D8E6EB] file:bg-white file:px-3 file:py-2 file:text-[10px] file:font-black file:uppercase file:tracking-[0.12em] file:text-[#0A3640]"
                 />
               </label>
@@ -762,9 +848,20 @@ export function AdminSiteEditorPage() {
                   <p className="text-[10px] font-black uppercase tracking-[0.16em] text-[#1398B7]">SVGs enviados</p>
                   <p className="mt-1 text-sm font-semibold text-[#5F7077]">Use "copiar nome" para aplicar no editor visual.</p>
                 </div>
-                <span className="inline-flex items-center rounded-full border border-[#D8E6EB] bg-white px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-[#15323b]">
-                  {iconLibraryAssets.length} cadastrado(s)
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className="inline-flex items-center rounded-full border border-[#D8E6EB] bg-white px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-[#15323b]">
+                    {iconLibraryAssets.length} cadastrado(s)
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => void handleDeleteAllUploadedIcons()}
+                    disabled={iconLibraryAssets.length === 0 || isDeletingAllIcons || isUploadingIcons}
+                    className="inline-flex items-center gap-2 rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-[10px] font-black uppercase tracking-[0.12em] text-rose-700 hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {isDeletingAllIcons ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
+                    Excluir todos
+                  </button>
+                </div>
               </div>
               {isUploadingIcons || isLoadingIconLibrary ? (
                 <div className="mt-3 inline-flex items-center gap-2 text-xs font-semibold text-[#5F7077]">
@@ -799,7 +896,7 @@ export function AdminSiteEditorPage() {
                         <button
                           type="button"
                           onClick={() => void handleDeleteUploadedIcon(asset)}
-                          disabled={isDeletingIconId === asset.id}
+                          disabled={isDeletingIconId === asset.id || isDeletingAllIcons || isUploadingIcons}
                           className="inline-flex items-center gap-2 rounded-full border border-rose-200 bg-rose-50 px-3 py-2 text-[10px] font-black uppercase tracking-[0.12em] text-rose-700 hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-60"
                         >
                           {isDeletingIconId === asset.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
