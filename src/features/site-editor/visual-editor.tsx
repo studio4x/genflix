@@ -842,7 +842,7 @@ function ListItemEditorCard({
     ? (selectedLibraryIcon ? `asset:${selectedLibraryIcon.assetId}` : '__uploaded__')
     : (iconKey ? `native:${iconKey}` : 'none')
   const templateDefinition = editorConfig.templates.find((template) => template.id === templateKey)
-  const shouldShowIconField = editorConfig.kind === 'section-registry' || iconKey !== '' || iconImageUrl !== '' || templateKey === 'categories' || templateKey === 'resources'
+  const shouldShowIconField = !editorConfig.hiddenFields.has('icon')
   delete metadataWithoutItems.buttonLabel
   delete metadataWithoutItems.isInternal
   delete metadataWithoutItems.openInNewTab
