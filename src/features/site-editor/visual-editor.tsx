@@ -3265,6 +3265,7 @@ export function VisualEditorProvider({ children }: { children: ReactNode }) {
   const [isTrayExpanded, setIsTrayExpanded] = useState(false)
   const isAdmin = roles.includes('admin')
   const canShowEditor = isAdmin && isPublicEditablePath(location.pathname) && !shouldIgnoreSiteEditor()
+  const isEditorAvailable = settings.is_enabled && settings.editing_enabled && !settings.fallback_mode
 
   const loadSettings = useCallback(async () => {
     try {
@@ -3310,7 +3311,7 @@ export function VisualEditorProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo<VisualEditorContextValue>(() => ({
     isAdmin,
-    isEditing: canShowEditor && isEditing && settings.is_enabled && settings.editing_enabled && !settings.fallback_mode,
+    isEditing: canShowEditor && isEditing && isEditorAvailable,
     settings,
     startEditing: () => setIsEditing(true),
     stopEditing: () => {
@@ -3320,12 +3321,12 @@ export function VisualEditorProvider({ children }: { children: ReactNode }) {
     },
     openEditor: setEditor,
     resolveValue: (_entryKey, fallback) => fallback,
-  }), [canShowEditor, isAdmin, isEditing, settings])
+  }), [canShowEditor, isAdmin, isEditing, isEditorAvailable, settings])
 
   return (
     <VisualEditorContext.Provider value={value}>
       {children}
-      {canShowEditor && settings.is_enabled && settings.editing_enabled && !settings.fallback_mode ? (
+      {canShowEditor ? (
         <div className="fixed bottom-5 right-5 z-[110] flex max-w-[calc(100%-24px)] items-end gap-3">
           {isTrayExpanded ? (
             <div className="w-[min(calc(100vw-96px),720px)] rounded-[24px] border border-[#D8E6EB] bg-white px-4 py-3 shadow-[0_18px_50px_rgba(6,27,33,0.16)]">
@@ -3343,15 +3344,18 @@ export function VisualEditorProvider({ children }: { children: ReactNode }) {
                     </span>
                   </div>
               <p className="mt-2 text-sm font-semibold text-[#15323b]">
-                Clique nos blocos destacados para editar. Use <span className="font-black">Ctrl/Cmd + S</span> para salvar e <span className="font-black">Esc</span> para fechar.
+                {isEditorAvailable
+                  ? <>Clique nos blocos destacados para editar. Use <span className="font-black">Ctrl/Cmd + S</span> para salvar e <span className="font-black">Esc</span> para fechar.</>
+                  : 'O editor visual esta temporariamente desativado. Acesse Gestao para habilitar novamente.'}
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
                 <button
                   type="button"
                   onClick={() => handleToggleEditing()}
+                  disabled={!isEditorAvailable}
                   className={cn(
-                    'inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-black uppercase tracking-[0.16em]',
+                    'inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-black uppercase tracking-[0.16em] disabled:cursor-not-allowed disabled:opacity-55',
                   isEditing ? 'bg-[#0A3640] text-white' : 'bg-[#1398B7] text-white',
                 )}
               >

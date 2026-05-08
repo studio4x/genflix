@@ -168,7 +168,7 @@ export const appRouter = createBrowserRouter([
   },
   {
     path: '/suporte',
-    element: withRouteSuspense(<PublicSupportPage />),
+    element: <PublicEditableRoute pageKey="support" seo={{ entryKey: 'support.seo', fallback: { title: 'GenFlix | Suporte', description: 'Central de suporte com FAQ, SLA de atendimento e abertura de chamados da GenFlix.', slug: '/suporte', image: '' } }}><PublicSupportPage /></PublicEditableRoute>,
   },
   {
     path: '/politica-de-reembolso',
