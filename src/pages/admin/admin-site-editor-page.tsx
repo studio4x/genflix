@@ -449,6 +449,7 @@ export function AdminSiteEditorPage() {
         </div>
       ) : null}
 
+      {activeTab === 'overrides' ? (
       <section className="grid gap-4 xl:grid-cols-4">
         <article className="border border-[#D8E6EB] bg-white p-5 shadow-sm">
           <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#5F7077]">Editor</p>
@@ -471,6 +472,7 @@ export function AdminSiteEditorPage() {
           <p className="mt-2 text-sm font-semibold text-[#5F7077]">Overrides preservados para rollback.</p>
         </article>
       </section>
+      ) : null}
 
       <section className="grid gap-6 xl:grid-cols-[0.85fr_minmax(0,1.15fr)]">
         <div className="min-w-0 space-y-6">
@@ -494,6 +496,8 @@ export function AdminSiteEditorPage() {
             </div>
           </article>
 
+          {activeTab === 'overrides' ? (
+          <>
           <article className="border border-[#D8E6EB] bg-white p-5 shadow-sm">
             <h2 className="font-readex text-xl font-semibold text-[#15323b]">Governança compartilhada</h2>
             <p className="mt-2 text-sm font-semibold leading-6 text-[#5F7077]">
@@ -583,6 +587,8 @@ export function AdminSiteEditorPage() {
               </Button>
             </div>
           </article>
+          </>
+          ) : null}
 
           {activeTab === 'icon-library' ? (
           <article className="border border-[#D8E6EB] bg-white p-5 shadow-sm">
@@ -721,6 +727,7 @@ export function AdminSiteEditorPage() {
 
         </div>
 
+        {activeTab === 'overrides' ? (
         <div className="min-w-0 space-y-6">
           <article className="border border-[#D8E6EB] bg-white p-5 shadow-sm">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
@@ -965,6 +972,7 @@ export function AdminSiteEditorPage() {
           ) : null}
         </section>
         </div>
+        ) : null}
       </section>
     </div>
   )
