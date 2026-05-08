@@ -834,6 +834,7 @@ function ListItemEditorCard({
   const colorValue = typeof metadataWithoutItems.color === 'string' ? metadataWithoutItems.color : ''
   const iconImageUrl = typeof metadataWithoutItems.iconImageUrl === 'string' ? metadataWithoutItems.iconImageUrl : ''
   const iconImageAlt = typeof metadataWithoutItems.iconImageAlt === 'string' ? metadataWithoutItems.iconImageAlt : ''
+  const iconColor = typeof metadataWithoutItems.iconColor === 'string' ? metadataWithoutItems.iconColor : ''
   const iconImageAssetId = typeof metadataWithoutItems.iconImageAssetId === 'string' ? metadataWithoutItems.iconImageAssetId : ''
   const selectedLibraryIcon = iconLibraryOptions.find((option) => option.assetId === iconImageAssetId)
     ?? iconLibraryOptions.find((option) => option.imageUrl === iconImageUrl)
@@ -893,6 +894,7 @@ function ListItemEditorCard({
       delete nextMetadata.iconImageUrl
       delete nextMetadata.iconImageAlt
       delete nextMetadata.iconImageAssetId
+      delete nextMetadata.iconColor
     } else if (nextToken.startsWith('native:')) {
       nextMetadata.iconKey = nextToken.slice('native:'.length)
       delete nextMetadata.iconImageUrl
@@ -1175,6 +1177,7 @@ function ListItemEditorCard({
                 iconKey,
                 iconImageUrl,
                 iconAlt: iconImageAlt || item.label || item.title || item.id,
+                iconColor: iconColor || colorValue,
                 className: 'h-4 w-4',
               })}
             </div>
@@ -1258,13 +1261,33 @@ function ListItemEditorCard({
               <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Ícone</span>
               {iconSelectionField}
               <div className="grid gap-2 rounded-[14px] border border-[#D8E6EB] bg-[#F8FCFD] p-3">
+                <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Cor do ícone</p>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="color"
+                    value={iconColor || '#1398B7'}
+                    onChange={(event) => updateMetadataField('iconColor', event.target.value)}
+                    className="h-10 w-14 rounded-[12px] border border-[#D8E6EB] bg-white p-1 outline-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => updateMetadataField('iconColor', '')}
+                    className="rounded-full border border-[#D8E6EB] px-3 py-2 text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077] hover:bg-white"
+                  >
+                    Usar cor padrão
+                  </button>
+                </div>
+              </div>
+              <div className="grid gap-2 rounded-[14px] border border-[#D8E6EB] bg-[#F8FCFD] p-3">
                 <div className="flex items-center gap-3">
                   <div className="flex h-10 w-10 items-center justify-center rounded-full border border-[#D8E6EB] bg-white text-[#0A3640]">
-                    {iconImageUrl ? (
-                      <img src={iconImageUrl} alt={iconImageAlt || item.label || item.title || item.id} className="h-4 w-4 object-contain" />
-                    ) : (
-                      renderSiteIcon(iconKey, 'h-4 w-4')
-                    )}
+                    {renderSiteIconVisual({
+                      iconKey,
+                      iconImageUrl,
+                      iconAlt: iconImageAlt || item.label || item.title || item.id,
+                      iconColor,
+                      className: 'h-4 w-4',
+                    })}
                   </div>
                   <div className="min-w-0">
                     <p className="text-xs font-bold text-[#15323b]">
@@ -1460,6 +1483,24 @@ function ListItemEditorCard({
           <label className="grid gap-1.5 md:col-span-2">
             <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Ícone</span>
             {iconSelectionField}
+            <div className="grid gap-2 rounded-[14px] border border-[#D8E6EB] bg-[#F8FCFD] p-3">
+              <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Cor do ícone</p>
+              <div className="flex items-center gap-3">
+                <input
+                  type="color"
+                  value={iconColor || '#1398B7'}
+                  onChange={(event) => updateMetadataField('iconColor', event.target.value)}
+                  className="h-10 w-14 rounded-[12px] border border-[#D8E6EB] bg-white p-1 outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={() => updateMetadataField('iconColor', '')}
+                  className="rounded-full border border-[#D8E6EB] px-3 py-2 text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077] hover:bg-white"
+                >
+                  Usar cor padrão
+                </button>
+              </div>
+            </div>
           </label>
         ) : null}
         <label className="grid gap-1.5 md:col-span-2">
@@ -3169,6 +3210,7 @@ function EditorModal({
                       const itemIconKey = typeof itemMetadata.iconKey === 'string' ? itemMetadata.iconKey : null
                       const itemIconImageUrl = typeof itemMetadata.iconImageUrl === 'string' ? itemMetadata.iconImageUrl : null
                       const itemIconImageAlt = typeof itemMetadata.iconImageAlt === 'string' ? itemMetadata.iconImageAlt : null
+                      const itemIconColor = typeof itemMetadata.iconColor === 'string' ? itemMetadata.iconColor : null
 
                       return (
                         <article key={`${item.id ?? index}`} className="overflow-hidden rounded-[18px] border border-[#D8E6EB] bg-white shadow-[0_12px_24px_rgba(21,50,59,0.04)]">
@@ -3179,6 +3221,7 @@ function EditorModal({
                                   iconKey: itemIconKey,
                                   iconImageUrl: itemIconImageUrl,
                                   iconAlt: itemIconImageAlt || (typeof item.label === 'string' ? item.label : undefined),
+                                  iconColor: itemIconColor,
                                   className: 'h-4 w-4',
                                 })}
                               </div>

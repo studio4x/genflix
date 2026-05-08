@@ -261,6 +261,7 @@ function HomeCategoriesSection({
                 : homeCategoryIconKeys[category.label] ?? 'sparkles'
               const iconImageUrl = typeof item.metadata?.iconImageUrl === 'string' ? item.metadata.iconImageUrl : null
               const iconImageAlt = typeof item.metadata?.iconImageAlt === 'string' ? item.metadata.iconImageAlt : null
+              const iconColor = typeof item.metadata?.iconColor === 'string' ? item.metadata.iconColor : null
 
               return (
                 <article
@@ -272,6 +273,7 @@ function HomeCategoriesSection({
                       iconKey,
                       iconImageUrl,
                       iconAlt: iconImageAlt || item.label,
+                      iconColor,
                       className: 'h-5 w-5',
                     })}
                   </div>

@@ -49,28 +49,65 @@ export const SITE_ICON_OPTIONS: SiteIconOption[] = [
 
 const SITE_ICON_MAP = new Map(SITE_ICON_OPTIONS.map((item) => [item.value, item.icon]))
 
-export function renderSiteIcon(iconKey: string | null | undefined, className?: string) {
+function normalizeIconColor(value: string | null | undefined) {
+  if (typeof value !== 'string') {
+    return undefined
+  }
+  const trimmed = value.trim()
+  return trimmed === '' ? undefined : trimmed
+}
+
+function looksLikeSvgAsset(assetUrl: string) {
+  return /\.svg(?:[?#].*)?$/i.test(assetUrl)
+}
+
+export function renderSiteIcon(iconKey: string | null | undefined, className?: string, iconColor?: string | null) {
   const Icon = SITE_ICON_MAP.get(iconKey ?? '') ?? LinkIcon
-  return <Icon className={cn('h-4 w-4', className)} />
+  const resolvedColor = normalizeIconColor(iconColor)
+  return <Icon className={cn('h-4 w-4', className)} style={resolvedColor ? { color: resolvedColor } : undefined} />
 }
 
 export function renderSiteIconVisual(input: {
   iconKey?: string | null
   iconImageUrl?: string | null
   iconAlt?: string | null
+  iconColor?: string | null
   className?: string
 }) {
-  if (typeof input.iconImageUrl === 'string' && input.iconImageUrl.trim() !== '') {
+  const iconColor = normalizeIconColor(input.iconColor)
+  const iconImageUrl = typeof input.iconImageUrl === 'string' ? input.iconImageUrl.trim() : ''
+
+  if (iconImageUrl !== '') {
+    if (iconColor && looksLikeSvgAsset(iconImageUrl)) {
+      return (
+        <span
+          aria-hidden="true"
+          className={cn('block h-4 w-4', input.className)}
+          style={{
+            backgroundColor: iconColor,
+            maskImage: `url("${iconImageUrl}")`,
+            maskRepeat: 'no-repeat',
+            maskPosition: 'center',
+            maskSize: 'contain',
+            WebkitMaskImage: `url("${iconImageUrl}")`,
+            WebkitMaskRepeat: 'no-repeat',
+            WebkitMaskPosition: 'center',
+            WebkitMaskSize: 'contain',
+          }}
+        />
+      )
+    }
+
     return (
       <img
-        src={input.iconImageUrl}
+        src={iconImageUrl}
         alt={input.iconAlt ?? ''}
         className={cn('block h-4 w-4 object-contain', input.className)}
       />
     )
   }
 
-  return renderSiteIcon(input.iconKey ?? null, input.className)
+  return renderSiteIcon(input.iconKey ?? null, input.className, iconColor)
 }
 
 export function getSiteIconOption(iconKey: string | null | undefined) {

@@ -271,7 +271,9 @@ export function PublicCourseDetailsPage() {
           >
             {(items) => (
               <div className="mt-10 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-                {items.filter(isEditableItemVisible).map((item) => (
+                {items.filter(isEditableItemVisible).map((item) => {
+                  const iconColor = typeof item.metadata?.iconColor === 'string' ? item.metadata.iconColor : null
+                  return (
                   <article
                     key={item.id}
                     className="rounded-[20px] border border-[#D8E6EB] bg-white px-6 py-6 shadow-[0_16px_36px_rgba(21,50,59,0.04)]"
@@ -280,13 +282,15 @@ export function PublicCourseDetailsPage() {
                       {renderSiteIconVisual({
                         iconKey: resolveStudyFeatureIconKey(item),
                         iconAlt: item.label ?? item.title ?? 'Recurso',
+                        iconColor,
                         className: 'h-5 w-5',
                       })}
                     </div>
                     <h3 className="mt-5 text-lg font-bold text-[#183139]">{item.title ?? item.label ?? 'Card'}</h3>
                     <p className="mt-3 text-sm leading-7 text-[#6d7f85]">{item.description ?? ''}</p>
                   </article>
-                ))}
+                  )
+                })}
               </div>
             )}
           </EditableList>
