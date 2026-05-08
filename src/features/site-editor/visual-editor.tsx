@@ -366,6 +366,7 @@ const richTextToolbarModules = {
     ['bold', 'italic', 'underline', 'strike'],
     [{ align: [] }],
     [{ list: 'ordered' }, { list: 'bullet' }],
+    [{ columns: [1, 2, 3, 4] }],
     ['blockquote', 'code-block', 'hr'],
     ['link', 'image', 'video', 'table'],
     [{ color: [] }, { background: [] }],

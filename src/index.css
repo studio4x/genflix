@@ -470,6 +470,52 @@ tr:nth-child(even) {
   color: #475569;
 }
 
+.rich-text-content .genflix-columns,
+.lesson-content-html .lesson-rich-text .genflix-columns,
+.lesson-hotspots-body .genflix-columns {
+  display: grid;
+  gap: 1.25rem;
+  margin: 1.5rem 0;
+}
+
+.rich-text-content .genflix-column,
+.lesson-content-html .lesson-rich-text .genflix-column,
+.lesson-hotspots-body .genflix-column {
+  min-width: 0;
+}
+
+.rich-text-content .genflix-column > :first-child,
+.lesson-content-html .lesson-rich-text .genflix-column > :first-child,
+.lesson-hotspots-body .genflix-column > :first-child {
+  margin-top: 0;
+}
+
+.rich-text-content .genflix-column > :last-child,
+.lesson-content-html .lesson-rich-text .genflix-column > :last-child,
+.lesson-hotspots-body .genflix-column > :last-child {
+  margin-bottom: 0;
+}
+
+@media (min-width: 768px) {
+  .rich-text-content .genflix-columns-2,
+  .lesson-content-html .lesson-rich-text .genflix-columns-2,
+  .lesson-hotspots-body .genflix-columns-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .rich-text-content .genflix-columns-3,
+  .lesson-content-html .lesson-rich-text .genflix-columns-3,
+  .lesson-hotspots-body .genflix-columns-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .rich-text-content .genflix-columns-4,
+  .lesson-content-html .lesson-rich-text .genflix-columns-4,
+  .lesson-hotspots-body .genflix-columns-4 {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
 .home-banner-carousel-track {
   min-height: var(--banner-mobile-height, 560px);
 }

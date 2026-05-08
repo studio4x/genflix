@@ -84,6 +84,23 @@ function buildTableHtml(rows: number, columns: number) {
   `.trim()
 }
 
+function buildColumnsHtml(columns: number) {
+  const safeColumns = Math.max(1, Math.min(4, columns))
+  const items = Array.from({ length: safeColumns }, (_, index) => `
+    <div class="genflix-column">
+      <p><strong>Coluna ${index + 1}</strong></p>
+      <p>Escreva o conteúdo desta coluna aqui.</p>
+    </div>
+  `.trim()).join('')
+
+  return `
+    <div class="genflix-columns genflix-columns-${safeColumns}">
+      ${items}
+    </div>
+    <p></p>
+  `.trim()
+}
+
 function extractPlainText(html: string) {
   if (typeof document === 'undefined') {
     return html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
@@ -94,11 +111,78 @@ function extractPlainText(html: string) {
   return (container.textContent ?? '').replace(/\s+/g, ' ').trim()
 }
 
+function findClosestColumnsContainer(root: HTMLElement | null) {
+  if (!root || typeof window === 'undefined') {
+    return null
+  }
+
+  const selection = window.getSelection()
+  const anchorNode = selection?.anchorNode
+
+  if (!anchorNode) {
+    return null
+  }
+
+  let current: Node | null = anchorNode.nodeType === Node.ELEMENT_NODE ? anchorNode : anchorNode.parentNode
+
+  while (current && current !== root) {
+    if (current instanceof HTMLElement && current.classList.contains('genflix-columns')) {
+      return current
+    }
+    current = current.parentNode
+  }
+
+  return null
+}
+
+function updateExistingColumnsLayout(container: HTMLElement, nextCount: number) {
+  const safeColumns = Math.max(1, Math.min(4, nextCount))
+  const columns = Array.from(container.children).filter((child): child is HTMLElement => (
+    child instanceof HTMLElement && child.classList.contains('genflix-column')
+  ))
+
+  if (safeColumns <= 1) {
+    const mergedHtml = columns.map((column) => column.innerHTML.trim()).filter(Boolean).join('')
+    container.outerHTML = `${mergedHtml}<p></p>`
+    return
+  }
+
+  if (columns.length === 0) {
+    container.outerHTML = buildColumnsHtml(safeColumns)
+    return
+  }
+
+  if (columns.length < safeColumns) {
+    for (let index = columns.length; index < safeColumns; index += 1) {
+      const column = document.createElement('div')
+      column.className = 'genflix-column'
+      column.innerHTML = `<p><strong>Coluna ${index + 1}</strong></p><p>Escreva o conteúdo desta coluna aqui.</p>`
+      container.appendChild(column)
+      columns.push(column)
+    }
+  }
+
+  if (columns.length > safeColumns) {
+    const targetColumn = columns[safeColumns - 1]
+    const overflowColumns = columns.slice(safeColumns)
+    overflowColumns.forEach((column) => {
+      const trimmedHtml = column.innerHTML.trim()
+      if (trimmedHtml !== '') {
+        targetColumn.insertAdjacentHTML('beforeend', trimmedHtml)
+      }
+      column.remove()
+    })
+  }
+
+  container.className = `genflix-columns genflix-columns-${safeColumns}`
+}
+
 const defaultToolbar = [
   [{ header: [1, 2, 3, false] }],
   ['bold', 'italic', 'underline', 'strike'],
   [{ list: 'ordered' }, { list: 'bullet' }],
   [{ align: [] }],
+  [{ columns: [1, 2, 3, 4] }],
   ['link', 'image', 'video'],
   ['clean'],
 ] satisfies ToolbarItem[]
@@ -147,10 +231,46 @@ export default function ReactQuill({
     textColor: toolbarHasObjectKey(toolbarItems, 'color'),
     backgroundColor: toolbarHasObjectKey(toolbarItems, 'background'),
     table: toolbarHasString(toolbarItems, 'table'),
+    columns: toolbarHasObjectKey(toolbarItems, 'columns'),
     horizontalRule: toolbarHasString(toolbarItems, 'hr'),
     undo: toolbarHasString(toolbarItems, 'undo'),
     redo: toolbarHasString(toolbarItems, 'redo'),
   }), [toolbarItems])
+
+  function syncEditorValue() {
+    const editor = editorRef.current
+    if (!editor) {
+      return
+    }
+
+    queueMicrotask(() => onChange(editor.innerHTML))
+  }
+
+  function runEditorCommand(command: string, nextValue?: string) {
+    execEditorCommand(editorRef.current, command, nextValue)
+    syncEditorValue()
+  }
+
+  function insertEditorHtml(html: string) {
+    insertHtml(editorRef.current, html)
+    syncEditorValue()
+  }
+
+  function applyColumnsLayout(columnCount: number) {
+    const editor = editorRef.current
+    if (!editor) {
+      return
+    }
+
+    const existingContainer = findClosestColumnsContainer(editor)
+    if (existingContainer) {
+      updateExistingColumnsLayout(existingContainer, columnCount)
+      syncEditorValue()
+      return
+    }
+
+    insertEditorHtml(buildColumnsHtml(columnCount))
+  }
 
   const stats = useMemo(() => {
     const plainText = extractPlainText(value)
@@ -197,12 +317,12 @@ export default function ReactQuill({
         <>
           <div className="flex flex-wrap gap-2 border-b border-slate-200 bg-white px-4 py-3 text-xs font-semibold text-slate-700">
             {toolbarButtons.undo ? (
-              <button type="button" className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 hover:bg-slate-100" onClick={() => execEditorCommand(editorRef.current, 'undo')}>
+              <button type="button" className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 hover:bg-slate-100" onClick={() => runEditorCommand('undo')}>
                 Desfazer
               </button>
             ) : null}
             {toolbarButtons.redo ? (
-              <button type="button" className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 hover:bg-slate-100" onClick={() => execEditorCommand(editorRef.current, 'redo')}>
+              <button type="button" className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 hover:bg-slate-100" onClick={() => runEditorCommand('redo')}>
                 Refazer
               </button>
             ) : null}
@@ -214,7 +334,7 @@ export default function ReactQuill({
                   if (!level) {
                     return
                   }
-                  execEditorCommand(editorRef.current, 'formatBlock', level === 'false' ? 'p' : `h${level}`)
+                  runEditorCommand('formatBlock', level === 'false' ? 'p' : `h${level}`)
                   event.currentTarget.value = ''
                 }}
                 defaultValue=""
@@ -232,22 +352,22 @@ export default function ReactQuill({
               </select>
             ) : null}
             {toolbarButtons.bold ? (
-              <button type="button" className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 font-black hover:bg-slate-100" onClick={() => execEditorCommand(editorRef.current, 'bold')}>
+              <button type="button" className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 font-black hover:bg-slate-100" onClick={() => runEditorCommand('bold')}>
                 B
               </button>
             ) : null}
             {toolbarButtons.italic ? (
-              <button type="button" className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 italic hover:bg-slate-100" onClick={() => execEditorCommand(editorRef.current, 'italic')}>
+              <button type="button" className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 italic hover:bg-slate-100" onClick={() => runEditorCommand('italic')}>
                 I
               </button>
             ) : null}
             {toolbarButtons.underline ? (
-              <button type="button" className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 underline hover:bg-slate-100" onClick={() => execEditorCommand(editorRef.current, 'underline')}>
+              <button type="button" className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 underline hover:bg-slate-100" onClick={() => runEditorCommand('underline')}>
                 U
               </button>
             ) : null}
             {toolbarButtons.strike ? (
-              <button type="button" className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 line-through hover:bg-slate-100" onClick={() => execEditorCommand(editorRef.current, 'strikeThrough')}>
+              <button type="button" className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 line-through hover:bg-slate-100" onClick={() => runEditorCommand('strikeThrough')}>
                 S
               </button>
             ) : null}
@@ -260,10 +380,10 @@ export default function ReactQuill({
                     return
                   }
 
-                  if (alignment === 'left') execEditorCommand(editorRef.current, 'justifyLeft')
-                  if (alignment === 'center') execEditorCommand(editorRef.current, 'justifyCenter')
-                  if (alignment === 'right') execEditorCommand(editorRef.current, 'justifyRight')
-                  if (alignment === 'justify') execEditorCommand(editorRef.current, 'justifyFull')
+                  if (alignment === 'left') runEditorCommand('justifyLeft')
+                  if (alignment === 'center') runEditorCommand('justifyCenter')
+                  if (alignment === 'right') runEditorCommand('justifyRight')
+                  if (alignment === 'justify') runEditorCommand('justifyFull')
                   event.currentTarget.value = ''
                 }}
                 defaultValue=""
@@ -278,22 +398,45 @@ export default function ReactQuill({
               </select>
             ) : null}
             {toolbarButtons.ordered ? (
-              <button type="button" className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 hover:bg-slate-100" onClick={() => execEditorCommand(editorRef.current, 'insertOrderedList')}>
+              <button type="button" className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 hover:bg-slate-100" onClick={() => runEditorCommand('insertOrderedList')}>
                 Lista 1.
               </button>
             ) : null}
             {toolbarButtons.bullet ? (
-              <button type="button" className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 hover:bg-slate-100" onClick={() => execEditorCommand(editorRef.current, 'insertUnorderedList')}>
+              <button type="button" className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 hover:bg-slate-100" onClick={() => runEditorCommand('insertUnorderedList')}>
                 Lista
               </button>
             ) : null}
+            {toolbarButtons.columns ? (
+              <select
+                className="rounded-lg border border-slate-200 bg-white px-3 py-1.5"
+                onChange={(event) => {
+                  const nextValue = Number.parseInt(event.target.value, 10)
+                  if (!Number.isFinite(nextValue)) {
+                    return
+                  }
+
+                  applyColumnsLayout(nextValue)
+                  event.currentTarget.value = ''
+                }}
+                defaultValue=""
+              >
+                <option value="" disabled>
+                  Colunas
+                </option>
+                <option value="1">1 coluna</option>
+                <option value="2">2 colunas</option>
+                <option value="3">3 colunas</option>
+                <option value="4">4 colunas</option>
+              </select>
+            ) : null}
             {toolbarButtons.blockquote ? (
-              <button type="button" className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 hover:bg-slate-100" onClick={() => execEditorCommand(editorRef.current, 'formatBlock', 'blockquote')}>
+              <button type="button" className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 hover:bg-slate-100" onClick={() => runEditorCommand('formatBlock', 'blockquote')}>
                 Citação
               </button>
             ) : null}
             {toolbarButtons.codeBlock ? (
-              <button type="button" className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 hover:bg-slate-100" onClick={() => execEditorCommand(editorRef.current, 'formatBlock', 'pre')}>
+              <button type="button" className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 hover:bg-slate-100" onClick={() => runEditorCommand('formatBlock', 'pre')}>
                 Código
               </button>
             ) : null}
@@ -304,7 +447,7 @@ export default function ReactQuill({
                 onClick={() => {
                   const url = window.prompt('Digite a URL do link')
                   if (url) {
-                    execEditorCommand(editorRef.current, 'createLink', url)
+                    runEditorCommand('createLink', url)
                   }
                 }}
               >
@@ -312,7 +455,7 @@ export default function ReactQuill({
               </button>
             ) : null}
             {toolbarButtons.link ? (
-              <button type="button" className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 hover:bg-slate-100" onClick={() => execEditorCommand(editorRef.current, 'unlink')}>
+              <button type="button" className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 hover:bg-slate-100" onClick={() => runEditorCommand('unlink')}>
                 Remover link
               </button>
             ) : null}
@@ -323,7 +466,7 @@ export default function ReactQuill({
                 onClick={() => {
                   const imageUrl = window.prompt('Digite a URL da imagem')
                   if (imageUrl) {
-                    execEditorCommand(editorRef.current, 'insertImage', imageUrl)
+                    runEditorCommand('insertImage', imageUrl)
                   }
                 }}
               >
@@ -343,7 +486,7 @@ export default function ReactQuill({
                   const html = videoValue.includes('<iframe')
                     ? `${videoValue}<p></p>`
                     : `<div class="embedded-video"><iframe src="${videoValue}" frameborder="0" allowfullscreen></iframe></div><p></p>`
-                  insertHtml(editorRef.current, html)
+                  insertEditorHtml(html)
                 }}
               >
                 Vídeo
@@ -366,27 +509,27 @@ export default function ReactQuill({
                     return
                   }
 
-                  insertHtml(editorRef.current, buildTableHtml(rows, columns))
+                  insertEditorHtml(buildTableHtml(rows, columns))
                 }}
               >
                 Tabela
               </button>
             ) : null}
             {toolbarButtons.horizontalRule ? (
-              <button type="button" className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 hover:bg-slate-100" onClick={() => execEditorCommand(editorRef.current, 'insertHorizontalRule')}>
+              <button type="button" className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 hover:bg-slate-100" onClick={() => runEditorCommand('insertHorizontalRule')}>
                 Linha
               </button>
             ) : null}
             {toolbarButtons.textColor ? (
               <label className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-1.5 hover:bg-slate-50">
                 <span>Texto</span>
-                <input type="color" className="h-5 w-5 rounded border-0 bg-transparent p-0" onChange={(event) => execEditorCommand(editorRef.current, 'foreColor', event.target.value)} />
+                <input type="color" className="h-5 w-5 rounded border-0 bg-transparent p-0" onChange={(event) => runEditorCommand('foreColor', event.target.value)} />
               </label>
             ) : null}
             {toolbarButtons.backgroundColor ? (
               <label className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-1.5 hover:bg-slate-50">
                 <span>Fundo</span>
-                <input type="color" className="h-5 w-5 rounded border-0 bg-transparent p-0" onChange={(event) => execEditorCommand(editorRef.current, 'hiliteColor', event.target.value)} />
+                <input type="color" className="h-5 w-5 rounded border-0 bg-transparent p-0" onChange={(event) => runEditorCommand('hiliteColor', event.target.value)} />
               </label>
             ) : null}
             {toolbarButtons.clean ? (
@@ -394,8 +537,8 @@ export default function ReactQuill({
                 type="button"
                 className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 hover:bg-slate-100"
                 onClick={() => {
-                  execEditorCommand(editorRef.current, 'removeFormat')
-                  execEditorCommand(editorRef.current, 'unlink')
+                  runEditorCommand('removeFormat')
+                  runEditorCommand('unlink')
                 }}
               >
                 Limpar
@@ -432,6 +575,34 @@ export default function ReactQuill({
         .react-quill-local [contenteditable='true']:empty:before {
           content: attr(data-placeholder);
           color: #94a3b8;
+        }
+
+        .react-quill-local .genflix-columns {
+          display: grid;
+          gap: 1rem;
+          margin: 1.5rem 0;
+        }
+
+        .react-quill-local .genflix-column {
+          min-height: 110px;
+          border: 1px dashed #cbd5e1;
+          border-radius: 16px;
+          padding: 1rem;
+          background: #f8fafc;
+        }
+
+        @media (min-width: 768px) {
+          .react-quill-local .genflix-columns-2 {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+          }
+
+          .react-quill-local .genflix-columns-3 {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+          }
+
+          .react-quill-local .genflix-columns-4 {
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+          }
         }
       `}</style>
     </div>
