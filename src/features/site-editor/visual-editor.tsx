@@ -1369,16 +1369,18 @@ function ListItemEditorCard({
               </div>
             </div>
           </div>
-          <label className="grid gap-1.5 md:col-span-2">
+          <div className="grid gap-1.5 md:col-span-2">
             <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Resumo operacional</span>
-            <textarea
-              value={item.description ?? ''}
-              onChange={(event) => updateField('description', event.target.value)}
-              rows={3}
-              className="rounded-[14px] border border-[#D8E6EB] px-3 py-2 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]"
-              placeholder="Descreva a função deste bloco para a equipe."
-            />
-          </label>
+            <div className="overflow-hidden rounded-[14px] border border-[#D8E6EB] bg-white">
+              <ReactQuill
+                value={item.description ?? ''}
+                onChange={updateRichTextField}
+                placeholder="Descreva a função deste bloco para a equipe."
+                modules={richTextToolbarModules}
+                className="[&_.react-quill-local]:rounded-none [&_.react-quill-local]:border-0 [&_.react-quill-local_.ql-container]:border-0"
+              />
+            </div>
+          </div>
         </div>
 
         <div className="mt-4 grid gap-3 md:grid-cols-2">
@@ -1523,15 +1525,18 @@ function ListItemEditorCard({
             </div>
           </label>
         ) : null}
-        <label className="grid gap-1.5 md:col-span-2">
+        <div className="grid gap-1.5 md:col-span-2">
           <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Descrição</span>
-          <textarea
-            value={item.description ?? ''}
-            onChange={(event) => updateField('description', event.target.value)}
-            rows={3}
-            className="rounded-[14px] border border-[#D8E6EB] px-3 py-2 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]"
-          />
-        </label>
+          <div className="overflow-hidden rounded-[14px] border border-[#D8E6EB] bg-white">
+            <ReactQuill
+              value={item.description ?? ''}
+              onChange={updateRichTextField}
+              placeholder="Escreva a descrição do item..."
+              modules={richTextToolbarModules}
+              className="[&_.react-quill-local]:rounded-none [&_.react-quill-local]:border-0 [&_.react-quill-local_.ql-container]:border-0"
+            />
+          </div>
+        </div>
       </div>
 
       <div className={cn('mt-4 grid gap-3 md:grid-cols-2', isCollapsed && 'hidden')}>
@@ -1777,24 +1782,6 @@ function EditorModal({
     skipHistoryRef.current = true
     setRawValue(snapshot.rawValue)
     setTextStyle(snapshot.textStyle)
-  }
-
-  function applyRichTextFormat(before: string, after = before.replace('<', '</')) {
-    const textarea = textareaRef.current
-    if (!textarea) return
-
-    const selectionStart = textarea.selectionStart ?? 0
-    const selectionEnd = textarea.selectionEnd ?? selectionStart
-    const selectedText = rawValue.slice(selectionStart, selectionEnd)
-    const nextValue = `${rawValue.slice(0, selectionStart)}${before}${selectedText || 'texto'}${after}${rawValue.slice(selectionEnd)}`
-
-    setRawValue(nextValue)
-    queueMicrotask(() => {
-      textarea.focus()
-      const cursorStart = selectionStart + before.length
-      const cursorEnd = cursorStart + (selectedText || 'texto').length
-      textarea.setSelectionRange(cursorStart, cursorEnd)
-    })
   }
 
   const handleCloseRequest = useCallback(() => {
@@ -3109,16 +3096,6 @@ function EditorModal({
                 </div>
               </div>
 
-              {usesRichTextToolbar ? (
-                <div className="flex flex-wrap gap-2 border-b border-[#D8E6EB] px-4 py-3">
-                  <button type="button" onClick={() => applyRichTextFormat('<strong>', '</strong>')} className="rounded-full border border-[#D8E6EB] px-3 py-2 text-xs font-black uppercase tracking-[0.14em] text-[#0A3640] hover:bg-[#F2F7F9]">Negrito</button>
-                  <button type="button" onClick={() => applyRichTextFormat('<em>', '</em>')} className="rounded-full border border-[#D8E6EB] px-3 py-2 text-xs font-black uppercase tracking-[0.14em] text-[#0A3640] hover:bg-[#F2F7F9]">Itálico</button>
-                  <button type="button" onClick={() => applyRichTextFormat('<p>', '</p>')} className="rounded-full border border-[#D8E6EB] px-3 py-2 text-xs font-black uppercase tracking-[0.14em] text-[#0A3640] hover:bg-[#F2F7F9]">Parágrafo</button>
-                  <button type="button" onClick={() => applyRichTextFormat('<h3>', '</h3>')} className="rounded-full border border-[#D8E6EB] px-3 py-2 text-xs font-black uppercase tracking-[0.14em] text-[#0A3640] hover:bg-[#F2F7F9]">Título</button>
-                  <button type="button" onClick={() => applyRichTextFormat('<ul><li>', '</li></ul>')} className="rounded-full border border-[#D8E6EB] px-3 py-2 text-xs font-black uppercase tracking-[0.14em] text-[#0A3640] hover:bg-[#F2F7F9]">Lista</button>
-                </div>
-              ) : null}
-
               {isRichTextListEditor ? (
                 <div className="grid gap-2 p-4">
                   <div className="rounded-[18px] border border-[#D8E6EB] bg-[#F8FCFD] px-4 py-4 text-sm leading-6 text-[#5F7077]">
@@ -3138,13 +3115,31 @@ function EditorModal({
                     </div>
                   ) : null}
                 </div>
+              ) : usesRichTextToolbar ? (
+                <div className="grid gap-2 p-4">
+                  <div className="overflow-hidden rounded-[18px] border border-[#D8E6EB] bg-white">
+                    <ReactQuill
+                      value={rawValue}
+                      onChange={setRawValue}
+                      placeholder="Escreva o conteúdo aqui..."
+                      modules={richTextToolbarModules}
+                      minHeightClassName="min-h-[320px]"
+                      className="[&_.react-quill-local]:rounded-none [&_.react-quill-local]:border-0 [&_.react-quill-local_.ql-container]:border-0"
+                    />
+                  </div>
+                  {message ? (
+                    <div className="rounded-[16px] border border-[#D8E6EB] bg-[#F2F7F9] p-3 text-sm font-bold text-[#15323b]">
+                      {message}
+                    </div>
+                  ) : null}
+                </div>
               ) : (
                 <div className="grid gap-2 p-4">
                   <textarea
                     ref={textareaRef}
                     value={rawValue}
                     onChange={(event) => setRawValue(event.target.value)}
-                    rows={usesJsonEditor ? 18 : usesRichTextToolbar ? 14 : 10}
+                    rows={usesJsonEditor ? 18 : 10}
                     className="w-full resize-y rounded-[18px] border border-[#D8E6EB] bg-white px-4 py-3 font-mono text-sm leading-6 text-[#15323b] outline-none focus:border-[#1398B7]"
                   />
                   {parsedPreview.error ? (

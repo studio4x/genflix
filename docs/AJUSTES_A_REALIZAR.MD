@@ -237,6 +237,8 @@
 
 [OK] T71 - No editor visual, para o tipo "content" e estrutura "blocos de conteúdo", deve ter a possibilidade a ajustar fonte, tamanhos e todos os outros elementos disponiveis para o tipo "text".
 
+[OK] T71.2 - no editor visual, os campos de conteúdo de texto (todos os tipos), devem ter editor rico igual aos campos de textos do construtor de curso, na página de edição das aulas...
+
 [ ] T72 - Inserir no editor, a possibilidade de adicionar/alterar colunas no conteúdo das páginas...
 
 [ ] T73 - Inserir a posisibilidade de adicionar imagens no editor dos textos dentro do editor visual.
