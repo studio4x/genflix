@@ -29,6 +29,7 @@ import {
   fetchSiteEditorSettings,
   saveSiteContentEntry,
   shouldIgnoreSiteEditor,
+  updateSiteEditorSettings,
   upsertSiteEditorWorkspaceRecord,
   uploadSiteAsset,
 } from '@/features/site-editor/api'
@@ -3263,6 +3264,7 @@ export function VisualEditorProvider({ children }: { children: ReactNode }) {
   const [isEditing, setIsEditing] = useState(false)
   const [editor, setEditor] = useState<EditorInput | null>(null)
   const [isTrayExpanded, setIsTrayExpanded] = useState(false)
+  const [isUnlockingEditor, setIsUnlockingEditor] = useState(false)
   const isAdmin = roles.includes('admin')
   const canShowEditor = isAdmin && isPublicEditablePath(location.pathname) && !shouldIgnoreSiteEditor()
   const isEditorAvailable = settings.is_enabled && settings.editing_enabled && !settings.fallback_mode
@@ -3298,6 +3300,22 @@ export function VisualEditorProvider({ children }: { children: ReactNode }) {
     setIsTrayExpanded(false)
   }, [location.pathname])
 
+  const unlockEditor = useCallback(async () => {
+    try {
+      setIsUnlockingEditor(true)
+      await updateSiteEditorSettings({
+        is_enabled: true,
+        read_overrides_enabled: true,
+        editing_enabled: true,
+        fallback_mode: false,
+      })
+      await loadSettings()
+      setIsEditing(true)
+    } finally {
+      setIsUnlockingEditor(false)
+    }
+  }, [loadSettings])
+
   const handleToggleEditing = useCallback(() => {
     if (isEditing) {
       setEditor(null)
@@ -3306,8 +3324,13 @@ export function VisualEditorProvider({ children }: { children: ReactNode }) {
       return
     }
 
+    if (!isEditorAvailable) {
+      void unlockEditor()
+      return
+    }
+
     setIsEditing(true)
-  }, [isEditing])
+  }, [isEditing, isEditorAvailable, unlockEditor])
 
   const value = useMemo<VisualEditorContextValue>(() => ({
     isAdmin,
@@ -3353,14 +3376,14 @@ export function VisualEditorProvider({ children }: { children: ReactNode }) {
                 <button
                   type="button"
                   onClick={() => handleToggleEditing()}
-                  disabled={!isEditorAvailable}
+                  disabled={isUnlockingEditor}
                   className={cn(
                     'inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-black uppercase tracking-[0.16em] disabled:cursor-not-allowed disabled:opacity-55',
                   isEditing ? 'bg-[#0A3640] text-white' : 'bg-[#1398B7] text-white',
                 )}
               >
                 <Edit3 className="h-3.5 w-3.5" />
-                {isEditing ? 'Sair da edição' : 'Ativar edição'}
+                {isUnlockingEditor ? 'Liberando edição...' : isEditing ? 'Sair da edição' : 'Ativar edição'}
                   </button>
                   <Link to="/admin/site-editor" className="inline-flex items-center gap-2 rounded-full border border-[#BEE3EA] bg-white px-4 py-2 text-xs font-black uppercase tracking-[0.16em] text-[#15323b] hover:bg-[#F2F7F9]">
                     <Settings className="h-3.5 w-3.5" />
