@@ -474,7 +474,7 @@ export function AdminSiteEditorPage() {
       </section>
       ) : null}
 
-      <section className="grid gap-6 xl:grid-cols-[0.85fr_minmax(0,1.15fr)]">
+      <section className={`grid gap-6 ${activeTab === 'icon-library' ? '' : 'xl:grid-cols-[0.85fr_minmax(0,1.15fr)]'}`}>
         <div className="min-w-0 space-y-6">
           <article className="border border-[#D8E6EB] bg-white p-4 shadow-sm">
             <div className="inline-flex h-11 overflow-hidden rounded-[14px] border border-[#D8E6EB] bg-[#F8FBFC]">
