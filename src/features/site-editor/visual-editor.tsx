@@ -819,6 +819,7 @@ function ListItemEditorCard({
   editorConfig: NormalizedListEditorSchema
 }) {
   const [isCollapsed, setIsCollapsed] = useState(false)
+  const [iconSearchQuery, setIconSearchQuery] = useState('')
   const metadata: Record<string, unknown> = isStringRecord(item.metadata) ? { ...item.metadata } : {}
   const nestedItems = normalizeEditableListItems(metadata.items)
   const metadataWithoutItems: Record<string, unknown> = { ...metadata }
@@ -949,9 +950,25 @@ function ListItemEditorCard({
     })
   }
 
+  const normalizedIconSearchQuery = iconSearchQuery.trim().toLowerCase()
+  const filteredNativeIconOptions = SITE_ICON_OPTIONS.filter((option) => {
+    if (normalizedIconSearchQuery === '') return true
+    return option.label.toLowerCase().includes(normalizedIconSearchQuery) || option.value.toLowerCase().includes(normalizedIconSearchQuery)
+  })
+  const filteredLibraryIconOptions = iconLibraryOptions.filter((option) => {
+    if (normalizedIconSearchQuery === '') return true
+    return option.label.toLowerCase().includes(normalizedIconSearchQuery)
+  })
+
   const iconSelectionField = shouldShowIconField ? (
     <div className="grid gap-2 rounded-[14px] border border-[#D8E6EB] bg-[#F8FCFD] p-3">
       <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Seleção de ícone</p>
+      <input
+        value={iconSearchQuery}
+        onChange={(event) => setIconSearchQuery(event.target.value)}
+        placeholder="Buscar ícone..."
+        className="h-10 rounded-xl border border-[#D8E6EB] bg-white px-3 text-sm font-medium text-[#15323b] outline-none focus:border-[#1398B7]"
+      />
       <div className="max-h-52 space-y-2 overflow-y-auto pr-1">
         <button
           type="button"
@@ -965,7 +982,7 @@ function ListItemEditorCard({
         >
           <span>Sem ícone</span>
         </button>
-        {SITE_ICON_OPTIONS.map((option) => {
+        {filteredNativeIconOptions.map((option) => {
           const token = `native:${option.value}`
           const isActive = selectedIconToken === token
 
@@ -990,7 +1007,7 @@ function ListItemEditorCard({
             </button>
           )
         })}
-        {iconLibraryOptions.map((option) => {
+        {filteredLibraryIconOptions.map((option) => {
           const token = `asset:${option.assetId}`
           const isActive = selectedIconToken === token
 
@@ -1015,6 +1032,9 @@ function ListItemEditorCard({
             </button>
           )
         })}
+        {filteredNativeIconOptions.length === 0 && filteredLibraryIconOptions.length === 0 ? (
+          <p className="px-2 py-1 text-xs font-semibold text-[#5F7077]">Nenhum ícone encontrado para essa busca.</p>
+        ) : null}
       </div>
       {selectedIconToken === '__uploaded__' ? (
         <p className="text-[11px] text-[#5F7077]">
