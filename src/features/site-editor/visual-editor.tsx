@@ -109,6 +109,12 @@ type NormalizedListEditorSchema = {
   instancePageKey?: SitePageKey
 }
 
+type MediaLibraryIconOption = {
+  assetId: string
+  imageUrl: string
+  label: string
+}
+
 type SiteContentContextValue = {
   pageKey: SitePageKey
   entries: Map<string, SiteContentEntry>
@@ -608,6 +614,56 @@ function moveArrayItem<TValue>(items: TValue[], fromIndex: number, toIndex: numb
   return nextItems
 }
 
+function resolveSiteAssetLabel(asset: SiteAsset) {
+  if (typeof asset.alt === 'string' && asset.alt.trim() !== '') {
+    return asset.alt.trim()
+  }
+
+  const metadata = isStringRecord(asset.metadata) ? asset.metadata : {}
+  if (typeof metadata.original_name === 'string' && metadata.original_name.trim() !== '') {
+    const originalName = metadata.original_name.trim()
+    return originalName.replace(/\.[a-z0-9]+$/i, '')
+  }
+
+  const segments = asset.storage_path.split('/')
+  const fileName = segments[segments.length - 1] ?? 'icone'
+  return fileName.replace(/\.[a-z0-9]+$/i, '')
+}
+
+function buildMediaLibraryIconOptions(assets: SiteAsset[]) {
+  const options: MediaLibraryIconOption[] = []
+  const seen = new Set<string>()
+
+  for (const asset of assets) {
+    if (seen.has(asset.id)) {
+      continue
+    }
+
+    const imageUrl = typeof asset.public_url === 'string' ? asset.public_url.trim() : ''
+    if (!imageUrl) {
+      continue
+    }
+
+    const metadata = isStringRecord(asset.metadata) ? asset.metadata : {}
+    const entryKey = typeof metadata.entry_key === 'string' ? metadata.entry_key.trim().toLowerCase() : ''
+    const mimeType = (asset.mime_type ?? '').toLowerCase()
+    const isSvg = mimeType === 'image/svg+xml' || asset.storage_path.toLowerCase().endsWith('.svg')
+
+    if (entryKey !== 'icon-library' && !isSvg) {
+      continue
+    }
+
+    seen.add(asset.id)
+    options.push({
+      assetId: asset.id,
+      imageUrl,
+      label: resolveSiteAssetLabel(asset),
+    })
+  }
+
+  return options
+}
+
 function escapeHtml(value: string) {
   return value
     .replace(/&/g, '&amp;')
@@ -746,6 +802,7 @@ function ListItemEditorCard({
   onInsertBelow,
   onRemove,
   onUploadIcon,
+  iconLibraryOptions,
   editorConfig,
 }: {
   item: EditableListItem
@@ -758,6 +815,7 @@ function ListItemEditorCard({
   onInsertBelow?: (index: number) => void
   onRemove: (index: number) => void
   onUploadIcon?: (index: number, file: File) => void
+  iconLibraryOptions: MediaLibraryIconOption[]
   editorConfig: NormalizedListEditorSchema
 }) {
   const [isCollapsed, setIsCollapsed] = useState(false)
@@ -776,8 +834,14 @@ function ListItemEditorCard({
   const colorValue = typeof metadataWithoutItems.color === 'string' ? metadataWithoutItems.color : ''
   const iconImageUrl = typeof metadataWithoutItems.iconImageUrl === 'string' ? metadataWithoutItems.iconImageUrl : ''
   const iconImageAlt = typeof metadataWithoutItems.iconImageAlt === 'string' ? metadataWithoutItems.iconImageAlt : ''
+  const iconImageAssetId = typeof metadataWithoutItems.iconImageAssetId === 'string' ? metadataWithoutItems.iconImageAssetId : ''
+  const selectedLibraryIcon = iconLibraryOptions.find((option) => option.assetId === iconImageAssetId)
+    ?? iconLibraryOptions.find((option) => option.imageUrl === iconImageUrl)
+  const selectedIconToken = iconImageUrl
+    ? (selectedLibraryIcon ? `asset:${selectedLibraryIcon.assetId}` : '__uploaded__')
+    : (iconKey ? `native:${iconKey}` : 'none')
   const templateDefinition = editorConfig.templates.find((template) => template.id === templateKey)
-  const shouldShowIconField = editorConfig.kind === 'section-registry' || iconKey !== '' || templateKey === 'categories' || templateKey === 'resources'
+  const shouldShowIconField = editorConfig.kind === 'section-registry' || iconKey !== '' || iconImageUrl !== '' || templateKey === 'categories' || templateKey === 'resources'
   delete metadataWithoutItems.buttonLabel
   delete metadataWithoutItems.isInternal
   delete metadataWithoutItems.openInNewTab
@@ -794,15 +858,21 @@ function ListItemEditorCard({
     })
   }
 
-  function updateMetadataField(field: string, value: unknown) {
-    const nextMetadata: Record<string, unknown> = {
+  function buildMetadataBase() {
+    return {
       ...metadataWithoutItems,
       ...(buttonLabel ? { buttonLabel } : {}),
       ...(isInternal ? { isInternal: true } : {}),
       ...(openInNewTab ? { openInNewTab: true } : {}),
       ...(isHidden ? { isHidden: true } : {}),
-      [field]: value,
       ...(nestedItems.length > 0 ? { items: nestedItems } : {}),
+    } as Record<string, unknown>
+  }
+
+  function updateMetadataField(field: string, value: unknown) {
+    const nextMetadata: Record<string, unknown> = {
+      ...buildMetadataBase(),
+      [field]: value,
     }
 
     if (value === '' || value === false || value === undefined || value === null) {
@@ -812,6 +882,39 @@ function ListItemEditorCard({
     onChange({
       ...item,
       metadata: nextMetadata,
+    })
+  }
+
+  function updateIconSelection(nextToken: string) {
+    const nextMetadata = buildMetadataBase()
+
+    if (nextToken === 'none') {
+      delete nextMetadata.iconKey
+      delete nextMetadata.iconImageUrl
+      delete nextMetadata.iconImageAlt
+      delete nextMetadata.iconImageAssetId
+    } else if (nextToken.startsWith('native:')) {
+      nextMetadata.iconKey = nextToken.slice('native:'.length)
+      delete nextMetadata.iconImageUrl
+      delete nextMetadata.iconImageAlt
+      delete nextMetadata.iconImageAssetId
+    } else if (nextToken.startsWith('asset:')) {
+      const assetId = nextToken.slice('asset:'.length)
+      const selectedOption = iconLibraryOptions.find((option) => option.assetId === assetId)
+      if (!selectedOption) {
+        return
+      }
+      nextMetadata.iconImageUrl = selectedOption.imageUrl
+      nextMetadata.iconImageAlt = selectedOption.label
+      nextMetadata.iconImageAssetId = selectedOption.assetId
+      delete nextMetadata.iconKey
+    } else {
+      return
+    }
+
+    onChange({
+      ...item,
+      metadata: Object.keys(nextMetadata).length > 0 ? nextMetadata : undefined,
     })
   }
 
@@ -843,6 +946,81 @@ function ListItemEditorCard({
       },
     })
   }
+
+  const iconSelectionField = shouldShowIconField ? (
+    <div className="grid gap-2 rounded-[14px] border border-[#D8E6EB] bg-[#F8FCFD] p-3">
+      <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Seleção de ícone</p>
+      <div className="max-h-52 space-y-2 overflow-y-auto pr-1">
+        <button
+          type="button"
+          onClick={() => updateIconSelection('none')}
+          className={cn(
+            'flex w-full items-center justify-between rounded-xl border px-3 py-2 text-left text-xs font-semibold transition',
+            selectedIconToken === 'none'
+              ? 'border-[#1398B7] bg-[#EAF8FB] text-[#0A3640]'
+              : 'border-[#D8E6EB] bg-white text-[#15323b] hover:border-[#1398B7]',
+          )}
+        >
+          <span>Sem ícone</span>
+        </button>
+        {SITE_ICON_OPTIONS.map((option) => {
+          const token = `native:${option.value}`
+          const isActive = selectedIconToken === token
+
+          return (
+            <button
+              key={token}
+              type="button"
+              onClick={() => updateIconSelection(token)}
+              className={cn(
+                'flex w-full items-center justify-between gap-3 rounded-xl border px-3 py-2 text-left text-xs font-semibold transition',
+                isActive
+                  ? 'border-[#1398B7] bg-[#EAF8FB] text-[#0A3640]'
+                  : 'border-[#D8E6EB] bg-white text-[#15323b] hover:border-[#1398B7]',
+              )}
+            >
+              <span className="inline-flex items-center gap-2">
+                <span className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-[#D8E6EB] bg-white text-[#0A3640]">
+                  {renderSiteIcon(option.value, 'h-4 w-4')}
+                </span>
+                <span>{option.label}</span>
+              </span>
+            </button>
+          )
+        })}
+        {iconLibraryOptions.map((option) => {
+          const token = `asset:${option.assetId}`
+          const isActive = selectedIconToken === token
+
+          return (
+            <button
+              key={token}
+              type="button"
+              onClick={() => updateIconSelection(token)}
+              className={cn(
+                'flex w-full items-center justify-between gap-3 rounded-xl border px-3 py-2 text-left text-xs font-semibold transition',
+                isActive
+                  ? 'border-[#1398B7] bg-[#EAF8FB] text-[#0A3640]'
+                  : 'border-[#D8E6EB] bg-white text-[#15323b] hover:border-[#1398B7]',
+              )}
+            >
+              <span className="inline-flex items-center gap-2">
+                <span className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-[#D8E6EB] bg-white">
+                  <img src={option.imageUrl} alt={option.label} className="h-4 w-4 object-contain" />
+                </span>
+                <span>{option.label}</span>
+              </span>
+            </button>
+          )
+        })}
+      </div>
+      {selectedIconToken === '__uploaded__' ? (
+        <p className="text-[11px] text-[#5F7077]">
+          Ícone atual não está na biblioteca de mídia. Faça upload novamente na biblioteca para reutilizá-lo na seleção.
+        </p>
+      ) : null}
+    </div>
+  ) : null
 
   if (editorConfig.kind === 'rich-text-list') {
     return (
@@ -1078,18 +1256,7 @@ function ListItemEditorCard({
           {shouldShowIconField ? (
             <label className="grid gap-1.5 md:col-span-2">
               <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Ícone</span>
-              <select
-                value={iconKey}
-                onChange={(event) => updateMetadataField('iconKey', event.target.value)}
-                className="h-11 rounded-[14px] border border-[#D8E6EB] bg-white px-3 text-sm font-semibold text-[#15323b] outline-none"
-              >
-                <option value="">Sem ícone</option>
-                {SITE_ICON_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
+              {iconSelectionField}
               <div className="grid gap-2 rounded-[14px] border border-[#D8E6EB] bg-[#F8FCFD] p-3">
                 <div className="flex items-center gap-3">
                   <div className="flex h-10 w-10 items-center justify-center rounded-full border border-[#D8E6EB] bg-white text-[#0A3640]">
@@ -1101,11 +1268,11 @@ function ListItemEditorCard({
                   </div>
                   <div className="min-w-0">
                     <p className="text-xs font-bold text-[#15323b]">
-                      {iconImageUrl ? 'Ícone enviado' : 'Ícone da biblioteca'}
+                      {iconImageUrl ? 'Ícone da biblioteca de mídia' : 'Ícone nativo'}
                     </p>
                     <p className="text-[11px] leading-5 text-[#5F7077]">
                       {iconImageUrl
-                        ? (iconImageAlt || 'Imagem carregada para este card.')
+                        ? (selectedLibraryIcon?.label || iconImageAlt || 'Imagem carregada para este card.')
                         : 'Use um arquivo de imagem para substituir o ícone atual.'}
                     </p>
                   </div>
@@ -1292,18 +1459,7 @@ function ListItemEditorCard({
         {shouldShowIconField ? (
           <label className="grid gap-1.5 md:col-span-2">
             <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Ícone</span>
-            <select
-              value={iconKey}
-              onChange={(event) => updateMetadataField('iconKey', event.target.value)}
-              className="h-11 rounded-[14px] border border-[#D8E6EB] bg-white px-3 text-sm font-semibold text-[#15323b] outline-none"
-            >
-              <option value="">Sem ícone</option>
-              {SITE_ICON_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
+            {iconSelectionField}
           </label>
         ) : null}
         <label className="grid gap-1.5 md:col-span-2">
@@ -1396,6 +1552,7 @@ function ListItemEditorCard({
                 }}
                 onRemove={(removeIndex) => updateNestedItems(nestedItems.filter((_, currentIndex) => currentIndex !== removeIndex))}
                 onUploadIcon={onUploadIcon}
+                iconLibraryOptions={iconLibraryOptions}
                 editorConfig={editorConfig}
               />
             ))}
@@ -1443,6 +1600,7 @@ function EditorModal({
   const [previewViewport, setPreviewViewport] = useState<PreviewViewport>('desktop')
   const [assetLibrary, setAssetLibrary] = useState<SiteAsset[]>([])
   const [isLoadingAssetLibrary, setIsLoadingAssetLibrary] = useState(false)
+  const mediaLibraryIconOptions = useMemo(() => buildMediaLibraryIconOptions(assetLibrary), [assetLibrary])
   const [draftComment, setDraftComment] = useState('')
   const [workspaceState, setWorkspaceState] = useState<SiteEditorWorkspaceMap>({})
   const [isLoadingWorkspace, setIsLoadingWorkspace] = useState(false)
@@ -1670,13 +1828,14 @@ function EditorModal({
   }, [handleCloseRequest])
 
   useEffect(() => {
-    if (editor.entryType !== 'image') {
+    const shouldLoadAssetLibrary = editor.entryType === 'image' || editor.entryType === 'list'
+    if (!shouldLoadAssetLibrary) {
       return
     }
 
     let isMounted = true
     setIsLoadingAssetLibrary(true)
-    void fetchSiteAssets(18)
+    void fetchSiteAssets(editor.entryType === 'list' ? 240 : 48)
       .then((assets) => {
         if (!isMounted) return
         setAssetLibrary(assets)
@@ -2106,6 +2265,7 @@ function EditorModal({
                       }}
                       onRemove={(removeIndex) => updateListEditor(normalizeEditableListItems(parsedPreview.value).filter((_, currentIndex) => currentIndex !== removeIndex))}
                       onUploadIcon={(uploadIndex, file) => void handleListIconUpload(uploadIndex, file)}
+                      iconLibraryOptions={mediaLibraryIconOptions}
                       editorConfig={listEditorConfig}
                     />
                   ))}
