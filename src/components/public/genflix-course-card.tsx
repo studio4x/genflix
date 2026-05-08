@@ -22,7 +22,7 @@ export function GenflixCourseCard({
           placeholderClassName="transition-transform duration-500 group-hover:scale-[1.03]"
         />
         <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(10,54,64,0.04)_0%,rgba(10,54,64,0)_38%,rgba(10,54,64,0.24)_100%)]" />
-        <div className="absolute left-4 top-4 rounded-[2px] bg-[#EBF3F5]/92 px-2 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-[#15323B]">
+        <div className="absolute left-4 top-4 rounded-full border border-emerald-300/80 bg-emerald-500 px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-white shadow-[0_6px_18px_rgba(5,150,105,0.35)]">
           {course.category}
         </div>
       </div>
