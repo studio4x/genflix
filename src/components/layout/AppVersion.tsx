@@ -1,4 +1,4 @@
-export const APP_BUILD_VERSION = '0.0.1040-1965999'
+export const APP_BUILD_VERSION = '0.0.1041-11fa99b'
 
 interface AppVersionProps {
   className?: string

@@ -12,7 +12,7 @@ import {
   resolveSectionRegistryTemplateKey,
   SectionStructureControl,
 } from '@/features/site-editor/section-registry'
-import { EditableList, EditableText, isEditableItemVisible, sanitizeRichText, useEditableValue } from '@/features/site-editor/visual-editor'
+import { EditableRichText, EditableText, isEditableItemVisible, useEditableValue } from '@/features/site-editor/visual-editor'
 import type { EditableListItem } from '@/features/site-editor/types'
 
 const aboutParagraphs = [
@@ -57,6 +57,29 @@ const aboutLayoutSchema = createSectionRegistrySchema({
   instancePageKey: 'about',
 })
 
+function escapeHtml(value: string) {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
+function paragraphsToHtml(paragraphs: string[]) {
+  return paragraphs
+    .filter((paragraph) => typeof paragraph === 'string' && paragraph.trim() !== '')
+    .map((paragraph) => `<p>${escapeHtml(paragraph)}</p>`)
+    .join('')
+}
+
+function legacyParagraphsToRichText(items: EditableListItem[]) {
+  return items
+    .map((item) => (typeof item.description === 'string' ? item.description.trim() : ''))
+    .filter((chunk) => chunk !== '')
+    .join('')
+}
+
 function AboutHeroSection() {
   return (
     <section className="bg-white pb-10 pt-8">
@@ -78,30 +101,19 @@ function AboutHeroSection() {
   )
 }
 
-function AboutStorySection({ editableParagraphs }: { editableParagraphs: EditableListItem[] }) {
+function AboutStorySection({ richTextFallback }: { richTextFallback: string }) {
   return (
     <section className="bg-white pb-16 pt-4">
       <div className="public-site-container">
         <div className="rounded-[28px] border border-[#D8E6EB] bg-white px-8 py-10 shadow-[0_18px_42px_rgba(21,50,59,0.03)] sm:px-10 lg:px-12">
-          <div className="mx-auto max-w-[960px] space-y-5 border-t border-[#BEE3EA] pt-10 text-[15px] leading-8 text-[#4f666d]">
-            <EditableList
-              entryKey="about.paragraphs"
-              fallback={editableParagraphs}
-              label="Paragrafos da pagina Sobre"
-              schema={{
-                kind: 'rich-text-list',
-                itemName: 'parágrafo',
-                addLabel: 'Adicionar parágrafo',
-              }}
-            >
-              {(items) => items.filter(isEditableItemVisible).map((item) => (
-                <div
-                  key={item.id}
-                  className="space-y-4"
-                  dangerouslySetInnerHTML={{ __html: sanitizeRichText(item.description ?? '') }}
-                />
-              ))}
-            </EditableList>
+          <div className="mx-auto max-w-[960px] border-t border-[#BEE3EA] pt-10">
+            <EditableRichText
+              entryKey="about.storyContent"
+              fallback={richTextFallback}
+              label="Conteudo da pagina Sobre"
+              pageKey="about"
+              className="rich-text-content space-y-5 text-[15px] leading-8 text-[#4f666d]"
+            />
           </div>
         </div>
       </div>
@@ -150,13 +162,17 @@ export function PublicAboutPage() {
   const { isLoading, user, roles } = useAuth()
   const waitingRoleResolution = !!user && roles.length === 0
   const aboutSections = useEditableValue('about.layout.sections', aboutLayoutFallback)
-  const editableParagraphs = useEditableValue(
+  const legacyParagraphs = useEditableValue(
     'about.paragraphs',
     aboutParagraphs.map((paragraph, index) => ({
       id: `paragraph-${index + 1}`,
       description: paragraph,
     })),
   )
+
+  const storyRichTextFallback = Array.isArray(legacyParagraphs)
+    ? legacyParagraphsToRichText(legacyParagraphs)
+    : paragraphsToHtml(aboutParagraphs)
 
   if (isLoading || waitingRoleResolution) {
     return (
@@ -186,7 +202,7 @@ export function PublicAboutPage() {
         }
 
         if (templateKey === 'story') {
-          return <AboutStorySection editableParagraphs={editableParagraphs} />
+          return <AboutStorySection richTextFallback={storyRichTextFallback} />
         }
 
         if (templateKey === 'mission') {
@@ -203,3 +219,4 @@ export function PublicAboutPage() {
     </main>
   )
 }
+
