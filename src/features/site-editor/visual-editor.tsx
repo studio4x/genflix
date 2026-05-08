@@ -362,10 +362,14 @@ const BUTTON_STYLE_PRESETS = [
 
 const richTextToolbarModules = {
   toolbar: [
-    [{ header: [1, 2, 3, false] }],
+    [{ header: [1, 2, 3, 4, 5, 6, false] }],
     ['bold', 'italic', 'underline', 'strike'],
+    [{ align: [] }],
     [{ list: 'ordered' }, { list: 'bullet' }],
-    ['link', 'clean'],
+    ['blockquote', 'code-block', 'hr'],
+    ['link', 'image', 'video', 'table'],
+    [{ color: [] }, { background: [] }],
+    ['undo', 'redo', 'clean'],
   ],
 }
 
@@ -1138,6 +1142,8 @@ function ListItemEditorCard({
                   onChange={updateRichTextField}
                   placeholder="Escreva o conteúdo aqui..."
                   modules={richTextToolbarModules}
+                  enableHtmlMode
+                  minHeightClassName="min-h-[220px]"
                   className="[&_.react-quill-local]:rounded-none [&_.react-quill-local]:border-0 [&_.react-quill-local_.ql-container]:border-0"
                 />
               </div>
@@ -1377,6 +1383,8 @@ function ListItemEditorCard({
                 onChange={updateRichTextField}
                 placeholder="Descreva a função deste bloco para a equipe."
                 modules={richTextToolbarModules}
+                enableHtmlMode
+                minHeightClassName="min-h-[220px]"
                 className="[&_.react-quill-local]:rounded-none [&_.react-quill-local]:border-0 [&_.react-quill-local_.ql-container]:border-0"
               />
             </div>
@@ -1533,6 +1541,8 @@ function ListItemEditorCard({
               onChange={updateRichTextField}
               placeholder="Escreva a descrição do item..."
               modules={richTextToolbarModules}
+              enableHtmlMode
+              minHeightClassName="min-h-[220px]"
               className="[&_.react-quill-local]:rounded-none [&_.react-quill-local]:border-0 [&_.react-quill-local_.ql-container]:border-0"
             />
           </div>
@@ -3123,7 +3133,8 @@ function EditorModal({
                       onChange={setRawValue}
                       placeholder="Escreva o conteúdo aqui..."
                       modules={richTextToolbarModules}
-                      minHeightClassName="min-h-[320px]"
+                      enableHtmlMode
+                      minHeightClassName="min-h-[360px]"
                       className="[&_.react-quill-local]:rounded-none [&_.react-quill-local]:border-0 [&_.react-quill-local_.ql-container]:border-0"
                     />
                   </div>

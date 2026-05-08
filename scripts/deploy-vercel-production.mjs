@@ -238,6 +238,7 @@ async function main() {
       '--prebuilt',
       '--prod',
       '--yes',
+      '--archive=tgz',
       '--meta',
       `githubCommitSha=${headSha}`,
       '--meta',
