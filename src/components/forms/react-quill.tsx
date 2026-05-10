@@ -5,6 +5,7 @@ type ToolbarItem = string | Record<string, unknown> | Array<string | Record<stri
 type ReactQuillProps = {
   value: string
   onChange: (value: string) => void
+  onRequestImage?: () => Promise<{ src: string; alt?: string } | null> | { src: string; alt?: string } | null
   placeholder?: string
   className?: string
   minHeightClassName?: string
@@ -101,6 +102,27 @@ function buildColumnsHtml(columns: number) {
   `.trim()
 }
 
+function escapeHtmlAttribute(value: string) {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+}
+
+function buildImageHtml(input: { src: string; alt?: string }) {
+  const safeSrc = input.src.trim()
+  const safeAlt = typeof input.alt === 'string' ? input.alt.trim() : ''
+  if (!safeSrc) {
+    return ''
+  }
+
+  return `
+    <p><img src="${escapeHtmlAttribute(safeSrc)}" alt="${escapeHtmlAttribute(safeAlt)}" /></p>
+    <p></p>
+  `.trim()
+}
+
 function extractPlainText(html: string) {
   if (typeof document === 'undefined') {
     return html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
@@ -190,6 +212,7 @@ const defaultToolbar = [
 export default function ReactQuill({
   value,
   onChange,
+  onRequestImage,
   placeholder,
   className = '',
   minHeightClassName = 'min-h-[180px]',
@@ -254,6 +277,22 @@ export default function ReactQuill({
   function insertEditorHtml(html: string) {
     insertHtml(editorRef.current, html)
     syncEditorValue()
+  }
+
+  async function handleInsertImage() {
+    if (onRequestImage) {
+      const selectedImage = await onRequestImage()
+      const imageHtml = selectedImage ? buildImageHtml(selectedImage) : ''
+      if (imageHtml) {
+        insertEditorHtml(imageHtml)
+      }
+      return
+    }
+
+    const imageUrl = window.prompt('Digite a URL da imagem')
+    if (imageUrl) {
+      runEditorCommand('insertImage', imageUrl)
+    }
   }
 
   function applyColumnsLayout(columnCount: number) {
@@ -463,12 +502,7 @@ export default function ReactQuill({
               <button
                 type="button"
                 className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 hover:bg-slate-100"
-                onClick={() => {
-                  const imageUrl = window.prompt('Digite a URL da imagem')
-                  if (imageUrl) {
-                    runEditorCommand('insertImage', imageUrl)
-                  }
-                }}
+                onClick={() => void handleInsertImage()}
               >
                 Imagem
               </button>

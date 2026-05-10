@@ -241,7 +241,7 @@
 
 [OK] T72 - Inserir no editor, a possibilidade de adicionar/alterar colunas no conteúdo das páginas...
 
-[ ] T73 - Inserir a posisibilidade de adicionar imagens no editor dos textos dentro do editor visual.
+[OK] T73 - Inserir a posisibilidade de adicionar imagens no editor dos textos dentro do editor visual.
 
 [ ] T74 - Inserir a possibilidade de excluir um conteúdo da página via editor visual.
 

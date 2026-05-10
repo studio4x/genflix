@@ -115,6 +115,11 @@ type MediaLibraryIconOption = {
   label: string
 }
 
+type RichTextImageSelection = {
+  src: string
+  alt?: string
+}
+
 type SiteContentContextValue = {
   pageKey: SitePageKey
   entries: Map<string, SiteContentEntry>
@@ -635,6 +640,31 @@ function resolveSiteAssetLabel(asset: SiteAsset) {
   return fileName.replace(/\.[a-z0-9]+$/i, '')
 }
 
+function isImageSiteAsset(asset: SiteAsset) {
+  const mimeType = (asset.mime_type ?? '').toLowerCase()
+  if (mimeType.startsWith('image/')) {
+    return true
+  }
+
+  return /\.(png|jpe?g|gif|webp|svg|avif)$/i.test(asset.storage_path)
+}
+
+function buildRichTextImageSelection(asset: SiteAsset): RichTextImageSelection | null {
+  if (!isImageSiteAsset(asset)) {
+    return null
+  }
+
+  const imageUrl = typeof asset.public_url === 'string' ? asset.public_url.trim() : ''
+  if (!imageUrl) {
+    return null
+  }
+
+  return {
+    src: imageUrl,
+    alt: resolveSiteAssetLabel(asset),
+  }
+}
+
 function buildMediaLibraryIconOptions(assets: SiteAsset[]) {
   const options: MediaLibraryIconOption[] = []
   const seen = new Set<string>()
@@ -807,6 +837,7 @@ function ListItemEditorCard({
   onInsertBelow,
   onRemove,
   onUploadIcon,
+  onRequestRichTextImage,
   iconLibraryOptions,
   editorConfig,
 }: {
@@ -820,6 +851,7 @@ function ListItemEditorCard({
   onInsertBelow?: (index: number) => void
   onRemove: (index: number) => void
   onUploadIcon?: (index: number, file: File) => void
+  onRequestRichTextImage?: () => Promise<RichTextImageSelection | null>
   iconLibraryOptions: MediaLibraryIconOption[]
   editorConfig: NormalizedListEditorSchema
 }) {
@@ -1141,6 +1173,7 @@ function ListItemEditorCard({
                 <ReactQuill
                   value={item.description ?? ''}
                   onChange={updateRichTextField}
+                  onRequestImage={onRequestRichTextImage}
                   placeholder="Escreva o conteúdo aqui..."
                   modules={richTextToolbarModules}
                   enableHtmlMode
@@ -1382,6 +1415,7 @@ function ListItemEditorCard({
               <ReactQuill
                 value={item.description ?? ''}
                 onChange={updateRichTextField}
+                onRequestImage={onRequestRichTextImage}
                 placeholder="Descreva a função deste bloco para a equipe."
                 modules={richTextToolbarModules}
                 enableHtmlMode
@@ -1540,6 +1574,7 @@ function ListItemEditorCard({
             <ReactQuill
               value={item.description ?? ''}
               onChange={updateRichTextField}
+              onRequestImage={onRequestRichTextImage}
               placeholder="Escreva a descrição do item..."
               modules={richTextToolbarModules}
               enableHtmlMode
@@ -1629,6 +1664,7 @@ function ListItemEditorCard({
                 }}
                 onRemove={(removeIndex) => updateNestedItems(nestedItems.filter((_, currentIndex) => currentIndex !== removeIndex))}
                 onUploadIcon={onUploadIcon}
+                onRequestRichTextImage={onRequestRichTextImage}
                 iconLibraryOptions={iconLibraryOptions}
                 editorConfig={editorConfig}
               />
@@ -1671,13 +1707,16 @@ function EditorModal({
   const textareaRef = useRef<HTMLTextAreaElement | null>(null)
   const [rawValue, setRawValue] = useState(() => initialRawValue)
   const [uploadAlt, setUploadAlt] = useState('')
+  const [richTextImageAlt, setRichTextImageAlt] = useState('')
   const [isSaving, setIsSaving] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
   const [textStyle, setTextStyle] = useState<TextStyleValue>(() => initialTextStyle)
   const [previewViewport, setPreviewViewport] = useState<PreviewViewport>('desktop')
   const [assetLibrary, setAssetLibrary] = useState<SiteAsset[]>([])
   const [isLoadingAssetLibrary, setIsLoadingAssetLibrary] = useState(false)
+  const [isRichTextImagePickerOpen, setIsRichTextImagePickerOpen] = useState(false)
   const mediaLibraryIconOptions = useMemo(() => buildMediaLibraryIconOptions(assetLibrary), [assetLibrary])
+  const richTextImageAssets = useMemo(() => assetLibrary.filter(isImageSiteAsset), [assetLibrary])
   const [draftComment, setDraftComment] = useState('')
   const [workspaceState, setWorkspaceState] = useState<SiteEditorWorkspaceMap>({})
   const [isLoadingWorkspace, setIsLoadingWorkspace] = useState(false)
@@ -1687,6 +1726,7 @@ function EditorModal({
   const [future, setFuture] = useState<Array<{ rawValue: string; textStyle: TextStyleValue }>>([])
   const skipHistoryRef = useRef(true)
   const previousSnapshotRef = useRef<{ rawValue: string; textStyle: TextStyleValue }>({ rawValue: initialRawValue, textStyle: initialTextStyle })
+  const richTextImageResolverRef = useRef<((value: RichTextImageSelection | null) => void) | null>(null)
   const listEditorConfig = useMemo(() => normalizeListEditorSchema(editor.schema), [editor.schema])
   const shouldParseJsonValue = ['list', 'json', 'link', 'button', 'image'].includes(editor.entryType)
   const isRichTextListEditor = editor.entryType === 'list' && listEditorConfig.kind === 'rich-text-list'
@@ -1750,6 +1790,58 @@ function EditorModal({
 
   function updateListEditor(nextItems: EditableListItem[]) {
     setRawValue(JSON.stringify(nextItems, null, 2))
+  }
+
+  function closeRichTextImagePicker(selection: RichTextImageSelection | null = null) {
+    richTextImageResolverRef.current?.(selection)
+    richTextImageResolverRef.current = null
+    setIsRichTextImagePickerOpen(false)
+    setRichTextImageAlt('')
+  }
+
+  function requestRichTextImage() {
+    setMessage(null)
+    setRichTextImageAlt('')
+    setIsRichTextImagePickerOpen(true)
+
+    return new Promise<RichTextImageSelection | null>((resolve) => {
+      richTextImageResolverRef.current = resolve
+    })
+  }
+
+  async function handleRichTextImageUpload(file: File | null) {
+    if (!file) {
+      return
+    }
+
+    setMessage(null)
+    setIsSaving(true)
+
+    try {
+      const asset = await uploadSiteAsset(file, {
+        alt: richTextImageAlt || file.name,
+        pageKey: editor.pageKey,
+        entryKey: editor.entryKey,
+      })
+      setAssetLibrary((current) => [asset, ...current.filter((currentAsset) => currentAsset.id !== asset.id)].slice(0, 240))
+      closeRichTextImagePicker(buildRichTextImageSelection(asset))
+      setMessage('Imagem inserida no texto. Clique em salvar para publicar.')
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Não foi possível enviar a imagem para o texto.')
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  function handleSelectRichTextImageFromLibrary(asset: SiteAsset) {
+    const selection = buildRichTextImageSelection(asset)
+    if (!selection) {
+      setMessage('Este ativo não possui uma URL pública válida.')
+      return
+    }
+
+    closeRichTextImagePicker(selection)
+    setMessage('Imagem inserida no texto. Clique em salvar para publicar.')
   }
 
   async function handleListIconUpload(itemIndex: number, file: File | null) {
@@ -1871,6 +1963,12 @@ function EditorModal({
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === 'Escape') {
+        if (isRichTextImagePickerOpen) {
+          event.preventDefault()
+          closeRichTextImagePicker(null)
+          return
+        }
+
         event.preventDefault()
         handleCloseRequest()
         return
@@ -1884,17 +1982,22 @@ function EditorModal({
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [handleCloseRequest])
+  }, [handleCloseRequest, isRichTextImagePickerOpen])
+
+  useEffect(() => () => {
+    richTextImageResolverRef.current?.(null)
+    richTextImageResolverRef.current = null
+  }, [])
 
   useEffect(() => {
-    const shouldLoadAssetLibrary = editor.entryType === 'image' || editor.entryType === 'list'
+    const shouldLoadAssetLibrary = editor.entryType === 'image' || editor.entryType === 'list' || usesRichTextToolbar
     if (!shouldLoadAssetLibrary) {
       return
     }
 
     let isMounted = true
     setIsLoadingAssetLibrary(true)
-    void fetchSiteAssets(editor.entryType === 'list' ? 240 : 48)
+    void fetchSiteAssets(editor.entryType === 'list' || usesRichTextToolbar ? 240 : 48)
       .then((assets) => {
         if (!isMounted) return
         setAssetLibrary(assets)
@@ -1911,7 +2014,7 @@ function EditorModal({
     return () => {
       isMounted = false
     }
-  }, [editor.entryType])
+  }, [editor.entryType, usesRichTextToolbar])
 
   async function handleSaveDraft() {
     try {
@@ -2074,6 +2177,89 @@ function EditorModal({
 
   return (
     <div className="fixed inset-0 z-[120] overflow-y-auto bg-[#061b21]/62 px-3 py-3 backdrop-blur-sm sm:px-4 sm:py-6">
+      {isRichTextImagePickerOpen ? (
+        <div className="fixed inset-0 z-[130] flex items-center justify-center bg-[#061b21]/52 px-3 py-4 backdrop-blur-sm">
+          <div className="w-full max-w-4xl overflow-hidden rounded-[28px] border border-[#D8E6EB] bg-white shadow-[0_30px_90px_rgba(6,27,33,0.24)]">
+            <div className="flex items-start justify-between gap-4 border-b border-[#D8E6EB] bg-[linear-gradient(180deg,#F8FCFD_0%,#FFFFFF_100%)] p-6">
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#1398B7]">Imagem no texto</p>
+                <h3 className="mt-1 font-readex text-xl font-semibold text-[#15323b]">Inserir imagem no conteúdo</h3>
+                <p className="mt-1 text-sm font-semibold text-[#5F7077]">Envie uma nova imagem ou reutilize um ativo já existente da biblioteca.</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => closeRichTextImagePicker(null)}
+                className="flex h-10 w-10 items-center justify-center rounded-full border border-[#D8E6EB] text-[#5F7077] hover:bg-[#F2F7F9]"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="grid gap-6 p-6 lg:grid-cols-[320px,minmax(0,1fr)]">
+              <div className="grid gap-4 rounded-[22px] border border-[#D8E6EB] bg-[#F8FCFD] p-4">
+                <label className="grid gap-2">
+                  <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#5F7077]">Texto alternativo</span>
+                  <input
+                    value={richTextImageAlt}
+                    onChange={(event) => setRichTextImageAlt(event.target.value)}
+                    className="h-11 rounded-[14px] border border-[#D8E6EB] bg-white px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]"
+                    placeholder="Descrição da imagem"
+                  />
+                </label>
+                <label className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-[16px] border border-[#1398B7] bg-white px-4 py-3 text-sm font-black text-[#0A3640] hover:bg-[#E8F6FA]">
+                  <ImageIcon className="h-4 w-4" />
+                  Enviar imagem
+                  <input type="file" accept="image/*" className="hidden" onChange={(event) => void handleRichTextImageUpload(event.target.files?.[0] ?? null)} />
+                </label>
+                <div className="rounded-[18px] border border-dashed border-[#D8E6EB] bg-white px-4 py-4 text-xs leading-5 text-[#5F7077]">
+                  A imagem é inserida no editor imediatamente, mas a publicação continua acontecendo no botão de salvar do editor visual.
+                </div>
+              </div>
+
+              <div className="rounded-[22px] border border-[#D8E6EB] bg-white p-4">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#1398B7]">Biblioteca de mídia</p>
+                    <p className="mt-1 text-sm font-semibold text-[#15323b]">Escolha uma imagem já enviada para reutilizar no texto.</p>
+                  </div>
+                  {isLoadingAssetLibrary ? <p className="text-xs font-semibold text-[#5F7077]">Carregando...</p> : null}
+                </div>
+                <div className="mt-4 grid max-h-[55vh] gap-3 overflow-y-auto pr-1 sm:grid-cols-2">
+                  {richTextImageAssets.map((asset) => (
+                    <button
+                      key={asset.id}
+                      type="button"
+                      onClick={() => handleSelectRichTextImageFromLibrary(asset)}
+                      className="overflow-hidden rounded-[18px] border border-[#D8E6EB] bg-[#F8FCFD] text-left transition hover:border-[#1398B7] hover:bg-[#EAF8FB]"
+                    >
+                      {asset.public_url ? (
+                        <img
+                          src={asset.public_url}
+                          alt={asset.alt ?? ''}
+                          className="h-32 w-full border-b border-[#D8E6EB] object-cover"
+                        />
+                      ) : (
+                        <div className="flex h-32 items-center justify-center border-b border-[#D8E6EB] bg-white text-xs font-semibold text-[#5F7077]">
+                          Sem preview
+                        </div>
+                      )}
+                      <div className="px-3 py-3">
+                        <p className="line-clamp-2 text-sm font-semibold text-[#15323b]">{resolveSiteAssetLabel(asset)}</p>
+                        <p className="mt-1 text-xs font-semibold text-[#5F7077]">{asset.width && asset.height ? `${asset.width}x${asset.height}px` : 'Dimensões não disponíveis'}</p>
+                      </div>
+                    </button>
+                  ))}
+                  {!isLoadingAssetLibrary && richTextImageAssets.length === 0 ? (
+                    <div className="rounded-[18px] border border-dashed border-[#D8E6EB] bg-[#F8FCFD] px-4 py-8 text-center text-sm font-semibold text-[#5F7077]">
+                      Nenhum ativo anterior encontrado.
+                    </div>
+                  ) : null}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
       <form
         ref={formRef}
         onSubmit={(event) => void handleSubmit(event)}
@@ -2324,6 +2510,7 @@ function EditorModal({
                       }}
                       onRemove={(removeIndex) => updateListEditor(normalizeEditableListItems(parsedPreview.value).filter((_, currentIndex) => currentIndex !== removeIndex))}
                       onUploadIcon={(uploadIndex, file) => void handleListIconUpload(uploadIndex, file)}
+                      onRequestRichTextImage={requestRichTextImage}
                       iconLibraryOptions={mediaLibraryIconOptions}
                       editorConfig={listEditorConfig}
                     />
@@ -3132,6 +3319,7 @@ function EditorModal({
                     <ReactQuill
                       value={rawValue}
                       onChange={setRawValue}
+                      onRequestImage={requestRichTextImage}
                       placeholder="Escreva o conteúdo aqui..."
                       modules={richTextToolbarModules}
                       enableHtmlMode
