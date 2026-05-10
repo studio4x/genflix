@@ -221,9 +221,21 @@ export function PublicCourseDetailsPage() {
                     <p className="mt-2 text-sm text-[#6a7b81]">{detail.secondaryPriceLabel}</p>
                   </div>
 
-                                    <GenflixCtaButton asChild className="w-full px-5 py-3">
+                  <GenflixCtaButton asChild className="w-full px-5 py-3">
                     <Link to={`/checkout/pagamento/${slug}`}>Comprar agora</Link>
                   </GenflixCtaButton>
+
+                  {detail.bonusSection.enabled && detail.bonusSection.description.trim().length > 0 ? (
+                    <div className="rounded-[20px] border border-[#D8E6EB] bg-[#F2F7F9] px-4 py-4">
+                      <div className="flex items-start gap-3">
+                        <CirclePlay className="mt-0.5 h-5 w-5 text-[#1398B7]" />
+                        <div>
+                          <p className="text-sm font-semibold text-[#183139]">{detail.bonusSection.title}</p>
+                          <p className="mt-1 text-sm leading-6 text-[#6a7b81]">{detail.bonusSection.description}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ) : null}
 
                   <div className="grid gap-3 sm:grid-cols-2">
                     {detail.includedItems.map((item) => (
@@ -237,15 +249,6 @@ export function PublicCourseDetailsPage() {
                     ))}
                   </div>
 
-                  <div className="rounded-[20px] border border-[#D8E6EB] bg-[#F2F7F9] px-4 py-4">
-                    <div className="flex items-start gap-3">
-                      <CirclePlay className="mt-0.5 h-5 w-5 text-[#1398B7]" />
-                      <div>
-                        <p className="text-sm font-semibold text-[#183139]">Prévia de conteúdo</p>
-                        <p className="mt-1 text-sm leading-6 text-[#6a7b81]">{detail.mentor.bio}</p>
-                      </div>
-                    </div>
-                  </div>
                 </div>
               </div>
             </aside>

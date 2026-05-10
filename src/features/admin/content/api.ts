@@ -212,6 +212,11 @@ export async function updateCoursePublicPage(courseId: string, input: CoursePubl
     aboutParagraphs: input.aboutParagraphs,
     outcomes: input.outcomes,
     includedItems: input.includedItems,
+    bonusSection: {
+      enabled: input.bonus_enabled,
+      title: input.bonus_title?.trim() || 'Prévia de conteúdo',
+      description: input.mentor_bio?.trim() || '',
+    },
     contentSource: input.contentSource,
     customSyllabus: input.customSyllabus,
   }
@@ -224,7 +229,7 @@ export async function updateCoursePublicPage(courseId: string, input: CoursePubl
       marketing_description: input.marketing_description.trim(),
       mentor_name: input.mentor_name.trim(),
       mentor_role: input.mentor_role.trim(),
-      mentor_bio: input.mentor_bio.trim(),
+      mentor_bio: input.mentor_bio?.trim() || null,
       mentor_initials: input.mentor_initials?.trim() || null,
       price_label: input.price_label.trim(),
       secondary_price_label: input.secondary_price_label.trim(),

@@ -9,11 +9,18 @@ import {
 
 export type CoursePublicContentSource = 'real' | 'custom'
 
+export interface CoursePublicBonusSection {
+  enabled: boolean
+  title: string
+  description: string
+}
+
 export interface CoursePublicPageContent {
   categoryLine: string | null
   aboutParagraphs: string[]
   outcomes: GenflixCourseOutcome[]
   includedItems: string[]
+  bonusSection: CoursePublicBonusSection | null
   contentSource: CoursePublicContentSource
   customSyllabus: GenflixCourseModule[]
 }
@@ -118,6 +125,26 @@ function normalizeModule(value: unknown): GenflixCourseModule | null {
   }
 }
 
+function normalizeBonusSection(value: unknown): CoursePublicBonusSection | null {
+  if (!isRecord(value)) {
+    return null
+  }
+
+  const title = trimString(value.title)
+  const description = trimString(value.description)
+  const enabled = value.enabled !== false
+
+  if (!title && !description) {
+    return null
+  }
+
+  return {
+    enabled,
+    title: title || 'Prévia de conteúdo',
+    description,
+  }
+}
+
 export function normalizeCoursePublicPageContent(value: unknown): CoursePublicPageContent {
   if (!isRecord(value)) {
     return {
@@ -125,6 +152,7 @@ export function normalizeCoursePublicPageContent(value: unknown): CoursePublicPa
       aboutParagraphs: [],
       outcomes: [],
       includedItems: [],
+      bonusSection: null,
       contentSource: 'custom',
       customSyllabus: [],
     }
@@ -141,6 +169,7 @@ export function normalizeCoursePublicPageContent(value: unknown): CoursePublicPa
     includedItems: Array.isArray(value.includedItems)
       ? value.includedItems.map((item) => trimString(item)).filter(Boolean)
       : [],
+    bonusSection: normalizeBonusSection(value.bonusSection),
     contentSource: value.contentSource === 'real' ? 'real' : 'custom',
     customSyllabus: Array.isArray(value.customSyllabus)
       ? value.customSyllabus.map(normalizeModule).filter((item): item is GenflixCourseModule => Boolean(item))
@@ -211,6 +240,22 @@ export function buildCoursePublicDetail(
     trimString(row.description) ||
     staticDetail?.description ||
     ''
+  const fallbackBonusDescription =
+    trimString(row.mentor_bio) ||
+    staticDetail?.bonusSection.description ||
+    staticDetail?.mentor.bio ||
+    ''
+  const bonusSection = content.bonusSection
+    ? {
+      enabled: content.bonusSection.enabled,
+      title: content.bonusSection.title || 'Prévia de conteúdo',
+      description: content.bonusSection.description || fallbackBonusDescription,
+    }
+    : {
+      enabled: Boolean(fallbackBonusDescription),
+      title: staticDetail?.bonusSection.title || 'Prévia de conteúdo',
+      description: fallbackBonusDescription,
+    }
 
   const syllabus =
     content.contentSource === 'real' && options?.realSyllabus?.length
@@ -272,5 +317,6 @@ export function buildCoursePublicDetail(
     includedItems: content.includedItems.length
       ? content.includedItems
       : staticDetail?.includedItems ?? defaultIncludedItems,
+    bonusSection,
   }
 }

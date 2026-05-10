@@ -118,6 +118,11 @@ export interface GenflixCourseDetail {
   priceLabel: string
   secondaryPriceLabel: string
   includedItems: string[]
+  bonusSection: {
+    enabled: boolean
+    title: string
+    description: string
+  }
 }
 
 export interface GenflixBlogPost {
@@ -533,6 +538,11 @@ function buildCourseDetail(course: GenflixCourseItem, overrides: Partial<Genflix
     priceLabel: 'R$ 294,90',
     secondaryPriceLabel: 'Acesso imediato + materiais inclusos',
     includedItems: defaultIncludedItems,
+    bonusSection: {
+      enabled: true,
+      title: 'Prévia de conteúdo',
+      description: `Curadoria acadêmica e acompanhamento pedagógico conduzidos por ${course.mentor}, com experiência aplicada em ${course.category.toLowerCase()}.`,
+    },
     ...overrides,
   }
 }

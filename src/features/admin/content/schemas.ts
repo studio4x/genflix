@@ -65,6 +65,11 @@ export const coursePublicPageContentSchema = z.object({
   aboutParagraphs: z.array(z.string().trim().min(1)).default([]),
   outcomes: z.array(publicCourseOutcomeSchema).default([]),
   includedItems: z.array(z.string().trim().min(1)).default([]),
+  bonusSection: z.object({
+    enabled: z.boolean().default(true),
+    title: z.string().trim().min(1, 'Informe o titulo da secao bonus.'),
+    description: z.string().trim().min(1, 'Informe o texto da secao bonus.'),
+  }).nullable().optional(),
   contentSource: z.enum(['real', 'custom']).default('custom'),
   customSyllabus: z.array(publicCourseModuleSchema).default([]),
 })
@@ -76,7 +81,9 @@ export const coursePublicPageFormSchema = z.object({
   marketing_description: z.string().trim().min(10, 'Informe a descricao principal do curso.'),
   mentor_name: z.string().trim().min(2, 'Informe o nome do mentor.'),
   mentor_role: z.string().trim().min(2, 'Informe o cargo ou funcao do mentor.'),
-  mentor_bio: z.string().trim().min(2, 'Informe o texto da previa de conteudo.'),
+  mentor_bio: z.string().trim().optional().or(z.literal('')),
+  bonus_enabled: z.boolean().default(true),
+  bonus_title: z.string().trim().optional().or(z.literal('')),
   mentor_initials: z.string().trim().max(4).optional().or(z.literal('')),
   price_label: z.string().trim().min(1, 'Informe o preco exibido na pagina publica.'),
   secondary_price_label: z.string().trim().min(1, 'Informe o subtitulo do checkout.'),
@@ -85,6 +92,26 @@ export const coursePublicPageFormSchema = z.object({
   includedItems: z.array(z.string().trim().min(1)).min(1, 'Adicione pelo menos um item do que esta incluido.'),
   contentSource: z.enum(['real', 'custom']).default('custom'),
   customSyllabus: z.array(publicCourseModuleSchema).default([]),
+}).superRefine((value, ctx) => {
+  if (!value.bonus_enabled) {
+    return
+  }
+
+  if (!value.bonus_title?.trim()) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['bonus_title'],
+      message: 'Informe o titulo da secao bonus.',
+    })
+  }
+
+  if (!value.mentor_bio?.trim()) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['mentor_bio'],
+      message: 'Informe o texto da secao bonus.',
+    })
+  }
 })
 
 export const moduleFormSchema = z.object({

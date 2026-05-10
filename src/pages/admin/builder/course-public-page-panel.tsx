@@ -25,6 +25,8 @@ type CoursePublicPageFormState = {
   mentor_name: string
   mentor_role: string
   mentor_bio: string
+  bonus_enabled: boolean
+  bonus_title: string
   mentor_initials: string
   price_label: string
   secondary_price_label: string
@@ -109,6 +111,8 @@ export function CoursePublicPagePanel() {
     mentor_name: '',
     mentor_role: '',
     mentor_bio: '',
+    bonus_enabled: true,
+    bonus_title: 'Prévia de conteúdo',
     mentor_initials: '',
     price_label: '',
     secondary_price_label: '',
@@ -153,7 +157,9 @@ export function CoursePublicPagePanel() {
       marketing_description: courseTree.course.marketing_description ?? resolvedDetail.description,
       mentor_name: courseTree.course.mentor_name ?? resolvedDetail.mentor.name,
       mentor_role: courseTree.course.mentor_role ?? resolvedDetail.mentor.role,
-      mentor_bio: courseTree.course.mentor_bio ?? resolvedDetail.mentor.bio,
+      mentor_bio: content.bonusSection?.description ?? courseTree.course.mentor_bio ?? resolvedDetail.bonusSection.description,
+      bonus_enabled: content.bonusSection?.enabled ?? resolvedDetail.bonusSection.enabled,
+      bonus_title: content.bonusSection?.title ?? resolvedDetail.bonusSection.title,
       mentor_initials: courseTree.course.mentor_initials ?? resolvedDetail.mentor.initials,
       price_label: courseTree.course.price_label ?? resolvedDetail.priceLabel,
       secondary_price_label: courseTree.course.secondary_price_label ?? resolvedDetail.secondaryPriceLabel,
@@ -215,6 +221,8 @@ export function CoursePublicPagePanel() {
     try {
       const parsed = coursePublicPageFormSchema.safeParse({
         ...form,
+        mentor_bio: form.mentor_bio.trim(),
+        bonus_title: form.bonus_title.trim(),
         aboutParagraphs: form.aboutParagraphs.map((item) => item.trim()).filter(Boolean),
         includedItems: form.includedItems.map((item) => item.trim()).filter(Boolean),
         outcomes: form.outcomes
@@ -348,7 +356,7 @@ export function CoursePublicPagePanel() {
           <SectionHeading
             eyebrow="Sidebar"
             title="Mentor e itens inclusos"
-            description="Os campos abaixo abastecem o card lateral: mentor, texto da previa de conteudo e lista de beneficios do curso."
+            description="Os campos abaixo abastecem o card lateral: mentor, secao bonus exibida abaixo do botao comprar e lista de beneficios do curso."
           />
 
           <div className="mt-8 grid gap-5 md:grid-cols-2">
@@ -372,13 +380,34 @@ export function CoursePublicPagePanel() {
               />
             </label>
 
+            <label className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-700 md:col-span-2">
+              <input
+                type="checkbox"
+                checked={form.bonus_enabled}
+                onChange={(event) => updateField('bonus_enabled', event.target.checked)}
+              />
+              Exibir secao bonus abaixo do botao comprar
+            </label>
+
             <label className="block space-y-2 md:col-span-2">
-              <span className="text-xs font-black uppercase tracking-widest text-slate-400">Texto da previa de conteudo</span>
+              <span className="text-xs font-black uppercase tracking-widest text-slate-400">Titulo da secao bonus</span>
+              <input
+                className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-5 py-3 text-sm font-semibold outline-none focus:border-cyan-400 focus:bg-white"
+                value={form.bonus_title}
+                onChange={(event) => updateField('bonus_title', event.target.value)}
+                placeholder="Ex: Previa de conteudo"
+                disabled={!form.bonus_enabled}
+              />
+            </label>
+
+            <label className="block space-y-2 md:col-span-2">
+              <span className="text-xs font-black uppercase tracking-widest text-slate-400">Descricao da secao bonus</span>
               <textarea
                 className="min-h-[120px] w-full rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4 text-sm font-medium leading-7 text-slate-700 outline-none focus:border-cyan-400 focus:bg-white"
                 value={form.mentor_bio}
                 onChange={(event) => updateField('mentor_bio', event.target.value)}
-                required
+                placeholder="Ex: Tenha acesso a uma previa completa dos principais topicos do curso."
+                disabled={!form.bonus_enabled}
               />
             </label>
 
