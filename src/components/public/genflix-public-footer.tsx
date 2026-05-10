@@ -159,9 +159,9 @@ export function GenflixPublicFooter({
   const footerSocialLinks = useEditableValue('global.footer.socialLinks', footerSocialLinksFallback, { pageKey: 'global' })
 
   return (
-    <footer id={id} className="bg-[#0A3640] text-white">
+    <footer id={id} className="bg-[#0A3640] text-white shadow-none">
       <div className="public-site-container py-8 sm:py-10">
-        <div className="space-y-8 rounded-[32px] bg-[#0A3640] px-6 py-8 sm:px-8 lg:px-10">
+        <div className="space-y-8 rounded-[32px] bg-[#0A3640] px-6 py-8 shadow-none sm:px-8 lg:px-10">
           <div className="space-y-8 border-b border-white/18 pb-8">
             <div className="flex items-center">
               <GenflixLogo theme="light" />

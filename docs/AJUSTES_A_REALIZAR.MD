@@ -250,7 +250,7 @@
 
 [ ] T76 - Ajustar alinhamento dos elementos do banner "veja em detakhes...". Inserir possibilidade de excluir o campo de e-mail.
 
-[ ] T77 - Elimitar a sombra do contorno do rodapé.
+[OK] T77 - Elimitar a sombra do contorno do rodapé.
 
 [ ] T78 - Alterar o layout do blog para ser igual ao da zapflix.
 
