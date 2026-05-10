@@ -1,6 +1,7 @@
 export type SupportTicketStatus = 'open' | 'in_progress' | 'closed'
 export type SupportTicketPriority = 'low' | 'medium' | 'high' | 'urgent'
 export type SupportTicketCategory = 'payment' | 'technical' | 'account' | 'general'
+export type SupportFaqCategoryKey = SupportTicketCategory | string
 export type SupportSlaStatus = 'on_time' | 'at_risk' | 'overdue' | 'answered'
 export type SupportModalStep = 'choice' | 'form'
 
@@ -32,7 +33,7 @@ export interface SupportCrisisProtocolConfig {
 
 export interface SupportFaqItem {
   id: string
-  category_key: SupportTicketCategory
+  category_key: SupportFaqCategoryKey
   question: string
   answer: string
   sort_order: number

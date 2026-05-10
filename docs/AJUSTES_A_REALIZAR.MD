@@ -260,7 +260,7 @@
 
 [OK] T81 - no admin, na pagina de criar faq, mova o botão de salvar para o painel de detalhes.
 
-[ ] T82 - no admin, na página de faz, insira a opção de adicionar nova categoria dentro da aba de categorias.
+[OK] T82 - no admin, na página de faz, insira a opção de adicionar nova categoria dentro da aba de categorias.
 
 [ ] T83 - Inserir a possibilidade de inserir uma seção de bonus na página do curso. Essa inserção será pela página "pagina publica do curso" dentro do construtor de curso.  Na pagina publica do curso, esse bonus deverá aparecer abaixo do botão comprar. Ex.: quadro "Prévia de conteúdo"
 

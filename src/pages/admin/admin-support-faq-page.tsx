@@ -12,7 +12,7 @@ import {
   fetchSupportSettings,
   updateSupportFaq,
 } from '@/features/support/api'
-import type { SupportFaqItem, SupportFaqSuggestionItem, SupportTicketCategory } from '@/features/support/types'
+import type { SupportFaqItem, SupportFaqSuggestionItem } from '@/features/support/types'
 import { getOrderedSupportCategories } from '@/lib/support-sla'
 
 type AdminFaqTab = 'artigos' | 'categorias' | 'feedback' | 'sugestoes' | 'analytics'
@@ -20,11 +20,18 @@ type ArticleStatusFilter = 'all' | 'draft' | 'published'
 type PeriodFilter = '7d' | '30d' | '90d'
 
 type FaqDraft = {
-  category_key: SupportTicketCategory
+  category_key: string
   question: string
   answer: string
   sort_order: number
   is_published: boolean
+}
+
+type FaqCategoryOption = {
+  key: string
+  label: string
+  description: string
+  source: 'sla' | 'faq'
 }
 
 const emptyDraft: FaqDraft = {
@@ -49,6 +56,25 @@ function formatDateTime(value: string) {
   return new Date(value).toLocaleString('pt-BR')
 }
 
+function toFaqCategoryKey(value: string) {
+  return value
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '')
+}
+
+function formatFaqCategoryLabel(key: string) {
+  return key
+    .replace(/[_-]+/g, ' ')
+    .split(' ')
+    .filter(Boolean)
+    .map((token) => token.charAt(0).toUpperCase() + token.slice(1))
+    .join(' ')
+}
+
 export function AdminSupportFaqPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const filters = normalizeSearchParams(searchParams)
@@ -65,6 +91,8 @@ export function AdminSupportFaqPage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const [faqEvents, setFaqEvents] = useState<Awaited<ReturnType<typeof fetchSupportFaqEvents>>>([])
+  const [manualFaqCategories, setManualFaqCategories] = useState<string[]>([])
+  const [newCategoryName, setNewCategoryName] = useState('')
 
   const periodDays = filters.period === '7d' ? 7 : filters.period === '90d' ? 90 : 30
 
@@ -119,7 +147,57 @@ export function AdminSupportFaqPage() {
   }, [searchInput, setSearchParams])
 
   const categories = useMemo(() => getOrderedSupportCategories(settings?.sla), [settings?.sla])
-  const categoryLabelMap = useMemo(() => new Map(categories.map((item) => [item.key, item.label])), [categories])
+
+  const faqCategoryOptions = useMemo<FaqCategoryOption[]>(() => {
+    const optionMap = new Map<string, FaqCategoryOption>()
+
+    categories.forEach((item) => {
+      optionMap.set(item.key, {
+        key: item.key,
+        label: item.label,
+        description: item.description,
+        source: 'sla',
+      })
+    })
+
+    faqs.forEach((item) => {
+      if (optionMap.has(item.category_key)) {
+        return
+      }
+
+      optionMap.set(item.category_key, {
+        key: item.category_key,
+        label: formatFaqCategoryLabel(item.category_key),
+        description: 'Categoria personalizada da FAQ.',
+        source: 'faq',
+      })
+    })
+
+    manualFaqCategories.forEach((categoryKey) => {
+      if (optionMap.has(categoryKey)) {
+        return
+      }
+
+      optionMap.set(categoryKey, {
+        key: categoryKey,
+        label: formatFaqCategoryLabel(categoryKey),
+        description: 'Categoria personalizada da FAQ.',
+        source: 'faq',
+      })
+    })
+
+    return [...optionMap.values()].sort((a, b) => {
+      if (a.source !== b.source) {
+        return a.source === 'sla' ? -1 : 1
+      }
+      return a.label.localeCompare(b.label, 'pt-BR')
+    })
+  }, [categories, faqs, manualFaqCategories])
+
+  const categoryLabelMap = useMemo(
+    () => new Map(faqCategoryOptions.map((item) => [item.key, item.label])),
+    [faqCategoryOptions],
+  )
 
   const filteredFaqs = useMemo(() => {
     return faqs
@@ -378,9 +456,9 @@ export function AdminSupportFaqPage() {
                 className="h-11 rounded-[14px] border border-[#D8E6EB] bg-[#F8FBFC] px-3 text-sm font-semibold text-[#15323b] outline-none"
               >
                 <option value="all">Categoria: Todas</option>
-                {categories.map((item) => (
-                  <option key={item.key} value={item.key}>{item.label}</option>
-                ))}
+                    {faqCategoryOptions.map((item) => (
+                      <option key={item.key} value={item.key}>{item.label}</option>
+                    ))}
               </select>
 
               <label className="flex h-11 items-center gap-2 rounded-[14px] border border-[#D8E6EB] bg-[#F8FBFC] px-3">
@@ -460,10 +538,10 @@ export function AdminSupportFaqPage() {
                   <div className="mt-4 space-y-3">
                     <select
                       value={selectedArticle.category_key}
-                      onChange={(event) => updateDraft(selectedArticle.id, { category_key: event.target.value as SupportTicketCategory })}
+                      onChange={(event) => updateDraft(selectedArticle.id, { category_key: event.target.value })}
                       className="h-10 w-full rounded-[12px] border border-[#D8E6EB] bg-white px-3 text-sm font-semibold text-[#15323b] outline-none"
                     >
-                      {categories.map((category) => (
+                      {faqCategoryOptions.map((category) => (
                         <option key={category.key} value={category.key}>{category.label}</option>
                       ))}
                     </select>
@@ -520,10 +598,10 @@ export function AdminSupportFaqPage() {
               <div className="mt-3 grid gap-2 lg:grid-cols-[180px_120px_1fr]">
                 <select
                   value={newDraft.category_key}
-                  onChange={(event) => setNewDraft((current) => ({ ...current, category_key: event.target.value as SupportTicketCategory }))}
+                  onChange={(event) => setNewDraft((current) => ({ ...current, category_key: event.target.value }))}
                   className="h-10 rounded-[12px] border border-[#D8E6EB] bg-white px-3 text-sm font-semibold text-[#15323b] outline-none"
                 >
-                  {categories.map((item) => (
+                  {faqCategoryOptions.map((item) => (
                     <option key={item.key} value={item.key}>{item.label}</option>
                   ))}
                 </select>
@@ -568,15 +646,51 @@ export function AdminSupportFaqPage() {
               <LifeBuoy className="h-4 w-4 text-[#1398B7]" />
               <p className="text-sm font-semibold text-[#15323b]">FAQ Admin / Categorias</p>
             </div>
-            <p className="mt-2 text-sm text-[#5F7077]">Categorias carregadas da configuracao de SLA atual. A estrutura visual segue a spec e pode ser conectada a tabela `faq_categories` quando disponivel.</p>
+            <p className="mt-2 text-sm text-[#5F7077]">Categorias usadas na FAQ. Voce pode adicionar novas categorias personalizadas diretamente por esta aba.</p>
+            <div className="mt-4 rounded-[14px] border border-[#D8E6EB] bg-white p-3">
+              <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#5F7077]">Nova categoria</p>
+              <div className="mt-2 flex flex-col gap-2 sm:flex-row">
+                <input
+                  value={newCategoryName}
+                  onChange={(event) => setNewCategoryName(event.target.value)}
+                  placeholder="Ex.: Certificados"
+                  className="h-10 w-full rounded-[12px] border border-[#D8E6EB] bg-white px-3 text-sm font-semibold text-[#15323b] outline-none"
+                />
+                <Button
+                  type="button"
+                  onClick={() => {
+                    const categoryKey = toFaqCategoryKey(newCategoryName)
+                    if (!categoryKey) {
+                      setErrorMessage('Informe um nome valido para criar a categoria.')
+                      return
+                    }
+                    if (faqCategoryOptions.some((item) => item.key === categoryKey)) {
+                      setErrorMessage('Essa categoria ja existe.')
+                      return
+                    }
+
+                    setManualFaqCategories((current) => [...current, categoryKey])
+                    setNewDraft((current) => ({ ...current, category_key: categoryKey }))
+                    setNewCategoryName('')
+                    setErrorMessage(null)
+                    setSuccessMessage('Categoria adicionada com sucesso.')
+                  }}
+                  className="h-10 rounded-[12px] px-4 text-sm font-black"
+                >
+                  Adicionar categoria
+                </Button>
+              </div>
+            </div>
             <div className="mt-4 space-y-2">
-              {categories.map((category) => (
+              {faqCategoryOptions.map((category) => (
                 <div key={category.key} className="flex items-center justify-between rounded-[12px] border border-[#D8E6EB] bg-white px-3 py-2">
                   <div>
                     <p className="text-sm font-bold text-[#15323b]">{category.label}</p>
                     <p className="text-xs text-[#5F7077]">{category.description}</p>
                   </div>
-                  <span className="rounded-full bg-[#E8F6FA] px-3 py-1 text-[11px] font-black uppercase tracking-[0.12em] text-[#1398B7]">Ativa</span>
+                  <span className="rounded-full bg-[#E8F6FA] px-3 py-1 text-[11px] font-black uppercase tracking-[0.12em] text-[#1398B7]">
+                    {category.source === 'sla' ? 'SLA' : 'FAQ'}
+                  </span>
                 </div>
               ))}
             </div>
@@ -623,7 +737,7 @@ export function AdminSupportFaqPage() {
                 <p className="text-xs font-semibold text-[#5F7077]">Categorias mais pedidas</p>
                 <p className="mt-1 text-sm font-semibold text-[#15323b]">
                   {suggestionsSummary.topCategories.length > 0
-                    ? suggestionsSummary.topCategories.map(([key]) => categoryLabelMap.get(key as SupportTicketCategory) ?? key).join(', ')
+                    ? suggestionsSummary.topCategories.map(([key]) => categoryLabelMap.get(key) ?? key).join(', ')
                     : '-'}
                 </p>
               </article>
