@@ -11,7 +11,6 @@ import { GenflixPublicHeader } from '@/components/public/genflix-public-header'
 import { BannerPlacementSlot } from '@/features/banners/banner-placement-slot'
 import {
   genflixCatalogCourses,
-  genflixCatalogFilters,
   genflixNavLinks,
   type GenflixCourseItem,
 } from '@/features/public/genflix-site-content'
@@ -31,7 +30,7 @@ export function PublicCoursesPage() {
   const { isLoading, user, roles } = useAuth()
   const waitingRoleResolution = !!user && roles.length === 0
   const [query, setQuery] = useState('')
-  const [selectedFilter, setSelectedFilter] = useState<(typeof genflixCatalogFilters)[number]>('Todos')
+  const [selectedFilter, setSelectedFilter] = useState('Todos')
   const [currentPage, setCurrentPage] = useState(1)
   const [courses, setCourses] = useState<GenflixCourseItem[]>(genflixCatalogCourses)
   const searchPlaceholder = useEditableValue('courses.search.placeholder', 'Buscar curso, área ou instrutor...')
@@ -59,6 +58,32 @@ export function PublicCoursesPage() {
     }
   }, [])
 
+  const availableFilters = useMemo(() => {
+    const categoriesByKey = new Map<string, string>()
+
+    for (const course of courses) {
+      const category = course.category.trim()
+      if (!category) {
+        continue
+      }
+
+      const normalizedCategory = category.toLocaleLowerCase('pt-BR')
+      if (!categoriesByKey.has(normalizedCategory)) {
+        categoriesByKey.set(normalizedCategory, category)
+      }
+    }
+
+    const categories = [...categoriesByKey.values()].sort((left, right) => left.localeCompare(right, 'pt-BR'))
+    return ['Todos', ...categories]
+  }, [courses])
+
+  useEffect(() => {
+    if (!availableFilters.includes(selectedFilter)) {
+      setSelectedFilter('Todos')
+      setCurrentPage(1)
+    }
+  }, [availableFilters, selectedFilter])
+
   const filteredCourses = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase()
 
@@ -66,11 +91,7 @@ export function PublicCoursesPage() {
       const matchesFilter =
         selectedFilter === 'Todos'
           ? true
-          : selectedFilter === 'Psicologia'
-            ? course.category === 'Psicanálise / Psicologia'
-            : selectedFilter === 'Interesse Geral'
-              ? course.category === 'Interesse Geral'
-              : course.category === selectedFilter
+          : course.category.trim() === selectedFilter
 
       const matchesQuery = normalizedQuery
         ? [course.title, course.category, course.mentor, course.role]
@@ -130,7 +151,7 @@ export function PublicCoursesPage() {
               </div>
 
               <div className="flex flex-wrap items-center justify-center gap-3">
-                {genflixCatalogFilters.map((filter) => (
+                {availableFilters.map((filter) => (
                   <button
                     key={filter}
                     type="button"

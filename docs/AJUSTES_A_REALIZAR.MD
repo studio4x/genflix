@@ -245,7 +245,8 @@
 
 [ ] T74 - Inserir a possibilidade de excluir um conteúdo da página via editor visual.
 
-[ ] T75 - Na página de cursos, os botões do filtro deverão corresponder às categorias reais dos cursos adicionados.
+## Chat 20 - Ajustes Gerais
+[OK] T75 - Na página de cursos, os botões do filtro deverão corresponder às categorias reais dos cursos adicionados.
 
 [ ] T76 - Ajustar alinhamento dos elementos do banner "veja em detakhes...". Inserir possibilidade de excluir o campo de e-mail.
 
