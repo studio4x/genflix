@@ -248,13 +248,13 @@
 ## Chat 20 - Ajustes Gerais
 [OK] T75 - Na página de cursos, os botões do filtro deverão corresponder às categorias reais dos cursos adicionados.
 
-[ ] T76 - Ajustar alinhamento dos elementos do banner "veja em detakhes...". Inserir possibilidade de excluir o campo de e-mail.
+[OK] T76 - Ajustar alinhamento dos elementos do banner "veja em detakhes...". Inserir possibilidade de excluir o campo de e-mail.
 
 [OK] T77 - Elimitar a sombra do contorno do rodapé.
 
 [ ] T78 - Alterar o layout do blog para ser igual ao da zapflix.
 
-[ ] T79 - A Abertura de ticket, só deverá ser permitida para usuário logado. Remover da página de suporte, a primeira seção de sla publico e o botão de abrir ticket. Inserir uma faq para inserir o acesso ao suporte via ticket.
+[OK] T79 - A Abertura de ticket, só deverá ser permitida para usuário logado. Remover da página de suporte, a primeira seção de sla publico e o botão de abrir ticket. Inserir uma faq para inserir o acesso ao suporte via ticket.
 
 [ ] T80 - Implementar chatbot igual da homecarematch.
 

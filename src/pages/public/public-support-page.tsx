@@ -1,9 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
-import { HelpCircle, LifeBuoy, Search, ShieldAlert } from 'lucide-react'
+import { HelpCircle, LifeBuoy, Search } from 'lucide-react'
 import { Link } from 'react-router-dom'
 
 import { useAuth } from '@/app/providers/auth-provider'
-import { SupportTicketModal } from '@/components/support/support-ticket-modal'
 import { GenflixCtaButton, normalizeGenflixCtaTone } from '@/components/public/genflix-cta-button'
 import { GenflixPublicFooter } from '@/components/public/genflix-public-footer'
 import { GenflixPublicHeader } from '@/components/public/genflix-public-header'
@@ -11,7 +10,7 @@ import { PublicTextBlocksSection } from '@/components/public/public-text-blocks-
 import { BannerPlacementSlot } from '@/features/banners/banner-placement-slot'
 import { createSupportFaqSuggestion, fetchSupportFaqs, fetchSupportSettings, trackSupportFaqEvent } from '@/features/support/api'
 import { genflixNavLinks } from '@/features/public/genflix-site-content'
-import { formatSupportBusinessHours, getOrderedSupportCategories, getSupportListRoute } from '@/lib/support-sla'
+import { getOrderedSupportCategories, getSupportListRoute } from '@/lib/support-sla'
 import type { SupportFaqItem, SupportTicketCategory } from '@/features/support/types'
 
 export function PublicSupportPage() {
@@ -20,13 +19,32 @@ export function PublicSupportPage() {
   const [activeCategory, setActiveCategory] = useState<SupportTicketCategory>('general')
   const [faqs, setFaqs] = useState<SupportFaqItem[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [isModalOpen, setIsModalOpen] = useState(false)
   const [settings, setSettings] = useState<Awaited<ReturnType<typeof fetchSupportSettings>> | null>(null)
   const [voteState, setVoteState] = useState<Record<string, 'helpful' | 'not_helpful'>>({})
   const [suggestedQuestion, setSuggestedQuestion] = useState('')
   const [suggestionDetails, setSuggestionDetails] = useState('')
   const [suggestionStatus, setSuggestionStatus] = useState<string | null>(null)
   const [isSubmittingSuggestion, setIsSubmittingSuggestion] = useState(false)
+  const supportListRoute = getSupportListRoute(roles.includes('admin'))
+
+  const ticketAccessFaq = useMemo<SupportFaqItem>(() => {
+    return {
+      id: 'support-ticket-access-auth-required',
+      category_key: 'general',
+      question: 'Como abrir um ticket de suporte?',
+      answer: user
+        ? `A abertura de ticket exige login. Acesse seu painel em ${supportListRoute} e use o botao "Abrir chamado" dentro da area logada.`
+        : 'A abertura de ticket exige login. Clique em "Entrar" no topo do site, acesse seu painel e abra o chamado na pagina de suporte.',
+      sort_order: -1,
+      is_published: true,
+      created_at: new Date(0).toISOString(),
+      updated_at: new Date(0).toISOString(),
+    }
+  }, [supportListRoute, user])
+
+  const faqsWithTicketAccess = useMemo(() => {
+    return [ticketAccessFaq, ...faqs.filter((item) => item.id !== ticketAccessFaq.id)]
+  }, [faqs, ticketAccessFaq])
 
   const faqSessionId = useMemo(() => {
     const storageKey = 'genflix_support_faq_session_id'
@@ -73,7 +91,7 @@ export function PublicSupportPage() {
   const hasActiveSearch = normalizedSearchQuery.length > 0
 
   const filteredFaqs = useMemo(() => {
-    return faqs.filter((item) => {
+    return faqsWithTicketAccess.filter((item) => {
       const matchesCategory = normalizedSearchQuery.length > 0 ? true : item.category_key === activeCategory
       const matchesQuery = normalizedSearchQuery.length === 0
         || item.question.toLowerCase().includes(normalizedSearchQuery)
@@ -81,7 +99,7 @@ export function PublicSupportPage() {
 
       return matchesCategory && matchesQuery
     })
-  }, [activeCategory, faqs, normalizedSearchQuery])
+  }, [activeCategory, faqsWithTicketAccess, normalizedSearchQuery])
 
   useEffect(() => {
     const hasNoResult = searchQuery.trim().length > 0 && filteredFaqs.length === 0
@@ -158,68 +176,9 @@ export function PublicSupportPage() {
               Como podemos ajudar?
             </h1>
             <p className="mx-auto mt-4 max-w-[620px] text-base leading-8 text-[#5F7077]">
-              Consulte perguntas frequentes, entenda o SLA de primeira resposta e abra um chamado quando precisar de atendimento humano.
+              Consulte as perguntas frequentes e veja como acessar o suporte por ticket na area logada.
             </p>
           </div>
-        </div>
-      </section>
-
-      <section className="public-site-container py-10 sm:py-12">
-        <div className="grid gap-6 xl:grid-cols-[1.25fr_0.75fr]">
-          <article className="rounded-[30px] border border-[#D8E6EB] bg-white p-6 shadow-sm sm:p-7">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#1398B7]">SLA publico</p>
-                <h2 className="mt-2 font-readex text-2xl font-semibold text-[#15323b]">SLA de primeira resposta</h2>
-              </div>
-              <div className="rounded-full border border-[#D8E6EB] bg-[#F8FBFC] px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-[#5F7077]">
-                Horario util
-              </div>
-            </div>
-
-            <div className="mt-6 grid gap-4 sm:grid-cols-2">
-              {orderedCategories.map((item) => (
-                <article key={item.key} className="rounded-[22px] border border-[#D8E6EB] bg-[#F8FBFC] p-4">
-                  <p className="text-sm font-black text-[#15323b]">{item.label}</p>
-                  <div className="mt-3 inline-flex rounded-full border border-[#BEE3EA] bg-[#E8F6FA] px-3 py-1 text-[11px] font-black uppercase tracking-[0.14em] text-[#1398B7]">
-                    ate {item.first_response_hours} hora{item.first_response_hours === 1 ? '' : 's'} uteis
-                  </div>
-                  <p className="mt-3 text-sm leading-6 text-[#5F7077]">{item.description}</p>
-                </article>
-              ))}
-            </div>
-
-            <div className="mt-5 rounded-[22px] border border-[#D8E6EB] bg-[#F2F8FA] px-5 py-4">
-              <p className="text-sm font-semibold leading-6 text-[#15323b]">
-                Atendimento: {settings ? formatSupportBusinessHours(settings.businessHours) : '-'}
-              </p>
-              <p className="mt-2 text-sm leading-6 text-[#5F7077]">
-                {settings?.sla.public_note ?? 'Os prazos se referem apenas ao tempo da primeira resposta humana.'}
-              </p>
-            </div>
-          </article>
-
-          <article className="rounded-[30px] border border-[#D8E6EB] bg-[#0A3640] p-6 text-white shadow-sm sm:p-7">
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/10">
-              <ShieldAlert className="h-6 w-6" />
-            </div>
-            <h2 className="mt-6 font-readex text-2xl font-semibold">Casos graves ou sensiveis</h2>
-            <p className="mt-4 text-sm leading-7 text-white/78">
-              {settings?.crisisProtocol.description ?? 'Para situacoes com fraude, seguranca ou necessidade urgente de orientacao, abra um chamado com o maximo de contexto.'}
-            </p>
-            <p className="mt-4 text-sm leading-7 text-white/64">
-              {settings?.crisisProtocol.note ?? 'Nossa equipe trata os chamados com responsabilidade e prioridade operacional adequada.'}
-            </p>
-
-            <GenflixCtaButton
-              type="button"
-              tone="surface"
-              className="mt-8 h-12 w-full justify-between px-5 !text-[#0A3640] [&>span:first-child]:!text-[#0A3640]"
-              onClick={() => setIsModalOpen(true)}
-            >
-              Abrir chamado
-            </GenflixCtaButton>
-          </article>
         </div>
       </section>
 
@@ -385,21 +344,22 @@ export function PublicSupportPage() {
             <div className="flex flex-col gap-6 px-6 py-8 sm:px-8 lg:flex-row lg:items-center lg:justify-between">
               <div className="max-w-2xl">
                 <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#1398B7]">Ainda precisa de ajuda?</p>
-                <h2 className="mt-2 font-readex text-2xl font-semibold text-[#15323b]">Abra um chamado com a equipe de suporte</h2>
+                <h2 className="mt-2 font-readex text-2xl font-semibold text-[#15323b]">Acesso ao suporte por ticket</h2>
                 <p className="mt-3 text-sm leading-7 text-[#5F7077]">
-                  Se a FAQ nao resolver, descreva o problema com o maximo de contexto. Assim conseguimos responder com mais precisao.
+                  O chamado deve ser aberto apenas dentro da area logada para manter seu atendimento vinculado a conta correta.
                 </p>
               </div>
 
               <div className="flex flex-col gap-3 sm:flex-row">
-                <GenflixCtaButton type="button" className="h-12 px-5" onClick={() => setIsModalOpen(true)}>
-                  Abrir um chamado
-                </GenflixCtaButton>
                 {user ? (
                   <GenflixCtaButton asChild tone={normalizeGenflixCtaTone('surface')} className="h-12 px-5 text-[#0A3640]">
-                    <Link to={getSupportListRoute(roles.includes('admin'))}>Ver historico de chamados</Link>
+                    <Link to={supportListRoute}>Acessar meus chamados</Link>
                   </GenflixCtaButton>
-                ) : null}
+                ) : (
+                  <GenflixCtaButton asChild className="h-12 px-5">
+                    <Link to="/entrar">Entrar para abrir ticket</Link>
+                  </GenflixCtaButton>
+                )}
               </div>
             </div>
           </div>
@@ -407,13 +367,6 @@ export function PublicSupportPage() {
       </section>
 
       <GenflixPublicFooter />
-
-      {isModalOpen ? (
-        <SupportTicketModal
-          initialStep="form"
-          onClose={() => setIsModalOpen(false)}
-        />
-      ) : null}
     </main>
   )
 }
