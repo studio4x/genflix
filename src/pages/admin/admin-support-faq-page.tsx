@@ -432,19 +432,6 @@ export function AdminSupportFaqPage() {
                             <div className="flex justify-end gap-2">
                               <Button
                                 type="button"
-                                variant="outline"
-                                onClick={(event) => {
-                                  event.stopPropagation()
-                                  void handleSaveExisting(item)
-                                }}
-                                disabled={isSaving === item.id}
-                                className="h-8 rounded-full border-[#D8E6EB] bg-white px-3 text-xs font-black text-[#15323b]"
-                              >
-                                <Save className="mr-1 h-3.5 w-3.5" />
-                                Salvar
-                              </Button>
-                              <Button
-                                type="button"
                                 variant="destructive"
                                 onClick={(event) => {
                                   event.stopPropagation()
@@ -513,6 +500,16 @@ export function AdminSupportFaqPage() {
                       <p className="mt-2 text-sm font-black text-[#15323b]">{selectedArticle.question}</p>
                       <p className="mt-2 text-sm leading-6 text-[#5F7077]">{selectedArticle.answer}</p>
                     </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => void handleSaveExisting(selectedArticle)}
+                      disabled={isSaving === selectedArticle.id}
+                      className="h-10 rounded-[12px] border-[#D8E6EB] bg-white px-4 text-sm font-black text-[#15323b]"
+                    >
+                      <Save className="mr-2 h-4 w-4" />
+                      Salvar alteracoes
+                    </Button>
                   </div>
                 )}
               </aside>

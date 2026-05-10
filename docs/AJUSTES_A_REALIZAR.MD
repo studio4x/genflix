@@ -258,7 +258,7 @@
 
 [ ] T80 - Implementar chatbot igual da homecarematch.
 
-[ ] T81 - no admin, na pagina de criar faq, amova o botão de salvar para o painel de detalhes.
+[OK] T81 - no admin, na pagina de criar faq, mova o botão de salvar para o painel de detalhes.
 
 [ ] T82 - no admin, na página de faz, insira a opção de adicionar nova categoria dentro da aba de categorias.
 
