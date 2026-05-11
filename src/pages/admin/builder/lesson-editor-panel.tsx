@@ -8,6 +8,7 @@ import {
   deleteLesson,
   fetchMaterials,
   fetchLessonFooterActions,
+  getSignedMaterialUrl,
   uploadMaterial,
   updateLesson,
   toErrorMessage,
@@ -108,6 +109,33 @@ function formatBytes(value: number): string {
   return `${normalized.toFixed(unitIndex === 0 ? 0 : 1)} ${units[unitIndex]}`
 }
 
+function getYouTubeEmbedUrl(url: string): string | null {
+  try {
+    const parsed = new URL(url)
+    const host = parsed.hostname.toLowerCase()
+    if (host.includes('youtu.be')) {
+      const videoId = parsed.pathname.replace('/', '').trim()
+      return videoId ? `https://www.youtube.com/embed/${videoId}` : null
+    }
+    if (host.includes('youtube.com') || host.includes('m.youtube.com')) {
+      const videoId = parsed.searchParams.get('v')
+      if (videoId) return `https://www.youtube.com/embed/${videoId}`
+      const parts = parsed.pathname.split('/').filter(Boolean)
+      const embedIndex = parts.findIndex((part) => part === 'embed' || part === 'shorts')
+      if (embedIndex >= 0 && parts[embedIndex + 1]) {
+        return `https://www.youtube.com/embed/${parts[embedIndex + 1]}`
+      }
+    }
+  } catch {
+    return null
+  }
+  return null
+}
+
+function isDirectVideoUrl(url: string): boolean {
+  return /^https?:\/\/[^\s]+\.(mp4|webm|ogg|ogv|m4v|mov)(\?.*)?(#.*)?$/i.test(url)
+}
+
 export function LessonEditorPanel() {
   const { courseId, moduleId, lessonId } = useParams<{ courseId: string; moduleId: string; lessonId?: string }>()
   const navigate = useNavigate()
@@ -128,6 +156,8 @@ export function LessonEditorPanel() {
   const [isUploadingFileLessonAsset, setIsUploadingFileLessonAsset] = useState(false)
   const [pendingProtectedVideoFile, setPendingProtectedVideoFile] = useState<File | null>(null)
   const [pendingFileLessonAsset, setPendingFileLessonAsset] = useState<File | null>(null)
+  const [protectedVideoPreviewUrl, setProtectedVideoPreviewUrl] = useState<string | null>(null)
+  const [isLoadingProtectedVideoPreview, setIsLoadingProtectedVideoPreview] = useState(false)
   const [audioRequests, setAudioRequests] = useState<LessonAudioModerationRequestAdminItem[]>([])
   const [footerActions, setFooterActions] = useState<LessonFooterAction[]>([])
   const [isLoadingAudioRequests, setIsLoadingAudioRequests] = useState(false)
@@ -196,6 +226,40 @@ export function LessonEditorPanel() {
 
     void loadLessonMaterials()
   }, [isNew, lessonId])
+
+  useEffect(() => {
+    async function loadProtectedVideoPreview() {
+      if (videoInputMode !== 'asset') {
+        setProtectedVideoPreviewUrl(null)
+        return
+      }
+
+      const value = form.youtube_url?.trim() ?? ''
+      if (!value.startsWith('asset:')) {
+        setProtectedVideoPreviewUrl(null)
+        return
+      }
+
+      const materialId = value.slice('asset:'.length).trim()
+      const linkedMaterial = lessonMaterials.find((material) => material.id === materialId)
+      if (!linkedMaterial?.storage_path) {
+        setProtectedVideoPreviewUrl(null)
+        return
+      }
+
+      setIsLoadingProtectedVideoPreview(true)
+      try {
+        const signedUrl = await getSignedMaterialUrl(linkedMaterial.storage_path)
+        setProtectedVideoPreviewUrl(signedUrl)
+      } catch {
+        setProtectedVideoPreviewUrl(null)
+      } finally {
+        setIsLoadingProtectedVideoPreview(false)
+      }
+    }
+
+    void loadProtectedVideoPreview()
+  }, [videoInputMode, form.youtube_url, lessonMaterials])
 
   useEffect(() => {
     async function loadAudioRequests() {
@@ -678,10 +742,62 @@ export function LessonEditorPanel() {
                        </span>
                      </div>
                      <p className="text-sm text-slate-500">Esta visualizacao usa a origem selecionada no toggle acima.</p>
-                     <div className="mt-4 rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">
-                       {form.youtube_url?.trim()
-                         ? `Fonte atual: ${form.youtube_url.trim()}`
-                         : 'Ainda nao existe video para pre-visualizar neste modo.'}
+                     <div className="mt-4">
+                       {videoInputMode === 'asset' ? (
+                         isLoadingProtectedVideoPreview ? (
+                           <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">
+                             Carregando preview do video protegido...
+                           </div>
+                         ) : protectedVideoPreviewUrl ? (
+                           <div className="overflow-hidden rounded-xl border border-slate-200 bg-black">
+                             <video className="aspect-video w-full" controls preload="metadata" src={protectedVideoPreviewUrl}>
+                               O navegador nao suporta reproducao de video.
+                             </video>
+                           </div>
+                         ) : (
+                           <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">
+                             Ainda nao existe video para pre-visualizar neste modo.
+                           </div>
+                         )
+                       ) : (() => {
+                         const url = form.youtube_url?.trim() ?? ''
+                         if (!url) {
+                           return (
+                             <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">
+                               Ainda nao existe video para pre-visualizar neste modo.
+                             </div>
+                           )
+                         }
+                         const youtubeEmbedUrl = getYouTubeEmbedUrl(url)
+                         if (youtubeEmbedUrl) {
+                           return (
+                             <div className="overflow-hidden rounded-xl border border-slate-200 bg-black">
+                               <iframe
+                                 className="aspect-video w-full"
+                                 src={youtubeEmbedUrl}
+                                 title="Preview do video"
+                                 frameBorder="0"
+                                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                 allowFullScreen
+                               />
+                             </div>
+                           )
+                         }
+                         if (isDirectVideoUrl(url)) {
+                           return (
+                             <div className="overflow-hidden rounded-xl border border-slate-200 bg-black">
+                               <video className="aspect-video w-full" controls preload="metadata" src={url}>
+                                 O navegador nao suporta reproducao de video.
+                               </video>
+                             </div>
+                           )
+                         }
+                         return (
+                           <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">
+                             URL invalida para preview.
+                           </div>
+                         )
+                       })()}
                      </div>
                    </div>
 
