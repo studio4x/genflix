@@ -6,7 +6,9 @@ import {
   createLesson,
   deleteLessonContentAsset,
   deleteLesson,
+  fetchMaterials,
   fetchLessonFooterActions,
+  uploadMaterial,
   updateLesson,
   toErrorMessage,
 } from '@/features/admin/content/api'
@@ -35,7 +37,7 @@ import { LessonImageHotspotsBlockEditor } from '@/features/admin/content/lesson-
 import { LessonAudioPlayer } from '@/features/student/lesson-audio/lesson-audio-player'
 import { Plus, Trash2, Code2, Eye } from 'lucide-react'
 import { publishBuilderNotice } from '@/lib/builder-notice'
-import type { LessonFooterAction } from '@/types/content'
+import type { LessonFooterAction, LessonMaterial } from '@/types/content'
 
 const initialForm: LessonFormInput = {
   title: '',
@@ -98,6 +100,14 @@ function getColumnsGridClass(columnsCount: number): string {
   return 'md:grid-cols-4'
 }
 
+function formatBytes(value: number): string {
+  if (value === 0) return '0 B'
+  const units = ['B', 'KB', 'MB', 'GB']
+  const unitIndex = Math.min(Math.floor(Math.log(value) / Math.log(1024)), units.length - 1)
+  const normalized = value / 1024 ** unitIndex
+  return `${normalized.toFixed(unitIndex === 0 ? 0 : 1)} ${units[unitIndex]}`
+}
+
 export function LessonEditorPanel() {
   const { courseId, moduleId, lessonId } = useParams<{ courseId: string; moduleId: string; lessonId?: string }>()
   const navigate = useNavigate()
@@ -112,6 +122,12 @@ export function LessonEditorPanel() {
   const [isDeleting, setIsDeleting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [videoInputMode, setVideoInputMode] = useState<'url' | 'asset'>('url')
+  const [lessonMaterials, setLessonMaterials] = useState<LessonMaterial[]>([])
+  const [isLoadingLessonMaterials, setIsLoadingLessonMaterials] = useState(false)
+  const [isUploadingProtectedVideo, setIsUploadingProtectedVideo] = useState(false)
+  const [isUploadingFileLessonAsset, setIsUploadingFileLessonAsset] = useState(false)
+  const [pendingProtectedVideoFile, setPendingProtectedVideoFile] = useState<File | null>(null)
+  const [pendingFileLessonAsset, setPendingFileLessonAsset] = useState<File | null>(null)
   const [audioRequests, setAudioRequests] = useState<LessonAudioModerationRequestAdminItem[]>([])
   const [footerActions, setFooterActions] = useState<LessonFooterAction[]>([])
   const [isLoadingAudioRequests, setIsLoadingAudioRequests] = useState(false)
@@ -123,6 +139,10 @@ export function LessonEditorPanel() {
     if (isNew) {
       setForm(initialForm)
       setBlocks([{ type: 'rich-text', content: '' }])
+      setVideoInputMode('url')
+      setLessonMaterials([])
+      setPendingProtectedVideoFile(null)
+      setPendingFileLessonAsset(null)
       return
     }
 
@@ -151,9 +171,31 @@ export function LessonEditorPanel() {
           starts_at: found.starts_at ? found.starts_at.slice(0, 16) : '',
           ends_at: found.ends_at ? found.ends_at.slice(0, 16) : '',
         })
+        setVideoInputMode(found.youtube_url?.startsWith('asset:') ? 'asset' : 'url')
       }
     }
   }, [isNew, lessonId, courseTree])
+
+  useEffect(() => {
+    async function loadLessonMaterials() {
+      if (isNew || !lessonId) {
+        setLessonMaterials([])
+        return
+      }
+
+      setIsLoadingLessonMaterials(true)
+      try {
+        const materials = await fetchMaterials(lessonId)
+        setLessonMaterials(materials)
+      } catch (err) {
+        console.error('Erro ao buscar materiais da aula:', err)
+      } finally {
+        setIsLoadingLessonMaterials(false)
+      }
+    }
+
+    void loadLessonMaterials()
+  }, [isNew, lessonId])
 
   useEffect(() => {
     async function loadAudioRequests() {
@@ -350,6 +392,56 @@ export function LessonEditorPanel() {
     }
   }
 
+  async function uploadLessonAsset(
+    file: File | null,
+    options: {
+      uploadType: 'protected-video' | 'file-lesson'
+    },
+  ) {
+    if (!file || !lessonId || !user?.id) {
+      setError('Salve a aula e autentique-se para enviar ficheiros.')
+      return
+    }
+
+    setError(null)
+    if (options.uploadType === 'protected-video') {
+      setIsUploadingProtectedVideo(true)
+    } else {
+      setIsUploadingFileLessonAsset(true)
+    }
+
+    try {
+      const uploaded = await uploadMaterial(lessonId, file, user.id)
+      setLessonMaterials((prev) => [uploaded, ...prev.filter((item) => item.id !== uploaded.id)])
+
+      if (options.uploadType === 'protected-video') {
+        setForm((prev) => ({ ...prev, youtube_url: `asset:${uploaded.id}` }))
+        setVideoInputMode('asset')
+        setPendingProtectedVideoFile(null)
+        publishBuilderNotice({
+          type: 'success',
+          title: 'Video protegido enviado',
+          message: `O ficheiro "${uploaded.file_name}" foi vinculado como fonte audiovisual da aula.`,
+        })
+      } else {
+        setPendingFileLessonAsset(null)
+        publishBuilderNotice({
+          type: 'success',
+          title: 'Ficheiro enviado',
+          message: `O ficheiro "${uploaded.file_name}" foi adicionado aos materiais desta aula.`,
+        })
+      }
+    } catch (err) {
+      setError(toErrorMessage(err))
+    } finally {
+      if (options.uploadType === 'protected-video') {
+        setIsUploadingProtectedVideo(false)
+      } else {
+        setIsUploadingFileLessonAsset(false)
+      }
+    }
+  }
+
   return (
     <div className="w-full space-y-6 animate-in fade-in duration-500 pb-20">
        <style>{`
@@ -532,42 +624,172 @@ export function LessonEditorPanel() {
                </div>
 
                {(form.lesson_type === 'video' || form.lesson_type === 'hybrid') && (
-                 <div className="animate-in slide-in-from-top-2 duration-300 space-y-3">
-                    <div className="rounded-xl border border-slate-200 bg-white p-1">
-                      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                        <button
-                          type="button"
-                          onClick={() => setVideoInputMode('url')}
-                          className={`rounded-lg px-3 py-2 text-xs font-black uppercase tracking-wide transition ${videoInputMode === 'url' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-50'}`}
-                        >
-                          URL do video
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setVideoInputMode('asset')}
-                          className={`rounded-lg px-3 py-2 text-xs font-black uppercase tracking-wide transition ${videoInputMode === 'asset' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-50'}`}
-                        >
-                          Asset protegido
-                        </button>
-                      </div>
-                    </div>
-                    <label className="block space-y-2">
-                      <span className="text-sm font-bold text-slate-800 flex items-center gap-2">
-                        <svg className="h-4 w-4 text-rose-500" fill="currentColor" viewBox="0 0 24 24"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
-                        {videoInputMode === 'url' ? 'URL do Video' : 'Asset Protegido (asset:uuid)'}
-                      </span>
-                      <input
-                        className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-3 text-sm shadow-inner transition-all focus:border-rose-500 focus:ring-2 focus:ring-rose-100 focus:bg-white placeholder:text-slate-400"
-                        placeholder={videoInputMode === 'url' ? 'https://www.youtube.com/watch?v=... ou https://cdn.exemplo.com/video.mp4' : 'asset:00000000-0000-0000-0000-000000000000'}
-                        value={form.youtube_url}
-                        onChange={(e) => setForm((prev) => ({ ...prev, youtube_url: e.target.value }))}
-                      />
-                    </label>
-                    <p className="text-xs text-slate-500">
-                      Opcoes aceitas: YouTube, URL direta (.mp4/.webm/.ogg/.m4v/.mov) e referencia protegida asset:uuid.
-                    </p>
+                 <div className="animate-in slide-in-from-top-2 duration-300 space-y-4 rounded-2xl border border-slate-200 bg-slate-50/50 p-4 md:p-5">
+                   <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-500">Bloco 03: Conteudo em Video</p>
+                   <h4 className="text-2xl font-black text-slate-900">Fonte audiovisual</h4>
+
+                   <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 rounded-xl border border-slate-200 bg-white p-1">
+                     <button
+                       type="button"
+                       onClick={() => setVideoInputMode('url')}
+                       className={`rounded-xl px-4 py-4 text-left transition ${
+                         videoInputMode === 'url' ? 'bg-slate-950 text-white' : 'text-slate-700 hover:bg-slate-50'
+                       }`}
+                     >
+                       <p className="text-sm font-black">Usar URL do video</p>
+                       <p className={`mt-1 text-sm ${videoInputMode === 'url' ? 'text-slate-200' : 'text-slate-500'}`}>
+                         Usa YouTube ou link direto quando quiseres apontar para um ficheiro externo.
+                       </p>
+                     </button>
+                     <button
+                       type="button"
+                       onClick={() => setVideoInputMode('asset')}
+                       className={`rounded-xl px-4 py-4 text-left transition ${
+                         videoInputMode === 'asset' ? 'bg-slate-950 text-white' : 'text-slate-700 hover:bg-slate-50'
+                       }`}
+                     >
+                       <p className="text-sm font-black">Usar upload protegido</p>
+                       <p className={`mt-1 text-sm ${videoInputMode === 'asset' ? 'text-slate-200' : 'text-slate-500'}`}>
+                         Envia o video para a plataforma e publica apenas a referencia protegida.
+                       </p>
+                     </button>
+                   </div>
+
+                   <div className="rounded-xl border border-slate-200 bg-white p-4">
+                     <p className="text-lg font-black text-slate-900">
+                       {videoInputMode === 'url' ? 'Sem URL de video' : 'Upload protegido selecionado'}
+                     </p>
+                     <p className="mt-2 text-sm text-slate-600">
+                       {videoInputMode === 'url'
+                         ? 'Define um link do YouTube ou de um video direto enquanto o modo de URL estiver ativo.'
+                         : 'Seleciona um ficheiro e clica em Enviar video protegido para concluir esta aula sem depender de link externo.'}
+                     </p>
+                   </div>
+
+                   <div className="rounded-xl border border-slate-200 bg-white p-4">
+                     <div className="flex flex-wrap items-center justify-between gap-3">
+                       <p className="text-lg font-black text-slate-900">Preview do video</p>
+                       <span className={`rounded-full px-3 py-1 text-[11px] font-black uppercase tracking-[0.2em] ${
+                         videoInputMode === 'url'
+                           ? 'bg-sky-100 text-sky-800'
+                           : 'bg-emerald-100 text-emerald-800'
+                       }`}>
+                         {videoInputMode === 'url' ? 'URL externa' : 'Upload protegido'}
+                       </span>
+                     </div>
+                     <p className="text-sm text-slate-500">Esta visualizacao usa a origem selecionada no toggle acima.</p>
+                     <div className="mt-4 rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">
+                       {form.youtube_url?.trim()
+                         ? `Fonte atual: ${form.youtube_url.trim()}`
+                         : 'Ainda nao existe video para pre-visualizar neste modo.'}
+                     </div>
+                   </div>
+
+                   <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-amber-900">
+                     <p className="font-black">Nota de protecao</p>
+                     <p className="mt-2 text-sm">
+                       Nenhum player web garante protecao total contra pirataria. O upload protegido reduz o risco com bucket privado e referencia assinada temporaria.
+                     </p>
+                   </div>
+
+                   {videoInputMode === 'url' ? (
+                     <label className="block space-y-2">
+                       <span className="text-xs font-black uppercase tracking-[0.2em] text-slate-600">URL do video</span>
+                       <input
+                         className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm shadow-inner transition-all focus:border-slate-400 focus:ring-2 focus:ring-slate-100 placeholder:text-slate-400"
+                         placeholder="https://youtube.com/watch?v=... ou https://cdn.exemplo.com/video.mp4"
+                         value={form.youtube_url}
+                         onChange={(event) => setForm((prev) => ({ ...prev, youtube_url: event.target.value }))}
+                       />
+                       <p className="text-sm text-slate-600">
+                         Aceita links do YouTube ou URLs diretas de ficheiro de video como .mp4, .webm, .mov e .m4v.
+                       </p>
+                     </label>
+                   ) : (
+                     <div className="space-y-3 rounded-xl border border-slate-200 bg-white p-4">
+                       <p className="text-lg font-black text-slate-900">Upload protegido de video</p>
+                       <p className="text-sm text-slate-600">
+                         Recomendado para aulas pagas. O video fica em storage privado e a aula salva a referencia no formato <code>asset:uuid</code>.
+                       </p>
+                       {isNew || !lessonId ? (
+                         <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+                           Salve a aula primeiro para habilitar upload protegido.
+                         </p>
+                       ) : (
+                         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                           <input
+                             type="file"
+                             accept="video/*"
+                             onChange={(event) => setPendingProtectedVideoFile(event.target.files?.[0] ?? null)}
+                             className="text-sm"
+                           />
+                           <Button
+                             type="button"
+                             disabled={!pendingProtectedVideoFile || isUploadingProtectedVideo}
+                             onClick={() => void uploadLessonAsset(pendingProtectedVideoFile, { uploadType: 'protected-video' })}
+                             className="bg-slate-900 text-white hover:bg-slate-800"
+                           >
+                             {isUploadingProtectedVideo ? 'Enviando video...' : 'Enviar video protegido'}
+                           </Button>
+                         </div>
+                       )}
+                       {form.youtube_url?.startsWith('asset:') ? (
+                         <p className="text-xs text-slate-500">Referencia protegida atual: {form.youtube_url}</p>
+                       ) : null}
+                     </div>
+                   )}
                  </div>
                )}
+               {form.lesson_type === 'file' ? (
+                 <div className="animate-in slide-in-from-top-2 duration-300 space-y-4 rounded-2xl border border-slate-200 bg-slate-50/50 p-4 md:p-5">
+                   <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-500">Bloco 03: Conteudo em Ficheiro</p>
+                   <h4 className="text-xl font-black text-slate-900">Upload do ficheiro principal</h4>
+                   <p className="text-sm text-slate-600">
+                     No formato "apenas ficheiro", envie o arquivo para os materiais desta aula.
+                   </p>
+                   {isNew || !lessonId ? (
+                     <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+                       Salve a aula primeiro para habilitar upload de ficheiro.
+                     </p>
+                   ) : (
+                     <div className="space-y-3 rounded-xl border border-slate-200 bg-white p-4">
+                       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                         <input
+                           type="file"
+                           onChange={(event) => setPendingFileLessonAsset(event.target.files?.[0] ?? null)}
+                           className="text-sm"
+                         />
+                         <Button
+                           type="button"
+                           disabled={!pendingFileLessonAsset || isUploadingFileLessonAsset}
+                           onClick={() => void uploadLessonAsset(pendingFileLessonAsset, { uploadType: 'file-lesson' })}
+                           className="bg-slate-900 text-white hover:bg-slate-800"
+                         >
+                           {isUploadingFileLessonAsset ? 'Enviando ficheiro...' : 'Enviar ficheiro'}
+                         </Button>
+                       </div>
+                       <p className="text-xs text-slate-500">Limite atual no bucket: 50 MB por ficheiro.</p>
+                     </div>
+                   )}
+                   <div className="rounded-xl border border-slate-200 bg-white p-4">
+                     <p className="text-sm font-black text-slate-900">Ficheiros ja enviados</p>
+                     {isLoadingLessonMaterials ? (
+                       <p className="mt-2 text-sm text-slate-500">Carregando ficheiros...</p>
+                     ) : lessonMaterials.length === 0 ? (
+                       <p className="mt-2 text-sm text-slate-500">Nenhum ficheiro enviado para esta aula.</p>
+                     ) : (
+                       <ul className="mt-3 space-y-2 text-sm text-slate-600">
+                         {lessonMaterials.slice(0, 5).map((material) => (
+                           <li key={material.id} className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+                             <span className="font-semibold text-slate-800">{material.file_name}</span>
+                             <span className="ml-2 text-xs text-slate-500">{formatBytes(material.file_size_bytes)}</span>
+                           </li>
+                         ))}
+                       </ul>
+                     )}
+                   </div>
+                 </div>
+               ) : null}
                 {(form.lesson_type === 'text' || form.lesson_type === 'hybrid') && (
                    <div className="animate-in slide-in-from-top-2 duration-300 space-y-6">
                       <div className="flex items-center justify-between">
