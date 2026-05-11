@@ -12,6 +12,7 @@ import {
   buildCoursePublicDetail,
   normalizeCoursePublicPageContent,
 } from '@/features/public/course-public-page-content'
+import { publishBuilderNotice } from '@/lib/builder-notice'
 import type {
   GenflixCourseModule,
   GenflixCourseOutcome,
@@ -246,6 +247,11 @@ export function CoursePublicPagePanel() {
       await updateCoursePublicPage(courseTree.course.id, parsed.data)
       await refreshTree()
       setSuccess(true)
+      publishBuilderNotice({
+        type: 'success',
+        title: 'Pagina publica salva',
+        message: `A pagina publica do curso "${courseTree.course.title}" foi atualizada com sucesso.`,
+      })
       setTimeout(() => setSuccess(false), 3000)
     } catch (submitError) {
       setError(toErrorMessage(submitError))

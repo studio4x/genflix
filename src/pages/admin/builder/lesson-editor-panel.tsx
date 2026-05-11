@@ -34,6 +34,7 @@ import {
 import { LessonImageHotspotsBlockEditor } from '@/features/admin/content/lesson-image-hotspots-block'
 import { LessonAudioPlayer } from '@/features/student/lesson-audio/lesson-audio-player'
 import { Plus, Trash2, Code2, Eye } from 'lucide-react'
+import { publishBuilderNotice } from '@/lib/builder-notice'
 import type { LessonFooterAction } from '@/types/content'
 
 const initialForm: LessonFormInput = {
@@ -278,9 +279,19 @@ export function LessonEditorPanel() {
 
       if (!isNew && lessonId) {
         await updateLesson(lessonId, dataToSave)
+        publishBuilderNotice({
+          type: 'success',
+          title: 'Aula salva',
+          message: `As alteracoes da aula "${form.title}" foram salvas com sucesso.`,
+        })
       } else {
         const created = await createLesson(moduleId, dataToSave)
         await refreshTree()
+        publishBuilderNotice({
+          type: 'success',
+          title: 'Aula criada',
+          message: `A aula "${form.title}" foi criada com sucesso.`,
+        })
         navigate(`/admin/cursos/${courseId}/builder/modulos/${moduleId}/aulas/${created.id}`, { replace: true })
         return
       }

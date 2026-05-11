@@ -4,6 +4,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { useCourseBuilder } from '@/app/layouts/admin-course-builder-layout'
 import { useAuth } from '@/app/providers/auth-provider'
 import { Button } from '@/components/ui/button'
+import { publishBuilderNotice } from '@/lib/builder-notice'
 import { cn } from '@/lib/utils'
 import { GamifiedQuestionEditor } from '@/features/admin/assessments/gamified-question-editor'
 import {
@@ -388,11 +389,21 @@ export function AssessmentBuilderPanel() {
       if (!isFinal && moduleId) {
         const createdAssessment = await createModuleAssessment(courseId, moduleId, initialData, user.id)
         await refreshTree()
+        publishBuilderNotice({
+          type: 'success',
+          title: 'Quiz criado',
+          message: `O quiz "${initialData.title}" foi criado com sucesso.`,
+        })
         navigate(`/admin/cursos/${courseId}/builder/modulos/${moduleId}/avaliacoes/${createdAssessment.id}`)
       } else {
         await createFinalAssessment(courseId, initialData, user.id)
         await loadData()
         await refreshTree()
+        publishBuilderNotice({
+          type: 'success',
+          title: 'Avaliacao final criada',
+          message: 'A avaliacao final foi criada com sucesso.',
+        })
       }
     } catch (createError) {
       setError(toErrorMessage(createError))
@@ -438,6 +449,44 @@ export function AssessmentBuilderPanel() {
     }
 
     await handleUpdateAssessment(updates)
+  }
+
+  async function handleSaveAssessmentSettings() {
+    if (!assessmentDraft || !assessment) return
+
+    setError(null)
+    setIsLoading(true)
+
+    try {
+      const normalizedTitle = assessmentDraft.title.trim()
+      if (normalizedTitle.length < 2) {
+        throw new Error('Informe um titulo de quiz com pelo menos 2 caracteres.')
+      }
+
+      const payload = {
+        title: normalizedTitle,
+        description: assessmentDraft.description,
+        passing_score: assessmentDraft.passing_score,
+        max_attempts: assessmentDraft.max_attempts,
+        estimated_minutes: assessmentDraft.estimated_minutes,
+        is_required: assessment.is_required,
+        is_active: assessment.is_active,
+      }
+
+      await updateAssessment(assessment.id, payload)
+      setAssessment((prev) => (prev ? { ...prev, ...payload } : prev))
+
+      setAssessmentDraft((prev) => (prev ? { ...prev, title: normalizedTitle } : prev))
+      publishBuilderNotice({
+        type: 'success',
+        title: isFinal ? 'Avaliacao final salva' : 'Quiz salvo',
+        message: `As configuracoes de "${normalizedTitle}" foram salvas com sucesso.`,
+      })
+    } catch (saveError) {
+      setError(toErrorMessage(saveError))
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   function findQuestion(questionId: string) {
@@ -1482,6 +1531,17 @@ export function AssessmentBuilderPanel() {
         </div>
 
         <div className="flex items-center gap-3">
+          <Button
+            variant="default"
+            onClick={() => void handleSaveAssessmentSettings()}
+            disabled={isLoading}
+            className="flex h-10 items-center gap-2 rounded-xl bg-blue-600 px-4 font-bold text-white transition-all hover:bg-blue-700"
+          >
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
+            {isLoading ? 'Salvando...' : (isFinal ? 'Salvar Avaliacao' : 'Salvar Quiz')}
+          </Button>
           <Button
             variant="outline"
             onClick={() => void handleDeleteAssessment()}

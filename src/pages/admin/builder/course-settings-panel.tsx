@@ -16,6 +16,7 @@ import {
 } from '@/features/admin/content/api'
 import { courseFormSchema } from '@/features/admin/content/schemas'
 import { formatCurrencyInputFromCents, parseCurrencyInputToCents } from '@/lib/currency'
+import { publishBuilderNotice } from '@/lib/builder-notice'
 import {
   canCourseUseCaseStudies,
   COURSE_QUIZ_TYPE_OPTIONS,
@@ -185,6 +186,11 @@ export function CourseSettingsPanel() {
       await updateCourse(courseTree.course.id, parsed.data)
       await refreshTree()
       setSuccess(true)
+      publishBuilderNotice({
+        type: 'success',
+        title: 'Configuracoes salvas',
+        message: `As configuracoes do curso "${parsed.data.title}" foram salvas com sucesso.`,
+      })
       setTimeout(() => setSuccess(false), 3000)
     } catch (err) {
       setError(toErrorMessage(err))
@@ -204,6 +210,11 @@ export function CourseSettingsPanel() {
     try {
       await upsertCourseAiReviewStandards(courseTree.course.id, aiStandards, user.id)
       setAiStandardsSuccess(true)
+      publishBuilderNotice({
+        type: 'success',
+        title: 'Padroes da IA salvos',
+        message: 'Os padroes de revisao com IA foram atualizados com sucesso.',
+      })
       setTimeout(() => setAiStandardsSuccess(false), 3000)
     } catch (err) {
       setError(toErrorMessage(err))

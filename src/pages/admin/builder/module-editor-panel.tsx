@@ -298,9 +298,19 @@ export function ModuleEditorPanel() {
     try {
       if (!isNew && moduleId) {
         await updateModule(moduleId, parsed.data)
+        publishBuilderNotice({
+          type: 'success',
+          title: 'Modulo salvo',
+          message: `As alteracoes do modulo "${parsed.data.title}" foram salvas com sucesso.`,
+        })
       } else {
         const created = await createModule(courseId, parsed.data)
         await refreshTree()
+        publishBuilderNotice({
+          type: 'success',
+          title: 'Modulo criado',
+          message: `O modulo "${parsed.data.title}" foi criado com sucesso.`,
+        })
         navigate(`/admin/cursos/${courseId}/builder/modulos/${created.id}`, { replace: true })
         return
       }

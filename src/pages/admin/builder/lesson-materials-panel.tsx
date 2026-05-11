@@ -17,6 +17,7 @@ import {
   getSignedLessonFooterActionUrl,
   toErrorMessage,
 } from '@/features/admin/content/api'
+import { publishBuilderNotice } from '@/lib/builder-notice'
 import { lessonFooterActionFormSchema } from '@/features/admin/content/schemas'
 import { useCourseBuilder } from '@/app/layouts/admin-course-builder-layout'
 import type { ButtonTemplate, Lesson, LessonFooterAction } from '@/types/content'
@@ -112,6 +113,11 @@ export function LessonMaterialsPanel() {
 
       await createLessonFooterAction(lessonId, parsed.data, user.id, file)
       await loadData()
+      publishBuilderNotice({
+        type: 'success',
+        title: 'Botao da aula salvo',
+        message: `O arquivo "${file.name}" foi adicionado ao rodape da aula com sucesso.`,
+      })
     } catch (err) {
       setError(toErrorMessage(err))
     } finally {
@@ -143,6 +149,11 @@ export function LessonMaterialsPanel() {
       setUrlLabel('')
       setUrlValue('')
       await loadData()
+      publishBuilderNotice({
+        type: 'success',
+        title: 'Botao da aula salvo',
+        message: `O link "${parsed.data.label}" foi adicionado ao rodape da aula com sucesso.`,
+      })
     } catch (err) {
       setError(toErrorMessage(err))
     }
