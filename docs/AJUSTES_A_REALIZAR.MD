@@ -135,9 +135,9 @@
 
 ## CHAT 11 — Editor de conteúdo de curso
 
-[ ] T38 - Alterar editor de texto dos módulos para seguir `docs/lesson-rich-text-blocks-spec.md`.
+[OK] T38 - Alterar editor de texto dos módulos para seguir `docs/lesson-rich-text-blocks-spec.md`.
 
-[ ] T39 - Alterar editor de texto das aulas para seguir `docs/lesson-rich-text-blocks-spec.md`.
+[OK] T39 - Alterar editor de texto das aulas para seguir `docs/lesson-rich-text-blocks-spec.md`.
 
 [OK] T39.5 - Inserir a opção de inserir colunas nos blocos de conteúdos das aulas.. (add 1 coluna, add 2 colunas, add 3 colunas, etc)
 
@@ -180,12 +180,6 @@
 [OK] T51 - Validar se os dois campos de e-mail são iguais.
 
 [OK] T51.2 - o FUNDO DA PÁGINA https://genflix-omega.vercel.app/indique-a-genflix DEVERÁ SER BRANCO.
-
----
-
-## CHAT 16 — Checklist final
-
-[ ] T52 - Criar um documento de checklist com tudo o que já foi implementado, descrevendo em detalhes. Esse documento será usado para validar o que foi implementado, testar todas as funcionalidades disponíveis e identificar se ainda falta algo para implementar.
 
 ---
 
@@ -269,3 +263,8 @@
 [OK] t85 - Na página recursos, o editor visual deverá ter a opção de trocar/inserir icones no quadros existentes. Além disso, precisamos implementar um botão para abrir um video de instrução. Precisa também adicionar na página admin uma página para inserir os videos de cada recurso.. Os recursos que não tiverem videos adicionados, não aparecerá o botão de ver video.
 
 
+---
+
+## CHAT 21 — Checklist final
+
+[ ] T52 - Criar um documento de checklist com tudo o que já foi implementado, descrevendo em detalhes. Esse documento será usado para validar o que foi implementado, testar todas as funcionalidades disponíveis e identificar se ainda falta algo para implementar.
