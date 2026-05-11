@@ -171,6 +171,35 @@ function renderResourceIcon(item: ResourcePopupItem, className: string) {
   return <FallbackIcon className={className} />
 }
 
+function sanitizeResourceRichText(rawValue: string) {
+  return rawValue
+    .replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, '')
+    .replace(/\son[a-z]+="[^"]*"/gi, '')
+    .replace(/\son[a-z]+='[^']*'/gi, '')
+}
+
+function hasHtmlMarkup(value: string) {
+  return /<[^>]+>/.test(value)
+}
+
+function renderResourceTextContent(value: string, className: string) {
+  const trimmedValue = value.trim()
+  if (!trimmedValue) {
+    return null
+  }
+
+  if (!hasHtmlMarkup(trimmedValue)) {
+    return <p className={className}>{trimmedValue}</p>
+  }
+
+  return (
+    <div
+      className={`rich-text-content ${className}`}
+      dangerouslySetInnerHTML={{ __html: sanitizeResourceRichText(trimmedValue) }}
+    />
+  )
+}
+
 function ResourcePopup({
   item,
   onClose,
@@ -249,9 +278,11 @@ function ResourcePopup({
             </div>
 
             <div className="mt-16 space-y-8 text-[1.65rem] font-light leading-[1.58] tracking-[-0.035em] text-[#292929]">
-              {content.lead ? <p>{content.lead}</p> : null}
-              {content.paragraphs.map((paragraph) => (
-                <p key={paragraph}>{paragraph}</p>
+              {content.lead ? renderResourceTextContent(content.lead, '') : null}
+              {content.paragraphs.map((paragraph, paragraphIndex) => (
+                <div key={`${paragraphIndex}-${paragraph.slice(0, 24)}`}>
+                  {renderResourceTextContent(paragraph, '')}
+                </div>
               ))}
 
               {videoUrl ? (
@@ -390,7 +421,9 @@ export function PublicResourcesPage() {
                   </div>
 
                   <h2 className="mt-5 text-[1rem] font-bold leading-6 text-[#183139]">{item.label}</h2>
-                  <p className="mt-3 text-sm leading-7 text-[#667980]">{item.description}</p>
+                  <div className="mt-3 text-sm leading-7 text-[#667980] [&_p]:m-0">
+                    {renderResourceTextContent(item.description ?? '', '')}
+                  </div>
                   {videoUrl ? (
                     <div className="mt-4">
                       <a
