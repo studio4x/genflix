@@ -471,6 +471,7 @@ tr:nth-child(even) {
 }
 
 .rich-text-content .genflix-columns,
+.lesson-content-html .genflix-columns,
 .lesson-content-html .lesson-rich-text .genflix-columns,
 .lesson-hotspots-body .genflix-columns {
   display: grid;
@@ -479,18 +480,21 @@ tr:nth-child(even) {
 }
 
 .rich-text-content .genflix-column,
+.lesson-content-html .genflix-column,
 .lesson-content-html .lesson-rich-text .genflix-column,
 .lesson-hotspots-body .genflix-column {
   min-width: 0;
 }
 
 .rich-text-content .genflix-column > :first-child,
+.lesson-content-html .genflix-column > :first-child,
 .lesson-content-html .lesson-rich-text .genflix-column > :first-child,
 .lesson-hotspots-body .genflix-column > :first-child {
   margin-top: 0;
 }
 
 .rich-text-content .genflix-column > :last-child,
+.lesson-content-html .genflix-column > :last-child,
 .lesson-content-html .lesson-rich-text .genflix-column > :last-child,
 .lesson-hotspots-body .genflix-column > :last-child {
   margin-bottom: 0;
@@ -498,18 +502,21 @@ tr:nth-child(even) {
 
 @media (min-width: 768px) {
   .rich-text-content .genflix-columns-2,
+  .lesson-content-html .genflix-columns-2,
   .lesson-content-html .lesson-rich-text .genflix-columns-2,
   .lesson-hotspots-body .genflix-columns-2 {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .rich-text-content .genflix-columns-3,
+  .lesson-content-html .genflix-columns-3,
   .lesson-content-html .lesson-rich-text .genflix-columns-3,
   .lesson-hotspots-body .genflix-columns-3 {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .rich-text-content .genflix-columns-4,
+  .lesson-content-html .genflix-columns-4,
   .lesson-content-html .lesson-rich-text .genflix-columns-4,
   .lesson-hotspots-body .genflix-columns-4 {
     grid-template-columns: repeat(4, minmax(0, 1fr));

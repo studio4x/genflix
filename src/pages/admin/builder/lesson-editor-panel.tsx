@@ -48,22 +48,54 @@ const initialForm: LessonFormInput = {
   ends_at: '',
 }
 
-// Custom toolbar for ReactQuill
-const quillModules = {
+const FULL_QUILL_MODULES = {
   toolbar: [
-    [{ 'header': [1, 2, 3, false] }],
+    [{ 'header': [1, 2, 3, 4, false] }],
     ['bold', 'italic', 'underline', 'strike'],
     [{ 'list': 'ordered' }, { 'list': 'bullet' }],
-    [{ columns: [1, 2, 3, 4] }],
-    ['link', 'blockquote', 'code-block'],
-    ['clean']
+    [{ 'align': [] }],
+    [{ 'color': [] }, { 'background': [] }],
+    ['blockquote', 'code-block'],
+    ['link', 'image', 'video', 'table', 'hr'],
+    ['undo', 'redo', 'clean']
   ]
 }
 
-const quillFormats = [
+const FULL_QUILL_FORMATS = [
   'header', 'bold', 'italic', 'underline', 'strike',
-  'list', 'bullet', 'link', 'blockquote', 'code-block'
+  'list', 'bullet', 'align', 'color', 'background',
+  'link', 'blockquote', 'code-block'
 ]
+
+function createEmptyColumnsBlockContent(columnsCount = 2): string[] {
+  const safeCount = Math.min(4, Math.max(1, columnsCount))
+  return Array.from({ length: safeCount }, () => '<p></p>')
+}
+
+function resizeColumnsBlockContent(columns: string[], nextCount: number): string[] {
+  const safeCount = Math.min(4, Math.max(1, nextCount))
+  const next = [...columns]
+
+  if (next.length < safeCount) {
+    while (next.length < safeCount) {
+      next.push('<p></p>')
+    }
+    return next
+  }
+
+  if (next.length > safeCount) {
+    return next.slice(0, safeCount)
+  }
+
+  return next
+}
+
+function getColumnsGridClass(columnsCount: number): string {
+  if (columnsCount <= 1) return 'md:grid-cols-1'
+  if (columnsCount === 2) return 'md:grid-cols-2'
+  if (columnsCount === 3) return 'md:grid-cols-3'
+  return 'md:grid-cols-4'
+}
 
 export function LessonEditorPanel() {
   const { courseId, moduleId, lessonId } = useParams<{ courseId: string; moduleId: string; lessonId?: string }>()
@@ -168,11 +200,19 @@ export function LessonEditorPanel() {
     })
   }
 
-  const addBlock = (type: 'rich-text' | 'table' | 'image-hotspots') => {
+  const addBlock = (type: 'rich-text' | 'table' | 'image-hotspots' | 'columns', columnsCount = 2) => {
     if (type === 'image-hotspots') {
       setBlocks(prev => [...prev, {
         type,
         content: createEmptyLessonImageHotspotsBlockContent(),
+      }])
+      return
+    }
+
+    if (type === 'columns') {
+      setBlocks(prev => [...prev, {
+        type,
+        content: createEmptyColumnsBlockContent(columnsCount),
       }])
       return
     }
@@ -199,6 +239,7 @@ export function LessonEditorPanel() {
   }
 
   function getBlockLabel(block: LessonContentBlock) {
+    if (block.type === 'columns') return 'Bloco em Colunas'
     if (block.type === 'table') return 'Bloco de Tabela'
     if (block.type === 'image-hotspots') return 'Bloco de Hotspots'
     return 'Bloco de Texto Rico'
@@ -530,13 +571,65 @@ export function LessonEditorPanel() {
                                    onChange={(nextContent) => updateBlock(index, { ...block, content: nextContent })}
                                    onError={setError}
                                  />
+                              ) : block.type === 'columns' ? (
+                                 <div className="space-y-4">
+                                   <div className="flex flex-col gap-2 rounded-xl border border-slate-200 bg-white p-4 md:flex-row md:items-center md:justify-between">
+                                     <div>
+                                       <p className="text-xs font-black uppercase tracking-[0.16em] text-slate-500">Layout em colunas</p>
+                                       <p className="text-xs text-slate-500">Cada coluna possui um editor próprio para facilitar ajustes de conteúdo.</p>
+                                     </div>
+                                     <label className="inline-flex items-center gap-2 text-xs font-semibold text-slate-600">
+                                       Quantidade:
+                                       <select
+                                         className="rounded-md border border-slate-200 bg-white px-2 py-1 text-xs font-semibold"
+                                         value={block.content.length}
+                                         onChange={(event) => {
+                                           const nextCount = Number.parseInt(event.target.value, 10)
+                                           if (!Number.isFinite(nextCount)) return
+                                           updateBlock(index, {
+                                             ...block,
+                                             content: resizeColumnsBlockContent(block.content, nextCount),
+                                           })
+                                         }}
+                                       >
+                                         <option value="1">1 coluna</option>
+                                         <option value="2">2 colunas</option>
+                                         <option value="3">3 colunas</option>
+                                         <option value="4">4 colunas</option>
+                                       </select>
+                                     </label>
+                                   </div>
+                                   <div className={`grid grid-cols-1 gap-4 ${getColumnsGridClass(block.content.length)}`}>
+                                     {block.content.map((columnContent, columnIndex) => (
+                                       <div key={`column-editor-${index}-${columnIndex}`} className="rounded-xl border border-slate-200 bg-white p-3">
+                                         <p className="mb-2 text-[11px] font-black uppercase tracking-widest text-slate-500">
+                                           Coluna {columnIndex + 1}
+                                         </p>
+                                         <ReactQuill
+                                           theme="snow"
+                                           value={columnContent}
+                                           onChange={(value: string) => {
+                                             const nextColumns = [...block.content]
+                                             nextColumns[columnIndex] = value
+                                             updateBlock(index, { ...block, content: nextColumns })
+                                           }}
+                                           modules={FULL_QUILL_MODULES}
+                                           formats={FULL_QUILL_FORMATS}
+                                           enableHtmlMode
+                                           placeholder={`Escreva aqui o texto da coluna ${columnIndex + 1}...`}
+                                         />
+                                       </div>
+                                     ))}
+                                   </div>
+                                 </div>
                               ) : (
                                  <ReactQuill
                                    theme="snow"
                                    value={block.content}
                                    onChange={(value: string) => updateBlock(index, { ...block, content: value })}
-                                   modules={quillModules}
-                                   formats={quillFormats}
+                                   modules={FULL_QUILL_MODULES}
+                                   formats={FULL_QUILL_FORMATS}
+                                   enableHtmlMode
                                    placeholder="Escreva aqui o texto da aula..."
                                  />
                               )}
@@ -544,7 +637,7 @@ export function LessonEditorPanel() {
                         ))}
                       </div>
 
-                      <div className="flex items-center gap-4 p-4 border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50/50">
+                      <div className="flex flex-wrap items-center gap-3 p-4 border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50/50">
                         <span className="text-xs font-bold text-slate-500 mr-2">Adicionar Bloco:</span>
                         <Button type="button" variant="outline" size="sm" onClick={() => addBlock('rich-text')} className="bg-white hover:bg-blue-50 hover:text-blue-600 border-slate-200">
                            <Plus className="h-4 w-4 mr-2" /> Bloco de Texto
@@ -554,6 +647,20 @@ export function LessonEditorPanel() {
                         </Button>
                         <Button type="button" variant="outline" size="sm" onClick={() => addBlock('image-hotspots')} className="bg-white hover:bg-violet-50 hover:text-violet-600 border-slate-200">
                            <Plus className="h-4 w-4 mr-2" /> Bloco de Hotspots
+                        </Button>
+                        <div className="mx-1 h-6 w-px bg-slate-200" />
+                        <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Colunas:</span>
+                        <Button type="button" variant="outline" size="sm" onClick={() => addBlock('columns', 1)} className="bg-white hover:bg-cyan-50 hover:text-cyan-700 border-slate-200">
+                          1 coluna
+                        </Button>
+                        <Button type="button" variant="outline" size="sm" onClick={() => addBlock('columns', 2)} className="bg-white hover:bg-cyan-50 hover:text-cyan-700 border-slate-200">
+                          2 colunas
+                        </Button>
+                        <Button type="button" variant="outline" size="sm" onClick={() => addBlock('columns', 3)} className="bg-white hover:bg-cyan-50 hover:text-cyan-700 border-slate-200">
+                          3 colunas
+                        </Button>
+                        <Button type="button" variant="outline" size="sm" onClick={() => addBlock('columns', 4)} className="bg-white hover:bg-cyan-50 hover:text-cyan-700 border-slate-200">
+                          4 colunas
                         </Button>
                       </div>
                    </div>

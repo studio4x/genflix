@@ -10,6 +10,10 @@ export type LessonContentBlock =
       content: string
     }
   | {
+      type: 'columns'
+      content: string[]
+    }
+  | {
       type: 'table'
       content: string
     }
@@ -20,9 +24,12 @@ export type LessonContentBlock =
 
 const TABLE_PLACEHOLDER_PREFIX = '__TABLE_BLOCK__'
 const HOTSPOTS_PLACEHOLDER_PREFIX = '__HOTSPOTS_BLOCK__'
+const COLUMNS_PLACEHOLDER_PREFIX = '__COLUMNS_BLOCK__'
 const LESSON_IMAGE_HOTSPOTS_BLOCK_ATTR = 'data-hcm-block'
 const LESSON_IMAGE_HOTSPOTS_BLOCK_PAYLOAD_ATTR = 'data-hcm-payload'
 const LESSON_IMAGE_HOTSPOTS_BLOCK_TYPE = 'image-hotspots'
+const LESSON_COLUMNS_BLOCK_COUNT_ATTR = 'data-hcm-columns'
+const LESSON_COLUMNS_BLOCK_TYPE = 'columns'
 
 const ALLOWED_TABLE_TAGS = new Set([
   'table',
@@ -330,6 +337,86 @@ function buildHotspotsFallbackHtml(content: LessonImageHotspotsBlockContent): st
   `
 }
 
+function normalizeColumnsContent(columns: string[], fallbackCount = 2): string[] {
+  const safeFallbackCount = clamp(fallbackCount, 1, 4)
+  const normalized = columns
+    .map((column) => normalizeHtml(column))
+    .slice(0, 4)
+
+  const withFallback = normalized.length > 0
+    ? normalized
+    : Array.from({ length: safeFallbackCount }, () => '<p></p>')
+
+  while (withFallback.length < safeFallbackCount) {
+    withFallback.push('<p></p>')
+  }
+
+  return withFallback
+}
+
+function extractColumnsContent(element: Element): string[] {
+  const columns = Array.from(element.children)
+    .filter((child): child is HTMLElement => (
+      child instanceof HTMLElement && child.classList.contains('genflix-column')
+    ))
+    .map((column) => normalizeHtml(column.innerHTML))
+
+  const requestedCount = clamp(
+    Number.parseInt(element.getAttribute(LESSON_COLUMNS_BLOCK_COUNT_ATTR) ?? '', 10) || columns.length || 2,
+    1,
+    4,
+  )
+
+  return normalizeColumnsContent(columns, requestedCount)
+}
+
+function isColumnsBlockElement(element: Element): boolean {
+  if (element.getAttribute(LESSON_IMAGE_HOTSPOTS_BLOCK_ATTR) === LESSON_COLUMNS_BLOCK_TYPE) {
+    return true
+  }
+
+  return (
+    element.classList.contains('genflix-columns')
+    && Array.from(element.children).some((child) => (
+      child instanceof HTMLElement && child.classList.contains('genflix-column')
+    ))
+  )
+}
+
+function serializeLessonColumnsBlock(columns: string[]): string {
+  const normalizedColumns = normalizeColumnsContent(columns)
+  const count = clamp(normalizedColumns.length, 1, 4)
+  const columnsHtml = normalizedColumns
+    .slice(0, count)
+    .map((columnHtml) => `<div class="genflix-column">${columnHtml || '<p></p>'}</div>`)
+    .join('')
+
+  return `
+    <div
+      ${LESSON_IMAGE_HOTSPOTS_BLOCK_ATTR}="${LESSON_COLUMNS_BLOCK_TYPE}"
+      ${LESSON_COLUMNS_BLOCK_COUNT_ATTR}="${count}"
+      class="genflix-columns genflix-columns-${count}"
+    >
+      ${columnsHtml}
+    </div>
+  `
+}
+
+function extractLessonColumnsBlock(
+  element: Element,
+): LessonContentBlock | null {
+  if (!isColumnsBlockElement(element)) {
+    return null
+  }
+
+  const columns = extractColumnsContent(element)
+
+  return {
+    type: 'columns',
+    content: columns,
+  }
+}
+
 export function serializeLessonImageHotspotsBlock(
   content: LessonImageHotspotsBlockContent,
 ): string {
@@ -494,6 +581,27 @@ export function splitContent(html: string): LessonContentBlock[] {
       element.replaceWith(marker)
     })
 
+  Array.from(doc.querySelectorAll(`.${'genflix-columns'}, [${LESSON_IMAGE_HOTSPOTS_BLOCK_ATTR}="${LESSON_COLUMNS_BLOCK_TYPE}"]`))
+    .forEach((element, index) => {
+      if (!isColumnsBlockElement(element)) {
+        return
+      }
+
+      const placeholder = `${COLUMNS_PLACEHOLDER_PREFIX}_${index}__`
+      const parsedBlock = extractLessonColumnsBlock(element)
+
+      blockMap.set(
+        placeholder,
+        parsedBlock ?? {
+          type: 'rich-text',
+          content: normalizeHtml((element as HTMLElement).innerHTML),
+        },
+      )
+
+      const marker = doc.createTextNode(placeholder)
+      element.replaceWith(marker)
+    })
+
   const tableMap = new Map<string, string>()
 
   Array.from(doc.querySelectorAll('table')).forEach((table, index) => {
@@ -513,7 +621,7 @@ export function splitContent(html: string): LessonContentBlock[] {
 
   const blocks: LessonContentBlock[] = []
   const placeholderRegex = new RegExp(
-    `(${TABLE_PLACEHOLDER_PREFIX}_\\d+__|${HOTSPOTS_PLACEHOLDER_PREFIX}_\\d+__)`,
+    `(${TABLE_PLACEHOLDER_PREFIX}_\\d+__|${HOTSPOTS_PLACEHOLDER_PREFIX}_\\d+__|${COLUMNS_PLACEHOLDER_PREFIX}_\\d+__)`,
     'g',
   )
   const parts = rawHtml.split(placeholderRegex)
@@ -574,6 +682,10 @@ export function mergeContent(blocks: LessonContentBlock[]): string {
 
       if (block.type === 'image-hotspots') {
         return normalizeHtml(serializeLessonImageHotspotsBlock(block.content))
+      }
+
+      if (block.type === 'columns') {
+        return normalizeHtml(serializeLessonColumnsBlock(block.content))
       }
 
       return normalizeHtml(block.content)
