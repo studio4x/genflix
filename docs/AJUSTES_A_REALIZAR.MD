@@ -266,5 +266,6 @@
 
 [OK] T84 - ALTERAR A COR DO FUNDO DA SEÇÃO "CUYRSOS POR AREA DE CONHECIMENTO" NA HOME. INSERIR AZUL CLARO.
 
-[ ] t85 - Na página recursos, o editor visual deverá ter a opção de trocar/inserir icones no quadros existentes. Além disso, precisamos implementar um botão para abrir um video de instrução. Precisa também adicionar na página admin uma página para inserir os videos de cada recurso.. Os recursos que não tiverem videos adicionados, não aparecerá o botão de ver video.
+[OK] t85 - Na página recursos, o editor visual deverá ter a opção de trocar/inserir icones no quadros existentes. Além disso, precisamos implementar um botão para abrir um video de instrução. Precisa também adicionar na página admin uma página para inserir os videos de cada recurso.. Os recursos que não tiverem videos adicionados, não aparecerá o botão de ver video.
+
 

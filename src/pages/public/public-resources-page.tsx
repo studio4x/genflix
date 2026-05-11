@@ -1,6 +1,7 @@
 import { ArrowRight, X } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
+import type { LucideIcon } from 'lucide-react'
 
 import { useAuth } from '@/app/providers/auth-provider'
 import { GenflixCtaButton } from '@/components/public/genflix-cta-button'
@@ -9,10 +10,16 @@ import { GenflixPublicFooter } from '@/components/public/genflix-public-footer'
 import { GenflixPublicHeader } from '@/components/public/genflix-public-header'
 import { BannerPlacementSlot } from '@/features/banners/banner-placement-slot'
 import {
-  genflixNavLinks,
-  genflixResourceItems,
-  type GenflixResourceItem,
+  genflixNavLinks
 } from '@/features/public/genflix-site-content'
+import {
+  createResourcesItemsFallback,
+  findResourceFallbackByLabel,
+  normalizeResourcesItems,
+  resolveResourceVideoUrl,
+} from '@/features/public/genflix-resource-items-editor'
+import { renderSiteIconVisual } from '@/features/site-editor/site-icons'
+import type { EditableListItem } from '@/features/site-editor/types'
 import { EditableList, EditableText, isEditableItemVisible, useEditableValue } from '@/features/site-editor/visual-editor'
 
 interface ResourcePopupContent {
@@ -20,6 +27,12 @@ interface ResourcePopupContent {
   lead?: string
   paragraphs: string[]
   bullets?: string[]
+}
+
+type ResourcePopupItem = EditableListItem & {
+  label: string
+  description: string
+  fallbackIcon: LucideIcon
 }
 
 const exercisePopupContent: ResourcePopupContent = {
@@ -123,21 +136,49 @@ const resourcePopupContents: Record<string, ResourcePopupContent> = {
   'Preenchimento de lacunas': exercisePopupContent,
 }
 
-function buildFallbackPopupContent(item: GenflixResourceItem): ResourcePopupContent {
+function buildFallbackPopupContent(item: EditableListItem): ResourcePopupContent {
   return {
-    title: item.label,
-    paragraphs: [item.description],
+    title: item.label ?? item.title ?? 'Recurso',
+    paragraphs: [item.description ?? ''],
   }
+}
+
+function getItemMetadata(item: EditableListItem) {
+  if (!item.metadata || typeof item.metadata !== 'object' || Array.isArray(item.metadata)) {
+    return {} as Record<string, unknown>
+  }
+  return item.metadata as Record<string, unknown>
+}
+
+function renderResourceIcon(item: ResourcePopupItem, className: string) {
+  const metadata = getItemMetadata(item)
+  const iconKey = typeof metadata.iconKey === 'string' ? metadata.iconKey : null
+  const iconImageUrl = typeof metadata.iconImageUrl === 'string' ? metadata.iconImageUrl : null
+  const iconAlt = typeof metadata.iconImageAlt === 'string' ? metadata.iconImageAlt : null
+  const iconColor = typeof metadata.iconColor === 'string' ? metadata.iconColor : null
+
+  if (iconKey || iconImageUrl) {
+    return renderSiteIconVisual({
+      iconKey,
+      iconImageUrl,
+      iconAlt: iconAlt || item.label || item.title || 'Recurso',
+      iconColor,
+      className,
+    })
+  }
+
+  const FallbackIcon = item.fallbackIcon
+  return <FallbackIcon className={className} />
 }
 
 function ResourcePopup({
   item,
   onClose,
 }: {
-  item: GenflixResourceItem
+  item: ResourcePopupItem
   onClose: () => void
 }) {
-  const Icon = item.icon
+  const videoUrl = resolveResourceVideoUrl(item)
   const fallbackContent = resourcePopupContents[item.label] ?? buildFallbackPopupContent(item)
   const content = useEditableValue(
     `resources.popup.${item.label}`,
@@ -169,7 +210,7 @@ function ResourcePopup({
         <aside className="hidden w-[285px] shrink-0 flex-col justify-between bg-gradient-to-b from-[#075a67] to-[#042f38] px-10 py-14 text-white md:flex">
           <div>
             <div className="flex h-32 w-32 items-center justify-center text-[#46ff2f]">
-              <Icon className="h-24 w-24 stroke-[1.4]" />
+              {renderResourceIcon(item, 'h-24 w-24 stroke-[1.4]')}
             </div>
             <div className="mt-20 flex gap-2">
               {Array.from({ length: 14 }).map((_, index) => (
@@ -191,7 +232,7 @@ function ResourcePopup({
         <section className="min-w-0 flex-1 overflow-y-auto px-7 py-16 sm:px-12 md:px-16 md:py-20">
           <div className="mx-auto max-w-[620px]">
             <div className="mx-auto mb-8 flex h-16 w-16 items-center justify-center rounded-3xl bg-[#075a67] text-[#46ff2f] md:hidden">
-              <Icon className="h-9 w-9 stroke-[1.5]" />
+              {renderResourceIcon(item, 'h-9 w-9 stroke-[1.5]')}
             </div>
 
             <h2
@@ -212,6 +253,16 @@ function ResourcePopup({
               {content.paragraphs.map((paragraph) => (
                 <p key={paragraph}>{paragraph}</p>
               ))}
+
+              {videoUrl ? (
+                <div className="pt-2">
+                  <GenflixCtaButton asChild className="px-5 py-3">
+                    <a href={videoUrl} target="_blank" rel="noreferrer">
+                      Ver vídeo de instrução
+                    </a>
+                  </GenflixCtaButton>
+                </div>
+              ) : null}
 
               {content.bullets?.length ? (
                 <ul className="grid gap-3 pt-1 text-[1.25rem] leading-relaxed sm:grid-cols-2">
@@ -235,27 +286,28 @@ export function PublicResourcesPage() {
   const { isLoading, user, roles } = useAuth()
   const [selectedResourceLabel, setSelectedResourceLabel] = useState<string | null>(null)
   const waitingRoleResolution = !!user && roles.length === 0
-  const resourceItems = useEditableValue(
+  const resourceItemsRaw = useEditableValue(
     'resources.items',
-    genflixResourceItems.map((item) => ({
-      id: item.label,
-      label: item.label,
-      description: item.description,
-    })),
+    createResourcesItemsFallback(),
+  )
+  const resourceItems = useMemo(
+    () => normalizeResourcesItems(resourceItemsRaw),
+    [resourceItemsRaw],
   )
   const selectedResource = useMemo(
-    () => {
+    (): ResourcePopupItem | null => {
       if (!selectedResourceLabel) return null
-      const original = genflixResourceItems.find((item) => item.label === selectedResourceLabel)
-      if (original) return original
+
       const custom = resourceItems.find((item) => item.label === selectedResourceLabel)
-      return custom
-        ? {
-            label: custom.label ?? selectedResourceLabel,
-            description: custom.description ?? '',
-            icon: genflixResourceItems[0].icon,
-          }
-        : null
+      if (!custom) return null
+
+      const fallback = findResourceFallbackByLabel(custom.label)
+      return {
+        ...custom,
+        label: custom.label ?? selectedResourceLabel,
+        description: custom.description ?? '',
+        fallbackIcon: fallback.icon,
+      }
     },
     [resourceItems, selectedResourceLabel],
   )
@@ -312,19 +364,25 @@ export function PublicResourcesPage() {
           <div className="mt-12 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             <EditableList entryKey="resources.items" fallback={resourceItems} label="Cards de recursos">
               {(items) => items.filter(isEditableItemVisible).map((item) => {
-              const fallback = genflixResourceItems.find((resource) => resource.label === item.label) ?? genflixResourceItems[0]
-              const Icon = fallback.icon
+              const fallback = findResourceFallbackByLabel(item.label)
+              const popupItem: ResourcePopupItem = {
+                ...item,
+                label: item.label ?? item.title ?? item.id,
+                description: item.description ?? '',
+                fallbackIcon: fallback.icon,
+              }
+              const videoUrl = resolveResourceVideoUrl(popupItem)
 
               return (
                 <button
                   type="button"
-                  key={item.label}
-                  onClick={() => setSelectedResourceLabel(item.label ?? null)}
+                  key={item.id}
+                  onClick={() => setSelectedResourceLabel(popupItem.label ?? null)}
                   className="group rounded-[18px] border border-[#D8E6EB] bg-[#F2F7F9] px-5 py-5 text-left shadow-[0_16px_36px_rgba(21,50,59,0.04)] transition-transform duration-300 hover:-translate-y-1 hover:shadow-[0_20px_42px_rgba(19,152,183,0.12)] focus:outline-none focus:ring-4 focus:ring-[#1398B7]/18"
                 >
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#E8F6FA] text-[#1398B7]">
-                      <Icon className="h-4.5 w-4.5" />
+                      {renderResourceIcon(popupItem, 'h-4.5 w-4.5')}
                     </div>
                     <span className="text-[#1398B7] transition-transform group-hover:translate-x-1">
                       <ArrowRight className="h-4 w-4" />
@@ -333,6 +391,19 @@ export function PublicResourcesPage() {
 
                   <h2 className="mt-5 text-[1rem] font-bold leading-6 text-[#183139]">{item.label}</h2>
                   <p className="mt-3 text-sm leading-7 text-[#667980]">{item.description}</p>
+                  {videoUrl ? (
+                    <div className="mt-4">
+                      <a
+                        href={videoUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        onClick={(event) => event.stopPropagation()}
+                        className="inline-flex items-center rounded-full border border-[#1398B7]/30 bg-white px-3 py-1.5 text-xs font-black uppercase tracking-[0.12em] text-[#0F7E99] hover:bg-[#E8F6FA]"
+                      >
+                        Ver vídeo de instrução
+                      </a>
+                    </div>
+                  ) : null}
                 </button>
               )
             })}

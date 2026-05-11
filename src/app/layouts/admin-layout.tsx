@@ -41,6 +41,7 @@ const adminNavGroups: AdminNavGroup[] = [
       { to: '/admin/botoes-aula', label: 'Botoes de Aula' },
       { to: '/admin/banners', label: 'Banners' },
       { to: '/admin/site-editor', label: 'Editor Visual' },
+      { to: '/admin/recursos/videos', label: 'Videos de Recursos' },
       { to: '/admin/formularios', label: 'Formularios' },
       { to: '/admin/tipos-quiz', label: 'Tipos de Quiz' },
     ],

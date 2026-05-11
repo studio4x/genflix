@@ -74,6 +74,7 @@ const AdminBannersPage = lazy(async () => ({ default: (await import('@/pages/adm
 const AdminBrandingSettingsPage = lazy(async () => ({ default: (await import('@/pages/admin/admin-branding-settings-page')).AdminBrandingSettingsPage }))
 const AdminOperationalPendingPage = lazy(async () => ({ default: (await import('@/pages/admin/admin-operational-pending-page')).AdminOperationalPendingPage }))
 const AdminSiteEditorPage = lazy(async () => ({ default: (await import('@/pages/admin/admin-site-editor-page')).AdminSiteEditorPage }))
+const AdminResourceVideosPage = lazy(async () => ({ default: (await import('@/pages/admin/admin-resource-videos-page')).AdminResourceVideosPage }))
 const CourseOverviewPanel = lazy(async () => ({ default: (await import('@/pages/admin/builder/course-overview-panel')).CourseOverviewPanel }))
 const ModuleEditorPanel = lazy(async () => ({ default: (await import('@/pages/admin/builder/module-editor-panel')).ModuleEditorPanel }))
 const LessonEditorPanel = lazy(async () => ({ default: (await import('@/pages/admin/builder/lesson-editor-panel')).LessonEditorPanel }))
@@ -515,6 +516,10 @@ export const appRouter = createBrowserRouter([
           {
             path: '/admin/site-editor',
             element: withRouteSuspense(<AdminSiteEditorPage />),
+          },
+          {
+            path: '/admin/recursos/videos',
+            element: withRouteSuspense(<AdminResourceVideosPage />),
           },
         ],
       },
