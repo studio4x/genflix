@@ -83,6 +83,50 @@ export function AdminResourceVideosPage() {
     }))
   }
 
+  function updateCardLabel(index: number, nextValue: string) {
+    setItems((current) => current.map((item, currentIndex) => (
+      currentIndex === index
+        ? {
+          ...item,
+          label: nextValue,
+        }
+        : item
+    )))
+  }
+
+  function updateCardDescription(index: number, nextValue: string) {
+    setItems((current) => current.map((item, currentIndex) => (
+      currentIndex === index
+        ? {
+          ...item,
+          description: nextValue,
+        }
+        : item
+    )))
+  }
+
+  function updatePopupField(index: number, field: 'popupTitle' | 'popupBody', nextValue: string) {
+    setItems((current) => current.map((item, currentIndex) => {
+      if (currentIndex !== index) {
+        return item
+      }
+
+      const metadata = toMetadata(item)
+      const trimmed = nextValue.trim()
+
+      if (trimmed === '') {
+        delete metadata[field]
+      } else {
+        metadata[field] = nextValue
+      }
+
+      return {
+        ...item,
+        metadata: Object.keys(metadata).length > 0 ? metadata : undefined,
+      }
+    }))
+  }
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setIsSaving(true)
@@ -174,6 +218,14 @@ export function AdminResourceVideosPage() {
               const metadata = toMetadata(item)
               return typeof metadata.instructionalVideoUrl === 'string' ? metadata.instructionalVideoUrl : ''
             })()
+            const popupTitle = (() => {
+              const metadata = toMetadata(item)
+              return typeof metadata.popupTitle === 'string' ? metadata.popupTitle : ''
+            })()
+            const popupBody = (() => {
+              const metadata = toMetadata(item)
+              return typeof metadata.popupBody === 'string' ? metadata.popupBody : ''
+            })()
 
             const isConfigured = resolveResourceVideoUrl(item) !== ''
 
@@ -195,7 +247,46 @@ export function AdminResourceVideosPage() {
                   </span>
                 </div>
 
-                <p className="mt-2 text-sm leading-6 text-[#5F7077]">{item.description || 'Sem descricao cadastrada.'}</p>
+                <div className="mt-4 grid gap-3 md:grid-cols-2">
+                  <label className="grid gap-2">
+                    <span className="text-[10px] font-black uppercase tracking-[0.16em] text-[#5F7077]">Texto do card: titulo</span>
+                    <input
+                      value={item.label ?? ''}
+                      onChange={(event) => updateCardLabel(index, event.target.value)}
+                      placeholder="Ex.: Videos (mas nao apenas)"
+                      className="h-11 rounded-[14px] border border-[#D8E6EB] bg-white px-4 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]"
+                    />
+                  </label>
+                  <label className="grid gap-2 md:col-span-2">
+                    <span className="text-[10px] font-black uppercase tracking-[0.16em] text-[#5F7077]">Texto do card: descricao</span>
+                    <textarea
+                      value={item.description ?? ''}
+                      onChange={(event) => updateCardDescription(index, event.target.value)}
+                      rows={4}
+                      placeholder="Texto exibido no card do recurso."
+                      className="rounded-[14px] border border-[#D8E6EB] bg-white px-4 py-3 text-sm font-semibold leading-6 text-[#15323b] outline-none focus:border-[#1398B7]"
+                    />
+                  </label>
+                  <label className="grid gap-2">
+                    <span className="text-[10px] font-black uppercase tracking-[0.16em] text-[#5F7077]">Texto do popup: titulo</span>
+                    <input
+                      value={popupTitle}
+                      onChange={(event) => updatePopupField(index, 'popupTitle', event.target.value)}
+                      placeholder="Ex.: Videos? Claro, mas nao apenas"
+                      className="h-11 rounded-[14px] border border-[#D8E6EB] bg-white px-4 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]"
+                    />
+                  </label>
+                  <label className="grid gap-2 md:col-span-2">
+                    <span className="text-[10px] font-black uppercase tracking-[0.16em] text-[#5F7077]">Texto do popup: conteudo</span>
+                    <textarea
+                      value={popupBody}
+                      onChange={(event) => updatePopupField(index, 'popupBody', event.target.value)}
+                      rows={6}
+                      placeholder="Conteudo exibido no popup ao clicar no recurso."
+                      className="rounded-[14px] border border-[#D8E6EB] bg-white px-4 py-3 text-sm font-semibold leading-6 text-[#15323b] outline-none focus:border-[#1398B7]"
+                    />
+                  </label>
+                </div>
 
                 <label className="mt-4 grid gap-2">
                   <span className="text-[10px] font-black uppercase tracking-[0.16em] text-[#5F7077]">Link do video de instrucao</span>

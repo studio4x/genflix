@@ -137,6 +137,17 @@ const resourcePopupContents: Record<string, ResourcePopupContent> = {
 }
 
 function buildFallbackPopupContent(item: EditableListItem): ResourcePopupContent {
+  const metadata = getItemMetadata(item)
+  const popupTitle = typeof metadata.popupTitle === 'string' ? metadata.popupTitle.trim() : ''
+  const popupBody = typeof metadata.popupBody === 'string' ? metadata.popupBody.trim() : ''
+
+  if (popupBody) {
+    return {
+      title: popupTitle || item.label || item.title || 'Recurso',
+      paragraphs: [popupBody],
+    }
+  }
+
   return {
     title: item.label ?? item.title ?? 'Recurso',
     paragraphs: [item.description ?? ''],
@@ -208,7 +219,11 @@ function ResourcePopup({
   onClose: () => void
 }) {
   const videoUrl = resolveResourceVideoUrl(item)
-  const fallbackContent = resourcePopupContents[item.label] ?? buildFallbackPopupContent(item)
+  const metadataFallback = buildFallbackPopupContent(item)
+  const legacyFallback = resourcePopupContents[item.label]
+  const fallbackContent = metadataFallback.paragraphs[0]?.trim()
+    ? metadataFallback
+    : (legacyFallback ?? metadataFallback)
   const content = useEditableValue(
     `resources.popup.${item.label}`,
     fallbackContent as unknown as Record<string, unknown>,
