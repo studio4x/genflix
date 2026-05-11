@@ -62,10 +62,63 @@ function buildPopupJsonValue(title: string, body: string) {
   }
 }
 
+function normalizeItemForSave(item: EditableListItem): EditableListItem {
+  const metadata = toMetadata(item)
+  const instructionalVideoUrl = typeof metadata.instructionalVideoUrl === 'string'
+    ? metadata.instructionalVideoUrl.trim()
+    : ''
+  const popupTitle = typeof metadata.popupTitle === 'string' ? metadata.popupTitle.trim() : ''
+  const popupBody = typeof metadata.popupBody === 'string' ? metadata.popupBody.trim() : ''
+  const cardDescription = (item.description ?? '').trim()
+  const resolvedPopupBody = popupBody || cardDescription
+
+  if (instructionalVideoUrl === '') {
+    delete metadata.instructionalVideoUrl
+  } else {
+    metadata.instructionalVideoUrl = instructionalVideoUrl
+  }
+
+  if (popupTitle === '') {
+    delete metadata.popupTitle
+  } else {
+    metadata.popupTitle = popupTitle
+  }
+
+  if (resolvedPopupBody === '') {
+    delete metadata.popupBody
+  } else {
+    metadata.popupBody = resolvedPopupBody
+  }
+
+  return {
+    ...item,
+    metadata: Object.keys(metadata).length > 0 ? metadata : undefined,
+  }
+}
+
+function resolvePopupPayload(item: EditableListItem) {
+  const label = item.label?.trim() ?? ''
+  if (!label) {
+    return null
+  }
+
+  const metadata = toMetadata(item)
+  const popupTitle = typeof metadata.popupTitle === 'string' ? metadata.popupTitle.trim() : ''
+  const popupBody = typeof metadata.popupBody === 'string' ? metadata.popupBody.trim() : ''
+  const cardDescription = (item.description ?? '').trim()
+
+  return {
+    label,
+    title: popupTitle || label,
+    body: popupBody || cardDescription,
+  }
+}
+
 export function AdminResourceVideosPage() {
   const [items, setItems] = useState<EditableListItem[]>(createResourcesItemsFallback())
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
+  const [savingCardIndex, setSavingCardIndex] = useState<number | null>(null)
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const popupBaselineRef = useRef<Map<string, { title: string; body: string }>>(new Map())
@@ -221,30 +274,14 @@ export function AdminResourceVideosPage() {
     }))
   }
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
+  async function saveResources(targetIndex: number | null = null) {
     setIsSaving(true)
+    setSavingCardIndex(targetIndex)
     setMessage(null)
     setError(null)
 
     try {
-      const normalizedItems = items.map((item) => {
-        const metadata = toMetadata(item)
-        const instructionalVideoUrl = typeof metadata.instructionalVideoUrl === 'string'
-          ? metadata.instructionalVideoUrl.trim()
-          : ''
-
-        if (instructionalVideoUrl === '') {
-          delete metadata.instructionalVideoUrl
-        } else {
-          metadata.instructionalVideoUrl = instructionalVideoUrl
-        }
-
-        return {
-          ...item,
-          metadata: Object.keys(metadata).length > 0 ? metadata : undefined,
-        }
-      })
+      const normalizedItems = items.map(normalizeItemForSave)
 
       await saveSiteContentEntry({
         pageKey: 'resources',
@@ -258,51 +295,59 @@ export function AdminResourceVideosPage() {
         },
       })
 
-      await Promise.all(
-        normalizedItems.map(async (item) => {
-          const label = item.label?.trim() ?? ''
-          if (!label) {
-            return
-          }
+      const popupItems = targetIndex === null
+        ? normalizedItems
+        : normalizedItems[targetIndex]
+          ? [normalizedItems[targetIndex]]
+          : []
 
-          const metadata = toMetadata(item)
-          const popupTitle = typeof metadata.popupTitle === 'string' ? metadata.popupTitle : ''
-          const popupBody = typeof metadata.popupBody === 'string' ? metadata.popupBody : ''
-          const baseline = popupBaselineRef.current.get(label)
-          const normalizedTitle = popupTitle.trim() || label
-          const normalizedBody = popupBody.trim()
+      await Promise.all(popupItems.map(async (item) => {
+        const payload = resolvePopupPayload(item)
+        if (!payload) {
+          return
+        }
 
-          if (baseline && baseline.title.trim() === normalizedTitle && baseline.body.trim() === normalizedBody) {
-            return
-          }
+        const baseline = popupBaselineRef.current.get(payload.label)
+        if (baseline && baseline.title.trim() === payload.title && baseline.body.trim() === payload.body) {
+          return
+        }
 
-          await saveSiteContentEntry({
-            pageKey: 'resources',
-            entryKey: `resources.popup.${label}`,
-            entryType: 'json',
-            value: buildPopupJsonValue(normalizedTitle, normalizedBody),
-            schema: {},
-          })
-        }),
-      )
+        await saveSiteContentEntry({
+          pageKey: 'resources',
+          entryKey: `resources.popup.${payload.label}`,
+          entryType: 'json',
+          value: buildPopupJsonValue(payload.title, payload.body),
+          schema: {},
+        })
+      }))
 
       setItems(normalizedItems)
       popupBaselineRef.current = new Map(
         normalizedItems.map((item) => {
-          const label = item.label?.trim() ?? ''
-          const metadata = toMetadata(item)
-          const popupTitle = typeof metadata.popupTitle === 'string' ? metadata.popupTitle.trim() : ''
-          const popupBody = typeof metadata.popupBody === 'string' ? metadata.popupBody.trim() : ''
+          const payload = resolvePopupPayload(item)
+          if (!payload) {
+            return ['', { title: '', body: '' }] as const
+          }
 
-          return [label, { title: popupTitle || label, body: popupBody }] as const
+          return [payload.label, { title: payload.title, body: payload.body }] as const
         }).filter(([label]) => label.length > 0),
       )
-      setMessage('Videos de instrucao salvos com sucesso.')
+      setMessage(targetIndex === null ? 'Videos de instrucao salvos com sucesso.' : `Recurso ${targetIndex + 1} salvo com sucesso.`)
     } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : 'Nao foi possivel salvar os videos dos recursos.')
+      setError(saveError instanceof Error ? saveError.message : 'Nao foi possivel salvar os dados dos recursos.')
     } finally {
       setIsSaving(false)
+      setSavingCardIndex(null)
     }
+  }
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    await saveResources(null)
+  }
+
+  async function handleSaveCard(index: number) {
+    await saveResources(index)
   }
 
   return (
@@ -429,6 +474,17 @@ export function AdminResourceVideosPage() {
                     className="h-11 rounded-[14px] border border-[#D8E6EB] bg-white px-4 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]"
                   />
                 </label>
+
+                <div className="mt-4 flex justify-end">
+                  <Button
+                    type="button"
+                    onClick={() => void handleSaveCard(index)}
+                    disabled={isSaving || isLoading}
+                    className="rounded-none bg-[#1398B7] font-black text-white hover:bg-[#0F7E99]"
+                  >
+                    {isSaving && savingCardIndex === index ? 'Salvando...' : 'Salvar recurso'}
+                  </Button>
+                </div>
               </article>
             )
           })}
