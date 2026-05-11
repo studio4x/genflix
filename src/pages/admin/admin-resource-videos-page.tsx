@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type FormEvent } from 'react'
+import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 
 import { Button } from '@/components/ui/button'
 import {
@@ -16,12 +16,59 @@ function toMetadata(item: EditableListItem) {
   return { ...item.metadata as Record<string, unknown> }
 }
 
+function normalizePopupEntry(value: unknown): { title: string; body: string } | null {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return null
+  }
+
+  const record = value as Record<string, unknown>
+  const title = typeof record.title === 'string' ? record.title.trim() : ''
+  const lead = typeof record.lead === 'string' ? record.lead.trim() : ''
+  const paragraphs = Array.isArray(record.paragraphs)
+    ? record.paragraphs
+      .map((paragraph) => (typeof paragraph === 'string' ? paragraph.trim() : ''))
+      .filter(Boolean)
+    : []
+  const bullets = Array.isArray(record.bullets)
+    ? record.bullets
+      .map((bullet) => (typeof bullet === 'string' ? bullet.trim() : ''))
+      .filter(Boolean)
+    : []
+
+  const bodyParts = [lead, ...paragraphs]
+  if (bullets.length > 0) {
+    bodyParts.push(bullets.map((bullet) => `- ${bullet}`).join('\n'))
+  }
+
+  const body = bodyParts.filter(Boolean).join('\n\n').trim()
+  if (!title && !body) {
+    return null
+  }
+
+  return { title, body }
+}
+
+function parsePopupBodyToParagraphs(value: string) {
+  return value
+    .split(/\n{2,}/)
+    .map((part) => part.trim())
+    .filter(Boolean)
+}
+
+function buildPopupJsonValue(title: string, body: string) {
+  return {
+    title: title.trim(),
+    paragraphs: parsePopupBodyToParagraphs(body),
+  }
+}
+
 export function AdminResourceVideosPage() {
   const [items, setItems] = useState<EditableListItem[]>(createResourcesItemsFallback())
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const popupBaselineRef = useRef<Map<string, { title: string; body: string }>>(new Map())
 
   const configuredCount = useMemo(
     () => items.filter((item) => resolveResourceVideoUrl(item) !== '').length,
@@ -39,8 +86,55 @@ export function AdminResourceVideosPage() {
         const entries = await fetchSiteContent('resources')
         const resourcesEntry = entries.find((entry) => entry.page_key === 'resources' && entry.entry_key === 'resources.items')
         const normalized = normalizeResourcesItems(resourcesEntry?.value)
+        const popupEntries = new Map(
+          entries
+            .filter((entry) => entry.page_key === 'resources' && entry.entry_key.startsWith('resources.popup.'))
+            .map((entry) => [entry.entry_key, normalizePopupEntry(entry.value)]),
+        )
+        const popupBaseline = new Map<string, { title: string; body: string }>()
+        for (const [entryKey, value] of popupEntries.entries()) {
+          if (!value) {
+            continue
+          }
+
+          const label = entryKey.replace('resources.popup.', '').trim()
+          if (label) {
+            popupBaseline.set(label, value)
+          }
+        }
+
+        const mergedWithPopupEntries = normalized.map((item) => {
+          const label = item.label?.trim() ?? ''
+          if (!label) {
+            return item
+          }
+
+          const popupEntry = popupEntries.get(`resources.popup.${label}`)
+          if (!popupEntry) {
+            return item
+          }
+
+          const metadata = toMetadata(item)
+          const currentTitle = typeof metadata.popupTitle === 'string' ? metadata.popupTitle.trim() : ''
+          const currentBody = typeof metadata.popupBody === 'string' ? metadata.popupBody.trim() : ''
+
+          if (!currentTitle && popupEntry.title) {
+            metadata.popupTitle = popupEntry.title
+          }
+
+          if (!currentBody && popupEntry.body) {
+            metadata.popupBody = popupEntry.body
+          }
+
+          return {
+            ...item,
+            metadata: Object.keys(metadata).length > 0 ? metadata : undefined,
+          }
+        })
+
         if (isMounted) {
-          setItems(normalized)
+          popupBaselineRef.current = popupBaseline
+          setItems(mergedWithPopupEntries)
         }
       } catch (loadError) {
         if (isMounted) {
@@ -164,7 +258,45 @@ export function AdminResourceVideosPage() {
         },
       })
 
+      await Promise.all(
+        normalizedItems.map(async (item) => {
+          const label = item.label?.trim() ?? ''
+          if (!label) {
+            return
+          }
+
+          const metadata = toMetadata(item)
+          const popupTitle = typeof metadata.popupTitle === 'string' ? metadata.popupTitle : ''
+          const popupBody = typeof metadata.popupBody === 'string' ? metadata.popupBody : ''
+          const baseline = popupBaselineRef.current.get(label)
+          const normalizedTitle = popupTitle.trim() || label
+          const normalizedBody = popupBody.trim()
+
+          if (baseline && baseline.title.trim() === normalizedTitle && baseline.body.trim() === normalizedBody) {
+            return
+          }
+
+          await saveSiteContentEntry({
+            pageKey: 'resources',
+            entryKey: `resources.popup.${label}`,
+            entryType: 'json',
+            value: buildPopupJsonValue(normalizedTitle, normalizedBody),
+            schema: {},
+          })
+        }),
+      )
+
       setItems(normalizedItems)
+      popupBaselineRef.current = new Map(
+        normalizedItems.map((item) => {
+          const label = item.label?.trim() ?? ''
+          const metadata = toMetadata(item)
+          const popupTitle = typeof metadata.popupTitle === 'string' ? metadata.popupTitle.trim() : ''
+          const popupBody = typeof metadata.popupBody === 'string' ? metadata.popupBody.trim() : ''
+
+          return [label, { title: popupTitle || label, body: popupBody }] as const
+        }).filter(([label]) => label.length > 0),
+      )
       setMessage('Videos de instrucao salvos com sucesso.')
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : 'Nao foi possivel salvar os videos dos recursos.')
