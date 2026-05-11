@@ -290,7 +290,7 @@ export interface Lesson {
   description: string | null
   position: number
   is_required: boolean
-  lesson_type: 'video' | 'text' | 'hybrid'
+  lesson_type: 'video' | 'text' | 'hybrid' | 'file'
   youtube_url: string | null
   text_content: string | null
   estimated_minutes: number
@@ -502,7 +502,7 @@ export interface StudentLessonWithProgress {
   title: string
   description: string | null
   is_required: boolean
-  lesson_type: 'video' | 'text' | 'hybrid'
+  lesson_type: 'video' | 'text' | 'hybrid' | 'file'
   youtube_url: string | null
   text_content: string | null
   estimated_minutes: number

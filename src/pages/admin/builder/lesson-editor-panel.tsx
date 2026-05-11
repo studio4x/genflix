@@ -275,7 +275,15 @@ export function LessonEditorPanel() {
 
     try {
       const finalHtml = mergeContent(blocks)
-      const dataToSave = { ...form, text_content: finalHtml }
+      const dataToSave: LessonFormInput = {
+        ...form,
+        youtube_url: (form.lesson_type === 'video' || form.lesson_type === 'hybrid')
+          ? (form.youtube_url?.trim() ?? '')
+          : '',
+        text_content: (form.lesson_type === 'text' || form.lesson_type === 'hybrid')
+          ? finalHtml
+          : '',
+      }
 
       if (!isNew && lessonId) {
         await updateLesson(lessonId, dataToSave)

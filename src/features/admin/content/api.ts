@@ -1048,7 +1048,7 @@ export interface ImportModuleData {
   lessons?: {
     title: string
     description?: string
-    lesson_type: 'video' | 'text' | 'hybrid'
+    lesson_type: 'video' | 'text' | 'hybrid' | 'file'
     youtube_url?: string
     text_content?: string
     estimated_minutes?: number
@@ -1071,7 +1071,7 @@ export interface ExportModuleData {
   lessons?: {
     title: string
     description?: string
-    lesson_type: 'video' | 'text' | 'hybrid'
+    lesson_type: 'video' | 'text' | 'hybrid' | 'file'
     youtube_url?: string
     text_content?: string
     estimated_minutes?: number

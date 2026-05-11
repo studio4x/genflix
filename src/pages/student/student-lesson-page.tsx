@@ -34,11 +34,25 @@ import type {
   StudentLessonWithProgress,
 } from '@/types/content'
 
-function extractVideoId(url: string | null) {
+function getLessonVideoSource(url: string | null): { type: 'youtube'; value: string } | { type: 'direct'; value: string } | { type: 'asset' } | null {
   if (!url) return null
+
+  if (url.startsWith('asset:')) {
+    return { type: 'asset' }
+  }
+
   const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/
   const match = url.match(regExp)
-  return match && match[2].length === 11 ? match[2] : null
+  if (match && match[2].length === 11) {
+    return { type: 'youtube', value: match[2] }
+  }
+
+  const isDirectVideo = /^https?:\/\/[^\s]+\.(mp4|webm|ogg|ogv|m4v|mov)(\?.*)?(#.*)?$/i.test(url)
+  if (isDirectVideo) {
+    return { type: 'direct', value: url }
+  }
+
+  return null
 }
 
 export function StudentLessonPage() {
@@ -167,7 +181,7 @@ export function StudentLessonPage() {
   const videoUrl = activeLessonDetails?.youtube_url || currentLesson.youtube_url
   const textContent = activeLessonDetails?.text_content || currentLesson.text_content
   const lessonType = activeLessonDetails?.lesson_type || currentLesson.lesson_type
-  const videoId = extractVideoId(videoUrl)
+  const videoSource = getLessonVideoSource(videoUrl)
 
   async function handleToggleCompletion() {
     if (!user || !currentLesson) return
@@ -264,16 +278,32 @@ export function StudentLessonPage() {
         )}
       </div>
 
-      {(lessonType === 'video' || lessonType === 'hybrid') && videoId && (
+      {(lessonType === 'video' || lessonType === 'hybrid') && videoSource?.type === 'youtube' && (
         <div className="aspect-video w-full animate-in zoom-in-95 overflow-hidden rounded-[32px] bg-black shadow-2xl ring-1 ring-slate-900/10 duration-500">
           <iframe
             className="h-full w-full"
-            src={`https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1&showinfo=0`}
+            src={`https://www.youtube.com/embed/${videoSource.value}?rel=0&modestbranding=1&showinfo=0`}
             title="YouTube video player"
             frameBorder="0"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
             allowFullScreen
           />
+        </div>
+      )}
+
+      {(lessonType === 'video' || lessonType === 'hybrid') && videoSource?.type === 'direct' && (
+        <div className="aspect-video w-full animate-in zoom-in-95 overflow-hidden rounded-[32px] bg-black shadow-2xl ring-1 ring-slate-900/10 duration-500">
+          <video className="h-full w-full" controls preload="metadata" src={videoSource.value}>
+            Seu navegador nao suporta reproducao de video.
+          </video>
+        </div>
+      )}
+
+      {(lessonType === 'video' || lessonType === 'hybrid') && videoSource?.type === 'asset' && (
+        <div className="rounded-[28px] border border-amber-200 bg-amber-50 p-6 text-amber-900">
+          <p className="text-sm font-semibold">
+            Este video protegido ainda nao esta disponivel neste player. Use os recursos da aula para acessar o material.
+          </p>
         </div>
       )}
 
@@ -289,6 +319,14 @@ export function StudentLessonPage() {
               />
             </div>
           </div>
+        </div>
+      )}
+
+      {lessonType === 'file' && !textContent && (
+        <div className="rounded-[28px] border border-amber-200 bg-amber-50 p-6 text-amber-900">
+          <p className="text-sm font-semibold">
+            Esta aula e consumida pelos materiais do modulo. Use a secao "Botoes e Recursos" abaixo para acessar os ficheiros.
+          </p>
         </div>
       )}
 

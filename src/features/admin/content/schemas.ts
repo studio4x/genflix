@@ -4,6 +4,9 @@ import { DEFAULT_COURSE_QUIZ_TYPE_SETTINGS } from '@/features/assessments/course
 
 const youtubeRegex =
   /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/[^\s]+$/i
+const directVideoRegex =
+  /^https?:\/\/[^\s]+\.(mp4|webm|ogg|ogv|m4v|mov)(\?.*)?(#.*)?$/i
+const assetVideoRegex = /^asset:[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 
 export const courseQuizTypeSettingsSchema = z.object({
   single_choice: z.boolean().default(DEFAULT_COURSE_QUIZ_TYPE_SETTINGS.single_choice),
@@ -140,14 +143,14 @@ export const lessonFormSchema = z.object({
   title: z.string().trim().min(2, 'Titulo deve ter ao menos 2 caracteres'),
   description: z.string().trim().max(2000).optional(),
   is_required: z.boolean(),
-  lesson_type: z.enum(['video', 'text', 'hybrid']).default('video'),
+  lesson_type: z.enum(['video', 'text', 'hybrid', 'file']).default('video'),
   text_content: z.string().optional(),
   youtube_url: z
     .string()
     .trim()
     .optional()
-    .refine((value) => !value || youtubeRegex.test(value), {
-      message: 'URL do YouTube invalida',
+    .refine((value) => !value || youtubeRegex.test(value) || directVideoRegex.test(value) || assetVideoRegex.test(value), {
+      message: 'Fonte de video invalida',
     }),
   estimated_minutes: z.number().int().min(0),
   starts_at: z.string().optional().or(z.literal('')),
