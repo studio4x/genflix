@@ -1,4 +1,4 @@
-import { ArrowRight, X } from 'lucide-react'
+import { X } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import type { LucideIcon } from 'lucide-react'
@@ -22,13 +22,6 @@ import { renderSiteIconVisual } from '@/features/site-editor/site-icons'
 import type { EditableListItem } from '@/features/site-editor/types'
 import { EditableList, EditableText, isEditableItemVisible, useEditableValue } from '@/features/site-editor/visual-editor'
 
-interface ResourcePopupContent {
-  title: string
-  lead?: string
-  paragraphs: string[]
-  bullets?: string[]
-}
-
 type ResourcePopupItem = EditableListItem & {
   label: string
   description: string
@@ -38,125 +31,6 @@ type ResourcePopupItem = EditableListItem & {
 type ResourceVideoModalState = {
   url: string
   title: string
-}
-
-const exercisePopupContent: ResourcePopupContent = {
-  title: 'Exercícios? Temos de todos os tipos',
-  paragraphs: [
-    'Nas outras plataformas, os exercícios são estáticos e com pouca variedade — geralmente apenas múltipla escolha. Na GenFlix é diferente. Aqui você encontra uma variedade quase infinita de tipos de exercícios, cada um desenhado para testar seu conhecimento de formas diferentes e manter o aprendizado dinâmico e desafiador.',
-  ],
-  bullets: [
-    'Questões discursivas',
-    'Múltipla escolha',
-    'Estudos de casos resolvidos',
-    'Gamificação',
-    'Arrastar e soltar',
-    'Colorir',
-    'Preencher lacunas',
-    'Questões de concursos',
-  ],
-}
-
-const resourcePopupContents: Record<string, ResourcePopupContent> = {
-  'Textos diretos ao ponto': {
-    title: 'Cursos diretos ao ponto',
-    paragraphs: [
-      'Aulas longas e cheias de redundâncias não funcionam mais. Nossos cursos trazem conteúdos objetivos, diretos ao ponto, sem blá-blá-blá.',
-      'Cada parágrafo tem propósito, cada vídeo ou recurso didático agrega valor. Você aprende mais em menos tempo, sem distrações ou informações desnecessárias, focado apenas no essencial.',
-    ],
-  },
-  'Texto para fala': {
-    title: 'Texto para fala',
-    paragraphs: [
-      'Na plataforma GenFlix você pode ler ou ouvir a aula. Além de possibilitar o estudo durante deslocamentos, alternar entre texto e áudio favorece diferentes estilos de aprendizagem, ajudando na compreensão e na memorização do conteúdo.',
-      'Com isso, o estudo torna-se mais dinâmico, personalizado e inclusivo, contribuindo para um melhor aproveitamento dos seus cursos.',
-    ],
-  },
-  'Vídeos': {
-    title: 'Vídeos? Claro, mas não apenas',
-    paragraphs: [
-      'Vídeos são fundamentais, mas funcionam melhor quando intercalados com outros recursos didáticos. Textos, áudios, mapas mentais, flashcards e outras ferramentas quebram a monotonia, mantêm sua atenção e facilitam o aprendizado.',
-      'Na plataforma GenFlix, essa combinação de recursos garante um estudo dinâmico e eficaz, com máxima retenção do conteúdo.',
-    ],
-  },
-  'Lives com autores': {
-    title: 'Aulas ao vivo',
-    paragraphs: [
-      'A plataforma GenFlix oferece um meio próprio para transmissão de aulas ao vivo. Alguns cursos dispõem desse recurso, outros não, e a disponibilidade de aulas ao vivo está indicada na lista de ferramentas didáticas de cada curso.',
-    ],
-  },
-  'Bloco de notas pessoais': {
-    title: 'Bloco de notas virtual',
-    lead: 'Papel? Para que papel?',
-    paragraphs: [
-      'Na plataforma GenFlix você pode fazer suas anotações diretamente no bloco de notas existente em cada aula. Isso torna o estudo mais organizado e centralizado.',
-      'Organizado, sempre disponível.',
-    ],
-  },
-  'Fóruns de discussão': {
-    title: 'Comunidades ou fóruns de discussão',
-    paragraphs: [
-      'Os cursos da plataforma GenFlix têm comunidades ou fóruns de discussão segmentados por assunto. Já pensou que maravilha poder sanar dúvidas ou trocar experiências com outros estudantes que estão fazendo o mesmo curso que você?',
-    ],
-  },
-  'Descontos em livros do GEN': {
-    title: 'Descontos em livros do GEN',
-    paragraphs: [
-      'Ao inscrever-se em um curso no GenFlix você automaticamente ganha desconto para compras de livros do GEN diretamente relacionados com a área do curso adquirido.',
-      'Para quem não sabe: o GEN | Grupo Editorial Nacional é o maior conglomerado brasileiro de grandes editoras acadêmicas, como Guanabara Koogan, LTC, Método, Forense e Saraiva, entre outras.',
-      'Esse desconto, para ficar claro, não é cumulativo com os que já estejam sendo praticados no site do GEN.',
-    ],
-  },
-  Flashcards: {
-    title: 'Flashcards',
-    paragraphs: [
-      'Junto com mapas mentais e resumões, os flashcards são uma das ferramentas de estudo mais eficazes para revisões rápidas e preparação para provas. Eles ajudam você a testar sua memória, identificar pontos fracos do conhecimento e transformar o estudo em um processo ativo, dinâmico e eficaz.',
-      'E, claro, todo curso da plataforma GenFlix vem com uma grande quantidade de flashcards prontos para você usar.',
-    ],
-  },
-  'Mapas mentais': {
-    title: 'Mapas mentais',
-    paragraphs: [
-      'Se você gosta de mapas mentais ou conceituais, chegou ao lugar certo. Na plataforma GenFlix você encontra uma grande quantidade deles para baixar e usar nos seus estudos.',
-    ],
-  },
-  Podcasts: {
-    title: 'Podcasts',
-    paragraphs: [
-      'Nos podcasts da plataforma GenFlix os autores dos cursos trazem exemplos práticos, curiosidades e comentam estudos de casos. É um recurso dinâmico e acessível que enriquece seu aprendizado, permitindo que você estude enquanto se desloca ou realiza outras atividades.',
-      'Nem todos os cursos têm podcasts, mas quando disponíveis, você encontra essa informação na página de abertura de cada curso.',
-    ],
-  },
-  Resumos: {
-    title: 'Resumões',
-    paragraphs: [
-      'Ao final de cada módulo ou grupo de aulas há um "resumão" com os pontos-chave do assunto em formato de tópicos.',
-      'Esses resumos possibilitam revisões rápidas, ajudam na fixação do aprendizado e são especialmente úteis na preparação para provas.',
-    ],
-  },
-  'Questões discursivas': exercisePopupContent,
-  'Estudos de casos': exercisePopupContent,
-  'Múltipla escolha': exercisePopupContent,
-  'Exercícios de progressão': exercisePopupContent,
-  'Preenchimento de lacunas': exercisePopupContent,
-}
-
-function buildFallbackPopupContent(item: EditableListItem): ResourcePopupContent {
-  const metadata = getItemMetadata(item)
-  const popupTitle = typeof metadata.popupTitle === 'string' ? metadata.popupTitle.trim() : ''
-  const popupBody = typeof metadata.popupBody === 'string' ? metadata.popupBody.trim() : ''
-
-  if (popupBody) {
-    return {
-      title: popupTitle || item.label || item.title || 'Recurso',
-      paragraphs: [popupBody],
-    }
-  }
-
-  return {
-    title: item.label ?? item.title ?? 'Recurso',
-    paragraphs: [item.description ?? ''],
-  }
 }
 
 function getItemMetadata(item: EditableListItem) {
@@ -312,128 +186,8 @@ function ResourceVideoModal({
   )
 }
 
-function ResourcePopup({
-  item,
-  onClose,
-  onOpenVideo,
-}: {
-  item: ResourcePopupItem
-  onClose: () => void
-  onOpenVideo: (url: string, title: string) => void
-}) {
-  const videoUrl = resolveResourceVideoUrl(item)
-  const metadataFallback = buildFallbackPopupContent(item)
-  const legacyFallback = resourcePopupContents[item.label]
-  const fallbackContent = metadataFallback.paragraphs[0]?.trim()
-    ? metadataFallback
-    : (legacyFallback ?? metadataFallback)
-  const content = useEditableValue(
-    `resources.popup.${item.label}`,
-    fallbackContent as unknown as Record<string, unknown>,
-  ) as unknown as ResourcePopupContent
-
-  return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-[#061b21]/70 px-4 py-6 backdrop-blur-sm"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="resource-popup-title"
-      onMouseDown={(event) => {
-        if (event.target === event.currentTarget) {
-          onClose()
-        }
-      }}
-    >
-      <div className="relative flex max-h-[92vh] w-full max-w-[1040px] overflow-hidden border border-[#0f5b64]/40 bg-white shadow-[0_30px_80px_rgba(6,27,33,0.26)] md:min-h-[650px]">
-        <button
-          type="button"
-          onClick={onClose}
-          className="absolute right-4 top-4 z-10 inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#D8E6EB] bg-white text-[#1d3d45] shadow-sm transition hover:bg-[#E8F6FA]"
-          aria-label="Fechar popup"
-        >
-          <X className="h-5 w-5" />
-        </button>
-
-        <aside className="hidden w-[285px] shrink-0 flex-col justify-between bg-gradient-to-b from-[#075a67] to-[#042f38] px-10 py-14 text-white md:flex">
-          <div>
-            <div className="flex h-32 w-32 items-center justify-center text-[#46ff2f]">
-              {renderResourceIcon(item, 'h-24 w-24 stroke-[1.4]')}
-            </div>
-            <div className="mt-20 flex gap-2">
-              {Array.from({ length: 14 }).map((_, index) => (
-                <span key={index} className="h-1 w-1 rounded-full bg-white/95" />
-              ))}
-            </div>
-          </div>
-
-          <div className="space-y-4">
-            <div className="relative h-16 w-20">
-              <span className="absolute left-3 top-2 h-11 w-11 rounded-full border-2 border-white/95" />
-              <span className="absolute left-8 top-0 h-11 w-11 rounded-full border-2 border-white/95" />
-              <span className="absolute left-8 top-5 h-11 w-11 rounded-full border-2 border-white/95" />
-            </div>
-            <p className="font-readex text-3xl font-medium tracking-[-0.04em] text-white">GenFlix</p>
-          </div>
-        </aside>
-
-        <section className="min-w-0 flex-1 overflow-y-auto px-7 py-16 sm:px-12 md:px-16 md:py-20">
-          <div className="mx-auto max-w-[620px]">
-            <div className="mx-auto mb-8 flex h-16 w-16 items-center justify-center rounded-3xl bg-[#075a67] text-[#46ff2f] md:hidden">
-              {renderResourceIcon(item, 'h-9 w-9 stroke-[1.5]')}
-            </div>
-
-            <h2
-              id="resource-popup-title"
-              className="text-center font-readex text-3xl font-medium leading-tight tracking-[0.08em] text-[#075a67] sm:text-4xl"
-            >
-              {content.title}
-            </h2>
-
-            <div className="mx-auto mt-14 flex max-w-[420px] justify-center gap-2">
-              {Array.from({ length: 24 }).map((_, index) => (
-                <span key={index} className="h-1 w-1 rounded-full bg-[#17383f]" />
-              ))}
-            </div>
-
-            <div className="mt-16 space-y-8 text-[1.65rem] font-light leading-[1.58] tracking-[-0.035em] text-[#292929]">
-              {content.lead ? renderResourceTextContent(content.lead, '') : null}
-              {content.paragraphs.map((paragraph, paragraphIndex) => (
-                <div key={`${paragraphIndex}-${paragraph.slice(0, 24)}`}>
-                  {renderResourceTextContent(paragraph, '')}
-                </div>
-              ))}
-
-              {videoUrl ? (
-                <div className="pt-2">
-                  <GenflixCtaButton className="px-5 py-3" onClick={() => onOpenVideo(videoUrl, content.title || item.label)}>
-                    <span>
-                      Ver vídeo de instrução
-                    </span>
-                  </GenflixCtaButton>
-                </div>
-              ) : null}
-
-              {content.bullets?.length ? (
-                <ul className="grid gap-3 pt-1 text-[1.25rem] leading-relaxed sm:grid-cols-2">
-                  {content.bullets.map((bullet) => (
-                    <li key={bullet} className="flex items-start gap-3">
-                      <span className="mt-3 h-1.5 w-1.5 shrink-0 rounded-full bg-[#075a67]" />
-                      <span>{bullet}</span>
-                    </li>
-                  ))}
-                </ul>
-              ) : null}
-            </div>
-          </div>
-        </section>
-      </div>
-    </div>
-  )
-}
-
 export function PublicResourcesPage() {
   const { isLoading, user, roles } = useAuth()
-  const [selectedResourceLabel, setSelectedResourceLabel] = useState<string | null>(null)
   const [activeVideo, setActiveVideo] = useState<ResourceVideoModalState | null>(null)
   const waitingRoleResolution = !!user && roles.length === 0
   const resourceItemsRaw = useEditableValue(
@@ -444,36 +198,14 @@ export function PublicResourcesPage() {
     () => normalizeResourcesItems(resourceItemsRaw),
     [resourceItemsRaw],
   )
-  const selectedResource = useMemo(
-    (): ResourcePopupItem | null => {
-      if (!selectedResourceLabel) return null
-
-      const custom = resourceItems.find((item) => item.label === selectedResourceLabel)
-      if (!custom) return null
-
-      const fallback = findResourceFallbackByLabel(custom.label)
-      return {
-        ...custom,
-        label: custom.label ?? selectedResourceLabel,
-        description: custom.description ?? '',
-        fallbackIcon: fallback.icon,
-      }
-    },
-    [resourceItems, selectedResourceLabel],
-  )
-
   useEffect(() => {
-    if (!selectedResource && !activeVideo) {
+    if (!activeVideo) {
       return
     }
 
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === 'Escape') {
-        if (activeVideo) {
-          setActiveVideo(null)
-          return
-        }
-        setSelectedResourceLabel(null)
+        setActiveVideo(null)
       }
     }
 
@@ -485,7 +217,7 @@ export function PublicResourcesPage() {
       document.body.style.overflow = previousOverflow
       window.removeEventListener('keydown', handleKeyDown)
     }
-  }, [activeVideo, selectedResource])
+  }, [activeVideo])
 
   if (isLoading || waitingRoleResolution) {
     return (
@@ -528,19 +260,14 @@ export function PublicResourcesPage() {
               const videoUrl = resolveResourceVideoUrl(popupItem)
 
               return (
-                <button
-                  type="button"
+                <article
                   key={item.id}
-                  onClick={() => setSelectedResourceLabel(popupItem.label ?? null)}
-                  className="group rounded-[18px] border border-[#D8E6EB] bg-[#F2F7F9] px-5 py-5 text-left shadow-[0_16px_36px_rgba(21,50,59,0.04)] transition-transform duration-300 hover:-translate-y-1 hover:shadow-[0_20px_42px_rgba(19,152,183,0.12)] focus:outline-none focus:ring-4 focus:ring-[#1398B7]/18"
+                  className="rounded-[18px] border border-[#D8E6EB] bg-[#F2F7F9] px-5 py-5 text-left shadow-[0_16px_36px_rgba(21,50,59,0.04)] transition-transform duration-300 hover:-translate-y-1 hover:shadow-[0_20px_42px_rgba(19,152,183,0.12)]"
                 >
-                  <div className="flex items-start justify-between gap-4">
+                  <div className="flex items-start gap-4">
                     <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#E8F6FA] text-[#1398B7]">
                       {renderResourceIcon(popupItem, 'h-4.5 w-4.5')}
                     </div>
-                    <span className="text-[#1398B7] transition-transform group-hover:translate-x-1">
-                      <ArrowRight className="h-4 w-4" />
-                    </span>
                   </div>
 
                   <h2 className="mt-5 text-[1rem] font-bold leading-6 text-[#183139]">{item.label}</h2>
@@ -564,7 +291,7 @@ export function PublicResourcesPage() {
                       </button>
                     </div>
                   ) : null}
-                </button>
+                </article>
               )
             })}
             </EditableList>
@@ -584,13 +311,6 @@ export function PublicResourcesPage() {
       <GenflixPublicFooter />
       {activeVideo ? (
         <ResourceVideoModal state={activeVideo} onClose={() => setActiveVideo(null)} />
-      ) : null}
-      {selectedResource ? (
-        <ResourcePopup
-          item={selectedResource}
-          onClose={() => setSelectedResourceLabel(null)}
-          onOpenVideo={(url, title) => setActiveVideo({ url, title })}
-        />
       ) : null}
     </main>
   )

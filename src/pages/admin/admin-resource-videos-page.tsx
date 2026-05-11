@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
+import { useEffect, useMemo, useState, type FormEvent } from 'react'
 
 import { Button } from '@/components/ui/button'
 import {
@@ -16,61 +16,11 @@ function toMetadata(item: EditableListItem) {
   return { ...item.metadata as Record<string, unknown> }
 }
 
-function normalizePopupEntry(value: unknown): { title: string; body: string } | null {
-  if (!value || typeof value !== 'object' || Array.isArray(value)) {
-    return null
-  }
-
-  const record = value as Record<string, unknown>
-  const title = typeof record.title === 'string' ? record.title.trim() : ''
-  const lead = typeof record.lead === 'string' ? record.lead.trim() : ''
-  const paragraphs = Array.isArray(record.paragraphs)
-    ? record.paragraphs
-      .map((paragraph) => (typeof paragraph === 'string' ? paragraph.trim() : ''))
-      .filter(Boolean)
-    : []
-  const bullets = Array.isArray(record.bullets)
-    ? record.bullets
-      .map((bullet) => (typeof bullet === 'string' ? bullet.trim() : ''))
-      .filter(Boolean)
-    : []
-
-  const bodyParts = [lead, ...paragraphs]
-  if (bullets.length > 0) {
-    bodyParts.push(bullets.map((bullet) => `- ${bullet}`).join('\n'))
-  }
-
-  const body = bodyParts.filter(Boolean).join('\n\n').trim()
-  if (!title && !body) {
-    return null
-  }
-
-  return { title, body }
-}
-
-function parsePopupBodyToParagraphs(value: string) {
-  return value
-    .split(/\n{2,}/)
-    .map((part) => part.trim())
-    .filter(Boolean)
-}
-
-function buildPopupJsonValue(title: string, body: string) {
-  return {
-    title: title.trim(),
-    paragraphs: parsePopupBodyToParagraphs(body),
-  }
-}
-
 function normalizeItemForSave(item: EditableListItem): EditableListItem {
   const metadata = toMetadata(item)
   const instructionalVideoUrl = typeof metadata.instructionalVideoUrl === 'string'
     ? metadata.instructionalVideoUrl.trim()
     : ''
-  const popupTitle = typeof metadata.popupTitle === 'string' ? metadata.popupTitle.trim() : ''
-  const popupBody = typeof metadata.popupBody === 'string' ? metadata.popupBody.trim() : ''
-  const cardDescription = (item.description ?? '').trim()
-  const resolvedPopupBody = popupBody || cardDescription
 
   if (instructionalVideoUrl === '') {
     delete metadata.instructionalVideoUrl
@@ -78,39 +28,9 @@ function normalizeItemForSave(item: EditableListItem): EditableListItem {
     metadata.instructionalVideoUrl = instructionalVideoUrl
   }
 
-  if (popupTitle === '') {
-    delete metadata.popupTitle
-  } else {
-    metadata.popupTitle = popupTitle
-  }
-
-  if (resolvedPopupBody === '') {
-    delete metadata.popupBody
-  } else {
-    metadata.popupBody = resolvedPopupBody
-  }
-
   return {
     ...item,
     metadata: Object.keys(metadata).length > 0 ? metadata : undefined,
-  }
-}
-
-function resolvePopupPayload(item: EditableListItem) {
-  const label = item.label?.trim() ?? ''
-  if (!label) {
-    return null
-  }
-
-  const metadata = toMetadata(item)
-  const popupTitle = typeof metadata.popupTitle === 'string' ? metadata.popupTitle.trim() : ''
-  const popupBody = typeof metadata.popupBody === 'string' ? metadata.popupBody.trim() : ''
-  const cardDescription = (item.description ?? '').trim()
-
-  return {
-    label,
-    title: popupTitle || label,
-    body: popupBody || cardDescription,
   }
 }
 
@@ -121,7 +41,6 @@ export function AdminResourceVideosPage() {
   const [savingCardIndex, setSavingCardIndex] = useState<number | null>(null)
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const popupBaselineRef = useRef<Map<string, { title: string; body: string }>>(new Map())
 
   const configuredCount = useMemo(
     () => items.filter((item) => resolveResourceVideoUrl(item) !== '').length,
@@ -139,55 +58,9 @@ export function AdminResourceVideosPage() {
         const entries = await fetchSiteContent('resources')
         const resourcesEntry = entries.find((entry) => entry.page_key === 'resources' && entry.entry_key === 'resources.items')
         const normalized = normalizeResourcesItems(resourcesEntry?.value)
-        const popupEntries = new Map(
-          entries
-            .filter((entry) => entry.page_key === 'resources' && entry.entry_key.startsWith('resources.popup.'))
-            .map((entry) => [entry.entry_key, normalizePopupEntry(entry.value)]),
-        )
-        const popupBaseline = new Map<string, { title: string; body: string }>()
-        for (const [entryKey, value] of popupEntries.entries()) {
-          if (!value) {
-            continue
-          }
-
-          const label = entryKey.replace('resources.popup.', '').trim()
-          if (label) {
-            popupBaseline.set(label, value)
-          }
-        }
-
-        const mergedWithPopupEntries = normalized.map((item) => {
-          const label = item.label?.trim() ?? ''
-          if (!label) {
-            return item
-          }
-
-          const popupEntry = popupEntries.get(`resources.popup.${label}`)
-          if (!popupEntry) {
-            return item
-          }
-
-          const metadata = toMetadata(item)
-          const currentTitle = typeof metadata.popupTitle === 'string' ? metadata.popupTitle.trim() : ''
-          const currentBody = typeof metadata.popupBody === 'string' ? metadata.popupBody.trim() : ''
-
-          if (!currentTitle && popupEntry.title) {
-            metadata.popupTitle = popupEntry.title
-          }
-
-          if (!currentBody && popupEntry.body) {
-            metadata.popupBody = popupEntry.body
-          }
-
-          return {
-            ...item,
-            metadata: Object.keys(metadata).length > 0 ? metadata : undefined,
-          }
-        })
 
         if (isMounted) {
-          popupBaselineRef.current = popupBaseline
-          setItems(mergedWithPopupEntries)
+          setItems(normalized)
         }
       } catch (loadError) {
         if (isMounted) {
@@ -252,28 +125,6 @@ export function AdminResourceVideosPage() {
     )))
   }
 
-  function updatePopupField(index: number, field: 'popupTitle' | 'popupBody', nextValue: string) {
-    setItems((current) => current.map((item, currentIndex) => {
-      if (currentIndex !== index) {
-        return item
-      }
-
-      const metadata = toMetadata(item)
-      const trimmed = nextValue.trim()
-
-      if (trimmed === '') {
-        delete metadata[field]
-      } else {
-        metadata[field] = nextValue
-      }
-
-      return {
-        ...item,
-        metadata: Object.keys(metadata).length > 0 ? metadata : undefined,
-      }
-    }))
-  }
-
   async function saveResources(targetIndex: number | null = null) {
     setIsSaving(true)
     setSavingCardIndex(targetIndex)
@@ -295,43 +146,7 @@ export function AdminResourceVideosPage() {
         },
       })
 
-      const popupItems = targetIndex === null
-        ? normalizedItems
-        : normalizedItems[targetIndex]
-          ? [normalizedItems[targetIndex]]
-          : []
-
-      await Promise.all(popupItems.map(async (item) => {
-        const payload = resolvePopupPayload(item)
-        if (!payload) {
-          return
-        }
-
-        const baseline = popupBaselineRef.current.get(payload.label)
-        if (baseline && baseline.title.trim() === payload.title && baseline.body.trim() === payload.body) {
-          return
-        }
-
-        await saveSiteContentEntry({
-          pageKey: 'resources',
-          entryKey: `resources.popup.${payload.label}`,
-          entryType: 'json',
-          value: buildPopupJsonValue(payload.title, payload.body),
-          schema: {},
-        })
-      }))
-
       setItems(normalizedItems)
-      popupBaselineRef.current = new Map(
-        normalizedItems.map((item) => {
-          const payload = resolvePopupPayload(item)
-          if (!payload) {
-            return ['', { title: '', body: '' }] as const
-          }
-
-          return [payload.label, { title: payload.title, body: payload.body }] as const
-        }).filter(([label]) => label.length > 0),
-      )
       setMessage(targetIndex === null ? 'Videos de instrucao salvos com sucesso.' : `Recurso ${targetIndex + 1} salvo com sucesso.`)
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : 'Nao foi possivel salvar os dados dos recursos.')
@@ -395,14 +210,6 @@ export function AdminResourceVideosPage() {
               const metadata = toMetadata(item)
               return typeof metadata.instructionalVideoUrl === 'string' ? metadata.instructionalVideoUrl : ''
             })()
-            const popupTitle = (() => {
-              const metadata = toMetadata(item)
-              return typeof metadata.popupTitle === 'string' ? metadata.popupTitle : ''
-            })()
-            const popupBody = (() => {
-              const metadata = toMetadata(item)
-              return typeof metadata.popupBody === 'string' ? metadata.popupBody : ''
-            })()
 
             const isConfigured = resolveResourceVideoUrl(item) !== ''
 
@@ -441,25 +248,6 @@ export function AdminResourceVideosPage() {
                       onChange={(event) => updateCardDescription(index, event.target.value)}
                       rows={4}
                       placeholder="Texto exibido no card do recurso."
-                      className="rounded-[14px] border border-[#D8E6EB] bg-white px-4 py-3 text-sm font-semibold leading-6 text-[#15323b] outline-none focus:border-[#1398B7]"
-                    />
-                  </label>
-                  <label className="grid gap-2">
-                    <span className="text-[10px] font-black uppercase tracking-[0.16em] text-[#5F7077]">Texto do popup: titulo</span>
-                    <input
-                      value={popupTitle}
-                      onChange={(event) => updatePopupField(index, 'popupTitle', event.target.value)}
-                      placeholder="Ex.: Videos? Claro, mas nao apenas"
-                      className="h-11 rounded-[14px] border border-[#D8E6EB] bg-white px-4 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]"
-                    />
-                  </label>
-                  <label className="grid gap-2 md:col-span-2">
-                    <span className="text-[10px] font-black uppercase tracking-[0.16em] text-[#5F7077]">Texto do popup: conteudo</span>
-                    <textarea
-                      value={popupBody}
-                      onChange={(event) => updatePopupField(index, 'popupBody', event.target.value)}
-                      rows={6}
-                      placeholder="Conteudo exibido no popup ao clicar no recurso."
                       className="rounded-[14px] border border-[#D8E6EB] bg-white px-4 py-3 text-sm font-semibold leading-6 text-[#15323b] outline-none focus:border-[#1398B7]"
                     />
                   </label>
