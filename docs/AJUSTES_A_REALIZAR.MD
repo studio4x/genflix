@@ -94,7 +94,7 @@
 
 [OK] T28 - Criar validação básica para verificar se GTM e Meta Pixel foram configurados.
 
-[ ] T29 - Garantir disparo correto dos principais eventos da plataforma.
+[OK] T29 - Garantir disparo correto dos principais eventos da plataforma.
 
 ---
 

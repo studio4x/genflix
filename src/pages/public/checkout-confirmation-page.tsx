@@ -7,7 +7,7 @@ import { GenflixCtaButton } from '@/components/public/genflix-cta-button'
 import { GenflixPublicHeader } from '@/components/public/genflix-public-header'
 import { genflixNavLinks } from '@/features/public/genflix-public-shell-content'
 import {
-  SITE_PURCHASE_EVENT_NAME,
+  dispatchSitePurchaseEvent,
   type SitePurchaseTrackingEventDetail,
 } from '@/features/site-editor/site-tracking'
 
@@ -43,7 +43,7 @@ export function PublicCheckoutConfirmationPage() {
     }
 
     purchaseDispatchedRef.current = true
-    window.dispatchEvent(new CustomEvent(SITE_PURCHASE_EVENT_NAME, { detail: purchaseEvent }))
+    dispatchSitePurchaseEvent(purchaseEvent)
   }, [courseCurrency, courseId, courseTitle, courseValue])
 
   return (

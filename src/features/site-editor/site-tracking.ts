@@ -18,7 +18,23 @@ export type SitePurchaseTrackingEventDetail = {
   value: number
 }
 
+export type SiteViewItemTrackingEventDetail = {
+  courseId: string
+  courseTitle: string
+  currency: string
+  value?: number
+}
+
+export type SiteBeginCheckoutTrackingEventDetail = {
+  courseId: string
+  courseTitle: string
+  currency: string
+  value?: number
+}
+
 export const SITE_PURCHASE_EVENT_NAME = 'genflix:purchase'
+export const SITE_VIEW_ITEM_EVENT_NAME = 'genflix:view_item'
+export const SITE_BEGIN_CHECKOUT_EVENT_NAME = 'genflix:begin_checkout'
 
 export const defaultSiteTrackingSettings: SiteTrackingSettings = {
   gtmId: '',
@@ -100,4 +116,24 @@ export async function fetchSiteTrackingSettings() {
   }
 
   return normalizeSiteTracking(data?.value ?? defaultSiteTrackingSettings)
+}
+
+function dispatchSiteTrackingEvent<EventDetail>(eventName: string, detail: EventDetail) {
+  if (typeof window === 'undefined') {
+    return
+  }
+
+  window.dispatchEvent(new CustomEvent(eventName, { detail }))
+}
+
+export function dispatchSitePurchaseEvent(detail: SitePurchaseTrackingEventDetail) {
+  dispatchSiteTrackingEvent(SITE_PURCHASE_EVENT_NAME, detail)
+}
+
+export function dispatchSiteViewItemEvent(detail: SiteViewItemTrackingEventDetail) {
+  dispatchSiteTrackingEvent(SITE_VIEW_ITEM_EVENT_NAME, detail)
+}
+
+export function dispatchSiteBeginCheckoutEvent(detail: SiteBeginCheckoutTrackingEventDetail) {
+  dispatchSiteTrackingEvent(SITE_BEGIN_CHECKOUT_EVENT_NAME, detail)
 }

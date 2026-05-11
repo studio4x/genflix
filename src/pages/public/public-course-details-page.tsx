@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { BadgeCheck, ChevronDown, CirclePlay, Play, Sparkles } from 'lucide-react'
 import { Link, Navigate, useParams } from 'react-router-dom'
 
@@ -23,6 +23,13 @@ import { CourseReviewsSection } from '@/features/reviews/course-reviews-section'
 import { cn } from '@/lib/utils'
 import { EditableList, isEditableItemVisible } from '@/features/site-editor/visual-editor'
 import { renderSiteIconVisual } from '@/features/site-editor/site-icons'
+import { dispatchSiteViewItemEvent } from '@/features/site-editor/site-tracking'
+
+function parsePriceLabelToNumber(priceLabel: string) {
+  const normalized = priceLabel.replace(/\s+/g, '').replace(/[R$]/gi, '').replace(/\./g, '').replace(',', '.')
+  const value = Number.parseFloat(normalized)
+  return Number.isFinite(value) && value > 0 ? value : undefined
+}
 
 export function PublicCourseDetailsPage() {
   const { slug = '' } = useParams()
@@ -31,6 +38,7 @@ export function PublicCourseDetailsPage() {
   const [detail, setDetail] = useState<GenflixCourseDetail | null>(staticDetail)
   const [isLoadingDetail, setIsLoadingDetail] = useState(true)
   const [openModule, setOpenModule] = useState(0)
+  const trackedCourseRef = useRef<string | null>(null)
 
   useEffect(() => {
     let isMounted = true
@@ -59,6 +67,25 @@ export function PublicCourseDetailsPage() {
       isMounted = false
     }
   }, [slug, staticDetail])
+
+  useEffect(() => {
+    if (!detail) {
+      return
+    }
+
+    const courseId = detail.id?.trim() || detail.slug.trim()
+    if (!courseId || trackedCourseRef.current === courseId) {
+      return
+    }
+
+    trackedCourseRef.current = courseId
+    dispatchSiteViewItemEvent({
+      courseId,
+      courseTitle: detail.title,
+      currency: 'BRL',
+      value: parsePriceLabelToNumber(detail.priceLabel),
+    })
+  }, [detail])
 
 
   if (!isLoadingDetail && !staticCourse && !detail) {

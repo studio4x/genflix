@@ -25,6 +25,7 @@ import { fetchPublicCourseDetailFromSupabase } from '@/features/public/genflix-p
 import { genflixNavLinks, getGenflixCourseDetailBySlug, type GenflixCourseDetail } from '@/features/public/genflix-site-content'
 import { startCourseCheckout } from '@/features/public/courses/api'
 import type { LegalDocumentKey } from '@/features/public/legal-documents'
+import { dispatchSiteBeginCheckoutEvent } from '@/features/site-editor/site-tracking'
 import { supabase } from '@/services/supabase/client'
 
 type CheckoutAuthMode = 'login' | 'signup'
@@ -92,6 +93,12 @@ function normalizeStateCode(value: string) {
   return value.trim().toUpperCase().slice(0, 2)
 }
 
+function parsePriceLabelToNumber(priceLabel: string) {
+  const normalized = priceLabel.replace(/\s+/g, '').replace(/[R$]/gi, '').replace(/\./g, '').replace(',', '.')
+  const value = Number.parseFloat(normalized)
+  return Number.isFinite(value) && value > 0 ? value : undefined
+}
+
 export function PublicCheckoutPage() {
   const { slug = '' } = useParams()
   const { isLoading, session, user, roles, profile, signIn, signUp, updateProfile } = useAuth()
@@ -126,6 +133,7 @@ export function PublicCheckoutPage() {
   const [checkoutCity, setCheckoutCity] = useState('')
   const [openDocument, setOpenDocument] = useState<LegalDocumentKey | null>(null)
   const hydratedCheckoutUserIdRef = useRef<string | null>(null)
+  const checkoutViewTrackedRef = useRef<string | null>(null)
   const { cities: checkoutCities, isLoadingCities } = useBrazilCities(checkoutState)
   const {
     address: checkoutCepAddress,
@@ -268,6 +276,25 @@ export function PublicCheckoutPage() {
       isMounted = false
     }
   }, [slug, staticDetail])
+
+  useEffect(() => {
+    if (!detail) {
+      return
+    }
+
+    const courseId = detail.id?.trim() || detail.slug.trim()
+    if (!courseId || checkoutViewTrackedRef.current === courseId) {
+      return
+    }
+
+    checkoutViewTrackedRef.current = courseId
+    dispatchSiteBeginCheckoutEvent({
+      courseId,
+      courseTitle: detail.title,
+      currency: 'BRL',
+      value: parsePriceLabelToNumber(detail.priceLabel),
+    })
+  }, [detail])
 
   const handleContinue = useCallback(async () => {
     if (!detail) {
