@@ -54,6 +54,7 @@ const quillModules = {
     [{ 'header': [1, 2, 3, false] }],
     ['bold', 'italic', 'underline', 'strike'],
     [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+    [{ columns: [1, 2, 3, 4] }],
     ['link', 'blockquote', 'code-block'],
     ['clean']
   ]

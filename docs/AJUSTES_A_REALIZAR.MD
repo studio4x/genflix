@@ -139,7 +139,7 @@
 
 [ ] T39 - Alterar editor de texto das aulas para seguir `docs/lesson-rich-text-blocks-spec.md`.
 
-[ ] T39.5 - Inserir a opção de inserir colunas nos blocos de conteúdos das aulas.. (add 1 coluna, add 2 colunas, add 3 colunas, etc)
+[OK] T39.5 - Inserir a opção de inserir colunas nos blocos de conteúdos das aulas.. (add 1 coluna, add 2 colunas, add 3 colunas, etc)
 
 ---
 
