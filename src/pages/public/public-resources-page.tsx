@@ -35,6 +35,11 @@ type ResourcePopupItem = EditableListItem & {
   fallbackIcon: LucideIcon
 }
 
+type ResourceVideoModalState = {
+  url: string
+  title: string
+}
+
 const exercisePopupContent: ResourcePopupContent = {
   title: 'Exercícios? Temos de todos os tipos',
   paragraphs: [
@@ -211,12 +216,110 @@ function renderResourceTextContent(value: string, className: string) {
   )
 }
 
+function isDirectVideoFile(url: string) {
+  const normalized = url.toLowerCase()
+  return ['.mp4', '.webm', '.ogg', '.m3u8'].some((extension) => normalized.includes(extension))
+}
+
+function resolveEmbeddableVideoUrl(url: string) {
+  try {
+    const parsed = new URL(url)
+    const host = parsed.hostname.toLowerCase()
+
+    if (host.includes('youtube.com') || host.includes('youtu.be')) {
+      if (host.includes('youtu.be')) {
+        const id = parsed.pathname.replace('/', '').trim()
+        return id ? `https://www.youtube.com/embed/${id}` : url
+      }
+
+      const shortsMatch = parsed.pathname.match(/^\/shorts\/([^/?]+)/)
+      if (shortsMatch?.[1]) {
+        return `https://www.youtube.com/embed/${shortsMatch[1]}`
+      }
+
+      const id = parsed.searchParams.get('v')?.trim()
+      if (id) {
+        return `https://www.youtube.com/embed/${id}`
+      }
+    }
+
+    if (host.includes('vimeo.com')) {
+      const id = parsed.pathname.split('/').filter(Boolean).at(-1)
+      return id ? `https://player.vimeo.com/video/${id}` : url
+    }
+  } catch {
+    return url
+  }
+
+  return url
+}
+
+function ResourceVideoModal({
+  state,
+  onClose,
+}: {
+  state: ResourceVideoModalState
+  onClose: () => void
+}) {
+  const embedUrl = resolveEmbeddableVideoUrl(state.url)
+  const directFile = isDirectVideoFile(state.url)
+
+  return (
+    <div
+      className="fixed inset-0 z-[70] flex items-center justify-center bg-[#061b21]/78 px-4 py-6 backdrop-blur-sm"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="resource-video-modal-title"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) {
+          onClose()
+        }
+      }}
+    >
+      <div className="relative h-[80vh] w-[70vw] max-w-[1280px] overflow-hidden rounded-[18px] border border-[#0f5b64]/40 bg-[#04171c] shadow-[0_30px_80px_rgba(6,27,33,0.38)]">
+        <h2 id="resource-video-modal-title" className="sr-only">{state.title}</h2>
+        <button
+          type="button"
+          onClick={onClose}
+          className="absolute right-3 top-3 z-20 inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/25 bg-black/45 text-white shadow-sm transition hover:bg-black/62"
+          aria-label="Fechar video"
+        >
+          <X className="h-5 w-5" />
+        </button>
+
+        <div className="h-full w-full">
+          {directFile ? (
+            <video
+              controls
+              autoPlay
+              className="h-full w-full bg-black object-contain"
+              src={state.url}
+            >
+              Seu navegador nao suporta reproducao de video.
+            </video>
+          ) : (
+            <iframe
+              title={state.title}
+              src={embedUrl}
+              allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
+              allowFullScreen
+              className="h-full w-full border-0 bg-black"
+            />
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function ResourcePopup({
   item,
   onClose,
+  onOpenVideo,
 }: {
   item: ResourcePopupItem
   onClose: () => void
+  onOpenVideo: (url: string, title: string) => void
 }) {
   const videoUrl = resolveResourceVideoUrl(item)
   const metadataFallback = buildFallbackPopupContent(item)
@@ -302,10 +405,10 @@ function ResourcePopup({
 
               {videoUrl ? (
                 <div className="pt-2">
-                  <GenflixCtaButton asChild className="px-5 py-3">
-                    <a href={videoUrl} target="_blank" rel="noreferrer">
+                  <GenflixCtaButton className="px-5 py-3" onClick={() => onOpenVideo(videoUrl, content.title || item.label)}>
+                    <span>
                       Ver vídeo de instrução
-                    </a>
+                    </span>
                   </GenflixCtaButton>
                 </div>
               ) : null}
@@ -331,6 +434,7 @@ function ResourcePopup({
 export function PublicResourcesPage() {
   const { isLoading, user, roles } = useAuth()
   const [selectedResourceLabel, setSelectedResourceLabel] = useState<string | null>(null)
+  const [activeVideo, setActiveVideo] = useState<ResourceVideoModalState | null>(null)
   const waitingRoleResolution = !!user && roles.length === 0
   const resourceItemsRaw = useEditableValue(
     'resources.items',
@@ -359,12 +463,16 @@ export function PublicResourcesPage() {
   )
 
   useEffect(() => {
-    if (!selectedResource) {
+    if (!selectedResource && !activeVideo) {
       return
     }
 
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === 'Escape') {
+        if (activeVideo) {
+          setActiveVideo(null)
+          return
+        }
         setSelectedResourceLabel(null)
       }
     }
@@ -377,7 +485,7 @@ export function PublicResourcesPage() {
       document.body.style.overflow = previousOverflow
       window.removeEventListener('keydown', handleKeyDown)
     }
-  }, [selectedResource])
+  }, [activeVideo, selectedResource])
 
   if (isLoading || waitingRoleResolution) {
     return (
@@ -441,15 +549,19 @@ export function PublicResourcesPage() {
                   </div>
                   {videoUrl ? (
                     <div className="mt-4">
-                      <a
-                        href={videoUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        onClick={(event) => event.stopPropagation()}
+                      <button
+                        type="button"
+                        onClick={(event) => {
+                          event.stopPropagation()
+                          setActiveVideo({
+                            url: videoUrl,
+                            title: popupItem.label || 'Video de instrucao',
+                          })
+                        }}
                         className="inline-flex items-center rounded-full border border-[#1398B7]/30 bg-white px-3 py-1.5 text-xs font-black uppercase tracking-[0.12em] text-[#0F7E99] hover:bg-[#E8F6FA]"
                       >
                         Ver vídeo de instrução
-                      </a>
+                      </button>
                     </div>
                   ) : null}
                 </button>
@@ -470,8 +582,15 @@ export function PublicResourcesPage() {
 
       <GenflixNewsletterSection />
       <GenflixPublicFooter />
+      {activeVideo ? (
+        <ResourceVideoModal state={activeVideo} onClose={() => setActiveVideo(null)} />
+      ) : null}
       {selectedResource ? (
-        <ResourcePopup item={selectedResource} onClose={() => setSelectedResourceLabel(null)} />
+        <ResourcePopup
+          item={selectedResource}
+          onClose={() => setSelectedResourceLabel(null)}
+          onOpenVideo={(url, title) => setActiveVideo({ url, title })}
+        />
       ) : null}
     </main>
   )
