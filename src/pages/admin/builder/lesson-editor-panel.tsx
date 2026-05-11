@@ -111,6 +111,7 @@ export function LessonEditorPanel() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [videoInputMode, setVideoInputMode] = useState<'url' | 'asset'>('url')
   const [audioRequests, setAudioRequests] = useState<LessonAudioModerationRequestAdminItem[]>([])
   const [footerActions, setFooterActions] = useState<LessonFooterAction[]>([])
   const [isLoadingAudioRequests, setIsLoadingAudioRequests] = useState(false)
@@ -495,7 +496,7 @@ export function LessonEditorPanel() {
                  Formato Pedagógico
                </legend>
                
-               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-slate-100/80 p-1.5 rounded-2xl">
+               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 bg-slate-100/80 p-1.5 rounded-2xl">
                  <button
                    type="button"
                    onClick={() => setForm(prev => ({ ...prev, lesson_type: 'video' }))}
@@ -520,25 +521,53 @@ export function LessonEditorPanel() {
                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
                    Vídeo + Texto
                  </button>
+                 <button
+                   type="button"
+                   onClick={() => setForm(prev => ({ ...prev, lesson_type: 'file' }))}
+                   className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-xs font-black transition-all uppercase tracking-wider ${form.lesson_type === 'file' ? 'bg-white text-blue-600 shadow-sm ring-1 ring-slate-200' : 'text-slate-500 hover:text-slate-700'}`}
+                 >
+                   <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3M4 17v1a2 2 0 002 2h12a2 2 0 002-2v-1M7 7h10" /></svg>
+                   Apenas Ficheiro
+                 </button>
                </div>
 
                {(form.lesson_type === 'video' || form.lesson_type === 'hybrid') && (
-                 <div className="animate-in slide-in-from-top-2 duration-300">
+                 <div className="animate-in slide-in-from-top-2 duration-300 space-y-3">
+                    <div className="rounded-xl border border-slate-200 bg-white p-1">
+                      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                        <button
+                          type="button"
+                          onClick={() => setVideoInputMode('url')}
+                          className={`rounded-lg px-3 py-2 text-xs font-black uppercase tracking-wide transition ${videoInputMode === 'url' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-50'}`}
+                        >
+                          URL do video
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setVideoInputMode('asset')}
+                          className={`rounded-lg px-3 py-2 text-xs font-black uppercase tracking-wide transition ${videoInputMode === 'asset' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-50'}`}
+                        >
+                          Asset protegido
+                        </button>
+                      </div>
+                    </div>
                     <label className="block space-y-2">
                       <span className="text-sm font-bold text-slate-800 flex items-center gap-2">
                         <svg className="h-4 w-4 text-rose-500" fill="currentColor" viewBox="0 0 24 24"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
-                        Link do YouTube
+                        {videoInputMode === 'url' ? 'URL do Video' : 'Asset Protegido (asset:uuid)'}
                       </span>
                       <input
                         className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-3 text-sm shadow-inner transition-all focus:border-rose-500 focus:ring-2 focus:ring-rose-100 focus:bg-white placeholder:text-slate-400"
-                        placeholder="https://www.youtube.com/watch?v=..."
+                        placeholder={videoInputMode === 'url' ? 'https://www.youtube.com/watch?v=... ou https://cdn.exemplo.com/video.mp4' : 'asset:00000000-0000-0000-0000-000000000000'}
                         value={form.youtube_url}
                         onChange={(e) => setForm((prev) => ({ ...prev, youtube_url: e.target.value }))}
                       />
                     </label>
+                    <p className="text-xs text-slate-500">
+                      Opcoes aceitas: YouTube, URL direta (.mp4/.webm/.ogg/.m4v/.mov) e referencia protegida asset:uuid.
+                    </p>
                  </div>
                )}
-
                 {(form.lesson_type === 'text' || form.lesson_type === 'hybrid') && (
                    <div className="animate-in slide-in-from-top-2 duration-300 space-y-6">
                       <div className="flex items-center justify-between">
