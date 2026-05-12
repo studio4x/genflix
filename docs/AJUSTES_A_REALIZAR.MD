@@ -291,7 +291,9 @@
 
 [OK] T97 - A seção de newsletter deverá estar desvinculada da seção da home que tem o botão que leva a página de recursos.
 
-[ ] t98 - ao clicar para editar nos cards de recursos na página de recursos, permitir editar as bordas dos cards. se alterar um, altera todos. permitir alterar também a curvatura das bordas. Todos os elementos devem ser carregados recolhidos. No editor da descrição, inserir a possibilidade de definir a cor e tamanho dos textos, de modo geral para todos os cards, sem precisar ajustar o html de cada um.
+## Chat 23 - Ajustes Gerais
+
+[OK] t98 - ao clicar para editar nos cards de recursos na página de recursos, permitir editar as bordas dos cards. se alterar um, altera todos. permitir alterar também a curvatura das bordas. Todos os elementos devem ser carregados recolhidos. No editor da descrição, inserir a possibilidade de definir a cor e tamanho dos textos, de modo geral para todos os cards, sem precisar ajustar o html de cada um.
 
 [ ] t99 - Nos recursos, inserir no painel admin, na página de videos dos recursos, inserir a possibilidade de inserir um botão de leia mais e então inserir um conteúdo nesse leia mais. quando ativado essa opção, abrir um campo para inserir o campo de leia mais. na página publica, o botão de leia mais deverá abrir um modal com esse conteudo.
 

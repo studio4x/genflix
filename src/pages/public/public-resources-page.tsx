@@ -253,44 +253,56 @@ function ResourcesCatalogSection({
               const videoUrl = resolveResourceVideoUrl(popupItem)
 
               return (
-                <article
+                <EditableContainer
                   key={item.id}
-                  className="rounded-[18px] border border-[#D8E6EB] bg-[#F2F7F9] px-5 py-5 text-left shadow-[0_16px_36px_rgba(21,50,59,0.04)] transition-transform duration-300 hover:-translate-y-1 hover:shadow-[0_20px_42px_rgba(19,152,183,0.12)]"
+                  entryKey="resources.catalog.card.style"
+                  label="Estilo global dos cards de recursos"
+                  pageKey="resources"
                 >
-                  <div className="flex items-start gap-4">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#E8F6FA] text-[#1398B7]">
-                      {renderResourceIcon(popupItem, 'h-4.5 w-4.5')}
+                  <article
+                    className="rounded-[18px] border border-[#D8E6EB] bg-[#F2F7F9] px-5 py-5 text-left shadow-[0_16px_36px_rgba(21,50,59,0.04)] transition-transform duration-300 hover:-translate-y-1 hover:shadow-[0_20px_42px_rgba(19,152,183,0.12)]"
+                  >
+                    <div className="flex items-start gap-4">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#E8F6FA] text-[#1398B7]">
+                        {renderResourceIcon(popupItem, 'h-4.5 w-4.5')}
+                      </div>
                     </div>
-                  </div>
 
-                  <h2 className="mt-5 text-[1rem] font-bold leading-6 text-[#183139]">{item.label}</h2>
-                  <div className="mt-3 text-sm leading-7 text-[#667980] [&_p]:m-0">
-                    {renderResourceTextContent(item.description ?? '', '')}
-                  </div>
-                  {videoUrl ? (
-                    <div className="mt-4">
-                      <button
-                        type="button"
-                        onClick={(event) => {
-                          event.stopPropagation()
-                          onOpenVideo({
-                            url: videoUrl,
-                            title: popupItem.label || 'Video de instrucao',
-                          })
-                        }}
-                        className="inline-flex items-center rounded-full border border-[#1398B7]/30 bg-white px-3 py-1.5 text-xs font-black uppercase tracking-[0.12em] text-[#0F7E99] hover:bg-[#E8F6FA]"
-                      >
-                        Ver video de instrucao
-                      </button>
-                    </div>
-                  ) : null}
-                </article>
+                    <h2 className="mt-5 text-[1rem] font-bold leading-6 text-[#183139]">{item.label}</h2>
+                    <EditableContainer
+                      entryKey="resources.catalog.card.description.style"
+                      label="Estilo global da descricao dos cards de recursos"
+                      pageKey="resources"
+                    >
+                      <div className="mt-3 text-sm leading-7 text-[#667980] [&_p]:m-0">
+                        {renderResourceTextContent(item.description ?? '', '')}
+                      </div>
+                    </EditableContainer>
+                    {videoUrl ? (
+                      <div className="mt-4">
+                        <button
+                          type="button"
+                          onClick={(event) => {
+                            event.stopPropagation()
+                            onOpenVideo({
+                              url: videoUrl,
+                              title: popupItem.label || 'Video de instrucao',
+                            })
+                          }}
+                          className="inline-flex items-center rounded-full border border-[#1398B7]/30 bg-white px-3 py-1.5 text-xs font-black uppercase tracking-[0.12em] text-[#0F7E99] hover:bg-[#E8F6FA]"
+                        >
+                          Ver video de instrucao
+                        </button>
+                      </div>
+                    ) : null}
+                  </article>
+                </EditableContainer>
               )
             })}
           </EditableList>
         </div>
         </EditableContainer>
-
+ 
         <EditableContainer entryKey="resources.catalog.cta.wrap" label="Container interno do CTA de recursos" pageKey="resources">
           <div className="mt-12 flex justify-center">
           <GenflixCtaButton asChild className="px-5 py-3">
@@ -304,7 +316,7 @@ function ResourcesCatalogSection({
     </section>
   )
 }
-
+ 
 export function PublicResourcesPage() {
   const { isLoading, user, roles } = useAuth()
   const [activeVideo, setActiveVideo] = useState<ResourceVideoModalState | null>(null)
@@ -318,28 +330,28 @@ export function PublicResourcesPage() {
     () => normalizeResourcesItems(resourceItemsRaw),
     [resourceItemsRaw],
   )
-
+ 
   useEffect(() => {
     if (!activeVideo) {
       return
     }
-
+ 
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === 'Escape') {
         setActiveVideo(null)
       }
     }
-
+ 
     const previousOverflow = document.body.style.overflow
     document.body.style.overflow = 'hidden'
     window.addEventListener('keydown', handleKeyDown)
-
+ 
     return () => {
       document.body.style.overflow = previousOverflow
       window.removeEventListener('keydown', handleKeyDown)
     }
   }, [activeVideo])
-
+ 
   if (isLoading || waitingRoleResolution) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-[#10242b] p-6 font-manrope">
@@ -347,7 +359,7 @@ export function PublicResourcesPage() {
       </main>
     )
   }
-
+ 
   return (
     <main className="min-h-screen bg-[#F2F7F9] font-manrope text-[#163138]">
       <GenflixPublicHeader currentPage="resources" navLinks={genflixNavLinks} />
@@ -364,7 +376,7 @@ export function PublicResourcesPage() {
         const templateKey = resolveSectionRegistryTemplateKey(item)
         const sectionPageKey = resolveSectionRegistryPageKey(item, 'resources')
         const sectionEntryPrefix = resolveSectionRegistryEntryPrefix(item, `resources.sections.${templateKey}`)
-
+ 
         if (templateKey === 'catalog') {
           return (
             <EditableContainer entryKey={`${sectionEntryPrefix}.layout`} label="Bloco Catalogo da pagina Recursos" pageKey={sectionPageKey}>
@@ -372,11 +384,11 @@ export function PublicResourcesPage() {
             </EditableContainer>
           )
         }
-
+ 
         if (templateKey === 'newsletter') {
           return <GenflixNewsletterSection />
         }
-
+ 
         return null
       })}
       <GenflixPublicFooter />

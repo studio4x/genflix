@@ -887,7 +887,7 @@ function ListItemEditorCard({
   iconLibraryOptions: MediaLibraryIconOption[]
   editorConfig: NormalizedListEditorSchema
 }) {
-  const [isCollapsed, setIsCollapsed] = useState(false)
+  const [isCollapsed, setIsCollapsed] = useState(true)
   const [iconSearchQuery, setIconSearchQuery] = useState('')
   const metadata: Record<string, unknown> = isStringRecord(item.metadata) ? { ...item.metadata } : {}
   const nestedItems = normalizeEditableListItems(metadata.items)
