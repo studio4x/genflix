@@ -1782,6 +1782,7 @@ function EditorModal({
   const previewHeadingTag = getHeadingTagLabel(textStyle.headingTag)
   const isSeoEditor = editor.entryType === 'json' && editor.schema?.kind === 'seo'
   const isSiteAppearanceEditor = editor.entryType === 'json' && editor.schema?.kind === 'site-appearance'
+  const isContainerStyleEditor = editor.entryType === 'json' && editor.schema?.kind === 'container-style'
   const isGlobalHeaderEditor = editor.pageKey === 'global'
   const isAppearanceLockedToGlobal = isSiteAppearanceEditor && !isGlobalHeaderEditor && appearanceDraft.scope === 'global'
   const previewImagePresentation = useMemo(() => getEditableImagePresentation(previewImage), [previewImage])
@@ -1789,8 +1790,8 @@ function EditorModal({
   const workflowStatus = workspaceRecord.status
   const comments = workspaceRecord.comments
   const draftAvailable = typeof workspaceRecord.draftRawValue === 'string' && workspaceRecord.draftRawValue.trim() !== ''
-  const displayEntryTypeLabel = isRichTextListEditor ? 'content' : editor.entryType
-  const displayStructureLabel = isRichTextListEditor ? 'blocos de conteúdo' : describeValueShape(parsedPreview.value)
+  const displayEntryTypeLabel = isContainerStyleEditor ? 'section' : (isRichTextListEditor ? 'content' : editor.entryType)
+  const displayStructureLabel = isContainerStyleEditor ? 'container visual' : (isRichTextListEditor ? 'blocos de conteúdo' : describeValueShape(parsedPreview.value))
   const updateAppearanceDraft = useCallback((nextAppearance: NormalizedSiteAppearance) => {
     setRawValue(JSON.stringify(buildSiteAppearanceValue(nextAppearance), null, 2))
   }, [])
@@ -2943,7 +2944,7 @@ function EditorModal({
                     </div>
                   </div>
                 ) : null}
-                {!isSiteAppearanceEditor ? (
+                {!isSiteAppearanceEditor && !isContainerStyleEditor ? (
                 <div className="mt-4 grid gap-3 md:grid-cols-2">
                   {Object.entries(previewRecord).map(([key, currentValue]) => {
                     if (typeof currentValue === 'string') {
@@ -4279,11 +4280,21 @@ export function EditableContainer({
   const styleEntryKey = `${entryKey}.__style`
   const styleValue = normalizeTextStyle(useEditableValue(styleEntryKey, {}, { pageKey: resolvedPageKey }))
   const inlineStyle = textStyleToCss(styleValue)
-  const content = (
-    <div className={className} style={inlineStyle}>
-      {children}
-    </div>
-  )
+  const childNodes = Array.isArray(children) ? children : [children]
+  const singleChildNode = childNodes.length === 1 ? childNodes[0] : null
+  const content = isValidElement<{ className?: string; style?: CSSProperties }>(singleChildNode)
+    ? cloneElement(singleChildNode, {
+      className,
+      style: {
+        ...(singleChildNode.props.style ?? {}),
+        ...(inlineStyle ?? {}),
+      },
+    })
+    : (
+      <div className={className} style={inlineStyle}>
+        {children}
+      </div>
+    )
 
   if (!editor?.isEditing || !scope) {
     return content
@@ -4301,6 +4312,7 @@ export function EditableContainer({
         fallback: {},
         styleEntryKey,
         styleFallback: styleValue,
+        schema: { kind: 'container-style' },
         reload: scope.reload,
       })}
     >
