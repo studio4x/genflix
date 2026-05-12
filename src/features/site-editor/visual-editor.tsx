@@ -10,6 +10,7 @@
   useState,
   type CSSProperties,
   type FormEvent,
+  type ReactElement,
   type ReactNode,
 } from 'react'
 import { Link, useLocation } from 'react-router-dom'
@@ -4294,11 +4295,15 @@ export function EditableContainer({
   const inlineStyle = textStyleToCss(styleValue)
   const childNodes = Array.isArray(children) ? children : [children]
   const singleChildNode = childNodes.length === 1 ? childNodes[0] : null
-  const content = isValidElement<{ className?: string; style?: CSSProperties }>(singleChildNode)
-    ? cloneElement(singleChildNode, {
-      className: className ? cn(singleChildNode.props.className, className) : singleChildNode.props.className,
+  const isIntrinsicElement = isValidElement(singleChildNode) && typeof singleChildNode.type === 'string'
+  const intrinsicChild = isIntrinsicElement
+    ? singleChildNode as ReactElement<{ className?: string; style?: CSSProperties }>
+    : null
+  const content = intrinsicChild
+    ? cloneElement(intrinsicChild, {
+      className: className ? cn(intrinsicChild.props.className, className) : intrinsicChild.props.className,
       style: {
-        ...(singleChildNode.props.style ?? {}),
+        ...(intrinsicChild.props.style ?? {}),
         ...(inlineStyle ?? {}),
       },
     })
