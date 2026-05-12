@@ -75,6 +75,9 @@ type TextStyleValue = {
   backgroundImage?: string
   backgroundSize?: string
   backgroundPosition?: string
+  borderColor?: string
+  borderWidth?: string
+  borderStyle?: string
   width?: string
   height?: string
   minWidth?: string
@@ -262,6 +265,9 @@ function normalizeTextStyle(value: unknown): TextStyleValue {
     'backgroundImage',
     'backgroundSize',
     'backgroundPosition',
+    'borderColor',
+    'borderWidth',
+    'borderStyle',
     'width',
     'height',
     'minWidth',
@@ -330,6 +336,9 @@ function hasBoxStyle(style: TextStyleValue) {
     || style.marginInline
     || style.marginBlock
     || style.borderRadius
+    || style.borderColor
+    || style.borderWidth
+    || style.borderStyle
     || style.textAlign
   )
 }
@@ -1737,6 +1746,7 @@ function EditorModal({
   const [isRichTextImagePickerOpen, setIsRichTextImagePickerOpen] = useState(false)
   const mediaLibraryIconOptions = useMemo(() => buildMediaLibraryIconOptions(assetLibrary), [assetLibrary])
   const richTextImageAssets = useMemo(() => assetLibrary.filter(isImageSiteAsset), [assetLibrary])
+  const backgroundImageAssets = useMemo(() => assetLibrary.filter(isImageSiteAsset), [assetLibrary])
   const [draftComment, setDraftComment] = useState('')
   const [workspaceState, setWorkspaceState] = useState<SiteEditorWorkspaceMap>({})
   const [isLoadingWorkspace, setIsLoadingWorkspace] = useState(false)
@@ -2183,6 +2193,33 @@ function EditorModal({
     }
   }
 
+  async function handleBackgroundImageUpload(file: File | null) {
+    if (!file) return
+    setMessage(null)
+    setIsSaving(true)
+
+    try {
+      const asset = await uploadSiteAsset(file, {
+        pageKey: editor.pageKey,
+        entryKey: editor.styleEntryKey ?? editor.entryKey,
+      })
+      setAssetLibrary((current) => [asset, ...current.filter((currentAsset) => currentAsset.id !== asset.id)].slice(0, 240))
+      if (asset.public_url) {
+        setTextStyle((current) => ({
+          ...current,
+          backgroundImage: `url(${asset.public_url})`,
+        }))
+        setMessage('Imagem de fundo enviada. Clique em publicar para aplicar.')
+      } else {
+        setMessage('Upload concluído, mas o ativo não retornou URL pública.')
+      }
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Não foi possível enviar a imagem de fundo.')
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
   function selectAssetFromLibrary(asset: SiteAsset) {
     setUploadAlt(asset.alt ?? '')
     setRawValue(JSON.stringify({
@@ -2194,6 +2231,19 @@ function EditorModal({
       focusY: previewImagePresentation.focusY,
     }, null, 2))
     setMessage('Imagem da biblioteca selecionada. Clique em salvar para publicar.')
+  }
+
+  function selectBackgroundImageFromLibrary(asset: SiteAsset) {
+    if (!asset.public_url) {
+      setMessage('Este ativo não possui URL pública disponível.')
+      return
+    }
+
+    setTextStyle((current) => ({
+      ...current,
+      backgroundImage: `url(${asset.public_url})`,
+    }))
+    setMessage('Imagem de fundo selecionada da biblioteca. Clique em publicar para aplicar.')
   }
 
   return (
@@ -2985,12 +3035,7 @@ function EditorModal({
                       )
                     }
 
-                    return (
-                      <div key={key} className="rounded-[14px] border border-[#D8E6EB] bg-white px-3 py-2 text-xs font-semibold text-[#5F7077]">
-                        <span className="font-black uppercase tracking-[0.14em]">{key}</span>
-                        <pre className="mt-2 overflow-auto leading-5 text-[#15323b]">{JSON.stringify(currentValue, null, 2)}</pre>
-                      </div>
-                    )
+                    return null
                   })}
                 </div>
                 ) : null}
@@ -3024,7 +3069,7 @@ function EditorModal({
                   </label>
                   {!isContainerStyleEditor ? (
                   <label className="grid gap-1.5">
-                    <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Largura</span>
+                    <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Largura (px/rem/em)</span>
                     <input
                       value={textStyle.width ?? ''}
                       onChange={(event) => setTextStyle((current) => ({ ...current, width: event.target.value }))}
@@ -3035,7 +3080,7 @@ function EditorModal({
                   ) : null}
                   {!isContainerStyleEditor ? (
                   <label className="grid gap-1.5">
-                    <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Altura</span>
+                    <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Altura (px/rem/em)</span>
                     <input
                       value={textStyle.height ?? ''}
                       onChange={(event) => setTextStyle((current) => ({ ...current, height: event.target.value }))}
@@ -3046,7 +3091,7 @@ function EditorModal({
                   ) : null}
                   {!isContainerStyleEditor ? (
                   <label className="grid gap-1.5">
-                    <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Largura mínima</span>
+                    <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Largura mínima (px/rem/em)</span>
                     <div className="flex items-center gap-2">
                       <input
                         value={textStyle.minWidth ?? ''}
@@ -3060,12 +3105,52 @@ function EditorModal({
                   ) : null}
                   <label className="grid gap-1.5 md:col-span-2">
                     <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Imagem de fundo (URL)</span>
-                    <input
-                      value={textStyle.backgroundImage ?? ''}
-                      onChange={(event) => setTextStyle((current) => ({ ...current, backgroundImage: event.target.value }))}
-                      placeholder="url(https://...)"
-                      className="h-11 rounded-[14px] border border-[#D8E6EB] px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]"
-                    />
+                    <div className="grid gap-2">
+                      <input
+                        value={textStyle.backgroundImage ?? ''}
+                        onChange={(event) => setTextStyle((current) => ({ ...current, backgroundImage: event.target.value }))}
+                        placeholder="url(https://...)"
+                        className="h-11 rounded-[14px] border border-[#D8E6EB] px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]"
+                      />
+                      <div className="flex flex-wrap gap-2">
+                        <label className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-[12px] border border-[#1398B7] bg-white px-3 py-2 text-xs font-black uppercase tracking-[0.12em] text-[#0A3640] hover:bg-[#E8F6FA]">
+                          <ImageIcon className="h-3.5 w-3.5" />
+                          Upload
+                          <input type="file" accept="image/*" className="hidden" onChange={(event) => void handleBackgroundImageUpload(event.target.files?.[0] ?? null)} />
+                        </label>
+                        {textStyle.backgroundImage ? (
+                          <button
+                            type="button"
+                            onClick={() => setTextStyle((current) => ({ ...current, backgroundImage: undefined }))}
+                            className="rounded-[12px] border border-[#D8E6EB] bg-white px-3 py-2 text-xs font-black uppercase tracking-[0.12em] text-[#5F7077] hover:bg-[#F2F7F9]"
+                          >
+                            Remover imagem
+                          </button>
+                        ) : null}
+                      </div>
+                      <div className="grid max-h-36 gap-2 overflow-y-auto rounded-[14px] border border-[#D8E6EB] bg-[#F8FCFD] p-2 sm:grid-cols-2">
+                        {backgroundImageAssets.slice(0, 8).map((asset) => (
+                          <button
+                            key={asset.id}
+                            type="button"
+                            onClick={() => selectBackgroundImageFromLibrary(asset)}
+                            className="flex items-center gap-2 rounded-[12px] border border-[#D8E6EB] bg-white px-2 py-2 text-left hover:border-[#1398B7] hover:bg-[#EAF8FB]"
+                          >
+                            {asset.public_url ? (
+                              <img src={asset.public_url} alt={asset.alt ?? ''} className="h-10 w-10 rounded-[8px] object-cover" />
+                            ) : (
+                              <div className="h-10 w-10 rounded-[8px] bg-[#D8E6EB]" />
+                            )}
+                            <span className="line-clamp-2 text-xs font-semibold text-[#15323b]">{resolveSiteAssetLabel(asset)}</span>
+                          </button>
+                        ))}
+                        {!isLoadingAssetLibrary && backgroundImageAssets.length === 0 ? (
+                          <div className="sm:col-span-2 rounded-[12px] border border-dashed border-[#D8E6EB] px-3 py-4 text-center text-xs font-semibold text-[#5F7077]">
+                            Nenhuma imagem disponível na biblioteca.
+                          </div>
+                        ) : null}
+                      </div>
+                    </div>
                   </label>
                   <label className="grid gap-1.5">
                     <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Posição da imagem</span>
@@ -3087,7 +3172,7 @@ function EditorModal({
                   </label>
                   {!isContainerStyleEditor ? (
                   <label className="grid gap-1.5">
-                    <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Altura mínima</span>
+                    <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Altura mínima (px/rem/em)</span>
                     <div className="flex items-center gap-2">
                       <input
                         value={textStyle.minHeight ?? ''}
@@ -3099,9 +3184,8 @@ function EditorModal({
                     </div>
                   </label>
                   ) : null}
-                  {!isContainerStyleEditor ? (
                   <label className="grid gap-1.5">
-                    <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Arredondamento</span>
+                    <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Curvatura da borda (px/rem/em)</span>
                     <div className="flex items-center gap-2">
                       <input
                         value={textStyle.borderRadius ?? ''}
@@ -3112,9 +3196,35 @@ function EditorModal({
                       <span className="shrink-0 text-[10px] font-black uppercase tracking-[0.14em] text-[#8A9AA1]">px</span>
                     </div>
                   </label>
-                  ) : null}
                   <label className="grid gap-1.5">
-                    <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Padding horizontal</span>
+                    <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Espessura da borda (px/rem/em)</span>
+                    <input
+                      value={textStyle.borderWidth ?? ''}
+                      onChange={(event) => setTextStyle((current) => ({ ...current, borderWidth: event.target.value }))}
+                      placeholder="1px"
+                      className="h-11 rounded-[14px] border border-[#D8E6EB] px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]"
+                    />
+                  </label>
+                  <label className="grid gap-1.5 md:col-span-2">
+                    <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Cor da borda</span>
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="color"
+                        value={textStyle.borderColor ?? '#d8e6eb'}
+                        onChange={(event) => setTextStyle((current) => ({ ...current, borderColor: event.target.value, borderStyle: current.borderStyle ?? 'solid' }))}
+                        className="h-11 w-14 rounded-[14px] border border-[#D8E6EB] bg-white p-1 outline-none focus:border-[#1398B7]"
+                        aria-label="Selecionar cor da borda"
+                      />
+                      <input
+                        value={textStyle.borderColor ?? ''}
+                        onChange={(event) => setTextStyle((current) => ({ ...current, borderColor: event.target.value, borderStyle: current.borderStyle ?? 'solid' }))}
+                        placeholder="#d8e6eb"
+                        className="h-11 flex-1 rounded-[14px] border border-[#D8E6EB] px-3 text-sm font-semibold uppercase tracking-[0.06em] text-[#15323b] outline-none focus:border-[#1398B7]"
+                      />
+                    </div>
+                  </label>
+                  <label className="grid gap-1.5">
+                    <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Padding horizontal (px/rem/em)</span>
                     <input
                       value={textStyle.paddingInline ?? ''}
                       onChange={(event) => setTextStyle((current) => ({ ...current, paddingInline: event.target.value }))}
@@ -3123,7 +3233,7 @@ function EditorModal({
                     />
                   </label>
                   <label className="grid gap-1.5">
-                    <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Padding vertical</span>
+                    <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Padding vertical (px/rem/em)</span>
                     <input
                       value={textStyle.paddingBlock ?? ''}
                       onChange={(event) => setTextStyle((current) => ({ ...current, paddingBlock: event.target.value }))}
@@ -3132,7 +3242,7 @@ function EditorModal({
                     />
                   </label>
                   <label className="grid gap-1.5">
-                    <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Margem horizontal</span>
+                    <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Margem horizontal (px/rem/em)</span>
                     <input
                       value={textStyle.marginInline ?? ''}
                       onChange={(event) => setTextStyle((current) => ({ ...current, marginInline: event.target.value }))}
@@ -3141,7 +3251,7 @@ function EditorModal({
                     />
                   </label>
                   <label className="grid gap-1.5">
-                    <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Margem vertical</span>
+                    <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Margem vertical (px/rem/em)</span>
                     <input
                       value={textStyle.marginBlock ?? ''}
                       onChange={(event) => setTextStyle((current) => ({ ...current, marginBlock: event.target.value }))}
@@ -3602,14 +3712,16 @@ function EditorModal({
                     ) : (
                       <div className="sm:col-span-2 rounded-[18px] border border-[#D8E6EB] bg-white p-5 shadow-[0_12px_24px_rgba(21,50,59,0.04)]">
                         <div className="space-y-3">
-                          {Object.entries(previewRecord).map(([key, currentValue]) => (
-                            <div key={key} className="rounded-[14px] border border-[#D8E6EB] bg-[#F8FCFD] px-3 py-2">
-                              <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">{key}</p>
-                              <p className="mt-1 break-words text-sm font-semibold text-[#15323b]">
-                                {typeof currentValue === 'string' ? currentValue : JSON.stringify(currentValue)}
-                              </p>
-                            </div>
-                          ))}
+                          {Object.entries(previewRecord)
+                            .filter(([, currentValue]) => typeof currentValue === 'string' || typeof currentValue === 'boolean')
+                            .map(([key, currentValue]) => (
+                              <div key={key} className="rounded-[14px] border border-[#D8E6EB] bg-[#F8FCFD] px-3 py-2">
+                                <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">{key}</p>
+                                <p className="mt-1 break-words text-sm font-semibold text-[#15323b]">
+                                  {typeof currentValue === 'string' ? currentValue : currentValue ? 'true' : 'false'}
+                                </p>
+                              </div>
+                            ))}
                         </div>
                       </div>
                     )}
