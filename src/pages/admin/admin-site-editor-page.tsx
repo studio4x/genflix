@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, type ChangeEvent } from 'react'
+﻿import { useCallback, useEffect, useMemo, useState, type ChangeEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { AlertTriangle, Copy, Eye, EyeOff, ExternalLink, Filter, History, Loader2, MessageSquare, RotateCcw, Save, Search, ShieldCheck, Trash2, Type, Upload } from 'lucide-react'
 import JSZip from 'jszip'
@@ -332,7 +332,7 @@ export function AdminSiteEditorPage() {
       setPages((pagesResult.data ?? []) as SitePageRow[])
       setEntries((entriesResult.data ?? []) as SiteContentEntry[])
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Não foi possível carregar o editor visual.')
+      setMessage(error instanceof Error ? error.message : 'NÃ£o foi possÃ­vel carregar o editor visual.')
     } finally {
       setIsLoading(false)
     }
@@ -391,9 +391,9 @@ export function AdminSiteEditorPage() {
     try {
       const nextSettings = await updateSiteEditorSettings(input)
       setSettings(nextSettings)
-      setMessage('Configurações do editor visual atualizadas.')
+      setMessage('ConfiguraÃ§Ãµes do editor visual atualizadas.')
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Não foi possível atualizar as configurações.')
+      setMessage(error instanceof Error ? error.message : 'NÃ£o foi possÃ­vel atualizar as configuraÃ§Ãµes.')
     } finally {
       setIsSaving(false)
     }
@@ -406,9 +406,9 @@ export function AdminSiteEditorPage() {
     try {
       const nextSettings = await disableSiteEditorOverrides()
       setSettings(nextSettings)
-      setMessage('Editor desativado para leitura pública. O site voltou ao conteúdo original hardcoded.')
+      setMessage('Editor desativado para leitura pÃºblica. O site voltou ao conteÃºdo original hardcoded.')
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Não foi possível ativar o fallback original.')
+      setMessage(error instanceof Error ? error.message : 'NÃ£o foi possÃ­vel ativar o fallback original.')
     } finally {
       setIsSaving(false)
     }
@@ -423,7 +423,7 @@ export function AdminSiteEditorPage() {
       await loadData()
       setMessage('Override do campo desativado. O fallback original voltou a valer para este campo.')
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Não foi possível limpar o override.')
+      setMessage(error instanceof Error ? error.message : 'NÃ£o foi possÃ­vel limpar o override.')
     } finally {
       setIsSaving(false)
     }
@@ -436,9 +436,9 @@ export function AdminSiteEditorPage() {
     try {
       await clearPageOverrides(selectedPageKey)
       await loadData()
-      setMessage('Overrides da página desativados. A página voltou ao conteúdo original.')
+      setMessage('Overrides da pÃ¡gina desativados. A pÃ¡gina voltou ao conteÃºdo original.')
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Não foi possível restaurar a página.')
+      setMessage(error instanceof Error ? error.message : 'NÃ£o foi possÃ­vel restaurar a pÃ¡gina.')
     } finally {
       setIsSaving(false)
     }
@@ -451,16 +451,16 @@ export function AdminSiteEditorPage() {
     try {
       setVersions(await fetchSiteContentVersions(entryId))
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Não foi possível carregar o histórico.')
+      setMessage(error instanceof Error ? error.message : 'NÃ£o foi possÃ­vel carregar o histÃ³rico.')
     }
   }
 
   async function handleCopyIconKey(iconKey: string) {
     try {
       await navigator.clipboard.writeText(iconKey)
-      setMessage(`Chave do ícone "${iconKey}" copiada para uso no editor.`)
+      setMessage(`Chave do Ã­cone "${iconKey}" copiada para uso no editor.`)
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Não foi possível copiar a chave do ícone.')
+      setMessage(error instanceof Error ? error.message : 'NÃ£o foi possÃ­vel copiar a chave do Ã­cone.')
     }
   }
 
@@ -605,7 +605,7 @@ export function AdminSiteEditorPage() {
         : ''
       setMessage(`${uploadedCount} icone(s) SVG enviado(s) para a biblioteca${zipSummary}.${duplicateSummary}${ignoredSummary}`)
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Não foi possível enviar os ícones para a biblioteca.')
+      setMessage(error instanceof Error ? error.message : 'NÃ£o foi possÃ­vel enviar os Ã­cones para a biblioteca.')
     } finally {
       setIsUploadingIcons(false)
     }
@@ -666,9 +666,9 @@ export function AdminSiteEditorPage() {
       if (selectedEntryId) {
         setVersions(await fetchSiteContentVersions(selectedEntryId))
       }
-      setMessage('Versão anterior restaurada e publicada.')
+      setMessage('VersÃ£o anterior restaurada e publicada.')
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Não foi possível restaurar a versão.')
+      setMessage(error instanceof Error ? error.message : 'NÃ£o foi possÃ­vel restaurar a versÃ£o.')
     } finally {
       setIsSaving(false)
     }
@@ -681,7 +681,7 @@ export function AdminSiteEditorPage() {
           <p className="text-[10px] font-black uppercase tracking-[0.28em] text-[#1398B7]">Admin / Site</p>
           <h1 className="mt-2 font-readex text-3xl font-semibold tracking-tight text-[#15323b]">Editor Visual</h1>
           <p className="mt-2 max-w-3xl text-sm font-medium leading-6 text-[#5F7077]">
-            Edite conteúdo do site público pelo frontend sem alterar a estrutura visual. O fallback hardcoded permanece preservado.
+            Edite conteÃºdo do site pÃºblico pelo frontend sem alterar a estrutura visual. O fallback hardcoded permanece preservado.
           </p>
         </div>
 
@@ -692,6 +692,33 @@ export function AdminSiteEditorPage() {
           Abrir site
         </Link>
       </header>
+      <article className="w-full border border-[#D8E6EB] bg-white p-4 shadow-sm">
+        <div className="flex h-11 w-full overflow-hidden rounded-[14px] border border-[#D8E6EB] bg-[#F8FBFC]">
+          <button
+            type="button"
+            onClick={() => setActiveTab('overrides')}
+            className={'flex-1 px-4 text-xs font-black uppercase tracking-[0.14em] ' + (activeTab === 'overrides' ? 'bg-[#0A3640] text-white' : 'text-[#5F7077]')}
+          >
+            Overrides
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('icon-library')}
+            className={'inline-flex flex-1 items-center justify-center gap-2 px-4 text-xs font-black uppercase tracking-[0.14em] ' + (activeTab === 'icon-library' ? 'bg-[#1398B7] text-white' : 'text-[#5F7077]')}
+          >
+            <Upload className="h-3.5 w-3.5" />
+            Biblioteca de ícones
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('typography')}
+            className={'inline-flex flex-1 items-center justify-center gap-2 px-4 text-xs font-black uppercase tracking-[0.14em] ' + (activeTab === 'typography' ? 'bg-[#1398B7] text-white' : 'text-[#5F7077]')}
+          >
+            <Type className="h-3.5 w-3.5" />
+            Tipografia global
+          </button>
+        </div>
+      </article>
 
       {message ? (
         <div className="border border-[#D8E6EB] bg-[#F2F7F9] p-4 text-sm font-bold text-[#15323b]">
@@ -707,12 +734,12 @@ export function AdminSiteEditorPage() {
           <p className="mt-2 text-sm font-semibold text-[#5F7077]">Controla a camada CMS inteira.</p>
         </article>
         <article className="border border-[#D8E6EB] bg-white p-5 shadow-sm">
-          <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#5F7077]">Overrides públicos</p>
+          <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#5F7077]">Overrides pÃºblicos</p>
           <p className="mt-3 font-readex text-2xl font-semibold text-[#15323b]">{settings.read_overrides_enabled ? 'Lendo' : 'Fallback'}</p>
-          <p className="mt-2 text-sm font-semibold text-[#5F7077]">Se desligado, o site usa o conteúdo original.</p>
+          <p className="mt-2 text-sm font-semibold text-[#5F7077]">Se desligado, o site usa o conteÃºdo original.</p>
         </article>
         <article className="border border-[#D8E6EB] bg-white p-5 shadow-sm">
-          <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#5F7077]">Modo edição</p>
+          <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#5F7077]">Modo ediÃ§Ã£o</p>
           <p className="mt-3 font-readex text-2xl font-semibold text-[#15323b]">{settings.editing_enabled ? 'Liberado' : 'Bloqueado'}</p>
           <p className="mt-2 text-sm font-semibold text-[#5F7077]">Afeta apenas administradores.</p>
         </article>
@@ -726,40 +753,13 @@ export function AdminSiteEditorPage() {
 
       <section className={`grid gap-6 ${activeTab === 'icon-library' || activeTab === 'typography' ? '' : 'xl:grid-cols-[0.85fr_minmax(0,1.15fr)]'}`}>
         <div className="min-w-0 space-y-6">
-          <article className="border border-[#D8E6EB] bg-white p-4 shadow-sm">
-            <div className="inline-flex h-11 overflow-hidden rounded-[14px] border border-[#D8E6EB] bg-[#F8FBFC]">
-              <button
-                type="button"
-                onClick={() => setActiveTab('overrides')}
-                className={`px-4 text-xs font-black uppercase tracking-[0.14em] ${activeTab === 'overrides' ? 'bg-[#0A3640] text-white' : 'text-[#5F7077]'}`}
-              >
-                Overrides
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveTab('icon-library')}
-                className={`inline-flex items-center gap-2 px-4 text-xs font-black uppercase tracking-[0.14em] ${activeTab === 'icon-library' ? 'bg-[#1398B7] text-white' : 'text-[#5F7077]'}`}
-              >
-                <Upload className="h-3.5 w-3.5" />
-                Biblioteca de ícones
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveTab('typography')}
-                className={`inline-flex items-center gap-2 px-4 text-xs font-black uppercase tracking-[0.14em] ${activeTab === 'typography' ? 'bg-[#1398B7] text-white' : 'text-[#5F7077]'}`}
-              >
-                <Type className="h-3.5 w-3.5" />
-                Tipografia global
-              </button>
-            </div>
-          </article>
 
           {activeTab === 'overrides' ? (
           <>
           <article className="border border-[#D8E6EB] bg-white p-5 shadow-sm">
-            <h2 className="font-readex text-xl font-semibold text-[#15323b]">Governança compartilhada</h2>
+            <h2 className="font-readex text-xl font-semibold text-[#15323b]">GovernanÃ§a compartilhada</h2>
             <p className="mt-2 text-sm font-semibold leading-6 text-[#5F7077]">
-              Estes dados agora ficam persistidos no backend e refletem o fluxo compartilhado de rascunho, revisão, aprovação e comentários entre colaboradores do editor.
+              Estes dados agora ficam persistidos no backend e refletem o fluxo compartilhado de rascunho, revisÃ£o, aprovaÃ§Ã£o e comentÃ¡rios entre colaboradores do editor.
             </p>
             <div className="mt-5 grid gap-3 sm:grid-cols-2">
               <div className="rounded-[18px] border border-[#D8E6EB] bg-[#F8FBFC] p-4">
@@ -767,7 +767,7 @@ export function AdminSiteEditorPage() {
                 <p className="mt-2 text-2xl font-black text-[#15323b]">{collaborationSummary.draftsWithContent}</p>
               </div>
               <div className="rounded-[18px] border border-[#D8E6EB] bg-[#F8FBFC] p-4">
-                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#5F7077]">Comentários internos</p>
+                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#5F7077]">ComentÃ¡rios internos</p>
                 <p className="mt-2 text-2xl font-black text-[#15323b]">{collaborationSummary.comments}</p>
               </div>
             </div>
@@ -780,11 +780,11 @@ export function AdminSiteEditorPage() {
               ))}
             </div>
             <div className="mt-4 rounded-[18px] border border-[#D8E6EB] bg-[#F8FBFC] p-4">
-              <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#1398B7]">Permissões por perfil</p>
+              <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#1398B7]">PermissÃµes por perfil</p>
               <div className="mt-3 grid gap-2 text-sm font-semibold text-[#15323b]">
-                <p><span className="font-black">Admin:</span> rascunho, comentários, aprovação e publicação.</p>
-                <p><span className="font-black">Criador/Professor:</span> rascunho, comentários e solicitação de revisão.</p>
-                <p><span className="font-black">Demais perfis:</span> sem acesso ao fluxo de edição.</p>
+                <p><span className="font-black">Admin:</span> rascunho, comentÃ¡rios, aprovaÃ§Ã£o e publicaÃ§Ã£o.</p>
+                <p><span className="font-black">Criador/Professor:</span> rascunho, comentÃ¡rios e solicitaÃ§Ã£o de revisÃ£o.</p>
+                <p><span className="font-black">Demais perfis:</span> sem acesso ao fluxo de ediÃ§Ã£o.</p>
               </div>
             </div>
           </article>
@@ -795,7 +795,7 @@ export function AdminSiteEditorPage() {
               <div>
                 <h2 className="font-readex text-xl font-semibold text-rose-800">Fallback imediato</h2>
                 <p className="mt-2 text-sm font-semibold leading-6 text-rose-700">
-                  Esta ação não apaga dados. Ela apenas faz o site ignorar overrides e voltar ao conteúdo original do código.
+                  Esta aÃ§Ã£o nÃ£o apaga dados. Ela apenas faz o site ignorar overrides e voltar ao conteÃºdo original do cÃ³digo.
                 </p>
               </div>
             </div>
@@ -806,12 +806,12 @@ export function AdminSiteEditorPage() {
               className="mt-5 h-12 w-full rounded-none bg-rose-700 font-black text-white hover:bg-rose-800"
             >
               <ShieldCheck className="mr-2 h-4 w-4" />
-              Desativar editor visual e voltar ao conteúdo original
+              Desativar editor visual e voltar ao conteÃºdo original
             </Button>
           </article>
 
           <article className="border border-[#D8E6EB] bg-white p-5 shadow-sm">
-            <h2 className="font-readex text-xl font-semibold text-[#15323b]">Configurações</h2>
+            <h2 className="font-readex text-xl font-semibold text-[#15323b]">ConfiguraÃ§Ãµes</h2>
             <div className="mt-5 grid gap-3">
               <Button
                 type="button"
@@ -841,7 +841,7 @@ export function AdminSiteEditorPage() {
                 className="h-11 rounded-none justify-start border-[#D8E6EB]"
               >
                 <Save className="mr-2 h-4 w-4" />
-                {settings.editing_enabled ? 'Bloquear edição inline' : 'Liberar edição inline'}
+                {settings.editing_enabled ? 'Bloquear ediÃ§Ã£o inline' : 'Liberar ediÃ§Ã£o inline'}
               </Button>
             </div>
           </article>
@@ -853,25 +853,25 @@ export function AdminSiteEditorPage() {
             <div className="flex items-start justify-between gap-3">
               <div>
                 <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#1398B7]">Biblioteca</p>
-                <h2 className="mt-1 font-readex text-xl font-semibold text-[#15323b]">Ícones do site</h2>
+                <h2 className="mt-1 font-readex text-xl font-semibold text-[#15323b]">Ãcones do site</h2>
                 <p className="mt-2 text-sm font-semibold leading-6 text-[#5F7077]">
-                  Use esta biblioteca para localizar e copiar as chaves de ícone usadas em cards, seções e elementos editáveis.
+                  Use esta biblioteca para localizar e copiar as chaves de Ã­cone usadas em cards, seÃ§Ãµes e elementos editÃ¡veis.
                 </p>
               </div>
               <div className="rounded-[18px] border border-[#D8E6EB] bg-[#F8FBFC] px-4 py-3 text-right">
-                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#5F7077]">Disponíveis</p>
+                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#5F7077]">DisponÃ­veis</p>
                 <p className="mt-1 font-readex text-2xl font-semibold text-[#15323b]">{SITE_ICON_OPTIONS.length}</p>
               </div>
             </div>
 
             <label className="mt-4 grid gap-2">
-              <span className="text-[10px] font-black uppercase tracking-[0.18em] text-[#5F7077]">Buscar ícone</span>
+              <span className="text-[10px] font-black uppercase tracking-[0.18em] text-[#5F7077]">Buscar Ã­cone</span>
               <div className="flex h-11 items-center gap-2 rounded-[14px] border border-[#D8E6EB] bg-[#F8FBFC] px-3">
                 <Search className="h-4 w-4 text-[#7C8B90]" />
                 <input
                   value={iconSearchQuery}
                   onChange={(event) => setIconSearchQuery(event.target.value)}
-                  placeholder="Ex.: saúde, vídeo, link, arquivo..."
+                  placeholder="Ex.: saÃºde, vÃ­deo, link, arquivo..."
                   className="w-full border-0 bg-transparent text-sm font-semibold text-[#15323b] outline-none"
                 />
               </div>
@@ -890,8 +890,8 @@ export function AdminSiteEditorPage() {
                 />
               </label>
               <label className="grid gap-2 rounded-[16px] border border-[#D8E6EB] bg-[#F8FBFC] p-3">
-                <span className="text-[10px] font-black uppercase tracking-[0.16em] text-[#5F7077]">Subir vários SVGs</span>
-                <span className="text-xs font-semibold text-[#5F7077]">Envio em lote por SVGs ou ZIP; o nome do ícone vira o nome do arquivo.</span>
+                <span className="text-[10px] font-black uppercase tracking-[0.16em] text-[#5F7077]">Subir vÃ¡rios SVGs</span>
+                <span className="text-xs font-semibold text-[#5F7077]">Envio em lote por SVGs ou ZIP; o nome do Ã­cone vira o nome do arquivo.</span>
                 <input
                   type="file"
                   accept=".svg,image/svg+xml,.zip,application/zip"
@@ -927,7 +927,7 @@ export function AdminSiteEditorPage() {
               {isUploadingIcons || isLoadingIconLibrary ? (
                 <div className="mt-3 inline-flex items-center gap-2 text-xs font-semibold text-[#5F7077]">
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  Atualizando biblioteca de ícones...
+                  Atualizando biblioteca de Ã­cones...
                 </div>
               ) : null}
               <div className="mt-3 grid gap-2 sm:grid-cols-2">
@@ -998,7 +998,7 @@ export function AdminSiteEditorPage() {
 
               {filteredIconOptions.length === 0 ? (
                 <div className="rounded-[18px] border border-dashed border-[#D8E6EB] bg-[#F8FBFC] px-4 py-8 text-sm font-semibold text-[#5F7077] sm:col-span-2 xl:col-span-3">
-                  Nenhum ícone encontrado para esse filtro.
+                  Nenhum Ã­cone encontrado para esse filtro.
                 </div>
               ) : null}
             </div>
@@ -1143,15 +1143,15 @@ export function AdminSiteEditorPage() {
           <article className="border border-[#D8E6EB] bg-white p-5 shadow-sm">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
               <div>
-                <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#1398B7]">Páginas</p>
-                <h2 className="mt-1 font-readex text-xl font-semibold text-[#15323b]">Selecione o contexto de edição</h2>
+                <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#1398B7]">PÃ¡ginas</p>
+                <h2 className="mt-1 font-readex text-xl font-semibold text-[#15323b]">Selecione o contexto de ediÃ§Ã£o</h2>
                 <p className="mt-2 text-sm font-semibold text-[#5F7077]">
-                  Escolha a página no seletor e mantenha os overrides abaixo, sem ocupar largura desnecessária.
+                  Escolha a pÃ¡gina no seletor e mantenha os overrides abaixo, sem ocupar largura desnecessÃ¡ria.
                 </p>
               </div>
 
               <label className="grid min-w-[280px] gap-2">
-                <span className="text-[10px] font-black uppercase tracking-[0.18em] text-[#5F7077]">Página</span>
+                <span className="text-[10px] font-black uppercase tracking-[0.18em] text-[#5F7077]">PÃ¡gina</span>
                 <select
                   value={selectedPageKey}
                   onChange={(event) => setSelectedPageKey(event.target.value as SitePageKey)}
@@ -1159,7 +1159,7 @@ export function AdminSiteEditorPage() {
                 >
                   {pages.map((page) => (
                     <option key={page.page_key} value={page.page_key}>
-                      {page.title} · {page.path}
+                      {page.title} Â· {page.path}
                     </option>
                   ))}
                 </select>
@@ -1187,7 +1187,7 @@ export function AdminSiteEditorPage() {
                 {selectedPage?.title ?? selectedPageKey}
               </h2>
               <p className="mt-2 text-sm font-semibold text-[#5F7077]">
-                {selectedPage?.path ?? selectedPageKey} · {selectedPageStat} campo(s) cadastrados para esta pagina
+                {selectedPage?.path ?? selectedPageKey} Â· {selectedPageStat} campo(s) cadastrados para esta pagina
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -1201,7 +1201,7 @@ export function AdminSiteEditorPage() {
                 </Link>
               ) : null}
               <Button type="button" variant="outline" disabled={isSaving} onClick={() => void handleClearPage()} className="rounded-none border-[#D8E6EB]">
-                Restaurar conteúdo original desta página
+                Restaurar conteÃºdo original desta pÃ¡gina
               </Button>
             </div>
           </div>
@@ -1287,7 +1287,7 @@ export function AdminSiteEditorPage() {
             <p className="p-5 text-sm font-semibold text-[#5F7077]">Carregando...</p>
           ) : pageEntries.length === 0 ? (
             <p className="p-5 text-sm font-semibold text-[#5F7077]">
-              Nenhum override salvo para esta página. O site está usando exatamente o conteúdo original do código.
+              Nenhum override salvo para esta pÃ¡gina. O site estÃ¡ usando exatamente o conteÃºdo original do cÃ³digo.
             </p>
           ) : (
             <div className="mt-5 overflow-x-auto">
@@ -1301,7 +1301,7 @@ export function AdminSiteEditorPage() {
                     <th className="px-4 py-3">Workflow</th>
                     <th className="px-4 py-3">Atualizado</th>
                     {editorMode === 'advanced' ? <th className="px-4 py-3">Pagina tecnica</th> : null}
-                    <th className="px-4 py-3">Ações</th>
+                    <th className="px-4 py-3">AÃ§Ãµes</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#D8E6EB]">
@@ -1321,7 +1321,7 @@ export function AdminSiteEditorPage() {
                         {workspace?.comments.length ? (
                           <div className="mt-2 inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-[0.14em] text-[#1398B7]">
                             <MessageSquare className="h-3.5 w-3.5" />
-                            {workspace.comments.length} comentário(s)
+                            {workspace.comments.length} comentÃ¡rio(s)
                           </div>
                         ) : null}
                       </td>
@@ -1338,7 +1338,7 @@ export function AdminSiteEditorPage() {
                         <div className="flex flex-wrap gap-2">
                           <button type="button" onClick={() => void handleLoadVersions(entry.id)} className="inline-flex items-center gap-1 border border-[#D8E6EB] px-3 py-2 text-xs font-black text-[#0A3640] hover:bg-[#F2F7F9]">
                             <History className="h-3.5 w-3.5" />
-                            Histórico
+                            HistÃ³rico
                           </button>
                           <button type="button" onClick={() => void handleClearEntry(entry.id)} className="border border-[#D8E6EB] px-3 py-2 text-xs font-black text-rose-700 hover:bg-rose-50">
                             Limpar override
@@ -1354,15 +1354,15 @@ export function AdminSiteEditorPage() {
 
           {selectedEntryId ? (
             <div className="mt-6 border border-[#D8E6EB] bg-[#F2F7F9] p-4">
-              <h3 className="font-readex text-lg font-semibold text-[#15323b]">Histórico do campo</h3>
+              <h3 className="font-readex text-lg font-semibold text-[#15323b]">HistÃ³rico do campo</h3>
               <div className="mt-3 grid gap-2">
                 {versions.length === 0 ? (
-                  <p className="text-sm font-semibold text-[#5F7077]">Nenhuma versão registrada.</p>
+                  <p className="text-sm font-semibold text-[#5F7077]">Nenhuma versÃ£o registrada.</p>
                 ) : versions.map((version) => (
                   <div key={version.id} className="border border-[#D8E6EB] bg-white p-3">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <p className="text-xs font-black uppercase tracking-[0.16em] text-[#5F7077]">
-                        {new Date(version.created_at).toLocaleString('pt-BR')} - {version.change_reason ?? 'alteração'}
+                        {new Date(version.created_at).toLocaleString('pt-BR')} - {version.change_reason ?? 'alteraÃ§Ã£o'}
                       </p>
                       <button
                         type="button"
@@ -1370,7 +1370,7 @@ export function AdminSiteEditorPage() {
                         onClick={() => void handleRestoreVersion(version)}
                         className="border border-[#D8E6EB] px-3 py-1.5 text-xs font-black text-[#0A3640] hover:bg-[#F2F7F9]"
                       >
-                        Restaurar versão anterior
+                        Restaurar versÃ£o anterior
                       </button>
                     </div>
                     <pre className="mt-2 max-h-36 overflow-auto bg-[#F2F7F9] p-3 text-xs text-[#15323b]">
