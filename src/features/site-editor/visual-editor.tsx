@@ -3227,12 +3227,27 @@ function EditorModal({
                   </label>
                   <label className="grid gap-1.5 md:col-span-2">
                     <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Sombra (px/rem/em)</span>
-                    <input
-                      value={textStyle.boxShadow ?? ''}
-                      onChange={(event) => setTextStyle((current) => ({ ...current, boxShadow: event.target.value }))}
-                      placeholder="0 20px 44px rgba(21,50,59,0.08)"
-                      className="h-11 rounded-[14px] border border-[#D8E6EB] px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]"
-                    />
+                    <div className="flex items-center gap-2">
+                      <input
+                        value={textStyle.boxShadow === 'none' ? '' : (textStyle.boxShadow ?? '')}
+                        onChange={(event) => {
+                          const nextValue = event.target.value.trim()
+                          setTextStyle((current) => ({
+                            ...current,
+                            boxShadow: nextValue.length === 0 ? 'none' : event.target.value,
+                          }))
+                        }}
+                        placeholder="0 20px 44px rgba(21,50,59,0.08)"
+                        className="h-11 flex-1 rounded-[14px] border border-[#D8E6EB] px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setTextStyle((current) => ({ ...current, boxShadow: 'none' }))}
+                        className="h-11 shrink-0 rounded-[14px] border border-[#D8E6EB] px-3 text-[10px] font-black uppercase tracking-[0.14em] text-[#0A3640] hover:bg-[#F2F7F9]"
+                      >
+                        Remover
+                      </button>
+                    </div>
                   </label>
                   <label className="grid gap-1.5">
                     <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Padding horizontal (px/rem/em)</span>
