@@ -167,7 +167,7 @@ export function GenflixPublicFooter({
               <GenflixLogo theme="light" />
             </div>
 
-            <div className="grid gap-8 lg:grid-cols-[repeat(3,minmax(0,1fr))_220px_220px]">
+            <div className="grid gap-8 lg:grid-cols-4">
               <EditableList entryKey="global.footer.columns" fallback={footerColumns} label="Colunas do rodapé" pageKey="global">
                 {(columns) => columns.filter(isEditableItemVisible).map((column) => {
                   const items = Array.isArray(column.metadata?.items)
@@ -232,11 +232,11 @@ export function GenflixPublicFooter({
                   </div>
                 )}
               </EditableList>
-              <div className="lg:justify-self-end">
+              <div>
                 <GenflixCtaButton
                   asChild
                   tone="surface"
-                  className="min-h-[42px] w-full text-[13px]"
+                  className="mt-[26px] min-h-[42px] w-full text-[13px]"
                   customColors={{
                     buttonTextColor: '#0A3640',
                     iconTextColor: '#0A3640',
