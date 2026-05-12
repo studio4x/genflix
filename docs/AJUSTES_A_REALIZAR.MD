@@ -297,7 +297,7 @@
 
 [OK] t99 - Nos recursos, inserir no painel admin, na página de videos dos recursos, inserir a possibilidade de inserir um botão de leia mais e então inserir um conteúdo nesse leia mais. quando ativado essa opção, abrir um campo para inserir o campo de leia mais. na página publica, o botão de leia mais deverá abrir um modal com esse conteudo.
 
-[ ] t100 - Nos recursos, ao editar os icones pelo editor visual, quando selecione uma cor de icone, o icone some.. e se eu deixar a cor padrão, que é azul, o icone fica na cor preta...
+[OK] t100 - Nos recursos, ao editar os icones pelo editor visual, quando selecione uma cor de icone, o icone some.. e se eu deixar a cor padrão, que é azul, o icone fica na cor preta...
 
 [ ] t101 - Na página do admin, devemos inserir dentro da página "admin/cursos", uma aba para configurar as categorias dos cursos. AS categorias deverá ser um crud. Para eu poder criar, editar e remover categorias e também poder selecionar em cada curso a qual categoria ele pertence. Na página pública de cursos, as categorias que devem aparecer lá são as categorias que foram criadas.
 

@@ -57,10 +57,6 @@ function normalizeIconColor(value: string | null | undefined) {
   return trimmed === '' ? undefined : trimmed
 }
 
-function looksLikeSvgAsset(assetUrl: string) {
-  return /\.svg(?:[?#].*)?$/i.test(assetUrl)
-}
-
 export function renderSiteIcon(iconKey: string | null | undefined, className?: string, iconColor?: string | null) {
   const Icon = SITE_ICON_MAP.get(iconKey ?? '') ?? LinkIcon
   const resolvedColor = normalizeIconColor(iconColor)
@@ -76,28 +72,15 @@ export function renderSiteIconVisual(input: {
 }) {
   const iconColor = normalizeIconColor(input.iconColor)
   const iconImageUrl = typeof input.iconImageUrl === 'string' ? input.iconImageUrl.trim() : ''
+  const iconKey = typeof input.iconKey === 'string' ? input.iconKey.trim() : ''
+
+  // Prioriza ícone nativo quando existir chave válida, evitando comportamento inconsistente
+  // de colorização em ativos SVG externos.
+  if (iconKey !== '') {
+    return renderSiteIcon(iconKey, input.className, iconColor)
+  }
 
   if (iconImageUrl !== '') {
-    if (iconColor && looksLikeSvgAsset(iconImageUrl)) {
-      return (
-        <span
-          aria-hidden="true"
-          className={cn('block h-4 w-4', input.className)}
-          style={{
-            backgroundColor: iconColor,
-            maskImage: `url("${iconImageUrl}")`,
-            maskRepeat: 'no-repeat',
-            maskPosition: 'center',
-            maskSize: 'contain',
-            WebkitMaskImage: `url("${iconImageUrl}")`,
-            WebkitMaskRepeat: 'no-repeat',
-            WebkitMaskPosition: 'center',
-            WebkitMaskSize: 'contain',
-          }}
-        />
-      )
-    }
-
     return (
       <img
         src={iconImageUrl}
