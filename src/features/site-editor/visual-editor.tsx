@@ -3016,6 +3016,7 @@ function EditorModal({
                       />
                     </div>
                   </label>
+                  {!isContainerStyleEditor ? (
                   <label className="grid gap-1.5">
                     <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Largura</span>
                     <input
@@ -3025,6 +3026,8 @@ function EditorModal({
                       className="h-11 rounded-[14px] border border-[#D8E6EB] px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]"
                     />
                   </label>
+                  ) : null}
+                  {!isContainerStyleEditor ? (
                   <label className="grid gap-1.5">
                     <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Altura</span>
                     <input
@@ -3034,6 +3037,8 @@ function EditorModal({
                       className="h-11 rounded-[14px] border border-[#D8E6EB] px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]"
                     />
                   </label>
+                  ) : null}
+                  {!isContainerStyleEditor ? (
                   <label className="grid gap-1.5">
                     <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Largura mínima</span>
                     <div className="flex items-center gap-2">
@@ -3046,6 +3051,7 @@ function EditorModal({
                       <span className="shrink-0 text-[10px] font-black uppercase tracking-[0.14em] text-[#8A9AA1]">px</span>
                     </div>
                   </label>
+                  ) : null}
                   <label className="grid gap-1.5 md:col-span-2">
                     <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Imagem de fundo (URL)</span>
                     <input
@@ -3073,6 +3079,7 @@ function EditorModal({
                       className="h-11 rounded-[14px] border border-[#D8E6EB] px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]"
                     />
                   </label>
+                  {!isContainerStyleEditor ? (
                   <label className="grid gap-1.5">
                     <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Altura mínima</span>
                     <div className="flex items-center gap-2">
@@ -3085,6 +3092,8 @@ function EditorModal({
                       <span className="shrink-0 text-[10px] font-black uppercase tracking-[0.14em] text-[#8A9AA1]">px</span>
                     </div>
                   </label>
+                  ) : null}
+                  {!isContainerStyleEditor ? (
                   <label className="grid gap-1.5">
                     <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Arredondamento</span>
                     <div className="flex items-center gap-2">
@@ -3097,6 +3106,7 @@ function EditorModal({
                       <span className="shrink-0 text-[10px] font-black uppercase tracking-[0.14em] text-[#8A9AA1]">px</span>
                     </div>
                   </label>
+                  ) : null}
                   <label className="grid gap-1.5">
                     <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Padding horizontal</span>
                     <input
@@ -3133,6 +3143,7 @@ function EditorModal({
                       className="h-11 rounded-[14px] border border-[#D8E6EB] px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]"
                     />
                   </label>
+                  {!isContainerStyleEditor ? (
                   <label className="grid gap-1.5 md:col-span-2">
                     <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Alinhamento</span>
                     <select
@@ -3150,7 +3161,8 @@ function EditorModal({
                       <option value="justify">Justificado</option>
                     </select>
                   </label>
-                  {showTypographyControls ? (
+                  ) : null}
+                  {!isContainerStyleEditor && showTypographyControls ? (
                     <>
                   {isTitleEditor ? (
                     <label className="grid gap-1.5 md:col-span-2">
