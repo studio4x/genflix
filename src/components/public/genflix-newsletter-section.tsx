@@ -134,9 +134,19 @@ export function GenflixNewsletterSection({
                         className="mt-8 min-h-[50px] justify-between px-5 md:min-w-[220px]"
                         tone={normalizeGenflixCtaTone(buttonValue.tone)}
                       >
-                        <Link to={ctaHref}>
-                          {typeof buttonValue.label === 'string' ? buttonValue.label : 'Ver cursos'}
-                        </Link>
+                        {buttonValue.isInternal === true ? (
+                          <Link to={typeof buttonValue.href === 'string' ? buttonValue.href : ctaHref}>
+                            {typeof buttonValue.label === 'string' ? buttonValue.label : 'Ver cursos'}
+                          </Link>
+                        ) : (
+                          <a
+                            href={typeof buttonValue.href === 'string' ? buttonValue.href : ctaHref}
+                            target={buttonValue.openInNewTab === true ? '_blank' : undefined}
+                            rel={buttonValue.openInNewTab === true ? 'noreferrer' : undefined}
+                          >
+                            {typeof buttonValue.label === 'string' ? buttonValue.label : 'Ver cursos'}
+                          </a>
+                        )}
                       </GenflixCtaButton>
                     )}
                   </EditableButton>

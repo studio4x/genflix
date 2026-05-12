@@ -272,7 +272,7 @@
 
 [OK] T89 - Tirar definitamente a sombra retangular do rodapé. Na coluna Mídias sociais, retirar o texto "nos siga em". Remover o formato de botão das redes sociais (remover a borda e o espaçamento ao redor do nome da midia social).
 
-[ ] t90 - Na seção da home "conheça os muitos recursos didáticos que só a genflix tem.", a url do botão a ser adotada deve ser a que for configurado no editor visual.
+[OK] t90 - Na seção da home "conheça os muitos recursos didáticos que só a genflix tem.", a url do botão a ser adotada deve ser a que for configurado no editor visual.
 
 [] t91 - No rodapé, inserir na quarta coluna (a ultima da direito), um botão "Ensine na Genflix" e direcionar para a página "https://genflix-omega.vercel.app/ensine-na-genflix".
 
