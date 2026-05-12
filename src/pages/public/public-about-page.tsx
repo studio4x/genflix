@@ -86,18 +86,20 @@ function AboutHeroSection() {
   return (
     <section className="bg-white pb-10 pt-8">
       <div className="public-site-container">
-        <div className="rounded-[30px] bg-[#F2F7F9] px-8 py-14 text-center shadow-[0_20px_44px_rgba(21,50,59,0.04)] sm:px-12">
-          <h1 className="text-[2.65rem] font-extrabold leading-[0.94] tracking-[-0.05em] text-[#183139] sm:text-[3rem]">
-            <EditableText entryKey="about.hero.title" fallback="GenFlix" label="Titulo da pagina Sobre" />
-          </h1>
-          <p className="mt-4 text-base font-medium text-[#1398B7]">
-            <EditableText
-              entryKey="about.hero.subtitle"
-              fallback="Porque aprender e ensinar nao precisa ser complicado."
-              label="Subtitulo da pagina Sobre"
-            />
-          </p>
-        </div>
+        <EditableContainer entryKey="about.hero.card" label="Container interno do Hero" pageKey="about">
+          <div className="rounded-[30px] bg-[#F2F7F9] px-8 py-14 text-center shadow-[0_20px_44px_rgba(21,50,59,0.04)] sm:px-12">
+            <h1 className="text-[2.65rem] font-extrabold leading-[0.94] tracking-[-0.05em] text-[#183139] sm:text-[3rem]">
+              <EditableText entryKey="about.hero.title" fallback="GenFlix" label="Titulo da pagina Sobre" />
+            </h1>
+            <p className="mt-4 text-base font-medium text-[#1398B7]">
+              <EditableText
+                entryKey="about.hero.subtitle"
+                fallback="Porque aprender e ensinar nao precisa ser complicado."
+                label="Subtitulo da pagina Sobre"
+              />
+            </p>
+          </div>
+        </EditableContainer>
       </div>
     </section>
   )
@@ -107,17 +109,21 @@ function AboutStorySection({ richTextFallback }: { richTextFallback: string }) {
   return (
     <section className="bg-white pb-16 pt-4">
       <div className="public-site-container">
-        <div className="rounded-[28px] border border-[#D8E6EB] bg-white px-8 py-10 shadow-[0_18px_42px_rgba(21,50,59,0.03)] sm:px-10 lg:px-12">
-          <div className="mx-auto max-w-[960px] border-t border-[#BEE3EA] pt-10">
-            <EditableRichText
-              entryKey="about.storyContent"
-              fallback={richTextFallback}
-              label="Conteudo da pagina Sobre"
-              pageKey="about"
-              className="rich-text-content space-y-5 text-[15px] leading-8 text-[#4f666d]"
-            />
+        <EditableContainer entryKey="about.story.card" label="Container interno da Historia" pageKey="about">
+          <div className="rounded-[28px] border border-[#D8E6EB] bg-white px-8 py-10 shadow-[0_18px_42px_rgba(21,50,59,0.03)] sm:px-10 lg:px-12">
+            <EditableContainer entryKey="about.story.contentWrap" label="Container de conteudo da Historia" pageKey="about">
+              <div className="mx-auto max-w-[960px] border-t border-[#BEE3EA] pt-10">
+                <EditableRichText
+                  entryKey="about.storyContent"
+                  fallback={richTextFallback}
+                  label="Conteudo da pagina Sobre"
+                  pageKey="about"
+                  className="rich-text-content space-y-5 text-[15px] leading-8 text-[#4f666d]"
+                />
+              </div>
+            </EditableContainer>
           </div>
-        </div>
+        </EditableContainer>
       </div>
     </section>
   )
@@ -127,7 +133,8 @@ function AboutMissionSection() {
   return (
     <section className="bg-white pb-20">
       <div className="public-site-container">
-        <div className="grid gap-8 overflow-hidden rounded-[30px] bg-[#F2F7F9] px-8 py-8 shadow-[0_22px_46px_rgba(21,50,59,0.05)] lg:grid-cols-[360px_minmax(0,1fr)] lg:items-center lg:px-10 lg:py-10">
+        <EditableContainer entryKey="about.mission.card" label="Container interno da Missao" pageKey="about">
+          <div className="grid gap-8 overflow-hidden rounded-[30px] bg-[#F2F7F9] px-8 py-8 shadow-[0_22px_46px_rgba(21,50,59,0.05)] lg:grid-cols-[360px_minmax(0,1fr)] lg:items-center lg:px-10 lg:py-10">
           <div className="flex min-h-[240px] items-center justify-center rounded-[24px] bg-white shadow-[0_18px_40px_rgba(21,50,59,0.06)]">
             <div className="scale-[2.3]">
               <GenflixLogo />
@@ -155,6 +162,7 @@ function AboutMissionSection() {
             <div className="mt-7 h-px w-full max-w-[260px] bg-[#8FCAD8]" />
           </div>
         </div>
+        </EditableContainer>
       </div>
     </section>
   )

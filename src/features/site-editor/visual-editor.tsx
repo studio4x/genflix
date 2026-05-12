@@ -4296,7 +4296,7 @@ export function EditableContainer({
   const singleChildNode = childNodes.length === 1 ? childNodes[0] : null
   const content = isValidElement<{ className?: string; style?: CSSProperties }>(singleChildNode)
     ? cloneElement(singleChildNode, {
-      className,
+      className: className ? cn(singleChildNode.props.className, className) : singleChildNode.props.className,
       style: {
         ...(singleChildNode.props.style ?? {}),
         ...(inlineStyle ?? {}),
