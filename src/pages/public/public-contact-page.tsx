@@ -12,10 +12,12 @@ import {
   createSectionRegistryFallback,
   createSectionRegistrySchema,
   renderVisibleSectionList,
+  resolveSectionRegistryEntryPrefix,
+  resolveSectionRegistryPageKey,
   resolveSectionRegistryTemplateKey,
   SectionStructureControl,
 } from '@/features/site-editor/section-registry'
-import { EditableText, useEditableValue } from '@/features/site-editor/visual-editor'
+import { EditableContainer, EditableText, useEditableValue } from '@/features/site-editor/visual-editor'
 
 const contactSectionTemplates = [
   {
@@ -237,7 +239,7 @@ export function PublicContactPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#F2F7F9] font-manrope text-[#163138]">
+    <EditableContainer entryKey="contact.page.layout" label="Layout geral da página Contato" pageKey="contact" className="min-h-screen bg-[#F2F7F9] font-manrope text-[#163138]">
       <GenflixPublicHeader currentPage="contact" navLinks={genflixNavLinks} />
       <BannerPlacementSlot pageKey="contact" placementKey="hero" />
       <SectionStructureControl
@@ -250,26 +252,30 @@ export function PublicContactPage() {
       />
       {renderVisibleSectionList(contactSections, (item) => {
         const templateKey = resolveSectionRegistryTemplateKey(item)
+        const sectionPageKey = resolveSectionRegistryPageKey(item, 'contact')
+        const sectionEntryPrefix = resolveSectionRegistryEntryPrefix(item, `contact.sections.${templateKey}`)
 
         if (templateKey === 'form') {
           return (
-            <ContactFormSection
-              name={name}
-              email={email}
-              emailConfirmation={emailConfirmation}
-              message={message}
-              feedback={feedback}
-              isSubmitting={isSubmitting}
-              namePlaceholder={namePlaceholder}
-              emailPlaceholder={emailPlaceholder}
-              emailConfirmationPlaceholder={emailConfirmationPlaceholder}
-              messagePlaceholder={messagePlaceholder}
-              onNameChange={setName}
-              onEmailChange={setEmail}
-              onEmailConfirmationChange={setEmailConfirmation}
-              onMessageChange={setMessage}
-              onSubmit={handleSubmit}
-            />
+            <EditableContainer entryKey={`${sectionEntryPrefix}.layout`} label="Bloco Formulário da página Contato" pageKey={sectionPageKey}>
+              <ContactFormSection
+                name={name}
+                email={email}
+                emailConfirmation={emailConfirmation}
+                message={message}
+                feedback={feedback}
+                isSubmitting={isSubmitting}
+                namePlaceholder={namePlaceholder}
+                emailPlaceholder={emailPlaceholder}
+                emailConfirmationPlaceholder={emailConfirmationPlaceholder}
+                messagePlaceholder={messagePlaceholder}
+                onNameChange={setName}
+                onEmailChange={setEmail}
+                onEmailConfirmationChange={setEmailConfirmation}
+                onMessageChange={setMessage}
+                onSubmit={handleSubmit}
+              />
+            </EditableContainer>
           )
         }
 
@@ -277,6 +283,6 @@ export function PublicContactPage() {
       })}
       <GenflixNewsletterSection id="newsletter" entryPrefix="contact.newsletter" pageKey="contact" />
       <GenflixPublicFooter />
-    </main>
+    </EditableContainer>
   )
 }

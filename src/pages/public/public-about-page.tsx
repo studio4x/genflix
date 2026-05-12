@@ -9,10 +9,12 @@ import {
   createSectionRegistryFallback,
   createSectionRegistrySchema,
   renderVisibleSectionList,
+  resolveSectionRegistryEntryPrefix,
+  resolveSectionRegistryPageKey,
   resolveSectionRegistryTemplateKey,
   SectionStructureControl,
 } from '@/features/site-editor/section-registry'
-import { EditableRichText, EditableText, isEditableItemVisible, useEditableValue } from '@/features/site-editor/visual-editor'
+import { EditableContainer, EditableRichText, EditableText, isEditableItemVisible, useEditableValue } from '@/features/site-editor/visual-editor'
 import type { EditableListItem } from '@/features/site-editor/types'
 
 const aboutParagraphs = [
@@ -183,7 +185,7 @@ export function PublicAboutPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#F2F7F9] font-manrope text-[#163138]">
+    <EditableContainer entryKey="about.page.layout" label="Layout geral da página Sobre" pageKey="about" className="min-h-screen bg-[#F2F7F9] font-manrope text-[#163138]">
       <GenflixPublicHeader currentPage="about" navLinks={genflixNavLinks} />
       <BannerPlacementSlot pageKey="about" placementKey="hero" />
       <SectionStructureControl
@@ -196,17 +198,31 @@ export function PublicAboutPage() {
       />
       {renderVisibleSectionList(aboutSections.filter(isEditableItemVisible), (item) => {
         const templateKey = resolveSectionRegistryTemplateKey(item)
+        const sectionPageKey = resolveSectionRegistryPageKey(item, 'about')
+        const sectionEntryPrefix = resolveSectionRegistryEntryPrefix(item, `about.sections.${templateKey}`)
 
         if (templateKey === 'hero') {
-          return <AboutHeroSection />
+          return (
+            <EditableContainer entryKey={`${sectionEntryPrefix}.layout`} label="Bloco Hero da página Sobre" pageKey={sectionPageKey}>
+              <AboutHeroSection />
+            </EditableContainer>
+          )
         }
 
         if (templateKey === 'story') {
-          return <AboutStorySection richTextFallback={storyRichTextFallback} />
+          return (
+            <EditableContainer entryKey={`${sectionEntryPrefix}.layout`} label="Bloco História da página Sobre" pageKey={sectionPageKey}>
+              <AboutStorySection richTextFallback={storyRichTextFallback} />
+            </EditableContainer>
+          )
         }
 
         if (templateKey === 'mission') {
-          return <AboutMissionSection />
+          return (
+            <EditableContainer entryKey={`${sectionEntryPrefix}.layout`} label="Bloco Missão da página Sobre" pageKey={sectionPageKey}>
+              <AboutMissionSection />
+            </EditableContainer>
+          )
         }
 
         if (templateKey === 'newsletter') {
@@ -216,7 +232,7 @@ export function PublicAboutPage() {
         return null
       })}
       <GenflixPublicFooter />
-    </main>
+    </EditableContainer>
   )
 }
 

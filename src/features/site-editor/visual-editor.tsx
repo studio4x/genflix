@@ -70,6 +70,9 @@ type EditableValue = string | EditableListItem[] | Record<string, unknown> | nul
 type TextStyleValue = {
   color?: string
   backgroundColor?: string
+  backgroundImage?: string
+  backgroundSize?: string
+  backgroundPosition?: string
   width?: string
   height?: string
   minWidth?: string
@@ -78,6 +81,8 @@ type TextStyleValue = {
   maxHeight?: string
   paddingInline?: string
   paddingBlock?: string
+  marginInline?: string
+  marginBlock?: string
   borderRadius?: string
   fontFamily?: string
   fontSize?: string
@@ -252,12 +257,19 @@ function normalizeTextStyle(value: unknown): TextStyleValue {
   const fields: Array<Exclude<keyof TextStyleValue, 'headingTag' | 'textAlign'>> = [
     'color',
     'backgroundColor',
+    'backgroundImage',
+    'backgroundSize',
+    'backgroundPosition',
     'width',
     'height',
     'minWidth',
     'minHeight',
     'maxWidth',
     'maxHeight',
+    'paddingInline',
+    'paddingBlock',
+    'marginInline',
+    'marginBlock',
     'borderRadius',
     'fontFamily',
     'fontSize',
@@ -313,6 +325,8 @@ function hasBoxStyle(style: TextStyleValue) {
     || style.maxHeight
     || style.paddingInline
     || style.paddingBlock
+    || style.marginInline
+    || style.marginBlock
     || style.borderRadius
     || style.textAlign
   )
@@ -3031,6 +3045,33 @@ function EditorModal({
                       <span className="shrink-0 text-[10px] font-black uppercase tracking-[0.14em] text-[#8A9AA1]">px</span>
                     </div>
                   </label>
+                  <label className="grid gap-1.5 md:col-span-2">
+                    <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Imagem de fundo (URL)</span>
+                    <input
+                      value={textStyle.backgroundImage ?? ''}
+                      onChange={(event) => setTextStyle((current) => ({ ...current, backgroundImage: event.target.value }))}
+                      placeholder="url(https://...)"
+                      className="h-11 rounded-[14px] border border-[#D8E6EB] px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]"
+                    />
+                  </label>
+                  <label className="grid gap-1.5">
+                    <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Posição da imagem</span>
+                    <input
+                      value={textStyle.backgroundPosition ?? ''}
+                      onChange={(event) => setTextStyle((current) => ({ ...current, backgroundPosition: event.target.value }))}
+                      placeholder="center"
+                      className="h-11 rounded-[14px] border border-[#D8E6EB] px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]"
+                    />
+                  </label>
+                  <label className="grid gap-1.5">
+                    <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Tamanho da imagem</span>
+                    <input
+                      value={textStyle.backgroundSize ?? ''}
+                      onChange={(event) => setTextStyle((current) => ({ ...current, backgroundSize: event.target.value }))}
+                      placeholder="cover"
+                      className="h-11 rounded-[14px] border border-[#D8E6EB] px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]"
+                    />
+                  </label>
                   <label className="grid gap-1.5">
                     <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Altura mínima</span>
                     <div className="flex items-center gap-2">
@@ -3070,6 +3111,24 @@ function EditorModal({
                       value={textStyle.paddingBlock ?? ''}
                       onChange={(event) => setTextStyle((current) => ({ ...current, paddingBlock: event.target.value }))}
                       placeholder="0.75rem"
+                      className="h-11 rounded-[14px] border border-[#D8E6EB] px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]"
+                    />
+                  </label>
+                  <label className="grid gap-1.5">
+                    <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Margem horizontal</span>
+                    <input
+                      value={textStyle.marginInline ?? ''}
+                      onChange={(event) => setTextStyle((current) => ({ ...current, marginInline: event.target.value }))}
+                      placeholder="0"
+                      className="h-11 rounded-[14px] border border-[#D8E6EB] px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]"
+                    />
+                  </label>
+                  <label className="grid gap-1.5">
+                    <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Margem vertical</span>
+                    <input
+                      value={textStyle.marginBlock ?? ''}
+                      onChange={(event) => setTextStyle((current) => ({ ...current, marginBlock: event.target.value }))}
+                      placeholder="0"
                       className="h-11 rounded-[14px] border border-[#D8E6EB] px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]"
                     />
                   </label>
@@ -4193,6 +4252,55 @@ export function EditableList({
         styleEntryKey,
         styleFallback: styleValue,
         schema,
+        reload: scope.reload,
+      })}
+    >
+      {content}
+    </EditableMarker>
+  )
+}
+
+export function EditableContainer({
+  entryKey,
+  label,
+  pageKey,
+  className,
+  children,
+}: {
+  entryKey: string
+  label: string
+  pageKey?: SitePageKey
+  className?: string
+  children: ReactNode
+}) {
+  const scope = useContext(SiteContentContext)
+  const editor = useContext(VisualEditorContext)
+  const resolvedPageKey = pageKey ?? scope?.pageKey ?? 'global'
+  const styleEntryKey = `${entryKey}.__style`
+  const styleValue = normalizeTextStyle(useEditableValue(styleEntryKey, {}, { pageKey: resolvedPageKey }))
+  const inlineStyle = textStyleToCss(styleValue)
+  const content = (
+    <div className={className} style={inlineStyle}>
+      {children}
+    </div>
+  )
+
+  if (!editor?.isEditing || !scope) {
+    return content
+  }
+
+  return (
+    <EditableMarker
+      label={label}
+      display="block"
+      onClick={() => editor.openEditor({
+        pageKey: resolvedPageKey,
+        entryKey,
+        entryType: 'json',
+        label,
+        fallback: {},
+        styleEntryKey,
+        styleFallback: styleValue,
         reload: scope.reload,
       })}
     >

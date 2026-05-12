@@ -15,10 +15,12 @@ import {
   createSectionRegistryFallback,
   createSectionRegistrySchema,
   renderVisibleSectionList,
+  resolveSectionRegistryEntryPrefix,
+  resolveSectionRegistryPageKey,
   resolveSectionRegistryTemplateKey,
   SectionStructureControl,
 } from '@/features/site-editor/section-registry'
-import { EditableList, EditableText, isEditableItemVisible, useEditableValue } from '@/features/site-editor/visual-editor'
+import { EditableContainer, EditableList, EditableText, isEditableItemVisible, useEditableValue } from '@/features/site-editor/visual-editor'
 import type { EditableListItem } from '@/features/site-editor/types'
 
 const communitySectionTemplates = [
@@ -171,7 +173,7 @@ export function PublicCommunityPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#F2F7F9] font-manrope text-[#163138]">
+    <EditableContainer entryKey="community.page.layout" label="Layout geral da página Comunidade" pageKey="community" className="min-h-screen bg-[#F2F7F9] font-manrope text-[#163138]">
       <GenflixPublicHeader currentPage="community" navLinks={genflixNavLinks} />
       <BannerPlacementSlot pageKey="community" placementKey="hero" />
       <SectionStructureControl
@@ -184,13 +186,23 @@ export function PublicCommunityPage() {
       />
       {renderVisibleSectionList(communitySections.filter(isEditableItemVisible), (item) => {
         const templateKey = resolveSectionRegistryTemplateKey(item)
+        const sectionPageKey = resolveSectionRegistryPageKey(item, 'community')
+        const sectionEntryPrefix = resolveSectionRegistryEntryPrefix(item, `community.sections.${templateKey}`)
 
         if (templateKey === 'hero') {
-          return <CommunityHeroSection communityItems={communityItems} />
+          return (
+            <EditableContainer entryKey={`${sectionEntryPrefix}.layout`} label="Bloco Hero da página Comunidade" pageKey={sectionPageKey}>
+              <CommunityHeroSection communityItems={communityItems} />
+            </EditableContainer>
+          )
         }
 
         if (templateKey === 'support') {
-          return <CommunitySupportSection />
+          return (
+            <EditableContainer entryKey={`${sectionEntryPrefix}.layout`} label="Bloco Apoio da página Comunidade" pageKey={sectionPageKey}>
+              <CommunitySupportSection />
+            </EditableContainer>
+          )
         }
 
         if (templateKey === 'newsletter') {
@@ -200,6 +212,6 @@ export function PublicCommunityPage() {
         return null
       })}
       <GenflixPublicFooter />
-    </main>
+    </EditableContainer>
   )
 }

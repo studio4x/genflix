@@ -276,7 +276,7 @@
 
 [OK] t91 - No rodapé, inserir na quarta coluna (a ultima da direito), um botão "Ensine na Genflix" e direcionar para a página "https://genflix-omega.vercel.app/ensine-na-genflix".
 
-[] t92 - Permitir editar o fundo das seções/blocos pelo editor visual. Permitir alterar imagens pelo editor visual também. Permitir editar os paddings e margens da página como um todo..
+[OK] t92 - Permitir editar o fundo das seções/blocos pelo editor visual. Permitir alterar imagens pelo editor visual também. Permitir editar os paddings e margens da página como um todo..
 
 [ ] t93 - A página "ensine na genflix" deverá ter o mesmo layout da página contato, usar o mesmo formulário de contato também.
 
