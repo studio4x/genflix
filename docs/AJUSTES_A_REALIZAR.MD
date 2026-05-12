@@ -266,7 +266,7 @@
 
 ## Chat 21 - Ajustes Gerais
 
-[ ] T87 - Na visualização da aula pelo visualizador de cursos, o video inserido deverá ocupar apenas 70% da largura do container, assim o video não fica com tamanho excessivo e não fica cortado na tela.
+[OK] T87 - Na visualização da aula pelo visualizador de cursos, o video inserido deverá ocupar apenas 70% da largura do container, assim o video não fica com tamanho excessivo e não fica cortado na tela.
 
 [ ] T88 - Inserir na página "/admin/site-editor", uma aba para definir globalmente as tipografias do site.. A ideia é criar um padrão de tamanho, fonte, espessura de texto entre outras definições para os titulos (h1, h2, h3, etc), corpo de texto, tópicos, links, etc.
 

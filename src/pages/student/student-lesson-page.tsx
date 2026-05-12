@@ -323,7 +323,7 @@ export function StudentLessonPage() {
       </div>
 
       {(lessonType === 'video' || lessonType === 'hybrid') && videoSource?.type === 'youtube' && (
-        <div className="aspect-video w-full animate-in zoom-in-95 overflow-hidden rounded-[32px] bg-black shadow-2xl ring-1 ring-slate-900/10 duration-500">
+        <div className="mx-auto aspect-video w-[70%] animate-in zoom-in-95 overflow-hidden rounded-[32px] bg-black shadow-2xl ring-1 ring-slate-900/10 duration-500">
           <iframe
             className="h-full w-full"
             src={`https://www.youtube.com/embed/${videoSource.value}?rel=0&modestbranding=1&showinfo=0`}
@@ -336,7 +336,7 @@ export function StudentLessonPage() {
       )}
 
       {(lessonType === 'video' || lessonType === 'hybrid') && videoSource?.type === 'direct' && (
-        <div className="aspect-video w-full animate-in zoom-in-95 overflow-hidden rounded-[32px] bg-black shadow-2xl ring-1 ring-slate-900/10 duration-500">
+        <div className="mx-auto aspect-video w-[70%] animate-in zoom-in-95 overflow-hidden rounded-[32px] bg-black shadow-2xl ring-1 ring-slate-900/10 duration-500">
           <video className="h-full w-full" controls preload="metadata" src={videoSource.value}>
             Seu navegador nao suporta reproducao de video.
           </video>
@@ -350,7 +350,7 @@ export function StudentLessonPage() {
       )}
 
       {(lessonType === 'video' || lessonType === 'hybrid') && videoSource?.type === 'asset' && !isLoadingProtectedVideo && protectedVideoPlaybackUrl && (
-        <div className="aspect-video w-full animate-in zoom-in-95 overflow-hidden rounded-[32px] bg-black shadow-2xl ring-1 ring-slate-900/10 duration-500">
+        <div className="mx-auto aspect-video w-[70%] animate-in zoom-in-95 overflow-hidden rounded-[32px] bg-black shadow-2xl ring-1 ring-slate-900/10 duration-500">
           <video className="h-full w-full" controls preload="metadata" src={protectedVideoPlaybackUrl}>
             Seu navegador nao suporta reproducao de video.
           </video>
