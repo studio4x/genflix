@@ -11,7 +11,9 @@ import {
   renderButtonTemplateIcon,
 } from '@/features/admin/content/button-template-icons'
 import {
+  fetchMaterials,
   fetchLessonFooterActions,
+  getSignedMaterialUrl,
   getSignedLessonFooterActionUrl,
 } from '@/features/admin/content/api'
 import type { StudentCourseAssessmentSummary } from '@/features/student/assessments/api'
@@ -72,6 +74,8 @@ export function StudentLessonPage() {
   const [footerActions, setFooterActions] = useState<LessonFooterAction[]>([])
   const [isLoadingFooterActions, setIsLoadingFooterActions] = useState(false)
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false)
+  const [protectedVideoPlaybackUrl, setProtectedVideoPlaybackUrl] = useState<string | null>(null)
+  const [isLoadingProtectedVideo, setIsLoadingProtectedVideo] = useState(false)
 
   useEffect(() => {
     async function loadActiveLesson() {
@@ -182,6 +186,46 @@ export function StudentLessonPage() {
   const textContent = activeLessonDetails?.text_content || currentLesson.text_content
   const lessonType = activeLessonDetails?.lesson_type || currentLesson.lesson_type
   const videoSource = getLessonVideoSource(videoUrl)
+
+  useEffect(() => {
+    async function resolveProtectedVideoUrl() {
+      if (!lessonId || videoSource?.type !== 'asset') {
+        setProtectedVideoPlaybackUrl(null)
+        setIsLoadingProtectedVideo(false)
+        return
+      }
+
+      const materialId = videoUrl?.startsWith('asset:')
+        ? videoUrl.slice('asset:'.length).trim()
+        : ''
+
+      if (!materialId) {
+        setProtectedVideoPlaybackUrl(null)
+        setIsLoadingProtectedVideo(false)
+        return
+      }
+
+      setIsLoadingProtectedVideo(true)
+      try {
+        const lessonMaterials = await fetchMaterials(lessonId)
+        const linkedMaterial = lessonMaterials.find((material) => material.id === materialId)
+
+        if (!linkedMaterial?.storage_path) {
+          setProtectedVideoPlaybackUrl(null)
+          return
+        }
+
+        const signedUrl = await getSignedMaterialUrl(linkedMaterial.storage_path, 60 * 60 * 6)
+        setProtectedVideoPlaybackUrl(signedUrl)
+      } catch {
+        setProtectedVideoPlaybackUrl(null)
+      } finally {
+        setIsLoadingProtectedVideo(false)
+      }
+    }
+
+    void resolveProtectedVideoUrl()
+  }, [lessonId, videoSource?.type, videoUrl])
 
   async function handleToggleCompletion() {
     if (!user || !currentLesson) return
@@ -299,10 +343,24 @@ export function StudentLessonPage() {
         </div>
       )}
 
-      {(lessonType === 'video' || lessonType === 'hybrid') && videoSource?.type === 'asset' && (
+      {(lessonType === 'video' || lessonType === 'hybrid') && videoSource?.type === 'asset' && isLoadingProtectedVideo && (
+        <div className="rounded-[28px] border border-slate-200 bg-white p-6 text-slate-700">
+          <p className="text-sm font-semibold">Carregando video protegido...</p>
+        </div>
+      )}
+
+      {(lessonType === 'video' || lessonType === 'hybrid') && videoSource?.type === 'asset' && !isLoadingProtectedVideo && protectedVideoPlaybackUrl && (
+        <div className="aspect-video w-full animate-in zoom-in-95 overflow-hidden rounded-[32px] bg-black shadow-2xl ring-1 ring-slate-900/10 duration-500">
+          <video className="h-full w-full" controls preload="metadata" src={protectedVideoPlaybackUrl}>
+            Seu navegador nao suporta reproducao de video.
+          </video>
+        </div>
+      )}
+
+      {(lessonType === 'video' || lessonType === 'hybrid') && videoSource?.type === 'asset' && !isLoadingProtectedVideo && !protectedVideoPlaybackUrl && (
         <div className="rounded-[28px] border border-amber-200 bg-amber-50 p-6 text-amber-900">
           <p className="text-sm font-semibold">
-            Este video protegido ainda nao esta disponivel neste player. Use os recursos da aula para acessar o material.
+            Nao foi possivel carregar o video protegido desta aula. Tente novamente em instantes.
           </p>
         </div>
       )}

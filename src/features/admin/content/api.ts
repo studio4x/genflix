@@ -604,10 +604,10 @@ export async function deleteMaterial(material: LessonMaterial) {
   }
 }
 
-export async function getSignedMaterialUrl(storagePath: string) {
+export async function getSignedMaterialUrl(storagePath: string, expiresInSeconds = 60 * 10) {
   const result = await supabase.storage
     .from(MATERIALS_BUCKET)
-    .createSignedUrl(storagePath, 60 * 10)
+    .createSignedUrl(storagePath, expiresInSeconds)
 
   if (result.error) {
     throw result.error
