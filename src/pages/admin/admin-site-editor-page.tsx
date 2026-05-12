@@ -1067,17 +1067,22 @@ export function AdminSiteEditorPage() {
                   <h3 className="text-sm font-black text-[#15323b]">{siteTypographyGroupLabels[groupKey]}</h3>
                   <div className="mt-3 grid gap-3">
                     <label className="grid gap-1">
-                      <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Fonte</span>
-                      <input
+                      <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Fonte (family)</span>
+                      <select
                         value={typographyDraft[groupKey].fontFamily}
                         onChange={(event) => handleTypographyGroupChange(groupKey, 'fontFamily', event.target.value)}
-                        placeholder="Ex.: Inter, sans-serif"
                         className="h-11 rounded-[12px] border border-[#D8E6EB] bg-white px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]"
-                      />
+                      >
+                        {SITE_TEXT_FONT_PRESETS.map((fontPreset) => (
+                          <option key={fontPreset.family} value={fontPreset.family} style={{ fontFamily: fontPreset.family }}>
+                            {fontPreset.label}
+                          </option>
+                        ))}
+                      </select>
                     </label>
                     <div className="grid gap-3 sm:grid-cols-2">
                       <label className="grid gap-1">
-                        <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Tamanho</span>
+                        <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Tamanho (px)</span>
                         <input
                           value={typographyDraft[groupKey].fontSize}
                           onChange={(event) => handleTypographyGroupChange(groupKey, 'fontSize', event.target.value)}
@@ -1086,7 +1091,7 @@ export function AdminSiteEditorPage() {
                         />
                       </label>
                       <label className="grid gap-1">
-                        <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Peso</span>
+                        <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Peso (100-900)</span>
                         <input
                           value={typographyDraft[groupKey].fontWeight}
                           onChange={(event) => handleTypographyGroupChange(groupKey, 'fontWeight', event.target.value)}
@@ -1097,7 +1102,7 @@ export function AdminSiteEditorPage() {
                     </div>
                     <div className="grid gap-3 sm:grid-cols-2">
                       <label className="grid gap-1">
-                        <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Entrelinha</span>
+                        <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Entrelinha (em)</span>
                         <input
                           value={typographyDraft[groupKey].lineHeight}
                           onChange={(event) => handleTypographyGroupChange(groupKey, 'lineHeight', event.target.value)}
@@ -1106,7 +1111,7 @@ export function AdminSiteEditorPage() {
                         />
                       </label>
                       <label className="grid gap-1">
-                        <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Letter spacing</span>
+                        <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Letter spacing (em)</span>
                         <input
                           value={typographyDraft[groupKey].letterSpacing}
                           onChange={(event) => handleTypographyGroupChange(groupKey, 'letterSpacing', event.target.value)}
