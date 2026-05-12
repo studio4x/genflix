@@ -295,7 +295,7 @@
 
 [OK] t98 - ao clicar para editar nos cards de recursos na página de recursos, permitir editar as bordas dos cards. se alterar um, altera todos. permitir alterar também a curvatura das bordas. Todos os elementos devem ser carregados recolhidos. No editor da descrição, inserir a possibilidade de definir a cor e tamanho dos textos, de modo geral para todos os cards, sem precisar ajustar o html de cada um.
 
-[ ] t99 - Nos recursos, inserir no painel admin, na página de videos dos recursos, inserir a possibilidade de inserir um botão de leia mais e então inserir um conteúdo nesse leia mais. quando ativado essa opção, abrir um campo para inserir o campo de leia mais. na página publica, o botão de leia mais deverá abrir um modal com esse conteudo.
+[OK] t99 - Nos recursos, inserir no painel admin, na página de videos dos recursos, inserir a possibilidade de inserir um botão de leia mais e então inserir um conteúdo nesse leia mais. quando ativado essa opção, abrir um campo para inserir o campo de leia mais. na página publica, o botão de leia mais deverá abrir um modal com esse conteudo.
 
 [ ] t100 - Nos recursos, ao editar os icones pelo editor visual, quando selecione uma cor de icone, o icone some.. e se eu deixar a cor padrão, que é azul, o icone fica na cor preta...
 

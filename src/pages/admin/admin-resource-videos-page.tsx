@@ -28,6 +28,19 @@ function normalizeItemForSave(item: EditableListItem): EditableListItem {
     metadata.instructionalVideoUrl = instructionalVideoUrl
   }
 
+  const readMoreContent = typeof metadata.readMoreContent === 'string'
+    ? metadata.readMoreContent.trim()
+    : ''
+  const readMoreEnabled = metadata.readMoreEnabled === true
+
+  if (!readMoreEnabled || readMoreContent === '') {
+    delete metadata.readMoreEnabled
+    delete metadata.readMoreContent
+  } else {
+    metadata.readMoreEnabled = true
+    metadata.readMoreContent = readMoreContent
+  }
+
   return {
     ...item,
     metadata: Object.keys(metadata).length > 0 ? metadata : undefined,
@@ -125,6 +138,49 @@ export function AdminResourceVideosPage() {
     )))
   }
 
+  function updateReadMoreEnabled(index: number, enabled: boolean) {
+    setItems((current) => current.map((item, currentIndex) => {
+      if (currentIndex !== index) {
+        return item
+      }
+
+      const metadata = toMetadata(item)
+      if (enabled) {
+        metadata.readMoreEnabled = true
+      } else {
+        delete metadata.readMoreEnabled
+        delete metadata.readMoreContent
+      }
+
+      return {
+        ...item,
+        metadata: Object.keys(metadata).length > 0 ? metadata : undefined,
+      }
+    }))
+  }
+
+  function updateReadMoreContent(index: number, nextValue: string) {
+    setItems((current) => current.map((item, currentIndex) => {
+      if (currentIndex !== index) {
+        return item
+      }
+
+      const metadata = toMetadata(item)
+      const trimmed = nextValue.trim()
+
+      if (trimmed === '') {
+        delete metadata.readMoreContent
+      } else {
+        metadata.readMoreContent = trimmed
+      }
+
+      return {
+        ...item,
+        metadata: Object.keys(metadata).length > 0 ? metadata : undefined,
+      }
+    }))
+  }
+
   async function saveResources(targetIndex: number | null = null) {
     setIsSaving(true)
     setSavingCardIndex(targetIndex)
@@ -210,6 +266,14 @@ export function AdminResourceVideosPage() {
               const metadata = toMetadata(item)
               return typeof metadata.instructionalVideoUrl === 'string' ? metadata.instructionalVideoUrl : ''
             })()
+            const readMoreEnabled = (() => {
+              const metadata = toMetadata(item)
+              return metadata.readMoreEnabled === true
+            })()
+            const readMoreContent = (() => {
+              const metadata = toMetadata(item)
+              return typeof metadata.readMoreContent === 'string' ? metadata.readMoreContent : ''
+            })()
 
             const isConfigured = resolveResourceVideoUrl(item) !== ''
 
@@ -262,6 +326,28 @@ export function AdminResourceVideosPage() {
                     className="h-11 rounded-[14px] border border-[#D8E6EB] bg-white px-4 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]"
                   />
                 </label>
+
+                <label className="mt-4 flex items-center justify-between rounded-[14px] border border-[#D8E6EB] bg-[#F8FCFD] px-4 py-3 text-sm font-semibold text-[#15323b]">
+                  <span>Ativar botao "Leia mais" neste recurso</span>
+                  <input
+                    type="checkbox"
+                    checked={readMoreEnabled}
+                    onChange={(event) => updateReadMoreEnabled(index, event.target.checked)}
+                  />
+                </label>
+
+                {readMoreEnabled ? (
+                  <label className="mt-4 grid gap-2">
+                    <span className="text-[10px] font-black uppercase tracking-[0.16em] text-[#5F7077]">Conteudo do "Leia mais"</span>
+                    <textarea
+                      value={readMoreContent}
+                      onChange={(event) => updateReadMoreContent(index, event.target.value)}
+                      rows={6}
+                      placeholder="Esse conteúdo abrirá em um modal na página pública de recursos."
+                      className="rounded-[14px] border border-[#D8E6EB] bg-white px-4 py-3 text-sm font-semibold leading-6 text-[#15323b] outline-none focus:border-[#1398B7]"
+                    />
+                  </label>
+                ) : null}
 
                 <div className="mt-4 flex justify-end">
                   <Button

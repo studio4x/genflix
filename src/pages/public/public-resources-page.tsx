@@ -40,6 +40,11 @@ type ResourceVideoModalState = {
   title: string
 }
 
+type ResourceReadMoreModalState = {
+  title: string
+  content: string
+}
+
 const resourcesSectionTemplates = [
   {
     id: 'catalog',
@@ -121,6 +126,13 @@ function renderResourceTextContent(value: string, className: string) {
 function isDirectVideoFile(url: string) {
   const normalized = url.toLowerCase()
   return ['.mp4', '.webm', '.ogg', '.m3u8'].some((extension) => normalized.includes(extension))
+}
+
+function resolveReadMoreContent(item: EditableListItem | null | undefined) {
+  if (!item) return ''
+  const metadata = getItemMetadata(item)
+  if (metadata.readMoreEnabled !== true) return ''
+  return typeof metadata.readMoreContent === 'string' ? metadata.readMoreContent.trim() : ''
 }
 
 function resolveEmbeddableVideoUrl(url: string) {
@@ -214,12 +226,54 @@ function ResourceVideoModal({
   )
 }
 
+function ResourceReadMoreModal({
+  state,
+  onClose,
+}: {
+  state: ResourceReadMoreModalState
+  onClose: () => void
+}) {
+  return (
+    <div
+      className="fixed inset-0 z-[70] flex items-center justify-center bg-[#061b21]/78 px-4 py-6 backdrop-blur-sm"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="resource-read-more-modal-title"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) {
+          onClose()
+        }
+      }}
+    >
+      <div className="relative max-h-[80vh] w-full max-w-[760px] overflow-y-auto rounded-[18px] border border-[#D8E6EB] bg-white p-6 shadow-[0_30px_80px_rgba(6,27,33,0.38)]">
+        <h2 id="resource-read-more-modal-title" className="pr-10 text-xl font-extrabold text-[#183139]">
+          {state.title}
+        </h2>
+        <button
+          type="button"
+          onClick={onClose}
+          className="absolute right-3 top-3 z-20 inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#D8E6EB] bg-white text-[#15323b] shadow-sm transition hover:bg-[#F2F7F9]"
+          aria-label="Fechar leia mais"
+        >
+          <X className="h-5 w-5" />
+        </button>
+
+        <div className="mt-4 text-sm leading-7 text-[#425f68] [&_p]:mb-3 [&_p:last-child]:mb-0">
+          {renderResourceTextContent(state.content, '')}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function ResourcesCatalogSection({
   resourceItems,
   onOpenVideo,
+  onOpenReadMore,
 }: {
   resourceItems: EditableListItem[]
   onOpenVideo: (state: ResourceVideoModalState) => void
+  onOpenReadMore: (state: ResourceReadMoreModalState) => void
 }) {
   return (
     <section className="bg-white pb-16 pt-4">
@@ -251,6 +305,7 @@ function ResourcesCatalogSection({
                 fallbackIcon: fallback.icon,
               }
               const videoUrl = resolveResourceVideoUrl(popupItem)
+              const readMoreContent = resolveReadMoreContent(popupItem)
 
               return (
                 <EditableContainer
@@ -278,21 +333,38 @@ function ResourcesCatalogSection({
                         {renderResourceTextContent(item.description ?? '', '')}
                       </div>
                     </EditableContainer>
-                    {videoUrl ? (
-                      <div className="mt-4">
-                        <button
-                          type="button"
-                          onClick={(event) => {
-                            event.stopPropagation()
-                            onOpenVideo({
-                              url: videoUrl,
-                              title: popupItem.label || 'Video de instrucao',
-                            })
-                          }}
-                          className="inline-flex items-center rounded-full border border-[#1398B7]/30 bg-white px-3 py-1.5 text-xs font-black uppercase tracking-[0.12em] text-[#0F7E99] hover:bg-[#E8F6FA]"
-                        >
-                          Ver video de instrucao
-                        </button>
+                    {videoUrl || readMoreContent ? (
+                      <div className="mt-4 flex flex-wrap gap-2">
+                        {videoUrl ? (
+                          <button
+                            type="button"
+                            onClick={(event) => {
+                              event.stopPropagation()
+                              onOpenVideo({
+                                url: videoUrl,
+                                title: popupItem.label || 'Video de instrucao',
+                              })
+                            }}
+                            className="inline-flex items-center rounded-full border border-[#1398B7]/30 bg-white px-3 py-1.5 text-xs font-black uppercase tracking-[0.12em] text-[#0F7E99] hover:bg-[#E8F6FA]"
+                          >
+                            Ver video de instrucao
+                          </button>
+                        ) : null}
+                        {readMoreContent ? (
+                          <button
+                            type="button"
+                            onClick={(event) => {
+                              event.stopPropagation()
+                              onOpenReadMore({
+                                title: popupItem.label || 'Leia mais',
+                                content: readMoreContent,
+                              })
+                            }}
+                            className="inline-flex items-center rounded-full border border-[#15323B]/20 bg-white px-3 py-1.5 text-xs font-black uppercase tracking-[0.12em] text-[#15323B] hover:bg-[#EAF2F5]"
+                          >
+                            Leia mais
+                          </button>
+                        ) : null}
                       </div>
                     ) : null}
                   </article>
@@ -320,6 +392,7 @@ function ResourcesCatalogSection({
 export function PublicResourcesPage() {
   const { isLoading, user, roles } = useAuth()
   const [activeVideo, setActiveVideo] = useState<ResourceVideoModalState | null>(null)
+  const [activeReadMore, setActiveReadMore] = useState<ResourceReadMoreModalState | null>(null)
   const waitingRoleResolution = !!user && roles.length === 0
   const resourcesSections = useEditableValue('resources.layout.sections', resourcesLayoutFallback)
   const resourceItemsRaw = useEditableValue(
@@ -332,7 +405,7 @@ export function PublicResourcesPage() {
   )
  
   useEffect(() => {
-    if (!activeVideo) {
+    if (!activeVideo && !activeReadMore) {
       return
     }
  
@@ -350,7 +423,7 @@ export function PublicResourcesPage() {
       document.body.style.overflow = previousOverflow
       window.removeEventListener('keydown', handleKeyDown)
     }
-  }, [activeVideo])
+  }, [activeVideo, activeReadMore])
  
   if (isLoading || waitingRoleResolution) {
     return (
@@ -380,7 +453,11 @@ export function PublicResourcesPage() {
         if (templateKey === 'catalog') {
           return (
             <EditableContainer entryKey={`${sectionEntryPrefix}.layout`} label="Bloco Catalogo da pagina Recursos" pageKey={sectionPageKey}>
-              <ResourcesCatalogSection resourceItems={resourceItems} onOpenVideo={setActiveVideo} />
+              <ResourcesCatalogSection
+                resourceItems={resourceItems}
+                onOpenVideo={setActiveVideo}
+                onOpenReadMore={setActiveReadMore}
+              />
             </EditableContainer>
           )
         }
@@ -394,6 +471,9 @@ export function PublicResourcesPage() {
       <GenflixPublicFooter />
       {activeVideo ? (
         <ResourceVideoModal state={activeVideo} onClose={() => setActiveVideo(null)} />
+      ) : null}
+      {activeReadMore ? (
+        <ResourceReadMoreModal state={activeReadMore} onClose={() => setActiveReadMore(null)} />
       ) : null}
     </main>
   )
