@@ -209,6 +209,13 @@ export function GenflixPublicFooter({
                     <h3 className="text-[11px] font-black uppercase tracking-[0.18em] text-white/92">
                       Mídias sociais
                     </h3>
+                    <div className="mt-4">
+                      <GenflixCtaButton asChild tone="surface" className="min-h-[42px] w-full justify-center text-[13px] text-[#0A3640]">
+                        <a href="https://genflix-omega.vercel.app/ensine-na-genflix">
+                          Ensine na Genflix
+                        </a>
+                      </GenflixCtaButton>
+                    </div>
                     <div className="mt-4 flex flex-col gap-2">
                       {items.filter(isEditableItemVisible).map((item) => {
                         const Icon = getFooterSocialIcon(item.label ?? item.title ?? '')

@@ -274,7 +274,7 @@
 
 [OK] t90 - Na seção da home "conheça os muitos recursos didáticos que só a genflix tem.", a url do botão a ser adotada deve ser a que for configurado no editor visual.
 
-[] t91 - No rodapé, inserir na quarta coluna (a ultima da direito), um botão "Ensine na Genflix" e direcionar para a página "https://genflix-omega.vercel.app/ensine-na-genflix".
+[OK] t91 - No rodapé, inserir na quarta coluna (a ultima da direito), um botão "Ensine na Genflix" e direcionar para a página "https://genflix-omega.vercel.app/ensine-na-genflix".
 
 [] t92 - Permitir editar o fundo das seções/blocos pelo editor visual. Permitir alterar imagens pelo editor visual também. Permitir editar os paddings e margens da página como um todo..
 
