@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type ChangeEvent } from 'react'
 import { Link } from 'react-router-dom'
-import { AlertTriangle, Copy, Eye, EyeOff, ExternalLink, Filter, History, Loader2, MessageSquare, RotateCcw, Save, Search, ShieldCheck, Trash2, Upload } from 'lucide-react'
+import { AlertTriangle, Copy, Eye, EyeOff, ExternalLink, Filter, History, Loader2, MessageSquare, RotateCcw, Save, Search, ShieldCheck, Trash2, Type, Upload } from 'lucide-react'
 import JSZip from 'jszip'
 
 import { Button } from '@/components/ui/button'
@@ -13,6 +13,7 @@ import {
   fetchSiteContentVersions,
   fetchSiteEditorSettings,
   restoreSiteContentVersion,
+  saveSiteContentEntry,
   uploadSiteAsset,
   updateSiteEditorSettings,
 } from '@/features/site-editor/api'
@@ -23,7 +24,9 @@ import {
   formatWorkflowStatus,
   type SiteEditorWorkspaceMap,
 } from '@/features/site-editor/collaboration'
+import { SITE_TEXT_FONT_PRESETS } from '@/features/site-editor/font-presets'
 import { renderSiteIcon, SITE_ICON_OPTIONS } from '@/features/site-editor/site-icons'
+import { createDefaultSiteTypography, normalizeSiteTypography, type SiteTypographyConfig, type SiteTypographyGroup, type SiteTypographyGroupKey } from '@/features/site-editor/site-typography'
 import { supabase } from '@/services/supabase/client'
 
 type SitePageRow = {
@@ -35,7 +38,7 @@ type SitePageRow = {
 }
 
 type SiteEditorMode = 'basic' | 'advanced'
-type AdminSiteEditorTab = 'overrides' | 'icon-library'
+type AdminSiteEditorTab = 'overrides' | 'icon-library' | 'typography'
 
 function resolveIconNameFromFileName(fileName: string) {
   const normalizedName = fileName.trim()
@@ -163,6 +166,15 @@ function summarizeEntryValue(value: unknown) {
   return String(value)
 }
 
+const siteTypographyGroupLabels: Record<SiteTypographyGroupKey, string> = {
+  h1: 'Titulos H1',
+  h2: 'Titulos H2',
+  h3: 'Titulos H3',
+  body: 'Corpo de texto',
+  list: 'Topicos de lista',
+  link: 'Links',
+}
+
 export function AdminSiteEditorPage() {
   const [settings, setSettings] = useState<SiteEditorSettings>(defaultSiteEditorSettings)
   const [pages, setPages] = useState<SitePageRow[]>([])
@@ -170,6 +182,7 @@ export function AdminSiteEditorPage() {
   const [selectedPageKey, setSelectedPageKey] = useState<SitePageKey>('home')
   const [editorMode, setEditorMode] = useState<SiteEditorMode>('basic')
   const [activeTab, setActiveTab] = useState<AdminSiteEditorTab>('overrides')
+  const [typographyDraft, setTypographyDraft] = useState<SiteTypographyConfig>(createDefaultSiteTypography())
   const [searchQuery, setSearchQuery] = useState('')
   const [iconSearchQuery, setIconSearchQuery] = useState('')
   const [typeFilter, setTypeFilter] = useState<'all' | SiteContentEntry['entry_type']>('all')
@@ -253,6 +266,11 @@ export function AdminSiteEditorPage() {
       )
     })
   }, [iconLibraryAssets, iconSearchQuery])
+
+  useEffect(() => {
+    const typographyEntry = entries.find((entry) => entry.page_key === 'global' && entry.entry_key === 'site.typography')
+    setTypographyDraft(normalizeSiteTypography(typographyEntry?.value))
+  }, [entries])
 
   useEffect(() => {
     if (pages.length === 0) {
@@ -603,6 +621,41 @@ export function AdminSiteEditorPage() {
     event.target.value = ''
   }
 
+  function handleTypographyGroupChange(groupKey: SiteTypographyGroupKey, field: keyof SiteTypographyGroup, value: string) {
+    setTypographyDraft((current) => ({
+      ...current,
+      [groupKey]: {
+        ...current[groupKey],
+        [field]: value,
+      },
+    }))
+  }
+
+  function handleTypographyReset() {
+    setTypographyDraft(createDefaultSiteTypography())
+  }
+
+  async function handleTypographySave() {
+    setIsSaving(true)
+    setMessage(null)
+
+    try {
+      await saveSiteContentEntry({
+        pageKey: 'global',
+        entryKey: 'site.typography',
+        entryType: 'json',
+        value: typographyDraft,
+        schema: { kind: 'site-typography' },
+      })
+      await loadData()
+      setMessage('Padroes de tipografia global atualizados com sucesso.')
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Nao foi possivel salvar os padroes de tipografia.')
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
   async function handleRestoreVersion(version: SiteContentVersion) {
     setIsSaving(true)
     setMessage(null)
@@ -671,7 +724,7 @@ export function AdminSiteEditorPage() {
       </section>
       ) : null}
 
-      <section className={`grid gap-6 ${activeTab === 'icon-library' ? '' : 'xl:grid-cols-[0.85fr_minmax(0,1.15fr)]'}`}>
+      <section className={`grid gap-6 ${activeTab === 'icon-library' || activeTab === 'typography' ? '' : 'xl:grid-cols-[0.85fr_minmax(0,1.15fr)]'}`}>
         <div className="min-w-0 space-y-6">
           <article className="border border-[#D8E6EB] bg-white p-4 shadow-sm">
             <div className="inline-flex h-11 overflow-hidden rounded-[14px] border border-[#D8E6EB] bg-[#F8FBFC]">
@@ -689,6 +742,14 @@ export function AdminSiteEditorPage() {
               >
                 <Upload className="h-3.5 w-3.5" />
                 Biblioteca de ícones
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('typography')}
+                className={`inline-flex items-center gap-2 px-4 text-xs font-black uppercase tracking-[0.14em] ${activeTab === 'typography' ? 'bg-[#1398B7] text-white' : 'text-[#5F7077]'}`}
+              >
+                <Type className="h-3.5 w-3.5" />
+                Tipografia global
               </button>
             </div>
           </article>
@@ -940,6 +1001,137 @@ export function AdminSiteEditorPage() {
                   Nenhum ícone encontrado para esse filtro.
                 </div>
               ) : null}
+            </div>
+          </article>
+          ) : null}
+
+          {activeTab === 'typography' ? (
+          <article className="border border-[#D8E6EB] bg-white p-5 shadow-sm">
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#1398B7]">Tipografia</p>
+                <h2 className="mt-1 font-readex text-xl font-semibold text-[#15323b]">Padrao global de textos</h2>
+                <p className="mt-2 max-w-3xl text-sm font-semibold leading-6 text-[#5F7077]">
+                  Defina fonte, tamanho e peso para H1, H2, H3, corpo, topicos e links em todo o site publico.
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleTypographyReset}
+                  disabled={isSaving}
+                  className="rounded-none border-[#D8E6EB]"
+                >
+                  <RotateCcw className="mr-2 h-4 w-4" />
+                  Limpar
+                </Button>
+                <Button
+                  type="button"
+                  onClick={() => void handleTypographySave()}
+                  disabled={isSaving}
+                  className="rounded-none bg-[#0A3640] text-white hover:bg-[#0A3640]/90"
+                >
+                  <Save className="mr-2 h-4 w-4" />
+                  Salvar tipografia
+                </Button>
+              </div>
+            </div>
+
+            <div className="mt-4 rounded-[16px] border border-[#D8E6EB] bg-[#F8FBFC] p-3">
+              <p className="text-[10px] font-black uppercase tracking-[0.16em] text-[#5F7077]">Aplicar fonte rapida em todos os grupos</p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {SITE_TEXT_FONT_PRESETS.map((fontPreset) => (
+                  <button
+                    key={fontPreset.family}
+                    type="button"
+                    onClick={() => setTypographyDraft((current) => ({
+                      h1: { ...current.h1, fontFamily: fontPreset.family },
+                      h2: { ...current.h2, fontFamily: fontPreset.family },
+                      h3: { ...current.h3, fontFamily: fontPreset.family },
+                      body: { ...current.body, fontFamily: fontPreset.family },
+                      list: { ...current.list, fontFamily: fontPreset.family },
+                      link: { ...current.link, fontFamily: fontPreset.family },
+                    }))}
+                    className="rounded-full border border-[#D8E6EB] bg-white px-3 py-1 text-[10px] font-black uppercase tracking-[0.12em] text-[#15323b] hover:bg-[#F2F7F9]"
+                  >
+                    {fontPreset.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="mt-4 grid gap-4 lg:grid-cols-2">
+              {(['h1', 'h2', 'h3', 'body', 'list', 'link'] as SiteTypographyGroupKey[]).map((groupKey) => (
+                <section key={groupKey} className="rounded-[16px] border border-[#D8E6EB] bg-[#F8FBFC] p-4">
+                  <h3 className="text-sm font-black text-[#15323b]">{siteTypographyGroupLabels[groupKey]}</h3>
+                  <div className="mt-3 grid gap-3">
+                    <label className="grid gap-1">
+                      <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Fonte</span>
+                      <input
+                        value={typographyDraft[groupKey].fontFamily}
+                        onChange={(event) => handleTypographyGroupChange(groupKey, 'fontFamily', event.target.value)}
+                        placeholder="Ex.: Inter, sans-serif"
+                        className="h-11 rounded-[12px] border border-[#D8E6EB] bg-white px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]"
+                      />
+                    </label>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <label className="grid gap-1">
+                        <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Tamanho</span>
+                        <input
+                          value={typographyDraft[groupKey].fontSize}
+                          onChange={(event) => handleTypographyGroupChange(groupKey, 'fontSize', event.target.value)}
+                          placeholder="Ex.: 16px"
+                          className="h-11 rounded-[12px] border border-[#D8E6EB] bg-white px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]"
+                        />
+                      </label>
+                      <label className="grid gap-1">
+                        <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Peso</span>
+                        <input
+                          value={typographyDraft[groupKey].fontWeight}
+                          onChange={(event) => handleTypographyGroupChange(groupKey, 'fontWeight', event.target.value)}
+                          placeholder="Ex.: 700"
+                          className="h-11 rounded-[12px] border border-[#D8E6EB] bg-white px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]"
+                        />
+                      </label>
+                    </div>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <label className="grid gap-1">
+                        <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Entrelinha</span>
+                        <input
+                          value={typographyDraft[groupKey].lineHeight}
+                          onChange={(event) => handleTypographyGroupChange(groupKey, 'lineHeight', event.target.value)}
+                          placeholder="Ex.: 1.5"
+                          className="h-11 rounded-[12px] border border-[#D8E6EB] bg-white px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]"
+                        />
+                      </label>
+                      <label className="grid gap-1">
+                        <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Letter spacing</span>
+                        <input
+                          value={typographyDraft[groupKey].letterSpacing}
+                          onChange={(event) => handleTypographyGroupChange(groupKey, 'letterSpacing', event.target.value)}
+                          placeholder="Ex.: -0.02em"
+                          className="h-11 rounded-[12px] border border-[#D8E6EB] bg-white px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]"
+                        />
+                      </label>
+                    </div>
+                    <label className="grid gap-1">
+                      <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Transformacao</span>
+                      <select
+                        value={typographyDraft[groupKey].textTransform || 'none'}
+                        onChange={(event) => handleTypographyGroupChange(groupKey, 'textTransform', event.target.value)}
+                        className="h-11 rounded-[12px] border border-[#D8E6EB] bg-white px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]"
+                      >
+                        <option value="none">none</option>
+                        <option value="uppercase">uppercase</option>
+                        <option value="lowercase">lowercase</option>
+                        <option value="capitalize">capitalize</option>
+                        <option value="inherit">inherit</option>
+                      </select>
+                    </label>
+                  </div>
+                </section>
+              ))}
             </div>
           </article>
           ) : null}
@@ -1196,3 +1388,4 @@ export function AdminSiteEditorPage() {
     </div>
   )
 }
+

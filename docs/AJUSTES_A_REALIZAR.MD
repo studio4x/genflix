@@ -268,7 +268,7 @@
 
 [OK] T87 - Na visualização da aula pelo visualizador de cursos, o video inserido deverá ocupar apenas 70% da largura do container, assim o video não fica com tamanho excessivo e não fica cortado na tela.
 
-[ ] T88 - Inserir na página "/admin/site-editor", uma aba para definir globalmente as tipografias do site.. A ideia é criar um padrão de tamanho, fonte, espessura de texto entre outras definições para os titulos (h1, h2, h3, etc), corpo de texto, tópicos, links, etc.
+[OK] T88 - Inserir na página "/admin/site-editor", uma aba para definir globalmente as tipografias do site.. A ideia é criar um padrão de tamanho, fonte, espessura de texto entre outras definições para os titulos (h1, h2, h3, etc), corpo de texto, tópicos, links, etc.
 
 [ ] T89 - Tirar definitamente a sombra retangular do rodapé. Na coluna Mídias sociais, retirar o texto "nos siga em". Remover o formato de botão das redes sociais (remover a borda e o espaçamento ao redor do nome da midia social).
 

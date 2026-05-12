@@ -18,6 +18,7 @@ import {
   type SiteAppearanceTheme,
   type SiteAppearanceViewport,
 } from '@/features/site-editor/site-appearance'
+import { buildSiteTypographyCss, normalizeSiteTypography } from '@/features/site-editor/site-typography'
 import { SiteTrackingInjector } from '@/features/site-editor/site-tracking-injector'
 import { useSiteContentScope, useVisualEditorState, EditableButton, EditableList, isEditableItemVisible, useEditableValue } from '@/features/site-editor/visual-editor'
 import { cn } from '@/lib/utils'
@@ -137,6 +138,8 @@ export function GenflixPublicHeader({
   const appearanceScopePageKey = resolveSiteAppearancePageKey(currentPage)
   const pageAppearanceEntry = scope?.entries.get(`${appearanceScopePageKey}:site.appearance`)?.value
   const globalAppearanceEntry = scope?.entries.get('global:site.appearance')?.value
+  const globalTypographyEntry = scope?.entries.get('global:site.typography')?.value
+  const typographyCss = buildSiteTypographyCss(normalizeSiteTypography(globalTypographyEntry))
   const pageAppearanceRecord = normalizeSiteAppearance(
     pageAppearanceEntry ?? globalAppearanceEntry ?? createDefaultSiteAppearance(headerTheme),
     createDefaultSiteAppearance(headerTheme),
@@ -255,6 +258,7 @@ export function GenflixPublicHeader({
 
   return (
     <>
+      {typographyCss ? <style>{typographyCss}</style> : null}
       <section
         className={cn(
           'border-b',
