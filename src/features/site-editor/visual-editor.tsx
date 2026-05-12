@@ -4299,6 +4299,7 @@ export function EditableContainer({
   const styleValue = normalizeTextStyle(useEditableValue(styleEntryKey, {}, { pageKey: resolvedPageKey }))
   const inlineStyle = textStyleToCss(styleValue)
   const compositeWrapperRef = useRef<HTMLDivElement | null>(null)
+  const intrinsicTargetRef = useRef<HTMLElement | null>(null)
   const previousCompositeTargetRef = useRef<HTMLElement | null>(null)
   const previousCompositeKeysRef = useRef<string[]>([])
   const childNodes = Array.isArray(children) ? children : [children]
@@ -4318,11 +4319,9 @@ export function EditableContainer({
     previousCompositeTargetRef.current = null
     previousCompositeKeysRef.current = []
 
-    if (intrinsicChild || !compositeWrapperRef.current) {
-      return
-    }
-
-    const target = compositeWrapperRef.current.firstElementChild
+    const target = intrinsicChild
+      ? intrinsicTargetRef.current
+      : compositeWrapperRef.current?.firstElementChild
     if (!(target instanceof HTMLElement) || !inlineStyle) {
       return
     }
@@ -4330,7 +4329,7 @@ export function EditableContainer({
     const nextKeys = Object.entries(inlineStyle)
       .filter(([, value]) => typeof value === 'string' && value.trim() !== '')
       .map(([key, value]) => {
-        target.style.setProperty(cssPropertyName(key), value)
+        target.style.setProperty(cssPropertyName(key), value, 'important')
         return key
       })
 
@@ -4345,7 +4344,10 @@ export function EditableContainer({
   }, [inlineStyle, intrinsicChild, children])
 
   const content = intrinsicChild
-    ? cloneElement(intrinsicChild, {
+    ? cloneElement(intrinsicChild as ReactElement<{ className?: string; style?: CSSProperties; ref?: (node: HTMLElement | null) => void }>, {
+      ref: (node: HTMLElement | null) => {
+        intrinsicTargetRef.current = node
+      },
       className: className ? cn(intrinsicChild.props.className, className) : intrinsicChild.props.className,
       style: {
         ...(intrinsicChild.props.style ?? {}),
