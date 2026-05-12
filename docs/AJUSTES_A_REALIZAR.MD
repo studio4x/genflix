@@ -283,7 +283,7 @@
 
 [OK] T93 - A página "ensine na genflix" deverá ter o mesmo layout da página contato, usar o mesmo formulário de contato também. Porém no admin, deverá ter uma identificação para diferenciar os forms enviados em cada página.
 
-[ ] t94 - No formulário da "assine nossa newsletter", remover as ´´areas: "psicanalise/psicologia" e "interesse geral". Habilite o editor visual para os textos dessa seção, inclusive o formulário.
+[OK] T94 - No formulário da "assine nossa newsletter", remover as ´´areas: "psicanalise/psicologia" e "interesse geral". Habilite o editor visual para os textos dessa seção, inclusive o formulário.
 
 [ ] t95 - Precisamos implementar na página "https://genflix-omega.vercel.app/indique-a-genflix" uma forma da pessoa compartilhar a plataforma copiando um link de compartilhamento, compartilhar também pelo whatsapp e um formulário para inserir os dados de alguém que ela queira que conheça a plataforma, e ao clicar em enviar, dever´´a ser enviado um e-mail para a pessoa dizendo que fulano de tal inseriu o contato dela na plataforma genflix para que ela conhecesse.
 

@@ -10,7 +10,8 @@ import type { SitePageKey } from '@/features/site-editor/types'
 type GenflixNewsletterSectionVariant = 'form' | 'cta'
 
 const newsletterInterestAreas = genflixCategoryTiles.map((category) => category.label)
-const allInterestAreasLabel = 'Todas as áreas'
+const hiddenNewsletterAreas = new Set(['Psicanálise / Psicologia', 'Interesse Geral'])
+const newsletterSelectableAreas = newsletterInterestAreas.filter((area) => !hiddenNewsletterAreas.has(area))
 
 export function GenflixNewsletterSection({
   id = 'newsletter',
@@ -46,12 +47,12 @@ export function GenflixNewsletterSection({
   }
 
   function setAllInterestAreas(selected: boolean) {
-    setSelectedInterestAreas(selected ? [...newsletterInterestAreas] : [])
+    setSelectedInterestAreas(selected ? [...newsletterSelectableAreas] : [])
   }
 
   const areAllInterestAreasSelected =
-    newsletterInterestAreas.length > 0 &&
-    newsletterInterestAreas.every((area) => selectedInterestAreas.includes(area))
+    newsletterSelectableAreas.length > 0 &&
+    newsletterSelectableAreas.every((area) => selectedInterestAreas.includes(area))
 
   async function handleNewsletterSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -164,9 +165,21 @@ export function GenflixNewsletterSection({
                       <div className="rounded-[24px] border border-white/12 bg-white/6 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] sm:p-5">
                         <div className="flex items-start justify-between gap-4">
                           <div>
-                            <p className="text-[10px] font-black uppercase tracking-[0.22em] !text-white">Areas de interesse</p>
+                            <p className="text-[10px] font-black uppercase tracking-[0.22em] !text-white">
+                              <EditableText
+                                entryKey={`${entryPrefix}.form.interest.title`}
+                                fallback="Areas de interesse"
+                                label="Titulo das areas da newsletter"
+                                pageKey={pageKey}
+                              />
+                            </p>
                             <p className="mt-2 text-sm leading-6 !text-white">
-                              Selecione as areas que mais combinam com o seu foco de estudos.
+                              <EditableText
+                                entryKey={`${entryPrefix}.form.interest.description`}
+                                fallback="Selecione as areas que mais combinam com o seu foco de estudos."
+                                label="Descricao das areas da newsletter"
+                                pageKey={pageKey}
+                              />
                             </p>
                           </div>
                         </div>
@@ -186,10 +199,17 @@ export function GenflixNewsletterSection({
                               onChange={(event) => setAllInterestAreas(event.target.checked)}
                               className="h-4 w-4 rounded border-white/40 text-[#1398B7] focus:ring-[#1398B7]"
                             />
-                            <span className="!text-white">{allInterestAreasLabel}</span>
+                            <span className="!text-white">
+                              <EditableText
+                                entryKey={`${entryPrefix}.form.interest.all_label`}
+                                fallback="Todas as areas"
+                                label="Rotulo todas as areas da newsletter"
+                                pageKey={pageKey}
+                              />
+                            </span>
                           </label>
 
-                          {newsletterInterestAreas.map((area) => {
+                          {newsletterSelectableAreas.map((area) => {
                             const isSelected = selectedInterestAreas.includes(area)
 
                             return (
@@ -208,7 +228,14 @@ export function GenflixNewsletterSection({
                                   onChange={() => toggleInterestArea(area)}
                                   className="h-4 w-4 rounded border-white/40 text-[#1398B7] focus:ring-[#1398B7]"
                                 />
-                                <span className="!text-white">{area}</span>
+                                <span className="!text-white">
+                                  <EditableText
+                                    entryKey={`${entryPrefix}.form.interest.option.${area.toLowerCase().replace(/[^a-z0-9]+/g, '_')}`}
+                                    fallback={area}
+                                    label={`Rotulo da area ${area}`}
+                                    pageKey={pageKey}
+                                  />
+                                </span>
                               </label>
                             )
                           })}
