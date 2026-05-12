@@ -237,7 +237,7 @@
 
 [OK] T73 - Inserir a posisibilidade de adicionar imagens no editor dos textos dentro do editor visual.
 
-[ ] T74 - Inserir a possibilidade de excluir um conteúdo da página via editor visual.
+[OK] T74 - Inserir a possibilidade de excluir um conteúdo da página via editor visual.
 
 ## Chat 20 - Ajustes Gerais
 [OK] T75 - Na página de cursos, os botões do filtro deverão corresponder às categorias reais dos cursos adicionados.
@@ -262,6 +262,42 @@
 
 [OK] t85 - Na página recursos, o editor visual deverá ter a opção de trocar/inserir icones no quadros existentes. Além disso, precisamos implementar um botão para abrir um video de instrução. Precisa também adicionar na página admin uma página para inserir os videos de cada recurso.. Os recursos que não tiverem videos adicionados, não aparecerá o botão de ver video.
 
+[ ] T86 - Ajustar a narração das aulas
+
+## Chat 21 - Ajustes Gerais
+
+[ ] T87 - Na visualização da aula pelo visualizador de cursos, o video inserido deverá ocupar apenas 70% da largura do container, assim o video não fica com tamanho excessivo e não fica cortado na tela.
+
+[ ] T88 - Inserir na página "/admin/site-editor", uma aba para definir globalmente as tipografias do site.. A ideia é criar um padrão de tamanho, fonte, espessura de texto entre outras definições para os titulos (h1, h2, h3, etc), corpo de texto, tópicos, links, etc.
+
+[ ] T89 - Tirar definitamente a sombra retangular do rodapé. Na coluna Mídias sociais, retirar o texto "nos siga em". Remover o formato de botão das redes sociais (remover a borda e o espaçamento ao redor do nome da midia social).
+
+[ ] t90 - Na seção da home "conheça os muitos recursos didáticos que só a genflix tem.", a url do botão a ser adotada deve ser a que for configurado no editor visual.
+
+[] t91 - No rodapé, inserir na quarta coluna (a ultima da direito), um botão "Ensine na Genflix" e direcionar para a página "https://genflix-omega.vercel.app/ensine-na-genflix".
+
+[] t92 - Permitir editar o fundo das seções/blocos pelo editor visual. Permitir alterar imagens pelo editor visual também. Permitir editar os paddings e margens da página como um todo..
+
+[ ] t93 - A página "ensine na genflix" deverá ter o mesmo layout da página contato, usar o mesmo formulário de contato também.
+
+## Chat 22 - Ajustes Gerais
+
+
+[ ] t94 - No formulário da "assine nossa newsletter", remover as ´´areas: "psicanalise/psicologia" e "interesse geral". Habilite o editor visual para os textos dessa seção, inclusive o formulário.
+
+[ ] t95 - Precisamos implementar na página "https://genflix-omega.vercel.app/indique-a-genflix" uma forma da pessoa compartilhar a plataforma copiando um link de compartilhamento, compartilhar também pelo whatsapp e um formulário para inserir os dados de alguém que ela queira que conheça a plataforma, e ao clicar em enviar, dever´´a ser enviado um e-mail para a pessoa dizendo que fulano de tal inseriu o contato dela na plataforma genflix para que ela conhecesse.
+
+[ ] t96 - No editor de texto, na funcionalidade de colunas, inserir a possibilidade de ajustar a largura de cada coluna.
+
+[ ] t97 - A seção de newsletter deverá estar desvinculada da seção da home que tem o botão que leva a página de recursos.
+
+[ ] t98 - ao clicar para editar nos cards de recursos na página de recursos, permitir editar as bordas dos cards. se alterar um, altera todos. permitir alterar também a curvatura das bordas. Todos os elementos devem ser carregados recolhidos. No editor da descrição, inserir a possibilidade de definir a cor e tamanho dos textos, de modo geral para todos os cards, sem precisar ajustar o html de cada um.
+
+[ ] t99 - Nos recursos, inserir no painel admin, na página de videos dos recursos, inserir a possibilidade de inserir um botão de leia mais e então inserir um conteúdo nesse leia mais. quando ativado essa opção, abrir um campo para inserir o campo de leia mais. na página publica, o botão de leia mais deverá abrir um modal com esse conteudo.
+
+[ ] t100 - Nos recursos, ao editar os icones pelo editor visual, quando selecione uma cor de icone, o icone some.. e se eu deixar a cor padrão, que é azul, o icone fica na cor preta...
+
+[ ] t101 - Na página do admin, devemos inserir dentro da página "admin/cursos", uma aba para configurar as categorias dos cursos. AS categorias deverá ser um crud. Para eu poder criar, editar e remover categorias e também poder selecionar em cada curso a qual categoria ele pertence. Na página pública de cursos, as categorias que devem aparecer lá são as categorias que foram criadas.
 
 ---
 
