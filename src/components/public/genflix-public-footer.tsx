@@ -209,8 +209,7 @@ export function GenflixPublicFooter({
                     <h3 className="text-[11px] font-black uppercase tracking-[0.18em] text-white/92">
                       Mídias sociais
                     </h3>
-                    <p className="mt-4 text-sm text-white/72">Nos siga em:</p>
-                    <div className="mt-4 flex flex-col gap-3">
+                    <div className="mt-4 flex flex-col gap-2">
                       {items.filter(isEditableItemVisible).map((item) => {
                         const Icon = getFooterSocialIcon(item.label ?? item.title ?? '')
                         const label = item.label ?? item.title ?? 'Rede social'
@@ -222,7 +221,7 @@ export function GenflixPublicFooter({
                             target="_blank"
                             rel="noreferrer"
                             aria-label={label}
-                            className="inline-flex w-fit items-center gap-3 rounded-full border border-white/14 bg-white/6 px-4 py-2 text-white/80 transition-colors hover:bg-white/10 hover:text-white"
+                            className="inline-flex w-fit items-center gap-2 text-white/80 transition-colors hover:text-white"
                           >
                             <Icon className="h-4 w-4" />
                             <span className="text-sm font-semibold leading-none">{label}</span>

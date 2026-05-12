@@ -270,7 +270,7 @@
 
 [OK] T88 - Inserir na página "/admin/site-editor", uma aba para definir globalmente as tipografias do site.. A ideia é criar um padrão de tamanho, fonte, espessura de texto entre outras definições para os titulos (h1, h2, h3, etc), corpo de texto, tópicos, links, etc.
 
-[ ] T89 - Tirar definitamente a sombra retangular do rodapé. Na coluna Mídias sociais, retirar o texto "nos siga em". Remover o formato de botão das redes sociais (remover a borda e o espaçamento ao redor do nome da midia social).
+[OK] T89 - Tirar definitamente a sombra retangular do rodapé. Na coluna Mídias sociais, retirar o texto "nos siga em". Remover o formato de botão das redes sociais (remover a borda e o espaçamento ao redor do nome da midia social).
 
 [ ] t90 - Na seção da home "conheça os muitos recursos didáticos que só a genflix tem.", a url do botão a ser adotada deve ser a que for configurado no editor visual.
 
