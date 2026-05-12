@@ -78,6 +78,7 @@ type TextStyleValue = {
   borderColor?: string
   borderWidth?: string
   borderStyle?: string
+  boxShadow?: string
   width?: string
   height?: string
   minWidth?: string
@@ -268,6 +269,7 @@ function normalizeTextStyle(value: unknown): TextStyleValue {
     'borderColor',
     'borderWidth',
     'borderStyle',
+    'boxShadow',
     'width',
     'height',
     'minWidth',
@@ -339,6 +341,7 @@ function hasBoxStyle(style: TextStyleValue) {
     || style.borderColor
     || style.borderWidth
     || style.borderStyle
+    || style.boxShadow
     || style.textAlign
   )
 }
@@ -1733,7 +1736,6 @@ function EditorModal({
   const isTitleEditor = isTitleEditorEntry(editor.label, editor.entryKey)
   const defaultColor = '#183139'
   const formRef = useRef<HTMLFormElement | null>(null)
-  const textareaRef = useRef<HTMLTextAreaElement | null>(null)
   const [rawValue, setRawValue] = useState(() => initialRawValue)
   const [uploadAlt, setUploadAlt] = useState('')
   const [richTextImageAlt, setRichTextImageAlt] = useState('')
@@ -3223,6 +3225,15 @@ function EditorModal({
                       />
                     </div>
                   </label>
+                  <label className="grid gap-1.5 md:col-span-2">
+                    <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Sombra (px/rem/em)</span>
+                    <input
+                      value={textStyle.boxShadow ?? ''}
+                      onChange={(event) => setTextStyle((current) => ({ ...current, boxShadow: event.target.value }))}
+                      placeholder="0 20px 44px rgba(21,50,59,0.08)"
+                      className="h-11 rounded-[14px] border border-[#D8E6EB] px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]"
+                    />
+                  </label>
                   <label className="grid gap-1.5">
                     <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Padding horizontal (px/rem/em)</span>
                     <input
@@ -3523,16 +3534,14 @@ function EditorModal({
                 </div>
               ) : (
                 <div className="grid gap-2 p-4">
-                  <textarea
-                    ref={textareaRef}
-                    value={rawValue}
-                    onChange={(event) => setRawValue(event.target.value)}
-                    rows={usesJsonEditor ? 18 : 10}
-                    className="w-full resize-y rounded-[18px] border border-[#D8E6EB] bg-white px-4 py-3 font-mono text-sm leading-6 text-[#15323b] outline-none focus:border-[#1398B7]"
-                  />
                   {parsedPreview.error ? (
                     <div className="rounded-[16px] border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-bold text-rose-700">
                       JSON inválido: {parsedPreview.error}
+                    </div>
+                  ) : null}
+                  {!parsedPreview.error ? (
+                    <div className="rounded-[16px] border border-[#D8E6EB] bg-[#F8FCFD] px-4 py-3 text-sm font-semibold text-[#5F7077]">
+                      Edição textual avançada oculta para este tipo de bloco. Use os controles estruturados e de estilo.
                     </div>
                   ) : null}
                   {message ? (
