@@ -501,6 +501,13 @@ tr:nth-child(even) {
 }
 
 @media (min-width: 768px) {
+  .rich-text-content .genflix-columns[data-hcm-column-widths],
+  .lesson-content-html .genflix-columns[data-hcm-column-widths],
+  .lesson-content-html .lesson-rich-text .genflix-columns[data-hcm-column-widths],
+  .lesson-hotspots-body .genflix-columns[data-hcm-column-widths] {
+    grid-template-columns: var(--hcm-columns-template);
+  }
+
   .rich-text-content .genflix-columns-2,
   .lesson-content-html .genflix-columns-2,
   .lesson-content-html .lesson-rich-text .genflix-columns-2,

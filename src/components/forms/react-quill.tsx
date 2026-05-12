@@ -102,6 +102,50 @@ function buildColumnsHtml(columns: number) {
   `.trim()
 }
 
+function buildEqualColumnWidths(columns: number) {
+  const safeColumns = Math.max(1, Math.min(4, columns))
+  const base = Math.floor(100 / safeColumns)
+  const widths = Array.from({ length: safeColumns }, () => base)
+  widths[safeColumns - 1] += 100 - (base * safeColumns)
+  return widths
+}
+
+function normalizeColumnWidths(input: string, columns: number) {
+  const safeColumns = Math.max(1, Math.min(4, columns))
+  const parts = input
+    .split(',')
+    .map((part) => Number.parseFloat(part.trim().replace('%', '').replace(',', '.')))
+    .filter((value) => Number.isFinite(value) && value > 0)
+
+  if (parts.length !== safeColumns) {
+    return null
+  }
+
+  const total = parts.reduce((sum, value) => sum + value, 0)
+  if (total <= 0) {
+    return null
+  }
+
+  const normalized = parts.map((value) => (value / total) * 100)
+  const rounded = normalized.map((value) => Number.parseFloat(value.toFixed(2)))
+  const roundedTotal = rounded.reduce((sum, value) => sum + value, 0)
+  rounded[rounded.length - 1] = Number.parseFloat((rounded[rounded.length - 1] + (100 - roundedTotal)).toFixed(2))
+  return rounded
+}
+
+function applyColumnWidths(container: HTMLElement, widths: number[]) {
+  const serialized = widths.map((value) => value.toFixed(2).replace(/\.00$/, '')).join(',')
+  const template = widths.map((value) => `${value.toFixed(2).replace(/\.00$/, '')}%`).join(' ')
+
+  container.setAttribute('data-hcm-column-widths', serialized)
+  container.style.setProperty('--hcm-columns-template', template)
+}
+
+function clearColumnWidths(container: HTMLElement) {
+  container.removeAttribute('data-hcm-column-widths')
+  container.style.removeProperty('--hcm-columns-template')
+}
+
 function escapeHtmlAttribute(value: string) {
   return value
     .replace(/&/g, '&amp;')
@@ -197,6 +241,19 @@ function updateExistingColumnsLayout(container: HTMLElement, nextCount: number) 
   }
 
   container.className = `genflix-columns genflix-columns-${safeColumns}`
+
+  const currentWidths = container.getAttribute('data-hcm-column-widths')
+  if (!currentWidths) {
+    return
+  }
+
+  const nextWidths = normalizeColumnWidths(currentWidths, safeColumns)
+  if (!nextWidths) {
+    clearColumnWidths(container)
+    return
+  }
+
+  applyColumnWidths(container, nextWidths)
 }
 
 const defaultToolbar = [
@@ -309,6 +366,41 @@ export default function ReactQuill({
     }
 
     insertEditorHtml(buildColumnsHtml(columnCount))
+  }
+
+  function applyColumnsWidthsFromPrompt() {
+    const editor = editorRef.current
+    if (!editor) {
+      return
+    }
+
+    const existingContainer = findClosestColumnsContainer(editor)
+    if (!existingContainer) {
+      window.alert('Posicione o cursor dentro de um bloco de colunas para ajustar as larguras.')
+      return
+    }
+
+    const columns = Array.from(existingContainer.children).filter((child): child is HTMLElement => (
+      child instanceof HTMLElement && child.classList.contains('genflix-column')
+    ))
+
+    const count = Math.max(1, Math.min(4, columns.length))
+    const currentWidths = existingContainer.getAttribute('data-hcm-column-widths')
+    const fallbackSuggestion = currentWidths ?? buildEqualColumnWidths(count).join(', ')
+    const input = window.prompt(`Informe ${count} larguras em % separadas por vírgula (ex.: ${buildEqualColumnWidths(count).join(', ')}).`, fallbackSuggestion)
+
+    if (!input) {
+      return
+    }
+
+    const widths = normalizeColumnWidths(input, count)
+    if (!widths) {
+      window.alert('Valor inválido. Informe exatamente uma largura positiva para cada coluna.')
+      return
+    }
+
+    applyColumnWidths(existingContainer, widths)
+    syncEditorValue()
   }
 
   const stats = useMemo(() => {
@@ -469,6 +561,15 @@ export default function ReactQuill({
                 <option value="4">4 colunas</option>
               </select>
             ) : null}
+            {toolbarButtons.columns ? (
+              <button
+                type="button"
+                className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 hover:bg-slate-100"
+                onClick={applyColumnsWidthsFromPrompt}
+              >
+                Larguras
+              </button>
+            ) : null}
             {toolbarButtons.blockquote ? (
               <button type="button" className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 hover:bg-slate-100" onClick={() => runEditorCommand('formatBlock', 'blockquote')}>
                 Citação
@@ -626,6 +727,10 @@ export default function ReactQuill({
         }
 
         @media (min-width: 768px) {
+          .react-quill-local .genflix-columns[data-hcm-column-widths] {
+            grid-template-columns: var(--hcm-columns-template);
+          }
+
           .react-quill-local .genflix-columns-2 {
             grid-template-columns: repeat(2, minmax(0, 1fr));
           }
