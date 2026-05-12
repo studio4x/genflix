@@ -798,7 +798,7 @@ function EditableMarker({
     return (
       <div
         className="contents"
-        onClickCapture={(event) => {
+        onClick={(event) => {
           event.preventDefault()
           event.stopPropagation()
           onClick()
