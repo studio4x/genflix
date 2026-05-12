@@ -1,24 +1,41 @@
 import { type FormEvent, useState } from 'react'
 
+import { useAuth } from '@/app/providers/auth-provider'
 import { GenflixCtaButton } from '@/components/public/genflix-cta-button'
-import { BannerPlacementSlot } from '@/features/banners/banner-placement-slot'
 import { GenflixPublicFooter } from '@/components/public/genflix-public-footer'
 import { GenflixPublicHeader } from '@/components/public/genflix-public-header'
+import { BannerPlacementSlot } from '@/features/banners/banner-placement-slot'
+import { genflixHeroImage } from '@/features/public/genflix-public-media'
 import { genflixNavLinks } from '@/features/public/genflix-public-shell-content'
-import { EditableText } from '@/features/site-editor/visual-editor'
+import { EditableContainer, EditableImage, EditableText, getEditableImagePresentation, useEditableValue } from '@/features/site-editor/visual-editor'
 
 export function PublicTeachPage() {
+  const { isLoading, user, roles } = useAuth()
+  const waitingRoleResolution = !!user && roles.length === 0
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [emailConfirmation, setEmailConfirmation] = useState('')
-  const [subject, setSubject] = useState('')
-  const [courseIdea, setCourseIdea] = useState('')
-  const [message, setMessage] = useState<string | null>(null)
+  const [message, setMessage] = useState('')
+  const [feedback, setFeedback] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  const namePlaceholder = useEditableValue('global.teach.form.name.placeholder', 'Seu nome')
+  const emailPlaceholder = useEditableValue('global.teach.form.email.placeholder', 'Seu@e-mail.com')
+  const emailConfirmationPlaceholder = useEditableValue('global.teach.form.email_confirmation.placeholder', 'Seu@e-mail.com')
+  const messagePlaceholder = useEditableValue('global.teach.form.message.placeholder', 'Escreva sua mensagem')
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    setMessage(null)
+    setFeedback(null)
+
+    const normalizedEmail = email.trim().toLowerCase()
+    const normalizedEmailConfirmation = emailConfirmation.trim().toLowerCase()
+
+    if (normalizedEmail !== normalizedEmailConfirmation) {
+      setFeedback('Os e-mails precisam ser iguais.')
+      return
+    }
+
     setIsSubmitting(true)
 
     try {
@@ -28,10 +45,8 @@ export function PublicTeachPage() {
         body: JSON.stringify({
           form_type: 'teach',
           name: name.trim(),
-          email: email.trim(),
-          email_confirmation: emailConfirmation.trim(),
-          subject: subject.trim(),
-          message: courseIdea.trim(),
+          email: normalizedEmail,
+          message: message.trim(),
           source_path: window.location.pathname,
           source_url: window.location.href,
         }),
@@ -39,20 +54,27 @@ export function PublicTeachPage() {
 
       const payload = await response.json().catch(() => null) as { error?: string } | null
       if (!response.ok) {
-        throw new Error(payload?.error ?? 'Nao foi possivel enviar sua proposta agora.')
+        throw new Error(payload?.error ?? 'Nao foi possivel enviar sua mensagem.')
       }
 
       setName('')
       setEmail('')
       setEmailConfirmation('')
-      setSubject('')
-      setCourseIdea('')
-      setMessage('Recebemos sua proposta. Em breve nosso time entra em contato.')
+      setMessage('')
+      setFeedback('Mensagem enviada com sucesso. Em breve entraremos em contato.')
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Nao foi possivel enviar sua proposta agora.')
+      setFeedback(error instanceof Error ? error.message : 'Nao foi possivel enviar sua mensagem.')
     } finally {
       setIsSubmitting(false)
     }
+  }
+
+  if (isLoading || waitingRoleResolution) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-[#10242b] p-6 font-manrope">
+        <p className="text-sm font-extrabold uppercase tracking-[0.28em] text-white/72">Carregando GenFlix...</p>
+      </main>
+    )
   }
 
   return (
@@ -60,155 +82,121 @@ export function PublicTeachPage() {
       <GenflixPublicHeader navLinks={genflixNavLinks} />
       <BannerPlacementSlot pageKey="global" placementKey="hero" />
 
-      <section className="bg-white pb-16 pt-4">
+      <section className="bg-white pb-0 pt-6">
         <div className="public-site-container">
-          <div className="rounded-[28px] border border-[#D8E6EB] bg-[#F8FBFC] px-6 py-10 shadow-[0_20px_44px_rgba(21,50,59,0.04)] sm:px-10">
-            <p className="text-[11px] font-black uppercase tracking-[0.28em] text-[#1398B7]">
-              <EditableText entryKey="global.teach.eyebrow" fallback="Parcerias com criadores" label="Chamada da página Ensine na GenFlix" pageKey="global" />
-            </p>
-            <h1 className="mt-4 max-w-[760px] text-[2.5rem] font-extrabold leading-[0.94] tracking-[-0.05em] text-[#183139] sm:text-[3rem]">
-              <EditableText entryKey="global.teach.title" fallback="Ensine na GenFlix" label="Título da página Ensine na GenFlix" pageKey="global" />
-            </h1>
-            <p className="mt-4 max-w-[740px] text-base leading-7 text-[#5f7178]">
-              <EditableText
-                entryKey="global.teach.description"
-                fallback="Se você é professor, especialista ou produtor de conteúdo, envie sua proposta para que a nossa equipe avalie a publicação do seu curso na plataforma."
-                label="Descrição da página Ensine na GenFlix"
+          <EditableContainer entryKey="global.teach.form.card" label="Container interno do formulario Ensine na GenFlix" pageKey="global">
+            <div className="grid min-h-[620px] overflow-hidden rounded-[4px] border border-[#D8E6EB] bg-white shadow-[0_24px_56px_rgba(21,50,59,0.06)] lg:grid-cols-[1fr_1fr]">
+              <EditableImage
+                entryKey="global.teach.form.image"
+                fallback={{ src: genflixHeroImage, alt: 'Ensine na GenFlix' }}
+                label="Imagem lateral da pagina Ensine na GenFlix"
                 pageKey="global"
-              />
-            </p>
-          </div>
+              >
+                {(imageValue) => (
+                  <div
+                    className="relative min-h-[360px]"
+                    style={{
+                      backgroundImage: `linear-gradient(180deg, rgba(10, 54, 64, 0.12) 0%, rgba(10, 54, 64, 0.42) 100%), url(${typeof imageValue.src === 'string' ? imageValue.src : genflixHeroImage})`,
+                      backgroundPosition: getEditableImagePresentation(imageValue).backgroundPosition,
+                      backgroundSize: getEditableImagePresentation(imageValue).fit === 'contain' ? 'contain' : 'cover',
+                    }}
+                  >
+                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_20%,rgba(255,255,255,0.12),transparent_24%),radial-gradient(circle_at_78%_16%,rgba(255,255,255,0.18),transparent_20%)]" />
+                  </div>
+                )}
+              </EditableImage>
 
-          <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_420px]">
-            <div className="space-y-6">
-              <article className="rounded-[24px] border border-[#D8E6EB] bg-white px-6 py-6 shadow-[0_16px_36px_rgba(21,50,59,0.04)] sm:px-8">
-                <h2 className="text-[1.5rem] font-bold tracking-[-0.03em] text-[#183139]">
-                  <EditableText entryKey="global.teach.partnership.title" fallback="Como a parceria funciona" label="Título da seção de parceria" pageKey="global" />
-                </h2>
-                <div className="mt-4 space-y-4 text-[15px] leading-8 text-[#5f7178]">
-                  <p>
-                    <EditableText entryKey="global.teach.partnership.paragraph1" fallback="Você apresenta a ideia do curso, explica para quem ele foi pensado e compartilha sua experiência no tema." label="Texto 1 da seção de parceria" pageKey="global" />
-                  </p>
-                  <p>
-                    <EditableText entryKey="global.teach.partnership.paragraph2" fallback="A equipe GenFlix analisa o alinhamento pedagógico e comercial e retorna com os próximos passos para seguir com a publicação." label="Texto 2 da seção de parceria" pageKey="global" />
-                  </p>
-                </div>
-              </article>
+              <div className="flex items-center px-6 py-12 sm:px-10 lg:px-12">
+                <EditableContainer entryKey="global.teach.form.content.card" label="Container interno do conteudo Ensine na GenFlix" pageKey="global">
+                  <div className="w-full max-w-[420px]">
+                    <h1 className="text-[2.45rem] font-extrabold leading-[0.95] tracking-[-0.05em] text-[#183139] sm:text-[3rem]">
+                      <EditableText entryKey="global.teach.title" fallback="Ensine na GenFlix" label="Titulo da pagina Ensine na GenFlix" pageKey="global" />
+                    </h1>
+                    <p className="mt-4 text-base leading-7 text-[#5f7178]">
+                      <EditableText
+                        entryKey="global.teach.description"
+                        fallback="Duvidas, sugestoes ou suporte - estamos aqui."
+                        label="Descricao da pagina Ensine na GenFlix"
+                        pageKey="global"
+                      />
+                    </p>
 
-              <div className="grid gap-6 md:grid-cols-2">
-                <article className="rounded-[24px] border border-[#D8E6EB] bg-white px-6 py-6 shadow-[0_16px_36px_rgba(21,50,59,0.04)]">
-                  <p className="text-[11px] font-black uppercase tracking-[0.24em] text-[#1398B7]">
-                    <EditableText entryKey="global.teach.pdf.eyebrow" fallback="Apresente seu projeto" label="Chamada do bloco PDF" pageKey="global" />
-                  </p>
-                  <h3 className="mt-4 text-xl font-bold text-[#183139]">
-                    <EditableText entryKey="global.teach.pdf.title" fallback="Envie um resumo claro da sua proposta" label="Título do bloco PDF" pageKey="global" />
-                  </h3>
-                  <p className="mt-3 text-sm leading-7 text-[#5f7178]">
-                    <EditableText entryKey="global.teach.pdf.description" fallback="Conte o tema, o formato desejado, o público-alvo e o que você espera entregar para os alunos." label="Descrição do bloco PDF" pageKey="global" />
-                  </p>
-                </article>
+                    <form onSubmit={handleSubmit} className="mt-8 space-y-5">
+                      <div>
+                        <label htmlFor="teach-name" className="mb-2 block text-sm font-medium text-[#4f656c]">
+                          <EditableText entryKey="global.teach.form.name.label" fallback="Nome completo:" label="Rotulo do nome Ensine" pageKey="global" />
+                        </label>
+                        <input
+                          id="teach-name"
+                          type="text"
+                          value={name}
+                          onChange={(event) => setName(event.target.value)}
+                          required
+                          placeholder={namePlaceholder}
+                          className="h-12 w-full rounded-[12px] border border-[#D8E6EB] bg-[#EDF4F6] px-4 text-sm text-[#183139] outline-none transition-colors placeholder:text-[#9babb0] focus:border-[#1398B7] focus:bg-white"
+                        />
+                      </div>
 
-                <article className="rounded-[24px] border border-[#D8E6EB] bg-white px-6 py-6 shadow-[0_16px_36px_rgba(21,50,59,0.04)]">
-                  <p className="text-[11px] font-black uppercase tracking-[0.24em] text-[#1398B7]">
-                    <EditableText entryKey="global.teach.flip.eyebrow" fallback="Próximos passos" label="Chamada do bloco FlipPDF" pageKey="global" />
-                  </p>
-                  <h3 className="mt-4 text-xl font-bold text-[#183139]">
-                    <EditableText entryKey="global.teach.flip.title" fallback="Sua proposta passa por análise inicial" label="Título do bloco FlipPDF" pageKey="global" />
-                  </h3>
-                  <p className="mt-3 text-sm leading-7 text-[#5f7178]">
-                    <EditableText entryKey="global.teach.flip.description" fallback="Depois do envio, nossa equipe avalia a proposta e orienta sobre cadastro, estrutura do curso e produção do conteúdo." label="Descrição do bloco FlipPDF" pageKey="global" />
-                  </p>
-                </article>
+                      <div>
+                        <label htmlFor="teach-email" className="mb-2 block text-sm font-medium text-[#4f656c]">
+                          <EditableText entryKey="global.teach.form.email.label" fallback="E-mail:" label="Rotulo do e-mail Ensine" pageKey="global" />
+                        </label>
+                        <input
+                          id="teach-email"
+                          type="email"
+                          value={email}
+                          onChange={(event) => setEmail(event.target.value)}
+                          required
+                          placeholder={emailPlaceholder}
+                          className="h-12 w-full rounded-[12px] border border-[#D8E6EB] bg-[#EDF4F6] px-4 text-sm text-[#183139] outline-none transition-colors placeholder:text-[#9babb0] focus:border-[#1398B7] focus:bg-white"
+                        />
+                      </div>
+
+                      <div>
+                        <label htmlFor="teach-email-confirmation" className="mb-2 block text-sm font-medium text-[#4f656c]">
+                          <EditableText
+                            entryKey="global.teach.form.email_confirmation.label"
+                            fallback="Reinsira seu e-mail:"
+                            label="Rotulo de reinsira e-mail Ensine"
+                            pageKey="global"
+                          />
+                        </label>
+                        <input
+                          id="teach-email-confirmation"
+                          type="email"
+                          value={emailConfirmation}
+                          onChange={(event) => setEmailConfirmation(event.target.value)}
+                          required
+                          placeholder={emailConfirmationPlaceholder}
+                          className="h-12 w-full rounded-[12px] border border-[#D8E6EB] bg-[#EDF4F6] px-4 text-sm text-[#183139] outline-none transition-colors placeholder:text-[#9babb0] focus:border-[#1398B7] focus:bg-white"
+                        />
+                      </div>
+
+                      <div>
+                        <label htmlFor="teach-message" className="mb-2 block text-sm font-medium text-[#4f656c]">
+                          <EditableText entryKey="global.teach.form.message.label" fallback="Assunto:" label="Rotulo do assunto Ensine" pageKey="global" />
+                        </label>
+                        <textarea
+                          id="teach-message"
+                          value={message}
+                          onChange={(event) => setMessage(event.target.value)}
+                          required
+                          rows={5}
+                          placeholder={messagePlaceholder}
+                          className="w-full rounded-[16px] border border-[#D8E6EB] bg-[#EDF4F6] px-4 py-3 text-sm text-[#183139] outline-none transition-colors placeholder:text-[#9babb0] focus:border-[#1398B7] focus:bg-white"
+                        />
+                      </div>
+
+                      <GenflixCtaButton type="submit" disabled={isSubmitting} className="px-5 py-3">
+                        {isSubmitting ? 'Enviando...' : <EditableText entryKey="global.teach.form.submit" fallback="Enviar" label="Botao de envio Ensine" pageKey="global" />}
+                      </GenflixCtaButton>
+                      {feedback ? <p className="text-sm font-semibold text-[#5f7178]">{feedback}</p> : null}
+                    </form>
+                  </div>
+                </EditableContainer>
               </div>
             </div>
-
-            <aside className="rounded-[24px] border border-[#D8E6EB] bg-white px-6 py-6 shadow-[0_16px_36px_rgba(21,50,59,0.04)]">
-              <h2 className="text-[1.4rem] font-bold tracking-[-0.03em] text-[#183139]">
-                <EditableText entryKey="global.teach.form.title" fallback="Enviar proposta" label="Título do formulário Ensine na GenFlix" pageKey="global" />
-              </h2>
-              <p className="mt-3 text-sm leading-7 text-[#5f7178]">
-                <EditableText entryKey="global.teach.form.description" fallback="Preencha seus dados e descreva seu curso para iniciar a análise da parceria." label="Descrição do formulário Ensine na GenFlix" pageKey="global" />
-              </p>
-
-              <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
-                <label className="block space-y-2">
-                  <span className="text-sm font-medium text-[#4f656c]">
-                    <EditableText entryKey="global.teach.form.nameLabel" fallback="Nome completo" label="Rótulo nome do formulário Ensine na GenFlix" pageKey="global" />
-                  </span>
-                  <input
-                    className="h-12 w-full rounded-[12px] border border-[#D8E6EB] bg-[#EDF4F6] px-4 text-sm text-[#183139] outline-none transition-colors placeholder:text-[#8BA0A7] focus:border-[#1398B7] focus:bg-white"
-                    value={name}
-                    onChange={(event) => setName(event.target.value)}
-                    placeholder="Nome completo"
-                    required
-                  />
-                </label>
-                <label className="block space-y-2">
-                  <span className="text-sm font-medium text-[#4f656c]">
-                    <EditableText entryKey="global.teach.form.emailLabel" fallback="Seu e-mail" label="Rótulo e-mail do formulário Ensine na GenFlix" pageKey="global" />
-                  </span>
-                  <input
-                    type="email"
-                    className="h-12 w-full rounded-[12px] border border-[#D8E6EB] bg-[#EDF4F6] px-4 text-sm text-[#183139] outline-none transition-colors placeholder:text-[#8BA0A7] focus:border-[#1398B7] focus:bg-white"
-                    value={email}
-                    onChange={(event) => setEmail(event.target.value)}
-                    placeholder="seu@email.com"
-                    required
-                  />
-                </label>
-                <label className="block space-y-2">
-                  <span className="text-sm font-medium text-[#4f656c]">
-                    <EditableText entryKey="global.teach.form.emailConfirmationLabel" fallback="Reinsira seu e-mail" label="Rótulo confirmar e-mail do formulário Ensine na GenFlix" pageKey="global" />
-                  </span>
-                  <input
-                    type="email"
-                    className="h-12 w-full rounded-[12px] border border-[#D8E6EB] bg-[#EDF4F6] px-4 text-sm text-[#183139] outline-none transition-colors placeholder:text-[#8BA0A7] focus:border-[#1398B7] focus:bg-white"
-                    value={emailConfirmation}
-                    onChange={(event) => setEmailConfirmation(event.target.value)}
-                    placeholder="seu@email.com"
-                    required
-                  />
-                </label>
-                <label className="block space-y-2">
-                  <span className="text-sm font-medium text-[#4f656c]">
-                    <EditableText entryKey="global.teach.form.subjectLabel" fallback="Assunto do curso" label="Rótulo assunto do formulário Ensine na GenFlix" pageKey="global" />
-                  </span>
-                  <input
-                    type="text"
-                    className="h-12 w-full rounded-[12px] border border-[#D8E6EB] bg-[#EDF4F6] px-4 text-sm text-[#183139] outline-none transition-colors placeholder:text-[#8BA0A7] focus:border-[#1398B7] focus:bg-white"
-                    value={subject}
-                    onChange={(event) => setSubject(event.target.value)}
-                    placeholder="Ex.: Saúde e educação"
-                    required
-                  />
-                </label>
-                <label className="block space-y-2">
-                  <span className="text-sm font-medium text-[#4f656c]">
-                    <EditableText entryKey="global.teach.form.messageLabel" fallback="Resumo da proposta" label="Rótulo proposta do formulário Ensine na GenFlix" pageKey="global" />
-                  </span>
-                  <textarea
-                    className="min-h-[180px] w-full rounded-[16px] border border-[#D8E6EB] bg-[#EDF4F6] px-4 py-3 text-sm text-[#183139] outline-none transition-colors placeholder:text-[#8BA0A7] focus:border-[#1398B7] focus:bg-white"
-                    value={courseIdea}
-                    onChange={(event) => setCourseIdea(event.target.value)}
-                    placeholder="Explique seu curso, o público-alvo e o formato desejado."
-                    required
-                  />
-                </label>
-
-                {message ? (
-                  <p className="rounded-[14px] border border-[#D8E6EB] bg-[#F2F7F9] px-4 py-3 text-sm font-medium text-[#5f7178]">
-                    {message}
-                  </p>
-                ) : null}
-
-                <GenflixCtaButton type="submit" disabled={isSubmitting} className="h-12 w-full px-5">
-                  {isSubmitting ? 'Enviando...' : (
-                    <EditableText entryKey="global.teach.form.submitLabel" fallback="Enviar proposta" label="Botão do formulário Ensine na GenFlix" pageKey="global" />
-                  )}
-                </GenflixCtaButton>
-              </form>
-            </aside>
-          </div>
+          </EditableContainer>
         </div>
       </section>
 

@@ -145,6 +145,7 @@ export function AdminPublicFormsPage() {
           >
             <option value="all">Todos</option>
             <option value="contact">Contato</option>
+            <option value="teach">Ensine na GenFlix</option>
             <option value="newsletter">Newsletter</option>
             <option value="lead">Lead</option>
             <option value="support">Suporte</option>

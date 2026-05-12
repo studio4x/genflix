@@ -278,10 +278,10 @@
 
 [OK] t92 - Permitir editar o fundo das seções/blocos pelo editor visual. Permitir alterar imagens pelo editor visual também. Permitir editar os paddings e margens da página como um todo..
 
-[ ] t93 - A página "ensine na genflix" deverá ter o mesmo layout da página contato, usar o mesmo formulário de contato também.
 
 ## Chat 22 - Ajustes Gerais
 
+[OK] T93 - A página "ensine na genflix" deverá ter o mesmo layout da página contato, usar o mesmo formulário de contato também. Porém no admin, deverá ter uma identificação para diferenciar os forms enviados em cada página.
 
 [ ] t94 - No formulário da "assine nossa newsletter", remover as ´´areas: "psicanalise/psicologia" e "interesse geral". Habilite o editor visual para os textos dessa seção, inclusive o formulário.
 
