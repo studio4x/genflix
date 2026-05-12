@@ -185,7 +185,7 @@ export function PublicAboutPage() {
   }
 
   return (
-    <EditableContainer entryKey="about.page.layout" label="Layout geral da página Sobre" pageKey="about" className="min-h-screen bg-[#F2F7F9] font-manrope text-[#163138]">
+    <main className="min-h-screen bg-[#F2F7F9] font-manrope text-[#163138]">
       <GenflixPublicHeader currentPage="about" navLinks={genflixNavLinks} />
       <BannerPlacementSlot pageKey="about" placementKey="hero" />
       <SectionStructureControl
@@ -232,7 +232,7 @@ export function PublicAboutPage() {
         return null
       })}
       <GenflixPublicFooter />
-    </EditableContainer>
+    </main>
   )
 }
 

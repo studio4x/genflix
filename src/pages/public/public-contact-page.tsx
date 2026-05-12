@@ -17,7 +17,7 @@ import {
   resolveSectionRegistryTemplateKey,
   SectionStructureControl,
 } from '@/features/site-editor/section-registry'
-import { EditableContainer, EditableText, useEditableValue } from '@/features/site-editor/visual-editor'
+import { EditableContainer, EditableImage, EditableText, getEditableImagePresentation, useEditableValue } from '@/features/site-editor/visual-editor'
 
 const contactSectionTemplates = [
   {
@@ -71,14 +71,25 @@ function ContactFormSection({
     <section className="bg-white pb-0 pt-6">
       <div className="public-site-container">
         <div className="grid min-h-[620px] overflow-hidden rounded-[4px] border border-[#D8E6EB] bg-white shadow-[0_24px_56px_rgba(21,50,59,0.06)] lg:grid-cols-[1fr_1fr]">
-          <div
-            className="relative min-h-[360px] bg-cover bg-center"
-            style={{
-              backgroundImage: `linear-gradient(180deg, rgba(10, 54, 64, 0.12) 0%, rgba(10, 54, 64, 0.42) 100%), url(${genflixHeroImage})`,
-            }}
+          <EditableImage
+            entryKey="contact.form.image"
+            fallback={{ src: genflixHeroImage, alt: 'Contato GenFlix' }}
+            label="Imagem lateral da página Contato"
+            pageKey="contact"
           >
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_20%,rgba(255,255,255,0.12),transparent_24%),radial-gradient(circle_at_78%_16%,rgba(255,255,255,0.18),transparent_20%)]" />
-          </div>
+            {(imageValue) => (
+              <div
+                className="relative min-h-[360px]"
+                style={{
+                  backgroundImage: `linear-gradient(180deg, rgba(10, 54, 64, 0.12) 0%, rgba(10, 54, 64, 0.42) 100%), url(${typeof imageValue.src === 'string' ? imageValue.src : genflixHeroImage})`,
+                  backgroundPosition: getEditableImagePresentation(imageValue).backgroundPosition,
+                  backgroundSize: getEditableImagePresentation(imageValue).fit === 'contain' ? 'contain' : 'cover',
+                }}
+              >
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_20%,rgba(255,255,255,0.12),transparent_24%),radial-gradient(circle_at_78%_16%,rgba(255,255,255,0.18),transparent_20%)]" />
+              </div>
+            )}
+          </EditableImage>
 
           <div className="flex items-center px-6 py-12 sm:px-10 lg:px-12">
             <div className="w-full max-w-[420px]">
@@ -239,7 +250,7 @@ export function PublicContactPage() {
   }
 
   return (
-    <EditableContainer entryKey="contact.page.layout" label="Layout geral da página Contato" pageKey="contact" className="min-h-screen bg-[#F2F7F9] font-manrope text-[#163138]">
+    <main className="min-h-screen bg-[#F2F7F9] font-manrope text-[#163138]">
       <GenflixPublicHeader currentPage="contact" navLinks={genflixNavLinks} />
       <BannerPlacementSlot pageKey="contact" placementKey="hero" />
       <SectionStructureControl
@@ -283,6 +294,6 @@ export function PublicContactPage() {
       })}
       <GenflixNewsletterSection id="newsletter" entryPrefix="contact.newsletter" pageKey="contact" />
       <GenflixPublicFooter />
-    </EditableContainer>
+    </main>
   )
 }

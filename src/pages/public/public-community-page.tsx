@@ -173,7 +173,7 @@ export function PublicCommunityPage() {
   }
 
   return (
-    <EditableContainer entryKey="community.page.layout" label="Layout geral da página Comunidade" pageKey="community" className="min-h-screen bg-[#F2F7F9] font-manrope text-[#163138]">
+    <main className="min-h-screen bg-[#F2F7F9] font-manrope text-[#163138]">
       <GenflixPublicHeader currentPage="community" navLinks={genflixNavLinks} />
       <BannerPlacementSlot pageKey="community" placementKey="hero" />
       <SectionStructureControl
@@ -212,6 +212,6 @@ export function PublicCommunityPage() {
         return null
       })}
       <GenflixPublicFooter />
-    </EditableContainer>
+    </main>
   )
 }
