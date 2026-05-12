@@ -5,6 +5,7 @@
   useCallback,
   useContext,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -355,6 +356,10 @@ function cloneNodeWithStyle(node: ReactNode, style?: CSSProperties) {
       ...style,
     },
   })
+}
+
+function cssPropertyName(property: string) {
+  return property.replace(/[A-Z]/g, (match) => `-${match.toLowerCase()}`)
 }
 
 const BUTTON_STYLE_PRESETS = [
@@ -4293,12 +4298,52 @@ export function EditableContainer({
   const styleEntryKey = `${entryKey}.__style`
   const styleValue = normalizeTextStyle(useEditableValue(styleEntryKey, {}, { pageKey: resolvedPageKey }))
   const inlineStyle = textStyleToCss(styleValue)
+  const compositeWrapperRef = useRef<HTMLDivElement | null>(null)
+  const previousCompositeTargetRef = useRef<HTMLElement | null>(null)
+  const previousCompositeKeysRef = useRef<string[]>([])
   const childNodes = Array.isArray(children) ? children : [children]
   const singleChildNode = childNodes.length === 1 ? childNodes[0] : null
   const isIntrinsicElement = isValidElement(singleChildNode) && typeof singleChildNode.type === 'string'
   const intrinsicChild = isIntrinsicElement
     ? singleChildNode as ReactElement<{ className?: string; style?: CSSProperties }>
     : null
+
+  useLayoutEffect(() => {
+    const previousTarget = previousCompositeTargetRef.current
+    const previousKeys = previousCompositeKeysRef.current
+    for (const key of previousKeys) {
+      previousTarget?.style.removeProperty(cssPropertyName(key))
+    }
+
+    previousCompositeTargetRef.current = null
+    previousCompositeKeysRef.current = []
+
+    if (intrinsicChild || !compositeWrapperRef.current) {
+      return
+    }
+
+    const target = compositeWrapperRef.current.firstElementChild
+    if (!(target instanceof HTMLElement) || !inlineStyle) {
+      return
+    }
+
+    const nextKeys = Object.entries(inlineStyle)
+      .filter(([, value]) => typeof value === 'string' && value.trim() !== '')
+      .map(([key, value]) => {
+        target.style.setProperty(cssPropertyName(key), value)
+        return key
+      })
+
+    previousCompositeTargetRef.current = target
+    previousCompositeKeysRef.current = nextKeys
+
+    return () => {
+      for (const key of nextKeys) {
+        target.style.removeProperty(cssPropertyName(key))
+      }
+    }
+  }, [inlineStyle, intrinsicChild, children])
+
   const content = intrinsicChild
     ? cloneElement(intrinsicChild, {
       className: className ? cn(intrinsicChild.props.className, className) : intrinsicChild.props.className,
@@ -4308,7 +4353,7 @@ export function EditableContainer({
       },
     })
     : (
-      <div className={className} style={inlineStyle}>
+      <div ref={compositeWrapperRef} className={className}>
         {children}
       </div>
     )
