@@ -53,7 +53,7 @@ const homeLayoutFallback: EditableListItem[] = [
     description: 'Bloco final com chamada para cursos.',
     metadata: {
       templateKey: 'newsletter',
-      pageKey: 'global',
+      pageKey: 'home',
     },
   },
 ]
@@ -101,6 +101,7 @@ const homeLayoutSchema = {
         description: 'Bloco final com chamada para cursos.',
         metadata: {
           templateKey: 'newsletter',
+          pageKey: 'home',
         },
       },
     },
@@ -135,10 +136,10 @@ function resolveHomeSectionPrefix(item: EditableListItem, templateKey: string) {
 
   if (templateKey === 'categories') return 'home.categories'
   if (templateKey === 'featured') return 'home.featured'
-  return 'global.newsletter'
+  return 'home.newsletter'
 }
 
-function resolveHomeSectionPageKey(item: EditableListItem, templateKey: string): SitePageKey {
+function resolveHomeSectionPageKey(item: EditableListItem): SitePageKey {
   const metadata = getHomeSectionMetadata(item)
   const configuredPageKey = typeof metadata.pageKey === 'string' ? metadata.pageKey : null
 
@@ -146,7 +147,7 @@ function resolveHomeSectionPageKey(item: EditableListItem, templateKey: string):
     return configuredPageKey
   }
 
-  return templateKey === 'newsletter' ? 'global' : 'home'
+  return 'home'
 }
 
 function HomeStructureControl({ sections }: { sections: EditableListItem[] }) {
@@ -384,7 +385,7 @@ export function PublicHomePage() {
         const occurrence = templateOccurrences.get(templateKey) ?? 0
         templateOccurrences.set(templateKey, occurrence + 1)
         const entryPrefix = resolveHomeSectionPrefix(section, templateKey)
-        const pageKey = resolveHomeSectionPageKey(section, templateKey)
+        const pageKey = resolveHomeSectionPageKey(section)
 
         if (templateKey === 'categories') {
           return <HomeCategoriesSection key={section.id} entryPrefix={entryPrefix} pageKey={pageKey} />
@@ -401,8 +402,7 @@ export function PublicHomePage() {
               id={occurrence === 0 ? 'newsletter' : `newsletter-${occurrence + 1}`}
               entryPrefix={entryPrefix}
               pageKey={pageKey}
-              variant="cta"
-              ctaHref="/cursos"
+              variant="form"
             />
           )
         }

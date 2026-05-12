@@ -289,7 +289,7 @@
 
 [ ] t96 - No editor de texto, na funcionalidade de colunas, inserir a possibilidade de ajustar a largura de cada coluna.
 
-[ ] t97 - A seção de newsletter deverá estar desvinculada da seção da home que tem o botão que leva a página de recursos.
+[OK] T97 - A seção de newsletter deverá estar desvinculada da seção da home que tem o botão que leva a página de recursos.
 
 [ ] t98 - ao clicar para editar nos cards de recursos na página de recursos, permitir editar as bordas dos cards. se alterar um, altera todos. permitir alterar também a curvatura das bordas. Todos os elementos devem ser carregados recolhidos. No editor da descrição, inserir a possibilidade de definir a cor e tamanho dos textos, de modo geral para todos os cards, sem precisar ajustar o html de cada um.
 
