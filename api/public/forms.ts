@@ -44,6 +44,8 @@ const publicFormSchema = z.object({
   form_type: z.string().trim().min(1).max(64),
   name: z.string().trim().max(200).optional().nullable(),
   email: z.string().trim().email().optional().nullable(),
+  recipient_name: z.string().trim().max(200).optional().nullable(),
+  recipient_email: z.string().trim().email().optional().nullable(),
   email_confirmation: z.string().trim().email().optional().nullable(),
   subject: z.string().trim().max(200).optional().nullable(),
   interest_areas: z.array(z.string().trim().min(1).max(120)).max(20).optional().nullable(),
@@ -99,6 +101,7 @@ function formatFormTypeLabel(formType: string) {
     newsletter: 'newsletter',
     lead: 'lead',
     support: 'suporte',
+    refer: 'indicacao',
   }
 
   return labels[formType] ?? formType
@@ -110,6 +113,8 @@ function buildNotificationTemplate(input: z.infer<typeof publicFormSchema>): Not
   const email = normalizeField(input.email)
   const subject = normalizeField(input.subject)
   const message = normalizeField(input.message)
+  const recipientName = normalizeField(input.recipient_name)
+  const recipientEmail = normalizeField(input.recipient_email)
   const interestAreas = Array.isArray(input.interest_areas)
     ? input.interest_areas.map((area) => area.trim()).filter((area) => area.length > 0)
     : []
@@ -120,6 +125,7 @@ function buildNotificationTemplate(input: z.infer<typeof publicFormSchema>): Not
     newsletter: 'Novo cadastro na newsletter',
     lead: 'Novo lead recebido',
     support: 'Novo formulário de suporte recebido',
+    refer: 'Nova indicacao recebida',
   }
 
   const title = titleMap[input.form_type] ?? 'Novo formulário recebido'
@@ -128,6 +134,8 @@ function buildNotificationTemplate(input: z.infer<typeof publicFormSchema>): Not
     `Tipo: ${formLabel}`,
     name ? `Nome: ${name}` : null,
     email ? `E-mail: ${email}` : null,
+    recipientName ? `Nome indicado: ${recipientName}` : null,
+    recipientEmail ? `E-mail indicado: ${recipientEmail}` : null,
     interestAreas.length > 0 ? `Areas de interesse: ${interestAreas.join(', ')}` : null,
     subject ? `Assunto do curso: ${subject}` : null,
     message ? `Mensagem: ${message.slice(0, 280)}` : null,
@@ -138,6 +146,39 @@ function buildNotificationTemplate(input: z.infer<typeof publicFormSchema>): Not
     title,
     body: parts.length > 0 ? parts.join(' | ') : 'Novo formulário recebido pela plataforma.',
   }
+}
+
+async function notifyReferredContact(input: z.infer<typeof publicFormSchema>) {
+  if (input.form_type !== 'refer') {
+    return
+  }
+
+  const recipientEmail = normalizeField(input.recipient_email)
+  if (!recipientEmail) {
+    return
+  }
+
+  const recipientName = normalizeField(input.recipient_name)
+  const referrerName = normalizeField(input.name)
+  const referrerEmail = normalizeField(input.email)
+  const customMessage = normalizeField(input.message)
+  const publicAppUrl = getPublicAppUrl().replace(/\/$/, '')
+
+  const title = `${referrerName ?? 'Um contato'} indicou a GenFlix para voce`
+  const bodyLines = [
+    `${referrerName ?? 'Alguem'} inseriu seu contato na plataforma GenFlix para voce conhecer os cursos e recursos disponiveis.`,
+    referrerEmail ? `Contato de quem indicou: ${referrerEmail}` : null,
+    customMessage ? `Mensagem enviada: ${customMessage}` : null,
+  ].filter((line): line is string => Boolean(line))
+
+  await sendNotificationEmail({
+    to: recipientEmail,
+    fullName: recipientName ?? undefined,
+    title,
+    body: bodyLines.join('\n\n'),
+    actionUrl: `${publicAppUrl}/`,
+    actionLabel: 'Conhecer a GenFlix',
+  }).catch(() => null)
 }
 
 async function loadAdminProfiles(adminClient: SupabaseClient, fallbackEmail: string | null) {
@@ -266,6 +307,8 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
     form_type: parsed.data.form_type,
     name: normalizeField(parsed.data.name),
     email: normalizeField(parsed.data.email),
+    recipient_name: normalizeField(parsed.data.recipient_name),
+    recipient_email: normalizeField(parsed.data.recipient_email),
     email_confirmation: normalizeField(parsed.data.email_confirmation),
     subject: normalizeField(parsed.data.subject),
     interest_areas: Array.isArray(parsed.data.interest_areas) ? parsed.data.interest_areas.map((area) => area.trim()).filter((area) => area.length > 0) : [],
@@ -308,6 +351,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
     const adminNotificationEmail = normalizeField(adminSettingsResult.data?.admin_notification_email ?? null)
 
     const notificationResult = await notifyAdmins(adminClient, submissionRecord, template, adminNotificationEmail)
+    await notifyReferredContact(parsed.data)
 
     jsonResponse(res, 201, {
       id: submissionRecord.id,
@@ -320,3 +364,4 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
     })
   }
 }
+

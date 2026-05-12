@@ -285,7 +285,7 @@
 
 [OK] T94 - No formulário da "assine nossa newsletter", remover as ´´areas: "psicanalise/psicologia" e "interesse geral". Habilite o editor visual para os textos dessa seção, inclusive o formulário.
 
-[ ] t95 - Precisamos implementar na página "https://genflix-omega.vercel.app/indique-a-genflix" uma forma da pessoa compartilhar a plataforma copiando um link de compartilhamento, compartilhar também pelo whatsapp e um formulário para inserir os dados de alguém que ela queira que conheça a plataforma, e ao clicar em enviar, dever´´a ser enviado um e-mail para a pessoa dizendo que fulano de tal inseriu o contato dela na plataforma genflix para que ela conhecesse.
+[OK] T95 - Precisamos implementar na página "https://genflix-omega.vercel.app/indique-a-genflix" uma forma da pessoa compartilhar a plataforma copiando um link de compartilhamento, compartilhar também pelo whatsapp e um formulário para inserir os dados de alguém que ela queira que conheça a plataforma, e ao clicar em enviar, dever´´a ser enviado um e-mail para a pessoa dizendo que fulano de tal inseriu o contato dela na plataforma genflix para que ela conhecesse.
 
 [ ] t96 - No editor de texto, na funcionalidade de colunas, inserir a possibilidade de ajustar a largura de cada coluna.
 
