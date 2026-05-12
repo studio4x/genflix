@@ -224,20 +224,23 @@ function ResourcesCatalogSection({
   return (
     <section className="bg-white pb-16 pt-4">
       <div className="public-site-container">
-        <div className="mx-auto max-w-[680px] text-center">
-          <h1 className="text-[2.35rem] font-extrabold leading-[0.96] tracking-[-0.05em] text-[#183139] sm:text-[2.8rem]">
-            <EditableText entryKey="resources.title" fallback="Muito alem do video" label="Titulo de recursos" />
-          </h1>
-          <p className="mx-auto mt-4 max-w-[560px] text-base leading-7 text-[#61737a]">
-            <EditableText
-              entryKey="resources.description"
-              fallback="Ferramentas pensadas para voce aprender, fixar e revisar do seu jeito."
-              label="Descricao de recursos"
-            />
-          </p>
-        </div>
+        <EditableContainer entryKey="resources.catalog.header.card" label="Container interno do cabecalho de recursos" pageKey="resources">
+          <div className="mx-auto max-w-[680px] text-center">
+            <h1 className="text-[2.35rem] font-extrabold leading-[0.96] tracking-[-0.05em] text-[#183139] sm:text-[2.8rem]">
+              <EditableText entryKey="resources.title" fallback="Muito alem do video" label="Titulo de recursos" />
+            </h1>
+            <p className="mx-auto mt-4 max-w-[560px] text-base leading-7 text-[#61737a]">
+              <EditableText
+                entryKey="resources.description"
+                fallback="Ferramentas pensadas para voce aprender, fixar e revisar do seu jeito."
+                label="Descricao de recursos"
+              />
+            </p>
+          </div>
+        </EditableContainer>
 
-        <div className="mt-12 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <EditableContainer entryKey="resources.catalog.grid.wrap" label="Container interno da grade de recursos" pageKey="resources">
+          <div className="mt-12 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           <EditableList entryKey="resources.items" fallback={resourceItems} label="Cards de recursos">
             {(items) => items.filter(isEditableItemVisible).map((item) => {
               const fallback = findResourceFallbackByLabel(item.label)
@@ -286,14 +289,17 @@ function ResourcesCatalogSection({
             })}
           </EditableList>
         </div>
+        </EditableContainer>
 
-        <div className="mt-12 flex justify-center">
+        <EditableContainer entryKey="resources.catalog.cta.wrap" label="Container interno do CTA de recursos" pageKey="resources">
+          <div className="mt-12 flex justify-center">
           <GenflixCtaButton asChild className="px-5 py-3">
             <Link to="/login">
               <EditableText entryKey="resources.cta" fallback="Entrar para explorar tudo" label="CTA de recursos" />
             </Link>
           </GenflixCtaButton>
         </div>
+        </EditableContainer>
       </div>
     </section>
   )

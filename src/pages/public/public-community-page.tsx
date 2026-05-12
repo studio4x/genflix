@@ -53,24 +53,27 @@ function CommunityHeroSection({ communityItems }: { communityItems: EditableList
   return (
     <section className="bg-white pb-14 pt-4">
       <div className="public-site-container">
-        <div className="mx-auto max-w-[760px] text-center">
-          <h1 className="text-[2.35rem] font-extrabold leading-[0.96] tracking-[-0.05em] text-[#183139] sm:text-[2.8rem]">
-            <EditableText
-              entryKey="community.hero.title"
-              fallback="Tire duvidas, troque experiencias e aprofunde o que aprendeu."
-              label="Titulo da comunidade"
-            />
-          </h1>
-          <p className="mx-auto mt-4 max-w-[720px] text-base leading-7 text-[#61737a]">
-            <EditableText
-              entryKey="community.hero.description"
-              fallback="Escolha sua comunidade, entre na conversa e leve o aprendizado alem da tela. Aqui as duvidas viram debate e o debate vira conhecimento."
-              label="Descricao da comunidade"
-            />
-          </p>
-        </div>
+        <EditableContainer entryKey="community.hero.header.card" label="Container interno do cabecalho da comunidade" pageKey="community">
+          <div className="mx-auto max-w-[760px] text-center">
+            <h1 className="text-[2.35rem] font-extrabold leading-[0.96] tracking-[-0.05em] text-[#183139] sm:text-[2.8rem]">
+              <EditableText
+                entryKey="community.hero.title"
+                fallback="Tire duvidas, troque experiencias e aprofunde o que aprendeu."
+                label="Titulo da comunidade"
+              />
+            </h1>
+            <p className="mx-auto mt-4 max-w-[720px] text-base leading-7 text-[#61737a]">
+              <EditableText
+                entryKey="community.hero.description"
+                fallback="Escolha sua comunidade, entre na conversa e leve o aprendizado alem da tela. Aqui as duvidas viram debate e o debate vira conhecimento."
+                label="Descricao da comunidade"
+              />
+            </p>
+          </div>
+        </EditableContainer>
 
-        <div className="mt-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
+        <EditableContainer entryKey="community.hero.grid.wrap" label="Container interno da grade de comunidades" pageKey="community">
+          <div className="mt-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
           <EditableList entryKey="community.items" fallback={communityItems} label="Comunidades">
             {(items) => items.filter(isEditableItemVisible).map((item) => {
               const fallback = genflixCommunityItems.find((community) => community.label === item.label) ?? genflixCommunityItems[0]
@@ -90,6 +93,7 @@ function CommunityHeroSection({ communityItems }: { communityItems: EditableList
             })}
           </EditableList>
         </div>
+        </EditableContainer>
       </div>
     </section>
   )
@@ -99,7 +103,8 @@ function CommunitySupportSection() {
   return (
     <section className="bg-white pb-16">
       <div className="public-site-container">
-        <div className="grid gap-8 overflow-hidden rounded-[28px] border border-[#D8E6EB] bg-white p-6 shadow-[0_20px_46px_rgba(21,50,59,0.05)] lg:grid-cols-[1fr_0.9fr] lg:p-8">
+        <EditableContainer entryKey="community.support.card" label="Container interno do bloco de apoio" pageKey="community">
+          <div className="grid gap-8 overflow-hidden rounded-[28px] border border-[#D8E6EB] bg-white p-6 shadow-[0_20px_46px_rgba(21,50,59,0.05)] lg:grid-cols-[1fr_0.9fr] lg:p-8">
           <div className="relative overflow-hidden rounded-[22px] bg-[#173039]">
             <img
               src="/images/genflix/home/featured-6.jpg"
@@ -146,6 +151,7 @@ function CommunitySupportSection() {
             </div>
           </div>
         </div>
+        </EditableContainer>
       </div>
     </section>
   )

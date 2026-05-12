@@ -14,6 +14,7 @@ import {
   genflixNavLinks,
 } from '@/features/public/genflix-site-content'
 import {
+  EditableContainer,
   EditableButton,
   EditableList,
   EditableText,
@@ -236,53 +237,57 @@ function HomeCategoriesSection({
   return (
     <section className="border-b border-[#D8E6EB] bg-[#f2f8fa] py-14 sm:py-16">
       <div className="public-site-container">
-        <div className="mx-auto max-w-[640px] text-center">
-          <h2 className="text-[2rem] font-bold tracking-[-0.04em] text-[#15323B] sm:text-[2.25rem]">
-            <EditableText
-              entryKey={`${entryPrefix}.title`}
-              fallback="Cursos por area de conhecimento"
-              label="Titulo de categorias"
+        <EditableContainer entryKey={`${entryPrefix}.heading.card`} label="Container interno de categorias" pageKey={pageKey}>
+          <div className="mx-auto max-w-[640px] text-center">
+            <h2 className="text-[2rem] font-bold tracking-[-0.04em] text-[#15323B] sm:text-[2.25rem]">
+              <EditableText
+                entryKey={`${entryPrefix}.title`}
+                fallback="Cursos por area de conhecimento"
+                label="Titulo de categorias"
+                pageKey={pageKey}
+              />
+            </h2>
+          </div>
+        </EditableContainer>
+
+        <EditableContainer entryKey={`${entryPrefix}.items.wrap`} label="Container interno da grade de categorias" pageKey={pageKey}>
+          <div className="mx-auto mt-10 flex max-w-[1160px] flex-wrap justify-center gap-3">
+            <EditableList
+              entryKey={`${entryPrefix}.items`}
+              fallback={categoryItems}
+              label="Categorias da home"
               pageKey={pageKey}
-            />
-          </h2>
-        </div>
+            >
+              {(items) => items.filter(isEditableItemVisible).map((item) => {
+                const category = genflixCategoryTiles.find((tile) => tile.label === item.label) ?? genflixCategoryTiles[0]
+                const iconKey = typeof item.metadata?.iconKey === 'string'
+                  ? item.metadata.iconKey
+                  : homeCategoryIconKeys[category.label] ?? 'sparkles'
+                const iconImageUrl = typeof item.metadata?.iconImageUrl === 'string' ? item.metadata.iconImageUrl : null
+                const iconImageAlt = typeof item.metadata?.iconImageAlt === 'string' ? item.metadata.iconImageAlt : null
+                const iconColor = typeof item.metadata?.iconColor === 'string' ? item.metadata.iconColor : null
 
-        <div className="mx-auto mt-10 flex max-w-[1160px] flex-wrap justify-center gap-3">
-          <EditableList
-            entryKey={`${entryPrefix}.items`}
-            fallback={categoryItems}
-            label="Categorias da home"
-            pageKey={pageKey}
-          >
-            {(items) => items.filter(isEditableItemVisible).map((item) => {
-              const category = genflixCategoryTiles.find((tile) => tile.label === item.label) ?? genflixCategoryTiles[0]
-              const iconKey = typeof item.metadata?.iconKey === 'string'
-                ? item.metadata.iconKey
-                : homeCategoryIconKeys[category.label] ?? 'sparkles'
-              const iconImageUrl = typeof item.metadata?.iconImageUrl === 'string' ? item.metadata.iconImageUrl : null
-              const iconImageAlt = typeof item.metadata?.iconImageAlt === 'string' ? item.metadata.iconImageAlt : null
-              const iconColor = typeof item.metadata?.iconColor === 'string' ? item.metadata.iconColor : null
-
-              return (
-                <article
-                  key={item.id}
-                  className="min-h-[124px] w-[145px] rounded-[4px] bg-[linear-gradient(180deg,#1BA8C5_0%,#0A3640_100%)] px-4 py-4 text-white shadow-[0_18px_30px_rgba(10,54,64,0.14)] sm:w-[150px]"
-                >
-                  <div className="flex h-11 w-11 items-center justify-center text-white/95">
-                    {renderSiteIconVisual({
-                      iconKey,
-                      iconImageUrl,
-                      iconAlt: iconImageAlt || item.label,
-                      iconColor,
-                      className: 'h-5 w-5',
-                    })}
-                  </div>
-                  <p className="mt-3 text-[15px] font-semibold leading-6 tracking-[-0.02em]">{item.label}</p>
-                </article>
-              )
-            })}
-          </EditableList>
-        </div>
+                return (
+                  <article
+                    key={item.id}
+                    className="min-h-[124px] w-[145px] rounded-[4px] bg-[linear-gradient(180deg,#1BA8C5_0%,#0A3640_100%)] px-4 py-4 text-white shadow-[0_18px_30px_rgba(10,54,64,0.14)] sm:w-[150px]"
+                  >
+                    <div className="flex h-11 w-11 items-center justify-center text-white/95">
+                      {renderSiteIconVisual({
+                        iconKey,
+                        iconImageUrl,
+                        iconAlt: iconImageAlt || item.label,
+                        iconColor,
+                        className: 'h-5 w-5',
+                      })}
+                    </div>
+                    <p className="mt-3 text-[15px] font-semibold leading-6 tracking-[-0.02em]">{item.label}</p>
+                  </article>
+                )
+              })}
+            </EditableList>
+          </div>
+        </EditableContainer>
       </div>
     </section>
   )
@@ -302,44 +307,48 @@ function HomeFeaturedSection({
   return (
     <section id={sectionId} className="bg-white py-16 sm:py-20">
       <div className="public-site-container">
-        <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <h2 className="text-[2rem] font-bold tracking-[-0.04em] text-[#15323B] sm:text-[2.25rem]">
-              <EditableText entryKey={`${entryPrefix}.title`} fallback="Novidades" label="Titulo de cursos em destaque" pageKey={pageKey} />
-            </h2>
+        <EditableContainer entryKey={`${entryPrefix}.header.wrap`} label="Container interno do cabecalho de novidades" pageKey={pageKey}>
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+              <h2 className="text-[2rem] font-bold tracking-[-0.04em] text-[#15323B] sm:text-[2.25rem]">
+                <EditableText entryKey={`${entryPrefix}.title`} fallback="Novidades" label="Titulo de cursos em destaque" pageKey={pageKey} />
+              </h2>
+            </div>
+
+            <EditableButton
+              entryKey={`${entryPrefix}.cta`}
+              fallback={{ label: legacyFeaturedCtaLabel, href: '/cursos', isInternal: true, tone: 'solid' }}
+              label="CTA de cursos em destaque"
+              pageKey={pageKey}
+            >
+              {(buttonValue) => buttonValue.isHidden === true ? null : (
+                <GenflixCtaButton asChild className="h-11 self-start px-5" tone={normalizeGenflixCtaTone(buttonValue.tone)}>
+                  {buttonValue.isInternal === true ? (
+                    <Link to={typeof buttonValue.href === 'string' ? buttonValue.href : '/cursos'}>
+                      {typeof buttonValue.label === 'string' ? buttonValue.label : 'Conheca todos os cursos'}
+                    </Link>
+                  ) : (
+                    <a
+                      href={typeof buttonValue.href === 'string' ? buttonValue.href : '#'}
+                      target={buttonValue.openInNewTab === true ? '_blank' : undefined}
+                      rel={buttonValue.openInNewTab === true ? 'noreferrer' : undefined}
+                    >
+                      {typeof buttonValue.label === 'string' ? buttonValue.label : 'Conheca todos os cursos'}
+                    </a>
+                  )}
+                </GenflixCtaButton>
+              )}
+            </EditableButton>
           </div>
+        </EditableContainer>
 
-          <EditableButton
-            entryKey={`${entryPrefix}.cta`}
-            fallback={{ label: legacyFeaturedCtaLabel, href: '/cursos', isInternal: true, tone: 'solid' }}
-            label="CTA de cursos em destaque"
-            pageKey={pageKey}
-          >
-            {(buttonValue) => buttonValue.isHidden === true ? null : (
-              <GenflixCtaButton asChild className="h-11 self-start px-5" tone={normalizeGenflixCtaTone(buttonValue.tone)}>
-                {buttonValue.isInternal === true ? (
-                  <Link to={typeof buttonValue.href === 'string' ? buttonValue.href : '/cursos'}>
-                    {typeof buttonValue.label === 'string' ? buttonValue.label : 'Conheca todos os cursos'}
-                  </Link>
-                ) : (
-                  <a
-                    href={typeof buttonValue.href === 'string' ? buttonValue.href : '#'}
-                    target={buttonValue.openInNewTab === true ? '_blank' : undefined}
-                    rel={buttonValue.openInNewTab === true ? 'noreferrer' : undefined}
-                  >
-                    {typeof buttonValue.label === 'string' ? buttonValue.label : 'Conheca todos os cursos'}
-                  </a>
-                )}
-              </GenflixCtaButton>
-            )}
-          </EditableButton>
-        </div>
-
-        <div className="mt-10 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+        <EditableContainer entryKey={`${entryPrefix}.grid.wrap`} label="Container interno da grade de novidades" pageKey={pageKey}>
+          <div className="mt-10 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
           {genflixFeaturedCourses.map((course) => (
             <GenflixCourseCard key={course.slug} course={course} />
           ))}
         </div>
+        </EditableContainer>
       </div>
     </section>
   )

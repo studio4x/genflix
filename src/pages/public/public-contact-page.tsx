@@ -70,7 +70,8 @@ function ContactFormSection({
   return (
     <section className="bg-white pb-0 pt-6">
       <div className="public-site-container">
-        <div className="grid min-h-[620px] overflow-hidden rounded-[4px] border border-[#D8E6EB] bg-white shadow-[0_24px_56px_rgba(21,50,59,0.06)] lg:grid-cols-[1fr_1fr]">
+        <EditableContainer entryKey="contact.form.card" label="Container interno do formulario de contato" pageKey="contact">
+          <div className="grid min-h-[620px] overflow-hidden rounded-[4px] border border-[#D8E6EB] bg-white shadow-[0_24px_56px_rgba(21,50,59,0.06)] lg:grid-cols-[1fr_1fr]">
           <EditableImage
             entryKey="contact.form.image"
             fallback={{ src: genflixHeroImage, alt: 'Contato GenFlix' }}
@@ -92,7 +93,8 @@ function ContactFormSection({
           </EditableImage>
 
           <div className="flex items-center px-6 py-12 sm:px-10 lg:px-12">
-            <div className="w-full max-w-[420px]">
+            <EditableContainer entryKey="contact.form.content.card" label="Container interno do conteudo de contato" pageKey="contact">
+              <div className="w-full max-w-[420px]">
               <h1 className="text-[2.45rem] font-extrabold leading-[0.95] tracking-[-0.05em] text-[#183139] sm:text-[3rem]">
                 <EditableText entryKey="contact.title" fallback="Fale com a gente." label="Titulo de contato" />
               </h1>
@@ -174,9 +176,11 @@ function ContactFormSection({
                 </GenflixCtaButton>
                 {feedback ? <p className="text-sm font-semibold text-[#5f7178]">{feedback}</p> : null}
               </form>
-            </div>
+              </div>
+            </EditableContainer>
           </div>
         </div>
+        </EditableContainer>
       </div>
     </section>
   )
