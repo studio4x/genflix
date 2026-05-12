@@ -457,6 +457,12 @@ export function AdminCoursesPage() {
                                      >
                                        Abrir
                                      </Link>
+                                     <Link
+                                       to={`/aluno/cursos/${course.id}`}
+                                       className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-[11px] font-black uppercase tracking-widest text-slate-500 transition-colors hover:border-emerald-200 hover:text-emerald-600"
+                                     >
+                                       Visualizar
+                                     </Link>
                                   </div>
                                )}
                             </Draggable>
@@ -543,6 +549,12 @@ export function AdminCoursesPage() {
                              <Link to={`/admin/cursos/${course.id}/builder/assessments`}>
                                 <svg className="h-5 w-5 opacity-50 group-hover/sub:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                                 <span className="text-[10px] font-bold uppercase tracking-tighter">Avaliações</span>
+                             </Link>
+                          </Button>
+                          <Button variant="ghost" className="flex-1 flex flex-col items-center gap-1 h-auto py-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-2xl group/sub" asChild>
+                             <Link to={`/aluno/cursos/${course.id}`}>
+                                <svg className="h-5 w-5 opacity-50 group-hover/sub:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5s8.268 2.943 9.542 7c-1.274 4.057-5.065 7-9.542 7S3.732 16.057 2.458 12z" /></svg>
+                                <span className="text-[10px] font-bold uppercase tracking-tighter">Visualizar</span>
                              </Link>
                           </Button>
                           <Button

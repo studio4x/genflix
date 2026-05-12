@@ -236,7 +236,7 @@ export const appRouter = createBrowserRouter([
     element: <PublicEditableRoute pageKey="terms" seo={{ entryKey: 'terms.seo', fallback: { title: 'GenFlix | Termos de uso', description: 'Leia os termos de uso aplicáveis à plataforma GenFlix.', slug: '/termos-de-uso', image: '' } }}><TermsOfUsePage /></PublicEditableRoute>,
   },
   {
-    element: <ProtectedRoute allowedRoles={['student', 'aluno']} />,
+    element: <ProtectedRoute allowedRoles={['student', 'aluno', 'admin']} />,
     children: [
       {
         path: '/aluno',
