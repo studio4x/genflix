@@ -101,7 +101,7 @@ function renderResourceIcon(item: ResourcePopupItem, className: string, forcedCo
   }
 
   const FallbackIcon = item.fallbackIcon
-  return <FallbackIcon className={className} />
+  return <FallbackIcon className={className} style={iconColor ? { color: iconColor } : undefined} />
 }
 
 function sanitizeResourceRichText(rawValue: string) {
