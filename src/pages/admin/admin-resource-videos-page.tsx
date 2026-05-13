@@ -576,6 +576,15 @@ export function AdminResourceVideosPage() {
           </section>
 
           <div className="flex flex-wrap items-center gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              disabled={isSaving || isLoading}
+              onClick={() => setCardStyle({ ...defaultCardStyle })}
+              className="rounded-none border-[#D8E6EB] bg-white font-black text-[#15323b] hover:bg-[#F2F7F9]"
+            >
+              Redefinir para padrao
+            </Button>
             <Button type="submit" disabled={isSaving || isLoading} className="rounded-none bg-[#1398B7] font-black text-white hover:bg-[#0F7E99]">
               {isSaving ? 'Salvando...' : 'Salvar padrao dos cards'}
             </Button>
