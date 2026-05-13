@@ -299,7 +299,7 @@
 
 [OK] t100 - Nos recursos, ao editar os icones pelo editor visual, quando selecione uma cor de icone, o icone some.. e se eu deixar a cor padrão, que é azul, o icone fica na cor preta...
 
-[ ] t101 - Na página do admin, devemos inserir dentro da página "admin/cursos", uma aba para configurar as categorias dos cursos. AS categorias deverá ser um crud. Para eu poder criar, editar e remover categorias e também poder selecionar em cada curso a qual categoria ele pertence. Na página pública de cursos, as categorias que devem aparecer lá são as categorias que foram criadas.
+[OK] t101 - Na página do admin, devemos inserir dentro da página "admin/cursos", uma aba para configurar as categorias dos cursos. AS categorias deverá ser um crud. Para eu poder criar, editar e remover categorias e também poder selecionar em cada curso a qual categoria ele pertence. Na página pública de cursos, as categorias que devem aparecer lá são as categorias que foram criadas.
 
 ---
 
