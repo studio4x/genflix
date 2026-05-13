@@ -3554,11 +3554,18 @@ function EditorModal({
                       JSON inválido: {parsedPreview.error}
                     </div>
                   ) : null}
-                  {!parsedPreview.error ? (
-                    <div className="rounded-[16px] border border-[#D8E6EB] bg-[#F8FCFD] px-4 py-3 text-sm font-semibold text-[#5F7077]">
-                      Edição textual avançada oculta para este tipo de bloco. Use os controles estruturados e de estilo.
-                    </div>
-                  ) : null}
+                  <div className="overflow-hidden rounded-[18px] border border-[#D8E6EB] bg-white">
+                    <textarea
+                      value={rawValue}
+                      onChange={(event) => setRawValue(event.target.value)}
+                      rows={14}
+                      className="w-full resize-y border-0 bg-white px-4 py-3 text-sm font-semibold leading-6 text-[#15323b] outline-none"
+                      placeholder="Edite o conteúdo avançado deste bloco (texto ou JSON, conforme o tipo)."
+                    />
+                  </div>
+                  <div className="rounded-[16px] border border-[#D8E6EB] bg-[#F8FCFD] px-4 py-3 text-sm font-semibold text-[#5F7077]">
+                    Edição avançada habilitada para este bloco. Você pode usar os controles estruturados e também ajustar o conteúdo bruto.
+                  </div>
                   {message ? (
                     <div className="rounded-[16px] border border-[#D8E6EB] bg-[#F2F7F9] p-3 text-sm font-bold text-[#15323b]">
                       {message}
