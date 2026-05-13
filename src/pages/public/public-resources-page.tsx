@@ -82,12 +82,13 @@ function getItemMetadata(item: EditableListItem) {
   return item.metadata as Record<string, unknown>
 }
 
-function renderResourceIcon(item: ResourcePopupItem, className: string) {
+function renderResourceIcon(item: ResourcePopupItem, className: string, forcedColor?: string | null) {
   const metadata = getItemMetadata(item)
   const iconKey = typeof metadata.iconKey === 'string' ? metadata.iconKey : null
   const iconImageUrl = typeof metadata.iconImageUrl === 'string' ? metadata.iconImageUrl : null
   const iconAlt = typeof metadata.iconImageAlt === 'string' ? metadata.iconImageAlt : null
-  const iconColor = typeof metadata.iconColor === 'string' ? metadata.iconColor : null
+  const metadataIconColor = typeof metadata.iconColor === 'string' ? metadata.iconColor : null
+  const iconColor = typeof forcedColor === 'string' && forcedColor.trim() !== '' ? forcedColor : metadataIconColor
 
   if (iconKey || iconImageUrl) {
     return renderSiteIconVisual({
@@ -379,7 +380,7 @@ function ResourcesCatalogSection({
                           color: itemColor || cardStyle.iconColor,
                         }}
                       >
-                        {renderResourceIcon(popupItem, 'h-4.5 w-4.5')}
+                        {renderResourceIcon(popupItem, 'h-4.5 w-4.5', itemColor)}
                       </div>
                     </div>
 

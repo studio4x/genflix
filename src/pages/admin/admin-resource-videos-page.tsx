@@ -251,6 +251,15 @@ export function AdminResourceVideosPage() {
     })
   }
 
+  function resetItemColor(index: number) {
+    updateItem(index, (item) => {
+      const metadata = toMetadata(item)
+      delete metadata.itemColor
+      delete metadata.iconColor
+      return { ...item, metadata: Object.keys(metadata).length > 0 ? metadata : undefined }
+    })
+  }
+
   async function saveResources(targetIndex: number | null = null) {
     setIsSaving(true)
     setSavingCardIndex(targetIndex)
@@ -378,7 +387,7 @@ export function AdminResourceVideosPage() {
                 const readMoreEnabled = metadata.readMoreEnabled === true
                 const readMoreContent = typeof metadata.readMoreContent === 'string' ? metadata.readMoreContent : ''
                 const currentIconKey = typeof metadata.iconKey === 'string' ? metadata.iconKey : ''
-                const currentItemColor = typeof metadata.itemColor === 'string' ? metadata.itemColor : '#1398B7'
+                const currentItemColor = typeof metadata.itemColor === 'string' ? metadata.itemColor : defaultCardStyle.iconColor
                 const isConfigured = resolveResourceVideoUrl(item) !== ''
 
                 return (
@@ -434,12 +443,22 @@ export function AdminResourceVideosPage() {
 
                       <label className="grid gap-2">
                         <span className="text-[10px] font-black uppercase tracking-[0.16em] text-[#5F7077]">Cor do item</span>
-                        <input
-                          type="color"
-                          value={currentItemColor}
-                          onChange={(event) => updateItemColor(index, event.target.value)}
-                          className="h-11 w-full rounded-[14px] border border-[#D8E6EB] bg-white px-2"
-                        />
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="color"
+                            value={currentItemColor}
+                            onChange={(event) => updateItemColor(index, event.target.value)}
+                            className="h-11 w-full rounded-[14px] border border-[#D8E6EB] bg-white px-2"
+                          />
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => resetItemColor(index)}
+                            className="h-11 rounded-[14px] border-[#D8E6EB] px-3 text-[10px] font-black uppercase tracking-[0.12em]"
+                          >
+                            Padrao
+                          </Button>
+                        </div>
                       </label>
 
                       <label className="grid gap-2">
