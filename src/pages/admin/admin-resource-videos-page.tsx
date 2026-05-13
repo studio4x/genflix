@@ -7,7 +7,6 @@ import {
   resolveResourceVideoUrl,
 } from '@/features/public/genflix-resource-items-editor'
 import { fetchSiteAssets, fetchSiteContent, saveSiteContentEntry } from '@/features/site-editor/api'
-import { renderSiteIcon, SITE_ICON_OPTIONS } from '@/features/site-editor/site-icons'
 import type { EditableListItem, SiteAsset } from '@/features/site-editor/types'
 
 type ResourceCardStyleSettings = {
@@ -50,36 +49,29 @@ const defaultCardStyle: ResourceCardStyleSettings = {
   buttonRadius: 999,
 }
 
-const RESOURCE_DEFAULT_ICON_BY_LABEL: Record<string, string> = {
-  'Textos diretos ao ponto': 'file-text',
-  'Texto para fala': 'headphones',
-  'Videos': 'monitor-play',
-  'Vídeos': 'monitor-play',
-  'Lives com autores': 'monitor-play',
-  'Bloco de notas pessoais': 'file-text',
-  'Foruns de discussao': 'link',
-  'Fóruns de discussão': 'link',
-  'Descontos em livros do GEN': 'download',
-  Podcasts: 'headphones',
-  Resumos: 'file-text',
-  'Mapas mentais': 'sparkles',
-  Flashcards: 'file-text',
-  'Glossario de termos': 'file-text',
-  'Glossário de termos': 'file-text',
-  'Download de suplementos': 'download',
-  'Questoes discursivas': 'file-text',
-  'Questões discursivas': 'file-text',
-  'Estudos de casos': 'file-text',
-  'Multipla escolha': 'sparkles',
-  'Múltipla escolha': 'sparkles',
-  'Exercicios de progressao': 'sparkles',
-  'Exercícios de progressão': 'sparkles',
-  'Preenchimento de lacunas': 'file-text',
+function normalizeIconName(value: string) {
+  return value
+    .normalize('NFD')
+    .replace(/\p{Diacritic}/gu, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
 }
 
-function resolveDefaultResourceIconKey(item: EditableListItem) {
-  const label = (item.label ?? item.title ?? '').trim()
-  return RESOURCE_DEFAULT_ICON_BY_LABEL[label] ?? 'sparkles'
+function resolveMatchingLibraryIcon(item: EditableListItem, iconAssets: SiteAsset[]) {
+  const label = normalizeIconName((item.label ?? item.title ?? item.id ?? '').trim())
+  if (!label) return null
+
+  for (const asset of iconAssets) {
+    const originalName = typeof asset.metadata?.original_name === 'string' ? asset.metadata.original_name : ''
+    const candidate = normalizeIconName((asset.alt ?? '').trim() || originalName)
+    if (!candidate || !asset.public_url) continue
+    if (candidate === label || candidate.includes(label) || label.includes(candidate)) {
+      return asset
+    }
+  }
+
+  return null
 }
 
 function toMetadata(item: EditableListItem) {
@@ -200,7 +192,49 @@ export function AdminResourceVideosPage() {
         })
 
         if (isMounted) {
-          setItems(normalizeResourcesItems(resourcesEntry?.value))
+          const normalizedItems = normalizeResourcesItems(resourcesEntry?.value)
+          const nextItems = normalizedItems.map((item) => {
+            const metadata = toMetadata(item)
+            const hasIconSet = typeof metadata.iconImageUrl === 'string' && metadata.iconImageUrl.trim() !== ''
+            if (hasIconSet) {
+              return item
+            }
+            const matchedAsset = resolveMatchingLibraryIcon(item, iconAssets)
+            if (!matchedAsset?.public_url) {
+              return item
+            }
+            return {
+              ...item,
+              metadata: {
+                ...metadata,
+                iconImageUrl: matchedAsset.public_url,
+                iconImageAlt: matchedAsset.alt ?? item.label ?? item.title ?? 'Icone',
+                iconImageAssetId: matchedAsset.id,
+              },
+            }
+          })
+
+          const changedIcons = nextItems.some((item, index) => {
+            const before = toMetadata(normalizedItems[index])
+            const after = toMetadata(item)
+            return before.iconImageUrl !== after.iconImageUrl || before.iconImageAssetId !== after.iconImageAssetId
+          })
+
+          if (changedIcons) {
+            await saveSiteContentEntry({
+              pageKey: 'resources',
+              entryKey: 'resources.items',
+              entryType: 'list',
+              value: nextItems.map(normalizeItemForSave),
+              schema: {
+                kind: 'default',
+                itemName: 'recurso',
+                addLabel: 'Adicionar recurso',
+              },
+            })
+          }
+
+          setItems(nextItems)
           setCardStyle(parseCardStyle(styleEntry?.value))
           setIconLibraryAssets(iconAssets)
         }
@@ -276,28 +310,12 @@ export function AdminResourceVideosPage() {
     })
   }
 
-  function updateItemIcon(index: number, iconKey: string) {
-    updateItem(index, (item) => {
-      const metadata = toMetadata(item)
-      if (iconKey.trim() === '') {
-        delete metadata.iconKey
-      } else {
-        metadata.iconKey = iconKey
-      }
-      delete metadata.iconImageUrl
-      delete metadata.iconImageAlt
-      delete metadata.iconImageAssetId
-      return { ...item, metadata: Object.keys(metadata).length > 0 ? metadata : undefined }
-    })
-  }
-
   function updateItemLibraryIcon(index: number, asset: SiteAsset) {
     updateItem(index, (item) => {
       const metadata = toMetadata(item)
       metadata.iconImageUrl = asset.public_url ?? ''
       metadata.iconImageAlt = asset.alt ?? item.label ?? item.title ?? 'Icone'
       metadata.iconImageAssetId = asset.id
-      delete metadata.iconKey
       return { ...item, metadata: Object.keys(metadata).length > 0 ? metadata : undefined }
     })
   }
@@ -446,15 +464,13 @@ export function AdminResourceVideosPage() {
                 const currentVideoUrl = typeof metadata.instructionalVideoUrl === 'string' ? metadata.instructionalVideoUrl : ''
                 const readMoreEnabled = metadata.readMoreEnabled === true
                 const readMoreContent = typeof metadata.readMoreContent === 'string' ? metadata.readMoreContent : ''
-                const currentIconKey = typeof metadata.iconKey === 'string' ? metadata.iconKey : ''
                 const currentIconImageUrl = typeof metadata.iconImageUrl === 'string' ? metadata.iconImageUrl : ''
                 const currentIconImageAssetId = typeof metadata.iconImageAssetId === 'string' ? metadata.iconImageAssetId : ''
-                const defaultIconKey = resolveDefaultResourceIconKey(item)
                 const selectedLibraryAsset = currentIconImageAssetId
                   ? iconLibraryAssets.find((asset) => asset.id === currentIconImageAssetId)
                   : iconLibraryAssets.find((asset) => (asset.public_url ?? '') === currentIconImageUrl)
-                const effectiveIconKey = currentIconKey || defaultIconKey
-                const selectedIconLabel = SITE_ICON_OPTIONS.find((option) => option.value === effectiveIconKey)?.label ?? 'Icone'
+                const suggestedLibraryAsset = resolveMatchingLibraryIcon(item, iconLibraryAssets)
+                const effectiveLibraryAsset = selectedLibraryAsset ?? suggestedLibraryAsset
                 const currentItemColor = typeof metadata.itemColor === 'string' ? metadata.itemColor : defaultCardStyle.iconColor
                 const isConfigured = resolveResourceVideoUrl(item) !== ''
 
@@ -490,56 +506,41 @@ export function AdminResourceVideosPage() {
                         <div className="rounded-[14px] border border-[#D8E6EB] bg-[#F8FCFD] p-3">
                           <div className="mb-3 flex items-center justify-between gap-3">
                             <div className="inline-flex items-center gap-2 rounded-full border border-[#D8E6EB] bg-white px-3 py-1.5 text-xs font-semibold text-[#15323b]">
-                              {selectedLibraryAsset?.public_url ? (
+                              {effectiveLibraryAsset?.public_url ? (
                                 <img
-                                  src={selectedLibraryAsset.public_url}
-                                  alt={selectedLibraryAsset.alt ?? 'Icone da biblioteca'}
+                                  src={effectiveLibraryAsset.public_url}
+                                  alt={effectiveLibraryAsset.alt ?? 'Icone da biblioteca'}
                                   className="h-4 w-4 object-contain"
                                 />
-                              ) : renderSiteIcon(effectiveIconKey, 'h-4 w-4', currentItemColor)}
+                              ) : (
+                                <span className="inline-flex h-4 w-4 rounded-full border border-[#D8E6EB] bg-white" />
+                              )}
                               <span>
-                                {selectedLibraryAsset
-                                  ? (selectedLibraryAsset.alt ?? 'Icone da biblioteca')
-                                  : (currentIconKey ? selectedIconLabel : `Padrao: ${selectedIconLabel}`)}
+                                {effectiveLibraryAsset
+                                  ? (effectiveLibraryAsset.alt ?? 'Icone da biblioteca')
+                                  : 'Sem SVG sugerido para este item'}
                               </span>
                             </div>
                             <Button
                               type="button"
                               variant="outline"
-                              onClick={() => updateItemIcon(index, '')}
+                              onClick={() => {
+                                if (suggestedLibraryAsset) {
+                                  updateItemLibraryIcon(index, suggestedLibraryAsset)
+                                }
+                              }}
+                              disabled={!suggestedLibraryAsset}
                               className="h-8 rounded-[10px] border-[#D8E6EB] px-2 text-[10px] font-black uppercase tracking-[0.12em]"
                             >
-                              Usar padrao
+                              Usar sugestao
                             </Button>
                           </div>
-                          <div className="grid max-h-56 grid-cols-1 gap-2 overflow-auto pr-1 sm:grid-cols-2">
-                            {SITE_ICON_OPTIONS.map((option) => {
-                              const isSelected = effectiveIconKey === option.value
-                              return (
-                                <button
-                                  key={option.value}
-                                  type="button"
-                                  onClick={() => updateItemIcon(index, option.value)}
-                                  className={`flex items-center gap-2 rounded-[10px] border px-2 py-2 text-left text-xs font-semibold transition ${
-                                    isSelected
-                                      ? 'border-[#1398B7] bg-[#E8F6FA] text-[#0F7E99]'
-                                      : 'border-[#D8E6EB] bg-white text-[#15323b] hover:border-[#9bcddb] hover:bg-[#F2F7F9]'
-                                  }`}
-                                >
-                                  <span className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-[#D8E6EB] bg-white">
-                                    {renderSiteIcon(option.value, 'h-4 w-4', currentItemColor)}
-                                  </span>
-                                  <span className="truncate">{option.label}</span>
-                                </button>
-                              )
-                            })}
-                          </div>
                           {iconLibraryAssets.length > 0 ? (
-                            <div className="mt-3 border-t border-[#D8E6EB] pt-3">
+                            <div className="border-t border-[#D8E6EB] pt-3">
                               <p className="mb-2 text-[10px] font-black uppercase tracking-[0.16em] text-[#5F7077]">SVGs enviados na biblioteca</p>
                               <div className="grid max-h-52 grid-cols-1 gap-2 overflow-auto pr-1 sm:grid-cols-2">
                                 {iconLibraryAssets.map((asset) => {
-                                  const isSelected = selectedLibraryAsset?.id === asset.id
+                                  const isSelected = effectiveLibraryAsset?.id === asset.id
                                   const assetLabel = asset.alt ?? 'Icone SVG'
                                   return (
                                     <button
