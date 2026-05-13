@@ -16,7 +16,8 @@ import {
   resolveResourceVideoUrl,
 } from '@/features/public/genflix-resource-items-editor'
 import { renderSiteIconVisual } from '@/features/site-editor/site-icons'
-import type { EditableListItem } from '@/features/site-editor/types'
+import { fetchSiteAssets } from '@/features/site-editor/api'
+import type { EditableListItem, SiteAsset } from '@/features/site-editor/types'
 import { EditableButton, EditableList, EditableText, isEditableItemVisible, useEditableValue } from '@/features/site-editor/visual-editor'
 
 type ResourcePopupItem = EditableListItem & {
@@ -82,11 +83,39 @@ function getItemMetadata(item: EditableListItem) {
   return item.metadata as Record<string, unknown>
 }
 
-function renderResourceIcon(item: ResourcePopupItem, className: string, forcedColor?: string | null) {
+function normalizeIconName(value: string) {
+  return value
+    .normalize('NFD')
+    .replace(/\p{Diacritic}/gu, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+}
+
+function resolveUploadedIconForResource(item: EditableListItem, uploadedIcons: SiteAsset[]) {
+  const label = normalizeIconName(item.label ?? item.title ?? item.id)
+  if (!label) return null
+
+  for (const iconAsset of uploadedIcons) {
+    const originalName = typeof iconAsset.metadata?.original_name === 'string' ? iconAsset.metadata.original_name : ''
+    const iconName = normalizeIconName((iconAsset.alt ?? '').trim() || originalName)
+    if (!iconName || !iconAsset.public_url) continue
+    if (iconName === label || iconName.includes(label) || label.includes(iconName)) {
+      return { url: iconAsset.public_url, alt: iconAsset.alt ?? item.label ?? item.title ?? 'Recurso' }
+    }
+  }
+
+  return null
+}
+
+function renderResourceIcon(item: ResourcePopupItem, className: string, forcedColor?: string | null, uploadedIcons: SiteAsset[] = []) {
   const metadata = getItemMetadata(item)
   const iconKey = typeof metadata.iconKey === 'string' ? metadata.iconKey : null
-  const iconImageUrl = typeof metadata.iconImageUrl === 'string' ? metadata.iconImageUrl : null
-  const iconAlt = typeof metadata.iconImageAlt === 'string' ? metadata.iconImageAlt : null
+  const explicitIconImageUrl = typeof metadata.iconImageUrl === 'string' ? metadata.iconImageUrl : null
+  const explicitIconAlt = typeof metadata.iconImageAlt === 'string' ? metadata.iconImageAlt : null
+  const uploadedFallback = (!iconKey && !explicitIconImageUrl) ? resolveUploadedIconForResource(item, uploadedIcons) : null
+  const iconImageUrl = explicitIconImageUrl || uploadedFallback?.url || null
+  const iconAlt = explicitIconAlt || uploadedFallback?.alt || null
   const metadataIconColor = typeof metadata.iconColor === 'string' ? metadata.iconColor : null
   const iconColor = typeof forcedColor === 'string' && forcedColor.trim() !== '' ? forcedColor : metadataIconColor
 
@@ -312,10 +341,12 @@ function ResourceReadMoreModal({
 
 function ResourcesCatalogSection({
   cardStyle,
+  uploadedIcons,
   onOpenVideo,
   onOpenReadMore,
 }: {
   cardStyle: ResourceCardStyleSettings
+  uploadedIcons: SiteAsset[]
   onOpenVideo: (state: ResourceVideoModalState) => void
   onOpenReadMore: (state: ResourceReadMoreModalState) => void
 }) {
@@ -383,7 +414,7 @@ function ResourcesCatalogSection({
                           color: itemColor || cardStyle.iconColor,
                         }}
                       >
-                        {renderResourceIcon(popupItem, 'h-4.5 w-4.5', itemColor)}
+                        {renderResourceIcon(popupItem, 'h-4.5 w-4.5', itemColor, uploadedIcons)}
                       </div>
                     </div>
 
@@ -502,6 +533,35 @@ export function PublicResourcesPage() {
   const waitingRoleResolution = !!user && roles.length === 0
   const rawCardStyle = useEditableValue('resources.cardStyle', defaultCardStyle)
   const cardStyle = useMemo(() => parseCardStyle(rawCardStyle), [rawCardStyle])
+  const [uploadedIcons, setUploadedIcons] = useState<SiteAsset[]>([])
+
+  useEffect(() => {
+    let mounted = true
+    async function loadUploadedIcons() {
+      try {
+        const assets = await fetchSiteAssets(240)
+        const iconAssets = assets.filter((asset) => {
+          const metadata = asset.metadata && typeof asset.metadata === 'object' && !Array.isArray(asset.metadata)
+            ? asset.metadata as Record<string, unknown>
+            : null
+          const entryKey = typeof metadata?.entry_key === 'string' ? metadata.entry_key : ''
+          const mimeType = typeof asset.mime_type === 'string' ? asset.mime_type.toLowerCase() : ''
+          return entryKey === 'icon-library' && mimeType.includes('svg')
+        })
+        if (mounted) {
+          setUploadedIcons(iconAssets)
+        }
+      } catch {
+        if (mounted) {
+          setUploadedIcons([])
+        }
+      }
+    }
+    void loadUploadedIcons()
+    return () => {
+      mounted = false
+    }
+  }, [])
  
   useEffect(() => {
     if (!activeVideo && !activeReadMore) {
@@ -538,6 +598,7 @@ export function PublicResourcesPage() {
       <BannerPlacementSlot pageKey="resources" placementKey="hero" />
       <ResourcesCatalogSection
         cardStyle={cardStyle}
+        uploadedIcons={uploadedIcons}
         onOpenVideo={setActiveVideo}
         onOpenReadMore={setActiveReadMore}
       />

@@ -25,7 +25,7 @@ import {
   type SiteEditorWorkspaceMap,
 } from '@/features/site-editor/collaboration'
 import { SITE_TEXT_FONT_PRESETS } from '@/features/site-editor/font-presets'
-import { renderSiteIcon, SITE_ICON_OPTIONS } from '@/features/site-editor/site-icons'
+import { SITE_ICON_OPTIONS } from '@/features/site-editor/site-icons'
 import { createDefaultSiteTypography, normalizeSiteTypography, type SiteTypographyConfig, type SiteTypographyGroup, type SiteTypographyGroupKey } from '@/features/site-editor/site-typography'
 import { supabase } from '@/services/supabase/client'
 
@@ -233,20 +233,6 @@ export function AdminSiteEditorPage() {
     [entries, pages],
   )
   const selectedPageStat = pageStats.find((page) => page.pageKey === selectedPageKey)?.totalEntries ?? 0
-  const filteredIconOptions = useMemo(() => {
-    const normalizedQuery = iconSearchQuery.trim().toLowerCase()
-
-    return SITE_ICON_OPTIONS.filter((option) => {
-      if (normalizedQuery.length === 0) {
-        return true
-      }
-
-      return (
-        option.label.toLowerCase().includes(normalizedQuery)
-        || option.value.toLowerCase().includes(normalizedQuery)
-      )
-    })
-  }, [iconSearchQuery])
   const filteredUploadedIconAssets = useMemo(() => {
     const normalizedQuery = iconSearchQuery.trim().toLowerCase()
 
@@ -860,7 +846,7 @@ export function AdminSiteEditorPage() {
               </div>
               <div className="rounded-[18px] border border-[#D8E6EB] bg-[#F8FBFC] px-4 py-3 text-right">
                 <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#5F7077]">Disponíveis</p>
-                <p className="mt-1 font-readex text-2xl font-semibold text-[#15323b]">{SITE_ICON_OPTIONS.length}</p>
+                <p className="mt-1 font-readex text-2xl font-semibold text-[#15323b]">{iconLibraryAssets.length}</p>
               </div>
             </div>
 
@@ -975,33 +961,6 @@ export function AdminSiteEditorPage() {
               </div>
             </div>
 
-            <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-              {filteredIconOptions.map((option) => (
-                <article key={option.value} className="rounded-[18px] border border-[#D8E6EB] bg-[#F8FBFC] p-4">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-[#D8E6EB] bg-white text-[#1398B7]">
-                      {renderSiteIcon(option.value, 'h-5 w-5')}
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => void handleCopyIconKey(option.value)}
-                      className="inline-flex items-center gap-2 rounded-full border border-[#D8E6EB] bg-white px-3 py-2 text-[10px] font-black uppercase tracking-[0.14em] text-[#0A3640] hover:bg-[#F2F7F9]"
-                    >
-                      <Copy className="h-3.5 w-3.5" />
-                      Copiar chave
-                    </button>
-                  </div>
-                  <p className="mt-3 text-sm font-bold text-[#15323b]">{option.label}</p>
-                  <p className="mt-1 text-xs font-semibold text-[#5F7077]">Chave: {option.value}</p>
-                </article>
-              ))}
-
-              {filteredIconOptions.length === 0 ? (
-                <div className="rounded-[18px] border border-dashed border-[#D8E6EB] bg-[#F8FBFC] px-4 py-8 text-sm font-semibold text-[#5F7077] sm:col-span-2 xl:col-span-3">
-                  Nenhum ícone encontrado para esse filtro.
-                </div>
-              ) : null}
-            </div>
           </article>
           ) : null}
 
