@@ -634,7 +634,7 @@ export function AdminCoursesPage() {
 
                         {/* Title Overlay */}
                         <div className="absolute bottom-4 left-4 right-4 z-20">
-                           <h4 className="text-lg font-black text-white leading-tight group-hover:text-blue-300 transition-colors line-clamp-2">
+                           <h4 className="text-lg font-black text-white leading-tight line-clamp-2">
                              {course.title}
                            </h4>
                            <div className="mt-2 flex items-center gap-2">
