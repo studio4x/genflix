@@ -7,7 +7,48 @@ import {
   resolveResourceVideoUrl,
 } from '@/features/public/genflix-resource-items-editor'
 import { fetchSiteContent, saveSiteContentEntry } from '@/features/site-editor/api'
+import { SITE_ICON_OPTIONS } from '@/features/site-editor/site-icons'
 import type { EditableListItem } from '@/features/site-editor/types'
+
+type ResourceCardStyleSettings = {
+  cardBackgroundColor: string
+  cardBorderColor: string
+  cardBorderWidth: number
+  cardBorderRadius: number
+  cardShadow: string
+  titleColor: string
+  titleFontSize: number
+  titleFontWeight: number
+  descriptionColor: string
+  descriptionFontSize: number
+  descriptionLineHeight: number
+  iconBackgroundColor: string
+  iconColor: string
+  buttonBackgroundColor: string
+  buttonTextColor: string
+  buttonBorderColor: string
+  buttonRadius: number
+}
+
+const defaultCardStyle: ResourceCardStyleSettings = {
+  cardBackgroundColor: '#F2F7F9',
+  cardBorderColor: '#D8E6EB',
+  cardBorderWidth: 1,
+  cardBorderRadius: 18,
+  cardShadow: '0 16px 36px rgba(21,50,59,0.04)',
+  titleColor: '#183139',
+  titleFontSize: 16,
+  titleFontWeight: 700,
+  descriptionColor: '#667980',
+  descriptionFontSize: 14,
+  descriptionLineHeight: 1.75,
+  iconBackgroundColor: '#E8F6FA',
+  iconColor: '#1398B7',
+  buttonBackgroundColor: '#FFFFFF',
+  buttonTextColor: '#0F7E99',
+  buttonBorderColor: '#1398B7',
+  buttonRadius: 999,
+}
 
 function toMetadata(item: EditableListItem) {
   if (!item.metadata || typeof item.metadata !== 'object' || Array.isArray(item.metadata)) {
@@ -47,8 +88,50 @@ function normalizeItemForSave(item: EditableListItem): EditableListItem {
   }
 }
 
+function parseCardStyle(rawValue: unknown): ResourceCardStyleSettings {
+  if (!rawValue || typeof rawValue !== 'object' || Array.isArray(rawValue)) {
+    return { ...defaultCardStyle }
+  }
+
+  const value = rawValue as Record<string, unknown>
+  const fromNumber = (field: keyof ResourceCardStyleSettings, min: number, max: number) => {
+    const current = value[field]
+    return typeof current === 'number' && Number.isFinite(current)
+      ? Math.min(max, Math.max(min, current))
+      : defaultCardStyle[field] as number
+  }
+  const fromString = (field: keyof ResourceCardStyleSettings) => {
+    const current = value[field]
+    return typeof current === 'string' && current.trim() !== ''
+      ? current.trim()
+      : defaultCardStyle[field] as string
+  }
+
+  return {
+    cardBackgroundColor: fromString('cardBackgroundColor'),
+    cardBorderColor: fromString('cardBorderColor'),
+    cardBorderWidth: fromNumber('cardBorderWidth', 0, 12),
+    cardBorderRadius: fromNumber('cardBorderRadius', 0, 64),
+    cardShadow: fromString('cardShadow'),
+    titleColor: fromString('titleColor'),
+    titleFontSize: fromNumber('titleFontSize', 10, 48),
+    titleFontWeight: fromNumber('titleFontWeight', 300, 900),
+    descriptionColor: fromString('descriptionColor'),
+    descriptionFontSize: fromNumber('descriptionFontSize', 10, 32),
+    descriptionLineHeight: fromNumber('descriptionLineHeight', 1, 3),
+    iconBackgroundColor: fromString('iconBackgroundColor'),
+    iconColor: fromString('iconColor'),
+    buttonBackgroundColor: fromString('buttonBackgroundColor'),
+    buttonTextColor: fromString('buttonTextColor'),
+    buttonBorderColor: fromString('buttonBorderColor'),
+    buttonRadius: fromNumber('buttonRadius', 0, 999),
+  }
+}
+
 export function AdminResourceVideosPage() {
+  const [activeTab, setActiveTab] = useState<'items' | 'style'>('items')
   const [items, setItems] = useState<EditableListItem[]>(createResourcesItemsFallback())
+  const [cardStyle, setCardStyle] = useState<ResourceCardStyleSettings>({ ...defaultCardStyle })
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [savingCardIndex, setSavingCardIndex] = useState<number | null>(null)
@@ -70,14 +153,16 @@ export function AdminResourceVideosPage() {
       try {
         const entries = await fetchSiteContent('resources')
         const resourcesEntry = entries.find((entry) => entry.page_key === 'resources' && entry.entry_key === 'resources.items')
-        const normalized = normalizeResourcesItems(resourcesEntry?.value)
+        const styleEntry = entries.find((entry) => entry.page_key === 'resources' && entry.entry_key === 'resources.cardStyle')
 
         if (isMounted) {
-          setItems(normalized)
+          setItems(normalizeResourcesItems(resourcesEntry?.value))
+          setCardStyle(parseCardStyle(styleEntry?.value))
         }
       } catch (loadError) {
         if (isMounted) {
           setItems(createResourcesItemsFallback())
+          setCardStyle({ ...defaultCardStyle })
           setError(loadError instanceof Error ? loadError.message : 'Nao foi possivel carregar os recursos.')
         }
       } finally {
@@ -94,56 +179,33 @@ export function AdminResourceVideosPage() {
     }
   }, [])
 
-  function updateVideoUrl(index: number, nextValue: string) {
-    setItems((current) => current.map((item, currentIndex) => {
-      if (currentIndex !== index) {
-        return item
-      }
+  function updateItem(index: number, updater: (item: EditableListItem) => EditableListItem) {
+    setItems((current) => current.map((item, currentIndex) => (currentIndex === index ? updater(item) : item)))
+  }
 
+  function updateVideoUrl(index: number, nextValue: string) {
+    updateItem(index, (item) => {
       const metadata = toMetadata(item)
       const trimmed = nextValue.trim()
-
       if (trimmed === '') {
         delete metadata.instructionalVideoUrl
       } else {
         metadata.instructionalVideoUrl = trimmed
       }
-
-      return {
-        ...item,
-        metadata: Object.keys(metadata).length > 0 ? metadata : undefined,
-      }
-    }))
+      return { ...item, metadata: Object.keys(metadata).length > 0 ? metadata : undefined }
+    })
   }
 
   function updateCardLabel(index: number, nextValue: string) {
-    setItems((current) => current.map((item, currentIndex) => (
-      currentIndex === index
-        ? {
-          ...item,
-          label: nextValue,
-        }
-        : item
-    )))
+    updateItem(index, (item) => ({ ...item, label: nextValue }))
   }
 
   function updateCardDescription(index: number, nextValue: string) {
-    setItems((current) => current.map((item, currentIndex) => (
-      currentIndex === index
-        ? {
-          ...item,
-          description: nextValue,
-        }
-        : item
-    )))
+    updateItem(index, (item) => ({ ...item, description: nextValue }))
   }
 
   function updateReadMoreEnabled(index: number, enabled: boolean) {
-    setItems((current) => current.map((item, currentIndex) => {
-      if (currentIndex !== index) {
-        return item
-      }
-
+    updateItem(index, (item) => {
       const metadata = toMetadata(item)
       if (enabled) {
         metadata.readMoreEnabled = true
@@ -151,34 +213,42 @@ export function AdminResourceVideosPage() {
         delete metadata.readMoreEnabled
         delete metadata.readMoreContent
       }
-
-      return {
-        ...item,
-        metadata: Object.keys(metadata).length > 0 ? metadata : undefined,
-      }
-    }))
+      return { ...item, metadata: Object.keys(metadata).length > 0 ? metadata : undefined }
+    })
   }
 
   function updateReadMoreContent(index: number, nextValue: string) {
-    setItems((current) => current.map((item, currentIndex) => {
-      if (currentIndex !== index) {
-        return item
-      }
-
+    updateItem(index, (item) => {
       const metadata = toMetadata(item)
       const trimmed = nextValue.trim()
-
       if (trimmed === '') {
         delete metadata.readMoreContent
       } else {
         metadata.readMoreContent = trimmed
       }
+      return { ...item, metadata: Object.keys(metadata).length > 0 ? metadata : undefined }
+    })
+  }
 
-      return {
-        ...item,
-        metadata: Object.keys(metadata).length > 0 ? metadata : undefined,
+  function updateItemIcon(index: number, iconKey: string) {
+    updateItem(index, (item) => {
+      const metadata = toMetadata(item)
+      if (iconKey.trim() === '') {
+        delete metadata.iconKey
+      } else {
+        metadata.iconKey = iconKey
       }
-    }))
+      return { ...item, metadata: Object.keys(metadata).length > 0 ? metadata : undefined }
+    })
+  }
+
+  function updateItemColor(index: number, color: string) {
+    updateItem(index, (item) => {
+      const metadata = toMetadata(item)
+      metadata.iconColor = color
+      metadata.itemColor = color
+      return { ...item, metadata: metadata }
+    })
   }
 
   async function saveResources(targetIndex: number | null = null) {
@@ -189,7 +259,6 @@ export function AdminResourceVideosPage() {
 
     try {
       const normalizedItems = items.map(normalizeItemForSave)
-
       await saveSiteContentEntry({
         pageKey: 'resources',
         entryKey: 'resources.items',
@@ -203,7 +272,7 @@ export function AdminResourceVideosPage() {
       })
 
       setItems(normalizedItems)
-      setMessage(targetIndex === null ? 'Videos de instrucao salvos com sucesso.' : `Recurso ${targetIndex + 1} salvo com sucesso.`)
+      setMessage(targetIndex === null ? 'Recursos salvos com sucesso.' : `Recurso ${targetIndex + 1} salvo com sucesso.`)
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : 'Nao foi possivel salvar os dados dos recursos.')
     } finally {
@@ -212,39 +281,64 @@ export function AdminResourceVideosPage() {
     }
   }
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    await saveResources(null)
+  async function saveCardStyle(event?: FormEvent<HTMLFormElement>) {
+    event?.preventDefault()
+    setIsSaving(true)
+    setMessage(null)
+    setError(null)
+
+    try {
+      await saveSiteContentEntry({
+        pageKey: 'resources',
+        entryKey: 'resources.cardStyle',
+        entryType: 'json',
+        value: cardStyle,
+        schema: { kind: 'resources-card-style' },
+      })
+      setMessage('Padrao dos cards salvo com sucesso.')
+    } catch (saveError) {
+      setError(saveError instanceof Error ? saveError.message : 'Nao foi possivel salvar o padrao dos cards.')
+    } finally {
+      setIsSaving(false)
+    }
   }
 
-  async function handleSaveCard(index: number) {
-    await saveResources(index)
+  async function handleItemsSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    await saveResources(null)
   }
 
   return (
     <div className="space-y-6">
       <header className="space-y-2">
         <p className="text-[11px] font-black uppercase tracking-[0.22em] text-[#5F7077]">Recursos</p>
-        <h1 className="font-readex text-3xl font-semibold tracking-tight text-[#15323b]">Videos de Instrucao</h1>
+        <h1 className="font-readex text-3xl font-semibold tracking-tight text-[#15323b]">Recursos</h1>
         <p className="max-w-3xl text-sm leading-6 text-[#5F7077]">
-          Cadastre o link de video para cada recurso da pagina publica. Somente os recursos com video configurado exibem o botao
-          &quot;Ver video de instrucao&quot;.
+          Edite os cards de recursos por item e tambem o padrao visual global que sera aplicado na pagina publica.
         </p>
       </header>
 
-      <section className="grid gap-4 md:grid-cols-3">
-        <article className="rounded-[20px] border border-[#D8E6EB] bg-white px-5 py-5">
-          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#5F7077]">Total de recursos</p>
-          <p className="mt-2 font-readex text-3xl font-semibold text-[#15323b]">{items.length}</p>
-        </article>
-        <article className="rounded-[20px] border border-[#D8E6EB] bg-white px-5 py-5">
-          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#5F7077]">Com video</p>
-          <p className="mt-2 font-readex text-3xl font-semibold text-[#0F7E99]">{configuredCount}</p>
-        </article>
-        <article className="rounded-[20px] border border-[#D8E6EB] bg-white px-5 py-5">
-          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#5F7077]">Sem video</p>
-          <p className="mt-2 font-readex text-3xl font-semibold text-[#A04A34]">{Math.max(items.length - configuredCount, 0)}</p>
-        </article>
+      <section className="rounded-[20px] border border-[#D8E6EB] bg-white p-3">
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => setActiveTab('items')}
+            className={`rounded-xl px-4 py-2 text-xs font-black uppercase tracking-[0.14em] ${
+              activeTab === 'items' ? 'bg-[#1398B7] text-white' : 'bg-[#F2F7F9] text-[#5F7077]'
+            }`}
+          >
+            Itens de recursos
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('style')}
+            className={`rounded-xl px-4 py-2 text-xs font-black uppercase tracking-[0.14em] ${
+              activeTab === 'style' ? 'bg-[#1398B7] text-white' : 'bg-[#F2F7F9] text-[#5F7077]'
+            }`}
+          >
+            Padrao dos cards
+          </button>
+        </div>
       </section>
 
       {error ? (
@@ -259,120 +353,235 @@ export function AdminResourceVideosPage() {
         </div>
       ) : null}
 
-      <form onSubmit={(event) => void handleSubmit(event)} className="space-y-4">
-        <div className="grid gap-4">
-          {items.map((item, index) => {
-            const currentVideoUrl = (() => {
-              const metadata = toMetadata(item)
-              return typeof metadata.instructionalVideoUrl === 'string' ? metadata.instructionalVideoUrl : ''
-            })()
-            const readMoreEnabled = (() => {
-              const metadata = toMetadata(item)
-              return metadata.readMoreEnabled === true
-            })()
-            const readMoreContent = (() => {
-              const metadata = toMetadata(item)
-              return typeof metadata.readMoreContent === 'string' ? metadata.readMoreContent : ''
-            })()
+      {activeTab === 'items' ? (
+        <>
+          <section className="grid gap-4 md:grid-cols-3">
+            <article className="rounded-[20px] border border-[#D8E6EB] bg-white px-5 py-5">
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#5F7077]">Total de recursos</p>
+              <p className="mt-2 font-readex text-3xl font-semibold text-[#15323b]">{items.length}</p>
+            </article>
+            <article className="rounded-[20px] border border-[#D8E6EB] bg-white px-5 py-5">
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#5F7077]">Com video</p>
+              <p className="mt-2 font-readex text-3xl font-semibold text-[#0F7E99]">{configuredCount}</p>
+            </article>
+            <article className="rounded-[20px] border border-[#D8E6EB] bg-white px-5 py-5">
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#5F7077]">Sem video</p>
+              <p className="mt-2 font-readex text-3xl font-semibold text-[#A04A34]">{Math.max(items.length - configuredCount, 0)}</p>
+            </article>
+          </section>
 
-            const isConfigured = resolveResourceVideoUrl(item) !== ''
+          <form onSubmit={(event) => void handleItemsSubmit(event)} className="space-y-4">
+            <div className="grid gap-4">
+              {items.map((item, index) => {
+                const metadata = toMetadata(item)
+                const currentVideoUrl = typeof metadata.instructionalVideoUrl === 'string' ? metadata.instructionalVideoUrl : ''
+                const readMoreEnabled = metadata.readMoreEnabled === true
+                const readMoreContent = typeof metadata.readMoreContent === 'string' ? metadata.readMoreContent : ''
+                const currentIconKey = typeof metadata.iconKey === 'string' ? metadata.iconKey : ''
+                const currentItemColor = typeof metadata.itemColor === 'string' ? metadata.itemColor : '#1398B7'
+                const isConfigured = resolveResourceVideoUrl(item) !== ''
 
-            return (
-              <article key={item.id || `${item.label}-${index}`} className="rounded-[20px] border border-[#D8E6EB] bg-white px-5 py-5">
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div>
-                    <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#1398B7]">Recurso {index + 1}</p>
-                    <h2 className="mt-1 text-lg font-bold text-[#15323b]">{item.label || item.title || `Recurso ${index + 1}`}</h2>
-                  </div>
-                  <span
-                    className={`rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] ${
-                      isConfigured
-                        ? 'border border-emerald-200 bg-emerald-50 text-emerald-700'
-                        : 'border border-[#D8E6EB] bg-[#F2F7F9] text-[#5F7077]'
-                    }`}
-                  >
-                    {isConfigured ? 'Video ativo' : 'Sem video'}
-                  </span>
-                </div>
+                return (
+                  <article key={item.id || `${item.label}-${index}`} className="rounded-[20px] border border-[#D8E6EB] bg-white px-5 py-5">
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div>
+                        <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#1398B7]">Recurso {index + 1}</p>
+                        <h2 className="mt-1 text-lg font-bold text-[#15323b]">{item.label || item.title || `Recurso ${index + 1}`}</h2>
+                      </div>
+                      <span
+                        className={`rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] ${
+                          isConfigured
+                            ? 'border border-emerald-200 bg-emerald-50 text-emerald-700'
+                            : 'border border-[#D8E6EB] bg-[#F2F7F9] text-[#5F7077]'
+                        }`}
+                      >
+                        {isConfigured ? 'Video ativo' : 'Sem video'}
+                      </span>
+                    </div>
 
-                <div className="mt-4 grid gap-3 md:grid-cols-2">
-                  <label className="grid gap-2">
-                    <span className="text-[10px] font-black uppercase tracking-[0.16em] text-[#5F7077]">Texto do card: titulo</span>
-                    <input
-                      value={item.label ?? ''}
-                      onChange={(event) => updateCardLabel(index, event.target.value)}
-                      placeholder="Ex.: Videos (mas nao apenas)"
-                      className="h-11 rounded-[14px] border border-[#D8E6EB] bg-white px-4 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]"
-                    />
-                  </label>
-                  <label className="grid gap-2 md:col-span-2">
-                    <span className="text-[10px] font-black uppercase tracking-[0.16em] text-[#5F7077]">Texto do card: descricao</span>
-                    <textarea
-                      value={item.description ?? ''}
-                      onChange={(event) => updateCardDescription(index, event.target.value)}
-                      rows={4}
-                      placeholder="Texto exibido no card do recurso."
-                      className="rounded-[14px] border border-[#D8E6EB] bg-white px-4 py-3 text-sm font-semibold leading-6 text-[#15323b] outline-none focus:border-[#1398B7]"
-                    />
-                  </label>
-                </div>
+                    <div className="mt-4 grid gap-3 md:grid-cols-2">
+                      <label className="grid gap-2">
+                        <span className="text-[10px] font-black uppercase tracking-[0.16em] text-[#5F7077]">Titulo do card</span>
+                        <input
+                          value={item.label ?? ''}
+                          onChange={(event) => updateCardLabel(index, event.target.value)}
+                          className="h-11 rounded-[14px] border border-[#D8E6EB] bg-white px-4 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]"
+                        />
+                      </label>
+                      <label className="grid gap-2">
+                        <span className="text-[10px] font-black uppercase tracking-[0.16em] text-[#5F7077]">Icone (biblioteca)</span>
+                        <select
+                          value={currentIconKey}
+                          onChange={(event) => updateItemIcon(index, event.target.value)}
+                          className="h-11 rounded-[14px] border border-[#D8E6EB] bg-white px-4 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]"
+                        >
+                          <option value="">Padrao</option>
+                          {SITE_ICON_OPTIONS.map((option) => (
+                            <option key={option.value} value={option.value}>{option.label}</option>
+                          ))}
+                        </select>
+                      </label>
 
-                <label className="mt-4 grid gap-2">
-                  <span className="text-[10px] font-black uppercase tracking-[0.16em] text-[#5F7077]">Link do video de instrucao</span>
-                  <input
-                    value={currentVideoUrl}
-                    onChange={(event) => updateVideoUrl(index, event.target.value)}
-                    placeholder="https://..."
-                    className="h-11 rounded-[14px] border border-[#D8E6EB] bg-white px-4 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]"
-                  />
-                </label>
+                      <label className="grid gap-2 md:col-span-2">
+                        <span className="text-[10px] font-black uppercase tracking-[0.16em] text-[#5F7077]">Descricao</span>
+                        <textarea
+                          value={item.description ?? ''}
+                          onChange={(event) => updateCardDescription(index, event.target.value)}
+                          rows={4}
+                          className="rounded-[14px] border border-[#D8E6EB] bg-white px-4 py-3 text-sm font-semibold leading-6 text-[#15323b] outline-none focus:border-[#1398B7]"
+                        />
+                      </label>
 
-                <label className="mt-4 flex items-center justify-between rounded-[14px] border border-[#D8E6EB] bg-[#F8FCFD] px-4 py-3 text-sm font-semibold text-[#15323b]">
-                  <span>Ativar botao "Leia mais" neste recurso</span>
-                  <input
-                    type="checkbox"
-                    checked={readMoreEnabled}
-                    onChange={(event) => updateReadMoreEnabled(index, event.target.checked)}
-                  />
-                </label>
+                      <label className="grid gap-2">
+                        <span className="text-[10px] font-black uppercase tracking-[0.16em] text-[#5F7077]">Cor do item</span>
+                        <input
+                          type="color"
+                          value={currentItemColor}
+                          onChange={(event) => updateItemColor(index, event.target.value)}
+                          className="h-11 w-full rounded-[14px] border border-[#D8E6EB] bg-white px-2"
+                        />
+                      </label>
 
-                {readMoreEnabled ? (
-                  <label className="mt-4 grid gap-2">
-                    <span className="text-[10px] font-black uppercase tracking-[0.16em] text-[#5F7077]">Conteudo do "Leia mais"</span>
-                    <textarea
-                      value={readMoreContent}
-                      onChange={(event) => updateReadMoreContent(index, event.target.value)}
-                      rows={6}
-                      placeholder="Esse conteúdo abrirá em um modal na página pública de recursos."
-                      className="rounded-[14px] border border-[#D8E6EB] bg-white px-4 py-3 text-sm font-semibold leading-6 text-[#15323b] outline-none focus:border-[#1398B7]"
-                    />
-                  </label>
-                ) : null}
+                      <label className="grid gap-2">
+                        <span className="text-[10px] font-black uppercase tracking-[0.16em] text-[#5F7077]">Link do video</span>
+                        <input
+                          value={currentVideoUrl}
+                          onChange={(event) => updateVideoUrl(index, event.target.value)}
+                          placeholder="https://..."
+                          className="h-11 rounded-[14px] border border-[#D8E6EB] bg-white px-4 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]"
+                        />
+                      </label>
+                    </div>
 
-                <div className="mt-4 flex justify-end">
-                  <Button
-                    type="button"
-                    onClick={() => void handleSaveCard(index)}
-                    disabled={isSaving || isLoading}
-                    className="rounded-none bg-[#1398B7] font-black text-white hover:bg-[#0F7E99]"
-                  >
-                    {isSaving && savingCardIndex === index ? 'Salvando...' : 'Salvar recurso'}
-                  </Button>
-                </div>
-              </article>
-            )
-          })}
-        </div>
+                    <label className="mt-4 flex items-center justify-between rounded-[14px] border border-[#D8E6EB] bg-[#F8FCFD] px-4 py-3 text-sm font-semibold text-[#15323b]">
+                      <span>Ativar botao "Leia mais" neste recurso</span>
+                      <input
+                        type="checkbox"
+                        checked={readMoreEnabled}
+                        onChange={(event) => updateReadMoreEnabled(index, event.target.checked)}
+                      />
+                    </label>
 
-        <div className="flex flex-wrap items-center gap-3">
-          <Button type="submit" disabled={isSaving || isLoading} className="rounded-none bg-[#1398B7] font-black text-white hover:bg-[#0F7E99]">
-            {isSaving ? 'Salvando...' : 'Salvar videos dos recursos'}
-          </Button>
-          <span className="text-xs font-semibold text-[#5F7077]">
-            {isLoading ? 'Carregando recursos...' : 'Recursos sem video nao exibem o botao na pagina publica.'}
-          </span>
-        </div>
-      </form>
+                    {readMoreEnabled ? (
+                      <label className="mt-4 grid gap-2">
+                        <span className="text-[10px] font-black uppercase tracking-[0.16em] text-[#5F7077]">Conteudo do "Leia mais"</span>
+                        <textarea
+                          value={readMoreContent}
+                          onChange={(event) => updateReadMoreContent(index, event.target.value)}
+                          rows={6}
+                          className="rounded-[14px] border border-[#D8E6EB] bg-white px-4 py-3 text-sm font-semibold leading-6 text-[#15323b] outline-none focus:border-[#1398B7]"
+                        />
+                      </label>
+                    ) : null}
+
+                    <div className="mt-4 flex justify-end">
+                      <Button
+                        type="button"
+                        onClick={() => void saveResources(index)}
+                        disabled={isSaving || isLoading}
+                        className="rounded-none bg-[#1398B7] font-black text-white hover:bg-[#0F7E99]"
+                      >
+                        {isSaving && savingCardIndex === index ? 'Salvando...' : 'Salvar recurso'}
+                      </Button>
+                    </div>
+                  </article>
+                )
+              })}
+            </div>
+
+            <div className="flex flex-wrap items-center gap-3">
+              <Button type="submit" disabled={isSaving || isLoading} className="rounded-none bg-[#1398B7] font-black text-white hover:bg-[#0F7E99]">
+                {isSaving ? 'Salvando...' : 'Salvar todos os recursos'}
+              </Button>
+            </div>
+          </form>
+        </>
+      ) : (
+        <form onSubmit={(event) => void saveCardStyle(event)} className="space-y-5">
+          <section className="grid gap-4 rounded-[20px] border border-[#D8E6EB] bg-white p-5 md:grid-cols-2">
+            <label className="grid gap-2">
+              <span className="text-[10px] font-black uppercase tracking-[0.16em] text-[#5F7077]">Background do card</span>
+              <input type="color" value={cardStyle.cardBackgroundColor} onChange={(e) => setCardStyle((p) => ({ ...p, cardBackgroundColor: e.target.value }))} className="h-11 w-full rounded-[14px] border border-[#D8E6EB] bg-white px-2" />
+            </label>
+            <label className="grid gap-2">
+              <span className="text-[10px] font-black uppercase tracking-[0.16em] text-[#5F7077]">Borda do card</span>
+              <input type="color" value={cardStyle.cardBorderColor} onChange={(e) => setCardStyle((p) => ({ ...p, cardBorderColor: e.target.value }))} className="h-11 w-full rounded-[14px] border border-[#D8E6EB] bg-white px-2" />
+            </label>
+            <label className="grid gap-2">
+              <span className="text-[10px] font-black uppercase tracking-[0.16em] text-[#5F7077]">Espessura da borda (px)</span>
+              <input type="number" min={0} max={12} value={cardStyle.cardBorderWidth} onChange={(e) => setCardStyle((p) => ({ ...p, cardBorderWidth: Number(e.target.value) || 0 }))} className="h-11 rounded-[14px] border border-[#D8E6EB] bg-white px-4" />
+            </label>
+            <label className="grid gap-2">
+              <span className="text-[10px] font-black uppercase tracking-[0.16em] text-[#5F7077]">Curvatura do card (px)</span>
+              <input type="number" min={0} max={64} value={cardStyle.cardBorderRadius} onChange={(e) => setCardStyle((p) => ({ ...p, cardBorderRadius: Number(e.target.value) || 0 }))} className="h-11 rounded-[14px] border border-[#D8E6EB] bg-white px-4" />
+            </label>
+            <label className="grid gap-2 md:col-span-2">
+              <span className="text-[10px] font-black uppercase tracking-[0.16em] text-[#5F7077]">Sombra CSS do card</span>
+              <input value={cardStyle.cardShadow} onChange={(e) => setCardStyle((p) => ({ ...p, cardShadow: e.target.value }))} className="h-11 rounded-[14px] border border-[#D8E6EB] bg-white px-4" />
+            </label>
+          </section>
+
+          <section className="grid gap-4 rounded-[20px] border border-[#D8E6EB] bg-white p-5 md:grid-cols-2">
+            <label className="grid gap-2">
+              <span className="text-[10px] font-black uppercase tracking-[0.16em] text-[#5F7077]">Cor do titulo</span>
+              <input type="color" value={cardStyle.titleColor} onChange={(e) => setCardStyle((p) => ({ ...p, titleColor: e.target.value }))} className="h-11 w-full rounded-[14px] border border-[#D8E6EB] bg-white px-2" />
+            </label>
+            <label className="grid gap-2">
+              <span className="text-[10px] font-black uppercase tracking-[0.16em] text-[#5F7077]">Tamanho do titulo (px)</span>
+              <input type="number" min={10} max={48} value={cardStyle.titleFontSize} onChange={(e) => setCardStyle((p) => ({ ...p, titleFontSize: Number(e.target.value) || 16 }))} className="h-11 rounded-[14px] border border-[#D8E6EB] bg-white px-4" />
+            </label>
+            <label className="grid gap-2">
+              <span className="text-[10px] font-black uppercase tracking-[0.16em] text-[#5F7077]">Peso do titulo</span>
+              <input type="number" min={300} max={900} step={100} value={cardStyle.titleFontWeight} onChange={(e) => setCardStyle((p) => ({ ...p, titleFontWeight: Number(e.target.value) || 700 }))} className="h-11 rounded-[14px] border border-[#D8E6EB] bg-white px-4" />
+            </label>
+            <label className="grid gap-2">
+              <span className="text-[10px] font-black uppercase tracking-[0.16em] text-[#5F7077]">Cor da descricao</span>
+              <input type="color" value={cardStyle.descriptionColor} onChange={(e) => setCardStyle((p) => ({ ...p, descriptionColor: e.target.value }))} className="h-11 w-full rounded-[14px] border border-[#D8E6EB] bg-white px-2" />
+            </label>
+            <label className="grid gap-2">
+              <span className="text-[10px] font-black uppercase tracking-[0.16em] text-[#5F7077]">Tamanho da descricao (px)</span>
+              <input type="number" min={10} max={32} value={cardStyle.descriptionFontSize} onChange={(e) => setCardStyle((p) => ({ ...p, descriptionFontSize: Number(e.target.value) || 14 }))} className="h-11 rounded-[14px] border border-[#D8E6EB] bg-white px-4" />
+            </label>
+            <label className="grid gap-2">
+              <span className="text-[10px] font-black uppercase tracking-[0.16em] text-[#5F7077]">Line-height da descricao</span>
+              <input type="number" min={1} max={3} step={0.1} value={cardStyle.descriptionLineHeight} onChange={(e) => setCardStyle((p) => ({ ...p, descriptionLineHeight: Number(e.target.value) || 1.75 }))} className="h-11 rounded-[14px] border border-[#D8E6EB] bg-white px-4" />
+            </label>
+          </section>
+
+          <section className="grid gap-4 rounded-[20px] border border-[#D8E6EB] bg-white p-5 md:grid-cols-2">
+            <label className="grid gap-2">
+              <span className="text-[10px] font-black uppercase tracking-[0.16em] text-[#5F7077]">Background do icone</span>
+              <input type="color" value={cardStyle.iconBackgroundColor} onChange={(e) => setCardStyle((p) => ({ ...p, iconBackgroundColor: e.target.value }))} className="h-11 w-full rounded-[14px] border border-[#D8E6EB] bg-white px-2" />
+            </label>
+            <label className="grid gap-2">
+              <span className="text-[10px] font-black uppercase tracking-[0.16em] text-[#5F7077]">Cor padrao do icone</span>
+              <input type="color" value={cardStyle.iconColor} onChange={(e) => setCardStyle((p) => ({ ...p, iconColor: e.target.value }))} className="h-11 w-full rounded-[14px] border border-[#D8E6EB] bg-white px-2" />
+            </label>
+            <label className="grid gap-2">
+              <span className="text-[10px] font-black uppercase tracking-[0.16em] text-[#5F7077]">Background do botao</span>
+              <input type="color" value={cardStyle.buttonBackgroundColor} onChange={(e) => setCardStyle((p) => ({ ...p, buttonBackgroundColor: e.target.value }))} className="h-11 w-full rounded-[14px] border border-[#D8E6EB] bg-white px-2" />
+            </label>
+            <label className="grid gap-2">
+              <span className="text-[10px] font-black uppercase tracking-[0.16em] text-[#5F7077]">Cor do texto do botao</span>
+              <input type="color" value={cardStyle.buttonTextColor} onChange={(e) => setCardStyle((p) => ({ ...p, buttonTextColor: e.target.value }))} className="h-11 w-full rounded-[14px] border border-[#D8E6EB] bg-white px-2" />
+            </label>
+            <label className="grid gap-2">
+              <span className="text-[10px] font-black uppercase tracking-[0.16em] text-[#5F7077]">Cor da borda do botao</span>
+              <input type="color" value={cardStyle.buttonBorderColor} onChange={(e) => setCardStyle((p) => ({ ...p, buttonBorderColor: e.target.value }))} className="h-11 w-full rounded-[14px] border border-[#D8E6EB] bg-white px-2" />
+            </label>
+            <label className="grid gap-2">
+              <span className="text-[10px] font-black uppercase tracking-[0.16em] text-[#5F7077]">Raio do botao (px)</span>
+              <input type="number" min={0} max={999} value={cardStyle.buttonRadius} onChange={(e) => setCardStyle((p) => ({ ...p, buttonRadius: Number(e.target.value) || 0 }))} className="h-11 rounded-[14px] border border-[#D8E6EB] bg-white px-4" />
+            </label>
+          </section>
+
+          <div className="flex flex-wrap items-center gap-3">
+            <Button type="submit" disabled={isSaving || isLoading} className="rounded-none bg-[#1398B7] font-black text-white hover:bg-[#0F7E99]">
+              {isSaving ? 'Salvando...' : 'Salvar padrao dos cards'}
+            </Button>
+          </div>
+        </form>
+      )}
     </div>
   )
 }

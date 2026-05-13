@@ -519,6 +519,10 @@ export const appRouter = createBrowserRouter([
           },
           {
             path: '/admin/recursos/videos',
+            element: <Navigate to="/admin/recursos" replace />,
+          },
+          {
+            path: '/admin/recursos',
             element: withRouteSuspense(<AdminResourceVideosPage />),
           },
         ],

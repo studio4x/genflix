@@ -16,18 +16,9 @@ import {
   normalizeResourcesItems,
   resolveResourceVideoUrl,
 } from '@/features/public/genflix-resource-items-editor'
-import {
-  createSectionRegistryFallback,
-  createSectionRegistrySchema,
-  renderVisibleSectionList,
-  resolveSectionRegistryEntryPrefix,
-  resolveSectionRegistryPageKey,
-  resolveSectionRegistryTemplateKey,
-  SectionStructureControl,
-} from '@/features/site-editor/section-registry'
 import { renderSiteIconVisual } from '@/features/site-editor/site-icons'
 import type { EditableListItem } from '@/features/site-editor/types'
-import { EditableContainer, EditableList, EditableText, isEditableItemVisible, useEditableValue } from '@/features/site-editor/visual-editor'
+import { isEditableItemVisible, useEditableValue } from '@/features/site-editor/visual-editor'
 
 type ResourcePopupItem = EditableListItem & {
   label: string
@@ -45,26 +36,45 @@ type ResourceReadMoreModalState = {
   content: string
 }
 
-const resourcesSectionTemplates = [
-  {
-    id: 'catalog',
-    label: 'Catalogo de recursos',
-    description: 'Bloco principal com titulo, descricao, cards e CTA.',
-  },
-  {
-    id: 'newsletter',
-    label: 'Newsletter',
-    description: 'Bloco global de captacao compartilhado com outras paginas publicas.',
-    pageKey: 'global' as const,
-  },
-]
+type ResourceCardStyleSettings = {
+  cardBackgroundColor: string
+  cardBorderColor: string
+  cardBorderWidth: number
+  cardBorderRadius: number
+  cardShadow: string
+  titleColor: string
+  titleFontSize: number
+  titleFontWeight: number
+  descriptionColor: string
+  descriptionFontSize: number
+  descriptionLineHeight: number
+  iconBackgroundColor: string
+  iconColor: string
+  buttonBackgroundColor: string
+  buttonTextColor: string
+  buttonBorderColor: string
+  buttonRadius: number
+}
 
-const resourcesLayoutFallback = createSectionRegistryFallback(resourcesSectionTemplates)
-const resourcesLayoutSchema = createSectionRegistrySchema({
-  templates: resourcesSectionTemplates,
-  instancePrefix: 'resources.sections',
-  instancePageKey: 'resources',
-})
+const defaultCardStyle: ResourceCardStyleSettings = {
+  cardBackgroundColor: '#F2F7F9',
+  cardBorderColor: '#D8E6EB',
+  cardBorderWidth: 1,
+  cardBorderRadius: 18,
+  cardShadow: '0 16px 36px rgba(21,50,59,0.04)',
+  titleColor: '#183139',
+  titleFontSize: 16,
+  titleFontWeight: 700,
+  descriptionColor: '#667980',
+  descriptionFontSize: 14,
+  descriptionLineHeight: 1.75,
+  iconBackgroundColor: '#E8F6FA',
+  iconColor: '#1398B7',
+  buttonBackgroundColor: '#FFFFFF',
+  buttonTextColor: '#0F7E99',
+  buttonBorderColor: '#1398B7',
+  buttonRadius: 999,
+}
 
 function getItemMetadata(item: EditableListItem) {
   if (!item.metadata || typeof item.metadata !== 'object' || Array.isArray(item.metadata)) {
@@ -133,6 +143,40 @@ function resolveReadMoreContent(item: EditableListItem | null | undefined) {
   const metadata = getItemMetadata(item)
   if (metadata.readMoreEnabled !== true) return ''
   return typeof metadata.readMoreContent === 'string' ? metadata.readMoreContent.trim() : ''
+}
+
+function parseCardStyle(rawValue: unknown): ResourceCardStyleSettings {
+  if (!rawValue || typeof rawValue !== 'object' || Array.isArray(rawValue)) {
+    return { ...defaultCardStyle }
+  }
+  const value = rawValue as Record<string, unknown>
+  const fromNumber = (field: keyof ResourceCardStyleSettings, fallback: number) => {
+    const current = value[field]
+    return typeof current === 'number' && Number.isFinite(current) ? current : fallback
+  }
+  const fromString = (field: keyof ResourceCardStyleSettings, fallback: string) => {
+    const current = value[field]
+    return typeof current === 'string' && current.trim() !== '' ? current.trim() : fallback
+  }
+  return {
+    cardBackgroundColor: fromString('cardBackgroundColor', defaultCardStyle.cardBackgroundColor),
+    cardBorderColor: fromString('cardBorderColor', defaultCardStyle.cardBorderColor),
+    cardBorderWidth: fromNumber('cardBorderWidth', defaultCardStyle.cardBorderWidth),
+    cardBorderRadius: fromNumber('cardBorderRadius', defaultCardStyle.cardBorderRadius),
+    cardShadow: fromString('cardShadow', defaultCardStyle.cardShadow),
+    titleColor: fromString('titleColor', defaultCardStyle.titleColor),
+    titleFontSize: fromNumber('titleFontSize', defaultCardStyle.titleFontSize),
+    titleFontWeight: fromNumber('titleFontWeight', defaultCardStyle.titleFontWeight),
+    descriptionColor: fromString('descriptionColor', defaultCardStyle.descriptionColor),
+    descriptionFontSize: fromNumber('descriptionFontSize', defaultCardStyle.descriptionFontSize),
+    descriptionLineHeight: fromNumber('descriptionLineHeight', defaultCardStyle.descriptionLineHeight),
+    iconBackgroundColor: fromString('iconBackgroundColor', defaultCardStyle.iconBackgroundColor),
+    iconColor: fromString('iconColor', defaultCardStyle.iconColor),
+    buttonBackgroundColor: fromString('buttonBackgroundColor', defaultCardStyle.buttonBackgroundColor),
+    buttonTextColor: fromString('buttonTextColor', defaultCardStyle.buttonTextColor),
+    buttonBorderColor: fromString('buttonBorderColor', defaultCardStyle.buttonBorderColor),
+    buttonRadius: fromNumber('buttonRadius', defaultCardStyle.buttonRadius),
+  }
 }
 
 function resolveEmbeddableVideoUrl(url: string) {
@@ -268,35 +312,31 @@ function ResourceReadMoreModal({
 
 function ResourcesCatalogSection({
   resourceItems,
+  cardStyle,
+  title,
+  description,
+  ctaLabel,
   onOpenVideo,
   onOpenReadMore,
 }: {
   resourceItems: EditableListItem[]
+  cardStyle: ResourceCardStyleSettings
+  title: string
+  description: string
+  ctaLabel: string
   onOpenVideo: (state: ResourceVideoModalState) => void
   onOpenReadMore: (state: ResourceReadMoreModalState) => void
 }) {
   return (
     <section className="bg-white pb-16 pt-4">
       <div className="public-site-container">
-        <EditableContainer entryKey="resources.catalog.header.card" label="Container interno do cabecalho de recursos" pageKey="resources">
-          <div className="mx-auto max-w-[680px] text-center">
-            <h1 className="text-[2.35rem] font-extrabold leading-[0.96] tracking-[-0.05em] text-[#183139] sm:text-[2.8rem]">
-              <EditableText entryKey="resources.title" fallback="Muito alem do video" label="Titulo de recursos" />
-            </h1>
-            <p className="mx-auto mt-4 max-w-[560px] text-base leading-7 text-[#61737a]">
-              <EditableText
-                entryKey="resources.description"
-                fallback="Ferramentas pensadas para voce aprender, fixar e revisar do seu jeito."
-                label="Descricao de recursos"
-              />
-            </p>
-          </div>
-        </EditableContainer>
+        <div className="mx-auto max-w-[680px] text-center">
+          <h1 className="text-[2.35rem] font-extrabold leading-[0.96] tracking-[-0.05em] text-[#183139] sm:text-[2.8rem]">{title}</h1>
+          <p className="mx-auto mt-4 max-w-[560px] text-base leading-7 text-[#61737a]">{description}</p>
+        </div>
 
-        <EditableContainer entryKey="resources.catalog.grid.wrap" label="Container interno da grade de recursos" pageKey="resources">
-          <div className="mt-12 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          <EditableList entryKey="resources.items" fallback={resourceItems} label="Cards de recursos">
-            {(items) => items.filter(isEditableItemVisible).map((item) => {
+        <div className="mt-12 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {resourceItems.filter(isEditableItemVisible).map((item) => {
               const fallback = findResourceFallbackByLabel(item.label)
               const popupItem: ResourcePopupItem = {
                 ...item,
@@ -307,32 +347,53 @@ function ResourcesCatalogSection({
               const videoUrl = resolveResourceVideoUrl(popupItem)
               const readMoreContent = resolveReadMoreContent(popupItem)
 
+              const metadata = getItemMetadata(popupItem)
+              const itemColor = typeof metadata.itemColor === 'string' ? metadata.itemColor : cardStyle.iconColor
+
               return (
-                <EditableContainer
-                  key={item.id}
-                  entryKey="resources.catalog.card.style"
-                  label="Estilo global dos cards de recursos"
-                  pageKey="resources"
-                >
                   <article
+                    key={item.id}
                     className="rounded-[18px] border border-[#D8E6EB] bg-[#F2F7F9] px-5 py-5 text-left shadow-[0_16px_36px_rgba(21,50,59,0.04)] transition-transform duration-300 hover:-translate-y-1 hover:shadow-[0_20px_42px_rgba(19,152,183,0.12)]"
+                    style={{
+                      borderColor: cardStyle.cardBorderColor,
+                      borderWidth: `${cardStyle.cardBorderWidth}px`,
+                      borderRadius: `${cardStyle.cardBorderRadius}px`,
+                      backgroundColor: cardStyle.cardBackgroundColor,
+                      boxShadow: cardStyle.cardShadow,
+                    }}
                   >
                     <div className="flex items-start gap-4">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#E8F6FA] text-[#1398B7]">
+                      <div
+                        className="flex h-10 w-10 items-center justify-center rounded-2xl"
+                        style={{
+                          backgroundColor: cardStyle.iconBackgroundColor,
+                          color: itemColor || cardStyle.iconColor,
+                        }}
+                      >
                         {renderResourceIcon(popupItem, 'h-4.5 w-4.5')}
                       </div>
                     </div>
 
-                    <h2 className="mt-5 text-[1rem] font-bold leading-6 text-[#183139]">{item.label}</h2>
-                    <EditableContainer
-                      entryKey="resources.catalog.card.description.style"
-                      label="Estilo global da descricao dos cards de recursos"
-                      pageKey="resources"
+                    <h2
+                      className="mt-5 leading-6"
+                      style={{
+                        color: cardStyle.titleColor,
+                        fontSize: `${cardStyle.titleFontSize}px`,
+                        fontWeight: cardStyle.titleFontWeight,
+                      }}
                     >
-                      <div className="mt-3 text-sm leading-7 text-[#667980] [&_p]:m-0">
+                      {item.label}
+                    </h2>
+                      <div
+                        className="mt-3 [&_p]:m-0"
+                        style={{
+                          color: cardStyle.descriptionColor,
+                          fontSize: `${cardStyle.descriptionFontSize}px`,
+                          lineHeight: String(cardStyle.descriptionLineHeight),
+                        }}
+                      >
                         {renderResourceTextContent(item.description ?? '', '')}
                       </div>
-                    </EditableContainer>
                     {videoUrl || readMoreContent ? (
                       <div className="mt-4 flex flex-wrap gap-2">
                         {videoUrl ? (
@@ -346,6 +407,12 @@ function ResourcesCatalogSection({
                               })
                             }}
                             className="inline-flex items-center rounded-full border border-[#1398B7]/30 bg-white px-3 py-1.5 text-xs font-black uppercase tracking-[0.12em] text-[#0F7E99] hover:bg-[#E8F6FA]"
+                            style={{
+                              backgroundColor: cardStyle.buttonBackgroundColor,
+                              color: cardStyle.buttonTextColor,
+                              borderColor: cardStyle.buttonBorderColor,
+                              borderRadius: `${cardStyle.buttonRadius}px`,
+                            }}
                           >
                             Ver video de instrucao
                           </button>
@@ -361,6 +428,12 @@ function ResourcesCatalogSection({
                               })
                             }}
                             className="inline-flex items-center rounded-full border border-[#15323B]/20 bg-white px-3 py-1.5 text-xs font-black uppercase tracking-[0.12em] text-[#15323B] hover:bg-[#EAF2F5]"
+                            style={{
+                              backgroundColor: cardStyle.buttonBackgroundColor,
+                              color: cardStyle.buttonTextColor,
+                              borderColor: cardStyle.buttonBorderColor,
+                              borderRadius: `${cardStyle.buttonRadius}px`,
+                            }}
                           >
                             Leia mais
                           </button>
@@ -368,22 +441,17 @@ function ResourcesCatalogSection({
                       </div>
                     ) : null}
                   </article>
-                </EditableContainer>
               )
             })}
-          </EditableList>
         </div>
-        </EditableContainer>
  
-        <EditableContainer entryKey="resources.catalog.cta.wrap" label="Container interno do CTA de recursos" pageKey="resources">
           <div className="mt-12 flex justify-center">
           <GenflixCtaButton asChild className="px-5 py-3">
             <Link to="/login">
-              <EditableText entryKey="resources.cta" fallback="Entrar para explorar tudo" label="CTA de recursos" />
+              {ctaLabel}
             </Link>
           </GenflixCtaButton>
         </div>
-        </EditableContainer>
       </div>
     </section>
   )
@@ -394,7 +462,11 @@ export function PublicResourcesPage() {
   const [activeVideo, setActiveVideo] = useState<ResourceVideoModalState | null>(null)
   const [activeReadMore, setActiveReadMore] = useState<ResourceReadMoreModalState | null>(null)
   const waitingRoleResolution = !!user && roles.length === 0
-  const resourcesSections = useEditableValue('resources.layout.sections', resourcesLayoutFallback)
+  const resourcesTitle = useEditableValue('resources.title', 'Muito alem do video')
+  const resourcesDescription = useEditableValue('resources.description', 'Ferramentas pensadas para voce aprender, fixar e revisar do seu jeito.')
+  const resourcesCta = useEditableValue('resources.cta', 'Entrar para explorar tudo')
+  const rawCardStyle = useEditableValue('resources.cardStyle', defaultCardStyle)
+  const cardStyle = useMemo(() => parseCardStyle(rawCardStyle), [rawCardStyle])
   const resourceItemsRaw = useEditableValue(
     'resources.items',
     createResourcesItemsFallback(),
@@ -437,37 +509,16 @@ export function PublicResourcesPage() {
     <main className="min-h-screen bg-[#F2F7F9] font-manrope text-[#163138]">
       <GenflixPublicHeader currentPage="resources" navLinks={genflixNavLinks} />
       <BannerPlacementSlot pageKey="resources" placementKey="hero" />
-      <SectionStructureControl
-        buttonLabel="Gerenciar blocos da pagina"
-        pageKey="resources"
-        entryKey="resources.layout.sections"
-        label="Estrutura da pagina Recursos"
-        sections={resourcesSections}
-        schema={resourcesLayoutSchema}
+      <ResourcesCatalogSection
+        resourceItems={resourceItems}
+        cardStyle={cardStyle}
+        title={resourcesTitle}
+        description={resourcesDescription}
+        ctaLabel={resourcesCta}
+        onOpenVideo={setActiveVideo}
+        onOpenReadMore={setActiveReadMore}
       />
-      {renderVisibleSectionList(resourcesSections.filter(isEditableItemVisible), (item) => {
-        const templateKey = resolveSectionRegistryTemplateKey(item)
-        const sectionPageKey = resolveSectionRegistryPageKey(item, 'resources')
-        const sectionEntryPrefix = resolveSectionRegistryEntryPrefix(item, `resources.sections.${templateKey}`)
- 
-        if (templateKey === 'catalog') {
-          return (
-            <EditableContainer entryKey={`${sectionEntryPrefix}.layout`} label="Bloco Catalogo da pagina Recursos" pageKey={sectionPageKey}>
-              <ResourcesCatalogSection
-                resourceItems={resourceItems}
-                onOpenVideo={setActiveVideo}
-                onOpenReadMore={setActiveReadMore}
-              />
-            </EditableContainer>
-          )
-        }
- 
-        if (templateKey === 'newsletter') {
-          return <GenflixNewsletterSection />
-        }
- 
-        return null
-      })}
+      <GenflixNewsletterSection />
       <GenflixPublicFooter />
       {activeVideo ? (
         <ResourceVideoModal state={activeVideo} onClose={() => setActiveVideo(null)} />
