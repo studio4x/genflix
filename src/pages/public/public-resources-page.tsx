@@ -358,7 +358,10 @@ function ResourcesCatalogSection({
                 const readMoreContent = resolveReadMoreContent(popupItem)
 
                 const metadata = getItemMetadata(popupItem)
-                const itemColor = typeof metadata.itemColor === 'string' ? metadata.itemColor : cardStyle.iconColor
+                const metadataIconColor = typeof metadata.iconColor === 'string' ? metadata.iconColor : ''
+                const itemColor = typeof metadata.itemColor === 'string' && metadata.itemColor.trim() !== ''
+                  ? metadata.itemColor
+                  : (metadataIconColor.trim() !== '' ? metadataIconColor : cardStyle.iconColor)
 
                 return (
                   <article

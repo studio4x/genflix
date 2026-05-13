@@ -7,7 +7,7 @@ import {
   resolveResourceVideoUrl,
 } from '@/features/public/genflix-resource-items-editor'
 import { fetchSiteContent, saveSiteContentEntry } from '@/features/site-editor/api'
-import { SITE_ICON_OPTIONS } from '@/features/site-editor/site-icons'
+import { renderSiteIcon, SITE_ICON_OPTIONS } from '@/features/site-editor/site-icons'
 import type { EditableListItem } from '@/features/site-editor/types'
 
 type ResourceCardStyleSettings = {
@@ -48,6 +48,38 @@ const defaultCardStyle: ResourceCardStyleSettings = {
   buttonTextColor: '#0F7E99',
   buttonBorderColor: '#1398B7',
   buttonRadius: 999,
+}
+
+const RESOURCE_DEFAULT_ICON_BY_LABEL: Record<string, string> = {
+  'Textos diretos ao ponto': 'file-text',
+  'Texto para fala': 'headphones',
+  'Videos': 'monitor-play',
+  'Vídeos': 'monitor-play',
+  'Lives com autores': 'monitor-play',
+  'Bloco de notas pessoais': 'file-text',
+  'Foruns de discussao': 'link',
+  'Fóruns de discussão': 'link',
+  'Descontos em livros do GEN': 'download',
+  Podcasts: 'headphones',
+  Resumos: 'file-text',
+  'Mapas mentais': 'sparkles',
+  Flashcards: 'file-text',
+  'Glossario de termos': 'file-text',
+  'Glossário de termos': 'file-text',
+  'Download de suplementos': 'download',
+  'Questoes discursivas': 'file-text',
+  'Questões discursivas': 'file-text',
+  'Estudos de casos': 'file-text',
+  'Multipla escolha': 'sparkles',
+  'Múltipla escolha': 'sparkles',
+  'Exercicios de progressao': 'sparkles',
+  'Exercícios de progressão': 'sparkles',
+  'Preenchimento de lacunas': 'file-text',
+}
+
+function resolveDefaultResourceIconKey(item: EditableListItem) {
+  const label = (item.label ?? item.title ?? '').trim()
+  return RESOURCE_DEFAULT_ICON_BY_LABEL[label] ?? 'sparkles'
 }
 
 function toMetadata(item: EditableListItem) {
@@ -387,6 +419,9 @@ export function AdminResourceVideosPage() {
                 const readMoreEnabled = metadata.readMoreEnabled === true
                 const readMoreContent = typeof metadata.readMoreContent === 'string' ? metadata.readMoreContent : ''
                 const currentIconKey = typeof metadata.iconKey === 'string' ? metadata.iconKey : ''
+                const defaultIconKey = resolveDefaultResourceIconKey(item)
+                const effectiveIconKey = currentIconKey || defaultIconKey
+                const selectedIconLabel = SITE_ICON_OPTIONS.find((option) => option.value === effectiveIconKey)?.label ?? 'Icone'
                 const currentItemColor = typeof metadata.itemColor === 'string' ? metadata.itemColor : defaultCardStyle.iconColor
                 const isConfigured = resolveResourceVideoUrl(item) !== ''
 
@@ -419,16 +454,44 @@ export function AdminResourceVideosPage() {
                       </label>
                       <label className="grid gap-2">
                         <span className="text-[10px] font-black uppercase tracking-[0.16em] text-[#5F7077]">Icone (biblioteca)</span>
-                        <select
-                          value={currentIconKey}
-                          onChange={(event) => updateItemIcon(index, event.target.value)}
-                          className="h-11 rounded-[14px] border border-[#D8E6EB] bg-white px-4 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]"
-                        >
-                          <option value="">Padrao</option>
-                          {SITE_ICON_OPTIONS.map((option) => (
-                            <option key={option.value} value={option.value}>{option.label}</option>
-                          ))}
-                        </select>
+                        <div className="rounded-[14px] border border-[#D8E6EB] bg-[#F8FCFD] p-3">
+                          <div className="mb-3 flex items-center justify-between gap-3">
+                            <div className="inline-flex items-center gap-2 rounded-full border border-[#D8E6EB] bg-white px-3 py-1.5 text-xs font-semibold text-[#15323b]">
+                              {renderSiteIcon(effectiveIconKey, 'h-4 w-4', currentItemColor)}
+                              <span>{currentIconKey ? selectedIconLabel : `Padrao: ${selectedIconLabel}`}</span>
+                            </div>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={() => updateItemIcon(index, '')}
+                              className="h-8 rounded-[10px] border-[#D8E6EB] px-2 text-[10px] font-black uppercase tracking-[0.12em]"
+                            >
+                              Usar padrao
+                            </Button>
+                          </div>
+                          <div className="grid max-h-56 grid-cols-1 gap-2 overflow-auto pr-1 sm:grid-cols-2">
+                            {SITE_ICON_OPTIONS.map((option) => {
+                              const isSelected = effectiveIconKey === option.value
+                              return (
+                                <button
+                                  key={option.value}
+                                  type="button"
+                                  onClick={() => updateItemIcon(index, option.value)}
+                                  className={`flex items-center gap-2 rounded-[10px] border px-2 py-2 text-left text-xs font-semibold transition ${
+                                    isSelected
+                                      ? 'border-[#1398B7] bg-[#E8F6FA] text-[#0F7E99]'
+                                      : 'border-[#D8E6EB] bg-white text-[#15323b] hover:border-[#9bcddb] hover:bg-[#F2F7F9]'
+                                  }`}
+                                >
+                                  <span className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-[#D8E6EB] bg-white">
+                                    {renderSiteIcon(option.value, 'h-4 w-4', currentItemColor)}
+                                  </span>
+                                  <span className="truncate">{option.label}</span>
+                                </button>
+                              )
+                            })}
+                          </div>
+                        </div>
                       </label>
 
                       <label className="grid gap-2 md:col-span-2">
