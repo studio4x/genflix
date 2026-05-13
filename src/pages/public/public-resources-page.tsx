@@ -13,12 +13,11 @@ import { genflixNavLinks } from '@/features/public/genflix-site-content'
 import {
   createResourcesItemsFallback,
   findResourceFallbackByLabel,
-  normalizeResourcesItems,
   resolveResourceVideoUrl,
 } from '@/features/public/genflix-resource-items-editor'
 import { renderSiteIconVisual } from '@/features/site-editor/site-icons'
 import type { EditableListItem } from '@/features/site-editor/types'
-import { isEditableItemVisible, useEditableValue } from '@/features/site-editor/visual-editor'
+import { EditableButton, EditableList, EditableText, isEditableItemVisible, useEditableValue } from '@/features/site-editor/visual-editor'
 
 type ResourcePopupItem = EditableListItem & {
   label: string
@@ -311,19 +310,11 @@ function ResourceReadMoreModal({
 }
 
 function ResourcesCatalogSection({
-  resourceItems,
   cardStyle,
-  title,
-  description,
-  ctaLabel,
   onOpenVideo,
   onOpenReadMore,
 }: {
-  resourceItems: EditableListItem[]
   cardStyle: ResourceCardStyleSettings
-  title: string
-  description: string
-  ctaLabel: string
   onOpenVideo: (state: ResourceVideoModalState) => void
   onOpenReadMore: (state: ResourceReadMoreModalState) => void
 }) {
@@ -331,26 +322,44 @@ function ResourcesCatalogSection({
     <section className="bg-white pb-16 pt-4">
       <div className="public-site-container">
         <div className="mx-auto max-w-[680px] text-center">
-          <h1 className="text-[2.35rem] font-extrabold leading-[0.96] tracking-[-0.05em] text-[#183139] sm:text-[2.8rem]">{title}</h1>
-          <p className="mx-auto mt-4 max-w-[560px] text-base leading-7 text-[#61737a]">{description}</p>
+          <h1 className="text-[2.35rem] font-extrabold leading-[0.96] tracking-[-0.05em] text-[#183139] sm:text-[2.8rem]">
+            <EditableText
+              entryKey="resources.title"
+              fallback="Muito alem do video"
+              label="Titulo da secao de recursos"
+            />
+          </h1>
+          <p className="mx-auto mt-4 max-w-[560px] text-base leading-7 text-[#61737a]">
+            <EditableText
+              entryKey="resources.description"
+              fallback="Ferramentas pensadas para voce aprender, fixar e revisar do seu jeito."
+              label="Descricao da secao de recursos"
+            />
+          </p>
         </div>
 
-        <div className="mt-12 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {resourceItems.filter(isEditableItemVisible).map((item) => {
-              const fallback = findResourceFallbackByLabel(item.label)
-              const popupItem: ResourcePopupItem = {
-                ...item,
-                label: item.label ?? item.title ?? item.id,
-                description: item.description ?? '',
-                fallbackIcon: fallback.icon,
-              }
-              const videoUrl = resolveResourceVideoUrl(popupItem)
-              const readMoreContent = resolveReadMoreContent(popupItem)
+        <EditableList
+          entryKey="resources.items"
+          fallback={createResourcesItemsFallback()}
+          label="Cards de recursos"
+        >
+          {(resourceItems) => (
+            <div className="mt-12 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              {resourceItems.filter(isEditableItemVisible).map((item) => {
+                const fallback = findResourceFallbackByLabel(item.label)
+                const popupItem: ResourcePopupItem = {
+                  ...item,
+                  label: item.label ?? item.title ?? item.id,
+                  description: item.description ?? '',
+                  fallbackIcon: fallback.icon,
+                }
+                const videoUrl = resolveResourceVideoUrl(popupItem)
+                const readMoreContent = resolveReadMoreContent(popupItem)
 
-              const metadata = getItemMetadata(popupItem)
-              const itemColor = typeof metadata.itemColor === 'string' ? metadata.itemColor : cardStyle.iconColor
+                const metadata = getItemMetadata(popupItem)
+                const itemColor = typeof metadata.itemColor === 'string' ? metadata.itemColor : cardStyle.iconColor
 
-              return (
+                return (
                   <article
                     key={item.id}
                     className="rounded-[18px] border border-[#D8E6EB] bg-[#F2F7F9] px-5 py-5 text-left shadow-[0_16px_36px_rgba(21,50,59,0.04)] transition-transform duration-300 hover:-translate-y-1 hover:shadow-[0_20px_42px_rgba(19,152,183,0.12)]"
@@ -384,16 +393,16 @@ function ResourcesCatalogSection({
                     >
                       {item.label}
                     </h2>
-                      <div
-                        className="mt-3 [&_p]:m-0"
-                        style={{
-                          color: cardStyle.descriptionColor,
-                          fontSize: `${cardStyle.descriptionFontSize}px`,
-                          lineHeight: String(cardStyle.descriptionLineHeight),
-                        }}
-                      >
-                        {renderResourceTextContent(item.description ?? '', '')}
-                      </div>
+                    <div
+                      className="mt-3 [&_p]:m-0"
+                      style={{
+                        color: cardStyle.descriptionColor,
+                        fontSize: `${cardStyle.descriptionFontSize}px`,
+                        lineHeight: String(cardStyle.descriptionLineHeight),
+                      }}
+                    >
+                      {renderResourceTextContent(item.description ?? '', '')}
+                    </div>
                     {videoUrl || readMoreContent ? (
                       <div className="mt-4 flex flex-wrap gap-2">
                         {videoUrl ? (
@@ -441,16 +450,41 @@ function ResourcesCatalogSection({
                       </div>
                     ) : null}
                   </article>
-              )
-            })}
-        </div>
+                )
+              })}
+            </div>
+          )}
+        </EditableList>
  
-          <div className="mt-12 flex justify-center">
-          <GenflixCtaButton asChild className="px-5 py-3">
-            <Link to="/login">
-              {ctaLabel}
-            </Link>
-          </GenflixCtaButton>
+        <div className="mt-12 flex justify-center">
+          <EditableButton
+            entryKey="resources.cta"
+            fallback={{
+              label: 'Entrar para explorar tudo',
+              href: '/login',
+              isInternal: true,
+              tone: 'solid',
+            }}
+            label="Botao principal da secao de recursos"
+          >
+            {(buttonValue) => buttonValue.isHidden === true ? null : (
+              <GenflixCtaButton asChild className="px-5 py-3">
+                {buttonValue.isInternal === true ? (
+                  <Link to={typeof buttonValue.href === 'string' ? buttonValue.href : '/login'}>
+                    {typeof buttonValue.label === 'string' ? buttonValue.label : 'Entrar para explorar tudo'}
+                  </Link>
+                ) : (
+                  <a
+                    href={typeof buttonValue.href === 'string' ? buttonValue.href : '/login'}
+                    target={buttonValue.openInNewTab === true ? '_blank' : undefined}
+                    rel={buttonValue.openInNewTab === true ? 'noreferrer' : undefined}
+                  >
+                    {typeof buttonValue.label === 'string' ? buttonValue.label : 'Entrar para explorar tudo'}
+                  </a>
+                )}
+              </GenflixCtaButton>
+            )}
+          </EditableButton>
         </div>
       </div>
     </section>
@@ -462,19 +496,8 @@ export function PublicResourcesPage() {
   const [activeVideo, setActiveVideo] = useState<ResourceVideoModalState | null>(null)
   const [activeReadMore, setActiveReadMore] = useState<ResourceReadMoreModalState | null>(null)
   const waitingRoleResolution = !!user && roles.length === 0
-  const resourcesTitle = useEditableValue('resources.title', 'Muito alem do video')
-  const resourcesDescription = useEditableValue('resources.description', 'Ferramentas pensadas para voce aprender, fixar e revisar do seu jeito.')
-  const resourcesCta = useEditableValue('resources.cta', 'Entrar para explorar tudo')
   const rawCardStyle = useEditableValue('resources.cardStyle', defaultCardStyle)
   const cardStyle = useMemo(() => parseCardStyle(rawCardStyle), [rawCardStyle])
-  const resourceItemsRaw = useEditableValue(
-    'resources.items',
-    createResourcesItemsFallback(),
-  )
-  const resourceItems = useMemo(
-    () => normalizeResourcesItems(resourceItemsRaw),
-    [resourceItemsRaw],
-  )
  
   useEffect(() => {
     if (!activeVideo && !activeReadMore) {
@@ -510,11 +533,7 @@ export function PublicResourcesPage() {
       <GenflixPublicHeader currentPage="resources" navLinks={genflixNavLinks} />
       <BannerPlacementSlot pageKey="resources" placementKey="hero" />
       <ResourcesCatalogSection
-        resourceItems={resourceItems}
         cardStyle={cardStyle}
-        title={resourcesTitle}
-        description={resourcesDescription}
-        ctaLabel={resourcesCta}
         onOpenVideo={setActiveVideo}
         onOpenReadMore={setActiveReadMore}
       />
