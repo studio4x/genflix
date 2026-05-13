@@ -266,6 +266,16 @@ export interface Course {
   updated_at: string
 }
 
+export interface CourseCategory {
+  id: string
+  name: string
+  slug: string
+  display_order: number
+  is_active: boolean
+  created_at: string
+  updated_at: string
+}
+
 export interface CourseModule {
   id: string
   course_id: string

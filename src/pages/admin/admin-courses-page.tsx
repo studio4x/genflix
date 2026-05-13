@@ -8,11 +8,15 @@ import { useAuth } from '@/app/providers/auth-provider'
 import { Button } from '@/components/ui/button'
 import { useLocalStorageState } from '@/hooks/use-local-storage-state'
 import {
+  createCourseCategory,
   createCourse,
+  deleteCourseCategory,
   deleteCourse,
   exportFullCourseContent,
+  fetchCourseCategories,
   fetchCourses,
   updateCoursesDisplayOrder,
+  updateCourseCategory,
   updateCourse,
   uploadCourseThumbnail,
   toErrorMessage,
@@ -28,10 +32,11 @@ import {
   courseFormSchema,
   type CourseFormInput,
 } from '@/features/admin/content/schemas'
-import type { Course, CourseStatus } from '@/types/content'
+import type { Course, CourseCategory, CourseStatus } from '@/types/content'
 
 const initialForm: CourseFormInput = {
   title: '',
+  category: '',
   description: '',
   status: 'draft',
   thumbnail_url: '',
@@ -83,6 +88,12 @@ export function AdminCoursesPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [activeTab, setActiveTab] = useState<'courses' | 'categories'>('courses')
+  const [categories, setCategories] = useState<CourseCategory[]>([])
+  const [categoryName, setCategoryName] = useState('')
+  const [categorySlug, setCategorySlug] = useState('')
+  const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null)
+  const [isCategoryActive, setIsCategoryActive] = useState(true)
   
   const { state: draft, setState: setDraft, clear: clearDraft } =
     useLocalStorageState<CourseEditorDraft>('admin:courses:editor-draft', initialDraft)
@@ -115,8 +126,18 @@ export function AdminCoursesPage() {
     }
   }
 
+  async function loadCategories() {
+    try {
+      const data = await fetchCourseCategories(true)
+      setCategories(data)
+    } catch (loadError) {
+      setError(toErrorMessage(loadError))
+    }
+  }
+
   useEffect(() => {
     void loadCourses()
+    void loadCategories()
   }, [])
 
   function resetForm() {
@@ -180,6 +201,7 @@ export function AdminCoursesPage() {
       editingCourseId: course.id,
           form: {
             title: course.title,
+            category: course.category ?? '',
             description: course.description ?? '',
             status: course.status,
             thumbnail_url: course.thumbnail_url ?? '',
@@ -195,6 +217,72 @@ export function AdminCoursesPage() {
           },
         }))
     setError(null)
+  }
+
+  function resetCategoryForm() {
+    setCategoryName('')
+    setCategorySlug('')
+    setEditingCategoryId(null)
+    setIsCategoryActive(true)
+  }
+
+  async function handleCategorySubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (!categoryName.trim()) {
+      setError('Informe o nome da categoria.')
+      return
+    }
+
+    setError(null)
+    setIsSubmitting(true)
+    try {
+      if (editingCategoryId) {
+        await updateCourseCategory(editingCategoryId, {
+          name: categoryName,
+          slug: categorySlug,
+          is_active: isCategoryActive,
+        })
+      } else {
+        await createCourseCategory({
+          name: categoryName,
+          slug: categorySlug,
+          is_active: isCategoryActive,
+        })
+      }
+      await loadCategories()
+      resetCategoryForm()
+    } catch (submitError) {
+      setError(toErrorMessage(submitError))
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  function handleEditCategory(category: CourseCategory) {
+    setEditingCategoryId(category.id)
+    setCategoryName(category.name)
+    setCategorySlug(category.slug)
+    setIsCategoryActive(category.is_active)
+    setError(null)
+  }
+
+  async function handleDeleteCategory(category: CourseCategory) {
+    const confirmed = window.confirm(`Deseja remover a categoria "${category.name}"?`)
+    if (!confirmed) return
+
+    setError(null)
+    setIsSubmitting(true)
+    try {
+      await deleteCourseCategory(category.id)
+      await loadCategories()
+      if (editingCategoryId === category.id) {
+        resetCategoryForm()
+      }
+    } catch (deleteError) {
+      setError(toErrorMessage(deleteError))
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   async function handleDelete(course: Course) {
@@ -326,26 +414,58 @@ export function AdminCoursesPage() {
         </div>
         <div className="flex items-center gap-3">
            {isLoading && <span className="h-5 w-5 rounded-full border-2 border-slate-200 border-t-blue-600 animate-spin mr-2" />}
-           
-           <Button 
-              variant="outline"
-              onClick={() => setIsImportModalOpen(true)}
-              className="h-12 px-6 rounded-2xl border-slate-200 text-slate-500 font-bold hover:bg-slate-50 flex items-center gap-2 group transition-all transform active:scale-95"
-            >
-               <svg className="h-5 w-5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
-               Importar de IA
-            </Button>
+           {activeTab === 'courses' ? (
+             <>
+               <Button
+                 variant="outline"
+                 onClick={() => setIsImportModalOpen(true)}
+                 className="h-12 px-6 rounded-2xl border-slate-200 text-slate-500 font-bold hover:bg-slate-50 flex items-center gap-2 group transition-all transform active:scale-95"
+               >
+                 <svg className="h-5 w-5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                 Importar de IA
+               </Button>
 
-           <Button 
-             onClick={openNewCourseForm}
-             className="bg-blue-600 hover:bg-blue-700 text-white font-bold h-12 px-6 rounded-2xl shadow-xl shadow-blue-100 flex items-center gap-2 group transition-all transform active:scale-95"
-           >
-              <svg className="h-5 w-5 transition-transform group-hover:rotate-90" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
-              Adicionar Novo Curso
-           </Button>
+               <Button
+                 onClick={openNewCourseForm}
+                 className="bg-blue-600 hover:bg-blue-700 text-white font-bold h-12 px-6 rounded-2xl shadow-xl shadow-blue-100 flex items-center gap-2 group transition-all transform active:scale-95"
+               >
+                 <svg className="h-5 w-5 transition-transform group-hover:rotate-90" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+                 Adicionar Novo Curso
+               </Button>
+             </>
+           ) : null}
         </div>
       </header>
 
+      <section className="rounded-[24px] border border-slate-100 bg-white p-3 shadow-sm">
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => setActiveTab('courses')}
+            className={`rounded-2xl px-4 py-2 text-xs font-black uppercase tracking-widest transition-colors ${
+              activeTab === 'courses'
+                ? 'bg-blue-600 text-white'
+                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+            }`}
+          >
+            Cursos
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('categories')}
+            className={`rounded-2xl px-4 py-2 text-xs font-black uppercase tracking-widest transition-colors ${
+              activeTab === 'categories'
+                ? 'bg-blue-600 text-white'
+                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+            }`}
+          >
+            Categorias
+          </button>
+        </div>
+      </section>
+
+      {activeTab === 'courses' ? (
+      <>
       {/* METRICS CARDS */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
          <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm flex items-center gap-4">
@@ -589,9 +709,84 @@ export function AdminCoursesPage() {
             </div>
          )}
       </section>
+      </>
+      ) : (
+      <section className="grid grid-cols-1 gap-6 lg:grid-cols-[360px_1fr]">
+        <article className="rounded-[28px] border border-slate-100 bg-white p-6 shadow-sm">
+          <h3 className="text-lg font-black text-slate-900">
+            {editingCategoryId ? 'Editar categoria' : 'Nova categoria'}
+          </h3>
+          <form className="mt-4 space-y-4" onSubmit={handleCategorySubmit}>
+            <label className="block space-y-2">
+              <span className="text-xs font-black uppercase tracking-widest text-slate-400">Nome</span>
+              <input
+                className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold"
+                value={categoryName}
+                onChange={(event) => setCategoryName(event.target.value)}
+                placeholder="Ex.: Saude"
+                required
+              />
+            </label>
+            <label className="block space-y-2">
+              <span className="text-xs font-black uppercase tracking-widest text-slate-400">Slug (opcional)</span>
+              <input
+                className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold"
+                value={categorySlug}
+                onChange={(event) => setCategorySlug(event.target.value)}
+                placeholder="ex.: saude"
+              />
+            </label>
+            <label className="flex items-center gap-2 text-sm font-semibold text-slate-700">
+              <input
+                type="checkbox"
+                checked={isCategoryActive}
+                onChange={(event) => setIsCategoryActive(event.target.checked)}
+              />
+              Categoria ativa no site
+            </label>
+            <div className="flex gap-3 pt-2">
+              <Button type="button" variant="outline" onClick={resetCategoryForm} className="flex-1 rounded-2xl">
+                Limpar
+              </Button>
+              <Button type="submit" disabled={isSubmitting} className="flex-1 rounded-2xl bg-blue-600 hover:bg-blue-700">
+                {editingCategoryId ? 'Salvar' : 'Criar'}
+              </Button>
+            </div>
+          </form>
+        </article>
+
+        <article className="rounded-[28px] border border-slate-100 bg-white p-6 shadow-sm">
+          <h3 className="text-lg font-black text-slate-900">Categorias cadastradas</h3>
+          <div className="mt-4 space-y-3">
+            {categories.length === 0 ? (
+              <p className="text-sm font-medium text-slate-500">Nenhuma categoria cadastrada.</p>
+            ) : (
+              categories.map((category) => (
+                <div key={category.id} className="flex items-center justify-between rounded-2xl border border-slate-100 px-4 py-3">
+                  <div>
+                    <p className="text-sm font-black text-slate-900">{category.name}</p>
+                    <p className="text-xs font-semibold uppercase tracking-widest text-slate-400">
+                      {category.slug} {category.is_active ? '• Ativa' : '• Inativa'}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button type="button" variant="outline" className="rounded-xl" onClick={() => handleEditCategory(category)}>
+                      Editar
+                    </Button>
+                    <Button type="button" variant="ghost" className="rounded-xl text-rose-600 hover:bg-rose-50" onClick={() => void handleDeleteCategory(category)}>
+                      Excluir
+                    </Button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </article>
+      </section>
+      )}
 
       {/* MODAL OVERLAY FORM */}
-      {isFormOpen && (
+      {activeTab === 'courses' && isFormOpen && (
          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-300">
             <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={resetForm} />
             
@@ -683,7 +878,7 @@ export function AdminCoursesPage() {
                          </label>
                       </div>
 
-                      <div className="grid grid-cols-1 gap-6">
+                      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                          <label className="block space-y-2 w-full">
                             <span className="text-xs font-black text-slate-400 uppercase tracking-widest pl-1">Status</span>
                             <select
@@ -694,6 +889,23 @@ export function AdminCoursesPage() {
                                <option value="draft">🚀 Em Rascunho</option>
                                <option value="published">✅ Publicado</option>
                                <option value="archived">📦 Arquivado</option>
+                            </select>
+                         </label>
+                         <label className="block space-y-2 w-full">
+                            <span className="text-xs font-black text-slate-400 uppercase tracking-widest pl-1">Categoria</span>
+                            <select
+                               className="w-full font-bold rounded-2xl border border-slate-200 bg-slate-100/50 px-6 py-4 focus:bg-white focus:ring-4 focus:ring-blue-100 transition-all appearance-none"
+                               value={form.category ?? ''}
+                               onChange={(event) => setDraft((p) => ({ ...p, form: { ...p.form, category: event.target.value } }))}
+                            >
+                               <option value="">Sem categoria</option>
+                               {categories
+                                 .filter((category) => category.is_active || category.name === form.category)
+                                 .map((category) => (
+                                   <option key={category.id} value={category.name}>
+                                     {category.name}
+                                   </option>
+                                 ))}
                             </select>
                          </label>
                       </div>

@@ -14,7 +14,10 @@ import {
   genflixNavLinks,
   type GenflixCourseItem,
 } from '@/features/public/genflix-site-content'
-import { fetchPublicCoursesFromSupabase } from '@/features/public/genflix-public-content-api'
+import {
+  fetchPublicCourseCategoriesFromSupabase,
+  fetchPublicCoursesFromSupabase,
+} from '@/features/public/genflix-public-content-api'
 import {
   genflixStudyFeatureCardsFallback,
   genflixStudyFeatureCardsSchema,
@@ -33,6 +36,7 @@ export function PublicCoursesPage() {
   const [selectedFilter, setSelectedFilter] = useState('Todos')
   const [currentPage, setCurrentPage] = useState(1)
   const [courses, setCourses] = useState<GenflixCourseItem[]>(genflixCatalogCourses)
+  const [configuredCategories, setConfiguredCategories] = useState<string[]>([])
   const searchPlaceholder = useEditableValue('courses.search.placeholder', 'Buscar curso, área ou instrutor...')
 
   useEffect(() => {
@@ -40,9 +44,15 @@ export function PublicCoursesPage() {
 
     async function loadCourses() {
       try {
-        const publicCourses = await fetchPublicCoursesFromSupabase()
+        const [publicCourses, publicCategories] = await Promise.all([
+          fetchPublicCoursesFromSupabase(),
+          fetchPublicCourseCategoriesFromSupabase(),
+        ])
         if (isMounted && publicCourses.length > 0) {
           setCourses(publicCourses)
+        }
+        if (isMounted) {
+          setConfiguredCategories(publicCategories)
         }
       } catch {
         if (isMounted) {
@@ -59,6 +69,10 @@ export function PublicCoursesPage() {
   }, [])
 
   const availableFilters = useMemo(() => {
+    if (configuredCategories.length > 0) {
+      return ['Todos', ...configuredCategories]
+    }
+
     const categoriesByKey = new Map<string, string>()
 
     for (const course of courses) {
@@ -75,7 +89,7 @@ export function PublicCoursesPage() {
 
     const categories = [...categoriesByKey.values()].sort((left, right) => left.localeCompare(right, 'pt-BR'))
     return ['Todos', ...categories]
-  }, [courses])
+  }, [configuredCategories, courses])
 
   useEffect(() => {
     if (!availableFilters.includes(selectedFilter)) {

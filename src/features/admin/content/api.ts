@@ -13,6 +13,7 @@ import {
 import type {
   ButtonTemplate,
   Course,
+  CourseCategory,
   CourseQuizTypeSettings,
   CourseModule,
   Lesson,
@@ -104,6 +105,81 @@ export async function fetchCourses(): Promise<Course[]> {
   return ((result.data as Course[]) ?? []).map(withLegacyCourseSalesDefaults)
 }
 
+export async function fetchCourseCategories(includeInactive = true): Promise<CourseCategory[]> {
+  const query = supabase
+    .from('course_categories')
+    .select('*')
+    .order('display_order', { ascending: true })
+    .order('name', { ascending: true })
+
+  const result = includeInactive ? await query : await query.eq('is_active', true)
+  if (result.error) {
+    throw result.error
+  }
+  return (result.data as CourseCategory[]) ?? []
+}
+
+export async function createCourseCategory(input: { name: string; slug?: string; is_active?: boolean }) {
+  const positionResult = await supabase
+    .from('course_categories')
+    .select('display_order')
+    .order('display_order', { ascending: false })
+    .limit(1)
+
+  if (positionResult.error) {
+    throw positionResult.error
+  }
+
+  const nextDisplayOrder = (positionResult.data?.[0]?.display_order ?? 0) + 1
+  const result = await supabase
+    .from('course_categories')
+    .insert({
+      name: input.name.trim(),
+      slug: input.slug?.trim() || slugify(input.name),
+      display_order: nextDisplayOrder,
+      is_active: input.is_active ?? true,
+    })
+    .select('*')
+    .single()
+
+  if (result.error) {
+    throw result.error
+  }
+  return result.data as CourseCategory
+}
+
+export async function updateCourseCategory(
+  categoryId: string,
+  input: { name: string; slug?: string; is_active?: boolean },
+) {
+  const result = await supabase
+    .from('course_categories')
+    .update({
+      name: input.name.trim(),
+      slug: input.slug?.trim() || slugify(input.name),
+      is_active: input.is_active ?? true,
+    })
+    .eq('id', categoryId)
+    .select('*')
+    .single()
+
+  if (result.error) {
+    throw result.error
+  }
+  return result.data as CourseCategory
+}
+
+export async function deleteCourseCategory(categoryId: string) {
+  const result = await supabase
+    .from('course_categories')
+    .delete()
+    .eq('id', categoryId)
+
+  if (result.error) {
+    throw result.error
+  }
+}
+
 export async function createCourse(input: CourseFormInput, userId: string) {
   const positionResult = await supabase
     .from('courses')
@@ -119,6 +195,7 @@ export async function createCourse(input: CourseFormInput, userId: string) {
 
   const payload = {
     title: input.title,
+    category: input.category?.trim() || null,
     description: input.description?.trim() || null,
     status: input.status,
     display_order: nextDisplayOrder,
@@ -170,6 +247,7 @@ export async function updateCoursesDisplayOrder(courses: Pick<Course, 'id' | 'di
 export async function updateCourse(courseId: string, input: CourseFormInput) {
   const payload = {
     title: input.title,
+    category: input.category?.trim() || null,
     description: input.description?.trim() || null,
     status: input.status,
     thumbnail_url: input.thumbnail_url?.trim() || null,

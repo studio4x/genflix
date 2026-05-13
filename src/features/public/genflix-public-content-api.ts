@@ -28,6 +28,12 @@ interface PublicBlogPostRow {
   featured: boolean
 }
 
+interface PublicCourseCategoryRow {
+  name: string
+  slug: string
+  display_order: number
+}
+
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined
 const publicCourseSelect =
@@ -201,4 +207,14 @@ export async function fetchPublicBlogPostFromSupabase(slug: string) {
   const [row] = await fetchPublicRows<PublicBlogPostRow>('blog_posts', params)
 
   return row ? toBlogPost(row) : null
+}
+
+export async function fetchPublicCourseCategoriesFromSupabase() {
+  const params = new URLSearchParams({
+    select: 'name,slug,display_order',
+    is_active: 'eq.true',
+    order: 'display_order.asc,name.asc',
+  })
+  const rows = await fetchPublicRows<PublicCourseCategoryRow>('course_categories', params)
+  return rows.map((row) => row.name.trim()).filter(Boolean)
 }
