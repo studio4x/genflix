@@ -6,9 +6,9 @@ import {
   normalizeResourcesItems,
   resolveResourceVideoUrl,
 } from '@/features/public/genflix-resource-items-editor'
-import { fetchSiteContent, saveSiteContentEntry } from '@/features/site-editor/api'
+import { fetchSiteAssets, fetchSiteContent, saveSiteContentEntry } from '@/features/site-editor/api'
 import { renderSiteIcon, SITE_ICON_OPTIONS } from '@/features/site-editor/site-icons'
-import type { EditableListItem } from '@/features/site-editor/types'
+import type { EditableListItem, SiteAsset } from '@/features/site-editor/types'
 
 type ResourceCardStyleSettings = {
   cardBackgroundColor: string
@@ -165,6 +165,7 @@ export function AdminResourceVideosPage() {
   const [items, setItems] = useState<EditableListItem[]>(createResourcesItemsFallback())
   const [cardStyle, setCardStyle] = useState<ResourceCardStyleSettings>({ ...defaultCardStyle })
   const [isLoading, setIsLoading] = useState(true)
+  const [iconLibraryAssets, setIconLibraryAssets] = useState<SiteAsset[]>([])
   const [isSaving, setIsSaving] = useState(false)
   const [savingCardIndex, setSavingCardIndex] = useState<number | null>(null)
   const [message, setMessage] = useState<string | null>(null)
@@ -183,18 +184,31 @@ export function AdminResourceVideosPage() {
       setError(null)
 
       try {
-        const entries = await fetchSiteContent('resources')
+        const [entries, assets] = await Promise.all([
+          fetchSiteContent('resources'),
+          fetchSiteAssets(240),
+        ])
         const resourcesEntry = entries.find((entry) => entry.page_key === 'resources' && entry.entry_key === 'resources.items')
         const styleEntry = entries.find((entry) => entry.page_key === 'resources' && entry.entry_key === 'resources.cardStyle')
+        const iconAssets = assets.filter((asset) => {
+          const metadata = asset.metadata && typeof asset.metadata === 'object' && !Array.isArray(asset.metadata)
+            ? asset.metadata as Record<string, unknown>
+            : null
+          const entryKey = typeof metadata?.entry_key === 'string' ? metadata.entry_key : ''
+          const mimeType = typeof asset.mime_type === 'string' ? asset.mime_type.toLowerCase() : ''
+          return entryKey === 'icon-library' && mimeType.includes('svg')
+        })
 
         if (isMounted) {
           setItems(normalizeResourcesItems(resourcesEntry?.value))
           setCardStyle(parseCardStyle(styleEntry?.value))
+          setIconLibraryAssets(iconAssets)
         }
       } catch (loadError) {
         if (isMounted) {
           setItems(createResourcesItemsFallback())
           setCardStyle({ ...defaultCardStyle })
+          setIconLibraryAssets([])
           setError(loadError instanceof Error ? loadError.message : 'Nao foi possivel carregar os recursos.')
         }
       } finally {
@@ -270,6 +284,20 @@ export function AdminResourceVideosPage() {
       } else {
         metadata.iconKey = iconKey
       }
+      delete metadata.iconImageUrl
+      delete metadata.iconImageAlt
+      delete metadata.iconImageAssetId
+      return { ...item, metadata: Object.keys(metadata).length > 0 ? metadata : undefined }
+    })
+  }
+
+  function updateItemLibraryIcon(index: number, asset: SiteAsset) {
+    updateItem(index, (item) => {
+      const metadata = toMetadata(item)
+      metadata.iconImageUrl = asset.public_url ?? ''
+      metadata.iconImageAlt = asset.alt ?? item.label ?? item.title ?? 'Icone'
+      metadata.iconImageAssetId = asset.id
+      delete metadata.iconKey
       return { ...item, metadata: Object.keys(metadata).length > 0 ? metadata : undefined }
     })
   }
@@ -419,7 +447,12 @@ export function AdminResourceVideosPage() {
                 const readMoreEnabled = metadata.readMoreEnabled === true
                 const readMoreContent = typeof metadata.readMoreContent === 'string' ? metadata.readMoreContent : ''
                 const currentIconKey = typeof metadata.iconKey === 'string' ? metadata.iconKey : ''
+                const currentIconImageUrl = typeof metadata.iconImageUrl === 'string' ? metadata.iconImageUrl : ''
+                const currentIconImageAssetId = typeof metadata.iconImageAssetId === 'string' ? metadata.iconImageAssetId : ''
                 const defaultIconKey = resolveDefaultResourceIconKey(item)
+                const selectedLibraryAsset = currentIconImageAssetId
+                  ? iconLibraryAssets.find((asset) => asset.id === currentIconImageAssetId)
+                  : iconLibraryAssets.find((asset) => (asset.public_url ?? '') === currentIconImageUrl)
                 const effectiveIconKey = currentIconKey || defaultIconKey
                 const selectedIconLabel = SITE_ICON_OPTIONS.find((option) => option.value === effectiveIconKey)?.label ?? 'Icone'
                 const currentItemColor = typeof metadata.itemColor === 'string' ? metadata.itemColor : defaultCardStyle.iconColor
@@ -457,8 +490,18 @@ export function AdminResourceVideosPage() {
                         <div className="rounded-[14px] border border-[#D8E6EB] bg-[#F8FCFD] p-3">
                           <div className="mb-3 flex items-center justify-between gap-3">
                             <div className="inline-flex items-center gap-2 rounded-full border border-[#D8E6EB] bg-white px-3 py-1.5 text-xs font-semibold text-[#15323b]">
-                              {renderSiteIcon(effectiveIconKey, 'h-4 w-4', currentItemColor)}
-                              <span>{currentIconKey ? selectedIconLabel : `Padrao: ${selectedIconLabel}`}</span>
+                              {selectedLibraryAsset?.public_url ? (
+                                <img
+                                  src={selectedLibraryAsset.public_url}
+                                  alt={selectedLibraryAsset.alt ?? 'Icone da biblioteca'}
+                                  className="h-4 w-4 object-contain"
+                                />
+                              ) : renderSiteIcon(effectiveIconKey, 'h-4 w-4', currentItemColor)}
+                              <span>
+                                {selectedLibraryAsset
+                                  ? (selectedLibraryAsset.alt ?? 'Icone da biblioteca')
+                                  : (currentIconKey ? selectedIconLabel : `Padrao: ${selectedIconLabel}`)}
+                              </span>
                             </div>
                             <Button
                               type="button"
@@ -491,6 +534,36 @@ export function AdminResourceVideosPage() {
                               )
                             })}
                           </div>
+                          {iconLibraryAssets.length > 0 ? (
+                            <div className="mt-3 border-t border-[#D8E6EB] pt-3">
+                              <p className="mb-2 text-[10px] font-black uppercase tracking-[0.16em] text-[#5F7077]">SVGs enviados na biblioteca</p>
+                              <div className="grid max-h-52 grid-cols-1 gap-2 overflow-auto pr-1 sm:grid-cols-2">
+                                {iconLibraryAssets.map((asset) => {
+                                  const isSelected = selectedLibraryAsset?.id === asset.id
+                                  const assetLabel = asset.alt ?? 'Icone SVG'
+                                  return (
+                                    <button
+                                      key={asset.id}
+                                      type="button"
+                                      onClick={() => updateItemLibraryIcon(index, asset)}
+                                      className={`flex items-center gap-2 rounded-[10px] border px-2 py-2 text-left text-xs font-semibold transition ${
+                                        isSelected
+                                          ? 'border-[#1398B7] bg-[#E8F6FA] text-[#0F7E99]'
+                                          : 'border-[#D8E6EB] bg-white text-[#15323b] hover:border-[#9bcddb] hover:bg-[#F2F7F9]'
+                                      }`}
+                                    >
+                                      <span className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-[#D8E6EB] bg-white">
+                                        {asset.public_url ? (
+                                          <img src={asset.public_url} alt={assetLabel} className="h-4 w-4 object-contain" />
+                                        ) : null}
+                                      </span>
+                                      <span className="truncate">{assetLabel}</span>
+                                    </button>
+                                  )
+                                })}
+                              </div>
+                            </div>
+                          ) : null}
                         </div>
                       </label>
 
