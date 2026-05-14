@@ -97,6 +97,7 @@ type TextStyleValue = {
   lineHeight?: string
   textTransform?: string
   fontStyle?: string
+  display?: 'block' | 'inline' | 'inline-block' | 'flex' | 'grid' | 'none'
   textAlign?: 'left' | 'center' | 'right' | 'justify'
   headingTag?: string
 }
@@ -261,7 +262,7 @@ function normalizeTextStyle(value: unknown): TextStyleValue {
   }
 
   const nextStyle: TextStyleValue = {}
-  const fields: Array<Exclude<keyof TextStyleValue, 'headingTag' | 'textAlign'>> = [
+  const fields: Array<Exclude<keyof TextStyleValue, 'headingTag' | 'textAlign' | 'display'>> = [
     'color',
     'backgroundColor',
     'backgroundImage',
@@ -318,6 +319,13 @@ function normalizeTextStyle(value: unknown): TextStyleValue {
     }
   }
 
+  if (typeof value.display === 'string') {
+    const normalizedDisplay = value.display.trim().toLowerCase()
+    if (['block', 'inline', 'inline-block', 'flex', 'grid', 'none'].includes(normalizedDisplay)) {
+      nextStyle.display = normalizedDisplay as TextStyleValue['display']
+    }
+  }
+
   return nextStyle
 }
 
@@ -327,7 +335,8 @@ function hasTextStyle(style: TextStyleValue) {
 
 function hasBoxStyle(style: TextStyleValue) {
   return Boolean(
-    style.backgroundColor
+    style.display
+    || style.backgroundColor
     || style.width
     || style.height
     || style.minWidth
@@ -2204,6 +2213,71 @@ function EditorModal({
     }
   }
 
+  async function handleDeleteContent() {
+    const confirmed = window.confirm('Deseja excluir este conteúdo da página? Esta ação publica o campo como vazio/oculto.')
+    if (!confirmed) {
+      return
+    }
+
+    setMessage(null)
+    setIsSaving(true)
+
+    try {
+      let clearedValue: unknown
+      if (editor.entryType === 'list') {
+        clearedValue = []
+      } else if (editor.entryType === 'button' || editor.entryType === 'link') {
+        clearedValue = { isHidden: true }
+      } else if (editor.entryType === 'image') {
+        clearedValue = { src: '', alt: '' }
+      } else if (editor.entryType === 'json') {
+        clearedValue = {}
+      } else {
+        clearedValue = ''
+      }
+
+      await saveSiteContentEntry({
+        pageKey: editor.pageKey,
+        entryKey: editor.entryKey,
+        entryType: editor.entryType,
+        value: clearedValue,
+        schema: editor.schema,
+      })
+
+      if (editor.styleEntryKey) {
+        const isContainerStyleEditor = editor.schema?.kind === 'container-style'
+        const clearedStyle = isContainerStyleEditor
+          ? { ...normalizeTextStyle(textStyle), display: 'none' }
+          : normalizeTextStyle(textStyle)
+
+        await saveSiteContentEntry({
+          pageKey: editor.pageKey,
+          entryKey: editor.styleEntryKey,
+          entryType: 'json',
+          value: clearedStyle,
+          schema: { kind: 'text-style' },
+        })
+      }
+
+      const nextRecord = await upsertSiteEditorWorkspaceRecord({
+        pageKey: editor.pageKey,
+        entryKey: editor.entryKey,
+        status: 'published',
+        draftRawValue: null,
+        draftTextStyle: {},
+        publishedAt: new Date().toISOString(),
+      })
+      replaceWorkspaceRecord(nextRecord)
+      await editor.reload()
+      onSaved()
+      setMessage('Conteúdo excluído com sucesso.')
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Não foi possível excluir o conteúdo.')
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
   async function handleBackgroundImageUpload(file: File | null) {
     if (!file) return
     setMessage(null)
@@ -3888,6 +3962,14 @@ function EditorModal({
             O fluxo agora separa rascunho local, revisão e publicação final.
           </p>
           <div className="flex flex-wrap justify-end gap-3">
+            <button
+              type="button"
+              onClick={() => void handleDeleteContent()}
+              disabled={isSaving || !permissions.canPublish}
+              className="rounded-full border border-rose-200 bg-rose-50 px-5 py-3 text-sm font-black text-rose-700 hover:bg-rose-100 disabled:opacity-60"
+            >
+              Excluir conteúdo
+            </button>
             <button type="button" onClick={handleCloseRequest} className="rounded-full border border-[#D8E6EB] bg-white px-5 py-3 text-sm font-black text-[#5F7077] hover:bg-[#F2F7F9]">
               Fechar
             </button>
