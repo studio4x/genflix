@@ -22,6 +22,7 @@ import {
   type SiteBannerPlacementKey,
   type SiteBannerLocationKey,
   type SiteBannerThemePreset,
+  type SiteBannerVersion,
   cloneBannerElementStyles,
 } from '@/features/banners/types'
 import type { SitePageKey } from '@/features/site-editor/types'
@@ -53,6 +54,15 @@ type SiteBannerRow = {
   updated_at: string
 }
 
+type SiteBannerVersionRow = {
+  id: string
+  banner_id: string
+  snapshot: Record<string, unknown> | null
+  changed_by: string | null
+  change_reason: string | null
+  created_at: string
+}
+
 type UpdateSiteBannerInput = {
   id: string
   name?: string
@@ -73,6 +83,7 @@ type UpdateSiteBannerInput = {
   secondaryCta?: SiteBannerCta | null
   isActive?: boolean
   sortOrder?: number
+  changeReason?: string
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -205,6 +216,93 @@ function normalizeBanner(row: SiteBannerRow): SiteBanner {
     updatedBy: row.updated_by,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+  }
+}
+
+function buildBannerSnapshot(banner: SiteBanner) {
+  return {
+    id: banner.id,
+    locationKey: banner.locationKey,
+    name: banner.name,
+    title: banner.title,
+    subtitle: banner.subtitle,
+    body: banner.body,
+    backgroundAssetId: banner.backgroundAssetId,
+    backgroundUrl: banner.backgroundUrl,
+    backgroundAssetIdMobile: banner.backgroundAssetIdMobile,
+    backgroundUrlMobile: banner.backgroundUrlMobile,
+    themePreset: banner.themePreset,
+    layoutDesktop: cloneBannerLayout(banner.layoutDesktop),
+    layoutMobile: cloneBannerLayout(banner.layoutMobile),
+    heightDesktop: banner.heightDesktop,
+    heightMobile: banner.heightMobile,
+    elementStyles: cloneBannerElementStyles(banner.elementStyles),
+    primaryCta: banner.primaryCta ? { ...banner.primaryCta } : null,
+    secondaryCta: banner.secondaryCta ? { ...banner.secondaryCta } : null,
+    isActive: banner.isActive,
+    sortOrder: banner.sortOrder,
+    createdBy: banner.createdBy,
+    updatedBy: banner.updatedBy,
+    createdAt: banner.createdAt,
+    updatedAt: banner.updatedAt,
+  } satisfies SiteBanner
+}
+
+function normalizeBannerVersion(row: SiteBannerVersionRow): SiteBannerVersion | null {
+  if (!row.snapshot) {
+    return null
+  }
+
+  const snapshotRecord = row.snapshot
+  const snapshot = normalizeBanner({
+    id: typeof snapshotRecord.id === 'string' ? snapshotRecord.id : row.banner_id,
+    location_key: typeof snapshotRecord.locationKey === 'string' ? snapshotRecord.locationKey : HOME_HERO_BANNER_LOCATION,
+    name: typeof snapshotRecord.name === 'string' ? snapshotRecord.name : 'Banner',
+    title: typeof snapshotRecord.title === 'string' ? snapshotRecord.title : '',
+    subtitle: typeof snapshotRecord.subtitle === 'string' ? snapshotRecord.subtitle : '',
+    body: typeof snapshotRecord.body === 'string' ? snapshotRecord.body : '',
+    background_asset_id: typeof snapshotRecord.backgroundAssetId === 'string' ? snapshotRecord.backgroundAssetId : null,
+    background_url: typeof snapshotRecord.backgroundUrl === 'string' ? snapshotRecord.backgroundUrl : null,
+    background_asset_id_mobile: typeof snapshotRecord.backgroundAssetIdMobile === 'string' ? snapshotRecord.backgroundAssetIdMobile : null,
+    background_url_mobile: typeof snapshotRecord.backgroundUrlMobile === 'string' ? snapshotRecord.backgroundUrlMobile : null,
+    theme_preset: typeof snapshotRecord.themePreset === 'string' ? snapshotRecord.themePreset : 'light-strong',
+    layout_desktop: isRecord(snapshotRecord.layoutDesktop) ? snapshotRecord.layoutDesktop : null,
+    layout_mobile: isRecord(snapshotRecord.layoutMobile) ? snapshotRecord.layoutMobile : null,
+    height_desktop: typeof snapshotRecord.heightDesktop === 'number' ? snapshotRecord.heightDesktop : null,
+    height_mobile: typeof snapshotRecord.heightMobile === 'number' ? snapshotRecord.heightMobile : null,
+    element_styles: isRecord(snapshotRecord.elementStyles) ? snapshotRecord.elementStyles : null,
+    primary_cta: snapshotRecord.primaryCta ?? null,
+    secondary_cta: snapshotRecord.secondaryCta ?? null,
+    is_active: typeof snapshotRecord.isActive === 'boolean' ? snapshotRecord.isActive : false,
+    sort_order: typeof snapshotRecord.sortOrder === 'number' ? snapshotRecord.sortOrder : 0,
+    created_by: typeof snapshotRecord.createdBy === 'string' ? snapshotRecord.createdBy : null,
+    updated_by: typeof snapshotRecord.updatedBy === 'string' ? snapshotRecord.updatedBy : null,
+    created_at: typeof snapshotRecord.createdAt === 'string' ? snapshotRecord.createdAt : row.created_at,
+    updated_at: typeof snapshotRecord.updatedAt === 'string' ? snapshotRecord.updatedAt : row.created_at,
+  })
+
+  return {
+    id: row.id,
+    bannerId: row.banner_id,
+    snapshot,
+    changedBy: row.changed_by,
+    changeReason: row.change_reason ?? 'update',
+    createdAt: row.created_at,
+  }
+}
+
+async function insertBannerVersion(banner: SiteBanner, changeReason: string, changedBy: string | null) {
+  const { error } = await supabase
+    .from('site_banner_versions')
+    .insert({
+      banner_id: banner.id,
+      snapshot: buildBannerSnapshot(banner),
+      changed_by: changedBy,
+      change_reason: changeReason,
+    })
+
+  if (error) {
+    throw error
   }
 }
 
@@ -395,7 +493,9 @@ export async function createSiteBanner(locationKey: SiteBannerLocationKey = HOME
     throw error
   }
 
-  return normalizeBanner(data as SiteBannerRow)
+  const banner = normalizeBanner(data as SiteBannerRow)
+  await insertBannerVersion(banner, 'create', userId)
+  return banner
 }
 
 export async function updateSiteBanner(input: UpdateSiteBannerInput) {
@@ -434,7 +534,9 @@ export async function updateSiteBanner(input: UpdateSiteBannerInput) {
     throw error
   }
 
-  return normalizeBanner(data as SiteBannerRow)
+  const banner = normalizeBanner(data as SiteBannerRow)
+  await insertBannerVersion(banner, input.changeReason ?? 'update', userId)
+  return banner
 }
 
 export async function deleteSiteBanner(id: string) {
@@ -449,7 +551,7 @@ export async function toggleSiteBannerActive(id: string, isActive: boolean) {
   return updateSiteBanner({ id, isActive })
 }
 
-export async function reorderSiteBanners(idsInOrder: string[]) {
+export async function reorderSiteBanners(idsInOrder: string[], locationKey: SiteBannerLocationKey = HOME_HERO_BANNER_LOCATION) {
   const userId = await currentUserId()
   const updates = idsInOrder.map((id, index) => ({
     id,
@@ -462,6 +564,11 @@ export async function reorderSiteBanners(idsInOrder: string[]) {
   if (error) {
     throw error
   }
+
+  const reordered = await fetchSiteBanners(locationKey)
+  await Promise.all(reordered
+    .filter((banner) => idsInOrder.includes(banner.id))
+    .map((banner) => insertBannerVersion(banner, 'reorder', userId)))
 }
 
 export async function duplicateSiteBanner(banner: SiteBanner) {
@@ -501,5 +608,48 @@ export async function duplicateSiteBanner(banner: SiteBanner) {
     throw error
   }
 
-  return normalizeBanner(data as SiteBannerRow)
+  const duplicated = normalizeBanner(data as SiteBannerRow)
+  await insertBannerVersion(duplicated, 'duplicate', userId)
+  return duplicated
+}
+
+export async function fetchSiteBannerVersions(bannerId: string) {
+  const { data, error } = await supabase
+    .from('site_banner_versions')
+    .select('id, banner_id, snapshot, changed_by, change_reason, created_at')
+    .eq('banner_id', bannerId)
+    .order('created_at', { ascending: false })
+
+  if (error) {
+    throw error
+  }
+
+  return ((data ?? []) as SiteBannerVersionRow[])
+    .map(normalizeBannerVersion)
+    .filter((item): item is SiteBannerVersion => item !== null)
+}
+
+export async function restoreSiteBannerVersion(version: SiteBannerVersion) {
+  return updateSiteBanner({
+    id: version.bannerId,
+    name: version.snapshot.name,
+    title: version.snapshot.title,
+    subtitle: version.snapshot.subtitle,
+    body: version.snapshot.body,
+    backgroundAssetId: version.snapshot.backgroundAssetId,
+    backgroundUrl: version.snapshot.backgroundUrl,
+    backgroundAssetIdMobile: version.snapshot.backgroundAssetIdMobile,
+    backgroundUrlMobile: version.snapshot.backgroundUrlMobile,
+    themePreset: version.snapshot.themePreset,
+    layoutDesktop: cloneBannerLayout(version.snapshot.layoutDesktop),
+    layoutMobile: cloneBannerLayout(version.snapshot.layoutMobile),
+    heightDesktop: version.snapshot.heightDesktop,
+    heightMobile: version.snapshot.heightMobile,
+    elementStyles: cloneBannerElementStyles(version.snapshot.elementStyles),
+    primaryCta: version.snapshot.primaryCta ? { ...version.snapshot.primaryCta } : null,
+    secondaryCta: version.snapshot.secondaryCta ? { ...version.snapshot.secondaryCta } : null,
+    isActive: version.snapshot.isActive,
+    sortOrder: version.snapshot.sortOrder,
+    changeReason: 'restore',
+  })
 }

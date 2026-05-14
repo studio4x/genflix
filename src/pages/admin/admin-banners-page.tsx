@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { ArrowDown, ArrowUp, ChevronDown, Copy, Eye, EyeOff, Grip, ImagePlus, Layers, Monitor, Plus, Save, Smartphone, Trash2 } from 'lucide-react'
+import { ArrowDown, ArrowUp, ChevronDown, Copy, Eye, EyeOff, Grip, History, ImagePlus, Layers, Monitor, Plus, Save, Smartphone, Trash2 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import {
@@ -10,7 +10,9 @@ import {
   fetchSiteBannerLocations,
   fetchSiteBannerCarouselTargets,
   fetchSiteBanners,
+  fetchSiteBannerVersions,
   reorderSiteBanners,
+  restoreSiteBannerVersion,
   toggleSiteBannerActive,
   upsertSiteBannerCarouselTarget,
   updateSiteBanner,
@@ -31,6 +33,7 @@ import {
   type SiteBannerElementStyle,
   type SiteBannerLayoutItem,
   type SiteBannerLayoutKey,
+  type SiteBannerVersion,
 } from '@/features/banners/types'
 import { GenflixCtaButton } from '@/components/public/genflix-cta-button'
 import { uploadSiteAsset } from '@/features/site-editor/api'
@@ -462,6 +465,9 @@ export function AdminBannersPage() {
   const [carouselTargets, setCarouselTargets] = useState<SiteBannerCarouselTarget[]>([])
   const [targetPageKey, setTargetPageKey] = useState<SitePageKey>('home')
   const [targetPlacementKey, setTargetPlacementKey] = useState<SiteBannerPlacementKey>('hero')
+  const [bannerVersions, setBannerVersions] = useState<SiteBannerVersion[]>([])
+  const [loadingVersions, setLoadingVersions] = useState(false)
+  const [restoringVersionId, setRestoringVersionId] = useState<string | null>(null)
 
   const pageOptions: Array<{ value: SitePageKey; label: string }> = [
     { value: 'home', label: 'Home' },
@@ -538,6 +544,45 @@ export function AdminBannersPage() {
     setHeightDesktopInput(formatBannerHeightInput(draft.heightDesktop))
     setHeightMobileInput(formatBannerHeightInput(draft.heightMobile))
   }, [draft?.id, draft?.heightDesktop, draft?.heightMobile])
+
+  useEffect(() => {
+    if (!selectedBannerId) {
+      setBannerVersions([])
+      setLoadingVersions(false)
+      return
+    }
+
+    let isMounted = true
+    setLoadingVersions(true)
+
+    void fetchSiteBannerVersions(selectedBannerId)
+      .then((versions) => {
+        if (!isMounted) {
+          return
+        }
+
+        setBannerVersions(versions)
+      })
+      .catch((loadError) => {
+        if (!isMounted) {
+          return
+        }
+
+        setError(loadError instanceof Error ? loadError.message : 'Nao foi possivel carregar o historico do banner.')
+        setBannerVersions([])
+      })
+      .finally(() => {
+        if (!isMounted) {
+          return
+        }
+
+        setLoadingVersions(false)
+      })
+
+    return () => {
+      isMounted = false
+    }
+  }, [selectedBannerId])
 
   useEffect(() => {
     function handlePointerMove(event: PointerEvent) {
@@ -893,11 +938,37 @@ export function AdminBannersPage() {
     }
 
     try {
-      await reorderSiteBanners(reordered.map((banner) => banner.id))
+      await reorderSiteBanners(reordered.map((banner) => banner.id), selectedLocationKey)
       setMessage('Ordem dos banners atualizada.')
     } catch (reorderError) {
       setError(reorderError instanceof Error ? reorderError.message : 'Nao foi possivel atualizar a ordem.')
       await loadBanners(selectedBannerId)
+    }
+  }
+
+  async function handleRestoreVersion(version: SiteBannerVersion) {
+    const label = version.snapshot.name || version.snapshot.title || 'banner'
+    if (!window.confirm(`Deseja reverter o banner para a revisão de ${new Date(version.createdAt).toLocaleString('pt-BR')} (${label})? Essa ação cria uma nova revisão.`)) {
+      return
+    }
+
+    setRestoringVersionId(version.id)
+    setMessage(null)
+    setError(null)
+
+    try {
+      const restored = await restoreSiteBannerVersion(version)
+      setBanners((current) => current.map((banner) => banner.id === restored.id ? restored : banner))
+      setDraft(cloneBanner(restored))
+      setHeightDesktopInput(formatBannerHeightInput(restored.heightDesktop))
+      setHeightMobileInput(formatBannerHeightInput(restored.heightMobile))
+      const versions = await fetchSiteBannerVersions(restored.id)
+      setBannerVersions(versions)
+      setMessage('Banner revertido para a revisão selecionada.')
+    } catch (restoreError) {
+      setError(restoreError instanceof Error ? restoreError.message : 'Nao foi possivel restaurar esta revisao.')
+    } finally {
+      setRestoringVersionId(null)
     }
   }
 
@@ -1356,6 +1427,55 @@ export function AdminBannersPage() {
 
                 <div className="xl:col-span-5 2xl:col-span-4">
                   <div className="grid gap-6 xl:max-h-[calc(100vh-9rem)] xl:overflow-y-auto xl:pr-2">
+                    <div className="rounded-[24px] border border-[#D8E6EB] bg-[#F8FBFC] p-4">
+                      <div className="flex items-center gap-2">
+                        <History className="h-4 w-4 text-[#1398B7]" />
+                        <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#1398B7]">Historico de revisoes</p>
+                      </div>
+                      <p className="mt-2 text-xs font-semibold leading-5 text-[#5F7077]">
+                        Cada salvamento relevante do banner gera uma revisao. Clique na desejada para reverter e criar uma nova entrada no historico.
+                      </p>
+                      <div className="mt-4 grid gap-3">
+                        {loadingVersions ? (
+                          <div className="rounded-[18px] border border-dashed border-[#D8E6EB] bg-white px-4 py-4 text-sm font-semibold text-[#5F7077]">
+                            Carregando historico...
+                          </div>
+                        ) : bannerVersions.length === 0 ? (
+                          <div className="rounded-[18px] border border-dashed border-[#D8E6EB] bg-white px-4 py-4 text-sm font-semibold text-[#5F7077]">
+                            Nenhuma revisao registrada para este banner.
+                          </div>
+                        ) : bannerVersions.slice(0, 12).map((version, index) => (
+                          <div key={version.id} className="rounded-[18px] border border-[#D8E6EB] bg-white p-4">
+                            <div className="flex flex-wrap items-start justify-between gap-3">
+                              <div>
+                                <p className="text-[10px] font-black uppercase tracking-[0.16em] text-[#1398B7]">
+                                  Revisao {bannerVersions.length - index} · {new Date(version.createdAt).toLocaleString('pt-BR')}
+                                </p>
+                                <p className="mt-1 text-xs font-semibold text-[#5F7077]">
+                                  {version.changeReason} · {version.snapshot.name || 'Banner sem nome'}
+                                </p>
+                              </div>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                disabled={restoringVersionId === version.id || saving}
+                                onClick={() => void handleRestoreVersion(version)}
+                                className="rounded-xl border-[#D8E6EB] px-3 text-[10px] font-black uppercase tracking-[0.12em]"
+                              >
+                                {restoringVersionId === version.id ? 'Revertendo...' : 'Reverter'}
+                              </Button>
+                            </div>
+                            <div className="mt-3 rounded-[16px] border border-[#D8E6EB] bg-[#F8FBFC] px-3 py-3">
+                              <p className="text-sm font-black text-[#15323b]">{version.snapshot.title || 'Sem titulo'}</p>
+                              {version.snapshot.subtitle ? (
+                                <p className="mt-1 text-xs font-semibold leading-5 text-[#5F7077]">{version.snapshot.subtitle}</p>
+                              ) : null}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
                     <CollapsibleCard
                       title="Conteudo e imagem"
                       summary="Troque a imagem, ajuste os textos-base e mantenha o preview visivel ao lado."

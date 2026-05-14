@@ -95,6 +95,15 @@ export interface SiteBanner {
   updatedAt: string
 }
 
+export interface SiteBannerVersion {
+  id: string
+  bannerId: string
+  snapshot: SiteBanner
+  changedBy: string | null
+  changeReason: string
+  createdAt: string
+}
+
 export const defaultBannerLayoutDesktop: SiteBannerLayoutDesktop = {
   title: { x: 0, y: 122, width: 40, visible: true, zIndex: 3 },
   subtitle: { x: 0, y: 410, width: 38, visible: true, zIndex: 3 },
