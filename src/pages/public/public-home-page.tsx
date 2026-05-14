@@ -392,7 +392,7 @@ function HomeFinalCtaSection({
                 <h2 className="text-[2rem] font-bold leading-[0.96] tracking-[-0.04em] text-[#183139] sm:text-[2.35rem]">
                   <EditableText
                     entryKey={`${entryPrefix}.title`}
-                    fallback="Veja em detalhes a mais completa plataforma EAD."
+                    fallback="Muito além do vídeo."
                     label="Título da chamada final da home"
                     pageKey={pageKey}
                   />
@@ -400,7 +400,7 @@ function HomeFinalCtaSection({
                 <p className="mt-4 text-sm leading-7 text-[#5F7077] sm:text-base">
                   <EditableText
                     entryKey={`${entryPrefix}.description`}
-                    fallback="Acesse os cursos, trilhas e recursos para acelerar seu aprendizado."
+                    fallback="Ferramentas pensadas para você aprender, fixar e revisar do seu jeito."
                     label="Descrição da chamada final da home"
                     pageKey={pageKey}
                   />
@@ -408,23 +408,23 @@ function HomeFinalCtaSection({
                 <div className="mt-7">
                   <EditableButton
                     entryKey={`${entryPrefix}.cta`}
-                    fallback={{ label: 'Conheça os cursos', href: '/cursos', isInternal: true, tone: 'solid' }}
+                    fallback={{ label: 'Ver todos os recursos', href: '/recursos', isInternal: true, tone: 'solid' }}
                     label="Botão da chamada final da home"
                     pageKey={pageKey}
                   >
                     {(buttonValue) => buttonValue.isHidden === true ? null : (
                       <GenflixCtaButton asChild className="px-5 py-3" tone={normalizeGenflixCtaTone(buttonValue.tone)}>
                         {buttonValue.isInternal === true ? (
-                          <Link to={typeof buttonValue.href === 'string' ? buttonValue.href : '/cursos'}>
-                            {typeof buttonValue.label === 'string' ? buttonValue.label : 'Conheça os cursos'}
+                          <Link to={typeof buttonValue.href === 'string' ? buttonValue.href : '/recursos'}>
+                            {typeof buttonValue.label === 'string' ? buttonValue.label : 'Ver todos os recursos'}
                           </Link>
                         ) : (
                           <a
-                            href={typeof buttonValue.href === 'string' ? buttonValue.href : '/cursos'}
+                            href={typeof buttonValue.href === 'string' ? buttonValue.href : '/recursos'}
                             target={buttonValue.openInNewTab === true ? '_blank' : undefined}
                             rel={buttonValue.openInNewTab === true ? 'noreferrer' : undefined}
                           >
-                            {typeof buttonValue.label === 'string' ? buttonValue.label : 'Conheça os cursos'}
+                            {typeof buttonValue.label === 'string' ? buttonValue.label : 'Ver todos os recursos'}
                           </a>
                         )}
                       </GenflixCtaButton>
@@ -480,7 +480,7 @@ export function PublicHomePage() {
           return <HomeFeaturedSection key={section.id} entryPrefix={entryPrefix} sectionId={occurrence === 0 ? 'destaques' : `destaques-${occurrence + 1}`} pageKey={pageKey} />
         }
 
-        if (templateKey === 'cta') {
+        if (templateKey === 'cta' || templateKey === 'newsletter') {
           return <HomeFinalCtaSection key={section.id} entryPrefix={entryPrefix} sectionId={occurrence === 0 ? 'home-cta' : `home-cta-${occurrence + 1}`} pageKey={pageKey} />
         }
 
