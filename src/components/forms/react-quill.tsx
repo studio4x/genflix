@@ -71,6 +71,17 @@ function getMovableElement(node: EventTarget | null) {
   return node.closest('[data-hcm-movable="true"]') as HTMLElement | null
 }
 
+function getAlignmentTarget(element: HTMLElement) {
+  if (element.tagName === 'IMG') {
+    const paragraph = element.closest('p')
+    if (paragraph instanceof HTMLElement) {
+      return paragraph
+    }
+  }
+
+  return element
+}
+
 function createSelectionSnapshot(selection: Selection | null) {
   if (!selection || selection.rangeCount === 0) {
     return null
@@ -433,23 +444,33 @@ export default function ReactQuill({
       return
     }
 
-    selectedElement.style.display = 'block'
-    selectedElement.style.marginLeft = alignment === 'center' || alignment === 'right' ? 'auto' : '0'
-    selectedElement.style.marginRight = alignment === 'center' || alignment === 'left' ? 'auto' : '0'
+    const alignmentTarget = getAlignmentTarget(selectedElement)
 
     if (selectedElement.tagName === 'IMG') {
-      selectedElement.style.float = alignment === 'right' ? 'right' : alignment === 'left' ? 'left' : 'none'
+      alignmentTarget.style.textAlign = alignment
+      selectedElement.style.display = alignment === 'left' ? 'block' : 'inline-block'
+      selectedElement.style.float = 'none'
+      if (alignment === 'left') {
+        selectedElement.style.marginLeft = '0'
+        selectedElement.style.marginRight = '0'
+      } else {
+        selectedElement.style.removeProperty('margin-left')
+        selectedElement.style.removeProperty('margin-right')
+      }
       if (alignment === 'justify') {
         selectedElement.style.width = '100%'
       } else if (selectedElement.style.width === '100%') {
         selectedElement.style.removeProperty('width')
       }
     } else {
-      selectedElement.style.textAlign = alignment
+      alignmentTarget.style.display = 'block'
+      alignmentTarget.style.marginLeft = alignment === 'center' || alignment === 'right' ? 'auto' : '0'
+      alignmentTarget.style.marginRight = alignment === 'center' || alignment === 'left' ? 'auto' : '0'
+      alignmentTarget.style.textAlign = alignment
       if (alignment === 'justify') {
-        selectedElement.style.width = '100%'
-      } else if (selectedElement.style.width === '100%') {
-        selectedElement.style.removeProperty('width')
+        alignmentTarget.style.width = '100%'
+      } else if (alignmentTarget.style.width === '100%') {
+        alignmentTarget.style.removeProperty('width')
       }
     }
 
