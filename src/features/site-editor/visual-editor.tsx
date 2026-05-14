@@ -512,9 +512,10 @@ function normalizeEditableListItems(value: unknown): EditableListItem[] {
     const extraMetadata = Object.fromEntries(
       Object.entries(item).filter(([key]) => !['id', 'label', 'title', 'description', 'href', 'image', 'metadata'].includes(key)),
     )
+    // Prefer explicit metadata fields over legacy top-level fields.
     const mergedMetadata = {
-      ...baseMetadata,
       ...extraMetadata,
+      ...baseMetadata,
     }
 
     const nextItem: EditableListItem = {
