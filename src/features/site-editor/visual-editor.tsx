@@ -872,6 +872,7 @@ function ListItemEditorCard({
   onRequestRichTextImage,
   iconLibraryOptions,
   editorConfig,
+  svgOnlyIcons = false,
 }: {
   item: EditableListItem
   index: number
@@ -886,6 +887,7 @@ function ListItemEditorCard({
   onRequestRichTextImage?: () => Promise<RichTextImageSelection | null>
   iconLibraryOptions: MediaLibraryIconOption[]
   editorConfig: NormalizedListEditorSchema
+  svgOnlyIcons?: boolean
 }) {
   const [isCollapsed, setIsCollapsed] = useState(true)
   const [iconSearchQuery, setIconSearchQuery] = useState('')
@@ -910,7 +912,7 @@ function ListItemEditorCard({
     ?? iconLibraryOptions.find((option) => option.imageUrl === iconImageUrl)
   const selectedIconToken = iconImageUrl
     ? (selectedLibraryIcon ? `asset:${selectedLibraryIcon.assetId}` : '__uploaded__')
-    : (iconKey ? `native:${iconKey}` : 'none')
+    : (svgOnlyIcons ? 'none' : (iconKey ? `native:${iconKey}` : 'none'))
   const templateDefinition = editorConfig.templates.find((template) => template.id === templateKey)
   const shouldShowIconField = !editorConfig.hiddenFields.has('icon')
   delete metadataWithoutItems.buttonLabel
@@ -966,6 +968,9 @@ function ListItemEditorCard({
       delete nextMetadata.iconImageAssetId
       delete nextMetadata.iconColor
     } else if (nextToken.startsWith('native:')) {
+      if (svgOnlyIcons) {
+        return
+      }
       nextMetadata.iconKey = nextToken.slice('native:'.length)
       delete nextMetadata.iconImageUrl
       delete nextMetadata.iconImageAlt
@@ -1051,7 +1056,7 @@ function ListItemEditorCard({
         >
           <span>Sem ícone</span>
         </button>
-        {filteredNativeIconOptions.map((option) => {
+        {!svgOnlyIcons ? filteredNativeIconOptions.map((option) => {
           const token = `native:${option.value}`
           const isActive = selectedIconToken === token
 
@@ -1075,7 +1080,7 @@ function ListItemEditorCard({
               </span>
             </button>
           )
-        })}
+        }) : null}
         {filteredLibraryIconOptions.map((option) => {
           const token = `asset:${option.assetId}`
           const isActive = selectedIconToken === token
@@ -1734,6 +1739,7 @@ function EditorModal({
   const initialRawValue = useMemo(() => valueToString(editor.fallback), [editor.fallback])
   const initialTextStyle = useMemo(() => normalizeTextStyle(editor.styleFallback), [editor.styleFallback])
   const isTitleEditor = isTitleEditorEntry(editor.label, editor.entryKey)
+  const isResourcesItemsEditor = editor.pageKey === 'resources' && editor.entryKey === 'resources.items'
   const defaultColor = '#183139'
   const formRef = useRef<HTMLFormElement | null>(null)
   const [rawValue, setRawValue] = useState(() => initialRawValue)
@@ -2586,6 +2592,7 @@ function EditorModal({
                       onRequestRichTextImage={requestRichTextImage}
                       iconLibraryOptions={mediaLibraryIconOptions}
                       editorConfig={listEditorConfig}
+                      svgOnlyIcons={isResourcesItemsEditor}
                     />
                   ))}
                 </div>
