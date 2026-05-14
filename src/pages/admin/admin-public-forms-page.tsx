@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 
 import { Button } from '@/components/ui/button'
+import { genflixCategoryTiles } from '@/features/public/genflix-site-content'
 import { fetchSiteContent, saveSiteContentEntry } from '@/features/site-editor/api'
 import type { SitePageKey } from '@/features/site-editor/types'
 import { supabase } from '@/services/supabase/client'
@@ -45,6 +46,18 @@ type CustomFormField = {
   required?: boolean
 }
 
+const hiddenNewsletterAreas = new Set(['Psicanalise / Psicologia', 'Interesse Geral'])
+const newsletterSelectableAreas = genflixCategoryTiles
+  .map((category) => category.label)
+  .filter((area) => !hiddenNewsletterAreas.has(area))
+const newsletterAreaFields: FormEditableField[] = newsletterSelectableAreas.map((area) => ({
+  key: `areaOption_${area.toLowerCase().replace(/[^a-z0-9]+/g, '_')}`,
+  label: `Opcao de area: ${area}`,
+  entryKey: `global.newsletter.form.interest.option.${area.toLowerCase().replace(/[^a-z0-9]+/g, '_')}`,
+  pageKey: 'global',
+  fallback: area,
+}))
+
 const formDefinitions: SiteFormDefinition[] = [
   {
     id: 'contact',
@@ -85,9 +98,12 @@ const formDefinitions: SiteFormDefinition[] = [
     editableFields: [
       { key: 'title', label: 'Titulo', entryKey: 'global.newsletter.title', pageKey: 'global', fallback: 'Assine nossa newsletter' },
       { key: 'description', label: 'Descricao', entryKey: 'global.newsletter.description', pageKey: 'global', fallback: 'Cadastre-se para receber atualizacoes sobre nossos cursos e conteudo.' },
+      { key: 'placeholder', label: 'Placeholder do e-mail', entryKey: 'global.newsletter.placeholder', pageKey: 'global', fallback: 'Seu@e-mail.com' },
       { key: 'button', label: 'Texto do botao', entryKey: 'global.newsletter.button.label', pageKey: 'global', fallback: 'Quero me inscrever' },
       { key: 'areasTitle', label: 'Titulo areas', entryKey: 'global.newsletter.form.interest.title', pageKey: 'global', fallback: 'Areas de interesse' },
       { key: 'areasDescription', label: 'Descricao areas', entryKey: 'global.newsletter.form.interest.description', pageKey: 'global', fallback: 'Selecione as areas que mais combinam com o seu foco de estudos.' },
+      { key: 'allAreasLabel', label: 'Opcao todas as areas', entryKey: 'global.newsletter.form.interest.all_label', pageKey: 'global', fallback: 'Todas as areas' },
+      ...newsletterAreaFields,
     ],
   },
   {
