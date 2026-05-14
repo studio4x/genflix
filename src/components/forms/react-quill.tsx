@@ -63,6 +63,36 @@ function insertHtml(editor: HTMLDivElement | null, html: string) {
   document.execCommand('insertHTML', false, html)
 }
 
+function getMovableElement(node: EventTarget | null) {
+  if (!(node instanceof HTMLElement)) {
+    return null
+  }
+
+  return node.closest('[data-hcm-movable="true"]') as HTMLElement | null
+}
+
+function createSelectionSnapshot(selection: Selection | null) {
+  if (!selection || selection.rangeCount === 0) {
+    return null
+  }
+
+  return selection.getRangeAt(0).cloneRange()
+}
+
+function restoreSelectionSnapshot(range: Range | null) {
+  if (!range || typeof window === 'undefined') {
+    return
+  }
+
+  const selection = window.getSelection()
+  if (!selection) {
+    return
+  }
+
+  selection.removeAllRanges()
+  selection.addRange(range)
+}
+
 function buildTableHtml(rows: number, columns: number) {
   const safeRows = Math.max(1, Math.min(12, rows))
   const safeColumns = Math.max(1, Math.min(8, columns))
@@ -73,14 +103,16 @@ function buildTableHtml(rows: number, columns: number) {
   }).join('')
 
   return `
-    <table border="1" style="width:100%;border-collapse:collapse;">
-      <thead>
-        <tr>${headerCells}</tr>
-      </thead>
-      <tbody>
-        ${bodyRows}
-      </tbody>
-    </table>
+    <div data-hcm-movable="true" draggable="true">
+      <table border="1" style="width:100%;border-collapse:collapse;">
+        <thead>
+          <tr>${headerCells}</tr>
+        </thead>
+        <tbody>
+          ${bodyRows}
+        </tbody>
+      </table>
+    </div>
     <p></p>
   `.trim()
 }
@@ -162,7 +194,7 @@ function buildImageHtml(input: { src: string; alt?: string }) {
   }
 
   return `
-    <p><img src="${escapeHtmlAttribute(safeSrc)}" alt="${escapeHtmlAttribute(safeAlt)}" /></p>
+    <p><img src="${escapeHtmlAttribute(safeSrc)}" alt="${escapeHtmlAttribute(safeAlt)}" data-hcm-movable="true" draggable="true" /></p>
     <p></p>
   `.trim()
 }
@@ -279,6 +311,9 @@ export default function ReactQuill({
   htmlTabLabel = 'HTML',
 }: ReactQuillProps) {
   const editorRef = useRef<HTMLDivElement | null>(null)
+  const savedSelectionRef = useRef<Range | null>(null)
+  const draggedElementRef = useRef<HTMLElement | null>(null)
+  const selectedMovableElementRef = useRef<HTMLElement | null>(null)
   const [activeMode, setActiveMode] = useState<'visual' | 'html'>('visual')
   const toolbarItems = useMemo(() => flattenToolbarItems(modules?.toolbar ?? defaultToolbar), [modules])
 
@@ -326,17 +361,53 @@ export default function ReactQuill({
     queueMicrotask(() => onChange(editor.innerHTML))
   }
 
+  function rememberSelection() {
+    if (typeof window === 'undefined') {
+      return
+    }
+
+    savedSelectionRef.current = createSelectionSnapshot(window.getSelection())
+  }
+
+  function restoreSavedSelection() {
+    restoreSelectionSnapshot(savedSelectionRef.current)
+  }
+
+  function clearSelectedMovableElement() {
+    selectedMovableElementRef.current?.removeAttribute('data-hcm-selected')
+    selectedMovableElementRef.current = null
+  }
+
+  function selectMovableElement(element: HTMLElement | null) {
+    if (selectedMovableElementRef.current === element) {
+      return
+    }
+
+    clearSelectedMovableElement()
+    if (!element) {
+      return
+    }
+
+    element.setAttribute('data-hcm-selected', 'true')
+    selectedMovableElementRef.current = element
+  }
+
   function runEditorCommand(command: string, nextValue?: string) {
+    restoreSavedSelection()
     execEditorCommand(editorRef.current, command, nextValue)
+    rememberSelection()
     syncEditorValue()
   }
 
   function insertEditorHtml(html: string) {
+    restoreSavedSelection()
     insertHtml(editorRef.current, html)
+    rememberSelection()
     syncEditorValue()
   }
 
   async function handleInsertImage() {
+    rememberSelection()
     if (onRequestImage) {
       const selectedImage = await onRequestImage()
       const imageHtml = selectedImage ? buildImageHtml(selectedImage) : ''
@@ -350,6 +421,39 @@ export default function ReactQuill({
     if (imageUrl) {
       runEditorCommand('insertImage', imageUrl)
     }
+  }
+
+  function applyAlignment(alignment: string) {
+    const selectedElement = selectedMovableElementRef.current
+    if (!selectedElement) {
+      if (alignment === 'left') runEditorCommand('justifyLeft')
+      if (alignment === 'center') runEditorCommand('justifyCenter')
+      if (alignment === 'right') runEditorCommand('justifyRight')
+      if (alignment === 'justify') runEditorCommand('justifyFull')
+      return
+    }
+
+    selectedElement.style.display = 'block'
+    selectedElement.style.marginLeft = alignment === 'center' || alignment === 'right' ? 'auto' : '0'
+    selectedElement.style.marginRight = alignment === 'center' || alignment === 'left' ? 'auto' : '0'
+
+    if (selectedElement.tagName === 'IMG') {
+      selectedElement.style.float = alignment === 'right' ? 'right' : alignment === 'left' ? 'left' : 'none'
+      if (alignment === 'justify') {
+        selectedElement.style.width = '100%'
+      } else if (selectedElement.style.width === '100%') {
+        selectedElement.style.removeProperty('width')
+      }
+    } else {
+      selectedElement.style.textAlign = alignment
+      if (alignment === 'justify') {
+        selectedElement.style.width = '100%'
+      } else if (selectedElement.style.width === '100%') {
+        selectedElement.style.removeProperty('width')
+      }
+    }
+
+    syncEditorValue()
   }
 
   function applyColumnsLayout(columnCount: number) {
@@ -411,6 +515,28 @@ export default function ReactQuill({
       characters: plainText.length,
     }
   }, [value])
+
+  useEffect(() => {
+    if (activeMode !== 'visual' || typeof document === 'undefined') {
+      return
+    }
+
+    function handleSelectionChange() {
+      const editor = editorRef.current
+      const selection = window.getSelection()
+      const anchorNode = selection?.anchorNode
+      if (!editor || !anchorNode) {
+        return
+      }
+
+      if (editor.contains(anchorNode)) {
+        rememberSelection()
+      }
+    }
+
+    document.addEventListener('selectionchange', handleSelectionChange)
+    return () => document.removeEventListener('selectionchange', handleSelectionChange)
+  }, [activeMode])
 
   return (
     <div className={`react-quill-local overflow-hidden rounded-[18px] border border-slate-200 bg-white ${className}`}>
@@ -511,10 +637,7 @@ export default function ReactQuill({
                     return
                   }
 
-                  if (alignment === 'left') runEditorCommand('justifyLeft')
-                  if (alignment === 'center') runEditorCommand('justifyCenter')
-                  if (alignment === 'right') runEditorCommand('justifyRight')
-                  if (alignment === 'justify') runEditorCommand('justifyFull')
+                  applyAlignment(alignment)
                   event.currentTarget.value = ''
                 }}
                 defaultValue=""
@@ -619,8 +742,8 @@ export default function ReactQuill({
                   }
 
                   const html = videoValue.includes('<iframe')
-                    ? `${videoValue}<p></p>`
-                    : `<div class="embedded-video"><iframe src="${videoValue}" frameborder="0" allowfullscreen></iframe></div><p></p>`
+                    ? `<div class="embedded-video" data-hcm-movable="true" draggable="true">${videoValue}</div><p></p>`
+                    : `<div class="embedded-video" data-hcm-movable="true" draggable="true"><iframe src="${videoValue}" frameborder="0" allowfullscreen></iframe></div><p></p>`
                   insertEditorHtml(html)
                 }}
               >
@@ -687,6 +810,70 @@ export default function ReactQuill({
             contentEditable
             suppressContentEditableWarning
             data-placeholder={placeholder}
+            onMouseUp={rememberSelection}
+            onKeyUp={rememberSelection}
+            onClick={(event) => {
+              selectMovableElement(getMovableElement(event.target))
+              rememberSelection()
+            }}
+            onDragStart={(event) => {
+              const movableElement = getMovableElement(event.target)
+              if (!movableElement) {
+                return
+              }
+
+              draggedElementRef.current = movableElement
+              selectMovableElement(movableElement)
+              event.dataTransfer.effectAllowed = 'move'
+              event.dataTransfer.setData('text/html', movableElement.outerHTML)
+            }}
+            onDragOver={(event) => {
+              if (!draggedElementRef.current) {
+                return
+              }
+
+              event.preventDefault()
+              event.dataTransfer.dropEffect = 'move'
+            }}
+            onDrop={(event) => {
+              const draggedElement = draggedElementRef.current
+              if (!draggedElement) {
+                return
+              }
+
+              event.preventDefault()
+
+              const dropRange = document.caretRangeFromPoint
+                ? document.caretRangeFromPoint(event.clientX, event.clientY)
+                : (() => {
+                  const position = document.caretPositionFromPoint?.(event.clientX, event.clientY)
+                  if (!position) {
+                    return null
+                  }
+                  const range = document.createRange()
+                  range.setStart(position.offsetNode, position.offset)
+                  range.collapse(true)
+                  return range
+                })()
+
+              if (!dropRange) {
+                draggedElementRef.current = null
+                return
+              }
+
+              const selection = window.getSelection()
+              selection?.removeAllRanges()
+              selection?.addRange(dropRange)
+              savedSelectionRef.current = dropRange.cloneRange()
+
+              const html = draggedElement.outerHTML
+              draggedElement.remove()
+              insertEditorHtml(html)
+              draggedElementRef.current = null
+            }}
+            onDragEnd={() => {
+              draggedElementRef.current = null
+            }}
             onInput={(event) => onChange(event.currentTarget.innerHTML)}
             onBlur={(event) => onChange(event.currentTarget.innerHTML)}
           />
@@ -710,6 +897,15 @@ export default function ReactQuill({
         .react-quill-local [contenteditable='true']:empty:before {
           content: attr(data-placeholder);
           color: #94a3b8;
+        }
+
+        .react-quill-local [data-hcm-movable='true'] {
+          cursor: grab;
+        }
+
+        .react-quill-local [data-hcm-movable='true'][data-hcm-selected='true'] {
+          outline: 3px solid rgba(14, 165, 233, 0.45);
+          outline-offset: 4px;
         }
 
         .react-quill-local .genflix-columns {

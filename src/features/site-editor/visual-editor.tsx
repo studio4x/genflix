@@ -4029,6 +4029,14 @@ function EditorModal({
                       </div>
                     ) : null}
                   </div>
+                ) : editor.entryType === 'rich_text' ? (
+                  <div className="rounded-[18px] border border-[#D8E6EB] bg-white p-4">
+                    <div
+                      className="break-words text-sm leading-7 text-[#15323b] [&_img]:h-auto [&_img]:max-w-full [&_table]:my-6 [&_table]:w-full [&_table]:border-collapse [&_td]:border [&_td]:border-[#D8E6EB] [&_td]:px-3 [&_td]:py-2 [&_th]:border [&_th]:border-[#D8E6EB] [&_th]:bg-[#F8FCFD] [&_th]:px-3 [&_th]:py-2 [&_iframe]:min-h-[320px] [&_iframe]:w-full"
+                      style={previewTextStyle}
+                      dangerouslySetInnerHTML={{ __html: sanitizeRichText(rawValue) }}
+                    />
+                  </div>
                 ) : previewRecord ? (
                   <div className="grid gap-3 sm:grid-cols-2">
                     {editor.entryType === 'button' || editor.entryType === 'link' ? (
