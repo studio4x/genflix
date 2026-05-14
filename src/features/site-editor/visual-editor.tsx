@@ -25,10 +25,12 @@ import { supabase } from '@/services/supabase/client'
 import { cn } from '@/lib/utils'
 import {
   createSiteEditorWorkspaceComment,
+  fetchSiteContentVersions,
   fetchSiteAssets,
   fetchSiteContent,
   fetchSiteEditorWorkspace,
   fetchSiteEditorSettings,
+  restoreSiteContentVersion,
   saveSiteContentEntry,
   shouldIgnoreSiteEditor,
   updateSiteEditorSettings,
@@ -41,6 +43,7 @@ import {
   type SiteAsset,
   type SiteContentEntry,
   type SiteContentEntryType,
+  type SiteContentVersion,
   type SiteEditorSettings,
   type SitePageKey,
 } from '@/features/site-editor/types'
@@ -327,6 +330,28 @@ function normalizeTextStyle(value: unknown): TextStyleValue {
   }
 
   return nextStyle
+}
+
+function summarizeVersionValue(value: unknown) {
+  if (typeof value === 'string') {
+    const normalized = value.trim()
+    if (normalized === '') return 'Texto vazio'
+    return normalized.length > 84 ? `${normalized.slice(0, 84)}...` : normalized
+  }
+
+  if (Array.isArray(value)) {
+    return `${value.length} item(ns)`
+  }
+
+  if (isStringRecord(value)) {
+    return `${Object.keys(value).length} campo(s)`
+  }
+
+  if (value === null || value === undefined) {
+    return 'Sem valor'
+  }
+
+  return String(value)
 }
 
 function hasTextStyle(style: TextStyleValue) {
@@ -1769,6 +1794,9 @@ function EditorModal({
   const [draftComment, setDraftComment] = useState('')
   const [workspaceState, setWorkspaceState] = useState<SiteEditorWorkspaceMap>({})
   const [isLoadingWorkspace, setIsLoadingWorkspace] = useState(false)
+  const [revisionHistory, setRevisionHistory] = useState<SiteContentVersion[]>([])
+  const [isLoadingRevisionHistory, setIsLoadingRevisionHistory] = useState(false)
+  const [restoringVersionId, setRestoringVersionId] = useState<string | null>(null)
   const workspaceKey = useMemo(() => createSiteEditorWorkspaceKey(editor.pageKey, editor.entryKey), [editor.entryKey, editor.pageKey])
   const workspaceRecord = workspaceState[workspaceKey] ?? getDefaultWorkspaceRecord(editor.pageKey, editor.entryKey)
   const [history, setHistory] = useState<Array<{ rawValue: string; textStyle: TextStyleValue }>>([])
@@ -1830,6 +1858,24 @@ function EditorModal({
   const updateAppearanceDraft = useCallback((nextAppearance: NormalizedSiteAppearance) => {
     setRawValue(JSON.stringify(buildSiteAppearanceValue(nextAppearance), null, 2))
   }, [])
+
+  const loadRevisionHistory = useCallback(async () => {
+    setIsLoadingRevisionHistory(true)
+    try {
+      const entries = await fetchSiteContent(editor.pageKey)
+      const targetEntry = entries.find((entry) => entry.page_key === editor.pageKey && entry.entry_key === editor.entryKey)
+      if (!targetEntry) {
+        setRevisionHistory([])
+        return
+      }
+      const versions = await fetchSiteContentVersions(targetEntry.id)
+      setRevisionHistory(versions)
+    } catch {
+      setRevisionHistory([])
+    } finally {
+      setIsLoadingRevisionHistory(false)
+    }
+  }, [editor.entryKey, editor.pageKey])
 
   function replaceWorkspaceRecord(nextRecord: SiteEditorWorkspaceRecord) {
     setWorkspaceState((current) => ({
@@ -1985,6 +2031,10 @@ function EditorModal({
       void supabase.removeChannel(channel)
     }
   }, [editor.pageKey, workspaceKey])
+
+  useEffect(() => {
+    void loadRevisionHistory()
+  }, [loadRevisionHistory])
 
   useEffect(() => {
     const currentSnapshot = {
@@ -2174,6 +2224,7 @@ function EditorModal({
         publishedAt: new Date().toISOString(),
       })
       replaceWorkspaceRecord(nextRecord)
+      await loadRevisionHistory()
       await editor.reload()
       onSaved()
       setMessage('Conteúdo publicado com sucesso.')
@@ -2181,6 +2232,25 @@ function EditorModal({
       setMessage(error instanceof Error ? error.message : 'Não foi possível salvar o conteúdo.')
     } finally {
       setIsSaving(false)
+    }
+  }
+
+  async function handleRestoreVersion(version: SiteContentVersion) {
+    const confirmed = window.confirm('Deseja reverter para esta versão? Esta ação cria uma nova revisão.')
+    if (!confirmed) return
+
+    setMessage(null)
+    setRestoringVersionId(version.id)
+    try {
+      await restoreSiteContentVersion(version)
+      await loadRevisionHistory()
+      await editor.reload()
+      onSaved()
+      setMessage('Versão restaurada com sucesso.')
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Não foi possível restaurar a versão.')
+    } finally {
+      setRestoringVersionId(null)
     }
   }
 
@@ -3911,6 +3981,44 @@ function EditorModal({
                       ? 'O conteúdo está aprovado e pronto para publicação.'
                       : 'Use rascunho e revisão antes de publicar para reduzir risco operacional.'}
                 </div>
+              </div>
+            </div>
+
+            <div className="rounded-[22px] border border-[#D8E6EB] bg-white p-4">
+              <div className="flex items-center gap-2">
+                <RotateCcw className="h-4 w-4 text-[#1398B7]" />
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#1398B7]">Histórico de revisões</p>
+              </div>
+              <div className="mt-4 grid gap-2">
+                {isLoadingRevisionHistory ? (
+                  <div className="rounded-[16px] border border-dashed border-[#D8E6EB] bg-[#F8FCFD] px-4 py-4 text-sm font-semibold text-[#5F7077]">
+                    Carregando histórico...
+                  </div>
+                ) : revisionHistory.length === 0 ? (
+                  <div className="rounded-[16px] border border-dashed border-[#D8E6EB] bg-[#F8FCFD] px-4 py-4 text-sm font-semibold text-[#5F7077]">
+                    Nenhuma revisão disponível para este conteúdo.
+                  </div>
+                ) : revisionHistory.slice(0, 12).map((version, index) => (
+                  <div key={version.id} className="rounded-[14px] border border-[#D8E6EB] bg-[#F8FCFD] px-3 py-3">
+                    <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[#1398B7]">
+                      Revisão {revisionHistory.length - index} · {new Date(version.created_at).toLocaleString('pt-BR')}
+                    </p>
+                    <p className="mt-1 text-xs font-semibold text-[#5F7077]">
+                      {version.change_reason} · {version.changed_by ?? 'usuário não identificado'}
+                    </p>
+                    <p className="mt-2 break-words text-sm font-semibold text-[#15323b]">
+                      {summarizeVersionValue(version.next_value)}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => void handleRestoreVersion(version)}
+                      disabled={restoringVersionId === version.id}
+                      className="mt-3 inline-flex items-center justify-center rounded-full border border-[#D8E6EB] bg-white px-3 py-1.5 text-[11px] font-black uppercase tracking-[0.12em] text-[#0A3640] hover:bg-[#F2F7F9] disabled:opacity-60"
+                    >
+                      {restoringVersionId === version.id ? 'Revertendo...' : 'Reverter para esta versão'}
+                    </button>
+                  </div>
+                ))}
               </div>
             </div>
 
