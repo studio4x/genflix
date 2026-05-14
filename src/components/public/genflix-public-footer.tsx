@@ -232,11 +232,11 @@ export function GenflixPublicFooter({
                   </div>
                 )}
               </EditableList>
-              <div>
+              <div className="flex h-full items-center">
                 <GenflixCtaButton
                   asChild
                   tone="surface"
-                  className="mt-[26px] min-h-[42px] w-full text-[13px]"
+                  className="min-h-[42px] w-full text-[13px]"
                   customColors={{
                     buttonTextColor: '#0A3640',
                     iconTextColor: '#0A3640',
