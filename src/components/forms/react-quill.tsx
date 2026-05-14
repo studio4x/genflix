@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type MouseEvent } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type MouseEvent, type PointerEvent as ReactPointerEvent } from 'react'
 
 type ToolbarItem = string | Record<string, unknown> | Array<string | Record<string, unknown>>
 
@@ -20,6 +20,13 @@ type ReactQuillProps = {
 }
 
 type FlattenedToolbarItem = string | Record<string, unknown>
+
+type SelectedImageBounds = {
+  left: number
+  top: number
+  width: number
+  height: number
+}
 
 function flattenToolbarItems(toolbar: ToolbarItem[] | undefined) {
   return (toolbar ?? []).flatMap((item) => (Array.isArray(item) ? item : [item])) as FlattenedToolbarItem[]
@@ -351,9 +358,14 @@ export default function ReactQuill({
   htmlTabLabel = 'HTML',
 }: ReactQuillProps) {
   const editorRef = useRef<HTMLDivElement | null>(null)
+  const editorShellRef = useRef<HTMLDivElement | null>(null)
   const savedSelectionRef = useRef<Range | null>(null)
   const draggedElementRef = useRef<HTMLElement | null>(null)
   const selectedMovableElementRef = useRef<HTMLElement | null>(null)
+  const resizeSessionRef = useRef<{ image: HTMLImageElement; startX: number; startWidth: number } | null>(null)
+  const [selectionVersion, setSelectionVersion] = useState(0)
+  const [selectedImageBounds, setSelectedImageBounds] = useState<SelectedImageBounds | null>(null)
+  const [isResizingImage, setIsResizingImage] = useState(false)
   const [movableContextMenu, setMovableContextMenu] = useState<{ x: number; y: number } | null>(null)
   const [activeMode, setActiveMode] = useState<'visual' | 'html'>('visual')
   const toolbarItems = useMemo(() => flattenToolbarItems(modules?.toolbar ?? defaultToolbar), [modules])
@@ -418,6 +430,7 @@ export default function ReactQuill({
   function clearSelectedMovableElement() {
     selectedMovableElementRef.current?.removeAttribute('data-hcm-selected')
     selectedMovableElementRef.current = null
+    setSelectionVersion((value) => value + 1)
   }
 
   function selectMovableElement(element: HTMLElement | null) {
@@ -432,6 +445,7 @@ export default function ReactQuill({
 
     element.setAttribute('data-hcm-selected', 'true')
     selectedMovableElementRef.current = element
+    setSelectionVersion((value) => value + 1)
   }
 
   function closeMovableContextMenu() {
@@ -457,6 +471,53 @@ export default function ReactQuill({
 
     mutator(image)
     syncEditorValue()
+  }
+
+  function updateSelectedImageBounds() {
+    const selectedImage = getSelectedImageElement(selectedMovableElementRef.current)
+    const editorShell = editorShellRef.current
+
+    if (!selectedImage || !editorShell) {
+      setSelectedImageBounds(null)
+      return
+    }
+
+    const imageRect = selectedImage.getBoundingClientRect()
+    const shellRect = editorShell.getBoundingClientRect()
+    setSelectedImageBounds({
+      left: imageRect.left - shellRect.left,
+      top: imageRect.top - shellRect.top,
+      width: imageRect.width,
+      height: imageRect.height,
+    })
+  }
+
+  function stopImageResize(commit: boolean) {
+    if (commit) {
+      syncEditorValue()
+    }
+
+    resizeSessionRef.current = null
+    setIsResizingImage(false)
+    updateSelectedImageBounds()
+  }
+
+  function startImageResize(event: ReactPointerEvent<HTMLButtonElement>) {
+    const image = getSelectedImageElement(selectedMovableElementRef.current)
+    if (!image) {
+      return
+    }
+
+    event.preventDefault()
+    event.stopPropagation()
+    closeMovableContextMenu()
+    selectMovableElement(image)
+    resizeSessionRef.current = {
+      image,
+      startX: event.clientX,
+      startWidth: Math.max(80, image.getBoundingClientRect().width),
+    }
+    setIsResizingImage(true)
   }
 
   async function replaceSelectedImage() {
@@ -680,6 +741,86 @@ export default function ReactQuill({
     document.addEventListener('selectionchange', handleSelectionChange)
     return () => document.removeEventListener('selectionchange', handleSelectionChange)
   }, [activeMode])
+
+  useLayoutEffect(() => {
+    if (activeMode !== 'visual') {
+      setSelectedImageBounds(null)
+      return
+    }
+
+    updateSelectedImageBounds()
+  }, [activeMode, selectionVersion, movableContextMenu, value, isResizingImage])
+
+  useEffect(() => {
+    if (activeMode !== 'visual' || typeof window === 'undefined') {
+      return
+    }
+
+    function handleRefresh() {
+      updateSelectedImageBounds()
+    }
+
+    window.addEventListener('resize', handleRefresh)
+    window.addEventListener('scroll', handleRefresh, true)
+
+    const editor = editorRef.current
+    const selectedImage = getSelectedImageElement(selectedMovableElementRef.current)
+    const resizeObserver = typeof ResizeObserver !== 'undefined'
+      ? new ResizeObserver(handleRefresh)
+      : null
+
+    if (editor && resizeObserver) {
+      resizeObserver.observe(editor)
+    }
+
+    if (selectedImage && resizeObserver) {
+      resizeObserver.observe(selectedImage)
+    }
+
+    return () => {
+      window.removeEventListener('resize', handleRefresh)
+      window.removeEventListener('scroll', handleRefresh, true)
+      resizeObserver?.disconnect()
+    }
+  }, [activeMode, selectionVersion, isResizingImage, value])
+
+  useEffect(() => {
+    if (!isResizingImage || typeof window === 'undefined') {
+      return
+    }
+
+    function handlePointerMove(event: PointerEvent) {
+      const session = resizeSessionRef.current
+      if (!session) {
+        return
+      }
+
+      const editor = editorRef.current
+      const editorWidth = editor?.getBoundingClientRect().width ?? session.startWidth
+      const nextWidth = Math.max(80, Math.min(editorWidth, Math.round(session.startWidth + (event.clientX - session.startX))))
+
+      session.image.style.display = 'block'
+      session.image.style.float = 'none'
+      session.image.style.width = `${nextWidth}px`
+      session.image.style.maxWidth = 'none'
+      session.image.style.height = 'auto'
+      updateSelectedImageBounds()
+    }
+
+    function handlePointerUp() {
+      stopImageResize(true)
+    }
+
+    window.addEventListener('pointermove', handlePointerMove)
+    window.addEventListener('pointerup', handlePointerUp)
+    window.addEventListener('pointercancel', handlePointerUp)
+
+    return () => {
+      window.removeEventListener('pointermove', handlePointerMove)
+      window.removeEventListener('pointerup', handlePointerUp)
+      window.removeEventListener('pointercancel', handlePointerUp)
+    }
+  }, [isResizingImage])
 
   useEffect(() => {
     if (typeof document === 'undefined') {
@@ -968,98 +1109,124 @@ export default function ReactQuill({
             ) : null}
           </div>
 
-          <div
-            ref={editorRef}
-            className={`${minHeightClassName} w-full bg-white px-4 py-4 text-sm leading-7 text-slate-800 outline-none [&_blockquote]:border-l-4 [&_blockquote]:border-slate-300 [&_blockquote]:pl-4 [&_blockquote]:italic [&_img]:h-auto [&_img]:max-w-full [&_pre]:overflow-x-auto [&_pre]:rounded-xl [&_pre]:bg-slate-950 [&_pre]:p-4 [&_pre]:font-mono [&_pre]:text-slate-100 [&_table]:w-full [&_table]:border-collapse [&_table]:my-6 [&_td]:border [&_td]:border-slate-300 [&_td]:px-3 [&_td]:py-2 [&_th]:border [&_th]:border-slate-300 [&_th]:bg-slate-100 [&_th]:px-3 [&_th]:py-2 [&_iframe]:min-h-[320px] [&_iframe]:w-full`}
-            contentEditable
-            suppressContentEditableWarning
-            data-placeholder={placeholder}
-            onMouseUp={rememberSelection}
-            onKeyUp={rememberSelection}
-            onMouseDown={(event) => {
-              const movableElement = getMovableElement(event.target)
-              if (!movableElement) {
-                return
-              }
+          <div ref={editorShellRef} className="relative">
+            <div
+              ref={editorRef}
+              className={`${minHeightClassName} w-full bg-white px-4 py-4 text-sm leading-7 text-slate-800 outline-none [&_blockquote]:border-l-4 [&_blockquote]:border-slate-300 [&_blockquote]:pl-4 [&_blockquote]:italic [&_img]:h-auto [&_img]:max-w-full [&_pre]:overflow-x-auto [&_pre]:rounded-xl [&_pre]:bg-slate-950 [&_pre]:p-4 [&_pre]:font-mono [&_pre]:text-slate-100 [&_table]:w-full [&_table]:border-collapse [&_table]:my-6 [&_td]:border [&_td]:border-slate-300 [&_td]:px-3 [&_td]:py-2 [&_th]:border [&_th]:border-slate-300 [&_th]:bg-slate-100 [&_th]:px-3 [&_th]:py-2 [&_iframe]:min-h-[320px] [&_iframe]:w-full`}
+              contentEditable
+              suppressContentEditableWarning
+              data-placeholder={placeholder}
+              onMouseUp={rememberSelection}
+              onKeyUp={rememberSelection}
+              onMouseDown={(event) => {
+                const movableElement = getMovableElement(event.target)
+                if (!movableElement) {
+                  return
+                }
 
-              event.preventDefault()
-              selectMovableElement(movableElement)
-            }}
-            onClick={(event) => {
-              selectMovableElement(getMovableElement(event.target))
-              rememberSelection()
-            }}
-            onContextMenu={openMovableContextMenu}
-            onKeyDown={(event) => {
-              if ((event.key === 'Delete' || event.key === 'Backspace') && selectedMovableElementRef.current) {
                 event.preventDefault()
-                removeSelectedMovableElement()
-              }
-              if (event.key === 'Escape') {
-                closeMovableContextMenu()
-              }
-            }}
-            onDragStart={(event) => {
-              const movableElement = getMovableElement(event.target)
-              if (!movableElement) {
-                return
-              }
+                selectMovableElement(movableElement)
+              }}
+              onClick={(event) => {
+                selectMovableElement(getMovableElement(event.target))
+                rememberSelection()
+              }}
+              onContextMenu={openMovableContextMenu}
+              onKeyDown={(event) => {
+                if ((event.key === 'Delete' || event.key === 'Backspace') && selectedMovableElementRef.current) {
+                  event.preventDefault()
+                  removeSelectedMovableElement()
+                }
+                if (event.key === 'Escape') {
+                  closeMovableContextMenu()
+                }
+              }}
+              onDragStart={(event) => {
+                const movableElement = getMovableElement(event.target)
+                if (!movableElement) {
+                  return
+                }
 
-              draggedElementRef.current = movableElement
-              selectMovableElement(movableElement)
-              event.dataTransfer.effectAllowed = 'move'
-              event.dataTransfer.setData('text/html', movableElement.outerHTML)
-            }}
-            onDragOver={(event) => {
-              if (!draggedElementRef.current) {
-                return
-              }
+                draggedElementRef.current = movableElement
+                selectMovableElement(movableElement)
+                event.dataTransfer.effectAllowed = 'move'
+                event.dataTransfer.setData('text/html', movableElement.outerHTML)
+              }}
+              onDragOver={(event) => {
+                if (!draggedElementRef.current) {
+                  return
+                }
 
-              event.preventDefault()
-              event.dataTransfer.dropEffect = 'move'
-            }}
-            onDrop={(event) => {
-              const draggedElement = draggedElementRef.current
-              if (!draggedElement) {
-                return
-              }
+                event.preventDefault()
+                event.dataTransfer.dropEffect = 'move'
+              }}
+              onDrop={(event) => {
+                const draggedElement = draggedElementRef.current
+                if (!draggedElement) {
+                  return
+                }
 
-              event.preventDefault()
+                event.preventDefault()
 
-              const dropRange = document.caretRangeFromPoint
-                ? document.caretRangeFromPoint(event.clientX, event.clientY)
-                : (() => {
-                  const position = document.caretPositionFromPoint?.(event.clientX, event.clientY)
-                  if (!position) {
-                    return null
-                  }
-                  const range = document.createRange()
-                  range.setStart(position.offsetNode, position.offset)
-                  range.collapse(true)
-                  return range
-                })()
+                const dropRange = document.caretRangeFromPoint
+                  ? document.caretRangeFromPoint(event.clientX, event.clientY)
+                  : (() => {
+                    const position = document.caretPositionFromPoint?.(event.clientX, event.clientY)
+                    if (!position) {
+                      return null
+                    }
+                    const range = document.createRange()
+                    range.setStart(position.offsetNode, position.offset)
+                    range.collapse(true)
+                    return range
+                  })()
 
-              if (!dropRange) {
+                if (!dropRange) {
+                  draggedElementRef.current = null
+                  return
+                }
+
+                const selection = window.getSelection()
+                selection?.removeAllRanges()
+                selection?.addRange(dropRange)
+                savedSelectionRef.current = dropRange.cloneRange()
+
+                const html = draggedElement.outerHTML
+                draggedElement.remove()
+                insertEditorHtml(html)
                 draggedElementRef.current = null
-                return
-              }
+              }}
+              onDragEnd={() => {
+                draggedElementRef.current = null
+              }}
+              onInput={(event) => onChange(event.currentTarget.innerHTML)}
+              onBlur={(event) => onChange(event.currentTarget.innerHTML)}
+            />
 
-              const selection = window.getSelection()
-              selection?.removeAllRanges()
-              selection?.addRange(dropRange)
-              savedSelectionRef.current = dropRange.cloneRange()
-
-              const html = draggedElement.outerHTML
-              draggedElement.remove()
-              insertEditorHtml(html)
-              draggedElementRef.current = null
-            }}
-            onDragEnd={() => {
-              draggedElementRef.current = null
-            }}
-            onInput={(event) => onChange(event.currentTarget.innerHTML)}
-            onBlur={(event) => onChange(event.currentTarget.innerHTML)}
-          />
+            {selectedImageBounds ? (
+              <div
+                className="pointer-events-none absolute z-20 rounded-xl border-2 border-sky-400/70"
+                style={{
+                  left: selectedImageBounds.left - 2,
+                  top: selectedImageBounds.top - 2,
+                  width: selectedImageBounds.width + 4,
+                  height: selectedImageBounds.height + 4,
+                }}
+              >
+                <div className="absolute -right-1 -top-7 rounded-full bg-sky-500 px-2 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-white shadow-lg">
+                  Imagem
+                </div>
+                <button
+                  type="button"
+                  aria-label="Redimensionar imagem"
+                  className={`pointer-events-auto absolute -bottom-2 -right-2 h-5 w-5 rounded-full border-2 border-white bg-sky-500 shadow-lg ${isResizingImage ? 'cursor-se-resize' : 'cursor-se-resize'}`}
+                  onPointerDown={startImageResize}
+                >
+                  <span className="sr-only">Redimensionar imagem</span>
+                </button>
+              </div>
+            ) : null}
+          </div>
           {movableContextMenu ? (
             <div
               className="fixed z-50 w-56 rounded-2xl border border-slate-200 bg-white p-2 shadow-2xl"
@@ -1131,6 +1298,10 @@ export default function ReactQuill({
         .react-quill-local img[data-hcm-movable='true'] {
           display: inline-block;
           vertical-align: middle;
+        }
+
+        .react-quill-local [contenteditable='true'] {
+          position: relative;
         }
 
         .react-quill-local .genflix-columns {
