@@ -135,6 +135,7 @@ type SiteContentContextValue = {
   pageKey: SitePageKey
   entries: Map<string, SiteContentEntry>
   reload: () => Promise<void>
+  isReady: boolean
 }
 
 type VisualEditorContextValue = {
@@ -1904,6 +1905,7 @@ function EditorModal({
       nextMetadata.iconImageUrl = asset.public_url
       nextMetadata.iconImageAlt = asset.alt ?? currentItem?.label ?? currentItem?.title ?? file.name
       nextMetadata.iconImageAssetId = asset.id
+      delete nextMetadata.iconKey
       nextItems[itemIndex] = {
         ...nextItems[itemIndex],
         metadata: nextMetadata,
@@ -4070,12 +4072,14 @@ export function VisualEditorProvider({ children }: { children: ReactNode }) {
 
 export function SiteContentScope({ pageKey, children }: { pageKey: SitePageKey; children: ReactNode }) {
   const [entries, setEntries] = useState<Map<string, SiteContentEntry>>(new Map())
+  const [isReady, setIsReady] = useState(false)
   const editor = useContext(VisualEditorContext)
   const settings = editor?.settings ?? defaultSiteEditorSettings
 
   const reload = useCallback(async () => {
     if (shouldIgnoreSiteEditor() || !settings.is_enabled || !settings.read_overrides_enabled || settings.fallback_mode) {
       setEntries(new Map())
+      setIsReady(true)
       return
     }
 
@@ -4084,6 +4088,8 @@ export function SiteContentScope({ pageKey, children }: { pageKey: SitePageKey; 
       setEntries(new Map(rows.map((entry) => [`${entry.page_key}:${entry.entry_key}`, entry])))
     } catch {
       setEntries(new Map())
+    } finally {
+      setIsReady(true)
     }
   }, [pageKey, settings.fallback_mode, settings.is_enabled, settings.read_overrides_enabled])
 
@@ -4096,8 +4102,9 @@ export function SiteContentScope({ pageKey, children }: { pageKey: SitePageKey; 
   const value = useMemo<SiteContentContextValue>(() => ({
     pageKey,
     entries,
+    isReady,
     reload,
-  }), [entries, pageKey, reload])
+  }), [entries, isReady, pageKey, reload])
 
   return <SiteContentContext.Provider value={value}>{children}</SiteContentContext.Provider>
 }

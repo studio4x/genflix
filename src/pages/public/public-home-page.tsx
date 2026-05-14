@@ -223,6 +223,7 @@ function HomeCategoriesSection({
   entryPrefix: string
   pageKey?: SitePageKey
 }) {
+  const scope = useSiteContentScope()
   const categoryItems = useEditableValue(
     `${entryPrefix}.items`,
     genflixCategoryTiles.map((category) => ({
@@ -253,13 +254,16 @@ function HomeCategoriesSection({
 
         <EditableContainer entryKey={`${entryPrefix}.items.wrap`} label="Container interno da grade de categorias" pageKey={pageKey}>
           <div className="mx-auto mt-10 flex max-w-[1160px] flex-wrap justify-center gap-3">
+            {!scope?.isReady ? (
+              <div className="w-full py-8 text-center text-sm font-semibold text-[#5F7077]">Carregando categorias...</div>
+            ) : null}
             <EditableList
               entryKey={`${entryPrefix}.items`}
               fallback={categoryItems}
               label="Categorias da home"
               pageKey={pageKey}
             >
-              {(items) => items.filter(isEditableItemVisible).map((item) => {
+              {(items) => (scope?.isReady ? items : []).filter(isEditableItemVisible).map((item) => {
                 const category = genflixCategoryTiles.find((tile) => tile.label === item.label) ?? genflixCategoryTiles[0]
                 const iconKey = typeof item.metadata?.iconKey === 'string'
                   ? item.metadata.iconKey
