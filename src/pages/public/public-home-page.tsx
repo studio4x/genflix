@@ -272,6 +272,11 @@ function HomeCategoriesSection({
                 const iconImageAlt = typeof item.metadata?.iconImageAlt === 'string' ? item.metadata.iconImageAlt : null
                 const iconImageMimeType = typeof item.metadata?.iconImageMimeType === 'string' ? item.metadata.iconImageMimeType : null
                 const iconColor = typeof item.metadata?.iconColor === 'string' ? item.metadata.iconColor : null
+                const iconSize = typeof item.metadata?.iconSize === 'number'
+                  ? Math.min(36, Math.max(12, Math.round(item.metadata.iconSize)))
+                  : typeof item.metadata?.iconSize === 'string'
+                    ? Math.min(36, Math.max(12, Math.round(Number(item.metadata.iconSize) || 20)))
+                    : 20
 
                 return (
                   <article
@@ -285,6 +290,7 @@ function HomeCategoriesSection({
                         iconAlt: iconImageAlt || item.label,
                         iconColor,
                         iconImageMimeType,
+                        iconSize,
                         className: 'h-5 w-5',
                       })}
                     </div>

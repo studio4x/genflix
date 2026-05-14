@@ -57,6 +57,15 @@ function normalizeIconColor(value: string | null | undefined) {
   return trimmed === '' ? undefined : trimmed
 }
 
+function normalizeIconSize(value: number | null | undefined) {
+  if (!Number.isFinite(value)) {
+    return undefined
+  }
+
+  const numericValue = Number(value)
+  return Math.min(36, Math.max(12, numericValue))
+}
+
 function isSvgIconUrl(value: string) {
   if (value.trim() === '') {
     return false
@@ -82,6 +91,7 @@ export function renderSiteIconVisual(input: {
   iconAlt?: string | null
   iconColor?: string | null
   iconImageMimeType?: string | null
+  iconSize?: number | null
   className?: string
 }) {
   const iconColor = normalizeIconColor(input.iconColor)
@@ -89,6 +99,8 @@ export function renderSiteIconVisual(input: {
   const iconKey = typeof input.iconKey === 'string' ? input.iconKey.trim() : ''
   const iconImageMimeType = typeof input.iconImageMimeType === 'string' ? input.iconImageMimeType.trim().toLowerCase() : ''
   const isSvgIcon = iconImageMimeType === 'image/svg+xml' || isSvgIconUrl(iconImageUrl)
+  const iconSize = normalizeIconSize(input.iconSize)
+  const sizeStyle = iconSize ? { width: `${iconSize}px`, height: `${iconSize}px` } : undefined
 
   // Prioriza ícone nativo quando existir chave válida, evitando comportamento inconsistente
   // de colorização em ativos SVG externos.
@@ -101,6 +113,7 @@ export function renderSiteIconVisual(input: {
           className={cn('block h-4 w-4', input.className)}
           style={{
             backgroundColor: iconColor ?? 'currentColor',
+            ...sizeStyle,
             maskImage: `url("${iconImageUrl}")`,
             maskRepeat: 'no-repeat',
             maskPosition: 'center',
@@ -119,15 +132,34 @@ export function renderSiteIconVisual(input: {
         src={iconImageUrl}
         alt={input.iconAlt ?? ''}
         className={cn('block h-4 w-4 object-contain', input.className)}
+        style={sizeStyle}
       />
     )
   }
 
   if (iconKey !== '') {
-    return renderSiteIcon(iconKey, input.className, iconColor)
+    const Icon = SITE_ICON_MAP.get(iconKey) ?? LinkIcon
+    return (
+      <Icon
+        className={cn('h-4 w-4', input.className)}
+        style={{
+          ...(iconColor ? { color: iconColor } : {}),
+          ...(sizeStyle ?? {}),
+        }}
+      />
+    )
   }
 
-  return renderSiteIcon(input.iconKey ?? null, input.className, iconColor)
+  const FallbackIcon = SITE_ICON_MAP.get(input.iconKey ?? '') ?? LinkIcon
+  return (
+    <FallbackIcon
+      className={cn('h-4 w-4', input.className)}
+      style={{
+        ...(iconColor ? { color: iconColor } : {}),
+        ...(sizeStyle ?? {}),
+      }}
+    />
+  )
 }
 
 export function getSiteIconOption(iconKey: string | null | undefined) {

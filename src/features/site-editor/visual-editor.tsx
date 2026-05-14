@@ -269,6 +269,20 @@ function normalizeHexColorForStorage(value: string) {
   return isValidHexColor(normalized) ? normalized : ''
 }
 
+function normalizeEditorIconSize(value: unknown, fallback = 16) {
+  const numericValue = typeof value === 'number'
+    ? value
+    : typeof value === 'string'
+      ? Number(value)
+      : NaN
+
+  if (!Number.isFinite(numericValue)) {
+    return fallback
+  }
+
+  return Math.min(36, Math.max(12, Math.round(numericValue)))
+}
+
 function normalizeTextStyle(value: unknown): TextStyleValue {
   if (!isStringRecord(value)) {
     return {}
@@ -955,6 +969,7 @@ function ListItemEditorCard({
   const iconImageAlt = typeof metadataWithoutItems.iconImageAlt === 'string' ? metadataWithoutItems.iconImageAlt : ''
   const iconColor = typeof metadataWithoutItems.iconColor === 'string' ? metadataWithoutItems.iconColor : ''
   const iconImageMimeType = typeof metadataWithoutItems.iconImageMimeType === 'string' ? metadataWithoutItems.iconImageMimeType : ''
+  const iconSize = normalizeEditorIconSize(metadataWithoutItems.iconSize, 16)
   const iconImageAssetId = typeof metadataWithoutItems.iconImageAssetId === 'string' ? metadataWithoutItems.iconImageAssetId : ''
   const selectedLibraryIcon = iconLibraryOptions.find((option) => option.assetId === iconImageAssetId)
     ?? iconLibraryOptions.find((option) => option.imageUrl === iconImageUrl)
@@ -964,6 +979,7 @@ function ListItemEditorCard({
     : (svgOnlyIcons ? 'none' : (iconKey ? `native:${iconKey}` : 'none'))
   const selectedNativeIcon = iconKey ? getSiteIconOption(iconKey) : null
   const [iconColorInput, setIconColorInput] = useState(iconColor)
+  const [iconSizeInput, setIconSizeInput] = useState(String(iconSize))
   const templateDefinition = editorConfig.templates.find((template) => template.id === templateKey)
   const shouldShowIconField = !editorConfig.hiddenFields.has('icon')
   delete metadataWithoutItems.buttonLabel
@@ -978,6 +994,10 @@ function ListItemEditorCard({
   useEffect(() => {
     setIconColorInput(iconColor)
   }, [iconColor])
+
+  useEffect(() => {
+    setIconSizeInput(String(iconSize))
+  }, [iconSize])
 
   function updateField(field: keyof EditableListItem, value: string) {
     onChange({
@@ -1036,6 +1056,24 @@ function ListItemEditorCard({
     setIconColorInput(iconColor)
   }
 
+  function applyIconSizeValue(value: number) {
+    const normalized = normalizeEditorIconSize(value, 16)
+    updateMetadataField('iconSize', normalized)
+    setIconSizeInput(String(normalized))
+  }
+
+  function handleIconSizeInputBlur() {
+    if (iconSizeInput.trim() === '') {
+      updateMetadataField('iconSize', '')
+      setIconSizeInput('16')
+      return
+    }
+
+    const normalized = normalizeEditorIconSize(iconSizeInput, 16)
+    updateMetadataField('iconSize', normalized)
+    setIconSizeInput(String(normalized))
+  }
+
   const iconColorControls = (
     <div className="grid gap-2 rounded-[14px] border border-[#D8E6EB] bg-[#F8FCFD] p-3">
       <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Cor do ícone</p>
@@ -1072,6 +1110,40 @@ function ListItemEditorCard({
     </div>
   )
 
+  const iconSizeControls = (
+    <div className="grid gap-2 rounded-[14px] border border-[#D8E6EB] bg-[#F8FCFD] p-3">
+      <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Tamanho do ícone</p>
+      <div className="flex flex-wrap items-center gap-3">
+        <input
+          type="range"
+          min={12}
+          max={36}
+          step={1}
+          value={iconSize}
+          onChange={(event) => applyIconSizeValue(Number(event.target.value))}
+          className="min-w-[180px] flex-1 accent-[#1398B7]"
+        />
+        <input
+          type="number"
+          min={12}
+          max={36}
+          step={1}
+          value={iconSizeInput}
+          onChange={(event) => setIconSizeInput(event.target.value)}
+          onBlur={handleIconSizeInputBlur}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter') {
+              event.preventDefault()
+              handleIconSizeInputBlur()
+            }
+          }}
+          className="h-10 w-[84px] rounded-[12px] border border-[#D8E6EB] bg-white px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]"
+        />
+        <span className="text-xs font-bold text-[#5F7077]">px</span>
+      </div>
+    </div>
+  )
+
   function updateIconSelection(nextToken: string) {
     const nextMetadata = buildMetadataBase()
 
@@ -1082,6 +1154,7 @@ function ListItemEditorCard({
       delete nextMetadata.iconImageAssetId
       delete nextMetadata.iconImageMimeType
       delete nextMetadata.iconColor
+      delete nextMetadata.iconSize
     } else if (nextToken.startsWith('native:')) {
       if (svgOnlyIcons) {
         return
@@ -1165,6 +1238,7 @@ function ListItemEditorCard({
               iconAlt: iconImageAlt || item.label || item.title || item.id,
               iconColor,
               iconImageMimeType: resolvedIconImageMimeType,
+              iconSize,
               className: 'h-4 w-4',
             })
           )}
@@ -1419,6 +1493,7 @@ function ListItemEditorCard({
                   iconAlt: iconImageAlt || item.label || item.title || item.id,
                   iconColor: iconColor || colorValue,
                   iconImageMimeType: resolvedIconImageMimeType,
+                  iconSize,
                   className: 'h-4 w-4',
                 })}
             </div>
@@ -1502,6 +1577,7 @@ function ListItemEditorCard({
               <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Ícone</span>
               {iconSelectionField}
               {iconColorControls}
+              {iconSizeControls}
               <div className="grid gap-2 rounded-[14px] border border-[#D8E6EB] bg-[#F8FCFD] p-3">
                 <div className="flex items-center gap-3">
                   <div className="flex h-10 w-10 items-center justify-center rounded-full border border-[#D8E6EB] bg-white text-[#0A3640]">
@@ -1511,6 +1587,7 @@ function ListItemEditorCard({
                       iconAlt: iconImageAlt || item.label || item.title || item.id,
                       iconColor,
                       iconImageMimeType: resolvedIconImageMimeType,
+                      iconSize,
                       className: 'h-4 w-4',
                     })}
                   </div>
@@ -1715,6 +1792,7 @@ function ListItemEditorCard({
             <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Ícone</span>
             {iconSelectionField}
             {iconColorControls}
+            {iconSizeControls}
           </label>
         ) : null}
         <div className="grid gap-1.5 md:col-span-2">
@@ -3877,6 +3955,7 @@ function EditorModal({
                       const itemIconImageAlt = typeof itemMetadata.iconImageAlt === 'string' ? itemMetadata.iconImageAlt : null
                       const itemIconImageMimeType = typeof itemMetadata.iconImageMimeType === 'string' ? itemMetadata.iconImageMimeType : null
                       const itemIconColor = typeof itemMetadata.iconColor === 'string' ? itemMetadata.iconColor : null
+                      const itemIconSize = normalizeEditorIconSize(itemMetadata.iconSize, 16)
 
                       return (
                         <article key={`${item.id ?? index}`} className="overflow-hidden rounded-[18px] border border-[#D8E6EB] bg-white shadow-[0_12px_24px_rgba(21,50,59,0.04)]">
@@ -3889,6 +3968,7 @@ function EditorModal({
                                   iconAlt: itemIconImageAlt || (typeof item.label === 'string' ? item.label : undefined),
                                   iconColor: itemIconColor,
                                   iconImageMimeType: itemIconImageMimeType,
+                                  iconSize: itemIconSize,
                                   className: 'h-4 w-4',
                                 })}
                               </div>
