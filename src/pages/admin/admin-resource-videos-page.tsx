@@ -6,8 +6,8 @@ import {
   normalizeResourcesItems,
   resolveResourceVideoUrl,
 } from '@/features/public/genflix-resource-items-editor'
-import { fetchSiteAssets, fetchSiteContent, saveSiteContentEntry } from '@/features/site-editor/api'
-import type { EditableListItem, SiteAsset } from '@/features/site-editor/types'
+import { fetchSiteContent, saveSiteContentEntry } from '@/features/site-editor/api'
+import type { EditableListItem } from '@/features/site-editor/types'
 
 type ResourceCardStyleSettings = {
   cardBackgroundColor: string
@@ -47,31 +47,6 @@ const defaultCardStyle: ResourceCardStyleSettings = {
   buttonTextColor: '#0F7E99',
   buttonBorderColor: '#1398B7',
   buttonRadius: 999,
-}
-
-function normalizeIconName(value: string) {
-  return value
-    .normalize('NFD')
-    .replace(/\p{Diacritic}/gu, '')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-}
-
-function resolveMatchingLibraryIcon(item: EditableListItem, iconAssets: SiteAsset[]) {
-  const label = normalizeIconName((item.label ?? item.title ?? item.id ?? '').trim())
-  if (!label) return null
-
-  for (const asset of iconAssets) {
-    const originalName = typeof asset.metadata?.original_name === 'string' ? asset.metadata.original_name : ''
-    const candidate = normalizeIconName((asset.alt ?? '').trim() || originalName)
-    if (!candidate || !asset.public_url) continue
-    if (candidate === label || candidate.includes(label) || label.includes(candidate)) {
-      return asset
-    }
-  }
-
-  return null
 }
 
 function toMetadata(item: EditableListItem) {
@@ -157,7 +132,6 @@ export function AdminResourceVideosPage() {
   const [items, setItems] = useState<EditableListItem[]>(createResourcesItemsFallback())
   const [cardStyle, setCardStyle] = useState<ResourceCardStyleSettings>({ ...defaultCardStyle })
   const [isLoading, setIsLoading] = useState(true)
-  const [iconLibraryAssets, setIconLibraryAssets] = useState<SiteAsset[]>([])
   const [isSaving, setIsSaving] = useState(false)
   const [savingCardIndex, setSavingCardIndex] = useState<number | null>(null)
   const [message, setMessage] = useState<string | null>(null)
@@ -176,73 +150,18 @@ export function AdminResourceVideosPage() {
       setError(null)
 
       try {
-        const [entries, assets] = await Promise.all([
-          fetchSiteContent('resources'),
-          fetchSiteAssets(240),
-        ])
+        const entries = await fetchSiteContent('resources')
         const resourcesEntry = entries.find((entry) => entry.page_key === 'resources' && entry.entry_key === 'resources.items')
         const styleEntry = entries.find((entry) => entry.page_key === 'resources' && entry.entry_key === 'resources.cardStyle')
-        const iconAssets = assets.filter((asset) => {
-          const metadata = asset.metadata && typeof asset.metadata === 'object' && !Array.isArray(asset.metadata)
-            ? asset.metadata as Record<string, unknown>
-            : null
-          const entryKey = typeof metadata?.entry_key === 'string' ? metadata.entry_key : ''
-          const mimeType = typeof asset.mime_type === 'string' ? asset.mime_type.toLowerCase() : ''
-          return entryKey === 'icon-library' && mimeType.includes('svg')
-        })
 
         if (isMounted) {
-          const normalizedItems = normalizeResourcesItems(resourcesEntry?.value)
-          const nextItems = normalizedItems.map((item) => {
-            const metadata = toMetadata(item)
-            const hasIconSet = typeof metadata.iconImageUrl === 'string' && metadata.iconImageUrl.trim() !== ''
-            if (hasIconSet) {
-              return item
-            }
-            const matchedAsset = resolveMatchingLibraryIcon(item, iconAssets)
-            if (!matchedAsset?.public_url) {
-              return item
-            }
-            return {
-              ...item,
-              metadata: {
-                ...metadata,
-                iconImageUrl: matchedAsset.public_url,
-                iconImageAlt: matchedAsset.alt ?? item.label ?? item.title ?? 'Icone',
-                iconImageAssetId: matchedAsset.id,
-              },
-            }
-          })
-
-          const changedIcons = nextItems.some((item, index) => {
-            const before = toMetadata(normalizedItems[index])
-            const after = toMetadata(item)
-            return before.iconImageUrl !== after.iconImageUrl || before.iconImageAssetId !== after.iconImageAssetId
-          })
-
-          if (changedIcons) {
-            await saveSiteContentEntry({
-              pageKey: 'resources',
-              entryKey: 'resources.items',
-              entryType: 'list',
-              value: nextItems.map(normalizeItemForSave),
-              schema: {
-                kind: 'default',
-                itemName: 'recurso',
-                addLabel: 'Adicionar recurso',
-              },
-            })
-          }
-
-          setItems(nextItems)
+          setItems(normalizeResourcesItems(resourcesEntry?.value))
           setCardStyle(parseCardStyle(styleEntry?.value))
-          setIconLibraryAssets(iconAssets)
         }
       } catch (loadError) {
         if (isMounted) {
           setItems(createResourcesItemsFallback())
           setCardStyle({ ...defaultCardStyle })
-          setIconLibraryAssets([])
           setError(loadError instanceof Error ? loadError.message : 'Nao foi possivel carregar os recursos.')
         }
       } finally {
@@ -276,14 +195,6 @@ export function AdminResourceVideosPage() {
     })
   }
 
-  function updateCardLabel(index: number, nextValue: string) {
-    updateItem(index, (item) => ({ ...item, label: nextValue }))
-  }
-
-  function updateCardDescription(index: number, nextValue: string) {
-    updateItem(index, (item) => ({ ...item, description: nextValue }))
-  }
-
   function updateReadMoreEnabled(index: number, enabled: boolean) {
     updateItem(index, (item) => {
       const metadata = toMetadata(item)
@@ -306,34 +217,6 @@ export function AdminResourceVideosPage() {
       } else {
         metadata.readMoreContent = trimmed
       }
-      return { ...item, metadata: Object.keys(metadata).length > 0 ? metadata : undefined }
-    })
-  }
-
-  function updateItemLibraryIcon(index: number, asset: SiteAsset) {
-    updateItem(index, (item) => {
-      const metadata = toMetadata(item)
-      metadata.iconImageUrl = asset.public_url ?? ''
-      metadata.iconImageAlt = asset.alt ?? item.label ?? item.title ?? 'Icone'
-      metadata.iconImageAssetId = asset.id
-      return { ...item, metadata: Object.keys(metadata).length > 0 ? metadata : undefined }
-    })
-  }
-
-  function updateItemColor(index: number, color: string) {
-    updateItem(index, (item) => {
-      const metadata = toMetadata(item)
-      metadata.iconColor = color
-      metadata.itemColor = color
-      return { ...item, metadata: metadata }
-    })
-  }
-
-  function resetItemColor(index: number) {
-    updateItem(index, (item) => {
-      const metadata = toMetadata(item)
-      delete metadata.itemColor
-      delete metadata.iconColor
       return { ...item, metadata: Object.keys(metadata).length > 0 ? metadata : undefined }
     })
   }
@@ -458,20 +341,16 @@ export function AdminResourceVideosPage() {
           </section>
 
           <form onSubmit={(event) => void handleItemsSubmit(event)} className="space-y-4">
+            <div className="rounded-[16px] border border-[#D8E6EB] bg-[#F8FCFD] px-5 py-4 text-sm font-semibold leading-6 text-[#4F636A]">
+              Os demais campos dos recursos (titulo, icone, descricao e cor) devem ser editados pelo editor visual.
+            </div>
+
             <div className="grid gap-4">
               {items.map((item, index) => {
                 const metadata = toMetadata(item)
                 const currentVideoUrl = typeof metadata.instructionalVideoUrl === 'string' ? metadata.instructionalVideoUrl : ''
                 const readMoreEnabled = metadata.readMoreEnabled === true
                 const readMoreContent = typeof metadata.readMoreContent === 'string' ? metadata.readMoreContent : ''
-                const currentIconImageUrl = typeof metadata.iconImageUrl === 'string' ? metadata.iconImageUrl : ''
-                const currentIconImageAssetId = typeof metadata.iconImageAssetId === 'string' ? metadata.iconImageAssetId : ''
-                const selectedLibraryAsset = currentIconImageAssetId
-                  ? iconLibraryAssets.find((asset) => asset.id === currentIconImageAssetId)
-                  : iconLibraryAssets.find((asset) => (asset.public_url ?? '') === currentIconImageUrl)
-                const suggestedLibraryAsset = resolveMatchingLibraryIcon(item, iconLibraryAssets)
-                const effectiveLibraryAsset = selectedLibraryAsset ?? suggestedLibraryAsset
-                const currentItemColor = typeof metadata.itemColor === 'string' ? metadata.itemColor : defaultCardStyle.iconColor
                 const isConfigured = resolveResourceVideoUrl(item) !== ''
 
                 return (
@@ -492,112 +371,7 @@ export function AdminResourceVideosPage() {
                       </span>
                     </div>
 
-                    <div className="mt-4 grid gap-3 md:grid-cols-2">
-                      <label className="grid gap-2">
-                        <span className="text-[10px] font-black uppercase tracking-[0.16em] text-[#5F7077]">Titulo do card</span>
-                        <input
-                          value={item.label ?? ''}
-                          onChange={(event) => updateCardLabel(index, event.target.value)}
-                          className="h-11 rounded-[14px] border border-[#D8E6EB] bg-white px-4 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]"
-                        />
-                      </label>
-                      <label className="grid gap-2">
-                        <span className="text-[10px] font-black uppercase tracking-[0.16em] text-[#5F7077]">Icone (biblioteca)</span>
-                        <div className="rounded-[14px] border border-[#D8E6EB] bg-[#F8FCFD] p-3">
-                          <div className="mb-3 flex items-center justify-between gap-3">
-                            <div className="inline-flex items-center gap-2 rounded-full border border-[#D8E6EB] bg-white px-3 py-1.5 text-xs font-semibold text-[#15323b]">
-                              {effectiveLibraryAsset?.public_url ? (
-                                <img
-                                  src={effectiveLibraryAsset.public_url}
-                                  alt={effectiveLibraryAsset.alt ?? 'Icone da biblioteca'}
-                                  className="h-4 w-4 object-contain"
-                                />
-                              ) : (
-                                <span className="inline-flex h-4 w-4 rounded-full border border-[#D8E6EB] bg-white" />
-                              )}
-                              <span>
-                                {effectiveLibraryAsset
-                                  ? (effectiveLibraryAsset.alt ?? 'Icone da biblioteca')
-                                  : 'Sem SVG sugerido para este item'}
-                              </span>
-                            </div>
-                            <Button
-                              type="button"
-                              variant="outline"
-                              onClick={() => {
-                                if (suggestedLibraryAsset) {
-                                  updateItemLibraryIcon(index, suggestedLibraryAsset)
-                                }
-                              }}
-                              disabled={!suggestedLibraryAsset}
-                              className="h-8 rounded-[10px] border-[#D8E6EB] px-2 text-[10px] font-black uppercase tracking-[0.12em]"
-                            >
-                              Usar sugestao
-                            </Button>
-                          </div>
-                          {iconLibraryAssets.length > 0 ? (
-                            <div className="border-t border-[#D8E6EB] pt-3">
-                              <p className="mb-2 text-[10px] font-black uppercase tracking-[0.16em] text-[#5F7077]">SVGs enviados na biblioteca</p>
-                              <div className="grid max-h-52 grid-cols-1 gap-2 overflow-auto pr-1 sm:grid-cols-2">
-                                {iconLibraryAssets.map((asset) => {
-                                  const isSelected = effectiveLibraryAsset?.id === asset.id
-                                  const assetLabel = asset.alt ?? 'Icone SVG'
-                                  return (
-                                    <button
-                                      key={asset.id}
-                                      type="button"
-                                      onClick={() => updateItemLibraryIcon(index, asset)}
-                                      className={`flex items-center gap-2 rounded-[10px] border px-2 py-2 text-left text-xs font-semibold transition ${
-                                        isSelected
-                                          ? 'border-[#1398B7] bg-[#E8F6FA] text-[#0F7E99]'
-                                          : 'border-[#D8E6EB] bg-white text-[#15323b] hover:border-[#9bcddb] hover:bg-[#F2F7F9]'
-                                      }`}
-                                    >
-                                      <span className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-[#D8E6EB] bg-white">
-                                        {asset.public_url ? (
-                                          <img src={asset.public_url} alt={assetLabel} className="h-4 w-4 object-contain" />
-                                        ) : null}
-                                      </span>
-                                      <span className="truncate">{assetLabel}</span>
-                                    </button>
-                                  )
-                                })}
-                              </div>
-                            </div>
-                          ) : null}
-                        </div>
-                      </label>
-
-                      <label className="grid gap-2 md:col-span-2">
-                        <span className="text-[10px] font-black uppercase tracking-[0.16em] text-[#5F7077]">Descricao</span>
-                        <textarea
-                          value={item.description ?? ''}
-                          onChange={(event) => updateCardDescription(index, event.target.value)}
-                          rows={4}
-                          className="rounded-[14px] border border-[#D8E6EB] bg-white px-4 py-3 text-sm font-semibold leading-6 text-[#15323b] outline-none focus:border-[#1398B7]"
-                        />
-                      </label>
-
-                      <label className="grid gap-2">
-                        <span className="text-[10px] font-black uppercase tracking-[0.16em] text-[#5F7077]">Cor do item</span>
-                        <div className="flex items-center gap-2">
-                          <input
-                            type="color"
-                            value={currentItemColor}
-                            onChange={(event) => updateItemColor(index, event.target.value)}
-                            className="h-11 w-full rounded-[14px] border border-[#D8E6EB] bg-white px-2"
-                          />
-                          <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() => resetItemColor(index)}
-                            className="h-11 rounded-[14px] border-[#D8E6EB] px-3 text-[10px] font-black uppercase tracking-[0.12em]"
-                          >
-                            Padrao
-                          </Button>
-                        </div>
-                      </label>
-
+                    <div className="mt-4 grid gap-3">
                       <label className="grid gap-2">
                         <span className="text-[10px] font-black uppercase tracking-[0.16em] text-[#5F7077]">Link do video</span>
                         <input
