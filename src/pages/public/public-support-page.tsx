@@ -8,6 +8,7 @@ import { GenflixPublicFooter } from '@/components/public/genflix-public-footer'
 import { GenflixPublicHeader } from '@/components/public/genflix-public-header'
 import { PublicTextBlocksSection } from '@/components/public/public-text-blocks-section'
 import { BannerPlacementSlot } from '@/features/banners/banner-placement-slot'
+import { EditableContainer } from '@/features/site-editor/visual-editor'
 import { createSupportFaqSuggestion, fetchSupportFaqs, fetchSupportSettings, trackSupportFaqEvent } from '@/features/support/api'
 import { genflixNavLinks } from '@/features/public/genflix-site-content'
 import { getOrderedSupportCategories, getSupportListRoute } from '@/lib/support-sla'
@@ -193,6 +194,7 @@ export function PublicSupportPage() {
         />
       </section>
 
+      <EditableContainer entryKey="support.faqSection" label="Seção de perguntas frequentes" pageKey="support">
       <section id="perguntas-frequentes" className="public-site-container pb-10 sm:pb-14">
         <div className="grid gap-6 lg:grid-cols-[260px_minmax(0,1fr)]">
           <aside className="space-y-4 lg:sticky lg:top-28 lg:self-start">
@@ -210,6 +212,7 @@ export function PublicSupportPage() {
               />
             </label>
 
+            <EditableContainer entryKey="support.faqCategoriesContainer" label="Container de categorias FAQ" pageKey="support">
             <div className="hidden rounded-[28px] border border-[#D8E6EB] bg-white p-4 shadow-sm lg:block">
               <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#5F7077]">Categorias</p>
               <div className="mt-4 space-y-2">
@@ -229,6 +232,7 @@ export function PublicSupportPage() {
                 ))}
               </div>
             </div>
+            </EditableContainer>
 
             <label className="grid gap-2 lg:hidden">
               <span className="text-[10px] font-black uppercase tracking-[0.18em] text-[#5F7077]">Categoria</span>
@@ -244,6 +248,7 @@ export function PublicSupportPage() {
             </label>
           </aside>
 
+          <EditableContainer entryKey="support.faqContentContainer" label="Container principal FAQ" pageKey="support">
           <div className="rounded-[30px] border border-[#D8E6EB] bg-white p-6 shadow-sm sm:p-7">
             <div className="flex items-center gap-3">
               <HelpCircle className="h-5 w-5 text-[#1398B7]" />
@@ -305,7 +310,8 @@ export function PublicSupportPage() {
                   </div>
                 ) : null}
                 {filteredFaqs.map((item) => (
-                  <article key={item.id} className="rounded-[22px] border border-[#D8E6EB] bg-[#F8FBFC] px-5 py-4">
+                  <EditableContainer key={item.id} entryKey="support.faqItemContainer" label="Container de item FAQ" pageKey="support">
+                  <article className="rounded-[22px] border border-[#D8E6EB] bg-[#F8FBFC] px-5 py-4">
                     <h3 className="text-base font-black text-[#15323b]">{item.question}</h3>
                     <p className="mt-3 text-sm leading-7 text-[#5F7077]">{item.answer}</p>
                     <div className="mt-4 flex flex-wrap items-center gap-2">
@@ -330,12 +336,15 @@ export function PublicSupportPage() {
                       </button>
                     </div>
                   </article>
+                  </EditableContainer>
                 ))}
               </div>
             )}
           </div>
+          </EditableContainer>
         </div>
       </section>
+      </EditableContainer>
 
       <section className="public-site-container pb-16 sm:pb-20">
         <article className="overflow-hidden rounded-[32px] border border-[#D8E6EB] bg-white shadow-sm">

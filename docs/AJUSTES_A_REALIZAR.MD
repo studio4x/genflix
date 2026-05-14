@@ -246,23 +246,19 @@
 
 [OK] T77 - Elimitar a sombra do contorno do rodapé.
 
-[ ] T78 - Alterar o layout do blog para ser igual ao da zapflix.
+[OK] [REVISADO] T79 - A Abertura de ticket, só deverá ser permitida para usuário logado. Remover da página de suporte, a primeira seção de sla publico e o botão de abrir ticket. Inserir uma faq para inserir o acesso ao suporte via ticket.
 
-[OK] T79 - A Abertura de ticket, só deverá ser permitida para usuário logado. Remover da página de suporte, a primeira seção de sla publico e o botão de abrir ticket. Inserir uma faq para inserir o acesso ao suporte via ticket.
+[OK] [REVISADO] T81 - no admin, na pagina de criar faq, mova o botão de salvar para o painel de detalhes.
 
-[ ] T80 - Implementar chatbot igual da homecarematch.
+[OK] [REVISADO] T82 - no admin, na página de faz, insira a opção de adicionar nova categoria dentro da aba de categorias.
 
-[OK] T81 - no admin, na pagina de criar faq, mova o botão de salvar para o painel de detalhes.
+[OK] [REVISADO] T83 - Inserir a possibilidade de inserir uma seção de bonus na página do curso. Essa inserção será pela página "pagina publica do curso" dentro do construtor de curso.  Na pagina publica do curso, esse bonus deverá aparecer abaixo do botão comprar. Ex.: quadro "Prévia de conteúdo"
 
-[OK] T82 - no admin, na página de faz, insira a opção de adicionar nova categoria dentro da aba de categorias.
+[OK] [REVISADO] T84 - ALTERAR A COR DO FUNDO DA SEÇÃO "CUYRSOS POR AREA DE CONHECIMENTO" NA HOME. INSERIR AZUL CLARO.
 
-[OK] T83 - Inserir a possibilidade de inserir uma seção de bonus na página do curso. Essa inserção será pela página "pagina publica do curso" dentro do construtor de curso.  Na pagina publica do curso, esse bonus deverá aparecer abaixo do botão comprar. Ex.: quadro "Prévia de conteúdo"
+[OK] [REVISADO] t85 - Na página recursos, o editor visual deverá ter a opção de trocar/inserir icones no quadros existentes. Além disso, precisamos implementar um botão para abrir um video de instrução. Precisa também adicionar na página admin uma página para inserir os videos de cada recurso.. Os recursos que não tiverem videos adicionados, não aparecerá o botão de ver video.
 
-[OK] T84 - ALTERAR A COR DO FUNDO DA SEÇÃO "CUYRSOS POR AREA DE CONHECIMENTO" NA HOME. INSERIR AZUL CLARO.
-
-[OK] t85 - Na página recursos, o editor visual deverá ter a opção de trocar/inserir icones no quadros existentes. Além disso, precisamos implementar um botão para abrir um video de instrução. Precisa também adicionar na página admin uma página para inserir os videos de cada recurso.. Os recursos que não tiverem videos adicionados, não aparecerá o botão de ver video.
-
-[OK] T86 - Ajustar a narração das aulas que aparece a mensagem de erro "Não foi possível carregar a narração desta aula no momento.". Log do erro: inspector.js:7  POST https://axhlkilkqolvfecyhhxx.supabase.co/functions/v1/generate-lesson-audio 401 (Unauthorized)
+[OK] [REVISADO] T86 - Ajustar a narração das aulas que aparece a mensagem de erro "Não foi possível carregar a narração desta aula no momento.". Log do erro: inspector.js:7  POST https://axhlkilkqolvfecyhhxx.supabase.co/functions/v1/generate-lesson-audio 401 (Unauthorized)
 window.fetch @ inspector.js:7
 C @ lesson-audio-player-Cn6Fq8Iz.js:1
 await in C
@@ -297,7 +293,7 @@ di @ vendor-BgSEBt1b.js:5
 gn @ vendor-BgSEBt1b.js:5
 mn @ vendor-BgSEBt1b.js:5
 
-[OK] T86.5 - Deixe na cor preta todo esse texto: "Narração em áudio da aula
+[OK] [REVISADO] T86.5 - Deixe na cor preta todo esse texto: "Narração em áudio da aula
 O conteúdo textual desta aula pode ser narrado em áudio gerado por IA para escuta no player abaixo."
 
 ## Chat 21 - Ajustes Gerais
@@ -338,6 +334,9 @@ O conteúdo textual desta aula pode ser narrado em áudio gerado por IA para esc
 [OK] [REVISADO] t101 - Na página do admin, devemos inserir dentro da página "admin/cursos", uma aba para configurar as categorias dos cursos. AS categorias deverá ser um crud. Para eu poder criar, editar e remover categorias e também poder selecionar em cada curso a qual categoria ele pertence. Na página pública de cursos, as categorias que devem aparecer lá são as categorias que foram criadas.
 
 ---
+[ ] T78 - Alterar o layout do blog para ser igual ao da zapflix.
+
+[ ] T80 - Implementar chatbot igual da homecarematch.
 
 ## CHAT 21 — Checklist final
 
