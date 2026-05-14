@@ -128,6 +128,7 @@ type MediaLibraryIconOption = {
   assetId: string
   imageUrl: string
   label: string
+  mimeType?: string | null
 }
 
 type RichTextImageSelection = {
@@ -257,6 +258,15 @@ function describeValueShape(value: unknown) {
   }
 
   return typeof value
+}
+
+function isValidHexColor(value: string) {
+  return /^#(?:[0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/.test(value.trim())
+}
+
+function normalizeHexColorForStorage(value: string) {
+  const normalized = value.trim().toUpperCase()
+  return isValidHexColor(normalized) ? normalized : ''
 }
 
 function normalizeTextStyle(value: unknown): TextStyleValue {
@@ -761,6 +771,7 @@ function buildMediaLibraryIconOptions(assets: SiteAsset[]) {
       assetId: asset.id,
       imageUrl,
       label: resolveSiteAssetLabel(asset),
+      mimeType: asset.mime_type,
     })
   }
 
@@ -943,13 +954,16 @@ function ListItemEditorCard({
   const iconImageUrl = typeof metadataWithoutItems.iconImageUrl === 'string' ? metadataWithoutItems.iconImageUrl : ''
   const iconImageAlt = typeof metadataWithoutItems.iconImageAlt === 'string' ? metadataWithoutItems.iconImageAlt : ''
   const iconColor = typeof metadataWithoutItems.iconColor === 'string' ? metadataWithoutItems.iconColor : ''
+  const iconImageMimeType = typeof metadataWithoutItems.iconImageMimeType === 'string' ? metadataWithoutItems.iconImageMimeType : ''
   const iconImageAssetId = typeof metadataWithoutItems.iconImageAssetId === 'string' ? metadataWithoutItems.iconImageAssetId : ''
   const selectedLibraryIcon = iconLibraryOptions.find((option) => option.assetId === iconImageAssetId)
     ?? iconLibraryOptions.find((option) => option.imageUrl === iconImageUrl)
+  const resolvedIconImageMimeType = iconImageMimeType || selectedLibraryIcon?.mimeType || ''
   const selectedIconToken = iconImageUrl
     ? (selectedLibraryIcon ? `asset:${selectedLibraryIcon.assetId}` : '__uploaded__')
     : (svgOnlyIcons ? 'none' : (iconKey ? `native:${iconKey}` : 'none'))
   const selectedNativeIcon = iconKey ? getSiteIconOption(iconKey) : null
+  const [iconColorInput, setIconColorInput] = useState(iconColor)
   const templateDefinition = editorConfig.templates.find((template) => template.id === templateKey)
   const shouldShowIconField = !editorConfig.hiddenFields.has('icon')
   delete metadataWithoutItems.buttonLabel
@@ -960,6 +974,10 @@ function ListItemEditorCard({
   delete metadataWithoutItems.entryPrefix
   delete metadataWithoutItems.pageKey
   delete metadataWithoutItems.iconKey
+
+  useEffect(() => {
+    setIconColorInput(iconColor)
+  }, [iconColor])
 
   function updateField(field: keyof EditableListItem, value: string) {
     onChange({
@@ -995,6 +1013,65 @@ function ListItemEditorCard({
     })
   }
 
+  function applyIconColorValue(value: string) {
+    const normalized = normalizeHexColorForStorage(value)
+    updateMetadataField('iconColor', normalized)
+    setIconColorInput(normalized)
+  }
+
+  function handleIconHexInputBlur() {
+    if (iconColorInput.trim() === '') {
+      updateMetadataField('iconColor', '')
+      setIconColorInput('')
+      return
+    }
+
+    const normalized = normalizeHexColorForStorage(iconColorInput)
+    if (normalized) {
+      updateMetadataField('iconColor', normalized)
+      setIconColorInput(normalized)
+      return
+    }
+
+    setIconColorInput(iconColor)
+  }
+
+  const iconColorControls = (
+    <div className="grid gap-2 rounded-[14px] border border-[#D8E6EB] bg-[#F8FCFD] p-3">
+      <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Cor do ícone</p>
+      <div className="flex flex-wrap items-center gap-3">
+        <input
+          type="color"
+          value={isValidHexColor(iconColor) ? iconColor : '#1398B7'}
+          onChange={(event) => applyIconColorValue(event.target.value)}
+          className="h-10 w-14 rounded-[12px] border border-[#D8E6EB] bg-white p-1 outline-none"
+        />
+        <input
+          type="text"
+          inputMode="text"
+          value={iconColorInput}
+          onChange={(event) => setIconColorInput(event.target.value.toUpperCase())}
+          onBlur={handleIconHexInputBlur}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter') {
+              event.preventDefault()
+              handleIconHexInputBlur()
+            }
+          }}
+          placeholder="#1398B7"
+          className="h-10 min-w-[126px] rounded-[12px] border border-[#D8E6EB] bg-white px-3 text-sm font-semibold uppercase text-[#15323b] outline-none focus:border-[#1398B7]"
+        />
+        <button
+          type="button"
+          onClick={() => applyIconColorValue('')}
+          className="rounded-full border border-[#D8E6EB] px-3 py-2 text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077] hover:bg-white"
+        >
+          Usar cor padrão
+        </button>
+      </div>
+    </div>
+  )
+
   function updateIconSelection(nextToken: string) {
     const nextMetadata = buildMetadataBase()
 
@@ -1003,6 +1080,7 @@ function ListItemEditorCard({
       delete nextMetadata.iconImageUrl
       delete nextMetadata.iconImageAlt
       delete nextMetadata.iconImageAssetId
+      delete nextMetadata.iconImageMimeType
       delete nextMetadata.iconColor
     } else if (nextToken.startsWith('native:')) {
       if (svgOnlyIcons) {
@@ -1012,6 +1090,7 @@ function ListItemEditorCard({
       delete nextMetadata.iconImageUrl
       delete nextMetadata.iconImageAlt
       delete nextMetadata.iconImageAssetId
+      delete nextMetadata.iconImageMimeType
     } else if (nextToken.startsWith('asset:')) {
       const assetId = nextToken.slice('asset:'.length)
       const selectedOption = iconLibraryOptions.find((option) => option.assetId === assetId)
@@ -1021,6 +1100,7 @@ function ListItemEditorCard({
       nextMetadata.iconImageUrl = selectedOption.imageUrl
       nextMetadata.iconImageAlt = selectedOption.label
       nextMetadata.iconImageAssetId = selectedOption.assetId
+      nextMetadata.iconImageMimeType = selectedOption.mimeType ?? undefined
       delete nextMetadata.iconKey
     } else {
       return
@@ -1084,6 +1164,7 @@ function ListItemEditorCard({
               iconImageUrl,
               iconAlt: iconImageAlt || item.label || item.title || item.id,
               iconColor,
+              iconImageMimeType: resolvedIconImageMimeType,
               className: 'h-4 w-4',
             })
           )}
@@ -1332,13 +1413,14 @@ function ListItemEditorCard({
               className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border bg-white"
               style={{ borderColor: colorValue || '#D8E6EB', color: colorValue || '#0A3640' }}
             >
-              {renderSiteIconVisual({
-                iconKey,
-                iconImageUrl,
-                iconAlt: iconImageAlt || item.label || item.title || item.id,
-                iconColor: iconColor || colorValue,
-                className: 'h-4 w-4',
-              })}
+                {renderSiteIconVisual({
+                  iconKey,
+                  iconImageUrl,
+                  iconAlt: iconImageAlt || item.label || item.title || item.id,
+                  iconColor: iconColor || colorValue,
+                  iconImageMimeType: resolvedIconImageMimeType,
+                  className: 'h-4 w-4',
+                })}
             </div>
             <div className="min-w-0 flex-1">
               <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[#1398B7]">
@@ -1419,24 +1501,7 @@ function ListItemEditorCard({
             <label className="grid gap-1.5 md:col-span-2">
               <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Ícone</span>
               {iconSelectionField}
-              <div className="grid gap-2 rounded-[14px] border border-[#D8E6EB] bg-[#F8FCFD] p-3">
-                <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Cor do ícone</p>
-                <div className="flex items-center gap-3">
-                  <input
-                    type="color"
-                    value={iconColor || '#1398B7'}
-                    onChange={(event) => updateMetadataField('iconColor', event.target.value)}
-                    className="h-10 w-14 rounded-[12px] border border-[#D8E6EB] bg-white p-1 outline-none"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => updateMetadataField('iconColor', '')}
-                    className="rounded-full border border-[#D8E6EB] px-3 py-2 text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077] hover:bg-white"
-                  >
-                    Usar cor padrão
-                  </button>
-                </div>
-              </div>
+              {iconColorControls}
               <div className="grid gap-2 rounded-[14px] border border-[#D8E6EB] bg-[#F8FCFD] p-3">
                 <div className="flex items-center gap-3">
                   <div className="flex h-10 w-10 items-center justify-center rounded-full border border-[#D8E6EB] bg-white text-[#0A3640]">
@@ -1445,6 +1510,7 @@ function ListItemEditorCard({
                       iconImageUrl,
                       iconAlt: iconImageAlt || item.label || item.title || item.id,
                       iconColor,
+                      iconImageMimeType: resolvedIconImageMimeType,
                       className: 'h-4 w-4',
                     })}
                   </div>
@@ -1472,6 +1538,7 @@ function ListItemEditorCard({
                         delete nextMetadata.iconImageUrl
                         delete nextMetadata.iconImageAlt
                         delete nextMetadata.iconImageAssetId
+                        delete nextMetadata.iconImageMimeType
 
                         onChange({
                           ...item,
@@ -1647,24 +1714,7 @@ function ListItemEditorCard({
           <label className="grid gap-1.5 md:col-span-2">
             <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Ícone</span>
             {iconSelectionField}
-            <div className="grid gap-2 rounded-[14px] border border-[#D8E6EB] bg-[#F8FCFD] p-3">
-              <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Cor do ícone</p>
-              <div className="flex items-center gap-3">
-                <input
-                  type="color"
-                  value={iconColor || '#1398B7'}
-                  onChange={(event) => updateMetadataField('iconColor', event.target.value)}
-                  className="h-10 w-14 rounded-[12px] border border-[#D8E6EB] bg-white p-1 outline-none"
-                />
-                <button
-                  type="button"
-                  onClick={() => updateMetadataField('iconColor', '')}
-                  className="rounded-full border border-[#D8E6EB] px-3 py-2 text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077] hover:bg-white"
-                >
-                  Usar cor padrão
-                </button>
-              </div>
-            </div>
+            {iconColorControls}
           </label>
         ) : null}
         <div className="grid gap-1.5 md:col-span-2">
@@ -1986,6 +2036,7 @@ function EditorModal({
       nextMetadata.iconImageUrl = asset.public_url
       nextMetadata.iconImageAlt = asset.alt ?? currentItem?.label ?? currentItem?.title ?? file.name
       nextMetadata.iconImageAssetId = asset.id
+      nextMetadata.iconImageMimeType = asset.mime_type
       delete nextMetadata.iconKey
       nextItems[itemIndex] = {
         ...nextItems[itemIndex],
@@ -3824,6 +3875,7 @@ function EditorModal({
                       const itemIconKey = typeof itemMetadata.iconKey === 'string' ? itemMetadata.iconKey : null
                       const itemIconImageUrl = typeof itemMetadata.iconImageUrl === 'string' ? itemMetadata.iconImageUrl : null
                       const itemIconImageAlt = typeof itemMetadata.iconImageAlt === 'string' ? itemMetadata.iconImageAlt : null
+                      const itemIconImageMimeType = typeof itemMetadata.iconImageMimeType === 'string' ? itemMetadata.iconImageMimeType : null
                       const itemIconColor = typeof itemMetadata.iconColor === 'string' ? itemMetadata.iconColor : null
 
                       return (
@@ -3836,6 +3888,7 @@ function EditorModal({
                                   iconImageUrl: itemIconImageUrl,
                                   iconAlt: itemIconImageAlt || (typeof item.label === 'string' ? item.label : undefined),
                                   iconColor: itemIconColor,
+                                  iconImageMimeType: itemIconImageMimeType,
                                   className: 'h-4 w-4',
                                 })}
                               </div>
