@@ -164,7 +164,9 @@ export function GenflixPublicFooter({
         <div className="space-y-8 px-6 py-8 sm:px-8 lg:px-10">
           <div className="space-y-8 border-b border-white/18 pb-8">
             <div className="flex items-center">
-              <GenflixLogo theme="light" />
+              <Link to="/" aria-label="Ir para a home da GenFlix">
+                <GenflixLogo theme="light" />
+              </Link>
             </div>
 
             <div className="grid gap-8 lg:grid-cols-4">
