@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, type MouseEvent } from 'react'
 
 type ToolbarItem = string | Record<string, unknown> | Array<string | Record<string, unknown>>
 
@@ -71,15 +71,44 @@ function getMovableElement(node: EventTarget | null) {
   return node.closest('[data-hcm-movable="true"]') as HTMLElement | null
 }
 
+function normalizeMovableImagesHtml(html: string) {
+  if (typeof document === 'undefined') {
+    return html
+  }
+
+  const container = document.createElement('div')
+  container.innerHTML = html
+
+  container.querySelectorAll('img').forEach((img) => {
+    img.setAttribute('data-hcm-movable', 'true')
+    img.setAttribute('draggable', 'true')
+    img.setAttribute('contenteditable', 'false')
+    img.style.maxWidth = '100%'
+    img.style.height = 'auto'
+  })
+
+  return container.innerHTML
+}
+
 function getAlignmentTarget(element: HTMLElement) {
   if (element.tagName === 'IMG') {
-    const paragraph = element.closest('p')
-    if (paragraph instanceof HTMLElement) {
-      return paragraph
-    }
+    return element
   }
 
   return element
+}
+
+function getSelectedImageElement(element: HTMLElement | null) {
+  if (!element) {
+    return null
+  }
+
+  if (element.tagName === 'IMG') {
+    return element as HTMLImageElement
+  }
+
+  const image = element.querySelector('img[data-hcm-movable="true"]')
+  return image instanceof HTMLImageElement ? image : null
 }
 
 function createSelectionSnapshot(selection: Selection | null) {
@@ -205,7 +234,7 @@ function buildImageHtml(input: { src: string; alt?: string }) {
   }
 
   return `
-    <p><img src="${escapeHtmlAttribute(safeSrc)}" alt="${escapeHtmlAttribute(safeAlt)}" data-hcm-movable="true" draggable="true" /></p>
+    <p><img src="${escapeHtmlAttribute(safeSrc)}" alt="${escapeHtmlAttribute(safeAlt)}" data-hcm-movable="true" draggable="true" contenteditable="false" /></p>
     <p></p>
   `.trim()
 }
@@ -325,6 +354,7 @@ export default function ReactQuill({
   const savedSelectionRef = useRef<Range | null>(null)
   const draggedElementRef = useRef<HTMLElement | null>(null)
   const selectedMovableElementRef = useRef<HTMLElement | null>(null)
+  const [movableContextMenu, setMovableContextMenu] = useState<{ x: number; y: number } | null>(null)
   const [activeMode, setActiveMode] = useState<'visual' | 'html'>('visual')
   const toolbarItems = useMemo(() => flattenToolbarItems(modules?.toolbar ?? defaultToolbar), [modules])
 
@@ -334,8 +364,9 @@ export default function ReactQuill({
       return
     }
 
-    if (editor.innerHTML !== value) {
-      editor.innerHTML = value
+    const normalizedValue = normalizeMovableImagesHtml(value)
+    if (editor.innerHTML !== normalizedValue) {
+      editor.innerHTML = normalizedValue
     }
   }, [value, activeMode])
 
@@ -403,6 +434,101 @@ export default function ReactQuill({
     selectedMovableElementRef.current = element
   }
 
+  function closeMovableContextMenu() {
+    setMovableContextMenu(null)
+  }
+
+  function openMovableContextMenu(event: MouseEvent<HTMLElement>) {
+    const movableElement = getMovableElement(event.target)
+    if (!movableElement) {
+      return
+    }
+
+    event.preventDefault()
+    selectMovableElement(movableElement)
+    setMovableContextMenu({ x: event.clientX, y: event.clientY })
+  }
+
+  function updateSelectedMovableImage(mutator: (image: HTMLImageElement) => void) {
+    const image = getSelectedImageElement(selectedMovableElementRef.current)
+    if (!image) {
+      return
+    }
+
+    mutator(image)
+    syncEditorValue()
+  }
+
+  async function replaceSelectedImage() {
+    const image = getSelectedImageElement(selectedMovableElementRef.current)
+    if (!image) {
+      return
+    }
+
+    closeMovableContextMenu()
+
+    if (onRequestImage) {
+      const selectedImage = await onRequestImage()
+      if (!selectedImage) {
+        return
+      }
+
+      updateSelectedMovableImage((nextImage) => {
+        nextImage.src = selectedImage.src
+        nextImage.alt = selectedImage.alt ?? nextImage.alt
+      })
+      return
+    }
+
+    const nextUrl = window.prompt('Digite a nova URL da imagem', image.src)
+    if (!nextUrl) {
+      return
+    }
+
+    updateSelectedMovableImage((nextImage) => {
+      nextImage.src = nextUrl
+    })
+  }
+
+  function editSelectedImageAlt() {
+    const image = getSelectedImageElement(selectedMovableElementRef.current)
+    if (!image) {
+      return
+    }
+
+    closeMovableContextMenu()
+
+    const nextAlt = window.prompt('Texto alternativo da imagem', image.alt ?? '')
+    if (nextAlt === null) {
+      return
+    }
+
+    updateSelectedMovableImage((nextImage) => {
+      nextImage.alt = nextAlt
+    })
+  }
+
+  function removeSelectedMovableElement() {
+    const selectedElement = selectedMovableElementRef.current
+    if (!selectedElement) {
+      return
+    }
+
+    closeMovableContextMenu()
+    const parentParagraph = selectedElement.parentElement
+    if (
+      parentParagraph instanceof HTMLParagraphElement
+      && parentParagraph.childElementCount === 1
+      && parentParagraph.textContent?.trim() === ''
+    ) {
+      parentParagraph.remove()
+    } else if (selectedElement.isConnected) {
+      selectedElement.remove()
+    }
+    clearSelectedMovableElement()
+    syncEditorValue()
+  }
+
   function runEditorCommand(command: string, nextValue?: string) {
     restoreSavedSelection()
     execEditorCommand(editorRef.current, command, nextValue)
@@ -430,7 +556,7 @@ export default function ReactQuill({
 
     const imageUrl = window.prompt('Digite a URL da imagem')
     if (imageUrl) {
-      runEditorCommand('insertImage', imageUrl)
+      insertEditorHtml(buildImageHtml({ src: imageUrl }))
     }
   }
 
@@ -447,16 +573,12 @@ export default function ReactQuill({
     const alignmentTarget = getAlignmentTarget(selectedElement)
 
     if (selectedElement.tagName === 'IMG') {
-      alignmentTarget.style.textAlign = alignment
-      selectedElement.style.display = alignment === 'left' ? 'block' : 'inline-block'
+      selectedElement.style.display = 'block'
       selectedElement.style.float = 'none'
-      if (alignment === 'left') {
-        selectedElement.style.marginLeft = '0'
-        selectedElement.style.marginRight = '0'
-      } else {
-        selectedElement.style.removeProperty('margin-left')
-        selectedElement.style.removeProperty('margin-right')
-      }
+      selectedElement.style.maxWidth = '100%'
+      selectedElement.style.height = 'auto'
+      selectedElement.style.marginLeft = alignment === 'center' || alignment === 'right' ? 'auto' : '0'
+      selectedElement.style.marginRight = alignment === 'center' || alignment === 'left' ? 'auto' : '0'
       if (alignment === 'justify') {
         selectedElement.style.width = '100%'
       } else if (selectedElement.style.width === '100%') {
@@ -558,6 +680,27 @@ export default function ReactQuill({
     document.addEventListener('selectionchange', handleSelectionChange)
     return () => document.removeEventListener('selectionchange', handleSelectionChange)
   }, [activeMode])
+
+  useEffect(() => {
+    if (typeof document === 'undefined') {
+      return
+    }
+
+    function handleDocumentPointerDown(event: PointerEvent) {
+      const target = event.target
+      if (!(target instanceof Node)) {
+        return
+      }
+
+      const root = editorRef.current
+      if (movableContextMenu && root && !root.contains(target)) {
+        closeMovableContextMenu()
+      }
+    }
+
+    document.addEventListener('pointerdown', handleDocumentPointerDown)
+    return () => document.removeEventListener('pointerdown', handleDocumentPointerDown)
+  }, [movableContextMenu])
 
   return (
     <div className={`react-quill-local overflow-hidden rounded-[18px] border border-slate-200 bg-white ${className}`}>
@@ -833,9 +976,28 @@ export default function ReactQuill({
             data-placeholder={placeholder}
             onMouseUp={rememberSelection}
             onKeyUp={rememberSelection}
+            onMouseDown={(event) => {
+              const movableElement = getMovableElement(event.target)
+              if (!movableElement) {
+                return
+              }
+
+              event.preventDefault()
+              selectMovableElement(movableElement)
+            }}
             onClick={(event) => {
               selectMovableElement(getMovableElement(event.target))
               rememberSelection()
+            }}
+            onContextMenu={openMovableContextMenu}
+            onKeyDown={(event) => {
+              if ((event.key === 'Delete' || event.key === 'Backspace') && selectedMovableElementRef.current) {
+                event.preventDefault()
+                removeSelectedMovableElement()
+              }
+              if (event.key === 'Escape') {
+                closeMovableContextMenu()
+              }
             }}
             onDragStart={(event) => {
               const movableElement = getMovableElement(event.target)
@@ -898,6 +1060,43 @@ export default function ReactQuill({
             onInput={(event) => onChange(event.currentTarget.innerHTML)}
             onBlur={(event) => onChange(event.currentTarget.innerHTML)}
           />
+          {movableContextMenu ? (
+            <div
+              className="fixed z-50 w-56 rounded-2xl border border-slate-200 bg-white p-2 shadow-2xl"
+              style={{ left: movableContextMenu.x, top: movableContextMenu.y }}
+              onPointerDown={(event) => event.stopPropagation()}
+              onMouseLeave={closeMovableContextMenu}
+            >
+              <div className="mb-2 px-2 text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
+                Imagem
+              </div>
+              <div className="grid grid-cols-2 gap-1">
+                <button type="button" className="rounded-lg border border-slate-200 px-2 py-1.5 text-left text-xs font-semibold text-slate-700 hover:bg-slate-50" onClick={() => { applyAlignment('left'); closeMovableContextMenu() }}>
+                  Esquerda
+                </button>
+                <button type="button" className="rounded-lg border border-slate-200 px-2 py-1.5 text-left text-xs font-semibold text-slate-700 hover:bg-slate-50" onClick={() => { applyAlignment('center'); closeMovableContextMenu() }}>
+                  Centro
+                </button>
+                <button type="button" className="rounded-lg border border-slate-200 px-2 py-1.5 text-left text-xs font-semibold text-slate-700 hover:bg-slate-50" onClick={() => { applyAlignment('right'); closeMovableContextMenu() }}>
+                  Direita
+                </button>
+                <button type="button" className="rounded-lg border border-slate-200 px-2 py-1.5 text-left text-xs font-semibold text-slate-700 hover:bg-slate-50" onClick={() => { applyAlignment('justify'); closeMovableContextMenu() }}>
+                  Justificar
+                </button>
+              </div>
+              <div className="mt-2 grid gap-1">
+                <button type="button" className="rounded-lg border border-slate-200 px-2 py-1.5 text-left text-xs font-semibold text-slate-700 hover:bg-slate-50" onClick={() => void replaceSelectedImage()}>
+                  Trocar imagem
+                </button>
+                <button type="button" className="rounded-lg border border-slate-200 px-2 py-1.5 text-left text-xs font-semibold text-slate-700 hover:bg-slate-50" onClick={editSelectedImageAlt}>
+                  Propriedades
+                </button>
+                <button type="button" className="rounded-lg border border-rose-200 px-2 py-1.5 text-left text-xs font-semibold text-rose-700 hover:bg-rose-50" onClick={removeSelectedMovableElement}>
+                  Remover
+                </button>
+              </div>
+            </div>
+          ) : null}
         </>
       ) : (
         <textarea
@@ -927,6 +1126,11 @@ export default function ReactQuill({
         .react-quill-local [data-hcm-movable='true'][data-hcm-selected='true'] {
           outline: 3px solid rgba(14, 165, 233, 0.45);
           outline-offset: 4px;
+        }
+
+        .react-quill-local img[data-hcm-movable='true'] {
+          display: inline-block;
+          vertical-align: middle;
         }
 
         .react-quill-local .genflix-columns {
