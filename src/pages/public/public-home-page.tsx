@@ -4,7 +4,6 @@ import { useAuth } from '@/app/providers/auth-provider'
 import { HomeBannerCarousel } from '@/features/banners/home-banner-carousel'
 import { GenflixCtaButton, normalizeGenflixCtaTone } from '@/components/public/genflix-cta-button'
 import { GenflixCourseCard } from '@/components/public/genflix-course-card'
-import { GenflixNewsletterSection } from '@/components/public/genflix-newsletter-section'
 import { GenflixPublicFooter } from '@/components/public/genflix-public-footer'
 import { GenflixPublicHeader } from '@/components/public/genflix-public-header'
 import {
@@ -16,6 +15,7 @@ import {
 import {
   EditableContainer,
   EditableButton,
+  EditableImage,
   EditableList,
   EditableText,
   isEditableItemVisible,
@@ -48,11 +48,11 @@ const homeLayoutFallback: EditableListItem[] = [
     },
   },
   {
-    id: 'home-newsletter',
-    label: 'Newsletter',
-    description: 'Bloco final com chamada para cursos.',
+    id: 'home-cta',
+    label: 'Chamada final',
+    description: 'Bloco final com chamada para explorar os cursos.',
     metadata: {
-      templateKey: 'newsletter',
+      templateKey: 'cta',
       pageKey: 'home',
     },
   },
@@ -92,15 +92,15 @@ const homeLayoutSchema = {
       },
     },
     {
-      id: 'newsletter',
-      label: 'Newsletter',
-      description: 'Bloco de chamada para cursos com imagem e CTA.',
+      id: 'cta',
+      label: 'Chamada final',
+      description: 'Bloco final com imagem e CTA para explorar os cursos.',
       item: {
-        id: 'newsletter',
-        label: 'Newsletter',
-        description: 'Bloco final com chamada para cursos.',
+        id: 'cta',
+        label: 'Chamada final',
+        description: 'Bloco final com chamada para explorar os cursos.',
         metadata: {
-          templateKey: 'newsletter',
+          templateKey: 'cta',
           pageKey: 'home',
         },
       },
@@ -136,7 +136,7 @@ function resolveHomeSectionPrefix(item: EditableListItem, templateKey: string) {
 
   if (templateKey === 'categories') return 'home.categories'
   if (templateKey === 'featured') return 'home.featured'
-  return 'home.newsletter'
+  return 'home.cta'
 }
 
 function resolveHomeSectionPageKey(item: EditableListItem): SitePageKey {
@@ -207,7 +207,7 @@ function HomeHeroFallbackSection() {
             </GenflixCtaButton>
 
             <GenflixCtaButton asChild tone="surface" className="min-h-[48px] px-5">
-              <a href="#newsletter">Quero me inscrever</a>
+              <a href="#home-cta">Quero me inscrever</a>
             </GenflixCtaButton>
           </div>
         </div>
@@ -355,6 +355,91 @@ function HomeFeaturedSection({
   )
 }
 
+function HomeFinalCtaSection({
+  entryPrefix,
+  sectionId,
+  pageKey = 'home',
+}: {
+  entryPrefix: string
+  sectionId?: string
+  pageKey?: SitePageKey
+}) {
+  return (
+    <section id={sectionId} className="bg-white pb-16 pt-4">
+      <div className="public-site-container">
+        <EditableContainer entryKey={`${entryPrefix}.card`} label="Container interno da chamada final da home" pageKey={pageKey}>
+          <div className="grid min-h-[360px] overflow-hidden rounded-[6px] border border-[#D8E6EB] bg-white shadow-[0_24px_56px_rgba(21,50,59,0.06)] lg:grid-cols-[1fr_1fr]">
+            <EditableImage
+              entryKey={`${entryPrefix}.image`}
+              fallback={{ src: '/images/genflix/home/featured-6.jpg', alt: 'Plataforma GenFlix' }}
+              label="Imagem da chamada final da home"
+              pageKey={pageKey}
+            >
+              {(imageValue) => (
+                <div
+                  className="relative min-h-[280px]"
+                  style={{
+                    backgroundImage: `linear-gradient(180deg, rgba(10, 54, 64, 0.12) 0%, rgba(10, 54, 64, 0.42) 100%), url(${typeof imageValue.src === 'string' ? imageValue.src : '/images/genflix/home/featured-6.jpg'})`,
+                    backgroundPosition: 'center',
+                    backgroundSize: 'cover',
+                  }}
+                />
+              )}
+            </EditableImage>
+
+            <div className="flex items-center px-6 py-10 sm:px-10">
+              <div className="max-w-[460px]">
+                <h2 className="text-[2rem] font-bold leading-[0.96] tracking-[-0.04em] text-[#183139] sm:text-[2.35rem]">
+                  <EditableText
+                    entryKey={`${entryPrefix}.title`}
+                    fallback="Veja em detalhes a mais completa plataforma EAD."
+                    label="Título da chamada final da home"
+                    pageKey={pageKey}
+                  />
+                </h2>
+                <p className="mt-4 text-sm leading-7 text-[#5F7077] sm:text-base">
+                  <EditableText
+                    entryKey={`${entryPrefix}.description`}
+                    fallback="Acesse os cursos, trilhas e recursos para acelerar seu aprendizado."
+                    label="Descrição da chamada final da home"
+                    pageKey={pageKey}
+                  />
+                </p>
+                <div className="mt-7">
+                  <EditableButton
+                    entryKey={`${entryPrefix}.cta`}
+                    fallback={{ label: 'Conheça os cursos', href: '/cursos', isInternal: true, tone: 'solid' }}
+                    label="Botão da chamada final da home"
+                    pageKey={pageKey}
+                  >
+                    {(buttonValue) => buttonValue.isHidden === true ? null : (
+                      <GenflixCtaButton asChild className="px-5 py-3" tone={normalizeGenflixCtaTone(buttonValue.tone)}>
+                        {buttonValue.isInternal === true ? (
+                          <Link to={typeof buttonValue.href === 'string' ? buttonValue.href : '/cursos'}>
+                            {typeof buttonValue.label === 'string' ? buttonValue.label : 'Conheça os cursos'}
+                          </Link>
+                        ) : (
+                          <a
+                            href={typeof buttonValue.href === 'string' ? buttonValue.href : '/cursos'}
+                            target={buttonValue.openInNewTab === true ? '_blank' : undefined}
+                            rel={buttonValue.openInNewTab === true ? 'noreferrer' : undefined}
+                          >
+                            {typeof buttonValue.label === 'string' ? buttonValue.label : 'Conheça os cursos'}
+                          </a>
+                        )}
+                      </GenflixCtaButton>
+                    )}
+                  </EditableButton>
+                </div>
+              </div>
+            </div>
+          </div>
+        </EditableContainer>
+      </div>
+    </section>
+  )
+}
+
 export function PublicHomePage() {
   const { isLoading, user, roles } = useAuth()
   const waitingRoleResolution = !!user && roles.length === 0
@@ -395,16 +480,8 @@ export function PublicHomePage() {
           return <HomeFeaturedSection key={section.id} entryPrefix={entryPrefix} sectionId={occurrence === 0 ? 'destaques' : `destaques-${occurrence + 1}`} pageKey={pageKey} />
         }
 
-        if (templateKey === 'newsletter') {
-          return (
-            <GenflixNewsletterSection
-              key={section.id}
-              id={occurrence === 0 ? 'newsletter' : `newsletter-${occurrence + 1}`}
-              entryPrefix={entryPrefix}
-              pageKey={pageKey}
-              variant="form"
-            />
-          )
+        if (templateKey === 'cta') {
+          return <HomeFinalCtaSection key={section.id} entryPrefix={entryPrefix} sectionId={occurrence === 0 ? 'home-cta' : `home-cta-${occurrence + 1}`} pageKey={pageKey} />
         }
 
         return null
