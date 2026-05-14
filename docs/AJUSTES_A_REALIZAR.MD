@@ -297,7 +297,7 @@ di @ vendor-BgSEBt1b.js:5
 gn @ vendor-BgSEBt1b.js:5
 mn @ vendor-BgSEBt1b.js:5
 
-[ ] T86.5 - Deixe na cor preta todo esse texto: "Narração em áudio da aula
+[OK] T86.5 - Deixe na cor preta todo esse texto: "Narração em áudio da aula
 O conteúdo textual desta aula pode ser narrado em áudio gerado por IA para escuta no player abaixo."
 
 ## Chat 21 - Ajustes Gerais

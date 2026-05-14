@@ -158,8 +158,8 @@ export function LessonAudioPlayer({ lessonId, isAdmin = false }: LessonAudioPlay
             <span className="inline-flex rounded-full bg-sky-600 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-white">
               Texto para Fala
             </span>
-            <h3 className="text-2xl font-black tracking-tight text-slate-900">Narração em áudio da aula</h3>
-            <p className="max-w-2xl text-sm font-medium leading-relaxed text-slate-500">
+            <h3 className="text-2xl font-black tracking-tight text-black">Narração em áudio da aula</h3>
+            <p className="max-w-2xl text-sm font-medium leading-relaxed text-black">
               O conteúdo textual desta aula pode ser narrado em áudio gerado por IA para escuta no player abaixo.
             </p>
           </div>
