@@ -76,10 +76,6 @@ export function renderSiteIconVisual(input: {
 
   // Prioriza ícone nativo quando existir chave válida, evitando comportamento inconsistente
   // de colorização em ativos SVG externos.
-  if (iconKey !== '') {
-    return renderSiteIcon(iconKey, input.className, iconColor)
-  }
-
   if (iconImageUrl !== '') {
     return (
       <img
@@ -88,6 +84,10 @@ export function renderSiteIconVisual(input: {
         className={cn('block h-4 w-4 object-contain', input.className)}
       />
     )
+  }
+
+  if (iconKey !== '') {
+    return renderSiteIcon(iconKey, input.className, iconColor)
   }
 
   return renderSiteIcon(input.iconKey ?? null, input.className, iconColor)

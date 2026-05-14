@@ -47,7 +47,7 @@ import {
   type SiteEditorSettings,
   type SitePageKey,
 } from '@/features/site-editor/types'
-import { renderSiteIcon, renderSiteIconVisual, SITE_ICON_OPTIONS } from '@/features/site-editor/site-icons'
+import { getSiteIconOption, renderSiteIcon, renderSiteIconVisual, SITE_ICON_OPTIONS } from '@/features/site-editor/site-icons'
 import {
   buildSiteAppearanceValue,
   defaultSiteAppearance,
@@ -949,6 +949,7 @@ function ListItemEditorCard({
   const selectedIconToken = iconImageUrl
     ? (selectedLibraryIcon ? `asset:${selectedLibraryIcon.assetId}` : '__uploaded__')
     : (svgOnlyIcons ? 'none' : (iconKey ? `native:${iconKey}` : 'none'))
+  const selectedNativeIcon = iconKey ? getSiteIconOption(iconKey) : null
   const templateDefinition = editorConfig.templates.find((template) => template.id === templateKey)
   const shouldShowIconField = !editorConfig.hiddenFields.has('icon')
   delete metadataWithoutItems.buttonLabel
@@ -1073,6 +1074,31 @@ function ListItemEditorCard({
   const iconSelectionField = shouldShowIconField ? (
     <div className="grid gap-2 rounded-[14px] border border-[#D8E6EB] bg-[#F8FCFD] p-3">
       <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Seleção de ícone</p>
+      <div className="flex items-center gap-3 rounded-[12px] border border-[#D8E6EB] bg-white px-3 py-2">
+        <span className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[#D8E6EB] bg-[#F8FCFD]">
+          {selectedIconToken === 'none' ? (
+            <span className="text-[10px] font-black uppercase tracking-[0.12em] text-[#5F7077]">Sem</span>
+          ) : (
+            renderSiteIconVisual({
+              iconKey,
+              iconImageUrl,
+              iconAlt: iconImageAlt || item.label || item.title || item.id,
+              iconColor,
+              className: 'h-4 w-4',
+            })
+          )}
+        </span>
+        <div className="min-w-0">
+          <p className="text-[10px] font-black uppercase tracking-[0.12em] text-[#1398B7]">Ícone selecionado</p>
+          <p className="truncate text-sm font-semibold text-[#15323b]">
+            {selectedIconToken === 'none'
+              ? 'Sem ícone'
+              : iconImageUrl
+                ? (selectedLibraryIcon?.label || iconImageAlt || 'Ícone da biblioteca')
+                : (selectedNativeIcon?.label || iconKey || 'Ícone nativo')}
+          </p>
+        </div>
+      </div>
       <input
         value={iconSearchQuery}
         onChange={(event) => setIconSearchQuery(event.target.value)}
