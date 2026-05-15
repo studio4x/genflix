@@ -1,0 +1,175 @@
+# Checklist de Validacao da Plataforma (T106)
+
+Este checklist foi criado para apoiar a validacao funcional da plataforma por setor, modulo e funcionalidade.
+
+## Como usar
+
+- Marque `[OK]` quando o item for validado.
+- Marque `[NOK]` quando houver falha e registre evidencias (print, erro, rota, horario).
+- Marque `[NA]` quando o item nao se aplicar ao escopo atual do teste.
+
+---
+
+## Setor Publico
+
+### Modulo Home e Navegacao Publica
+- [ ] Home (`/`) carrega sem erro de console.
+- [ ] Header, menu e rodape exibem corretamente em desktop e mobile.
+- [ ] Links principais do menu publico redirecionam para as rotas corretas.
+- [ ] SEO basico da pagina inicial (title/description) aparece no HTML final.
+
+### Modulo Catalogo e Conversao
+- [ ] Pagina de cursos (`/cursos`) lista cursos sem falha.
+- [ ] Detalhe do curso (`/cursos/:slug`) abre com dados validos.
+- [ ] Fluxo de checkout (`/checkout/pagamento/:slug`) abre corretamente.
+- [ ] Confirmacao de checkout (`/checkout/confirmacao`) exibe status esperado.
+
+### Modulo Conteudo Publico
+- [ ] Blog (`/blog`) carrega lista de posts.
+- [ ] Post individual (`/blog/:slug`) renderiza conteudo sem quebrar layout.
+- [ ] Pagina de recursos (`/recursos`) carrega cards e blocos esperados.
+- [ ] Pagina comunidade (`/comunidade`) carrega sem erros.
+
+### Modulo Contato e Suporte Publico
+- [ ] Pagina contato (`/contato`) abre e permite envio de formulario.
+- [ ] Pagina suporte (`/suporte`) carrega FAQ e canais previstos.
+- [ ] Pagina ajuda (`/ajuda`) carrega layout padrao da plataforma.
+- [ ] Pagina indique (`/indique-a-genflix`) permite compartilhamento/envio conforme fluxo.
+- [ ] Pagina ensine (`/ensine-na-genflix`) carrega formulario esperado.
+
+### Modulo Autenticacao Publica
+- [ ] Login (`/login`) autentica usuario valido.
+- [ ] Criacao de conta (`/criar-conta`) conclui cadastro valido.
+- [ ] Recuperacao de senha (`/recuperar-senha`) envia fluxo corretamente.
+- [ ] Redefinicao (`/redefinir-senha`) atualiza senha com token valido.
+- [ ] Callback (`/auth/callback`) finaliza sessao sem erro.
+
+### Modulo Paginas Legais
+- [ ] Privacidade (`/privacidade`) carrega corretamente.
+- [ ] Cookies (`/cookies`) carrega corretamente.
+- [ ] Termos (`/termos-de-uso`) carrega corretamente.
+- [ ] Politica de reembolso (`/politica-de-reembolso`) carrega corretamente.
+
+---
+
+## Setor Aluno
+
+### Modulo Dashboard e Area do Aluno
+- [ ] Dashboard (`/aluno/dashboard`) carrega com dados do usuario logado.
+- [ ] Lista de cursos (`/aluno/cursos`) exibe cursos liberados.
+- [ ] Detalhe do curso (`/aluno/cursos/:courseId`) carrega progresso/status.
+- [ ] Minha conta (`/aluno/minha-conta`) salva alteracoes basicas.
+- [ ] Pagamentos (`/aluno/pagamentos`) mostra historico conforme perfil.
+
+### Modulo Player de Curso
+- [ ] Player (`/aluno/cursos/:courseId/player`) abre sem erro.
+- [ ] Aula (`.../aulas/:lessonId`) carrega video/conteudo corretamente.
+- [ ] Avaliacao (`.../avaliacoes/:assessmentId`) inicia e finaliza.
+- [ ] Navegacao entre modulos/aulas respeita regras configuradas.
+
+### Modulo Comunicacao e Suporte do Aluno
+- [ ] Mensagens (`/aluno/mensagens`) abre e lista conversas.
+- [ ] Tickets (`/aluno/suporte`) permite criar e acompanhar chamado.
+- [ ] Detalhe do ticket (`/aluno/suporte/:ticketId`) exibe timeline.
+
+---
+
+## Setor Criador
+
+### Modulo Perfil e Relatorios do Criador
+- [ ] Relatorios (`/criador/relatorios`) carregam sem erro.
+- [ ] Perfil (`/criador/perfil`) salva alteracoes esperadas.
+- [ ] Notificacoes (`/criador/notificacoes`) lista eventos corretamente.
+
+### Modulo Comunicacao e Suporte do Criador
+- [ ] Mensagens (`/criador/mensagens`) abre e permite interacao.
+- [ ] Suporte (`/criador/suporte`) cria e acompanha tickets.
+
+---
+
+## Setor Admin
+
+### Modulo Visao Geral e Operacao
+- [ ] Dashboard (`/admin`) carrega metricas principais.
+- [ ] Relatorios (`/admin/relatorios`) carrega indicadores.
+- [ ] Pendencias (`/admin/pendencias`) exibe itens operacionais.
+- [ ] Storage R2 (`/admin/storage-r2`) carrega uso, custo estimado e navegacao de arquivos.
+
+### Modulo Catalogo e Cursos
+- [ ] Catalogo (`/admin/cursos`) lista cursos e categorias.
+- [ ] Modulos do curso (`/admin/cursos/:courseId/modulos`) CRUD funcional.
+- [ ] Aulas do modulo (`/admin/modulos/:moduleId/aulas`) CRUD funcional.
+- [ ] Materiais da aula (`/admin/aulas/:lessonId/materiais`) CRUD funcional.
+- [ ] Liberacoes (`/admin/cursos/:courseId/liberacoes`) CRUD funcional.
+
+### Modulo Course Builder
+- [ ] Builder principal (`/admin/cursos/:courseId/builder`) abre sem erro.
+- [ ] Editor de modulo (`.../modulos/:moduleId`) salva alteracoes.
+- [ ] Editor de aula (`.../aulas/:lessonId`) salva conteudo e midias.
+- [ ] Materiais no builder (`.../aulas/:lessonId/materiais`) funciona corretamente.
+- [ ] Avaliacoes (`.../avaliacoes/:assessmentId`) salva e publica regras.
+- [ ] Public page (`.../public-page`) reflete configuracoes no front publico.
+- [ ] Settings (`.../settings`) persiste configuracoes do curso.
+- [ ] Releases (`.../releases`) aplica regras de acesso esperadas.
+- [ ] Assessments final (`.../assessments` e `.../assessments/final`) funciona sem erro.
+
+### Modulo Conteudo e Marketing
+- [ ] Blog (`/admin/blog`) CRUD completo.
+- [ ] Banners (`/admin/banners`) CRUD e historico/revisao funcionando.
+- [ ] Botoes de aula (`/admin/botoes-aula`) CRUD funcional.
+- [ ] Recursos (`/admin/recursos`) CRUD e player publico corretos.
+- [ ] Tipos de quiz (`/admin/tipos-quiz`) CRUD funcional.
+- [ ] Editor visual (`/admin/site-editor`) edicao por secao/container habilitada.
+
+### Modulo Comunidade e Atendimento
+- [ ] Usuarios (`/admin/usuarios`) listagem e acoes principais.
+- [ ] Grupos (`/admin/grupos`) CRUD funcional.
+- [ ] Notificacoes (`/admin/notificacoes`) envio/listagem funcional.
+- [ ] Mensagens (`/admin/mensagens`) abre e opera sem erro.
+- [ ] Tickets (`/admin/suporte`) fluxo completo de atendimento.
+- [ ] FAQ (`/admin/faq`) CRUD funcional.
+- [ ] Reviews (`/admin/reviews`) modera/lista corretamente.
+- [ ] Formularios (`/admin/formularios`) entradas e filtros funcionando.
+
+### Modulo Financeiro
+- [ ] Pagamentos (`/admin/pagamentos`) parametros e logs consistentes.
+- [ ] Repasses (`/admin/repasses`) lista e acoes operacionais funcionando.
+
+### Modulo Configuracao da Plataforma
+- [ ] Minha conta (`/admin/minha-conta`) atualiza dados corretamente.
+- [ ] Configuracoes do site (`/admin/configuracoes-site`) persiste alteracoes.
+
+---
+
+## Setor Infraestrutura e Integracoes
+
+### Modulo Auth e Permissoes
+- [ ] Rotas protegidas respeitam perfis (`admin`, `aluno`, `criador`).
+- [ ] Sessao expirada redireciona corretamente para login.
+- [ ] Rota nao autorizada usa tela de bloqueio adequada.
+
+### Modulo Storage e Midia
+- [ ] Upload de arquivos protegidos no R2 conclui sem erro.
+- [ ] Exclusao de arquivos no R2 remove item e atualiza listagem.
+- [ ] Acesso protegido a assets da aula funciona para usuario permitido.
+
+### Modulo Edge Functions e APIs
+- [ ] Funcoes administrativas respondem com auth valida.
+- [ ] CORS das funcoes principais nao bloqueia frontend em producao.
+- [ ] Tratamento de erro retorna mensagem clara para o usuario.
+
+### Modulo Deploy e Observabilidade
+- [ ] Build version no rodape corresponde ao ultimo deploy.
+- [ ] Dominio `genflix-omega.vercel.app` aponta para deploy READY esperado.
+- [ ] Logs de console em fluxos criticos sem erros bloqueantes recorrentes.
+
+---
+
+## Registro de Validacao
+
+- Ciclo:
+- Ambiente:
+- Responsavel:
+- Data:
+- Resultado geral:
+- Riscos/Pendencias:
