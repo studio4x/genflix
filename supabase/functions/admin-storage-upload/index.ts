@@ -100,7 +100,7 @@ async function handlePrepareUpload(
     return jsonResponse({ error: `Arquivo excede o limite permitido (${maxUploadSize} bytes).` }, 413)
   }
 
-  const provider = resolveStorageProvider(requestBody?.provider)
+  const provider = resolveUploadProvider(uploadKind, requestBody?.provider)
   const bucket = resolveBucket(uploadKind)
   const objectPath = buildObjectPath(entityId, fileName)
 
@@ -151,6 +151,24 @@ function resolveBucket(uploadKind: UploadKind) {
     return MATERIALS_BUCKET
   }
   return MATERIALS_BUCKET
+}
+
+function resolveUploadProvider(uploadKind: UploadKind, value: unknown): StorageProvider {
+  if (value === 'r2' || value === 'supabase') {
+    return value
+  }
+
+  // Materiais protegidos podem incluir vídeos grandes; quando o bucket privado do R2
+  // já está configurado, preferimos esse provedor mesmo que o default global não tenha
+  // sido alinhado ainda.
+  if (uploadKind === 'lesson_material') {
+    const bucket = Deno.env.get('R2_PRIVATE_BUCKET')?.trim() ?? ''
+    if (bucket) {
+      return 'r2'
+    }
+  }
+
+  return resolveStorageProvider(value)
 }
 
 function resolveR2Bucket() {
