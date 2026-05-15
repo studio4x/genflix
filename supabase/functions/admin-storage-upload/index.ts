@@ -10,7 +10,8 @@ import {
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers':
+    'authorization, x-client-info, apikey, content-type, cache-control, pragma, x-requested-with',
 }
 
 const MATERIALS_BUCKET = 'materials'
