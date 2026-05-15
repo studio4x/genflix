@@ -1,8 +1,14 @@
 import { useEffect, useMemo, useState } from 'react'
-import { RefreshCw } from 'lucide-react'
+import { RefreshCw, Search, Trash2 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
-import { fetchR2UsageOverview, type R2UsageOverview } from '@/features/admin/storage-r2/api'
+import {
+  deleteR2Object,
+  fetchR2Objects,
+  fetchR2UsageOverview,
+  type R2ObjectRow,
+  type R2UsageOverview,
+} from '@/features/admin/storage-r2/api'
 
 function formatBytes(bytes: number) {
   if (!Number.isFinite(bytes) || bytes <= 0) {
@@ -21,12 +27,12 @@ function formatNumber(value: number) {
 
 function formatDate(value: string) {
   if (!value) {
-    return '—'
+    return 'â€”'
   }
 
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) {
-    return '—'
+    return 'â€”'
   }
 
   return new Intl.DateTimeFormat('pt-BR', {
@@ -35,11 +41,24 @@ function formatDate(value: string) {
   }).format(date)
 }
 
+type ActiveTab = 'overview' | 'files'
+
 export function AdminR2StoragePage() {
+  const [activeTab, setActiveTab] = useState<ActiveTab>('overview')
   const [overview, setOverview] = useState<R2UsageOverview | null>(null)
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  const [selectedBucket, setSelectedBucket] = useState('')
+  const [prefixInput, setPrefixInput] = useState('')
+  const [appliedPrefix, setAppliedPrefix] = useState('')
+  const [objects, setObjects] = useState<R2ObjectRow[]>([])
+  const [objectsLoading, setObjectsLoading] = useState(false)
+  const [objectsLoadingMore, setObjectsLoadingMore] = useState(false)
+  const [objectsError, setObjectsError] = useState<string | null>(null)
+  const [nextToken, setNextToken] = useState<string | null>(null)
+  const [deletingKey, setDeletingKey] = useState<string | null>(null)
 
   async function loadData(mode: 'initial' | 'refresh' = 'initial') {
     if (mode === 'initial') {
@@ -67,6 +86,19 @@ export function AdminR2StoragePage() {
     void loadData('initial')
   }, [])
 
+  useEffect(() => {
+    if (!overview?.buckets?.length) {
+      setSelectedBucket('')
+      return
+    }
+
+    if (selectedBucket && overview.buckets.some((bucket) => bucket.name === selectedBucket)) {
+      return
+    }
+
+    setSelectedBucket(overview.buckets[0]?.name ?? '')
+  }, [overview, selectedBucket])
+
   const topBucket = useMemo(() => {
     if (!overview?.buckets?.length) {
       return null
@@ -75,6 +107,68 @@ export function AdminR2StoragePage() {
     return [...overview.buckets].sort((a, b) => b.total_size_bytes - a.total_size_bytes)[0] ?? null
   }, [overview])
 
+  async function loadObjects(options?: { append?: boolean; continuationToken?: string | null }) {
+    if (!selectedBucket) {
+      return
+    }
+
+    const append = Boolean(options?.append)
+    if (append) {
+      setObjectsLoadingMore(true)
+    } else {
+      setObjectsLoading(true)
+      setObjects([])
+      setNextToken(null)
+    }
+
+    setObjectsError(null)
+    try {
+      const payload = await fetchR2Objects({
+        bucket: selectedBucket,
+        prefix: appliedPrefix,
+        continuationToken: options?.continuationToken ?? null,
+      })
+      setObjects((previous) => (append ? [...previous, ...payload.objects] : payload.objects))
+      setNextToken(payload.continuation_token)
+    } catch (requestError) {
+      setObjectsError(requestError instanceof Error ? requestError.message : 'Falha ao listar objetos do bucket.')
+    } finally {
+      if (append) {
+        setObjectsLoadingMore(false)
+      } else {
+        setObjectsLoading(false)
+      }
+    }
+  }
+
+  useEffect(() => {
+    if (activeTab !== 'files' || !selectedBucket) {
+      return
+    }
+    void loadObjects()
+  }, [activeTab, selectedBucket, appliedPrefix])
+
+  async function handleDeleteObject(objectKey: string) {
+    if (!selectedBucket) {
+      return
+    }
+
+    const confirmed = window.confirm(`Deseja excluir o arquivo?\n\n${objectKey}`)
+    if (!confirmed) {
+      return
+    }
+
+    setDeletingKey(objectKey)
+    try {
+      await deleteR2Object({ bucket: selectedBucket, key: objectKey })
+      setObjects((previous) => previous.filter((entry) => entry.key !== objectKey))
+    } catch (requestError) {
+      setObjectsError(requestError instanceof Error ? requestError.message : 'Falha ao excluir arquivo.')
+    } finally {
+      setDeletingKey(null)
+    }
+  }
+
   return (
     <div className="space-y-6 text-[#163138]">
       <header className="flex flex-col gap-4 rounded-[24px] border border-[#D8E6EB] bg-[#F8FBFC] p-5 sm:flex-row sm:items-center sm:justify-between">
@@ -82,132 +176,245 @@ export function AdminR2StoragePage() {
           <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#1398B7]">Cloudflare R2</p>
           <h1 className="mt-1 text-2xl font-black tracking-tight text-[#15323B]">Storage R2</h1>
           <p className="mt-2 text-sm text-[#5F7077]">
-            Acompanhe consumo de armazenamento, objetos e uploads por bucket.
+            Acompanhe consumo, navegue entre arquivos e remova objetos do storage.
           </p>
         </div>
 
         <Button
           type="button"
           variant="outline"
-          onClick={() => void loadData('refresh')}
-          disabled={loading || refreshing}
+          onClick={() => {
+            if (activeTab === 'overview') {
+              void loadData('refresh')
+            } else {
+              void loadObjects()
+            }
+          }}
+          disabled={loading || refreshing || objectsLoading || objectsLoadingMore}
           className="h-11 rounded-2xl border-[#BEE3EA] bg-white px-4 font-black text-[#15323B] hover:bg-[#F2F7F9]"
         >
-          <RefreshCw className={`mr-2 h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+          <RefreshCw className={`mr-2 h-4 w-4 ${refreshing || objectsLoading ? 'animate-spin' : ''}`} />
           Atualizar
         </Button>
       </header>
 
-      {error ? (
-        <section className="rounded-[24px] border border-rose-200 bg-rose-50 px-5 py-4 text-sm font-semibold text-rose-700">
-          {error}
-        </section>
-      ) : null}
-
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <article className="rounded-[20px] border border-[#D8E6EB] bg-white p-4">
-          <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[#5F7077]">Buckets</p>
-          <p className="mt-2 text-3xl font-black text-[#15323B]">
-            {loading ? '—' : formatNumber(overview?.bucket_count ?? 0)}
-          </p>
-        </article>
-        <article className="rounded-[20px] border border-[#D8E6EB] bg-white p-4">
-          <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[#5F7077]">Armazenamento total</p>
-          <p className="mt-2 text-3xl font-black text-[#15323B]">
-            {loading ? '—' : formatBytes(overview?.totals.total_size_bytes ?? 0)}
-          </p>
-        </article>
-        <article className="rounded-[20px] border border-[#D8E6EB] bg-white p-4">
-          <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[#5F7077]">Objetos</p>
-          <p className="mt-2 text-3xl font-black text-[#15323B]">
-            {loading ? '—' : formatNumber(overview?.totals.object_count ?? 0)}
-          </p>
-        </article>
-        <article className="rounded-[20px] border border-[#D8E6EB] bg-white p-4">
-          <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[#5F7077]">Uploads acumulados</p>
-          <p className="mt-2 text-3xl font-black text-[#15323B]">
-            {loading ? '—' : formatNumber(overview?.totals.upload_count ?? 0)}
-          </p>
-        </article>
-      </section>
-
-      <section className="grid gap-4 lg:grid-cols-2">
-        <article className="rounded-[20px] border border-[#D8E6EB] bg-white p-4">
-          <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[#5F7077]">Camada principal</p>
-          <p className="mt-2 text-2xl font-black text-[#15323B]">
-            {loading ? '—' : formatBytes(overview?.totals.payload_size_bytes ?? 0)}
-          </p>
-          <p className="mt-1 text-sm text-[#5F7077]">
-            Dados de payload no storage padrão.
-          </p>
-        </article>
-        <article className="rounded-[20px] border border-[#D8E6EB] bg-white p-4">
-          <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[#5F7077]">Metadata</p>
-          <p className="mt-2 text-2xl font-black text-[#15323B]">
-            {loading ? '—' : formatBytes(overview?.totals.metadata_size_bytes ?? 0)}
-          </p>
-          <p className="mt-1 text-sm text-[#5F7077]">
-            Espaço consumido por metadados dos objetos.
-          </p>
-        </article>
-      </section>
-
-      <section className="rounded-[24px] border border-[#D8E6EB] bg-white p-5">
-        <div className="mb-4 flex flex-col gap-1">
-          <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[#5F7077]">Detalhamento por bucket</p>
-          <p className="text-sm text-[#5F7077]">
-            Última atualização: {loading ? '—' : formatDate(overview?.checked_at ?? '')}
-          </p>
+      <section className="rounded-[20px] border border-[#D8E6EB] bg-white p-2">
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => setActiveTab('overview')}
+            className={`rounded-xl px-4 py-2 text-sm font-black transition ${
+              activeTab === 'overview' ? 'bg-[#15323B] text-white' : 'text-[#15323B] hover:bg-[#F2F7F9]'
+            }`}
+          >
+            Visao geral
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('files')}
+            className={`rounded-xl px-4 py-2 text-sm font-black transition ${
+              activeTab === 'files' ? 'bg-[#15323B] text-white' : 'text-[#15323B] hover:bg-[#F2F7F9]'
+            }`}
+          >
+            Arquivos
+          </button>
         </div>
-
-        {loading ? (
-          <p className="text-sm font-semibold text-[#5F7077]">Carregando métricas...</p>
-        ) : (overview?.buckets?.length ?? 0) === 0 ? (
-          <p className="text-sm font-semibold text-[#5F7077]">Nenhum bucket R2 encontrado.</p>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full border-separate border-spacing-y-2">
-              <thead>
-                <tr className="text-left text-[11px] font-black uppercase tracking-[0.14em] text-[#5F7077]">
-                  <th className="px-3 py-2">Bucket</th>
-                  <th className="px-3 py-2">Total</th>
-                  <th className="px-3 py-2">Objetos</th>
-                  <th className="px-3 py-2">Uploads</th>
-                  <th className="px-3 py-2">Região</th>
-                  <th className="px-3 py-2">Atualizado</th>
-                </tr>
-              </thead>
-              <tbody>
-                {overview?.buckets.map((bucket) => (
-                  <tr key={bucket.name} className="rounded-2xl bg-[#F8FBFC] text-sm font-semibold text-[#163138]">
-                    <td className="rounded-l-2xl px-3 py-3">
-                      <div>
-                        <p className="font-black text-[#15323B]">{bucket.name}</p>
-                        <p className="text-xs font-semibold text-[#5F7077]">{bucket.storage_class}</p>
-                      </div>
-                    </td>
-                    <td className="px-3 py-3">{formatBytes(bucket.total_size_bytes)}</td>
-                    <td className="px-3 py-3">{formatNumber(bucket.object_count)}</td>
-                    <td className="px-3 py-3">{formatNumber(bucket.upload_count)}</td>
-                    <td className="px-3 py-3">{bucket.location}</td>
-                    <td className="rounded-r-2xl px-3 py-3">{formatDate(bucket.usage_end)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
       </section>
 
-      {topBucket ? (
-        <section className="rounded-[24px] border border-[#D8E6EB] bg-white p-5">
-          <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[#5F7077]">Bucket com maior consumo</p>
-          <p className="mt-2 text-xl font-black text-[#15323B]">{topBucket.name}</p>
-          <p className="mt-1 text-sm text-[#5F7077]">
-            {formatBytes(topBucket.total_size_bytes)} em {formatNumber(topBucket.object_count)} objetos.
-          </p>
+      {activeTab === 'overview' ? (
+        <>
+          {error ? (
+            <section className="rounded-[24px] border border-rose-200 bg-rose-50 px-5 py-4 text-sm font-semibold text-rose-700">
+              {error}
+            </section>
+          ) : null}
+
+          <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <article className="rounded-[20px] border border-[#D8E6EB] bg-white p-4">
+              <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[#5F7077]">Buckets</p>
+              <p className="mt-2 text-3xl font-black text-[#15323B]">
+                {loading ? 'â€”' : formatNumber(overview?.bucket_count ?? 0)}
+              </p>
+            </article>
+            <article className="rounded-[20px] border border-[#D8E6EB] bg-white p-4">
+              <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[#5F7077]">Armazenamento total</p>
+              <p className="mt-2 text-3xl font-black text-[#15323B]">
+                {loading ? 'â€”' : formatBytes(overview?.totals.total_size_bytes ?? 0)}
+              </p>
+            </article>
+            <article className="rounded-[20px] border border-[#D8E6EB] bg-white p-4">
+              <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[#5F7077]">Objetos</p>
+              <p className="mt-2 text-3xl font-black text-[#15323B]">
+                {loading ? 'â€”' : formatNumber(overview?.totals.object_count ?? 0)}
+              </p>
+            </article>
+            <article className="rounded-[20px] border border-[#D8E6EB] bg-white p-4">
+              <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[#5F7077]">Uploads acumulados</p>
+              <p className="mt-2 text-3xl font-black text-[#15323B]">
+                {loading ? 'â€”' : formatNumber(overview?.totals.upload_count ?? 0)}
+              </p>
+            </article>
+          </section>
+
+          <section className="rounded-[24px] border border-[#D8E6EB] bg-white p-5">
+            <div className="mb-4 flex flex-col gap-1">
+              <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[#5F7077]">Detalhamento por bucket</p>
+              <p className="text-sm text-[#5F7077]">
+                Ultima atualizacao: {loading ? 'â€”' : formatDate(overview?.checked_at ?? '')}
+              </p>
+            </div>
+
+            {loading ? (
+              <p className="text-sm font-semibold text-[#5F7077]">Carregando metricas...</p>
+            ) : (overview?.buckets?.length ?? 0) === 0 ? (
+              <p className="text-sm font-semibold text-[#5F7077]">Nenhum bucket R2 encontrado.</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="min-w-full border-separate border-spacing-y-2">
+                  <thead>
+                    <tr className="text-left text-[11px] font-black uppercase tracking-[0.14em] text-[#5F7077]">
+                      <th className="px-3 py-2">Bucket</th>
+                      <th className="px-3 py-2">Total</th>
+                      <th className="px-3 py-2">Objetos</th>
+                      <th className="px-3 py-2">Uploads</th>
+                      <th className="px-3 py-2">Regiao</th>
+                      <th className="px-3 py-2">Atualizado</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {overview?.buckets.map((bucket) => (
+                      <tr key={bucket.name} className="rounded-2xl bg-[#F8FBFC] text-sm font-semibold text-[#163138]">
+                        <td className="rounded-l-2xl px-3 py-3">
+                          <div>
+                            <p className="font-black text-[#15323B]">{bucket.name}</p>
+                            <p className="text-xs font-semibold text-[#5F7077]">{bucket.storage_class}</p>
+                          </div>
+                        </td>
+                        <td className="px-3 py-3">{formatBytes(bucket.total_size_bytes)}</td>
+                        <td className="px-3 py-3">{formatNumber(bucket.object_count)}</td>
+                        <td className="px-3 py-3">{formatNumber(bucket.upload_count)}</td>
+                        <td className="px-3 py-3">{bucket.location}</td>
+                        <td className="rounded-r-2xl px-3 py-3">{formatDate(bucket.usage_end)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </section>
+
+          {topBucket ? (
+            <section className="rounded-[24px] border border-[#D8E6EB] bg-white p-5">
+              <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[#5F7077]">Bucket com maior consumo</p>
+              <p className="mt-2 text-xl font-black text-[#15323B]">{topBucket.name}</p>
+              <p className="mt-1 text-sm text-[#5F7077]">
+                {formatBytes(topBucket.total_size_bytes)} em {formatNumber(topBucket.object_count)} objetos.
+              </p>
+            </section>
+          ) : null}
+        </>
+      ) : (
+        <section className="space-y-4 rounded-[24px] border border-[#D8E6EB] bg-white p-5">
+          <div className="grid gap-3 md:grid-cols-[minmax(0,260px)_minmax(0,1fr)_auto] md:items-end">
+            <label className="space-y-1">
+              <span className="text-[11px] font-black uppercase tracking-[0.16em] text-[#5F7077]">Bucket</span>
+              <select
+                value={selectedBucket}
+                onChange={(event) => setSelectedBucket(event.target.value)}
+                className="h-11 w-full rounded-xl border border-[#D8E6EB] bg-white px-3 text-sm font-semibold text-[#15323B]"
+              >
+                {(overview?.buckets ?? []).map((bucket) => (
+                  <option key={bucket.name} value={bucket.name}>
+                    {bucket.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="space-y-1">
+              <span className="text-[11px] font-black uppercase tracking-[0.16em] text-[#5F7077]">Prefixo (pasta)</span>
+              <input
+                value={prefixInput}
+                onChange={(event) => setPrefixInput(event.target.value)}
+                placeholder="Ex.: a37fdd1a-d961-46a1-94e4-7389231ac938/"
+                className="h-11 w-full rounded-xl border border-[#D8E6EB] bg-white px-3 text-sm font-semibold text-[#15323B] placeholder:text-[#95A7AE]"
+              />
+            </label>
+
+            <Button
+              type="button"
+              disabled={!selectedBucket || objectsLoading || objectsLoadingMore}
+              onClick={() => setAppliedPrefix(prefixInput.trim())}
+              className="h-11 rounded-xl bg-[#15323B] px-4 font-black text-white hover:bg-[#10252C]"
+            >
+              <Search className="mr-2 h-4 w-4" />
+              Buscar
+            </Button>
+          </div>
+
+          {objectsError ? (
+            <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">
+              {objectsError}
+            </div>
+          ) : null}
+
+          {objectsLoading ? (
+            <p className="text-sm font-semibold text-[#5F7077]">Carregando arquivos...</p>
+          ) : objects.length === 0 ? (
+            <p className="text-sm font-semibold text-[#5F7077]">Nenhum arquivo encontrado para este filtro.</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="min-w-full border-separate border-spacing-y-2">
+                <thead>
+                  <tr className="text-left text-[11px] font-black uppercase tracking-[0.14em] text-[#5F7077]">
+                    <th className="px-3 py-2">Arquivo</th>
+                    <th className="px-3 py-2">Tamanho</th>
+                    <th className="px-3 py-2">Ultima alteracao</th>
+                    <th className="px-3 py-2 text-right">Acao</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {objects.map((objectRow) => (
+                    <tr key={objectRow.key} className="rounded-2xl bg-[#F8FBFC] text-sm font-semibold text-[#163138]">
+                      <td className="rounded-l-2xl px-3 py-3">
+                        <p className="font-black text-[#15323B] break-all">{objectRow.key}</p>
+                      </td>
+                      <td className="px-3 py-3">{formatBytes(objectRow.size_bytes)}</td>
+                      <td className="px-3 py-3">{formatDate(objectRow.last_modified ?? '')}</td>
+                      <td className="rounded-r-2xl px-3 py-3 text-right">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="h-9 rounded-lg border-rose-200 bg-white px-3 font-black text-rose-700 hover:bg-rose-50"
+                          disabled={deletingKey === objectRow.key}
+                          onClick={() => void handleDeleteObject(objectRow.key)}
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          {deletingKey === objectRow.key ? 'Excluindo...' : 'Excluir'}
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {nextToken ? (
+            <div className="pt-2">
+              <Button
+                type="button"
+                variant="outline"
+                className="h-10 rounded-xl border-[#BEE3EA] bg-white px-4 font-black text-[#15323B] hover:bg-[#F2F7F9]"
+                disabled={objectsLoadingMore}
+                onClick={() => void loadObjects({ append: true, continuationToken: nextToken })}
+              >
+                {objectsLoadingMore ? 'Carregando...' : 'Carregar mais'}
+              </Button>
+            </div>
+          ) : null}
         </section>
-      ) : null}
+      )}
     </div>
   )
 }

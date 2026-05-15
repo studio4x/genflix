@@ -1,5 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import { ListBucketsCommand, ListObjectsV2Command, S3Client } from 'https://esm.sh/@aws-sdk/client-s3@3.916.0'
+import { DeleteObjectCommand, ListBucketsCommand, ListObjectsV2Command, S3Client } from 'https://esm.sh/@aws-sdk/client-s3@3.916.0'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -62,6 +62,7 @@ Deno.serve(async (request) => {
 
   try {
     const body = await request.json().catch(() => ({}))
+    const action = resolveAction(body?.action)
     const accessToken = getAccessToken(request, body)
     if (!accessToken) {
       return jsonResponse({ error: 'Token de acesso ausente.' }, 401)
@@ -92,6 +93,47 @@ Deno.serve(async (request) => {
     }
     if (!roleCheck.data) {
       return jsonResponse({ error: 'Apenas administradores podem visualizar o uso do storage.' }, 403)
+    }
+
+    if (action === 'list_objects') {
+      const bucket = typeof body?.bucket === 'string' ? body.bucket.trim() : ''
+      const prefix = typeof body?.prefix === 'string' ? body.prefix.trim() : ''
+      const continuationToken = typeof body?.continuation_token === 'string'
+        ? body.continuation_token.trim()
+        : ''
+      if (!bucket) {
+        return jsonResponse({ error: 'bucket obrigatorio para listagem de arquivos.' }, 400)
+      }
+
+      const listing = await listR2ObjectsViaS3({
+        bucket,
+        prefix,
+        continuationToken: continuationToken || undefined,
+      })
+
+      return jsonResponse({
+        bucket,
+        prefix,
+        checked_at: new Date().toISOString(),
+        objects: listing.objects,
+        continuation_token: listing.continuationToken ?? null,
+      })
+    }
+
+    if (action === 'delete_object') {
+      const bucket = typeof body?.bucket === 'string' ? body.bucket.trim() : ''
+      const key = typeof body?.key === 'string' ? body.key.trim() : ''
+      if (!bucket || !key) {
+        return jsonResponse({ error: 'bucket e key sao obrigatorios para exclusao.' }, 400)
+      }
+
+      await deleteR2ObjectViaS3({ bucket, key })
+      return jsonResponse({
+        ok: true,
+        bucket,
+        key,
+        deleted_at: new Date().toISOString(),
+      })
     }
 
     const accountId = (Deno.env.get('R2_ACCOUNT_ID') ?? '').trim()
@@ -148,6 +190,18 @@ Deno.serve(async (request) => {
     return jsonResponse({ error: message }, 500)
   }
 })
+
+type FunctionAction = 'overview' | 'list_objects' | 'delete_object'
+
+function resolveAction(value: unknown): FunctionAction {
+  if (value === 'list_objects') {
+    return value
+  }
+  if (value === 'delete_object') {
+    return value
+  }
+  return 'overview'
+}
 
 function getAccessToken(request: Request, body: Record<string, unknown>) {
   const authHeader = request.headers.get('Authorization')
@@ -229,22 +283,7 @@ async function loadUsageFromCloudflareApi(input: { accountId: string; cloudflare
 }
 
 async function loadUsageFromR2S3() {
-  const endpoint = (Deno.env.get('R2_S3_ENDPOINT') ?? Deno.env.get('R2_ENDPOINT') ?? '').trim()
-  const accessKeyId = (Deno.env.get('R2_ACCESS_KEY_ID') ?? '').trim()
-  const secretAccessKey = (Deno.env.get('R2_SECRET_ACCESS_KEY') ?? '').trim()
-
-  if (!endpoint || !accessKeyId || !secretAccessKey) {
-    throw new Error(
-      'Secrets ausentes para fallback S3 do R2 (R2_S3_ENDPOINT, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY).',
-    )
-  }
-
-  const client = new S3Client({
-    region: 'auto',
-    endpoint,
-    credentials: { accessKeyId, secretAccessKey },
-    forcePathStyle: true,
-  })
+  const client = createR2S3Client()
 
   const configuredBuckets = resolveConfiguredBuckets()
   let buckets: Array<{ Name?: string; CreationDate?: Date }> = []
@@ -313,6 +352,63 @@ async function loadUsageFromR2S3() {
       }
     }),
   )
+}
+
+async function listR2ObjectsViaS3(input: {
+  bucket: string
+  prefix: string
+  continuationToken?: string
+}) {
+  const client = createR2S3Client()
+  const page = await client.send(
+    new ListObjectsV2Command({
+      Bucket: input.bucket,
+      Prefix: input.prefix || undefined,
+      ContinuationToken: input.continuationToken,
+      MaxKeys: 200,
+    }),
+  )
+
+  const objects = (page.Contents ?? []).map((entry) => ({
+    key: entry.Key ?? '',
+    size_bytes: entry.Size ?? 0,
+    last_modified: entry.LastModified ? entry.LastModified.toISOString() : null,
+    etag: entry.ETag ?? null,
+  })).filter((entry) => entry.key)
+
+  return {
+    objects,
+    continuationToken: page.NextContinuationToken ?? null,
+  }
+}
+
+async function deleteR2ObjectViaS3(input: { bucket: string; key: string }) {
+  const client = createR2S3Client()
+  await client.send(
+    new DeleteObjectCommand({
+      Bucket: input.bucket,
+      Key: input.key,
+    }),
+  )
+}
+
+function createR2S3Client() {
+  const endpoint = (Deno.env.get('R2_S3_ENDPOINT') ?? Deno.env.get('R2_ENDPOINT') ?? '').trim()
+  const accessKeyId = (Deno.env.get('R2_ACCESS_KEY_ID') ?? '').trim()
+  const secretAccessKey = (Deno.env.get('R2_SECRET_ACCESS_KEY') ?? '').trim()
+
+  if (!endpoint || !accessKeyId || !secretAccessKey) {
+    throw new Error(
+      'Secrets ausentes para fallback S3 do R2 (R2_S3_ENDPOINT, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY).',
+    )
+  }
+
+  return new S3Client({
+    region: 'auto',
+    endpoint,
+    credentials: { accessKeyId, secretAccessKey },
+    forcePathStyle: true,
+  })
 }
 
 function resolveConfiguredBuckets() {
