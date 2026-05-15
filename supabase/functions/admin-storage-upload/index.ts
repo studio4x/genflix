@@ -94,7 +94,8 @@ async function handlePrepareUpload(
     return jsonResponse({ error: 'file_size_bytes invalido.' }, 400)
   }
 
-  const maxUploadSize = getMaxUploadSizeBytes(50 * 1024 * 1024)
+  // Default mais alto para suportar materiais em video; ainda pode ser sobrescrito por R2_MAX_FILE_SIZE_BYTES.
+  const maxUploadSize = getMaxUploadSizeBytes(1024 * 1024 * 1024)
   if (fileSizeBytes > maxUploadSize) {
     return jsonResponse({ error: `Arquivo excede o limite permitido (${maxUploadSize} bytes).` }, 413)
   }
