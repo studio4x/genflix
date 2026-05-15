@@ -171,19 +171,104 @@ async function uploadPrivateFile(
     throw new Error('URL de upload assinada ausente.')
   }
 
-  const uploadResult = await fetch(ticket.upload_url, {
-    method: 'PUT',
-    headers: {
-      'Content-Type': file.type || 'application/octet-stream',
-      ...(ticket.upload_headers ?? {}),
-    },
-    body: file,
-  })
+  // Upload grande via fetch pode ser instavel em navegadores com extensoes que
+  // interceptam window.fetch; usamos XHR com retry para reduzir abortos de rede.
+  const uploadHeaders = buildR2UploadHeaders(file, ticket.upload_headers)
+  const maxAttempts = 3
+  let lastError: Error | null = null
 
-  if (!uploadResult.ok) {
-    const errorBody = await uploadResult.text().catch(() => '')
-    throw new Error(`Falha no upload para R2 (${uploadResult.status}). ${errorBody}`)
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    try {
+      await uploadToSignedR2UrlWithXhr(ticket.upload_url, uploadHeaders, file)
+      return
+    } catch (error) {
+      const normalized = error instanceof Error ? error : new Error('Falha no upload para R2.')
+      lastError = normalized
+      if (!isRetryableR2UploadError(normalized) || attempt >= maxAttempts) {
+        break
+      }
+      await delay(350 * attempt)
+    }
   }
+
+  if (lastError) {
+    throw lastError
+  }
+}
+
+function buildR2UploadHeaders(file: File, signedHeaders: Record<string, string> | null | undefined) {
+  const headers: Record<string, string> = {
+    'Content-Type': file.type || 'application/octet-stream',
+  }
+
+  for (const [rawKey, rawValue] of Object.entries(signedHeaders ?? {})) {
+    const key = rawKey.trim()
+    const value = String(rawValue ?? '').trim()
+    if (!key || !value) {
+      continue
+    }
+
+    const lowerKey = key.toLowerCase()
+    if (lowerKey === 'host' || lowerKey === 'content-length' || lowerKey === 'content-type') {
+      continue
+    }
+
+    headers[key] = value
+  }
+
+  return headers
+}
+
+async function uploadToSignedR2UrlWithXhr(url: string, headers: Record<string, string>, file: File) {
+  await new Promise<void>((resolve, reject) => {
+    const xhr = new XMLHttpRequest()
+    xhr.open('PUT', url, true)
+
+    for (const [key, value] of Object.entries(headers)) {
+      try {
+        xhr.setRequestHeader(key, value)
+      } catch {
+        // Ignora headers nao permitidos pelo navegador (ex.: host).
+      }
+    }
+
+    xhr.onerror = () => {
+      reject(new Error('Falha de rede durante upload para R2 (status 0).'))
+    }
+
+    xhr.onabort = () => {
+      reject(new Error('Upload para R2 foi abortado (status 0).'))
+    }
+
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        resolve()
+        return
+      }
+      reject(new Error(`Falha no upload para R2 (${xhr.status}). ${xhr.responseText || ''}`.trim()))
+    }
+
+    xhr.send(file)
+  })
+}
+
+function isRetryableR2UploadError(error: Error) {
+  const message = error.message.toLowerCase()
+  const statusMatch = message.match(/\((\d{3})\)/)
+  const status = statusMatch ? Number(statusMatch[1]) : null
+  return (
+    message.includes('status 0') ||
+    message.includes('network') ||
+    message.includes('abort') ||
+    message.includes('timeout') ||
+    (status !== null && status >= 500)
+  )
+}
+
+function delay(ms: number) {
+  return new Promise<void>((resolve) => {
+    window.setTimeout(() => resolve(), ms)
+  })
 }
 
 async function deletePrivateObject(input: {
