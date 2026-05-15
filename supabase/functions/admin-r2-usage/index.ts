@@ -1,4 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { ListBucketsCommand, ListObjectsV2Command, S3Client } from 'https://esm.sh/@aws-sdk/client-s3@3.916.0'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -29,6 +30,25 @@ type CloudflareR2BucketUsage = {
   infrequentAccessMetadataSize?: string
   infrequentAccessObjectCount?: string
   infrequentAccessUploadCount?: string
+}
+
+type R2UsageBucketRow = {
+  name: string
+  location: string
+  storage_class: string
+  jurisdiction: string | null
+  creation_date: string
+  usage_end: string
+  payload_size_bytes: number
+  metadata_size_bytes: number
+  total_size_bytes: number
+  object_count: number
+  upload_count: number
+  infrequent_access_payload_size_bytes: number
+  infrequent_access_metadata_size_bytes: number
+  infrequent_access_total_size_bytes: number
+  infrequent_access_object_count: number
+  infrequent_access_upload_count: number
 }
 
 Deno.serve(async (request) => {
@@ -76,49 +96,21 @@ Deno.serve(async (request) => {
 
     const accountId = (Deno.env.get('R2_ACCOUNT_ID') ?? '').trim()
     const cloudflareToken = (Deno.env.get('CLOUDFLARE_API_TOKEN') ?? Deno.env.get('CLOUDFLARE_ACCESS_TOKEN') ?? '').trim()
-    if (!accountId || !cloudflareToken) {
-      return jsonResponse({ error: 'Secrets ausentes para R2 (R2_ACCOUNT_ID e CLOUDFLARE_API_TOKEN).' }, 500)
+
+    let bucketRows: R2UsageBucketRow[] = []
+    let source: 'cloudflare-api' | 'r2-s3' = 'cloudflare-api'
+
+    if (accountId && cloudflareToken) {
+      try {
+        bucketRows = await loadUsageFromCloudflareApi({ accountId, cloudflareToken })
+      } catch (error) {
+        source = 'r2-s3'
+        bucketRows = await loadUsageFromR2S3()
+      }
+    } else {
+      source = 'r2-s3'
+      bucketRows = await loadUsageFromR2S3()
     }
-
-    const bucketList = await cloudflareRequest<{ buckets: CloudflareR2Bucket[] }>({
-      accountId,
-      token: cloudflareToken,
-      path: '/r2/buckets',
-    })
-
-    const bucketRows = await Promise.all(
-      (bucketList.buckets ?? []).map(async (bucket) => {
-        const usage = await cloudflareRequest<CloudflareR2BucketUsage>({
-          accountId,
-          token: cloudflareToken,
-          path: `/r2/buckets/${encodeURIComponent(bucket.name)}/usage`,
-        })
-
-        const payloadSizeBytes = toNumber(usage.payloadSize)
-        const metadataSizeBytes = toNumber(usage.metadataSize)
-        const infrequentAccessPayloadSizeBytes = toNumber(usage.infrequentAccessPayloadSize)
-        const infrequentAccessMetadataSizeBytes = toNumber(usage.infrequentAccessMetadataSize)
-
-        return {
-          name: bucket.name,
-          location: bucket.location,
-          storage_class: bucket.storage_class,
-          jurisdiction: bucket.jurisdiction ?? null,
-          creation_date: bucket.creation_date,
-          usage_end: usage.end,
-          payload_size_bytes: payloadSizeBytes,
-          metadata_size_bytes: metadataSizeBytes,
-          total_size_bytes: payloadSizeBytes + metadataSizeBytes,
-          object_count: toNumber(usage.objectCount),
-          upload_count: toNumber(usage.uploadCount),
-          infrequent_access_payload_size_bytes: infrequentAccessPayloadSizeBytes,
-          infrequent_access_metadata_size_bytes: infrequentAccessMetadataSizeBytes,
-          infrequent_access_total_size_bytes: infrequentAccessPayloadSizeBytes + infrequentAccessMetadataSizeBytes,
-          infrequent_access_object_count: toNumber(usage.infrequentAccessObjectCount),
-          infrequent_access_upload_count: toNumber(usage.infrequentAccessUploadCount),
-        }
-      }),
-    )
 
     const totals = bucketRows.reduce(
       (acc, bucket) => ({
@@ -146,6 +138,7 @@ Deno.serve(async (request) => {
     return jsonResponse({
       account_id: accountId,
       checked_at: new Date().toISOString(),
+      source,
       bucket_count: bucketRows.length,
       buckets: bucketRows,
       totals,
@@ -191,6 +184,119 @@ async function cloudflareRequest<T>(input: {
   }
 
   return payload.result
+}
+
+async function loadUsageFromCloudflareApi(input: { accountId: string; cloudflareToken: string }) {
+  const bucketList = await cloudflareRequest<{ buckets: CloudflareR2Bucket[] }>({
+    accountId: input.accountId,
+    token: input.cloudflareToken,
+    path: '/r2/buckets',
+  })
+
+  return await Promise.all(
+    (bucketList.buckets ?? []).map(async (bucket) => {
+      const usage = await cloudflareRequest<CloudflareR2BucketUsage>({
+        accountId: input.accountId,
+        token: input.cloudflareToken,
+        path: `/r2/buckets/${encodeURIComponent(bucket.name)}/usage`,
+      })
+
+      const payloadSizeBytes = toNumber(usage.payloadSize)
+      const metadataSizeBytes = toNumber(usage.metadataSize)
+      const infrequentAccessPayloadSizeBytes = toNumber(usage.infrequentAccessPayloadSize)
+      const infrequentAccessMetadataSizeBytes = toNumber(usage.infrequentAccessMetadataSize)
+
+      return {
+        name: bucket.name,
+        location: bucket.location,
+        storage_class: bucket.storage_class,
+        jurisdiction: bucket.jurisdiction ?? null,
+        creation_date: bucket.creation_date,
+        usage_end: usage.end,
+        payload_size_bytes: payloadSizeBytes,
+        metadata_size_bytes: metadataSizeBytes,
+        total_size_bytes: payloadSizeBytes + metadataSizeBytes,
+        object_count: toNumber(usage.objectCount),
+        upload_count: toNumber(usage.uploadCount),
+        infrequent_access_payload_size_bytes: infrequentAccessPayloadSizeBytes,
+        infrequent_access_metadata_size_bytes: infrequentAccessMetadataSizeBytes,
+        infrequent_access_total_size_bytes: infrequentAccessPayloadSizeBytes + infrequentAccessMetadataSizeBytes,
+        infrequent_access_object_count: toNumber(usage.infrequentAccessObjectCount),
+        infrequent_access_upload_count: toNumber(usage.infrequentAccessUploadCount),
+      }
+    }),
+  )
+}
+
+async function loadUsageFromR2S3() {
+  const endpoint = (Deno.env.get('R2_S3_ENDPOINT') ?? Deno.env.get('R2_ENDPOINT') ?? '').trim()
+  const accessKeyId = (Deno.env.get('R2_ACCESS_KEY_ID') ?? '').trim()
+  const secretAccessKey = (Deno.env.get('R2_SECRET_ACCESS_KEY') ?? '').trim()
+
+  if (!endpoint || !accessKeyId || !secretAccessKey) {
+    throw new Error(
+      'Secrets ausentes para fallback S3 do R2 (R2_S3_ENDPOINT, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY).',
+    )
+  }
+
+  const client = new S3Client({
+    region: 'auto',
+    endpoint,
+    credentials: { accessKeyId, secretAccessKey },
+    forcePathStyle: true,
+  })
+
+  const listBucketsResult = await client.send(new ListBucketsCommand({}))
+  const buckets = listBucketsResult.Buckets ?? []
+  const usageEnd = new Date().toISOString()
+
+  return await Promise.all(
+    buckets.map(async (bucket) => {
+      const bucketName = bucket.Name ?? 'unknown'
+      const createdAt = bucket.CreationDate?.toISOString() ?? usageEnd
+
+      let continuationToken: string | undefined
+      let objectCount = 0
+      let totalPayloadSize = 0
+
+      do {
+        const page = await client.send(
+          new ListObjectsV2Command({
+            Bucket: bucketName,
+            ContinuationToken: continuationToken,
+            MaxKeys: 1000,
+          }),
+        )
+
+        const objects = page.Contents ?? []
+        for (const objectEntry of objects) {
+          objectCount += 1
+          totalPayloadSize += objectEntry.Size ?? 0
+        }
+
+        continuationToken = page.NextContinuationToken
+      } while (continuationToken)
+
+      return {
+        name: bucketName,
+        location: 'auto',
+        storage_class: 'Standard',
+        jurisdiction: null,
+        creation_date: createdAt,
+        usage_end: usageEnd,
+        payload_size_bytes: totalPayloadSize,
+        metadata_size_bytes: 0,
+        total_size_bytes: totalPayloadSize,
+        object_count: objectCount,
+        upload_count: objectCount,
+        infrequent_access_payload_size_bytes: 0,
+        infrequent_access_metadata_size_bytes: 0,
+        infrequent_access_total_size_bytes: 0,
+        infrequent_access_object_count: 0,
+        infrequent_access_upload_count: 0,
+      }
+    }),
+  )
 }
 
 function jsonResponse(payload: unknown, status = 200) {
