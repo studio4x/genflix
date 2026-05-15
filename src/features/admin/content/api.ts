@@ -51,6 +51,13 @@ type UploadPreparationResponse = {
   storage_provider: PrivateStorageProvider
 }
 
+export type UploadProgressSnapshot = {
+  loadedBytes: number
+  totalBytes: number
+  percent: number
+  etaSeconds: number | null
+}
+
 function normalizeSupabaseError(error: unknown): Error {
   if (error instanceof Error) {
     return error
@@ -153,8 +160,17 @@ async function preparePrivateAssetUpload(input: {
 async function uploadPrivateFile(
   ticket: UploadPreparationResponse,
   file: File,
+  options?: {
+    onProgress?: (snapshot: UploadProgressSnapshot) => void
+  },
 ) {
   if (ticket.upload_method === 'supabase_signed_upload') {
+    options?.onProgress?.({
+      loadedBytes: 0,
+      totalBytes: file.size,
+      percent: 0,
+      etaSeconds: null,
+    })
     if (!ticket.upload_token) {
       throw new Error('Token de upload assinado ausente.')
     }
@@ -164,6 +180,12 @@ async function uploadPrivateFile(
     if (signedUploadResult.error) {
       throw signedUploadResult.error
     }
+    options?.onProgress?.({
+      loadedBytes: file.size,
+      totalBytes: file.size,
+      percent: 100,
+      etaSeconds: 0,
+    })
     return
   }
 
@@ -179,7 +201,7 @@ async function uploadPrivateFile(
 
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
     try {
-      await uploadToSignedR2UrlWithXhr(ticket.upload_url, uploadHeaders, file)
+      await uploadToSignedR2UrlWithXhr(ticket.upload_url, uploadHeaders, file, options?.onProgress)
       return
     } catch (error) {
       const normalized = error instanceof Error ? error : new Error('Falha no upload para R2.')
@@ -219,9 +241,15 @@ function buildR2UploadHeaders(file: File, signedHeaders: Record<string, string> 
   return headers
 }
 
-async function uploadToSignedR2UrlWithXhr(url: string, headers: Record<string, string>, file: File) {
+async function uploadToSignedR2UrlWithXhr(
+  url: string,
+  headers: Record<string, string>,
+  file: File,
+  onProgress?: (snapshot: UploadProgressSnapshot) => void,
+) {
   await new Promise<void>((resolve, reject) => {
     const xhr = new XMLHttpRequest()
+    const startTime = Date.now()
     xhr.open('PUT', url, true)
 
     for (const [key, value] of Object.entries(headers)) {
@@ -240,8 +268,33 @@ async function uploadToSignedR2UrlWithXhr(url: string, headers: Record<string, s
       reject(new Error('Upload para R2 foi abortado (status 0).'))
     }
 
+    xhr.upload.onprogress = (event) => {
+      const loadedBytes = Number.isFinite(event.loaded) ? event.loaded : 0
+      const totalBytes = event.lengthComputable && Number.isFinite(event.total) && event.total > 0
+        ? event.total
+        : file.size
+      const percent = totalBytes > 0 ? Math.min(100, Math.round((loadedBytes / totalBytes) * 100)) : 0
+      const elapsedSeconds = Math.max((Date.now() - startTime) / 1000, 0.001)
+      const bytesPerSecond = loadedBytes / elapsedSeconds
+      const remainingBytes = Math.max(totalBytes - loadedBytes, 0)
+      const etaSeconds = bytesPerSecond > 0 ? Math.ceil(remainingBytes / bytesPerSecond) : null
+
+      onProgress?.({
+        loadedBytes,
+        totalBytes,
+        percent,
+        etaSeconds,
+      })
+    }
+
     xhr.onload = () => {
       if (xhr.status >= 200 && xhr.status < 300) {
+        onProgress?.({
+          loadedBytes: file.size,
+          totalBytes: file.size,
+          percent: 100,
+          etaSeconds: 0,
+        })
         resolve()
         return
       }
@@ -816,13 +869,18 @@ export async function uploadMaterial(
   lessonId: string,
   file: File,
   userId: string,
+  options?: {
+    onProgress?: (snapshot: UploadProgressSnapshot) => void
+  },
 ) {
   const uploadTicket = await preparePrivateAssetUpload({
     uploadKind: 'lesson_material',
     entityId: lessonId,
     file,
   })
-  await uploadPrivateFile(uploadTicket, file)
+  await uploadPrivateFile(uploadTicket, file, {
+    onProgress: options?.onProgress,
+  })
 
   const metadataResult = await supabase
     .from('lesson_materials')

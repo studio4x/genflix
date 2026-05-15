@@ -12,6 +12,7 @@ import {
   uploadMaterial,
   updateLesson,
   toErrorMessage,
+  type UploadProgressSnapshot,
 } from '@/features/admin/content/api'
 import { lessonFormSchema, type LessonFormInput } from '@/features/admin/content/schemas'
 import { useCourseBuilder } from '@/app/layouts/admin-course-builder-layout'
@@ -109,6 +110,12 @@ function formatBytes(value: number): string {
   return `${normalized.toFixed(unitIndex === 0 ? 0 : 1)} ${units[unitIndex]}`
 }
 
+function formatEtaSeconds(value: number | null): string {
+  if (value === null) return 'calculando...'
+  if (value <= 0) return '0s'
+  return `${value}s`
+}
+
 function getYouTubeEmbedUrl(url: string): string | null {
   try {
     const parsed = new URL(url)
@@ -156,6 +163,8 @@ export function LessonEditorPanel() {
   const [isUploadingFileLessonAsset, setIsUploadingFileLessonAsset] = useState(false)
   const [pendingProtectedVideoFile, setPendingProtectedVideoFile] = useState<File | null>(null)
   const [pendingFileLessonAsset, setPendingFileLessonAsset] = useState<File | null>(null)
+  const [protectedVideoUploadProgress, setProtectedVideoUploadProgress] = useState<UploadProgressSnapshot | null>(null)
+  const [fileLessonUploadProgress, setFileLessonUploadProgress] = useState<UploadProgressSnapshot | null>(null)
   const [protectedVideoPreviewUrl, setProtectedVideoPreviewUrl] = useState<string | null>(null)
   const [isLoadingProtectedVideoPreview, setIsLoadingProtectedVideoPreview] = useState(false)
   const [audioRequests, setAudioRequests] = useState<LessonAudioModerationRequestAdminItem[]>([])
@@ -470,12 +479,32 @@ export function LessonEditorPanel() {
     setError(null)
     if (options.uploadType === 'protected-video') {
       setIsUploadingProtectedVideo(true)
+      setProtectedVideoUploadProgress({
+        loadedBytes: 0,
+        totalBytes: file.size,
+        percent: 0,
+        etaSeconds: null,
+      })
     } else {
       setIsUploadingFileLessonAsset(true)
+      setFileLessonUploadProgress({
+        loadedBytes: 0,
+        totalBytes: file.size,
+        percent: 0,
+        etaSeconds: null,
+      })
     }
 
     try {
-      const uploaded = await uploadMaterial(lessonId, file, user.id)
+      const uploaded = await uploadMaterial(lessonId, file, user.id, {
+        onProgress: (snapshot) => {
+          if (options.uploadType === 'protected-video') {
+            setProtectedVideoUploadProgress(snapshot)
+          } else {
+            setFileLessonUploadProgress(snapshot)
+          }
+        },
+      })
       setLessonMaterials((prev) => [uploaded, ...prev.filter((item) => item.id !== uploaded.id)])
 
       if (options.uploadType === 'protected-video') {
@@ -500,8 +529,10 @@ export function LessonEditorPanel() {
     } finally {
       if (options.uploadType === 'protected-video') {
         setIsUploadingProtectedVideo(false)
+        setProtectedVideoUploadProgress(null)
       } else {
         setIsUploadingFileLessonAsset(false)
+        setFileLessonUploadProgress(null)
       }
     }
   }
@@ -849,6 +880,24 @@ export function LessonEditorPanel() {
                            </Button>
                          </div>
                        )}
+                       {protectedVideoUploadProgress ? (
+                         <div className="mt-3 rounded-lg border border-slate-200 bg-slate-50 p-3">
+                           <div className="flex items-center justify-between text-xs font-semibold text-slate-600">
+                             <span>Progresso do upload</span>
+                             <span>{protectedVideoUploadProgress.percent}%</span>
+                           </div>
+                           <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-slate-200">
+                             <div
+                               className="h-full rounded-full bg-slate-900 transition-all duration-300"
+                               style={{ width: `${protectedVideoUploadProgress.percent}%` }}
+                             />
+                           </div>
+                           <p className="mt-2 text-xs text-slate-600">
+                             {formatBytes(protectedVideoUploadProgress.loadedBytes)} de {formatBytes(protectedVideoUploadProgress.totalBytes)} •
+                             {' '}Previsao de termino: {formatEtaSeconds(protectedVideoUploadProgress.etaSeconds)}
+                           </p>
+                         </div>
+                       ) : null}
                        {form.youtube_url?.startsWith('asset:') ? (
                          <p className="text-xs text-slate-500">Referencia protegida atual: {form.youtube_url}</p>
                        ) : null}
@@ -884,7 +933,25 @@ export function LessonEditorPanel() {
                            {isUploadingFileLessonAsset ? 'Enviando ficheiro...' : 'Enviar ficheiro'}
                          </Button>
                        </div>
-                       <p className="text-xs text-slate-500">Limite atual no bucket: 50 MB por ficheiro.</p>
+                       <p className="text-xs text-slate-500">Limite atual conforme configuracao do storage protegido.</p>
+                       {fileLessonUploadProgress ? (
+                         <div className="mt-3 rounded-lg border border-slate-200 bg-slate-50 p-3">
+                           <div className="flex items-center justify-between text-xs font-semibold text-slate-600">
+                             <span>Progresso do upload</span>
+                             <span>{fileLessonUploadProgress.percent}%</span>
+                           </div>
+                           <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-slate-200">
+                             <div
+                               className="h-full rounded-full bg-slate-900 transition-all duration-300"
+                               style={{ width: `${fileLessonUploadProgress.percent}%` }}
+                             />
+                           </div>
+                           <p className="mt-2 text-xs text-slate-600">
+                             {formatBytes(fileLessonUploadProgress.loadedBytes)} de {formatBytes(fileLessonUploadProgress.totalBytes)} •
+                             {' '}Previsao de termino: {formatEtaSeconds(fileLessonUploadProgress.etaSeconds)}
+                           </p>
+                         </div>
+                       ) : null}
                      </div>
                    )}
                    <div className="rounded-xl border border-slate-200 bg-white p-4">
