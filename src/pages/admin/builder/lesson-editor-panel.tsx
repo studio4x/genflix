@@ -4,6 +4,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import ReactQuill from '@/components/forms/react-quill'
 import {
   createLesson,
+  deleteMaterial,
   deleteLessonContentAsset,
   deleteLesson,
   fetchMaterials,
@@ -160,6 +161,7 @@ export function LessonEditorPanel() {
   const [lessonMaterials, setLessonMaterials] = useState<LessonMaterial[]>([])
   const [isLoadingLessonMaterials, setIsLoadingLessonMaterials] = useState(false)
   const [isUploadingProtectedVideo, setIsUploadingProtectedVideo] = useState(false)
+  const [isRemovingProtectedVideo, setIsRemovingProtectedVideo] = useState(false)
   const [isUploadingFileLessonAsset, setIsUploadingFileLessonAsset] = useState(false)
   const [pendingProtectedVideoFile, setPendingProtectedVideoFile] = useState<File | null>(null)
   const [pendingFileLessonAsset, setPendingFileLessonAsset] = useState<File | null>(null)
@@ -537,6 +539,47 @@ export function LessonEditorPanel() {
     }
   }
 
+  async function removeProtectedVideoAsset() {
+    const value = form.youtube_url?.trim() ?? ''
+    if (!value.startsWith('asset:')) {
+      setError('Nenhum video protegido vinculado para remover.')
+      return
+    }
+
+    const materialId = value.slice('asset:'.length).trim()
+    const linkedMaterial = lessonMaterials.find((item) => item.id === materialId)
+    if (!linkedMaterial) {
+      setError('Nao foi possivel localizar o arquivo vinculado para remocao.')
+      return
+    }
+
+    const confirmed = window.confirm(
+      `Deseja remover o video protegido "${linkedMaterial.file_name}"?\n\nEsta acao exclui o arquivo do storage privado.`,
+    )
+    if (!confirmed) {
+      return
+    }
+
+    setError(null)
+    setIsRemovingProtectedVideo(true)
+    try {
+      await deleteMaterial(linkedMaterial)
+      setLessonMaterials((prev) => prev.filter((item) => item.id !== linkedMaterial.id))
+      setForm((prev) => ({ ...prev, youtube_url: '' }))
+      setProtectedVideoPreviewUrl(null)
+      setPendingProtectedVideoFile(null)
+      publishBuilderNotice({
+        type: 'success',
+        title: 'Video removido',
+        message: `O ficheiro "${linkedMaterial.file_name}" foi removido do storage e desvinculado da aula.`,
+      })
+    } catch (err) {
+      setError(toErrorMessage(err))
+    } finally {
+      setIsRemovingProtectedVideo(false)
+    }
+  }
+
   return (
     <div className="w-full space-y-6 animate-in fade-in duration-500 pb-20">
        <style>{`
@@ -899,7 +942,18 @@ export function LessonEditorPanel() {
                          </div>
                        ) : null}
                        {form.youtube_url?.startsWith('asset:') ? (
-                         <p className="text-xs text-slate-500">Referencia protegida atual: {form.youtube_url}</p>
+                         <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                           <p className="text-xs text-slate-500">Referencia protegida atual: {form.youtube_url}</p>
+                           <Button
+                             type="button"
+                             variant="outline"
+                             className="h-9 rounded-lg border-rose-200 bg-white px-3 text-xs font-black text-rose-700 hover:bg-rose-50"
+                             onClick={() => void removeProtectedVideoAsset()}
+                             disabled={isRemovingProtectedVideo || isUploadingProtectedVideo}
+                           >
+                             {isRemovingProtectedVideo ? 'Removendo...' : 'Remover video protegido'}
+                           </Button>
+                         </div>
                        ) : null}
                      </div>
                    )}
