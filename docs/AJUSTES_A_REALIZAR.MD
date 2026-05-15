@@ -347,3 +347,6 @@ O conteúdo textual desta aula pode ser narrado em áudio gerado por IA para esc
 [OK] t103 - Implemente no editor de banners, um histórico de revisões com a possibilidade de reveter uma alteração clicando na revisão desejada..
 
 [OK] T104 - Vamos implementar o storage r2 do cloudflare seguindo as diretrizes do arquivo: C:\PLATAFORMAS VS CODE\GENFLIX\genflix\docs\specs\SPEC_R2_STORAGE_MIGRATION.md
+
+
+[OK] T105 - Insira na página https://genflix-omega.vercel.app/admin/storage-r2, informações sobre estimativa de custo.. tanto em relação a quantidade de gbs utilizado quanto as outras coisas que a cloudflare cobra.. considere também o plano gratuito nas contas. 

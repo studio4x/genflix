@@ -43,6 +43,48 @@ function formatDate(value: string) {
 
 type ActiveTab = 'overview' | 'files'
 
+const CLOUDFLARE_R2_PRICING = {
+  freeTier: {
+    storageGbMonth: 10,
+    classARequests: 1_000_000,
+    classBRequests: 10_000_000,
+  },
+  standard: {
+    storageUsdPerGbMonth: 0.015,
+    classAUsdPerMillion: 4.5,
+    classBUsdPerMillion: 0.36,
+  },
+  infrequentAccess: {
+    storageUsdPerGbMonth: 0.01,
+    classAUsdPerMillion: 9,
+    classBUsdPerMillion: 0.9,
+    retrievalUsdPerGb: 0.01,
+  },
+} as const
+
+function bytesToDecimalGb(bytes: number) {
+  if (!Number.isFinite(bytes) || bytes <= 0) {
+    return 0
+  }
+  return bytes / 1_000_000_000
+}
+
+function roundUpBillingUnit(value: number) {
+  if (!Number.isFinite(value) || value <= 0) {
+    return 0
+  }
+  return Math.ceil(value)
+}
+
+function formatUsd(value: number) {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(value)
+}
+
 export function AdminR2StoragePage() {
   const [activeTab, setActiveTab] = useState<ActiveTab>('overview')
   const [overview, setOverview] = useState<R2UsageOverview | null>(null)
@@ -105,6 +147,63 @@ export function AdminR2StoragePage() {
     }
 
     return [...overview.buckets].sort((a, b) => b.total_size_bytes - a.total_size_bytes)[0] ?? null
+  }, [overview])
+
+  const costEstimate = useMemo(() => {
+    const buckets = overview?.buckets ?? []
+    const totals = overview?.totals
+
+    const totalStorageGb = bytesToDecimalGb(totals?.total_size_bytes ?? 0)
+    const infrequentStorageGb = bytesToDecimalGb(totals?.infrequent_access_total_size_bytes ?? 0)
+    const standardStorageGb = Math.max(0, totalStorageGb - infrequentStorageGb)
+
+    const standardStorageBillableGb = Math.max(
+      0,
+      roundUpBillingUnit(standardStorageGb) - CLOUDFLARE_R2_PRICING.freeTier.storageGbMonth,
+    )
+    const infrequentStorageBillableGb = roundUpBillingUnit(infrequentStorageGb)
+
+    const standardStorageCost =
+      standardStorageBillableGb * CLOUDFLARE_R2_PRICING.standard.storageUsdPerGbMonth
+    const infrequentStorageCost =
+      infrequentStorageBillableGb * CLOUDFLARE_R2_PRICING.infrequentAccess.storageUsdPerGbMonth
+
+    const standardClassARequests = buckets.reduce((acc, bucket) => acc + bucket.upload_count, 0)
+    const infrequentClassARequests = buckets.reduce(
+      (acc, bucket) => acc + bucket.infrequent_access_upload_count,
+      0,
+    )
+
+    const standardClassABillableMillions = Math.max(
+      0,
+      roundUpBillingUnit(standardClassARequests / 1_000_000) - 1,
+    )
+    const infrequentClassABillableMillions = roundUpBillingUnit(infrequentClassARequests / 1_000_000)
+
+    const standardClassACost =
+      standardClassABillableMillions * CLOUDFLARE_R2_PRICING.standard.classAUsdPerMillion
+    const infrequentClassACost =
+      infrequentClassABillableMillions * CLOUDFLARE_R2_PRICING.infrequentAccess.classAUsdPerMillion
+
+    const subtotalKnown =
+      standardStorageCost + infrequentStorageCost + standardClassACost + infrequentClassACost
+
+    return {
+      totalStorageGb,
+      standardStorageGb,
+      infrequentStorageGb,
+      standardStorageBillableGb,
+      infrequentStorageBillableGb,
+      standardClassARequests,
+      infrequentClassARequests,
+      standardClassABillableMillions,
+      infrequentClassABillableMillions,
+      standardStorageCost,
+      infrequentStorageCost,
+      standardClassACost,
+      infrequentClassACost,
+      subtotalKnown,
+    }
   }, [overview])
 
   async function loadObjects(options?: { append?: boolean; continuationToken?: string | null }) {
@@ -254,6 +353,116 @@ export function AdminR2StoragePage() {
                 {loading ? 'â€”' : formatNumber(overview?.totals.upload_count ?? 0)}
               </p>
             </article>
+          </section>
+
+          <section className="rounded-[24px] border border-[#D8E6EB] bg-white p-5">
+            <div className="mb-4 flex flex-col gap-1">
+              <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[#5F7077]">
+                Estimativa de custo mensal (Cloudflare R2)
+              </p>
+              <p className="text-sm text-[#5F7077]">
+                Precos em USD baseados no uso atual com franquia gratuita mensal aplicada quando disponivel.
+              </p>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              <article className="rounded-[16px] border border-[#D8E6EB] bg-[#F8FBFC] p-4">
+                <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[#5F7077]">
+                  Subtotal estimado
+                </p>
+                <p className="mt-2 text-2xl font-black text-[#15323B]">
+                  {loading ? '--' : formatUsd(costEstimate.subtotalKnown)}
+                </p>
+                <p className="mt-1 text-xs font-semibold text-[#5F7077]">
+                  Inclui Storage e Class A (Standard e IA).
+                </p>
+              </article>
+              <article className="rounded-[16px] border border-[#D8E6EB] bg-[#F8FBFC] p-4">
+                <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[#5F7077]">
+                  Storage Standard faturavel
+                </p>
+                <p className="mt-2 text-2xl font-black text-[#15323B]">
+                  {loading ? '--' : `${costEstimate.standardStorageBillableGb} GB-mes`}
+                </p>
+                <p className="mt-1 text-xs font-semibold text-[#5F7077]">
+                  Uso atual: {loading ? '--' : `${costEstimate.standardStorageGb.toFixed(2)} GB`}
+                </p>
+              </article>
+              <article className="rounded-[16px] border border-[#D8E6EB] bg-[#F8FBFC] p-4">
+                <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[#5F7077]">
+                  Class A Standard faturavel
+                </p>
+                <p className="mt-2 text-2xl font-black text-[#15323B]">
+                  {loading ? '--' : `${costEstimate.standardClassABillableMillions} mi`}
+                </p>
+                <p className="mt-1 text-xs font-semibold text-[#5F7077]">
+                  Requisicoes atuais: {loading ? '--' : formatNumber(costEstimate.standardClassARequests)}
+                </p>
+              </article>
+            </div>
+
+            <div className="mt-5 overflow-x-auto">
+              <table className="min-w-full border-separate border-spacing-y-2">
+                <thead>
+                  <tr className="text-left text-[11px] font-black uppercase tracking-[0.14em] text-[#5F7077]">
+                    <th className="px-3 py-2">Item</th>
+                    <th className="px-3 py-2">Preco</th>
+                    <th className="px-3 py-2">Franquia gratis</th>
+                    <th className="px-3 py-2">Uso atual</th>
+                    <th className="px-3 py-2">Estimativa</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr className="rounded-2xl bg-[#F8FBFC] text-sm font-semibold text-[#163138]">
+                    <td className="rounded-l-2xl px-3 py-3">Storage Standard</td>
+                    <td className="px-3 py-3">$0.015 / GB-mes</td>
+                    <td className="px-3 py-3">10 GB-mes</td>
+                    <td className="px-3 py-3">{loading ? '--' : `${costEstimate.standardStorageGb.toFixed(2)} GB`}</td>
+                    <td className="rounded-r-2xl px-3 py-3">{loading ? '--' : formatUsd(costEstimate.standardStorageCost)}</td>
+                  </tr>
+                  <tr className="rounded-2xl bg-[#F8FBFC] text-sm font-semibold text-[#163138]">
+                    <td className="rounded-l-2xl px-3 py-3">Class A Standard</td>
+                    <td className="px-3 py-3">$4.50 / milhao</td>
+                    <td className="px-3 py-3">1 milhao</td>
+                    <td className="px-3 py-3">{loading ? '--' : formatNumber(costEstimate.standardClassARequests)}</td>
+                    <td className="rounded-r-2xl px-3 py-3">{loading ? '--' : formatUsd(costEstimate.standardClassACost)}</td>
+                  </tr>
+                  <tr className="rounded-2xl bg-[#F8FBFC] text-sm font-semibold text-[#163138]">
+                    <td className="rounded-l-2xl px-3 py-3">Class B Standard</td>
+                    <td className="px-3 py-3">$0.36 / milhao</td>
+                    <td className="px-3 py-3">10 milhoes</td>
+                    <td className="px-3 py-3">Nao disponivel no endpoint</td>
+                    <td className="rounded-r-2xl px-3 py-3">Nao calculado</td>
+                  </tr>
+                  <tr className="rounded-2xl bg-[#F8FBFC] text-sm font-semibold text-[#163138]">
+                    <td className="rounded-l-2xl px-3 py-3">Storage IA</td>
+                    <td className="px-3 py-3">$0.01 / GB-mes</td>
+                    <td className="px-3 py-3">Sem franquia</td>
+                    <td className="px-3 py-3">{loading ? '--' : `${costEstimate.infrequentStorageGb.toFixed(2)} GB`}</td>
+                    <td className="rounded-r-2xl px-3 py-3">{loading ? '--' : formatUsd(costEstimate.infrequentStorageCost)}</td>
+                  </tr>
+                  <tr className="rounded-2xl bg-[#F8FBFC] text-sm font-semibold text-[#163138]">
+                    <td className="rounded-l-2xl px-3 py-3">Class A IA</td>
+                    <td className="px-3 py-3">$9.00 / milhao</td>
+                    <td className="px-3 py-3">Sem franquia</td>
+                    <td className="px-3 py-3">{loading ? '--' : formatNumber(costEstimate.infrequentClassARequests)}</td>
+                    <td className="rounded-r-2xl px-3 py-3">{loading ? '--' : formatUsd(costEstimate.infrequentClassACost)}</td>
+                  </tr>
+                  <tr className="rounded-2xl bg-[#F8FBFC] text-sm font-semibold text-[#163138]">
+                    <td className="rounded-l-2xl px-3 py-3">Class B IA / Retrieval IA</td>
+                    <td className="px-3 py-3">$0.90 / milhao + $0.01 / GB</td>
+                    <td className="px-3 py-3">Sem franquia</td>
+                    <td className="px-3 py-3">Nao disponivel no endpoint</td>
+                    <td className="rounded-r-2xl px-3 py-3">Nao calculado</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <p className="mt-4 text-xs font-semibold text-[#5F7077]">
+              A Cloudflare arredonda para cima por unidade de cobranca (GB-mes, milhao de operacoes e GB de
+              retrieval). Este painel e uma estimativa de acompanhamento e nao substitui a fatura oficial.
+            </p>
           </section>
 
           <section className="rounded-[24px] border border-[#D8E6EB] bg-white p-5">
