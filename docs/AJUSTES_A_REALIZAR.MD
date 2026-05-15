@@ -342,6 +342,8 @@ O conteúdo textual desta aula pode ser narrado em áudio gerado por IA para esc
 
 [ ] T52 - Criar um documento de checklist com tudo o que já foi implementado, descrevendo em detalhes. Esse documento será usado para validar o que foi implementado, testar todas as funcionalidades disponíveis e identificar se ainda falta algo para implementar.
 
-[ ] T102 - No editor de texto, dentro do editor visual, precisamos ter a opção de mover uma imagem selecionado, clicando e segurando, para qualquer posição do texto.. Ao inserir uma imagem ou qualquer elementor dentro do editor, a posição a ser inserida é onde o cursor está. ALém disso, a funcionalidade de alinhamento deverá funcionar também para as imagens e demais elementos. O "Preview rápido" não está mostrando o texto formatado em html.. ele está mostrando somente o código html..
+[OK] T102 - No editor de texto, dentro do editor visual, precisamos ter a opção de mover uma imagem selecionado, clicando e segurando, para qualquer posição do texto.. Ao inserir uma imagem ou qualquer elementor dentro do editor, a posição a ser inserida é onde o cursor está. ALém disso, a funcionalidade de alinhamento deverá funcionar também para as imagens e demais elementos. O "Preview rápido" não está mostrando o texto formatado em html.. ele está mostrando somente o código html..
 
 [OK] t103 - Implemente no editor de banners, um histórico de revisões com a possibilidade de reveter uma alteração clicando na revisão desejada..
+
+[OK] T104 - Vamos implementar o storage r2 do cloudflare seguindo as diretrizes do arquivo: C:\PLATAFORMAS VS CODE\GENFLIX\genflix\docs\specs\SPEC_R2_STORAGE_MIGRATION.md

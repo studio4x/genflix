@@ -29,6 +29,7 @@ interface StudentModuleProgressRpcRow {
   ends_at: string | null
   module_pdf_file_name: string | null
   module_pdf_storage_path: string | null
+  module_pdf_storage_provider?: 'supabase' | 'r2' | null
 }
 
 interface StudentLessonProgressRpcRow {
@@ -160,6 +161,7 @@ export async function fetchStudentCourseContentWithProgress(
     ends_at: module.ends_at,
     module_pdf_file_name: module.module_pdf_file_name,
     module_pdf_storage_path: module.module_pdf_storage_path,
+    module_pdf_storage_provider: module.module_pdf_storage_provider ?? 'supabase',
     lessons: lessonMap.get(module.module_id) ?? [],
   }))
 }

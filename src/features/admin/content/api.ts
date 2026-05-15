@@ -38,6 +38,18 @@ const MATERIALS_BUCKET = 'materials'
 const MODULE_PDFS_BUCKET = 'module-pdfs'
 const LESSON_FOOTER_ASSETS_BUCKET = 'lesson-footer-assets'
 const LESSON_CONTENT_ASSETS_BUCKET = 'lesson-content-assets'
+type PrivateStorageProvider = 'supabase' | 'r2'
+
+type UploadPreparationResponse = {
+  provider: PrivateStorageProvider
+  upload_method: 'supabase_signed_upload' | 'r2_signed_put'
+  upload_path: string
+  upload_token: string | null
+  upload_url: string | null
+  upload_headers: Record<string, string> | null
+  storage_bucket: string
+  storage_provider: PrivateStorageProvider
+}
 
 function normalizeSupabaseError(error: unknown): Error {
   if (error instanceof Error) {
@@ -103,6 +115,95 @@ export async function fetchCourses(): Promise<Course[]> {
     throw result.error
   }
   return ((result.data as Course[]) ?? []).map(withLegacyCourseSalesDefaults)
+}
+
+async function getAccessTokenOrThrow() {
+  const sessionResult = await supabase.auth.getSession()
+  const accessToken = sessionResult.data.session?.access_token ?? ''
+  if (!accessToken) {
+    throw new Error('Sessao expirada. Faça login novamente.')
+  }
+  return accessToken
+}
+
+async function preparePrivateAssetUpload(input: {
+  uploadKind: 'lesson_material'
+  entityId: string
+  file: File
+}) {
+  const accessToken = await getAccessTokenOrThrow()
+  const response = await supabase.functions.invoke<UploadPreparationResponse>('admin-storage-upload', {
+    body: {
+      access_token: accessToken,
+      operation: 'prepare_upload',
+      upload_kind: input.uploadKind,
+      entity_id: input.entityId,
+      file_name: input.file.name,
+      mime_type: input.file.type || 'application/octet-stream',
+      file_size_bytes: input.file.size,
+    },
+  })
+
+  if (response.error || !response.data) {
+    throw new Error(response.error?.message ?? 'Nao foi possivel preparar o upload protegido.')
+  }
+  return response.data
+}
+
+async function uploadPrivateFile(
+  ticket: UploadPreparationResponse,
+  file: File,
+) {
+  if (ticket.upload_method === 'supabase_signed_upload') {
+    if (!ticket.upload_token) {
+      throw new Error('Token de upload assinado ausente.')
+    }
+    const signedUploadResult = await supabase.storage
+      .from(ticket.storage_bucket)
+      .uploadToSignedUrl(ticket.upload_path, ticket.upload_token, file)
+    if (signedUploadResult.error) {
+      throw signedUploadResult.error
+    }
+    return
+  }
+
+  if (!ticket.upload_url) {
+    throw new Error('URL de upload assinada ausente.')
+  }
+
+  const uploadResult = await fetch(ticket.upload_url, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': file.type || 'application/octet-stream',
+      ...(ticket.upload_headers ?? {}),
+    },
+    body: file,
+  })
+
+  if (!uploadResult.ok) {
+    const errorBody = await uploadResult.text().catch(() => '')
+    throw new Error(`Falha no upload para R2 (${uploadResult.status}). ${errorBody}`)
+  }
+}
+
+async function deletePrivateObject(input: {
+  storagePath: string
+  storageProvider: PrivateStorageProvider
+  storageBucket: string
+}) {
+  const accessToken = await getAccessTokenOrThrow()
+  const response = await supabase.functions.invoke<{ ok: boolean }>('admin-storage-upload', {
+    body: {
+      access_token: accessToken,
+      operation: 'delete_object',
+      provider: input.storageProvider,
+      storage_path: input.storagePath,
+      storage_bucket: input.storageBucket,
+    },
+  })
+  if (response.error) {
+    throw new Error(response.error.message)
+  }
 }
 
 export async function fetchCourseCategories(includeInactive = true): Promise<CourseCategory[]> {
@@ -631,24 +732,19 @@ export async function uploadMaterial(
   file: File,
   userId: string,
 ) {
-  const objectPath = `${lessonId}/${crypto.randomUUID()}-${sanitizeFileName(file.name)}`
-  const uploadResult = await supabase.storage
-    .from(MATERIALS_BUCKET)
-    .upload(objectPath, file, {
-      cacheControl: '3600',
-      upsert: false,
-      contentType: file.type || undefined,
-    })
-
-  if (uploadResult.error) {
-    throw uploadResult.error
-  }
+  const uploadTicket = await preparePrivateAssetUpload({
+    uploadKind: 'lesson_material',
+    entityId: lessonId,
+    file,
+  })
+  await uploadPrivateFile(uploadTicket, file)
 
   const metadataResult = await supabase
     .from('lesson_materials')
     .insert({
       lesson_id: lessonId,
-      storage_path: objectPath,
+      storage_path: uploadTicket.upload_path,
+      storage_provider: uploadTicket.storage_provider,
       file_name: file.name,
       mime_type: file.type || null,
       file_size_bytes: file.size,
@@ -658,7 +754,11 @@ export async function uploadMaterial(
     .single()
 
   if (metadataResult.error) {
-    await supabase.storage.from(MATERIALS_BUCKET).remove([objectPath])
+    await deletePrivateObject({
+      storagePath: uploadTicket.upload_path,
+      storageProvider: uploadTicket.storage_provider,
+      storageBucket: uploadTicket.storage_bucket,
+    })
     throw metadataResult.error
   }
 
@@ -666,12 +766,11 @@ export async function uploadMaterial(
 }
 
 export async function deleteMaterial(material: LessonMaterial) {
-  const storageDeleteResult = await supabase.storage
-    .from(MATERIALS_BUCKET)
-    .remove([material.storage_path])
-  if (storageDeleteResult.error) {
-    throw storageDeleteResult.error
-  }
+  await deletePrivateObject({
+    storagePath: material.storage_path,
+    storageProvider: material.storage_provider ?? 'supabase',
+    storageBucket: MATERIALS_BUCKET,
+  })
 
   const metadataDeleteResult = await supabase
     .from('lesson_materials')
@@ -683,15 +782,22 @@ export async function deleteMaterial(material: LessonMaterial) {
 }
 
 export async function getSignedMaterialUrl(storagePath: string, expiresInSeconds = 60 * 10) {
-  const result = await supabase.storage
-    .from(MATERIALS_BUCKET)
-    .createSignedUrl(storagePath, expiresInSeconds)
+  const accessToken = await getAccessTokenOrThrow()
+  const response = await supabase.functions.invoke<{
+    signed_url: string
+  }>('generate-asset-access', {
+    body: {
+      access_token: accessToken,
+      storage_path: storagePath,
+      expires_in_seconds: expiresInSeconds,
+    },
+  })
 
-  if (result.error) {
-    throw result.error
+  if (response.error || !response.data?.signed_url) {
+    throw new Error(response.error?.message ?? 'Nao foi possivel gerar URL assinada do material.')
   }
 
-  return result.data.signedUrl
+  return response.data.signed_url
 }
 
 export async function uploadModulePdf(
@@ -715,11 +821,12 @@ export async function uploadModulePdf(
     .from('course_modules')
     .update({
       module_pdf_storage_path: objectPath,
+      module_pdf_storage_provider: 'supabase',
       module_pdf_file_name: file.name,
       module_pdf_uploaded_at: new Date().toISOString(),
     })
     .eq('id', moduleId)
-    .select('module_pdf_storage_path, module_pdf_file_name, module_pdf_uploaded_at')
+    .select('module_pdf_storage_path, module_pdf_storage_provider, module_pdf_file_name, module_pdf_uploaded_at')
     .single()
 
   if (metadataResult.error) {
@@ -729,12 +836,14 @@ export async function uploadModulePdf(
 
   const row = metadataResult.data as {
     module_pdf_storage_path: string
+    module_pdf_storage_provider: 'supabase' | 'r2'
     module_pdf_file_name: string
     module_pdf_uploaded_at: string | null
   }
 
   return {
     storage_path: row.module_pdf_storage_path,
+    storage_provider: row.module_pdf_storage_provider,
     file_name: row.module_pdf_file_name,
     uploaded_at: row.module_pdf_uploaded_at,
   } satisfies ModulePdfAsset

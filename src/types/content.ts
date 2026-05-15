@@ -287,6 +287,7 @@ export interface CourseModule {
   ends_at: string | null
   release_days_after_enrollment: number | null
   module_pdf_storage_path: string | null
+  module_pdf_storage_provider: 'supabase' | 'r2'
   module_pdf_file_name: string | null
   module_pdf_uploaded_at: string | null
   created_at: string
@@ -312,6 +313,7 @@ export interface Lesson {
 
 export interface ModulePdfAsset {
   storage_path: string
+  storage_provider: 'supabase' | 'r2'
   file_name: string
   uploaded_at: string | null
 }
@@ -320,6 +322,7 @@ export interface LessonMaterial {
   id: string
   lesson_id: string
   storage_path: string
+  storage_provider: 'supabase' | 'r2'
   file_name: string
   mime_type: string | null
   file_size_bytes: number
@@ -541,5 +544,6 @@ export interface StudentCourseModuleProgress {
   ends_at: string | null
   module_pdf_file_name: string | null
   module_pdf_storage_path: string | null
+  module_pdf_storage_provider?: 'supabase' | 'r2'
   lessons: StudentLessonWithProgress[]
 }
