@@ -43,11 +43,23 @@ export async function fetchR2UsageOverview() {
     throw new Error('Sessao expirada. Entre novamente para visualizar o uso do storage.')
   }
 
-  const response = await fetch('/api/admin/storage/r2', {
-    method: 'GET',
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+  const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+
+  if (!supabaseUrl || !supabaseAnonKey) {
+    throw new Error('Configuracao do Supabase ausente no frontend.')
+  }
+
+  const response = await fetch(`${supabaseUrl}/functions/v1/admin-r2-usage`, {
+    method: 'POST',
     headers: {
+      'Content-Type': 'application/json',
+      apikey: supabaseAnonKey,
       Authorization: `Bearer ${accessToken}`,
     },
+    body: JSON.stringify({
+      access_token: accessToken,
+    }),
   })
 
   const payload = await response.json().catch(() => null) as (R2UsageOverview & { error?: string }) | null
