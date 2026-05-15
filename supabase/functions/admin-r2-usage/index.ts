@@ -246,8 +246,24 @@ async function loadUsageFromR2S3() {
     forcePathStyle: true,
   })
 
-  const listBucketsResult = await client.send(new ListBucketsCommand({}))
-  const buckets = listBucketsResult.Buckets ?? []
+  const configuredBuckets = resolveConfiguredBuckets()
+  let buckets: Array<{ Name?: string; CreationDate?: Date }> = []
+
+  try {
+    const listBucketsResult = await client.send(new ListBucketsCommand({}))
+    buckets = listBucketsResult.Buckets ?? []
+  } catch (error) {
+    if (configuredBuckets.length === 0) {
+      const message = error instanceof Error ? error.message : 'Access Denied'
+      throw new Error(
+        `Nao foi possivel listar buckets no R2 (${message}). Configure R2_PRIVATE_BUCKET ou R2_BUCKETS para usar credencial restrita.`,
+      )
+    }
+  }
+
+  if (buckets.length === 0 && configuredBuckets.length > 0) {
+    buckets = configuredBuckets.map((name) => ({ Name: name }))
+  }
   const usageEnd = new Date().toISOString()
 
   return await Promise.all(
@@ -297,6 +313,17 @@ async function loadUsageFromR2S3() {
       }
     }),
   )
+}
+
+function resolveConfiguredBuckets() {
+  const fromSingle = (Deno.env.get('R2_PRIVATE_BUCKET') ?? '').trim()
+  const fromList = (Deno.env.get('R2_BUCKETS') ?? '')
+    .split(',')
+    .map((entry) => entry.trim())
+    .filter(Boolean)
+
+  const merged = fromSingle ? [fromSingle, ...fromList] : fromList
+  return Array.from(new Set(merged))
 }
 
 function jsonResponse(payload: unknown, status = 200) {
