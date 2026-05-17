@@ -25,10 +25,10 @@ Este checklist foi criado para apoiar a validacao funcional da plataforma por se
 - [OK] Confirmacao de checkout (`/checkout/confirmacao`) exibe status esperado.
 
 ### Modulo Conteudo Publico
-- [ ] Blog (`/blog`) carrega lista de posts.
-- [ ] Post individual (`/blog/:slug`) renderiza conteudo sem quebrar layout.
-- [ ] Pagina de recursos (`/recursos`) carrega cards e blocos esperados.
-- [ ] Pagina comunidade (`/comunidade`) carrega sem erros.
+- [OK] Blog (`/blog`) carrega lista de posts.
+- [OK] Post individual (`/blog/:slug`) renderiza conteudo sem quebrar layout.
+- [OK] Pagina de recursos (`/recursos`) carrega cards e blocos esperados.
+- [OK] Pagina comunidade (`/comunidade`) carrega sem erros.
 
 ### Modulo Contato e Suporte Publico
 - [ ] Pagina contato (`/contato`) abre e permite envio de formulario.
