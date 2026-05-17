@@ -19,10 +19,10 @@ Este checklist foi criado para apoiar a validacao funcional da plataforma por se
 - [OK] SEO basico da pagina inicial (title/description) aparece no HTML final.
 
 ### Modulo Catalogo e Conversao
-- [ ] Pagina de cursos (`/cursos`) lista cursos sem falha.
-- [ ] Detalhe do curso (`/cursos/:slug`) abre com dados validos.
-- [ ] Fluxo de checkout (`/checkout/pagamento/:slug`) abre corretamente.
-- [ ] Confirmacao de checkout (`/checkout/confirmacao`) exibe status esperado.
+- [OK] Pagina de cursos (`/cursos`) lista cursos sem falha.
+- [OK] Detalhe do curso (`/cursos/:slug`) abre com dados validos.
+- [OK] Fluxo de checkout (`/checkout/pagamento/:slug`) abre corretamente.
+- [OK] Confirmacao de checkout (`/checkout/confirmacao`) exibe status esperado.
 
 ### Modulo Conteudo Publico
 - [ ] Blog (`/blog`) carrega lista de posts.
