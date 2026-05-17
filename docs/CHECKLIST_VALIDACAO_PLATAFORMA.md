@@ -31,11 +31,11 @@ Este checklist foi criado para apoiar a validacao funcional da plataforma por se
 - [OK] Pagina comunidade (`/comunidade`) carrega sem erros.
 
 ### Modulo Contato e Suporte Publico
-- [ ] Pagina contato (`/contato`) abre e permite envio de formulario.
-- [ ] Pagina suporte (`/suporte`) carrega FAQ e canais previstos.
-- [ ] Pagina ajuda (`/ajuda`) carrega layout padrao da plataforma.
-- [ ] Pagina indique (`/indique-a-genflix`) permite compartilhamento/envio conforme fluxo.
-- [ ] Pagina ensine (`/ensine-na-genflix`) carrega formulario esperado.
+- [OK] Pagina contato (`/contato`) abre e permite envio de formulario.
+- [OK] Pagina suporte (`/suporte`) carrega FAQ e canais previstos.
+- [OK] Pagina ajuda (`/ajuda`) carrega layout padrao da plataforma.
+- [OK] Pagina indique (`/indique-a-genflix`) permite compartilhamento/envio conforme fluxo.
+- [OK] Pagina ensine (`/ensine-na-genflix`) carrega formulario esperado.
 
 ### Modulo Autenticacao Publica
 - [ ] Login (`/login`) autentica usuario valido.
