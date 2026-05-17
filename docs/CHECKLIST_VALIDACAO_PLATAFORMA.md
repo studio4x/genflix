@@ -13,10 +13,10 @@ Este checklist foi criado para apoiar a validacao funcional da plataforma por se
 ## Setor Publico
 
 ### Modulo Home e Navegacao Publica
-- [ ] Home (`/`) carrega sem erro de console.
-- [ ] Header, menu e rodape exibem corretamente em desktop e mobile.
-- [ ] Links principais do menu publico redirecionam para as rotas corretas.
-- [ ] SEO basico da pagina inicial (title/description) aparece no HTML final.
+- [OK] Home (`/`) carrega sem erro de console.
+- [OK] Header, menu e rodape exibem corretamente em desktop e mobile.
+- [OK] Links principais do menu publico redirecionam para as rotas corretas.
+- [OK] SEO basico da pagina inicial (title/description) aparece no HTML final.
 
 ### Modulo Catalogo e Conversao
 - [ ] Pagina de cursos (`/cursos`) lista cursos sem falha.
