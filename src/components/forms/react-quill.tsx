@@ -86,6 +86,36 @@ function normalizeMovableImagesHtml(html: string) {
   const container = document.createElement('div')
   container.innerHTML = html
 
+  // Keep editor markup predictable for plain rich text content.
+  container.querySelectorAll('div').forEach((div) => {
+    const hasSpecialClass = div.classList.contains('genflix-columns')
+      || div.classList.contains('genflix-column')
+      || div.classList.contains('embedded-video')
+    const hasSpecialAttr = div.hasAttribute('data-hcm-movable')
+      || div.hasAttribute('data-hcm-column-widths')
+      || div.style.getPropertyValue('--hcm-columns-template') !== ''
+
+    if (hasSpecialClass || hasSpecialAttr) {
+      return
+    }
+
+    const paragraph = document.createElement('p')
+    paragraph.innerHTML = div.innerHTML
+    div.replaceWith(paragraph)
+  })
+
+  // Some browser commands (like italic) may inject inline font-size.
+  container.querySelectorAll('i, em, b, strong, u, s, span').forEach((element) => {
+    if (!(element instanceof HTMLElement)) {
+      return
+    }
+
+    element.style.removeProperty('font-size')
+    if (element.getAttribute('style')?.trim() === '') {
+      element.removeAttribute('style')
+    }
+  })
+
   container.querySelectorAll('img').forEach((img) => {
     img.setAttribute('data-hcm-movable', 'true')
     img.setAttribute('draggable', 'true')
@@ -412,7 +442,13 @@ export default function ReactQuill({
       return
     }
 
-    queueMicrotask(() => onChange(editor.innerHTML))
+    queueMicrotask(() => {
+      const normalized = normalizeMovableImagesHtml(editor.innerHTML)
+      if (editor.innerHTML !== normalized) {
+        editor.innerHTML = normalized
+      }
+      onChange(normalized)
+    })
   }
 
   function rememberSelection() {
@@ -1199,8 +1235,20 @@ export default function ReactQuill({
               onDragEnd={() => {
                 draggedElementRef.current = null
               }}
-              onInput={(event) => onChange(event.currentTarget.innerHTML)}
-              onBlur={(event) => onChange(event.currentTarget.innerHTML)}
+              onInput={(event) => {
+                const normalized = normalizeMovableImagesHtml(event.currentTarget.innerHTML)
+                if (event.currentTarget.innerHTML !== normalized) {
+                  event.currentTarget.innerHTML = normalized
+                }
+                onChange(normalized)
+              }}
+              onBlur={(event) => {
+                const normalized = normalizeMovableImagesHtml(event.currentTarget.innerHTML)
+                if (event.currentTarget.innerHTML !== normalized) {
+                  event.currentTarget.innerHTML = normalized
+                }
+                onChange(normalized)
+              }}
             />
 
             {selectedImageBounds ? (
