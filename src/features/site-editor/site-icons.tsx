@@ -98,12 +98,11 @@ function canUseCssMaskForIcon(url: string) {
 }
 
 function svgToDataUrl(svg: string) {
-  const encoded = encodeURIComponent(svg)
-    .replace(/%20/g, ' ')
-    .replace(/%3D/g, '=')
-    .replace(/%3A/g, ':')
-    .replace(/%2F/g, '/')
-  return `data:image/svg+xml;utf8,${encoded}`
+  const utf8 = encodeURIComponent(svg).replace(/%([0-9A-F]{2})/g, (_, byte) =>
+    String.fromCharCode(Number.parseInt(byte, 16)),
+  )
+  const base64 = btoa(utf8)
+  return `data:image/svg+xml;base64,${base64}`
 }
 
 function ColorizedRemoteSvgIcon({
