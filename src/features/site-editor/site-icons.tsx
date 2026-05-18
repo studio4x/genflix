@@ -49,7 +49,7 @@ export const SITE_ICON_OPTIONS: SiteIconOption[] = [
 ]
 
 const SITE_ICON_MAP = new Map(SITE_ICON_OPTIONS.map((item) => [item.value, item.icon]))
-const SVG_DATA_URL_CACHE = new Map<string, string>()
+const SVG_INLINE_CACHE = new Map<string, string>()
 
 function normalizeIconColor(value: string | null | undefined) {
   if (typeof value !== 'string') {
@@ -97,12 +97,13 @@ function canUseCssMaskForIcon(url: string) {
   }
 }
 
-function svgToDataUrl(svg: string) {
-  const utf8 = encodeURIComponent(svg).replace(/%([0-9A-F]{2})/g, (_, byte) =>
-    String.fromCharCode(Number.parseInt(byte, 16)),
-  )
-  const base64 = btoa(utf8)
-  return `data:image/svg+xml;base64,${base64}`
+function normalizeSvgForCurrentColor(svgText: string) {
+  return svgText
+    .replace(/<\?xml[\s\S]*?\?>/gi, '')
+    .replace(/<!doctype[\s\S]*?>/gi, '')
+    .replace(/<svg\b([^>]*)>/i, '<svg$1 width="100%" height="100%" preserveAspectRatio="xMidYMid meet">')
+    .replace(/\b(fill|stroke)=["'](#000000|#000|black|rgb\(0[\s,]+0[\s,]+0\)|rgba\(0[\s,]+0[\s,]+0[\s,]+1\))["']/gi, '$1="currentColor"')
+    .replace(/\b(fill|stroke)\s*:\s*(#000000|#000|black|rgb\(0[\s,]+0[\s,]+0\)|rgba\(0[\s,]+0[\s,]+0[\s,]+1\))/gi, '$1:currentColor')
 }
 
 function ColorizedRemoteSvgIcon({
@@ -118,32 +119,32 @@ function ColorizedRemoteSvgIcon({
   className?: string
   sizeStyle?: { width: string; height: string }
 }) {
-  const [resolvedMaskUrl, setResolvedMaskUrl] = useState<string | null>(() => SVG_DATA_URL_CACHE.get(iconImageUrl) ?? null)
+  const [svgMarkup, setSvgMarkup] = useState<string | null>(() => SVG_INLINE_CACHE.get(iconImageUrl) ?? null)
 
   useEffect(() => {
     let isMounted = true
 
-    const cached = SVG_DATA_URL_CACHE.get(iconImageUrl)
+    const cached = SVG_INLINE_CACHE.get(iconImageUrl)
     if (cached) {
-      setResolvedMaskUrl(cached)
+      setSvgMarkup(cached)
       return () => {
         isMounted = false
       }
     }
 
-    setResolvedMaskUrl(null)
+    setSvgMarkup(null)
 
     void fetch(iconImageUrl)
       .then((response) => (response.ok ? response.text() : Promise.reject(new Error(`SVG fetch failed: ${response.status}`))))
       .then((svgText) => {
         if (!isMounted) return
-        const dataUrl = svgToDataUrl(svgText)
-        SVG_DATA_URL_CACHE.set(iconImageUrl, dataUrl)
-        setResolvedMaskUrl(dataUrl)
+        const normalized = normalizeSvgForCurrentColor(svgText)
+        SVG_INLINE_CACHE.set(iconImageUrl, normalized)
+        setSvgMarkup(normalized)
       })
       .catch(() => {
         if (!isMounted) return
-        setResolvedMaskUrl(null)
+        setSvgMarkup(null)
       })
 
     return () => {
@@ -151,13 +152,13 @@ function ColorizedRemoteSvgIcon({
     }
   }, [iconImageUrl])
 
-  const maskUrl = useMemo(() => {
-    if (resolvedMaskUrl) return resolvedMaskUrl
-    if (canUseCssMaskForIcon(iconImageUrl)) return iconImageUrl
+  const inlineMarkup = useMemo(() => {
+    if (svgMarkup) return svgMarkup
+    if (canUseCssMaskForIcon(iconImageUrl)) return null
     return null
-  }, [iconImageUrl, resolvedMaskUrl])
+  }, [iconImageUrl, svgMarkup])
 
-  if (!maskUrl) {
+  if (!inlineMarkup) {
     return (
       <img
         src={iconImageUrl}
@@ -172,19 +173,12 @@ function ColorizedRemoteSvgIcon({
     <span
       aria-label={iconAlt}
       role="img"
-      className={cn('block h-4 w-4', className)}
+      className={cn('block h-4 w-4 overflow-hidden', className)}
       style={{
-        backgroundColor: iconColor,
+        color: iconColor,
         ...sizeStyle,
-        maskImage: `url("${maskUrl}")`,
-        maskRepeat: 'no-repeat',
-        maskPosition: 'center',
-        maskSize: 'contain',
-        WebkitMaskImage: `url("${maskUrl}")`,
-        WebkitMaskRepeat: 'no-repeat',
-        WebkitMaskPosition: 'center',
-        WebkitMaskSize: 'contain',
       }}
+      dangerouslySetInnerHTML={{ __html: inlineMarkup }}
     />
   )
 }
