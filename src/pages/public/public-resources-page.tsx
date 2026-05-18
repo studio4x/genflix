@@ -123,6 +123,8 @@ function renderResourceIcon(item: ResourcePopupItem, className: string, forcedCo
   const iconAlt = explicitIconAlt || uploadedFallback?.alt || null
   const iconImageMimeType = explicitIconImageMimeType || uploadedFallback?.mimeType || null
   const metadataIconColor = typeof metadata.iconColor === 'string' ? metadata.iconColor : null
+  const metadataIconSize = typeof metadata.iconSize === 'number' && Number.isFinite(metadata.iconSize) ? metadata.iconSize : null
+  const iconSize = metadataIconSize ? Math.min(36, Math.max(12, metadataIconSize)) : null
   const iconColor = typeof forcedColor === 'string' && forcedColor.trim() !== '' ? forcedColor : metadataIconColor
 
   if (iconKey || iconImageUrl) {
@@ -132,6 +134,7 @@ function renderResourceIcon(item: ResourcePopupItem, className: string, forcedCo
       iconAlt: iconAlt || item.label || item.title || 'Recurso',
       iconColor,
       iconImageMimeType,
+      iconSize,
       className,
     })
   }
@@ -397,6 +400,9 @@ function ResourcesCatalogSection({
 
                 const metadata = getItemMetadata(popupItem)
                 const metadataIconColor = typeof metadata.iconColor === 'string' ? metadata.iconColor : ''
+                const metadataIconSize = typeof metadata.iconSize === 'number' && Number.isFinite(metadata.iconSize) ? metadata.iconSize : null
+                const iconSize = metadataIconSize ? Math.min(36, Math.max(12, metadataIconSize)) : 18
+                const iconBadgeSize = iconSize + 20
                 const itemColor = typeof metadata.itemColor === 'string' && metadata.itemColor.trim() !== ''
                   ? metadata.itemColor
                   : (metadataIconColor.trim() !== '' ? metadataIconColor : cardStyle.iconColor)
@@ -415,13 +421,15 @@ function ResourcesCatalogSection({
                   >
                     <div className="flex items-start gap-4">
                       <div
-                        className="flex h-10 w-10 items-center justify-center rounded-2xl"
+                        className="flex items-center justify-center rounded-full"
                         style={{
+                          width: `${iconBadgeSize}px`,
+                          height: `${iconBadgeSize}px`,
                           backgroundColor: cardStyle.iconBackgroundColor,
                           color: itemColor || cardStyle.iconColor,
                         }}
                       >
-                        {renderResourceIcon(popupItem, 'h-4.5 w-4.5', itemColor, uploadedIcons)}
+                        {renderResourceIcon(popupItem, 'h-full w-full', itemColor, uploadedIcons)}
                       </div>
                     </div>
 
