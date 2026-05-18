@@ -101,7 +101,11 @@ function resolveUploadedIconForResource(item: EditableListItem, uploadedIcons: S
     const iconName = normalizeIconName((iconAsset.alt ?? '').trim() || originalName)
     if (!iconName || !iconAsset.public_url) continue
     if (iconName === label || iconName.includes(label) || label.includes(iconName)) {
-      return { url: iconAsset.public_url, alt: iconAsset.alt ?? item.label ?? item.title ?? 'Recurso' }
+      return {
+        url: iconAsset.public_url,
+        alt: iconAsset.alt ?? item.label ?? item.title ?? 'Recurso',
+        mimeType: iconAsset.mime_type ?? null,
+      }
     }
   }
 
@@ -113,9 +117,11 @@ function renderResourceIcon(item: ResourcePopupItem, className: string, forcedCo
   const iconKey = typeof metadata.iconKey === 'string' ? metadata.iconKey : null
   const explicitIconImageUrl = typeof metadata.iconImageUrl === 'string' ? metadata.iconImageUrl : null
   const explicitIconAlt = typeof metadata.iconImageAlt === 'string' ? metadata.iconImageAlt : null
+  const explicitIconImageMimeType = typeof metadata.iconImageMimeType === 'string' ? metadata.iconImageMimeType : null
   const uploadedFallback = (!iconKey && !explicitIconImageUrl) ? resolveUploadedIconForResource(item, uploadedIcons) : null
   const iconImageUrl = explicitIconImageUrl || uploadedFallback?.url || null
   const iconAlt = explicitIconAlt || uploadedFallback?.alt || null
+  const iconImageMimeType = explicitIconImageMimeType || uploadedFallback?.mimeType || null
   const metadataIconColor = typeof metadata.iconColor === 'string' ? metadata.iconColor : null
   const iconColor = typeof forcedColor === 'string' && forcedColor.trim() !== '' ? forcedColor : metadataIconColor
 
@@ -125,6 +131,7 @@ function renderResourceIcon(item: ResourcePopupItem, className: string, forcedCo
       iconImageUrl,
       iconAlt: iconAlt || item.label || item.title || 'Recurso',
       iconColor,
+      iconImageMimeType,
       className,
     })
   }
