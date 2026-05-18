@@ -23,6 +23,7 @@ type ResourceCardStyleSettings = {
   descriptionLineHeight: number
   iconBackgroundColor: string
   iconColor: string
+  iconSize: number
   buttonBackgroundColor: string
   buttonTextColor: string
   buttonBorderColor: string
@@ -43,6 +44,7 @@ const defaultCardStyle: ResourceCardStyleSettings = {
   descriptionLineHeight: 1.75,
   iconBackgroundColor: '#E8F6FA',
   iconColor: '#1398B7',
+  iconSize: 18,
   buttonBackgroundColor: '#FFFFFF',
   buttonTextColor: '#0F7E99',
   buttonBorderColor: '#1398B7',
@@ -120,6 +122,7 @@ function parseCardStyle(rawValue: unknown): ResourceCardStyleSettings {
     descriptionLineHeight: fromNumber('descriptionLineHeight', 1, 3),
     iconBackgroundColor: fromString('iconBackgroundColor'),
     iconColor: fromString('iconColor'),
+    iconSize: fromNumber('iconSize', 12, 36),
     buttonBackgroundColor: fromString('buttonBackgroundColor'),
     buttonTextColor: fromString('buttonTextColor'),
     buttonBorderColor: fromString('buttonBorderColor'),
@@ -258,6 +261,27 @@ export function AdminResourceVideosPage() {
     setError(null)
 
     try {
+      const normalizedItems = items.map((item) => {
+        const metadata = toMetadata(item)
+        delete metadata.iconSize
+        return {
+          ...item,
+          metadata: Object.keys(metadata).length > 0 ? metadata : undefined,
+        }
+      })
+
+      await saveSiteContentEntry({
+        pageKey: 'resources',
+        entryKey: 'resources.items',
+        entryType: 'list',
+        value: normalizedItems,
+        schema: {
+          kind: 'default',
+          itemName: 'recurso',
+          addLabel: 'Adicionar recurso',
+        },
+      })
+
       await saveSiteContentEntry({
         pageKey: 'resources',
         entryKey: 'resources.cardStyle',
@@ -265,7 +289,8 @@ export function AdminResourceVideosPage() {
         value: cardStyle,
         schema: { kind: 'resources-card-style' },
       })
-      setMessage('Padrao dos cards salvo com sucesso.')
+      setItems(normalizedItems)
+      setMessage('Padrao dos cards salvo com sucesso. Os tamanhos individuais dos icones foram resetados e o tamanho global passou a valer para todos os recursos, ate que algum item seja editado individualmente no editor visual.')
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : 'Nao foi possivel salvar o padrao dos cards.')
     } finally {
@@ -286,6 +311,9 @@ export function AdminResourceVideosPage() {
         <p className="max-w-3xl text-sm leading-6 text-[#5F7077]">
           Edite os cards de recursos por item e tambem o padrao visual global que sera aplicado na pagina publica.
         </p>
+        <div className="max-w-4xl rounded-[16px] border border-amber-200 bg-amber-50 px-5 py-4 text-sm font-semibold leading-6 text-amber-900">
+          O tamanho do icone definido nesta pagina e global. Ao salvar esse tamanho global, os tamanhos configurados individualmente no editor visual sao resetados para que todos os recursos passem a seguir o novo padrao. Se depois disso um recurso for editado individualmente no editor visual, o tamanho definido naquele recurso sobrescrevera o tamanho global apenas para ele.
+        </div>
       </header>
 
       <section className="rounded-[20px] border border-[#D8E6EB] bg-white p-3">
@@ -342,7 +370,7 @@ export function AdminResourceVideosPage() {
 
           <form onSubmit={(event) => void handleItemsSubmit(event)} className="space-y-4">
             <div className="rounded-[16px] border border-[#D8E6EB] bg-[#F8FCFD] px-5 py-4 text-sm font-semibold leading-6 text-[#4F636A]">
-              Os demais campos dos recursos (titulo, icone, descricao e cor) devem ser editados pelo editor visual.
+              Os demais campos dos recursos (titulo, icone, descricao e cor) devem ser editados pelo editor visual. O tamanho global do icone fica na aba "Padrao dos cards". Se um recurso receber tamanho proprio no editor visual, ele sobrescreve o tamanho global.
             </div>
 
             <div className="grid gap-4">
@@ -487,6 +515,13 @@ export function AdminResourceVideosPage() {
               <span className="text-[10px] font-black uppercase tracking-[0.16em] text-[#5F7077]">Cor padrao do icone</span>
               <input type="color" value={cardStyle.iconColor} onChange={(e) => setCardStyle((p) => ({ ...p, iconColor: e.target.value }))} className="h-11 w-full rounded-[14px] border border-[#D8E6EB] bg-white px-2" />
             </label>
+            <label className="grid gap-2">
+              <span className="text-[10px] font-black uppercase tracking-[0.16em] text-[#5F7077]">Tamanho global do icone (px)</span>
+              <input type="number" min={12} max={36} value={cardStyle.iconSize} onChange={(e) => setCardStyle((p) => ({ ...p, iconSize: Math.min(36, Math.max(12, Number(e.target.value) || 18)) }))} className="h-11 rounded-[14px] border border-[#D8E6EB] bg-white px-4" />
+            </label>
+            <div className="rounded-[14px] border border-[#D8E6EB] bg-[#F8FCFD] px-4 py-3 text-sm font-semibold leading-6 text-[#4F636A]">
+              Ao salvar aqui, esse tamanho vira o padrao global da pagina e limpa os tamanhos individuais antigos. Depois, se voce ajustar um recurso especifico no editor visual, aquele recurso passa a usar o tamanho proprio dele.
+            </div>
             <label className="grid gap-2">
               <span className="text-[10px] font-black uppercase tracking-[0.16em] text-[#5F7077]">Background do botao</span>
               <input type="color" value={cardStyle.buttonBackgroundColor} onChange={(e) => setCardStyle((p) => ({ ...p, buttonBackgroundColor: e.target.value }))} className="h-11 w-full rounded-[14px] border border-[#D8E6EB] bg-white px-2" />

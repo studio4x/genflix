@@ -50,6 +50,7 @@ type ResourceCardStyleSettings = {
   descriptionLineHeight: number
   iconBackgroundColor: string
   iconColor: string
+  iconSize: number
   buttonBackgroundColor: string
   buttonTextColor: string
   buttonBorderColor: string
@@ -70,6 +71,7 @@ const defaultCardStyle: ResourceCardStyleSettings = {
   descriptionLineHeight: 1.75,
   iconBackgroundColor: '#E8F6FA',
   iconColor: '#1398B7',
+  iconSize: 18,
   buttonBackgroundColor: '#FFFFFF',
   buttonTextColor: '#0F7E99',
   buttonBorderColor: '#1398B7',
@@ -81,6 +83,20 @@ function getItemMetadata(item: EditableListItem) {
     return {} as Record<string, unknown>
   }
   return item.metadata as Record<string, unknown>
+}
+
+function normalizeResourceIconSize(value: unknown, fallback: number | null = 18) {
+  const numericValue = typeof value === 'number'
+    ? value
+    : typeof value === 'string'
+      ? Number(value)
+      : NaN
+
+  if (!Number.isFinite(numericValue)) {
+    return fallback
+  }
+
+  return Math.min(36, Math.max(12, Math.round(numericValue)))
 }
 
 function normalizeIconName(value: string) {
@@ -112,7 +128,13 @@ function resolveUploadedIconForResource(item: EditableListItem, uploadedIcons: S
   return null
 }
 
-function renderResourceIcon(item: ResourcePopupItem, className: string, forcedColor?: string | null, uploadedIcons: SiteAsset[] = []) {
+function renderResourceIcon(
+  item: ResourcePopupItem,
+  className: string,
+  forcedColor?: string | null,
+  uploadedIcons: SiteAsset[] = [],
+  fallbackIconSize?: number | null,
+) {
   const metadata = getItemMetadata(item)
   const iconKey = typeof metadata.iconKey === 'string' ? metadata.iconKey : null
   const explicitIconImageUrl = typeof metadata.iconImageUrl === 'string' ? metadata.iconImageUrl : null
@@ -123,8 +145,7 @@ function renderResourceIcon(item: ResourcePopupItem, className: string, forcedCo
   const iconAlt = explicitIconAlt || uploadedFallback?.alt || null
   const iconImageMimeType = explicitIconImageMimeType || uploadedFallback?.mimeType || null
   const metadataIconColor = typeof metadata.iconColor === 'string' ? metadata.iconColor : null
-  const metadataIconSize = typeof metadata.iconSize === 'number' && Number.isFinite(metadata.iconSize) ? metadata.iconSize : null
-  const iconSize = metadataIconSize ? Math.min(36, Math.max(12, metadataIconSize)) : null
+  const iconSize = normalizeResourceIconSize(metadata.iconSize, fallbackIconSize ?? null)
   const iconColor = typeof forcedColor === 'string' && forcedColor.trim() !== '' ? forcedColor : metadataIconColor
 
   if (iconKey || iconImageUrl) {
@@ -211,6 +232,7 @@ function parseCardStyle(rawValue: unknown): ResourceCardStyleSettings {
     descriptionLineHeight: fromNumber('descriptionLineHeight', defaultCardStyle.descriptionLineHeight),
     iconBackgroundColor: fromString('iconBackgroundColor', defaultCardStyle.iconBackgroundColor),
     iconColor: fromString('iconColor', defaultCardStyle.iconColor),
+    iconSize: fromNumber('iconSize', defaultCardStyle.iconSize),
     buttonBackgroundColor: fromString('buttonBackgroundColor', defaultCardStyle.buttonBackgroundColor),
     buttonTextColor: fromString('buttonTextColor', defaultCardStyle.buttonTextColor),
     buttonBorderColor: fromString('buttonBorderColor', defaultCardStyle.buttonBorderColor),
@@ -400,8 +422,7 @@ function ResourcesCatalogSection({
 
                 const metadata = getItemMetadata(popupItem)
                 const metadataIconColor = typeof metadata.iconColor === 'string' ? metadata.iconColor : ''
-                const metadataIconSize = typeof metadata.iconSize === 'number' && Number.isFinite(metadata.iconSize) ? metadata.iconSize : null
-                const iconSize = metadataIconSize ? Math.min(36, Math.max(12, metadataIconSize)) : 18
+                const iconSize = normalizeResourceIconSize(metadata.iconSize, cardStyle.iconSize) ?? cardStyle.iconSize
                 const iconBadgeSize = iconSize + 20
                 const itemColor = typeof metadata.itemColor === 'string' && metadata.itemColor.trim() !== ''
                   ? metadata.itemColor
@@ -429,7 +450,7 @@ function ResourcesCatalogSection({
                           color: itemColor || cardStyle.iconColor,
                         }}
                       >
-                        {renderResourceIcon(popupItem, 'h-full w-full', itemColor, uploadedIcons)}
+                        {renderResourceIcon(popupItem, 'h-full w-full', itemColor, uploadedIcons, cardStyle.iconSize)}
                       </div>
                     </div>
 
