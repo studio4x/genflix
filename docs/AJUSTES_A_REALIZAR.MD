@@ -353,4 +353,4 @@ O conteúdo textual desta aula pode ser narrado em áudio gerado por IA para esc
 
 [OK] t106 - Crie um documento de checklist, dividido por setores/modulos/funcionalidades. Vamos utilizar esse documento para ir validando cada item da plataforma..
 
-[ ] T107 - Faça ajustes de codificação de textos na página inicial (https://genflix-omega.vercel.app/criador/relatorios) do painel do criador..
+[OK] T107 - Faça ajustes de codificação de textos na página inicial (https://genflix-omega.vercel.app/criador/relatorios) do painel do criador..
