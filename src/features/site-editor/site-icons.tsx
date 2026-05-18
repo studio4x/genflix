@@ -79,6 +79,22 @@ function isSvgIconUrl(value: string) {
   }
 }
 
+function canUseCssMaskForIcon(url: string) {
+  if (url.startsWith('data:') || url.startsWith('blob:')) {
+    return true
+  }
+
+  try {
+    const parsed = new URL(url, typeof window !== 'undefined' ? window.location.origin : undefined)
+    if (typeof window === 'undefined') {
+      return false
+    }
+    return parsed.origin === window.location.origin
+  } catch {
+    return false
+  }
+}
+
 export function renderSiteIcon(iconKey: string | null | undefined, className?: string, iconColor?: string | null) {
   const Icon = SITE_ICON_MAP.get(iconKey ?? '') ?? LinkIcon
   const resolvedColor = normalizeIconColor(iconColor)
@@ -105,7 +121,7 @@ export function renderSiteIconVisual(input: {
   // Para SVG com cor personalizada, usa máscara para respeitar iconColor.
   // Nos demais casos mantém <img> como fallback robusto.
   if (iconImageUrl !== '') {
-    if (isSvgIcon && iconColor) {
+    if (isSvgIcon && iconColor && canUseCssMaskForIcon(iconImageUrl)) {
       return (
         <span
           aria-label={input.iconAlt ?? ''}
