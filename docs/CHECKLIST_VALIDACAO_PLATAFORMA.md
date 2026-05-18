@@ -38,11 +38,11 @@ Este checklist foi criado para apoiar a validacao funcional da plataforma por se
 - [OK] Pagina ensine (`/ensine-na-genflix`) carrega formulario esperado.
 
 ### Modulo Autenticacao Publica
-- [ ] Login (`/login`) autentica usuario valido.
-- [ ] Criacao de conta (`/criar-conta`) conclui cadastro valido.
-- [ ] Recuperacao de senha (`/recuperar-senha`) envia fluxo corretamente.
-- [ ] Redefinicao (`/redefinir-senha`) atualiza senha com token valido.
-- [ ] Callback (`/auth/callback`) finaliza sessao sem erro.
+- [OK] Login (`/login`) autentica usuario valido.
+- [OK] Criacao de conta (`/criar-conta`) conclui cadastro valido.
+- [OK] Recuperacao de senha (`/recuperar-senha`) envia fluxo corretamente.
+- [OK] Redefinicao (`/redefinir-senha`) atualiza senha com token valido.
+- [OK] Callback (`/auth/callback`) finaliza sessao sem erro.
 
 ### Modulo Paginas Legais
 - [ ] Privacidade (`/privacidade`) carrega corretamente.
