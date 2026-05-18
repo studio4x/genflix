@@ -1,4 +1,5 @@
 ﻿import type { LucideIcon } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
 import {
   BrainCircuit,
   BriefcaseBusiness,
@@ -48,6 +49,7 @@ export const SITE_ICON_OPTIONS: SiteIconOption[] = [
 ]
 
 const SITE_ICON_MAP = new Map(SITE_ICON_OPTIONS.map((item) => [item.value, item.icon]))
+const SVG_DATA_URL_CACHE = new Map<string, string>()
 
 function normalizeIconColor(value: string | null | undefined) {
   if (typeof value !== 'string') {
@@ -95,6 +97,99 @@ function canUseCssMaskForIcon(url: string) {
   }
 }
 
+function svgToDataUrl(svg: string) {
+  const encoded = encodeURIComponent(svg)
+    .replace(/%20/g, ' ')
+    .replace(/%3D/g, '=')
+    .replace(/%3A/g, ':')
+    .replace(/%2F/g, '/')
+  return `data:image/svg+xml;utf8,${encoded}`
+}
+
+function ColorizedRemoteSvgIcon({
+  iconImageUrl,
+  iconAlt,
+  iconColor,
+  className,
+  sizeStyle,
+}: {
+  iconImageUrl: string
+  iconAlt: string
+  iconColor: string
+  className?: string
+  sizeStyle?: { width: string; height: string }
+}) {
+  const [resolvedMaskUrl, setResolvedMaskUrl] = useState<string | null>(() => SVG_DATA_URL_CACHE.get(iconImageUrl) ?? null)
+
+  useEffect(() => {
+    let isMounted = true
+
+    const cached = SVG_DATA_URL_CACHE.get(iconImageUrl)
+    if (cached) {
+      setResolvedMaskUrl(cached)
+      return () => {
+        isMounted = false
+      }
+    }
+
+    setResolvedMaskUrl(null)
+
+    void fetch(iconImageUrl)
+      .then((response) => (response.ok ? response.text() : Promise.reject(new Error(`SVG fetch failed: ${response.status}`))))
+      .then((svgText) => {
+        if (!isMounted) return
+        const dataUrl = svgToDataUrl(svgText)
+        SVG_DATA_URL_CACHE.set(iconImageUrl, dataUrl)
+        setResolvedMaskUrl(dataUrl)
+      })
+      .catch(() => {
+        if (!isMounted) return
+        setResolvedMaskUrl(null)
+      })
+
+    return () => {
+      isMounted = false
+    }
+  }, [iconImageUrl])
+
+  const maskUrl = useMemo(() => {
+    if (resolvedMaskUrl) return resolvedMaskUrl
+    if (canUseCssMaskForIcon(iconImageUrl)) return iconImageUrl
+    return null
+  }, [iconImageUrl, resolvedMaskUrl])
+
+  if (!maskUrl) {
+    return (
+      <img
+        src={iconImageUrl}
+        alt={iconAlt}
+        className={cn('block h-4 w-4 object-contain', className)}
+        style={sizeStyle}
+      />
+    )
+  }
+
+  return (
+    <span
+      aria-label={iconAlt}
+      role="img"
+      className={cn('block h-4 w-4', className)}
+      style={{
+        backgroundColor: iconColor,
+        ...sizeStyle,
+        maskImage: `url("${maskUrl}")`,
+        maskRepeat: 'no-repeat',
+        maskPosition: 'center',
+        maskSize: 'contain',
+        WebkitMaskImage: `url("${maskUrl}")`,
+        WebkitMaskRepeat: 'no-repeat',
+        WebkitMaskPosition: 'center',
+        WebkitMaskSize: 'contain',
+      }}
+    />
+  )
+}
+
 export function renderSiteIcon(iconKey: string | null | undefined, className?: string, iconColor?: string | null) {
   const Icon = SITE_ICON_MAP.get(iconKey ?? '') ?? LinkIcon
   const resolvedColor = normalizeIconColor(iconColor)
@@ -118,27 +213,15 @@ export function renderSiteIconVisual(input: {
   const iconSize = normalizeIconSize(input.iconSize)
   const sizeStyle = iconSize ? { width: `${iconSize}px`, height: `${iconSize}px` } : undefined
 
-  // Para SVG com cor personalizada, usa máscara para respeitar iconColor.
-  // Nos demais casos mantém <img> como fallback robusto.
   if (iconImageUrl !== '') {
-    if (isSvgIcon && iconColor && canUseCssMaskForIcon(iconImageUrl)) {
+    if (isSvgIcon && iconColor) {
       return (
-        <span
-          aria-label={input.iconAlt ?? ''}
-          role="img"
-          className={cn('block h-4 w-4', input.className)}
-          style={{
-            backgroundColor: iconColor,
-            ...sizeStyle,
-            maskImage: `url("${iconImageUrl}")`,
-            maskRepeat: 'no-repeat',
-            maskPosition: 'center',
-            maskSize: 'contain',
-            WebkitMaskImage: `url("${iconImageUrl}")`,
-            WebkitMaskRepeat: 'no-repeat',
-            WebkitMaskPosition: 'center',
-            WebkitMaskSize: 'contain',
-          }}
+        <ColorizedRemoteSvgIcon
+          iconImageUrl={iconImageUrl}
+          iconAlt={input.iconAlt ?? ''}
+          iconColor={iconColor}
+          className={input.className}
+          sizeStyle={sizeStyle}
         />
       )
     }
