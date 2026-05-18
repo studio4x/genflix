@@ -1,5 +1,5 @@
 ﻿import type { LucideIcon } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useLayoutEffect, useState } from 'react'
 import {
   BrainCircuit,
   BriefcaseBusiness,
@@ -50,6 +50,7 @@ export const SITE_ICON_OPTIONS: SiteIconOption[] = [
 
 const SITE_ICON_MAP = new Map(SITE_ICON_OPTIONS.map((item) => [item.value, item.icon]))
 const SVG_INLINE_CACHE = new Map<string, string>()
+const SVG_VIEWBOX_CACHE = new Map<string, string>()
 
 function normalizeIconColor(value: string | null | undefined) {
   if (typeof value !== 'string') {
@@ -81,32 +82,60 @@ function isSvgIconUrl(value: string) {
   }
 }
 
-function canUseCssMaskForIcon(url: string) {
-  if (url.startsWith('data:') || url.startsWith('blob:')) {
-    return true
-  }
-
-  try {
-    const parsed = new URL(url, typeof window !== 'undefined' ? window.location.origin : undefined)
-    if (typeof window === 'undefined') {
-      return false
-    }
-    return parsed.origin === window.location.origin
-  } catch {
-    return false
-  }
-}
-
-function normalizeSvgForCurrentColor(svgText: string) {
-  return svgText
+function normalizeSvgMarkup(svgText: string, forceCurrentColor: boolean) {
+  const withoutPreamble = svgText
     .replace(/<\?xml[\s\S]*?\?>/gi, '')
     .replace(/<!doctype[\s\S]*?>/gi, '')
     .replace(/<svg\b([^>]*)>/i, '<svg$1 width="100%" height="100%" preserveAspectRatio="xMidYMid meet">')
+
+  if (!forceCurrentColor) {
+    return withoutPreamble
+  }
+
+  return withoutPreamble
     .replace(/\b(fill|stroke)=["'](#000000|#000|black|rgb\(0[\s,]+0[\s,]+0\)|rgba\(0[\s,]+0[\s,]+0[\s,]+1\))["']/gi, '$1="currentColor"')
     .replace(/\b(fill|stroke)\s*:\s*(#000000|#000|black|rgb\(0[\s,]+0[\s,]+0\)|rgba\(0[\s,]+0[\s,]+0[\s,]+1\))/gi, '$1:currentColor')
 }
+function applyNormalizedSvgViewBox(svg: SVGSVGElement, cacheKey: string) {
+  const cachedViewBox = SVG_VIEWBOX_CACHE.get(cacheKey)
+  if (cachedViewBox) {
+    svg.setAttribute('viewBox', cachedViewBox)
+    svg.setAttribute('preserveAspectRatio', 'xMidYMid meet')
+    svg.style.width = '100%'
+    svg.style.height = '100%'
+    svg.style.display = 'block'
+    return
+  }
 
-function ColorizedRemoteSvgIcon({
+  let bbox: DOMRect | SVGRect
+  try {
+    bbox = svg.getBBox()
+  } catch {
+    return
+  }
+
+  if (!Number.isFinite(bbox.width) || !Number.isFinite(bbox.height) || bbox.width <= 0 || bbox.height <= 0) {
+    return
+  }
+
+  const paddingX = Math.max(bbox.width * 0.14, 1.25)
+  const paddingY = Math.max(bbox.height * 0.14, 1.25)
+  const viewBox = [
+    bbox.x - paddingX,
+    bbox.y - paddingY,
+    bbox.width + (paddingX * 2),
+    bbox.height + (paddingY * 2),
+  ].join(' ')
+
+  SVG_VIEWBOX_CACHE.set(cacheKey, viewBox)
+  svg.setAttribute('viewBox', viewBox)
+  svg.setAttribute('preserveAspectRatio', 'xMidYMid meet')
+  svg.style.width = '100%'
+  svg.style.height = '100%'
+  svg.style.display = 'block'
+}
+
+function RemoteSvgIcon({
   iconImageUrl,
   iconAlt,
   iconColor,
@@ -115,16 +144,17 @@ function ColorizedRemoteSvgIcon({
 }: {
   iconImageUrl: string
   iconAlt: string
-  iconColor: string
+  iconColor?: string
   className?: string
   sizeStyle?: { width: string; height: string }
 }) {
-  const [svgMarkup, setSvgMarkup] = useState<string | null>(() => SVG_INLINE_CACHE.get(iconImageUrl) ?? null)
+  const cacheKey = `${iconImageUrl}::${iconColor ? 'colorized' : 'original'}`
+  const [svgMarkup, setSvgMarkup] = useState<string | null>(() => SVG_INLINE_CACHE.get(cacheKey) ?? null)
 
   useEffect(() => {
     let isMounted = true
 
-    const cached = SVG_INLINE_CACHE.get(iconImageUrl)
+    const cached = SVG_INLINE_CACHE.get(cacheKey)
     if (cached) {
       setSvgMarkup(cached)
       return () => {
@@ -138,8 +168,8 @@ function ColorizedRemoteSvgIcon({
       .then((response) => (response.ok ? response.text() : Promise.reject(new Error(`SVG fetch failed: ${response.status}`))))
       .then((svgText) => {
         if (!isMounted) return
-        const normalized = normalizeSvgForCurrentColor(svgText)
-        SVG_INLINE_CACHE.set(iconImageUrl, normalized)
+        const normalized = normalizeSvgMarkup(svgText, Boolean(iconColor))
+        SVG_INLINE_CACHE.set(cacheKey, normalized)
         setSvgMarkup(normalized)
       })
       .catch(() => {
@@ -150,20 +180,35 @@ function ColorizedRemoteSvgIcon({
     return () => {
       isMounted = false
     }
-  }, [iconImageUrl])
+  }, [cacheKey, iconColor, iconImageUrl])
 
-  const inlineMarkup = useMemo(() => {
-    if (svgMarkup) return svgMarkup
-    if (canUseCssMaskForIcon(iconImageUrl)) return null
-    return null
-  }, [iconImageUrl, svgMarkup])
+  useLayoutEffect(() => {
+    if (!svgMarkup || typeof document === 'undefined') {
+      return
+    }
 
-  if (!inlineMarkup) {
+    const frameId = window.requestAnimationFrame(() => {
+      const holders = document.querySelectorAll<HTMLElement>(`[data-genflix-svg-key="${CSS.escape(cacheKey)}"]`)
+      holders.forEach((holder) => {
+        const svg = holder.querySelector('svg')
+        if (!(svg instanceof SVGSVGElement)) {
+          return
+        }
+        applyNormalizedSvgViewBox(svg, cacheKey)
+      })
+    })
+
+    return () => {
+      window.cancelAnimationFrame(frameId)
+    }
+  }, [cacheKey, svgMarkup])
+
+  if (!svgMarkup) {
     return (
       <img
         src={iconImageUrl}
         alt={iconAlt}
-        className={cn('block h-4 w-4 object-contain', className)}
+        className={cn('block h-full w-full object-contain', className)}
         style={sizeStyle}
       />
     )
@@ -173,12 +218,13 @@ function ColorizedRemoteSvgIcon({
     <span
       aria-label={iconAlt}
       role="img"
-      className={cn('block h-4 w-4 overflow-hidden', className)}
+      data-genflix-svg-key={cacheKey}
+      className={cn('flex h-full w-full items-center justify-center overflow-hidden', className)}
       style={{
-        color: iconColor,
+        ...(iconColor ? { color: iconColor } : {}),
         ...sizeStyle,
       }}
-      dangerouslySetInnerHTML={{ __html: inlineMarkup }}
+      dangerouslySetInnerHTML={{ __html: svgMarkup }}
     />
   )
 }
@@ -207,9 +253,9 @@ export function renderSiteIconVisual(input: {
   const sizeStyle = iconSize ? { width: `${iconSize}px`, height: `${iconSize}px` } : undefined
 
   if (iconImageUrl !== '') {
-    if (isSvgIcon && iconColor) {
+    if (isSvgIcon) {
       return (
-        <ColorizedRemoteSvgIcon
+        <RemoteSvgIcon
           iconImageUrl={iconImageUrl}
           iconAlt={input.iconAlt ?? ''}
           iconColor={iconColor}
@@ -223,7 +269,7 @@ export function renderSiteIconVisual(input: {
       <img
         src={iconImageUrl}
         alt={input.iconAlt ?? ''}
-        className={cn('block h-4 w-4 object-contain', input.className)}
+        className={cn('block h-full w-full object-contain', input.className)}
         style={sizeStyle}
       />
     )
