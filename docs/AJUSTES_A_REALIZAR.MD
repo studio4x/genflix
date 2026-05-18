@@ -352,3 +352,5 @@ O conteúdo textual desta aula pode ser narrado em áudio gerado por IA para esc
 [OK] T105 - Insira na página https://genflix-omega.vercel.app/admin/storage-r2, informações sobre estimativa de custo.. tanto em relação a quantidade de gbs utilizado quanto as outras coisas que a cloudflare cobra.. considere também o plano gratuito nas contas. 
 
 [OK] t106 - Crie um documento de checklist, dividido por setores/modulos/funcionalidades. Vamos utilizar esse documento para ir validando cada item da plataforma..
+
+[ ] T107 - Faça ajustes de codificação de textos na página inicial (https://genflix-omega.vercel.app/criador/relatorios) do painel do criador..
