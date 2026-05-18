@@ -1,4 +1,4 @@
-import type { LucideIcon } from 'lucide-react'
+﻿import type { LucideIcon } from 'lucide-react'
 import {
   BrainCircuit,
   BriefcaseBusiness,
@@ -28,12 +28,12 @@ export interface SiteIconOption {
 }
 
 export const SITE_ICON_OPTIONS: SiteIconOption[] = [
-  { value: 'heart-pulse', label: 'Saúde', icon: HeartPulse },
-  { value: 'scale', label: 'Jurídicos', icon: Scale },
+  { value: 'heart-pulse', label: 'Saude', icon: HeartPulse },
+  { value: 'scale', label: 'Juridicos', icon: Scale },
   { value: 'sigma', label: 'Exatas', icon: Sigma },
-  { value: 'briefcase-business', label: 'Gestão', icon: BriefcaseBusiness },
+  { value: 'briefcase-business', label: 'Gestao', icon: BriefcaseBusiness },
   { value: 'landmark', label: 'Humanas', icon: Landmark },
-  { value: 'brain-circuit', label: 'Psicanálise / Psicologia', icon: BrainCircuit },
+  { value: 'brain-circuit', label: 'Psicanalise / Psicologia', icon: BrainCircuit },
   { value: 'sparkles', label: 'Interesse geral', icon: Sparkles },
   { value: 'download', label: 'Download', icon: Download },
   { value: 'external-link', label: 'Link externo', icon: ExternalLink },
@@ -43,8 +43,8 @@ export const SITE_ICON_OPTIONS: SiteIconOption[] = [
   { value: 'file-archive', label: 'Arquivo compactado', icon: FileArchive },
   { value: 'folder-open', label: 'Pasta', icon: FolderOpen },
   { value: 'graduation-cap', label: 'Estudo', icon: GraduationCap },
-  { value: 'headphones', label: 'Áudio', icon: Headphones },
-  { value: 'monitor-play', label: 'Vídeo', icon: MonitorPlay },
+  { value: 'headphones', label: 'Audio', icon: Headphones },
+  { value: 'monitor-play', label: 'Video', icon: MonitorPlay },
 ]
 
 const SITE_ICON_MAP = new Map(SITE_ICON_OPTIONS.map((item) => [item.value, item.icon]))
@@ -66,19 +66,6 @@ function normalizeIconSize(value: number | null | undefined) {
   return Math.min(36, Math.max(12, numericValue))
 }
 
-function isSvgIconUrl(value: string) {
-  if (value.trim() === '') {
-    return false
-  }
-
-  try {
-    const parsed = new URL(value)
-    return parsed.pathname.toLowerCase().endsWith('.svg')
-  } catch {
-    return value.split('?')[0]?.toLowerCase().endsWith('.svg') ?? false
-  }
-}
-
 export function renderSiteIcon(iconKey: string | null | undefined, className?: string, iconColor?: string | null) {
   const Icon = SITE_ICON_MAP.get(iconKey ?? '') ?? LinkIcon
   const resolvedColor = normalizeIconColor(iconColor)
@@ -97,36 +84,11 @@ export function renderSiteIconVisual(input: {
   const iconColor = normalizeIconColor(input.iconColor)
   const iconImageUrl = typeof input.iconImageUrl === 'string' ? input.iconImageUrl.trim() : ''
   const iconKey = typeof input.iconKey === 'string' ? input.iconKey.trim() : ''
-  const iconImageMimeType = typeof input.iconImageMimeType === 'string' ? input.iconImageMimeType.trim().toLowerCase() : ''
-  const isSvgIcon = iconImageMimeType === 'image/svg+xml' || isSvgIconUrl(iconImageUrl)
   const iconSize = normalizeIconSize(input.iconSize)
   const sizeStyle = iconSize ? { width: `${iconSize}px`, height: `${iconSize}px` } : undefined
 
-  // Prioriza ícone nativo quando existir chave válida, evitando comportamento inconsistente
-  // de colorização em ativos SVG externos.
+  // Renderiza icones remotos com <img> para evitar falhas silenciosas de mask-image em SVG.
   if (iconImageUrl !== '') {
-    if (isSvgIcon) {
-      return (
-        <span
-          aria-label={input.iconAlt ?? ''}
-          role="img"
-          className={cn('block h-4 w-4', input.className)}
-          style={{
-            backgroundColor: iconColor ?? 'currentColor',
-            ...sizeStyle,
-            maskImage: `url("${iconImageUrl}")`,
-            maskRepeat: 'no-repeat',
-            maskPosition: 'center',
-            maskSize: 'contain',
-            WebkitMaskImage: `url("${iconImageUrl}")`,
-            WebkitMaskRepeat: 'no-repeat',
-            WebkitMaskPosition: 'center',
-            WebkitMaskSize: 'contain',
-          }}
-        />
-      )
-    }
-
     return (
       <img
         src={iconImageUrl}
@@ -165,4 +127,3 @@ export function renderSiteIconVisual(input: {
 export function getSiteIconOption(iconKey: string | null | undefined) {
   return SITE_ICON_OPTIONS.find((item) => item.value === iconKey) ?? null
 }
-
