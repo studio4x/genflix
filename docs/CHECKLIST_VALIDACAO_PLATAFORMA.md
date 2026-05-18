@@ -45,10 +45,10 @@ Este checklist foi criado para apoiar a validacao funcional da plataforma por se
 - [OK] Callback (`/auth/callback`) finaliza sessao sem erro.
 
 ### Modulo Paginas Legais
-- [ ] Privacidade (`/privacidade`) carrega corretamente.
-- [ ] Cookies (`/cookies`) carrega corretamente.
-- [ ] Termos (`/termos-de-uso`) carrega corretamente.
-- [ ] Politica de reembolso (`/politica-de-reembolso`) carrega corretamente.
+- [OK] Privacidade (`/privacidade`) carrega corretamente.
+- [OK] Cookies (`/cookies`) carrega corretamente.
+- [OK] Termos (`/termos-de-uso`) carrega corretamente.
+- [OK] Politica de reembolso (`/politica-de-reembolso`) carrega corretamente.
 
 ---
 
