@@ -82,6 +82,33 @@ function isSvgIconUrl(value: string) {
   }
 }
 
+function shouldForceCurrentColorForPaintValue(value: string) {
+  const normalized = value.trim().toLowerCase()
+  if (
+    normalized === ''
+    || normalized === 'none'
+    || normalized === 'currentcolor'
+    || normalized === 'inherit'
+    || normalized === 'transparent'
+    || normalized === 'context-fill'
+    || normalized === 'context-stroke'
+    || normalized.startsWith('url(')
+    || normalized.startsWith('var(')
+  ) {
+    return false
+  }
+
+  return true
+}
+
+function normalizeInlineSvgStyle(styleText: string) {
+  return styleText.replace(/(fill|stroke)\s*:\s*([^;]+)(;?)/gi, (fullMatch, propertyName: string, rawValue: string, trailingSemicolon: string) => {
+    return shouldForceCurrentColorForPaintValue(rawValue)
+      ? `${propertyName}:currentColor${trailingSemicolon || ''}`
+      : fullMatch
+  })
+}
+
 function normalizeSvgMarkup(svgText: string, forceCurrentColor: boolean) {
   const withoutPreamble = svgText
     .replace(/<\?xml[\s\S]*?\?>/gi, '')
@@ -92,9 +119,33 @@ function normalizeSvgMarkup(svgText: string, forceCurrentColor: boolean) {
     return withoutPreamble
   }
 
+  const shapeTagsThatDefaultToFill = new Set(['path', 'rect', 'circle', 'ellipse', 'polygon'])
+
   return withoutPreamble
-    .replace(/\b(fill|stroke)=["'](#000000|#000|black|rgb\(0[\s,]+0[\s,]+0\)|rgba\(0[\s,]+0[\s,]+0[\s,]+1\))["']/gi, '$1="currentColor"')
-    .replace(/\b(fill|stroke)\s*:\s*(#000000|#000|black|rgb\(0[\s,]+0[\s,]+0\)|rgba\(0[\s,]+0[\s,]+0[\s,]+1\))/gi, '$1:currentColor')
+    .replace(/<style\b([^>]*)>([\s\S]*?)<\/style>/gi, (_fullMatch, styleAttrs: string, styleContent: string) => {
+      return `<style${styleAttrs}>${normalizeInlineSvgStyle(styleContent)}</style>`
+    })
+    .replace(/<(path|rect|circle|ellipse|polygon|polyline|line)\b([^>]*)>/gi, (_fullMatch, rawTagName: string, rawAttributes: string) => {
+      let attributes = rawAttributes.replace(/\b(fill|stroke)=["']([^"']+)["']/gi, (paintMatch, propertyName: string, rawValue: string) => {
+        return shouldForceCurrentColorForPaintValue(rawValue)
+          ? `${propertyName}="currentColor"`
+          : paintMatch
+      })
+
+      attributes = attributes.replace(/\bstyle=(["'])([\s\S]*?)\1/gi, (_styleMatch, quote: string, styleValue: string) => {
+        return `style=${quote}${normalizeInlineSvgStyle(styleValue)}${quote}`
+      })
+
+      const tagName = rawTagName.toLowerCase()
+      const hasPaintAttribute = /\b(fill|stroke)=["'][^"']*["']/i.test(attributes)
+      const hasPaintStyle = /\bstyle=(["'])[\s\S]*?(fill|stroke)\s*:/i.test(attributes)
+
+      if (!hasPaintAttribute && !hasPaintStyle && shapeTagsThatDefaultToFill.has(tagName)) {
+        attributes += ' fill="currentColor"'
+      }
+
+      return `<${rawTagName}${attributes}>`
+    })
 }
 function applyNormalizedSvgViewBox(svg: SVGSVGElement, cacheKey: string) {
   const cachedViewBox = SVG_VIEWBOX_CACHE.get(cacheKey)
