@@ -456,7 +456,7 @@ function ResourcesCatalogSection({
                 return (
                   <article
                     key={item.id}
-                    className="rounded-[18px] border border-[#D8E6EB] bg-[#F2F7F9] px-5 py-5 text-left shadow-[0_16px_36px_rgba(21,50,59,0.04)] transition-transform duration-300 hover:-translate-y-1 hover:shadow-[0_20px_42px_rgba(19,152,183,0.12)]"
+                    className="rounded-[18px] border px-5 py-5 text-left transition-transform duration-300 hover:-translate-y-1 hover:shadow-[0_20px_42px_rgba(19,152,183,0.12)]"
                     style={{
                       borderColor: cardStyle.cardBorderColor,
                       borderWidth: `${cardStyle.cardBorderWidth}px`,
