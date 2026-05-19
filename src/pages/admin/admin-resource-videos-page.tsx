@@ -6,8 +6,13 @@ import {
   normalizeResourcesItems,
   resolveResourceVideoUrl,
 } from '@/features/public/genflix-resource-items-editor'
-import { fetchSiteContent, saveSiteContentEntry } from '@/features/site-editor/api'
-import type { EditableListItem } from '@/features/site-editor/types'
+import {
+  fetchSiteContent,
+  fetchSiteContentVersions,
+  restoreSiteContentVersion,
+  saveSiteContentEntry,
+} from '@/features/site-editor/api'
+import type { EditableListItem, SiteContentVersion } from '@/features/site-editor/types'
 
 type ResourceCardStyleSettings = {
   cardBackgroundColor: string
@@ -130,10 +135,18 @@ function parseCardStyle(rawValue: unknown): ResourceCardStyleSettings {
   }
 }
 
+function summarizeCardStyleVersion(rawValue: unknown) {
+  const style = parseCardStyle(rawValue)
+  return `Fundo ${style.cardBackgroundColor} · Borda ${style.cardBorderColor} (${style.cardBorderWidth}px) · Ícone ${style.iconSize}px · Título ${style.titleColor}`
+}
+
 export function AdminResourceVideosPage() {
   const [activeTab, setActiveTab] = useState<'items' | 'style'>('items')
   const [items, setItems] = useState<EditableListItem[]>(createResourcesItemsFallback())
   const [cardStyle, setCardStyle] = useState<ResourceCardStyleSettings>({ ...defaultCardStyle })
+  const [cardStyleVersions, setCardStyleVersions] = useState<SiteContentVersion[]>([])
+  const [isLoadingCardStyleVersions, setIsLoadingCardStyleVersions] = useState(false)
+  const [restoringCardStyleVersionId, setRestoringCardStyleVersionId] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [savingCardIndex, setSavingCardIndex] = useState<number | null>(null)
@@ -145,6 +158,33 @@ export function AdminResourceVideosPage() {
     [items],
   )
 
+  async function loadCardStyleVersions(entryId: string | null) {
+    if (!entryId) {
+      setCardStyleVersions([])
+      return
+    }
+
+    setIsLoadingCardStyleVersions(true)
+    try {
+      const versions = await fetchSiteContentVersions(entryId)
+      setCardStyleVersions(versions)
+    } catch (loadError) {
+      setError(loadError instanceof Error ? loadError.message : 'Nao foi possivel carregar o historico do padrao dos cards.')
+    } finally {
+      setIsLoadingCardStyleVersions(false)
+    }
+  }
+
+  async function reloadResourcesData() {
+    const entries = await fetchSiteContent('resources')
+    const resourcesEntry = entries.find((entry) => entry.page_key === 'resources' && entry.entry_key === 'resources.items')
+    const styleEntry = entries.find((entry) => entry.page_key === 'resources' && entry.entry_key === 'resources.cardStyle')
+
+    setItems(normalizeResourcesItems(resourcesEntry?.value))
+    setCardStyle(parseCardStyle(styleEntry?.value))
+    await loadCardStyleVersions(styleEntry?.id ?? null)
+  }
+
   useEffect(() => {
     let isMounted = true
 
@@ -153,18 +193,14 @@ export function AdminResourceVideosPage() {
       setError(null)
 
       try {
-        const entries = await fetchSiteContent('resources')
-        const resourcesEntry = entries.find((entry) => entry.page_key === 'resources' && entry.entry_key === 'resources.items')
-        const styleEntry = entries.find((entry) => entry.page_key === 'resources' && entry.entry_key === 'resources.cardStyle')
-
         if (isMounted) {
-          setItems(normalizeResourcesItems(resourcesEntry?.value))
-          setCardStyle(parseCardStyle(styleEntry?.value))
+          await reloadResourcesData()
         }
       } catch (loadError) {
         if (isMounted) {
           setItems(createResourcesItemsFallback())
           setCardStyle({ ...defaultCardStyle })
+          setCardStyleVersions([])
           setError(loadError instanceof Error ? loadError.message : 'Nao foi possivel carregar os recursos.')
         }
       } finally {
@@ -289,7 +325,7 @@ export function AdminResourceVideosPage() {
         value: cardStyle,
         schema: { kind: 'resources-card-style' },
       })
-      setItems(normalizedItems)
+      await reloadResourcesData()
       setMessage('Padrao dos cards salvo com sucesso. Os tamanhos individuais dos icones foram resetados e o tamanho global passou a valer para todos os recursos, ate que algum item seja editado individualmente no editor visual.')
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : 'Nao foi possivel salvar o padrao dos cards.')
@@ -301,6 +337,25 @@ export function AdminResourceVideosPage() {
   async function handleItemsSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     await saveResources(null)
+  }
+
+  async function handleRestoreCardStyleVersion(version: SiteContentVersion) {
+    const confirmed = window.confirm('Deseja reverter o padrão dos cards para esta revisão? Esta ação cria uma nova revisão.')
+    if (!confirmed) return
+
+    setMessage(null)
+    setError(null)
+    setRestoringCardStyleVersionId(version.id)
+
+    try {
+      await restoreSiteContentVersion(version)
+      await reloadResourcesData()
+      setMessage('Revisão do padrão dos cards restaurada com sucesso.')
+    } catch (restoreError) {
+      setError(restoreError instanceof Error ? restoreError.message : 'Nao foi possivel restaurar esta revisao do padrao dos cards.')
+    } finally {
+      setRestoringCardStyleVersionId(null)
+    }
   }
 
   return (
@@ -554,6 +609,55 @@ export function AdminResourceVideosPage() {
               {isSaving ? 'Salvando...' : 'Salvar padrao dos cards'}
             </Button>
           </div>
+
+          <section className="rounded-[20px] border border-[#D8E6EB] bg-white p-5">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-[0.16em] text-[#1398B7]">Historico de revisoes</p>
+                <h2 className="mt-1 text-lg font-bold text-[#15323b]">Revisões do padrão dos cards</h2>
+                <p className="mt-2 max-w-3xl text-sm leading-6 text-[#5F7077]">
+                  Cada salvamento desta aba gera uma nova revisão. Ao reverter uma revisão, o padrão global dos cards volta para aquele estado e uma nova revisão é criada automaticamente.
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-4 grid gap-3">
+              {isLoadingCardStyleVersions ? (
+                <div className="rounded-[16px] border border-dashed border-[#D8E6EB] bg-[#F8FCFD] px-4 py-4 text-sm font-semibold text-[#5F7077]">
+                  Carregando histórico...
+                </div>
+              ) : cardStyleVersions.length === 0 ? (
+                <div className="rounded-[16px] border border-dashed border-[#D8E6EB] bg-[#F8FCFD] px-4 py-4 text-sm font-semibold text-[#5F7077]">
+                  Nenhuma revisão registrada para o padrão dos cards ainda.
+                </div>
+              ) : cardStyleVersions.slice(0, 12).map((version, index) => (
+                <article key={version.id} className="rounded-[16px] border border-[#D8E6EB] bg-[#F8FCFD] px-4 py-4">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[#1398B7]">
+                        Revisão {cardStyleVersions.length - index} · {new Date(version.created_at).toLocaleString('pt-BR')}
+                      </p>
+                      <p className="mt-1 text-xs font-semibold text-[#5F7077]">
+                        {version.change_reason ?? 'alteração'} · {version.changed_by ?? 'usuário não identificado'}
+                      </p>
+                      <p className="mt-2 text-sm font-semibold leading-6 text-[#15323b]">
+                        {summarizeCardStyleVersion(version.next_value)}
+                      </p>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      disabled={isSaving || isLoading || restoringCardStyleVersionId === version.id}
+                      onClick={() => void handleRestoreCardStyleVersion(version)}
+                      className="rounded-none border-[#D8E6EB] bg-white font-black text-[#15323b] hover:bg-[#F2F7F9]"
+                    >
+                      {restoringCardStyleVersionId === version.id ? 'Revertendo...' : 'Reverter'}
+                    </Button>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </section>
         </form>
       )}
     </div>
