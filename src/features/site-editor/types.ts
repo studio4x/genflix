@@ -52,6 +52,25 @@ export interface SiteContentVersion {
   created_at: string
 }
 
+export interface SitePageVersionEntrySnapshot {
+  entry_key: string
+  entry_type: SiteContentEntryType
+  value: unknown
+  schema: Record<string, unknown>
+  is_enabled: boolean
+}
+
+export interface SitePageVersion {
+  id: string
+  page_key: SitePageKey
+  snapshot: {
+    entries: SitePageVersionEntrySnapshot[]
+  }
+  changed_by: string | null
+  change_reason: string | null
+  created_at: string
+}
+
 export interface SiteEditorSettings {
   id: number
   is_enabled: boolean

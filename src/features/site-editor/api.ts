@@ -5,6 +5,8 @@ import {
   type SiteAsset,
   type SiteContentEntry,
   type SiteContentEntryType,
+  type SitePageVersion,
+  type SitePageVersionEntrySnapshot,
   type SiteContentVersion,
   type SiteEditorSettings,
   type SitePageKey,
@@ -58,6 +60,43 @@ function isEditorForcedOff() {
 
 function valuePayload(value: unknown) {
   return value === undefined ? null : value
+}
+
+async function createSitePageSnapshotVersion(input: {
+  pageKey: SitePageKey
+  changedBy: string | null
+  changeReason: string
+}) {
+  const { data: entries, error: entriesError } = await supabase
+    .from('site_content_entries')
+    .select('entry_key, entry_type, value, schema, is_enabled')
+    .eq('page_key', input.pageKey)
+    .order('entry_key', { ascending: true })
+
+  if (entriesError) {
+    throw entriesError
+  }
+
+  const snapshotEntries = ((entries ?? []) as SitePageVersionEntrySnapshot[]).map((entry) => ({
+    entry_key: entry.entry_key,
+    entry_type: entry.entry_type,
+    value: entry.value,
+    schema: entry.schema ?? {},
+    is_enabled: entry.is_enabled,
+  }))
+
+  const { error: versionError } = await supabase.from('site_page_versions').insert({
+    page_key: input.pageKey,
+    snapshot: {
+      entries: snapshotEntries,
+    },
+    changed_by: input.changedBy,
+    change_reason: input.changeReason,
+  })
+
+  if (versionError) {
+    throw versionError
+  }
 }
 
 export function shouldIgnoreSiteEditor() {
@@ -143,7 +182,7 @@ export async function saveSiteContentEntry(input: {
   entryType: SiteContentEntryType
   value: unknown
   schema?: Record<string, unknown>
-}) {
+}, options?: { skipPageVersion?: boolean; pageVersionReason?: string }) {
   const { data: sessionData } = await supabase.auth.getSession()
   const userId = sessionData.session?.user.id ?? null
   const { data: existing, error: existingError } = await supabase
@@ -194,6 +233,14 @@ export async function saveSiteContentEntry(input: {
     throw versionError
   }
 
+  if (!options?.skipPageVersion) {
+    await createSitePageSnapshotVersion({
+      pageKey: input.pageKey,
+      changedBy: userId,
+      changeReason: options?.pageVersionReason ?? `entry:${input.entryKey}:${existing ? 'update' : 'create'}`,
+    })
+  }
+
   return nextEntry
 }
 
@@ -209,6 +256,7 @@ export async function clearSiteContentEntryOverride(entryId: string) {
 }
 
 export async function clearPageOverrides(pageKey: SitePageKey) {
+  const { data: sessionData } = await supabase.auth.getSession()
   const { error } = await supabase
     .from('site_content_entries')
     .update({ is_enabled: false })
@@ -217,6 +265,12 @@ export async function clearPageOverrides(pageKey: SitePageKey) {
   if (error) {
     throw error
   }
+
+  await createSitePageSnapshotVersion({
+    pageKey,
+    changedBy: sessionData.session?.user.id ?? null,
+    changeReason: 'page:clear-overrides',
+  })
 }
 
 export async function fetchSiteContentVersions(entryId: string) {
@@ -240,6 +294,89 @@ export async function restoreSiteContentVersion(version: SiteContentVersion) {
     entryType: version.entry_type,
     value: version.previous_value ?? version.next_value,
     schema: {},
+  }, {
+    pageVersionReason: `entry:${version.entry_key}:restore`,
+  })
+}
+
+export async function fetchSitePageVersions(pageKey: SitePageKey) {
+  const { data, error } = await supabase
+    .from('site_page_versions')
+    .select('id, page_key, snapshot, changed_by, change_reason, created_at')
+    .eq('page_key', pageKey)
+    .order('created_at', { ascending: false })
+    .limit(50)
+
+  if (error) {
+    throw error
+  }
+
+  return (data ?? []) as SitePageVersion[]
+}
+
+export async function createSitePageVersion(pageKey: SitePageKey, reason = 'page:manual-snapshot') {
+  const { data: sessionData } = await supabase.auth.getSession()
+  await createSitePageSnapshotVersion({
+    pageKey,
+    changedBy: sessionData.session?.user.id ?? null,
+    changeReason: reason,
+  })
+}
+
+export async function restoreSitePageVersion(version: SitePageVersion) {
+  const { data: sessionData } = await supabase.auth.getSession()
+  const userId = sessionData.session?.user.id ?? null
+  const snapshotEntries = Array.isArray(version.snapshot?.entries) ? version.snapshot.entries : []
+
+  const { data: currentEntries, error: currentEntriesError } = await supabase
+    .from('site_content_entries')
+    .select('entry_key')
+    .eq('page_key', version.page_key)
+
+  if (currentEntriesError) {
+    throw currentEntriesError
+  }
+
+  for (const entry of snapshotEntries) {
+    await saveSiteContentEntry({
+      pageKey: version.page_key,
+      entryKey: entry.entry_key,
+      entryType: entry.entry_type,
+      value: entry.value,
+      schema: entry.schema ?? {},
+    }, { skipPageVersion: true })
+
+    if (entry.is_enabled === false) {
+      const { error: disableError } = await supabase
+        .from('site_content_entries')
+        .update({ is_enabled: false, updated_by: userId })
+        .eq('page_key', version.page_key)
+        .eq('entry_key', entry.entry_key)
+
+      if (disableError) {
+        throw disableError
+      }
+    }
+  }
+
+  const snapshotEntryKeys = new Set(snapshotEntries.map((entry) => entry.entry_key))
+  const entriesToDisable = (currentEntries ?? []).filter((entry) => !snapshotEntryKeys.has(entry.entry_key))
+  if (entriesToDisable.length > 0) {
+    const { error: disableMissingError } = await supabase
+      .from('site_content_entries')
+      .update({ is_enabled: false, updated_by: userId })
+      .eq('page_key', version.page_key)
+      .in('entry_key', entriesToDisable.map((entry) => entry.entry_key))
+
+    if (disableMissingError) {
+      throw disableMissingError
+    }
+  }
+
+  await createSitePageSnapshotVersion({
+    pageKey: version.page_key,
+    changedBy: userId,
+    changeReason: `page:restore:${version.id}`,
   })
 }
 

@@ -7,17 +7,20 @@ import { Button } from '@/components/ui/button'
 import {
   clearPageOverrides,
   clearSiteContentEntryOverride,
+  createSitePageVersion,
   deleteSiteAsset,
   disableSiteEditorOverrides,
+  fetchSitePageVersions,
   fetchSiteEditorWorkspace,
   fetchSiteContentVersions,
   fetchSiteEditorSettings,
+  restoreSitePageVersion,
   restoreSiteContentVersion,
   saveSiteContentEntry,
   uploadSiteAsset,
   updateSiteEditorSettings,
 } from '@/features/site-editor/api'
-import type { SiteAsset, SiteContentEntry, SiteContentVersion, SiteEditorSettings, SitePageKey } from '@/features/site-editor/types'
+import type { SiteAsset, SiteContentEntry, SiteContentVersion, SiteEditorSettings, SitePageKey, SitePageVersion } from '@/features/site-editor/types'
 import { defaultSiteEditorSettings } from '@/features/site-editor/types'
 import {
   createSiteEditorWorkspaceKey,
@@ -188,6 +191,7 @@ export function AdminSiteEditorPage() {
   const [typeFilter, setTypeFilter] = useState<'all' | SiteContentEntry['entry_type']>('all')
   const [statusFilter, setStatusFilter] = useState<'all' | 'enabled' | 'disabled'>('all')
   const [versions, setVersions] = useState<SiteContentVersion[]>([])
+  const [pageVersions, setPageVersions] = useState<SitePageVersion[]>([])
   const [selectedEntryId, setSelectedEntryId] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
@@ -267,6 +271,19 @@ export function AdminSiteEditorPage() {
       setSelectedPageKey(pages[0].page_key)
     }
   }, [pages, selectedPageKey])
+
+  useEffect(() => {
+    if (activeTab !== 'overrides') {
+      return
+    }
+    void (async () => {
+      try {
+        setPageVersions(await fetchSitePageVersions(selectedPageKey))
+      } catch {
+        setPageVersions([])
+      }
+    })()
+  }, [activeTab, selectedPageKey])
 
   const collaborationSummary = useMemo(() => {
     const relevantEntries = entries.filter((entry) => entry.page_key === selectedPageKey || entry.page_key === 'global')
@@ -438,6 +455,42 @@ export function AdminSiteEditorPage() {
       setVersions(await fetchSiteContentVersions(entryId))
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Não foi possível carregar o histórico.')
+    }
+  }
+
+  async function handleCreatePageVersion() {
+    setIsSaving(true)
+    setMessage(null)
+
+    try {
+      await createSitePageVersion(selectedPageKey, 'page:manual-snapshot')
+      setPageVersions(await fetchSitePageVersions(selectedPageKey))
+      setMessage('Versao da pagina registrada com sucesso.')
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Nao foi possivel registrar a versao da pagina.')
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  async function handleRestorePageVersion(version: SitePageVersion) {
+    const confirmed = window.confirm('Restaurar esta versao da pagina e substituir todos os ajustes atuais?')
+    if (!confirmed) {
+      return
+    }
+
+    setIsSaving(true)
+    setMessage(null)
+
+    try {
+      await restoreSitePageVersion(version)
+      await loadData()
+      setPageVersions(await fetchSitePageVersions(selectedPageKey))
+      setMessage('Versao da pagina restaurada com sucesso.')
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Nao foi possivel restaurar a versao da pagina.')
+    } finally {
+      setIsSaving(false)
     }
   }
 
@@ -1167,6 +1220,36 @@ export function AdminSiteEditorPage() {
               <Button type="button" variant="outline" disabled={isSaving} onClick={() => void handleClearPage()} className="rounded-none border-[#D8E6EB]">
                 Restaurar conteúdo original desta página
               </Button>
+              <Button type="button" variant="outline" disabled={isSaving} onClick={() => void handleCreatePageVersion()} className="rounded-none border-[#D8E6EB]">
+                Salvar versão desta página
+              </Button>
+            </div>
+          </div>
+
+          <div className="mt-5 rounded-[20px] border border-[#D8E6EB] bg-[#F8FBFC] p-4">
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-sm font-black text-[#15323b]">Controle de versões da página</p>
+              <span className="text-xs font-black uppercase tracking-[0.14em] text-[#5F7077]">{pageVersions.length} versão(ões)</span>
+            </div>
+            <div className="mt-3 grid gap-2">
+              {pageVersions.length === 0 ? (
+                <p className="text-xs font-semibold text-[#5F7077]">Nenhuma versão registrada ainda para esta página.</p>
+              ) : pageVersions.map((version) => (
+                <div key={version.id} className="flex flex-wrap items-center justify-between gap-2 rounded-[14px] border border-[#D8E6EB] bg-white px-3 py-2">
+                  <div className="min-w-0">
+                    <p className="text-xs font-black text-[#15323b]">{new Date(version.created_at).toLocaleString('pt-BR')}</p>
+                    <p className="text-[11px] font-semibold text-[#5F7077]">{version.change_reason ?? 'alteracao'}</p>
+                  </div>
+                  <button
+                    type="button"
+                    disabled={isSaving}
+                    onClick={() => void handleRestorePageVersion(version)}
+                    className="border border-[#D8E6EB] px-3 py-1.5 text-xs font-black text-[#0A3640] hover:bg-[#F2F7F9] disabled:opacity-60"
+                  >
+                    Restaurar página
+                  </button>
+                </div>
+              ))}
             </div>
           </div>
 
