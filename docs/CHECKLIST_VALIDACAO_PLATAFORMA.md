@@ -55,11 +55,11 @@ Este checklist foi criado para apoiar a validacao funcional da plataforma por se
 ## Setor Aluno
 
 ### Modulo Dashboard e Area do Aluno
-- [ ] Dashboard (`/aluno/dashboard`) carrega com dados do usuario logado.
-- [ ] Lista de cursos (`/aluno/cursos`) exibe cursos liberados.
-- [ ] Detalhe do curso (`/aluno/cursos/:courseId`) carrega progresso/status.
-- [ ] Minha conta (`/aluno/minha-conta`) salva alteracoes basicas.
-- [ ] Pagamentos (`/aluno/pagamentos`) mostra historico conforme perfil.
+- [OK] Dashboard (`/aluno/dashboard`) carrega com dados do usuario logado.
+- [OK] Lista de cursos (`/aluno/cursos`) exibe cursos liberados.
+- [OK] Detalhe do curso (`/aluno/cursos/:courseId`) carrega progresso/status.
+- [OK] Minha conta (`/aluno/minha-conta`) salva alteracoes basicas.
+- [OK] Pagamentos (`/aluno/pagamentos`) mostra historico conforme perfil.
 
 ### Modulo Player de Curso
 - [ ] Player (`/aluno/cursos/:courseId/player`) abre sem erro.
