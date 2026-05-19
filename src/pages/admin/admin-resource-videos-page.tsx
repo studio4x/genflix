@@ -46,7 +46,7 @@ const defaultCardStyle: ResourceCardStyleSettings = {
   titleFontWeight: 700,
   descriptionColor: '#667980',
   descriptionFontSize: 14,
-  descriptionLineHeight: 1.75,
+  descriptionLineHeight: 25,
   iconBackgroundColor: '#E8F6FA',
   iconColor: '#1398B7',
   iconSize: 18,
@@ -112,6 +112,13 @@ function parseCardStyle(rawValue: unknown): ResourceCardStyleSettings {
       ? current.trim()
       : defaultCardStyle[field] as string
   }
+  const currentDescriptionFontSize = fromNumber('descriptionFontSize', 10, 32)
+  const rawDescriptionLineHeight = typeof value.descriptionLineHeight === 'number' && Number.isFinite(value.descriptionLineHeight)
+    ? value.descriptionLineHeight
+    : defaultCardStyle.descriptionLineHeight
+  const normalizedDescriptionLineHeight = rawDescriptionLineHeight <= 3
+    ? Math.round(rawDescriptionLineHeight * currentDescriptionFontSize)
+    : Math.min(80, Math.max(10, Math.round(rawDescriptionLineHeight)))
 
   return {
     cardBackgroundColor: fromString('cardBackgroundColor'),
@@ -123,8 +130,8 @@ function parseCardStyle(rawValue: unknown): ResourceCardStyleSettings {
     titleFontSize: fromNumber('titleFontSize', 10, 48),
     titleFontWeight: fromNumber('titleFontWeight', 300, 900),
     descriptionColor: fromString('descriptionColor'),
-    descriptionFontSize: fromNumber('descriptionFontSize', 10, 32),
-    descriptionLineHeight: fromNumber('descriptionLineHeight', 1, 3),
+    descriptionFontSize: currentDescriptionFontSize,
+    descriptionLineHeight: normalizedDescriptionLineHeight,
     iconBackgroundColor: fromString('iconBackgroundColor'),
     iconColor: fromString('iconColor'),
     iconSize: fromNumber('iconSize', 12, 36),
@@ -556,8 +563,8 @@ export function AdminResourceVideosPage() {
               <input type="number" min={10} max={32} value={cardStyle.descriptionFontSize} onChange={(e) => setCardStyle((p) => ({ ...p, descriptionFontSize: Number(e.target.value) || 14 }))} className="h-11 rounded-[14px] border border-[#D8E6EB] bg-white px-4" />
             </label>
             <label className="grid gap-2">
-              <span className="text-[10px] font-black uppercase tracking-[0.16em] text-[#5F7077]">Line-height da descricao</span>
-              <input type="number" min={1} max={3} step={0.1} value={cardStyle.descriptionLineHeight} onChange={(e) => setCardStyle((p) => ({ ...p, descriptionLineHeight: Number(e.target.value) || 1.75 }))} className="h-11 rounded-[14px] border border-[#D8E6EB] bg-white px-4" />
+              <span className="text-[10px] font-black uppercase tracking-[0.16em] text-[#5F7077]">Line-height da descricao (px)</span>
+              <input type="number" min={10} max={80} step={1} value={cardStyle.descriptionLineHeight} onChange={(e) => setCardStyle((p) => ({ ...p, descriptionLineHeight: Number(e.target.value) || 25 }))} className="h-11 rounded-[14px] border border-[#D8E6EB] bg-white px-4" />
             </label>
           </section>
 

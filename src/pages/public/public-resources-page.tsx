@@ -68,7 +68,7 @@ const defaultCardStyle: ResourceCardStyleSettings = {
   titleFontWeight: 700,
   descriptionColor: '#667980',
   descriptionFontSize: 14,
-  descriptionLineHeight: 1.75,
+  descriptionLineHeight: 25,
   iconBackgroundColor: '#E8F6FA',
   iconColor: '#1398B7',
   iconSize: 18,
@@ -242,6 +242,14 @@ function parseCardStyle(rawValue: unknown): ResourceCardStyleSettings {
     const current = value[field]
     return typeof current === 'string' && current.trim() !== '' ? current.trim() : fallback
   }
+  const currentDescriptionFontSize = fromNumber('descriptionFontSize', defaultCardStyle.descriptionFontSize)
+  const rawDescriptionLineHeight = typeof value.descriptionLineHeight === 'number' && Number.isFinite(value.descriptionLineHeight)
+    ? value.descriptionLineHeight
+    : defaultCardStyle.descriptionLineHeight
+  const normalizedDescriptionLineHeight = rawDescriptionLineHeight <= 3
+    ? Math.round(rawDescriptionLineHeight * currentDescriptionFontSize)
+    : Math.min(80, Math.max(10, Math.round(rawDescriptionLineHeight)))
+
   return {
     cardBackgroundColor: fromString('cardBackgroundColor', defaultCardStyle.cardBackgroundColor),
     cardBorderColor: fromString('cardBorderColor', defaultCardStyle.cardBorderColor),
@@ -252,8 +260,8 @@ function parseCardStyle(rawValue: unknown): ResourceCardStyleSettings {
     titleFontSize: fromNumber('titleFontSize', defaultCardStyle.titleFontSize),
     titleFontWeight: fromNumber('titleFontWeight', defaultCardStyle.titleFontWeight),
     descriptionColor: fromString('descriptionColor', defaultCardStyle.descriptionColor),
-    descriptionFontSize: fromNumber('descriptionFontSize', defaultCardStyle.descriptionFontSize),
-    descriptionLineHeight: fromNumber('descriptionLineHeight', defaultCardStyle.descriptionLineHeight),
+    descriptionFontSize: currentDescriptionFontSize,
+    descriptionLineHeight: normalizedDescriptionLineHeight,
     iconBackgroundColor: fromString('iconBackgroundColor', defaultCardStyle.iconBackgroundColor),
     iconColor: fromString('iconColor', defaultCardStyle.iconColor),
     iconSize: fromNumber('iconSize', defaultCardStyle.iconSize),
@@ -496,7 +504,7 @@ function ResourcesCatalogSection({
                         style={{
                           color: cardStyle.descriptionColor,
                           fontSize: `${cardStyle.descriptionFontSize}px`,
-                          lineHeight: String(cardStyle.descriptionLineHeight),
+                          lineHeight: `${cardStyle.descriptionLineHeight}px`,
                           display: '-webkit-box',
                           WebkitBoxOrient: 'vertical',
                           WebkitLineClamp: 5,
