@@ -31,10 +31,12 @@ function toEditableItem(rawItem: unknown, index: number): EditableListItem {
     description: typeof record.description === 'string' ? record.description : '',
     href: typeof record.href === 'string' ? record.href : undefined,
     image: typeof record.image === 'string' ? record.image : undefined,
-    metadata: {
-      ...baseMetadata,
-      ...extraMetadata,
-    },
+    metadata: Object.keys({ ...extraMetadata, ...baseMetadata }).length > 0
+      ? {
+        ...extraMetadata,
+        ...baseMetadata,
+      }
+      : undefined,
   }
 }
 

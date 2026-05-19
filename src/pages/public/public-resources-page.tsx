@@ -169,10 +169,34 @@ function sanitizeResourceRichText(rawValue: string) {
     .replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, '')
     .replace(/\son[a-z]+="[^"]*"/gi, '')
     .replace(/\son[a-z]+='[^']*'/gi, '')
+    .replace(/\sstyle="[^"]*"/gi, '')
+    .replace(/\sstyle='[^']*'/gi, '')
 }
 
 function hasHtmlMarkup(value: string) {
   return /<[^>]+>/.test(value)
+}
+
+function getResourceDescriptionExcerpt(value: string) {
+  const trimmedValue = value.trim()
+  if (!trimmedValue) {
+    return ''
+  }
+
+  const withoutMarkup = trimmedValue
+    .replace(/<br\s*\/?>/gi, ' ')
+    .replace(/<\/(p|div|li|h[1-6])>/gi, ' ')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/gi, "'")
+    .replace(/\s+/g, ' ')
+    .trim()
+
+  return withoutMarkup
 }
 
 function renderResourceTextContent(value: string, className: string) {
@@ -424,6 +448,7 @@ function ResourcesCatalogSection({
                 const metadataIconColor = typeof metadata.iconColor === 'string' ? metadata.iconColor : ''
                 const iconSize = normalizeResourceIconSize(metadata.iconSize, cardStyle.iconSize) ?? cardStyle.iconSize
                 const iconBadgeSize = iconSize + 20
+                const descriptionExcerpt = getResourceDescriptionExcerpt(item.description ?? '')
                 const itemColor = typeof metadata.itemColor === 'string' && metadata.itemColor.trim() !== ''
                   ? metadata.itemColor
                   : (metadataIconColor.trim() !== '' ? metadataIconColor : cardStyle.iconColor)
@@ -435,6 +460,7 @@ function ResourcesCatalogSection({
                     style={{
                       borderColor: cardStyle.cardBorderColor,
                       borderWidth: `${cardStyle.cardBorderWidth}px`,
+                      borderStyle: 'solid',
                       borderRadius: `${cardStyle.cardBorderRadius}px`,
                       backgroundColor: cardStyle.cardBackgroundColor,
                       boxShadow: cardStyle.cardShadow,
@@ -464,16 +490,21 @@ function ResourcesCatalogSection({
                     >
                       {item.label}
                     </h2>
-                    <div
-                      className="mt-3 [&_p]:m-0"
-                      style={{
-                        color: cardStyle.descriptionColor,
-                        fontSize: `${cardStyle.descriptionFontSize}px`,
-                        lineHeight: String(cardStyle.descriptionLineHeight),
-                      }}
-                    >
-                      {renderResourceTextContent(item.description ?? '', '')}
-                    </div>
+                    {descriptionExcerpt ? (
+                      <p
+                        className="mt-3 overflow-hidden"
+                        style={{
+                          color: cardStyle.descriptionColor,
+                          fontSize: `${cardStyle.descriptionFontSize}px`,
+                          lineHeight: String(cardStyle.descriptionLineHeight),
+                          display: '-webkit-box',
+                          WebkitBoxOrient: 'vertical',
+                          WebkitLineClamp: 5,
+                        }}
+                      >
+                        {descriptionExcerpt}
+                      </p>
+                    ) : null}
                     {videoUrl || readMoreContent ? (
                       <div className="mt-4 flex flex-wrap gap-2">
                         {videoUrl ? (
