@@ -265,6 +265,15 @@ function getVerticalAnchorTransform(verticalAlign?: SiteBannerElementStyle['vert
   return 'translateY(0)'
 }
 
+function toPreviewStyle(item: SiteBannerLayoutItem, scaleFactor: number) {
+  return {
+    left: `${item.x * scaleFactor}px`,
+    top: `${item.y}px`,
+    width: `${item.width}%`,
+    zIndex: item.zIndex,
+  }
+}
+
 function getToneColorDefaults(tone: SiteBannerCta['tonePreset']) {
   if (tone === 'warm') {
     return { backgroundColor: '#176E52', textColor: '#F6F6F6' }
@@ -426,6 +435,7 @@ function BannerCanvasElement({
   onPointerDown,
   onResizePointerDown,
   draggable = true,
+  style,
 }: {
   elementKey: SiteBannerLayoutKey
   item: SiteBannerLayoutItem
@@ -434,6 +444,7 @@ function BannerCanvasElement({
   onPointerDown: (key: SiteBannerLayoutKey, event: React.PointerEvent<HTMLDivElement>) => void
   onResizePointerDown: (key: SiteBannerLayoutKey, event: React.PointerEvent<HTMLButtonElement>) => void
   draggable?: boolean
+  style?: React.CSSProperties
 }) {
   if (!item.visible) {
     return null
@@ -445,7 +456,7 @@ function BannerCanvasElement({
         'group absolute',
         draggable ? 'cursor-grab touch-none select-none active:cursor-grabbing' : 'cursor-default',
       )}
-      style={{
+      style={style ?? {
         left: `${item.x}px`,
         top: `${item.y}px`,
         width: `${item.width}%`,
@@ -493,12 +504,19 @@ export function AdminBannersPage() {
   const [libraryModalVariant, setLibraryModalVariant] = useState<BannerBackgroundVariant>('desktop')
   const [saveConfirmationOpen, setSaveConfirmationOpen] = useState(false)
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false)
+  const [isVersionsModalOpen, setIsVersionsModalOpen] = useState(false)
+  const [isImmersiveMode, setIsImmersiveMode] = useState(true)
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const stageRef = useRef<HTMLDivElement | null>(null)
   const previewModalStageRef = useRef<HTMLDivElement | null>(null)
+  const stageContentRef = useRef<HTMLDivElement | null>(null)
+  const previewModalContentRef = useRef<HTMLDivElement | null>(null)
+  const pageRootRef = useRef<HTMLDivElement | null>(null)
   const dragStateRef = useRef<BannerDragState | null>(null)
   const [previewMode, setPreviewMode] = useState<'desktop' | 'mobile'>('desktop')
+  const [stageContentWidth, setStageContentWidth] = useState(0)
+  const [previewModalContentWidth, setPreviewModalContentWidth] = useState(0)
   const [heightDesktopInput, setHeightDesktopInput] = useState('760')
   const [heightMobileInput, setHeightMobileInput] = useState('560')
   const [locationKeys, setLocationKeys] = useState<string[]>([])
@@ -658,17 +676,33 @@ export function AdminBannersPage() {
   }, [selectedBannerId])
 
   useEffect(() => {
+    const root = pageRootRef.current
+    if (!root || typeof root.requestFullscreen !== 'function' || document.fullscreenElement) {
+      return
+    }
+
+    void root.requestFullscreen({ navigationUI: 'hide' }).catch(() => {
+      // Some browsers block fullscreen entry without a user gesture.
+    })
+  }, [])
+
+  useEffect(() => {
     function handlePointerMove(event: PointerEvent) {
       const dragState = dragStateRef.current
       const stage = isPreviewModalOpen ? (previewModalStageRef.current ?? stageRef.current) : stageRef.current
+      const contentNode = isPreviewModalOpen ? (previewModalContentRef.current ?? stageContentRef.current) : stageContentRef.current
 
-      if (!dragState || !stage || dragState.pointerId !== event.pointerId) {
+      if (!dragState || !stage || !contentNode || dragState.pointerId !== event.pointerId) {
         return
       }
 
       const rect = stage.getBoundingClientRect()
+      const contentRect = contentNode.getBoundingClientRect()
       const deltaXPx = event.clientX - dragState.startClientX
       const deltaYPx = event.clientY - dragState.startClientY
+      const designWidth = previewMode === 'mobile' ? MOBILE_CANVAS_WIDTH : DESKTOP_CANVAS_WIDTH
+      const scaleFactor = contentRect.width > 0 ? contentRect.width / designWidth : 1
+      const normalizedScale = scaleFactor > 0 ? scaleFactor : 1
 
       setDraft((current) => {
         if (!current) {
@@ -682,15 +716,15 @@ export function AdminBannersPage() {
             ...current,
             [layoutKey]: {
               ...current[layoutKey],
-              [dragState.key]: applyWidthWithinCanvas(currentItem, dragState.startWidth + ((deltaXPx / rect.width) * 100)),
+              [dragState.key]: applyWidthWithinCanvas(currentItem, dragState.startWidth + ((deltaXPx / contentRect.width) * 100)),
             },
           }
         }
 
-        const elementWidthPx = (currentItem.width / 100) * rect.width
-        const maxX = Math.max(0, rect.width - elementWidthPx)
+        const elementWidthPx = (currentItem.width / 100) * contentRect.width
+        const maxX = Math.max(0, (contentRect.width - elementWidthPx) / normalizedScale)
         const maxY = Math.max(0, rect.height - 16)
-        const nextX = Math.round(clamp(dragState.startX + deltaXPx, 0, maxX))
+        const nextX = Math.round(clamp(dragState.startX + (deltaXPx / normalizedScale), 0, maxX))
         const nextY = Math.round(clamp(dragState.startY + deltaYPx, 0, maxY))
 
         return {
@@ -727,8 +761,50 @@ export function AdminBannersPage() {
     }
   }, [isPreviewModalOpen, previewMode])
 
+  useEffect(() => {
+    const cleanups: Array<() => void> = []
+    const observers: ResizeObserver[] = []
+    const bindings = [
+      { node: stageContentRef.current, setWidth: setStageContentWidth },
+      { node: previewModalContentRef.current, setWidth: setPreviewModalContentWidth },
+    ]
+
+    for (const binding of bindings) {
+      const node = binding.node
+      if (!node) {
+        continue
+      }
+
+      const updateWidth = () => binding.setWidth(node.getBoundingClientRect().width)
+      updateWidth()
+
+      if (typeof ResizeObserver === 'undefined') {
+        window.addEventListener('resize', updateWidth)
+        cleanups.push(() => window.removeEventListener('resize', updateWidth))
+        continue
+      }
+
+      const observer = new ResizeObserver(() => updateWidth())
+      observer.observe(node)
+      observers.push(observer)
+    }
+
+    return () => {
+      cleanups.forEach((cleanup) => cleanup())
+      observers.forEach((observer) => observer.disconnect())
+    }
+  }, [draft?.id, isPreviewModalOpen, previewMode])
+
   function toggleCard(key: string) {
     setExpandedCards((current) => ({ ...current, [key]: !current[key] }))
+  }
+
+  async function handleExitImmersiveMode() {
+    setIsImmersiveMode(false)
+
+    if (document.fullscreenElement) {
+      await document.exitFullscreen().catch(() => undefined)
+    }
   }
 
   function setDraftField<K extends keyof SiteBanner>(field: K, value: SiteBanner[K]) {
@@ -1247,19 +1323,70 @@ export function AdminBannersPage() {
   const activeBackgroundConfig = draft
     ? (isMobilePreview ? draft.backgroundMobile : draft.backgroundDesktop)
     : null
+  const activeDesignWidth = isMobilePreview ? MOBILE_CANVAS_WIDTH : DESKTOP_CANVAS_WIDTH
+  const activePreviewContentWidth = isPreviewModalOpen ? previewModalContentWidth : stageContentWidth
+  const previewScaleFactor = activePreviewContentWidth > 0 ? activePreviewContentWidth / activeDesignWidth : 1
 
-  const renderPreviewCanvas = (canvasRef: React.RefObject<HTMLDivElement | null>) => (
-    <div className={cn('w-full', isMobilePreview ? 'overflow-visible' : 'overflow-x-auto')}>
+  const getPreviewElementStyle = (item: SiteBannerLayoutItem, verticalAlign?: SiteBannerElementStyle['verticalAlign']) => ({
+    ...toPreviewStyle(item, previewScaleFactor),
+    transform: getVerticalAnchorTransform(verticalAlign),
+  })
+
+  const renderVersionsList = () => (
+    <div className="mt-4 grid gap-3">
+      {loadingVersions ? (
+        <div className="rounded-[18px] border border-dashed border-[#D8E6EB] bg-white px-4 py-4 text-sm font-semibold text-[#5F7077]">
+          Carregando historico...
+        </div>
+      ) : bannerVersions.length === 0 ? (
+        <div className="rounded-[18px] border border-dashed border-[#D8E6EB] bg-white px-4 py-4 text-sm font-semibold text-[#5F7077]">
+          Nenhuma revisao registrada para este banner.
+        </div>
+      ) : bannerVersions.slice(0, 12).map((version, index) => (
+        <div key={version.id} className="rounded-[18px] border border-[#D8E6EB] bg-white p-4">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-[0.16em] text-[#1398B7]">
+                Revisao {bannerVersions.length - index} · {new Date(version.createdAt).toLocaleString('pt-BR')}
+              </p>
+              <p className="mt-1 text-xs font-semibold text-[#5F7077]">
+                {version.changeReason} · {version.snapshot.name || 'Banner sem nome'}
+              </p>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={restoringVersionId === version.id || saving}
+              onClick={() => void handleRestoreVersion(version)}
+              className="rounded-xl border-[#D8E6EB] px-3 text-[10px] font-black uppercase tracking-[0.12em]"
+            >
+              {restoringVersionId === version.id ? 'Revertendo...' : 'Reverter'}
+            </Button>
+          </div>
+          <div className="mt-3 rounded-[16px] border border-[#D8E6EB] bg-[#F8FBFC] px-3 py-3">
+            <p className="text-sm font-black text-[#15323b]">{version.snapshot.title || 'Sem titulo'}</p>
+            {version.snapshot.subtitle ? (
+              <p className="mt-1 text-xs font-semibold leading-5 text-[#5F7077]">{version.snapshot.subtitle}</p>
+            ) : null}
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+
+  const renderPreviewCanvas = (
+    canvasRef: React.RefObject<HTMLDivElement | null>,
+    contentRef: React.RefObject<HTMLDivElement | null>,
+  ) => (
+    <div className="w-full">
       <div
         ref={canvasRef}
         className={cn(
           'relative overflow-hidden rounded-[32px] border border-[#D8E6EB] bg-[#0A3640] shadow-[0_24px_60px_rgba(10,54,64,0.16)] transition-all duration-300',
-          isMobilePreview ? 'mx-auto' : '',
         )}
         style={{
           height: `${previewHeight}px`,
-          width: `${isMobilePreview ? MOBILE_CANVAS_WIDTH : DESKTOP_CANVAS_WIDTH}px`,
-          minWidth: `${isMobilePreview ? MOBILE_CANVAS_WIDTH : DESKTOP_CANVAS_WIDTH}px`,
+          width: '100%',
         }}
       >
         <div
@@ -1272,33 +1399,33 @@ export function AdminBannersPage() {
           }}
         />
 
-        <div className="public-site-container relative h-full">
-          <BannerCanvasElement elementKey="title" item={titleLayout ?? draft!.layoutDesktop.title} verticalAlign={draft!.elementStyles.title.verticalAlign} onPointerDown={handleCanvasPointerDown} onResizePointerDown={handleCanvasResizePointerDown} draggable>
+        <div ref={contentRef} className="public-site-container relative h-full">
+          <BannerCanvasElement elementKey="title" item={titleLayout ?? draft!.layoutDesktop.title} verticalAlign={draft!.elementStyles.title.verticalAlign} onPointerDown={handleCanvasPointerDown} onResizePointerDown={handleCanvasResizePointerDown} draggable style={getPreviewElementStyle(titleLayout ?? draft!.layoutDesktop.title, draft!.elementStyles.title.verticalAlign)}>
             <p className={cn(isMobilePreview ? 'text-[2.2rem] font-extrabold leading-[0.94] tracking-[-0.05em] sm:text-[2.6rem]' : 'text-[2.5rem] font-extrabold leading-[0.92] tracking-[-0.05em] sm:text-[3rem] md:text-[3.25rem]', theme?.titleClass)} style={{ color: titleColor, ...titleTypographyStyle }}>
               {canvasTitle}
             </p>
           </BannerCanvasElement>
 
-          <BannerCanvasElement elementKey="subtitle" item={subtitleLayout ?? draft!.layoutDesktop.subtitle} verticalAlign={draft!.elementStyles.subtitle.verticalAlign} onPointerDown={handleCanvasPointerDown} onResizePointerDown={handleCanvasResizePointerDown} draggable>
+          <BannerCanvasElement elementKey="subtitle" item={subtitleLayout ?? draft!.layoutDesktop.subtitle} verticalAlign={draft!.elementStyles.subtitle.verticalAlign} onPointerDown={handleCanvasPointerDown} onResizePointerDown={handleCanvasResizePointerDown} draggable style={getPreviewElementStyle(subtitleLayout ?? draft!.layoutDesktop.subtitle, draft!.elementStyles.subtitle.verticalAlign)}>
             <p className={cn('text-sm leading-7 sm:text-base', theme?.textClass)} style={{ color: subtitleColor, ...subtitleTypographyStyle }}>
               {canvasSubtitle}
             </p>
           </BannerCanvasElement>
 
-          <BannerCanvasElement elementKey="body" item={bodyLayout ?? draft!.layoutDesktop.body} verticalAlign={draft!.elementStyles.body.verticalAlign} onPointerDown={handleCanvasPointerDown} onResizePointerDown={handleCanvasResizePointerDown} draggable>
+          <BannerCanvasElement elementKey="body" item={bodyLayout ?? draft!.layoutDesktop.body} verticalAlign={draft!.elementStyles.body.verticalAlign} onPointerDown={handleCanvasPointerDown} onResizePointerDown={handleCanvasResizePointerDown} draggable style={getPreviewElementStyle(bodyLayout ?? draft!.layoutDesktop.body, draft!.elementStyles.body.verticalAlign)}>
             <p className={cn('text-[15px] leading-7', theme?.bodyClass)} style={{ color: bodyColor, ...bodyTypographyStyle }}>
               {canvasBody}
             </p>
           </BannerCanvasElement>
 
           {draft!.primaryCta?.visible ? (
-            <BannerCanvasElement elementKey="primaryCta" item={primaryCtaLayout ?? draft!.layoutDesktop.primaryCta} verticalAlign={draft!.elementStyles.primaryCta.verticalAlign} onPointerDown={handleCanvasPointerDown} onResizePointerDown={handleCanvasResizePointerDown} draggable>
+            <BannerCanvasElement elementKey="primaryCta" item={primaryCtaLayout ?? draft!.layoutDesktop.primaryCta} verticalAlign={draft!.elementStyles.primaryCta.verticalAlign} onPointerDown={handleCanvasPointerDown} onResizePointerDown={handleCanvasResizePointerDown} draggable style={getPreviewElementStyle(primaryCtaLayout ?? draft!.layoutDesktop.primaryCta, draft!.elementStyles.primaryCta.verticalAlign)}>
               <PreviewCta cta={{ ...draft!.primaryCta, label: draft!.primaryCta.label || 'CTA principal' }} colors={draft!.elementStyles.primaryCta} className="h-12 w-full justify-between px-5" />
             </BannerCanvasElement>
           ) : null}
 
           {draft!.secondaryCta?.visible ? (
-            <BannerCanvasElement elementKey="secondaryCta" item={secondaryCtaLayout ?? draft!.layoutDesktop.secondaryCta} verticalAlign={draft!.elementStyles.secondaryCta.verticalAlign} onPointerDown={handleCanvasPointerDown} onResizePointerDown={handleCanvasResizePointerDown} draggable>
+            <BannerCanvasElement elementKey="secondaryCta" item={secondaryCtaLayout ?? draft!.layoutDesktop.secondaryCta} verticalAlign={draft!.elementStyles.secondaryCta.verticalAlign} onPointerDown={handleCanvasPointerDown} onResizePointerDown={handleCanvasResizePointerDown} draggable style={getPreviewElementStyle(secondaryCtaLayout ?? draft!.layoutDesktop.secondaryCta, draft!.elementStyles.secondaryCta.verticalAlign)}>
               <PreviewCta cta={{ ...draft!.secondaryCta, label: draft!.secondaryCta.label || 'CTA secundario' }} colors={draft!.elementStyles.secondaryCta} className="h-12 w-full justify-between px-5" />
             </BannerCanvasElement>
           ) : null}
@@ -1308,7 +1435,13 @@ export function AdminBannersPage() {
   )
 
   return (
-    <div className="space-y-7">
+    <div
+      ref={pageRootRef}
+      className={cn(
+        'space-y-7',
+        isImmersiveMode ? 'fixed inset-0 z-[70] overflow-y-auto bg-[#F2F7F9] p-5 sm:p-6 lg:p-8' : '',
+      )}
+    >
       {saveConfirmationOpen ? (
         <div className="fixed inset-0 z-[80] flex items-center justify-center bg-[#0A3640]/45 px-4">
           <div className="w-full max-w-md rounded-[24px] border border-[#D8E6EB] bg-white p-6 shadow-2xl">
@@ -1343,7 +1476,29 @@ export function AdminBannersPage() {
               </Button>
             </div>
             <div className="min-h-0 flex-1 overflow-auto rounded-2xl border border-[#D8E6EB] bg-[#F8FBFC] p-4">
-              {renderPreviewCanvas(previewModalStageRef)}
+              {renderPreviewCanvas(previewModalStageRef, previewModalContentRef)}
+            </div>
+          </div>
+        </div>
+      ) : null}
+      {isVersionsModalOpen && draft ? (
+        <div className="fixed inset-0 z-[88] flex items-center justify-center bg-[#0A3640]/60 px-4 py-6">
+          <div className="flex max-h-[90vh] w-full max-w-4xl flex-col overflow-hidden rounded-[24px] border border-[#D8E6EB] bg-white shadow-2xl">
+            <div className="flex items-center justify-between border-b border-[#D8E6EB] px-5 py-4">
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#1398B7]">Historico de revisoes</p>
+                <h2 className="mt-1 font-readex text-xl font-semibold text-[#15323b]">{draft.name || 'Banner sem nome'}</h2>
+              </div>
+              <Button type="button" variant="outline" onClick={() => setIsVersionsModalOpen(false)} className="rounded-xl border-[#D8E6EB]">
+                <X className="mr-1 h-4 w-4" />
+                Fechar
+              </Button>
+            </div>
+            <div className="min-h-0 flex-1 overflow-y-auto bg-[#F8FBFC] p-5">
+              <p className="text-xs font-semibold leading-5 text-[#5F7077]">
+                Cada salvamento relevante do banner gera uma revisao. Clique na desejada para reverter e criar uma nova entrada no historico.
+              </p>
+              {renderVersionsList()}
             </div>
           </div>
         </div>
@@ -1428,6 +1583,12 @@ export function AdminBannersPage() {
         </div>
 
         <div className="flex flex-wrap gap-3">
+          {isImmersiveMode ? (
+            <Button type="button" variant="outline" onClick={() => void handleExitImmersiveMode()} className="rounded-2xl border-[#D8E6EB]">
+              <X className="mr-2 h-4 w-4" />
+              Fechar tela cheia
+            </Button>
+          ) : null}
           <Button type="button" onClick={() => void handleCreateBanner()} disabled={saving} className="rounded-2xl bg-[#1398B7] px-5 font-black text-white hover:bg-[#1089A5]">
             <Plus className="mr-2 h-4 w-4" />
             Novo banner
@@ -1605,6 +1766,10 @@ export function AdminBannersPage() {
                   <Button type="button" variant="outline" onClick={handleAlignAllInsideCanvas} disabled={saving} className="rounded-2xl border-[#D8E6EB]">
                     Alinhar no canvas
                   </Button>
+                  <Button type="button" variant="outline" onClick={() => setIsVersionsModalOpen(true)} disabled={saving} className="rounded-2xl border-[#D8E6EB]">
+                    <History className="mr-2 h-4 w-4" />
+                    Revisoes
+                  </Button>
                   <Button type="button" onClick={() => void handleSaveBanner()} disabled={saving || uploadingBackground !== null} className="rounded-2xl bg-[#1398B7] px-5 font-black text-white hover:bg-[#1089A5]">
                     <Save className="mr-2 h-4 w-4" />
                     {saving ? 'Salvando...' : 'Salvar banner'}
@@ -1653,61 +1818,12 @@ export function AdminBannersPage() {
                         Ampliar previa
                       </Button>
                     </div>
-                    {renderPreviewCanvas(stageRef)}
+                    {renderPreviewCanvas(stageRef, stageContentRef)}
                   </div>
                 </div>
 
                 <div className="xl:col-span-5 2xl:col-span-4">
                   <div className="grid gap-6 xl:max-h-[calc(100vh-9rem)] xl:overflow-y-auto xl:pr-2">
-                    <div className="rounded-[24px] border border-[#D8E6EB] bg-[#F8FBFC] p-4">
-                      <div className="flex items-center gap-2">
-                        <History className="h-4 w-4 text-[#1398B7]" />
-                        <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#1398B7]">Historico de revisoes</p>
-                      </div>
-                      <p className="mt-2 text-xs font-semibold leading-5 text-[#5F7077]">
-                        Cada salvamento relevante do banner gera uma revisao. Clique na desejada para reverter e criar uma nova entrada no historico.
-                      </p>
-                      <div className="mt-4 grid gap-3">
-                        {loadingVersions ? (
-                          <div className="rounded-[18px] border border-dashed border-[#D8E6EB] bg-white px-4 py-4 text-sm font-semibold text-[#5F7077]">
-                            Carregando historico...
-                          </div>
-                        ) : bannerVersions.length === 0 ? (
-                          <div className="rounded-[18px] border border-dashed border-[#D8E6EB] bg-white px-4 py-4 text-sm font-semibold text-[#5F7077]">
-                            Nenhuma revisao registrada para este banner.
-                          </div>
-                        ) : bannerVersions.slice(0, 12).map((version, index) => (
-                          <div key={version.id} className="rounded-[18px] border border-[#D8E6EB] bg-white p-4">
-                            <div className="flex flex-wrap items-start justify-between gap-3">
-                              <div>
-                                <p className="text-[10px] font-black uppercase tracking-[0.16em] text-[#1398B7]">
-                                  Revisao {bannerVersions.length - index} · {new Date(version.createdAt).toLocaleString('pt-BR')}
-                                </p>
-                                <p className="mt-1 text-xs font-semibold text-[#5F7077]">
-                                  {version.changeReason} · {version.snapshot.name || 'Banner sem nome'}
-                                </p>
-                              </div>
-                              <Button
-                                type="button"
-                                variant="outline"
-                                disabled={restoringVersionId === version.id || saving}
-                                onClick={() => void handleRestoreVersion(version)}
-                                className="rounded-xl border-[#D8E6EB] px-3 text-[10px] font-black uppercase tracking-[0.12em]"
-                              >
-                                {restoringVersionId === version.id ? 'Revertendo...' : 'Reverter'}
-                              </Button>
-                            </div>
-                            <div className="mt-3 rounded-[16px] border border-[#D8E6EB] bg-[#F8FBFC] px-3 py-3">
-                              <p className="text-sm font-black text-[#15323b]">{version.snapshot.title || 'Sem titulo'}</p>
-                              {version.snapshot.subtitle ? (
-                                <p className="mt-1 text-xs font-semibold leading-5 text-[#5F7077]">{version.snapshot.subtitle}</p>
-                              ) : null}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
                     <CollapsibleCard
                       title="Conteudo e imagem"
                       summary="Troque a imagem, ajuste os textos-base e mantenha o preview visivel ao lado."
@@ -1731,7 +1847,7 @@ export function AdminBannersPage() {
                               value: draft.backgroundUrlMobile || draft.backgroundUrl,
                             },
                           ]).map((field) => (
-                            <div key={field.variant} className="rounded-[18px] border border-[#D8E6EB] bg-[#F8FBFC] p-3">
+                            <div key={field.variant} className="min-w-0 rounded-[18px] border border-[#D8E6EB] bg-[#F8FBFC] p-3">
                               <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#5F7077]">{field.label}</p>
                               <p className="mt-2 truncate text-sm font-semibold text-[#15323b]">{field.value || 'Nenhuma imagem definida'}</p>
                               <label className="mt-3 inline-flex h-11 w-full cursor-pointer items-center justify-center rounded-2xl bg-[#1398B7] px-3 text-center text-[11px] font-black uppercase tracking-[0.08em] text-white hover:bg-[#1089A5]">
@@ -1758,8 +1874,8 @@ export function AdminBannersPage() {
                               >
                                 Abrir biblioteca de midia
                               </Button>
-                              <div className="mt-3 grid gap-2">
-                                <label className="grid gap-1">
+                              <div className="mt-3 grid min-w-0 gap-2">
+                                <label className="grid min-w-0 gap-1">
                                   <span className="text-[10px] font-black uppercase tracking-[0.12em] text-[#5F7077]">Posicao</span>
                                   <select
                                     value={field.variant === 'desktop' ? draft.backgroundDesktop.position : draft.backgroundMobile.position}
@@ -1772,12 +1888,12 @@ export function AdminBannersPage() {
                                         ? { ...current.backgroundMobile, position: event.target.value as SiteBannerBackgroundPosition }
                                         : current.backgroundMobile,
                                     }) : current)}
-                                    className="h-10 rounded-[14px] border border-[#D8E6EB] bg-white px-3 text-xs font-semibold text-[#15323b] outline-none"
+                                    className="h-10 w-full min-w-0 rounded-[14px] border border-[#D8E6EB] bg-white px-3 text-xs font-semibold text-[#15323b] outline-none"
                                   >
                                     {BACKGROUND_POSITION_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
                                   </select>
                                 </label>
-                                <label className="grid gap-1">
+                                <label className="grid min-w-0 gap-1">
                                   <span className="text-[10px] font-black uppercase tracking-[0.12em] text-[#5F7077]">Ajuste (size)</span>
                                   <select
                                     value={field.variant === 'desktop' ? draft.backgroundDesktop.size : draft.backgroundMobile.size}
@@ -1790,12 +1906,12 @@ export function AdminBannersPage() {
                                         ? { ...current.backgroundMobile, size: event.target.value as SiteBannerBackgroundSize }
                                         : current.backgroundMobile,
                                     }) : current)}
-                                    className="h-10 rounded-[14px] border border-[#D8E6EB] bg-white px-3 text-xs font-semibold text-[#15323b] outline-none"
+                                    className="h-10 w-full min-w-0 rounded-[14px] border border-[#D8E6EB] bg-white px-3 text-xs font-semibold text-[#15323b] outline-none"
                                   >
                                     {BACKGROUND_SIZE_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
                                   </select>
                                 </label>
-                                <label className="grid gap-1">
+                                <label className="grid min-w-0 gap-1">
                                   <span className="text-[10px] font-black uppercase tracking-[0.12em] text-[#5F7077]">Repeticao</span>
                                   <select
                                     value={field.variant === 'desktop' ? draft.backgroundDesktop.repeat : draft.backgroundMobile.repeat}
@@ -1808,7 +1924,7 @@ export function AdminBannersPage() {
                                         ? { ...current.backgroundMobile, repeat: event.target.value as SiteBannerBackgroundRepeat }
                                         : current.backgroundMobile,
                                     }) : current)}
-                                    className="h-10 rounded-[14px] border border-[#D8E6EB] bg-white px-3 text-xs font-semibold text-[#15323b] outline-none"
+                                    className="h-10 w-full min-w-0 rounded-[14px] border border-[#D8E6EB] bg-white px-3 text-xs font-semibold text-[#15323b] outline-none"
                                   >
                                     {BACKGROUND_REPEAT_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
                                   </select>
