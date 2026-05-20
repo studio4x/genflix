@@ -363,7 +363,7 @@ ok - algumas vezes as informações gravadas são perdidas, como por exemplo no 
 ok - Daria para ser como em blogs, nos quais a quantiadde de texto é cortada?
 ok - a cor do ícone Gestão, na home, mfoi alterada depois que editei os itens de recursos
 
-[ ] T109 - No editor visual, em todos os campos de textos, seja titulo ou descrição, o editor rico de texto deve estar ativado juntamente com a versão visual e html..
+[OK] T109 - No editor visual, em todos os campos de textos, seja titulo ou descrição, o editor rico de texto deve estar ativado juntamente com a versão visual e html..
 
 [ ] t110 - Alterar o botão "ensine na genflix" no rodapé, para um botão padrão que já temos configurado na identidade visual.
 

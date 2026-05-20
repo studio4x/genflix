@@ -1200,6 +1200,13 @@ function ListItemEditorCard({
     })
   }
 
+  function updateTitleField(value: string) {
+    onChange({
+      ...item,
+      title: value,
+    })
+  }
+
   function updateNestedItems(nextNestedItems: EditableListItem[]) {
     onChange({
       ...item,
@@ -1407,12 +1414,17 @@ function ListItemEditorCard({
               </label>
               <label className="grid gap-1.5 md:col-span-2">
                 <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Título opcional</span>
-                <input
-                  value={item.title ?? ''}
-                  onChange={(event) => updateField('title', event.target.value)}
-                  className="h-11 rounded-[14px] border border-[#D8E6EB] px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]"
-                  placeholder="Exibido antes do texto, se houver"
-                />
+                <div className="overflow-hidden rounded-[14px] border border-[#D8E6EB] bg-white">
+                  <ReactQuill
+                    value={item.title ?? ''}
+                    onChange={updateTitleField}
+                    placeholder="Exibido antes do texto, se houver"
+                    modules={richTextToolbarModules}
+                    enableHtmlMode
+                    minHeightClassName="min-h-[140px]"
+                    className="[&_.react-quill-local]:rounded-none [&_.react-quill-local]:border-0 [&_.react-quill-local_.ql-container]:border-0"
+                  />
+                </div>
               </label>
             </div>
 
@@ -1556,14 +1568,19 @@ function ListItemEditorCard({
               className="h-11 rounded-[14px] border border-[#D8E6EB] px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]"
             />
           </label>
-          <label className="grid gap-1.5">
+          <label className="grid gap-1.5 md:col-span-2">
             <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Título</span>
-            <input
-              value={item.title ?? ''}
-              onChange={(event) => updateField('title', event.target.value)}
-              className="h-11 rounded-[14px] border border-[#D8E6EB] px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]"
-              placeholder="Título exibido para a equipe"
-            />
+            <div className="overflow-hidden rounded-[14px] border border-[#D8E6EB] bg-white">
+              <ReactQuill
+                value={item.title ?? ''}
+                onChange={updateTitleField}
+                placeholder="Título exibido para a equipe"
+                modules={richTextToolbarModules}
+                enableHtmlMode
+                minHeightClassName="min-h-[140px]"
+                className="[&_.react-quill-local]:rounded-none [&_.react-quill-local]:border-0 [&_.react-quill-local_.ql-container]:border-0"
+              />
+            </div>
           </label>
           <div className="rounded-[14px] border border-[#D8E6EB] bg-[#F8FCFD] px-3 py-3">
             <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Template</p>
@@ -1763,13 +1780,19 @@ function ListItemEditorCard({
             className="h-11 rounded-[14px] border border-[#D8E6EB] px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]"
           />
         </label>
-        <label className="grid gap-1.5">
+        <label className="grid gap-1.5 md:col-span-2">
           <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Título</span>
-          <input
-            value={item.title ?? ''}
-            onChange={(event) => updateField('title', event.target.value)}
-            className="h-11 rounded-[14px] border border-[#D8E6EB] px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]"
-          />
+          <div className="overflow-hidden rounded-[14px] border border-[#D8E6EB] bg-white">
+            <ReactQuill
+              value={item.title ?? ''}
+              onChange={updateTitleField}
+              placeholder="Título exibido para o item"
+              modules={richTextToolbarModules}
+              enableHtmlMode
+              minHeightClassName="min-h-[140px]"
+              className="[&_.react-quill-local]:rounded-none [&_.react-quill-local]:border-0 [&_.react-quill-local_.ql-container]:border-0"
+            />
+          </div>
         </label>
         <label className="grid gap-1.5">
           <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Link</span>
