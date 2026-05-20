@@ -459,6 +459,7 @@ export function AdminBannersPage() {
     desktop: '',
     mobile: '',
   })
+  const [saveConfirmationOpen, setSaveConfirmationOpen] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const stageRef = useRef<HTMLDivElement | null>(null)
@@ -928,6 +929,7 @@ export function AdminBannersPage() {
       setHeightDesktopInput(formatBannerHeightInput(updated.heightDesktop))
       setHeightMobileInput(formatBannerHeightInput(updated.heightMobile))
       setMessage('Banner salvo com sucesso.')
+      setSaveConfirmationOpen(true)
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : 'Nao foi possivel salvar o banner.')
     } finally {
@@ -1204,6 +1206,27 @@ export function AdminBannersPage() {
 
   return (
     <div className="space-y-7">
+      {saveConfirmationOpen ? (
+        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-[#0A3640]/45 px-4">
+          <div className="w-full max-w-md rounded-[24px] border border-[#D8E6EB] bg-white p-6 shadow-2xl">
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#1398B7]">Confirmação</p>
+            <h2 className="mt-2 font-readex text-2xl font-semibold text-[#15323b]">Banner salvo com sucesso</h2>
+            <p className="mt-2 text-sm font-semibold leading-6 text-[#5F7077]">
+              As alterações do banner foram registradas. Você pode continuar editando ou fechar esta confirmação.
+            </p>
+            <div className="mt-5 flex justify-end">
+              <Button
+                type="button"
+                onClick={() => setSaveConfirmationOpen(false)}
+                className="rounded-2xl bg-[#1398B7] px-5 font-black text-white hover:bg-[#1089A5]"
+              >
+                Fechar
+              </Button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
       <header className="flex flex-col gap-4 border-b border-[#D8E6EB] pb-6 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <p className="text-[10px] font-black uppercase tracking-[0.28em] text-[#1398B7]">Admin / Home</p>
