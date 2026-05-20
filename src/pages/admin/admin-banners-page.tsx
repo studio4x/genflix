@@ -1283,8 +1283,8 @@ export function AdminBannersPage() {
               )}
             </div>
 
-            <div className="flex items-center justify-end gap-2 border-t border-[#D8E6EB] px-5 py-4">
-              <Button type="button" variant="outline" onClick={() => setIsLibraryModalOpen(false)} className="rounded-xl border-[#D8E6EB]">
+            <div className="flex flex-col-reverse gap-2 border-t border-[#D8E6EB] px-5 py-4 sm:flex-row sm:items-center sm:justify-end">
+              <Button type="button" variant="outline" onClick={() => setIsLibraryModalOpen(false)} className="h-11 w-full rounded-xl border-[#D8E6EB] sm:w-auto">
                 Cancelar
               </Button>
               <Button
@@ -1294,7 +1294,7 @@ export function AdminBannersPage() {
                   setIsLibraryModalOpen(false)
                 }}
                 disabled={!backgroundLibrarySelection[libraryModalVariant]}
-                className="rounded-xl bg-[#1398B7] font-black text-white hover:bg-[#1089A5]"
+                className="h-11 w-full rounded-xl bg-[#1398B7] px-4 text-center text-xs font-black uppercase tracking-[0.1em] text-white hover:bg-[#1089A5] sm:w-auto"
               >
                 Usar imagem selecionada
               </Button>
