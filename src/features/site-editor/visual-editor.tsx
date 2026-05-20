@@ -893,7 +893,7 @@ function EditableMarker({
   return (
     <Wrapper
       className={cn(
-        'group/site-editor relative cursor-pointer rounded-[10px] bg-[rgba(19,152,183,0.06)] outline outline-2 outline-offset-2 outline-[#1398B7]/50 transition hover:bg-[rgba(19,152,183,0.1)] hover:outline-[#1398B7] focus-visible:bg-[rgba(19,152,183,0.1)]',
+        'group/site-editor relative cursor-pointer rounded-[10px] transition outline-none hover:outline hover:outline-2 hover:outline-offset-2 hover:outline-[#1398B7]/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1398B7]',
         display === 'block' && 'block',
       )}
       onClick={(event) => {
@@ -903,6 +903,7 @@ function EditableMarker({
       }}
       role="button"
       tabIndex={0}
+      aria-label={`Editar ${label}`}
       onKeyDown={(event) => {
         if (event.key === 'Enter' || event.key === ' ') {
           event.preventDefault()
@@ -910,9 +911,8 @@ function EditableMarker({
         }
       }}
     >
-      <span className="pointer-events-none absolute -top-3 left-2 z-[80] inline-flex items-center gap-1 rounded-full border border-[#0A3640]/10 bg-[#0A3640] px-2 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-white opacity-0 shadow-lg transition-opacity group-hover/site-editor:opacity-100 group-focus-visible/site-editor:opacity-100">
-        <Edit3 className="h-3 w-3" />
-        {label}
+      <span className="pointer-events-none absolute right-2 top-2 z-[80] inline-flex h-7 w-7 items-center justify-center rounded-full border border-[#0A3640]/15 bg-[#0A3640] text-white opacity-0 shadow-lg transition-opacity group-hover/site-editor:opacity-100 group-focus-visible/site-editor:opacity-100">
+        <Edit3 className="h-3.5 w-3.5" />
       </span>
       {children}
     </Wrapper>
@@ -4808,7 +4808,7 @@ export function EditableList({
   return (
     <EditableMarker
       label={label}
-      display="contents"
+      display="block"
       onClick={() => editor.openEditor({
         pageKey: resolvedPageKey,
         entryKey,
