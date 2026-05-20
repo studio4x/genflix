@@ -1607,12 +1607,12 @@ export function AdminBannersPage() {
                                   className="sr-only"
                                 />
                               </label>
-                              <div className="mt-2 grid gap-2">
+                              <div className="mt-2 grid min-w-0 gap-2">
                                 <select
                                   value={backgroundLibrarySelection[field.variant]}
                                   onChange={(event) => setBackgroundLibrarySelection((current) => ({ ...current, [field.variant]: event.target.value }))}
                                   disabled={loadingLibraryAssets || uploadingBackground !== null}
-                                  className="h-11 rounded-2xl border border-[#D8E6EB] bg-white px-3 text-xs font-semibold text-[#15323b] disabled:opacity-60"
+                                  className="h-11 min-w-0 rounded-2xl border border-[#D8E6EB] bg-white px-3 text-xs font-semibold text-[#15323b] disabled:opacity-60"
                                 >
                                   <option value="">
                                     {loadingLibraryAssets ? 'Carregando biblioteca...' : 'Selecionar da biblioteca de midia'}
@@ -1628,9 +1628,9 @@ export function AdminBannersPage() {
                                   variant="outline"
                                   onClick={() => handleBackgroundLibraryApply(field.variant)}
                                   disabled={loadingLibraryAssets || uploadingBackground !== null || !backgroundLibrarySelection[field.variant]}
-                                  className="h-10 rounded-2xl border-[#D8E6EB] px-3 text-[10px] font-black uppercase tracking-[0.14em]"
+                                  className="h-10 w-full min-w-0 rounded-2xl border-[#D8E6EB] px-2 text-[10px] font-black tracking-[0.08em] whitespace-normal"
                                 >
-                                  Usar da biblioteca
+                                  Usar biblioteca
                                 </Button>
                               </div>
                             </div>
