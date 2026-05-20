@@ -448,15 +448,6 @@ export async function fetchSiteBannerCarouselTargetLocationKeys(input: {
     }
   }
 
-  // Legacy guard: the initial hardcoded home hero location should not render
-  // in the dynamic home hero slot anymore.
-  if (
-    input.pageKey === 'home'
-    && (input.placementKey === 'hero' || input.placementKey === 'footer')
-  ) {
-    keys.delete(HOME_HERO_BANNER_LOCATION)
-  }
-
   return Array.from(keys)
 }
 
