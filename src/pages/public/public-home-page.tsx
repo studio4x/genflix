@@ -9,7 +9,6 @@ import { GenflixPublicHeader } from '@/components/public/genflix-public-header'
 import {
   genflixCategoryTiles,
   genflixFeaturedCourses,
-  genflixHeroImage,
   genflixNavLinks,
 } from '@/features/public/genflix-site-content'
 import {
@@ -177,41 +176,6 @@ function HomeStructureControl({ sections }: { sections: EditableListItem[] }) {
         </button>
       </div>
     </div>
-  )
-}
-
-function HomeHeroFallbackSection() {
-  return (
-    <section
-      id="inicio"
-      className="relative overflow-hidden"
-      style={{
-        backgroundImage: `linear-gradient(90deg, rgba(11, 38, 46, 0.84) 0%, rgba(11, 38, 46, 0.74) 28%, rgba(11, 38, 46, 0.36) 54%, rgba(11, 38, 46, 0.1) 100%), url(${genflixHeroImage})`,
-        backgroundPosition: 'center',
-        backgroundSize: 'cover',
-      }}
-    >
-      <div className="public-site-container flex min-h-[480px] items-center py-16 sm:py-20">
-        <div className="max-w-[520px] text-white">
-          <h1 className="max-w-[460px] text-[2.5rem] font-extrabold leading-[0.92] tracking-[-0.05em] sm:text-[3rem] md:text-[3.25rem]">
-            O conhecimento que a sua carreira estava esperando.
-          </h1>
-          <p className="mt-5 max-w-[420px] text-sm leading-7 text-white/78 sm:text-base">
-            As ferramentas de estudo para quem leva o aprendizado a serio.
-          </p>
-
-          <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-            <GenflixCtaButton asChild className="min-h-[48px] px-5">
-              <Link to="/login">Ja sou inscrito</Link>
-            </GenflixCtaButton>
-
-            <GenflixCtaButton asChild tone="surface" className="min-h-[48px] px-5">
-              <a href="#home-cta">Quero me inscrever</a>
-            </GenflixCtaButton>
-          </div>
-        </div>
-      </div>
-    </section>
   )
 }
 
@@ -386,7 +350,7 @@ export function PublicHomePage() {
   return (
     <main className="min-h-screen bg-[#F2F7F9] font-manrope text-[#163138]">
       <GenflixPublicHeader currentPage="home" navLinks={genflixNavLinks} />
-      <BannerPlacementSlot pageKey="home" placementKey="hero" fallback={<HomeHeroFallbackSection />} />
+      <BannerPlacementSlot pageKey="home" placementKey="hero" />
 
       <HomeStructureControl sections={homeSections} />
 

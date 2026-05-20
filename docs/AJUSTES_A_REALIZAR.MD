@@ -356,9 +356,15 @@ O conteúdo textual desta aula pode ser narrado em áudio gerado por IA para esc
 [OK] T107 - Faça ajustes de codificação de textos na página inicial (https://genflix-omega.vercel.app/criador/relatorios) do painel do criador..
 
 [OK] T108 - Padrão ds cards: 
-- cor de fundo não é obedecida
-- cor da borda do card não é obedecida
-- algumas vezes as informações gravadas são perdidas, como por exemplo no caso da cor do ícone GF-Curadoria na páfina de recursos
+ok - cor de fundo não é obedecida
+ok - cor da borda do card não é obedecida
+ok - algumas vezes as informações gravadas são perdidas, como por exemplo no caso da cor do ícone GF-Curadoria na páfina de recursos
 - as fontes e entrelinha de texto estão diferentes nos boxes dos recursos
-- Daria para ser como em blogs, nos quais a quantiadde de texto é cortada?
-- a cor do ícone Gestão, na home, mfoi alterada depois que editei os itens de recursos
+ok - Daria para ser como em blogs, nos quais a quantiadde de texto é cortada?
+ok - a cor do ícone Gestão, na home, mfoi alterada depois que editei os itens de recursos
+
+[ ] T109 - No editor visual, em todos os campos de textos, seja titulo ou descrição, o editor rico de texto deve estar ativado juntamente com a versão visual e html..
+
+[ ] t110 - Alterar o botão "ensine na genflix" no rodapé, para um botão padrão que já temos configurado na identidade visual.
+
+[ ] t111 - Na página contato, ao carregar a página, a imagem aparece mas depois muda para a que eu defini no editor. Remova essa transferência..
