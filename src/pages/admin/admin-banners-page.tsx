@@ -1186,6 +1186,24 @@ export function AdminBannersPage() {
     setMessage(`Imagem da biblioteca aplicada em ${variant === 'desktop' ? 'desktop' : 'mobile'}. Salve para publicar.`)
   }
 
+  function handleRemoveBackgroundImage(variant: BannerBackgroundVariant) {
+    if (!draft) {
+      return
+    }
+
+    setError(null)
+    setMessage(null)
+
+    setDraft((current) => current ? {
+      ...current,
+      backgroundAssetId: variant === 'desktop' ? null : current.backgroundAssetId,
+      backgroundUrl: variant === 'desktop' ? '' : current.backgroundUrl,
+      backgroundAssetIdMobile: variant === 'mobile' ? null : current.backgroundAssetIdMobile,
+      backgroundUrlMobile: variant === 'mobile' ? '' : current.backgroundUrlMobile,
+    } : current)
+    setMessage(`Imagem de ${variant === 'desktop' ? 'desktop' : 'mobile'} removida. Salve para publicar.`)
+  }
+
   function handleOpenLibraryModal(variant: BannerBackgroundVariant) {
     setLibraryModalVariant(variant)
     setIsLibraryModalOpen(true)
@@ -1301,9 +1319,14 @@ export function AdminBannersPage() {
   }
 
   const theme = draft ? bannerThemeStyles[draft.themePreset] : null
-  const getBackgroundImage = (overlay: string | undefined, backgroundUrl: string) => (
-    overlay ? `${overlay}, url(${backgroundUrl})` : `url(${backgroundUrl})`
-  )
+  const getBackgroundImage = (overlay: string | undefined, backgroundUrl: string) => {
+    const normalizedBackgroundUrl = backgroundUrl.trim()
+    if (!normalizedBackgroundUrl) {
+      return overlay || 'none'
+    }
+
+    return overlay ? `${overlay}, url(${normalizedBackgroundUrl})` : `url(${normalizedBackgroundUrl})`
+  }
   const canvasTitle = draft?.title.trim() || 'Titulo do banner'
   const canvasSubtitle = draft?.subtitle.trim() || 'Subtitulo opcional'
   const canvasBody = draft?.body.trim() || 'Texto complementar opcional'
@@ -1887,6 +1910,15 @@ export function AdminBannersPage() {
                                 className="mt-2 h-10 w-full rounded-2xl border-[#D8E6EB] px-3 text-[11px] font-black uppercase tracking-[0.08em] whitespace-normal leading-tight"
                               >
                                 Abrir biblioteca de midia
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => handleRemoveBackgroundImage(field.variant)}
+                                disabled={uploadingBackground !== null || !field.value}
+                                className="mt-2 h-10 w-full rounded-2xl border-[#F0C8CE] bg-white px-3 text-[11px] font-black uppercase tracking-[0.08em] text-[#A63A4B] hover:bg-[#FFF4F6] disabled:cursor-not-allowed disabled:opacity-60"
+                              >
+                                Remover imagem
                               </Button>
                               <div className="mt-3 grid min-w-0 gap-2">
                                 <label className="grid min-w-0 gap-1">

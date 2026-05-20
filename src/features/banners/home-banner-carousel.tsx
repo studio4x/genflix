@@ -345,9 +345,14 @@ export function HomeBannerCarousel({
   const activeSlide = slides[activeIndex] ?? slides[0] ?? null
   const desktopScaleFactor = contentWidth > 0 ? contentWidth / DESKTOP_BANNER_DESIGN_WIDTH : 1
   const mobileScaleFactor = contentWidth > 0 ? contentWidth / MOBILE_BANNER_DESIGN_WIDTH : 1
-  const getBackgroundImage = (overlay: string, backgroundUrl: string) => (
-    overlay ? `${overlay}, url(${backgroundUrl})` : `url(${backgroundUrl})`
-  )
+  const getBackgroundImage = (overlay: string, backgroundUrl: string) => {
+    const normalizedBackgroundUrl = backgroundUrl.trim()
+    if (!normalizedBackgroundUrl) {
+      return overlay || 'none'
+    }
+
+    return overlay ? `${overlay}, url(${normalizedBackgroundUrl})` : `url(${normalizedBackgroundUrl})`
+  }
 
   function goToSlide(index: number) {
     setActiveIndex(index)
