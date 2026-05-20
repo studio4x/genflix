@@ -459,6 +459,8 @@ export function AdminBannersPage() {
     desktop: '',
     mobile: '',
   })
+  const [isLibraryModalOpen, setIsLibraryModalOpen] = useState(false)
+  const [libraryModalVariant, setLibraryModalVariant] = useState<BannerBackgroundVariant>('desktop')
   const [saveConfirmationOpen, setSaveConfirmationOpen] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -1072,6 +1074,11 @@ export function AdminBannersPage() {
     setMessage(`Imagem da biblioteca aplicada em ${variant === 'desktop' ? 'desktop' : 'mobile'}. Salve para publicar.`)
   }
 
+  function handleOpenLibraryModal(variant: BannerBackgroundVariant) {
+    setLibraryModalVariant(variant)
+    setIsLibraryModalOpen(true)
+  }
+
   function handleCanvasPointerDown(key: SiteBannerLayoutKey, event: React.PointerEvent<HTMLDivElement>) {
     event.preventDefault()
 
@@ -1221,6 +1228,75 @@ export function AdminBannersPage() {
                 className="rounded-2xl bg-[#1398B7] px-5 font-black text-white hover:bg-[#1089A5]"
               >
                 Fechar
+              </Button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+      {isLibraryModalOpen ? (
+        <div className="fixed inset-0 z-[90] flex items-center justify-center bg-[#0A3640]/50 px-4 py-6">
+          <div className="flex h-full max-h-[90vh] w-full max-w-5xl flex-col overflow-hidden rounded-[24px] border border-[#D8E6EB] bg-white shadow-2xl">
+            <div className="flex items-center justify-between border-b border-[#D8E6EB] px-5 py-4">
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#1398B7]">Biblioteca de mídia</p>
+                <h2 className="mt-1 font-readex text-xl font-semibold text-[#15323b]">
+                  Escolher imagem para {libraryModalVariant === 'desktop' ? 'desktop' : 'mobile'}
+                </h2>
+              </div>
+              <Button type="button" variant="outline" onClick={() => setIsLibraryModalOpen(false)} className="rounded-xl border-[#D8E6EB]">
+                Fechar
+              </Button>
+            </div>
+
+            <div className="min-h-0 flex-1 overflow-y-auto p-5">
+              {loadingLibraryAssets ? (
+                <p className="text-sm font-semibold text-[#5F7077]">Carregando biblioteca...</p>
+              ) : libraryAssets.length === 0 ? (
+                <div className="rounded-[18px] border border-dashed border-[#D8E6EB] bg-[#F8FBFC] px-4 py-6 text-sm font-semibold text-[#5F7077]">
+                  Nenhuma imagem encontrada na biblioteca de mídia.
+                </div>
+              ) : (
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                  {libraryAssets.map((asset) => {
+                    const isSelected = backgroundLibrarySelection[libraryModalVariant] === asset.id
+                    return (
+                      <button
+                        key={asset.id}
+                        type="button"
+                        onClick={() => setBackgroundLibrarySelection((current) => ({ ...current, [libraryModalVariant]: asset.id }))}
+                        className={cn(
+                          'overflow-hidden rounded-[16px] border bg-white text-left transition-all',
+                          isSelected ? 'border-[#1398B7] ring-2 ring-[#1398B7]/20' : 'border-[#D8E6EB] hover:border-[#B8D8E1]',
+                        )}
+                      >
+                        <div className="aspect-[16/9] w-full bg-[#EAF2F5]">
+                          {asset.public_url ? <img src={asset.public_url} alt={asset.alt ?? 'Imagem'} className="h-full w-full object-cover" /> : null}
+                        </div>
+                        <div className="space-y-1 px-3 py-2">
+                          <p className="truncate text-xs font-black text-[#15323b]">{asset.alt ?? 'Imagem sem nome'}</p>
+                          <p className="text-[11px] font-semibold text-[#5F7077]">{new Date(asset.created_at).toLocaleString('pt-BR')}</p>
+                        </div>
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-center justify-end gap-2 border-t border-[#D8E6EB] px-5 py-4">
+              <Button type="button" variant="outline" onClick={() => setIsLibraryModalOpen(false)} className="rounded-xl border-[#D8E6EB]">
+                Cancelar
+              </Button>
+              <Button
+                type="button"
+                onClick={() => {
+                  handleBackgroundLibraryApply(libraryModalVariant)
+                  setIsLibraryModalOpen(false)
+                }}
+                disabled={!backgroundLibrarySelection[libraryModalVariant]}
+                className="rounded-xl bg-[#1398B7] font-black text-white hover:bg-[#1089A5]"
+              >
+                Usar imagem selecionada
               </Button>
             </div>
           </div>
@@ -1607,32 +1683,15 @@ export function AdminBannersPage() {
                                   className="sr-only"
                                 />
                               </label>
-                              <div className="mt-2 grid min-w-0 gap-2">
-                                <select
-                                  value={backgroundLibrarySelection[field.variant]}
-                                  onChange={(event) => setBackgroundLibrarySelection((current) => ({ ...current, [field.variant]: event.target.value }))}
-                                  disabled={loadingLibraryAssets || uploadingBackground !== null}
-                                  className="h-11 min-w-0 rounded-2xl border border-[#D8E6EB] bg-white px-3 text-xs font-semibold text-[#15323b] disabled:opacity-60"
-                                >
-                                  <option value="">
-                                    {loadingLibraryAssets ? 'Carregando biblioteca...' : 'Selecionar da biblioteca de midia'}
-                                  </option>
-                                  {libraryAssets.map((asset) => (
-                                    <option key={asset.id} value={asset.id}>
-                                      {(asset.alt ?? 'Imagem sem nome')} · {new Date(asset.created_at).toLocaleDateString('pt-BR')}
-                                    </option>
-                                  ))}
-                                </select>
-                                <Button
-                                  type="button"
-                                  variant="outline"
-                                  onClick={() => handleBackgroundLibraryApply(field.variant)}
-                                  disabled={loadingLibraryAssets || uploadingBackground !== null || !backgroundLibrarySelection[field.variant]}
-                                  className="h-10 w-full min-w-0 rounded-2xl border-[#D8E6EB] px-2 text-[10px] font-black tracking-[0.08em] whitespace-normal"
-                                >
-                                  Usar biblioteca
-                                </Button>
-                              </div>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => handleOpenLibraryModal(field.variant)}
+                                disabled={loadingLibraryAssets || uploadingBackground !== null}
+                                className="mt-2 h-10 w-full rounded-2xl border-[#D8E6EB] px-3 text-[10px] font-black uppercase tracking-[0.12em]"
+                              >
+                                Abrir biblioteca de midia
+                              </Button>
                             </div>
                           ))}
                         </div>
