@@ -17,7 +17,7 @@ import {
   resolveSectionRegistryTemplateKey,
   SectionStructureControl,
 } from '@/features/site-editor/section-registry'
-import { EditableContainer, EditableImage, EditableText, getEditableImagePresentation, useEditableValue } from '@/features/site-editor/visual-editor'
+import { EditableContainer, EditableImage, EditableText, getEditableImagePresentation, useEditableValue, useSiteContentScope } from '@/features/site-editor/visual-editor'
 
 const contactSectionTemplates = [
   {
@@ -188,7 +188,9 @@ function ContactFormSection({
 
 export function PublicContactPage() {
   const { isLoading, user, roles } = useAuth()
+  const siteContentScope = useSiteContentScope()
   const waitingRoleResolution = !!user && roles.length === 0
+  const waitingSiteContent = siteContentScope?.isReady === false
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [emailConfirmation, setEmailConfirmation] = useState('')
@@ -245,7 +247,7 @@ export function PublicContactPage() {
     }
   }
 
-  if (isLoading || waitingRoleResolution) {
+  if (isLoading || waitingRoleResolution || waitingSiteContent) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-[#10242b] p-6 font-manrope">
         <p className="text-sm font-extrabold uppercase tracking-[0.28em] text-white/72">Carregando GenFlix...</p>
