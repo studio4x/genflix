@@ -428,16 +428,18 @@ export function HomeBannerCarousel({
                 className="absolute inset-0 hidden lg:block"
                 style={{
                   backgroundImage: getBackgroundImage(theme.overlay, desktopBackgroundUrl),
-                  backgroundPosition: 'center',
-                  backgroundSize: 'cover',
+                  backgroundPosition: banner.backgroundDesktop.position,
+                  backgroundSize: banner.backgroundDesktop.size,
+                  backgroundRepeat: banner.backgroundDesktop.repeat,
                 }}
               />
               <div
                 className="absolute inset-0 lg:hidden"
                 style={{
                   backgroundImage: getBackgroundImage(theme.overlay, mobileBackgroundUrl),
-                  backgroundPosition: 'center',
-                  backgroundSize: 'cover',
+                  backgroundPosition: banner.backgroundMobile.position,
+                  backgroundSize: banner.backgroundMobile.size,
+                  backgroundRepeat: banner.backgroundMobile.repeat,
                 }}
               />
               <div ref={contentRef} className="public-site-container relative h-full">

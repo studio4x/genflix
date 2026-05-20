@@ -5,6 +5,7 @@ import {
   createDefaultSiteBanner,
   defaultBannerLayoutDesktop,
   defaultBannerLayoutMobile,
+  defaultBannerBackgroundConfig,
   defaultBannerElementStyles,
   defaultBannerHeightDesktop,
   defaultBannerHeightMobile,
@@ -22,6 +23,7 @@ import {
   type SiteBannerPlacementKey,
   type SiteBannerLocationKey,
   type SiteBannerThemePreset,
+  type SiteBannerBackgroundConfig,
   type SiteBannerVersion,
   cloneBannerElementStyles,
 } from '@/features/banners/types'
@@ -38,6 +40,12 @@ type SiteBannerRow = {
   background_url: string | null
   background_asset_id_mobile: string | null
   background_url_mobile: string | null
+  background_position_desktop: string | null
+  background_size_desktop: string | null
+  background_repeat_desktop: string | null
+  background_position_mobile: string | null
+  background_size_mobile: string | null
+  background_repeat_mobile: string | null
   theme_preset: string
   layout_desktop: Record<string, unknown> | null
   layout_mobile: Record<string, unknown> | null
@@ -73,6 +81,8 @@ type UpdateSiteBannerInput = {
   backgroundUrl?: string
   backgroundAssetIdMobile?: string | null
   backgroundUrlMobile?: string
+  backgroundDesktop?: SiteBannerBackgroundConfig
+  backgroundMobile?: SiteBannerBackgroundConfig
   themePreset?: SiteBannerThemePreset
   layoutDesktop?: SiteBannerLayoutDesktop
   layoutMobile?: SiteBannerLayoutMobile
@@ -202,6 +212,16 @@ function normalizeBanner(row: SiteBannerRow): SiteBanner {
     backgroundUrl: row.background_url ?? '/images/genflix/home/hero.jpg',
     backgroundAssetIdMobile: row.background_asset_id_mobile,
     backgroundUrlMobile: row.background_url_mobile ?? row.background_url ?? '/images/genflix/home/hero.jpg',
+    backgroundDesktop: normalizeBackgroundConfig({
+      position: row.background_position_desktop,
+      size: row.background_size_desktop,
+      repeat: row.background_repeat_desktop,
+    }),
+    backgroundMobile: normalizeBackgroundConfig({
+      position: row.background_position_mobile,
+      size: row.background_size_mobile,
+      repeat: row.background_repeat_mobile,
+    }),
     themePreset: row.theme_preset as SiteBannerThemePreset,
     layoutDesktop: normalizeLayoutDesktop(row.layout_desktop),
     layoutMobile: normalizeLayoutMobile(row.layout_mobile),
@@ -219,6 +239,32 @@ function normalizeBanner(row: SiteBannerRow): SiteBanner {
   }
 }
 
+function normalizeBackgroundConfig(input: {
+  position: unknown
+  size: unknown
+  repeat: unknown
+}): SiteBannerBackgroundConfig {
+  return {
+    position: input.position === 'center center'
+      || input.position === 'left center'
+      || input.position === 'right center'
+      || input.position === 'center top'
+      || input.position === 'center bottom'
+      || input.position === 'left top'
+      || input.position === 'right top'
+      || input.position === 'left bottom'
+      || input.position === 'right bottom'
+      ? input.position
+      : defaultBannerBackgroundConfig.position,
+    size: input.size === 'cover' || input.size === 'contain' || input.size === 'auto' || input.size === '100% 100%'
+      ? input.size
+      : defaultBannerBackgroundConfig.size,
+    repeat: input.repeat === 'no-repeat' || input.repeat === 'repeat' || input.repeat === 'repeat-x' || input.repeat === 'repeat-y'
+      ? input.repeat
+      : defaultBannerBackgroundConfig.repeat,
+  }
+}
+
 function buildBannerSnapshot(banner: SiteBanner) {
   return {
     id: banner.id,
@@ -231,6 +277,8 @@ function buildBannerSnapshot(banner: SiteBanner) {
     backgroundUrl: banner.backgroundUrl,
     backgroundAssetIdMobile: banner.backgroundAssetIdMobile,
     backgroundUrlMobile: banner.backgroundUrlMobile,
+    backgroundDesktop: { ...banner.backgroundDesktop },
+    backgroundMobile: { ...banner.backgroundMobile },
     themePreset: banner.themePreset,
     layoutDesktop: cloneBannerLayout(banner.layoutDesktop),
     layoutMobile: cloneBannerLayout(banner.layoutMobile),
@@ -265,6 +313,12 @@ function normalizeBannerVersion(row: SiteBannerVersionRow): SiteBannerVersion | 
     background_url: typeof snapshotRecord.backgroundUrl === 'string' ? snapshotRecord.backgroundUrl : null,
     background_asset_id_mobile: typeof snapshotRecord.backgroundAssetIdMobile === 'string' ? snapshotRecord.backgroundAssetIdMobile : null,
     background_url_mobile: typeof snapshotRecord.backgroundUrlMobile === 'string' ? snapshotRecord.backgroundUrlMobile : null,
+    background_position_desktop: isRecord(snapshotRecord.backgroundDesktop) && typeof snapshotRecord.backgroundDesktop.position === 'string' ? snapshotRecord.backgroundDesktop.position : null,
+    background_size_desktop: isRecord(snapshotRecord.backgroundDesktop) && typeof snapshotRecord.backgroundDesktop.size === 'string' ? snapshotRecord.backgroundDesktop.size : null,
+    background_repeat_desktop: isRecord(snapshotRecord.backgroundDesktop) && typeof snapshotRecord.backgroundDesktop.repeat === 'string' ? snapshotRecord.backgroundDesktop.repeat : null,
+    background_position_mobile: isRecord(snapshotRecord.backgroundMobile) && typeof snapshotRecord.backgroundMobile.position === 'string' ? snapshotRecord.backgroundMobile.position : null,
+    background_size_mobile: isRecord(snapshotRecord.backgroundMobile) && typeof snapshotRecord.backgroundMobile.size === 'string' ? snapshotRecord.backgroundMobile.size : null,
+    background_repeat_mobile: isRecord(snapshotRecord.backgroundMobile) && typeof snapshotRecord.backgroundMobile.repeat === 'string' ? snapshotRecord.backgroundMobile.repeat : null,
     theme_preset: typeof snapshotRecord.themePreset === 'string' ? snapshotRecord.themePreset : 'light-strong',
     layout_desktop: isRecord(snapshotRecord.layoutDesktop) ? snapshotRecord.layoutDesktop : null,
     layout_mobile: isRecord(snapshotRecord.layoutMobile) ? snapshotRecord.layoutMobile : null,
@@ -314,7 +368,7 @@ async function currentUserId() {
 export async function fetchSiteBanners(locationKey: SiteBannerLocationKey = HOME_HERO_BANNER_LOCATION) {
   const { data, error } = await supabase
     .from('site_banners')
-    .select('id, location_key, name, title, subtitle, body, background_asset_id, background_url, background_asset_id_mobile, background_url_mobile, theme_preset, layout_desktop, layout_mobile, height_desktop, height_mobile, element_styles, primary_cta, secondary_cta, is_active, sort_order, created_by, updated_by, created_at, updated_at')
+    .select('id, location_key, name, title, subtitle, body, background_asset_id, background_url, background_asset_id_mobile, background_url_mobile, background_position_desktop, background_size_desktop, background_repeat_desktop, background_position_mobile, background_size_mobile, background_repeat_mobile, theme_preset, layout_desktop, layout_mobile, height_desktop, height_mobile, element_styles, primary_cta, secondary_cta, is_active, sort_order, created_by, updated_by, created_at, updated_at')
     .eq('location_key', locationKey)
     .order('sort_order', { ascending: true })
     .order('created_at', { ascending: true })
@@ -442,7 +496,7 @@ export async function deleteSiteBannerCarouselTarget(targetId: string) {
 export async function fetchActiveSiteBanners(locationKey: SiteBannerLocationKey = HOME_HERO_BANNER_LOCATION) {
   const { data, error } = await supabase
     .from('site_banners')
-    .select('id, location_key, name, title, subtitle, body, background_asset_id, background_url, background_asset_id_mobile, background_url_mobile, theme_preset, layout_desktop, layout_mobile, height_desktop, height_mobile, element_styles, primary_cta, secondary_cta, is_active, sort_order, created_by, updated_by, created_at, updated_at')
+    .select('id, location_key, name, title, subtitle, body, background_asset_id, background_url, background_asset_id_mobile, background_url_mobile, background_position_desktop, background_size_desktop, background_repeat_desktop, background_position_mobile, background_size_mobile, background_repeat_mobile, theme_preset, layout_desktop, layout_mobile, height_desktop, height_mobile, element_styles, primary_cta, secondary_cta, is_active, sort_order, created_by, updated_by, created_at, updated_at')
     .eq('location_key', locationKey)
     .eq('is_active', true)
     .order('sort_order', { ascending: true })
@@ -473,6 +527,12 @@ export async function createSiteBanner(locationKey: SiteBannerLocationKey = HOME
       background_url: draft.backgroundUrl,
       background_asset_id_mobile: draft.backgroundAssetIdMobile,
       background_url_mobile: draft.backgroundUrlMobile,
+      background_position_desktop: draft.backgroundDesktop.position,
+      background_size_desktop: draft.backgroundDesktop.size,
+      background_repeat_desktop: draft.backgroundDesktop.repeat,
+      background_position_mobile: draft.backgroundMobile.position,
+      background_size_mobile: draft.backgroundMobile.size,
+      background_repeat_mobile: draft.backgroundMobile.repeat,
       theme_preset: draft.themePreset,
       layout_desktop: draft.layoutDesktop,
       layout_mobile: draft.layoutMobile,
@@ -486,7 +546,7 @@ export async function createSiteBanner(locationKey: SiteBannerLocationKey = HOME
       created_by: userId,
       updated_by: userId,
     })
-    .select('id, location_key, name, title, subtitle, body, background_asset_id, background_url, background_asset_id_mobile, background_url_mobile, theme_preset, layout_desktop, layout_mobile, height_desktop, height_mobile, element_styles, primary_cta, secondary_cta, is_active, sort_order, created_by, updated_by, created_at, updated_at')
+    .select('id, location_key, name, title, subtitle, body, background_asset_id, background_url, background_asset_id_mobile, background_url_mobile, background_position_desktop, background_size_desktop, background_repeat_desktop, background_position_mobile, background_size_mobile, background_repeat_mobile, theme_preset, layout_desktop, layout_mobile, height_desktop, height_mobile, element_styles, primary_cta, secondary_cta, is_active, sort_order, created_by, updated_by, created_at, updated_at')
     .single()
 
   if (error) {
@@ -512,6 +572,16 @@ export async function updateSiteBanner(input: UpdateSiteBannerInput) {
   if (input.backgroundUrl !== undefined) payload.background_url = input.backgroundUrl
   if (input.backgroundAssetIdMobile !== undefined) payload.background_asset_id_mobile = input.backgroundAssetIdMobile
   if (input.backgroundUrlMobile !== undefined) payload.background_url_mobile = input.backgroundUrlMobile
+  if (input.backgroundDesktop !== undefined) {
+    payload.background_position_desktop = input.backgroundDesktop.position
+    payload.background_size_desktop = input.backgroundDesktop.size
+    payload.background_repeat_desktop = input.backgroundDesktop.repeat
+  }
+  if (input.backgroundMobile !== undefined) {
+    payload.background_position_mobile = input.backgroundMobile.position
+    payload.background_size_mobile = input.backgroundMobile.size
+    payload.background_repeat_mobile = input.backgroundMobile.repeat
+  }
   if (input.themePreset !== undefined) payload.theme_preset = input.themePreset
   if (input.layoutDesktop !== undefined) payload.layout_desktop = input.layoutDesktop
   if (input.layoutMobile !== undefined) payload.layout_mobile = input.layoutMobile
@@ -527,7 +597,7 @@ export async function updateSiteBanner(input: UpdateSiteBannerInput) {
     .from('site_banners')
     .update(payload)
     .eq('id', input.id)
-    .select('id, location_key, name, title, subtitle, body, background_asset_id, background_url, background_asset_id_mobile, background_url_mobile, theme_preset, layout_desktop, layout_mobile, height_desktop, height_mobile, element_styles, primary_cta, secondary_cta, is_active, sort_order, created_by, updated_by, created_at, updated_at')
+    .select('id, location_key, name, title, subtitle, body, background_asset_id, background_url, background_asset_id_mobile, background_url_mobile, background_position_desktop, background_size_desktop, background_repeat_desktop, background_position_mobile, background_size_mobile, background_repeat_mobile, theme_preset, layout_desktop, layout_mobile, height_desktop, height_mobile, element_styles, primary_cta, secondary_cta, is_active, sort_order, created_by, updated_by, created_at, updated_at')
     .single()
 
   if (error) {
@@ -588,6 +658,12 @@ export async function duplicateSiteBanner(banner: SiteBanner) {
       background_url: banner.backgroundUrl,
       background_asset_id_mobile: banner.backgroundAssetIdMobile,
       background_url_mobile: banner.backgroundUrlMobile,
+      background_position_desktop: banner.backgroundDesktop.position,
+      background_size_desktop: banner.backgroundDesktop.size,
+      background_repeat_desktop: banner.backgroundDesktop.repeat,
+      background_position_mobile: banner.backgroundMobile.position,
+      background_size_mobile: banner.backgroundMobile.size,
+      background_repeat_mobile: banner.backgroundMobile.repeat,
       theme_preset: banner.themePreset,
       layout_desktop: cloneBannerLayout(banner.layoutDesktop),
       layout_mobile: cloneBannerLayout(banner.layoutMobile),
@@ -601,7 +677,7 @@ export async function duplicateSiteBanner(banner: SiteBanner) {
       created_by: userId,
       updated_by: userId,
     })
-    .select('id, location_key, name, title, subtitle, body, background_asset_id, background_url, background_asset_id_mobile, background_url_mobile, theme_preset, layout_desktop, layout_mobile, height_desktop, height_mobile, element_styles, primary_cta, secondary_cta, is_active, sort_order, created_by, updated_by, created_at, updated_at')
+    .select('id, location_key, name, title, subtitle, body, background_asset_id, background_url, background_asset_id_mobile, background_url_mobile, background_position_desktop, background_size_desktop, background_repeat_desktop, background_position_mobile, background_size_mobile, background_repeat_mobile, theme_preset, layout_desktop, layout_mobile, height_desktop, height_mobile, element_styles, primary_cta, secondary_cta, is_active, sort_order, created_by, updated_by, created_at, updated_at')
     .single()
 
   if (error) {
@@ -640,6 +716,8 @@ export async function restoreSiteBannerVersion(version: SiteBannerVersion) {
     backgroundUrl: version.snapshot.backgroundUrl,
     backgroundAssetIdMobile: version.snapshot.backgroundAssetIdMobile,
     backgroundUrlMobile: version.snapshot.backgroundUrlMobile,
+    backgroundDesktop: { ...version.snapshot.backgroundDesktop },
+    backgroundMobile: { ...version.snapshot.backgroundMobile },
     themePreset: version.snapshot.themePreset,
     layoutDesktop: cloneBannerLayout(version.snapshot.layoutDesktop),
     layoutMobile: cloneBannerLayout(version.snapshot.layoutMobile),

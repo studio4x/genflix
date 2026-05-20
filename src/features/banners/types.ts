@@ -13,6 +13,24 @@ export type SiteBannerLayoutKey = 'title' | 'subtitle' | 'body' | 'primaryCta' |
 export type SiteBannerColorKey = SiteBannerLayoutKey
 
 export type SiteBannerPlacementKey = 'hero' | 'mid' | 'footer'
+export type SiteBannerBackgroundPosition =
+  | 'center center'
+  | 'left center'
+  | 'right center'
+  | 'center top'
+  | 'center bottom'
+  | 'left top'
+  | 'right top'
+  | 'left bottom'
+  | 'right bottom'
+export type SiteBannerBackgroundSize = 'cover' | 'contain' | 'auto' | '100% 100%'
+export type SiteBannerBackgroundRepeat = 'no-repeat' | 'repeat' | 'repeat-x' | 'repeat-y'
+
+export interface SiteBannerBackgroundConfig {
+  position: SiteBannerBackgroundPosition
+  size: SiteBannerBackgroundSize
+  repeat: SiteBannerBackgroundRepeat
+}
 
 export interface SiteBannerCarouselTarget {
   id: string
@@ -79,6 +97,8 @@ export interface SiteBanner {
   backgroundUrl: string
   backgroundAssetIdMobile: string | null
   backgroundUrlMobile: string
+  backgroundDesktop: SiteBannerBackgroundConfig
+  backgroundMobile: SiteBannerBackgroundConfig
   themePreset: SiteBannerThemePreset
   layoutDesktop: SiteBannerLayoutDesktop
   layoutMobile: SiteBannerLayoutMobile
@@ -122,6 +142,11 @@ export const defaultBannerLayoutMobile: SiteBannerLayoutMobile = {
 
 export const defaultBannerHeightDesktop = 760
 export const defaultBannerHeightMobile = 560
+export const defaultBannerBackgroundConfig: SiteBannerBackgroundConfig = {
+  position: 'center center',
+  size: 'cover',
+  repeat: 'no-repeat',
+}
 
 export const defaultBannerElementStyles: SiteBannerElementStyles = {
   title: {},
@@ -207,6 +232,8 @@ export function createDefaultSiteBanner(
     backgroundUrl: '/images/genflix/home/hero.jpg',
     backgroundAssetIdMobile: null,
     backgroundUrlMobile: '/images/genflix/home/hero.jpg',
+    backgroundDesktop: { ...defaultBannerBackgroundConfig },
+    backgroundMobile: { ...defaultBannerBackgroundConfig },
     themePreset: 'light-strong',
     layoutDesktop: structuredClone(defaultBannerLayoutDesktop),
     layoutMobile: structuredClone(defaultBannerLayoutMobile),
