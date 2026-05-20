@@ -15,7 +15,6 @@ import {
 import {
   EditableContainer,
   EditableButton,
-  EditableImage,
   EditableList,
   EditableText,
   isEditableItemVisible,
@@ -367,86 +366,6 @@ function HomeFeaturedSection({
   )
 }
 
-function HomeFinalCtaSection({
-  entryPrefix,
-  sectionId,
-  pageKey = 'home',
-}: {
-  entryPrefix: string
-  sectionId?: string
-  pageKey?: SitePageKey
-}) {
-  return (
-    <section id={sectionId} className="relative overflow-hidden">
-      <EditableContainer entryKey={`${entryPrefix}.card`} label="Container interno da chamada final da home" pageKey={pageKey}>
-        <EditableImage
-          entryKey={`${entryPrefix}.image`}
-          fallback={{ src: '/images/genflix/home/featured-6.jpg', alt: 'Plataforma GenFlix' }}
-          label="Imagem da chamada final da home"
-          pageKey={pageKey}
-        >
-          {(imageValue) => (
-            <div
-              className="relative flex min-h-[460px] w-full items-center justify-center px-6 py-16 text-center sm:min-h-[520px] sm:px-8"
-              style={{
-                backgroundImage: `linear-gradient(180deg, rgba(10, 54, 64, 0.58) 0%, rgba(10, 54, 64, 0.58) 100%), url(${typeof imageValue.src === 'string' ? imageValue.src : '/images/genflix/home/featured-6.jpg'})`,
-                backgroundPosition: 'center',
-                backgroundSize: 'cover',
-                backgroundRepeat: 'no-repeat',
-              }}
-            >
-              <div className="mx-auto flex w-full max-w-[780px] flex-col items-center justify-center">
-                <h2 className="text-[2rem] font-bold leading-[0.96] tracking-[-0.04em] text-white sm:text-[2.35rem]">
-                  <EditableText
-                    entryKey={`${entryPrefix}.title`}
-                    fallback="Muito alem do video."
-                    label="Titulo da chamada final da home"
-                    pageKey={pageKey}
-                  />
-                </h2>
-                <p className="mt-4 max-w-[640px] text-sm leading-7 text-white/90 sm:text-base">
-                  <EditableText
-                    entryKey={`${entryPrefix}.description`}
-                    fallback="Ferramentas pensadas para voce aprender, fixar e revisar do seu jeito."
-                    label="Descricao da chamada final da home"
-                    pageKey={pageKey}
-                  />
-                </p>
-                <div className="mt-7">
-                  <EditableButton
-                    entryKey={`${entryPrefix}.cta`}
-                    fallback={{ label: 'Ver todos os recursos', href: '/recursos', isInternal: true, tone: 'solid' }}
-                    label="Botao da chamada final da home"
-                    pageKey={pageKey}
-                  >
-                    {(buttonValue) => buttonValue.isHidden === true ? null : (
-                      <GenflixCtaButton asChild className="px-5 py-3" tone={normalizeGenflixCtaTone(buttonValue.tone)}>
-                        {buttonValue.isInternal === true ? (
-                          <Link to={typeof buttonValue.href === 'string' ? buttonValue.href : '/recursos'}>
-                            {typeof buttonValue.label === 'string' ? buttonValue.label : 'Ver todos os recursos'}
-                          </Link>
-                        ) : (
-                          <a
-                            href={typeof buttonValue.href === 'string' ? buttonValue.href : '/recursos'}
-                            target={buttonValue.openInNewTab === true ? '_blank' : undefined}
-                            rel={buttonValue.openInNewTab === true ? 'noreferrer' : undefined}
-                          >
-                            {typeof buttonValue.label === 'string' ? buttonValue.label : 'Ver todos os recursos'}
-                          </a>
-                        )}
-                      </GenflixCtaButton>
-                    )}
-                  </EditableButton>
-                </div>
-              </div>
-            </div>
-          )}
-        </EditableImage>
-      </EditableContainer>
-    </section>
-  )
-}
-
 export function PublicHomePage() {
   const { isLoading, user, roles } = useAuth()
   const waitingRoleResolution = !!user && roles.length === 0
@@ -488,12 +407,13 @@ export function PublicHomePage() {
         }
 
         if (templateKey === 'cta' || templateKey === 'newsletter') {
-          return <HomeFinalCtaSection key={section.id} entryPrefix={entryPrefix} sectionId={occurrence === 0 ? 'home-cta' : `home-cta-${occurrence + 1}`} pageKey={pageKey} />
+          return null
         }
 
         return null
       })}
 
+      <BannerPlacementSlot pageKey="home" placementKey="footer" />
       <GenflixPublicFooter />
     </main>
   )
