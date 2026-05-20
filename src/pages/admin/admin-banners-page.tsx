@@ -36,8 +36,8 @@ import {
   type SiteBannerVersion,
 } from '@/features/banners/types'
 import { GenflixCtaButton } from '@/components/public/genflix-cta-button'
-import { uploadSiteAsset } from '@/features/site-editor/api'
-import type { SitePageKey } from '@/features/site-editor/types'
+import { fetchSiteAssets, uploadSiteAsset } from '@/features/site-editor/api'
+import type { SiteAsset, SitePageKey } from '@/features/site-editor/types'
 import { cn } from '@/lib/utils'
 
 type BannerDragState = {
@@ -453,6 +453,12 @@ export function AdminBannersPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [uploadingBackground, setUploadingBackground] = useState<BannerBackgroundVariant | null>(null)
+  const [libraryAssets, setLibraryAssets] = useState<SiteAsset[]>([])
+  const [loadingLibraryAssets, setLoadingLibraryAssets] = useState(false)
+  const [backgroundLibrarySelection, setBackgroundLibrarySelection] = useState<Record<BannerBackgroundVariant, string>>({
+    desktop: '',
+    mobile: '',
+  })
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const stageRef = useRef<HTMLDivElement | null>(null)
@@ -533,6 +539,38 @@ export function AdminBannersPage() {
   useEffect(() => {
     void loadBanners(undefined, selectedLocationKey)
   }, [selectedLocationKey])
+
+  useEffect(() => {
+    let isMounted = true
+    setLoadingLibraryAssets(true)
+
+    void fetchSiteAssets(120)
+      .then((assets) => {
+        if (!isMounted) {
+          return
+        }
+
+        setLibraryAssets(assets.filter((asset) => (asset.mime_type ?? '').startsWith('image/')))
+      })
+      .catch((loadError) => {
+        if (!isMounted) {
+          return
+        }
+
+        setError(loadError instanceof Error ? loadError.message : 'Nao foi possivel carregar a biblioteca de midia.')
+      })
+      .finally(() => {
+        if (!isMounted) {
+          return
+        }
+
+        setLoadingLibraryAssets(false)
+      })
+
+    return () => {
+      isMounted = false
+    }
+  }, [])
 
   useEffect(() => {
     if (!draft) {
@@ -995,12 +1033,41 @@ export function AdminBannersPage() {
         backgroundAssetIdMobile: variant === 'mobile' ? asset.id : current.backgroundAssetIdMobile,
         backgroundUrlMobile: variant === 'mobile' ? (asset.public_url ?? current.backgroundUrlMobile) : current.backgroundUrlMobile,
       } : current)
+      setLibraryAssets((current) => [asset, ...current.filter((item) => item.id !== asset.id)])
       setMessage('Imagem do banner enviada. Salve para publicar a troca.')
     } catch (uploadError) {
       setError(uploadError instanceof Error ? uploadError.message : 'Nao foi possivel enviar a imagem.')
     } finally {
       setUploadingBackground(null)
     }
+  }
+
+  function handleBackgroundLibraryApply(variant: BannerBackgroundVariant) {
+    if (!draft) {
+      return
+    }
+
+    const selectedAssetId = backgroundLibrarySelection[variant]
+    if (!selectedAssetId) {
+      setError('Selecione uma imagem da biblioteca antes de aplicar.')
+      return
+    }
+
+    const selectedAsset = libraryAssets.find((asset) => asset.id === selectedAssetId)
+    if (!selectedAsset || !selectedAsset.public_url) {
+      setError('Nao foi possivel usar o item selecionado da biblioteca.')
+      return
+    }
+    const selectedAssetUrl = selectedAsset.public_url
+
+    setDraft((current) => current ? {
+      ...current,
+      backgroundAssetId: variant === 'desktop' ? selectedAsset.id : current.backgroundAssetId,
+      backgroundUrl: variant === 'desktop' ? selectedAssetUrl : current.backgroundUrl,
+      backgroundAssetIdMobile: variant === 'mobile' ? selectedAsset.id : current.backgroundAssetIdMobile,
+      backgroundUrlMobile: variant === 'mobile' ? selectedAssetUrl : current.backgroundUrlMobile,
+    } : current)
+    setMessage(`Imagem da biblioteca aplicada em ${variant === 'desktop' ? 'desktop' : 'mobile'}. Salve para publicar.`)
   }
 
   function handleCanvasPointerDown(key: SiteBannerLayoutKey, event: React.PointerEvent<HTMLDivElement>) {
@@ -1517,6 +1584,32 @@ export function AdminBannersPage() {
                                   className="sr-only"
                                 />
                               </label>
+                              <div className="mt-2 grid gap-2">
+                                <select
+                                  value={backgroundLibrarySelection[field.variant]}
+                                  onChange={(event) => setBackgroundLibrarySelection((current) => ({ ...current, [field.variant]: event.target.value }))}
+                                  disabled={loadingLibraryAssets || uploadingBackground !== null}
+                                  className="h-11 rounded-2xl border border-[#D8E6EB] bg-white px-3 text-xs font-semibold text-[#15323b] disabled:opacity-60"
+                                >
+                                  <option value="">
+                                    {loadingLibraryAssets ? 'Carregando biblioteca...' : 'Selecionar da biblioteca de midia'}
+                                  </option>
+                                  {libraryAssets.map((asset) => (
+                                    <option key={asset.id} value={asset.id}>
+                                      {(asset.alt ?? 'Imagem sem nome')} · {new Date(asset.created_at).toLocaleDateString('pt-BR')}
+                                    </option>
+                                  ))}
+                                </select>
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  onClick={() => handleBackgroundLibraryApply(field.variant)}
+                                  disabled={loadingLibraryAssets || uploadingBackground !== null || !backgroundLibrarySelection[field.variant]}
+                                  className="h-10 rounded-2xl border-[#D8E6EB] px-3 text-[10px] font-black uppercase tracking-[0.14em]"
+                                >
+                                  Usar da biblioteca
+                                </Button>
+                              </div>
                             </div>
                           ))}
                         </div>
