@@ -1652,7 +1652,7 @@ export function AdminBannersPage() {
                       <div className="rounded-[18px] border border-[#D8E6EB] bg-white p-4">
                         <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#5F7077]">Imagem de fundo</p>
                         <p className="mt-2 text-xs font-semibold text-[#7C8E94]">Use uma arte para desktop e outra para mobile. Se o mobile nao tiver imagem propria, ele herda a do desktop.</p>
-                        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                        <div className="mt-4 grid gap-3 md:grid-cols-2">
                           {([
                             {
                               variant: 'desktop' as const,
@@ -1688,7 +1688,7 @@ export function AdminBannersPage() {
                                 variant="outline"
                                 onClick={() => handleOpenLibraryModal(field.variant)}
                                 disabled={loadingLibraryAssets || uploadingBackground !== null}
-                                className="mt-2 h-10 w-full rounded-2xl border-[#D8E6EB] px-3 text-[10px] font-black uppercase tracking-[0.12em]"
+                                className="mt-2 h-10 w-full rounded-2xl border-[#D8E6EB] px-2 text-[9px] font-black uppercase tracking-[0.08em] whitespace-normal leading-tight"
                               >
                                 Abrir biblioteca de midia
                               </Button>
