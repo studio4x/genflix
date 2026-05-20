@@ -844,7 +844,7 @@ function parseEditorValue(entryType: SiteContentEntryType, rawValue: string) {
     return JSON.parse(rawValue) as unknown
   }
 
-  return rawValue
+  return sanitizeRichText(rawValue)
 }
 
 function workflowStatusClasses(status: SiteEditorWorkflowStatus) {
@@ -1985,7 +1985,7 @@ function EditorModal({
   const shouldParseJsonValue = ['list', 'json', 'link', 'button', 'image'].includes(editor.entryType)
   const isRichTextListEditor = editor.entryType === 'list' && listEditorConfig.kind === 'rich-text-list'
   const usesJsonEditor = shouldParseJsonValue && !isRichTextListEditor
-  const usesRichTextToolbar = editor.entryType === 'rich_text'
+  const usesRichTextToolbar = editor.entryType === 'rich_text' || editor.entryType === 'text'
   const isDirty = rawValue !== initialRawValue || JSON.stringify(initialTextStyle) !== JSON.stringify(textStyle)
   const parsedPreview = useMemo(() => {
     if (!shouldParseJsonValue) {
@@ -4052,7 +4052,7 @@ function EditorModal({
                       </div>
                     ) : null}
                   </div>
-                ) : editor.entryType === 'rich_text' ? (
+                ) : editor.entryType === 'rich_text' || editor.entryType === 'text' ? (
                   <div className="rounded-[18px] border border-[#D8E6EB] bg-white p-4">
                     <div
                       className="break-words text-sm leading-7 text-[#15323b] [&_img]:h-auto [&_img]:max-w-full [&_table]:my-6 [&_table]:w-full [&_table]:border-collapse [&_td]:border [&_td]:border-[#D8E6EB] [&_td]:px-3 [&_td]:py-2 [&_th]:border [&_th]:border-[#D8E6EB] [&_th]:bg-[#F8FCFD] [&_th]:px-3 [&_th]:py-2 [&_iframe]:min-h-[320px] [&_iframe]:w-full"
@@ -4529,7 +4529,16 @@ export function EditableText({
   const renderedStyle = inlineStyle && shouldRenderAsBlock && !inlineStyle.display
     ? { ...inlineStyle, display: 'inline-block' }
     : inlineStyle
-  const content = renderedStyle ? <span style={renderedStyle}>{value}</span> : <>{value}</>
+  const sanitizedValue = sanitizeRichText(value)
+  const containsHtml = /<[a-z][\s\S]*>/i.test(sanitizedValue)
+  const content = containsHtml
+    ? (
+      <div
+        style={renderedStyle}
+        dangerouslySetInnerHTML={{ __html: sanitizedValue }}
+      />
+    )
+    : (renderedStyle ? <span style={renderedStyle}>{value}</span> : <>{value}</>)
 
   if (!editor?.isEditing || !scope) {
     return content
