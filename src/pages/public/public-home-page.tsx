@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 
 import { useAuth } from '@/app/providers/auth-provider'
-import { HomeBannerCarousel } from '@/features/banners/home-banner-carousel'
+import { BannerPlacementSlot } from '@/features/banners/banner-placement-slot'
 import { GenflixCtaButton, normalizeGenflixCtaTone } from '@/components/public/genflix-cta-button'
 import { GenflixCourseCard } from '@/components/public/genflix-course-card'
 import { GenflixPublicFooter } from '@/components/public/genflix-public-footer'
@@ -467,7 +467,7 @@ export function PublicHomePage() {
   return (
     <main className="min-h-screen bg-[#F2F7F9] font-manrope text-[#163138]">
       <GenflixPublicHeader currentPage="home" navLinks={genflixNavLinks} />
-      <HomeBannerCarousel fallback={<HomeHeroFallbackSection />} />
+      <BannerPlacementSlot pageKey="home" placementKey="hero" fallback={<HomeHeroFallbackSection />} />
 
       <HomeStructureControl sections={homeSections} />
 
