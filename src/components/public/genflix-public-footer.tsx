@@ -237,16 +237,12 @@ export function GenflixPublicFooter({
               <div className="flex h-full items-center">
                 <GenflixCtaButton
                   asChild
-                  tone="surface"
+                  tone="solid"
                   className="min-h-[42px] w-full text-[13px]"
-                  customColors={{
-                    buttonTextColor: '#0A3640',
-                    iconTextColor: '#0A3640',
-                  }}
                 >
-                  <a href="https://genflix-omega.vercel.app/ensine-na-genflix">
+                  <Link to="/ensine-na-genflix">
                     Ensine na Genflix
-                  </a>
+                  </Link>
                 </GenflixCtaButton>
               </div>
             </div>

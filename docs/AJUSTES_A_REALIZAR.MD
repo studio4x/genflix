@@ -365,6 +365,6 @@ ok - a cor do ícone Gestão, na home, mfoi alterada depois que editei os itens 
 
 [OK] T109 - No editor visual, em todos os campos de textos, seja titulo ou descrição, o editor rico de texto deve estar ativado juntamente com a versão visual e html..
 
-[ ] t110 - Alterar o botão "ensine na genflix" no rodapé, para um botão padrão que já temos configurado na identidade visual.
+[OK] t110 - Alterar o botão "ensine na genflix" no rodapé, para um botão padrão que já temos configurado na identidade visual.
 
 [ ] t111 - Na página contato, ao carregar a página, a imagem aparece mas depois muda para a que eu defini no editor. Remova essa transferência..
