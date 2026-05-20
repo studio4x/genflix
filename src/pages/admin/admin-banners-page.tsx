@@ -967,12 +967,14 @@ export function AdminBannersPage() {
     }
   }
 
-  async function handleDeleteBanner() {
-    if (!selectedBanner) {
+  async function handleDeleteBanner(targetBanner?: SiteBanner) {
+    const bannerToDelete = targetBanner ?? selectedBanner
+
+    if (!bannerToDelete) {
       return
     }
 
-    if (!window.confirm(`Deseja realmente excluir o banner "${selectedBanner.name}"?`)) {
+    if (!window.confirm(`Deseja realmente excluir o banner "${bannerToDelete.name}"?`)) {
       return
     }
 
@@ -981,8 +983,8 @@ export function AdminBannersPage() {
     setError(null)
 
     try {
-      await deleteSiteBanner(selectedBanner.id)
-      const fallbackBannerId = banners.find((banner) => banner.id !== selectedBanner.id)?.id ?? null
+      await deleteSiteBanner(bannerToDelete.id)
+      const fallbackBannerId = banners.find((banner) => banner.id !== bannerToDelete.id)?.id ?? null
       await loadBanners(fallbackBannerId)
       setMessage('Banner excluido com sucesso.')
     } catch (deleteError) {
@@ -1660,12 +1662,24 @@ export function AdminBannersPage() {
                   <article
                     key={banner.id}
                     className={cn(
-                      'h-full rounded-[24px] border p-4 transition-all',
+                      'relative h-full rounded-[24px] border p-4 transition-all',
                       isSelected ? 'border-[#1398B7] bg-[#E8F6FA]' : 'border-[#D8E6EB] bg-[#F8FBFC] hover:border-[#B8D8E1]',
                     )}
                   >
+                    <button
+                      type="button"
+                      aria-label={`Excluir ${banner.name}`}
+                      onClick={(event) => {
+                        event.stopPropagation()
+                        void handleDeleteBanner(banner)
+                      }}
+                      disabled={saving}
+                      className="absolute right-3 top-3 inline-flex h-8 w-8 items-center justify-center rounded-full border border-rose-200 bg-white text-rose-600 transition-colors hover:bg-rose-50 hover:text-rose-700 disabled:opacity-50"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
                     <button type="button" onClick={() => maybeChangeSelection(banner.id)} className="w-full text-left">
-                      <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-start justify-between gap-3 pr-10">
                         <div className="min-w-0">
                           <p className="truncate text-sm font-black text-[#15323b]">{banner.name}</p>
                           <p className="mt-1 truncate text-xs font-semibold text-[#5F7077]">{banner.title}</p>
