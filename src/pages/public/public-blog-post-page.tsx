@@ -229,7 +229,7 @@ export function PublicBlogPostPage() {
 
   return (
     <main className="min-h-screen bg-white font-manrope text-[#1f2e39]">
-      <GenflixPublicHeader currentPage="blog" navLinks={genflixNavLinks} />
+      <GenflixPublicHeader navLinks={genflixNavLinks} />
 
       <section className="pb-14 pt-8">
         <div className="public-site-container max-w-[1040px]">

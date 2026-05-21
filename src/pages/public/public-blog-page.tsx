@@ -84,7 +84,7 @@ export function PublicBlogPage() {
 
   return (
     <main className="min-h-screen bg-white font-manrope text-[#1f2e39]">
-      <GenflixPublicHeader currentPage="blog" navLinks={genflixNavLinks} />
+      <GenflixPublicHeader navLinks={genflixNavLinks} />
 
       <section className="pb-12 pt-10">
         <div className="public-site-container">

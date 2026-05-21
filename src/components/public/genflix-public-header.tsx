@@ -257,7 +257,7 @@ export function GenflixPublicHeader({
   }
 
   const headerSectionStyle = {
-    backgroundColor: resolvedShellBackground ?? (useHomeTheme ? undefined : '#F2F8FA'),
+    backgroundColor: currentScopeAppearance.pageBackgroundColor ?? (useHomeTheme ? undefined : '#F2F8FA'),
   }
 
   return (
