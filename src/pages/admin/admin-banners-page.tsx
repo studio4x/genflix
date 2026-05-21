@@ -1034,6 +1034,9 @@ export function AdminBannersPage() {
         elementStyles: draft.elementStyles,
         primaryCta: draft.primaryCta,
         secondaryCta: draft.secondaryCta,
+        globalLinkHref: draft.globalLinkHref.trim(),
+        globalLinkIsInternal: draft.globalLinkIsInternal,
+        globalLinkOpenInNewTab: draft.globalLinkOpenInNewTab,
         isActive: draft.isActive,
         sortOrder: draft.sortOrder,
       })
@@ -1408,6 +1411,7 @@ export function AdminBannersPage() {
         ref={canvasRef}
         className={cn(
           'relative overflow-hidden rounded-[32px] border border-[#D8E6EB] bg-[#0A3640] shadow-[0_24px_60px_rgba(10,54,64,0.16)] transition-all duration-300',
+          draft?.globalLinkHref.trim() ? 'cursor-pointer' : '',
         )}
         style={{
           height: `${previewHeight}px`,
@@ -2032,6 +2036,39 @@ export function AdminBannersPage() {
                           ))}
                         </select>
                       </label>
+
+                      <div className="rounded-[16px] border border-[#D8E6EB] bg-[#F8FBFC] p-3">
+                        <p className="text-[10px] font-black uppercase tracking-[0.16em] text-[#5F7077]">Link global do banner</p>
+                        <p className="mt-1 text-xs font-semibold text-[#5F7077]">
+                          Quando preenchido, todo o banner fica clicavel no site e mostra cursor de ponteiro.
+                        </p>
+                        <div className="mt-3 grid gap-3">
+                          <label className="grid gap-2">
+                            <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">URL global</span>
+                            <input
+                              value={draft.globalLinkHref}
+                              onChange={(event) => setDraftField('globalLinkHref', event.target.value)}
+                              placeholder="/cursos ou https://exemplo.com"
+                              className="h-11 rounded-[16px] border border-[#D8E6EB] bg-white px-4 text-sm font-semibold text-[#15323b] outline-none"
+                            />
+                          </label>
+                          <label className="grid gap-2">
+                            <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Tipo do link global</span>
+                            <select
+                              value={draft.globalLinkIsInternal ? 'internal' : 'external'}
+                              onChange={(event) => setDraft((current) => current ? ({
+                                ...current,
+                                globalLinkIsInternal: event.target.value === 'internal',
+                                globalLinkOpenInNewTab: event.target.value === 'external',
+                              }) : current)}
+                              className="h-11 rounded-[16px] border border-[#D8E6EB] bg-white px-4 text-sm font-semibold text-[#15323b] outline-none"
+                            >
+                              <option value="internal">Interno</option>
+                              <option value="external">Externo</option>
+                            </select>
+                          </label>
+                        </div>
+                      </div>
                     </div>
                     </CollapsibleCard>
 

@@ -1,6 +1,6 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode, type TouchEvent } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type MouseEvent, type ReactNode, type TouchEvent } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 
 import { GenflixCtaButton } from '@/components/public/genflix-cta-button'
 import { fetchActiveSiteBanners } from '@/features/banners/api'
@@ -93,14 +93,14 @@ function BannerLink({
   if (cta.isInternal) {
     return (
       <GenflixCtaButton asChild tone={cta.tonePreset} className={className} customColors={customColors}>
-        <Link to={cta.href}>{cta.label}</Link>
+        <Link to={cta.href} data-banner-cta="true">{cta.label}</Link>
       </GenflixCtaButton>
     )
   }
 
   return (
     <GenflixCtaButton asChild tone={cta.tonePreset} className={className} customColors={customColors}>
-      <a href={cta.href} target={cta.openInNewTab ? '_blank' : undefined} rel={cta.openInNewTab ? 'noreferrer' : undefined}>
+      <a href={cta.href} target={cta.openInNewTab ? '_blank' : undefined} rel={cta.openInNewTab ? 'noreferrer' : undefined} data-banner-cta="true">
         {cta.label}
       </a>
     </GenflixCtaButton>
@@ -248,6 +248,7 @@ export function HomeBannerCarousel({
   autoplayIntervalMs?: number
   locationKey?: SiteBannerLocationKey
 }) {
+  const navigate = useNavigate()
   const [banners, setBanners] = useState<SiteBanner[]>([])
   const [activeIndex, setActiveIndex] = useState(0)
   const [isPaused, setIsPaused] = useState(false)
@@ -392,6 +393,25 @@ export function HomeBannerCarousel({
     goToNext(delta > 0 ? -1 : 1)
   }
 
+  function handleBannerClick(banner: SiteBanner, event: MouseEvent<HTMLElement>) {
+    const globalHref = banner.globalLinkHref.trim()
+    if (!globalHref) {
+      return
+    }
+
+    const target = event.target as HTMLElement | null
+    if (target?.closest('a,button,[data-banner-cta="true"]')) {
+      return
+    }
+
+    if (banner.globalLinkIsInternal) {
+      navigate(globalHref)
+      return
+    }
+
+    window.open(globalHref, banner.globalLinkOpenInNewTab ? '_blank' : '_self', 'noreferrer')
+  }
+
   if (isLoading || slides.length === 0) {
     return <>{fallback}</>
   }
@@ -425,10 +445,12 @@ export function HomeBannerCarousel({
               key={banner.id}
               className={cn(
                 'absolute inset-0 transition-opacity duration-700 ease-out',
+                banner.globalLinkHref.trim() ? 'cursor-pointer' : '',
                 isVisible ? 'opacity-100' : 'pointer-events-none opacity-0',
               )}
               aria-hidden={!isVisible}
-              >
+              onClick={(event) => handleBannerClick(banner, event)}
+            >
               <div
                 className="absolute inset-0 hidden lg:block"
                 style={{

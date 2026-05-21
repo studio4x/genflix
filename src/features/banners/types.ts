@@ -107,6 +107,9 @@ export interface SiteBanner {
   elementStyles: SiteBannerElementStyles
   primaryCta: SiteBannerCta | null
   secondaryCta: SiteBannerCta | null
+  globalLinkHref: string
+  globalLinkIsInternal: boolean
+  globalLinkOpenInNewTab: boolean
   isActive: boolean
   sortOrder: number
   createdBy: string | null
@@ -242,6 +245,9 @@ export function createDefaultSiteBanner(
     elementStyles: structuredClone(defaultBannerElementStyles),
     primaryCta: { ...defaultPrimaryBannerCta },
     secondaryCta: { ...defaultSecondaryBannerCta },
+    globalLinkHref: '',
+    globalLinkIsInternal: true,
+    globalLinkOpenInNewTab: false,
     isActive: false,
     sortOrder,
   }

@@ -45,7 +45,35 @@ export async function clearServerCache() {
   }
 }
 
-export async function clearBrowserCache() {
+function preserveSessionEntries(storage: Storage) {
+  const preserved = new Map<string, string>()
+  for (let index = 0; index < storage.length; index += 1) {
+    const key = storage.key(index)
+    if (!key) {
+      continue
+    }
+
+    if (key.startsWith('sb-') || key.includes('supabase.auth') || key.includes('-auth-token')) {
+      const value = storage.getItem(key)
+      if (value !== null) {
+        preserved.set(key, value)
+      }
+    }
+  }
+
+  return preserved
+}
+
+function restoreSessionEntries(storage: Storage, entries: Map<string, string>) {
+  for (const [key, value] of entries.entries()) {
+    storage.setItem(key, value)
+  }
+}
+
+export async function clearBrowserCache({ preserveLogin }: { preserveLogin: boolean }) {
+  const localSessionEntries = preserveLogin ? preserveSessionEntries(localStorage) : new Map<string, string>()
+  const sessionSessionEntries = preserveLogin ? preserveSessionEntries(sessionStorage) : new Map<string, string>()
+
   try {
     localStorage.clear()
   } catch {
@@ -81,6 +109,15 @@ export async function clearBrowserCache() {
             request.onblocked = () => resolve()
           })),
       )
+    } catch {
+      // noop
+    }
+  }
+
+  if (preserveLogin) {
+    try {
+      restoreSessionEntries(localStorage, localSessionEntries)
+      restoreSessionEntries(sessionStorage, sessionSessionEntries)
     } catch {
       // noop
     }

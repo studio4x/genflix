@@ -54,6 +54,9 @@ type SiteBannerRow = {
   element_styles: Record<string, unknown> | null
   primary_cta: unknown
   secondary_cta: unknown
+  global_link_href: string | null
+  global_link_is_internal: boolean | null
+  global_link_open_in_new_tab: boolean | null
   is_active: boolean
   sort_order: number
   created_by: string | null
@@ -91,6 +94,9 @@ type UpdateSiteBannerInput = {
   elementStyles?: SiteBannerElementStyles
   primaryCta?: SiteBannerCta | null
   secondaryCta?: SiteBannerCta | null
+  globalLinkHref?: string
+  globalLinkIsInternal?: boolean
+  globalLinkOpenInNewTab?: boolean
   isActive?: boolean
   sortOrder?: number
   changeReason?: string
@@ -230,6 +236,9 @@ function normalizeBanner(row: SiteBannerRow): SiteBanner {
     elementStyles: normalizeElementStyles(row.element_styles),
     primaryCta: normalizeCta(row.primary_cta, defaultPrimaryBannerCta),
     secondaryCta: normalizeCta(row.secondary_cta, defaultSecondaryBannerCta),
+    globalLinkHref: row.global_link_href ?? '',
+    globalLinkIsInternal: row.global_link_is_internal ?? true,
+    globalLinkOpenInNewTab: row.global_link_open_in_new_tab ?? false,
     isActive: row.is_active,
     sortOrder: row.sort_order,
     createdBy: row.created_by,
@@ -287,6 +296,9 @@ function buildBannerSnapshot(banner: SiteBanner) {
     elementStyles: cloneBannerElementStyles(banner.elementStyles),
     primaryCta: banner.primaryCta ? { ...banner.primaryCta } : null,
     secondaryCta: banner.secondaryCta ? { ...banner.secondaryCta } : null,
+    globalLinkHref: banner.globalLinkHref,
+    globalLinkIsInternal: banner.globalLinkIsInternal,
+    globalLinkOpenInNewTab: banner.globalLinkOpenInNewTab,
     isActive: banner.isActive,
     sortOrder: banner.sortOrder,
     createdBy: banner.createdBy,
@@ -327,6 +339,9 @@ function normalizeBannerVersion(row: SiteBannerVersionRow): SiteBannerVersion | 
     element_styles: isRecord(snapshotRecord.elementStyles) ? snapshotRecord.elementStyles : null,
     primary_cta: snapshotRecord.primaryCta ?? null,
     secondary_cta: snapshotRecord.secondaryCta ?? null,
+    global_link_href: typeof snapshotRecord.globalLinkHref === 'string' ? snapshotRecord.globalLinkHref : '',
+    global_link_is_internal: typeof snapshotRecord.globalLinkIsInternal === 'boolean' ? snapshotRecord.globalLinkIsInternal : true,
+    global_link_open_in_new_tab: typeof snapshotRecord.globalLinkOpenInNewTab === 'boolean' ? snapshotRecord.globalLinkOpenInNewTab : false,
     is_active: typeof snapshotRecord.isActive === 'boolean' ? snapshotRecord.isActive : false,
     sort_order: typeof snapshotRecord.sortOrder === 'number' ? snapshotRecord.sortOrder : 0,
     created_by: typeof snapshotRecord.createdBy === 'string' ? snapshotRecord.createdBy : null,
@@ -368,7 +383,7 @@ async function currentUserId() {
 export async function fetchSiteBanners(locationKey: SiteBannerLocationKey = HOME_HERO_BANNER_LOCATION) {
   const { data, error } = await supabase
     .from('site_banners')
-    .select('id, location_key, name, title, subtitle, body, background_asset_id, background_url, background_asset_id_mobile, background_url_mobile, background_position_desktop, background_size_desktop, background_repeat_desktop, background_position_mobile, background_size_mobile, background_repeat_mobile, theme_preset, layout_desktop, layout_mobile, height_desktop, height_mobile, element_styles, primary_cta, secondary_cta, is_active, sort_order, created_by, updated_by, created_at, updated_at')
+    .select('id, location_key, name, title, subtitle, body, background_asset_id, background_url, background_asset_id_mobile, background_url_mobile, background_position_desktop, background_size_desktop, background_repeat_desktop, background_position_mobile, background_size_mobile, background_repeat_mobile, theme_preset, layout_desktop, layout_mobile, height_desktop, height_mobile, element_styles, primary_cta, secondary_cta, global_link_href, global_link_is_internal, global_link_open_in_new_tab, is_active, sort_order, created_by, updated_by, created_at, updated_at')
     .eq('location_key', locationKey)
     .order('sort_order', { ascending: true })
     .order('created_at', { ascending: true })
@@ -496,7 +511,7 @@ export async function deleteSiteBannerCarouselTarget(targetId: string) {
 export async function fetchActiveSiteBanners(locationKey: SiteBannerLocationKey = HOME_HERO_BANNER_LOCATION) {
   const { data, error } = await supabase
     .from('site_banners')
-    .select('id, location_key, name, title, subtitle, body, background_asset_id, background_url, background_asset_id_mobile, background_url_mobile, background_position_desktop, background_size_desktop, background_repeat_desktop, background_position_mobile, background_size_mobile, background_repeat_mobile, theme_preset, layout_desktop, layout_mobile, height_desktop, height_mobile, element_styles, primary_cta, secondary_cta, is_active, sort_order, created_by, updated_by, created_at, updated_at')
+    .select('id, location_key, name, title, subtitle, body, background_asset_id, background_url, background_asset_id_mobile, background_url_mobile, background_position_desktop, background_size_desktop, background_repeat_desktop, background_position_mobile, background_size_mobile, background_repeat_mobile, theme_preset, layout_desktop, layout_mobile, height_desktop, height_mobile, element_styles, primary_cta, secondary_cta, global_link_href, global_link_is_internal, global_link_open_in_new_tab, is_active, sort_order, created_by, updated_by, created_at, updated_at')
     .eq('location_key', locationKey)
     .eq('is_active', true)
     .order('sort_order', { ascending: true })
@@ -541,12 +556,15 @@ export async function createSiteBanner(locationKey: SiteBannerLocationKey = HOME
       element_styles: draft.elementStyles,
       primary_cta: draft.primaryCta,
       secondary_cta: draft.secondaryCta,
+      global_link_href: draft.globalLinkHref,
+      global_link_is_internal: draft.globalLinkIsInternal,
+      global_link_open_in_new_tab: draft.globalLinkOpenInNewTab,
       is_active: draft.isActive,
       sort_order: draft.sortOrder,
       created_by: userId,
       updated_by: userId,
     })
-    .select('id, location_key, name, title, subtitle, body, background_asset_id, background_url, background_asset_id_mobile, background_url_mobile, background_position_desktop, background_size_desktop, background_repeat_desktop, background_position_mobile, background_size_mobile, background_repeat_mobile, theme_preset, layout_desktop, layout_mobile, height_desktop, height_mobile, element_styles, primary_cta, secondary_cta, is_active, sort_order, created_by, updated_by, created_at, updated_at')
+    .select('id, location_key, name, title, subtitle, body, background_asset_id, background_url, background_asset_id_mobile, background_url_mobile, background_position_desktop, background_size_desktop, background_repeat_desktop, background_position_mobile, background_size_mobile, background_repeat_mobile, theme_preset, layout_desktop, layout_mobile, height_desktop, height_mobile, element_styles, primary_cta, secondary_cta, global_link_href, global_link_is_internal, global_link_open_in_new_tab, is_active, sort_order, created_by, updated_by, created_at, updated_at')
     .single()
 
   if (error) {
@@ -590,6 +608,9 @@ export async function updateSiteBanner(input: UpdateSiteBannerInput) {
   if (input.elementStyles !== undefined) payload.element_styles = input.elementStyles
   if (input.primaryCta !== undefined) payload.primary_cta = input.primaryCta
   if (input.secondaryCta !== undefined) payload.secondary_cta = input.secondaryCta
+  if (input.globalLinkHref !== undefined) payload.global_link_href = input.globalLinkHref
+  if (input.globalLinkIsInternal !== undefined) payload.global_link_is_internal = input.globalLinkIsInternal
+  if (input.globalLinkOpenInNewTab !== undefined) payload.global_link_open_in_new_tab = input.globalLinkOpenInNewTab
   if (input.isActive !== undefined) payload.is_active = input.isActive
   if (input.sortOrder !== undefined) payload.sort_order = input.sortOrder
 
@@ -597,7 +618,7 @@ export async function updateSiteBanner(input: UpdateSiteBannerInput) {
     .from('site_banners')
     .update(payload)
     .eq('id', input.id)
-    .select('id, location_key, name, title, subtitle, body, background_asset_id, background_url, background_asset_id_mobile, background_url_mobile, background_position_desktop, background_size_desktop, background_repeat_desktop, background_position_mobile, background_size_mobile, background_repeat_mobile, theme_preset, layout_desktop, layout_mobile, height_desktop, height_mobile, element_styles, primary_cta, secondary_cta, is_active, sort_order, created_by, updated_by, created_at, updated_at')
+    .select('id, location_key, name, title, subtitle, body, background_asset_id, background_url, background_asset_id_mobile, background_url_mobile, background_position_desktop, background_size_desktop, background_repeat_desktop, background_position_mobile, background_size_mobile, background_repeat_mobile, theme_preset, layout_desktop, layout_mobile, height_desktop, height_mobile, element_styles, primary_cta, secondary_cta, global_link_href, global_link_is_internal, global_link_open_in_new_tab, is_active, sort_order, created_by, updated_by, created_at, updated_at')
     .single()
 
   if (error) {
@@ -672,12 +693,15 @@ export async function duplicateSiteBanner(banner: SiteBanner) {
       element_styles: cloneBannerElementStyles(banner.elementStyles),
       primary_cta: banner.primaryCta ? { ...banner.primaryCta } : null,
       secondary_cta: banner.secondaryCta ? { ...banner.secondaryCta } : null,
+      global_link_href: banner.globalLinkHref,
+      global_link_is_internal: banner.globalLinkIsInternal,
+      global_link_open_in_new_tab: banner.globalLinkOpenInNewTab,
       is_active: false,
       sort_order: nextSortOrder,
       created_by: userId,
       updated_by: userId,
     })
-    .select('id, location_key, name, title, subtitle, body, background_asset_id, background_url, background_asset_id_mobile, background_url_mobile, background_position_desktop, background_size_desktop, background_repeat_desktop, background_position_mobile, background_size_mobile, background_repeat_mobile, theme_preset, layout_desktop, layout_mobile, height_desktop, height_mobile, element_styles, primary_cta, secondary_cta, is_active, sort_order, created_by, updated_by, created_at, updated_at')
+    .select('id, location_key, name, title, subtitle, body, background_asset_id, background_url, background_asset_id_mobile, background_url_mobile, background_position_desktop, background_size_desktop, background_repeat_desktop, background_position_mobile, background_size_mobile, background_repeat_mobile, theme_preset, layout_desktop, layout_mobile, height_desktop, height_mobile, element_styles, primary_cta, secondary_cta, global_link_href, global_link_is_internal, global_link_open_in_new_tab, is_active, sort_order, created_by, updated_by, created_at, updated_at')
     .single()
 
   if (error) {
@@ -726,6 +750,9 @@ export async function restoreSiteBannerVersion(version: SiteBannerVersion) {
     elementStyles: cloneBannerElementStyles(version.snapshot.elementStyles),
     primaryCta: version.snapshot.primaryCta ? { ...version.snapshot.primaryCta } : null,
     secondaryCta: version.snapshot.secondaryCta ? { ...version.snapshot.secondaryCta } : null,
+    globalLinkHref: version.snapshot.globalLinkHref,
+    globalLinkIsInternal: version.snapshot.globalLinkIsInternal,
+    globalLinkOpenInNewTab: version.snapshot.globalLinkOpenInNewTab,
     isActive: version.snapshot.isActive,
     sortOrder: version.snapshot.sortOrder,
     changeReason: 'restore',

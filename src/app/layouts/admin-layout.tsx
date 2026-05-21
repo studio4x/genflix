@@ -110,7 +110,9 @@ export function AdminLayout() {
   }
 
   async function handleClearServerCache() {
-    const shouldProceed = window.confirm('Limpar cache do servidor agora? Isso pode afetar usuarios conectados por alguns segundos.')
+    const shouldProceed = window.confirm(
+      'Esta acao vai:\n- Acionar limpeza de cache no servidor\n- Recarregar configuracoes do PostgREST (schema/config)\n- Refletir alteracoes recentes de dados/config mais rapido\n- Nao encerra seu login no navegador\n\nDeseja continuar?',
+    )
     if (!shouldProceed) {
       return
     }
@@ -128,8 +130,12 @@ export function AdminLayout() {
     }
   }
 
-  async function handleClearBrowserCache() {
-    const shouldProceed = window.confirm('Limpar cache deste navegador e recarregar o painel?')
+  async function handleClearBrowserCache(preserveLogin: boolean) {
+    const shouldProceed = window.confirm(
+      preserveLogin
+        ? 'Esta acao vai:\n- Limpar cache do navegador (arquivos, caches e IndexedDB)\n- Limpar dados locais temporarios do painel\n- Preservar sua sessao de login atual\n- Recarregar a pagina ao final\n\nDeseja continuar?'
+        : 'Esta acao vai:\n- Limpar cache do navegador (arquivos, caches e IndexedDB)\n- Limpar localStorage e sessionStorage completos\n- Encerrar sua sessao atual (logout)\n- Recarregar a pagina ao final\n\nDeseja continuar?',
+    )
     if (!shouldProceed) {
       return
     }
@@ -137,7 +143,7 @@ export function AdminLayout() {
     setIsClearingBrowserCache(true)
     setCacheStatusMessage(null)
     try {
-      await clearBrowserCache()
+      await clearBrowserCache({ preserveLogin })
       window.location.reload()
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Falha ao limpar cache do navegador.'
@@ -177,13 +183,25 @@ export function AdminLayout() {
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={() => void handleClearBrowserCache()}
+                onClick={() => void handleClearBrowserCache(true)}
                 disabled={isClearingServerCache || isClearingBrowserCache}
                 className="rounded-xl border-[#D8E6EB] bg-white font-bold text-[#5f7077] hover:border-[#1398B7]/40 hover:text-[#163138]"
-                title="Limpar cache do navegador"
+                title="Limpar cache do navegador mantendo login"
               >
                 <Trash2 className="h-3.5 w-3.5" />
-                {isClearingBrowserCache ? 'Limpando navegador...' : 'Cache navegador'}
+                {isClearingBrowserCache ? 'Limpando navegador...' : 'Cache navegador (manter login)'}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => void handleClearBrowserCache(false)}
+                disabled={isClearingServerCache || isClearingBrowserCache}
+                className="rounded-xl border-[#D8E6EB] bg-white font-bold text-[#5f7077] hover:border-[#1398B7]/40 hover:text-[#163138]"
+                title="Limpar cache do navegador e deslogar"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                {isClearingBrowserCache ? 'Limpando completo...' : 'Cache completo'}
               </Button>
             </div>
             <NotificationCenter compact />
