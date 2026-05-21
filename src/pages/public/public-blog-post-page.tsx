@@ -245,7 +245,7 @@ export function PublicBlogPostPage() {
               <img src={post.image} alt={post.title} className="h-[220px] w-full object-cover sm:h-[320px] lg:h-[430px]" />
             </div>
 
-            <h1 className="mt-10 text-center text-[30px] font-semibold leading-tight tracking-[-0.02em] text-[#ff7a00] sm:text-[44px]">
+            <h1 className="mt-10 text-center text-3xl font-semibold leading-tight text-[#ff7a00] sm:text-4xl">
               {post.title}
             </h1>
 
@@ -253,7 +253,7 @@ export function PublicBlogPostPage() {
               <p className="mt-4 text-center text-sm font-semibold uppercase tracking-[0.15em] text-amber-700">Preview de rascunho (admin)</p>
             ) : null}
 
-            <div className="mt-8 space-y-3 text-[16px] leading-[1.5] text-[#5f6570] sm:text-[35px]">
+            <div className="mt-8 space-y-4 text-base leading-8 text-[#5f6570]">
               <p className="font-semibold">Introdução</p>
               <p>{post.excerpt}</p>
               {post.content.map((paragraph) => (
@@ -264,44 +264,44 @@ export function PublicBlogPostPage() {
 
           <section className="mt-16 grid gap-14 lg:grid-cols-2">
             <div>
-              <h2 className="text-center text-[38px] font-light leading-none text-[#646872] sm:text-[48px]">Compartilhe ou imprima esta postagem</h2>
+              <h2 className="text-center text-2xl font-light leading-tight text-[#646872] sm:text-3xl">Compartilhe ou imprima esta postagem</h2>
               <div className="mt-16 h-px w-full bg-[#7f7f7f]" />
-              <p className="mt-8 text-center text-[38px] font-light leading-none text-[#646872] sm:text-[48px]">Siga-nos nas redes sociais</p>
+              <p className="mt-8 text-center text-2xl font-light leading-tight text-[#646872] sm:text-3xl">Siga-nos nas redes sociais</p>
             </div>
 
             <div>
-              <h2 className="text-center text-[38px] font-light leading-none text-[#646872] sm:text-[48px]">Envie-nos o seu comentário</h2>
+              <h2 className="text-center text-2xl font-light leading-tight text-[#646872] sm:text-3xl">Envie-nos o seu comentário</h2>
 
               <form className="mt-8 space-y-3" onSubmit={(event) => event.preventDefault()}>
                 <input
                   type="text"
                   placeholder="Seu nome"
-                  className="h-12 w-full rounded-full border border-[#808798] bg-transparent px-4 text-[30px] text-[#666c76] outline-none placeholder:text-[#666c76]"
+                  className="h-12 w-full rounded-full border border-[#808798] bg-transparent px-4 text-sm text-[#666c76] outline-none placeholder:text-[#666c76]"
                 />
                 <input
                   type="email"
                   placeholder="Seu e-mail"
-                  className="h-12 w-full rounded-full border border-[#808798] bg-transparent px-4 text-[30px] text-[#666c76] outline-none placeholder:text-[#666c76]"
+                  className="h-12 w-full rounded-full border border-[#808798] bg-transparent px-4 text-sm text-[#666c76] outline-none placeholder:text-[#666c76]"
                 />
                 <input
                   type="email"
                   placeholder="Repita seu e-mail"
-                  className="h-12 w-full rounded-full border border-[#808798] bg-transparent px-4 text-[30px] text-[#666c76] outline-none placeholder:text-[#666c76]"
+                  className="h-12 w-full rounded-full border border-[#808798] bg-transparent px-4 text-sm text-[#666c76] outline-none placeholder:text-[#666c76]"
                 />
                 <textarea
                   rows={4}
                   placeholder="Seu comentário"
-                  className="w-full rounded-[26px] border border-[#808798] bg-transparent px-4 py-3 text-[30px] text-[#666c76] outline-none placeholder:text-[#666c76]"
+                  className="w-full rounded-[26px] border border-[#808798] bg-transparent px-4 py-3 text-sm text-[#666c76] outline-none placeholder:text-[#666c76]"
                 />
 
-                <label className="flex items-start gap-2 text-[22px] leading-7 text-[#4e61a3] sm:text-[32px]">
+                <label className="flex items-start gap-2 text-sm leading-6 text-[#4e61a3]">
                   <input type="checkbox" className="mt-1 h-4 w-4 accent-[#b85c3a]" defaultChecked />
                   <span>Concordo com os termos da política de privacidade e responsabilidade do site.</span>
                 </label>
 
                 <button
                   type="submit"
-                  className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-full border-2 border-[#ff7a00] text-[29px] font-semibold uppercase tracking-[0.16em] text-[#223247] hover:bg-[#fff5ea]"
+                  className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-full border-2 border-[#ff7a00] text-sm font-semibold uppercase tracking-[0.16em] text-[#223247] hover:bg-[#fff5ea]"
                 >
                   <span className="text-sm">➤</span>
                   Enviar

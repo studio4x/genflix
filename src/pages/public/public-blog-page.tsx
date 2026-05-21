@@ -99,8 +99,8 @@ export function PublicBlogPage() {
                   className="h-[220px] w-full object-cover sm:h-[320px] lg:h-[430px]"
                 />
 
-                <div className="absolute inset-x-4 bottom-4 bg-[#8f1800] px-4 py-4 text-center text-white sm:inset-x-auto sm:right-7 sm:top-7 sm:w-[180px] sm:px-5 sm:py-7">
-                  <h2 className="text-[28px] font-semibold leading-tight tracking-[-0.02em] sm:text-[36px]">{featuredPost.title}</h2>
+                <div className="absolute inset-x-4 bottom-4 bg-[#8f1800] px-4 py-4 text-center text-white sm:inset-x-auto sm:right-7 sm:top-7 sm:w-[220px] sm:px-5 sm:py-7">
+                  <h2 className="text-xl font-semibold leading-tight sm:text-2xl">{featuredPost.title}</h2>
                 </div>
               </article>
 
@@ -138,12 +138,12 @@ export function PublicBlogPage() {
             <aside className="space-y-8">
               <div className="h-[290px] bg-[#23b6a1]" />
               <div>
-                <h2 className="text-[42px] font-semibold leading-none tracking-[-0.03em] text-[#ff7a00]">Áreas do blog</h2>
+                <h2 className="text-3xl font-semibold leading-tight text-[#ff7a00]">Áreas do blog</h2>
                 <div className="mt-6 flex items-center gap-8">
                   <span className="h-px flex-1 bg-[#3b3b3b]" />
                   <span className="h-px flex-1 bg-[#3b3b3b]" />
                 </div>
-                <div className="mt-8 space-y-3 text-[36px] leading-none text-[#2f4b7d]">
+                <div className="mt-8 space-y-3 text-lg leading-none text-[#2f4b7d]">
                   {genflixBlogFilters.map((filter) => (
                     <button
                       key={filter}
@@ -174,14 +174,14 @@ export function PublicBlogPage() {
                 </div>
 
                 <div className="p-7">
-                  <h3 className="text-[42px] font-semibold leading-tight tracking-[-0.02em] text-[#243a64]">{post.title}</h3>
-                  <p className="mt-4 line-clamp-6 text-[31px] leading-[1.45] text-[#20364f]">{post.excerpt}</p>
+                  <h3 className="text-2xl font-semibold leading-tight text-[#243a64]">{post.title}</h3>
+                  <p className="mt-4 line-clamp-6 text-base leading-7 text-[#20364f]">{post.excerpt}</p>
                   <Link
                     to={`/blog/${post.slug}`}
-                    className="mt-6 inline-flex items-center gap-1 text-[30px] font-semibold uppercase tracking-[0.01em] text-[#ff7a00] hover:text-[#e86f00]"
+                    className="mt-6 inline-flex items-center gap-1 text-sm font-semibold uppercase tracking-[0.08em] text-[#ff7a00] hover:text-[#e86f00]"
                   >
                     Leia mais
-                    <ArrowRight className="h-5 w-5" />
+                    <ArrowRight className="h-4 w-4" />
                   </Link>
                 </div>
               </article>
@@ -190,7 +190,7 @@ export function PublicBlogPage() {
 
           {paginatedPosts.length === 0 ? (
             <div className="mt-10 rounded-[4px] border border-dashed border-[#d8d8d8] bg-[#f8f8f8] px-6 py-12 text-center">
-              <p className="text-[34px] font-semibold text-[#20364f]">Nenhum artigo encontrado com esse filtro.</p>
+              <p className="text-lg font-semibold text-[#20364f]">Nenhum artigo encontrado com esse filtro.</p>
             </div>
           ) : null}
 
