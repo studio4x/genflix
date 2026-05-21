@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from 'react'
-import { ChevronDown, ChevronRight } from 'lucide-react'
+import { ChevronDown, ChevronRight, RefreshCcw, Trash2 } from 'lucide-react'
 import { Link, Outlet, useLocation } from 'react-router-dom'
 
 import { useAuth } from '@/app/providers/auth-provider'
 import { PlatformFooter } from '@/components/layout/platform-footer'
 import { GenflixLogo } from '@/components/public/genflix-logo'
 import { Button } from '@/components/ui/button'
+import { clearBrowserCache, clearServerCache } from '@/features/admin/cache/api'
 import { NotificationCenter } from '@/features/notifications/notification-center'
 
 type AdminNavItem = {
@@ -88,6 +89,9 @@ function isLinkActive(pathname: string, linkTo: string) {
 export function AdminLayout() {
   const { profile, signOut } = useAuth()
   const location = useLocation()
+  const [isClearingServerCache, setIsClearingServerCache] = useState(false)
+  const [isClearingBrowserCache, setIsClearingBrowserCache] = useState(false)
+  const [cacheStatusMessage, setCacheStatusMessage] = useState<string | null>(null)
 
   const activeGroupKey = useMemo(() => {
     return adminNavGroups.find((group) => group.links.some((link) => isLinkActive(location.pathname, link.to)))?.key ?? adminNavGroups[0].key
@@ -105,6 +109,43 @@ export function AdminLayout() {
       : [...current, groupKey])
   }
 
+  async function handleClearServerCache() {
+    const shouldProceed = window.confirm('Limpar cache do servidor agora? Isso pode afetar usuarios conectados por alguns segundos.')
+    if (!shouldProceed) {
+      return
+    }
+
+    setIsClearingServerCache(true)
+    setCacheStatusMessage(null)
+    try {
+      await clearServerCache()
+      setCacheStatusMessage('Cache do servidor limpo com sucesso.')
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Falha ao limpar cache do servidor.'
+      setCacheStatusMessage(message)
+    } finally {
+      setIsClearingServerCache(false)
+    }
+  }
+
+  async function handleClearBrowserCache() {
+    const shouldProceed = window.confirm('Limpar cache deste navegador e recarregar o painel?')
+    if (!shouldProceed) {
+      return
+    }
+
+    setIsClearingBrowserCache(true)
+    setCacheStatusMessage(null)
+    try {
+      await clearBrowserCache()
+      window.location.reload()
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Falha ao limpar cache do navegador.'
+      setCacheStatusMessage(message)
+      setIsClearingBrowserCache(false)
+    }
+  }
+
   return (
     <main className="min-h-screen bg-[#F2F7F9] font-manrope text-[#163138]">
       <header className="sticky top-0 z-40 border-b border-[#D8E6EB] bg-[#F2F7F9]/95 backdrop-blur-md">
@@ -119,6 +160,32 @@ export function AdminLayout() {
           </div>
 
           <div className="flex items-center gap-3">
+            <div className="hidden items-center gap-2 xl:flex">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => void handleClearServerCache()}
+                disabled={isClearingServerCache || isClearingBrowserCache}
+                className="rounded-xl border-[#D8E6EB] bg-white font-bold text-[#5f7077] hover:border-[#1398B7]/40 hover:text-[#163138]"
+                title="Limpar cache do servidor"
+              >
+                <RefreshCcw className="h-3.5 w-3.5" />
+                {isClearingServerCache ? 'Limpando servidor...' : 'Cache servidor'}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => void handleClearBrowserCache()}
+                disabled={isClearingServerCache || isClearingBrowserCache}
+                className="rounded-xl border-[#D8E6EB] bg-white font-bold text-[#5f7077] hover:border-[#1398B7]/40 hover:text-[#163138]"
+                title="Limpar cache do navegador"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                {isClearingBrowserCache ? 'Limpando navegador...' : 'Cache navegador'}
+              </Button>
+            </div>
             <NotificationCenter compact />
             <div className="hidden items-center gap-3 rounded-full border border-[#D8E6EB] bg-white px-2 py-1.5 shadow-sm md:flex">
               <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#E8F6FA] text-xs font-black text-[#1398B7]">
@@ -140,6 +207,13 @@ export function AdminLayout() {
             </Button>
           </div>
         </div>
+        {cacheStatusMessage ? (
+          <div className="px-4 pb-3 sm:px-6 lg:px-8">
+            <p className="rounded-xl border border-[#D8E6EB] bg-white px-3 py-2 text-xs font-semibold text-[#5F7077]">
+              {cacheStatusMessage}
+            </p>
+          </div>
+        ) : null}
       </header>
 
       <div className="grid min-h-[calc(100vh-73px)] grid-cols-1 gap-6 px-4 py-5 sm:px-6 lg:grid-cols-[280px_minmax(0,1fr)] lg:px-8">
