@@ -368,3 +368,5 @@ ok - a cor do ícone Gestão, na home, mfoi alterada depois que editei os itens 
 [OK] t110 - Alterar o botão "ensine na genflix" no rodapé, para um botão padrão que já temos configurado na identidade visual.
 
 [OK] t111 - Na página contato, ao carregar a página, a imagem aparece mas depois muda para a que eu defini no editor. Remova essa transferência..
+
+[OK] t112 - Altere o nome do "link mágico" para "Acesso rápido". Insira também um texto com instruções de como funciona.

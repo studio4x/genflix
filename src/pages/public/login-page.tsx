@@ -69,7 +69,7 @@ export function LoginPage() {
     <GenflixAuthLayout
       entryPrefix="global.auth.login"
       title="Bem-vindo de volta"
-      subtitle={mode === 'password' ? 'Continue de onde parou.' : 'Entre sem senha usando um link mágico.'}
+      subtitle={mode === 'password' ? 'Continue de onde parou.' : 'Entre sem senha com Acesso rápido.'}
       imageUrl={genflixHeroImage}
     >
       <div className="border-b border-[#D8E6EB]">
@@ -120,12 +120,17 @@ export function LoginPage() {
           }`}
         >
           <MailCheck className="h-4 w-4" />
-          Link mágico
+          Acesso rápido
         </button>
       </div>
 
       {mode === 'magic-link' ? (
         <form className="mt-6 space-y-5" onSubmit={handleMagicLinkSubmit}>
+          <div className="rounded-[14px] border border-[#D8E6EB] bg-[#F6FAFB] px-4 py-3 text-sm text-[#4f656c]">
+            <p className="font-semibold text-[#15323b]">Como funciona o Acesso rápido:</p>
+            <p className="mt-1 leading-6">Informe seu e-mail, clique em enviar e abra o link recebido para entrar automaticamente, sem senha.</p>
+          </div>
+
           <label className="block space-y-2">
             <span className="text-sm font-medium text-[#4f656c]">E-mail:</span>
             <input
