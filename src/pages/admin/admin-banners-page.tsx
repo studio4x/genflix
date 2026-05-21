@@ -1619,9 +1619,9 @@ export function AdminBannersPage() {
               Fechar tela cheia
             </Button>
           ) : null}
-          <Button type="button" onClick={() => void handleCreateBanner()} disabled={saving} className="rounded-2xl bg-[#1398B7] px-5 font-black text-white hover:bg-[#1089A5]">
+          <Button type="button" onClick={() => void handleCreateCarousel()} disabled={saving} className="rounded-2xl bg-[#1398B7] px-5 font-black text-white hover:bg-[#1089A5]">
             <Plus className="mr-2 h-4 w-4" />
-            Novo banner
+            Novo carrossel
           </Button>
           <Button type="button" variant="outline" onClick={() => void handleDuplicateBanner()} disabled={!selectedBanner || saving} className="rounded-2xl border-[#D8E6EB]">
             <Copy className="mr-2 h-4 w-4" />
@@ -1666,6 +1666,9 @@ export function AdminBannersPage() {
                 </select>
                 <Button type="button" variant="outline" onClick={() => void handleCreateCarousel()} className="h-9 rounded-xl border-[#D8E6EB] px-3 text-[10px] font-black uppercase tracking-[0.12em]">
                   Novo carrossel
+                </Button>
+                <Button type="button" onClick={() => void handleCreateBanner()} disabled={saving} className="h-9 rounded-xl bg-[#1398B7] px-3 text-[10px] font-black uppercase tracking-[0.12em] text-white hover:bg-[#1089A5]">
+                  Novo banner
                 </Button>
               </div>
               <div className="rounded-full bg-[#E8F6FA] px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-[#1398B7]">
