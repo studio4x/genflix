@@ -134,6 +134,7 @@ export function GenflixPublicHeader({
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [viewport, setViewport] = useState<SiteAppearanceViewport>('desktop')
   const isHome = currentPage === 'home'
+  const isBlogScope = pathname === '/blog' || pathname.startsWith('/blog/')
   const headerTheme: SiteAppearanceTheme = isHome ? 'home' : 'light'
   const appearanceScopePageKey = resolveSiteAppearancePageKey(currentPage)
   const pageAppearanceEntry = scope?.entries.get(`${appearanceScopePageKey}:site.appearance`)?.value
@@ -154,6 +155,9 @@ export function GenflixPublicHeader({
     pageAppearanceRecord.scope === 'global' ? globalAppearanceRecord : pageAppearanceRecord,
     viewport,
   )
+  const resolvedShellBackground = isBlogScope
+    ? '#FFFFFF'
+    : (currentScopeAppearance.pageBackgroundColor ?? '#F2F7F9')
   const useHomeTheme = isHome && pageAppearanceRecord.scope !== 'global'
   const logoTheme = resolveLogoTheme(currentScopeAppearance.pageBackgroundColor, useHomeTheme)
   const ctaPath = user ? getDashboardPathForRoles(roles) : '/login'
@@ -211,7 +215,7 @@ export function GenflixPublicHeader({
     }
 
     document.body.dataset.genflixPublicShell = 'true'
-    document.body.style.setProperty('--genflix-page-background', currentScopeAppearance.pageBackgroundColor ?? '#F2F7F9')
+    document.body.style.setProperty('--genflix-page-background', resolvedShellBackground)
 
     return () => {
       if (document.body.dataset.genflixPublicShell === 'true') {
@@ -219,7 +223,7 @@ export function GenflixPublicHeader({
       }
       document.body.style.removeProperty('--genflix-page-background')
     }
-  }, [currentScopeAppearance.pageBackgroundColor])
+  }, [resolvedShellBackground])
 
   const openAppearanceEditor = (scopePageKey: SiteAppearanceScopeKey) => {
     if (!editor?.isEditing || !scope) {
@@ -253,7 +257,7 @@ export function GenflixPublicHeader({
   }
 
   const headerSectionStyle = {
-    backgroundColor: currentScopeAppearance.pageBackgroundColor ?? (useHomeTheme ? undefined : '#F2F8FA'),
+    backgroundColor: resolvedShellBackground ?? (useHomeTheme ? undefined : '#F2F8FA'),
   }
 
   return (
