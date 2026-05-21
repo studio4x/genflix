@@ -5,7 +5,6 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '@/app/providers/auth-provider'
 import { GenflixPublicFooter } from '@/components/public/genflix-public-footer'
 import { GenflixPublicHeader } from '@/components/public/genflix-public-header'
-import { BannerPlacementSlot } from '@/features/banners/banner-placement-slot'
 import {
   genflixBlogFilters,
   genflixBlogPosts,
@@ -86,7 +85,6 @@ export function PublicBlogPage() {
   return (
     <main className="min-h-screen bg-white font-manrope text-[#1f2e39]">
       <GenflixPublicHeader currentPage="blog" navLinks={genflixNavLinks} />
-      <BannerPlacementSlot pageKey="blog" placementKey="hero" />
 
       <section className="pb-12 pt-10">
         <div className="public-site-container">
