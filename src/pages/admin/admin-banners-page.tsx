@@ -1037,6 +1037,7 @@ export function AdminBannersPage() {
         globalLinkHref: draft.globalLinkHref.trim(),
         globalLinkIsInternal: draft.globalLinkIsInternal,
         globalLinkOpenInNewTab: draft.globalLinkOpenInNewTab,
+        globalLinkTarget: draft.globalLinkTarget,
         isActive: draft.isActive,
         sortOrder: draft.sortOrder,
       })
@@ -2059,12 +2060,27 @@ export function AdminBannersPage() {
                               onChange={(event) => setDraft((current) => current ? ({
                                 ...current,
                                 globalLinkIsInternal: event.target.value === 'internal',
-                                globalLinkOpenInNewTab: event.target.value === 'external',
                               }) : current)}
                               className="h-11 rounded-[16px] border border-[#D8E6EB] bg-white px-4 text-sm font-semibold text-[#15323b] outline-none"
                             >
                               <option value="internal">Interno</option>
                               <option value="external">Externo</option>
+                            </select>
+                          </label>
+                          <label className="grid gap-2">
+                            <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Destino do link global</span>
+                            <select
+                              value={draft.globalLinkTarget}
+                              onChange={(event) => setDraft((current) => current ? ({
+                                ...current,
+                                globalLinkTarget: event.target.value as SiteBanner['globalLinkTarget'],
+                                globalLinkOpenInNewTab: event.target.value !== 'same-tab',
+                              }) : current)}
+                              className="h-11 rounded-[16px] border border-[#D8E6EB] bg-white px-4 text-sm font-semibold text-[#15323b] outline-none"
+                            >
+                              <option value="same-tab">Mesma aba</option>
+                              <option value="new-tab">Nova aba</option>
+                              <option value="new-window">Nova janela</option>
                             </select>
                           </label>
                         </div>

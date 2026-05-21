@@ -404,12 +404,21 @@ export function HomeBannerCarousel({
       return
     }
 
-    if (banner.globalLinkIsInternal) {
-      navigate(globalHref)
+    if (banner.globalLinkTarget === 'same-tab') {
+      if (banner.globalLinkIsInternal) {
+        navigate(globalHref)
+      } else {
+        window.location.assign(globalHref)
+      }
       return
     }
 
-    window.open(globalHref, banner.globalLinkOpenInNewTab ? '_blank' : '_self', 'noreferrer')
+    if (banner.globalLinkTarget === 'new-window') {
+      window.open(globalHref, '_blank', 'noopener,noreferrer,width=1280,height=800')
+      return
+    }
+
+    window.open(globalHref, '_blank', 'noopener,noreferrer')
   }
 
   if (isLoading || slides.length === 0) {

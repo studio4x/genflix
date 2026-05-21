@@ -9,6 +9,7 @@ export type SiteBannerLocationKey = string
 
 export type SiteBannerThemePreset = 'light-strong' | 'light-soft' | 'dark-soft' | 'no-overlay'
 export type SiteBannerTonePreset = 'solid' | 'warm' | 'surface'
+export type SiteBannerLinkTarget = 'same-tab' | 'new-tab' | 'new-window'
 export type SiteBannerLayoutKey = 'title' | 'subtitle' | 'body' | 'primaryCta' | 'secondaryCta'
 export type SiteBannerColorKey = SiteBannerLayoutKey
 
@@ -110,6 +111,7 @@ export interface SiteBanner {
   globalLinkHref: string
   globalLinkIsInternal: boolean
   globalLinkOpenInNewTab: boolean
+  globalLinkTarget: SiteBannerLinkTarget
   isActive: boolean
   sortOrder: number
   createdBy: string | null
@@ -248,6 +250,7 @@ export function createDefaultSiteBanner(
     globalLinkHref: '',
     globalLinkIsInternal: true,
     globalLinkOpenInNewTab: false,
+    globalLinkTarget: 'same-tab',
     isActive: false,
     sortOrder,
   }
