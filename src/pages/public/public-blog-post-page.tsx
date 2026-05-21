@@ -229,7 +229,7 @@ export function PublicBlogPostPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#ececec] font-manrope text-[#1f2e39]">
+    <main className="min-h-screen bg-white font-manrope text-[#1f2e39]">
       <GenflixPublicHeader currentPage="blog" navLinks={genflixNavLinks} />
       <BannerPlacementSlot pageKey="blog-post" placementKey="hero" />
 
