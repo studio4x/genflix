@@ -196,20 +196,82 @@ export function PublicBlogPage() {
     <main className="min-h-screen bg-white font-manrope text-[#1f2e39]">
       <GenflixPublicHeader navLinks={genflixNavLinks} />
 
-      <section className="pb-12 pt-10">
+      <section className="pb-16 pt-10">
         <div className="public-site-container">
-          <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_224px]">
-            <div>
+          <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_224px]">
+            <div className="space-y-14">
               <BannerPlacementSlot pageKey="blog" placementKey="hero" />
+              <div>
+                <div className="grid gap-8 md:grid-cols-2 xl:grid-cols-3">
+                  {paginatedPosts.map((post) => (
+                    <article key={post.slug} className="overflow-hidden rounded-[4px] border border-[#dfdfdf] bg-[#f5f5f5] shadow-sm">
+                      <div className="aspect-[16/9] overflow-hidden">
+                        <img src={post.image} alt={post.title} className="h-full w-full object-cover" loading="lazy" />
+                      </div>
+
+                      <div className="p-7">
+                        <h3 className="text-2xl font-semibold leading-tight text-[#243a64]">{post.title}</h3>
+                        <p className="mt-4 line-clamp-6 text-base leading-7 text-[#20364f]">{post.excerpt}</p>
+                        <Link
+                          to={`/blog/${post.slug}`}
+                          className="mt-6 inline-flex items-center gap-1 text-sm font-semibold uppercase tracking-[0.08em] text-[#ff7a00] hover:text-[#e86f00]"
+                        >
+                          Leia mais
+                          <ArrowRight className="h-4 w-4" />
+                        </Link>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+
+                {paginatedPosts.length === 0 ? (
+                  <div className="mt-10 rounded-[4px] border border-dashed border-[#d8d8d8] bg-[#f8f8f8] px-6 py-12 text-center">
+                    <p className="text-lg font-semibold text-[#20364f]">Nenhum artigo encontrado com esse filtro.</p>
+                  </div>
+                ) : null}
+
+                <div className="mt-10 flex items-center justify-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+                    disabled={visibleCurrentPage === 1}
+                    className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#d8d8d8] bg-white text-[#20364f] transition-colors hover:bg-[#f4f4f4] disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </button>
+
+                  {Array.from({ length: pageCount }, (_, index) => index + 1).map((page) => (
+                    <button
+                      key={page}
+                      type="button"
+                      onClick={() => setCurrentPage(page)}
+                      className={cn(
+                        'inline-flex h-10 w-10 items-center justify-center rounded-full border text-sm font-semibold transition-colors',
+                        visibleCurrentPage === page
+                          ? 'border-[#243a64] bg-[#243a64] text-white'
+                          : 'border-[#d8d8d8] bg-white text-[#20364f] hover:bg-[#f4f4f4]',
+                      )}
+                    >
+                      {page}
+                    </button>
+                  ))}
+
+                  <button
+                    type="button"
+                    onClick={() => setCurrentPage((page) => Math.min(pageCount, page + 1))}
+                    disabled={visibleCurrentPage === pageCount}
+                    className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#d8d8d8] bg-white text-[#20364f] transition-colors hover:bg-[#f4f4f4] disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
             </div>
 
             <aside className="space-y-8">
               {currentSidebarSlide?.url ? (
                 currentSidebarSlide.linkUrl.trim() ? (
-                  <a
-                    href={currentSidebarSlide.linkUrl}
-                    className="block cursor-pointer"
-                  >
+                  <a href={currentSidebarSlide.linkUrl} className="block cursor-pointer">
                     <img
                       src={currentSidebarSlide.url}
                       alt={currentSidebarSlide.alt || 'Imagem lateral do blog'}
@@ -251,74 +313,6 @@ export function PublicBlogPage() {
                 </div>
               </div>
             </aside>
-          </div>
-        </div>
-      </section>
-
-      <section className="pb-16">
-        <div className="public-site-container">
-          <div className="grid gap-8 md:grid-cols-2 xl:grid-cols-3">
-            {paginatedPosts.map((post) => (
-              <article key={post.slug} className="overflow-hidden rounded-[4px] border border-[#dfdfdf] bg-[#f5f5f5] shadow-sm">
-                <div className="aspect-[16/9] overflow-hidden">
-                  <img src={post.image} alt={post.title} className="h-full w-full object-cover" loading="lazy" />
-                </div>
-
-                <div className="p-7">
-                  <h3 className="text-2xl font-semibold leading-tight text-[#243a64]">{post.title}</h3>
-                  <p className="mt-4 line-clamp-6 text-base leading-7 text-[#20364f]">{post.excerpt}</p>
-                  <Link
-                    to={`/blog/${post.slug}`}
-                    className="mt-6 inline-flex items-center gap-1 text-sm font-semibold uppercase tracking-[0.08em] text-[#ff7a00] hover:text-[#e86f00]"
-                  >
-                    Leia mais
-                    <ArrowRight className="h-4 w-4" />
-                  </Link>
-                </div>
-              </article>
-            ))}
-          </div>
-
-          {paginatedPosts.length === 0 ? (
-            <div className="mt-10 rounded-[4px] border border-dashed border-[#d8d8d8] bg-[#f8f8f8] px-6 py-12 text-center">
-              <p className="text-lg font-semibold text-[#20364f]">Nenhum artigo encontrado com esse filtro.</p>
-            </div>
-          ) : null}
-
-          <div className="mt-10 flex items-center justify-center gap-3">
-            <button
-              type="button"
-              onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
-              disabled={visibleCurrentPage === 1}
-              className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#d8d8d8] bg-white text-[#20364f] transition-colors hover:bg-[#f4f4f4] disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </button>
-
-            {Array.from({ length: pageCount }, (_, index) => index + 1).map((page) => (
-              <button
-                key={page}
-                type="button"
-                onClick={() => setCurrentPage(page)}
-                className={cn(
-                  'inline-flex h-10 w-10 items-center justify-center rounded-full border text-sm font-semibold transition-colors',
-                  visibleCurrentPage === page
-                    ? 'border-[#243a64] bg-[#243a64] text-white'
-                    : 'border-[#d8d8d8] bg-white text-[#20364f] hover:bg-[#f4f4f4]',
-                )}
-              >
-                {page}
-              </button>
-            ))}
-
-            <button
-              type="button"
-              onClick={() => setCurrentPage((page) => Math.min(pageCount, page + 1))}
-              disabled={visibleCurrentPage === pageCount}
-              className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#d8d8d8] bg-white text-[#20364f] transition-colors hover:bg-[#f4f4f4] disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              <ChevronRight className="h-4 w-4" />
-            </button>
           </div>
         </div>
       </section>
