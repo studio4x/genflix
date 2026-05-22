@@ -299,6 +299,29 @@ export function PublicBlogPage() {
             </div>
 
             <aside className="space-y-8">
+              <div>
+                <h2 className="text-3xl font-semibold leading-tight text-[#ff7a00]">Áreas do blog</h2>
+                <div className="mt-6 flex items-center gap-8">
+                  <span className="h-px flex-1 bg-[#3b3b3b]" />
+                  <span className="h-px flex-1 bg-[#3b3b3b]" />
+                </div>
+                <div className="mt-8 space-y-3 text-lg leading-none text-[#2f4b7d]">
+                  {genflixBlogFilters.map((filter) => (
+                    <button
+                      key={filter}
+                      type="button"
+                      onClick={() => {
+                        setSelectedFilter(filter)
+                        setCurrentPage(1)
+                      }}
+                      className={cn('block text-left transition-colors', selectedFilter === filter ? 'text-[#ff7a00]' : 'hover:text-[#ff7a00]')}
+                    >
+                      {filter}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               {sidebarBlocks.length > 0 ? sidebarBlocks.map((block, blockIndex) => {
                 const activeSlide = block.mode === 'carousel' && block.slides.length > 1
                   ? block.slides[sidebarCarouselTick % block.slides.length]
@@ -329,28 +352,6 @@ export function PublicBlogPage() {
               }) : (
                 <div className="aspect-[7/10] w-full bg-[#23b6a1]" />
               )}
-              <div>
-                <h2 className="text-3xl font-semibold leading-tight text-[#ff7a00]">Áreas do blog</h2>
-                <div className="mt-6 flex items-center gap-8">
-                  <span className="h-px flex-1 bg-[#3b3b3b]" />
-                  <span className="h-px flex-1 bg-[#3b3b3b]" />
-                </div>
-                <div className="mt-8 space-y-3 text-lg leading-none text-[#2f4b7d]">
-                  {genflixBlogFilters.map((filter) => (
-                    <button
-                      key={filter}
-                      type="button"
-                      onClick={() => {
-                        setSelectedFilter(filter)
-                        setCurrentPage(1)
-                      }}
-                      className={cn('block text-left transition-colors', selectedFilter === filter ? 'text-[#ff7a00]' : 'hover:text-[#ff7a00]')}
-                    >
-                      {filter}
-                    </button>
-                  ))}
-                </div>
-              </div>
             </aside>
           </div>
         </div>
