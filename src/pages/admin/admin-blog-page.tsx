@@ -130,6 +130,14 @@ type TagFormState = SeoFields & {
   description: string
 }
 
+type BlogSidebarImageSlide = {
+  url: string
+  alt: string
+  linkUrl: string
+}
+
+type BlogSidebarImageMode = 'single' | 'carousel'
+
 const DEFAULT_SEO: SeoFields = {
   seo_title: '',
   seo_description: '',
@@ -481,8 +489,8 @@ export function AdminBlogPage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const [articleSuccessMessage, setArticleSuccessMessage] = useState<string | null>(null)
-  const [blogSidebarImageUrl, setBlogSidebarImageUrl] = useState('')
-  const [blogSidebarImageAlt, setBlogSidebarImageAlt] = useState('')
+  const [blogSidebarImageMode, setBlogSidebarImageMode] = useState<BlogSidebarImageMode>('single')
+  const [blogSidebarSlides, setBlogSidebarSlides] = useState<BlogSidebarImageSlide[]>([{ url: '', alt: '', linkUrl: '' }])
   const [isSavingLayout, setIsSavingLayout] = useState(false)
   const [isUploadingLayoutImage, setIsUploadingLayoutImage] = useState(false)
 
@@ -608,27 +616,52 @@ export function AdminBlogPage() {
       const value = layoutEntry?.value
 
       if (typeof value === 'string') {
-        setBlogSidebarImageUrl(value)
-        setBlogSidebarImageAlt('')
+        setBlogSidebarImageMode('single')
+        setBlogSidebarSlides([{ url: value, alt: '', linkUrl: '' }])
         return
       }
 
       if (value && typeof value === 'object' && !Array.isArray(value)) {
         const record = value as Record<string, unknown>
-        setBlogSidebarImageUrl(typeof record.url === 'string' ? record.url : '')
-        setBlogSidebarImageAlt(typeof record.alt === 'string' ? record.alt : '')
+        const slidesValue = Array.isArray(record.slides) ? record.slides : []
+        const parsedSlides = slidesValue
+          .map((slide) => {
+            if (!slide || typeof slide !== 'object' || Array.isArray(slide)) {
+              return null
+            }
+            const image = slide as Record<string, unknown>
+            return {
+              url: typeof image.url === 'string' ? image.url : '',
+              alt: typeof image.alt === 'string' ? image.alt : '',
+              linkUrl: typeof image.linkUrl === 'string' ? image.linkUrl : '',
+            } satisfies BlogSidebarImageSlide
+          })
+          .filter((slide): slide is BlogSidebarImageSlide => Boolean(slide))
+
+        if (parsedSlides.length > 0) {
+          setBlogSidebarImageMode(record.mode === 'carousel' ? 'carousel' : 'single')
+          setBlogSidebarSlides(parsedSlides)
+          return
+        }
+
+        setBlogSidebarImageMode('single')
+        setBlogSidebarSlides([{
+          url: typeof record.url === 'string' ? record.url : '',
+          alt: typeof record.alt === 'string' ? record.alt : '',
+          linkUrl: typeof record.linkUrl === 'string' ? record.linkUrl : '',
+        }])
         return
       }
 
-      setBlogSidebarImageUrl('')
-      setBlogSidebarImageAlt('')
+      setBlogSidebarImageMode('single')
+      setBlogSidebarSlides([{ url: '', alt: '', linkUrl: '' }])
     } catch {
-      setBlogSidebarImageUrl('')
-      setBlogSidebarImageAlt('')
+      setBlogSidebarImageMode('single')
+      setBlogSidebarSlides([{ url: '', alt: '', linkUrl: '' }])
     }
   }
 
-  async function handleUploadBlogSidebarImage(file: File | null) {
+  async function handleUploadBlogSidebarImage(file: File | null, index: number) {
     if (!file) {
       return
     }
@@ -643,12 +676,22 @@ export function AdminBlogPage() {
         entryKey: 'blog.sidebar.image',
       })
       if (uploaded.public_url) {
-        setBlogSidebarImageUrl(uploaded.public_url)
+        const uploadedUrl = uploaded.public_url ?? ''
+        setBlogSidebarSlides((current) => current.map((slide, slideIndex) => (
+          slideIndex === index
+            ? { ...slide, url: uploadedUrl }
+            : slide
+        )))
       }
       if (uploaded.alt) {
-        setBlogSidebarImageAlt(uploaded.alt)
+        const uploadedAlt = uploaded.alt ?? ''
+        setBlogSidebarSlides((current) => current.map((slide, slideIndex) => (
+          slideIndex === index
+            ? { ...slide, alt: uploadedAlt }
+            : slide
+        )))
       }
-      setSuccessMessage('Imagem enviada com sucesso. Clique em "Salvar imagem lateral" para publicar.')
+      setSuccessMessage('Imagem enviada com sucesso. Clique em "Salvar configuração lateral" para publicar.')
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : 'Nao foi possivel enviar a imagem.')
     } finally {
@@ -666,14 +709,18 @@ export function AdminBlogPage() {
         entryKey: 'blog.sidebar.image',
         entryType: 'image',
         value: {
-          url: blogSidebarImageUrl.trim(),
-          alt: blogSidebarImageAlt.trim(),
+          mode: blogSidebarImageMode,
+          slides: blogSidebarSlides.map((slide) => ({
+            url: slide.url.trim(),
+            alt: slide.alt.trim(),
+            linkUrl: slide.linkUrl.trim(),
+          })).filter((slide) => slide.url),
         },
         schema: {
           kind: 'blog-sidebar-image',
         },
       })
-      setSuccessMessage('Imagem lateral do blog salva com sucesso.')
+      setSuccessMessage('Configuração lateral do blog salva com sucesso.')
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : 'Nao foi possivel salvar a imagem lateral.')
     } finally {
@@ -1901,46 +1948,119 @@ export function AdminBlogPage() {
           <article className="rounded-[28px] border border-[#D8E6EB] bg-white p-5">
             <h2 className="text-lg font-black tracking-tight text-[#15323b]">Imagem lateral da home do blog</h2>
             <p className="mt-2 text-sm font-medium text-[#5F7077]">
-              Esta imagem aparece no bloco lateral da página <code>/blog</code>, acima de "Áreas do blog".
+              Esta mídia aparece no bloco lateral da página <code>/blog</code>, acima de "Áreas do blog".
+            </p>
+            <p className="mt-1 text-xs font-semibold text-[#6d7f84]">
+              Recomendação de upload: <strong>640x920 px</strong> (proporção <strong>7:10</strong>), formato JPG ou WebP.
             </p>
 
             <div className="mt-4 grid gap-3">
               <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
-                URL da imagem
-                <input
-                  value={blogSidebarImageUrl}
-                  onChange={(event) => setBlogSidebarImageUrl(event.target.value)}
-                  placeholder="https://..."
+                Tipo de exibição
+                <select
+                  value={blogSidebarImageMode}
+                  onChange={(event) => setBlogSidebarImageMode(event.target.value as BlogSidebarImageMode)}
                   className="h-11 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800"
-                />
+                >
+                  <option value="single">Imagem única</option>
+                  <option value="carousel">Carrossel / slider</option>
+                </select>
               </label>
 
-              <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
-                Texto alternativo (ALT)
-                <input
-                  value={blogSidebarImageAlt}
-                  onChange={(event) => setBlogSidebarImageAlt(event.target.value)}
-                  className="h-11 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800"
-                />
-              </label>
+              {blogSidebarSlides.map((slide, index) => (
+                <div key={`slide-${index}`} className="rounded-2xl border border-[#D8E6EB] bg-[#F8FBFC] p-3">
+                  <div className="mb-2 flex items-center justify-between">
+                    <p className="text-xs font-black uppercase tracking-[0.16em] text-[#5F7077]">
+                      {blogSidebarImageMode === 'single' ? 'Imagem' : `Slide ${index + 1}`}
+                    </p>
+                    {blogSidebarImageMode === 'carousel' && blogSidebarSlides.length > 1 ? (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setBlogSidebarSlides((current) => current.filter((_, currentIndex) => currentIndex !== index))
+                        }}
+                        className="text-xs font-black uppercase tracking-[0.16em] text-red-600 hover:text-red-700"
+                      >
+                        Remover
+                      </button>
+                    ) : null}
+                  </div>
 
-              <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
-                Enviar arquivo
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={(event) => {
-                    const file = event.target.files?.[0] ?? null
-                    void handleUploadBlogSidebarImage(file)
-                    event.currentTarget.value = ''
-                  }}
-                  className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700"
-                />
-              </label>
+                  <div className="grid gap-3">
+                    <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
+                      URL da imagem
+                      <input
+                        value={slide.url}
+                        onChange={(event) => {
+                          const nextValue = event.target.value
+                          setBlogSidebarSlides((current) => current.map((currentSlide, currentIndex) => (
+                            currentIndex === index ? { ...currentSlide, url: nextValue } : currentSlide
+                          )))
+                        }}
+                        placeholder="https://..."
+                        className="h-11 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800"
+                      />
+                    </label>
+
+                    <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
+                      Link da imagem (URL de clique ao tocar/clicar na imagem)
+                      <input
+                        value={slide.linkUrl}
+                        onChange={(event) => {
+                          const nextValue = event.target.value
+                          setBlogSidebarSlides((current) => current.map((currentSlide, currentIndex) => (
+                            currentIndex === index ? { ...currentSlide, linkUrl: nextValue } : currentSlide
+                          )))
+                        }}
+                        placeholder="https://..."
+                        className="h-11 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800"
+                      />
+                    </label>
+
+                    <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
+                      Texto alternativo (ALT)
+                      <input
+                        value={slide.alt}
+                        onChange={(event) => {
+                          const nextValue = event.target.value
+                          setBlogSidebarSlides((current) => current.map((currentSlide, currentIndex) => (
+                            currentIndex === index ? { ...currentSlide, alt: nextValue } : currentSlide
+                          )))
+                        }}
+                        className="h-11 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800"
+                      />
+                    </label>
+
+                    <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
+                      Enviar arquivo
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(event) => {
+                          const file = event.target.files?.[0] ?? null
+                          void handleUploadBlogSidebarImage(file, index)
+                          event.currentTarget.value = ''
+                        }}
+                        className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700"
+                      />
+                    </label>
+                  </div>
+                </div>
+              ))}
+
+              {blogSidebarImageMode === 'carousel' ? (
+                <button
+                  type="button"
+                  onClick={() => setBlogSidebarSlides((current) => [...current, { url: '', alt: '', linkUrl: '' }])}
+                  className="h-10 rounded-xl border border-[#D8E6EB] bg-white px-3 text-sm font-black uppercase tracking-[0.12em] text-[#15323b] hover:bg-[#F8FBFC]"
+                >
+                  Adicionar imagem ao slider
+                </button>
+              ) : null}
 
               <div className="flex flex-wrap gap-2 border-t border-[#D8E6EB] pt-4">
                 <Button type="button" className="rounded-xl bg-[#1398B7] hover:bg-[#0A3640]" onClick={() => void handleSaveBlogLayoutImage()} disabled={isSavingLayout || isUploadingLayoutImage}>
-                  {isSavingLayout ? 'Salvando...' : 'Salvar imagem lateral'}
+                  {isSavingLayout ? 'Salvando...' : 'Salvar configuração lateral'}
                 </Button>
               </div>
             </div>
@@ -1949,10 +2069,10 @@ export function AdminBlogPage() {
           <article className="rounded-[28px] border border-[#D8E6EB] bg-white p-5">
             <h3 className="text-sm font-black uppercase tracking-[0.16em] text-[#5F7077]">Preview</h3>
             <div className="mt-4 overflow-hidden rounded-[8px] border border-[#D8E6EB] bg-[#F8FBFC]">
-              {blogSidebarImageUrl.trim() ? (
+              {blogSidebarSlides[0]?.url?.trim() ? (
                 <img
-                  src={blogSidebarImageUrl}
-                  alt={blogSidebarImageAlt || 'Imagem lateral do blog'}
+                  src={blogSidebarSlides[0].url}
+                  alt={blogSidebarSlides[0].alt || 'Imagem lateral do blog'}
                   className="h-[290px] w-full object-cover"
                 />
               ) : (

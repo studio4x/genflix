@@ -17,6 +17,15 @@ import { fetchSiteContent } from '@/features/site-editor/api'
 import { cn } from '@/lib/utils'
 
 const POSTS_PER_PAGE = 6
+const SIDEBAR_SLIDE_INTERVAL_MS = 4000
+
+type BlogSidebarImageSlide = {
+  url: string
+  alt: string
+  linkUrl: string
+}
+
+type BlogSidebarImageMode = 'single' | 'carousel'
 
 export function PublicBlogPage() {
   const { isLoading, user, roles } = useAuth()
@@ -24,8 +33,9 @@ export function PublicBlogPage() {
   const [selectedFilter, setSelectedFilter] = useState<(typeof genflixBlogFilters)[number]>('Todos')
   const [currentPage, setCurrentPage] = useState(1)
   const [posts, setPosts] = useState<GenflixBlogPost[]>(genflixBlogPosts)
-  const [sidebarImageUrl, setSidebarImageUrl] = useState('')
-  const [sidebarImageAlt, setSidebarImageAlt] = useState('')
+  const [sidebarImageMode, setSidebarImageMode] = useState<BlogSidebarImageMode>('single')
+  const [sidebarSlides, setSidebarSlides] = useState<BlogSidebarImageSlide[]>([])
+  const [sidebarSlideIndex, setSidebarSlideIndex] = useState(0)
 
   useEffect(() => {
     let isMounted = true
@@ -64,24 +74,61 @@ export function PublicBlogPage() {
         }
 
         if (typeof value === 'string') {
-          setSidebarImageUrl(value)
-          setSidebarImageAlt('')
+          setSidebarImageMode('single')
+          setSidebarSlides([{ url: value, alt: '', linkUrl: '' }])
+          setSidebarSlideIndex(0)
           return
         }
 
         if (value && typeof value === 'object' && !Array.isArray(value)) {
           const record = value as Record<string, unknown>
-          setSidebarImageUrl(typeof record.url === 'string' ? record.url : '')
-          setSidebarImageAlt(typeof record.alt === 'string' ? record.alt : '')
+          const slidesValue = Array.isArray(record.slides) ? record.slides : []
+          const parsedSlides = slidesValue
+            .map((slide) => {
+              if (!slide || typeof slide !== 'object' || Array.isArray(slide)) {
+                return null
+              }
+              const image = slide as Record<string, unknown>
+              return {
+                url: typeof image.url === 'string' ? image.url : '',
+                alt: typeof image.alt === 'string' ? image.alt : '',
+                linkUrl: typeof image.linkUrl === 'string' ? image.linkUrl : '',
+              } satisfies BlogSidebarImageSlide
+            })
+            .filter((slide): slide is BlogSidebarImageSlide => Boolean(slide && slide.url))
+
+          if (parsedSlides.length > 0) {
+            setSidebarImageMode(record.mode === 'carousel' ? 'carousel' : 'single')
+            setSidebarSlides(parsedSlides)
+            setSidebarSlideIndex(0)
+            return
+          }
+
+          const legacyUrl = typeof record.url === 'string' ? record.url : ''
+          if (legacyUrl) {
+            setSidebarImageMode('single')
+            setSidebarSlides([{
+              url: legacyUrl,
+              alt: typeof record.alt === 'string' ? record.alt : '',
+              linkUrl: typeof record.linkUrl === 'string' ? record.linkUrl : '',
+            }])
+            setSidebarSlideIndex(0)
+            return
+          }
+          setSidebarImageMode('single')
+          setSidebarSlides([])
+          setSidebarSlideIndex(0)
           return
         }
 
-        setSidebarImageUrl('')
-        setSidebarImageAlt('')
+        setSidebarImageMode('single')
+        setSidebarSlides([])
+        setSidebarSlideIndex(0)
       } catch {
         if (isMounted) {
-          setSidebarImageUrl('')
-          setSidebarImageAlt('')
+          setSidebarImageMode('single')
+          setSidebarSlides([])
+          setSidebarSlideIndex(0)
         }
       }
     }
@@ -92,6 +139,27 @@ export function PublicBlogPage() {
       isMounted = false
     }
   }, [])
+
+  useEffect(() => {
+    if (sidebarImageMode !== 'carousel' || sidebarSlides.length <= 1) {
+      return
+    }
+
+    const intervalId = window.setInterval(() => {
+      setSidebarSlideIndex((current) => (current + 1) % sidebarSlides.length)
+    }, SIDEBAR_SLIDE_INTERVAL_MS)
+
+    return () => {
+      window.clearInterval(intervalId)
+    }
+  }, [sidebarImageMode, sidebarSlides.length])
+
+  useEffect(() => {
+    if (sidebarSlideIndex < sidebarSlides.length) {
+      return
+    }
+    setSidebarSlideIndex(0)
+  }, [sidebarSlides.length, sidebarSlideIndex])
 
   const filteredPosts = useMemo(() => {
     return posts.filter((post) => {
@@ -114,6 +182,8 @@ export function PublicBlogPage() {
     return listingPosts.slice(start, start + POSTS_PER_PAGE)
   }, [visibleCurrentPage, listingPosts])
 
+  const currentSidebarSlide = sidebarSlides[sidebarSlideIndex] ?? null
+
   if (isLoading || waitingRoleResolution) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-[#10242b] p-6 font-manrope">
@@ -134,13 +204,27 @@ export function PublicBlogPage() {
             </div>
 
             <aside className="space-y-8">
-              {sidebarImageUrl.trim() ? (
-                <img
-                  src={sidebarImageUrl}
-                  alt={sidebarImageAlt || 'Imagem lateral do blog'}
-                  className="h-[290px] w-full object-cover"
-                  loading="lazy"
-                />
+              {currentSidebarSlide?.url ? (
+                currentSidebarSlide.linkUrl.trim() ? (
+                  <a
+                    href={currentSidebarSlide.linkUrl}
+                    className="block cursor-pointer"
+                  >
+                    <img
+                      src={currentSidebarSlide.url}
+                      alt={currentSidebarSlide.alt || 'Imagem lateral do blog'}
+                      className="h-[290px] w-full object-cover"
+                      loading="lazy"
+                    />
+                  </a>
+                ) : (
+                  <img
+                    src={currentSidebarSlide.url}
+                    alt={currentSidebarSlide.alt || 'Imagem lateral do blog'}
+                    className="h-[290px] w-full object-cover"
+                    loading="lazy"
+                  />
+                )
               ) : (
                 <div className="h-[290px] bg-[#23b6a1]" />
               )}
