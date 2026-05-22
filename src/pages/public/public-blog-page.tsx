@@ -239,12 +239,12 @@ export function PublicBlogPage() {
                         <img src={post.image} alt={post.title} className="h-full w-full object-cover" loading="lazy" />
                       </div>
 
-                      <div className="p-7">
+                      <div className="flex min-h-[360px] flex-col p-7">
                         <h3 className="text-2xl font-semibold leading-tight text-[#243a64]">{post.title}</h3>
                         <p className="mt-4 line-clamp-6 text-base leading-7 text-[#20364f]">{post.excerpt}</p>
                         <Link
                           to={`/blog/${post.slug}`}
-                          className="mt-6 inline-flex items-center gap-1 text-sm font-semibold uppercase tracking-[0.08em] text-[#ff7a00] hover:text-[#e86f00]"
+                          className="mt-auto pt-6 inline-flex items-center gap-1 text-sm font-semibold uppercase tracking-[0.08em] text-[#ff7a00] hover:text-[#e86f00]"
                         >
                           Leia mais
                           <ArrowRight className="h-4 w-4" />
