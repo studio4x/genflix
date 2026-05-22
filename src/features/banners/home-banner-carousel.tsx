@@ -61,9 +61,9 @@ function getVerticalAnchorTransform(verticalAlign: SiteBanner['elementStyles']['
   return 'translateY(0)'
 }
 
-function toDesktopStyle(item: SiteBannerLayoutItem, scaleFactor: number) {
+function toDesignStyle(item: SiteBannerLayoutItem) {
   return {
-    left: `${item.x * scaleFactor}px`,
+    left: `${item.x}px`,
     top: `${item.y}px`,
     width: `${item.width}%`,
     zIndex: item.zIndex,
@@ -157,18 +157,27 @@ function DesktopBannerContent({ banner, scaleFactor }: { banner: SiteBanner; sca
 
   return (
     <div className="pointer-events-none absolute inset-0 hidden lg:block">
-      {desktopElements.map((element) => element.shouldRender ? (
-        <div
-          key={element.key}
-          className="pointer-events-auto absolute"
-          style={{
-            ...toDesktopStyle(element.item, scaleFactor),
-            transform: getVerticalAnchorTransform(banner.elementStyles[element.key].verticalAlign),
-          }}
-        >
-          {element.content}
-        </div>
-      ) : null)}
+      <div
+        className="absolute left-0 top-0 h-full"
+        style={{
+          width: `${DESKTOP_BANNER_DESIGN_WIDTH}px`,
+          transform: `scale(${scaleFactor})`,
+          transformOrigin: 'top left',
+        }}
+      >
+        {desktopElements.map((element) => element.shouldRender ? (
+          <div
+            key={element.key}
+            className="pointer-events-auto absolute"
+            style={{
+              ...toDesignStyle(element.item),
+              transform: getVerticalAnchorTransform(banner.elementStyles[element.key].verticalAlign),
+            }}
+          >
+            {element.content}
+          </div>
+        ) : null)}
+      </div>
     </div>
   )
 }
@@ -223,18 +232,27 @@ function MobileBannerContent({ banner, scaleFactor }: { banner: SiteBanner; scal
 
   return (
     <div className="pointer-events-none absolute inset-0 lg:hidden">
-      {mobileElements.map((element) => element.shouldRender ? (
-        <div
-          key={element.key}
-          className="pointer-events-auto absolute"
-          style={{
-            ...toDesktopStyle(element.item, scaleFactor),
-            transform: getVerticalAnchorTransform(banner.elementStyles[element.key].verticalAlign),
-          }}
-        >
-          {element.content}
-        </div>
-      ) : null)}
+      <div
+        className="absolute left-0 top-0 h-full"
+        style={{
+          width: `${MOBILE_BANNER_DESIGN_WIDTH}px`,
+          transform: `scale(${scaleFactor})`,
+          transformOrigin: 'top left',
+        }}
+      >
+        {mobileElements.map((element) => element.shouldRender ? (
+          <div
+            key={element.key}
+            className="pointer-events-auto absolute"
+            style={{
+              ...toDesignStyle(element.item),
+              transform: getVerticalAnchorTransform(banner.elementStyles[element.key].verticalAlign),
+            }}
+          >
+            {element.content}
+          </div>
+        ) : null)}
+      </div>
     </div>
   )
 }
