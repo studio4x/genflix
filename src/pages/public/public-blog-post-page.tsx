@@ -1,5 +1,6 @@
 ﻿import { useEffect, useState } from 'react'
-import { Navigate, useParams, useSearchParams } from 'react-router-dom'
+import { Link, Navigate, useParams, useSearchParams } from 'react-router-dom'
+import { ArrowLeftCircle, Send } from 'lucide-react'
 
 import { useAuth } from '@/app/providers/auth-provider'
 import { GenflixPublicFooter } from '@/components/public/genflix-public-footer'
@@ -242,11 +243,11 @@ export function PublicBlogPostPage() {
             ) : null}
 
             <div className="mt-10 grid gap-10 lg:grid-cols-[280px_minmax(0,1fr)]">
-              <h1 className="font-lora text-[52px] leading-[1.18] text-[#008f9c]">
+              <h1 className="font-lora text-[42px] leading-[1.12] text-[#008f9c] sm:text-[48px] lg:text-[56px]">
                 {post.title}
               </h1>
 
-              <div className="space-y-5 font-lora text-[40px] leading-[1.65] text-[#343434]">
+              <div className="space-y-5 font-lora text-[19px] leading-[1.7] text-[#343434]">
                 <p>{post.excerpt}</p>
                 {post.content.map((paragraph, index) => (
                   <p key={`${post.slug}-paragraph-${index}`}>{paragraph}</p>
@@ -255,52 +256,22 @@ export function PublicBlogPostPage() {
             </div>
           </article>
 
-          <section className="mt-16 grid gap-14 lg:grid-cols-2">
-            <div>
-              <h2 className="text-center text-2xl font-light leading-tight text-[#646872] sm:text-3xl">Compartilhe ou imprima esta postagem</h2>
-              <div className="mt-16 h-px w-full bg-[#7f7f7f]" />
-              <p className="mt-8 text-center text-2xl font-light leading-tight text-[#646872] sm:text-3xl">Siga-nos nas redes sociais</p>
-            </div>
+          <section className="mt-12 flex flex-wrap items-center justify-center gap-6 pb-4 lg:mt-14 lg:justify-between lg:gap-10">
+            <Link
+              to="/blog"
+              className="inline-flex h-12 min-w-[210px] items-center justify-center gap-2 rounded-full border border-[#00808f] px-6 text-sm font-semibold uppercase tracking-[0.02em] text-[#032b36] transition-colors hover:bg-[#e6f4f6]"
+            >
+              <ArrowLeftCircle className="h-4 w-4" />
+              Voltar para o blog
+            </Link>
 
-            <div>
-              <h2 className="text-center text-2xl font-light leading-tight text-[#646872] sm:text-3xl">Envie-nos o seu comentário</h2>
-
-              <form className="mt-8 space-y-3" onSubmit={(event) => event.preventDefault()}>
-                <input
-                  type="text"
-                  placeholder="Seu nome"
-                  className="h-12 w-full rounded-full border border-[#808798] bg-transparent px-4 text-sm text-[#666c76] outline-none placeholder:text-[#666c76]"
-                />
-                <input
-                  type="email"
-                  placeholder="Seu e-mail"
-                  className="h-12 w-full rounded-full border border-[#808798] bg-transparent px-4 text-sm text-[#666c76] outline-none placeholder:text-[#666c76]"
-                />
-                <input
-                  type="email"
-                  placeholder="Repita seu e-mail"
-                  className="h-12 w-full rounded-full border border-[#808798] bg-transparent px-4 text-sm text-[#666c76] outline-none placeholder:text-[#666c76]"
-                />
-                <textarea
-                  rows={4}
-                  placeholder="Seu comentário"
-                  className="w-full rounded-[26px] border border-[#808798] bg-transparent px-4 py-3 text-sm text-[#666c76] outline-none placeholder:text-[#666c76]"
-                />
-
-                <label className="flex items-start gap-2 text-sm leading-6 text-[#4e61a3]">
-                  <input type="checkbox" className="mt-1 h-4 w-4 accent-[#b85c3a]" defaultChecked />
-                  <span>Concordo com os termos da política de privacidade e responsabilidade do site.</span>
-                </label>
-
-                <button
-                  type="submit"
-                  className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-full border-2 border-[#ff7a00] text-sm font-semibold uppercase tracking-[0.16em] text-[#223247] hover:bg-[#fff5ea]"
-                >
-                  <span className="text-sm">➤</span>
-                  Enviar
-                </button>
-              </form>
-            </div>
+            <Link
+              to="/contato"
+              className="inline-flex h-12 min-w-[210px] items-center justify-center gap-2 rounded-full border border-[#00808f] px-6 text-sm font-semibold uppercase tracking-[0.02em] text-[#032b36] transition-colors hover:bg-[#e6f4f6]"
+            >
+              <Send className="h-4 w-4" />
+              Fale conosco
+            </Link>
           </section>
         </div>
       </section>
