@@ -138,6 +138,28 @@ type BlogSidebarImageSlide = {
 
 type BlogSidebarImageMode = 'single' | 'carousel'
 
+type BlogSidebarBlock = {
+  id: string
+  mode: BlogSidebarImageMode
+  slides: BlogSidebarImageSlide[]
+}
+
+function createSidebarBlockId() {
+  return `sidebar-block-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+}
+
+function createEmptySidebarSlide(): BlogSidebarImageSlide {
+  return { url: '', alt: '', linkUrl: '' }
+}
+
+function createEmptySidebarBlock(): BlogSidebarBlock {
+  return {
+    id: createSidebarBlockId(),
+    mode: 'single',
+    slides: [createEmptySidebarSlide()],
+  }
+}
+
 const DEFAULT_SEO: SeoFields = {
   seo_title: '',
   seo_description: '',
@@ -489,8 +511,7 @@ export function AdminBlogPage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const [articleSuccessMessage, setArticleSuccessMessage] = useState<string | null>(null)
-  const [blogSidebarImageMode, setBlogSidebarImageMode] = useState<BlogSidebarImageMode>('single')
-  const [blogSidebarSlides, setBlogSidebarSlides] = useState<BlogSidebarImageSlide[]>([{ url: '', alt: '', linkUrl: '' }])
+  const [blogSidebarBlocks, setBlogSidebarBlocks] = useState<BlogSidebarBlock[]>([createEmptySidebarBlock()])
   const [isSavingLayout, setIsSavingLayout] = useState(false)
   const [isUploadingLayoutImage, setIsUploadingLayoutImage] = useState(false)
 
@@ -616,13 +637,51 @@ export function AdminBlogPage() {
       const value = layoutEntry?.value
 
       if (typeof value === 'string') {
-        setBlogSidebarImageMode('single')
-        setBlogSidebarSlides([{ url: value, alt: '', linkUrl: '' }])
+        setBlogSidebarBlocks([{
+          id: createSidebarBlockId(),
+          mode: 'single',
+          slides: [{ url: value, alt: '', linkUrl: '' }],
+        }])
         return
       }
 
       if (value && typeof value === 'object' && !Array.isArray(value)) {
         const record = value as Record<string, unknown>
+
+        const blocksValue = Array.isArray(record.blocks) ? record.blocks : []
+        const parsedBlocks = blocksValue
+          .map((block) => {
+            if (!block || typeof block !== 'object' || Array.isArray(block)) {
+              return null
+            }
+            const mappedBlock = block as Record<string, unknown>
+            const mappedSlides = (Array.isArray(mappedBlock.slides) ? mappedBlock.slides : [])
+              .map((slide) => {
+                if (!slide || typeof slide !== 'object' || Array.isArray(slide)) {
+                  return null
+                }
+                const image = slide as Record<string, unknown>
+                return {
+                  url: typeof image.url === 'string' ? image.url : '',
+                  alt: typeof image.alt === 'string' ? image.alt : '',
+                  linkUrl: typeof image.linkUrl === 'string' ? image.linkUrl : '',
+                } satisfies BlogSidebarImageSlide
+              })
+              .filter((slide): slide is BlogSidebarImageSlide => Boolean(slide && slide.url))
+
+            return {
+              id: createSidebarBlockId(),
+              mode: mappedBlock.mode === 'carousel' ? 'carousel' : 'single',
+              slides: mappedSlides.length > 0 ? mappedSlides : [createEmptySidebarSlide()],
+            } satisfies BlogSidebarBlock
+          })
+          .filter((block): block is BlogSidebarBlock => Boolean(block))
+
+        if (parsedBlocks.length > 0) {
+          setBlogSidebarBlocks(parsedBlocks)
+          return
+        }
+
         const slidesValue = Array.isArray(record.slides) ? record.slides : []
         const parsedSlides = slidesValue
           .map((slide) => {
@@ -636,32 +695,42 @@ export function AdminBlogPage() {
               linkUrl: typeof image.linkUrl === 'string' ? image.linkUrl : '',
             } satisfies BlogSidebarImageSlide
           })
-          .filter((slide): slide is BlogSidebarImageSlide => Boolean(slide))
+          .filter((slide): slide is BlogSidebarImageSlide => Boolean(slide && slide.url))
 
         if (parsedSlides.length > 0) {
-          setBlogSidebarImageMode(record.mode === 'carousel' ? 'carousel' : 'single')
-          setBlogSidebarSlides(parsedSlides)
+          setBlogSidebarBlocks([{
+            id: createSidebarBlockId(),
+            mode: record.mode === 'carousel' ? 'carousel' : 'single',
+            slides: parsedSlides,
+          }])
           return
         }
 
-        setBlogSidebarImageMode('single')
-        setBlogSidebarSlides([{
-          url: typeof record.url === 'string' ? record.url : '',
-          alt: typeof record.alt === 'string' ? record.alt : '',
-          linkUrl: typeof record.linkUrl === 'string' ? record.linkUrl : '',
-        }])
+        const legacyUrl = typeof record.url === 'string' ? record.url : ''
+        if (legacyUrl) {
+          setBlogSidebarBlocks([{
+            id: createSidebarBlockId(),
+            mode: 'single',
+            slides: [{
+              url: legacyUrl,
+              alt: typeof record.alt === 'string' ? record.alt : '',
+              linkUrl: typeof record.linkUrl === 'string' ? record.linkUrl : '',
+            }],
+          }])
+          return
+        }
+
+        setBlogSidebarBlocks([createEmptySidebarBlock()])
         return
       }
 
-      setBlogSidebarImageMode('single')
-      setBlogSidebarSlides([{ url: '', alt: '', linkUrl: '' }])
+      setBlogSidebarBlocks([createEmptySidebarBlock()])
     } catch {
-      setBlogSidebarImageMode('single')
-      setBlogSidebarSlides([{ url: '', alt: '', linkUrl: '' }])
+      setBlogSidebarBlocks([createEmptySidebarBlock()])
     }
   }
 
-  async function handleUploadBlogSidebarImage(file: File | null, index: number) {
+  async function handleUploadBlogSidebarImage(file: File | null, blockIndex: number, slideIndex: number) {
     if (!file) {
       return
     }
@@ -677,19 +746,35 @@ export function AdminBlogPage() {
       })
       if (uploaded.public_url) {
         const uploadedUrl = uploaded.public_url ?? ''
-        setBlogSidebarSlides((current) => current.map((slide, slideIndex) => (
-          slideIndex === index
-            ? { ...slide, url: uploadedUrl }
-            : slide
-        )))
+        setBlogSidebarBlocks((currentBlocks) => currentBlocks.map((block, currentBlockIndex) => {
+          if (currentBlockIndex !== blockIndex) {
+            return block
+          }
+          return {
+            ...block,
+            slides: block.slides.map((slide, currentSlideIndex) => (
+              currentSlideIndex === slideIndex
+                ? { ...slide, url: uploadedUrl }
+                : slide
+            )),
+          }
+        }))
       }
       if (uploaded.alt) {
         const uploadedAlt = uploaded.alt ?? ''
-        setBlogSidebarSlides((current) => current.map((slide, slideIndex) => (
-          slideIndex === index
-            ? { ...slide, alt: uploadedAlt }
-            : slide
-        )))
+        setBlogSidebarBlocks((currentBlocks) => currentBlocks.map((block, currentBlockIndex) => {
+          if (currentBlockIndex !== blockIndex) {
+            return block
+          }
+          return {
+            ...block,
+            slides: block.slides.map((slide, currentSlideIndex) => (
+              currentSlideIndex === slideIndex
+                ? { ...slide, alt: uploadedAlt }
+                : slide
+            )),
+          }
+        }))
       }
       setSuccessMessage('Imagem enviada com sucesso. Clique em "Salvar configuração lateral" para publicar.')
     } catch (error) {
@@ -709,18 +794,20 @@ export function AdminBlogPage() {
         entryKey: 'blog.sidebar.image',
         entryType: 'image',
         value: {
-          mode: blogSidebarImageMode,
-          slides: blogSidebarSlides.map((slide) => ({
-            url: slide.url.trim(),
-            alt: slide.alt.trim(),
-            linkUrl: slide.linkUrl.trim(),
-          })).filter((slide) => slide.url),
+          blocks: blogSidebarBlocks.map((block) => ({
+            mode: block.mode,
+            slides: block.slides.map((slide) => ({
+              url: slide.url.trim(),
+              alt: slide.alt.trim(),
+              linkUrl: slide.linkUrl.trim(),
+            })).filter((slide) => slide.url),
+          })).filter((block) => block.slides.length > 0),
         },
         schema: {
-          kind: 'blog-sidebar-image',
+          kind: 'blog-sidebar-stack',
         },
       })
-      setSuccessMessage('Configuração lateral do blog salva com sucesso.')
+      setSuccessMessage('Configurações da lateral do blog salvas com sucesso.')
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : 'Nao foi possivel salvar a imagem lateral.')
     } finally {
@@ -1946,121 +2033,197 @@ export function AdminBlogPage() {
       {activeTab === 'layout' ? (
         <section className="grid gap-6 xl:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
           <article className="rounded-[28px] border border-[#D8E6EB] bg-white p-5">
-            <h2 className="text-lg font-black tracking-tight text-[#15323b]">Imagem lateral da home do blog</h2>
+            <h2 className="text-lg font-black tracking-tight text-[#15323b]">Blocos laterais da home do blog</h2>
             <p className="mt-2 text-sm font-medium text-[#5F7077]">
-              Esta mídia aparece no bloco lateral da página <code>/blog</code>, acima de "Áreas do blog".
+              Estes blocos aparecem na barra lateral direita da página <code>/blog</code>, um abaixo do outro.
             </p>
             <p className="mt-1 text-xs font-semibold text-[#6d7f84]">
               Recomendação de upload: <strong>640x920 px</strong> (proporção <strong>7:10</strong>), formato JPG ou WebP.
             </p>
 
             <div className="mt-4 grid gap-3">
-              <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
-                Tipo de exibição
-                <select
-                  value={blogSidebarImageMode}
-                  onChange={(event) => setBlogSidebarImageMode(event.target.value as BlogSidebarImageMode)}
-                  className="h-11 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800"
-                >
-                  <option value="single">Imagem única</option>
-                  <option value="carousel">Carrossel / slider</option>
-                </select>
-              </label>
-
-              {blogSidebarSlides.map((slide, index) => (
-                <div key={`slide-${index}`} className="rounded-2xl border border-[#D8E6EB] bg-[#F8FBFC] p-3">
-                  <div className="mb-2 flex items-center justify-between">
+              {blogSidebarBlocks.map((block, blockIndex) => (
+                <div key={block.id} className="rounded-2xl border border-[#D8E6EB] bg-[#F8FBFC] p-3">
+                  <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                     <p className="text-xs font-black uppercase tracking-[0.16em] text-[#5F7077]">
-                      {blogSidebarImageMode === 'single' ? 'Imagem' : `Slide ${index + 1}`}
+                      Bloco lateral {blockIndex + 1}
                     </p>
-                    {blogSidebarImageMode === 'carousel' && blogSidebarSlides.length > 1 ? (
+                    {blogSidebarBlocks.length > 1 ? (
                       <button
                         type="button"
                         onClick={() => {
-                          setBlogSidebarSlides((current) => current.filter((_, currentIndex) => currentIndex !== index))
+                          setBlogSidebarBlocks((current) => current.filter((_, currentIndex) => currentIndex !== blockIndex))
                         }}
                         className="text-xs font-black uppercase tracking-[0.16em] text-red-600 hover:text-red-700"
                       >
-                        Remover
+                        Remover bloco
                       </button>
                     ) : null}
                   </div>
 
-                  <div className="grid gap-3">
-                    <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
-                      URL da imagem
-                      <input
-                        value={slide.url}
-                        onChange={(event) => {
-                          const nextValue = event.target.value
-                          setBlogSidebarSlides((current) => current.map((currentSlide, currentIndex) => (
-                            currentIndex === index ? { ...currentSlide, url: nextValue } : currentSlide
-                          )))
-                        }}
-                        placeholder="https://..."
-                        className="h-11 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800"
-                      />
-                    </label>
+                  <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
+                    Tipo de exibição
+                    <select
+                      value={block.mode}
+                      onChange={(event) => {
+                        const nextMode = event.target.value as BlogSidebarImageMode
+                        setBlogSidebarBlocks((current) => current.map((currentBlock, currentIndex) => (
+                          currentIndex === blockIndex
+                            ? { ...currentBlock, mode: nextMode }
+                            : currentBlock
+                        )))
+                      }}
+                      className="h-11 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800"
+                    >
+                      <option value="single">Imagem única</option>
+                      <option value="carousel">Carrossel / slider</option>
+                    </select>
+                  </label>
 
-                    <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
-                      Link da imagem (URL de clique ao tocar/clicar na imagem)
-                      <input
-                        value={slide.linkUrl}
-                        onChange={(event) => {
-                          const nextValue = event.target.value
-                          setBlogSidebarSlides((current) => current.map((currentSlide, currentIndex) => (
-                            currentIndex === index ? { ...currentSlide, linkUrl: nextValue } : currentSlide
-                          )))
-                        }}
-                        placeholder="https://..."
-                        className="h-11 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800"
-                      />
-                    </label>
+                  <div className="mt-3 grid gap-3">
+                    {block.slides.map((slide, slideIndex) => (
+                      <div key={`block-${blockIndex}-slide-${slideIndex}`} className="rounded-xl border border-[#D8E6EB] bg-white p-3">
+                        <div className="mb-2 flex items-center justify-between">
+                          <p className="text-xs font-black uppercase tracking-[0.16em] text-[#5F7077]">
+                            {block.mode === 'single' ? 'Imagem' : `Slide ${slideIndex + 1}`}
+                          </p>
+                          {block.mode === 'carousel' && block.slides.length > 1 ? (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setBlogSidebarBlocks((current) => current.map((currentBlock, currentIndex) => {
+                                  if (currentIndex !== blockIndex) {
+                                    return currentBlock
+                                  }
+                                  return {
+                                    ...currentBlock,
+                                    slides: currentBlock.slides.filter((_, currentSlideIndex) => currentSlideIndex !== slideIndex),
+                                  }
+                                }))
+                              }}
+                              className="text-xs font-black uppercase tracking-[0.16em] text-red-600 hover:text-red-700"
+                            >
+                              Remover
+                            </button>
+                          ) : null}
+                        </div>
 
-                    <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
-                      Texto alternativo (ALT)
-                      <input
-                        value={slide.alt}
-                        onChange={(event) => {
-                          const nextValue = event.target.value
-                          setBlogSidebarSlides((current) => current.map((currentSlide, currentIndex) => (
-                            currentIndex === index ? { ...currentSlide, alt: nextValue } : currentSlide
-                          )))
-                        }}
-                        className="h-11 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800"
-                      />
-                    </label>
+                        <div className="grid gap-3">
+                          <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
+                            URL da imagem
+                            <input
+                              value={slide.url}
+                              onChange={(event) => {
+                                const nextValue = event.target.value
+                                setBlogSidebarBlocks((current) => current.map((currentBlock, currentIndex) => {
+                                  if (currentIndex !== blockIndex) {
+                                    return currentBlock
+                                  }
+                                  return {
+                                    ...currentBlock,
+                                    slides: currentBlock.slides.map((currentSlide, currentSlideIndex) => (
+                                      currentSlideIndex === slideIndex ? { ...currentSlide, url: nextValue } : currentSlide
+                                    )),
+                                  }
+                                }))
+                              }}
+                              placeholder="https://..."
+                              className="h-11 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800"
+                            />
+                          </label>
 
-                    <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
-                      Enviar arquivo
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={(event) => {
-                          const file = event.target.files?.[0] ?? null
-                          void handleUploadBlogSidebarImage(file, index)
-                          event.currentTarget.value = ''
-                        }}
-                        className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700"
-                      />
-                    </label>
+                          <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
+                            Link da imagem (URL de clique ao tocar/clicar na imagem)
+                            <input
+                              value={slide.linkUrl}
+                              onChange={(event) => {
+                                const nextValue = event.target.value
+                                setBlogSidebarBlocks((current) => current.map((currentBlock, currentIndex) => {
+                                  if (currentIndex !== blockIndex) {
+                                    return currentBlock
+                                  }
+                                  return {
+                                    ...currentBlock,
+                                    slides: currentBlock.slides.map((currentSlide, currentSlideIndex) => (
+                                      currentSlideIndex === slideIndex ? { ...currentSlide, linkUrl: nextValue } : currentSlide
+                                    )),
+                                  }
+                                }))
+                              }}
+                              placeholder="https://..."
+                              className="h-11 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800"
+                            />
+                          </label>
+
+                          <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
+                            Texto alternativo (ALT)
+                            <input
+                              value={slide.alt}
+                              onChange={(event) => {
+                                const nextValue = event.target.value
+                                setBlogSidebarBlocks((current) => current.map((currentBlock, currentIndex) => {
+                                  if (currentIndex !== blockIndex) {
+                                    return currentBlock
+                                  }
+                                  return {
+                                    ...currentBlock,
+                                    slides: currentBlock.slides.map((currentSlide, currentSlideIndex) => (
+                                      currentSlideIndex === slideIndex ? { ...currentSlide, alt: nextValue } : currentSlide
+                                    )),
+                                  }
+                                }))
+                              }}
+                              className="h-11 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800"
+                            />
+                          </label>
+
+                          <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
+                            Enviar arquivo
+                            <input
+                              type="file"
+                              accept="image/*"
+                              onChange={(event) => {
+                                const file = event.target.files?.[0] ?? null
+                                void handleUploadBlogSidebarImage(file, blockIndex, slideIndex)
+                                event.currentTarget.value = ''
+                              }}
+                              className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700"
+                            />
+                          </label>
+                        </div>
+                      </div>
+                    ))}
                   </div>
+
+                  {block.mode === 'carousel' ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setBlogSidebarBlocks((current) => current.map((currentBlock, currentIndex) => (
+                          currentIndex === blockIndex
+                            ? { ...currentBlock, slides: [...currentBlock.slides, createEmptySidebarSlide()] }
+                            : currentBlock
+                        )))
+                      }}
+                      className="mt-3 h-10 rounded-xl border border-[#D8E6EB] bg-white px-3 text-sm font-black uppercase tracking-[0.12em] text-[#15323b] hover:bg-[#F8FBFC]"
+                    >
+                      Adicionar imagem ao slider
+                    </button>
+                  ) : null}
                 </div>
               ))}
 
-              {blogSidebarImageMode === 'carousel' ? (
-                <button
-                  type="button"
-                  onClick={() => setBlogSidebarSlides((current) => [...current, { url: '', alt: '', linkUrl: '' }])}
-                  className="h-10 rounded-xl border border-[#D8E6EB] bg-white px-3 text-sm font-black uppercase tracking-[0.12em] text-[#15323b] hover:bg-[#F8FBFC]"
-                >
-                  Adicionar imagem ao slider
-                </button>
-              ) : null}
+              <button
+                type="button"
+                onClick={() => setBlogSidebarBlocks((current) => [...current, createEmptySidebarBlock()])}
+                className="h-10 rounded-xl border border-[#D8E6EB] bg-white px-3 text-sm font-black uppercase tracking-[0.12em] text-[#15323b] hover:bg-[#F8FBFC]"
+              >
+                Adicionar novo bloco lateral
+              </button>
 
               <div className="flex flex-wrap gap-2 border-t border-[#D8E6EB] pt-4">
                 <Button type="button" className="rounded-xl bg-[#1398B7] hover:bg-[#0A3640]" onClick={() => void handleSaveBlogLayoutImage()} disabled={isSavingLayout || isUploadingLayoutImage}>
-                  {isSavingLayout ? 'Salvando...' : 'Salvar configuração lateral'}
+                  {isSavingLayout ? 'Salvando...' : 'Salvar blocos laterais'}
                 </Button>
               </div>
             </div>
@@ -2068,16 +2231,23 @@ export function AdminBlogPage() {
 
           <article className="rounded-[28px] border border-[#D8E6EB] bg-white p-5">
             <h3 className="text-sm font-black uppercase tracking-[0.16em] text-[#5F7077]">Preview</h3>
-            <div className="mt-4 overflow-hidden rounded-[8px] border border-[#D8E6EB] bg-[#F8FBFC]">
-              {blogSidebarSlides[0]?.url?.trim() ? (
-                <img
-                  src={blogSidebarSlides[0].url}
-                  alt={blogSidebarSlides[0].alt || 'Imagem lateral do blog'}
-                  className="h-[290px] w-full object-cover"
-                />
-              ) : (
-                <div className="h-[290px] w-full bg-[#23b6a1]" />
-              )}
+            <div className="mt-4 space-y-4">
+              {blogSidebarBlocks.map((block) => {
+                const firstSlide = block.slides[0]
+                return (
+                  <div key={`preview-${block.id}`} className="overflow-hidden rounded-[8px] border border-[#D8E6EB] bg-[#F8FBFC]">
+                    {firstSlide?.url?.trim() ? (
+                      <img
+                        src={firstSlide.url}
+                        alt={firstSlide.alt || 'Imagem lateral do blog'}
+                        className="h-[290px] w-full object-cover"
+                      />
+                    ) : (
+                      <div className="h-[290px] w-full bg-[#23b6a1]" />
+                    )}
+                  </div>
+                )
+              })}
             </div>
           </article>
         </section>

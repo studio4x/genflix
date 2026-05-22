@@ -27,15 +27,19 @@ type BlogSidebarImageSlide = {
 
 type BlogSidebarImageMode = 'single' | 'carousel'
 
+type BlogSidebarBlock = {
+  mode: BlogSidebarImageMode
+  slides: BlogSidebarImageSlide[]
+}
+
 export function PublicBlogPage() {
   const { isLoading, user, roles } = useAuth()
   const waitingRoleResolution = !!user && roles.length === 0
   const [selectedFilter, setSelectedFilter] = useState<(typeof genflixBlogFilters)[number]>('Todos')
   const [currentPage, setCurrentPage] = useState(1)
   const [posts, setPosts] = useState<GenflixBlogPost[]>(genflixBlogPosts)
-  const [sidebarImageMode, setSidebarImageMode] = useState<BlogSidebarImageMode>('single')
-  const [sidebarSlides, setSidebarSlides] = useState<BlogSidebarImageSlide[]>([])
-  const [sidebarSlideIndex, setSidebarSlideIndex] = useState(0)
+  const [sidebarBlocks, setSidebarBlocks] = useState<BlogSidebarBlock[]>([])
+  const [sidebarCarouselTick, setSidebarCarouselTick] = useState(0)
 
   useEffect(() => {
     let isMounted = true
@@ -74,14 +78,50 @@ export function PublicBlogPage() {
         }
 
         if (typeof value === 'string') {
-          setSidebarImageMode('single')
-          setSidebarSlides([{ url: value, alt: '', linkUrl: '' }])
-          setSidebarSlideIndex(0)
+          setSidebarBlocks([{ mode: 'single', slides: [{ url: value, alt: '', linkUrl: '' }] }])
           return
         }
 
         if (value && typeof value === 'object' && !Array.isArray(value)) {
           const record = value as Record<string, unknown>
+          const blocksValue = Array.isArray(record.blocks) ? record.blocks : []
+          const parsedBlocks = blocksValue
+            .map((block) => {
+              if (!block || typeof block !== 'object' || Array.isArray(block)) {
+                return null
+              }
+              const mappedBlock = block as Record<string, unknown>
+              const parsedSlides = (Array.isArray(mappedBlock.slides) ? mappedBlock.slides : [])
+                .map((slide) => {
+                  if (!slide || typeof slide !== 'object' || Array.isArray(slide)) {
+                    return null
+                  }
+                  const image = slide as Record<string, unknown>
+                  return {
+                    url: typeof image.url === 'string' ? image.url : '',
+                    alt: typeof image.alt === 'string' ? image.alt : '',
+                    linkUrl: typeof image.linkUrl === 'string' ? image.linkUrl : '',
+                  } satisfies BlogSidebarImageSlide
+                })
+                .filter((slide): slide is BlogSidebarImageSlide => Boolean(slide && slide.url))
+
+              if (parsedSlides.length === 0) {
+                return null
+              }
+
+              return {
+                mode: mappedBlock.mode === 'carousel' ? 'carousel' : 'single',
+                slides: parsedSlides,
+              } satisfies BlogSidebarBlock
+            })
+            .filter((block): block is BlogSidebarBlock => Boolean(block))
+
+          if (parsedBlocks.length > 0) {
+            setSidebarBlocks(parsedBlocks)
+            setSidebarCarouselTick(0)
+            return
+          }
+
           const slidesValue = Array.isArray(record.slides) ? record.slides : []
           const parsedSlides = slidesValue
             .map((slide) => {
@@ -98,37 +138,35 @@ export function PublicBlogPage() {
             .filter((slide): slide is BlogSidebarImageSlide => Boolean(slide && slide.url))
 
           if (parsedSlides.length > 0) {
-            setSidebarImageMode(record.mode === 'carousel' ? 'carousel' : 'single')
-            setSidebarSlides(parsedSlides)
-            setSidebarSlideIndex(0)
+            setSidebarBlocks([{ mode: record.mode === 'carousel' ? 'carousel' : 'single', slides: parsedSlides }])
+            setSidebarCarouselTick(0)
             return
           }
 
           const legacyUrl = typeof record.url === 'string' ? record.url : ''
           if (legacyUrl) {
-            setSidebarImageMode('single')
-            setSidebarSlides([{
-              url: legacyUrl,
-              alt: typeof record.alt === 'string' ? record.alt : '',
-              linkUrl: typeof record.linkUrl === 'string' ? record.linkUrl : '',
+            setSidebarBlocks([{
+              mode: 'single',
+              slides: [{
+                url: legacyUrl,
+                alt: typeof record.alt === 'string' ? record.alt : '',
+                linkUrl: typeof record.linkUrl === 'string' ? record.linkUrl : '',
+              }],
             }])
-            setSidebarSlideIndex(0)
+            setSidebarCarouselTick(0)
             return
           }
-          setSidebarImageMode('single')
-          setSidebarSlides([])
-          setSidebarSlideIndex(0)
+          setSidebarBlocks([])
+          setSidebarCarouselTick(0)
           return
         }
 
-        setSidebarImageMode('single')
-        setSidebarSlides([])
-        setSidebarSlideIndex(0)
+        setSidebarBlocks([])
+        setSidebarCarouselTick(0)
       } catch {
         if (isMounted) {
-          setSidebarImageMode('single')
-          setSidebarSlides([])
-          setSidebarSlideIndex(0)
+          setSidebarBlocks([])
+          setSidebarCarouselTick(0)
         }
       }
     }
@@ -141,25 +179,19 @@ export function PublicBlogPage() {
   }, [])
 
   useEffect(() => {
-    if (sidebarImageMode !== 'carousel' || sidebarSlides.length <= 1) {
+    const hasCarousel = sidebarBlocks.some((block) => block.mode === 'carousel' && block.slides.length > 1)
+    if (!hasCarousel) {
       return
     }
 
     const intervalId = window.setInterval(() => {
-      setSidebarSlideIndex((current) => (current + 1) % sidebarSlides.length)
+      setSidebarCarouselTick((current) => current + 1)
     }, SIDEBAR_SLIDE_INTERVAL_MS)
 
     return () => {
       window.clearInterval(intervalId)
     }
-  }, [sidebarImageMode, sidebarSlides.length])
-
-  useEffect(() => {
-    if (sidebarSlideIndex < sidebarSlides.length) {
-      return
-    }
-    setSidebarSlideIndex(0)
-  }, [sidebarSlides.length, sidebarSlideIndex])
+  }, [sidebarBlocks])
 
   const filteredPosts = useMemo(() => {
     return posts.filter((post) => {
@@ -181,8 +213,6 @@ export function PublicBlogPage() {
     const start = (visibleCurrentPage - 1) * POSTS_PER_PAGE
     return listingPosts.slice(start, start + POSTS_PER_PAGE)
   }, [visibleCurrentPage, listingPosts])
-
-  const currentSidebarSlide = sidebarSlides[sidebarSlideIndex] ?? null
 
   if (isLoading || waitingRoleResolution) {
     return (
@@ -269,25 +299,34 @@ export function PublicBlogPage() {
             </div>
 
             <aside className="space-y-8">
-              {currentSidebarSlide?.url ? (
-                currentSidebarSlide.linkUrl.trim() ? (
-                  <a href={currentSidebarSlide.linkUrl} className="block cursor-pointer">
+              {sidebarBlocks.length > 0 ? sidebarBlocks.map((block, blockIndex) => {
+                const activeSlide = block.mode === 'carousel' && block.slides.length > 1
+                  ? block.slides[sidebarCarouselTick % block.slides.length]
+                  : block.slides[0]
+
+                if (!activeSlide?.url) {
+                  return <div key={`sidebar-block-${blockIndex}`} className="h-[290px] bg-[#23b6a1]" />
+                }
+
+                return activeSlide.linkUrl.trim() ? (
+                  <a key={`sidebar-block-${blockIndex}`} href={activeSlide.linkUrl} className="block cursor-pointer">
                     <img
-                      src={currentSidebarSlide.url}
-                      alt={currentSidebarSlide.alt || 'Imagem lateral do blog'}
+                      src={activeSlide.url}
+                      alt={activeSlide.alt || 'Imagem lateral do blog'}
                       className="h-[290px] w-full object-cover"
                       loading="lazy"
                     />
                   </a>
                 ) : (
                   <img
-                    src={currentSidebarSlide.url}
-                    alt={currentSidebarSlide.alt || 'Imagem lateral do blog'}
+                    key={`sidebar-block-${blockIndex}`}
+                    src={activeSlide.url}
+                    alt={activeSlide.alt || 'Imagem lateral do blog'}
                     className="h-[290px] w-full object-cover"
                     loading="lazy"
                   />
                 )
-              ) : (
+              }) : (
                 <div className="h-[290px] bg-[#23b6a1]" />
               )}
               <div>
