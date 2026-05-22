@@ -323,31 +323,64 @@ export function PublicBlogPage() {
               </div>
 
               {sidebarBlocks.length > 0 ? sidebarBlocks.map((block, blockIndex) => {
-                const activeSlide = block.mode === 'carousel' && block.slides.length > 1
-                  ? block.slides[sidebarCarouselTick % block.slides.length]
-                  : block.slides[0]
+                const hasCarousel = block.mode === 'carousel' && block.slides.length > 1
+                const activeSlideIndex = hasCarousel ? (sidebarCarouselTick % block.slides.length) : 0
+                const fallbackSlide = block.slides[0]
 
-                if (!activeSlide?.url) {
+                if (!fallbackSlide?.url) {
                   return <div key={`sidebar-block-${blockIndex}`} className="aspect-[7/10] w-full bg-[#23b6a1]" />
                 }
 
-                return activeSlide.linkUrl.trim() ? (
-                  <a key={`sidebar-block-${blockIndex}`} href={activeSlide.linkUrl} className="block cursor-pointer">
+                if (!hasCarousel) {
+                  return fallbackSlide.linkUrl.trim() ? (
+                    <a key={`sidebar-block-${blockIndex}`} href={fallbackSlide.linkUrl} className="block cursor-pointer">
+                      <img
+                        src={fallbackSlide.url}
+                        alt={fallbackSlide.alt || 'Imagem lateral do blog'}
+                        className="aspect-[7/10] w-full object-cover"
+                        loading="lazy"
+                      />
+                    </a>
+                  ) : (
                     <img
-                      src={activeSlide.url}
-                      alt={activeSlide.alt || 'Imagem lateral do blog'}
+                      key={`sidebar-block-${blockIndex}`}
+                      src={fallbackSlide.url}
+                      alt={fallbackSlide.alt || 'Imagem lateral do blog'}
                       className="aspect-[7/10] w-full object-cover"
                       loading="lazy"
                     />
-                  </a>
-                ) : (
-                  <img
-                    key={`sidebar-block-${blockIndex}`}
-                    src={activeSlide.url}
-                    alt={activeSlide.alt || 'Imagem lateral do blog'}
-                    className="aspect-[7/10] w-full object-cover"
-                    loading="lazy"
-                  />
+                  )
+                }
+
+                return (
+                  <div key={`sidebar-block-${blockIndex}`} className="aspect-[7/10] w-full overflow-hidden">
+                    <div
+                      className="flex h-full w-full transition-transform duration-700 ease-in-out"
+                      style={{ transform: `translateX(-${activeSlideIndex * 100}%)` }}
+                    >
+                      {block.slides.map((slide, slideIndex) => (
+                        <div key={`sidebar-block-${blockIndex}-slide-${slideIndex}`} className="h-full w-full shrink-0">
+                          {slide.linkUrl.trim() ? (
+                            <a href={slide.linkUrl} className="block h-full w-full cursor-pointer">
+                              <img
+                                src={slide.url}
+                                alt={slide.alt || 'Imagem lateral do blog'}
+                                className="h-full w-full object-cover"
+                                loading="lazy"
+                              />
+                            </a>
+                          ) : (
+                            <img
+                              src={slide.url}
+                              alt={slide.alt || 'Imagem lateral do blog'}
+                              className="h-full w-full object-cover"
+                              loading="lazy"
+                            />
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 )
               }) : (
                 <div className="aspect-[7/10] w-full bg-[#23b6a1]" />
