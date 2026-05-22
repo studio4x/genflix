@@ -3,6 +3,7 @@
 import { useAuth } from '@/app/providers/auth-provider'
 import { RichTextEditor } from '@/components/ui/RichTextEditor'
 import { Button } from '@/components/ui/button'
+import { fetchSiteContent, saveSiteContentEntry, uploadSiteAsset } from '@/features/site-editor/api'
 import { supabase } from '@/services/supabase/client'
 
 type ArticleStatus = 'draft' | 'scheduled' | 'published'
@@ -470,7 +471,7 @@ function suggestNewTagNames(form: ArticleFormState, tags: BlogTagRow[]) {
 
 export function AdminBlogPage() {
   const { user } = useAuth()
-  const [activeTab, setActiveTab] = useState<'articles' | 'categories' | 'tags'>('articles')
+  const [activeTab, setActiveTab] = useState<'articles' | 'categories' | 'tags' | 'layout'>('articles')
   const [articleView, setArticleView] = useState<'list' | 'editor'>('list')
   const [isLegacyMode, setIsLegacyMode] = useState(true)
   const [isLoading, setIsLoading] = useState(true)
@@ -480,6 +481,10 @@ export function AdminBlogPage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const [articleSuccessMessage, setArticleSuccessMessage] = useState<string | null>(null)
+  const [blogSidebarImageUrl, setBlogSidebarImageUrl] = useState('')
+  const [blogSidebarImageAlt, setBlogSidebarImageAlt] = useState('')
+  const [isSavingLayout, setIsSavingLayout] = useState(false)
+  const [isUploadingLayoutImage, setIsUploadingLayoutImage] = useState(false)
 
   const [articles, setArticles] = useState<BlogArticleRow[]>([])
   const [categories, setCategories] = useState<BlogCategoryRow[]>([])
@@ -590,10 +595,91 @@ export function AdminBlogPage() {
     setIsLoading(true)
     setErrorMessage(null)
     await loadLegacyData()
+    await loadBlogLayoutSettings()
   }
   useEffect(() => {
     void loadAllData()
   }, [])
+
+  async function loadBlogLayoutSettings() {
+    try {
+      const entries = await fetchSiteContent('blog')
+      const layoutEntry = entries.find((entry) => entry.page_key === 'blog' && entry.entry_key === 'blog.sidebar.image')
+      const value = layoutEntry?.value
+
+      if (typeof value === 'string') {
+        setBlogSidebarImageUrl(value)
+        setBlogSidebarImageAlt('')
+        return
+      }
+
+      if (value && typeof value === 'object' && !Array.isArray(value)) {
+        const record = value as Record<string, unknown>
+        setBlogSidebarImageUrl(typeof record.url === 'string' ? record.url : '')
+        setBlogSidebarImageAlt(typeof record.alt === 'string' ? record.alt : '')
+        return
+      }
+
+      setBlogSidebarImageUrl('')
+      setBlogSidebarImageAlt('')
+    } catch {
+      setBlogSidebarImageUrl('')
+      setBlogSidebarImageAlt('')
+    }
+  }
+
+  async function handleUploadBlogSidebarImage(file: File | null) {
+    if (!file) {
+      return
+    }
+
+    setIsUploadingLayoutImage(true)
+    setErrorMessage(null)
+    setSuccessMessage(null)
+    try {
+      const uploaded = await uploadSiteAsset(file, {
+        alt: file.name,
+        pageKey: 'blog',
+        entryKey: 'blog.sidebar.image',
+      })
+      if (uploaded.public_url) {
+        setBlogSidebarImageUrl(uploaded.public_url)
+      }
+      if (uploaded.alt) {
+        setBlogSidebarImageAlt(uploaded.alt)
+      }
+      setSuccessMessage('Imagem enviada com sucesso. Clique em "Salvar imagem lateral" para publicar.')
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : 'Nao foi possivel enviar a imagem.')
+    } finally {
+      setIsUploadingLayoutImage(false)
+    }
+  }
+
+  async function handleSaveBlogLayoutImage() {
+    setIsSavingLayout(true)
+    setErrorMessage(null)
+    setSuccessMessage(null)
+    try {
+      await saveSiteContentEntry({
+        pageKey: 'blog',
+        entryKey: 'blog.sidebar.image',
+        entryType: 'image',
+        value: {
+          url: blogSidebarImageUrl.trim(),
+          alt: blogSidebarImageAlt.trim(),
+        },
+        schema: {
+          kind: 'blog-sidebar-image',
+        },
+      })
+      setSuccessMessage('Imagem lateral do blog salva com sucesso.')
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : 'Nao foi possivel salvar a imagem lateral.')
+    } finally {
+      setIsSavingLayout(false)
+    }
+  }
 
   function resetArticleForm() {
     setSelectedArticleId(null)
@@ -1171,6 +1257,13 @@ export function AdminBlogPage() {
             Tags
           </button>
         ) : null}
+        <button
+          type="button"
+          onClick={() => setActiveTab('layout')}
+          className={`rounded-full border px-4 py-2 text-sm font-bold ${activeTab === 'layout' ? 'border-[#1398B7] bg-[#1398B7] text-white' : 'border-[#D8E6EB] bg-white text-[#15323b]'}`}
+        >
+          Layout do blog
+        </button>
       </section>
 
       {activeTab === 'articles' ? (
@@ -1798,6 +1891,73 @@ export function AdminBlogPage() {
                   <p className="mt-1 text-xs font-semibold text-[#6d7f84]">/{tag.slug} · robots: {tag.seo_robots ?? 'index,follow'}</p>
                 </button>
               ))}
+            </div>
+          </article>
+        </section>
+      ) : null}
+
+      {activeTab === 'layout' ? (
+        <section className="grid gap-6 xl:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
+          <article className="rounded-[28px] border border-[#D8E6EB] bg-white p-5">
+            <h2 className="text-lg font-black tracking-tight text-[#15323b]">Imagem lateral da home do blog</h2>
+            <p className="mt-2 text-sm font-medium text-[#5F7077]">
+              Esta imagem aparece no bloco lateral da página <code>/blog</code>, acima de "Áreas do blog".
+            </p>
+
+            <div className="mt-4 grid gap-3">
+              <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
+                URL da imagem
+                <input
+                  value={blogSidebarImageUrl}
+                  onChange={(event) => setBlogSidebarImageUrl(event.target.value)}
+                  placeholder="https://..."
+                  className="h-11 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800"
+                />
+              </label>
+
+              <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
+                Texto alternativo (ALT)
+                <input
+                  value={blogSidebarImageAlt}
+                  onChange={(event) => setBlogSidebarImageAlt(event.target.value)}
+                  className="h-11 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800"
+                />
+              </label>
+
+              <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
+                Enviar arquivo
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(event) => {
+                    const file = event.target.files?.[0] ?? null
+                    void handleUploadBlogSidebarImage(file)
+                    event.currentTarget.value = ''
+                  }}
+                  className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700"
+                />
+              </label>
+
+              <div className="flex flex-wrap gap-2 border-t border-[#D8E6EB] pt-4">
+                <Button type="button" className="rounded-xl bg-[#1398B7] hover:bg-[#0A3640]" onClick={() => void handleSaveBlogLayoutImage()} disabled={isSavingLayout || isUploadingLayoutImage}>
+                  {isSavingLayout ? 'Salvando...' : 'Salvar imagem lateral'}
+                </Button>
+              </div>
+            </div>
+          </article>
+
+          <article className="rounded-[28px] border border-[#D8E6EB] bg-white p-5">
+            <h3 className="text-sm font-black uppercase tracking-[0.16em] text-[#5F7077]">Preview</h3>
+            <div className="mt-4 overflow-hidden rounded-[8px] border border-[#D8E6EB] bg-[#F8FBFC]">
+              {blogSidebarImageUrl.trim() ? (
+                <img
+                  src={blogSidebarImageUrl}
+                  alt={blogSidebarImageAlt || 'Imagem lateral do blog'}
+                  className="h-[290px] w-full object-cover"
+                />
+              ) : (
+                <div className="h-[290px] w-full bg-[#23b6a1]" />
+              )}
             </div>
           </article>
         </section>

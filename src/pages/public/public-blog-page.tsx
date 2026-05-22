@@ -13,6 +13,7 @@ import {
 } from '@/features/public/genflix-site-content'
 import { BannerPlacementSlot } from '@/features/banners/banner-placement-slot'
 import { fetchPublicBlogPostsFromSupabase } from '@/features/public/genflix-public-content-api'
+import { fetchSiteContent } from '@/features/site-editor/api'
 import { cn } from '@/lib/utils'
 
 const POSTS_PER_PAGE = 6
@@ -23,6 +24,8 @@ export function PublicBlogPage() {
   const [selectedFilter, setSelectedFilter] = useState<(typeof genflixBlogFilters)[number]>('Todos')
   const [currentPage, setCurrentPage] = useState(1)
   const [posts, setPosts] = useState<GenflixBlogPost[]>(genflixBlogPosts)
+  const [sidebarImageUrl, setSidebarImageUrl] = useState('')
+  const [sidebarImageAlt, setSidebarImageAlt] = useState('')
 
   useEffect(() => {
     let isMounted = true
@@ -41,6 +44,49 @@ export function PublicBlogPage() {
     }
 
     void loadPosts()
+
+    return () => {
+      isMounted = false
+    }
+  }, [])
+
+  useEffect(() => {
+    let isMounted = true
+
+    async function loadSidebarImage() {
+      try {
+        const entries = await fetchSiteContent('blog')
+        const imageEntry = entries.find((entry) => entry.page_key === 'blog' && entry.entry_key === 'blog.sidebar.image')
+        const value = imageEntry?.value
+
+        if (!isMounted) {
+          return
+        }
+
+        if (typeof value === 'string') {
+          setSidebarImageUrl(value)
+          setSidebarImageAlt('')
+          return
+        }
+
+        if (value && typeof value === 'object' && !Array.isArray(value)) {
+          const record = value as Record<string, unknown>
+          setSidebarImageUrl(typeof record.url === 'string' ? record.url : '')
+          setSidebarImageAlt(typeof record.alt === 'string' ? record.alt : '')
+          return
+        }
+
+        setSidebarImageUrl('')
+        setSidebarImageAlt('')
+      } catch {
+        if (isMounted) {
+          setSidebarImageUrl('')
+          setSidebarImageAlt('')
+        }
+      }
+    }
+
+    void loadSidebarImage()
 
     return () => {
       isMounted = false
@@ -88,7 +134,16 @@ export function PublicBlogPage() {
             </div>
 
             <aside className="space-y-8">
-              <div className="h-[290px] bg-[#23b6a1]" />
+              {sidebarImageUrl.trim() ? (
+                <img
+                  src={sidebarImageUrl}
+                  alt={sidebarImageAlt || 'Imagem lateral do blog'}
+                  className="h-[290px] w-full object-cover"
+                  loading="lazy"
+                />
+              ) : (
+                <div className="h-[290px] bg-[#23b6a1]" />
+              )}
               <div>
                 <h2 className="text-3xl font-semibold leading-tight text-[#ff7a00]">Áreas do blog</h2>
                 <div className="mt-6 flex items-center gap-8">
