@@ -305,7 +305,7 @@ export function PublicBlogPage() {
                   : block.slides[0]
 
                 if (!activeSlide?.url) {
-                  return <div key={`sidebar-block-${blockIndex}`} className="h-[290px] bg-[#23b6a1]" />
+                  return <div key={`sidebar-block-${blockIndex}`} className="aspect-[7/10] w-full bg-[#23b6a1]" />
                 }
 
                 return activeSlide.linkUrl.trim() ? (
@@ -313,7 +313,7 @@ export function PublicBlogPage() {
                     <img
                       src={activeSlide.url}
                       alt={activeSlide.alt || 'Imagem lateral do blog'}
-                      className="h-[290px] w-full object-cover"
+                      className="aspect-[7/10] w-full object-cover"
                       loading="lazy"
                     />
                   </a>
@@ -322,12 +322,12 @@ export function PublicBlogPage() {
                     key={`sidebar-block-${blockIndex}`}
                     src={activeSlide.url}
                     alt={activeSlide.alt || 'Imagem lateral do blog'}
-                    className="h-[290px] w-full object-cover"
+                    className="aspect-[7/10] w-full object-cover"
                     loading="lazy"
                   />
                 )
               }) : (
-                <div className="h-[290px] bg-[#23b6a1]" />
+                <div className="aspect-[7/10] w-full bg-[#23b6a1]" />
               )}
               <div>
                 <h2 className="text-3xl font-semibold leading-tight text-[#ff7a00]">Áreas do blog</h2>

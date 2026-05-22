@@ -2240,10 +2240,10 @@ export function AdminBlogPage() {
                       <img
                         src={firstSlide.url}
                         alt={firstSlide.alt || 'Imagem lateral do blog'}
-                        className="h-[290px] w-full object-cover"
+                        className="aspect-[7/10] w-full object-cover"
                       />
                     ) : (
-                      <div className="h-[290px] w-full bg-[#23b6a1]" />
+                      <div className="aspect-[7/10] w-full bg-[#23b6a1]" />
                     )}
                   </div>
                 )
