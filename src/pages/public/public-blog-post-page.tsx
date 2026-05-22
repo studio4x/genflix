@@ -1,6 +1,5 @@
 ﻿import { useEffect, useState } from 'react'
-import { ArrowLeft } from 'lucide-react'
-import { Link, Navigate, useParams, useSearchParams } from 'react-router-dom'
+import { Navigate, useParams, useSearchParams } from 'react-router-dom'
 
 import { useAuth } from '@/app/providers/auth-provider'
 import { GenflixPublicFooter } from '@/components/public/genflix-public-footer'
@@ -228,35 +227,31 @@ export function PublicBlogPostPage() {
   }
 
   return (
-    <main className="min-h-screen bg-white font-manrope text-[#1f2e39]">
+    <main className="min-h-screen bg-[#f4f4f4] font-manrope text-[#1f2e39]">
       <GenflixPublicHeader navLinks={genflixNavLinks} />
 
-      <section className="pb-14 pt-8">
-        <div className="public-site-container max-w-[1040px]">
-          <Link to="/blog" className="inline-flex items-center gap-2 text-sm font-semibold text-[#2f4b7d] hover:text-[#1f3760]">
-            <ArrowLeft className="h-4 w-4" />
-            Voltar para o blog
-          </Link>
-
-          <article className="mt-6">
-            <div className="overflow-hidden border border-[#cdcdcd] bg-white shadow-sm">
-              <img src={post.image} alt={post.title} className="h-[220px] w-full object-cover sm:h-[320px] lg:h-[430px]" />
+      <section className="pb-16 pt-1">
+        <div className="public-site-container max-w-[1140px]">
+          <article>
+            <div className="overflow-hidden bg-black">
+              <img src={post.image} alt={post.title} className="h-[220px] w-full object-cover sm:h-[320px] lg:h-[560px]" />
             </div>
-
-            <h1 className="mt-10 text-center text-3xl font-semibold leading-tight text-[#ff7a00] sm:text-4xl">
-              {post.title}
-            </h1>
 
             {isDraftPreview ? (
               <p className="mt-4 text-center text-sm font-semibold uppercase tracking-[0.15em] text-amber-700">Preview de rascunho (admin)</p>
             ) : null}
 
-            <div className="mt-8 space-y-4 text-base leading-8 text-[#5f6570]">
-              <p className="font-semibold">Introdução</p>
-              <p>{post.excerpt}</p>
-              {post.content.map((paragraph) => (
-                <p key={paragraph}>{paragraph}</p>
-              ))}
+            <div className="mt-10 grid gap-10 lg:grid-cols-[280px_minmax(0,1fr)]">
+              <h1 className="font-lora text-[52px] leading-[1.18] text-[#008f9c]">
+                {post.title}
+              </h1>
+
+              <div className="space-y-5 font-lora text-[40px] leading-[1.65] text-[#343434]">
+                <p>{post.excerpt}</p>
+                {post.content.map((paragraph, index) => (
+                  <p key={`${post.slug}-paragraph-${index}`}>{paragraph}</p>
+                ))}
+              </div>
             </div>
           </article>
 
