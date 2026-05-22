@@ -265,9 +265,9 @@ function getVerticalAnchorTransform(verticalAlign?: SiteBannerElementStyle['vert
   return 'translateY(0)'
 }
 
-function toPreviewStyle(item: SiteBannerLayoutItem, scaleFactor: number) {
+function toPreviewStyle(item: SiteBannerLayoutItem) {
   return {
-    left: `${item.x * scaleFactor}px`,
+    left: `${item.x}px`,
     top: `${item.y}px`,
     width: `${item.width}%`,
     zIndex: item.zIndex,
@@ -696,7 +696,6 @@ export function AdminBannersPage() {
         return
       }
 
-      const rect = stage.getBoundingClientRect()
       const contentRect = contentNode.getBoundingClientRect()
       const deltaXPx = event.clientX - dragState.startClientX
       const deltaYPx = event.clientY - dragState.startClientY
@@ -721,11 +720,11 @@ export function AdminBannersPage() {
           }
         }
 
-        const elementWidthPx = (currentItem.width / 100) * contentRect.width
-        const maxX = Math.max(0, (contentRect.width - elementWidthPx) / normalizedScale)
-        const maxY = Math.max(0, rect.height - 16)
+        const designHeight = previewMode === 'mobile' ? current.heightMobile : current.heightDesktop
+        const maxX = Math.max(0, designWidth - ((currentItem.width / 100) * designWidth))
+        const maxY = Math.max(0, designHeight - 16)
         const nextX = Math.round(clamp(dragState.startX + (deltaXPx / normalizedScale), 0, maxX))
-        const nextY = Math.round(clamp(dragState.startY + deltaYPx, 0, maxY))
+        const nextY = Math.round(clamp(dragState.startY + (deltaYPx / normalizedScale), 0, maxY))
 
         return {
           ...current,
@@ -1357,7 +1356,7 @@ export function AdminBannersPage() {
   const previewScaleFactor = activePreviewContentWidth > 0 ? activePreviewContentWidth / activeDesignWidth : 1
 
   const getPreviewElementStyle = (item: SiteBannerLayoutItem, verticalAlign?: SiteBannerElementStyle['verticalAlign']) => ({
-    ...toPreviewStyle(item, previewScaleFactor),
+    ...toPreviewStyle(item),
     transform: getVerticalAnchorTransform(verticalAlign),
   })
 
@@ -1429,7 +1428,15 @@ export function AdminBannersPage() {
           }}
         />
 
-        <div ref={contentRef} className="public-site-container relative h-full">
+        <div
+          ref={contentRef}
+          className="absolute left-0 top-0 h-full"
+          style={{
+            width: `${activeDesignWidth}px`,
+            transform: `scale(${previewScaleFactor})`,
+            transformOrigin: 'top left',
+          }}
+        >
           <BannerCanvasElement elementKey="title" item={titleLayout ?? draft!.layoutDesktop.title} verticalAlign={draft!.elementStyles.title.verticalAlign} onPointerDown={handleCanvasPointerDown} onResizePointerDown={handleCanvasResizePointerDown} draggable style={getPreviewElementStyle(titleLayout ?? draft!.layoutDesktop.title, draft!.elementStyles.title.verticalAlign)}>
             <p className={cn(isMobilePreview ? 'text-[2.2rem] font-extrabold leading-[0.94] tracking-[-0.05em] sm:text-[2.6rem]' : 'text-[2.5rem] font-extrabold leading-[0.92] tracking-[-0.05em] sm:text-[3rem] md:text-[3.25rem]', theme?.titleClass)} style={{ color: titleColor, ...titleTypographyStyle }}>
               {canvasTitle}
