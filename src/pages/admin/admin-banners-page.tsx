@@ -59,6 +59,8 @@ type BannerBackgroundVariant = 'desktop' | 'mobile'
 const DESKTOP_CANVAS_WIDTH = DESKTOP_BANNER_DESIGN_WIDTH
 const MOBILE_CANVAS_WIDTH = 420
 const LAYOUT_KEYS: SiteBannerLayoutKey[] = ['title', 'subtitle', 'body', 'primaryCta', 'secondaryCta']
+const DEFAULT_MIN_LAYOUT_WIDTH = 18
+const CTA_MIN_LAYOUT_WIDTH = 10
 const BACKGROUND_POSITION_OPTIONS: Array<{ value: SiteBannerBackgroundPosition; label: string }> = [
   { value: 'center center', label: 'Centro' },
   { value: 'left center', label: 'Esquerda' },
@@ -134,8 +136,12 @@ function parseBannerHeightInput(value: string, fallback: number) {
   return clampBannerHeight(parsed)
 }
 
-function applyWidthWithinCanvas(item: SiteBannerLayoutItem, nextWidth: number) {
-  const normalizedWidth = normalizePercent(clamp(nextWidth, 18, 100))
+function getMinWidthForLayoutKey(key: SiteBannerLayoutKey) {
+  return key === 'primaryCta' || key === 'secondaryCta' ? CTA_MIN_LAYOUT_WIDTH : DEFAULT_MIN_LAYOUT_WIDTH
+}
+
+function applyWidthWithinCanvas(item: SiteBannerLayoutItem, nextWidth: number, minWidth = DEFAULT_MIN_LAYOUT_WIDTH) {
+  const normalizedWidth = normalizePercent(clamp(nextWidth, minWidth, 100))
   const normalizedX = Math.round(Math.max(0, item.x))
 
   return {
@@ -173,12 +179,13 @@ function keepLayoutInsideCanvas<T extends Record<SiteBannerLayoutKey, SiteBanner
 
   for (const key of LAYOUT_KEYS) {
     const item = layout[key]
+    const minWidth = getMinWidthForLayoutKey(key)
     const elementWidthPx = (item.width / 100) * canvasWidth
     const maxX = Math.max(0, canvasWidth - elementWidthPx)
     const maxY = Math.max(0, canvasHeight - 20)
     const nextX = Math.round(clamp(item.x, 0, maxX))
     const nextY = Math.round(clamp(item.y, 0, maxY))
-    const nextWidth = normalizePercent(clamp(item.width, 18, 100))
+    const nextWidth = normalizePercent(clamp(item.width, minWidth, 100))
 
     if (nextX !== item.x || nextY !== item.y || nextWidth !== item.width) {
       movedCount += 1
@@ -357,12 +364,14 @@ function CollapsibleCard({
 function LayoutControls({
   item,
   labelPrefix,
+  minWidth = DEFAULT_MIN_LAYOUT_WIDTH,
   onVisibleChange,
   onWidthChange,
   onZIndexChange,
 }: {
   item: SiteBannerLayoutItem
   labelPrefix: string
+  minWidth?: number
   onVisibleChange: (visible: boolean) => void
   onWidthChange: (width: number) => void
   onZIndexChange: (nextValue: number) => void
@@ -382,7 +391,7 @@ function LayoutControls({
         <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">{labelPrefix} largura</span>
         <input
           type="range"
-          min={18}
+          min={minWidth}
           max={100}
           step={0.5}
           value={item.width}
@@ -2168,7 +2177,8 @@ export function AdminBannersPage() {
                               item={item}
                               labelPrefix={activeLayoutLabel}
                               onVisibleChange={(visible) => setLayoutItem(layoutKey, (current) => ({ ...current, visible }))}
-                              onWidthChange={(width) => setLayoutItem(layoutKey, (current) => applyWidthWithinCanvas(current, width))}
+                              minWidth={getMinWidthForLayoutKey(layoutKey)}
+                              onWidthChange={(width) => setLayoutItem(layoutKey, (current) => applyWidthWithinCanvas(current, width, getMinWidthForLayoutKey(layoutKey)))}
                               onZIndexChange={(nextValue) => setLayoutItem(layoutKey, (current) => ({ ...current, zIndex: nextValue }))}
                             />
 
@@ -2367,7 +2377,8 @@ export function AdminBannersPage() {
                                 setLayoutItem(key, (current) => ({ ...current, visible }))
                                 setCta(key, (current) => current ? { ...current, visible } : current)
                               }}
-                              onWidthChange={(width) => setLayoutItem(key, (current) => applyWidthWithinCanvas(current, width))}
+                              minWidth={getMinWidthForLayoutKey(key)}
+                              onWidthChange={(width) => setLayoutItem(key, (current) => applyWidthWithinCanvas(current, width, getMinWidthForLayoutKey(key)))}
                               onZIndexChange={(nextValue) => setLayoutItem(key, (current) => ({ ...current, zIndex: nextValue }))}
                             />
 
