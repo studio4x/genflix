@@ -11,6 +11,7 @@ import {
   genflixNavLinks,
   type GenflixBlogPost,
 } from '@/features/public/genflix-site-content'
+import { BannerPlacementSlot } from '@/features/banners/banner-placement-slot'
 import { fetchPublicBlogPostsFromSupabase } from '@/features/public/genflix-public-content-api'
 import { cn } from '@/lib/utils'
 
@@ -21,7 +22,6 @@ export function PublicBlogPage() {
   const waitingRoleResolution = !!user && roles.length === 0
   const [selectedFilter, setSelectedFilter] = useState<(typeof genflixBlogFilters)[number]>('Todos')
   const [currentPage, setCurrentPage] = useState(1)
-  const [currentFeaturedSlide, setCurrentFeaturedSlide] = useState(0)
   const [posts, setPosts] = useState<GenflixBlogPost[]>(genflixBlogPosts)
 
   useEffect(() => {
@@ -59,13 +59,7 @@ export function PublicBlogPage() {
     })
   }, [posts, selectedFilter])
 
-  const featuredPosts = filteredPosts.filter((post) => post.featured)
-  const effectiveFeaturedPosts = featuredPosts.length > 0 ? featuredPosts : filteredPosts.slice(0, Math.min(5, filteredPosts.length))
-  const featuredSlideCount = Math.max(1, effectiveFeaturedPosts.length)
-  const featuredPost =
-    effectiveFeaturedPosts[Math.min(currentFeaturedSlide, featuredSlideCount - 1)] ?? filteredPosts[0] ?? genflixBlogPosts[0]
-
-  const listingPosts = filteredPosts.filter((post) => post.slug !== featuredPost?.slug)
+  const listingPosts = filteredPosts
   const pageCount = Math.max(1, Math.ceil(listingPosts.length / POSTS_PER_PAGE))
   const visibleCurrentPage = Math.min(currentPage, pageCount)
 
@@ -90,47 +84,7 @@ export function PublicBlogPage() {
         <div className="public-site-container">
           <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_224px]">
             <div>
-              <article className="relative overflow-hidden border border-[#cdcdcd] bg-white shadow-sm">
-                <img
-                  src={featuredPost.image}
-                  alt={featuredPost.title}
-                  className="h-[220px] w-full object-cover sm:h-[320px] lg:h-[430px]"
-                />
-
-                <div className="absolute inset-x-4 bottom-4 bg-[#8f1800] px-4 py-4 text-center text-white sm:inset-x-auto sm:right-7 sm:top-7 sm:w-[220px] sm:px-5 sm:py-7">
-                  <h2 className="text-xl font-semibold leading-tight sm:text-2xl">{featuredPost.title}</h2>
-                </div>
-              </article>
-
-              <div className="mt-4 flex items-center justify-center gap-3">
-                <button
-                  type="button"
-                  onClick={() => setCurrentFeaturedSlide((value) => (value - 1 + featuredSlideCount) % featuredSlideCount)}
-                  className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[#d0d0d0] bg-white text-[#6e6e6e] transition-colors hover:bg-[#f5f5f5]"
-                  aria-label="Slide anterior"
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </button>
-
-                {Array.from({ length: featuredSlideCount }, (_, index) => (
-                  <button
-                    key={index}
-                    type="button"
-                    onClick={() => setCurrentFeaturedSlide(index)}
-                    aria-label={`Ir para slide ${index + 1}`}
-                    className={cn('h-2.5 w-2.5 rounded-full transition-colors', index === currentFeaturedSlide ? 'bg-[#23d8cf]' : 'bg-[#b8b8b8]')}
-                  />
-                ))}
-
-                <button
-                  type="button"
-                  onClick={() => setCurrentFeaturedSlide((value) => (value + 1) % featuredSlideCount)}
-                  className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[#d0d0d0] bg-white text-[#6e6e6e] transition-colors hover:bg-[#f5f5f5]"
-                  aria-label="Próximo slide"
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </button>
-              </div>
+              <BannerPlacementSlot pageKey="blog" placementKey="hero" />
             </div>
 
             <aside className="space-y-8">
