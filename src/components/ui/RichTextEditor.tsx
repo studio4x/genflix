@@ -11,6 +11,7 @@ type RichTextEditorProps = {
   showRawHtmlToggle?: boolean
   showHeadingHints?: boolean
   minHeightClassName?: string
+  simpleMode?: boolean
 }
 
 const defaultModules = {
@@ -38,6 +39,23 @@ const defaultFormats = [
   'video',
 ]
 
+const simpleModules = {
+  toolbar: [
+    ['bold', 'italic', 'underline'],
+    [{ list: 'ordered' }, { list: 'bullet' }],
+    ['link', 'clean'],
+  ],
+}
+
+const simpleFormats = [
+  'bold',
+  'italic',
+  'underline',
+  'list',
+  'bullet',
+  'link',
+]
+
 export function RichTextEditor({
   value,
   onChange,
@@ -46,6 +64,7 @@ export function RichTextEditor({
   showRawHtmlToggle = true,
   showHeadingHints = false,
   minHeightClassName = 'min-h-[300px]',
+  simpleMode = false,
 }: RichTextEditorProps) {
   const [isRawHtmlMode, setIsRawHtmlMode] = useState(false)
 
@@ -91,8 +110,8 @@ export function RichTextEditor({
           value={value}
           onChange={onChange}
           placeholder={placeholder}
-          modules={defaultModules}
-          formats={defaultFormats}
+          modules={simpleMode ? simpleModules : defaultModules}
+          formats={simpleMode ? simpleFormats : defaultFormats}
           minHeightClassName={minHeightClassName}
           className="overflow-hidden rounded-2xl border border-slate-200 bg-white"
         />

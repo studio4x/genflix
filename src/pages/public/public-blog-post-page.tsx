@@ -382,6 +382,7 @@ export function PublicBlogPostPage() {
                 placeholder="Escreva seu comentario"
                 showRawHtmlToggle={false}
                 minHeightClassName="min-h-[140px]"
+                simpleMode
               />
               <div className="grid gap-2 sm:max-w-[280px]">
                 <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">Captcha anti-spam</p>
