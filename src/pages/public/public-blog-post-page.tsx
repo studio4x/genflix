@@ -235,7 +235,7 @@ export function PublicBlogPostPage() {
         <div className="public-site-container max-w-[1140px]">
           <article>
             <div className="overflow-hidden bg-black">
-              <img src={post.image} alt={post.title} className="h-[400px] w-full object-contain" />
+              <img src={post.image} alt={post.title} className="h-[500px] w-full object-contain" />
             </div>
 
             {isDraftPreview ? (
