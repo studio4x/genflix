@@ -785,7 +785,7 @@ export function AdminBlogPage() {
           }
         }))
       }
-      setSuccessMessage('Imagem enviada com sucesso. Clique em "Salvar configura??o lateral" para publicar.')
+      setSuccessMessage('Imagem enviada com sucesso. Clique em "Salvar configuração lateral" para publicar.')
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : 'Nao foi possivel enviar a imagem.')
     } finally {
@@ -816,7 +816,7 @@ export function AdminBlogPage() {
           kind: 'blog-sidebar-stack',
         },
       })
-      setSuccessMessage('Configura??es da lateral do blog salvas com sucesso.')
+      setSuccessMessage('Configurações da lateral do blog salvas com sucesso.')
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : 'Nao foi possivel salvar a imagem lateral.')
     } finally {
@@ -1276,7 +1276,7 @@ export function AdminBlogPage() {
       <div className="grid gap-3">
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
-            {labelPrefix} T?tulo SEO
+            {labelPrefix} Título SEO
             <input
               value={value.seo_title}
               onChange={(event) => onChange({ ...value, seo_title: event.target.value })}
@@ -1294,7 +1294,7 @@ export function AdminBlogPage() {
         </div>
 
         <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
-          {labelPrefix} Descri??o SEO
+          {labelPrefix} Descrição SEO
           <textarea
             value={value.seo_description}
             onChange={(event) => onChange({ ...value, seo_description: event.target.value })}
@@ -1325,7 +1325,7 @@ export function AdminBlogPage() {
 
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
-            {labelPrefix} T?tulo OG
+            {labelPrefix} Título OG
             <input
               value={value.seo_og_title}
               onChange={(event) => onChange({ ...value, seo_og_title: event.target.value })}
@@ -1333,7 +1333,7 @@ export function AdminBlogPage() {
             />
           </label>
           <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
-            {labelPrefix} Descri??o OG
+            {labelPrefix} Descrição OG
             <input
               value={value.seo_og_description}
               onChange={(event) => onChange({ ...value, seo_og_description: event.target.value })}
@@ -1350,7 +1350,7 @@ export function AdminBlogPage() {
       <header className="flex flex-col gap-4 border-b border-[#D8E6EB] pb-5 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <p className="text-[10px] font-black uppercase tracking-[0.28em] text-[#1398B7]">Admin / Blog</p>
-          <h1 className="mt-2 font-readex text-3xl font-semibold tracking-tight text-[#15323b]">Blog e conte?do</h1>
+          <h1 className="mt-2 font-readex text-3xl font-semibold tracking-tight text-[#15323b]">Blog e conteúdo</h1>
         </div>
 
         <div className="flex flex-wrap gap-3">
@@ -1426,7 +1426,7 @@ export function AdminBlogPage() {
             <div className="rounded-2xl border border-[#D8E6EB] bg-white p-4"><p className="text-xs font-bold uppercase text-[#5F7077]">Total</p><p className="mt-2 text-2xl font-black text-[#15323b]">{statusSummary.total}</p></div>
             <div className="rounded-2xl border border-[#D8E6EB] bg-white p-4"><p className="text-xs font-bold uppercase text-[#5F7077]">Rascunhos</p><p className="mt-2 text-2xl font-black text-[#15323b]">{statusSummary.draft}</p></div>
             <div className="rounded-2xl border border-[#D8E6EB] bg-white p-4"><p className="text-xs font-bold uppercase text-[#5F7077]">Agendados</p><p className="mt-2 text-2xl font-black text-[#15323b]">{statusSummary.scheduled}</p></div>
-            <div className="rounded-2xl border border-[#D8E6EB] bg-white p-4"><p className="text-xs font-bold uppercase text-[#5F7077]">Publica??o</p><p className="mt-2 text-2xl font-black text-[#15323b]">{statusSummary.published}</p></div>
+            <div className="rounded-2xl border border-[#D8E6EB] bg-white p-4"><p className="text-xs font-bold uppercase text-[#5F7077]">Publicação</p><p className="mt-2 text-2xl font-black text-[#15323b]">{statusSummary.published}</p></div>
             <div className="rounded-2xl border border-[#D8E6EB] bg-white p-4"><p className="text-xs font-bold uppercase text-[#5F7077]">Destaque</p><p className="mt-2 text-2xl font-black text-[#15323b]">{statusSummary.featured}</p></div>
           </section>
 
@@ -1448,7 +1448,7 @@ export function AdminBlogPage() {
 
               <div className="mt-4 grid gap-4">
                 <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
-                  T�tulo
+                  Título
                   <input
                     value={articleForm.title}
                     onChange={(event) => {
@@ -1485,7 +1485,7 @@ export function AdminBlogPage() {
                     >
                       <option value="draft">Rascunho</option>
                       <option value="scheduled">Agendado</option>
-                      <option value="published">Publica??o</option>
+                      <option value="published">Publicação</option>
                     </select>
                   </label>
 
@@ -1782,7 +1782,7 @@ export function AdminBlogPage() {
                     <option value="all">Todos os status</option>
                     <option value="draft">Rascunho</option>
                     <option value="scheduled">Agendado</option>
-                    <option value="published">Publica??o</option>
+                    <option value="published">Publicação</option>
                   </select>
                 </div>
               </div>
@@ -1796,10 +1796,10 @@ export function AdminBlogPage() {
                   <table className="min-w-full divide-y divide-[#D8E6EB] text-left text-sm">
                     <thead className="bg-[#F2F7F9] text-[10px] font-black uppercase tracking-[0.2em] text-[#5F7077]">
                       <tr>
-                        <th className="px-4 py-3">T?tulo</th>
+                        <th className="px-4 py-3">Título</th>
                         <th className="px-4 py-3">Status</th>
                         <th className="px-4 py-3">Categoria</th>
-                        <th className="px-4 py-3">Publica??o</th>
+                        <th className="px-4 py-3">Publicação</th>
                         <th className="px-4 py-3">Leitura</th>
                       </tr>
                     </thead>
@@ -1894,7 +1894,7 @@ export function AdminBlogPage() {
                 </label>
               </div>
               <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
-                Descri��o
+                Descrição
                 <textarea
                   value={categoryForm.description}
                   onChange={(event) => setCategoryForm((current) => ({ ...current, description: event.target.value }))}
@@ -1955,7 +1955,7 @@ export function AdminBlogPage() {
                 >
                   <p className="text-sm font-black text-[#15323b]">{getCategoryPath(category, categories)}</p>
                   <p className="mt-1 text-xs font-semibold text-[#6d7f84]">
-                    /{category.slug} �� SEO robots: {category.seo_robots ?? 'index,follow'}
+                    /{category.slug} • SEO robots: {category.seo_robots ?? 'index,follow'}
                   </p>
                 </button>
               ))}
@@ -2001,7 +2001,7 @@ export function AdminBlogPage() {
                 </label>
               </div>
               <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
-                Descri��o
+                Descrição
                 <textarea
                   value={tagForm.description}
                   onChange={(event) => setTagForm((current) => ({ ...current, description: event.target.value }))}
@@ -2055,10 +2055,10 @@ export function AdminBlogPage() {
           <article className="rounded-[28px] border border-[#D8E6EB] bg-white p-5">
             <h2 className="text-lg font-black tracking-tight text-[#15323b]">Blocos laterais da home do blog</h2>
             <p className="mt-2 text-sm font-medium text-[#5F7077]">
-              Estes blocos aparecem na barra lateral direita da p�gina <code>/blog</code>, um abaixo do outro.
+              Estes blocos aparecem na barra lateral direita da página <code>/blog</code>, um abaixo do outro.
             </p>
             <p className="mt-1 text-xs font-semibold text-[#6d7f84]">
-              Recomenda??o de upload: <strong>640x920 px</strong> (propor??o <strong>7:10</strong>), formato JPG ou WebP.
+              Recomendação de upload: <strong>640x920 px</strong> (proporção <strong>7:10</strong>), formato JPG ou WebP.
             </p>
 
             <div className="mt-4 grid gap-3">
@@ -2082,7 +2082,7 @@ export function AdminBlogPage() {
                   </div>
 
                   <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
-                    Tipo de exibi��o
+                    Tipo de exibição
                     <select
                       value={block.mode}
                       onChange={(event) => {
