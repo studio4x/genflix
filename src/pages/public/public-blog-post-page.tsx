@@ -1,10 +1,11 @@
-﻿import { useEffect, useState } from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
 import { Link, Navigate, useParams, useSearchParams } from 'react-router-dom'
 import { ArrowLeftCircle, Send } from 'lucide-react'
 
 import { useAuth } from '@/app/providers/auth-provider'
 import { GenflixPublicFooter } from '@/components/public/genflix-public-footer'
 import { GenflixPublicHeader } from '@/components/public/genflix-public-header'
+import { fetchApprovedBlogComments, submitBlogComment, type BlogComment } from '@/features/blog/comments-api'
 import {
   genflixNavLinks,
   getGenflixBlogPostBySlug,
@@ -126,7 +127,7 @@ function mapAdminPreviewToBlogPost(preview: AdminPreviewPayload): GenflixBlogPos
 export function PublicBlogPostPage() {
   const { slug = '' } = useParams()
   const [searchParams] = useSearchParams()
-  const { isLoading, user, roles } = useAuth()
+  const { isLoading, user, roles, profile } = useAuth()
   const isAdmin = roles.includes('admin')
   const isAdminPreviewRequest = searchParams.get('preview') === 'admin'
   const previewKey = searchParams.get('previewKey') || `slug:${slug}`
@@ -135,6 +136,26 @@ export function PublicBlogPostPage() {
   const [post, setPost] = useState<GenflixBlogPost | null>(() => getGenflixBlogPostBySlug(slug))
   const [isLoadingPost, setIsLoadingPost] = useState(true)
   const [isDraftPreview, setIsDraftPreview] = useState(false)
+  const [comments, setComments] = useState<BlogComment[]>([])
+  const [isLoadingComments, setIsLoadingComments] = useState(true)
+  const [firstName, setFirstName] = useState('')
+  const [lastName, setLastName] = useState('')
+  const [email, setEmail] = useState('')
+  const [content, setContent] = useState('')
+  const [isSubmittingComment, setIsSubmittingComment] = useState(false)
+  const [commentError, setCommentError] = useState<string | null>(null)
+  const [commentSuccess, setCommentSuccess] = useState<string | null>(null)
+
+  useEffect(() => {
+    const fullName = (profile?.full_name ?? user?.user_metadata?.full_name ?? '').trim()
+    const parts = fullName ? fullName.split(/\s+/).filter(Boolean) : []
+    const resolvedFirstName = parts.length ? parts[0] : ''
+    const resolvedLastName = parts.length > 1 ? parts.slice(1).join(' ') : ''
+
+    setFirstName((current) => (current.trim() ? current : resolvedFirstName))
+    setLastName((current) => (current.trim() ? current : resolvedLastName))
+    setEmail((current) => (current.trim() ? current : (profile?.email ?? user?.email ?? '')))
+  }, [profile?.email, profile?.full_name, user?.email, user?.user_metadata?.full_name])
 
   useEffect(() => {
     let isMounted = true
@@ -207,6 +228,58 @@ export function PublicBlogPostPage() {
     }
   }, [canUseAdminPreviewPayload, isAdmin, isAdminPreviewRequest, previewKey, slug])
 
+  useEffect(() => {
+    let isMounted = true
+
+    async function loadComments() {
+      setIsLoadingComments(true)
+      try {
+        const rows = await fetchApprovedBlogComments(slug)
+        if (isMounted) {
+          setComments(rows)
+        }
+      } catch {
+        if (isMounted) {
+          setComments([])
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoadingComments(false)
+        }
+      }
+    }
+
+    void loadComments()
+
+    return () => {
+      isMounted = false
+    }
+  }, [slug])
+
+  async function handleSubmitComment(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    setCommentError(null)
+    setCommentSuccess(null)
+    setIsSubmittingComment(true)
+
+    try {
+      await submitBlogComment({
+        postSlug: slug,
+        postTitle: post?.title ?? '',
+        firstName,
+        lastName,
+        email,
+        content,
+      })
+      setContent('')
+      setCommentSuccess('Comentario enviado para aprovacao do administrador.')
+    } catch (error) {
+      setCommentError(error instanceof Error ? error.message : 'Nao foi possivel enviar o comentario.')
+    } finally {
+      setIsSubmittingComment(false)
+    }
+  }
+
   if (isLoading || waitingRoleResolution) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-[#10242b] p-6 font-manrope">
@@ -272,6 +345,40 @@ export function PublicBlogPostPage() {
               <Send className="h-4 w-4" />
               Fale conosco
             </Link>
+          </section>
+
+          <section className="mt-10 rounded-[18px] border border-[#D8E6EB] bg-white p-5 shadow-sm sm:p-7">
+            <h2 className="font-readex text-2xl font-semibold text-[#15323b]">Comentarios</h2>
+            <p className="mt-2 text-sm font-medium text-[#5f7077]">Envie seu comentario. A publicacao acontece apos aprovacao do administrador.</p>
+
+            {commentError ? <p className="mt-4 border border-red-200 bg-red-50 p-3 text-sm font-bold text-red-700">{commentError}</p> : null}
+            {commentSuccess ? <p className="mt-4 border border-emerald-200 bg-emerald-50 p-3 text-sm font-bold text-emerald-700">{commentSuccess}</p> : null}
+
+            <form onSubmit={(event) => void handleSubmitComment(event)} className="mt-5 grid gap-3">
+              <div className="grid gap-3 sm:grid-cols-3">
+                <input value={firstName} onChange={(event) => setFirstName(event.target.value)} placeholder="Nome" className="h-11 border border-[#D8E6EB] px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]" />
+                <input value={lastName} onChange={(event) => setLastName(event.target.value)} placeholder="Sobrenome" className="h-11 border border-[#D8E6EB] px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]" />
+                <input value={email} onChange={(event) => setEmail(event.target.value)} type="email" placeholder="E-mail" className="h-11 border border-[#D8E6EB] px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]" />
+              </div>
+              <textarea value={content} onChange={(event) => setContent(event.target.value)} rows={4} maxLength={3000} placeholder="Escreva seu comentario" className="w-full resize-none border border-[#D8E6EB] px-3 py-2 text-sm font-medium text-[#15323b] outline-none focus:border-[#1398B7]" />
+              <button type="submit" disabled={isSubmittingComment} className="h-11 w-full max-w-[260px] rounded-full bg-[#1398B7] px-5 text-sm font-black uppercase tracking-[0.02em] text-white hover:bg-[#0A3640] disabled:opacity-70">
+                {isSubmittingComment ? 'Enviando...' : 'Enviar comentario'}
+              </button>
+            </form>
+
+            <div className="mt-8 space-y-4 border-t border-[#D8E6EB] pt-6">
+              {isLoadingComments ? (
+                <p className="text-sm font-semibold text-[#6d7f84]">Carregando comentarios...</p>
+              ) : comments.length === 0 ? (
+                <p className="text-sm font-semibold text-[#6d7f84]">Ainda nao ha comentarios aprovados neste artigo.</p>
+              ) : comments.map((item) => (
+                <article key={item.id} className="rounded-[14px] border border-[#D8E6EB] bg-[#F8FBFC] p-4">
+                  <p className="text-sm font-black text-[#15323b]">{item.first_name} {item.last_name}</p>
+                  <p className="mt-2 text-sm leading-7 text-[#5f7077]">{item.content}</p>
+                  {item.admin_response ? <p className="mt-3 border border-blue-100 bg-blue-50 p-2 text-xs font-bold text-blue-800">Resposta do admin: {item.admin_response}</p> : null}
+                </article>
+              ))}
+            </div>
           </section>
         </div>
       </section>
