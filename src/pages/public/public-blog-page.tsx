@@ -285,7 +285,7 @@ export function PublicBlogPage() {
 
             <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_224px]">
               <div className="space-y-8">
-                <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-[32px] leading-none text-[#1f2e39]">
+                <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-[24px] leading-none text-[#1f2e39] sm:text-[28px]">
                   <span className="text-[#1f2e39]">Áreas:</span>
                   {genflixBlogFilters.filter((filter) => filter !== 'Todos').map((filter) => (
                     <button
@@ -296,7 +296,7 @@ export function PublicBlogPage() {
                         setCurrentPage(1)
                       }}
                       className={cn(
-                        'text-[38px] leading-none transition-colors',
+                        'text-[28px] leading-none transition-colors sm:text-[32px]',
                         selectedFilter === filter ? 'text-[#ff7a00]' : 'hover:text-[#ff7a00]',
                       )}
                     >
