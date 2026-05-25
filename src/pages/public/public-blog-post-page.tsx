@@ -182,6 +182,7 @@ export function PublicBlogPostPage() {
   const [email, setEmail] = useState('')
   const [content, setContent] = useState('')
   const [isSubmittingComment, setIsSubmittingComment] = useState(false)
+  const [isCommentFormOpen, setIsCommentFormOpen] = useState(false)
   const [commentError, setCommentError] = useState<string | null>(null)
   const [commentSuccess, setCommentSuccess] = useState<string | null>(null)
   const [captcha, setCaptcha] = useState(() => createCaptchaChallenge())
@@ -321,6 +322,7 @@ export function PublicBlogPostPage() {
       setCaptchaInput('')
       setCaptcha(createCaptchaChallenge())
       setCommentSuccess('Comentario enviado para aprovacao do administrador.')
+      setIsCommentFormOpen(false)
     } catch (error) {
       setCommentError(error instanceof Error ? error.message : 'Nao foi possivel enviar o comentario.')
     } finally {
@@ -440,34 +442,46 @@ export function PublicBlogPostPage() {
               ))}
             </div>
 
-            <form onSubmit={(event) => void handleSubmitComment(event)} className="mt-6 grid gap-3 border-t border-[#D8E6EB] pt-6">
-              <div className="grid gap-3 sm:grid-cols-3">
-                <input value={firstName} onChange={(event) => setFirstName(event.target.value)} placeholder="Nome" disabled={isAuthenticated} className="h-11 border border-[#D8E6EB] px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7] disabled:cursor-not-allowed disabled:bg-slate-100" />
-                <input value={lastName} onChange={(event) => setLastName(event.target.value)} placeholder="Sobrenome" disabled={isAuthenticated} className="h-11 border border-[#D8E6EB] px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7] disabled:cursor-not-allowed disabled:bg-slate-100" />
-                <input value={email} onChange={(event) => setEmail(event.target.value)} type="email" placeholder="E-mail" disabled={isAuthenticated} className="h-11 border border-[#D8E6EB] px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7] disabled:cursor-not-allowed disabled:bg-slate-100" />
-              </div>
-              <RichTextEditor
-                value={content}
-                onChange={setContent}
-                placeholder="Escreva seu comentario"
-                showRawHtmlToggle={false}
-                minHeightClassName="min-h-[140px]"
-                simpleMode
-              />
-              <div className="grid gap-2 sm:max-w-[280px]">
-                <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">Captcha anti-spam</p>
-                <label className="text-sm font-semibold text-[#15323b]">Resolva: {captcha.prompt}</label>
-                <input
-                  value={captchaInput}
-                  onChange={(event) => setCaptchaInput(event.target.value)}
-                  placeholder="Digite o resultado"
-                  className="h-11 border border-[#D8E6EB] px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]"
-                />
-              </div>
-              <button type="submit" disabled={isSubmittingComment} className="h-11 w-full max-w-[260px] rounded-full bg-[#1398B7] px-5 text-sm font-black uppercase tracking-[0.02em] text-white hover:bg-[#0A3640] disabled:opacity-70">
-                {isSubmittingComment ? 'Enviando...' : 'Enviar comentario'}
+            <div className="mt-6 border-t border-[#D8E6EB] pt-6">
+              <button
+                type="button"
+                onClick={() => setIsCommentFormOpen((current) => !current)}
+                className="h-11 w-full max-w-[300px] rounded-full bg-[#1398B7] px-5 text-sm font-black uppercase tracking-[0.02em] text-white hover:bg-[#0A3640]"
+              >
+                {isCommentFormOpen ? 'Fechar formulario' : 'Enviar comentario'}
               </button>
-            </form>
+
+              {isCommentFormOpen ? (
+                <form onSubmit={(event) => void handleSubmitComment(event)} className="mt-4 grid gap-3">
+                  <div className="grid gap-3 sm:grid-cols-3">
+                    <input value={firstName} onChange={(event) => setFirstName(event.target.value)} placeholder="Nome" disabled={isAuthenticated} className="h-11 border border-[#D8E6EB] px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7] disabled:cursor-not-allowed disabled:bg-slate-100" />
+                    <input value={lastName} onChange={(event) => setLastName(event.target.value)} placeholder="Sobrenome" disabled={isAuthenticated} className="h-11 border border-[#D8E6EB] px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7] disabled:cursor-not-allowed disabled:bg-slate-100" />
+                    <input value={email} onChange={(event) => setEmail(event.target.value)} type="email" placeholder="E-mail" disabled={isAuthenticated} className="h-11 border border-[#D8E6EB] px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7] disabled:cursor-not-allowed disabled:bg-slate-100" />
+                  </div>
+                  <RichTextEditor
+                    value={content}
+                    onChange={setContent}
+                    placeholder="Escreva seu comentario"
+                    showRawHtmlToggle={false}
+                    minHeightClassName="min-h-[140px]"
+                    simpleMode
+                  />
+                  <div className="grid gap-2 sm:max-w-[280px]">
+                    <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">Captcha anti-spam</p>
+                    <label className="text-sm font-semibold text-[#15323b]">Resolva: {captcha.prompt}</label>
+                    <input
+                      value={captchaInput}
+                      onChange={(event) => setCaptchaInput(event.target.value)}
+                      placeholder="Digite o resultado"
+                      className="h-11 border border-[#D8E6EB] px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]"
+                    />
+                  </div>
+                  <button type="submit" disabled={isSubmittingComment} className="h-11 w-full max-w-[260px] rounded-full bg-[#1398B7] px-5 text-sm font-black uppercase tracking-[0.02em] text-white hover:bg-[#0A3640] disabled:opacity-70">
+                    {isSubmittingComment ? 'Enviando...' : 'Enviar comentario'}
+                  </button>
+                </form>
+              ) : null}
+            </div>
           </section>
         </div>
       </section>
