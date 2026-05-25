@@ -32,6 +32,41 @@ type BlogSidebarBlock = {
   slides: BlogSidebarImageSlide[]
 }
 
+function getGridCoverImageUrl(imageUrl: string) {
+  if (!imageUrl.trim()) {
+    return imageUrl
+  }
+
+  try {
+    const parsed = new URL(imageUrl)
+    const storageMarker = '/storage/v1/object/public/'
+    const renderMarker = '/storage/v1/render/image/public/'
+
+    if (parsed.pathname.includes(storageMarker)) {
+      parsed.pathname = parsed.pathname.replace(storageMarker, renderMarker)
+      parsed.searchParams.set('width', '960')
+      parsed.searchParams.set('height', '540')
+      parsed.searchParams.set('resize', 'cover')
+      parsed.searchParams.set('quality', '72')
+      parsed.searchParams.set('format', 'webp')
+      return parsed.toString()
+    }
+
+    if (parsed.pathname.includes(renderMarker)) {
+      parsed.searchParams.set('width', '960')
+      parsed.searchParams.set('height', '540')
+      parsed.searchParams.set('resize', 'cover')
+      parsed.searchParams.set('quality', '72')
+      parsed.searchParams.set('format', 'webp')
+      return parsed.toString()
+    }
+  } catch {
+    return imageUrl
+  }
+
+  return imageUrl
+}
+
 export function PublicBlogPage() {
   const { isLoading, user, roles } = useAuth()
   const waitingRoleResolution = !!user && roles.length === 0
@@ -236,7 +271,14 @@ export function PublicBlogPage() {
                   {paginatedPosts.map((post) => (
                     <article key={post.slug} className="overflow-hidden rounded-[4px] border border-[#dfdfdf] bg-[#f5f5f5] shadow-sm">
                       <div className="aspect-[16/9] overflow-hidden">
-                        <img src={post.image} alt={post.title} className="h-full w-full object-cover" loading="lazy" />
+                        <img
+                          src={getGridCoverImageUrl(post.image)}
+                          alt={post.title}
+                          className="h-full w-full object-cover"
+                          loading="lazy"
+                          decoding="async"
+                          fetchPriority="low"
+                        />
                       </div>
 
                       <div className="flex min-h-[360px] flex-col p-7">
