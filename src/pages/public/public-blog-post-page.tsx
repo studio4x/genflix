@@ -5,6 +5,7 @@ import { ArrowLeftCircle, Send } from 'lucide-react'
 import { useAuth } from '@/app/providers/auth-provider'
 import { GenflixPublicFooter } from '@/components/public/genflix-public-footer'
 import { GenflixPublicHeader } from '@/components/public/genflix-public-header'
+import { RichTextEditor } from '@/components/ui/RichTextEditor'
 import { fetchApprovedBlogComments, submitBlogComment, type BlogComment } from '@/features/blog/comments-api'
 import {
   genflixNavLinks,
@@ -124,6 +125,12 @@ function mapAdminPreviewToBlogPost(preview: AdminPreviewPayload): GenflixBlogPos
   }
 }
 
+function createCaptchaChallenge() {
+  const left = Math.floor(Math.random() * 8) + 1
+  const right = Math.floor(Math.random() * 8) + 1
+  return { prompt: `${left} + ${right}`, answer: String(left + right) }
+}
+
 export function PublicBlogPostPage() {
   const { slug = '' } = useParams()
   const [searchParams] = useSearchParams()
@@ -145,6 +152,9 @@ export function PublicBlogPostPage() {
   const [isSubmittingComment, setIsSubmittingComment] = useState(false)
   const [commentError, setCommentError] = useState<string | null>(null)
   const [commentSuccess, setCommentSuccess] = useState<string | null>(null)
+  const [captcha, setCaptcha] = useState(() => createCaptchaChallenge())
+  const [captchaInput, setCaptchaInput] = useState('')
+  const isAuthenticated = Boolean(user)
 
   useEffect(() => {
     const fullName = (profile?.full_name ?? user?.user_metadata?.full_name ?? '').trim()
@@ -263,6 +273,10 @@ export function PublicBlogPostPage() {
     setIsSubmittingComment(true)
 
     try {
+      if (captchaInput.trim() !== captcha.answer) {
+        throw new Error('Captcha invalido. Confira o resultado e tente novamente.')
+      }
+
       await submitBlogComment({
         postSlug: slug,
         postTitle: post?.title ?? '',
@@ -272,6 +286,8 @@ export function PublicBlogPostPage() {
         content,
       })
       setContent('')
+      setCaptchaInput('')
+      setCaptcha(createCaptchaChallenge())
       setCommentSuccess('Comentario enviado para aprovacao do administrador.')
     } catch (error) {
       setCommentError(error instanceof Error ? error.message : 'Nao foi possivel enviar o comentario.')
@@ -356,11 +372,27 @@ export function PublicBlogPostPage() {
 
             <form onSubmit={(event) => void handleSubmitComment(event)} className="mt-5 grid gap-3">
               <div className="grid gap-3 sm:grid-cols-3">
-                <input value={firstName} onChange={(event) => setFirstName(event.target.value)} placeholder="Nome" className="h-11 border border-[#D8E6EB] px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]" />
-                <input value={lastName} onChange={(event) => setLastName(event.target.value)} placeholder="Sobrenome" className="h-11 border border-[#D8E6EB] px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]" />
-                <input value={email} onChange={(event) => setEmail(event.target.value)} type="email" placeholder="E-mail" className="h-11 border border-[#D8E6EB] px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]" />
+                <input value={firstName} onChange={(event) => setFirstName(event.target.value)} placeholder="Nome" disabled={isAuthenticated} className="h-11 border border-[#D8E6EB] px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7] disabled:cursor-not-allowed disabled:bg-slate-100" />
+                <input value={lastName} onChange={(event) => setLastName(event.target.value)} placeholder="Sobrenome" disabled={isAuthenticated} className="h-11 border border-[#D8E6EB] px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7] disabled:cursor-not-allowed disabled:bg-slate-100" />
+                <input value={email} onChange={(event) => setEmail(event.target.value)} type="email" placeholder="E-mail" disabled={isAuthenticated} className="h-11 border border-[#D8E6EB] px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7] disabled:cursor-not-allowed disabled:bg-slate-100" />
               </div>
-              <textarea value={content} onChange={(event) => setContent(event.target.value)} rows={4} maxLength={3000} placeholder="Escreva seu comentario" className="w-full resize-none border border-[#D8E6EB] px-3 py-2 text-sm font-medium text-[#15323b] outline-none focus:border-[#1398B7]" />
+              <RichTextEditor
+                value={content}
+                onChange={setContent}
+                placeholder="Escreva seu comentario"
+                showRawHtmlToggle={false}
+                minHeightClassName="min-h-[140px]"
+              />
+              <div className="grid gap-2 sm:max-w-[280px]">
+                <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">Captcha anti-spam</p>
+                <label className="text-sm font-semibold text-[#15323b]">Resolva: {captcha.prompt}</label>
+                <input
+                  value={captchaInput}
+                  onChange={(event) => setCaptchaInput(event.target.value)}
+                  placeholder="Digite o resultado"
+                  className="h-11 border border-[#D8E6EB] px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]"
+                />
+              </div>
               <button type="submit" disabled={isSubmittingComment} className="h-11 w-full max-w-[260px] rounded-full bg-[#1398B7] px-5 text-sm font-black uppercase tracking-[0.02em] text-white hover:bg-[#0A3640] disabled:opacity-70">
                 {isSubmittingComment ? 'Enviando...' : 'Enviar comentario'}
               </button>
