@@ -266,23 +266,45 @@ export function PublicBlogPage() {
 
       <section className="pb-16 pt-10">
         <div className="public-site-container">
-          <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_224px]">
-            <div className="space-y-14">
-              <div>
-                <h1 className="text-4xl font-semibold leading-tight text-[#243a64] sm:text-5xl">
-                  <EditableText entryKey="blog.hero.title" fallback="Blog GenFlix" label="Título da página Blog" pageKey="blog" />
-                </h1>
-                <p className="mt-3 text-base leading-7 text-[#20364f] sm:text-lg">
-                  <EditableText
-                    entryKey="blog.hero.subtitle"
-                    fallback="Conteúdos para aprofundar seu aprendizado e aplicar o conhecimento com mais confiança."
-                    label="Subtítulo da página Blog"
-                    pageKey="blog"
-                  />
-                </p>
-              </div>
-              <BannerPlacementSlot pageKey="blog" placementKey="hero" />
-              <div>
+          <div className="space-y-10">
+            <div>
+              <h1 className="text-4xl font-semibold leading-tight text-[#243a64] sm:text-5xl">
+                <EditableText entryKey="blog.hero.title" fallback="Blog GenFlix" label="Título da página Blog" pageKey="blog" />
+              </h1>
+              <p className="mt-3 text-base leading-7 text-[#20364f] sm:text-lg">
+                <EditableText
+                  entryKey="blog.hero.subtitle"
+                  fallback="Conteúdos para aprofundar seu aprendizado e aplicar o conhecimento com mais confiança."
+                  label="Subtítulo da página Blog"
+                  pageKey="blog"
+                />
+              </p>
+            </div>
+
+            <BannerPlacementSlot pageKey="blog" placementKey="hero" />
+
+            <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_224px]">
+              <div className="space-y-8">
+                <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-[32px] leading-none text-[#1f2e39]">
+                  <span className="text-[#1f2e39]">Áreas:</span>
+                  {genflixBlogFilters.filter((filter) => filter !== 'Todos').map((filter) => (
+                    <button
+                      key={filter}
+                      type="button"
+                      onClick={() => {
+                        setSelectedFilter(filter)
+                        setCurrentPage(1)
+                      }}
+                      className={cn(
+                        'text-[38px] leading-none transition-colors',
+                        selectedFilter === filter ? 'text-[#ff7a00]' : 'hover:text-[#ff7a00]',
+                      )}
+                    >
+                      {filter}
+                    </button>
+                  ))}
+                </div>
+
                 <div className="grid gap-8 md:grid-cols-2 xl:grid-cols-3">
                   {paginatedPosts.map((post) => (
                     <article key={post.slug} className="overflow-hidden rounded-[4px] border border-[#dfdfdf] bg-[#f5f5f5] shadow-sm">
@@ -358,96 +380,72 @@ export function PublicBlogPage() {
                   </button>
                 </div>
               </div>
-            </div>
+              <aside className="space-y-6">
+                {sidebarBlocks.length > 0 ? sidebarBlocks.map((block, blockIndex) => {
+                  const hasCarousel = block.mode === 'carousel' && block.slides.length > 1
+                  const activeSlideIndex = hasCarousel ? (sidebarCarouselTick % block.slides.length) : 0
+                  const fallbackSlide = block.slides[0]
 
-            <aside className="space-y-8">
-              <div>
-                <h2 className="text-3xl font-semibold leading-tight text-[#ff7a00]">Áreas do blog</h2>
-                <div className="mt-6 flex items-center gap-8">
-                  <span className="h-px flex-1 bg-[#3b3b3b]" />
-                  <span className="h-px flex-1 bg-[#3b3b3b]" />
-                </div>
-                <div className="mt-8 space-y-3 text-lg leading-none text-[#2f4b7d]">
-                  {genflixBlogFilters.map((filter) => (
-                    <button
-                      key={filter}
-                      type="button"
-                      onClick={() => {
-                        setSelectedFilter(filter)
-                        setCurrentPage(1)
-                      }}
-                      className={cn('block text-left transition-colors', selectedFilter === filter ? 'text-[#ff7a00]' : 'hover:text-[#ff7a00]')}
-                    >
-                      {filter}
-                    </button>
-                  ))}
-                </div>
-              </div>
+                  if (!fallbackSlide?.url) {
+                    return <div key={`sidebar-block-${blockIndex}`} className="aspect-[7/10] w-full bg-[#23b6a1]" />
+                  }
 
-              {sidebarBlocks.length > 0 ? sidebarBlocks.map((block, blockIndex) => {
-                const hasCarousel = block.mode === 'carousel' && block.slides.length > 1
-                const activeSlideIndex = hasCarousel ? (sidebarCarouselTick % block.slides.length) : 0
-                const fallbackSlide = block.slides[0]
-
-                if (!fallbackSlide?.url) {
-                  return <div key={`sidebar-block-${blockIndex}`} className="aspect-[7/10] w-full bg-[#23b6a1]" />
-                }
-
-                if (!hasCarousel) {
-                  return fallbackSlide.linkUrl.trim() ? (
-                    <a key={`sidebar-block-${blockIndex}`} href={fallbackSlide.linkUrl} className="block cursor-pointer">
+                  if (!hasCarousel) {
+                    return fallbackSlide.linkUrl.trim() ? (
+                      <a key={`sidebar-block-${blockIndex}`} href={fallbackSlide.linkUrl} className="block cursor-pointer">
+                        <img
+                          src={fallbackSlide.url}
+                          alt={fallbackSlide.alt || 'Imagem lateral do blog'}
+                          className="aspect-[7/10] w-full object-cover"
+                          loading="lazy"
+                        />
+                      </a>
+                    ) : (
                       <img
+                        key={`sidebar-block-${blockIndex}`}
                         src={fallbackSlide.url}
                         alt={fallbackSlide.alt || 'Imagem lateral do blog'}
                         className="aspect-[7/10] w-full object-cover"
                         loading="lazy"
                       />
-                    </a>
-                  ) : (
-                    <img
-                      key={`sidebar-block-${blockIndex}`}
-                      src={fallbackSlide.url}
-                      alt={fallbackSlide.alt || 'Imagem lateral do blog'}
-                      className="aspect-[7/10] w-full object-cover"
-                      loading="lazy"
-                    />
-                  )
-                }
+                    )
+                  }
 
-                return (
-                  <div key={`sidebar-block-${blockIndex}`} className="aspect-[7/10] w-full overflow-hidden">
-                    <div
-                      className="flex h-full w-full transition-transform duration-700 ease-in-out"
-                      style={{ transform: `translateX(-${activeSlideIndex * 100}%)` }}
-                    >
-                      {block.slides.map((slide, slideIndex) => (
-                        <div key={`sidebar-block-${blockIndex}-slide-${slideIndex}`} className="h-full w-full shrink-0">
-                          {slide.linkUrl.trim() ? (
-                            <a href={slide.linkUrl} className="block h-full w-full cursor-pointer">
+                  return (
+                    <div key={`sidebar-block-${blockIndex}`} className="aspect-[7/10] w-full overflow-hidden">
+                      <div
+                        className="flex h-full w-full transition-transform duration-700 ease-in-out"
+                        style={{ transform: `translateX(-${activeSlideIndex * 100}%)` }}
+                      >
+                        {block.slides.map((slide, slideIndex) => (
+                          <div key={`sidebar-block-${blockIndex}-slide-${slideIndex}`} className="h-full w-full shrink-0">
+                            {slide.linkUrl.trim() ? (
+                              <a href={slide.linkUrl} className="block h-full w-full cursor-pointer">
+                                <img
+                                  src={slide.url}
+                                  alt={slide.alt || 'Imagem lateral do blog'}
+                                  className="h-full w-full object-cover"
+                                  loading="lazy"
+                                />
+                              </a>
+                            ) : (
                               <img
                                 src={slide.url}
                                 alt={slide.alt || 'Imagem lateral do blog'}
                                 className="h-full w-full object-cover"
                                 loading="lazy"
                               />
-                            </a>
-                          ) : (
-                            <img
-                              src={slide.url}
-                              alt={slide.alt || 'Imagem lateral do blog'}
-                              className="h-full w-full object-cover"
-                              loading="lazy"
-                            />
-                          )}
-                        </div>
-                      ))}
+                            )}
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                )
-              }) : (
-                <div className="aspect-[7/10] w-full bg-[#23b6a1]" />
-              )}
-            </aside>
+                  )
+                }) : (
+                  <div className="aspect-[7/10] w-full bg-[#23b6a1]" />
+                )}
+              </aside>
+            </div>
           </div>
         </div>
       </section>
