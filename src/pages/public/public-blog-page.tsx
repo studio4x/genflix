@@ -274,7 +274,7 @@ export function PublicBlogPage() {
                         <img
                           src={getGridCoverImageUrl(post.image)}
                           alt={post.title}
-                          className="h-full w-full object-cover"
+                          className="h-full w-full object-contain bg-[#e9ecef]"
                           loading="lazy"
                           decoding="async"
                           fetchPriority="low"
