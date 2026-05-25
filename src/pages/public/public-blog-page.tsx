@@ -282,7 +282,11 @@ export function PublicBlogPage() {
                       </div>
 
                       <div className="flex min-h-[360px] flex-col p-7">
-                        <h3 className="text-2xl font-semibold leading-tight text-[#243a64]">{post.title}</h3>
+                        <h3 className="text-2xl font-semibold leading-tight text-[#243a64]">
+                          <Link to={`/blog/${post.slug}`} className="transition-colors hover:text-[#ff7a00]">
+                            {post.title}
+                          </Link>
+                        </h3>
                         <p className="mt-4 min-h-[10.5rem] line-clamp-6 text-base leading-7 text-[#20364f]">{post.excerpt}</p>
                         <Link
                           to={`/blog/${post.slug}`}
