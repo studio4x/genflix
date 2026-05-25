@@ -14,6 +14,7 @@ import {
 import { BannerPlacementSlot } from '@/features/banners/banner-placement-slot'
 import { fetchPublicBlogPostsFromSupabase } from '@/features/public/genflix-public-content-api'
 import { fetchSiteContent } from '@/features/site-editor/api'
+import { EditableText, useSiteContentScope } from '@/features/site-editor/visual-editor'
 import { cn } from '@/lib/utils'
 
 const POSTS_PER_PAGE = 6
@@ -69,7 +70,9 @@ function getGridCoverImageUrl(imageUrl: string) {
 
 export function PublicBlogPage() {
   const { isLoading, user, roles } = useAuth()
+  const siteContentScope = useSiteContentScope()
   const waitingRoleResolution = !!user && roles.length === 0
+  const waitingSiteContent = siteContentScope?.isReady === false
   const [selectedFilter, setSelectedFilter] = useState<(typeof genflixBlogFilters)[number]>('Todos')
   const [currentPage, setCurrentPage] = useState(1)
   const [posts, setPosts] = useState<GenflixBlogPost[]>(genflixBlogPosts)
@@ -249,7 +252,7 @@ export function PublicBlogPage() {
     return listingPosts.slice(start, start + POSTS_PER_PAGE)
   }, [visibleCurrentPage, listingPosts])
 
-  if (isLoading || waitingRoleResolution) {
+  if (isLoading || waitingRoleResolution || waitingSiteContent) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-[#10242b] p-6 font-manrope">
         <p className="text-sm font-extrabold uppercase tracking-[0.28em] text-white/72">Carregando GenFlix...</p>
@@ -266,7 +269,17 @@ export function PublicBlogPage() {
           <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_224px]">
             <div className="space-y-14">
               <div>
-                <h1 className="text-4xl font-semibold leading-tight text-[#243a64] sm:text-5xl">Blog GenFlix</h1>
+                <h1 className="text-4xl font-semibold leading-tight text-[#243a64] sm:text-5xl">
+                  <EditableText entryKey="blog.hero.title" fallback="Blog GenFlix" label="Título da página Blog" pageKey="blog" />
+                </h1>
+                <p className="mt-3 text-base leading-7 text-[#20364f] sm:text-lg">
+                  <EditableText
+                    entryKey="blog.hero.subtitle"
+                    fallback="Conteúdos para aprofundar seu aprendizado e aplicar o conhecimento com mais confiança."
+                    label="Subtítulo da página Blog"
+                    pageKey="blog"
+                  />
+                </p>
               </div>
               <BannerPlacementSlot pageKey="blog" placementKey="hero" />
               <div>
