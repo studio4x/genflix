@@ -131,6 +131,38 @@ function createCaptchaChallenge() {
   return { prompt: `${left} + ${right}`, answer: String(left + right) }
 }
 
+function sanitizeCommentHtml(rawValue: string) {
+  if (!rawValue.trim()) {
+    return ''
+  }
+
+  const parser = new DOMParser()
+  const doc = parser.parseFromString(rawValue, 'text/html')
+  const blockedTags = new Set(['script', 'style', 'iframe', 'object', 'embed'])
+
+  const nodes = Array.from(doc.body.querySelectorAll('*'))
+  nodes.forEach((node) => {
+    if (blockedTags.has(node.tagName.toLowerCase())) {
+      node.remove()
+      return
+    }
+
+    Array.from(node.attributes).forEach((attribute) => {
+      const name = attribute.name.toLowerCase()
+      const value = attribute.value.trim().toLowerCase()
+      if (name.startsWith('on')) {
+        node.removeAttribute(attribute.name)
+        return
+      }
+      if ((name === 'href' || name === 'src') && value.startsWith('javascript:')) {
+        node.removeAttribute(attribute.name)
+      }
+    })
+  })
+
+  return doc.body.innerHTML
+}
+
 export function PublicBlogPostPage() {
   const { slug = '' } = useParams()
   const [searchParams] = useSearchParams()
@@ -370,7 +402,45 @@ export function PublicBlogPostPage() {
             {commentError ? <p className="mt-4 border border-red-200 bg-red-50 p-3 text-sm font-bold text-red-700">{commentError}</p> : null}
             {commentSuccess ? <p className="mt-4 border border-emerald-200 bg-emerald-50 p-3 text-sm font-bold text-emerald-700">{commentSuccess}</p> : null}
 
-            <form onSubmit={(event) => void handleSubmitComment(event)} className="mt-5 grid gap-3">
+            <div className="mt-6 space-y-4">
+              {isLoadingComments ? (
+                <p className="text-sm font-semibold text-[#6d7f84]">Carregando comentarios...</p>
+              ) : comments.length === 0 ? (
+                <p className="text-sm font-semibold text-[#6d7f84]">Ainda nao ha comentarios aprovados neste artigo.</p>
+              ) : comments.map((item) => (
+                <article key={item.id} className="rounded-[18px] border border-[#D8E6EB] bg-[#F8FBFC] p-4">
+                  <div className="flex items-start gap-3">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#0E8CA6] text-xs font-black uppercase text-white">
+                      {(item.first_name?.[0] ?? '').toUpperCase()}{(item.last_name?.[0] ?? '').toUpperCase()}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                        <p className="text-sm font-black text-[#15323b]">{item.first_name} {item.last_name}</p>
+                        <span className="text-xs font-semibold text-[#7a9097]">
+                          {new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(item.created_at))}
+                        </span>
+                      </div>
+                      <div
+                        className="prose prose-sm mt-2 max-w-none text-[#5f7077]"
+                        dangerouslySetInnerHTML={{ __html: sanitizeCommentHtml(item.content) }}
+                      />
+
+                      {item.admin_response ? (
+                        <div className="mt-3 rounded-[12px] border border-[#CBE6ED] bg-[#EAF7FA] p-3">
+                          <p className="text-[11px] font-black uppercase tracking-[0.12em] text-[#0E6F82]">Resposta do admin</p>
+                          <div
+                            className="prose prose-sm mt-2 max-w-none text-[#0A3640]"
+                            dangerouslySetInnerHTML={{ __html: sanitizeCommentHtml(item.admin_response) }}
+                          />
+                        </div>
+                      ) : null}
+                    </div>
+                  </div>
+                </article>
+              ))}
+            </div>
+
+            <form onSubmit={(event) => void handleSubmitComment(event)} className="mt-6 grid gap-3 border-t border-[#D8E6EB] pt-6">
               <div className="grid gap-3 sm:grid-cols-3">
                 <input value={firstName} onChange={(event) => setFirstName(event.target.value)} placeholder="Nome" disabled={isAuthenticated} className="h-11 border border-[#D8E6EB] px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7] disabled:cursor-not-allowed disabled:bg-slate-100" />
                 <input value={lastName} onChange={(event) => setLastName(event.target.value)} placeholder="Sobrenome" disabled={isAuthenticated} className="h-11 border border-[#D8E6EB] px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7] disabled:cursor-not-allowed disabled:bg-slate-100" />
@@ -398,20 +468,6 @@ export function PublicBlogPostPage() {
                 {isSubmittingComment ? 'Enviando...' : 'Enviar comentario'}
               </button>
             </form>
-
-            <div className="mt-8 space-y-4 border-t border-[#D8E6EB] pt-6">
-              {isLoadingComments ? (
-                <p className="text-sm font-semibold text-[#6d7f84]">Carregando comentarios...</p>
-              ) : comments.length === 0 ? (
-                <p className="text-sm font-semibold text-[#6d7f84]">Ainda nao ha comentarios aprovados neste artigo.</p>
-              ) : comments.map((item) => (
-                <article key={item.id} className="rounded-[14px] border border-[#D8E6EB] bg-[#F8FBFC] p-4">
-                  <p className="text-sm font-black text-[#15323b]">{item.first_name} {item.last_name}</p>
-                  <p className="mt-2 text-sm leading-7 text-[#5f7077]">{item.content}</p>
-                  {item.admin_response ? <p className="mt-3 border border-blue-100 bg-blue-50 p-2 text-xs font-bold text-blue-800">Resposta do admin: {item.admin_response}</p> : null}
-                </article>
-              ))}
-            </div>
           </section>
         </div>
       </section>
