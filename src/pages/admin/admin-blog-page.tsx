@@ -421,21 +421,21 @@ function getSeoValidationHints(form: ArticleFormState) {
   const focus = form.focusKeyword.trim().toLowerCase()
 
   if (!focus) {
-    hints.push('Defina uma palavra-chave de foco para melhorar as sugestÃµes de SEO.')
+    hints.push('Defina uma palavra-chave de foco para melhorar as sugest?es de SEO.')
   } else {
     if (!slug.includes(slugify(focus))) {
-      hints.push('A palavra-chave de foco ainda nÃ£o aparece no slug.')
+      hints.push('A palavra-chave de foco ainda n?o aparece no slug.')
     }
     if (!title.includes(focus)) {
-      hints.push('A palavra-chave de foco nÃ£o estÃ¡ presente no tÃ­tulo do artigo.')
+      hints.push('A palavra-chave de foco n?o est? presente no t?tulo do artigo.')
     }
     if (!excerpt.includes(focus)) {
-      hints.push('A palavra-chave de foco nÃ£o aparece no excerpt.')
+      hints.push('A palavra-chave de foco n?o aparece no excerpt.')
     }
   }
 
   if (form.seo_title.trim().length < 25 || form.seo_title.trim().length > 60) {
-    hints.push('O tÃ­tulo SEO ideal fica entre 25 e 60 caracteres.')
+    hints.push('O t?tulo SEO ideal fica entre 25 e 60 caracteres.')
   }
 
   if (form.seo_description.trim().length < 70 || form.seo_description.trim().length > 160) {
@@ -453,7 +453,7 @@ function suggestFocusKeyword(form: ArticleFormState) {
 
   const words = base
     .toLowerCase()
-    .split(/[^a-z0-9Ã -Ã¿]+/i)
+    .split(/[^a-z0-9?-?]+/i)
     .map((entry) => entry.trim())
     .filter((entry) => entry.length > 3)
 
@@ -480,7 +480,7 @@ function suggestNewTagNames(form: ArticleFormState, tags: BlogTagRow[]) {
   const stopWords = new Set(['para', 'como', 'com', 'sem', 'uma', 'das', 'dos', 'que', 'sobre', 'pela', 'pelo', 'mais', 'este', 'essa'])
 
   const candidates = corpus
-    .split(/[^a-z0-9Ã -Ã¿]+/i)
+    .split(/[^a-z0-9?-?]+/i)
     .map((entry) => entry.trim())
     .filter((entry) => entry.length >= 5 && !stopWords.has(entry))
 
@@ -785,7 +785,7 @@ export function AdminBlogPage() {
           }
         }))
       }
-      setSuccessMessage('Imagem enviada com sucesso. Clique em "Salvar configuraÃ§Ã£o lateral" para publicar.')
+      setSuccessMessage('Imagem enviada com sucesso. Clique em "Salvar configura??o lateral" para publicar.')
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : 'Nao foi possivel enviar a imagem.')
     } finally {
@@ -816,7 +816,7 @@ export function AdminBlogPage() {
           kind: 'blog-sidebar-stack',
         },
       })
-      setSuccessMessage('ConfiguraÃ§Ãµes da lateral do blog salvas com sucesso.')
+      setSuccessMessage('Configura??es da lateral do blog salvas com sucesso.')
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : 'Nao foi possivel salvar a imagem lateral.')
     } finally {
@@ -846,7 +846,7 @@ export function AdminBlogPage() {
     const previewKey = selectedArticleId ? `id:${selectedArticleId}` : `slug:${articleForm.slug}`
     const previewPayload = {
       slug: articleForm.slug,
-      title: articleForm.title.trim() || 'Rascunho sem tÃ­tulo',
+      title: articleForm.title.trim() || 'Rascunho sem t?tulo',
       category: 'Sem categoria',
       excerpt: articleForm.excerpt.trim(),
       image: articleForm.coverImageUrl.trim() || '/images/genflix/home/featured-2.jpg',
@@ -966,7 +966,7 @@ export function AdminBlogPage() {
     const effectiveStatus = nextStatus ?? articleForm.status
 
     if (!title || !slug) {
-      setErrorMessage('Informe tÃ­tulo e slug do artigo.')
+      setErrorMessage('Informe t?tulo e slug do artigo.')
       return
     }
 
@@ -1046,7 +1046,7 @@ export function AdminBlogPage() {
     await loadAllData()
     resetArticleForm()
     setArticleView('list')
-    setSuccessMessage('Artigo excluÃ­do com sucesso.')
+    setSuccessMessage('Artigo exclu?do com sucesso.')
   }
 
   async function handleSaveCategory(inline = false) {
@@ -1082,7 +1082,7 @@ export function AdminBlogPage() {
     }
 
     if (payload.display_order != null && Number.isNaN(payload.display_order)) {
-      setErrorMessage('Ordem da categoria invÃ¡lida.')
+      setErrorMessage('Ordem da categoria inv?lida.')
       setIsSavingCategory(false)
       return
     }
@@ -1137,7 +1137,7 @@ export function AdminBlogPage() {
 
     await loadAllData()
     resetCategoryForm()
-    setSuccessMessage('Categoria excluÃ­da com sucesso.')
+    setSuccessMessage('Categoria exclu?da com sucesso.')
   }
 
   async function handleSaveTag() {
@@ -1213,7 +1213,7 @@ export function AdminBlogPage() {
 
     await loadAllData()
     resetTagForm()
-    setSuccessMessage('Tag excluÃ­da sem quebrar relacionamentos de artigos.')
+    setSuccessMessage('Tag exclu?da sem quebrar relacionamentos de artigos.')
   }
 
   async function handleFillTagsWithAI() {
@@ -1227,7 +1227,7 @@ export function AdminBlogPage() {
       ...current,
       tagIds: Array.from(new Set([...current.tagIds, ...suggestedIds])),
     }))
-    setSuccessMessage('Tags existentes preenchidas com IA (heurÃ­stica semÃ¢ntica local).')
+    setSuccessMessage('Tags existentes preenchidas com IA (heur?stica sem?ntica local).')
   }
 
   async function handleSuggestAndCreateTags() {
@@ -1276,7 +1276,7 @@ export function AdminBlogPage() {
       <div className="grid gap-3">
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
-            {labelPrefix} TÃ­tulo SEO
+            {labelPrefix} T?tulo SEO
             <input
               value={value.seo_title}
               onChange={(event) => onChange({ ...value, seo_title: event.target.value })}
@@ -1284,7 +1284,7 @@ export function AdminBlogPage() {
             />
           </label>
           <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
-            {labelPrefix} URL canÃ´nica
+            {labelPrefix} URL can?nica
             <input
               value={value.seo_canonical_url}
               onChange={(event) => onChange({ ...value, seo_canonical_url: event.target.value })}
@@ -1294,7 +1294,7 @@ export function AdminBlogPage() {
         </div>
 
         <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
-          {labelPrefix} DescriÃ§Ã£o SEO
+          {labelPrefix} Descri??o SEO
           <textarea
             value={value.seo_description}
             onChange={(event) => onChange({ ...value, seo_description: event.target.value })}
@@ -1325,7 +1325,7 @@ export function AdminBlogPage() {
 
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
-            {labelPrefix} TÃ­tulo OG
+            {labelPrefix} T?tulo OG
             <input
               value={value.seo_og_title}
               onChange={(event) => onChange({ ...value, seo_og_title: event.target.value })}
@@ -1333,7 +1333,7 @@ export function AdminBlogPage() {
             />
           </label>
           <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
-            {labelPrefix} DescriÃ§Ã£o OG
+            {labelPrefix} Descri??o OG
             <input
               value={value.seo_og_description}
               onChange={(event) => onChange({ ...value, seo_og_description: event.target.value })}
@@ -1350,7 +1350,7 @@ export function AdminBlogPage() {
       <header className="flex flex-col gap-4 border-b border-[#D8E6EB] pb-5 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <p className="text-[10px] font-black uppercase tracking-[0.28em] text-[#1398B7]">Admin / Blog</p>
-          <h1 className="mt-2 font-readex text-3xl font-semibold tracking-tight text-[#15323b]">Blog e conteÃºdo</h1>
+          <h1 className="mt-2 font-readex text-3xl font-semibold tracking-tight text-[#15323b]">Blog e conte?do</h1>
         </div>
 
         <div className="flex flex-wrap gap-3">
@@ -1426,7 +1426,7 @@ export function AdminBlogPage() {
             <div className="rounded-2xl border border-[#D8E6EB] bg-white p-4"><p className="text-xs font-bold uppercase text-[#5F7077]">Total</p><p className="mt-2 text-2xl font-black text-[#15323b]">{statusSummary.total}</p></div>
             <div className="rounded-2xl border border-[#D8E6EB] bg-white p-4"><p className="text-xs font-bold uppercase text-[#5F7077]">Rascunhos</p><p className="mt-2 text-2xl font-black text-[#15323b]">{statusSummary.draft}</p></div>
             <div className="rounded-2xl border border-[#D8E6EB] bg-white p-4"><p className="text-xs font-bold uppercase text-[#5F7077]">Agendados</p><p className="mt-2 text-2xl font-black text-[#15323b]">{statusSummary.scheduled}</p></div>
-            <div className="rounded-2xl border border-[#D8E6EB] bg-white p-4"><p className="text-xs font-bold uppercase text-[#5F7077]">Publicados</p><p className="mt-2 text-2xl font-black text-[#15323b]">{statusSummary.published}</p></div>
+            <div className="rounded-2xl border border-[#D8E6EB] bg-white p-4"><p className="text-xs font-bold uppercase text-[#5F7077]">Publica??o</p><p className="mt-2 text-2xl font-black text-[#15323b]">{statusSummary.published}</p></div>
             <div className="rounded-2xl border border-[#D8E6EB] bg-white p-4"><p className="text-xs font-bold uppercase text-[#5F7077]">Destaque</p><p className="mt-2 text-2xl font-black text-[#15323b]">{statusSummary.featured}</p></div>
           </section>
 
@@ -1448,7 +1448,7 @@ export function AdminBlogPage() {
 
               <div className="mt-4 grid gap-4">
                 <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
-                  TÃ­tulo
+                  T�tulo
                   <input
                     value={articleForm.title}
                     onChange={(event) => {
@@ -1485,7 +1485,7 @@ export function AdminBlogPage() {
                     >
                       <option value="draft">Rascunho</option>
                       <option value="scheduled">Agendado</option>
-                      <option value="published">Publicado</option>
+                      <option value="published">Publica??o</option>
                     </select>
                   </label>
 
@@ -1655,7 +1655,7 @@ export function AdminBlogPage() {
                     </div>
                   ) : (
                     <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-xs font-semibold text-emerald-700">
-                      SEO bÃ¡sico do artigo estÃ¡ consistente com a palavra-chave de foco.
+                      SEO b?sico do artigo est? consistente com a palavra-chave de foco.
                     </div>
                   )}
 
@@ -1701,7 +1701,7 @@ export function AdminBlogPage() {
                   </div>
                 ) : (
                   <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs font-semibold text-slate-600">
-                    Tags e relacionamento avanÃ§ado estÃ£o indisponÃ­veis no modelo atual do blog.
+                    Tags e relacionamento avan?ado est?o indispon?veis no modelo atual do blog.
                   </div>
                 )}
 
@@ -1716,7 +1716,7 @@ export function AdminBlogPage() {
                 </label>
 
                 <div className="space-y-1">
-                  <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-500">ConteÃºdo (content_html)</p>
+                  <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-500">Conte?do (content_html)</p>
                   <RichTextEditor
                     value={articleForm.contentHtml}
                     onChange={(nextHtml) => {
@@ -1771,7 +1771,7 @@ export function AdminBlogPage() {
                   <input
                     value={articleSearch}
                     onChange={(event) => setArticleSearch(event.target.value)}
-                    placeholder="Buscar por tÃ­tulo, slug ou categoria..."
+                    placeholder="Buscar por t?tulo, slug ou categoria..."
                     className="h-10 min-w-[220px] rounded-xl border border-[#D8E6EB] bg-white px-3 text-sm font-medium text-[#15323b] outline-none focus:border-[#1398B7]"
                   />
                   <select
@@ -1782,7 +1782,7 @@ export function AdminBlogPage() {
                     <option value="all">Todos os status</option>
                     <option value="draft">Rascunho</option>
                     <option value="scheduled">Agendado</option>
-                    <option value="published">Publicado</option>
+                    <option value="published">Publica??o</option>
                   </select>
                 </div>
               </div>
@@ -1796,10 +1796,10 @@ export function AdminBlogPage() {
                   <table className="min-w-full divide-y divide-[#D8E6EB] text-left text-sm">
                     <thead className="bg-[#F2F7F9] text-[10px] font-black uppercase tracking-[0.2em] text-[#5F7077]">
                       <tr>
-                        <th className="px-4 py-3">TÃ­tulo</th>
+                        <th className="px-4 py-3">T?tulo</th>
                         <th className="px-4 py-3">Status</th>
                         <th className="px-4 py-3">Categoria</th>
-                        <th className="px-4 py-3">PublicaÃ§Ã£o</th>
+                        <th className="px-4 py-3">Publica??o</th>
                         <th className="px-4 py-3">Leitura</th>
                       </tr>
                     </thead>
@@ -1894,7 +1894,7 @@ export function AdminBlogPage() {
                 </label>
               </div>
               <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
-                DescriÃ§Ã£o
+                Descri��o
                 <textarea
                   value={categoryForm.description}
                   onChange={(event) => setCategoryForm((current) => ({ ...current, description: event.target.value }))}
@@ -1955,7 +1955,7 @@ export function AdminBlogPage() {
                 >
                   <p className="text-sm font-black text-[#15323b]">{getCategoryPath(category, categories)}</p>
                   <p className="mt-1 text-xs font-semibold text-[#6d7f84]">
-                    /{category.slug} Â· SEO robots: {category.seo_robots ?? 'index,follow'}
+                    /{category.slug} �� SEO robots: {category.seo_robots ?? 'index,follow'}
                   </p>
                 </button>
               ))}
@@ -2001,7 +2001,7 @@ export function AdminBlogPage() {
                 </label>
               </div>
               <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
-                DescriÃ§Ã£o
+                Descri��o
                 <textarea
                   value={tagForm.description}
                   onChange={(event) => setTagForm((current) => ({ ...current, description: event.target.value }))}
@@ -2042,7 +2042,7 @@ export function AdminBlogPage() {
                   className={`rounded-xl border px-3 py-3 text-left transition ${selectedTagId === tag.id ? 'border-[#1398B7] bg-[#E8F6FA]' : 'border-[#D8E6EB] bg-white hover:bg-[#F8FBFC]'}`}
                 >
                   <p className="text-sm font-black text-[#15323b]">#{tag.name}</p>
-                  <p className="mt-1 text-xs font-semibold text-[#6d7f84]">/{tag.slug} Â· robots: {tag.seo_robots ?? 'index,follow'}</p>
+                  <p className="mt-1 text-xs font-semibold text-[#6d7f84]">/{tag.slug} ? robots: {tag.seo_robots ?? 'index,follow'}</p>
                 </button>
               ))}
             </div>
@@ -2055,10 +2055,10 @@ export function AdminBlogPage() {
           <article className="rounded-[28px] border border-[#D8E6EB] bg-white p-5">
             <h2 className="text-lg font-black tracking-tight text-[#15323b]">Blocos laterais da home do blog</h2>
             <p className="mt-2 text-sm font-medium text-[#5F7077]">
-              Estes blocos aparecem na barra lateral direita da pÃ¡gina <code>/blog</code>, um abaixo do outro.
+              Estes blocos aparecem na barra lateral direita da p�gina <code>/blog</code>, um abaixo do outro.
             </p>
             <p className="mt-1 text-xs font-semibold text-[#6d7f84]">
-              RecomendaÃ§Ã£o de upload: <strong>640x920 px</strong> (proporÃ§Ã£o <strong>7:10</strong>), formato JPG ou WebP.
+              Recomenda??o de upload: <strong>640x920 px</strong> (propor??o <strong>7:10</strong>), formato JPG ou WebP.
             </p>
 
             <div className="mt-4 grid gap-3">
@@ -2082,7 +2082,7 @@ export function AdminBlogPage() {
                   </div>
 
                   <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
-                    Tipo de exibiÃ§Ã£o
+                    Tipo de exibi��o
                     <select
                       value={block.mode}
                       onChange={(event) => {
@@ -2095,7 +2095,7 @@ export function AdminBlogPage() {
                       }}
                       className="h-11 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800"
                     >
-                      <option value="single">Imagem Ãºnica</option>
+                      <option value="single">Imagem ?nica</option>
                       <option value="carousel">Carrossel / slider</option>
                     </select>
                   </label>

@@ -19,6 +19,38 @@ const statusLabels: Record<BlogCommentStatus | 'all', string> = {
   rejected: 'Rejeitados',
 }
 
+function sanitizeCommentHtml(rawValue: string) {
+  if (!rawValue.trim()) {
+    return ''
+  }
+
+  const parser = new DOMParser()
+  const doc = parser.parseFromString(rawValue, 'text/html')
+  const blockedTags = new Set(['script', 'style', 'iframe', 'object', 'embed'])
+
+  const nodes = Array.from(doc.body.querySelectorAll('*'))
+  nodes.forEach((node) => {
+    if (blockedTags.has(node.tagName.toLowerCase())) {
+      node.remove()
+      return
+    }
+
+    Array.from(node.attributes).forEach((attribute) => {
+      const name = attribute.name.toLowerCase()
+      const value = attribute.value.trim().toLowerCase()
+      if (name.startsWith('on')) {
+        node.removeAttribute(attribute.name)
+        return
+      }
+      if ((name === 'href' || name === 'src') && value.startsWith('javascript:')) {
+        node.removeAttribute(attribute.name)
+      }
+    })
+  })
+
+  return doc.body.innerHTML
+}
+
 function formatDate(value: string) {
   return new Intl.DateTimeFormat('pt-BR', {
     day: '2-digit',
@@ -197,9 +229,20 @@ export function AdminBlogCommentsPanel() {
               </div>
 
               <p className="text-sm font-bold text-[#15323b]">{item.first_name} {item.last_name} - {item.email}</p>
-              <p className="text-sm font-medium leading-7 text-[#5f7077]">{item.content}</p>
+              <div
+                className="prose prose-sm max-w-none text-[#5f7077]"
+                dangerouslySetInnerHTML={{ __html: sanitizeCommentHtml(item.content) }}
+              />
 
-              {item.admin_response ? <p className="rounded border border-blue-100 bg-blue-50 p-3 text-xs font-bold text-blue-700">Resposta do admin: {item.admin_response}</p> : null}
+              {item.admin_response ? (
+                <div className="rounded border border-blue-100 bg-blue-50 p-3 text-xs text-blue-700">
+                  <p className="mb-2 font-bold">Resposta do admin:</p>
+                  <div
+                    className="prose prose-sm max-w-none text-blue-700"
+                    dangerouslySetInnerHTML={{ __html: sanitizeCommentHtml(item.admin_response) }}
+                  />
+                </div>
+              ) : null}
               {item.moderation_reason ? <p className="rounded border border-red-100 bg-red-50 p-3 text-xs font-bold text-red-700">Motivo da rejeicao: {item.moderation_reason}</p> : null}
 
               <textarea
