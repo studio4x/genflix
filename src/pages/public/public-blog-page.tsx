@@ -265,6 +265,9 @@ export function PublicBlogPage() {
         <div className="public-site-container">
           <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_224px]">
             <div className="space-y-14">
+              <div>
+                <h1 className="text-4xl font-semibold leading-tight text-[#243a64] sm:text-5xl">Blog GenFlix</h1>
+              </div>
               <BannerPlacementSlot pageKey="blog" placementKey="hero" />
               <div>
                 <div className="grid gap-8 md:grid-cols-2 xl:grid-cols-3">
