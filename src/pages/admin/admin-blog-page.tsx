@@ -1741,69 +1741,14 @@ export function AdminBlogPage() {
                   </label>
                 </div>
 
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <div className="grid gap-2">
-                    <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
-                      Imagem de capa
-                      <input
-                        value={articleForm.coverImageUrl}
-                        onChange={(event) => setArticleForm((current) => ({ ...current, coverImageUrl: event.target.value }))}
-                        className="h-11 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800"
-                      />
-                    </label>
-                    <div className="grid gap-2 sm:grid-cols-2">
-                      <label className="inline-flex h-11 cursor-pointer items-center justify-center rounded-xl bg-[#1398B7] px-3 text-center text-xs font-black uppercase tracking-[0.08em] text-white hover:bg-[#1089A5]">
-                        {isUploadingCoverImage ? 'Enviando...' : 'Upload da capa'}
-                        <input
-                          type="file"
-                          accept=".jpg,.jpeg,.png,.webp,image/*"
-                          disabled={isUploadingCoverImage}
-                          onChange={(event) => {
-                            const file = event.target.files?.[0] ?? null
-                            void handleUploadArticleCoverImage(file)
-                            event.currentTarget.value = ''
-                          }}
-                          className="sr-only"
-                        />
-                      </label>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => setIsMediaLibraryOpen(true)}
-                        disabled={isLoadingMediaLibrary || isUploadingCoverImage}
-                        className="h-11 rounded-xl border-[#D8E6EB] text-xs font-black uppercase tracking-[0.08em]"
-                      >
-                        Abrir biblioteca de midia
-                      </Button>
-                    </div>
-                    {articleForm.coverImageUrl ? (
-                      <div className="overflow-hidden rounded-xl border border-[#D8E6EB] bg-white">
-                        <div className="aspect-[16/9] w-full bg-[#EAF2F5]">
-                          <img src={articleForm.coverImageUrl} alt={articleForm.title || 'Imagem de capa'} className="h-full w-full object-cover" />
-                        </div>
-                        <div className="flex items-center justify-between gap-2 border-t border-[#D8E6EB] px-3 py-2">
-                          <p className="truncate text-xs font-semibold text-slate-600">{articleForm.coverImageUrl}</p>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() => setArticleForm((current) => ({ ...current, coverImageUrl: '' }))}
-                            className="h-8 rounded-lg border-rose-200 px-2 text-[11px] font-black uppercase tracking-[0.08em] text-rose-700 hover:bg-rose-50"
-                          >
-                            Remover
-                          </Button>
-                        </div>
-                      </div>
-                    ) : null}
-                  </div>
-                  <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
-                    Tempo de leitura (auto)
-                    <input
-                      value={String(articleForm.readingTimeMinutes)}
-                      readOnly
-                      className="h-11 rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm font-semibold text-slate-700"
-                    />
-                  </label>
-                </div>
+                <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
+                  Tempo de leitura (auto)
+                  <input
+                    value={String(articleForm.readingTimeMinutes)}
+                    readOnly
+                    className="h-11 rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm font-semibold text-slate-700"
+                  />
+                </label>
 
                 <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
                   Resumo
@@ -1921,6 +1866,60 @@ export function AdminBlogPage() {
                     showRawHtmlToggle
                     showHeadingHints
                   />
+                </div>
+
+                <div className="grid gap-2">
+                  <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
+                    Imagem de capa
+                    <input
+                      value={articleForm.coverImageUrl}
+                      onChange={(event) => setArticleForm((current) => ({ ...current, coverImageUrl: event.target.value }))}
+                      className="h-11 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800"
+                    />
+                  </label>
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    <label className="inline-flex h-11 cursor-pointer items-center justify-center rounded-xl bg-[#1398B7] px-3 text-center text-xs font-black uppercase tracking-[0.08em] text-white hover:bg-[#1089A5]">
+                      {isUploadingCoverImage ? 'Enviando...' : 'Upload da capa'}
+                      <input
+                        type="file"
+                        accept=".jpg,.jpeg,.png,.webp,image/*"
+                        disabled={isUploadingCoverImage}
+                        onChange={(event) => {
+                          const file = event.target.files?.[0] ?? null
+                          void handleUploadArticleCoverImage(file)
+                          event.currentTarget.value = ''
+                        }}
+                        className="sr-only"
+                      />
+                    </label>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setIsMediaLibraryOpen(true)}
+                      disabled={isLoadingMediaLibrary || isUploadingCoverImage}
+                      className="h-11 rounded-xl border-[#D8E6EB] text-xs font-black uppercase tracking-[0.08em]"
+                    >
+                      Abrir biblioteca de midia
+                    </Button>
+                  </div>
+                  {articleForm.coverImageUrl ? (
+                    <div className="overflow-hidden rounded-xl border border-[#D8E6EB] bg-white">
+                      <div className="aspect-[16/9] w-full bg-[#EAF2F5]">
+                        <img src={articleForm.coverImageUrl} alt={articleForm.title || 'Imagem de capa'} className="h-full w-full object-cover" />
+                      </div>
+                      <div className="flex items-center justify-between gap-2 border-t border-[#D8E6EB] px-3 py-2">
+                        <p className="truncate text-xs font-semibold text-slate-600">{articleForm.coverImageUrl}</p>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => setArticleForm((current) => ({ ...current, coverImageUrl: '' }))}
+                          className="h-8 rounded-lg border-rose-200 px-2 text-[11px] font-black uppercase tracking-[0.08em] text-rose-700 hover:bg-rose-50"
+                        >
+                          Remover
+                        </Button>
+                      </div>
+                    </div>
+                  ) : null}
                 </div>
 
                 <div className="flex flex-wrap gap-2 border-t border-[#D8E6EB] pt-4">
