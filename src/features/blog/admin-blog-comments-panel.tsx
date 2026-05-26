@@ -79,7 +79,7 @@ export function AdminBlogCommentsPanel() {
       const rows = await listAdminBlogComments({ status, query })
       setItems(rows)
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'Nao foi possivel carregar comentarios.')
+      setErrorMessage(error instanceof Error ? error.message : 'Não foi possível carregar comentários.')
     } finally {
       setIsLoading(false)
     }
@@ -113,10 +113,10 @@ export function AdminBlogCommentsPanel() {
       await moderateBlogComment(commentId, action, action === 'reject' ? moderationReason : undefined, adminResponse)
       setModerationReason('')
       setAdminResponse('')
-      setSuccessMessage(action === 'approve' ? 'Comentario aprovado.' : 'Comentario rejeitado.')
+      setSuccessMessage(action === 'approve' ? 'Comentário aprovado.' : 'Comentário rejeitado.')
       await loadComments()
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'Nao foi possivel moderar o comentario.')
+      setErrorMessage(error instanceof Error ? error.message : 'Não foi possível moderar o comentário.')
     } finally {
       setActiveId(null)
     }
@@ -137,14 +137,14 @@ export function AdminBlogCommentsPanel() {
       setSuccessMessage('Resposta salva.')
       await loadComments()
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'Nao foi possivel salvar a resposta.')
+      setErrorMessage(error instanceof Error ? error.message : 'Não foi possível salvar a resposta.')
     } finally {
       setActiveId(null)
     }
   }
 
   async function handleDelete(commentId: string) {
-    if (!window.confirm('Excluir este comentario?')) {
+    if (!window.confirm('Excluir este comentário?')) {
       return
     }
 
@@ -153,10 +153,10 @@ export function AdminBlogCommentsPanel() {
     setSuccessMessage(null)
     try {
       await deleteBlogComment(commentId)
-      setSuccessMessage('Comentario excluido.')
+      setSuccessMessage('Comentário excluido.')
       await loadComments()
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'Nao foi possivel excluir o comentario.')
+      setErrorMessage(error instanceof Error ? error.message : 'Não foi possível excluir o comentário.')
     } finally {
       setActiveId(null)
     }
@@ -189,7 +189,7 @@ export function AdminBlogCommentsPanel() {
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               className="h-12 w-full border border-[#D8E6EB] bg-white pl-10 pr-4 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]"
-              placeholder="Buscar por artigo, nome, e-mail ou comentario"
+              placeholder="Buscar por artigo, nome, e-mail ou comentário"
             />
           </label>
 
@@ -212,10 +212,10 @@ export function AdminBlogCommentsPanel() {
 
       <section className="space-y-4">
         {isLoading && items.length === 0 ? (
-          <div className="border border-[#D8E6EB] bg-white p-6 text-sm font-bold text-[#6d7f84]">Carregando comentarios...</div>
+          <div className="border border-[#D8E6EB] bg-white p-6 text-sm font-bold text-[#6d7f84]">Carregando comentários...</div>
         ) : items.length === 0 ? (
           <div className="border border-dashed border-[#D8E6EB] bg-white p-8 text-center">
-            <p className="font-readex text-lg font-semibold text-[#15323b]">Nenhum comentario neste recorte</p>
+            <p className="font-readex text-lg font-semibold text-[#15323b]">Nenhum comentário neste recorte</p>
           </div>
         ) : items.map((item) => (
           <article key={item.id} className="border border-[#D8E6EB] bg-white p-5 shadow-[0_14px_32px_rgba(21,50,59,0.04)]">
@@ -243,7 +243,7 @@ export function AdminBlogCommentsPanel() {
                   />
                 </div>
               ) : null}
-              {item.moderation_reason ? <p className="rounded border border-red-100 bg-red-50 p-3 text-xs font-bold text-red-700">Motivo da rejeicao: {item.moderation_reason}</p> : null}
+              {item.moderation_reason ? <p className="rounded border border-red-100 bg-red-50 p-3 text-xs font-bold text-red-700">Motivo da rejeição: {item.moderation_reason}</p> : null}
 
               <textarea
                 value={adminResponse}
@@ -259,7 +259,7 @@ export function AdminBlogCommentsPanel() {
                 rows={2}
                 maxLength={300}
                 className="w-full resize-none border border-[#D8E6EB] bg-white px-3 py-2 text-sm font-semibold leading-6 text-[#15323b] outline-none focus:border-[#1398B7]"
-                placeholder="Motivo para rejeicao"
+                placeholder="Motivo para rejeição"
               />
 
               <div className="grid gap-2 sm:grid-cols-4">
@@ -283,3 +283,4 @@ export function AdminBlogCommentsPanel() {
     </section>
   )
 }
+

@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 
 import { useAuth } from '@/app/providers/auth-provider'
@@ -432,7 +432,7 @@ function getSeoValidationHints(form: ArticleFormState) {
       hints.push('A palavra-chave de foco não está presente no título do artigo.')
     }
     if (!excerpt.includes(focus)) {
-      hints.push('A palavra-chave de foco n?o aparece no excerpt.')
+      hints.push('A palavra-chave de foco não aparece no excerpt.')
     }
   }
 
@@ -691,7 +691,7 @@ export function AdminBlogPage() {
         if (!isMounted) {
           return
         }
-        setErrorMessage(error instanceof Error ? error.message : 'Nao foi possivel carregar a biblioteca de midia.')
+        setErrorMessage(error instanceof Error ? error.message : 'Não foi possível carregar a biblioteca de mídia.')
       })
       .finally(() => {
         if (!isMounted) {
@@ -851,9 +851,9 @@ export function AdminBlogPage() {
           }
         }))
       }
-      setSuccessMessage('Imagem enviada com sucesso. Clique em "Salvar configuraÃ§Ã£o lateral" para publicar.')
+      setSuccessMessage('Imagem enviada com sucesso. Clique em "Salvar configuração lateral" para publicar.')
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'Nao foi possivel enviar a imagem.')
+      setErrorMessage(error instanceof Error ? error.message : 'Não foi possível enviar a imagem.')
     } finally {
       setIsUploadingLayoutImage(false)
     }
@@ -879,7 +879,7 @@ export function AdminBlogPage() {
       setMediaLibraryAssets((current) => [uploaded, ...current.filter((asset) => asset.id !== uploaded.id)])
       setSuccessMessage('Imagem de capa enviada com sucesso.')
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'Nao foi possivel enviar a imagem de capa.')
+      setErrorMessage(error instanceof Error ? error.message : 'Não foi possível enviar a imagem de capa.')
     } finally {
       setIsUploadingCoverImage(false)
     }
@@ -893,12 +893,12 @@ export function AdminBlogPage() {
 
     const selectedAsset = mediaLibraryAssets.find((asset) => asset.id === selectedMediaAssetId)
     if (!selectedAsset || !selectedAsset.public_url) {
-      setErrorMessage('Nao foi possivel aplicar a imagem selecionada.')
+      setErrorMessage('Não foi possível aplicar a imagem selecionada.')
       return
     }
 
     setArticleForm((current) => ({ ...current, coverImageUrl: selectedAsset.public_url ?? current.coverImageUrl }))
-    setSuccessMessage('Imagem de capa aplicada da biblioteca de midia.')
+    setSuccessMessage('Imagem de capa aplicada da biblioteca de mídia.')
     setIsMediaLibraryOpen(false)
   }
 
@@ -925,9 +925,9 @@ export function AdminBlogPage() {
           kind: 'blog-sidebar-stack',
         },
       })
-      setSuccessMessage('ConfiguraÃ§Ãµes da lateral do blog salvas com sucesso.')
+      setSuccessMessage('Configurações da lateral do blog salvas com sucesso.')
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'Nao foi possivel salvar a imagem lateral.')
+      setErrorMessage(error instanceof Error ? error.message : 'Não foi possível salvar a imagem lateral.')
     } finally {
       setIsSavingLayout(false)
     }
@@ -955,7 +955,7 @@ export function AdminBlogPage() {
     const previewKey = selectedArticleId ? `id:${selectedArticleId}` : `slug:${articleForm.slug}`
     const previewPayload = {
       slug: articleForm.slug,
-      title: articleForm.title.trim() || 'Rascunho sem t?tulo',
+      title: articleForm.title.trim() || 'Rascunho sem título',
       category: 'Sem categoria',
       excerpt: articleForm.excerpt.trim(),
       image: articleForm.coverImageUrl.trim() || '/images/genflix/home/featured-2.jpg',
@@ -1402,7 +1402,7 @@ export function AdminBlogPage() {
       <div className="grid gap-3">
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
-            {labelPrefix} TÃ­tulo SEO
+            {labelPrefix} Título SEO
             <input
               value={value.seo_title}
               onChange={(event) => onChange({ ...value, seo_title: event.target.value })}
@@ -1414,7 +1414,7 @@ export function AdminBlogPage() {
             </span>
           </label>
           <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
-            {labelPrefix} URL can?nica
+            {labelPrefix} URL canônica
             <input
               value={value.seo_canonical_url}
               onChange={(event) => onChange({ ...value, seo_canonical_url: event.target.value })}
@@ -1428,7 +1428,7 @@ export function AdminBlogPage() {
         </div>
 
         <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
-          {labelPrefix} DescriÃ§Ã£o SEO
+          {labelPrefix} Descrição SEO
           <textarea
             value={value.seo_description}
             onChange={(event) => onChange({ ...value, seo_description: event.target.value })}
@@ -1470,7 +1470,7 @@ export function AdminBlogPage() {
 
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
-            {labelPrefix} TÃ­tulo OG
+            {labelPrefix} Título OG
             <input
               value={value.seo_og_title}
               onChange={(event) => onChange({ ...value, seo_og_title: event.target.value })}
@@ -1482,7 +1482,7 @@ export function AdminBlogPage() {
             </span>
           </label>
           <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
-            {labelPrefix} DescriÃ§Ã£o OG
+            {labelPrefix} Descrição OG
             <input
               value={value.seo_og_description}
               onChange={(event) => onChange({ ...value, seo_og_description: event.target.value })}
@@ -1505,7 +1505,7 @@ export function AdminBlogPage() {
           <div className="flex h-full max-h-[90vh] w-full max-w-5xl flex-col overflow-hidden rounded-[24px] border border-[#D8E6EB] bg-white shadow-2xl">
             <div className="flex items-center justify-between border-b border-[#D8E6EB] px-5 py-4">
               <div>
-                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#1398B7]">Biblioteca de midia</p>
+                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#1398B7]">Biblioteca de mídia</p>
                 <h2 className="mt-1 font-readex text-xl font-semibold text-[#15323b]">Escolher imagem de capa</h2>
               </div>
               <Button type="button" variant="outline" onClick={() => setIsMediaLibraryOpen(false)} className="rounded-xl border-[#D8E6EB]">
@@ -1518,7 +1518,7 @@ export function AdminBlogPage() {
                 <p className="text-sm font-semibold text-[#5F7077]">Carregando biblioteca...</p>
               ) : mediaLibraryAssets.length === 0 ? (
                 <div className="rounded-[18px] border border-dashed border-[#D8E6EB] bg-[#F8FBFC] px-4 py-6 text-sm font-semibold text-[#5F7077]">
-                  Nenhuma imagem encontrada na biblioteca de midia.
+                  Nenhuma imagem encontrada na biblioteca de mídia.
                 </div>
               ) : (
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
@@ -1626,7 +1626,7 @@ export function AdminBlogPage() {
           onClick={() => setActiveTab('comments')}
           className={`rounded-full border px-4 py-2 text-sm font-bold ${activeTab === 'comments' ? 'border-[#1398B7] bg-[#1398B7] text-white' : 'border-[#D8E6EB] bg-white text-[#15323b]'}`}
         >
-          Comentarios
+          Comentários
         </button>
       </section>
 
@@ -1640,7 +1640,7 @@ export function AdminBlogPage() {
             <div className="rounded-2xl border border-[#D8E6EB] bg-white p-4"><p className="text-xs font-bold uppercase text-[#5F7077]">Total</p><p className="mt-2 text-2xl font-black text-[#15323b]">{statusSummary.total}</p></div>
             <div className="rounded-2xl border border-[#D8E6EB] bg-white p-4"><p className="text-xs font-bold uppercase text-[#5F7077]">Rascunhos</p><p className="mt-2 text-2xl font-black text-[#15323b]">{statusSummary.draft}</p></div>
             <div className="rounded-2xl border border-[#D8E6EB] bg-white p-4"><p className="text-xs font-bold uppercase text-[#5F7077]">Agendados</p><p className="mt-2 text-2xl font-black text-[#15323b]">{statusSummary.scheduled}</p></div>
-            <div className="rounded-2xl border border-[#D8E6EB] bg-white p-4"><p className="text-xs font-bold uppercase text-[#5F7077]">PublicaÃ§Ã£o</p><p className="mt-2 text-2xl font-black text-[#15323b]">{statusSummary.published}</p></div>
+            <div className="rounded-2xl border border-[#D8E6EB] bg-white p-4"><p className="text-xs font-bold uppercase text-[#5F7077]">Publicação</p><p className="mt-2 text-2xl font-black text-[#15323b]">{statusSummary.published}</p></div>
             <div className="rounded-2xl border border-[#D8E6EB] bg-white p-4"><p className="text-xs font-bold uppercase text-[#5F7077]">Destaque</p><p className="mt-2 text-2xl font-black text-[#15323b]">{statusSummary.featured}</p></div>
           </section>
 
@@ -1662,7 +1662,7 @@ export function AdminBlogPage() {
 
               <div className="mt-4 grid gap-4">
                 <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
-                  TÃ­tulo
+                  Título
                   <input
                     value={articleForm.title}
                     onChange={(event) => {
@@ -1699,7 +1699,7 @@ export function AdminBlogPage() {
                     >
                       <option value="draft">Rascunho</option>
                       <option value="scheduled">Agendado</option>
-                      <option value="published">PublicaÃ§Ã£o</option>
+                      <option value="published">Publicação</option>
                     </select>
                   </label>
 
@@ -1918,7 +1918,7 @@ export function AdminBlogPage() {
                   </div>
                 ) : (
                   <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs font-semibold text-slate-600">
-                    Tags e relacionamento avan?ado est?o indispon?veis no modelo atual do blog.
+                    Tags e relacionamento avançado estão indisponíveis no modelo atual do blog.
                   </div>
                 )}
 
@@ -2071,7 +2071,7 @@ export function AdminBlogPage() {
                   <input
                     value={articleSearch}
                     onChange={(event) => setArticleSearch(event.target.value)}
-                    placeholder="Buscar por t?tulo, slug ou categoria..."
+                    placeholder="Buscar por título, slug ou categoria..."
                     className="h-10 min-w-[220px] rounded-xl border border-[#D8E6EB] bg-white px-3 text-sm font-medium text-[#15323b] outline-none focus:border-[#1398B7]"
                   />
                   <select
@@ -2082,7 +2082,7 @@ export function AdminBlogPage() {
                     <option value="all">Todos os status</option>
                     <option value="draft">Rascunho</option>
                     <option value="scheduled">Agendado</option>
-                    <option value="published">PublicaÃ§Ã£o</option>
+                    <option value="published">Publicação</option>
                   </select>
                 </div>
               </div>
@@ -2096,12 +2096,12 @@ export function AdminBlogPage() {
                   <table className="min-w-full divide-y divide-[#D8E6EB] text-left text-sm">
                     <thead className="bg-[#F2F7F9] text-[10px] font-black uppercase tracking-[0.2em] text-[#5F7077]">
                       <tr>
-                        <th className="px-4 py-3">TÃ­tulo</th>
+                        <th className="px-4 py-3">Título</th>
                         <th className="px-4 py-3">Status</th>
                         <th className="px-4 py-3">Categoria</th>
-                        <th className="px-4 py-3">PublicaÃ§Ã£o</th>
+                        <th className="px-4 py-3">Publicação</th>
                         <th className="px-4 py-3">Leitura</th>
-                        <th className="px-4 py-3">AÃ§Ãµes</th>
+                        <th className="px-4 py-3">Ações</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-[#D8E6EB]">
@@ -2345,7 +2345,7 @@ export function AdminBlogPage() {
                 </label>
               </div>
               <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
-                DescriÃ§Ã£o
+                Descrição
                 <textarea
                   value={tagForm.description}
                   onChange={(event) => setTagForm((current) => ({ ...current, description: event.target.value }))}
@@ -2399,10 +2399,10 @@ export function AdminBlogPage() {
           <article className="rounded-[28px] border border-[#D8E6EB] bg-white p-5">
             <h2 className="text-lg font-black tracking-tight text-[#15323b]">Blocos laterais da home do blog</h2>
             <p className="mt-2 text-sm font-medium text-[#5F7077]">
-              Estes blocos aparecem na barra lateral direita da pÃ¡gina <code>/blog</code>, um abaixo do outro.
+              Estes blocos aparecem na barra lateral direita da página <code>/blog</code>, um abaixo do outro.
             </p>
             <p className="mt-1 text-xs font-semibold text-[#6d7f84]">
-              RecomendaÃ§Ã£o de upload: <strong>640x920 px</strong> (proporÃ§Ã£o <strong>7:10</strong>), formato JPG ou WebP.
+              Recomendação de upload: <strong>640x920 px</strong> (proporção <strong>7:10</strong>), formato JPG ou WebP.
             </p>
 
             <div className="mt-4 grid gap-3">
@@ -2426,7 +2426,7 @@ export function AdminBlogPage() {
                   </div>
 
                   <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
-                    Tipo de exibiÃ§Ã£o
+                    Tipo de exibição
                     <select
                       value={block.mode}
                       onChange={(event) => {
@@ -2619,6 +2619,7 @@ export function AdminBlogPage() {
     </div>
   )
 }
+
 
 
 
