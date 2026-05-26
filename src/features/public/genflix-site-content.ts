@@ -135,6 +135,7 @@ export interface GenflixBlogPost {
   author: string
   publishedAt: string
   content: string[]
+  contentHtml?: string
   featured?: boolean
 }
 

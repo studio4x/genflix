@@ -26,6 +26,7 @@ type DraftBlogPostRow = {
   author: string | null
   published_at: string | null
   content: unknown
+  content_html: string | null
   featured: boolean | null
   status: string | null
 }
@@ -58,6 +59,41 @@ function toPostContent(value: unknown) {
       return typeof item === 'string' ? item : ''
     })
     .filter(Boolean)
+}
+
+function sanitizeBlogHtml(rawValue: string) {
+  if (!rawValue.trim()) {
+    return ''
+  }
+
+  const parser = new DOMParser()
+  const doc = parser.parseFromString(rawValue, 'text/html')
+  const blockedTags = new Set(['script', 'style', 'object', 'embed'])
+
+  Array.from(doc.body.querySelectorAll('*')).forEach((node) => {
+    const tagName = node.tagName.toLowerCase()
+    if (blockedTags.has(tagName)) {
+      node.remove()
+      return
+    }
+
+    Array.from(node.attributes).forEach((attribute) => {
+      const name = attribute.name.toLowerCase()
+      const value = attribute.value.trim().toLowerCase()
+
+      if (name.startsWith('on')) {
+        node.removeAttribute(attribute.name)
+        return
+      }
+
+      if ((name === 'href' || name === 'src') && value.startsWith('javascript:')) {
+        node.removeAttribute(attribute.name)
+        return
+      }
+    })
+  })
+
+  return doc.body.innerHTML
 }
 
 function contentHtmlToParagraphs(html: string) {
@@ -100,6 +136,7 @@ function mapDraftRowToBlogPost(row: DraftBlogPostRow): GenflixBlogPost {
       }).format(new Date(row.published_at))
       : '',
     content: toPostContent(row.content),
+    contentHtml: row.content_html ?? '',
     featured: Boolean(row.featured),
   }
 }
@@ -121,6 +158,7 @@ function mapAdminPreviewToBlogPost(preview: AdminPreviewPayload): GenflixBlogPos
       }).format(new Date(preview.publishedAt))
       : '',
     content: contentHtmlToParagraphs(preview.contentHtml ?? ''),
+    contentHtml: preview.contentHtml ?? '',
     featured: false,
   }
 }
@@ -218,7 +256,7 @@ export function PublicBlogPostPage() {
         if (!resolvedPost && isAdmin) {
           const previewQuery = supabase
             .from('blog_posts')
-            .select('id, slug, title, category, excerpt, image_url, read_time, author, published_at, content, featured, status')
+            .select('id, slug, title, category, excerpt, image_url, read_time, author, published_at, content, content_html, featured, status')
 
           const previewResult = previewKey.startsWith('id:')
             ? await previewQuery.eq('id', previewKey.slice(3)).maybeSingle()
@@ -372,9 +410,16 @@ export function PublicBlogPostPage() {
 
               <div className="space-y-5 font-lora text-[19px] leading-[1.7] text-[#343434]">
                 <p>{post.excerpt}</p>
-                {post.content.map((paragraph, index) => (
-                  <p key={`${post.slug}-paragraph-${index}`}>{paragraph}</p>
-                ))}
+                {post.contentHtml?.trim() ? (
+                  <div
+                    className="prose prose-lg max-w-none prose-headings:font-lora prose-headings:text-[#15323b] prose-p:my-4 prose-li:my-1 prose-a:text-[#008f9c] prose-a:underline prose-strong:text-[#15323b] prose-blockquote:border-l-4 prose-blockquote:border-[#D8E6EB] prose-blockquote:pl-4 prose-blockquote:italic prose-img:rounded-2xl prose-img:shadow-sm"
+                    dangerouslySetInnerHTML={{ __html: sanitizeBlogHtml(post.contentHtml) }}
+                  />
+                ) : (
+                  post.content.map((paragraph, index) => (
+                    <p key={`${post.slug}-paragraph-${index}`}>{paragraph}</p>
+                  ))
+                )}
               </div>
             </div>
           </article>

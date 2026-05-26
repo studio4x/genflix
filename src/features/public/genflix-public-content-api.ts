@@ -25,6 +25,7 @@ interface PublicBlogPostRow {
   author: string | null
   published_at: string | null
   content: unknown
+  content_html: string | null
   featured: boolean
 }
 
@@ -46,7 +47,7 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undef
 const publicCourseSelect =
   'id, slug, title, description, category, thumbnail_url, cover_image_url, marketing_title, marketing_description, mentor_name, mentor_role, mentor_bio, mentor_initials, price_label, secondary_price_label, price_cents, currency, public_page_content, display_order'
 const publicBlogPostSelect =
-  'slug, title, category, excerpt, image_url, read_time, author, published_at, content, featured'
+  'slug, title, category, excerpt, image_url, read_time, author, published_at, content, content_html, featured'
 
 async function fetchPublicRows<T>(path: string, searchParams: URLSearchParams): Promise<T[]> {
   if (!supabaseUrl || !supabaseAnonKey) {
@@ -164,6 +165,7 @@ function toBlogPost(row: PublicBlogPostRow): GenflixBlogPost {
       }).format(new Date(row.published_at))
       : '',
     content,
+    contentHtml: row.content_html ?? '',
     featured: row.featured,
   }
 }
