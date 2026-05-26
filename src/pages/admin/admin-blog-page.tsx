@@ -8,6 +8,7 @@ import { AdminBlogCommentsPanel } from '@/features/blog/admin-blog-comments-pane
 import { fetchSiteAssets, fetchSiteContent, saveSiteContentEntry, uploadSiteAsset } from '@/features/site-editor/api'
 import type { SiteAsset } from '@/features/site-editor/types'
 import { supabase } from '@/services/supabase/client'
+import { Eye, Pencil, Trash2 } from 'lucide-react'
 
 type ArticleStatus = 'draft' | 'scheduled' | 'published'
 
@@ -1133,17 +1134,13 @@ export function AdminBlogPage() {
     setIsSavingArticle(false)
   }
 
-  async function handleDeleteArticle() {
-    if (!selectedArticleId) {
+  async function handleDeleteArticle(articleToDelete?: BlogArticleRow) {
+    const target = articleToDelete ?? articles.find((item) => item.id === selectedArticleId)
+    if (!target) {
       return
     }
 
-    const found = articles.find((item) => item.id === selectedArticleId)
-    if (!found) {
-      return
-    }
-
-    const shouldDelete = window.confirm(`Deseja excluir o artigo "${found.title}"?`)
+    const shouldDelete = window.confirm(`Deseja excluir o artigo "${target.title}"?`)
     if (!shouldDelete) {
       return
     }
@@ -1151,14 +1148,16 @@ export function AdminBlogPage() {
     setErrorMessage(null)
     setSuccessMessage(null)
 
-    const deleteLegacy = await supabase.from('blog_posts').delete().eq('id', selectedArticleId)
+    const deleteLegacy = await supabase.from('blog_posts').delete().eq('id', target.id)
     if (deleteLegacy.error) {
       setErrorMessage(deleteLegacy.error.message)
       return
     }
 
     await loadAllData()
-    resetArticleForm()
+    if (!selectedArticleId || selectedArticleId === target.id) {
+      resetArticleForm()
+    }
     setArticleView('list')
     setSuccessMessage('Artigo exclu?do com sucesso.')
   }
@@ -2042,17 +2041,47 @@ export function AdminBlogPage() {
                             <td className="px-4 py-3 font-semibold text-[#5F7077]">{formatDateTime(article.published_at)}</td>
                             <td className="px-4 py-3 font-semibold text-[#5F7077]">{article.reading_time_minutes ?? 1} min</td>
                             <td className="px-4 py-3">
-                              <Button
-                                type="button"
-                                variant="outline"
-                                className="h-8 rounded-lg px-3 text-xs font-bold"
-                                onClick={(event) => {
-                                  event.stopPropagation()
-                                  handleOpenArticleFromList(article.slug)
-                                }}
-                              >
-                                Visualizar artigo
-                              </Button>
+                              <div className="flex items-center gap-1">
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  title="Visualizar artigo"
+                                  aria-label="Visualizar artigo"
+                                  className="h-8 w-8 rounded-lg p-0"
+                                  onClick={(event) => {
+                                    event.stopPropagation()
+                                    handleOpenArticleFromList(article.slug)
+                                  }}
+                                >
+                                  <Eye className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  title="Editar artigo"
+                                  aria-label="Editar artigo"
+                                  className="h-8 w-8 rounded-lg p-0"
+                                  onClick={(event) => {
+                                    event.stopPropagation()
+                                    populateArticleForm(article)
+                                  }}
+                                >
+                                  <Pencil className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  title="Excluir artigo"
+                                  aria-label="Excluir artigo"
+                                  className="h-8 w-8 rounded-lg border-red-200 p-0 text-red-700 hover:bg-red-50"
+                                  onClick={(event) => {
+                                    event.stopPropagation()
+                                    void handleDeleteArticle(article)
+                                  }}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
                             </td>
                           </tr>
                         )
