@@ -8,7 +8,7 @@ import { AdminBlogCommentsPanel } from '@/features/blog/admin-blog-comments-pane
 import { fetchSiteAssets, fetchSiteContent, saveSiteContentEntry, uploadSiteAsset } from '@/features/site-editor/api'
 import type { SiteAsset } from '@/features/site-editor/types'
 import { supabase } from '@/services/supabase/client'
-import { ChevronDown, ChevronUp, Eye, Pencil, Trash2 } from 'lucide-react'
+import { ChevronDown, ChevronUp, Eye, Pencil, RotateCcw, Trash2 } from 'lucide-react'
 
 type ArticleStatus = 'draft' | 'scheduled' | 'published'
 
@@ -1220,6 +1220,44 @@ export function AdminBlogPage() {
     })
   }
 
+  function restoreArticleFromRevision(revision: BlogPostRevisionRow) {
+    const snapshot = revision.snapshot
+    if (!snapshot) {
+      setErrorMessage('Esta revisão não possui snapshot para restaurar.')
+      return
+    }
+
+    setSelectedArticleId(revision.article_id)
+    setIsArticleSlugTouched(true)
+    setArticleForm({
+      title: snapshot.title ?? '',
+      slug: snapshot.slug ?? '',
+      excerpt: snapshot.excerpt ?? '',
+      coverImageUrl: snapshot.cover_image_url ?? '',
+      status: snapshot.status ?? 'draft',
+      publishedAt: toDateTimeLocal(snapshot.published_at),
+      scheduledPublishAt: toDateTimeLocal(snapshot.scheduled_publish_at),
+      featured: Boolean(snapshot.featured),
+      categoryId: snapshot.category_id ?? '__none__',
+      tagIds: [...(snapshot.tag_ids ?? [])],
+      contentHtml: snapshot.content_html ?? '',
+      focusKeyword: snapshot.focus_keyword ?? '',
+      readingTimeMinutes: snapshot.reading_time_minutes ?? calculateReadingTimeMinutes(snapshot.content_html ?? ''),
+      seo_title: snapshot.seo_title ?? '',
+      seo_description: snapshot.seo_description ?? '',
+      seo_canonical_url: snapshot.seo_canonical_url ?? '',
+      seo_robots: snapshot.seo_robots ?? 'index,follow',
+      seo_og_title: snapshot.seo_og_title ?? '',
+      seo_og_description: snapshot.seo_og_description ?? '',
+      seo_og_image_url: snapshot.seo_og_image_url ?? '',
+    })
+
+    setSuccessMessage(`Revisão #${revision.revision_number} carregada no editor. Revise e salve para aplicar a restauração.`)
+    setErrorMessage(null)
+    setArticleSuccessMessage(null)
+    setArticleView('editor')
+  }
+
   async function saveArticleWithStatus(nextStatus?: ArticleStatus | null) {
     setErrorMessage(null)
     setSuccessMessage(null)
@@ -2298,8 +2336,20 @@ export function AdminBlogPage() {
                                   {revision.changed_by_email ? `E-mail: ${revision.changed_by_email}` : 'E-mail não disponível'}
                                 </p>
                               </div>
-                              <div className="rounded-full border border-[#D8E6EB] bg-white px-3 py-1 text-[11px] font-black uppercase tracking-[0.12em] text-[#0A3640]">
-                                {snapshot?.tag_ids?.length ?? 0} tag(s)
+                              <div className="flex flex-col items-end gap-2">
+                                <div className="rounded-full border border-[#D8E6EB] bg-white px-3 py-1 text-[11px] font-black uppercase tracking-[0.12em] text-[#0A3640]">
+                                  {snapshot?.tag_ids?.length ?? 0} tag(s)
+                                </div>
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  className="h-8 rounded-lg border-[#D8E6EB] px-3 text-[11px] font-black uppercase tracking-[0.08em] text-[#15323b] hover:bg-[#F8FBFC]"
+                                  onClick={() => restoreArticleFromRevision(revision)}
+                                  disabled={!snapshot}
+                                >
+                                  <RotateCcw className="mr-2 h-3.5 w-3.5" />
+                                  Restaurar
+                                </Button>
                               </div>
                             </div>
                             <p className="mt-3 text-sm font-semibold text-[#15323b]">
@@ -2905,7 +2955,6 @@ export function AdminBlogPage() {
     </div>
   )
 }
-
 
 
 
