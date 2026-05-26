@@ -2035,7 +2035,7 @@ export function AdminBlogPage() {
                         readingTimeMinutes: reading,
                       }))
                     }}
-                    showRawHtmlToggle={false}
+                    showRawHtmlToggle
                     enableHtmlMode
                     showHeadingHints
                   />
