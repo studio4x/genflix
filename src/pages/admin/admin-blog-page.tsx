@@ -1183,7 +1183,7 @@ export function AdminBlogPage() {
       description: form.description.trim() || null,
       parent_id: form.parentId === '__none__' ? null : form.parentId,
       is_active: form.isActive,
-      display_order: form.displayOrder.trim() ? Number(form.displayOrder) : null,
+      display_order: form.displayOrder.trim() ? Number(form.displayOrder) : 0,
       schema_json: form.schemaJson.trim() || null,
       seo_title: form.seo_title.trim() || null,
       seo_description: form.seo_description.trim() || null,
@@ -2104,6 +2104,8 @@ export function AdminBlogPage() {
               <Button type="button" variant="outline" className="rounded-xl" onClick={resetCategoryForm}>Limpar</Button>
             </div>
             <div className="mt-4 grid gap-3">
+              {selectedCategoryId ? (
+                <>
               <div className="grid gap-3 sm:grid-cols-2">
                 <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
                   Nome
@@ -2189,6 +2191,9 @@ export function AdminBlogPage() {
                 />
                 Categoria ativa
               </label>
+
+                </>
+              ) : null}
 
               <div className="flex flex-wrap gap-2 border-t border-[#D8E6EB] pt-3">
                 <Button type="button" className="rounded-xl bg-[#1398B7] hover:bg-[#0A3640]" onClick={() => void handleSaveCategory(false)} disabled={isSavingCategory}>
