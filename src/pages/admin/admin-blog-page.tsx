@@ -95,11 +95,49 @@ type LegacyBlogPostRow = {
   read_time: string | null
   author: string | null
   published_at: string | null
+  content_html: string | null
   content: unknown
   featured: boolean | null
   status: string | null
   created_at: string
   updated_at: string
+}
+
+type BlogArticleRevisionSnapshot = {
+  title: string
+  slug: string
+  excerpt: string
+  content_html: string
+  cover_image_url: string | null
+  status: ArticleStatus
+  featured: boolean
+  category_id: string | null
+  tag_ids: string[]
+  published_at: string | null
+  scheduled_publish_at: string | null
+  focus_keyword: string
+  reading_time_minutes: number
+  seo_title: string
+  seo_description: string
+  seo_canonical_url: string
+  seo_robots: string
+  seo_og_title: string
+  seo_og_description: string
+  seo_og_image_url: string
+  plain_text_length: number
+  word_count: number
+}
+
+type BlogPostRevisionRow = {
+  id: string
+  article_id: string
+  revision_number: number
+  snapshot: BlogArticleRevisionSnapshot | null
+  changed_by: string | null
+  changed_by_name: string | null
+  changed_by_email: string | null
+  change_type: string | null
+  created_at: string
 }
 
 type ArticleFormState = SeoFields & {
@@ -329,7 +367,7 @@ function normalizeLegacyStatus(status: string | null, publishedAt: string | null
 }
 
 function mapLegacyPostToArticle(post: LegacyBlogPostRow): BlogArticleRow {
-  const contentHtml = legacyContentToHtml(post.content)
+  const contentHtml = post.content_html?.trim() ? post.content_html : legacyContentToHtml(post.content)
   const readingTime = parseLegacyReadTime(post.read_time, contentHtml)
   return {
     id: post.id,
@@ -423,21 +461,21 @@ function getSeoValidationHints(form: ArticleFormState) {
   const focus = form.focusKeyword.trim().toLowerCase()
 
   if (!focus) {
-    hints.push('Defina uma palavra-chave de foco para melhorar as sugestões de SEO.')
+    hints.push('Defina uma palavra-chave de foco para melhorar as sugestÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âµes de SEO.')
   } else {
     if (!slug.includes(slugify(focus))) {
-      hints.push('A palavra-chave de foco ainda não aparece no slug.')
+      hints.push('A palavra-chave de foco ainda nÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o aparece no slug.')
     }
     if (!title.includes(focus)) {
-      hints.push('A palavra-chave de foco não está presente no título do artigo.')
+      hints.push('A palavra-chave de foco nÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o estÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ presente no tÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â­tulo do artigo.')
     }
     if (!excerpt.includes(focus)) {
-      hints.push('A palavra-chave de foco não aparece no excerpt.')
+      hints.push('A palavra-chave de foco nÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o aparece no excerpt.')
     }
   }
 
   if (form.seo_title.trim().length < 50 || form.seo_title.trim().length > 60) {
-    hints.push('O título SEO ideal fica entre 50 e 60 caracteres.')
+    hints.push('O tÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â­tulo SEO ideal fica entre 50 e 60 caracteres.')
   }
 
   if (form.seo_description.trim().length < 140 || form.seo_description.trim().length > 160) {
@@ -467,6 +505,21 @@ function suggestFocusKeyword(form: ArticleFormState) {
   }
 
   return filtered[0] ?? ''
+}
+
+function summarizeRevisionSnapshot(snapshot: BlogArticleRevisionSnapshot | null) {
+  if (!snapshot) {
+    return 'Sem snapshot disponÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â­vel.'
+  }
+
+  const pieces = [
+    snapshot.title?.trim() || 'Sem tÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â­tulo',
+    statusLabel(snapshot.status),
+    snapshot.tag_ids.length ? `${snapshot.tag_ids.length} tag(s)` : 'Sem tags',
+    `${snapshot.word_count} palavra(s)`,
+  ]
+
+  return pieces.join(' ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â· ')
 }
 
 function suggestExistingTagsWithHeuristic(form: ArticleFormState, tags: BlogTagRow[]) {
@@ -504,7 +557,7 @@ function suggestNewTagNames(form: ArticleFormState, tags: BlogTagRow[]) {
 }
 
 export function AdminBlogPage() {
-  const { user } = useAuth()
+  const { user, profile } = useAuth()
   const [searchParams, setSearchParams] = useSearchParams()
   const [activeTab, setActiveTab] = useState<'articles' | 'categories' | 'tags' | 'layout' | 'comments'>(searchParams.get('tab') === 'comments' ? 'comments' : 'articles')
   const [articleView, setArticleView] = useState<'list' | 'editor'>('list')
@@ -530,6 +583,8 @@ export function AdminBlogPage() {
   const [categories, setCategories] = useState<BlogCategoryRow[]>([])
   const [tags, setTags] = useState<BlogTagRow[]>([])
   const [articleTagRows, setArticleTagRows] = useState<BlogArticleTagRow[]>([])
+  const [articleRevisions, setArticleRevisions] = useState<BlogPostRevisionRow[]>([])
+  const [isLoadingArticleRevisions, setIsLoadingArticleRevisions] = useState(false)
 
   const [selectedArticleId, setSelectedArticleId] = useState<string | null>(null)
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null)
@@ -701,6 +756,27 @@ export function AdminBlogPage() {
     setIsLegacyMode(false)
   }
 
+  async function loadArticleRevisions(articleId: string) {
+    setIsLoadingArticleRevisions(true)
+    try {
+      const result = await supabase
+        .from('blog_post_revisions')
+        .select('*')
+        .eq('article_id', articleId)
+        .order('revision_number', { ascending: false })
+        .limit(12)
+
+      if (result.error) {
+        setArticleRevisions([])
+        return
+      }
+
+      setArticleRevisions((result.data ?? []) as BlogPostRevisionRow[])
+    } finally {
+      setIsLoadingArticleRevisions(false)
+    }
+  }
+
   async function loadAllData() {
     setIsLoading(true)
     setErrorMessage(null)
@@ -709,6 +785,11 @@ export function AdminBlogPage() {
       await loadCategoriesData()
       await loadTagsData()
       await loadBlogLayoutSettings()
+      if (selectedArticleId) {
+        await loadArticleRevisions(selectedArticleId)
+      } else {
+        setArticleRevisions([])
+      }
     } finally {
       setIsLoading(false)
     }
@@ -758,7 +839,7 @@ export function AdminBlogPage() {
         if (!isMounted) {
           return
         }
-        setErrorMessage(error instanceof Error ? error.message : 'Não foi possível carregar a biblioteca de mídia.')
+        setErrorMessage(error instanceof Error ? error.message : 'NÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o foi possÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â­vel carregar a biblioteca de mÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â­dia.')
       })
       .finally(() => {
         if (!isMounted) {
@@ -918,9 +999,9 @@ export function AdminBlogPage() {
           }
         }))
       }
-      setSuccessMessage('Imagem enviada com sucesso. Clique em "Salvar configuração lateral" para publicar.')
+      setSuccessMessage('Imagem enviada com sucesso. Clique em "Salvar configuraÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o lateral" para publicar.')
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'Não foi possível enviar a imagem.')
+      setErrorMessage(error instanceof Error ? error.message : 'NÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o foi possÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â­vel enviar a imagem.')
     } finally {
       setIsUploadingLayoutImage(false)
     }
@@ -946,7 +1027,7 @@ export function AdminBlogPage() {
       setMediaLibraryAssets((current) => [uploaded, ...current.filter((asset) => asset.id !== uploaded.id)])
       setSuccessMessage('Imagem de capa enviada com sucesso.')
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'Não foi possível enviar a imagem de capa.')
+      setErrorMessage(error instanceof Error ? error.message : 'NÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o foi possÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â­vel enviar a imagem de capa.')
     } finally {
       setIsUploadingCoverImage(false)
     }
@@ -960,12 +1041,12 @@ export function AdminBlogPage() {
 
     const selectedAsset = mediaLibraryAssets.find((asset) => asset.id === selectedMediaAssetId)
     if (!selectedAsset || !selectedAsset.public_url) {
-      setErrorMessage('Não foi possível aplicar a imagem selecionada.')
+      setErrorMessage('NÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o foi possÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â­vel aplicar a imagem selecionada.')
       return
     }
 
     setArticleForm((current) => ({ ...current, coverImageUrl: selectedAsset.public_url ?? current.coverImageUrl }))
-    setSuccessMessage('Imagem de capa aplicada da biblioteca de mídia.')
+    setSuccessMessage('Imagem de capa aplicada da biblioteca de mÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â­dia.')
     setIsMediaLibraryOpen(false)
   }
 
@@ -992,9 +1073,9 @@ export function AdminBlogPage() {
           kind: 'blog-sidebar-stack',
         },
       })
-      setSuccessMessage('Configurações da lateral do blog salvas com sucesso.')
+      setSuccessMessage('ConfiguraÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âµes da lateral do blog salvas com sucesso.')
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'Não foi possível salvar a imagem lateral.')
+      setErrorMessage(error instanceof Error ? error.message : 'NÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o foi possÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â­vel salvar a imagem lateral.')
     } finally {
       setIsSavingLayout(false)
     }
@@ -1007,6 +1088,7 @@ export function AdminBlogPage() {
     setShowInlineCategoryForm(false)
     setInlineCategoryForm(DEFAULT_INLINE_CATEGORY_FORM)
     setArticleSuccessMessage(null)
+    setArticleRevisions([])
   }
 
   function handleCreateArticle() {
@@ -1022,7 +1104,7 @@ export function AdminBlogPage() {
     const previewKey = selectedArticleId ? `id:${selectedArticleId}` : `slug:${articleForm.slug}`
     const previewPayload = {
       slug: articleForm.slug,
-      title: articleForm.title.trim() || 'Rascunho sem título',
+      title: articleForm.title.trim() || 'Rascunho sem tÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â­tulo',
       category: 'Sem categoria',
       excerpt: articleForm.excerpt.trim(),
       image: articleForm.coverImageUrl.trim() || '/images/genflix/home/featured-2.jpg',
@@ -1097,6 +1179,7 @@ export function AdminBlogPage() {
     setErrorMessage(null)
     setArticleSuccessMessage(null)
     setArticleView('editor')
+    void loadArticleRevisions(article.id)
   }
 
   function populateCategoryForm(category: BlogCategoryRow) {
@@ -1145,11 +1228,12 @@ export function AdminBlogPage() {
     const title = articleForm.title.trim()
     const slug = articleForm.slug.trim()
     const cleanedHtml = removeInternalH1(articleForm.contentHtml)
+    const plainText = stripHtml(cleanedHtml)
     const readingTime = calculateReadingTimeMinutes(cleanedHtml)
     const effectiveStatus = nextStatus ?? articleForm.status
 
     if (!title || !slug) {
-      setErrorMessage('Informe título e slug do artigo.')
+      setErrorMessage('Informe tÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â­tulo e slug do artigo.')
       return
     }
 
@@ -1171,7 +1255,8 @@ export function AdminBlogPage() {
       published_at: effectiveStatus === 'published'
         ? (articleForm.publishedAt ? new Date(articleForm.publishedAt).toISOString() : new Date().toISOString())
         : null,
-      content: stripHtml(cleanedHtml)
+      content_html: cleanedHtml,
+      content: plainText
         .split('. ')
         .map((entry) => entry.trim())
         .filter(Boolean),
@@ -1191,8 +1276,50 @@ export function AdminBlogPage() {
 
     const savedLegacy = mapLegacyPostToArticle(legacyResult.data as LegacyBlogPostRow)
     const savedArticleId = savedLegacy.id
+    const revisionSnapshot: BlogArticleRevisionSnapshot = {
+      title,
+      slug,
+      excerpt: articleForm.excerpt.trim(),
+      content_html: cleanedHtml,
+      cover_image_url: articleForm.coverImageUrl.trim() || null,
+      status: effectiveStatus,
+      featured: articleForm.featured,
+      category_id: articleForm.categoryId === '__none__' ? null : articleForm.categoryId,
+      tag_ids: [...articleForm.tagIds],
+      published_at: effectiveStatus === 'published'
+        ? (articleForm.publishedAt ? new Date(articleForm.publishedAt).toISOString() : new Date().toISOString())
+        : null,
+      scheduled_publish_at: articleForm.scheduledPublishAt
+        ? new Date(articleForm.scheduledPublishAt).toISOString()
+        : null,
+      focus_keyword: articleForm.focusKeyword.trim(),
+      reading_time_minutes: readingTime,
+      seo_title: articleForm.seo_title.trim(),
+      seo_description: articleForm.seo_description.trim(),
+      seo_canonical_url: articleForm.seo_canonical_url.trim(),
+      seo_robots: articleForm.seo_robots.trim() || 'index,follow',
+      seo_og_title: articleForm.seo_og_title.trim(),
+      seo_og_description: articleForm.seo_og_description.trim(),
+      seo_og_image_url: articleForm.seo_og_image_url.trim(),
+      plain_text_length: plainText.length,
+      word_count: plainText ? plainText.split(/\s+/).filter(Boolean).length : 0,
+    }
     let tagsSyncError: string | null = null
+    let revisionHistoryError: string | null = null
     try {
+      const revisionResult = await supabase.from('blog_post_revisions').insert({
+        article_id: savedArticleId,
+        snapshot: revisionSnapshot,
+        changed_by: user?.id ?? null,
+        changed_by_name: profile?.full_name?.trim() || user?.email?.trim() || null,
+        changed_by_email: user?.email ?? profile?.email ?? null,
+        change_type: selectedArticleId ? 'update' : 'create',
+      })
+
+      if (revisionResult.error) {
+        revisionHistoryError = revisionResult.error.message
+      }
+
       await syncArticleTags(savedArticleId, articleForm.tagIds)
     } catch (error) {
       tagsSyncError = error instanceof Error ? error.message : 'Não foi possível salvar as tags do artigo.'
@@ -1209,6 +1336,9 @@ export function AdminBlogPage() {
     if (tagsSyncError) {
       setErrorMessage(tagsSyncError)
       setArticleSuccessMessage('Artigo salvo, mas houve um problema ao sincronizar as tags.')
+    } else if (revisionHistoryError) {
+      setErrorMessage(revisionHistoryError)
+      setArticleSuccessMessage('Artigo salvo, mas houve um problema ao registrar o histórico de revisões.')
     } else {
       setArticleSuccessMessage('Artigo salvo com sucesso.')
     }
@@ -1284,7 +1414,7 @@ export function AdminBlogPage() {
     }
 
     if (payload.display_order != null && Number.isNaN(payload.display_order)) {
-      setErrorMessage('Ordem da categoria inválida.')
+      setErrorMessage('Ordem da categoria invÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡lida.')
       setIsSavingCategory(false)
       return
     }
@@ -1490,19 +1620,19 @@ export function AdminBlogPage() {
       <div className="grid gap-3">
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
-            {labelPrefix} Título SEO
+            {labelPrefix} TÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â­tulo SEO
             <input
               value={value.seo_title}
               onChange={(event) => onChange({ ...value, seo_title: event.target.value })}
               className="h-10 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800 outline-none focus:border-[#1398B7]"
-              placeholder="Ex.: Método Pomodoro: guia prático para estudar melhor"
+              placeholder="Ex.: MÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©todo Pomodoro: guia prÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡tico para estudar melhor"
             />
             <span className={`text-[11px] normal-case tracking-normal ${seoTitleLength >= 50 && seoTitleLength <= 60 && seoTitleHasFocus ? 'text-emerald-700' : 'text-amber-700'}`}>
               Recomendado: 50-60 caracteres e incluir a palavra-chave foco. ({seoTitleLength}/60)
             </span>
           </label>
           <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
-            {labelPrefix} URL canônica
+            {labelPrefix} URL canÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â´nica
             <input
               value={value.seo_canonical_url}
               onChange={(event) => onChange({ ...value, seo_canonical_url: event.target.value })}
@@ -1510,19 +1640,19 @@ export function AdminBlogPage() {
               placeholder="https://seudominio.com/blog/seu-artigo"
             />
             <span className={`text-[11px] normal-case tracking-normal ${canonicalIsAbsolute ? 'text-emerald-700' : 'text-amber-700'}`}>
-              Use URL absoluta (com https://) e sem parâmetros de rastreio.
+              Use URL absoluta (com https://) e sem parÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢metros de rastreio.
             </span>
           </label>
         </div>
 
         <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
-          {labelPrefix} Descrição SEO
+          {labelPrefix} DescriÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o SEO
           <textarea
             value={value.seo_description}
             onChange={(event) => onChange({ ...value, seo_description: event.target.value })}
             rows={2}
             className="rounded-xl border border-slate-200 px-3 py-2 text-sm font-medium text-slate-800 outline-none focus:border-[#1398B7]"
-            placeholder="Resumo claro com benefício e intenção de busca do usuário."
+            placeholder="Resumo claro com benefÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â­cio e intenÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o de busca do usuÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡rio."
           />
           <span className={`text-[11px] normal-case tracking-normal ${seoDescriptionLength >= 140 && seoDescriptionLength <= 160 && seoDescriptionHasFocus ? 'text-emerald-700' : 'text-amber-700'}`}>
             Recomendado: 140-160 caracteres e conter a palavra-chave foco. ({seoDescriptionLength}/160)
@@ -1551,31 +1681,31 @@ export function AdminBlogPage() {
               placeholder="https://seudominio.com/imagens/capa-og.jpg"
             />
             <span className={`text-[11px] normal-case tracking-normal ${ogImageLooksValid ? 'text-emerald-700' : 'text-amber-700'}`}>
-              Use uma URL pública da imagem OG (ideal 1200x630).
+              Use uma URL pÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âºblica da imagem OG (ideal 1200x630).
             </span>
           </label>
         </div>
 
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
-            {labelPrefix} Título OG
+            {labelPrefix} TÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â­tulo OG
             <input
               value={value.seo_og_title}
               onChange={(event) => onChange({ ...value, seo_og_title: event.target.value })}
               className="h-10 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800 outline-none focus:border-[#1398B7]"
-              placeholder="Título para compartilhamento em redes sociais"
+              placeholder="TÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â­tulo para compartilhamento em redes sociais"
             />
             <span className={`text-[11px] normal-case tracking-normal ${ogTitleLength >= 40 && ogTitleLength <= 60 ? 'text-emerald-700' : 'text-amber-700'}`}>
               Recomendado: 40-60 caracteres. ({ogTitleLength}/60)
             </span>
           </label>
           <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
-            {labelPrefix} Descrição OG
+            {labelPrefix} DescriÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o OG
             <input
               value={value.seo_og_description}
               onChange={(event) => onChange({ ...value, seo_og_description: event.target.value })}
               className="h-10 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800 outline-none focus:border-[#1398B7]"
-              placeholder="Descrição curta para melhorar o clique social"
+              placeholder="DescriÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o curta para melhorar o clique social"
             />
             <span className={`text-[11px] normal-case tracking-normal ${ogDescriptionLength >= 110 && ogDescriptionLength <= 160 ? 'text-emerald-700' : 'text-amber-700'}`}>
               Recomendado: 110-160 caracteres. ({ogDescriptionLength}/160)
@@ -1593,7 +1723,7 @@ export function AdminBlogPage() {
           <div className="flex h-full max-h-[90vh] w-full max-w-5xl flex-col overflow-hidden rounded-[24px] border border-[#D8E6EB] bg-white shadow-2xl">
             <div className="flex items-center justify-between border-b border-[#D8E6EB] px-5 py-4">
               <div>
-                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#1398B7]">Biblioteca de mídia</p>
+                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#1398B7]">Biblioteca de mÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â­dia</p>
                 <h2 className="mt-1 font-readex text-xl font-semibold text-[#15323b]">Escolher imagem de capa</h2>
               </div>
               <Button type="button" variant="outline" onClick={() => setIsMediaLibraryOpen(false)} className="rounded-xl border-[#D8E6EB]">
@@ -1606,7 +1736,7 @@ export function AdminBlogPage() {
                 <p className="text-sm font-semibold text-[#5F7077]">Carregando biblioteca...</p>
               ) : mediaLibraryAssets.length === 0 ? (
                 <div className="rounded-[18px] border border-dashed border-[#D8E6EB] bg-[#F8FBFC] px-4 py-6 text-sm font-semibold text-[#5F7077]">
-                  Nenhuma imagem encontrada na biblioteca de mídia.
+                  Nenhuma imagem encontrada na biblioteca de mÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â­dia.
                 </div>
               ) : (
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
@@ -1652,7 +1782,7 @@ export function AdminBlogPage() {
       <header className="flex flex-col gap-4 border-b border-[#D8E6EB] pb-5 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <p className="text-[10px] font-black uppercase tracking-[0.28em] text-[#1398B7]">Admin / Blog</p>
-          <h1 className="mt-2 font-readex text-3xl font-semibold tracking-tight text-[#15323b]">Blog e conteúdo</h1>
+          <h1 className="mt-2 font-readex text-3xl font-semibold tracking-tight text-[#15323b]">Blog e conteÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âºdo</h1>
         </div>
 
         <div className="flex flex-wrap gap-3">
@@ -1714,7 +1844,7 @@ export function AdminBlogPage() {
           onClick={() => setActiveTab('comments')}
           className={`rounded-full border px-4 py-2 text-sm font-bold ${activeTab === 'comments' ? 'border-[#1398B7] bg-[#1398B7] text-white' : 'border-[#D8E6EB] bg-white text-[#15323b]'}`}
         >
-          Comentários
+          ComentÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡rios
         </button>
       </section>
 
@@ -1728,7 +1858,7 @@ export function AdminBlogPage() {
             <div className="rounded-2xl border border-[#D8E6EB] bg-white p-4"><p className="text-xs font-bold uppercase text-[#5F7077]">Total</p><p className="mt-2 text-2xl font-black text-[#15323b]">{statusSummary.total}</p></div>
             <div className="rounded-2xl border border-[#D8E6EB] bg-white p-4"><p className="text-xs font-bold uppercase text-[#5F7077]">Rascunhos</p><p className="mt-2 text-2xl font-black text-[#15323b]">{statusSummary.draft}</p></div>
             <div className="rounded-2xl border border-[#D8E6EB] bg-white p-4"><p className="text-xs font-bold uppercase text-[#5F7077]">Agendados</p><p className="mt-2 text-2xl font-black text-[#15323b]">{statusSummary.scheduled}</p></div>
-            <div className="rounded-2xl border border-[#D8E6EB] bg-white p-4"><p className="text-xs font-bold uppercase text-[#5F7077]">Publicação</p><p className="mt-2 text-2xl font-black text-[#15323b]">{statusSummary.published}</p></div>
+            <div className="rounded-2xl border border-[#D8E6EB] bg-white p-4"><p className="text-xs font-bold uppercase text-[#5F7077]">PublicaÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o</p><p className="mt-2 text-2xl font-black text-[#15323b]">{statusSummary.published}</p></div>
             <div className="rounded-2xl border border-[#D8E6EB] bg-white p-4"><p className="text-xs font-bold uppercase text-[#5F7077]">Destaque</p><p className="mt-2 text-2xl font-black text-[#15323b]">{statusSummary.featured}</p></div>
           </section>
 
@@ -1750,7 +1880,7 @@ export function AdminBlogPage() {
 
               <div className="mt-4 grid gap-4">
                 <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
-                  Título
+                  TÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â­tulo
                   <input
                     value={articleForm.title}
                     onChange={(event) => {
@@ -1787,7 +1917,7 @@ export function AdminBlogPage() {
                     >
                       <option value="draft">Rascunho</option>
                       <option value="scheduled">Agendado</option>
-                      <option value="published">Publicação</option>
+                      <option value="published">PublicaÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o</option>
                     </select>
                   </label>
 
@@ -1840,7 +1970,7 @@ export function AdminBlogPage() {
                       </label>
                     </div>
                     <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
-                      Descrição
+                      DescriÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o
                       <textarea
                         value={inlineCategoryForm.description}
                         onChange={(event) => setInlineCategoryForm((current) => ({ ...current, description: event.target.value }))}
@@ -1921,7 +2051,7 @@ export function AdminBlogPage() {
 
                   {!isArticleSeoExpanded ? (
                     <p className="text-sm font-medium text-[#5F7077]">
-                      Seção recolhida. Expanda para configurar título SEO, descrição, canonical, robots e Open Graph.
+                      SeÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o recolhida. Expanda para configurar tÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â­tulo SEO, descriÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o, canonical, robots e Open Graph.
                     </p>
                   ) : null}
 
@@ -1938,7 +2068,7 @@ export function AdminBlogPage() {
                           placeholder="Termo principal que o artigo quer ranquear"
                         />
                         <span className="text-[11px] normal-case tracking-normal text-[#5F7077]">
-                          Use 1 termo principal e tente repeti-lo no slug, título SEO e descrição SEO.
+                          Use 1 termo principal e tente repeti-lo no slug, tÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â­tulo SEO e descriÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o SEO.
                         </span>
                       </label>
                       <Button
@@ -2009,7 +2139,7 @@ export function AdminBlogPage() {
                   </div>
                 ) : (
                   <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs font-semibold text-slate-600">
-                    Tags e relacionamento avançado estão indisponíveis no modelo atual do blog.
+                    Tags e relacionamento avanÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ado estÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o indisponÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â­veis no modelo atual do blog.
                   </div>
                 )}
 
@@ -2024,7 +2154,7 @@ export function AdminBlogPage() {
                 </label>
 
                 <div className="space-y-1">
-                  <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-500">Conteúdo (content_html)</p>
+                  <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-500">ConteÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âºdo (content_html)</p>
                   <RichTextEditor
                     value={articleForm.contentHtml}
                     onChange={(nextHtml) => {
@@ -2044,7 +2174,7 @@ export function AdminBlogPage() {
                   <p className="text-xs font-black uppercase tracking-[0.2em] text-[#1398B7]">Imagem de capa</p>
                   <h3 className="mt-2 text-2xl font-black tracking-tight text-[#15323b]">Upload de imagem</h3>
                   <p className="mt-2 text-sm font-medium text-[#5F7077]">
-                    Recomendado: JPG, PNG ou WEBP. Defina a imagem de capa do artigo usando upload ou biblioteca de mídia.
+                    Recomendado: JPG, PNG ou WEBP. Defina a imagem de capa do artigo usando upload ou biblioteca de mÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â­dia.
                   </p>
 
                   <div className="mt-4 grid gap-4 lg:grid-cols-[220px_minmax(0,1fr)]">
@@ -2062,7 +2192,7 @@ export function AdminBlogPage() {
 
                     <div className="rounded-2xl border border-[#D8E6EB] p-4">
                       <p className="text-lg font-black tracking-tight text-[#15323b]">Enviar nova imagem</p>
-                      <p className="mt-1 text-sm font-medium text-[#5F7077]">Após escolher a imagem, salve o artigo para manter a alteração.</p>
+                      <p className="mt-1 text-sm font-medium text-[#5F7077]">ApÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â³s escolher a imagem, salve o artigo para manter a alteraÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o.</p>
 
                       <label className="mt-3 grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
                         URL da capa
@@ -2123,6 +2253,71 @@ export function AdminBlogPage() {
                   </div>
                 </section>
 
+                <section className="rounded-2xl border border-[#D8E6EB] bg-white p-4">
+                  <div className="flex items-center justify-between gap-3 border-b border-[#D8E6EB] pb-3">
+                    <div>
+                      <p className="text-xs font-black uppercase tracking-[0.2em] text-[#1398B7]">HistÃƒÆ’Ã‚Â³rico de revisÃƒÆ’Ã‚Âµes</p>
+                      <h3 className="mt-1 text-lg font-black tracking-tight text-[#15323b]">Quem alterou este artigo</h3>
+                    </div>
+                    <p className="text-xs font-semibold text-[#5F7077]">
+                      {selectedArticleId ? `${articleRevisions.length} registro(s)` : 'Salve o artigo para registrar revisÃƒÆ’Ã‚Âµes.'}
+                    </p>
+                  </div>
+
+                  {isLoadingArticleRevisions ? (
+                    <div className="mt-4 rounded-[16px] border border-dashed border-[#D8E6EB] bg-[#F8FBFC] px-4 py-4 text-sm font-semibold text-[#5F7077]">
+                      Carregando histÃƒÆ’Ã‚Â³rico de revisÃƒÆ’Ã‚Âµes...
+                    </div>
+                  ) : !selectedArticleId ? (
+                    <div className="mt-4 rounded-[16px] border border-dashed border-[#D8E6EB] bg-[#F8FBFC] px-4 py-4 text-sm font-semibold text-[#5F7077]">
+                      Nenhuma revisÃƒÆ’Ã‚Â£o disponÃƒÆ’Ã‚Â­vel ainda. Salve o artigo para comeÃƒÆ’Ã‚Â§ar a registrar as alteraÃƒÆ’Ã‚Â§ÃƒÆ’Ã‚Âµes.
+                    </div>
+                  ) : articleRevisions.length === 0 ? (
+                    <div className="mt-4 rounded-[16px] border border-dashed border-[#D8E6EB] bg-[#F8FBFC] px-4 py-4 text-sm font-semibold text-[#5F7077]">
+                      Este artigo ainda nÃƒÆ’Ã‚Â£o possui histÃƒÆ’Ã‚Â³rico de revisÃƒÆ’Ã‚Âµes.
+                    </div>
+                  ) : (
+                    <div className="mt-4 max-h-80 space-y-3 overflow-y-auto pr-1">
+                      {articleRevisions.map((revision) => {
+                        const snapshot = revision.snapshot
+                        return (
+                          <div key={revision.id} className="rounded-[16px] border border-[#D8E6EB] bg-[#F8FBFC] px-4 py-3">
+                            <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                              <div>
+                                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#1398B7]">
+                                  RevisÃƒÆ’Ã‚Â£o #{revision.revision_number} Ãƒâ€šÃ‚Â· {formatDateTime(revision.created_at)}
+                                </p>
+                                <p className="mt-1 text-sm font-black text-[#15323b]">
+                                  {revision.change_type === 'create' ? 'CriaÃƒÆ’Ã‚Â§ÃƒÆ’Ã‚Â£o' : 'AtualizaÃƒÆ’Ã‚Â§ÃƒÆ’Ã‚Â£o'}
+                                  {snapshot?.status ? ` Ãƒâ€šÃ‚Â· ${statusLabel(snapshot.status)}` : ''}
+                                </p>
+                                <p className="mt-1 text-xs font-semibold text-[#5F7077]">
+                                  ResponsÃƒÆ’Ã‚Â¡vel: {revision.changed_by_name?.trim() || revision.changed_by_email?.trim() || revision.changed_by || 'UsuÃƒÆ’Ã‚Â¡rio nÃƒÆ’Ã‚Â£o identificado'}
+                                </p>
+                                <p className="mt-1 text-xs font-semibold text-[#5F7077]">
+                                  {revision.changed_by_email ? `E-mail: ${revision.changed_by_email}` : 'E-mail nÃƒÆ’Ã‚Â£o disponÃƒÆ’Ã‚Â­vel'}
+                                </p>
+                              </div>
+                              <div className="rounded-full border border-[#D8E6EB] bg-white px-3 py-1 text-[11px] font-black uppercase tracking-[0.12em] text-[#0A3640]">
+                                {snapshot?.tag_ids?.length ?? 0} tag(s)
+                              </div>
+                            </div>
+                            <p className="mt-3 text-sm font-semibold text-[#15323b]">
+                              {summarizeRevisionSnapshot(snapshot)}
+                            </p>
+                            {snapshot?.content_html ? (
+                              <p className="mt-2 line-clamp-3 text-xs font-medium leading-5 text-[#5F7077]">
+                                {stripHtml(snapshot.content_html).slice(0, 180)}
+                                {stripHtml(snapshot.content_html).length > 180 ? '...' : ''}
+                              </p>
+                            ) : null}
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
+                </section>
+
                 <div className="flex flex-wrap gap-2 border-t border-[#D8E6EB] pt-4">
                   <Button type="button" className="rounded-xl bg-[#1398B7] hover:bg-[#0A3640]" onClick={() => void saveArticleWithStatus('draft')} disabled={isSavingArticle}>
                     {isSavingArticle ? 'Salvando...' : 'Salvar rascunho'}
@@ -2162,7 +2357,7 @@ export function AdminBlogPage() {
                   <input
                     value={articleSearch}
                     onChange={(event) => setArticleSearch(event.target.value)}
-                    placeholder="Buscar por título, slug ou categoria..."
+                    placeholder="Buscar por tÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â­tulo, slug ou categoria..."
                     className="h-10 min-w-[220px] rounded-xl border border-[#D8E6EB] bg-white px-3 text-sm font-medium text-[#15323b] outline-none focus:border-[#1398B7]"
                   />
                   <select
@@ -2173,7 +2368,7 @@ export function AdminBlogPage() {
                     <option value="all">Todos os status</option>
                     <option value="draft">Rascunho</option>
                     <option value="scheduled">Agendado</option>
-                    <option value="published">Publicação</option>
+                    <option value="published">PublicaÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o</option>
                   </select>
                 </div>
               </div>
@@ -2187,12 +2382,12 @@ export function AdminBlogPage() {
                   <table className="min-w-full divide-y divide-[#D8E6EB] text-left text-sm">
                     <thead className="bg-[#F2F7F9] text-[10px] font-black uppercase tracking-[0.2em] text-[#5F7077]">
                       <tr>
-                        <th className="px-4 py-3">Título</th>
+                        <th className="px-4 py-3">TÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â­tulo</th>
                         <th className="px-4 py-3">Status</th>
                         <th className="px-4 py-3">Categoria</th>
-                        <th className="px-4 py-3">Publicação</th>
+                        <th className="px-4 py-3">PublicaÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o</th>
                         <th className="px-4 py-3">Leitura</th>
-                        <th className="px-4 py-3">Ações</th>
+                        <th className="px-4 py-3">AÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âµes</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-[#D8E6EB]">
@@ -2307,7 +2502,7 @@ export function AdminBlogPage() {
               </div>
 
               <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
-                Descrição
+                DescriÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o
                 <textarea
                   value={categoryForm.description}
                   onChange={(event) => setCategoryForm((current) => ({ ...current, description: event.target.value }))}
@@ -2436,7 +2631,7 @@ export function AdminBlogPage() {
                 </label>
               </div>
               <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
-                Descrição
+                DescriÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o
                 <textarea
                   value={tagForm.description}
                   onChange={(event) => setTagForm((current) => ({ ...current, description: event.target.value }))}
@@ -2490,10 +2685,10 @@ export function AdminBlogPage() {
           <article className="rounded-[28px] border border-[#D8E6EB] bg-white p-5">
             <h2 className="text-lg font-black tracking-tight text-[#15323b]">Blocos laterais da home do blog</h2>
             <p className="mt-2 text-sm font-medium text-[#5F7077]">
-              Estes blocos aparecem na barra lateral direita da página <code>/blog</code>, um abaixo do outro.
+              Estes blocos aparecem na barra lateral direita da pÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡gina <code>/blog</code>, um abaixo do outro.
             </p>
             <p className="mt-1 text-xs font-semibold text-[#6d7f84]">
-              Recomendação de upload: <strong>640x920 px</strong> (proporção <strong>7:10</strong>), formato JPG ou WebP.
+              RecomendaÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o de upload: <strong>640x920 px</strong> (proporÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o <strong>7:10</strong>), formato JPG ou WebP.
             </p>
 
             <div className="mt-4 grid gap-3">
@@ -2517,7 +2712,7 @@ export function AdminBlogPage() {
                   </div>
 
                   <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
-                    Tipo de exibição
+                    Tipo de exibiÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o
                     <select
                       value={block.mode}
                       onChange={(event) => {
