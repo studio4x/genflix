@@ -630,7 +630,6 @@ export function AdminBlogPage() {
 
     if (legacyResult.error) {
       setErrorMessage(legacyResult.error.message)
-      setIsLoading(false)
       return
     }
 
@@ -641,7 +640,6 @@ export function AdminBlogPage() {
     setArticleTagRows([])
     setIsLegacyMode(true)
     setActiveTab('articles')
-    setIsLoading(false)
   }
 
   async function loadCategoriesData() {
@@ -665,12 +663,81 @@ export function AdminBlogPage() {
     setCategories((categoriesResult.data ?? []) as BlogCategoryRow[])
   }
 
+  async function loadTagsData() {
+    const [tagsResult, articleTagResult] = await Promise.all([
+      supabase
+        .from(TABLES.tags)
+        .select('*')
+        .order('name', { ascending: true }),
+      supabase
+        .from(TABLES.articleTags)
+        .select('*')
+        .order('article_id', { ascending: true })
+        .order('tag_id', { ascending: true }),
+    ])
+
+    const missingTagTable = tagsResult.error?.message.includes(`Could not find the table 'public.${TABLES.tags}'`)
+    const missingArticleTagTable = articleTagResult.error?.message.includes(`Could not find the table 'public.${TABLES.articleTags}'`)
+
+    if (missingTagTable || missingArticleTagTable) {
+      setTags([])
+      setArticleTagRows([])
+      setIsLegacyMode(true)
+      return
+    }
+
+    if (tagsResult.error) {
+      setErrorMessage(tagsResult.error.message)
+      return
+    }
+
+    if (articleTagResult.error) {
+      setErrorMessage(articleTagResult.error.message)
+      return
+    }
+
+    setTags((tagsResult.data ?? []) as BlogTagRow[])
+    setArticleTagRows((articleTagResult.data ?? []) as BlogArticleTagRow[])
+    setIsLegacyMode(false)
+  }
+
   async function loadAllData() {
     setIsLoading(true)
     setErrorMessage(null)
-    await loadLegacyData()
-    await loadCategoriesData()
-    await loadBlogLayoutSettings()
+    try {
+      await loadLegacyData()
+      await loadCategoriesData()
+      await loadTagsData()
+      await loadBlogLayoutSettings()
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  async function syncArticleTags(articleId: string, tagIds: string[]) {
+    if (isLegacyMode) {
+      return
+    }
+
+    const deleteResult = await supabase.from(TABLES.articleTags).delete().eq('article_id', articleId)
+    if (deleteResult.error) {
+      throw new Error(deleteResult.error.message)
+    }
+
+    if (tagIds.length === 0) {
+      return
+    }
+
+    const insertResult = await supabase.from(TABLES.articleTags).insert(
+      tagIds.map((tagId) => ({
+        article_id: articleId,
+        tag_id: tagId,
+      })),
+    )
+
+    if (insertResult.error) {
+      throw new Error(insertResult.error.message)
+    }
   }
   useEffect(() => {
     void loadAllData()
@@ -1122,8 +1189,16 @@ export function AdminBlogPage() {
       return
     }
 
-    await loadAllData()
     const savedLegacy = mapLegacyPostToArticle(legacyResult.data as LegacyBlogPostRow)
+    const savedArticleId = savedLegacy.id
+    let tagsSyncError: string | null = null
+    try {
+      await syncArticleTags(savedArticleId, articleForm.tagIds)
+    } catch (error) {
+      tagsSyncError = error instanceof Error ? error.message : 'Não foi possível salvar as tags do artigo.'
+    }
+
+    await loadAllData()
     populateArticleForm(savedLegacy)
     setArticleForm((current) => ({
       ...current,
@@ -1131,7 +1206,12 @@ export function AdminBlogPage() {
       contentHtml: cleanedHtml,
       readingTimeMinutes: readingTime,
     }))
-    setArticleSuccessMessage('Artigo salvo com sucesso.')
+    if (tagsSyncError) {
+      setErrorMessage(tagsSyncError)
+      setArticleSuccessMessage('Artigo salvo, mas houve um problema ao sincronizar as tags.')
+    } else {
+      setArticleSuccessMessage('Artigo salvo com sucesso.')
+    }
     setIsSavingArticle(false)
   }
 
@@ -1148,6 +1228,14 @@ export function AdminBlogPage() {
 
     setErrorMessage(null)
     setSuccessMessage(null)
+
+    if (!isLegacyMode) {
+      const deleteLinks = await supabase.from(TABLES.articleTags).delete().eq('article_id', target.id)
+      if (deleteLinks.error) {
+        setErrorMessage(deleteLinks.error.message)
+        return
+      }
+    }
 
     const deleteLegacy = await supabase.from('blog_posts').delete().eq('id', target.id)
     if (deleteLegacy.error) {
@@ -1809,6 +1897,9 @@ export function AdminBlogPage() {
                     rows={3}
                     className="rounded-xl border border-slate-200 px-3 py-2 text-sm font-medium text-slate-800"
                   />
+                  <span className="text-[11px] normal-case tracking-normal text-[#5F7077]">
+                    Escreva um resumo curto, claro e direto, com 1 ou 2 frases que expliquem o valor principal do artigo.
+                  </span>
                 </label>
 
                 <section className="space-y-3 rounded-2xl border border-[#D8E6EB] bg-[#F8FBFC] p-4">
@@ -1944,7 +2035,8 @@ export function AdminBlogPage() {
                         readingTimeMinutes: reading,
                       }))
                     }}
-                    showRawHtmlToggle
+                    showRawHtmlToggle={false}
+                    enableHtmlMode
                     showHeadingHints
                   />
                 </div>
@@ -2619,6 +2711,7 @@ export function AdminBlogPage() {
     </div>
   )
 }
+
 
 
 

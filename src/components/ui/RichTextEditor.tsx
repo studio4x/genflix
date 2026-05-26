@@ -12,6 +12,7 @@ type RichTextEditorProps = {
   showHeadingHints?: boolean
   minHeightClassName?: string
   simpleMode?: boolean
+  enableHtmlMode?: boolean
 }
 
 const defaultModules = {
@@ -65,6 +66,7 @@ export function RichTextEditor({
   showHeadingHints = false,
   minHeightClassName = 'min-h-[300px]',
   simpleMode = false,
+  enableHtmlMode = false,
 }: RichTextEditorProps) {
   const [isRawHtmlMode, setIsRawHtmlMode] = useState(false)
 
@@ -113,9 +115,11 @@ export function RichTextEditor({
           modules={simpleMode ? simpleModules : defaultModules}
           formats={simpleMode ? simpleFormats : defaultFormats}
           minHeightClassName={minHeightClassName}
+          enableHtmlMode={enableHtmlMode}
           className="overflow-hidden rounded-2xl border border-slate-200 bg-white"
         />
       )}
     </div>
   )
 }
+
