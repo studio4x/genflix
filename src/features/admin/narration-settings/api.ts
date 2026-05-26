@@ -25,7 +25,7 @@ export async function fetchNarrationCredentialsDiagnostics() {
     throw new Error('Sessao expirada. Faca login novamente para gerenciar credenciais.')
   }
 
-  const response = await fetch('/api/admin/ai/narration-credentials', {
+  const response = await fetch('/api/admin/payments/diagnostics?scope=narration-ai', {
     method: 'GET',
     headers: {
       Authorization: `Bearer ${accessToken}`,
@@ -52,7 +52,7 @@ export async function saveNarrationCredentials(input: {
     throw new Error('Sessao expirada. Faca login novamente para salvar credenciais.')
   }
 
-  const response = await fetch('/api/admin/ai/narration-credentials', {
+  const response = await fetch('/api/admin/payments/diagnostics?scope=narration-ai', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

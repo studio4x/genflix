@@ -12,6 +12,7 @@ import {
 type ApiRequest = {
   method?: string
   headers: Record<string, string | string[] | undefined>
+  query?: Record<string, string | string[] | undefined>
   body?: unknown
 }
 
@@ -28,6 +29,23 @@ type DiagnosticCheck = {
   label: string
   status: DiagnosticStatus
   detail: string
+}
+
+type CredentialLocation = 'supabase' | 'vercel' | 'unavailable'
+
+type CredentialsCheck = {
+  key: string
+  label: string
+  status: 'ok' | 'warning' | 'error'
+  detail: string
+}
+
+type CredentialsDiagnosticsResponse = {
+  location: CredentialLocation
+  checkedAt: string
+  hasOpenAiKey: boolean
+  hasGeminiKey: boolean
+  checks: CredentialsCheck[]
 }
 
 type SessionRow = {
@@ -73,6 +91,320 @@ function readNestedString(source: Record<string, unknown> | null, path: string[]
     cursor = (cursor as Record<string, unknown>)[key]
   }
   return readString(cursor)
+}
+
+function readOptionalString(value: unknown) {
+  if (typeof value !== 'string') {
+    return null
+  }
+
+  const normalized = value.trim()
+  return normalized.length > 0 ? normalized : null
+}
+
+function getSupabaseManagementContext() {
+  const accessToken = process.env.SUPABASE_ACCESS_TOKEN
+  const projectRef = process.env.SUPABASE_PROJECT_REF
+
+  if (!accessToken || !projectRef) {
+    return null
+  }
+
+  return { accessToken, projectRef }
+}
+
+function getVercelManagementContext() {
+  const token = process.env.VERCEL_ACCESS_TOKEN ?? process.env.VERCEL_TOKEN
+  const projectId = process.env.VERCEL_PROJECT_ID
+  const teamId = process.env.VERCEL_ORG_ID
+
+  if (!token || !projectId || !teamId) {
+    return null
+  }
+
+  return { token, projectId, teamId }
+}
+
+async function listSupabaseSecrets(context: { accessToken: string; projectRef: string }) {
+  const response = await fetch(`https://api.supabase.com/v1/projects/${context.projectRef}/secrets`, {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${context.accessToken}`,
+      'Content-Type': 'application/json',
+    },
+  })
+
+  if (!response.ok) {
+    const message = await response.text()
+    throw new Error(`Falha ao listar secrets no Supabase: ${message}`)
+  }
+
+  const payload = await response.json().catch(() => [])
+  const names = Array.isArray(payload)
+    ? payload
+      .map((item) => (item && typeof item === 'object' ? (item as { name?: unknown }).name : null))
+      .filter((name): name is string => typeof name === 'string')
+    : []
+
+  return new Set(names)
+}
+
+async function upsertSupabaseSecrets(
+  context: { accessToken: string; projectRef: string },
+  input: { openAiApiKey?: string | null; geminiApiKey?: string | null },
+) {
+  const updates: Array<{ name: string; value: string }> = []
+
+  if (input.openAiApiKey) {
+    updates.push({ name: 'OPENAI_API_KEY', value: input.openAiApiKey })
+  }
+
+  if (input.geminiApiKey) {
+    updates.push({ name: 'GEMINI_API_KEY', value: input.geminiApiKey })
+  }
+
+  if (updates.length === 0) {
+    return
+  }
+
+  const response = await fetch(`https://api.supabase.com/v1/projects/${context.projectRef}/secrets`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${context.accessToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(updates),
+  })
+
+  if (!response.ok) {
+    const message = await response.text()
+    throw new Error(`Falha ao salvar secrets no Supabase: ${message}`)
+  }
+}
+
+async function listVercelEnv(context: { token: string; projectId: string; teamId: string }) {
+  const response = await fetch(`https://api.vercel.com/v10/projects/${context.projectId}/env?teamId=${context.teamId}`, {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${context.token}`,
+      'Content-Type': 'application/json',
+    },
+  })
+
+  if (!response.ok) {
+    const message = await response.text()
+    throw new Error(`Falha ao listar variaveis na Vercel: ${message}`)
+  }
+
+  const payload = await response.json().catch(() => ({})) as { envs?: Array<{ key?: string }> }
+  const names = (payload.envs ?? [])
+    .map((item) => item.key)
+    .filter((name): name is string => typeof name === 'string' && name.trim().length > 0)
+
+  return new Set(names)
+}
+
+async function upsertVercelEnv(
+  context: { token: string; projectId: string; teamId: string },
+  input: { openAiApiKey?: string | null; geminiApiKey?: string | null },
+) {
+  const updates: Array<{ key: string; value: string; type: 'encrypted'; target: Array<'production' | 'preview' | 'development'> }> = []
+
+  if (input.openAiApiKey) {
+    updates.push({
+      key: 'OPENAI_API_KEY',
+      value: input.openAiApiKey,
+      type: 'encrypted',
+      target: ['production', 'preview', 'development'],
+    })
+  }
+
+  if (input.geminiApiKey) {
+    updates.push({
+      key: 'GEMINI_API_KEY',
+      value: input.geminiApiKey,
+      type: 'encrypted',
+      target: ['production', 'preview', 'development'],
+    })
+  }
+
+  if (updates.length === 0) {
+    return
+  }
+
+  const response = await fetch(`https://api.vercel.com/v10/projects/${context.projectId}/env?upsert=true&teamId=${context.teamId}`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${context.token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(updates),
+  })
+
+  if (!response.ok) {
+    const message = await response.text()
+    throw new Error(`Falha ao salvar variaveis na Vercel: ${message}`)
+  }
+}
+
+async function buildNarrationCredentialsDiagnostics(): Promise<CredentialsDiagnosticsResponse> {
+  const checks: CredentialsCheck[] = []
+  const supabaseContext = getSupabaseManagementContext()
+  const vercelContext = getVercelManagementContext()
+
+  let hasOpenAiInSupabase = false
+  let hasGeminiInSupabase = false
+  let hasOpenAiInVercel = false
+  let hasGeminiInVercel = false
+
+  if (supabaseContext) {
+    try {
+      const names = await listSupabaseSecrets(supabaseContext)
+      hasOpenAiInSupabase = names.has('OPENAI_API_KEY')
+      hasGeminiInSupabase = names.has('GEMINI_API_KEY')
+      checks.push({
+        key: 'supabase-management',
+        label: 'Gerenciamento Supabase',
+        status: 'ok',
+        detail: 'Acesso ao Management API ativo para listar e atualizar secrets.',
+      })
+    } catch (error) {
+      checks.push({
+        key: 'supabase-management',
+        label: 'Gerenciamento Supabase',
+        status: 'warning',
+        detail: error instanceof Error ? error.message : 'Falha ao acessar secrets do Supabase.',
+      })
+    }
+  } else {
+    checks.push({
+      key: 'supabase-management',
+      label: 'Gerenciamento Supabase',
+      status: 'warning',
+      detail: 'SUPABASE_ACCESS_TOKEN ou SUPABASE_PROJECT_REF ausente.',
+    })
+  }
+
+  if (vercelContext) {
+    try {
+      const names = await listVercelEnv(vercelContext)
+      hasOpenAiInVercel = names.has('OPENAI_API_KEY')
+      hasGeminiInVercel = names.has('GEMINI_API_KEY')
+      checks.push({
+        key: 'vercel-management',
+        label: 'Gerenciamento Vercel',
+        status: 'ok',
+        detail: 'Acesso ao projeto Vercel disponivel para leitura de variaveis.',
+      })
+    } catch (error) {
+      checks.push({
+        key: 'vercel-management',
+        label: 'Gerenciamento Vercel',
+        status: 'warning',
+        detail: error instanceof Error ? error.message : 'Falha ao acessar variaveis da Vercel.',
+      })
+    }
+  } else {
+    checks.push({
+      key: 'vercel-management',
+      label: 'Gerenciamento Vercel',
+      status: 'warning',
+      detail: 'VERCEL_TOKEN/VERCEL_ACCESS_TOKEN ou VERCEL_PROJECT_ID/VERCEL_ORG_ID ausente.',
+    })
+  }
+
+  let location: CredentialLocation = 'unavailable'
+  if (hasOpenAiInSupabase || hasGeminiInSupabase) {
+    location = 'supabase'
+  } else if (hasOpenAiInVercel || hasGeminiInVercel) {
+    location = 'vercel'
+  } else if (supabaseContext) {
+    location = 'supabase'
+  } else if (vercelContext) {
+    location = 'vercel'
+  }
+
+  const hasOpenAiKey = location === 'supabase' ? hasOpenAiInSupabase : hasOpenAiInVercel
+  const hasGeminiKey = location === 'supabase' ? hasGeminiInSupabase : hasGeminiInVercel
+
+  if (!hasOpenAiKey && !hasGeminiKey) {
+    checks.push({
+      key: 'narration-provider',
+      label: 'Credenciais de narracao',
+      status: 'error',
+      detail: 'Nenhuma chave encontrada. Configure ao menos uma IA para gerar narração.',
+    })
+  } else if (!hasOpenAiKey || !hasGeminiKey) {
+    checks.push({
+      key: 'narration-provider',
+      label: 'Credenciais de narracao',
+      status: 'warning',
+      detail: 'Apenas uma IA configurada. Recomenda-se manter OpenAI + Gemini para fallback.',
+    })
+  } else {
+    checks.push({
+      key: 'narration-provider',
+      label: 'Credenciais de narracao',
+      status: 'ok',
+      detail: 'OpenAI e Gemini configuradas para operacao primária + fallback.',
+    })
+  }
+
+  return {
+    location,
+    checkedAt: new Date().toISOString(),
+    hasOpenAiKey,
+    hasGeminiKey,
+    checks,
+  }
+}
+
+async function handleNarrationCredentialsScope(req: ApiRequest, res: ApiResponse) {
+  if (req.method === 'GET') {
+    const diagnostics = await buildNarrationCredentialsDiagnostics()
+    jsonResponse(res, 200, diagnostics)
+    return
+  }
+
+  const rawBody = (typeof req.body === 'string' ? JSON.parse(req.body || '{}') : req.body) as {
+    openAiApiKey?: string
+    geminiApiKey?: string
+    targetLocation?: 'supabase' | 'vercel'
+  }
+
+  const openAiApiKey = readOptionalString(rawBody?.openAiApiKey)
+  const geminiApiKey = readOptionalString(rawBody?.geminiApiKey)
+
+  if (!openAiApiKey && !geminiApiKey) {
+    jsonResponse(res, 400, { error: 'Informe ao menos uma credencial (OpenAI ou Gemini).' })
+    return
+  }
+
+  const diagnostics = await buildNarrationCredentialsDiagnostics()
+  const targetLocation = rawBody?.targetLocation ?? (diagnostics.location === 'unavailable' ? 'supabase' : diagnostics.location)
+
+  if (targetLocation === 'supabase') {
+    const supabaseContext = getSupabaseManagementContext()
+    if (!supabaseContext) {
+      jsonResponse(res, 500, { error: 'Nao foi possivel salvar no Supabase: credenciais de gerenciamento ausentes.' })
+      return
+    }
+    await upsertSupabaseSecrets(supabaseContext, { openAiApiKey, geminiApiKey })
+  } else {
+    const vercelContext = getVercelManagementContext()
+    if (!vercelContext) {
+      jsonResponse(res, 500, { error: 'Nao foi possivel salvar na Vercel: credenciais de gerenciamento ausentes.' })
+      return
+    }
+    await upsertVercelEnv(vercelContext, { openAiApiKey, geminiApiKey })
+  }
+
+  const nextDiagnostics = await buildNarrationCredentialsDiagnostics()
+  jsonResponse(res, 200, {
+    ok: true,
+    location: targetLocation,
+    diagnostics: nextDiagnostics,
+  })
 }
 
 async function resolveInvoiceUrlFromAsaas(input: {
@@ -223,6 +555,12 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
 
   const context = await assertAdmin(req, res)
   if (!context) {
+    return
+  }
+
+  const scope = getHeaderValue(req.query?.scope)
+  if (scope === 'narration-ai') {
+    await handleNarrationCredentialsScope(req, res)
     return
   }
 
