@@ -397,24 +397,26 @@ export function PublicBlogPage() {
 
             <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_224px]">
               <div className="space-y-8">
-                <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-[24px] leading-none text-[#1f2e39] sm:text-[28px]">
-                  <span className="text-[#1f2e39]">Áreas:</span>
-                  {categoryFilters.map((filter) => (
-                    <button
-                      key={filter.id}
-                      type="button"
-                      onClick={() => {
-                        setSelectedFilter(filter.id)
-                        setCurrentPage(1)
-                      }}
-                      className={cn(
-                        'text-[28px] leading-none transition-colors sm:text-[32px]',
-                        selectedFilter === filter.id ? 'text-[#ff7a00]' : 'hover:text-[#ff7a00]',
-                      )}
-                    >
-                      {filter.name}
-                    </button>
-                  ))}
+                <div className="flex flex-col items-center gap-4 text-[#1f2e39]">
+                  <span className="text-base font-medium leading-none sm:text-lg">Filtre por Áreas:</span>
+                  <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-[18px] leading-none sm:gap-x-5 sm:text-[20px]">
+                    {categoryFilters.map((filter) => (
+                      <button
+                        key={filter.id}
+                        type="button"
+                        onClick={() => {
+                          setSelectedFilter(filter.id)
+                          setCurrentPage(1)
+                        }}
+                        className={cn(
+                          'whitespace-nowrap text-[18px] leading-none transition-colors sm:text-[20px]',
+                          selectedFilter === filter.id ? 'text-[#ff7a00]' : 'hover:text-[#ff7a00]',
+                        )}
+                      >
+                        {filter.name}
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
                 <div className="grid gap-8 md:grid-cols-2 xl:grid-cols-3">
