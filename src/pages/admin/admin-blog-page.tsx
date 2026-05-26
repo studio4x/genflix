@@ -951,6 +951,13 @@ export function AdminBlogPage() {
     window.open(`/blog/${articleForm.slug}?${params.toString()}`, '_blank', 'noopener,noreferrer')
   }
 
+  function handleOpenArticleFromList(slug: string) {
+    if (!slug) {
+      return
+    }
+    window.open(`/blog/${slug}`, '_blank', 'noopener,noreferrer')
+  }
+
   function resetCategoryForm() {
     setSelectedCategoryId(null)
     setIsCategorySlugTouched(false)
@@ -1579,7 +1586,7 @@ export function AdminBlogPage() {
                   <Button type="button" variant="outline" className="rounded-xl" onClick={resetArticleForm}>Limpar</Button>
                   {articleForm.slug ? (
                     <Button type="button" variant="outline" className="rounded-xl" onClick={handleOpenArticlePreview}>
-                      Visualizar
+                      Visualizar artigo
                     </Button>
                   ) : null}
                 </div>
@@ -1985,6 +1992,7 @@ export function AdminBlogPage() {
                         <th className="px-4 py-3">Categoria</th>
                         <th className="px-4 py-3">Publicação</th>
                         <th className="px-4 py-3">Leitura</th>
+                        <th className="px-4 py-3">Ações</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-[#D8E6EB]">
@@ -2005,6 +2013,19 @@ export function AdminBlogPage() {
                             <td className="px-4 py-3 font-semibold text-[#5F7077]">{categoryLabel}</td>
                             <td className="px-4 py-3 font-semibold text-[#5F7077]">{formatDateTime(article.published_at)}</td>
                             <td className="px-4 py-3 font-semibold text-[#5F7077]">{article.reading_time_minutes ?? 1} min</td>
+                            <td className="px-4 py-3">
+                              <Button
+                                type="button"
+                                variant="outline"
+                                className="h-8 rounded-lg px-3 text-xs font-bold"
+                                onClick={(event) => {
+                                  event.stopPropagation()
+                                  handleOpenArticleFromList(article.slug)
+                                }}
+                              >
+                                Visualizar artigo
+                              </Button>
+                            </td>
                           </tr>
                         )
                       })}
