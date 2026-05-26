@@ -400,7 +400,7 @@ export default function ReactQuill({
   const [activeMode, setActiveMode] = useState<'visual' | 'html'>('visual')
   const toolbarItems = useMemo(() => flattenToolbarItems(modules?.toolbar ?? defaultToolbar), [modules])
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const editor = editorRef.current
     if (!editor) {
       return
@@ -1148,7 +1148,7 @@ export default function ReactQuill({
           <div ref={editorShellRef} className="relative">
             <div
               ref={editorRef}
-              className={`${minHeightClassName} w-full bg-white px-4 py-4 text-sm leading-7 text-slate-800 outline-none [&_blockquote]:border-l-4 [&_blockquote]:border-slate-300 [&_blockquote]:pl-4 [&_blockquote]:italic [&_img]:h-auto [&_img]:max-w-full [&_pre]:overflow-x-auto [&_pre]:rounded-xl [&_pre]:bg-slate-950 [&_pre]:p-4 [&_pre]:font-mono [&_pre]:text-slate-100 [&_table]:w-full [&_table]:border-collapse [&_table]:my-6 [&_td]:border [&_td]:border-slate-300 [&_td]:px-3 [&_td]:py-2 [&_th]:border [&_th]:border-slate-300 [&_th]:bg-slate-100 [&_th]:px-3 [&_th]:py-2 [&_iframe]:min-h-[320px] [&_iframe]:w-full`}
+              className={`${minHeightClassName} w-full bg-white px-4 py-4 text-sm leading-7 text-slate-800 outline-none [&_a]:text-sky-700 [&_a]:underline [&_a]:underline-offset-2 [&_blockquote]:border-l-4 [&_blockquote]:border-slate-300 [&_blockquote]:pl-4 [&_blockquote]:italic [&_h1]:my-4 [&_h1]:text-3xl [&_h1]:font-black [&_h1]:leading-tight [&_h2]:my-4 [&_h2]:text-2xl [&_h2]:font-black [&_h2]:leading-tight [&_h3]:my-3 [&_h3]:text-xl [&_h3]:font-bold [&_h3]:leading-tight [&_h4]:my-3 [&_h4]:text-lg [&_h4]:font-bold [&_h4]:leading-tight [&_h5]:my-2 [&_h5]:text-base [&_h5]:font-bold [&_h6]:my-2 [&_h6]:text-sm [&_h6]:font-bold [&_img]:h-auto [&_img]:max-w-full [&_li]:my-1 [&_ol]:my-4 [&_ol]:list-decimal [&_ol]:pl-6 [&_p]:my-3 [&_pre]:overflow-x-auto [&_pre]:rounded-xl [&_pre]:bg-slate-950 [&_pre]:p-4 [&_pre]:font-mono [&_pre]:text-slate-100 [&_strong]:font-bold [&_table]:my-6 [&_table]:w-full [&_table]:border-collapse [&_td]:border [&_td]:border-slate-300 [&_td]:px-3 [&_td]:py-2 [&_th]:border [&_th]:border-slate-300 [&_th]:bg-slate-100 [&_th]:px-3 [&_th]:py-2 [&_ul]:my-4 [&_ul]:list-disc [&_ul]:pl-6 [&_iframe]:min-h-[320px] [&_iframe]:w-full`}
               contentEditable
               suppressContentEditableWarning
               data-placeholder={placeholder}
