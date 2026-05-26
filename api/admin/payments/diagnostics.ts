@@ -45,6 +45,8 @@ type CredentialsDiagnosticsResponse = {
   checkedAt: string
   hasOpenAiKey: boolean
   hasGeminiKey: boolean
+  openAiApiKey?: string | null
+  geminiApiKey?: string | null
   checks: CredentialsCheck[]
 }
 
@@ -125,7 +127,7 @@ function getVercelManagementContext() {
   return { token, projectId, teamId }
 }
 
-async function listSupabaseSecrets(context: { accessToken: string; projectRef: string }) {
+async function listSupabaseSecretsDetailed(context: { accessToken: string; projectRef: string }) {
   const response = await fetch(`https://api.supabase.com/v1/projects/${context.projectRef}/secrets`, {
     method: 'GET',
     headers: {
@@ -140,13 +142,25 @@ async function listSupabaseSecrets(context: { accessToken: string; projectRef: s
   }
 
   const payload = await response.json().catch(() => [])
-  const names = Array.isArray(payload)
+  const rows = Array.isArray(payload)
     ? payload
-      .map((item) => (item && typeof item === 'object' ? (item as { name?: unknown }).name : null))
-      .filter((name): name is string => typeof name === 'string')
+      .map((item) => {
+        if (!item || typeof item !== 'object') {
+          return null
+        }
+        const record = item as { name?: unknown; value?: unknown }
+        if (typeof record.name !== 'string') {
+          return null
+        }
+        return {
+          name: record.name,
+          value: typeof record.value === 'string' ? record.value : null,
+        }
+      })
+      .filter((entry): entry is { name: string; value: string | null } => Boolean(entry))
     : []
 
-  return new Set(names)
+  return rows
 }
 
 async function upsertSupabaseSecrets(
@@ -256,12 +270,17 @@ async function buildNarrationCredentialsDiagnostics(): Promise<CredentialsDiagno
   let hasGeminiInSupabase = false
   let hasOpenAiInVercel = false
   let hasGeminiInVercel = false
+  let openAiApiKeyFromSupabase: string | null = null
+  let geminiApiKeyFromSupabase: string | null = null
 
   if (supabaseContext) {
     try {
-      const names = await listSupabaseSecrets(supabaseContext)
+      const secrets = await listSupabaseSecretsDetailed(supabaseContext)
+      const names = new Set(secrets.map((entry) => entry.name))
       hasOpenAiInSupabase = names.has('OPENAI_API_KEY')
       hasGeminiInSupabase = names.has('GEMINI_API_KEY')
+      openAiApiKeyFromSupabase = secrets.find((entry) => entry.name === 'OPENAI_API_KEY')?.value ?? null
+      geminiApiKeyFromSupabase = secrets.find((entry) => entry.name === 'GEMINI_API_KEY')?.value ?? null
       checks.push({
         key: 'supabase-management',
         label: 'Gerenciamento Supabase',
@@ -355,6 +374,8 @@ async function buildNarrationCredentialsDiagnostics(): Promise<CredentialsDiagno
     checkedAt: new Date().toISOString(),
     hasOpenAiKey,
     hasGeminiKey,
+    openAiApiKey: location === 'supabase' ? openAiApiKeyFromSupabase : null,
+    geminiApiKey: location === 'supabase' ? geminiApiKeyFromSupabase : null,
     checks,
   }
 }

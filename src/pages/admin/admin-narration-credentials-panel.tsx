@@ -47,6 +47,8 @@ export function AdminNarrationCredentialsPanel() {
         const next = await fetchNarrationCredentialsDiagnostics()
         if (isMounted) {
           setDiagnostics(next)
+          setOpenAiApiKey(next.openAiApiKey ?? '')
+          setGeminiApiKey(next.geminiApiKey ?? '')
         }
       } catch (loadError) {
         if (isMounted) {
@@ -94,12 +96,12 @@ export function AdminNarrationCredentialsPanel() {
       const result = await saveNarrationCredentials({
         openAiApiKey: openAiApiKey.trim() || undefined,
         geminiApiKey: geminiApiKey.trim() || undefined,
-        targetLocation: diagnostics.location === 'unavailable' ? 'supabase' : diagnostics.location,
+        targetLocation: 'supabase',
       })
 
       setDiagnostics(result.diagnostics ?? diagnostics)
-      setOpenAiApiKey('')
-      setGeminiApiKey('')
+      setOpenAiApiKey(result.diagnostics?.openAiApiKey ?? openAiApiKey)
+      setGeminiApiKey(result.diagnostics?.geminiApiKey ?? geminiApiKey)
       setMessage('Credenciais salvas com sucesso. A geracao de narracao ja pode usar a configuracao atualizada.')
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : 'Nao foi possivel salvar as credenciais.')
@@ -155,7 +157,10 @@ export function AdminNarrationCredentialsPanel() {
             onClick={async () => {
               setIsLoading(true)
               try {
-                setDiagnostics(await fetchNarrationCredentialsDiagnostics())
+                const refreshed = await fetchNarrationCredentialsDiagnostics()
+                setDiagnostics(refreshed)
+                setOpenAiApiKey(refreshed.openAiApiKey ?? '')
+                setGeminiApiKey(refreshed.geminiApiKey ?? '')
               } catch (reloadError) {
                 setError(reloadError instanceof Error ? reloadError.message : 'Nao foi possivel atualizar o diagnostico.')
               } finally {

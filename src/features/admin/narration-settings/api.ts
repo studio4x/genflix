@@ -14,6 +14,8 @@ export interface NarrationCredentialsDiagnostics {
   checkedAt: string
   hasOpenAiKey: boolean
   hasGeminiKey: boolean
+  openAiApiKey?: string | null
+  geminiApiKey?: string | null
   checks: NarrationCredentialsCheck[]
 }
 
