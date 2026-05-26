@@ -341,7 +341,7 @@ function mapLegacyPostToArticle(post: LegacyBlogPostRow): BlogArticleRow {
     status: normalizeLegacyStatus(post.status, post.published_at),
     featured: Boolean(post.featured),
     author_id: post.author ?? null,
-    category_id: null,
+    category_id: post.category ?? null,
     published_at: post.published_at,
     scheduled_publish_at: null,
     reading_time_minutes: readingTime,
@@ -1081,7 +1081,7 @@ export function AdminBlogPage() {
     const effectiveStatus = nextStatus ?? articleForm.status
 
     if (!title || !slug) {
-      setErrorMessage('Informe t?tulo e slug do artigo.')
+      setErrorMessage('Informe título e slug do artigo.')
       return
     }
 
@@ -1095,7 +1095,7 @@ export function AdminBlogPage() {
     const legacyPayload = {
       title,
       slug,
-      category: null,
+      category: articleForm.categoryId === '__none__' ? null : articleForm.categoryId,
       excerpt: articleForm.excerpt.trim() || null,
       image_url: articleForm.coverImageUrl.trim() || null,
       read_time: `${readingTime} min`,
@@ -1195,7 +1195,7 @@ export function AdminBlogPage() {
     }
 
     if (payload.display_order != null && Number.isNaN(payload.display_order)) {
-      setErrorMessage('Ordem da categoria inv?lida.')
+      setErrorMessage('Ordem da categoria inválida.')
       setIsSavingCategory(false)
       return
     }
@@ -1524,7 +1524,7 @@ export function AdminBlogPage() {
       <header className="flex flex-col gap-4 border-b border-[#D8E6EB] pb-5 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <p className="text-[10px] font-black uppercase tracking-[0.28em] text-[#1398B7]">Admin / Blog</p>
-          <h1 className="mt-2 font-readex text-3xl font-semibold tracking-tight text-[#15323b]">Blog e conteÃºdo</h1>
+          <h1 className="mt-2 font-readex text-3xl font-semibold tracking-tight text-[#15323b]">Blog e conteúdo</h1>
         </div>
 
         <div className="flex flex-wrap gap-3">
@@ -1670,26 +1670,23 @@ export function AdminBlogPage() {
                       onChange={(event) => {
                         const selected = event.target.value
                         if (selected === '__create__') {
-                          if (!isLegacyMode) {
-                            setShowInlineCategoryForm(true)
-                          }
+                          setShowInlineCategoryForm(true)
                           return
                         }
                         setArticleForm((current) => ({ ...current, categoryId: selected }))
                       }}
-                      disabled={isLegacyMode}
-                      className="h-11 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800 outline-none focus:border-[#1398B7] disabled:bg-slate-100 disabled:text-slate-500"
+                      className="h-11 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800 outline-none focus:border-[#1398B7]"
                     >
                       <option value="__none__">Sem categoria</option>
-                      {!isLegacyMode ? categoryOptions.map((option) => (
+                      {categoryOptions.map((option) => (
                         <option key={option.id} value={option.id}>{option.label}</option>
-                      )) : null}
-                      {!isLegacyMode ? <option value="__create__">+ Criar categoria/subcategoria</option> : null}
+                      ))}
+                      <option value="__create__">+ Criar categoria/subcategoria</option>
                     </select>
                   </label>
                 </div>
 
-                {showInlineCategoryForm && !isLegacyMode ? (
+                {showInlineCategoryForm ? (
                   <div className="space-y-3 rounded-2xl border border-dashed border-[#BEE3EA] bg-[#F4FBFD] p-4">
                     <p className="text-xs font-black uppercase tracking-[0.2em] text-[#1398B7]">Criar categoria inline</p>
                     <div className="grid gap-3 sm:grid-cols-2">
@@ -1866,7 +1863,7 @@ export function AdminBlogPage() {
                 </label>
 
                 <div className="space-y-1">
-                  <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-500">Conte?do (content_html)</p>
+                  <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-500">Conteúdo (content_html)</p>
                   <RichTextEditor
                     value={articleForm.contentHtml}
                     onChange={(nextHtml) => {
@@ -2175,11 +2172,6 @@ export function AdminBlogPage() {
                     />
                   </label>
 
-                  {renderSeoFields(
-                    categoryForm,
-                    (next) => setCategoryForm((current) => ({ ...current, ...next })),
-                    'Categoria',
-                  )}
                 </>
               ) : null}
 
@@ -2209,9 +2201,7 @@ export function AdminBlogPage() {
                   className={`block w-full rounded-xl border px-4 py-3 text-left transition ${selectedCategoryId === category.id ? 'border-[#1398B7] bg-[#E8F6FA]' : 'border-[#D8E6EB] bg-white hover:bg-[#F8FBFC]'}`}
                 >
                   <p className="text-sm font-black text-[#15323b]">{getCategoryPath(category, categories)}</p>
-                  <p className="mt-1 text-xs font-semibold text-[#6d7f84]">
-                    /{category.slug} â€¢ SEO robots: {category.seo_robots ?? 'index,follow'}
-                  </p>
+                  <p className="mt-1 text-xs font-semibold text-[#6d7f84]">/{category.slug}</p>
                 </button>
               ))}
             </div>
