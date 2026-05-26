@@ -41,8 +41,8 @@ Deno.serve(async (request) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
     const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY') ?? ''
     const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    const openAiApiKey = Deno.env.get('OPENAI_API_KEY') ?? ''
-    const geminiApiKey = Deno.env.get('GEMINI_API_KEY') ?? ''
+    let openAiApiKey = Deno.env.get('OPENAI_API_KEY') ?? ''
+    let geminiApiKey = Deno.env.get('GEMINI_API_KEY') ?? ''
 
     if (!supabaseUrl || !supabaseAnonKey || !supabaseServiceRoleKey) {
       return jsonResponse({ error: 'Variaveis do Supabase ausentes na edge function.' }, 500)
@@ -65,6 +65,26 @@ Deno.serve(async (request) => {
     })
 
     const adminSupabase = createClient(supabaseUrl, supabaseServiceRoleKey)
+
+    const credentialsResult = await adminSupabase
+      .from('narration_ai_credentials')
+      .select('openai_api_key, gemini_api_key')
+      .eq('id', true)
+      .maybeSingle()
+    if (!credentialsResult.error && credentialsResult.data) {
+      const dbOpenAiKey = typeof credentialsResult.data.openai_api_key === 'string'
+        ? credentialsResult.data.openai_api_key.trim()
+        : ''
+      const dbGeminiKey = typeof credentialsResult.data.gemini_api_key === 'string'
+        ? credentialsResult.data.gemini_api_key.trim()
+        : ''
+      if (dbOpenAiKey) {
+        openAiApiKey = dbOpenAiKey
+      }
+      if (dbGeminiKey) {
+        geminiApiKey = dbGeminiKey
+      }
+    }
 
     const {
       data: { user },

@@ -58,6 +58,11 @@ type SessionRow = {
   raw_response: Record<string, unknown> | null
 }
 
+type NarrationCredentialsRow = {
+  openai_api_key: string | null
+  gemini_api_key: string | null
+}
+
 function jsonResponse(res: ApiResponse, statusCode: number, payload: unknown) {
   res.status(statusCode)
   res.setHeader('Content-Type', 'application/json; charset=utf-8')
@@ -272,6 +277,29 @@ async function buildNarrationCredentialsDiagnostics(): Promise<CredentialsDiagno
   let hasGeminiInVercel = false
   let openAiApiKeyFromSupabase: string | null = null
   let geminiApiKeyFromSupabase: string | null = null
+  let openAiApiKeyFromDatabase: string | null = null
+  let geminiApiKeyFromDatabase: string | null = null
+
+  const supabaseUrl = process.env.SUPABASE_URL ?? process.env.VITE_SUPABASE_URL
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+  if (supabaseUrl && serviceRoleKey) {
+    try {
+      const adminClient = createClient(supabaseUrl, serviceRoleKey, {
+        auth: { persistSession: false, autoRefreshToken: false },
+      })
+      const credentialsResult = await adminClient
+        .from('narration_ai_credentials')
+        .select('openai_api_key, gemini_api_key')
+        .eq('id', true)
+        .maybeSingle()
+
+      const row = (credentialsResult.data ?? null) as NarrationCredentialsRow | null
+      openAiApiKeyFromDatabase = readOptionalString(row?.openai_api_key)
+      geminiApiKeyFromDatabase = readOptionalString(row?.gemini_api_key)
+    } catch {
+      // noop: fallback para management APIs abaixo
+    }
+  }
 
   if (supabaseContext) {
     try {
@@ -332,8 +360,13 @@ async function buildNarrationCredentialsDiagnostics(): Promise<CredentialsDiagno
     })
   }
 
+  const hasOpenAiInDatabase = Boolean(openAiApiKeyFromDatabase)
+  const hasGeminiInDatabase = Boolean(geminiApiKeyFromDatabase)
+
   let location: CredentialLocation = 'unavailable'
-  if (hasOpenAiInSupabase || hasGeminiInSupabase) {
+  if (hasOpenAiInDatabase || hasGeminiInDatabase) {
+    location = 'supabase'
+  } else if (hasOpenAiInSupabase || hasGeminiInSupabase) {
     location = 'supabase'
   } else if (hasOpenAiInVercel || hasGeminiInVercel) {
     location = 'vercel'
@@ -343,8 +376,12 @@ async function buildNarrationCredentialsDiagnostics(): Promise<CredentialsDiagno
     location = 'vercel'
   }
 
-  const hasOpenAiKey = location === 'supabase' ? hasOpenAiInSupabase : hasOpenAiInVercel
-  const hasGeminiKey = location === 'supabase' ? hasGeminiInSupabase : hasGeminiInVercel
+  const hasOpenAiKey = location === 'supabase'
+    ? (hasOpenAiInDatabase || hasOpenAiInSupabase)
+    : hasOpenAiInVercel
+  const hasGeminiKey = location === 'supabase'
+    ? (hasGeminiInDatabase || hasGeminiInSupabase)
+    : hasGeminiInVercel
 
   if (!hasOpenAiKey && !hasGeminiKey) {
     checks.push({
@@ -374,13 +411,17 @@ async function buildNarrationCredentialsDiagnostics(): Promise<CredentialsDiagno
     checkedAt: new Date().toISOString(),
     hasOpenAiKey,
     hasGeminiKey,
-    openAiApiKey: location === 'supabase' ? openAiApiKeyFromSupabase : null,
-    geminiApiKey: location === 'supabase' ? geminiApiKeyFromSupabase : null,
+    openAiApiKey: location === 'supabase' ? (openAiApiKeyFromDatabase ?? openAiApiKeyFromSupabase) : null,
+    geminiApiKey: location === 'supabase' ? (geminiApiKeyFromDatabase ?? geminiApiKeyFromSupabase) : null,
     checks,
   }
 }
 
-async function handleNarrationCredentialsScope(req: ApiRequest, res: ApiResponse) {
+async function handleNarrationCredentialsScope(
+  req: ApiRequest,
+  res: ApiResponse,
+  context: NonNullable<Awaited<ReturnType<typeof assertAdmin>>>,
+) {
   if (req.method === 'GET') {
     const diagnostics = await buildNarrationCredentialsDiagnostics()
     jsonResponse(res, 200, diagnostics)
@@ -403,6 +444,22 @@ async function handleNarrationCredentialsScope(req: ApiRequest, res: ApiResponse
 
   const diagnostics = await buildNarrationCredentialsDiagnostics()
   const targetLocation = rawBody?.targetLocation ?? (diagnostics.location === 'unavailable' ? 'supabase' : diagnostics.location)
+
+  const currentCredentialsResult = await context.adminClient
+    .from('narration_ai_credentials')
+    .select('openai_api_key, gemini_api_key')
+    .eq('id', true)
+    .maybeSingle()
+  const currentCredentials = (currentCredentialsResult.data ?? null) as NarrationCredentialsRow | null
+
+  await context.adminClient
+    .from('narration_ai_credentials')
+    .upsert({
+      id: true,
+      openai_api_key: openAiApiKey ?? currentCredentials?.openai_api_key ?? null,
+      gemini_api_key: geminiApiKey ?? currentCredentials?.gemini_api_key ?? null,
+      updated_by: context.userId,
+    }, { onConflict: 'id' })
 
   if (targetLocation === 'supabase') {
     const supabaseContext = getSupabaseManagementContext()
@@ -503,7 +560,7 @@ async function assertAdmin(req: ApiRequest, res: ApiResponse) {
     return null
   }
 
-  return { supabaseUrl, serviceRoleKey, adminClient }
+  return { supabaseUrl, serviceRoleKey, adminClient, userId: userResult.data.user.id }
 }
 
 async function handleResolveInvoiceUrl(req: ApiRequest, res: ApiResponse, context: NonNullable<Awaited<ReturnType<typeof assertAdmin>>>) {
@@ -581,7 +638,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
 
   const scope = getHeaderValue(req.query?.scope)
   if (scope === 'narration-ai') {
-    await handleNarrationCredentialsScope(req, res)
+    await handleNarrationCredentialsScope(req, res, context)
     return
   }
 
