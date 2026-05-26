@@ -412,7 +412,7 @@ export function PublicBlogPostPage() {
                 <p>{post.excerpt}</p>
                 {post.contentHtml?.trim() ? (
                   <div
-                    className="prose prose-lg max-w-none prose-headings:font-lora prose-headings:text-[#15323b] prose-p:my-4 prose-li:my-1 prose-a:text-[#008f9c] prose-a:underline prose-strong:text-[#15323b] prose-blockquote:border-l-4 prose-blockquote:border-[#D8E6EB] prose-blockquote:pl-4 prose-blockquote:italic prose-img:rounded-2xl prose-img:shadow-sm"
+                    className="blog-article-html"
                     dangerouslySetInnerHTML={{ __html: sanitizeBlogHtml(post.contentHtml) }}
                   />
                 ) : (

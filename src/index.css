@@ -470,6 +470,105 @@ tr:nth-child(even) {
   color: #475569;
 }
 
+.blog-article-html {
+  color: #334155;
+  font-size: 1.05rem;
+  line-height: 1.85;
+}
+
+.blog-article-html h1,
+.blog-article-html h2,
+.blog-article-html h3,
+.blog-article-html h4,
+.blog-article-html h5,
+.blog-article-html h6 {
+  color: #15323b;
+  font-family: 'Lora', serif;
+  font-weight: 700;
+  line-height: 1.2;
+  margin: 1.5rem 0 0.75rem;
+}
+
+.blog-article-html h1 {
+  font-size: 2.1rem;
+}
+
+.blog-article-html h2 {
+  font-size: 1.65rem;
+}
+
+.blog-article-html h3 {
+  font-size: 1.35rem;
+}
+
+.blog-article-html p {
+  margin: 0 0 1rem;
+}
+
+.blog-article-html ul,
+.blog-article-html ol {
+  margin: 0 0 1rem 1.5rem;
+  padding: 0;
+}
+
+.blog-article-html ul {
+  list-style: disc;
+}
+
+.blog-article-html ol {
+  list-style: decimal;
+}
+
+.blog-article-html li {
+  margin-bottom: 0.45rem;
+}
+
+.blog-article-html a {
+  color: #008f9c;
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+
+.blog-article-html strong {
+  color: #15323b;
+  font-weight: 700;
+}
+
+.blog-article-html blockquote {
+  border-left: 4px solid #d8e6eb;
+  margin: 0 0 1rem;
+  padding-left: 0.9rem;
+  color: #51656d;
+  font-style: italic;
+}
+
+.blog-article-html img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 1.25rem 0;
+  border-radius: 1rem;
+}
+
+.blog-article-html table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.25rem 0;
+}
+
+.blog-article-html th,
+.blog-article-html td {
+  border: 1px solid #d8e6eb;
+  padding: 0.75rem 1rem;
+  vertical-align: top;
+}
+
+.blog-article-html th {
+  background: #f8fbfc;
+  font-weight: 700;
+  color: #15323b;
+}
+
 .rich-text-content .genflix-columns,
 .lesson-content-html .genflix-columns,
 .lesson-content-html .lesson-rich-text .genflix-columns,
