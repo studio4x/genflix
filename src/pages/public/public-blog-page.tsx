@@ -12,7 +12,10 @@ import {
   type GenflixBlogPost,
 } from '@/features/public/genflix-site-content'
 import { BannerPlacementSlot } from '@/features/banners/banner-placement-slot'
-import { fetchPublicBlogPostsFromSupabase } from '@/features/public/genflix-public-content-api'
+import {
+  fetchPublicBlogCategoriesFromSupabase,
+  fetchPublicBlogPostsFromSupabase,
+} from '@/features/public/genflix-public-content-api'
 import { fetchSiteContent } from '@/features/site-editor/api'
 import { EditableText, useSiteContentScope } from '@/features/site-editor/visual-editor'
 import { cn } from '@/lib/utils'
@@ -31,6 +34,42 @@ type BlogSidebarImageMode = 'single' | 'carousel'
 type BlogSidebarBlock = {
   mode: BlogSidebarImageMode
   slides: BlogSidebarImageSlide[]
+}
+
+type BlogCategoryFilter = {
+  id: string
+  name: string
+  slug: string
+}
+
+function normalizeFilterValue(value: string) {
+  return value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim()
+}
+
+function slugifyFilterValue(value: string) {
+  return normalizeFilterValue(value)
+    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+}
+
+function matchesPostCategory(postCategory: string | null, filter: BlogCategoryFilter) {
+  const normalizedPostCategory = normalizeFilterValue(postCategory ?? '')
+  const normalizedFilterName = normalizeFilterValue(filter.name)
+  const normalizedFilterSlug = normalizeFilterValue(filter.slug)
+  const normalizedFilterId = normalizeFilterValue(filter.id)
+
+  return (
+    normalizedPostCategory === normalizedFilterId ||
+    normalizedPostCategory === normalizedFilterName ||
+    normalizedPostCategory === normalizedFilterSlug ||
+    normalizedPostCategory === slugifyFilterValue(filter.name) ||
+    normalizedPostCategory === slugifyFilterValue(filter.slug)
+  )
 }
 
 function getGridCoverImageUrl(imageUrl: string) {
@@ -73,9 +112,10 @@ export function PublicBlogPage() {
   const siteContentScope = useSiteContentScope()
   const waitingRoleResolution = !!user && roles.length === 0
   const waitingSiteContent = siteContentScope?.isReady === false
-  const [selectedFilter, setSelectedFilter] = useState<(typeof genflixBlogFilters)[number]>('Todos')
+  const [selectedFilter, setSelectedFilter] = useState('all')
   const [currentPage, setCurrentPage] = useState(1)
   const [posts, setPosts] = useState<GenflixBlogPost[]>(genflixBlogPosts)
+  const [blogCategories, setBlogCategories] = useState<BlogCategoryFilter[]>([])
   const [sidebarBlocks, setSidebarBlocks] = useState<BlogSidebarBlock[]>([])
   const [sidebarCarouselTick, setSidebarCarouselTick] = useState(0)
 
@@ -101,6 +141,61 @@ export function PublicBlogPage() {
       isMounted = false
     }
   }, [])
+
+  useEffect(() => {
+    let isMounted = true
+
+    async function loadBlogCategories() {
+      try {
+        const rows = await fetchPublicBlogCategoriesFromSupabase()
+        if (isMounted && rows.length > 0) {
+          setBlogCategories(rows)
+          return
+        }
+      } catch {
+        // fallback abaixo
+      }
+
+      if (isMounted) {
+        setBlogCategories(
+          genflixBlogFilters
+            .filter((filter) => filter !== 'Todos')
+            .map((name) => ({
+              id: slugifyFilterValue(name),
+              name,
+              slug: slugifyFilterValue(name),
+            })),
+        )
+      }
+    }
+
+    void loadBlogCategories()
+
+    return () => {
+      isMounted = false
+    }
+  }, [])
+
+  useEffect(() => {
+    if (selectedFilter === 'all' || blogCategories.length === 0) {
+      return
+    }
+
+    const normalizedSelectedFilter = normalizeFilterValue(selectedFilter)
+    const matchedCategory = blogCategories.find((category) => {
+      return (
+        normalizeFilterValue(category.id) === normalizedSelectedFilter ||
+        normalizeFilterValue(category.name) === normalizedSelectedFilter ||
+        normalizeFilterValue(category.slug) === normalizedSelectedFilter ||
+        slugifyFilterValue(category.name) === selectedFilter ||
+        slugifyFilterValue(category.slug) === selectedFilter
+      )
+    })
+
+    if (matchedCategory && matchedCategory.id !== selectedFilter) {
+      setSelectedFilter(matchedCategory.id)
+    }
+  }, [blogCategories, selectedFilter])
 
   useEffect(() => {
     let isMounted = true
@@ -232,16 +327,33 @@ export function PublicBlogPage() {
   }, [sidebarBlocks])
 
   const filteredPosts = useMemo(() => {
+    if (selectedFilter === 'all') {
+      return posts
+    }
+
+    const selectedCategory = blogCategories.find((category) => category.id === selectedFilter)
     return posts.filter((post) => {
-      if (selectedFilter === 'Todos') {
-        return true
+      if (selectedCategory) {
+        return matchesPostCategory(post.category, selectedCategory)
       }
-      if (selectedFilter === 'Psicologia') {
-        return post.category === 'Psicologia'
-      }
-      return post.category === selectedFilter
+
+      return normalizeFilterValue(post.category ?? '') === normalizeFilterValue(selectedFilter)
     })
-  }, [posts, selectedFilter])
+  }, [blogCategories, posts, selectedFilter])
+
+  const categoryFilters = useMemo(() => {
+    if (blogCategories.length > 0) {
+      return blogCategories
+    }
+
+    return genflixBlogFilters
+      .filter((filter) => filter !== 'Todos')
+      .map((name) => ({
+        id: slugifyFilterValue(name),
+        name,
+        slug: slugifyFilterValue(name),
+      }))
+  }, [blogCategories])
 
   const listingPosts = filteredPosts
   const pageCount = Math.max(1, Math.ceil(listingPosts.length / POSTS_PER_PAGE))
@@ -287,20 +399,20 @@ export function PublicBlogPage() {
               <div className="space-y-8">
                 <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-[24px] leading-none text-[#1f2e39] sm:text-[28px]">
                   <span className="text-[#1f2e39]">Áreas:</span>
-                  {genflixBlogFilters.filter((filter) => filter !== 'Todos').map((filter) => (
+                  {categoryFilters.map((filter) => (
                     <button
-                      key={filter}
+                      key={filter.id}
                       type="button"
                       onClick={() => {
-                        setSelectedFilter(filter)
+                        setSelectedFilter(filter.id)
                         setCurrentPage(1)
                       }}
                       className={cn(
                         'text-[28px] leading-none transition-colors sm:text-[32px]',
-                        selectedFilter === filter ? 'text-[#ff7a00]' : 'hover:text-[#ff7a00]',
+                        selectedFilter === filter.id ? 'text-[#ff7a00]' : 'hover:text-[#ff7a00]',
                       )}
                     >
-                      {filter}
+                      {filter.name}
                     </button>
                   ))}
                 </div>
