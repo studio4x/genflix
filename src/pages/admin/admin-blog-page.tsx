@@ -1853,40 +1853,45 @@ export function AdminBlogPage() {
         </div>
       ) : null}
       {articleActionModal ? (
-        <div className="fixed inset-0 z-[95] flex items-center justify-center bg-[#0A3640]/55 px-4 py-6">
+        <div className="fixed inset-0 z-[95] flex items-center justify-center bg-[#06262D]/70 px-4 py-6">
           <div className="w-full max-w-lg overflow-hidden rounded-[24px] border border-[#D8E6EB] bg-white shadow-2xl">
             <div
               className={`flex items-start justify-between border-b px-5 py-4 ${
                 articleActionModal.tone === 'error'
-                  ? 'border-red-200 bg-red-50'
+                  ? 'border-[#F5B5B5] bg-gradient-to-r from-[#7F1D1D] to-[#DC2626]'
                   : articleActionModal.tone === 'warning'
-                    ? 'border-amber-200 bg-amber-50'
-                    : 'border-emerald-200 bg-emerald-50'
+                    ? 'border-[#F2D16B] bg-gradient-to-r from-[#8A5B00] to-[#E39A00]'
+                    : 'border-[#7DD3A6] bg-gradient-to-r from-[#0A3640] to-[#1398B7]'
               }`}
             >
               <div>
                 <p
                   className={`text-[10px] font-black uppercase tracking-[0.2em] ${
                     articleActionModal.tone === 'error'
-                      ? 'text-red-700'
+                      ? 'text-red-100'
                       : articleActionModal.tone === 'warning'
-                        ? 'text-amber-700'
-                        : 'text-emerald-700'
+                        ? 'text-amber-100'
+                        : 'text-cyan-100'
                   }`}
                 >
                   Resultado da ação
                 </p>
-                <h2 className="mt-1 font-readex text-xl font-semibold tracking-tight text-[#15323b]">
+                <h2 className="mt-1 font-readex text-xl font-semibold tracking-tight text-white">
                   {articleActionModal.title}
                 </h2>
               </div>
-              <Button type="button" variant="outline" onClick={() => setArticleActionModal(null)} className="h-9 rounded-lg border-[#D8E6EB] px-3">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setArticleActionModal(null)}
+                className="h-9 rounded-lg border-white/25 bg-white/10 px-3 text-white hover:bg-white/20 hover:text-white"
+              >
                 <X className="h-4 w-4" />
                 <span className="sr-only">Fechar modal</span>
               </Button>
             </div>
             <div className="space-y-4 px-5 py-5">
-              <p className="text-sm font-medium leading-6 text-[#5F7077]">
+              <p className="text-sm font-medium leading-6 text-[#15323b]">
                 {articleActionModal.message}
               </p>
               <div className="flex justify-end">
@@ -1894,9 +1899,9 @@ export function AdminBlogPage() {
                   type="button"
                   className={`rounded-xl ${
                     articleActionModal.tone === 'error'
-                      ? 'bg-red-600 hover:bg-red-700'
+                      ? 'bg-[#C94B4B] hover:bg-[#B63E3E]'
                       : articleActionModal.tone === 'warning'
-                        ? 'bg-amber-500 hover:bg-amber-600'
+                        ? 'bg-[#D48B00] hover:bg-[#B77700]'
                         : 'bg-[#1398B7] hover:bg-[#0A3640]'
                   }`}
                   onClick={() => setArticleActionModal(null)}
@@ -3046,6 +3051,5 @@ export function AdminBlogPage() {
     </div>
   )
 }
-
 
 
