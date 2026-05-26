@@ -8,7 +8,7 @@ import { AdminBlogCommentsPanel } from '@/features/blog/admin-blog-comments-pane
 import { fetchSiteAssets, fetchSiteContent, saveSiteContentEntry, uploadSiteAsset } from '@/features/site-editor/api'
 import type { SiteAsset } from '@/features/site-editor/types'
 import { supabase } from '@/services/supabase/client'
-import { ChevronDown, ChevronUp, Eye, Pencil, RotateCcw, Trash2 } from 'lucide-react'
+import { ChevronDown, ChevronUp, Eye, Pencil, RotateCcw, Trash2, X } from 'lucide-react'
 
 type ArticleStatus = 'draft' | 'scheduled' | 'published'
 
@@ -138,6 +138,14 @@ type BlogPostRevisionRow = {
   changed_by_email: string | null
   change_type: string | null
   created_at: string
+}
+
+type ArticleActionModalTone = 'success' | 'warning' | 'error'
+
+type ArticleActionModalState = {
+  title: string
+  message: string
+  tone: ArticleActionModalTone
 }
 
 type ArticleFormState = SeoFields & {
@@ -570,6 +578,7 @@ export function AdminBlogPage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const [articleSuccessMessage, setArticleSuccessMessage] = useState<string | null>(null)
+  const [articleActionModal, setArticleActionModal] = useState<ArticleActionModalState | null>(null)
   const [blogSidebarBlocks, setBlogSidebarBlocks] = useState<BlogSidebarBlock[]>([createEmptySidebarBlock()])
   const [isSavingLayout, setIsSavingLayout] = useState(false)
   const [isUploadingLayoutImage, setIsUploadingLayoutImage] = useState(false)
@@ -1258,10 +1267,15 @@ export function AdminBlogPage() {
     setArticleView('editor')
   }
 
+  function openArticleActionModal(modal: ArticleActionModalState) {
+    setArticleActionModal(modal)
+  }
+
   async function saveArticleWithStatus(nextStatus?: ArticleStatus | null) {
     setErrorMessage(null)
     setSuccessMessage(null)
     setArticleSuccessMessage(null)
+    setArticleActionModal(null)
 
     const title = articleForm.title.trim()
     const slug = articleForm.slug.trim()
@@ -1308,6 +1322,11 @@ export function AdminBlogPage() {
 
     if (legacyResult.error) {
       setErrorMessage(legacyResult.error.message)
+      openArticleActionModal({
+        title: 'Não foi possível salvar o artigo',
+        message: legacyResult.error.message,
+        tone: 'error',
+      })
       setIsSavingArticle(false)
       return
     }
@@ -1374,11 +1393,27 @@ export function AdminBlogPage() {
     if (tagsSyncError) {
       setErrorMessage(tagsSyncError)
       setArticleSuccessMessage('Artigo salvo, mas houve um problema ao sincronizar as tags.')
+      openArticleActionModal({
+        title: effectiveStatus === 'published' ? 'Artigo publicado' : effectiveStatus === 'scheduled' ? 'Artigo agendado' : 'Artigo salvo',
+        message: `O artigo foi ${effectiveStatus === 'published' ? 'publicado' : effectiveStatus === 'scheduled' ? 'agendado' : 'salvo'}, mas houve observações na sincronização das tags. ${tagsSyncError}`,
+        tone: 'warning',
+      })
     } else if (revisionHistoryError) {
       setErrorMessage(revisionHistoryError)
       setArticleSuccessMessage('Artigo salvo, mas houve um problema ao registrar o histórico de revisões.')
+      openArticleActionModal({
+        title: effectiveStatus === 'published' ? 'Artigo publicado' : effectiveStatus === 'scheduled' ? 'Artigo agendado' : 'Artigo salvo',
+        message: `O artigo foi ${effectiveStatus === 'published' ? 'publicado' : effectiveStatus === 'scheduled' ? 'agendado' : 'salvo'}, mas houve observações no histórico de revisões. ${revisionHistoryError}`,
+        tone: 'warning',
+      })
     } else {
-      setArticleSuccessMessage('Artigo salvo com sucesso.')
+      const actionVerb = effectiveStatus === 'published' ? 'publicado' : effectiveStatus === 'scheduled' ? 'agendado' : 'salvo'
+      setArticleSuccessMessage(`Artigo ${actionVerb} com sucesso.`)
+      openArticleActionModal({
+        title: `Artigo ${actionVerb}`,
+        message: `O artigo foi ${actionVerb} com sucesso.`,
+        tone: 'success',
+      })
     }
     setIsSavingArticle(false)
   }
@@ -1813,6 +1848,62 @@ export function AdminBlogPage() {
               >
                 Usar imagem selecionada
               </Button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+      {articleActionModal ? (
+        <div className="fixed inset-0 z-[95] flex items-center justify-center bg-[#0A3640]/55 px-4 py-6">
+          <div className="w-full max-w-lg overflow-hidden rounded-[24px] border border-[#D8E6EB] bg-white shadow-2xl">
+            <div
+              className={`flex items-start justify-between border-b px-5 py-4 ${
+                articleActionModal.tone === 'error'
+                  ? 'border-red-200 bg-red-50'
+                  : articleActionModal.tone === 'warning'
+                    ? 'border-amber-200 bg-amber-50'
+                    : 'border-emerald-200 bg-emerald-50'
+              }`}
+            >
+              <div>
+                <p
+                  className={`text-[10px] font-black uppercase tracking-[0.2em] ${
+                    articleActionModal.tone === 'error'
+                      ? 'text-red-700'
+                      : articleActionModal.tone === 'warning'
+                        ? 'text-amber-700'
+                        : 'text-emerald-700'
+                  }`}
+                >
+                  Resultado da ação
+                </p>
+                <h2 className="mt-1 font-readex text-xl font-semibold tracking-tight text-[#15323b]">
+                  {articleActionModal.title}
+                </h2>
+              </div>
+              <Button type="button" variant="outline" onClick={() => setArticleActionModal(null)} className="h-9 rounded-lg border-[#D8E6EB] px-3">
+                <X className="h-4 w-4" />
+                <span className="sr-only">Fechar modal</span>
+              </Button>
+            </div>
+            <div className="space-y-4 px-5 py-5">
+              <p className="text-sm font-medium leading-6 text-[#5F7077]">
+                {articleActionModal.message}
+              </p>
+              <div className="flex justify-end">
+                <Button
+                  type="button"
+                  className={`rounded-xl ${
+                    articleActionModal.tone === 'error'
+                      ? 'bg-red-600 hover:bg-red-700'
+                      : articleActionModal.tone === 'warning'
+                        ? 'bg-amber-500 hover:bg-amber-600'
+                        : 'bg-[#1398B7] hover:bg-[#0A3640]'
+                  }`}
+                  onClick={() => setArticleActionModal(null)}
+                >
+                  Fechar
+                </Button>
+              </div>
             </div>
           </div>
         </div>
@@ -2955,8 +3046,6 @@ export function AdminBlogPage() {
     </div>
   )
 }
-
-
 
 
 
