@@ -8,7 +8,7 @@ import { AdminBlogCommentsPanel } from '@/features/blog/admin-blog-comments-pane
 import { fetchSiteAssets, fetchSiteContent, saveSiteContentEntry, uploadSiteAsset } from '@/features/site-editor/api'
 import type { SiteAsset } from '@/features/site-editor/types'
 import { supabase } from '@/services/supabase/client'
-import { Eye, Pencil, Trash2 } from 'lucide-react'
+import { ChevronDown, ChevronUp, Eye, Pencil, Trash2 } from 'lucide-react'
 
 type ArticleStatus = 'draft' | 'scheduled' | 'published'
 
@@ -423,25 +423,25 @@ function getSeoValidationHints(form: ArticleFormState) {
   const focus = form.focusKeyword.trim().toLowerCase()
 
   if (!focus) {
-    hints.push('Defina uma palavra-chave de foco para melhorar as sugest?es de SEO.')
+    hints.push('Defina uma palavra-chave de foco para melhorar as sugestões de SEO.')
   } else {
     if (!slug.includes(slugify(focus))) {
-      hints.push('A palavra-chave de foco ainda n?o aparece no slug.')
+      hints.push('A palavra-chave de foco ainda não aparece no slug.')
     }
     if (!title.includes(focus)) {
-      hints.push('A palavra-chave de foco n?o est? presente no t?tulo do artigo.')
+      hints.push('A palavra-chave de foco não está presente no título do artigo.')
     }
     if (!excerpt.includes(focus)) {
       hints.push('A palavra-chave de foco n?o aparece no excerpt.')
     }
   }
 
-  if (form.seo_title.trim().length < 25 || form.seo_title.trim().length > 60) {
-    hints.push('O t?tulo SEO ideal fica entre 25 e 60 caracteres.')
+  if (form.seo_title.trim().length < 50 || form.seo_title.trim().length > 60) {
+    hints.push('O título SEO ideal fica entre 50 e 60 caracteres.')
   }
 
-  if (form.seo_description.trim().length < 70 || form.seo_description.trim().length > 160) {
-    hints.push('A SEO description ideal fica entre 70 e 160 caracteres.')
+  if (form.seo_description.trim().length < 140 || form.seo_description.trim().length > 160) {
+    hints.push('A meta description ideal fica entre 140 e 160 caracteres.')
   }
 
   return hints
@@ -553,6 +553,7 @@ export function AdminBlogPage() {
   const [isArticleSlugTouched, setIsArticleSlugTouched] = useState(false)
   const [isCategorySlugTouched, setIsCategorySlugTouched] = useState(false)
   const [isTagSlugTouched, setIsTagSlugTouched] = useState(false)
+  const [isArticleSeoExpanded, setIsArticleSeoExpanded] = useState(false)
 
   const [articleForm, setArticleForm] = useState<ArticleFormState>(DEFAULT_ARTICLE_FORM)
   const [categoryForm, setCategoryForm] = useState<CategoryFormState>(DEFAULT_CATEGORY_FORM)
@@ -1384,7 +1385,19 @@ export function AdminBlogPage() {
     value: SeoFields,
     onChange: (next: SeoFields) => void,
     labelPrefix: string,
+    focusKeyword?: string,
   ) {
+    const seoTitleLength = value.seo_title.trim().length
+    const seoDescriptionLength = value.seo_description.trim().length
+    const ogTitleLength = value.seo_og_title.trim().length
+    const ogDescriptionLength = value.seo_og_description.trim().length
+    const focus = focusKeyword?.trim().toLowerCase() ?? ''
+    const seoTitleHasFocus = !focus || value.seo_title.toLowerCase().includes(focus)
+    const seoDescriptionHasFocus = !focus || value.seo_description.toLowerCase().includes(focus)
+    const canonicalIsAbsolute = !value.seo_canonical_url.trim() || /^https?:\/\//i.test(value.seo_canonical_url.trim())
+    const ogImageLooksValid = !value.seo_og_image_url.trim() || /^https?:\/\/.+\.(jpg|jpeg|png|webp|gif)(\?.*)?$/i.test(value.seo_og_image_url.trim())
+    const robotsLooksValid = /^(index|noindex),(follow|nofollow)$/i.test(value.seo_robots.trim())
+
     return (
       <div className="grid gap-3">
         <div className="grid gap-3 sm:grid-cols-2">
@@ -1394,7 +1407,11 @@ export function AdminBlogPage() {
               value={value.seo_title}
               onChange={(event) => onChange({ ...value, seo_title: event.target.value })}
               className="h-10 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800 outline-none focus:border-[#1398B7]"
+              placeholder="Ex.: Método Pomodoro: guia prático para estudar melhor"
             />
+            <span className={`text-[11px] normal-case tracking-normal ${seoTitleLength >= 50 && seoTitleLength <= 60 && seoTitleHasFocus ? 'text-emerald-700' : 'text-amber-700'}`}>
+              Recomendado: 50-60 caracteres e incluir a palavra-chave foco. ({seoTitleLength}/60)
+            </span>
           </label>
           <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
             {labelPrefix} URL can?nica
@@ -1402,7 +1419,11 @@ export function AdminBlogPage() {
               value={value.seo_canonical_url}
               onChange={(event) => onChange({ ...value, seo_canonical_url: event.target.value })}
               className="h-10 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800 outline-none focus:border-[#1398B7]"
+              placeholder="https://seudominio.com/blog/seu-artigo"
             />
+            <span className={`text-[11px] normal-case tracking-normal ${canonicalIsAbsolute ? 'text-emerald-700' : 'text-amber-700'}`}>
+              Use URL absoluta (com https://) e sem parâmetros de rastreio.
+            </span>
           </label>
         </div>
 
@@ -1413,7 +1434,11 @@ export function AdminBlogPage() {
             onChange={(event) => onChange({ ...value, seo_description: event.target.value })}
             rows={2}
             className="rounded-xl border border-slate-200 px-3 py-2 text-sm font-medium text-slate-800 outline-none focus:border-[#1398B7]"
+            placeholder="Resumo claro com benefício e intenção de busca do usuário."
           />
+          <span className={`text-[11px] normal-case tracking-normal ${seoDescriptionLength >= 140 && seoDescriptionLength <= 160 && seoDescriptionHasFocus ? 'text-emerald-700' : 'text-amber-700'}`}>
+            Recomendado: 140-160 caracteres e conter a palavra-chave foco. ({seoDescriptionLength}/160)
+          </span>
         </label>
 
         <div className="grid gap-3 sm:grid-cols-2">
@@ -1425,6 +1450,9 @@ export function AdminBlogPage() {
               className="h-10 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800 outline-none focus:border-[#1398B7]"
               placeholder="index,follow"
             />
+            <span className={`text-[11px] normal-case tracking-normal ${robotsLooksValid ? 'text-emerald-700' : 'text-amber-700'}`}>
+              Formato recomendado: `index,follow` ou `noindex,nofollow`.
+            </span>
           </label>
           <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
             {labelPrefix} URL da imagem OG
@@ -1432,7 +1460,11 @@ export function AdminBlogPage() {
               value={value.seo_og_image_url}
               onChange={(event) => onChange({ ...value, seo_og_image_url: event.target.value })}
               className="h-10 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800 outline-none focus:border-[#1398B7]"
+              placeholder="https://seudominio.com/imagens/capa-og.jpg"
             />
+            <span className={`text-[11px] normal-case tracking-normal ${ogImageLooksValid ? 'text-emerald-700' : 'text-amber-700'}`}>
+              Use uma URL pública da imagem OG (ideal 1200x630).
+            </span>
           </label>
         </div>
 
@@ -1443,7 +1475,11 @@ export function AdminBlogPage() {
               value={value.seo_og_title}
               onChange={(event) => onChange({ ...value, seo_og_title: event.target.value })}
               className="h-10 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800 outline-none focus:border-[#1398B7]"
+              placeholder="Título para compartilhamento em redes sociais"
             />
+            <span className={`text-[11px] normal-case tracking-normal ${ogTitleLength >= 40 && ogTitleLength <= 60 ? 'text-emerald-700' : 'text-amber-700'}`}>
+              Recomendado: 40-60 caracteres. ({ogTitleLength}/60)
+            </span>
           </label>
           <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
             {labelPrefix} DescriÃ§Ã£o OG
@@ -1451,7 +1487,11 @@ export function AdminBlogPage() {
               value={value.seo_og_description}
               onChange={(event) => onChange({ ...value, seo_og_description: event.target.value })}
               className="h-10 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800 outline-none focus:border-[#1398B7]"
+              placeholder="Descrição curta para melhorar o clique social"
             />
+            <span className={`text-[11px] normal-case tracking-normal ${ogDescriptionLength >= 110 && ogDescriptionLength <= 160 ? 'text-emerald-700' : 'text-amber-700'}`}>
+              Recomendado: 110-160 caracteres. ({ogDescriptionLength}/160)
+            </span>
           </label>
         </div>
       </div>
@@ -1772,7 +1812,30 @@ export function AdminBlogPage() {
                 </label>
 
                 <section className="space-y-3 rounded-2xl border border-[#D8E6EB] bg-[#F8FBFC] p-4">
-                  <p className="text-xs font-black uppercase tracking-[0.2em] text-[#1398B7]">SEO do artigo</p>
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-xs font-black uppercase tracking-[0.2em] text-[#1398B7]">SEO do artigo</p>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="h-9 rounded-xl px-3 text-xs font-black uppercase tracking-[0.08em]"
+                      onClick={() => setIsArticleSeoExpanded((current) => !current)}
+                    >
+                      {isArticleSeoExpanded ? (
+                        <span className="inline-flex items-center gap-2"><ChevronUp className="h-4 w-4" /> Recolher</span>
+                      ) : (
+                        <span className="inline-flex items-center gap-2"><ChevronDown className="h-4 w-4" /> Expandir</span>
+                      )}
+                    </Button>
+                  </div>
+
+                  {!isArticleSeoExpanded ? (
+                    <p className="text-sm font-medium text-[#5F7077]">
+                      Seção recolhida. Expanda para configurar título SEO, descrição, canonical, robots e Open Graph.
+                    </p>
+                  ) : null}
+
+                  {isArticleSeoExpanded ? (
+                    <>
                   <div className="space-y-2">
                     <div className="flex flex-wrap items-center gap-2">
                       <label className="grid flex-1 gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
@@ -1781,7 +1844,11 @@ export function AdminBlogPage() {
                           value={articleForm.focusKeyword}
                           onChange={(event) => setArticleForm((current) => ({ ...current, focusKeyword: event.target.value }))}
                           className="h-11 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800"
+                          placeholder="Termo principal que o artigo quer ranquear"
                         />
+                        <span className="text-[11px] normal-case tracking-normal text-[#5F7077]">
+                          Use 1 termo principal e tente repeti-lo no slug, título SEO e descrição SEO.
+                        </span>
                       </label>
                       <Button
                         type="button"
@@ -1810,7 +1877,10 @@ export function AdminBlogPage() {
                     articleForm,
                     (next) => setArticleForm((current) => ({ ...current, ...next })),
                     'Artigo',
+                    articleForm.focusKeyword,
                   )}
+                    </>
+                  ) : null}
                 </section>
 
                 {!isLegacyMode ? (
