@@ -635,10 +635,26 @@ export function AdminBlogPage() {
     setIsLoading(false)
   }
 
+  async function loadCategoriesData() {
+    const categoriesResult = await supabase
+      .from(TABLES.categories)
+      .select('*')
+      .order('display_order', { ascending: true, nullsFirst: false })
+      .order('name', { ascending: true })
+
+    if (categoriesResult.error) {
+      setErrorMessage(categoriesResult.error.message)
+      return
+    }
+
+    setCategories((categoriesResult.data ?? []) as BlogCategoryRow[])
+  }
+
   async function loadAllData() {
     setIsLoading(true)
     setErrorMessage(null)
     await loadLegacyData()
+    await loadCategoriesData()
     await loadBlogLayoutSettings()
   }
   useEffect(() => {
@@ -1528,15 +1544,13 @@ export function AdminBlogPage() {
         >
           Artigos
         </button>
-        {!isLegacyMode ? (
-          <button
-            type="button"
-            onClick={() => setActiveTab('categories')}
-            className={`rounded-full border px-4 py-2 text-sm font-bold ${activeTab === 'categories' ? 'border-[#1398B7] bg-[#1398B7] text-white' : 'border-[#D8E6EB] bg-white text-[#15323b]'}`}
-          >
-            Categorias
-          </button>
-        ) : null}
+        <button
+          type="button"
+          onClick={() => setActiveTab('categories')}
+          className={`rounded-full border px-4 py-2 text-sm font-bold ${activeTab === 'categories' ? 'border-[#1398B7] bg-[#1398B7] text-white' : 'border-[#D8E6EB] bg-white text-[#15323b]'}`}
+        >
+          Categorias
+        </button>
         {!isLegacyMode ? (
           <button
             type="button"
