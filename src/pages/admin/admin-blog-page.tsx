@@ -5,7 +5,8 @@ import { useAuth } from '@/app/providers/auth-provider'
 import { RichTextEditor } from '@/components/ui/RichTextEditor'
 import { Button } from '@/components/ui/button'
 import { AdminBlogCommentsPanel } from '@/features/blog/admin-blog-comments-panel'
-import { fetchSiteContent, saveSiteContentEntry, uploadSiteAsset } from '@/features/site-editor/api'
+import { fetchSiteAssets, fetchSiteContent, saveSiteContentEntry, uploadSiteAsset } from '@/features/site-editor/api'
+import type { SiteAsset } from '@/features/site-editor/types'
 import { supabase } from '@/services/supabase/client'
 
 type ArticleStatus = 'draft' | 'scheduled' | 'published'
@@ -517,6 +518,11 @@ export function AdminBlogPage() {
   const [blogSidebarBlocks, setBlogSidebarBlocks] = useState<BlogSidebarBlock[]>([createEmptySidebarBlock()])
   const [isSavingLayout, setIsSavingLayout] = useState(false)
   const [isUploadingLayoutImage, setIsUploadingLayoutImage] = useState(false)
+  const [isUploadingCoverImage, setIsUploadingCoverImage] = useState(false)
+  const [mediaLibraryAssets, setMediaLibraryAssets] = useState<SiteAsset[]>([])
+  const [isLoadingMediaLibrary, setIsLoadingMediaLibrary] = useState(false)
+  const [isMediaLibraryOpen, setIsMediaLibraryOpen] = useState(false)
+  const [selectedMediaAssetId, setSelectedMediaAssetId] = useState('')
 
   const [articles, setArticles] = useState<BlogArticleRow[]>([])
   const [categories, setCategories] = useState<BlogCategoryRow[]>([])
@@ -637,6 +643,35 @@ export function AdminBlogPage() {
   }
   useEffect(() => {
     void loadAllData()
+  }, [])
+
+  useEffect(() => {
+    let isMounted = true
+    setIsLoadingMediaLibrary(true)
+
+    void fetchSiteAssets(120)
+      .then((assets) => {
+        if (!isMounted) {
+          return
+        }
+        setMediaLibraryAssets(assets.filter((asset) => (asset.mime_type ?? '').startsWith('image/')))
+      })
+      .catch((error) => {
+        if (!isMounted) {
+          return
+        }
+        setErrorMessage(error instanceof Error ? error.message : 'Nao foi possivel carregar a biblioteca de midia.')
+      })
+      .finally(() => {
+        if (!isMounted) {
+          return
+        }
+        setIsLoadingMediaLibrary(false)
+      })
+
+    return () => {
+      isMounted = false
+    }
   }, [])
 
   async function loadBlogLayoutSettings() {
@@ -791,6 +826,49 @@ export function AdminBlogPage() {
     } finally {
       setIsUploadingLayoutImage(false)
     }
+  }
+
+  async function handleUploadArticleCoverImage(file: File | null) {
+    if (!file) {
+      return
+    }
+
+    setIsUploadingCoverImage(true)
+    setErrorMessage(null)
+    setSuccessMessage(null)
+    try {
+      const uploaded = await uploadSiteAsset(file, {
+        alt: articleForm.title.trim() || file.name,
+        pageKey: 'blog',
+        entryKey: 'article.cover_image_url',
+      })
+      if (uploaded.public_url) {
+        setArticleForm((current) => ({ ...current, coverImageUrl: uploaded.public_url ?? current.coverImageUrl }))
+      }
+      setMediaLibraryAssets((current) => [uploaded, ...current.filter((asset) => asset.id !== uploaded.id)])
+      setSuccessMessage('Imagem de capa enviada com sucesso.')
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : 'Nao foi possivel enviar a imagem de capa.')
+    } finally {
+      setIsUploadingCoverImage(false)
+    }
+  }
+
+  function handleApplyCoverFromLibrary() {
+    if (!selectedMediaAssetId) {
+      setErrorMessage('Selecione uma imagem da biblioteca antes de aplicar.')
+      return
+    }
+
+    const selectedAsset = mediaLibraryAssets.find((asset) => asset.id === selectedMediaAssetId)
+    if (!selectedAsset || !selectedAsset.public_url) {
+      setErrorMessage('Nao foi possivel aplicar a imagem selecionada.')
+      return
+    }
+
+    setArticleForm((current) => ({ ...current, coverImageUrl: selectedAsset.public_url ?? current.coverImageUrl }))
+    setSuccessMessage('Imagem de capa aplicada da biblioteca de midia.')
+    setIsMediaLibraryOpen(false)
   }
 
   async function handleSaveBlogLayoutImage() {
@@ -1347,6 +1425,67 @@ export function AdminBlogPage() {
 
   return (
     <div className="space-y-6">
+      {isMediaLibraryOpen ? (
+        <div className="fixed inset-0 z-[90] flex items-center justify-center bg-[#0A3640]/50 px-4 py-6">
+          <div className="flex h-full max-h-[90vh] w-full max-w-5xl flex-col overflow-hidden rounded-[24px] border border-[#D8E6EB] bg-white shadow-2xl">
+            <div className="flex items-center justify-between border-b border-[#D8E6EB] px-5 py-4">
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#1398B7]">Biblioteca de midia</p>
+                <h2 className="mt-1 font-readex text-xl font-semibold text-[#15323b]">Escolher imagem de capa</h2>
+              </div>
+              <Button type="button" variant="outline" onClick={() => setIsMediaLibraryOpen(false)} className="rounded-xl border-[#D8E6EB]">
+                Fechar
+              </Button>
+            </div>
+
+            <div className="min-h-0 flex-1 overflow-y-auto p-5">
+              {isLoadingMediaLibrary ? (
+                <p className="text-sm font-semibold text-[#5F7077]">Carregando biblioteca...</p>
+              ) : mediaLibraryAssets.length === 0 ? (
+                <div className="rounded-[18px] border border-dashed border-[#D8E6EB] bg-[#F8FBFC] px-4 py-6 text-sm font-semibold text-[#5F7077]">
+                  Nenhuma imagem encontrada na biblioteca de midia.
+                </div>
+              ) : (
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                  {mediaLibraryAssets.map((asset) => {
+                    const isSelected = selectedMediaAssetId === asset.id
+                    return (
+                      <button
+                        key={asset.id}
+                        type="button"
+                        onClick={() => setSelectedMediaAssetId(asset.id)}
+                        className={`overflow-hidden rounded-[16px] border bg-white text-left transition-all ${isSelected ? 'border-[#1398B7] ring-2 ring-[#1398B7]/20' : 'border-[#D8E6EB] hover:border-[#B8D8E1]'}`}
+                      >
+                        <div className="aspect-[16/9] w-full bg-[#EAF2F5]">
+                          {asset.public_url ? <img src={asset.public_url} alt={asset.alt ?? 'Imagem'} className="h-full w-full object-cover" /> : null}
+                        </div>
+                        <div className="space-y-1 px-3 py-2">
+                          <p className="truncate text-xs font-black text-[#15323b]">{asset.alt ?? 'Imagem sem nome'}</p>
+                          <p className="text-[11px] font-semibold text-[#5F7077]">{new Date(asset.created_at).toLocaleString('pt-BR')}</p>
+                        </div>
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+
+            <div className="flex flex-col-reverse gap-2 border-t border-[#D8E6EB] px-5 py-4 sm:flex-row sm:items-center sm:justify-end">
+              <Button type="button" variant="outline" onClick={() => setIsMediaLibraryOpen(false)} className="h-11 w-full rounded-xl border-[#D8E6EB] sm:w-auto">
+                Cancelar
+              </Button>
+              <Button
+                type="button"
+                onClick={handleApplyCoverFromLibrary}
+                disabled={!selectedMediaAssetId}
+                className="h-11 w-full rounded-xl bg-[#1398B7] px-4 text-center text-xs font-black uppercase tracking-[0.1em] text-white hover:bg-[#1089A5] sm:w-auto"
+              >
+                Usar imagem selecionada
+              </Button>
+            </div>
+          </div>
+        </div>
+      ) : null}
       <header className="flex flex-col gap-4 border-b border-[#D8E6EB] pb-5 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <p className="text-[10px] font-black uppercase tracking-[0.28em] text-[#1398B7]">Admin / Blog</p>
@@ -1596,14 +1735,59 @@ export function AdminBlogPage() {
                 </div>
 
                 <div className="grid gap-3 sm:grid-cols-2">
-                  <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
-                    Imagem de capa
-                    <input
-                      value={articleForm.coverImageUrl}
-                      onChange={(event) => setArticleForm((current) => ({ ...current, coverImageUrl: event.target.value }))}
-                      className="h-11 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800"
-                    />
-                  </label>
+                  <div className="grid gap-2">
+                    <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
+                      Imagem de capa
+                      <input
+                        value={articleForm.coverImageUrl}
+                        onChange={(event) => setArticleForm((current) => ({ ...current, coverImageUrl: event.target.value }))}
+                        className="h-11 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800"
+                      />
+                    </label>
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      <label className="inline-flex h-11 cursor-pointer items-center justify-center rounded-xl bg-[#1398B7] px-3 text-center text-xs font-black uppercase tracking-[0.08em] text-white hover:bg-[#1089A5]">
+                        {isUploadingCoverImage ? 'Enviando...' : 'Upload da capa'}
+                        <input
+                          type="file"
+                          accept=".jpg,.jpeg,.png,.webp,image/*"
+                          disabled={isUploadingCoverImage}
+                          onChange={(event) => {
+                            const file = event.target.files?.[0] ?? null
+                            void handleUploadArticleCoverImage(file)
+                            event.currentTarget.value = ''
+                          }}
+                          className="sr-only"
+                        />
+                      </label>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => setIsMediaLibraryOpen(true)}
+                        disabled={isLoadingMediaLibrary || isUploadingCoverImage}
+                        className="h-11 rounded-xl border-[#D8E6EB] text-xs font-black uppercase tracking-[0.08em]"
+                      >
+                        Abrir biblioteca de midia
+                      </Button>
+                    </div>
+                    {articleForm.coverImageUrl ? (
+                      <div className="overflow-hidden rounded-xl border border-[#D8E6EB] bg-white">
+                        <div className="aspect-[16/9] w-full bg-[#EAF2F5]">
+                          <img src={articleForm.coverImageUrl} alt={articleForm.title || 'Imagem de capa'} className="h-full w-full object-cover" />
+                        </div>
+                        <div className="flex items-center justify-between gap-2 border-t border-[#D8E6EB] px-3 py-2">
+                          <p className="truncate text-xs font-semibold text-slate-600">{articleForm.coverImageUrl}</p>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => setArticleForm((current) => ({ ...current, coverImageUrl: '' }))}
+                            className="h-8 rounded-lg border-rose-200 px-2 text-[11px] font-black uppercase tracking-[0.08em] text-rose-700 hover:bg-rose-50"
+                          >
+                            Remover
+                          </Button>
+                        </div>
+                      </div>
+                    ) : null}
+                  </div>
                   <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
                     Tempo de leitura (auto)
                     <input
