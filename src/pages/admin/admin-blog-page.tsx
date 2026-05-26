@@ -1879,59 +1879,88 @@ export function AdminBlogPage() {
                   />
                 </div>
 
-                <div className="grid gap-2">
-                  <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
-                    Imagem de capa
-                    <input
-                      value={articleForm.coverImageUrl}
-                      onChange={(event) => setArticleForm((current) => ({ ...current, coverImageUrl: event.target.value }))}
-                      className="h-11 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800"
-                    />
-                  </label>
-                  <div className="grid gap-2 sm:grid-cols-2">
-                    <label className="inline-flex h-11 cursor-pointer items-center justify-center rounded-xl bg-[#1398B7] px-3 text-center text-xs font-black uppercase tracking-[0.08em] text-white hover:bg-[#1089A5]">
-                      {isUploadingCoverImage ? 'Enviando...' : 'Upload da capa'}
-                      <input
-                        type="file"
-                        accept=".jpg,.jpeg,.png,.webp,image/*"
-                        disabled={isUploadingCoverImage}
-                        onChange={(event) => {
-                          const file = event.target.files?.[0] ?? null
-                          void handleUploadArticleCoverImage(file)
-                          event.currentTarget.value = ''
-                        }}
-                        className="sr-only"
-                      />
-                    </label>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => setIsMediaLibraryOpen(true)}
-                      disabled={isLoadingMediaLibrary || isUploadingCoverImage}
-                      className="h-11 rounded-xl border-[#D8E6EB] text-xs font-black uppercase tracking-[0.08em]"
-                    >
-                      Abrir biblioteca de midia
-                    </Button>
-                  </div>
-                  {articleForm.coverImageUrl ? (
-                    <div className="overflow-hidden rounded-xl border border-[#D8E6EB] bg-white">
-                      <div className="aspect-[16/9] w-full bg-[#EAF2F5]">
-                        <img src={articleForm.coverImageUrl} alt={articleForm.title || 'Imagem de capa'} className="h-full w-full object-cover" />
+                <section className="rounded-2xl border border-[#D8E6EB] bg-white p-4">
+                  <p className="text-xs font-black uppercase tracking-[0.2em] text-[#1398B7]">Imagem de capa</p>
+                  <h3 className="mt-2 text-2xl font-black tracking-tight text-[#15323b]">Upload de imagem</h3>
+                  <p className="mt-2 text-sm font-medium text-[#5F7077]">
+                    Recomendado: JPG, PNG ou WEBP. Defina a imagem de capa do artigo usando upload ou biblioteca de mídia.
+                  </p>
+
+                  <div className="mt-4 grid gap-4 lg:grid-cols-[220px_minmax(0,1fr)]">
+                    <div className="overflow-hidden rounded-2xl border border-[#D8E6EB] bg-[#EAF2F5]">
+                      <div className="aspect-[4/3] w-full">
+                        {articleForm.coverImageUrl ? (
+                          <img src={articleForm.coverImageUrl} alt={articleForm.title || 'Imagem de capa'} className="h-full w-full object-cover" />
+                        ) : (
+                          <div className="flex h-full w-full items-center justify-center px-4 text-center text-xs font-semibold text-[#5F7077]">
+                            Nenhuma capa definida
+                          </div>
+                        )}
                       </div>
-                      <div className="flex items-center justify-between gap-2 border-t border-[#D8E6EB] px-3 py-2">
-                        <p className="truncate text-xs font-semibold text-slate-600">{articleForm.coverImageUrl}</p>
+                    </div>
+
+                    <div className="rounded-2xl border border-[#D8E6EB] p-4">
+                      <p className="text-lg font-black tracking-tight text-[#15323b]">Enviar nova imagem</p>
+                      <p className="mt-1 text-sm font-medium text-[#5F7077]">Após escolher a imagem, salve o artigo para manter a alteração.</p>
+
+                      <label className="mt-3 grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
+                        URL da capa
+                        <input
+                          value={articleForm.coverImageUrl}
+                          onChange={(event) => setArticleForm((current) => ({ ...current, coverImageUrl: event.target.value }))}
+                          className="h-10 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800"
+                        />
+                      </label>
+
+                      <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                        <label className="inline-flex h-10 cursor-pointer items-center justify-center rounded-xl bg-[#1398B7] px-3 text-center text-xs font-black uppercase tracking-[0.08em] text-white hover:bg-[#1089A5]">
+                          {isUploadingCoverImage ? 'Enviando...' : 'Escolher arquivo'}
+                          <input
+                            type="file"
+                            accept=".jpg,.jpeg,.png,.webp,image/*"
+                            disabled={isUploadingCoverImage}
+                            onChange={(event) => {
+                              const file = event.target.files?.[0] ?? null
+                              void handleUploadArticleCoverImage(file)
+                              event.currentTarget.value = ''
+                            }}
+                            className="sr-only"
+                          />
+                        </label>
                         <Button
                           type="button"
                           variant="outline"
-                          onClick={() => setArticleForm((current) => ({ ...current, coverImageUrl: '' }))}
-                          className="h-8 rounded-lg border-rose-200 px-2 text-[11px] font-black uppercase tracking-[0.08em] text-rose-700 hover:bg-rose-50"
+                          onClick={() => setIsMediaLibraryOpen(true)}
+                          disabled={isLoadingMediaLibrary || isUploadingCoverImage}
+                          className="h-10 rounded-xl border-[#D8E6EB] text-xs font-black uppercase tracking-[0.08em]"
                         >
-                          Remover
+                          Abrir biblioteca
                         </Button>
                       </div>
+
+                      {articleForm.coverImageUrl ? (
+                        <div className="mt-3 flex flex-wrap items-center gap-3">
+                          <a
+                            href={articleForm.coverImageUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-sm font-black text-[#1398B7] hover:text-[#0A3640]"
+                          >
+                            Abrir imagem atual
+                          </a>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => setArticleForm((current) => ({ ...current, coverImageUrl: '' }))}
+                            className="h-8 rounded-lg border-rose-200 px-3 text-xs font-black text-rose-700 hover:bg-rose-50"
+                          >
+                            Remover imagem
+                          </Button>
+                        </div>
+                      ) : null}
                     </div>
-                  ) : null}
-                </div>
+                  </div>
+                </section>
 
                 <div className="flex flex-wrap gap-2 border-t border-[#D8E6EB] pt-4">
                   <Button type="button" className="rounded-xl bg-[#1398B7] hover:bg-[#0A3640]" onClick={() => void saveArticleWithStatus('draft')} disabled={isSavingArticle}>
