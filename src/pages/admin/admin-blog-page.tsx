@@ -508,6 +508,7 @@ export function AdminBlogPage() {
   const [activeTab, setActiveTab] = useState<'articles' | 'categories' | 'tags' | 'layout' | 'comments'>(searchParams.get('tab') === 'comments' ? 'comments' : 'articles')
   const [articleView, setArticleView] = useState<'list' | 'editor'>('list')
   const [isLegacyMode, setIsLegacyMode] = useState(true)
+  const [isCategoryCrudAvailable, setIsCategoryCrudAvailable] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [isSavingArticle, setIsSavingArticle] = useState(false)
   const [isSavingCategory, setIsSavingCategory] = useState(false)
@@ -541,6 +542,12 @@ export function AdminBlogPage() {
     next.set('tab', activeTab)
     setSearchParams(next, { replace: true })
   }, [activeTab, searchParams, setSearchParams])
+
+  useEffect(() => {
+    if (activeTab === 'categories' && !isCategoryCrudAvailable) {
+      setActiveTab('articles')
+    }
+  }, [activeTab, isCategoryCrudAvailable])
 
   const [isArticleSlugTouched, setIsArticleSlugTouched] = useState(false)
   const [isCategorySlugTouched, setIsCategorySlugTouched] = useState(false)
@@ -643,10 +650,16 @@ export function AdminBlogPage() {
       .order('name', { ascending: true })
 
     if (categoriesResult.error) {
+      if (categoriesResult.error.message.includes(`Could not find the table 'public.${TABLES.categories}'`)) {
+        setCategories([])
+        setIsCategoryCrudAvailable(false)
+        return
+      }
       setErrorMessage(categoriesResult.error.message)
       return
     }
 
+    setIsCategoryCrudAvailable(true)
     setCategories((categoriesResult.data ?? []) as BlogCategoryRow[])
   }
 
@@ -1544,13 +1557,15 @@ export function AdminBlogPage() {
         >
           Artigos
         </button>
-        <button
-          type="button"
-          onClick={() => setActiveTab('categories')}
-          className={`rounded-full border px-4 py-2 text-sm font-bold ${activeTab === 'categories' ? 'border-[#1398B7] bg-[#1398B7] text-white' : 'border-[#D8E6EB] bg-white text-[#15323b]'}`}
-        >
-          Categorias
-        </button>
+        {isCategoryCrudAvailable ? (
+          <button
+            type="button"
+            onClick={() => setActiveTab('categories')}
+            className={`rounded-full border px-4 py-2 text-sm font-bold ${activeTab === 'categories' ? 'border-[#1398B7] bg-[#1398B7] text-white' : 'border-[#D8E6EB] bg-white text-[#15323b]'}`}
+          >
+            Categorias
+          </button>
+        ) : null}
         {!isLegacyMode ? (
           <button
             type="button"
