@@ -21,6 +21,7 @@ interface PublicBlogPostRow {
   title: string
   category: string | null
   seo_description: string | null
+  excerpt?: string | null
   image_url: string | null
   read_time: string | null
   author: string | null
@@ -49,6 +50,8 @@ const publicCourseSelect =
   'id, slug, title, description, category, thumbnail_url, cover_image_url, marketing_title, marketing_description, mentor_name, mentor_role, mentor_bio, mentor_initials, price_label, secondary_price_label, price_cents, currency, public_page_content, display_order'
 const publicBlogPostSelect =
   'slug, title, category, seo_description, image_url, read_time, author, published_at, content, content_html, featured'
+const publicBlogPostLegacySelect =
+  'slug, title, category, excerpt, image_url, read_time, author, published_at, content, content_html, featured, status'
 
 async function fetchPublicRows<T>(path: string, searchParams: URLSearchParams): Promise<T[]> {
   if (!supabaseUrl || !supabaseAnonKey) {
@@ -150,12 +153,13 @@ function toBlogPost(row: PublicBlogPostRow): GenflixBlogPost {
       .filter(Boolean)
     : []
   const fallbackSeoDescription = content.join(' ').replace(/\s+/g, ' ').trim().slice(0, 160)
+  const summary = row.seo_description?.trim() || row.excerpt?.trim() || fallbackSeoDescription
 
   return {
     slug: row.slug,
     title: fixMojibakeText(row.title),
     category: fixMojibakeText(row.category ?? 'GenFlix'),
-    seoDescription: fixMojibakeText(row.seo_description?.trim() || fallbackSeoDescription),
+    seoDescription: fixMojibakeText(summary),
     image: row.image_url ?? '/images/genflix/home/featured-2.jpg',
     readTime: row.read_time ?? '5 min',
     author: row.author ?? 'Equipe GenFlix',
@@ -169,6 +173,37 @@ function toBlogPost(row: PublicBlogPostRow): GenflixBlogPost {
     content,
     contentHtml: row.content_html ?? '',
     featured: row.featured,
+  }
+}
+
+async function fetchPublicBlogRowsWithFallback(params: URLSearchParams) {
+  const isMissingColumn = (message: string, column: string) =>
+    message.includes(`column blog_posts.${column} does not exist`)
+
+  let activeParams = new URLSearchParams(params)
+
+  try {
+    return await fetchPublicRows<PublicBlogPostRow>('blog_posts', activeParams)
+  } catch (firstError) {
+    const firstMessage = firstError instanceof Error ? firstError.message : ''
+    if (!isMissingColumn(firstMessage, 'seo_description')) {
+      throw firstError
+    }
+
+    activeParams.set('select', publicBlogPostLegacySelect)
+  }
+
+  try {
+    return await fetchPublicRows<PublicBlogPostRow>('blog_posts', activeParams)
+  } catch (secondError) {
+    const secondMessage = secondError instanceof Error ? secondError.message : ''
+    if (!isMissingColumn(secondMessage, 'status')) {
+      throw secondError
+    }
+
+    activeParams.delete('or')
+    activeParams.set('published_at', 'not.is.null')
+    return await fetchPublicRows<PublicBlogPostRow>('blog_posts', activeParams)
   }
 }
 
@@ -203,7 +238,7 @@ export async function fetchPublicBlogPostsFromSupabase() {
     or: '(status.eq.published,and(status.is.null,published_at.not.is.null))',
     order: 'display_order.asc,published_at.desc',
   })
-  const rows = await fetchPublicRows<PublicBlogPostRow>('blog_posts', params)
+  const rows = await fetchPublicBlogRowsWithFallback(params)
 
   return rows.map(toBlogPost)
 }
@@ -215,7 +250,7 @@ export async function fetchPublicBlogPostFromSupabase(slug: string) {
     slug: `eq.${slug}`,
     limit: '1',
   })
-  const [row] = await fetchPublicRows<PublicBlogPostRow>('blog_posts', params)
+  const [row] = await fetchPublicBlogRowsWithFallback(params)
 
   return row ? toBlogPost(row) : null
 }
