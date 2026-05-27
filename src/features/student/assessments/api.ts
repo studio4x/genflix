@@ -158,7 +158,7 @@ export async function fetchAssessmentForExecution(assessmentId: string) {
       headers: {
         'Content-Type': 'application/json',
         apikey: env.VITE_SUPABASE_ANON_KEY,
-        Authorization: `Bearer ${env.VITE_SUPABASE_ANON_KEY}`,
+        Authorization: `Bearer ${accessToken}`,
       },
       body: JSON.stringify({
         assessment_id: assessmentId,
@@ -240,7 +240,7 @@ export async function submitAssessmentAttempt(
       headers: {
         'Content-Type': 'application/json',
         apikey: env.VITE_SUPABASE_ANON_KEY,
-        Authorization: `Bearer ${env.VITE_SUPABASE_ANON_KEY}`,
+        Authorization: `Bearer ${accessToken}`,
       },
       body: JSON.stringify({
         assessment_id: parsed.data.assessment_id,
