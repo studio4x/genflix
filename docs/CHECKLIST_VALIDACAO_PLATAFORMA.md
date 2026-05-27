@@ -68,9 +68,9 @@ Este checklist foi criado para apoiar a validacao funcional da plataforma por se
 - [OK] Navegacao entre modulos/aulas respeita regras configuradas.
 
 ### Modulo Comunicacao e Suporte do Aluno
-- [ ] Mensagens (`/aluno/mensagens`) abre e lista conversas.
-- [ ] Tickets (`/aluno/suporte`) permite criar e acompanhar chamado.
-- [ ] Detalhe do ticket (`/aluno/suporte/:ticketId`) exibe timeline.
+- [OK] Mensagens (`/aluno/mensagens`) abre e lista conversas.
+- [OK] Tickets (`/aluno/suporte`) permite criar e acompanhar chamado.
+- [OK] Detalhe do ticket (`/aluno/suporte/:ticketId`) exibe timeline.
 
 ---
 
