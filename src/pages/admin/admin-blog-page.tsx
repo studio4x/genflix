@@ -3009,16 +3009,6 @@ export function AdminBlogPage() {
                     </label>
                   </div>
 
-                  <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
-                    schema_json
-                    <textarea
-                      value={categoryForm.schemaJson}
-                      onChange={(event) => setCategoryForm((current) => ({ ...current, schemaJson: event.target.value }))}
-                      rows={2}
-                      className="rounded-xl border border-slate-200 px-3 py-2 font-mono text-xs font-medium text-slate-800"
-                    />
-                  </label>
-
                 </>
               ) : null}
 
