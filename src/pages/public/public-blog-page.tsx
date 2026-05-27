@@ -517,7 +517,7 @@ export function PublicBlogPage() {
                         </p>
                         <Link
                           to={`/blog/${post.slug}`}
-                          className="blog-grid-card-link mt-6 inline-flex items-center gap-1 text-sm font-semibold uppercase tracking-[0.08em] text-[#ff7a00] hover:text-[#e86f00]"
+                          className="blog-grid-card-link mt-auto inline-flex items-center gap-1 pt-6 text-sm font-semibold uppercase tracking-[0.08em] text-[#ff7a00] hover:text-[#e86f00]"
                         >
                           Leia mais
                           <ArrowRight className="h-4 w-4" />
