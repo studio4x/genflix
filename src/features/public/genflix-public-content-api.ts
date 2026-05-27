@@ -29,6 +29,8 @@ interface PublicBlogPostRow {
   content: unknown
   content_html: string | null
   featured: boolean
+  status?: string | null
+  created_at?: string | null
 }
 
 interface PublicCourseCategoryRow {
@@ -48,10 +50,10 @@ const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined
 const publicCourseSelect =
   'id, slug, title, description, category, thumbnail_url, cover_image_url, marketing_title, marketing_description, mentor_name, mentor_role, mentor_bio, mentor_initials, price_label, secondary_price_label, price_cents, currency, public_page_content, display_order'
-const publicBlogPostSelect =
-  'slug, title, category, seo_description, image_url, read_time, author, published_at, content, content_html, featured'
 const publicBlogPostLegacySelect =
   'slug, title, category, excerpt, image_url, read_time, author, published_at, content, content_html, featured, status'
+const publicBlogPostAllLegacySelect =
+  'slug, title, category, excerpt, image_url, read_time, author, published_at, content, content_html, featured, status, created_at'
 
 async function fetchPublicRows<T>(path: string, searchParams: URLSearchParams): Promise<T[]> {
   if (!supabaseUrl || !supabaseAnonKey) {
@@ -176,6 +178,53 @@ function toBlogPost(row: PublicBlogPostRow): GenflixBlogPost {
   }
 }
 
+function normalizeBlogStatus(value: string | null | undefined) {
+  return (value ?? '').trim().toLowerCase()
+}
+
+function isBlogPostPublic(row: PublicBlogPostRow) {
+  const status = normalizeBlogStatus(row.status)
+  const hasPublishedAt = Boolean(row.published_at)
+
+  if (status === 'published') {
+    return true
+  }
+
+  if (status === 'scheduled' && hasPublishedAt) {
+    const publishDate = new Date(row.published_at as string)
+    return !Number.isNaN(publishDate.getTime()) && publishDate.getTime() <= Date.now()
+  }
+
+  if (!status && hasPublishedAt) {
+    return true
+  }
+
+  return false
+}
+
+function sortPublicBlogRows(rows: PublicBlogPostRow[]) {
+  return [...rows].sort((left, right) => {
+    const leftPublished = left.published_at ? new Date(left.published_at).getTime() : 0
+    const rightPublished = right.published_at ? new Date(right.published_at).getTime() : 0
+    if (rightPublished !== leftPublished) {
+      return rightPublished - leftPublished
+    }
+
+    const leftCreated = left.created_at ? new Date(left.created_at).getTime() : 0
+    const rightCreated = right.created_at ? new Date(right.created_at).getTime() : 0
+    return rightCreated - leftCreated
+  })
+}
+
+async function fetchAllBlogRowsForPublic() {
+  const params = new URLSearchParams({
+    select: publicBlogPostAllLegacySelect,
+    order: 'display_order.asc,published_at.desc',
+  })
+
+  return await fetchPublicBlogRowsWithFallback(params)
+}
+
 async function fetchPublicBlogRowsWithFallback(params: URLSearchParams) {
   const isMissingColumn = (message: string, column: string) =>
     message.includes(`column blog_posts.${column} does not exist`)
@@ -233,26 +282,33 @@ export async function fetchPublicCourseDetailFromSupabase(slug: string) {
 }
 
 export async function fetchPublicBlogPostsFromSupabase() {
-  const params = new URLSearchParams({
-    select: publicBlogPostSelect,
-    or: '(status.eq.published,and(status.is.null,published_at.not.is.null))',
-    order: 'display_order.asc,published_at.desc',
-  })
-  const rows = await fetchPublicBlogRowsWithFallback(params)
-
-  return rows.map(toBlogPost)
+  const rows = await fetchAllBlogRowsForPublic()
+  return sortPublicBlogRows(rows).filter(isBlogPostPublic).map(toBlogPost)
 }
 
 export async function fetchPublicBlogPostFromSupabase(slug: string) {
+  const normalizedSlug = decodeURIComponent(slug).trim()
+  if (!normalizedSlug) {
+    return null
+  }
+
   const params = new URLSearchParams({
-    select: publicBlogPostSelect,
-    or: '(status.eq.published,and(status.is.null,published_at.not.is.null))',
-    slug: `eq.${slug}`,
+    select: publicBlogPostAllLegacySelect,
+    slug: `eq.${normalizedSlug}`,
     limit: '1',
   })
   const [row] = await fetchPublicBlogRowsWithFallback(params)
+  if (row && isBlogPostPublic(row)) {
+    return toBlogPost(row)
+  }
 
-  return row ? toBlogPost(row) : null
+  const allRows = await fetchAllBlogRowsForPublic()
+  const fallbackRow = allRows.find((item) => item.slug?.trim().toLowerCase() === normalizedSlug.toLowerCase())
+  if (!fallbackRow || !isBlogPostPublic(fallbackRow)) {
+    return null
+  }
+
+  return toBlogPost(fallbackRow)
 }
 
 export async function fetchPublicBlogCategoriesFromSupabase() {
