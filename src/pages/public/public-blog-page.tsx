@@ -494,7 +494,7 @@ export function PublicBlogPage() {
 
                 <div className="blog-grid-theme grid gap-8 md:grid-cols-2 xl:grid-cols-3" style={blogGridStyleVars}>
                   {paginatedPosts.map((post) => (
-                    <article key={post.slug} className="blog-grid-card overflow-hidden rounded-[4px] border border-[#dfdfdf] bg-[#f5f5f5] shadow-sm">
+                    <article key={post.slug} className="blog-grid-card flex h-full flex-col overflow-hidden rounded-[4px] border border-[#dfdfdf] bg-[#f5f5f5] shadow-sm">
                       <div className="aspect-[16/9] overflow-hidden">
                         <img
                           src={getGridCoverImageUrl(post.image)}
@@ -506,7 +506,7 @@ export function PublicBlogPage() {
                         />
                       </div>
 
-                      <div className="blog-grid-card-content flex min-h-[360px] flex-col p-7">
+                      <div className="blog-grid-card-content flex min-h-[360px] flex-1 flex-col p-7">
                         <h3 className="blog-grid-card-title text-2xl font-semibold leading-tight text-[#243a64]">
                           <Link to={`/blog/${post.slug}`} className="transition-colors hover:text-[#ff7a00]">
                             {fixMojibakeText(post.title)}
