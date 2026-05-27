@@ -457,6 +457,22 @@ export function PublicBlogPage() {
                 <div className="flex flex-col items-center gap-4 text-[#1f2e39]">
                   <span className="text-base font-medium leading-none sm:text-lg">Filtre por Áreas:</span>
                   <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-[18px] leading-none sm:gap-x-5 sm:text-[20px]">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedFilter('all')
+                        setCurrentPage(1)
+                      }}
+                      className={cn(
+                        'rounded-full border px-3 py-1.5 text-[16px] font-semibold leading-none transition-colors sm:text-[17px]',
+                        selectedFilter === 'all'
+                          ? 'border-[#ff7a00] bg-[#ff7a00] text-white'
+                          : 'border-[#ffb57a] bg-[#fff3e8] text-[#ff7a00] hover:border-[#ff7a00] hover:bg-[#ffe6d0]',
+                      )}
+                    >
+                      Todos
+                    </button>
+
                     {categoryFilters.map((filter) => (
                       <button
                         key={filter.id}
