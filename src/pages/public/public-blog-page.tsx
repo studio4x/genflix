@@ -439,7 +439,7 @@ export function PublicBlogPage() {
                             {post.title}
                           </Link>
                         </h3>
-                        <p className="mt-4 min-h-[10.5rem] line-clamp-6 text-base leading-7 text-[#20364f]">{post.excerpt}</p>
+                        <p className="mt-4 min-h-[10.5rem] line-clamp-6 text-base leading-7 text-[#20364f]">{post.seoDescription}</p>
                         <Link
                           to={`/blog/${post.slug}`}
                           className="mt-6 inline-flex items-center gap-1 text-sm font-semibold uppercase tracking-[0.08em] text-[#ff7a00] hover:text-[#e86f00]"

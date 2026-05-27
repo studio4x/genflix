@@ -94,7 +94,7 @@ export interface GenflixBlogPost {
   slug: string
   title: string
   category: string
-  excerpt: string
+  seoDescription: string
   image: string
   readTime: string
   author: string

@@ -26,7 +26,6 @@ type BlogArticleRow = {
   id: string
   title: string
   slug: string
-  excerpt: string | null
   content_html: string | null
   cover_image_url: string | null
   status: ArticleStatus | null
@@ -91,6 +90,7 @@ type LegacyBlogPostRow = {
   title: string
   category: string | null
   excerpt: string | null
+  seo_description: string | null
   image_url: string | null
   read_time: string | null
   author: string | null
@@ -106,7 +106,6 @@ type LegacyBlogPostRow = {
 type BlogArticleRevisionSnapshot = {
   title: string
   slug: string
-  excerpt: string
   content_html: string
   cover_image_url: string | null
   status: ArticleStatus
@@ -151,7 +150,6 @@ type ArticleActionModalState = {
 type ArticleFormState = SeoFields & {
   title: string
   slug: string
-  excerpt: string
   coverImageUrl: string
   status: ArticleStatus
   publishedAt: string
@@ -223,7 +221,6 @@ const DEFAULT_SEO: SeoFields = {
 const DEFAULT_ARTICLE_FORM: ArticleFormState = {
   title: '',
   slug: '',
-  excerpt: '',
   coverImageUrl: '',
   status: 'draft',
   publishedAt: '',
@@ -381,7 +378,6 @@ function mapLegacyPostToArticle(post: LegacyBlogPostRow): BlogArticleRow {
     id: post.id,
     title: post.title,
     slug: post.slug,
-    excerpt: post.excerpt ?? '',
     content_html: contentHtml,
     cover_image_url: post.image_url ?? null,
     status: normalizeLegacyStatus(post.status, post.published_at),
@@ -393,7 +389,7 @@ function mapLegacyPostToArticle(post: LegacyBlogPostRow): BlogArticleRow {
     reading_time_minutes: readingTime,
     focus_keyword: null,
     seo_title: null,
-    seo_description: null,
+    seo_description: post.seo_description?.trim() || post.excerpt?.trim() || null,
     seo_canonical_url: null,
     seo_robots: 'index,follow',
     seo_og_title: null,
@@ -691,7 +687,7 @@ export function AdminBlogPage() {
         : 'sem categoria'
 
       const matchesSearch = normalized
-        ? [article.title, article.slug, article.excerpt ?? '', categoryPath].join(' ').toLowerCase().includes(normalized)
+        ? [article.title, article.slug, article.seo_description ?? '', categoryPath].join(' ').toLowerCase().includes(normalized)
         : true
       return matchesStatus && matchesSearch
     })
@@ -1128,7 +1124,7 @@ export function AdminBlogPage() {
       slug: articleForm.slug,
       title: articleForm.title.trim() || 'Rascunho sem título',
       category: 'Sem categoria',
-      excerpt: articleForm.seo_description.trim() || articleForm.excerpt.trim(),
+      seoDescription: articleForm.seo_description.trim(),
       image: articleForm.coverImageUrl.trim() || '/images/genflix/home/featured-2.jpg',
       readTime: `${Math.max(1, articleForm.readingTimeMinutes)} min`,
       author: user?.email ?? 'Admin GenFlix',
@@ -1178,7 +1174,6 @@ export function AdminBlogPage() {
     setArticleForm({
       title: article.title,
       slug: article.slug,
-      excerpt: article.seo_description ?? article.excerpt ?? '',
       coverImageUrl: article.cover_image_url ?? '',
       status: article.status ?? 'draft',
       publishedAt: toDateTimeLocal(article.published_at),
@@ -1254,7 +1249,6 @@ export function AdminBlogPage() {
     setArticleForm({
       title: snapshot.title ?? '',
       slug: snapshot.slug ?? '',
-      excerpt: snapshot.seo_description ?? snapshot.excerpt ?? '',
       coverImageUrl: snapshot.cover_image_url ?? '',
       status: snapshot.status ?? 'draft',
       publishedAt: toDateTimeLocal(snapshot.published_at),
@@ -1313,7 +1307,7 @@ export function AdminBlogPage() {
       title,
       slug,
       category: articleForm.categoryId === '__none__' ? null : articleForm.categoryId,
-      excerpt: articleForm.seo_description.trim() || articleForm.excerpt.trim() || null,
+      seo_description: articleForm.seo_description.trim() || null,
       image_url: articleForm.coverImageUrl.trim() || null,
       read_time: `${readingTime} min`,
       author: user?.id ?? null,
@@ -1349,7 +1343,6 @@ export function AdminBlogPage() {
     const revisionSnapshot: BlogArticleRevisionSnapshot = {
       title,
       slug,
-      excerpt: articleForm.seo_description.trim() || articleForm.excerpt.trim(),
       content_html: cleanedHtml,
       cover_image_url: articleForm.coverImageUrl.trim() || null,
       status: effectiveStatus,
@@ -1690,7 +1683,6 @@ export function AdminBlogPage() {
     onChange: (next: SeoFields) => void,
     labelPrefix: string,
     focusKeyword?: string,
-    onSeoDescriptionChange?: (nextValue: string) => void,
   ) {
     const seoTitleLength = value.seo_title.trim().length
     const seoDescriptionLength = value.seo_description.trim().length
@@ -1739,7 +1731,6 @@ export function AdminBlogPage() {
             onChange={(event) => {
               const nextValue = event.target.value
               onChange({ ...value, seo_description: nextValue })
-              onSeoDescriptionChange?.(nextValue)
             }}
             rows={2}
             className="rounded-xl border border-slate-200 px-3 py-2 text-sm font-medium text-slate-800 outline-none focus:border-[#1398B7]"
@@ -2231,12 +2222,9 @@ export function AdminBlogPage() {
                   )}
                   {renderSeoFields(
                     articleForm,
-                    (next) => setArticleForm((current) => ({ ...current, ...next, excerpt: next.seo_description })),
+                    (next) => setArticleForm((current) => ({ ...current, ...next })),
                     'Artigo',
                     articleForm.focusKeyword,
-                    (nextSeoDescription) => {
-                      setArticleForm((current) => ({ ...current, excerpt: nextSeoDescription }))
-                    },
                   )}
                     </>
                   ) : null}

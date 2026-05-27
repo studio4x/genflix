@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react'
+﻿import { useEffect, useState, type FormEvent } from 'react'
 import { Link, Navigate, useParams, useSearchParams } from 'react-router-dom'
 import { ArrowLeftCircle, Send } from 'lucide-react'
 
@@ -20,7 +20,7 @@ type DraftBlogPostRow = {
   slug: string
   title: string
   category: string | null
-  excerpt: string | null
+  seo_description: string | null
   image_url: string | null
   read_time: string | null
   author: string | null
@@ -35,7 +35,7 @@ type AdminPreviewPayload = {
   slug: string
   title: string
   category?: string
-  excerpt?: string
+  seoDescription?: string
   image?: string
   readTime?: string
   author?: string
@@ -124,7 +124,7 @@ function mapDraftRowToBlogPost(row: DraftBlogPostRow): GenflixBlogPost {
     slug: row.slug,
     title: row.title,
     category: row.category ?? 'GenFlix',
-    excerpt: row.excerpt ?? '',
+    seoDescription: row.seo_description ?? '',
     image: row.image_url ?? '/images/genflix/home/featured-2.jpg',
     readTime: row.read_time ?? '5 min',
     author: row.author ?? 'Equipe GenFlix',
@@ -144,9 +144,9 @@ function mapDraftRowToBlogPost(row: DraftBlogPostRow): GenflixBlogPost {
 function mapAdminPreviewToBlogPost(preview: AdminPreviewPayload): GenflixBlogPost {
   return {
     slug: preview.slug,
-    title: preview.title || 'Rascunho sem título',
+    title: preview.title || 'Rascunho sem tÃ­tulo',
     category: preview.category || 'Sem categoria',
-    excerpt: preview.excerpt || '',
+    seoDescription: preview.seoDescription || '',
     image: preview.image || '/images/genflix/home/featured-2.jpg',
     readTime: preview.readTime || '1 min',
     author: preview.author || 'Admin GenFlix',
@@ -256,7 +256,7 @@ export function PublicBlogPostPage() {
         if (!resolvedPost && isAdmin) {
           const previewQuery = supabase
             .from('blog_posts')
-            .select('id, slug, title, category, excerpt, image_url, read_time, author, published_at, content, content_html, featured, status')
+            .select('id, slug, title, category, seo_description, image_url, read_time, author, published_at, content, content_html, featured, status')
 
           const previewResult = previewKey.startsWith('id:')
             ? await previewQuery.eq('id', previewKey.slice(3)).maybeSingle()
@@ -534,3 +534,4 @@ export function PublicBlogPostPage() {
     </main>
   )
 }
+
