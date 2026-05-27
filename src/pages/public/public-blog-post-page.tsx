@@ -388,6 +388,8 @@ export function PublicBlogPostPage() {
     return <Navigate to="/blog" replace />
   }
 
+  const shouldShowExcerpt = !post.contentHtml?.trim() && post.excerpt.trim().length > 0
+
   return (
     <main className="min-h-screen bg-[#f4f4f4] font-manrope text-[#1f2e39]">
       <GenflixPublicHeader navLinks={genflixNavLinks} />
@@ -409,7 +411,7 @@ export function PublicBlogPostPage() {
               </h1>
 
               <div className="space-y-5 font-lora text-[19px] leading-[1.7] text-[#343434]">
-                <p>{post.excerpt}</p>
+                {shouldShowExcerpt ? <p>{post.excerpt}</p> : null}
                 {post.contentHtml?.trim() ? (
                   <div
                     className="blog-article-html"
