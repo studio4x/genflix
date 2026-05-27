@@ -62,10 +62,10 @@ Este checklist foi criado para apoiar a validacao funcional da plataforma por se
 - [OK] Pagamentos (`/aluno/pagamentos`) mostra historico conforme perfil.
 
 ### Modulo Player de Curso
-- [ ] Player (`/aluno/cursos/:courseId/player`) abre sem erro.
-- [ ] Aula (`.../aulas/:lessonId`) carrega video/conteudo corretamente.
-- [ ] Avaliacao (`.../avaliacoes/:assessmentId`) inicia e finaliza.
-- [ ] Navegacao entre modulos/aulas respeita regras configuradas.
+- [OK] Player (`/aluno/cursos/:courseId/player`) abre sem erro.
+- [OK] Aula (`.../aulas/:lessonId`) carrega video/conteudo corretamente.
+- [OK] Avaliacao (`.../avaliacoes/:assessmentId`) inicia e finaliza.
+- [OK] Navegacao entre modulos/aulas respeita regras configuradas.
 
 ### Modulo Comunicacao e Suporte do Aluno
 - [ ] Mensagens (`/aluno/mensagens`) abre e lista conversas.
