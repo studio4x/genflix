@@ -1718,13 +1718,6 @@ export function AdminBlogPage() {
       name,
       slug,
       description: tagForm.description.trim() || null,
-      seo_title: tagForm.seo_title.trim() || null,
-      seo_description: tagForm.seo_description.trim() || null,
-      seo_canonical_url: tagForm.seo_canonical_url.trim() || null,
-      seo_robots: tagForm.seo_robots.trim() || 'index,follow',
-      seo_og_title: tagForm.seo_og_title.trim() || null,
-      seo_og_description: tagForm.seo_og_description.trim() || null,
-      seo_og_image_url: tagForm.seo_og_image_url.trim() || null,
     }
 
     const result = selectedTagId
@@ -3073,12 +3066,6 @@ export function AdminBlogPage() {
                   className="rounded-xl border border-slate-200 px-3 py-2 text-sm font-medium text-slate-800"
                 />
               </label>
-
-              {renderSeoFields(
-                tagForm,
-                (next) => setTagForm((current) => ({ ...current, ...next })),
-                'Tag',
-              )}
 
               <div className="flex flex-wrap gap-2 border-t border-[#D8E6EB] pt-3">
                 <Button type="button" className="rounded-xl bg-[#1398B7] hover:bg-[#0A3640]" onClick={() => void handleSaveTag()} disabled={isSavingTag}>
