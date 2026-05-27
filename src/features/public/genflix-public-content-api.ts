@@ -200,7 +200,7 @@ export async function fetchPublicCourseDetailFromSupabase(slug: string) {
 export async function fetchPublicBlogPostsFromSupabase() {
   const params = new URLSearchParams({
     select: publicBlogPostSelect,
-    status: 'eq.published',
+    or: '(status.eq.published,and(status.is.null,published_at.not.is.null))',
     order: 'display_order.asc,published_at.desc',
   })
   const rows = await fetchPublicRows<PublicBlogPostRow>('blog_posts', params)
@@ -211,7 +211,7 @@ export async function fetchPublicBlogPostsFromSupabase() {
 export async function fetchPublicBlogPostFromSupabase(slug: string) {
   const params = new URLSearchParams({
     select: publicBlogPostSelect,
-    status: 'eq.published',
+    or: '(status.eq.published,and(status.is.null,published_at.not.is.null))',
     slug: `eq.${slug}`,
     limit: '1',
   })
