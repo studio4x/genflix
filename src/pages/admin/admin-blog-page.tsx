@@ -465,7 +465,7 @@ function getSeoValidationHints(form: ArticleFormState) {
   const hints: string[] = []
   const slug = form.slug.toLowerCase()
   const title = form.title.toLowerCase()
-  const excerpt = form.excerpt.toLowerCase()
+  const description = form.seo_description.toLowerCase()
   const focus = form.focusKeyword.trim().toLowerCase()
 
   if (!focus) {
@@ -477,8 +477,8 @@ function getSeoValidationHints(form: ArticleFormState) {
     if (!title.includes(focus)) {
       hints.push('A palavra-chave de foco não está presente no título do artigo.')
     }
-    if (!excerpt.includes(focus)) {
-      hints.push('A palavra-chave de foco não aparece no excerpt.')
+    if (!description.includes(focus)) {
+      hints.push('A palavra-chave de foco não aparece na descrição SEO.')
     }
   }
 
@@ -494,7 +494,7 @@ function getSeoValidationHints(form: ArticleFormState) {
 }
 
 function suggestFocusKeyword(form: ArticleFormState) {
-  const base = `${form.title} ${form.excerpt}`.trim()
+  const base = `${form.title} ${form.seo_description}`.trim()
   if (!base) {
     return ''
   }
@@ -531,14 +531,14 @@ function summarizeRevisionSnapshot(snapshot: BlogArticleRevisionSnapshot | null)
 }
 
 function suggestExistingTagsWithHeuristic(form: ArticleFormState, tags: BlogTagRow[]) {
-  const corpus = `${form.title} ${form.excerpt} ${stripHtml(form.contentHtml)}`.toLowerCase()
+  const corpus = `${form.title} ${form.seo_description} ${stripHtml(form.contentHtml)}`.toLowerCase()
   return tags
     .filter((tag) => corpus.includes(tag.name.toLowerCase()) || corpus.includes(tag.slug.toLowerCase()))
     .map((tag) => tag.id)
 }
 
 function suggestNewTagNames(form: ArticleFormState, tags: BlogTagRow[]) {
-  const corpus = `${form.title} ${form.excerpt} ${stripHtml(form.contentHtml)} ${form.focusKeyword}`.toLowerCase()
+  const corpus = `${form.title} ${form.seo_description} ${stripHtml(form.contentHtml)} ${form.focusKeyword}`.toLowerCase()
   const existingSlugs = new Set(tags.map((tag) => tag.slug))
   const stopWords = new Set(['para', 'como', 'com', 'sem', 'uma', 'das', 'dos', 'que', 'sobre', 'pela', 'pelo', 'mais', 'este', 'essa'])
 
@@ -1128,7 +1128,7 @@ export function AdminBlogPage() {
       slug: articleForm.slug,
       title: articleForm.title.trim() || 'Rascunho sem título',
       category: 'Sem categoria',
-      excerpt: articleForm.excerpt.trim(),
+      excerpt: articleForm.seo_description.trim() || articleForm.excerpt.trim(),
       image: articleForm.coverImageUrl.trim() || '/images/genflix/home/featured-2.jpg',
       readTime: `${Math.max(1, articleForm.readingTimeMinutes)} min`,
       author: user?.email ?? 'Admin GenFlix',
@@ -1178,7 +1178,7 @@ export function AdminBlogPage() {
     setArticleForm({
       title: article.title,
       slug: article.slug,
-      excerpt: article.excerpt ?? '',
+      excerpt: article.seo_description ?? article.excerpt ?? '',
       coverImageUrl: article.cover_image_url ?? '',
       status: article.status ?? 'draft',
       publishedAt: toDateTimeLocal(article.published_at),
@@ -1254,7 +1254,7 @@ export function AdminBlogPage() {
     setArticleForm({
       title: snapshot.title ?? '',
       slug: snapshot.slug ?? '',
-      excerpt: snapshot.excerpt ?? '',
+      excerpt: snapshot.seo_description ?? snapshot.excerpt ?? '',
       coverImageUrl: snapshot.cover_image_url ?? '',
       status: snapshot.status ?? 'draft',
       publishedAt: toDateTimeLocal(snapshot.published_at),
@@ -1313,7 +1313,7 @@ export function AdminBlogPage() {
       title,
       slug,
       category: articleForm.categoryId === '__none__' ? null : articleForm.categoryId,
-      excerpt: articleForm.excerpt.trim() || null,
+      excerpt: articleForm.seo_description.trim() || articleForm.excerpt.trim() || null,
       image_url: articleForm.coverImageUrl.trim() || null,
       read_time: `${readingTime} min`,
       author: user?.id ?? null,
@@ -1349,7 +1349,7 @@ export function AdminBlogPage() {
     const revisionSnapshot: BlogArticleRevisionSnapshot = {
       title,
       slug,
-      excerpt: articleForm.excerpt.trim(),
+      excerpt: articleForm.seo_description.trim() || articleForm.excerpt.trim(),
       content_html: cleanedHtml,
       cover_image_url: articleForm.coverImageUrl.trim() || null,
       status: effectiveStatus,
@@ -1690,6 +1690,7 @@ export function AdminBlogPage() {
     onChange: (next: SeoFields) => void,
     labelPrefix: string,
     focusKeyword?: string,
+    onSeoDescriptionChange?: (nextValue: string) => void,
   ) {
     const seoTitleLength = value.seo_title.trim().length
     const seoDescriptionLength = value.seo_description.trim().length
@@ -1735,7 +1736,11 @@ export function AdminBlogPage() {
           {labelPrefix} Descrição SEO
           <textarea
             value={value.seo_description}
-            onChange={(event) => onChange({ ...value, seo_description: event.target.value })}
+            onChange={(event) => {
+              const nextValue = event.target.value
+              onChange({ ...value, seo_description: nextValue })
+              onSeoDescriptionChange?.(nextValue)
+            }}
             rows={2}
             className="rounded-xl border border-slate-200 px-3 py-2 text-sm font-medium text-slate-800 outline-none focus:border-[#1398B7]"
             placeholder="Resumo claro com benefício e intenção de busca do usuário."
@@ -2163,20 +2168,6 @@ export function AdminBlogPage() {
                     className="h-11 rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm font-semibold text-slate-700"
                   />
                 </label>
-
-                <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
-                  Resumo
-                  <textarea
-                    value={articleForm.excerpt}
-                    onChange={(event) => setArticleForm((current) => ({ ...current, excerpt: event.target.value }))}
-                    rows={3}
-                    className="rounded-xl border border-slate-200 px-3 py-2 text-sm font-medium text-slate-800"
-                  />
-                  <span className="text-[11px] normal-case tracking-normal text-[#5F7077]">
-                    Escreva um resumo curto, claro e direto, com 1 ou 2 frases que expliquem o valor principal do artigo.
-                  </span>
-                </label>
-
                 <section className="space-y-3 rounded-2xl border border-[#D8E6EB] bg-[#F8FBFC] p-4">
                   <div className="flex items-center justify-between gap-3">
                     <p className="text-xs font-black uppercase tracking-[0.2em] text-[#1398B7]">SEO do artigo</p>
@@ -2238,12 +2229,14 @@ export function AdminBlogPage() {
                       SEO básico do artigo está consistente com a palavra-chave de foco.
                     </div>
                   )}
-
                   {renderSeoFields(
                     articleForm,
-                    (next) => setArticleForm((current) => ({ ...current, ...next })),
+                    (next) => setArticleForm((current) => ({ ...current, ...next, excerpt: next.seo_description })),
                     'Artigo',
                     articleForm.focusKeyword,
+                    (nextSeoDescription) => {
+                      setArticleForm((current) => ({ ...current, excerpt: nextSeoDescription }))
+                    },
                   )}
                     </>
                   ) : null}
