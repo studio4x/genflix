@@ -1423,6 +1423,14 @@ export function AdminBlogPage() {
       status: effectiveStatus,
       contentHtml: cleanedHtml,
       readingTimeMinutes: readingTime,
+      focusKeyword: revisionSnapshot.focus_keyword,
+      seo_title: revisionSnapshot.seo_title,
+      seo_description: revisionSnapshot.seo_description,
+      seo_canonical_url: revisionSnapshot.seo_canonical_url,
+      seo_robots: revisionSnapshot.seo_robots,
+      seo_og_title: revisionSnapshot.seo_og_title,
+      seo_og_description: revisionSnapshot.seo_og_description,
+      seo_og_image_url: revisionSnapshot.seo_og_image_url,
     }))
     if (tagsSyncError) {
       setErrorMessage(tagsSyncError)
@@ -2093,7 +2101,7 @@ export function AdminBlogPage() {
             <div className="rounded-2xl border border-[#D8E6EB] bg-white p-4"><p className="text-xs font-bold uppercase text-[#5F7077]">Total</p><p className="mt-2 text-2xl font-black text-[#15323b]">{statusSummary.total}</p></div>
             <div className="rounded-2xl border border-[#D8E6EB] bg-white p-4"><p className="text-xs font-bold uppercase text-[#5F7077]">Rascunhos</p><p className="mt-2 text-2xl font-black text-[#15323b]">{statusSummary.draft}</p></div>
             <div className="rounded-2xl border border-[#D8E6EB] bg-white p-4"><p className="text-xs font-bold uppercase text-[#5F7077]">Agendados</p><p className="mt-2 text-2xl font-black text-[#15323b]">{statusSummary.scheduled}</p></div>
-            <div className="rounded-2xl border border-[#D8E6EB] bg-white p-4"><p className="text-xs font-bold uppercase text-[#5F7077]">Publicação</p><p className="mt-2 text-2xl font-black text-[#15323b]">{statusSummary.published}</p></div>
+            <div className="rounded-2xl border border-[#D8E6EB] bg-white p-4"><p className="text-xs font-bold uppercase text-[#5F7077]">Publicado</p><p className="mt-2 text-2xl font-black text-[#15323b]">{statusSummary.published}</p></div>
             <div className="rounded-2xl border border-[#D8E6EB] bg-white p-4"><p className="text-xs font-bold uppercase text-[#5F7077]">Destaque</p><p className="mt-2 text-2xl font-black text-[#15323b]">{statusSummary.featured}</p></div>
           </section>
 
@@ -2149,7 +2157,7 @@ export function AdminBlogPage() {
                     >
                       <option value="draft">Rascunho</option>
                       <option value="scheduled">Agendado</option>
-                      <option value="published">Publicação</option>
+                      <option value="published">Publicado</option>
                     </select>
                   </label>
 
@@ -2273,6 +2281,7 @@ export function AdminBlogPage() {
                       }))
                     }}
                     enableHtmlMode
+                    showRawHtmlToggle={false}
                     showHeadingHints
                   />
                 </div>
@@ -2654,7 +2663,7 @@ export function AdminBlogPage() {
                     <option value="all">Todos os status</option>
                     <option value="draft">Rascunho</option>
                     <option value="scheduled">Agendado</option>
-                    <option value="published">Publicação</option>
+                    <option value="published">Publicado</option>
                   </select>
                 </div>
               </div>
@@ -2671,7 +2680,7 @@ export function AdminBlogPage() {
                         <th className="px-4 py-3">Título</th>
                         <th className="px-4 py-3">Status</th>
                         <th className="px-4 py-3">Categoria</th>
-                        <th className="px-4 py-3">Publicação</th>
+                        <th className="px-4 py-3">Publicado</th>
                         <th className="px-4 py-3">Leitura</th>
                         <th className="px-4 py-3">Ações</th>
                       </tr>
