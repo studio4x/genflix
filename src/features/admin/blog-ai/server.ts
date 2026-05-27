@@ -6,7 +6,7 @@ type AssistantProvider = 'openai' | 'gemini' | 'heuristic'
 
 type BlogAssistAction = 'suggest_tags' | 'create_tags' | 'generate_seo'
 
-const blogAssistSchema = z.object({
+export const blogAssistSchema = z.object({
   action: z.enum(['suggest_tags', 'create_tags', 'generate_seo']),
   article: z.object({
     title: z.string().min(1),
