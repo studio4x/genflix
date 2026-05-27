@@ -625,6 +625,19 @@ export function AdminBlogPage() {
   const [inlineCategoryForm, setInlineCategoryForm] = useState<CategoryFormState>(DEFAULT_INLINE_CATEGORY_FORM)
   const [showInlineCategoryForm, setShowInlineCategoryForm] = useState(false)
 
+  useEffect(() => {
+    if (selectedArticleId || isArticleSlugTouched) {
+      return
+    }
+
+    const generatedSlug = slugify(articleForm.title)
+    setArticleForm((current) => (
+      current.slug === generatedSlug
+        ? current
+        : { ...current, slug: generatedSlug }
+    ))
+  }, [articleForm.title, isArticleSlugTouched, selectedArticleId])
+
   const categoryOptions = useMemo(() => buildCategoryOptions(categories), [categories])
   const seoHints = useMemo(() => getSeoValidationHints(articleForm), [articleForm])
 
@@ -2018,15 +2031,13 @@ export function AdminBlogPage() {
                   <input
                     value={articleForm.title}
                     onChange={(event) => {
-                      const nextTitle = event.target.value
-                      setArticleForm((current) => ({
-                        ...current,
-                        title: nextTitle,
-                        slug: isArticleSlugTouched ? current.slug : slugify(nextTitle),
-                      }))
+                      setArticleForm((current) => ({ ...current, title: event.target.value }))
                     }}
                     className="h-11 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800 outline-none focus:border-[#1398B7]"
                   />
+                  <span className="text-[11px] normal-case tracking-normal text-[#5F7077]">
+                    A slug é preenchida automaticamente a partir do título enquanto você não editá-la manualmente.
+                  </span>
                 </label>
 
                 <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
@@ -3051,5 +3062,3 @@ export function AdminBlogPage() {
     </div>
   )
 }
-
-
