@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { z } from 'zod'
 
-import { blogAssistSchema, processBlogAssist } from '../../../src/features/admin/blog-ai/server'
+import { blogAssistSchema, processBlogAssist } from '../../../src/features/admin/blog-ai/server.js'
 
 type ApiRequest = {
   method?: string
