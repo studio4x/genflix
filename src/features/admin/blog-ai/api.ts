@@ -77,7 +77,7 @@ async function getAccessToken() {
 async function requestBlogAssist<T extends BlogAssistResponse>(payload: Record<string, unknown>) {
   const accessToken = await getAccessToken()
 
-  const response = await fetch('/api/admin/blog/assist', {
+  const response = await fetch('/api/admin/site-editor/assist', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

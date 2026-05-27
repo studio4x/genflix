@@ -1,19 +1,6 @@
-import { createClient } from '@supabase/supabase-js'
 import { z } from 'zod'
 
-import { getPublicAppUrl } from '../../_shared/app-url.js'
-
-type ApiRequest = {
-  method?: string
-  headers: Record<string, string | string[] | undefined>
-  body?: unknown
-}
-
-type ApiResponse = {
-  status: (statusCode: number) => ApiResponse
-  json: (payload: unknown) => void
-  setHeader: (name: string, value: string) => void
-}
+import { getPublicAppUrl } from '../../../../api/_shared/app-url.js'
 
 type AssistantProvider = 'openai' | 'gemini' | 'heuristic'
 
@@ -78,55 +65,6 @@ type BlogAssistSeoResponse = BlogAssistBaseResponse & {
 type NarrationCredentialsRow = {
   openai_api_key: string | null
   gemini_api_key: string | null
-}
-
-function jsonResponse(res: ApiResponse, statusCode: number, payload: unknown) {
-  res.status(statusCode)
-  res.setHeader('Content-Type', 'application/json; charset=utf-8')
-  res.json(payload)
-}
-
-function getHeaderValue(value: string | string[] | undefined) {
-  if (typeof value === 'string') {
-    return value
-  }
-  if (Array.isArray(value) && value.length > 0) {
-    return value[0]
-  }
-  return null
-}
-
-function getBearerToken(authHeader: string | null) {
-  if (!authHeader) {
-    return null
-  }
-
-  const [scheme, token] = authHeader.split(' ')
-  if (scheme?.toLowerCase() !== 'bearer' || !token) {
-    return null
-  }
-
-  return token.trim()
-}
-
-function parseBody(rawBody: unknown) {
-  if (!rawBody) {
-    return null
-  }
-
-  if (typeof rawBody === 'string') {
-    try {
-      return JSON.parse(rawBody) as Record<string, unknown>
-    } catch {
-      return null
-    }
-  }
-
-  if (typeof rawBody === 'object') {
-    return rawBody as Record<string, unknown>
-  }
-
-  return null
 }
 
 function readOptionalString(value: unknown) {
@@ -280,64 +218,7 @@ function buildHeuristicSeoDraft(input: BlogAssistInput) {
   }
 }
 
-async function assertBlogEditor(req: ApiRequest, res: ApiResponse) {
-  const supabaseUrl = process.env.SUPABASE_URL ?? process.env.VITE_SUPABASE_URL
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-
-  if (!supabaseUrl || !serviceRoleKey) {
-    jsonResponse(res, 500, { error: 'Configuracao ausente: SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY sao obrigatorias.' })
-    return null
-  }
-
-  const bearerToken = getBearerToken(getHeaderValue(req.headers.authorization) ?? getHeaderValue(req.headers.Authorization))
-  if (!bearerToken) {
-    jsonResponse(res, 401, { error: 'Token de acesso ausente.' })
-    return null
-  }
-
-  const adminClient = createClient(supabaseUrl, serviceRoleKey, {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false,
-    },
-  })
-
-  const userResult = await adminClient.auth.getUser(bearerToken)
-  if (userResult.error || !userResult.data.user) {
-    jsonResponse(res, 401, { error: 'Token invalido ou expirado.' })
-    return null
-  }
-
-  const rolesResult = await adminClient
-    .from('user_roles')
-    .select('roles(code)')
-    .eq('user_id', userResult.data.user.id)
-
-  if (rolesResult.error) {
-    jsonResponse(res, 500, { error: 'Nao foi possivel validar as permissoes do usuario.' })
-    return null
-  }
-
-  const roles = ((rolesResult.data as Array<{ roles: { code: string } | { code: string }[] | null }> | null) ?? [])
-    .flatMap((relation) => {
-      if (!relation.roles) {
-        return []
-      }
-
-      return Array.isArray(relation.roles) ? relation.roles : [relation.roles]
-    })
-    .map((role) => role.code)
-
-  const canUseBlogAssist = roles.includes('admin') || roles.includes('criador') || roles.includes('professor')
-  if (!canUseBlogAssist) {
-    jsonResponse(res, 403, { error: 'Apenas colaboradores autorizados podem usar a assistencia do blog.' })
-    return null
-  }
-
-  return { adminClient, userId: userResult.data.user.id }
-}
-
-async function loadNarrationCredentials(adminClient: ReturnType<typeof createClient>) {
+async function loadNarrationCredentials(adminClient: any) {
   const credentialsResult = await adminClient
     .from('narration_ai_credentials')
     .select('openai_api_key, gemini_api_key')
@@ -436,7 +317,7 @@ ${cleanContent}
 `.trim()
 }
 
-async function callOpenAi(prompt: string, credentials: { openAiApiKey: string }) {
+async function callOpenAi(prompt: string, credentials: { openAiApiKey: string | null }) {
   if (!credentials.openAiApiKey) {
     return null
   }
@@ -484,7 +365,7 @@ async function callOpenAi(prompt: string, credentials: { openAiApiKey: string })
   return content
 }
 
-async function callGemini(prompt: string, credentials: { geminiApiKey: string }) {
+async function callGemini(prompt: string, credentials: { geminiApiKey: string | null }) {
   if (!credentials.geminiApiKey) {
     return null
   }
@@ -537,7 +418,7 @@ function parseAssistantJson<T>(raw: string) {
   return JSON.parse(extractJsonObject(raw)) as T
 }
 
-async function runBlogAssistWithAi(input: BlogAssistInput, credentials: { openAiApiKey: string; geminiApiKey: string }) {
+async function runBlogAssistWithAi(input: BlogAssistInput, credentials: { openAiApiKey: string | null; geminiApiKey: string | null }) {
   const prompt = buildAiPrompt(input, input.action)
 
   if (credentials.openAiApiKey) {
@@ -717,43 +598,18 @@ function buildDefaultSuggestions(input: BlogAssistInput): BlogAssistSuggestTagsR
   }
 }
 
-export default async function handler(req: ApiRequest, res: ApiResponse) {
-  if (req.method === 'OPTIONS') {
-    jsonResponse(res, 200, { ok: true })
-    return
-  }
-
-  if (req.method !== 'POST') {
-    jsonResponse(res, 405, { error: 'Metodo nao permitido.' })
-    return
-  }
-
-  const context = await assertBlogEditor(req, res)
-  if (!context) {
-    return
-  }
-
-  const parsedBody = blogAssistSchema.safeParse(parseBody(req.body))
-  if (!parsedBody.success) {
-    jsonResponse(res, 400, { error: parsedBody.error.issues[0]?.message ?? 'Payload invalido.' })
-    return
-  }
-
-  const input = parsedBody.data
-
+export async function processBlogAssist(adminClient: any, input: BlogAssistInput) {
   try {
-    const credentials = await loadNarrationCredentials(context.adminClient)
+    const credentials = await loadNarrationCredentials(adminClient)
     const aiResult = await runBlogAssistWithAi(input, credentials)
 
     if (!aiResult?.text) {
-      jsonResponse(res, 200, buildDefaultSuggestions(input))
-      return
+      return buildDefaultSuggestions(input)
     }
 
     const parsed = parseAssistantJson<Record<string, unknown>>(aiResult.text)
-    const normalized = normalizeAiResponse(input.action, parsed, aiResult.provider, aiResult.model)
-    jsonResponse(res, 200, normalized)
-  } catch (error) {
-    jsonResponse(res, 200, buildDefaultSuggestions(input))
+    return normalizeAiResponse(input.action, parsed, aiResult.provider, aiResult.model)
+  } catch {
+    return buildDefaultSuggestions(input)
   }
 }

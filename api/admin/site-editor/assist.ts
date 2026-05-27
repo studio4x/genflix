@@ -1,6 +1,8 @@
 import { createClient } from '@supabase/supabase-js'
 import { z } from 'zod'
 
+import { blogAssistSchema, processBlogAssist } from '../../../src/features/admin/blog-ai/server.ts'
+
 type ApiRequest = {
   method?: string
   headers: Record<string, string | string[] | undefined>
@@ -103,7 +105,7 @@ async function assertEditorCollaborator(req: ApiRequest, res: ApiResponse) {
     return null
   }
 
-  return { userId: userResult.data.user.id }
+  return { adminClient, userId: userResult.data.user.id }
 }
 
 function stripMarkup(content: string) {
@@ -288,12 +290,25 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
     return
   }
 
+  const body = parseBody(req.body)
+  const blogParsed = blogAssistSchema.safeParse(body)
+  if (blogParsed.success) {
+    const context = await assertEditorCollaborator(req, res)
+    if (!context) {
+      return
+    }
+
+    const result = await processBlogAssist(context.adminClient, blogParsed.data)
+    jsonResponse(res, 200, result)
+    return
+  }
+
   const context = await assertEditorCollaborator(req, res)
   if (!context) {
     return
   }
 
-  const parsedBody = assistSchema.safeParse(parseBody(req.body))
+  const parsedBody = assistSchema.safeParse(body)
   if (!parsedBody.success) {
     jsonResponse(res, 400, { error: parsedBody.error.issues[0]?.message ?? 'Payload invalido.' })
     return
