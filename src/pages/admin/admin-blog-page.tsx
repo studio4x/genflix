@@ -265,6 +265,8 @@ const DEFAULT_TAG_FORM: TagFormState = {
   ...DEFAULT_SEO,
 }
 
+const BLOG_CARD_SUMMARY_MAX_LENGTH = 180
+
 const DEFAULT_INLINE_CATEGORY_FORM: CategoryFormState = {
   ...DEFAULT_CATEGORY_FORM,
 }
@@ -2264,6 +2266,24 @@ export function AdminBlogPage() {
                     }}
                     className="h-11 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800 outline-none focus:border-[#1398B7]"
                   />
+                </label>
+
+                <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
+                  Resumo do card do artigo
+                  <textarea
+                    value={articleForm.seo_description}
+                    onChange={(event) => {
+                      const nextValue = event.target.value.slice(0, BLOG_CARD_SUMMARY_MAX_LENGTH)
+                      setArticleForm((current) => ({ ...current, seo_description: nextValue }))
+                    }}
+                    rows={3}
+                    maxLength={BLOG_CARD_SUMMARY_MAX_LENGTH}
+                    className="rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-800 outline-none focus:border-[#1398B7]"
+                    placeholder="Este texto aparece na descrição do card da página /blog."
+                  />
+                  <span className="text-[11px] normal-case tracking-normal text-[#5F7077]">
+                    O texto inserido aqui aparece no card do artigo no grid de <code>/blog</code>. Limite: {BLOG_CARD_SUMMARY_MAX_LENGTH} caracteres ({articleForm.seo_description.length}/{BLOG_CARD_SUMMARY_MAX_LENGTH}).
+                  </span>
                 </label>
 
                 <div className="grid gap-3 sm:grid-cols-2">

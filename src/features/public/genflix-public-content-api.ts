@@ -10,6 +10,7 @@ import type {
   GenflixCourseItem,
   GenflixCourseModule,
 } from '@/features/public/genflix-site-content'
+import { fixMojibakeText } from '@/lib/text-encoding'
 
 interface PublicCourseRow extends CoursePublicPageRowLike {
   display_order: number
@@ -152,9 +153,9 @@ function toBlogPost(row: PublicBlogPostRow): GenflixBlogPost {
 
   return {
     slug: row.slug,
-    title: row.title,
-    category: row.category ?? 'GenFlix',
-    seoDescription: row.seo_description?.trim() || fallbackSeoDescription,
+    title: fixMojibakeText(row.title),
+    category: fixMojibakeText(row.category ?? 'GenFlix'),
+    seoDescription: fixMojibakeText(row.seo_description?.trim() || fallbackSeoDescription),
     image: row.image_url ?? '/images/genflix/home/featured-2.jpg',
     readTime: row.read_time ?? '5 min',
     author: row.author ?? 'Equipe GenFlix',

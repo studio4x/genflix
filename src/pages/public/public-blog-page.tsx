@@ -19,6 +19,7 @@ import {
 import { createDefaultBlogStyleSettings, normalizeBlogStyleSettings, type BlogStyleSettings } from '@/features/blog/blog-style-settings'
 import { fetchSiteContent } from '@/features/site-editor/api'
 import { EditableText, useSiteContentScope } from '@/features/site-editor/visual-editor'
+import { fixMojibakeText } from '@/lib/text-encoding'
 import { cn } from '@/lib/utils'
 
 const POSTS_PER_PAGE = 6
@@ -492,10 +493,12 @@ export function PublicBlogPage() {
                       <div className="blog-grid-card-content flex min-h-[360px] flex-col p-7">
                         <h3 className="blog-grid-card-title text-2xl font-semibold leading-tight text-[#243a64]">
                           <Link to={`/blog/${post.slug}`} className="transition-colors hover:text-[#ff7a00]">
-                            {post.title}
+                            {fixMojibakeText(post.title)}
                           </Link>
                         </h3>
-                        <p className="blog-grid-card-description mt-4 min-h-[10.5rem] line-clamp-6 text-base leading-7 text-[#20364f]">{post.seoDescription}</p>
+                        <p className="blog-grid-card-description mt-4 min-h-[10.5rem] line-clamp-6 text-base leading-7 text-[#20364f]">
+                          {fixMojibakeText(post.seoDescription)}
+                        </p>
                         <Link
                           to={`/blog/${post.slug}`}
                           className="blog-grid-card-link mt-6 inline-flex items-center gap-1 text-sm font-semibold uppercase tracking-[0.08em] text-[#ff7a00] hover:text-[#e86f00]"
