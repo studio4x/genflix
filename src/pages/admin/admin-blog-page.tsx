@@ -5,6 +5,7 @@ import { useAuth } from '@/app/providers/auth-provider'
 import { RichTextEditor } from '@/components/ui/RichTextEditor'
 import { Button } from '@/components/ui/button'
 import { AdminBlogCommentsPanel } from '@/features/blog/admin-blog-comments-panel'
+import { createDefaultBlogStyleSettings, normalizeBlogStyleSettings, type BlogStyleSettings, type BlogTagStyle } from '@/features/blog/blog-style-settings'
 import {
   fetchBlogSeoDraft,
   fetchBlogTagCreationSuggestions,
@@ -586,7 +587,7 @@ function buildBlogAssistArticleInput(form: ArticleFormState, tags: BlogTagRow[])
 export function AdminBlogPage() {
   const { user, profile } = useAuth()
   const [searchParams, setSearchParams] = useSearchParams()
-  const [activeTab, setActiveTab] = useState<'articles' | 'categories' | 'tags' | 'layout' | 'comments'>(searchParams.get('tab') === 'comments' ? 'comments' : 'articles')
+  const [activeTab, setActiveTab] = useState<'articles' | 'categories' | 'tags' | 'layout' | 'styles' | 'comments'>(searchParams.get('tab') === 'comments' ? 'comments' : searchParams.get('tab') === 'styles' ? 'styles' : 'articles')
   const [articleView, setArticleView] = useState<'list' | 'editor'>('list')
   const [isLegacyMode, setIsLegacyMode] = useState(true)
   const [isCategoryCrudAvailable, setIsCategoryCrudAvailable] = useState(false)
@@ -600,7 +601,9 @@ export function AdminBlogPage() {
   const [articleActionModal, setArticleActionModal] = useState<ArticleActionModalState | null>(null)
   const [seoAiModal, setSeoAiModal] = useState<SeoAiModalState | null>(null)
   const [blogSidebarBlocks, setBlogSidebarBlocks] = useState<BlogSidebarBlock[]>([createEmptySidebarBlock()])
+  const [blogStyleSettings, setBlogStyleSettings] = useState<BlogStyleSettings>(createDefaultBlogStyleSettings())
   const [isSavingLayout, setIsSavingLayout] = useState(false)
+  const [isSavingStyleSettings, setIsSavingStyleSettings] = useState(false)
   const [isUploadingLayoutImage, setIsUploadingLayoutImage] = useState(false)
   const [isUploadingCoverImage, setIsUploadingCoverImage] = useState(false)
   const [mediaLibraryAssets, setMediaLibraryAssets] = useState<SiteAsset[]>([])
@@ -828,6 +831,7 @@ export function AdminBlogPage() {
       await loadCategoriesData()
       await loadTagsData()
       await loadBlogLayoutSettings()
+      await loadBlogStyleSettings()
       if (selectedArticleId) {
         await loadArticleRevisions(selectedArticleId)
       } else {
@@ -996,6 +1000,16 @@ export function AdminBlogPage() {
     }
   }
 
+  async function loadBlogStyleSettings() {
+    try {
+      const entries = await fetchSiteContent('blog')
+      const styleEntry = entries.find((entry) => entry.page_key === 'blog' && entry.entry_key === 'blog.style.settings')
+      setBlogStyleSettings(normalizeBlogStyleSettings(styleEntry?.value))
+    } catch {
+      setBlogStyleSettings(createDefaultBlogStyleSettings())
+    }
+  }
+
   async function handleUploadBlogSidebarImage(file: File | null, blockIndex: number, slideIndex: number) {
     if (!file) {
       return
@@ -1122,6 +1136,57 @@ export function AdminBlogPage() {
       setErrorMessage(error instanceof Error ? error.message : 'Não foi possível salvar a imagem lateral.')
     } finally {
       setIsSavingLayout(false)
+    }
+  }
+
+  function updateTagStyle(tag: keyof BlogStyleSettings['content'], field: keyof BlogTagStyle, value: string) {
+    setBlogStyleSettings((current) => ({
+      ...current,
+      content: {
+        ...current.content,
+        [tag]: {
+          ...current.content[tag],
+          [field]: value,
+        },
+      },
+    }))
+  }
+
+  function updateCardTextStyle(tag: keyof BlogStyleSettings['card']['text'], field: keyof BlogTagStyle, value: string) {
+    setBlogStyleSettings((current) => ({
+      ...current,
+      card: {
+        ...current.card,
+        text: {
+          ...current.card.text,
+          [tag]: {
+            ...current.card.text[tag],
+            [field]: value,
+          },
+        },
+      },
+    }))
+  }
+
+  async function handleSaveBlogStyleSettings() {
+    setIsSavingStyleSettings(true)
+    setErrorMessage(null)
+    setSuccessMessage(null)
+    try {
+      await saveSiteContentEntry({
+        pageKey: 'blog',
+        entryKey: 'blog.style.settings',
+        entryType: 'json',
+        value: blogStyleSettings,
+        schema: {
+          kind: 'blog-style-settings',
+        },
+      })
+      setSuccessMessage('Padrões de tipografia e cards do blog salvos com sucesso.')
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : 'Não foi possível salvar os padrões do blog.')
+    } finally {
+      setIsSavingStyleSettings(false)
     }
   }
 
@@ -2084,6 +2149,13 @@ export function AdminBlogPage() {
         </button>
         <button
           type="button"
+          onClick={() => setActiveTab('styles')}
+          className={`rounded-full border px-4 py-2 text-sm font-bold ${activeTab === 'styles' ? 'border-[#1398B7] bg-[#1398B7] text-white' : 'border-[#D8E6EB] bg-white text-[#15323b]'}`}
+        >
+          Estilos do blog
+        </button>
+        <button
+          type="button"
           onClick={() => setActiveTab('comments')}
           className={`rounded-full border px-4 py-2 text-sm font-bold ${activeTab === 'comments' ? 'border-[#1398B7] bg-[#1398B7] text-white' : 'border-[#D8E6EB] bg-white text-[#15323b]'}`}
         >
@@ -2970,6 +3042,58 @@ export function AdminBlogPage() {
                   <p className="mt-1 text-xs font-semibold text-[#6d7f84]">/{tag.slug} · robots: {tag.seo_robots ?? 'index,follow'}</p>
                 </button>
               ))}
+            </div>
+          </article>
+        </section>
+      ) : null}
+
+      {activeTab === 'styles' ? (
+        <section className="space-y-6">
+          <article className="rounded-[28px] border border-[#D8E6EB] bg-white p-5">
+            <h2 className="text-lg font-black tracking-tight text-[#15323b]">Padrão tipográfico dos artigos</h2>
+            <div className="mt-4 grid gap-4">
+              {(['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'a'] as const).map((tagKey) => (
+                <div key={tagKey} className="rounded-2xl border border-[#D8E6EB] bg-[#F8FBFC] p-4">
+                  <p className="text-xs font-black uppercase tracking-[0.18em] text-[#1398B7]">{tagKey}</p>
+                  <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+                    <input value={blogStyleSettings.content[tagKey].fontFamily} onChange={(event) => updateTagStyle(tagKey, 'fontFamily', event.target.value)} placeholder="font-family" className="h-10 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800" />
+                    <input value={blogStyleSettings.content[tagKey].fontSize} onChange={(event) => updateTagStyle(tagKey, 'fontSize', event.target.value)} placeholder="font-size" className="h-10 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800" />
+                    <input value={blogStyleSettings.content[tagKey].fontWeight} onChange={(event) => updateTagStyle(tagKey, 'fontWeight', event.target.value)} placeholder="font-weight" className="h-10 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800" />
+                    <input value={blogStyleSettings.content[tagKey].lineHeight} onChange={(event) => updateTagStyle(tagKey, 'lineHeight', event.target.value)} placeholder="line-height" className="h-10 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800" />
+                    <input value={blogStyleSettings.content[tagKey].letterSpacing} onChange={(event) => updateTagStyle(tagKey, 'letterSpacing', event.target.value)} placeholder="letter-spacing" className="h-10 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </article>
+          <article className="rounded-[28px] border border-[#D8E6EB] bg-white p-5">
+            <h2 className="text-lg font-black tracking-tight text-[#15323b]">Padrão de cards do grid</h2>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+              <input value={blogStyleSettings.card.container.backgroundColor} onChange={(event) => setBlogStyleSettings((current) => ({ ...current, card: { ...current.card, container: { ...current.card.container, backgroundColor: event.target.value } } }))} placeholder="Fundo do card" className="h-10 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800" />
+              <input value={blogStyleSettings.card.container.borderColor} onChange={(event) => setBlogStyleSettings((current) => ({ ...current, card: { ...current.card, container: { ...current.card.container, borderColor: event.target.value } } }))} placeholder="Borda do card" className="h-10 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800" />
+              <input value={blogStyleSettings.card.container.borderRadius} onChange={(event) => setBlogStyleSettings((current) => ({ ...current, card: { ...current.card, container: { ...current.card.container, borderRadius: event.target.value } } }))} placeholder="Raio" className="h-10 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800" />
+              <input value={blogStyleSettings.card.container.padding} onChange={(event) => setBlogStyleSettings((current) => ({ ...current, card: { ...current.card, container: { ...current.card.container, padding: event.target.value } } }))} placeholder="Padding" className="h-10 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800" />
+              <input value={blogStyleSettings.card.container.minHeight} onChange={(event) => setBlogStyleSettings((current) => ({ ...current, card: { ...current.card, container: { ...current.card.container, minHeight: event.target.value } } }))} placeholder="Altura mínima" className="h-10 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800" />
+              <select value={blogStyleSettings.card.container.imageObjectFit} onChange={(event) => setBlogStyleSettings((current) => ({ ...current, card: { ...current.card, container: { ...current.card.container, imageObjectFit: event.target.value === 'cover' ? 'cover' : 'contain' } } }))} className="h-10 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800"><option value="contain">Imagem: contain</option><option value="cover">Imagem: cover</option></select>
+            </div>
+            <div className="mt-4 grid gap-4">
+              {(['title', 'description', 'link'] as const).map((cardKey) => (
+                <div key={cardKey} className="rounded-2xl border border-[#D8E6EB] bg-[#F8FBFC] p-4">
+                  <p className="text-xs font-black uppercase tracking-[0.18em] text-[#1398B7]">Texto do card: {cardKey}</p>
+                  <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+                    <input value={blogStyleSettings.card.text[cardKey].fontFamily} onChange={(event) => updateCardTextStyle(cardKey, 'fontFamily', event.target.value)} placeholder="font-family" className="h-10 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800" />
+                    <input value={blogStyleSettings.card.text[cardKey].fontSize} onChange={(event) => updateCardTextStyle(cardKey, 'fontSize', event.target.value)} placeholder="font-size" className="h-10 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800" />
+                    <input value={blogStyleSettings.card.text[cardKey].fontWeight} onChange={(event) => updateCardTextStyle(cardKey, 'fontWeight', event.target.value)} placeholder="font-weight" className="h-10 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800" />
+                    <input value={blogStyleSettings.card.text[cardKey].lineHeight} onChange={(event) => updateCardTextStyle(cardKey, 'lineHeight', event.target.value)} placeholder="line-height" className="h-10 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800" />
+                    <input value={blogStyleSettings.card.text[cardKey].letterSpacing} onChange={(event) => updateCardTextStyle(cardKey, 'letterSpacing', event.target.value)} placeholder="letter-spacing" className="h-10 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800" />
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="mt-4 flex flex-wrap gap-2 border-t border-[#D8E6EB] pt-4">
+              <Button type="button" className="rounded-xl bg-[#1398B7] hover:bg-[#0A3640]" onClick={() => void handleSaveBlogStyleSettings()} disabled={isSavingStyleSettings}>
+                {isSavingStyleSettings ? 'Salvando...' : 'Salvar padrões visuais do blog'}
+              </Button>
             </div>
           </article>
         </section>

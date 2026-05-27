@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, type CSSProperties } from 'react'
 import { ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react'
 import { Link } from 'react-router-dom'
 
@@ -16,6 +16,7 @@ import {
   fetchPublicBlogCategoriesFromSupabase,
   fetchPublicBlogPostsFromSupabase,
 } from '@/features/public/genflix-public-content-api'
+import { createDefaultBlogStyleSettings, normalizeBlogStyleSettings, type BlogStyleSettings } from '@/features/blog/blog-style-settings'
 import { fetchSiteContent } from '@/features/site-editor/api'
 import { EditableText, useSiteContentScope } from '@/features/site-editor/visual-editor'
 import { cn } from '@/lib/utils'
@@ -118,6 +119,7 @@ export function PublicBlogPage() {
   const [blogCategories, setBlogCategories] = useState<BlogCategoryFilter[]>([])
   const [sidebarBlocks, setSidebarBlocks] = useState<BlogSidebarBlock[]>([])
   const [sidebarCarouselTick, setSidebarCarouselTick] = useState(0)
+  const [blogStyleSettings, setBlogStyleSettings] = useState<BlogStyleSettings>(createDefaultBlogStyleSettings())
 
   useEffect(() => {
     let isMounted = true
@@ -141,6 +143,57 @@ export function PublicBlogPage() {
       isMounted = false
     }
   }, [])
+
+  useEffect(() => {
+    let isMounted = true
+
+    async function loadStyleSettings() {
+      try {
+        const entries = await fetchSiteContent('blog')
+        const styleEntry = entries.find((entry) => entry.page_key === 'blog' && entry.entry_key === 'blog.style.settings')
+        if (!isMounted) {
+          return
+        }
+        setBlogStyleSettings(normalizeBlogStyleSettings(styleEntry?.value))
+      } catch {
+        if (isMounted) {
+          setBlogStyleSettings(createDefaultBlogStyleSettings())
+        }
+      }
+    }
+
+    void loadStyleSettings()
+    return () => {
+      isMounted = false
+    }
+  }, [])
+
+  const blogGridStyleVars = useMemo(() => {
+    const card = blogStyleSettings.card
+    return {
+      '--blog-card-bg': card.container.backgroundColor || undefined,
+      '--blog-card-border': card.container.borderColor || undefined,
+      '--blog-card-radius': card.container.borderRadius || undefined,
+      '--blog-card-padding': card.container.padding || undefined,
+      '--blog-card-min-height': card.container.minHeight || undefined,
+      '--blog-card-image-fit': card.container.imageObjectFit || undefined,
+      '--blog-card-title-font-family': card.text.title.fontFamily || undefined,
+      '--blog-card-title-font-size': card.text.title.fontSize || undefined,
+      '--blog-card-title-font-weight': card.text.title.fontWeight || undefined,
+      '--blog-card-title-line-height': card.text.title.lineHeight || undefined,
+      '--blog-card-title-letter-spacing': card.text.title.letterSpacing || undefined,
+      '--blog-card-description-font-family': card.text.description.fontFamily || undefined,
+      '--blog-card-description-font-size': card.text.description.fontSize || undefined,
+      '--blog-card-description-font-weight': card.text.description.fontWeight || undefined,
+      '--blog-card-description-line-height': card.text.description.lineHeight || undefined,
+      '--blog-card-description-letter-spacing': card.text.description.letterSpacing || undefined,
+      '--blog-card-link-font-family': card.text.link.fontFamily || undefined,
+      '--blog-card-link-font-size': card.text.link.fontSize || undefined,
+      '--blog-card-link-font-weight': card.text.link.fontWeight || undefined,
+      '--blog-card-link-line-height': card.text.link.lineHeight || undefined,
+      '--blog-card-link-letter-spacing': card.text.link.letterSpacing || undefined,
+    } as CSSProperties
+  }, [blogStyleSettings])
 
   useEffect(() => {
     let isMounted = true
@@ -419,30 +472,30 @@ export function PublicBlogPage() {
                   </div>
                 </div>
 
-                <div className="grid gap-8 md:grid-cols-2 xl:grid-cols-3">
+                <div className="blog-grid-theme grid gap-8 md:grid-cols-2 xl:grid-cols-3" style={blogGridStyleVars}>
                   {paginatedPosts.map((post) => (
-                    <article key={post.slug} className="overflow-hidden rounded-[4px] border border-[#dfdfdf] bg-[#f5f5f5] shadow-sm">
+                    <article key={post.slug} className="blog-grid-card overflow-hidden rounded-[4px] border border-[#dfdfdf] bg-[#f5f5f5] shadow-sm">
                       <div className="aspect-[16/9] overflow-hidden">
                         <img
                           src={getGridCoverImageUrl(post.image)}
                           alt={post.title}
-                          className="h-full w-full object-contain bg-[#e9ecef]"
+                          className="blog-grid-card-image h-full w-full object-contain bg-[#e9ecef]"
                           loading="lazy"
                           decoding="async"
                           fetchPriority="low"
                         />
                       </div>
 
-                      <div className="flex min-h-[360px] flex-col p-7">
-                        <h3 className="text-2xl font-semibold leading-tight text-[#243a64]">
+                      <div className="blog-grid-card-content flex min-h-[360px] flex-col p-7">
+                        <h3 className="blog-grid-card-title text-2xl font-semibold leading-tight text-[#243a64]">
                           <Link to={`/blog/${post.slug}`} className="transition-colors hover:text-[#ff7a00]">
                             {post.title}
                           </Link>
                         </h3>
-                        <p className="mt-4 min-h-[10.5rem] line-clamp-6 text-base leading-7 text-[#20364f]">{post.seoDescription}</p>
+                        <p className="blog-grid-card-description mt-4 min-h-[10.5rem] line-clamp-6 text-base leading-7 text-[#20364f]">{post.seoDescription}</p>
                         <Link
                           to={`/blog/${post.slug}`}
-                          className="mt-6 inline-flex items-center gap-1 text-sm font-semibold uppercase tracking-[0.08em] text-[#ff7a00] hover:text-[#e86f00]"
+                          className="blog-grid-card-link mt-6 inline-flex items-center gap-1 text-sm font-semibold uppercase tracking-[0.08em] text-[#ff7a00] hover:text-[#e86f00]"
                         >
                           Leia mais
                           <ArrowRight className="h-4 w-4" />
@@ -568,3 +621,4 @@ export function PublicBlogPage() {
     </main>
   )
 }
+

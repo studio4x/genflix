@@ -1,4 +1,4 @@
-﻿import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useState, type CSSProperties, type FormEvent } from 'react'
 import { Link, Navigate, useParams, useSearchParams } from 'react-router-dom'
 import { ArrowLeftCircle, Send } from 'lucide-react'
 
@@ -13,6 +13,8 @@ import {
   type GenflixBlogPost,
 } from '@/features/public/genflix-site-content'
 import { fetchPublicBlogPostFromSupabase } from '@/features/public/genflix-public-content-api'
+import { createDefaultBlogStyleSettings, normalizeBlogStyleSettings, type BlogStyleSettings } from '@/features/blog/blog-style-settings'
+import { fetchSiteContent } from '@/features/site-editor/api'
 import { supabase } from '@/services/supabase/client'
 
 type DraftBlogPostRow = {
@@ -144,7 +146,7 @@ function mapDraftRowToBlogPost(row: DraftBlogPostRow): GenflixBlogPost {
 function mapAdminPreviewToBlogPost(preview: AdminPreviewPayload): GenflixBlogPost {
   return {
     slug: preview.slug,
-    title: preview.title || 'Rascunho sem tÃ­tulo',
+    title: preview.title || 'Rascunho sem titulo',
     category: preview.category || 'Sem categoria',
     seoDescription: preview.seoDescription || '',
     image: preview.image || '/images/genflix/home/featured-2.jpg',
@@ -225,7 +227,73 @@ export function PublicBlogPostPage() {
   const [commentSuccess, setCommentSuccess] = useState<string | null>(null)
   const [captcha, setCaptcha] = useState(() => createCaptchaChallenge())
   const [captchaInput, setCaptchaInput] = useState('')
+  const [blogStyleSettings, setBlogStyleSettings] = useState<BlogStyleSettings>(createDefaultBlogStyleSettings())
   const isAuthenticated = Boolean(user)
+
+  useEffect(() => {
+    let isMounted = true
+    async function loadStyleSettings() {
+      try {
+        const entries = await fetchSiteContent('blog')
+        const styleEntry = entries.find((entry) => entry.page_key === 'blog' && entry.entry_key === 'blog.style.settings')
+        if (!isMounted) {
+          return
+        }
+        setBlogStyleSettings(normalizeBlogStyleSettings(styleEntry?.value))
+      } catch {
+        if (isMounted) {
+          setBlogStyleSettings(createDefaultBlogStyleSettings())
+        }
+      }
+    }
+    void loadStyleSettings()
+    return () => {
+      isMounted = false
+    }
+  }, [])
+
+  const articleStyleVars = {
+    '--blog-content-p-font-family': blogStyleSettings.content.p.fontFamily || undefined,
+    '--blog-content-p-font-size': blogStyleSettings.content.p.fontSize || undefined,
+    '--blog-content-p-font-weight': blogStyleSettings.content.p.fontWeight || undefined,
+    '--blog-content-p-line-height': blogStyleSettings.content.p.lineHeight || undefined,
+    '--blog-content-p-letter-spacing': blogStyleSettings.content.p.letterSpacing || undefined,
+    '--blog-content-h1-font-family': blogStyleSettings.content.h1.fontFamily || undefined,
+    '--blog-content-h1-font-size': blogStyleSettings.content.h1.fontSize || undefined,
+    '--blog-content-h1-font-weight': blogStyleSettings.content.h1.fontWeight || undefined,
+    '--blog-content-h1-line-height': blogStyleSettings.content.h1.lineHeight || undefined,
+    '--blog-content-h1-letter-spacing': blogStyleSettings.content.h1.letterSpacing || undefined,
+    '--blog-content-h2-font-family': blogStyleSettings.content.h2.fontFamily || undefined,
+    '--blog-content-h2-font-size': blogStyleSettings.content.h2.fontSize || undefined,
+    '--blog-content-h2-font-weight': blogStyleSettings.content.h2.fontWeight || undefined,
+    '--blog-content-h2-line-height': blogStyleSettings.content.h2.lineHeight || undefined,
+    '--blog-content-h2-letter-spacing': blogStyleSettings.content.h2.letterSpacing || undefined,
+    '--blog-content-h3-font-family': blogStyleSettings.content.h3.fontFamily || undefined,
+    '--blog-content-h3-font-size': blogStyleSettings.content.h3.fontSize || undefined,
+    '--blog-content-h3-font-weight': blogStyleSettings.content.h3.fontWeight || undefined,
+    '--blog-content-h3-line-height': blogStyleSettings.content.h3.lineHeight || undefined,
+    '--blog-content-h3-letter-spacing': blogStyleSettings.content.h3.letterSpacing || undefined,
+    '--blog-content-h4-font-family': blogStyleSettings.content.h4.fontFamily || undefined,
+    '--blog-content-h4-font-size': blogStyleSettings.content.h4.fontSize || undefined,
+    '--blog-content-h4-font-weight': blogStyleSettings.content.h4.fontWeight || undefined,
+    '--blog-content-h4-line-height': blogStyleSettings.content.h4.lineHeight || undefined,
+    '--blog-content-h4-letter-spacing': blogStyleSettings.content.h4.letterSpacing || undefined,
+    '--blog-content-h5-font-family': blogStyleSettings.content.h5.fontFamily || undefined,
+    '--blog-content-h5-font-size': blogStyleSettings.content.h5.fontSize || undefined,
+    '--blog-content-h5-font-weight': blogStyleSettings.content.h5.fontWeight || undefined,
+    '--blog-content-h5-line-height': blogStyleSettings.content.h5.lineHeight || undefined,
+    '--blog-content-h5-letter-spacing': blogStyleSettings.content.h5.letterSpacing || undefined,
+    '--blog-content-h6-font-family': blogStyleSettings.content.h6.fontFamily || undefined,
+    '--blog-content-h6-font-size': blogStyleSettings.content.h6.fontSize || undefined,
+    '--blog-content-h6-font-weight': blogStyleSettings.content.h6.fontWeight || undefined,
+    '--blog-content-h6-line-height': blogStyleSettings.content.h6.lineHeight || undefined,
+    '--blog-content-h6-letter-spacing': blogStyleSettings.content.h6.letterSpacing || undefined,
+    '--blog-content-a-font-family': blogStyleSettings.content.a.fontFamily || undefined,
+    '--blog-content-a-font-size': blogStyleSettings.content.a.fontSize || undefined,
+    '--blog-content-a-font-weight': blogStyleSettings.content.a.fontWeight || undefined,
+    '--blog-content-a-line-height': blogStyleSettings.content.a.lineHeight || undefined,
+    '--blog-content-a-letter-spacing': blogStyleSettings.content.a.letterSpacing || undefined,
+  } as CSSProperties
 
   useEffect(() => {
     const fullName = (profile?.full_name ?? user?.user_metadata?.full_name ?? '').trim()
@@ -412,6 +480,7 @@ export function PublicBlogPostPage() {
                 {post.contentHtml?.trim() ? (
                   <div
                     className="blog-article-html"
+                    style={articleStyleVars}
                     dangerouslySetInnerHTML={{ __html: sanitizeBlogHtml(post.contentHtml) }}
                   />
                 ) : (
@@ -534,4 +603,5 @@ export function PublicBlogPostPage() {
     </main>
   )
 }
+
 
