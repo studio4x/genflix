@@ -567,28 +567,68 @@ function isMissingLegacyColumnError(message: string, column: string) {
   return message.includes(`Could not find the '${column}' column`)
 }
 
+function isSingleObjectCoercionError(message: string) {
+  return message.includes('Cannot coerce the result to a single JSON object')
+}
+
 async function persistLegacyBlogPost(
   payload: Record<string, unknown>,
   selectedArticleId: string | null,
 ) {
-  const runPersist = async (payloadToSave: Record<string, unknown>) => (
-    selectedArticleId
-      ? await supabase.from('blog_posts').update(payloadToSave).eq('id', selectedArticleId).select('*').single()
-      : await supabase.from('blog_posts').insert(payloadToSave).select('*').single()
-  )
+  const runPersist = async (payloadToSave: Record<string, unknown>) => {
+    if (selectedArticleId) {
+      const updateResult = await supabase
+        .from('blog_posts')
+        .update(payloadToSave)
+        .eq('id', selectedArticleId)
+        .select('*')
+
+      if (updateResult.error) {
+        if (isSingleObjectCoercionError(updateResult.error.message)) {
+          const fetchById = await supabase.from('blog_posts').select('*').eq('id', selectedArticleId).limit(1)
+          if (!fetchById.error && Array.isArray(fetchById.data) && fetchById.data[0]) {
+            return { data: fetchById.data[0], error: null }
+          }
+        }
+        return updateResult
+      }
+
+      if (Array.isArray(updateResult.data) && updateResult.data[0]) {
+        return { data: updateResult.data[0], error: null }
+      }
+
+      const fetchById = await supabase.from('blog_posts').select('*').eq('id', selectedArticleId).limit(1)
+      if (!fetchById.error && Array.isArray(fetchById.data) && fetchById.data[0]) {
+        return { data: fetchById.data[0], error: null }
+      }
+      return fetchById
+    }
+
+    const insertResult = await supabase.from('blog_posts').insert(payloadToSave).select('*')
+    if (insertResult.error) {
+      return insertResult
+    }
+    if (Array.isArray(insertResult.data) && insertResult.data[0]) {
+      return { data: insertResult.data[0], error: null }
+    }
+    return insertResult
+  }
 
   const firstAttempt = await runPersist(payload)
   if (!firstAttempt.error) {
     return firstAttempt
   }
 
-  if (!isMissingLegacyColumnError(firstAttempt.error.message, 'seo_description')) {
-    return firstAttempt
+  const removableColumns = ['seo_description', 'excerpt']
+  for (const column of removableColumns) {
+    if (!isMissingLegacyColumnError(firstAttempt.error.message, column)) {
+      continue
+    }
+    const { [column]: _removed, ...payloadWithoutColumn } = payload
+    void _removed
+    return await runPersist(payloadWithoutColumn)
   }
-
-  const { seo_description: _seoDescription, ...payloadWithoutSeoDescription } = payload
-  void _seoDescription
-  return await runPersist(payloadWithoutSeoDescription)
+  return firstAttempt
 }
 
 function buildBlogAssistArticleInput(form: ArticleFormState, tags: BlogTagRow[]): BlogAssistArticleInput {
@@ -1482,6 +1522,7 @@ export function AdminBlogPage() {
       slug,
       category: articleForm.categoryId === '__none__' ? null : articleForm.categoryId,
       seo_description: articleForm.seo_description.trim() || null,
+      excerpt: articleForm.seo_description.trim() || null,
       image_url: articleForm.coverImageUrl.trim() || null,
       read_time: `${readingTime} min`,
       author: user?.id ?? null,
