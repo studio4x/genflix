@@ -7,6 +7,7 @@ export type BlogTagStyle = {
   fontWeight: string
   lineHeight: string
   letterSpacing: string
+  color: string
 }
 
 export type BlogCardStyle = {
@@ -43,6 +44,7 @@ function createEmptyTagStyle(): BlogTagStyle {
     fontWeight: '',
     lineHeight: '',
     letterSpacing: '',
+    color: '',
   }
 }
 
@@ -87,9 +89,10 @@ function normalizeTagStyle(value: unknown): BlogTagStyle {
     fontSize: sanitizeCssValue(style.fontSize),
     fontWeight: sanitizeCssValue(style.fontWeight),
     lineHeight: sanitizeCssValue(style.lineHeight),
-    letterSpacing: sanitizeCssValue(style.letterSpacing),
+      letterSpacing: sanitizeCssValue(style.letterSpacing),
+      color: sanitizeCssValue(style.color),
+    }
   }
-}
 
 export function normalizeBlogStyleSettings(value: unknown): BlogStyleSettings {
   const base = createDefaultBlogStyleSettings()
@@ -133,4 +136,3 @@ export function normalizeBlogStyleSettings(value: unknown): BlogStyleSettings {
 
   return base
 }
-

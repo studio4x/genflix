@@ -182,16 +182,19 @@ export function PublicBlogPage() {
       '--blog-card-title-font-weight': card.text.title.fontWeight || undefined,
       '--blog-card-title-line-height': card.text.title.lineHeight || undefined,
       '--blog-card-title-letter-spacing': card.text.title.letterSpacing || undefined,
+      '--blog-card-title-color': card.text.title.color || undefined,
       '--blog-card-description-font-family': card.text.description.fontFamily || undefined,
       '--blog-card-description-font-size': card.text.description.fontSize || undefined,
       '--blog-card-description-font-weight': card.text.description.fontWeight || undefined,
       '--blog-card-description-line-height': card.text.description.lineHeight || undefined,
       '--blog-card-description-letter-spacing': card.text.description.letterSpacing || undefined,
+      '--blog-card-description-color': card.text.description.color || undefined,
       '--blog-card-link-font-family': card.text.link.fontFamily || undefined,
       '--blog-card-link-font-size': card.text.link.fontSize || undefined,
       '--blog-card-link-font-weight': card.text.link.fontWeight || undefined,
       '--blog-card-link-line-height': card.text.link.lineHeight || undefined,
       '--blog-card-link-letter-spacing': card.text.link.letterSpacing || undefined,
+      '--blog-card-link-color': card.text.link.color || undefined,
     } as CSSProperties
   }, [blogStyleSettings])
 

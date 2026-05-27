@@ -13,6 +13,7 @@ import {
   type BlogAssistArticleInput,
 } from '@/features/admin/blog-ai/api'
 import { fetchSiteAssets, fetchSiteContent, saveSiteContentEntry, uploadSiteAsset } from '@/features/site-editor/api'
+import { SITE_TEXT_FONT_PRESETS } from '@/features/site-editor/font-presets'
 import type { SiteAsset } from '@/features/site-editor/types'
 import { supabase } from '@/services/supabase/client'
 import { ChevronDown, ChevronUp, Eye, Pencil, RotateCcw, Trash2, X } from 'lucide-react'
@@ -538,6 +539,28 @@ function summarizeRevisionSnapshot(snapshot: BlogArticleRevisionSnapshot | null)
   return pieces.join(' · ')
 }
 
+function toHexColor(value: string, fallback = '#000000') {
+  const trimmed = value.trim()
+  if (/^#[0-9a-fA-F]{6}$/.test(trimmed)) {
+    return trimmed
+  }
+  if (/^#[0-9a-fA-F]{3}$/.test(trimmed)) {
+    const hex = trimmed.slice(1)
+    return `#${hex[0]}${hex[0]}${hex[1]}${hex[1]}${hex[2]}${hex[2]}`
+  }
+  return fallback
+}
+
+type FontFamilyOption = {
+  label: string
+  value: string
+}
+
+const FONT_SIZE_OPTIONS = ['12px', '14px', '16px', '18px', '20px', '24px', '28px', '32px', '36px', '40px']
+const FONT_WEIGHT_OPTIONS = ['300', '400', '500', '600', '700', '800', '900']
+const LINE_HEIGHT_OPTIONS = ['1', '1.1', '1.2', '1.3', '1.4', '1.5', '1.6', '1.8', '2']
+const LETTER_SPACING_OPTIONS = ['-0.04em', '-0.02em', '0', '0.01em', '0.02em', '0.04em', '0.08em']
+
 function isMissingLegacyColumnError(message: string, column: string) {
   return message.includes(`Could not find the '${column}' column`)
 }
@@ -610,6 +633,9 @@ export function AdminBlogPage() {
   const [isLoadingMediaLibrary, setIsLoadingMediaLibrary] = useState(false)
   const [isMediaLibraryOpen, setIsMediaLibraryOpen] = useState(false)
   const [selectedMediaAssetId, setSelectedMediaAssetId] = useState('')
+  const [fontFamilyOptions, setFontFamilyOptions] = useState<FontFamilyOption[]>(
+    SITE_TEXT_FONT_PRESETS.map((item) => ({ label: item.label, value: item.family })),
+  )
 
   const [articles, setArticles] = useState<BlogArticleRow[]>([])
   const [categories, setCategories] = useState<BlogCategoryRow[]>([])
@@ -880,6 +906,27 @@ export function AdminBlogPage() {
         if (!isMounted) {
           return
         }
+        const presetOptions: FontFamilyOption[] = SITE_TEXT_FONT_PRESETS.map((item) => ({ label: item.label, value: item.family }))
+        const uploadedOptions: FontFamilyOption[] = assets
+          .filter((asset) => {
+            const mime = (asset.mime_type ?? '').toLowerCase()
+            const path = asset.storage_path.toLowerCase()
+            return mime.includes('font') || path.endsWith('.woff2') || path.endsWith('.woff') || path.endsWith('.ttf') || path.endsWith('.otf')
+          })
+          .map((asset) => {
+            const originalName = typeof asset.metadata?.original_name === 'string' ? asset.metadata.original_name : ''
+            const rawName = (originalName || asset.alt || asset.storage_path.split('/').pop() || 'Fonte').trim()
+            const cleanName = rawName.replace(/\.(woff2|woff|ttf|otf)$/i, '')
+            return {
+              label: `${cleanName} (upload)`,
+              value: `'${cleanName}', sans-serif`,
+            }
+          })
+
+        const merged = [...presetOptions, ...uploadedOptions].filter((option, index, list) => (
+          list.findIndex((item) => item.value === option.value) === index
+        ))
+        setFontFamilyOptions(merged)
         setMediaLibraryAssets(assets.filter((asset) => (asset.mime_type ?? '').startsWith('image/')))
       })
       .catch((error) => {
@@ -3055,12 +3102,48 @@ export function AdminBlogPage() {
               {(['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'a'] as const).map((tagKey) => (
                 <div key={tagKey} className="rounded-2xl border border-[#D8E6EB] bg-[#F8FBFC] p-4">
                   <p className="text-xs font-black uppercase tracking-[0.18em] text-[#1398B7]">{tagKey}</p>
-                  <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-                    <input value={blogStyleSettings.content[tagKey].fontFamily} onChange={(event) => updateTagStyle(tagKey, 'fontFamily', event.target.value)} placeholder="font-family" className="h-10 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800" />
-                    <input value={blogStyleSettings.content[tagKey].fontSize} onChange={(event) => updateTagStyle(tagKey, 'fontSize', event.target.value)} placeholder="font-size" className="h-10 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800" />
-                    <input value={blogStyleSettings.content[tagKey].fontWeight} onChange={(event) => updateTagStyle(tagKey, 'fontWeight', event.target.value)} placeholder="font-weight" className="h-10 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800" />
-                    <input value={blogStyleSettings.content[tagKey].lineHeight} onChange={(event) => updateTagStyle(tagKey, 'lineHeight', event.target.value)} placeholder="line-height" className="h-10 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800" />
-                    <input value={blogStyleSettings.content[tagKey].letterSpacing} onChange={(event) => updateTagStyle(tagKey, 'letterSpacing', event.target.value)} placeholder="letter-spacing" className="h-10 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800" />
+                  <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
+                    <label className="grid gap-1">
+                      <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Font family</span>
+                      <select value={blogStyleSettings.content[tagKey].fontFamily} onChange={(event) => updateTagStyle(tagKey, 'fontFamily', event.target.value)} className="h-10 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800">
+                        <option value="">Selecionar fonte</option>
+                        {fontFamilyOptions.map((option) => (
+                          <option key={option.value} value={option.value} style={{ fontFamily: option.value }}>{option.label}</option>
+                        ))}
+                      </select>
+                    </label>
+                    <label className="grid gap-1">
+                      <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Size (px)</span>
+                      <select value={blogStyleSettings.content[tagKey].fontSize} onChange={(event) => updateTagStyle(tagKey, 'fontSize', event.target.value)} className="h-10 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800">
+                        <option value="">Selecionar</option>
+                        {FONT_SIZE_OPTIONS.map((option) => <option key={option} value={option}>{option}</option>)}
+                      </select>
+                    </label>
+                    <label className="grid gap-1">
+                      <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Weight</span>
+                      <select value={blogStyleSettings.content[tagKey].fontWeight} onChange={(event) => updateTagStyle(tagKey, 'fontWeight', event.target.value)} className="h-10 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800">
+                        <option value="">Selecionar</option>
+                        {FONT_WEIGHT_OPTIONS.map((option) => <option key={option} value={option}>{option}</option>)}
+                      </select>
+                    </label>
+                    <label className="grid gap-1">
+                      <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Height (em)</span>
+                      <select value={blogStyleSettings.content[tagKey].lineHeight} onChange={(event) => updateTagStyle(tagKey, 'lineHeight', event.target.value)} className="h-10 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800">
+                        <option value="">Selecionar</option>
+                        {LINE_HEIGHT_OPTIONS.map((option) => <option key={option} value={option}>{option}</option>)}
+                      </select>
+                    </label>
+                    <label className="grid gap-1">
+                      <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Spacing (em)</span>
+                      <select value={blogStyleSettings.content[tagKey].letterSpacing} onChange={(event) => updateTagStyle(tagKey, 'letterSpacing', event.target.value)} className="h-10 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800">
+                        <option value="">Selecionar</option>
+                        {LETTER_SPACING_OPTIONS.map((option) => <option key={option} value={option}>{option}</option>)}
+                      </select>
+                    </label>
+                    <label className="grid gap-1">
+                      <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Color</span>
+                      <input type="color" value={toHexColor(blogStyleSettings.content[tagKey].color, '#15323b')} onChange={(event) => updateTagStyle(tagKey, 'color', event.target.value)} className="h-10 rounded-xl border border-slate-200 px-2 py-1" />
+                    </label>
                   </div>
                 </div>
               ))}
@@ -3069,23 +3152,77 @@ export function AdminBlogPage() {
           <article className="rounded-[28px] border border-[#D8E6EB] bg-white p-5">
             <h2 className="text-lg font-black tracking-tight text-[#15323b]">Padrão de cards do grid</h2>
             <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-              <input value={blogStyleSettings.card.container.backgroundColor} onChange={(event) => setBlogStyleSettings((current) => ({ ...current, card: { ...current.card, container: { ...current.card.container, backgroundColor: event.target.value } } }))} placeholder="Fundo do card" className="h-10 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800" />
-              <input value={blogStyleSettings.card.container.borderColor} onChange={(event) => setBlogStyleSettings((current) => ({ ...current, card: { ...current.card, container: { ...current.card.container, borderColor: event.target.value } } }))} placeholder="Borda do card" className="h-10 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800" />
-              <input value={blogStyleSettings.card.container.borderRadius} onChange={(event) => setBlogStyleSettings((current) => ({ ...current, card: { ...current.card, container: { ...current.card.container, borderRadius: event.target.value } } }))} placeholder="Raio" className="h-10 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800" />
-              <input value={blogStyleSettings.card.container.padding} onChange={(event) => setBlogStyleSettings((current) => ({ ...current, card: { ...current.card, container: { ...current.card.container, padding: event.target.value } } }))} placeholder="Padding" className="h-10 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800" />
-              <input value={blogStyleSettings.card.container.minHeight} onChange={(event) => setBlogStyleSettings((current) => ({ ...current, card: { ...current.card, container: { ...current.card.container, minHeight: event.target.value } } }))} placeholder="Altura mínima" className="h-10 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800" />
-              <select value={blogStyleSettings.card.container.imageObjectFit} onChange={(event) => setBlogStyleSettings((current) => ({ ...current, card: { ...current.card, container: { ...current.card.container, imageObjectFit: event.target.value === 'cover' ? 'cover' : 'contain' } } }))} className="h-10 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800"><option value="contain">Imagem: contain</option><option value="cover">Imagem: cover</option></select>
+              <label className="grid gap-1">
+                <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Cor de fundo</span>
+                <input type="color" value={toHexColor(blogStyleSettings.card.container.backgroundColor, '#f5f5f5')} onChange={(event) => setBlogStyleSettings((current) => ({ ...current, card: { ...current.card, container: { ...current.card.container, backgroundColor: event.target.value } } }))} className="h-10 rounded-xl border border-slate-200 px-2 py-1" />
+              </label>
+              <label className="grid gap-1">
+                <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Cor da borda</span>
+                <input type="color" value={toHexColor(blogStyleSettings.card.container.borderColor, '#dfdfdf')} onChange={(event) => setBlogStyleSettings((current) => ({ ...current, card: { ...current.card, container: { ...current.card.container, borderColor: event.target.value } } }))} className="h-10 rounded-xl border border-slate-200 px-2 py-1" />
+              </label>
+              <label className="grid gap-1">
+                <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Raio da borda (px)</span>
+                <input value={blogStyleSettings.card.container.borderRadius} onChange={(event) => setBlogStyleSettings((current) => ({ ...current, card: { ...current.card, container: { ...current.card.container, borderRadius: event.target.value } } }))} placeholder="Ex.: 8px" className="h-10 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800" />
+              </label>
+              <label className="grid gap-1">
+                <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Padding interno (rem)</span>
+                <input value={blogStyleSettings.card.container.padding} onChange={(event) => setBlogStyleSettings((current) => ({ ...current, card: { ...current.card, container: { ...current.card.container, padding: event.target.value } } }))} placeholder="Ex.: 1.75rem" className="h-10 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800" />
+              </label>
+              <label className="grid gap-1">
+                <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Altura minima (px)</span>
+                <input value={blogStyleSettings.card.container.minHeight} onChange={(event) => setBlogStyleSettings((current) => ({ ...current, card: { ...current.card, container: { ...current.card.container, minHeight: event.target.value } } }))} placeholder="Ex.: 360px" className="h-10 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800" />
+              </label>
+              <label className="grid gap-1">
+                <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Ajuste da imagem</span>
+                <select value={blogStyleSettings.card.container.imageObjectFit} onChange={(event) => setBlogStyleSettings((current) => ({ ...current, card: { ...current.card, container: { ...current.card.container, imageObjectFit: event.target.value === 'cover' ? 'cover' : 'contain' } } }))} className="h-10 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800"><option value="contain">contain</option><option value="cover">cover</option></select>
+              </label>
             </div>
             <div className="mt-4 grid gap-4">
               {(['title', 'description', 'link'] as const).map((cardKey) => (
                 <div key={cardKey} className="rounded-2xl border border-[#D8E6EB] bg-[#F8FBFC] p-4">
                   <p className="text-xs font-black uppercase tracking-[0.18em] text-[#1398B7]">Texto do card: {cardKey}</p>
-                  <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-                    <input value={blogStyleSettings.card.text[cardKey].fontFamily} onChange={(event) => updateCardTextStyle(cardKey, 'fontFamily', event.target.value)} placeholder="font-family" className="h-10 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800" />
-                    <input value={blogStyleSettings.card.text[cardKey].fontSize} onChange={(event) => updateCardTextStyle(cardKey, 'fontSize', event.target.value)} placeholder="font-size" className="h-10 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800" />
-                    <input value={blogStyleSettings.card.text[cardKey].fontWeight} onChange={(event) => updateCardTextStyle(cardKey, 'fontWeight', event.target.value)} placeholder="font-weight" className="h-10 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800" />
-                    <input value={blogStyleSettings.card.text[cardKey].lineHeight} onChange={(event) => updateCardTextStyle(cardKey, 'lineHeight', event.target.value)} placeholder="line-height" className="h-10 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800" />
-                    <input value={blogStyleSettings.card.text[cardKey].letterSpacing} onChange={(event) => updateCardTextStyle(cardKey, 'letterSpacing', event.target.value)} placeholder="letter-spacing" className="h-10 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800" />
+                  <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
+                    <label className="grid gap-1">
+                      <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Font family</span>
+                      <select value={blogStyleSettings.card.text[cardKey].fontFamily} onChange={(event) => updateCardTextStyle(cardKey, 'fontFamily', event.target.value)} className="h-10 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800">
+                        <option value="">Selecionar fonte</option>
+                        {fontFamilyOptions.map((option) => (
+                          <option key={option.value} value={option.value} style={{ fontFamily: option.value }}>{option.label}</option>
+                        ))}
+                      </select>
+                    </label>
+                    <label className="grid gap-1">
+                      <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Size (px)</span>
+                      <select value={blogStyleSettings.card.text[cardKey].fontSize} onChange={(event) => updateCardTextStyle(cardKey, 'fontSize', event.target.value)} className="h-10 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800">
+                        <option value="">Selecionar</option>
+                        {FONT_SIZE_OPTIONS.map((option) => <option key={option} value={option}>{option}</option>)}
+                      </select>
+                    </label>
+                    <label className="grid gap-1">
+                      <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Weight</span>
+                      <select value={blogStyleSettings.card.text[cardKey].fontWeight} onChange={(event) => updateCardTextStyle(cardKey, 'fontWeight', event.target.value)} className="h-10 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800">
+                        <option value="">Selecionar</option>
+                        {FONT_WEIGHT_OPTIONS.map((option) => <option key={option} value={option}>{option}</option>)}
+                      </select>
+                    </label>
+                    <label className="grid gap-1">
+                      <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Height (em)</span>
+                      <select value={blogStyleSettings.card.text[cardKey].lineHeight} onChange={(event) => updateCardTextStyle(cardKey, 'lineHeight', event.target.value)} className="h-10 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800">
+                        <option value="">Selecionar</option>
+                        {LINE_HEIGHT_OPTIONS.map((option) => <option key={option} value={option}>{option}</option>)}
+                      </select>
+                    </label>
+                    <label className="grid gap-1">
+                      <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Spacing (em)</span>
+                      <select value={blogStyleSettings.card.text[cardKey].letterSpacing} onChange={(event) => updateCardTextStyle(cardKey, 'letterSpacing', event.target.value)} className="h-10 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800">
+                        <option value="">Selecionar</option>
+                        {LETTER_SPACING_OPTIONS.map((option) => <option key={option} value={option}>{option}</option>)}
+                      </select>
+                    </label>
+                    <label className="grid gap-1">
+                      <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Color</span>
+                      <input type="color" value={toHexColor(blogStyleSettings.card.text[cardKey].color, cardKey === 'link' ? '#ff7a00' : '#243a64')} onChange={(event) => updateCardTextStyle(cardKey, 'color', event.target.value)} className="h-10 rounded-xl border border-slate-200 px-2 py-1" />
+                    </label>
                   </div>
                 </div>
               ))}
