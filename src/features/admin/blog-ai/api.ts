@@ -68,7 +68,7 @@ async function getAccessToken() {
   const sessionResult = await supabase.auth.getSession()
   const accessToken = sessionResult.data.session?.access_token
   if (!accessToken) {
-    throw new Error('Sessao expirada. Faca login novamente para usar os assistentes do blog.')
+    throw new Error('Sessão expirada. Faça login novamente para usar os assistentes do blog.')
   }
 
   return accessToken
@@ -95,7 +95,7 @@ async function requestBlogAssist<T extends BlogAssistResponse>(payload: Record<s
     : null
 
   if (!response.ok || !parsed) {
-    throw new Error(errorMessage ?? 'Nao foi possivel processar a assistencia do blog.')
+    throw new Error(errorMessage ?? 'Não foi possível processar a assistência do blog.')
   }
 
   return parsed as T

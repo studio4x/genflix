@@ -62,7 +62,7 @@ async function assertEditorCollaborator(req: ApiRequest, res: ApiResponse) {
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
   if (!supabaseUrl || !serviceRoleKey) {
-    jsonResponse(res, 500, { error: 'Configuracao ausente: SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY sao obrigatorias.' })
+    jsonResponse(res, 500, { error: 'Configuração ausente: SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY são obrigatórias.' })
     return null
   }
 
@@ -78,7 +78,7 @@ async function assertEditorCollaborator(req: ApiRequest, res: ApiResponse) {
 
   const userResult = await adminClient.auth.getUser(token)
   if (userResult.error || !userResult.data.user) {
-    jsonResponse(res, 401, { error: 'Token invalido ou expirado.' })
+    jsonResponse(res, 401, { error: 'Token inválido ou expirado.' })
     return null
   }
 
@@ -88,7 +88,7 @@ async function assertEditorCollaborator(req: ApiRequest, res: ApiResponse) {
     .eq('user_id', userResult.data.user.id)
 
   if (rolesResult.error) {
-    jsonResponse(res, 500, { error: 'Nao foi possivel validar as permissoes do usuario.' })
+    jsonResponse(res, 500, { error: 'Não foi possível validar as permissões do usuário.' })
     return null
   }
 
@@ -101,7 +101,7 @@ async function assertEditorCollaborator(req: ApiRequest, res: ApiResponse) {
 
   const canCollaborate = roles.includes('admin') || roles.includes('criador') || roles.includes('professor')
   if (!canCollaborate) {
-    jsonResponse(res, 403, { error: 'Apenas colaboradores do editor visual podem usar a assistencia editorial.' })
+    jsonResponse(res, 403, { error: 'Apenas colaboradores do editor visual podem usar a assistência editorial.' })
     return null
   }
 
@@ -129,23 +129,23 @@ function heuristicAssist(action: z.infer<typeof assistSchema>['action'], content
   const notes: string[] = []
 
   if (cleanContent.length > 420) {
-    warnings.push('O texto esta longo para leitura rapida e pode ser dividido em blocos menores.')
+    warnings.push('O texto está longo para leitura rápida e pode ser dividido em blocos menores.')
   }
   if (cleanContent.split(/\s+/).length > 80) {
-    warnings.push('Ha densidade alta de palavras; considere reduzir redundancias.')
+    warnings.push('Há densidade alta de palavras; considere reduzir redundâncias.')
   }
   if (!/[.!?]/.test(cleanContent) && action !== 'cta') {
     warnings.push('O texto parece pouco pontuado e pode perder legibilidade.')
   }
 
   if (action === 'audit') {
-    notes.push('Auditoria heuristica aplicada localmente.')
+    notes.push('Auditoria heurística aplicada localmente.')
     return {
       content,
       warnings,
       notes: [
         ...notes,
-        cleanContent.length <= 180 ? 'O tamanho esta bom para leitura escaneavel.' : 'Vale revisar o tamanho do bloco.',
+        cleanContent.length <= 180 ? 'O tamanho está bom para leitura escaneável.' : 'Vale revisar o tamanho do bloco.',
       ],
       provider: 'heuristic' as const,
     }
@@ -168,7 +168,7 @@ function heuristicAssist(action: z.infer<typeof assistSchema>['action'], content
       .split(/[,.!?]/)[0]
       .trim()
     const cta = compact.length > 28 ? compact.slice(0, 28).trim() : compact
-    notes.push('CTA fortalecido com heuristica local.')
+    notes.push('CTA fortalecido com heurística local.')
     return {
       content: cta ? `Quero ${cta.charAt(0).toLowerCase()}${cta.slice(1)}` : 'Quero saber mais',
       warnings,
@@ -203,7 +203,7 @@ async function openAiAssist(input: z.infer<typeof assistSchema>) {
   }
 
   const prompt = `
-Voce e um assistente editorial da plataforma GenFlix.
+Você é um assistente editorial da plataforma GenFlix.
 Responda sempre em JSON valido no formato:
 {"content":"...","notes":["..."],"warnings":["..."]}
 
@@ -214,14 +214,14 @@ Chave: ${input.entryKey}
 
 Regras:
 - preserve o idioma portugues do Brasil;
-- nao invente fatos;
+- não invente fatos;
 - mantenha o sentido original;
 - para CTA, devolva texto curto, direto e acionavel;
 - para summarize, encurte drasticamente mantendo a mensagem principal;
-- para audit, mantenha o conteudo original em "content" e foque em warnings/notes;
+- para audit, mantenha o conteúdo original em "content" e foque em warnings/notes;
 - warnings devem apontar contraste editorial, excesso de texto, clareza e consistencia quando fizer sentido.
 
-Conteudo original:
+Conteúdo original:
 """${input.content}"""
 `.trim()
 
@@ -238,7 +238,7 @@ Conteudo original:
       messages: [
         {
           role: 'system',
-          content: 'Voce gera assistencia editorial estruturada para um CMS visual.',
+          content: 'Você gera assistência editorial estruturada para um CMS visual.',
         },
         {
           role: 'user',
@@ -262,7 +262,7 @@ Conteudo original:
 
   const content = payload.choices?.[0]?.message?.content
   if (!content) {
-    throw new Error('OpenAI nao retornou conteudo textual valido.')
+    throw new Error('OpenAI não retornou conteúdo textual válido.')
   }
 
   const parsed = JSON.parse(content) as {
@@ -286,7 +286,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
   }
 
   if (req.method !== 'POST') {
-    jsonResponse(res, 405, { error: 'Metodo nao permitido.' })
+    jsonResponse(res, 405, { error: 'Método não permitido.' })
     return
   }
 
@@ -310,7 +310,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
 
   const parsedBody = assistSchema.safeParse(body)
   if (!parsedBody.success) {
-    jsonResponse(res, 400, { error: parsedBody.error.issues[0]?.message ?? 'Payload invalido.' })
+    jsonResponse(res, 400, { error: parsedBody.error.issues[0]?.message ?? 'Payload inválido.' })
     return
   }
 
@@ -321,7 +321,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
     jsonResponse(res, 200, result)
   } catch (error) {
     jsonResponse(res, 500, {
-      error: error instanceof Error ? error.message : 'Nao foi possivel gerar a sugestao editorial.',
+      error: error instanceof Error ? error.message : 'Não foi possível gerar a sugestão editorial.',
     })
   }
 }

@@ -144,8 +144,8 @@ function buildHeuristicTagSelection(input: BlogAssistInput) {
 
   return {
     selectedTagIds: Array.from(new Set(selectedTagIds)).slice(0, 10),
-    notes: ['Sugestao heuristica aplicada localmente.'],
-    warnings: ['Sem IA configurada ou resposta indisponivel.'],
+    notes: ['Sugestão heurística aplicada localmente.'],
+    warnings: ['Sem IA configurada ou resposta indisponível.'],
   }
 }
 
@@ -180,10 +180,10 @@ function buildHeuristicNewTags(input: BlogAssistInput) {
     suggestedTags: unique.map((token) => ({
       name: token.charAt(0).toUpperCase() + token.slice(1),
       slug: slugify(token),
-      description: `Tag gerada a partir do conteudo do artigo sobre ${token}.`,
+      description: `Tag gerada a partir do conteúdo do artigo sobre ${token}.`,
     })),
-    notes: ['Sugestao heuristica aplicada localmente.'],
-    warnings: ['Sem IA configurada ou resposta indisponivel.'],
+    notes: ['Sugestão heurística aplicada localmente.'],
+    warnings: ['Sem IA configurada ou resposta indisponível.'],
   }
 }
 
@@ -213,7 +213,7 @@ function buildHeuristicSeoDraft(input: BlogAssistInput) {
       seo_og_image_url: input.article.coverImageUrl.trim(),
       focus_keyword: focusKeyword,
     },
-    notes: ['Sugestao heuristica de SEO aplicada localmente.'],
+    notes: ['Sugestão heurística de SEO aplicada localmente.'],
     warnings: [],
   }
 }
@@ -240,22 +240,22 @@ function buildAiPrompt(input: BlogAssistInput, action: BlogAssistAction) {
 
   if (action === 'suggest_tags') {
     return `
-Voce e um assistente editorial da GenFlix especializado em categorizacao de artigos.
+Você é um assistente editorial da GenFlix especializado em categorização de artigos.
 Analise o artigo e retorne apenas JSON puro no formato:
 {"selectedTagIds":["id1","id2"],"notes":["..."],"warnings":["..."]}
 
 Regras:
 - selecione apenas tags existentes em availableTags;
-- prefira tags realmente aderentes ao conteudo;
-- nao selecione tags ja presentes em currentTagIds;
+- prefira tags realmente aderentes ao conteúdo;
+- não selecione tags já presentes em currentTagIds;
 - no maximo 8 tags;
 - responda somente JSON valido.
 
-Conteudo do artigo:
+Conteúdo do artigo:
 Titulo: ${article.title}
 Slug: ${article.slug}
 Palavra-chave foco: ${article.focusKeyword}
-Descricao SEO atual: ${article.seoDescription}
+Descrição SEO atual: ${article.seoDescription}
 Tags atuais (ids): ${JSON.stringify(currentTagIds)}
 Tags disponiveis:
 ${JSON.stringify(availableTags, null, 2)}
@@ -267,22 +267,22 @@ ${cleanContent}
 
   if (action === 'create_tags') {
     return `
-Voce e um assistente editorial da GenFlix especializado em sugerir tags novas para artigos.
+Você é um assistente editorial da GenFlix especializado em sugerir tags novas para artigos.
 Analise o artigo e retorne apenas JSON puro no formato:
 {"selectedTagIds":["id1","id2"],"suggestedTags":[{"name":"...","slug":"...","description":"..."}],"notes":["..."],"warnings":["..."]}
 
 Regras:
 - selecione tags existentes quando fizer sentido;
 - gere no maximo 5 novas tags;
-- nao repita tags ja existentes;
+- não repita tags já existentes;
 - crie slugs curtos, sem acentos e sem caracteres especiais;
 - responda somente JSON valido.
 
-Conteudo do artigo:
+Conteúdo do artigo:
 Titulo: ${article.title}
 Slug: ${article.slug}
 Palavra-chave foco: ${article.focusKeyword}
-Descricao SEO atual: ${article.seoDescription}
+Descrição SEO atual: ${article.seoDescription}
 Tags atuais (ids): ${JSON.stringify(currentTagIds)}
 Tags disponiveis:
 ${JSON.stringify(availableTags, null, 2)}
@@ -293,23 +293,23 @@ ${cleanContent}
   }
 
   return `
-Voce e um assistente editorial da GenFlix especializado em SEO para artigos.
+Você é um assistente editorial da GenFlix especializado em SEO para artigos.
 Analise o artigo e retorne apenas JSON puro no formato:
 {"seo":{"seo_title":"...","seo_description":"...","seo_canonical_url":"...","seo_robots":"index,follow","seo_og_title":"...","seo_og_description":"...","seo_og_image_url":"...","focus_keyword":"..."},"notes":["..."],"warnings":["..."]}
 
 Regras:
-- gere titulo SEO entre 50 e 60 caracteres quando possivel;
+- gere título SEO entre 50 e 60 caracteres quando possível;
 - gere meta description entre 140 e 160 caracteres;
-- use o conteudo do artigo como contexto principal;
+- use o conteúdo do artigo como contexto principal;
 - canonical deve ser uma URL absoluta do artigo;
 - og title e og description devem ser coerentes com o SEO principal;
 - responda somente JSON valido.
 
-Conteudo do artigo:
+Conteúdo do artigo:
 Titulo: ${article.title}
 Slug: ${article.slug}
 Palavra-chave foco atual: ${article.focusKeyword}
-Descricao SEO atual: ${article.seoDescription}
+Descrição SEO atual: ${article.seoDescription}
 Capa atual: ${article.coverImageUrl}
 
 Texto limpo:
@@ -335,7 +335,7 @@ async function callOpenAi(prompt: string, credentials: { openAiApiKey: string | 
       messages: [
         {
           role: 'system',
-          content: 'Voce gera assistencia editorial estruturada para o blog da plataforma GenFlix.',
+          content: 'Você gera assistência editorial estruturada para o blog da plataforma GenFlix.',
         },
         {
           role: 'user',
@@ -359,7 +359,7 @@ async function callOpenAi(prompt: string, credentials: { openAiApiKey: string | 
 
   const content = payload.choices?.[0]?.message?.content
   if (!content) {
-    throw new Error('OpenAI nao retornou conteudo textual valido.')
+    throw new Error('OpenAI não retornou conteúdo textual válido.')
   }
 
   return content
@@ -396,7 +396,7 @@ async function callGemini(prompt: string, credentials: { geminiApiKey: string | 
   const payload = await response.json()
   const text = payload?.candidates?.[0]?.content?.parts?.[0]?.text
   if (!text) {
-    throw new Error('Gemini nao retornou conteudo textual valido.')
+    throw new Error('Gemini não retornou conteúdo textual válido.')
   }
 
   return text
