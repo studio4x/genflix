@@ -487,6 +487,10 @@ export const appRouter = createBrowserRouter([
             element: withRouteSuspense(<AdminBlogPage />),
           },
           {
+            path: '/admin/blog/:articleSlug',
+            element: withRouteSuspense(<AdminBlogPage />),
+          },
+          {
             path: '/admin/pagamentos',
             element: withRouteSuspense(<AdminPaymentSettingsPage />),
           },

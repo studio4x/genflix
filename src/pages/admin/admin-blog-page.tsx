@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 
 import { useAuth } from '@/app/providers/auth-provider'
 import { RichTextEditor } from '@/components/ui/RichTextEditor'
@@ -610,6 +610,8 @@ function buildBlogAssistArticleInput(form: ArticleFormState, tags: BlogTagRow[])
 }
 
 export function AdminBlogPage() {
+  const navigate = useNavigate()
+  const { articleSlug } = useParams()
   const { user, profile } = useAuth()
   const [searchParams, setSearchParams] = useSearchParams()
   const [activeTab, setActiveTab] = useState<'articles' | 'categories' | 'tags' | 'layout' | 'styles' | 'comments'>(searchParams.get('tab') === 'comments' ? 'comments' : searchParams.get('tab') === 'styles' ? 'styles' : 'articles')
@@ -898,6 +900,23 @@ export function AdminBlogPage() {
   useEffect(() => {
     void loadAllData()
   }, [])
+
+  useEffect(() => {
+    if (!articleSlug) {
+      return
+    }
+
+    const target = articles.find((article) => article.slug === articleSlug)
+    if (!target) {
+      return
+    }
+
+    if (selectedArticleId === target.id && articleView === 'editor') {
+      return
+    }
+
+    populateArticleForm(target)
+  }, [articleSlug, articles, selectedArticleId, articleView])
 
   useEffect(() => {
     let isMounted = true
@@ -1251,9 +1270,18 @@ export function AdminBlogPage() {
     setArticleRevisions([])
   }
 
+  function syncArticleEditorUrl(slug?: string) {
+    const params = new URLSearchParams(searchParams)
+    params.set('tab', 'articles')
+    const query = params.toString()
+    const path = slug ? `/admin/blog/${slug}` : '/admin/blog'
+    navigate(`${path}${query ? `?${query}` : ''}`)
+  }
+
   function handleCreateArticle() {
     resetArticleForm()
     setArticleView('editor')
+    syncArticleEditorUrl()
   }
 
   function handleOpenArticlePreview() {
@@ -1339,8 +1367,10 @@ export function AdminBlogPage() {
     setSuccessMessage(null)
     setErrorMessage(null)
     setArticleSuccessMessage(null)
+    setActiveTab('articles')
     setArticleView('editor')
     void loadArticleRevisions(article.id)
+    syncArticleEditorUrl(article.slug)
   }
 
   function populateCategoryForm(category: BlogCategoryRow) {
@@ -1607,6 +1637,7 @@ export function AdminBlogPage() {
       resetArticleForm()
     }
     setArticleView('list')
+    syncArticleEditorUrl()
     setSuccessMessage('Artigo excluído com sucesso.')
   }
 
@@ -2159,6 +2190,7 @@ export function AdminBlogPage() {
           onClick={() => {
             setActiveTab('articles')
             setArticleView('list')
+            syncArticleEditorUrl()
           }}
           className={`rounded-full border px-4 py-2 text-sm font-bold ${activeTab === 'articles' ? 'border-[#1398B7] bg-[#1398B7] text-white' : 'border-[#D8E6EB] bg-white text-[#15323b]'}`}
         >
@@ -2225,7 +2257,10 @@ export function AdminBlogPage() {
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <h2 className="text-lg font-black tracking-tight text-[#15323b]">{selectedArticleId ? 'Editar artigo' : 'Novo artigo'}</h2>
                 <div className="flex gap-2">
-                  <Button type="button" variant="outline" className="rounded-xl" onClick={() => setArticleView('list')}>Voltar para lista</Button>
+                  <Button type="button" variant="outline" className="rounded-xl" onClick={() => {
+                    setArticleView('list')
+                    syncArticleEditorUrl()
+                  }}>Voltar para lista</Button>
                   <Button type="button" variant="outline" className="rounded-xl" onClick={resetArticleForm}>Limpar</Button>
                 </div>
               </div>
