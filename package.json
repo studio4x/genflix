@@ -5,8 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "node scripts/bump-build-version.mjs && tsc -b && vite build --configLoader native",
-    "build:dev": "node scripts/bump-build-version.mjs && tsc -b && vite build --mode development --configLoader native",
+    "check:encoding": "node scripts/check-encoding.mjs",
+    "build": "npm run check:encoding && node scripts/bump-build-version.mjs && tsc -b && vite build --configLoader native",
+    "build:dev": "npm run check:encoding && node scripts/bump-build-version.mjs && tsc -b && vite build --mode development --configLoader native",
     "deploy:vercel": "node scripts/deploy-vercel-production.mjs",
     "spin-off:create": "node scripts/create-spin-off.mjs",
     "typecheck": "tsc -b --pretty false",
