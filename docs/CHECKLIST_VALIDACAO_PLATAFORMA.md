@@ -77,9 +77,9 @@ Este checklist foi criado para apoiar a validacao funcional da plataforma por se
 ## Setor Criador
 
 ### Modulo Perfil e Relatorios do Criador
-- [ ] Relatorios (`/criador/relatorios`) carregam sem erro.
-- [ ] Perfil (`/criador/perfil`) salva alteracoes esperadas.
-- [ ] Notificacoes (`/criador/notificacoes`) lista eventos corretamente.
+- [OK] Relatorios (`/criador/relatorios`) carregam sem erro.
+- [OK] Perfil (`/criador/perfil`) salva alteracoes esperadas.
+- [OK] Notificacoes (`/criador/notificacoes`) lista eventos corretamente.
 
 ### Modulo Comunicacao e Suporte do Criador
 - [ ] Mensagens (`/criador/mensagens`) abre e permite interacao.
