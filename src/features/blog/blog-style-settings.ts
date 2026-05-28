@@ -1,4 +1,4 @@
-type BlogTagKey = 'p' | 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6' | 'a'
+type BlogTagKey = 'p' | 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6' | 'a' | 'li'
 type BlogCardTextKey = 'title' | 'description' | 'link'
 
 export type BlogTagStyle = {
@@ -28,7 +28,7 @@ export type BlogStyleSettings = {
   }
 }
 
-const TAG_KEYS: BlogTagKey[] = ['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'a']
+const TAG_KEYS: BlogTagKey[] = ['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'a', 'li']
 const CARD_TEXT_KEYS: BlogCardTextKey[] = ['title', 'description', 'link']
 
 function sanitizeCssValue(value: unknown) {
@@ -61,6 +61,7 @@ export function createDefaultBlogStyleSettings(): BlogStyleSettings {
       h5: createEmptyTagStyle(),
       h6: createEmptyTagStyle(),
       a: createEmptyTagStyle(),
+      li: createEmptyTagStyle(),
     },
     card: {
       container: {

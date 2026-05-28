@@ -559,12 +559,15 @@ function toHexColor(value: string, fallback = '#000000') {
   return fallback
 }
 
-function getBlogTagMeaning(tagKey: 'p' | 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6' | 'a') {
+function getBlogTagMeaning(tagKey: 'p' | 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6' | 'a' | 'li') {
   if (tagKey === 'p') {
     return 'Paragrafo: texto principal do artigo.'
   }
   if (tagKey === 'a') {
     return 'Link: textos clicaveis dentro do artigo.'
+  }
+  if (tagKey === 'li') {
+    return 'Lista: itens de listas com marcadores ou numeradas.'
   }
   return null
 }
@@ -3374,7 +3377,7 @@ export function AdminBlogPage() {
               </div>
             </div>
             <div className="mt-4 grid gap-4">
-              {(['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'a'] as const).map((tagKey) => (
+              {(['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'a', 'li'] as const).map((tagKey) => (
                 <div key={tagKey} className="rounded-2xl border border-[#D8E6EB] bg-[#F8FBFC] p-4">
                   <div className="flex flex-wrap items-center gap-2">
                     <p className="text-xs font-black uppercase tracking-[0.18em] text-[#1398B7]">{tagKey}</p>

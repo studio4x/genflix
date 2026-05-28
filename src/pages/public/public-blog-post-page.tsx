@@ -301,6 +301,12 @@ export function PublicBlogPostPage() {
     '--blog-content-a-line-height': blogStyleSettings.content.a.lineHeight || undefined,
     '--blog-content-a-letter-spacing': blogStyleSettings.content.a.letterSpacing || undefined,
     '--blog-content-a-color': blogStyleSettings.content.a.color || undefined,
+    '--blog-content-li-font-family': blogStyleSettings.content.li.fontFamily || undefined,
+    '--blog-content-li-font-size': blogStyleSettings.content.li.fontSize || undefined,
+    '--blog-content-li-font-weight': blogStyleSettings.content.li.fontWeight || undefined,
+    '--blog-content-li-line-height': blogStyleSettings.content.li.lineHeight || undefined,
+    '--blog-content-li-letter-spacing': blogStyleSettings.content.li.letterSpacing || undefined,
+    '--blog-content-li-color': blogStyleSettings.content.li.color || undefined,
   } as CSSProperties
   const articleTitleStyle = {
     fontFamily: blogStyleSettings.articleTitle.fontFamily || undefined,

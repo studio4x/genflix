@@ -572,6 +572,12 @@ tr:nth-child(even) {
 
 .blog-article-html li {
   margin-bottom: 0.45rem;
+  font-family: var(--blog-content-li-font-family, inherit);
+  font-size: var(--blog-content-li-font-size, inherit);
+  font-weight: var(--blog-content-li-font-weight, inherit);
+  line-height: var(--blog-content-li-line-height, inherit);
+  letter-spacing: var(--blog-content-li-letter-spacing, normal);
+  color: var(--blog-content-li-color, #334155);
 }
 
 .blog-article-html a {
