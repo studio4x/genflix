@@ -103,15 +103,15 @@ Este checklist foi criado para apoiar a validacao funcional da plataforma por se
 - [OK] Liberacoes (`/admin/cursos/:courseId/liberacoes`) CRUD funcional.
 
 ### Modulo Course Builder
-- [ ] Builder principal (`/admin/cursos/:courseId/builder`) abre sem erro.
-- [ ] Editor de modulo (`.../modulos/:moduleId`) salva alteracoes.
-- [ ] Editor de aula (`.../aulas/:lessonId`) salva conteudo e midias.
-- [ ] Materiais no builder (`.../aulas/:lessonId/materiais`) funciona corretamente.
-- [ ] Avaliacoes (`.../avaliacoes/:assessmentId`) salva e publica regras.
-- [ ] Public page (`.../public-page`) reflete configuracoes no front publico.
-- [ ] Settings (`.../settings`) persiste configuracoes do curso.
-- [ ] Releases (`.../releases`) aplica regras de acesso esperadas.
-- [ ] Assessments final (`.../assessments` e `.../assessments/final`) funciona sem erro.
+- [OK] Builder principal (`/admin/cursos/:courseId/builder`) abre sem erro.
+- [OK] Editor de modulo (`.../modulos/:moduleId`) salva alteracoes.
+- [OK] Editor de aula (`.../aulas/:lessonId`) salva conteudo e midias.
+- [OK] Materiais no builder (`.../aulas/:lessonId/materiais`) funciona corretamente.
+- [OK] Avaliacoes (`.../avaliacoes/:assessmentId`) salva e publica regras.
+- [OK] Public page (`.../public-page`) reflete configuracoes no front publico.
+- [OK] Settings (`.../settings`) persiste configuracoes do curso.
+- [OK] Releases (`.../releases`) aplica regras de acesso esperadas.
+- [OK] Assessments final (`.../assessments` e `.../assessments/final`) funciona sem erro.
 
 ### Modulo Conteudo e Marketing
 - [ ] Blog (`/admin/blog`) CRUD completo.
