@@ -12,9 +12,13 @@ import type { SupportModalStep, SupportTicketSummary } from '@/features/support/
 
 interface SupportTicketsPageProps {
   contextLabel?: 'Aluno' | 'Criador'
+  supportBasePath?: string
 }
 
-export function StudentSupportTicketsPage({ contextLabel = 'Aluno' }: SupportTicketsPageProps) {
+export function StudentSupportTicketsPage({
+  contextLabel = 'Aluno',
+  supportBasePath = '/aluno/suporte',
+}: SupportTicketsPageProps) {
   const [searchParams, setSearchParams] = useSearchParams()
   const [tickets, setTickets] = useState<SupportTicketSummary[]>([])
   const [settings, setSettings] = useState<Awaited<ReturnType<typeof fetchSupportSettings>> | null>(null)
@@ -178,7 +182,7 @@ export function StudentSupportTicketsPage({ contextLabel = 'Aluno' }: SupportTic
                         asChild
                         className="h-9 rounded-full px-4 text-xs font-black text-[#15323b]"
                       >
-                        <Link to={`/aluno/suporte/${ticket.id}`}>Ver detalhes</Link>
+                        <Link to={`${supportBasePath}/${ticket.id}`}>Ver detalhes</Link>
                       </Button>
                     </td>
                   </tr>
@@ -191,6 +195,7 @@ export function StudentSupportTicketsPage({ contextLabel = 'Aluno' }: SupportTic
 
       {isModalOpen ? (
         <SupportTicketModal
+          supportBasePath={supportBasePath}
           initialStep={modalStep}
           onClose={handleCloseModal}
           onCreated={() => {

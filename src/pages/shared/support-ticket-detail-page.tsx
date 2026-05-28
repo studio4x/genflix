@@ -14,7 +14,7 @@ import {
   sendSupportMessage,
   updateSupportTicketStatus,
 } from '@/features/support/api'
-import { formatSupportDate, formatSupportBusinessHours, getSupportCategoryConfig, getSupportListRoute, getSupportPriorityBadgeClass, getSupportUserDisplayName, supportPriorityLabelMap, supportStatusLabelMap } from '@/lib/support-sla'
+import { formatSupportDate, formatSupportBusinessHours, getSupportCategoryConfig, getSupportPriorityBadgeClass, getSupportUserDisplayName, supportPriorityLabelMap, supportStatusLabelMap } from '@/lib/support-sla'
 import { supabase } from '@/services/supabase/client'
 import type { SupportTicketDetail, SupportTicketStatus } from '@/features/support/types'
 
@@ -204,7 +204,11 @@ export function SupportTicketDetailPage() {
   }
 
   const canReply = isAdminView || ticket.status !== 'closed'
-  const backPath = getSupportListRoute(isAdminView)
+  const backPath = isAdminView
+    ? '/admin/suporte'
+    : location.pathname.startsWith('/criador')
+      ? '/criador/suporte'
+      : '/aluno/suporte'
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">

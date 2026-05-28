@@ -5,7 +5,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/app/providers/auth-provider'
 import { Button } from '@/components/ui/button'
 import { createSupportTicket, fetchSupportSettings } from '@/features/support/api'
-import { getSupportListRoute, getSupportPriorityOptions, getSupportTicketRoute } from '@/lib/support-sla'
+import { getSupportPriorityOptions } from '@/lib/support-sla'
 import type {
   SupportBusinessHoursConfig,
   SupportCrisisProtocolConfig,
@@ -54,10 +54,12 @@ function getPriorityLabel(priority: SupportTicketPriority) {
 
 export function SupportTicketModal({
   initialStep = 'choice',
+  supportBasePath = '/aluno/suporte',
   onClose,
   onCreated,
 }: {
   initialStep?: SupportModalStep
+  supportBasePath?: string
   onClose: () => void
   onCreated?: (ticketId: string) => void
 }) {
@@ -159,7 +161,7 @@ export function SupportTicketModal({
 
       onCreated?.(ticket.id)
       onClose()
-      navigate(getSupportTicketRoute(ticket.id, isAdmin))
+      navigate(`${supportBasePath}/${ticket.id}`)
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : 'Nao foi possivel abrir o chamado.')
     } finally {
@@ -392,7 +394,7 @@ export function SupportTicketModal({
                     asChild
                     className="h-11 rounded-2xl border-[#D8E6EB] bg-white font-black text-[#15323b]"
                   >
-                    <Link to={getSupportListRoute(isAdmin)}>Ver historico</Link>
+                    <Link to={supportBasePath}>Ver historico</Link>
                   </Button>
                 ) : null}
               </div>
