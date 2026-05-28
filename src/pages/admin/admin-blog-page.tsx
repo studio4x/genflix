@@ -2787,7 +2787,8 @@ export function AdminBlogPage() {
                   </div>
                 </section>
 
-                <section className="rounded-2xl border border-[#D8E6EB] bg-white p-4">
+                <div className="grid gap-4 lg:grid-cols-2">
+                  <section className="h-full rounded-2xl border border-[#D8E6EB] bg-white p-4">
                   <p className="text-xs font-black uppercase tracking-[0.2em] text-[#1398B7]">Imagem do card do artigo</p>
                   <h3 className="mt-2 text-2xl font-black tracking-tight text-[#15323b]">Upload para o grid</h3>
                   <p className="mt-2 text-sm font-medium text-[#5F7077]">
@@ -2871,9 +2872,9 @@ export function AdminBlogPage() {
                       ) : null}
                     </div>
                   </div>
-                </section>
+                  </section>
 
-                <section className="rounded-2xl border border-[#D8E6EB] bg-white p-4">
+                  <section className="h-full rounded-2xl border border-[#D8E6EB] bg-white p-4">
                   <div className="flex items-center justify-between gap-3 border-b border-[#D8E6EB] pb-3">
                     <div>
                       <p className="text-xs font-black uppercase tracking-[0.2em] text-[#1398B7]">Histórico de revisões</p>
@@ -2948,7 +2949,8 @@ export function AdminBlogPage() {
                       })}
                     </div>
                   )}
-                </section>
+                  </section>
+                </div>
 
                 <div className="flex flex-wrap gap-2 border-t border-[#D8E6EB] pt-4">
                   <Button type="button" className="rounded-xl bg-[#1398B7] hover:bg-[#0A3640]" onClick={() => void saveArticleWithStatus('published')} disabled={isSavingArticle}>
