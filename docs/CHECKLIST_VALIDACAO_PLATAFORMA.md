@@ -90,10 +90,10 @@ Este checklist foi criado para apoiar a validacao funcional da plataforma por se
 ## Setor Admin
 
 ### Modulo Visao Geral e Operacao
-- [ ] Dashboard (`/admin`) carrega metricas principais.
-- [ ] Relatorios (`/admin/relatorios`) carrega indicadores.
-- [ ] Pendencias (`/admin/pendencias`) exibe itens operacionais.
-- [ ] Storage R2 (`/admin/storage-r2`) carrega uso, custo estimado e navegacao de arquivos.
+- [OK] Dashboard (`/admin`) carrega metricas principais.
+- [OK] Relatorios (`/admin/relatorios`) carrega indicadores.
+- [OK] Pendencias (`/admin/pendencias`) exibe itens operacionais.
+- [OK] Storage R2 (`/admin/storage-r2`) carrega uso, custo estimado e navegacao de arquivos.
 
 ### Modulo Catalogo e Cursos
 - [ ] Catalogo (`/admin/cursos`) lista cursos e categorias.
