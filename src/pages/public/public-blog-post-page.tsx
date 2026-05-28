@@ -301,6 +301,7 @@ export function PublicBlogPostPage() {
     '--blog-content-a-line-height': blogStyleSettings.content.a.lineHeight || undefined,
     '--blog-content-a-letter-spacing': blogStyleSettings.content.a.letterSpacing || undefined,
     '--blog-content-a-color': blogStyleSettings.content.a.color || undefined,
+    '--blog-content-a-text-decoration': blogStyleSettings.content.a.underline ? 'underline' : 'none',
     '--blog-content-li-font-family': blogStyleSettings.content.li.fontFamily || undefined,
     '--blog-content-li-font-size': blogStyleSettings.content.li.fontSize || undefined,
     '--blog-content-li-font-weight': blogStyleSettings.content.li.fontWeight || undefined,

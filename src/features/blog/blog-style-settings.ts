@@ -8,6 +8,7 @@ export type BlogTagStyle = {
   lineHeight: string
   letterSpacing: string
   color: string
+  underline: boolean
 }
 
 export type BlogCardStyle = {
@@ -46,6 +47,7 @@ function createEmptyTagStyle(): BlogTagStyle {
     lineHeight: '',
     letterSpacing: '',
     color: '',
+    underline: true,
   }
 }
 
@@ -94,6 +96,7 @@ function normalizeTagStyle(value: unknown): BlogTagStyle {
     lineHeight: sanitizeCssValue(style.lineHeight),
       letterSpacing: sanitizeCssValue(style.letterSpacing),
       color: sanitizeCssValue(style.color),
+      underline: typeof style.underline === 'boolean' ? style.underline : true,
     }
   }
 

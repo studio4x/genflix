@@ -582,7 +582,7 @@ tr:nth-child(even) {
 
 .blog-article-html a {
   color: var(--blog-content-a-color, #008f9c);
-  text-decoration: underline;
+  text-decoration: var(--blog-content-a-text-decoration, underline);
   text-underline-offset: 0.15em;
   font-family: var(--blog-content-a-font-family, inherit);
   font-size: var(--blog-content-a-font-size, inherit);

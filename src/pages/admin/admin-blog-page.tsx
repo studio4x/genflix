@@ -3427,6 +3427,30 @@ export function AdminBlogPage() {
                       <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Color</span>
                       <input type="color" value={toHexColor(blogStyleSettings.content[tagKey].color, '#15323b')} onChange={(event) => updateTagStyle(tagKey, 'color', event.target.value)} className="h-10 rounded-xl border border-slate-200 px-2 py-1" />
                     </label>
+                    {tagKey === 'a' ? (
+                      <label className="grid gap-1">
+                        <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Sublinhado</span>
+                        <select
+                          value={blogStyleSettings.content.a.underline ? 'on' : 'off'}
+                          onChange={(event) =>
+                            setBlogStyleSettings((current) => ({
+                              ...current,
+                              content: {
+                                ...current.content,
+                                a: {
+                                  ...current.content.a,
+                                  underline: event.target.value === 'on',
+                                },
+                              },
+                            }))
+                          }
+                          className="h-10 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800"
+                        >
+                          <option value="on">Ativado</option>
+                          <option value="off">Desativado</option>
+                        </select>
+                      </label>
+                    ) : null}
                   </div>
                 </div>
               ))}
