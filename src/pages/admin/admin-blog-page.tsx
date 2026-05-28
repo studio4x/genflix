@@ -559,6 +559,16 @@ function toHexColor(value: string, fallback = '#000000') {
   return fallback
 }
 
+function getBlogTagMeaning(tagKey: 'p' | 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6' | 'a') {
+  if (tagKey === 'p') {
+    return 'Paragrafo: texto principal do artigo.'
+  }
+  if (tagKey === 'a') {
+    return 'Link: textos clicaveis dentro do artigo.'
+  }
+  return null
+}
+
 type FontFamilyOption = {
   label: string
   value: string
@@ -3366,7 +3376,12 @@ export function AdminBlogPage() {
             <div className="mt-4 grid gap-4">
               {(['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'a'] as const).map((tagKey) => (
                 <div key={tagKey} className="rounded-2xl border border-[#D8E6EB] bg-[#F8FBFC] p-4">
-                  <p className="text-xs font-black uppercase tracking-[0.18em] text-[#1398B7]">{tagKey}</p>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="text-xs font-black uppercase tracking-[0.18em] text-[#1398B7]">{tagKey}</p>
+                    {getBlogTagMeaning(tagKey) ? (
+                      <span className="text-[11px] font-semibold text-[#5F7077]">{getBlogTagMeaning(tagKey)}</span>
+                    ) : null}
+                  </div>
                   <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
                     <label className="grid gap-1">
                       <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Font family</span>
