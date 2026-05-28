@@ -96,11 +96,11 @@ Este checklist foi criado para apoiar a validacao funcional da plataforma por se
 - [OK] Storage R2 (`/admin/storage-r2`) carrega uso, custo estimado e navegacao de arquivos.
 
 ### Modulo Catalogo e Cursos
-- [ ] Catalogo (`/admin/cursos`) lista cursos e categorias.
-- [ ] Modulos do curso (`/admin/cursos/:courseId/modulos`) CRUD funcional.
-- [ ] Aulas do modulo (`/admin/modulos/:moduleId/aulas`) CRUD funcional.
-- [ ] Materiais da aula (`/admin/aulas/:lessonId/materiais`) CRUD funcional.
-- [ ] Liberacoes (`/admin/cursos/:courseId/liberacoes`) CRUD funcional.
+- [OK] Catalogo (`/admin/cursos`) lista cursos e categorias.
+- [OK] Modulos do curso (`/admin/cursos/:courseId/modulos`) CRUD funcional.
+- [OK] Aulas do modulo (`/admin/modulos/:moduleId/aulas`) CRUD funcional.
+- [OK] Materiais da aula (`/admin/aulas/:lessonId/materiais`) CRUD funcional.
+- [OK] Liberacoes (`/admin/cursos/:courseId/liberacoes`) CRUD funcional.
 
 ### Modulo Course Builder
 - [ ] Builder principal (`/admin/cursos/:courseId/builder`) abre sem erro.
