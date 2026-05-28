@@ -471,8 +471,12 @@ export function PublicBlogPostPage() {
       <section className="pb-16 pt-1">
         <div className="public-site-container max-w-[1140px]">
           <article>
-            <div className="overflow-hidden bg-black">
-              <img src={post.image} alt={post.title} className="h-[500px] w-full object-contain" />
+            <div className="mx-auto w-full max-w-[1920px] overflow-hidden bg-black">
+              <img
+                src={post.image}
+                alt={post.title}
+                className="aspect-[1920/500] w-full object-cover object-center"
+              />
             </div>
 
             {isDraftPreview ? (
