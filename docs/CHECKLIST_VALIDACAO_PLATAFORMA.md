@@ -82,8 +82,8 @@ Este checklist foi criado para apoiar a validacao funcional da plataforma por se
 - [OK] Notificacoes (`/criador/notificacoes`) lista eventos corretamente.
 
 ### Modulo Comunicacao e Suporte do Criador
-- [ ] Mensagens (`/criador/mensagens`) abre e permite interacao.
-- [ ] Suporte (`/criador/suporte`) cria e acompanha tickets.
+- [OK] Mensagens (`/criador/mensagens`) abre e permite interacao.
+- [OK] Suporte (`/criador/suporte`) cria e acompanha tickets.
 
 ---
 
