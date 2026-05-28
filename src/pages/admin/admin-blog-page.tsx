@@ -1298,6 +1298,16 @@ export function AdminBlogPage() {
     }))
   }
 
+  function updateArticleTitleStyle(field: keyof BlogTagStyle, value: string) {
+    setBlogStyleSettings((current) => ({
+      ...current,
+      articleTitle: {
+        ...current.articleTitle,
+        [field]: value,
+      },
+    }))
+  }
+
   function updateCardTextStyle(tag: keyof BlogStyleSettings['card']['text'], field: keyof BlogTagStyle, value: string) {
     setBlogStyleSettings((current) => ({
       ...current,
@@ -3307,6 +3317,52 @@ export function AdminBlogPage() {
         <section className="space-y-6">
           <article className="rounded-[28px] border border-[#D8E6EB] bg-white p-5">
             <h2 className="text-lg font-black tracking-tight text-[#15323b]">Padrão tipográfico dos artigos</h2>
+            <div className="mt-4 rounded-2xl border border-[#D8E6EB] bg-[#F8FBFC] p-4">
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-[#1398B7]">Titulo da pagina do artigo</p>
+              <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
+                <label className="grid gap-1">
+                  <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Font family</span>
+                  <select value={blogStyleSettings.articleTitle.fontFamily} onChange={(event) => updateArticleTitleStyle('fontFamily', event.target.value)} className="h-10 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800">
+                    <option value="">Selecionar fonte</option>
+                    {fontFamilyOptions.map((option) => (
+                      <option key={option.value} value={option.value} style={{ fontFamily: option.value }}>{option.label}</option>
+                    ))}
+                  </select>
+                </label>
+                <label className="grid gap-1">
+                  <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Size (px)</span>
+                  <select value={blogStyleSettings.articleTitle.fontSize} onChange={(event) => updateArticleTitleStyle('fontSize', event.target.value)} className="h-10 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800">
+                    <option value="">Selecionar</option>
+                    {FONT_SIZE_OPTIONS.map((option) => <option key={option} value={option}>{option}</option>)}
+                  </select>
+                </label>
+                <label className="grid gap-1">
+                  <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Weight</span>
+                  <select value={blogStyleSettings.articleTitle.fontWeight} onChange={(event) => updateArticleTitleStyle('fontWeight', event.target.value)} className="h-10 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800">
+                    <option value="">Selecionar</option>
+                    {FONT_WEIGHT_OPTIONS.map((option) => <option key={option} value={option}>{option}</option>)}
+                  </select>
+                </label>
+                <label className="grid gap-1">
+                  <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Height (em)</span>
+                  <select value={blogStyleSettings.articleTitle.lineHeight} onChange={(event) => updateArticleTitleStyle('lineHeight', event.target.value)} className="h-10 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800">
+                    <option value="">Selecionar</option>
+                    {LINE_HEIGHT_OPTIONS.map((option) => <option key={option} value={option}>{option}</option>)}
+                  </select>
+                </label>
+                <label className="grid gap-1">
+                  <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Spacing (em)</span>
+                  <select value={blogStyleSettings.articleTitle.letterSpacing} onChange={(event) => updateArticleTitleStyle('letterSpacing', event.target.value)} className="h-10 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800">
+                    <option value="">Selecionar</option>
+                    {LETTER_SPACING_OPTIONS.map((option) => <option key={option} value={option}>{option}</option>)}
+                  </select>
+                </label>
+                <label className="grid gap-1">
+                  <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Color</span>
+                  <input type="color" value={toHexColor(blogStyleSettings.articleTitle.color, '#008f9c')} onChange={(event) => updateArticleTitleStyle('color', event.target.value)} className="h-10 rounded-xl border border-slate-200 px-2 py-1" />
+                </label>
+              </div>
+            </div>
             <div className="mt-4 grid gap-4">
               {(['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'a'] as const).map((tagKey) => (
                 <div key={tagKey} className="rounded-2xl border border-[#D8E6EB] bg-[#F8FBFC] p-4">
@@ -3670,4 +3726,5 @@ export function AdminBlogPage() {
     </div>
   )
 }
+
 

@@ -302,6 +302,14 @@ export function PublicBlogPostPage() {
     '--blog-content-a-letter-spacing': blogStyleSettings.content.a.letterSpacing || undefined,
     '--blog-content-a-color': blogStyleSettings.content.a.color || undefined,
   } as CSSProperties
+  const articleTitleStyle = {
+    fontFamily: blogStyleSettings.articleTitle.fontFamily || undefined,
+    fontSize: blogStyleSettings.articleTitle.fontSize || undefined,
+    fontWeight: blogStyleSettings.articleTitle.fontWeight || undefined,
+    lineHeight: blogStyleSettings.articleTitle.lineHeight || undefined,
+    letterSpacing: blogStyleSettings.articleTitle.letterSpacing || undefined,
+    color: blogStyleSettings.articleTitle.color || undefined,
+  } as CSSProperties
 
   useEffect(() => {
     const fullName = (profile?.full_name ?? user?.user_metadata?.full_name ?? '').trim()
@@ -484,7 +492,7 @@ export function PublicBlogPostPage() {
             ) : null}
 
             <div className="mt-10 grid gap-10 lg:grid-cols-[280px_minmax(0,1fr)]">
-              <h1 className="font-lora text-[42px] leading-[1.12] text-[#008f9c] sm:text-[48px] lg:text-[56px]">
+              <h1 className="font-lora text-[42px] leading-[1.12] text-[#008f9c] sm:text-[48px] lg:text-[56px]" style={articleTitleStyle}>
                 {post.title}
               </h1>
 

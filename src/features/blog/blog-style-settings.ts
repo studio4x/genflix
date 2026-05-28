@@ -20,6 +20,7 @@ export type BlogCardStyle = {
 }
 
 export type BlogStyleSettings = {
+  articleTitle: BlogTagStyle
   content: Record<BlogTagKey, BlogTagStyle>
   card: {
     container: BlogCardStyle
@@ -50,6 +51,7 @@ function createEmptyTagStyle(): BlogTagStyle {
 
 export function createDefaultBlogStyleSettings(): BlogStyleSettings {
   return {
+    articleTitle: createEmptyTagStyle(),
     content: {
       p: createEmptyTagStyle(),
       h1: createEmptyTagStyle(),
@@ -101,6 +103,7 @@ export function normalizeBlogStyleSettings(value: unknown): BlogStyleSettings {
   }
 
   const record = value as Record<string, unknown>
+  base.articleTitle = normalizeTagStyle(record.articleTitle)
   const content = record.content
   if (content && typeof content === 'object' && !Array.isArray(content)) {
     const contentRecord = content as Record<string, unknown>
