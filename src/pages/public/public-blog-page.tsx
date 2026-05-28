@@ -495,7 +495,7 @@ export function PublicBlogPage() {
                 <div className="blog-grid-theme grid gap-8 md:grid-cols-2 xl:grid-cols-3" style={blogGridStyleVars}>
                   {paginatedPosts.map((post) => (
                     <article key={post.slug} className="blog-grid-card flex h-full flex-col overflow-hidden rounded-[4px] border border-[#dfdfdf] bg-[#f5f5f5] shadow-sm">
-                      <div className="aspect-[1920/500] overflow-hidden">
+                      <div className="aspect-[4/3] overflow-hidden">
                         <img
                           src={getGridCoverImageUrl((post as GenflixBlogPost & { cardImage?: string }).cardImage ?? post.image)}
                           alt={post.title}
