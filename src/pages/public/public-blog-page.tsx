@@ -87,7 +87,7 @@ function getGridCoverImageUrl(imageUrl: string) {
     if (parsed.pathname.includes(storageMarker)) {
       parsed.pathname = parsed.pathname.replace(storageMarker, renderMarker)
       parsed.searchParams.set('width', '960')
-      parsed.searchParams.set('height', '540')
+      parsed.searchParams.set('height', '720')
       parsed.searchParams.set('resize', 'cover')
       parsed.searchParams.set('quality', '72')
       parsed.searchParams.set('format', 'webp')
@@ -96,7 +96,7 @@ function getGridCoverImageUrl(imageUrl: string) {
 
     if (parsed.pathname.includes(renderMarker)) {
       parsed.searchParams.set('width', '960')
-      parsed.searchParams.set('height', '540')
+      parsed.searchParams.set('height', '720')
       parsed.searchParams.set('resize', 'cover')
       parsed.searchParams.set('quality', '72')
       parsed.searchParams.set('format', 'webp')
@@ -497,7 +497,7 @@ export function PublicBlogPage() {
                     <article key={post.slug} className="blog-grid-card flex h-full flex-col overflow-hidden rounded-[4px] border border-[#dfdfdf] bg-[#f5f5f5] shadow-sm">
                       <div className="aspect-[1920/500] overflow-hidden">
                         <img
-                          src={getGridCoverImageUrl(post.image)}
+                          src={getGridCoverImageUrl((post as GenflixBlogPost & { cardImage?: string }).cardImage ?? post.image)}
                           alt={post.title}
                           className="blog-grid-card-image h-full w-full object-cover object-center bg-[#e9ecef]"
                           loading="lazy"

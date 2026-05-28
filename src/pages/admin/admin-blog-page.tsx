@@ -36,6 +36,7 @@ type BlogArticleRow = {
   slug: string
   content_html: string | null
   cover_image_url: string | null
+  card_image_url: string | null
   status: ArticleStatus | null
   featured: boolean | null
   author_id: string | null
@@ -100,6 +101,7 @@ type LegacyBlogPostRow = {
   excerpt: string | null
   seo_description: string | null
   image_url: string | null
+  card_image_url?: string | null
   read_time: string | null
   author: string | null
   published_at: string | null
@@ -116,6 +118,7 @@ type BlogArticleRevisionSnapshot = {
   slug: string
   content_html: string
   cover_image_url: string | null
+  card_image_url: string | null
   status: ArticleStatus
   featured: boolean
   category_id: string | null
@@ -164,6 +167,7 @@ type ArticleFormState = SeoFields & {
   title: string
   slug: string
   coverImageUrl: string
+  cardImageUrl: string
   status: ArticleStatus
   publishedAt: string
   scheduledPublishAt: string
@@ -235,6 +239,7 @@ const DEFAULT_ARTICLE_FORM: ArticleFormState = {
   title: '',
   slug: '',
   coverImageUrl: '',
+  cardImageUrl: '',
   status: 'draft',
   publishedAt: '',
   scheduledPublishAt: '',
@@ -395,6 +400,7 @@ function mapLegacyPostToArticle(post: LegacyBlogPostRow): BlogArticleRow {
     slug: post.slug,
     content_html: contentHtml,
     cover_image_url: post.image_url ?? null,
+    card_image_url: post.card_image_url ?? post.image_url ?? null,
     status: normalizeLegacyStatus(post.status, post.published_at),
     featured: Boolean(post.featured),
     author_id: post.author ?? null,
@@ -619,7 +625,7 @@ async function persistLegacyBlogPost(
     return firstAttempt
   }
 
-  const removableColumns = ['seo_description', 'excerpt']
+  const removableColumns = ['seo_description', 'excerpt', 'card_image_url']
   for (const column of removableColumns) {
     if (!isMissingLegacyColumnError(firstAttempt.error.message, column)) {
       continue
@@ -677,6 +683,7 @@ export function AdminBlogPage() {
   const [isLoadingMediaLibrary, setIsLoadingMediaLibrary] = useState(false)
   const [isMediaLibraryOpen, setIsMediaLibraryOpen] = useState(false)
   const [selectedMediaAssetId, setSelectedMediaAssetId] = useState('')
+  const [mediaLibraryTarget, setMediaLibraryTarget] = useState<'cover' | 'card'>('cover')
   const [fontFamilyOptions, setFontFamilyOptions] = useState<FontFamilyOption[]>(
     SITE_TEXT_FONT_PRESETS.map((item) => ({ label: item.label, value: item.family })),
   )
@@ -1199,7 +1206,33 @@ export function AdminBlogPage() {
     }
   }
 
-  function handleApplyCoverFromLibrary() {
+  async function handleUploadArticleCardImage(file: File | null) {
+    if (!file) {
+      return
+    }
+
+    setIsUploadingCoverImage(true)
+    setErrorMessage(null)
+    setSuccessMessage(null)
+    try {
+      const uploaded = await uploadSiteAsset(file, {
+        alt: articleForm.title.trim() || file.name,
+        pageKey: 'blog',
+        entryKey: 'article.card_image_url',
+      })
+      if (uploaded.public_url) {
+        setArticleForm((current) => ({ ...current, cardImageUrl: uploaded.public_url ?? current.cardImageUrl }))
+      }
+      setMediaLibraryAssets((current) => [uploaded, ...current.filter((asset) => asset.id !== uploaded.id)])
+      setSuccessMessage('Imagem do card enviada com sucesso.')
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : 'Não foi possível enviar a imagem do card.')
+    } finally {
+      setIsUploadingCoverImage(false)
+    }
+  }
+
+  function handleApplyImageFromLibrary(target: 'cover' | 'card') {
     if (!selectedMediaAssetId) {
       setErrorMessage('Selecione uma imagem da biblioteca antes de aplicar.')
       return
@@ -1211,8 +1244,13 @@ export function AdminBlogPage() {
       return
     }
 
-    setArticleForm((current) => ({ ...current, coverImageUrl: selectedAsset.public_url ?? current.coverImageUrl }))
-    setSuccessMessage('Imagem de capa aplicada da biblioteca de mídia.')
+    if (target === 'cover') {
+      setArticleForm((current) => ({ ...current, coverImageUrl: selectedAsset.public_url ?? current.coverImageUrl }))
+      setSuccessMessage('Imagem de capa aplicada da biblioteca de mídia.')
+    } else {
+      setArticleForm((current) => ({ ...current, cardImageUrl: selectedAsset.public_url ?? current.cardImageUrl }))
+      setSuccessMessage('Imagem do card aplicada da biblioteca de mídia.')
+    }
     setIsMediaLibraryOpen(false)
   }
 
@@ -1387,6 +1425,7 @@ export function AdminBlogPage() {
       title: article.title,
       slug: article.slug,
       coverImageUrl: article.cover_image_url ?? '',
+      cardImageUrl: article.card_image_url ?? article.cover_image_url ?? '',
       status: article.status ?? 'draft',
       publishedAt: toDateTimeLocal(article.published_at),
       scheduledPublishAt: toDateTimeLocal(article.scheduled_publish_at),
@@ -1464,6 +1503,7 @@ export function AdminBlogPage() {
       title: snapshot.title ?? '',
       slug: snapshot.slug ?? '',
       coverImageUrl: snapshot.cover_image_url ?? '',
+      cardImageUrl: snapshot.card_image_url ?? snapshot.cover_image_url ?? '',
       status: snapshot.status ?? 'draft',
       publishedAt: toDateTimeLocal(snapshot.published_at),
       scheduledPublishAt: toDateTimeLocal(snapshot.scheduled_publish_at),
@@ -1524,6 +1564,7 @@ export function AdminBlogPage() {
       seo_description: articleForm.seo_description.trim() || null,
       excerpt: articleForm.seo_description.trim() || null,
       image_url: articleForm.coverImageUrl.trim() || null,
+      card_image_url: articleForm.cardImageUrl.trim() || articleForm.coverImageUrl.trim() || null,
       read_time: `${readingTime} min`,
       author: user?.id ?? null,
       published_at: effectiveStatus === 'published'
@@ -1558,6 +1599,7 @@ export function AdminBlogPage() {
       slug,
       content_html: cleanedHtml,
       cover_image_url: articleForm.coverImageUrl.trim() || null,
+      card_image_url: articleForm.cardImageUrl.trim() || articleForm.coverImageUrl.trim() || null,
       status: effectiveStatus,
       featured: articleForm.featured,
       category_id: articleForm.categoryId === '__none__' ? null : articleForm.categoryId,
@@ -1607,6 +1649,7 @@ export function AdminBlogPage() {
       ...current,
       status: effectiveStatus,
       contentHtml: cleanedHtml,
+      cardImageUrl: revisionSnapshot.card_image_url ?? '',
       readingTimeMinutes: readingTime,
       focusKeyword: revisionSnapshot.focus_keyword,
       seo_title: revisionSnapshot.seo_title,
@@ -2063,7 +2106,9 @@ export function AdminBlogPage() {
             <div className="flex items-center justify-between border-b border-[#D8E6EB] px-5 py-4">
               <div>
                 <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#1398B7]">Biblioteca de mídia</p>
-                <h2 className="mt-1 font-readex text-xl font-semibold text-[#15323b]">Escolher imagem de capa</h2>
+                <h2 className="mt-1 font-readex text-xl font-semibold text-[#15323b]">
+                  {mediaLibraryTarget === 'cover' ? 'Escolher imagem de capa' : 'Escolher imagem do card'}
+                </h2>
               </div>
               <Button type="button" variant="outline" onClick={() => setIsMediaLibraryOpen(false)} className="rounded-xl border-[#D8E6EB]">
                 Fechar
@@ -2108,7 +2153,7 @@ export function AdminBlogPage() {
               </Button>
               <Button
                 type="button"
-                onClick={handleApplyCoverFromLibrary}
+                onClick={() => handleApplyImageFromLibrary(mediaLibraryTarget)}
                 disabled={!selectedMediaAssetId}
                 className="h-11 w-full rounded-xl bg-[#1398B7] px-4 text-center text-xs font-black uppercase tracking-[0.1em] text-white hover:bg-[#1089A5] sm:w-auto"
               >
@@ -2707,7 +2752,10 @@ export function AdminBlogPage() {
                         <Button
                           type="button"
                           variant="outline"
-                          onClick={() => setIsMediaLibraryOpen(true)}
+                          onClick={() => {
+                            setMediaLibraryTarget('cover')
+                            setIsMediaLibraryOpen(true)
+                          }}
                           disabled={isLoadingMediaLibrary || isUploadingCoverImage}
                           className="h-10 rounded-xl border-[#D8E6EB] text-xs font-black uppercase tracking-[0.08em]"
                         >
@@ -2729,6 +2777,92 @@ export function AdminBlogPage() {
                             type="button"
                             variant="outline"
                             onClick={() => setArticleForm((current) => ({ ...current, coverImageUrl: '' }))}
+                            className="h-8 rounded-lg border-rose-200 px-3 text-xs font-black text-rose-700 hover:bg-rose-50"
+                          >
+                            Remover imagem
+                          </Button>
+                        </div>
+                      ) : null}
+                    </div>
+                  </div>
+                </section>
+
+                <section className="rounded-2xl border border-[#D8E6EB] bg-white p-4">
+                  <p className="text-xs font-black uppercase tracking-[0.2em] text-[#1398B7]">Imagem do card do artigo</p>
+                  <h3 className="mt-2 text-2xl font-black tracking-tight text-[#15323b]">Upload para o grid</h3>
+                  <p className="mt-2 text-sm font-medium text-[#5F7077]">
+                    Esta imagem e usada somente nos cards do grid do blog. Formato obrigatorio 4:3. Tamanho recomendado: 1200x900 px (minimo 800x600 px).
+                  </p>
+
+                  <div className="mt-4 grid gap-4 lg:grid-cols-[220px_minmax(0,1fr)]">
+                    <div className="overflow-hidden rounded-2xl border border-[#D8E6EB] bg-[#EAF2F5]">
+                      <div className="aspect-[4/3] w-full">
+                        {articleForm.cardImageUrl ? (
+                          <img src={articleForm.cardImageUrl} alt={`${articleForm.title || 'Artigo'} - card`} className="h-full w-full object-cover" />
+                        ) : (
+                          <div className="flex h-full w-full items-center justify-center px-4 text-center text-xs font-semibold text-[#5F7077]">
+                            Nenhuma imagem de card definida
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="rounded-2xl border border-[#D8E6EB] p-4">
+                      <p className="text-lg font-black tracking-tight text-[#15323b]">Enviar imagem 4:3</p>
+                      <p className="mt-1 text-sm font-medium text-[#5F7077]">Apos escolher a imagem, salve o artigo para manter a alteracao.</p>
+
+                      <label className="mt-3 grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
+                        URL da imagem do card
+                        <input
+                          value={articleForm.cardImageUrl}
+                          onChange={(event) => setArticleForm((current) => ({ ...current, cardImageUrl: event.target.value }))}
+                          className="h-10 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800"
+                        />
+                      </label>
+
+                      <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                        <label className="inline-flex h-10 cursor-pointer items-center justify-center rounded-xl bg-[#1398B7] px-3 text-center text-xs font-black uppercase tracking-[0.08em] text-white hover:bg-[#1089A5]">
+                          {isUploadingCoverImage ? 'Enviando...' : 'Escolher arquivo'}
+                          <input
+                            type="file"
+                            accept=".jpg,.jpeg,.png,.webp,image/*"
+                            disabled={isUploadingCoverImage}
+                            onChange={(event) => {
+                              const file = event.target.files?.[0] ?? null
+                              void handleUploadArticleCardImage(file)
+                              event.currentTarget.value = ''
+                            }}
+                            className="sr-only"
+                          />
+                        </label>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => {
+                            setMediaLibraryTarget('card')
+                            setIsMediaLibraryOpen(true)
+                          }}
+                          disabled={isLoadingMediaLibrary || isUploadingCoverImage}
+                          className="h-10 rounded-xl border-[#D8E6EB] text-xs font-black uppercase tracking-[0.08em]"
+                        >
+                          Abrir biblioteca
+                        </Button>
+                      </div>
+
+                      {articleForm.cardImageUrl ? (
+                        <div className="mt-3 flex flex-wrap items-center gap-3">
+                          <a
+                            href={articleForm.cardImageUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-sm font-black text-[#1398B7] hover:text-[#0A3640]"
+                          >
+                            Abrir imagem atual
+                          </a>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => setArticleForm((current) => ({ ...current, cardImageUrl: '' }))}
                             className="h-8 rounded-lg border-rose-200 px-3 text-xs font-black text-rose-700 hover:bg-rose-50"
                           >
                             Remover imagem

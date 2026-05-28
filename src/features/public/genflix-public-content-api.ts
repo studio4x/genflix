@@ -23,6 +23,7 @@ interface PublicBlogPostRow {
   seo_description: string | null
   excerpt?: string | null
   image_url: string | null
+  card_image_url?: string | null
   read_time: string | null
   author: string | null
   published_at: string | null
@@ -51,9 +52,9 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undef
 const publicCourseSelect =
   'id, slug, title, description, category, thumbnail_url, cover_image_url, marketing_title, marketing_description, mentor_name, mentor_role, mentor_bio, mentor_initials, price_label, secondary_price_label, price_cents, currency, public_page_content, display_order'
 const publicBlogPostLegacySelect =
-  'slug, title, category, excerpt, image_url, read_time, author, published_at, content, content_html, featured, status'
+  'slug, title, category, excerpt, image_url, card_image_url, read_time, author, published_at, content, content_html, featured, status'
 const publicBlogPostAllLegacySelect =
-  'slug, title, category, excerpt, image_url, read_time, author, published_at, content, content_html, featured, status, created_at'
+  'slug, title, category, excerpt, image_url, card_image_url, read_time, author, published_at, content, content_html, featured, status, created_at'
 
 async function fetchPublicRows<T>(path: string, searchParams: URLSearchParams): Promise<T[]> {
   if (!supabaseUrl || !supabaseAnonKey) {
@@ -157,7 +158,7 @@ function toBlogPost(row: PublicBlogPostRow): GenflixBlogPost {
   const fallbackSeoDescription = content.join(' ').replace(/\s+/g, ' ').trim().slice(0, 160)
   const summary = row.seo_description?.trim() || row.excerpt?.trim() || fallbackSeoDescription
 
-  return {
+  return Object.assign({
     slug: row.slug,
     title: fixMojibakeText(row.title),
     category: fixMojibakeText(row.category ?? 'GenFlix'),
@@ -175,7 +176,9 @@ function toBlogPost(row: PublicBlogPostRow): GenflixBlogPost {
     content,
     contentHtml: row.content_html ?? '',
     featured: row.featured,
-  }
+  }, {
+    cardImage: row.card_image_url ?? row.image_url ?? '/images/genflix/home/featured-2.jpg',
+  }) as GenflixBlogPost
 }
 
 function normalizeBlogStatus(value: string | null | undefined) {
@@ -235,11 +238,14 @@ async function fetchPublicBlogRowsWithFallback(params: URLSearchParams) {
     return await fetchPublicRows<PublicBlogPostRow>('blog_posts', activeParams)
   } catch (firstError) {
     const firstMessage = firstError instanceof Error ? firstError.message : ''
-    if (!isMissingColumn(firstMessage, 'seo_description')) {
+    if (!(isMissingColumn(firstMessage, 'seo_description') || isMissingColumn(firstMessage, 'card_image_url'))) {
       throw firstError
     }
 
     activeParams.set('select', publicBlogPostLegacySelect)
+    if (isMissingColumn(firstMessage, 'card_image_url')) {
+      activeParams.set('select', publicBlogPostLegacySelect.replace('card_image_url, ', ''))
+    }
   }
 
   try {

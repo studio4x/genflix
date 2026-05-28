@@ -96,6 +96,7 @@ export interface GenflixBlogPost {
   category: string
   seoDescription: string
   image: string
+  cardImage?: string
   readTime: string
   author: string
   publishedAt: string
