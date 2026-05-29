@@ -144,9 +144,9 @@ Este checklist foi criado para apoiar a validacao funcional da plataforma por se
 ## Setor Infraestrutura e Integracoes
 
 ### Modulo Auth e Permissoes
-- [ ] Rotas protegidas respeitam perfis (`admin`, `aluno`, `criador`).
-- [ ] Sessao expirada redireciona corretamente para login.
-- [ ] Rota nao autorizada usa tela de bloqueio adequada.
+- [OK] Rotas protegidas respeitam perfis (`admin`, `aluno`, `criador`).
+- [OK] Sessao expirada redireciona corretamente para login.
+- [OK] Rota nao autorizada usa tela de bloqueio adequada.
 
 ### Modulo Storage e Midia
 - [ ] Upload de arquivos protegidos no R2 conclui sem erro.
