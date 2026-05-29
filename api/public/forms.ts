@@ -40,10 +40,15 @@ type NotificationTemplate = {
   body: string
 }
 
+const FORM_RATE_LIMIT_WINDOW_MS = 10 * 60 * 1000
+const FORM_RATE_LIMIT_MAX_REQUESTS = 8
+const formRateLimitStore = new Map<string, number[]>()
+
 const publicFormSchema = z.object({
   form_type: z.string().trim().min(1).max(64),
   name: z.string().trim().max(200).optional().nullable(),
   email: z.string().trim().email().optional().nullable(),
+  website: z.string().trim().max(200).optional().nullable(),
   recipient_name: z.string().trim().max(200).optional().nullable(),
   recipient_email: z.string().trim().email().optional().nullable(),
   email_confirmation: z.string().trim().email().optional().nullable(),
@@ -58,6 +63,58 @@ function jsonResponse(res: ApiResponse, statusCode: number, payload: unknown) {
   res.status(statusCode)
   res.setHeader('Content-Type', 'application/json; charset=utf-8')
   res.json(payload)
+}
+
+function getHeaderValue(value: string | string[] | undefined) {
+  if (typeof value === 'string') {
+    return value
+  }
+
+  if (Array.isArray(value) && value.length > 0) {
+    return value[0]
+  }
+
+  return null
+}
+
+function getRequestIp(req: ApiRequest) {
+  const forwardedFor = getHeaderValue(req.headers['x-forwarded-for'])
+  if (forwardedFor) {
+    const firstIp = forwardedFor.split(',')[0]?.trim()
+    if (firstIp) {
+      return firstIp
+    }
+  }
+
+  const cloudflareIp = getHeaderValue(req.headers['cf-connecting-ip'])
+  if (cloudflareIp?.trim()) {
+    return cloudflareIp.trim()
+  }
+
+  const realIp = getHeaderValue(req.headers['x-real-ip'])
+  if (realIp?.trim()) {
+    return realIp.trim()
+  }
+
+  return 'unknown'
+}
+
+function isRateLimited(ip: string) {
+  const now = Date.now()
+  const timestamps = (formRateLimitStore.get(ip) ?? []).filter((timestamp) => now - timestamp < FORM_RATE_LIMIT_WINDOW_MS)
+  timestamps.push(now)
+  formRateLimitStore.set(ip, timestamps)
+
+  if (formRateLimitStore.size > 10_000) {
+    for (const [key, entries] of formRateLimitStore.entries()) {
+      const hasRecentEntry = entries.some((timestamp) => now - timestamp < FORM_RATE_LIMIT_WINDOW_MS)
+      if (!hasRecentEntry) {
+        formRateLimitStore.delete(key)
+      }
+    }
+  }
+
+  return timestamps.length > FORM_RATE_LIMIT_MAX_REQUESTS
 }
 
 function parseBody(rawBody: unknown) {
@@ -288,6 +345,12 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
     return
   }
 
+  const requesterIp = getRequestIp(req)
+  if (isRateLimited(requesterIp)) {
+    jsonResponse(res, 429, { error: 'Muitas tentativas. Aguarde alguns minutos antes de tentar novamente.' })
+    return
+  }
+
   let adminClient: SupabaseClient
   try {
     adminClient = createAdminClient()
@@ -300,6 +363,16 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
   const parsed = publicFormSchema.safeParse(body)
   if (!parsed.success) {
     jsonResponse(res, 400, { error: parsed.error.issues[0]?.message ?? 'Dados inválidos.' })
+    return
+  }
+
+  const honeypotWebsite = normalizeField(parsed.data.website)
+  if (honeypotWebsite) {
+    jsonResponse(res, 201, {
+      id: null,
+      notified_count: 0,
+      admin_email_notified: false,
+    })
     return
   }
 

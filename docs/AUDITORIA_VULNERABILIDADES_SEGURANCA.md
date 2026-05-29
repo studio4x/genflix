@@ -41,7 +41,7 @@ Ao corrigir qualquer vulnerabilidade listada neste documento, a plataforma **dev
   - Usar apenas `APP_PUBLIC_URL` canônica em produção para montar URLs sensíveis.
   - Ignorar headers de origem para links de segurança.
 
-### [ ] 4) Endpoint público de formulários sem rate limit/anti-bot
+### [OK] 4) Endpoint público de formulários sem rate limit/anti-bot
 - Severidade: **Alta**
 - Evidência:
   - `api/public/forms.ts` é público (`POST`) e não aplica rate limiting, CAPTCHA, challenge, nem proteção por IP/fingerprint.
