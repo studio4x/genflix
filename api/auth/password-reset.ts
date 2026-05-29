@@ -26,18 +26,6 @@ const passwordResetSchema = z.object({
   email: z.string().email('E-mail invalido.'),
 })
 
-function getHeaderValue(value: string | string[] | undefined) {
-  if (typeof value === 'string') {
-    return value
-  }
-
-  if (Array.isArray(value) && value.length > 0) {
-    return value[0]
-  }
-
-  return null
-}
-
 function parseBody(rawBody: unknown) {
   if (!rawBody) {
     return null
@@ -62,22 +50,6 @@ function jsonResponse(res: ApiResponse, statusCode: number, payload: unknown) {
   res.status(statusCode)
   res.setHeader('Content-Type', 'application/json; charset=utf-8')
   res.json(payload)
-}
-
-function getRequestOrigin(req: ApiRequest) {
-  const origin = getHeaderValue(req.headers.origin)
-  if (origin) {
-    return origin
-  }
-
-  const host = getHeaderValue(req.headers['x-forwarded-host']) ?? getHeaderValue(req.headers.host)
-  const protocol = getHeaderValue(req.headers['x-forwarded-proto']) ?? 'https'
-
-  if (!host) {
-    return getPublicAppUrl()
-  }
-
-  return `${protocol}://${host}`
 }
 
 function getSupabaseConfig() {
@@ -118,7 +90,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
       auth: { persistSession: false, autoRefreshToken: false },
     })
     const email = validationResult.data.email
-    const redirectTo = `${getRequestOrigin(req)}/redefinir-senha`
+    const redirectTo = `${getPublicAppUrl()}/redefinir-senha`
     const linkResult = await adminClient.auth.admin.generateLink({
       type: 'recovery',
       email,

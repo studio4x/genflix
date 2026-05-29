@@ -45,19 +45,8 @@ export function getBearerToken(headerValue: string | null) {
 }
 
 export function getRequestOrigin(req: ApiRequest) {
-  const origin = getHeaderValue(req.headers.origin)
-  if (origin) {
-    return origin
-  }
-
-  const host = getHeaderValue(req.headers['x-forwarded-host']) ?? getHeaderValue(req.headers.host)
-  const protocol = getHeaderValue(req.headers['x-forwarded-proto']) ?? 'https'
-
-  if (!host) {
-    return getPublicAppUrl()
-  }
-
-  return `${protocol}://${host}`
+  void req
+  return getPublicAppUrl()
 }
 
 export function getAsaasBaseUrl(environment: AsaasEnvironment) {
@@ -112,7 +101,7 @@ export async function fetchAsaasBalance(environment: AsaasEnvironment, accessTok
   const payload = await response.json().catch(() => null) as { balance?: number; errors?: Array<{ description?: string }> } | null
 
   if (!response.ok) {
-    throw new Error(payload?.errors?.[0]?.description ?? 'NÃ£o foi possÃ­vel consultar o saldo disponÃ­vel no Asaas.')
+    throw new Error(payload?.errors?.[0]?.description ?? 'Nao foi possivel consultar o saldo disponivel no Asaas.')
   }
 
   return Number(payload?.balance ?? 0)
@@ -130,7 +119,7 @@ export async function createAsaasPixTransfer(input: {
   const pixAddressKeyType = getAsaasPixAddressKeyType(input.pixKeyType)
 
   if (!pixAddressKeyType) {
-    throw new Error('Tipo de chave PIX invÃ¡lido para transferÃªncia Asaas.')
+    throw new Error('Tipo de chave PIX invalido para transferencia Asaas.')
   }
 
   const requestBody = {
@@ -154,7 +143,7 @@ export async function createAsaasPixTransfer(input: {
   const payload = await response.json().catch(() => null) as AsaasTransferPayload | null
 
   if (!response.ok || !payload?.id) {
-    throw new Error(readAsaasError(payload, 'NÃ£o foi possÃ­vel criar a transferÃªncia PIX no Asaas.'))
+    throw new Error(readAsaasError(payload, 'Nao foi possivel criar a transferencia PIX no Asaas.'))
   }
 
   return {
@@ -178,7 +167,7 @@ export async function fetchAsaasTransfer(input: {
   const payload = await response.json().catch(() => null) as AsaasTransferPayload | null
 
   if (!response.ok || !payload?.id) {
-    throw new Error(readAsaasError(payload, 'NÃ£o foi possÃ­vel consultar a transferÃªncia PIX no Asaas.'))
+    throw new Error(readAsaasError(payload, 'Nao foi possivel consultar a transferencia PIX no Asaas.'))
   }
 
   return payload

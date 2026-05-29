@@ -30,7 +30,7 @@ Ao corrigir qualquer vulnerabilidade listada neste documento, a plataforma **dev
   - Exigir sessão autenticada obrigatória e vincular `buyerUserId` ao usuário autenticado.
   - Remover caminho alternativo sem token ou restringir estritamente a contexto admin interno.
 
-### [ ] 3) Host Header / Origin poisoning em links sensíveis
+### [OK] 3) Host Header / Origin poisoning em links sensíveis
 - Severidade: **Alta**
 - Evidência:
   - `api/auth/password-reset.ts` usa `origin`/`x-forwarded-host`/`host` para montar `redirectTo`.
