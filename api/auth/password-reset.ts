@@ -22,6 +22,12 @@ type RecoveryLinkData = {
   } | null
 }
 
+const RESET_RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000
+const RESET_RATE_LIMIT_MAX_PER_IP = 10
+const RESET_RATE_LIMIT_MAX_PER_EMAIL = 3
+const resetRateLimitStore = new Map<string, number[]>()
+const RESET_GENERIC_SUCCESS_MESSAGE = 'Se o e-mail existir, enviaremos um link de recuperacao.'
+
 const passwordResetSchema = z.object({
   email: z.string().email('E-mail invalido.'),
 })
@@ -50,6 +56,58 @@ function jsonResponse(res: ApiResponse, statusCode: number, payload: unknown) {
   res.status(statusCode)
   res.setHeader('Content-Type', 'application/json; charset=utf-8')
   res.json(payload)
+}
+
+function getHeaderValue(value: string | string[] | undefined) {
+  if (typeof value === 'string') {
+    return value
+  }
+
+  if (Array.isArray(value) && value.length > 0) {
+    return value[0]
+  }
+
+  return null
+}
+
+function getRequestIp(req: ApiRequest) {
+  const forwardedFor = getHeaderValue(req.headers['x-forwarded-for'])
+  if (forwardedFor) {
+    const firstIp = forwardedFor.split(',')[0]?.trim()
+    if (firstIp) {
+      return firstIp
+    }
+  }
+
+  const cloudflareIp = getHeaderValue(req.headers['cf-connecting-ip'])
+  if (cloudflareIp?.trim()) {
+    return cloudflareIp.trim()
+  }
+
+  const realIp = getHeaderValue(req.headers['x-real-ip'])
+  if (realIp?.trim()) {
+    return realIp.trim()
+  }
+
+  return 'unknown'
+}
+
+function incrementAndCheckRateLimit(key: string, maxRequests: number) {
+  const now = Date.now()
+  const recentRequests = (resetRateLimitStore.get(key) ?? []).filter((timestamp) => now - timestamp < RESET_RATE_LIMIT_WINDOW_MS)
+  recentRequests.push(now)
+  resetRateLimitStore.set(key, recentRequests)
+
+  if (resetRateLimitStore.size > 10_000) {
+    for (const [storeKey, timestamps] of resetRateLimitStore.entries()) {
+      const hasRecentEntry = timestamps.some((timestamp) => now - timestamp < RESET_RATE_LIMIT_WINDOW_MS)
+      if (!hasRecentEntry) {
+        resetRateLimitStore.delete(storeKey)
+      }
+    }
+  }
+
+  return recentRequests.length > maxRequests
 }
 
 function getSupabaseConfig() {
@@ -84,12 +142,21 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
     return
   }
 
+  const normalizedEmail = validationResult.data.email
+  const requesterIp = getRequestIp(req)
+  const ipRateLimitExceeded = incrementAndCheckRateLimit(`ip:${requesterIp}`, RESET_RATE_LIMIT_MAX_PER_IP)
+  const emailRateLimitExceeded = incrementAndCheckRateLimit(`email:${normalizedEmail}`, RESET_RATE_LIMIT_MAX_PER_EMAIL)
+  if (ipRateLimitExceeded || emailRateLimitExceeded) {
+    jsonResponse(res, 200, { message: RESET_GENERIC_SUCCESS_MESSAGE })
+    return
+  }
+
   try {
     const { supabaseUrl, serviceRoleKey } = getSupabaseConfig()
     const adminClient = createClient(supabaseUrl, serviceRoleKey, {
       auth: { persistSession: false, autoRefreshToken: false },
     })
-    const email = validationResult.data.email
+    const email = normalizedEmail
     const redirectTo = `${getPublicAppUrl()}/redefinir-senha`
     const linkResult = await adminClient.auth.admin.generateLink({
       type: 'recovery',
@@ -101,7 +168,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
 
     if (linkResult.error) {
       // Fluxo publico: nao revela se o e-mail existe ou nao.
-      jsonResponse(res, 200, { message: 'Se o e-mail existir, enviaremos um link de recuperacao.' })
+      jsonResponse(res, 200, { message: RESET_GENERIC_SUCCESS_MESSAGE })
       return
     }
 
@@ -109,7 +176,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
     const actionLink = linkData.properties?.action_link
 
     if (!actionLink) {
-      jsonResponse(res, 200, { message: 'Se o e-mail existir, enviaremos um link de recuperacao.' })
+      jsonResponse(res, 200, { message: RESET_GENERIC_SUCCESS_MESSAGE })
       return
     }
 
@@ -125,7 +192,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
       actionLink,
     })
 
-    jsonResponse(res, 200, { message: 'Se o e-mail existir, enviaremos um link de recuperacao.' })
+    jsonResponse(res, 200, { message: RESET_GENERIC_SUCCESS_MESSAGE })
   } catch (error) {
     jsonResponse(res, 500, {
       error: error instanceof Error ? error.message : 'Nao foi possivel enviar o e-mail de recuperacao.',

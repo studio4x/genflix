@@ -52,7 +52,7 @@ Ao corrigir qualquer vulnerabilidade listada neste documento, a plataforma **dev
   - Adicionar proteção anti-bot (CAPTCHA/honeypot/tempo mínimo).
   - Criar circuit-breaker para notificações.
 
-### [ ] 5) Endpoint de recuperação de senha sem limitação de frequência
+### [OK] 5) Endpoint de recuperação de senha sem limitação de frequência
 - Severidade: **Média**
 - Evidência:
   - `api/auth/password-reset.ts` não possui rate limiting nem cooldown por IP/e-mail.
