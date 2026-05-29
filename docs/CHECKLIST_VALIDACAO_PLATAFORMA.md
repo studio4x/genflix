@@ -147,39 +147,39 @@ Este checklist foi criado para apoiar a validacao funcional da plataforma por se
 - [OK] Rotas protegidas respeitam perfis (`admin`, `aluno`, `criador`).
 - [OK] Sessao expirada redireciona corretamente para login.
 - [OK] Rota nao autorizada usa tela de bloqueio adequada.
-- [ ] Usuario sem permissao nao executa acao sensivel via API (bloqueio server-side).
-- [ ] Token ausente/invalido retorna `401` padronizado nas funcoes administrativas criticas.
+- [OK] Usuario sem permissao nao executa acao sensivel via API (bloqueio server-side).
+- [OK] Token ausente/invalido retorna `401` padronizado nas funcoes administrativas criticas.
 
 ### Modulo Storage e Midia
 - [OK] Upload de arquivos protegidos no R2 conclui sem erro.
 - [OK] Exclusao de arquivos no R2 remove item e atualiza listagem.
 - [OK] Acesso protegido a assets da aula funciona para usuario permitido.
-- [ ] Upload com tipo/tamanho invalido retorna erro claro e nao persiste arquivo.
-- [ ] URL assinada expira corretamente e bloqueia acesso apos expiracao.
+- [OK] Upload com tipo/tamanho invalido retorna erro claro e nao persiste arquivo.
+- [NOK] URL assinada expira corretamente e bloqueia acesso apos expiracao.
 
 ### Modulo Edge Functions e APIs
 - [OK] Funcoes administrativas respondem com auth valida.
 - [OK] CORS das funcoes principais nao bloqueia frontend em producao.
 - [OK] Tratamento de erro retorna mensagem clara para o usuario.
-- [ ] Timeouts em chamadas criticas sao tratados com fallback/retry sem quebrar fluxo.
-- [ ] Endpoints sensiveis mantem idempotencia em reenvio/reprocessamento.
-- [ ] Endpoints expostos possuem protecao basica contra abuso/rate limit.
+- [NOK] Timeouts em chamadas criticas sao tratados com fallback/retry sem quebrar fluxo.
+- [NOK] Endpoints sensiveis mantem idempotencia em reenvio/reprocessamento.
+- [NOK] Endpoints expostos possuem protecao basica contra abuso/rate limit.
 
 ### Modulo Deploy e Observabilidade
 - [OK] Build version no rodape corresponde ao ultimo deploy.
 - [OK] Dominio `genflix-omega.vercel.app` aponta para deploy READY esperado.
 - [OK] Logs de console em fluxos criticos sem erros bloqueantes recorrentes.
-- [ ] Healthcheck pos-deploy valida home, rota autenticada e uma Edge Function critica.
-- [ ] Janela de 15-30 min pos-release sem pico anomalo de `5xx` e `4xx` criticos.
-- [ ] Procedimento de rollback para ultimo deploy estavel esta testado/documentado.
+- [OK] Healthcheck pos-deploy valida home, rota autenticada e uma Edge Function critica.
+- [NOK] Janela de 15-30 min pos-release sem pico anomalo de `5xx` e `4xx` criticos.
+- [NOK] Procedimento de rollback para ultimo deploy estavel esta testado/documentado.
 
 ### Modulo Financeiro e Webhooks
-- [ ] Falha de pagamento (recusa/cancelamento) atualiza status corretamente no painel e no historico.
-- [ ] Webhook com assinatura invalida e rejeitado sem efeitos colaterais.
+- [NOK] Falha de pagamento (recusa/cancelamento) atualiza status corretamente no painel e no historico.
+- [NOK] Webhook com assinatura invalida e rejeitado sem efeitos colaterais.
 
 ### Modulo Qualidade Transversal
-- [ ] Acessibilidade minima: foco por teclado, contraste legivel e `aria-label` em acoes criticas.
-- [ ] Smoke mobile real cobre ao menos login, checkout e player em viewport pequeno.
+- [NOK] Acessibilidade minima: foco por teclado, contraste legivel e `aria-label` em acoes criticas.
+- [NOK] Smoke mobile real cobre ao menos login, checkout e player em viewport pequeno.
 
 ---
 
