@@ -105,7 +105,13 @@ const updateSettingsSchema = z.object({
   intervalDays: z.number().int().min(1).max(90),
   minimumAmountCents: z.number().int().min(0),
   isEnabled: z.boolean(),
-  nextRunAt: z.string().datetime().nullable().optional(),
+  nextRunAt: z
+    .string()
+    .trim()
+    .refine((value) => !Number.isNaN(Date.parse(value)), 'Data de proxima execucao invalida.')
+    .transform((value) => new Date(value).toISOString())
+    .nullable()
+    .optional(),
 })
 
 const processDueSchema = z.object({
