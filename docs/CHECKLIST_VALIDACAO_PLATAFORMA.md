@@ -154,9 +154,9 @@ Este checklist foi criado para apoiar a validacao funcional da plataforma por se
 - [OK] Acesso protegido a assets da aula funciona para usuario permitido.
 
 ### Modulo Edge Functions e APIs
-- [ ] Funcoes administrativas respondem com auth valida.
-- [ ] CORS das funcoes principais nao bloqueia frontend em producao.
-- [ ] Tratamento de erro retorna mensagem clara para o usuario.
+- [OK] Funcoes administrativas respondem com auth valida.
+- [OK] CORS das funcoes principais nao bloqueia frontend em producao.
+- [OK] Tratamento de erro retorna mensagem clara para o usuario.
 
 ### Modulo Deploy e Observabilidade
 - [ ] Build version no rodape corresponde ao ultimo deploy.
