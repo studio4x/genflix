@@ -132,12 +132,12 @@ Este checklist foi criado para apoiar a validacao funcional da plataforma por se
 - [OK] Formularios (`/admin/formularios`) entradas e filtros funcionando.
 
 ### Modulo Financeiro
-- [ ] Pagamentos (`/admin/pagamentos`) parametros e logs consistentes.
-- [ ] Repasses (`/admin/repasses`) lista e acoes operacionais funcionando.
+- [OK] Pagamentos (`/admin/pagamentos`) parametros e logs consistentes.
+- [OK] Repasses (`/admin/repasses`) lista e acoes operacionais funcionando.
 
 ### Modulo Configuracao da Plataforma
-- [ ] Minha conta (`/admin/minha-conta`) atualiza dados corretamente.
-- [ ] Configuracoes do site (`/admin/configuracoes-site`) persiste alteracoes.
+- [OK] Minha conta (`/admin/minha-conta`) atualiza dados corretamente.
+- [OK] Configuracoes do site (`/admin/configuracoes-site`) persiste alteracoes.
 
 ---
 
