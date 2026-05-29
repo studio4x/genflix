@@ -171,32 +171,25 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
   }
 
   const accessToken = getBearerToken(getHeaderValue(req.headers.authorization) ?? getHeaderValue(req.headers.Authorization))
+  if (!accessToken) {
+    jsonResponse(res, 401, { error: 'Token de acesso obrigatorio para iniciar o checkout.' })
+    return
+  }
 
   const adminClient = createClient(supabaseUrl, serviceRoleKey, {
     auth: { persistSession: false, autoRefreshToken: false },
   })
 
   const buyerUserId = normalizeOptionalText(parsed.data.buyerUserId)
-  let authUser: { id: string; email?: string | null; user_metadata?: Record<string, unknown> | null } | null = null
-
-  if (accessToken) {
-    const { data: userData, error: userError } = await adminClient.auth.getUser(accessToken)
-    if (userError || !userData.user) {
-      jsonResponse(res, 401, { error: 'Token ausente ou inválido.' })
-      return
-    }
-
-    authUser = userData.user
-  } else if (buyerUserId) {
-    const { data: userData, error: userError } = await adminClient.auth.admin.getUserById(buyerUserId)
-    if (userError || !userData.user) {
-      jsonResponse(res, 401, { error: 'Conta não encontrada para iniciar o checkout.' })
-      return
-    }
-
-    authUser = userData.user
-  } else {
+  const { data: userData, error: userError } = await adminClient.auth.getUser(accessToken)
+  if (userError || !userData.user) {
     jsonResponse(res, 401, { error: 'Token ausente ou inválido.' })
+    return
+  }
+  const authUser: { id: string; email?: string | null; user_metadata?: Record<string, unknown> | null } = userData.user
+
+  if (buyerUserId && buyerUserId !== authUser.id) {
+    jsonResponse(res, 403, { error: 'buyerUserId nao corresponde ao usuario autenticado.' })
     return
   }
 

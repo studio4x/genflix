@@ -20,7 +20,7 @@ Ao corrigir qualquer vulnerabilidade listada neste documento, a plataforma **dev
   - Sanitizar HTML no backend e no frontend com whitelist estrita.
   - Bloquear atributos/event handlers perigosos (`on*`), `javascript:`, `data:` inseguros e tags perigosas.
 
-### [ ] 2) Possível IDOR/abuso no checkout por `buyerUserId` sem sessão
+### [OK] 2) Possível IDOR/abuso no checkout por `buyerUserId` sem sessão
 - Severidade: **Crítica**
 - Evidência:
   - `api/checkout/asaas/start.ts` aceita `buyerUserId` e, na ausência de `Authorization`, usa `auth.admin.getUserById(buyerUserId)` para seguir fluxo.
