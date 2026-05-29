@@ -122,14 +122,14 @@ Este checklist foi criado para apoiar a validacao funcional da plataforma por se
 - [OK] Editor visual (`/admin/site-editor`) edicao por secao/container habilitada.
 
 ### Modulo Comunidade e Atendimento
-- [ ] Usuarios (`/admin/usuarios`) listagem e acoes principais.
-- [ ] Grupos (`/admin/grupos`) CRUD funcional.
-- [ ] Notificacoes (`/admin/notificacoes`) envio/listagem funcional.
-- [ ] Mensagens (`/admin/mensagens`) abre e opera sem erro.
-- [ ] Tickets (`/admin/suporte`) fluxo completo de atendimento.
-- [ ] FAQ (`/admin/faq`) CRUD funcional.
-- [ ] Reviews (`/admin/reviews`) modera/lista corretamente.
-- [ ] Formularios (`/admin/formularios`) entradas e filtros funcionando.
+- [OK] Usuarios (`/admin/usuarios`) listagem e acoes principais.
+- [OK] Grupos (`/admin/grupos`) CRUD funcional.
+- [OK] Notificacoes (`/admin/notificacoes`) envio/listagem funcional.
+- [OK] Mensagens (`/admin/mensagens`) abre e opera sem erro.
+- [OK] Tickets (`/admin/suporte`) fluxo completo de atendimento.
+- [OK] FAQ (`/admin/faq`) CRUD funcional.
+- [OK] Reviews (`/admin/reviews`) modera/lista corretamente.
+- [OK] Formularios (`/admin/formularios`) entradas e filtros funcionando.
 
 ### Modulo Financeiro
 - [ ] Pagamentos (`/admin/pagamentos`) parametros e logs consistentes.
