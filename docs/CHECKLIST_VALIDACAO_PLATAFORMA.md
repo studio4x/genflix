@@ -149,9 +149,9 @@ Este checklist foi criado para apoiar a validacao funcional da plataforma por se
 - [OK] Rota nao autorizada usa tela de bloqueio adequada.
 
 ### Modulo Storage e Midia
-- [ ] Upload de arquivos protegidos no R2 conclui sem erro.
-- [ ] Exclusao de arquivos no R2 remove item e atualiza listagem.
-- [ ] Acesso protegido a assets da aula funciona para usuario permitido.
+- [OK] Upload de arquivos protegidos no R2 conclui sem erro.
+- [OK] Exclusao de arquivos no R2 remove item e atualiza listagem.
+- [OK] Acesso protegido a assets da aula funciona para usuario permitido.
 
 ### Modulo Edge Functions e APIs
 - [ ] Funcoes administrativas respondem com auth valida.
