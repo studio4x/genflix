@@ -34,6 +34,40 @@ function moduleStateClasses(state: ModuleLearningState) {
   return 'bg-blue-50 text-blue-700 ring-blue-200'
 }
 
+function sanitizeCourseDescriptionHtml(rawValue: string) {
+  if (!rawValue.trim()) {
+    return ''
+  }
+
+  const parser = new DOMParser()
+  const doc = parser.parseFromString(rawValue, 'text/html')
+  const blockedTags = new Set(['script', 'style', 'iframe', 'object', 'embed', 'base', 'meta', 'link'])
+
+  Array.from(doc.body.querySelectorAll('*')).forEach((node) => {
+    const tagName = node.tagName.toLowerCase()
+    if (blockedTags.has(tagName)) {
+      node.remove()
+      return
+    }
+
+    Array.from(node.attributes).forEach((attribute) => {
+      const name = attribute.name.toLowerCase()
+      const value = attribute.value.trim().toLowerCase()
+
+      if (name.startsWith('on')) {
+        node.removeAttribute(attribute.name)
+        return
+      }
+
+      if ((name === 'href' || name === 'src') && (value.startsWith('javascript:') || value.startsWith('data:text/html'))) {
+        node.removeAttribute(attribute.name)
+      }
+    })
+  })
+
+  return doc.body.innerHTML
+}
+
 export function StudentCourseDetailsPage() {
   const { courseId } = useParams<{ courseId: string }>()
   const { user, roles } = useAuth()
@@ -318,6 +352,7 @@ export function StudentCourseDetailsPage() {
       },
     ] as const)),
   )
+  const sanitizedCourseDescription = course.description ? sanitizeCourseDescriptionHtml(course.description) : ''
 
   return (
     <div className="space-y-12 pb-24 animate-in fade-in duration-700">
@@ -449,7 +484,7 @@ export function StudentCourseDetailsPage() {
       </section>
       
       {/* COURSE DESCRIPTION (NEW) */}
-      {course.description && (
+      {sanitizedCourseDescription && (
          <section className="bg-white rounded-[40px] border border-slate-100 p-10 md:p-14 space-y-8 animate-in slide-in-from-bottom-4 duration-700 delay-400">
             <div className="flex items-center gap-4">
                <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] leading-none">Sobre este Treinamento</h3>
@@ -457,7 +492,7 @@ export function StudentCourseDetailsPage() {
             </div>
             <div 
                className="text-lg font-medium text-slate-600 leading-relaxed ql-editor !p-0"
-               dangerouslySetInnerHTML={{ __html: course.description }}
+               dangerouslySetInnerHTML={{ __html: sanitizedCourseDescription }}
             />
          </section>
       )}
