@@ -114,12 +114,12 @@ Este checklist foi criado para apoiar a validacao funcional da plataforma por se
 - [OK] Assessments final (`.../assessments` e `.../assessments/final`) funciona sem erro.
 
 ### Modulo Conteudo e Marketing
-- [ ] Blog (`/admin/blog`) CRUD completo.
-- [ ] Banners (`/admin/banners`) CRUD e historico/revisao funcionando.
-- [ ] Botoes de aula (`/admin/botoes-aula`) CRUD funcional.
-- [ ] Recursos (`/admin/recursos`) CRUD e player publico corretos.
-- [ ] Tipos de quiz (`/admin/tipos-quiz`) CRUD funcional.
-- [ ] Editor visual (`/admin/site-editor`) edicao por secao/container habilitada.
+- [OK] Blog (`/admin/blog`) CRUD completo.
+- [OK] Banners (`/admin/banners`) CRUD e historico/revisao funcionando.
+- [OK] Botoes de aula (`/admin/botoes-aula`) CRUD funcional.
+- [OK] Recursos (`/admin/recursos`) CRUD e player publico corretos.
+- [OK] Tipos de quiz (`/admin/tipos-quiz`) CRUD funcional.
+- [OK] Editor visual (`/admin/site-editor`) edicao por secao/container habilitada.
 
 ### Modulo Comunidade e Atendimento
 - [ ] Usuarios (`/admin/usuarios`) listagem e acoes principais.
