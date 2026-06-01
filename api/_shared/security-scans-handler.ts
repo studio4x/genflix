@@ -231,10 +231,15 @@ async function scanCorsWildcard(): Promise<ScannerFinding[]> {
   const root = path.join(process.cwd(), 'supabase', 'functions')
   const files = await readFilesRecursively(root, ['.ts', '.js'])
   const findings: ScannerFinding[] = []
+  const wildcardOriginRegexes = [
+    /['"]Access-Control-Allow-Origin['"]\s*:\s*['"]\*['"]/i,
+    /set\s*\(\s*['"]Access-Control-Allow-Origin['"]\s*,\s*['"]\*['"]\s*\)/i,
+  ]
 
   for (const file of files) {
     if (!file.content.includes('Access-Control-Allow-Origin')) continue
-    if (!file.content.includes("'*'") && !file.content.includes('"*"')) continue
+    const hasRealWildcard = wildcardOriginRegexes.some((regex) => regex.test(file.content))
+    if (!hasRealWildcard) continue
 
     findings.push({
       scannerKey: `cors-wildcard-${toRelative(file.filePath).replace(/[^a-z0-9]+/gi, '-')}`,
@@ -355,6 +360,7 @@ async function scanNpmAudit(): Promise<ScannerFinding[]> {
 
 async function scanSuspiciousPatterns(): Promise<ScannerFinding[]> {
   const files = await readFilesRecursively(process.cwd(), ['.ts', '.tsx', '.js', '.mjs', '.cjs', '.json'])
+  const selfScannerPath = toRelative(path.join(process.cwd(), 'api', '_shared', 'security-scans-handler.ts'))
   const signatures = [
     /eval\s*\(\s*atob\s*\(/i,
     /fromCharCode\s*\(/i,
@@ -365,14 +371,19 @@ async function scanSuspiciousPatterns(): Promise<ScannerFinding[]> {
   const findings: ScannerFinding[] = []
 
   for (const file of files) {
+    const relativePath = toRelative(file.filePath)
+    if (relativePath === selfScannerPath) {
+      continue
+    }
+
     for (const signature of signatures) {
       if (signature.test(file.content)) {
         findings.push({
-          scannerKey: `suspicious-pattern-${toRelative(file.filePath).replace(/[^a-z0-9]+/gi, '-')}`,
+          scannerKey: `suspicious-pattern-${relativePath.replace(/[^a-z0-9]+/gi, '-')}`,
           title: 'Padrao potencialmente malicioso detectado em arquivo',
           severity: 'high',
           description: 'Foi detectado um padrao comum em scripts ofuscados/maliciosos e o arquivo deve ser revisado.',
-          evidence: `Arquivo: ${toRelative(file.filePath)} | assinatura: ${signature.source}`,
+          evidence: `Arquivo: ${relativePath} | assinatura: ${signature.source}`,
           recommendation: 'Revisar manualmente o arquivo e remover codigo suspeito nao autorizado.',
           fixAvailable: false,
           autoFixSupported: false,
