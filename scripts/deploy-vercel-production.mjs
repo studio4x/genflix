@@ -223,6 +223,9 @@ async function main() {
   run(npxCommand, withVercelAuthArgs([vercelCliPackage, 'build', '--prod']), {
     env: {
       CI: 'true',
+      NODE_ENV: 'development',
+      NPM_CONFIG_PRODUCTION: 'false',
+      NPM_CONFIG_INCLUDE: 'dev',
     },
   })
 
