@@ -1,4 +1,4 @@
-import { supabase } from '@/services/supabase/client'
+﻿import { supabase } from '@/services/supabase/client'
 
 type SecuritySettings = {
   id: string
@@ -67,7 +67,7 @@ async function getAuthToken() {
 
 async function requestSecurityApi<T>(method: 'GET' | 'POST', body?: Record<string, unknown>) {
   const token = await getAuthToken()
-  const response = await fetch('/api/admin/security-scans', {
+  const response = await fetch('/api/admin/notifications?task=security_scans', {
     method,
     headers: {
       'Content-Type': 'application/json',
@@ -107,5 +107,6 @@ export async function fixSecurityFinding(findingId: string) {
     findingId,
   })
 }
+
 
 

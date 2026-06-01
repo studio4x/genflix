@@ -3,6 +3,7 @@ import { z } from 'zod'
 
 import { getPublicAppUrl } from '../_shared/app-url.js'
 import { getBearerToken, getHeaderValue } from '../_shared/asaas.js'
+import { handleSecurityScans } from '../_shared/security-scans-handler.js'
 import { sendNotificationEmail } from '../_shared/email.js'
 
 type ApiRequest = {
@@ -335,6 +336,13 @@ async function processEmailQueue(adminClient: SupabaseClient, limit: number) {
 }
 
 export default async function handler(req: ApiRequest, res: ApiResponse) {
+  const task = getFirstQueryValue(req.query?.task)
+
+  if (task === 'security_scans' || task === 'run_scheduled_security_scan') {
+    await handleSecurityScans(req, res)
+    return
+  }
+
   if (req.method === 'OPTIONS') {
     jsonResponse(res, 200, { ok: true })
     return
@@ -348,7 +356,6 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
   const context = await assertAdmin(req, res)
   if (!context) return
 
-  const task = getFirstQueryValue(req.query?.task)
   const body = parseBody(req.body)
   const parsed = processQueueSchema.safeParse({
     action: body.action ?? (task === 'process_queue' ? 'process_queue' : undefined),

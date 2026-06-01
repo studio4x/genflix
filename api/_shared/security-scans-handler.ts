@@ -1,9 +1,9 @@
-import { createClient, type SupabaseClient } from '@supabase/supabase-js'
+﻿import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import { promises as fs } from 'node:fs'
 import path from 'node:path'
 import { spawn } from 'node:child_process'
 
-import { getBearerToken, getHeaderValue } from '../_shared/asaas.js'
+import { getBearerToken, getHeaderValue } from './asaas.js'
 
 type ApiRequest = {
   method?: string
@@ -95,7 +95,7 @@ async function assertAdmin(req: ApiRequest, res: ApiResponse): Promise<Context |
     auth: { persistSession: false, autoRefreshToken: false },
   })
 
-  if (task === 'run_scheduled' && cronSecret && receivedCronSecret === cronSecret) {
+  if (task === 'run_scheduled_security_scan' && cronSecret && receivedCronSecret === cronSecret) {
     return { adminClient, userId: null, isCron: true }
   }
 
@@ -218,7 +218,7 @@ async function scanDangerousHtml(): Promise<ScannerFinding[]> {
       severity: 'high',
       description: 'Renderizacao direta de HTML pode permitir XSS persistente/refletido se o conteudo nao for sanitizado.',
       evidence: `Arquivo: ${toRelative(file.filePath)}`,
-      recommendation: 'Aplicar sanitizacao estrita com whitelist antes de renderizar HTML dinâmico.',
+      recommendation: 'Aplicar sanitizacao estrita com whitelist antes de renderizar HTML dinamico.',
       fixAvailable: false,
       autoFixSupported: false,
     })
@@ -640,7 +640,7 @@ async function fetchDashboard(adminClient: SupabaseClient) {
   }
 }
 
-export default async function handler(req: ApiRequest, res: ApiResponse) {
+export async function handleSecurityScans(req: ApiRequest, res: ApiResponse) {
   if (req.method === 'OPTIONS') {
     jsonResponse(res, 200, { ok: true })
     return
@@ -777,5 +777,10 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
     })
   }
 }
+
+
+
+
+
 
 
