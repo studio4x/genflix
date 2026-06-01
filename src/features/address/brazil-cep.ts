@@ -25,7 +25,7 @@ export async function resolveBrazilCepAddress(postalCode: string) {
   const response = await fetch(`https://viacep.com.br/ws/${encodeURIComponent(normalizedPostalCode)}/json/`)
 
   if (!response.ok) {
-    throw new Error('Nao foi possivel consultar o CEP informado.')
+    throw new Error('N?o foi possivel consultar o CEP informado.')
   }
 
   const payload = (await response.json()) as {
@@ -38,7 +38,7 @@ export async function resolveBrazilCepAddress(postalCode: string) {
   }
 
   if (payload.erro || !payload.cep || !payload.uf || !payload.ibge) {
-    throw new Error('CEP nao encontrado.')
+    throw new Error('CEP n?o encontrado.')
   }
 
   const resolvedAddress: BrazilCepAddress = {
@@ -84,7 +84,7 @@ export function useBrazilCepLookup(postalCode: string) {
         .catch((error) => {
           if (isActive) {
             setAddress(null)
-            setAddressError(error instanceof Error ? error.message : 'Nao foi possivel consultar o CEP informado.')
+            setAddressError(error instanceof Error ? error.message : 'N?o foi possivel consultar o CEP informado.')
           }
         })
         .finally(() => {

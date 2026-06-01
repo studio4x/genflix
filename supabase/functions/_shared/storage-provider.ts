@@ -73,7 +73,7 @@ export async function createSignedPutUrl(input: {
       .from(input.bucket)
       .createSignedUploadUrl(input.objectPath)
     if (uploadResult.error || !uploadResult.data?.token) {
-      throw new Error(uploadResult.error?.message ?? 'Nao foi possivel gerar URL assinada de upload.')
+      throw new Error(uploadResult.error?.message ?? 'N?o foi possivel gerar URL assinada de upload.')
     }
 
     return {
@@ -118,7 +118,7 @@ export async function createSignedGetUrl(input: {
       .from(input.bucket)
       .createSignedUrl(input.objectPath, input.expiresInSeconds)
     if (signedResult.error || !signedResult.data?.signedUrl) {
-      throw new Error(signedResult.error?.message ?? 'Nao foi possivel gerar URL assinada de leitura.')
+      throw new Error(signedResult.error?.message ?? 'N?o foi possivel gerar URL assinada de leitura.')
     }
     return signedResult.data.signedUrl
   }

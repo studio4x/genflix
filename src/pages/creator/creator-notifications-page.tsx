@@ -50,7 +50,7 @@ export function CreatorNotificationsPage() {
           </h1>
           <p className="mt-2 max-w-3xl text-sm font-medium leading-6 text-[#6d7f84]">
             {activeTab === 'preferencias'
-              ? 'Ajuste seus canais e horarios de silencio sem misturar essas configuracoes com a tela de relatorios.'
+              ? 'Ajuste seus canais e horarios de silencio sem misturar essas configura??es com a tela de relatorios.'
               : 'Consulte avisos transacionais e comunicados da plataforma em uma area dedicada para notificacoes.'}
           </p>
           <div className="mt-4 flex flex-wrap gap-3">

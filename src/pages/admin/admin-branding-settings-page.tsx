@@ -92,7 +92,7 @@ export function AdminBrandingSettingsPage() {
       setBrandingAsset(slot, value)
       setMessage(`Arquivo publicado em ${slot}.`)
     } catch (uploadError) {
-      setError(uploadError instanceof Error ? uploadError.message : 'Nao foi possivel salvar o arquivo de branding.')
+      setError(uploadError instanceof Error ? uploadError.message : 'N?o foi possivel salvar o arquivo de branding.')
     } finally {
       setUploadingSlot(null)
     }

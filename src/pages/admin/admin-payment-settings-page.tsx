@@ -28,7 +28,7 @@ function buildWebhookUrl() {
 
 function formatEnvironmentLabel(environment: PaymentGatewayEnvironment | null) {
   if (!environment) {
-    return 'Nao identificado'
+    return 'N?o identificado'
   }
 
   return environment === 'production' ? 'Producao' : 'Sandbox'
@@ -113,7 +113,7 @@ export function AdminPaymentSettingsPage() {
       setDiagnosticError(
         diagnosticsError instanceof Error
           ? diagnosticsError.message
-          : 'Nao foi possivel diagnosticar as configuracoes de pagamento.',
+          : 'N?o foi possivel diagnosticar as configura??es de pagamento.',
       )
     } finally {
       setIsDiagnosing(false)
@@ -133,7 +133,7 @@ export function AdminPaymentSettingsPage() {
       setRecentEvents(summaries.events)
       setMetrics(summaries.metrics)
     } catch (loadError) {
-      setError(loadError instanceof Error ? loadError.message : 'Nao foi possivel carregar as configuracoes.')
+      setError(loadError instanceof Error ? loadError.message : 'N?o foi possivel carregar as configura??es.')
     } finally {
       setIsLoading(false)
     }
@@ -146,7 +146,7 @@ export function AdminPaymentSettingsPage() {
 
   async function handleSave(nextEnvironment: PaymentGatewayEnvironment) {
     if (!user) {
-      setError('Usuario nao autenticado.')
+      setError('Usuario n?o autenticado.')
       return
     }
 
@@ -157,7 +157,7 @@ export function AdminPaymentSettingsPage() {
       setEnvironment(nextEnvironment)
       await runDiagnostics()
     } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : 'Nao foi possivel salvar as configuracoes.')
+      setError(saveError instanceof Error ? saveError.message : 'N?o foi possivel salvar as configura??es.')
     } finally {
       setIsSaving(false)
     }
@@ -179,7 +179,7 @@ export function AdminPaymentSettingsPage() {
         window.open(session.checkout_url, '_blank', 'noopener,noreferrer')
         return
       }
-      setError(openError instanceof Error ? openError.message : 'Nao foi possivel abrir a fatura do pedido.')
+      setError(openError instanceof Error ? openError.message : 'N?o foi possivel abrir a fatura do pedido.')
     } finally {
       setOpeningInvoiceId(null)
     }

@@ -108,7 +108,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
   }
 
   if (req.method !== 'GET') {
-    jsonResponse(res, 405, { error: 'Metodo nao permitido.' })
+    jsonResponse(res, 405, { error: 'Metodo n?o permitido.' })
     return
   }
 
@@ -116,7 +116,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
   if (!supabaseUrl || !serviceRoleKey) {
-    jsonResponse(res, 500, { error: 'Configuracao do Supabase ausente.' })
+    jsonResponse(res, 500, { error: 'Configura??o do Supabase ausente.' })
     return
   }
 
@@ -156,7 +156,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
     .order('created_at', { ascending: false })
 
   if (error) {
-    jsonResponse(res, 500, { error: 'Nao foi possivel consultar o historico de pagamentos.' })
+    jsonResponse(res, 500, { error: 'N?o foi possivel consultar o hist?rico de pagamentos.' })
     return
   }
 

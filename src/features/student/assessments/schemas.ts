@@ -31,7 +31,7 @@ export const assessmentAnswerSchema = z.object({
 })
 
 export const submitAssessmentAttemptSchema = z.object({
-  assessment_id: z.string().uuid('Avaliacao invalida.'),
+  assessment_id: z.string().uuid('Avalia??o invalida.'),
   answers: z.array(assessmentAnswerSchema),
 })
 

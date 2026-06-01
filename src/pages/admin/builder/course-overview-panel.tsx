@@ -171,7 +171,7 @@ export function CourseOverviewPanel() {
             [moduleId]: [savedReview, ...(previous[moduleId] ?? [])],
           }))
         } catch (historyError) {
-          setAnalysisError(`A analise foi concluida, mas o historico nao foi salvo: ${toErrorMessage(historyError)}`)
+          setAnalysisError(`A analise foi concluida, mas o hist?rico n?o foi salvo: ${toErrorMessage(historyError)}`)
         }
       }
       setAnalysisTarget({ moduleId, moduleTitle })
@@ -191,9 +191,9 @@ export function CourseOverviewPanel() {
     publishBuilderNotice({
       type: 'pending',
       title: 'Aplicando ajustes da IA',
-      message: `O modulo "${analysisTarget.moduleTitle}" esta sendo atualizado agora.`,
+      message: `O m?dulo "${analysisTarget.moduleTitle}" esta sendo atualizado agora.`,
       details: [
-        `Modulo em processamento: ${analysisTarget.moduleTitle}`,
+        `M?dulo em processamento: ${analysisTarget.moduleTitle}`,
         `Pontos identificados na analise: ${analysisResult.issues.length}`,
         'Aguarde a confirmacao final antes de sair da tela.',
       ],
@@ -214,7 +214,7 @@ export function CourseOverviewPanel() {
             }))
           }
         } catch (historyError) {
-          setAnalysisError(`Os ajustes foram aplicados, mas o historico nao foi atualizado: ${toErrorMessage(historyError)}`)
+          setAnalysisError(`Os ajustes foram aplicados, mas o hist?rico n?o foi atualizado: ${toErrorMessage(historyError)}`)
         }
       }
       setDidApplyCurrentAnalysis(true)
@@ -228,15 +228,15 @@ export function CourseOverviewPanel() {
       publishBuilderNotice({
         type: 'success',
         title: 'Ajustes da IA concluidos',
-        message: `Os ajustes foram aplicados ao modulo "${analysisTarget.moduleTitle}".`,
+        message: `Os ajustes foram aplicados ao m?dulo "${analysisTarget.moduleTitle}".`,
         details: [
-          `Modulo atualizado: ${analysisTarget.moduleTitle}`,
+          `M?dulo atualizado: ${analysisTarget.moduleTitle}`,
           `Horario: ${new Intl.DateTimeFormat('pt-BR', {
             dateStyle: 'short',
             timeStyle: 'medium',
           }).format(new Date(appliedAtIso))}`,
           `Pontos processados: ${analysisResult.issues.length}`,
-          analysisResult.ready_to_publish ? 'Status do modulo: pronto para publicar.' : 'Status do modulo: ainda requer revisao manual.',
+          analysisResult.ready_to_publish ? 'Status do m?dulo: pronto para publicar.' : 'Status do m?dulo: ainda requer revis?o manual.',
         ],
       })
     } catch (err) {
@@ -245,9 +245,9 @@ export function CourseOverviewPanel() {
       publishBuilderNotice({
         type: 'error',
         title: 'Falha ao aplicar ajustes da IA',
-        message: `Nao foi possivel concluir os ajustes no modulo "${analysisTarget.moduleTitle}".`,
+        message: `N?o foi possivel concluir os ajustes no m?dulo "${analysisTarget.moduleTitle}".`,
         details: [
-          `Modulo: ${analysisTarget.moduleTitle}`,
+          `M?dulo: ${analysisTarget.moduleTitle}`,
           `Erro retornado: ${message}`,
           'Nenhuma confirmacao de salvamento foi recebida.',
         ],
@@ -258,7 +258,7 @@ export function CourseOverviewPanel() {
   }
 
   async function handleDeleteModule(moduleId: string, moduleTitle: string) {
-    if (!window.confirm(`ATENCAO: Excluir o modulo "${moduleTitle}"?\n\nTodas as aulas e quizzes vinculados serao removidos permanentemente.`)) {
+    if (!window.confirm(`ATENCAO: Excluir o m?dulo "${moduleTitle}"?\n\nTodas as aulas e quizzes vinculados serao removidos permanentemente.`)) {
       return
     }
 
@@ -285,7 +285,7 @@ export function CourseOverviewPanel() {
 
   async function handleDeleteAssessment(assessmentId: string, assessmentTitle: string, isFinalAssessment = false) {
     const confirmMessage = isFinalAssessment
-      ? `CUIDADO: Excluir a avaliacao final "${assessmentTitle}"?\n\nTodas as questoes, estudos de caso e tentativas vinculadas serao removidos permanentemente.`
+      ? `CUIDADO: Excluir a avalia??o final "${assessmentTitle}"?\n\nTodas as questoes, estudos de caso e tentativas vinculadas serao removidos permanentemente.`
       : `CUIDADO: Excluir o quiz "${assessmentTitle}"?\n\nTodas as questoes, estudos de caso e tentativas vinculadas serao removidos permanentemente.`
 
     if (!window.confirm(confirmMessage)) {
@@ -359,7 +359,7 @@ export function CourseOverviewPanel() {
             <h3 className="text-lg font-bold text-slate-900">Mapa do Curso</h3>
             <p className="text-sm text-slate-500">A hierarquia atual de aprendizado.</p>
           </div>
-          <Link to={`/admin/cursos/${course.id}/builder/modulos/novo`} className="inline-flex shrink-0 items-center justify-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600">
+          <Link to={`/admin/cursos/${course.id}/builder/m?dulos/novo`} className="inline-flex shrink-0 items-center justify-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600">
             Adicionar Modulo
           </Link>
         </div>
@@ -402,14 +402,14 @@ export function CourseOverviewPanel() {
                     >
                       {isAnalyzingModuleId === module.id ? 'Analisando...' : 'Analisar com IA'}
                     </Button>
-                    <Link to={`/admin/cursos/${course.id}/builder/modulos/${module.id}`} className="text-sm font-semibold text-blue-600 hover:text-blue-800">
+                    <Link to={`/admin/cursos/${course.id}/builder/m?dulos/${module.id}`} className="text-sm font-semibold text-blue-600 hover:text-blue-800">
                       Editar Modulo
                     </Link>
                     <button
                       type="button"
                       onClick={() => void handleDeleteModule(module.id, module.title)}
                       className="rounded-xl p-2 text-slate-300 transition-colors hover:bg-rose-50 hover:text-rose-500"
-                      title="Excluir modulo"
+                      title="Excluir m?dulo"
                     >
                       <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -427,7 +427,7 @@ export function CourseOverviewPanel() {
                           {lesson.title}
                         </span>
                         <div className="flex items-center gap-2">
-                          <Link to={`/admin/cursos/${course.id}/builder/modulos/${module.id}/aulas/${lesson.id}`} className="text-xs font-semibold text-slate-500 hover:text-blue-600">
+                          <Link to={`/admin/cursos/${course.id}/builder/m?dulos/${module.id}/aulas/${lesson.id}`} className="text-xs font-semibold text-slate-500 hover:text-blue-600">
                             Editar
                           </Link>
                           <button
@@ -451,7 +451,7 @@ export function CourseOverviewPanel() {
                           {assessment.title}
                         </span>
                         <div className="flex items-center gap-2">
-                          <Link to={`/admin/cursos/${course.id}/builder/modulos/${module.id}/avaliacoes/${assessment.id}`} className="text-xs font-semibold text-amber-700 hover:text-amber-900">
+                          <Link to={`/admin/cursos/${course.id}/builder/m?dulos/${module.id}/avalia??es/${assessment.id}`} className="text-xs font-semibold text-amber-700 hover:text-amber-900">
                             Editar Quiz
                           </Link>
                           <button
@@ -476,11 +476,11 @@ export function CourseOverviewPanel() {
 
                 <div className="mt-4 border-t border-slate-100 pt-4">
                   <div className="flex flex-wrap items-center gap-4">
-                    <Link to={`/admin/cursos/${course.id}/builder/modulos/${module.id}/aulas/nova`} className="flex items-center gap-1 text-sm font-medium text-blue-600 hover:text-blue-800">
+                    <Link to={`/admin/cursos/${course.id}/builder/m?dulos/${module.id}/aulas/nova`} className="flex items-center gap-1 text-sm font-medium text-blue-600 hover:text-blue-800">
                       <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
                       Adicionar Aula
                     </Link>
-                    <Link to={`/admin/cursos/${course.id}/builder/modulos/${module.id}/avaliacoes/nova`} className="flex items-center gap-1 text-sm font-medium text-amber-700 hover:text-amber-900">
+                    <Link to={`/admin/cursos/${course.id}/builder/m?dulos/${module.id}/avalia??es/nova`} className="flex items-center gap-1 text-sm font-medium text-amber-700 hover:text-amber-900">
                       <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
                       Adicionar Quiz
                     </Link>
@@ -521,7 +521,7 @@ export function CourseOverviewPanel() {
                       type="button"
                       onClick={() => void handleDeleteAssessment(assessment.id, assessment.title, true)}
                       className="rounded-lg p-2 text-emerald-300 transition-colors hover:bg-rose-50 hover:text-rose-500"
-                      title="Excluir avaliacao final"
+                      title="Excluir avalia??o final"
                     >
                       <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -571,7 +571,7 @@ export function CourseOverviewPanel() {
                     O conteudo foi atualizado e salvo. Revise o modulo para confirmar o resultado final.
                   </p>
                   <Link
-                    to={`/admin/cursos/${course.id}/builder/modulos/${analysisTarget.moduleId}`}
+                    to={`/admin/cursos/${course.id}/builder/m?dulos/${analysisTarget.moduleId}`}
                     className="mt-4 inline-flex items-center rounded-xl border border-emerald-300 bg-white px-3 py-2 text-xs font-black uppercase tracking-widest text-emerald-700 hover:bg-emerald-100"
                   >
                     Revisar modulo atualizado
@@ -699,7 +699,7 @@ export function CourseOverviewPanel() {
                       ? 'bg-emerald-100 text-emerald-700'
                       : 'bg-amber-100 text-amber-700'
                   }`}>
-                    {repeatReviewPrompt.latestReview.applied_at ? 'Ajustes aplicados' : 'Ajustes nao aplicados'}
+                    {repeatReviewPrompt.latestReview.applied_at ? 'Ajustes aplicados' : 'Ajustes n?o aplicados'}
                   </span>
                 </div>
               </div>
@@ -789,7 +789,7 @@ export function CourseOverviewPanel() {
                             dateStyle: 'short',
                             timeStyle: 'medium',
                           }).format(new Date(review.applied_at))}`
-                          : 'Ajustes nao aplicados'}
+                          : 'Ajustes n?o aplicados'}
                       </span>
                     </div>
                     <p className="mt-4 text-sm leading-relaxed text-slate-700">{review.summary}</p>

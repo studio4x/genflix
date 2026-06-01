@@ -26,7 +26,7 @@ export async function fetchStudentPaymentHistory() {
   const accessToken = sessionResult.data.session?.access_token
 
   if (!accessToken) {
-    throw new Error('Sessao expirada. Faca login novamente.')
+    throw new Error('Sess?o expirada. Faca login novamente.')
   }
 
   const response = await fetch('/api/checkout/asaas/history', {
@@ -39,7 +39,7 @@ export async function fetchStudentPaymentHistory() {
   const payload = (await response.json().catch(() => null)) as { error?: string } & PaymentHistoryResponse | null
 
   if (!response.ok) {
-    throw new Error(payload?.error ?? 'Nao foi possivel consultar o historico de pagamentos.')
+    throw new Error(payload?.error ?? 'N?o foi possivel consultar o hist?rico de pagamentos.')
   }
 
   return payload?.payments ?? []
@@ -50,7 +50,7 @@ export async function requestStudentRefund(input: { checkoutSessionId: string; r
   const accessToken = sessionResult.data.session?.access_token
 
   if (!accessToken) {
-    throw new Error('Sessao expirada. Faca login novamente.')
+    throw new Error('Sess?o expirada. Faca login novamente.')
   }
 
   const response = await fetch('/api/checkout/asaas/request-refund', {
@@ -67,7 +67,7 @@ export async function requestStudentRefund(input: { checkoutSessionId: string; r
 
   const payload = (await response.json().catch(() => null)) as { error?: string; supportTicketId?: string | null } | null
   if (!response.ok) {
-    throw new Error(payload?.error ?? 'Nao foi possivel solicitar o reembolso.')
+    throw new Error(payload?.error ?? 'N?o foi possivel solicitar o reembolso.')
   }
 
   return {

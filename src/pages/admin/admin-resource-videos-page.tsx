@@ -176,7 +176,7 @@ export function AdminResourceVideosPage() {
       const versions = await fetchSiteContentVersions(entryId)
       setCardStyleVersions(versions)
     } catch (loadError) {
-      setError(loadError instanceof Error ? loadError.message : 'Nao foi possivel carregar o historico do padrao dos cards.')
+      setError(loadError instanceof Error ? loadError.message : 'N?o foi possivel carregar o hist?rico do padrao dos cards.')
     } finally {
       setIsLoadingCardStyleVersions(false)
     }
@@ -208,7 +208,7 @@ export function AdminResourceVideosPage() {
           setItems(createResourcesItemsFallback())
           setCardStyle({ ...defaultCardStyle })
           setCardStyleVersions([])
-          setError(loadError instanceof Error ? loadError.message : 'Nao foi possivel carregar os recursos.')
+          setError(loadError instanceof Error ? loadError.message : 'N?o foi possivel carregar os recursos.')
         }
       } finally {
         if (isMounted) {
@@ -290,7 +290,7 @@ export function AdminResourceVideosPage() {
       setItems(normalizedItems)
       setMessage(targetIndex === null ? 'Recursos salvos com sucesso.' : `Recurso ${targetIndex + 1} salvo com sucesso.`)
     } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : 'Nao foi possivel salvar os dados dos recursos.')
+      setError(saveError instanceof Error ? saveError.message : 'N?o foi possivel salvar os dados dos recursos.')
     } finally {
       setIsSaving(false)
       setSavingCardIndex(null)
@@ -335,7 +335,7 @@ export function AdminResourceVideosPage() {
       await reloadResourcesData()
       setMessage('Padrao dos cards salvo com sucesso. Os tamanhos individuais dos icones foram resetados e o tamanho global passou a valer para todos os recursos, ate que algum item seja editado individualmente no editor visual.')
     } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : 'Nao foi possivel salvar o padrao dos cards.')
+      setError(saveError instanceof Error ? saveError.message : 'N?o foi possivel salvar o padrao dos cards.')
     } finally {
       setIsSaving(false)
     }
@@ -359,7 +359,7 @@ export function AdminResourceVideosPage() {
       await reloadResourcesData()
       setMessage('Revisão do padrão dos cards restaurada com sucesso.')
     } catch (restoreError) {
-      setError(restoreError instanceof Error ? restoreError.message : 'Nao foi possivel restaurar esta revisao do padrao dos cards.')
+      setError(restoreError instanceof Error ? restoreError.message : 'N?o foi possivel restaurar esta revis?o do padrao dos cards.')
     } finally {
       setRestoringCardStyleVersionId(null)
     }

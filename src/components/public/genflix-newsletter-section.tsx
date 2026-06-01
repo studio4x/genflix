@@ -74,14 +74,14 @@ export function GenflixNewsletterSection({
 
       const payload = await response.json().catch(() => null) as { error?: string } | null
       if (!response.ok) {
-        throw new Error(payload?.error ?? 'Nao foi possivel cadastrar seu e-mail.')
+        throw new Error(payload?.error ?? 'N?o foi possivel cadastrar seu e-mail.')
       }
 
       setNewsletterEmail('')
       setSelectedInterestAreas([])
       setMessage('Cadastro recebido. Obrigado por se inscrever!')
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Nao foi possivel cadastrar seu e-mail.')
+      setMessage(error instanceof Error ? error.message : 'N?o foi possivel cadastrar seu e-mail.')
     } finally {
       setIsSubmitting(false)
     }

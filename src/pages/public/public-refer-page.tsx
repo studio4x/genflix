@@ -45,7 +45,7 @@ export function PublicReferPage() {
 
       setFeedback('Link copiado com sucesso.')
     } catch {
-      setFeedback('Nao foi possivel copiar o link agora.')
+      setFeedback('N?o foi possivel copiar o link agora.')
     }
   }
 
@@ -72,7 +72,7 @@ export function PublicReferPage() {
 
       const payload = await response.json().catch(() => null) as { error?: string } | null
       if (!response.ok) {
-        throw new Error(payload?.error ?? 'Nao foi possivel enviar a indicacao.')
+        throw new Error(payload?.error ?? 'N?o foi possivel enviar a indicacao.')
       }
 
       setReferrerName('')
@@ -82,7 +82,7 @@ export function PublicReferPage() {
       setMessage('')
       setFeedback('Indicacao enviada com sucesso.')
     } catch (error) {
-      setFeedback(error instanceof Error ? error.message : 'Nao foi possivel enviar a indicacao.')
+      setFeedback(error instanceof Error ? error.message : 'N?o foi possivel enviar a indicacao.')
     } finally {
       setIsSubmitting(false)
     }

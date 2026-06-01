@@ -400,7 +400,7 @@ export function AdminModulesPage() {
                     <Link to={`/admin/cursos/${courseId}/builder/assessments`}>Avaliações</Link>
                   </Button>
                   <Button type="button" variant="outline" size="sm" className="h-8 px-4 text-xs font-bold bg-white border-slate-200 text-blue-600 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-200 shadow-sm" asChild>
-                    <Link to={`/admin/modulos/${module.id}/aulas`}>
+                    <Link to={`/admin/m?dulos/${module.id}/aulas`}>
                       <svg className="h-3.5 w-3.5 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
                       Gerenciar Aulas
                     </Link>

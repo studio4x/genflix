@@ -57,7 +57,7 @@ export const publicCourseOutcomeSchema = z.object({
 })
 
 export const publicCourseModuleSchema = z.object({
-  title: z.string().trim().min(1, 'Informe o titulo do modulo.'),
+  title: z.string().trim().min(1, 'Informe o titulo do m?dulo.'),
   lessonCount: z.number().int().min(0).default(0),
   summary: z.string().trim().default(''),
   items: z.array(z.string().trim().min(1)).default([]),
@@ -71,8 +71,8 @@ export const coursePublicPageContentSchema = z.object({
   includedItems: z.array(z.string().trim().min(1)).default([]),
   bonusSection: z.object({
     enabled: z.boolean().default(true),
-    title: z.string().trim().min(1, 'Informe o titulo da secao bonus.'),
-    description: z.string().trim().min(1, 'Informe o texto da secao bonus.'),
+    title: z.string().trim().min(1, 'Informe o titulo da se??o bonus.'),
+    description: z.string().trim().min(1, 'Informe o texto da se??o bonus.'),
   }).nullable().optional(),
   contentSource: z.enum(['real', 'custom']).default('custom'),
   customSyllabus: z.array(publicCourseModuleSchema).default([]),
@@ -89,10 +89,10 @@ export const coursePublicPageFormSchema = z.object({
   bonus_enabled: z.boolean().default(true),
   bonus_title: z.string().trim().optional().or(z.literal('')),
   mentor_initials: z.string().trim().max(4).optional().or(z.literal('')),
-  price_label: z.string().trim().min(1, 'Informe o preco exibido na pagina publica.'),
+  price_label: z.string().trim().min(1, 'Informe o preco exibido na p?gina publica.'),
   secondary_price_label: z.string().trim().min(1, 'Informe o subtitulo do checkout.'),
   aboutParagraphs: z.array(z.string().trim().min(1)).min(1, 'Adicione pelo menos um paragrafo em Sobre o Curso.'),
-  outcomes: z.array(publicCourseOutcomeSchema).min(1, 'Adicione pelo menos um destaque em O que voce vai aprender.'),
+  outcomes: z.array(publicCourseOutcomeSchema).min(1, 'Adicione pelo menos um destaque em O que voc? vai aprender.'),
   includedItems: z.array(z.string().trim().min(1)).min(1, 'Adicione pelo menos um item do que esta incluido.'),
   contentSource: z.enum(['real', 'custom']).default('custom'),
   customSyllabus: z.array(publicCourseModuleSchema).default([]),
@@ -105,7 +105,7 @@ export const coursePublicPageFormSchema = z.object({
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
       path: ['bonus_title'],
-      message: 'Informe o titulo da secao bonus.',
+      message: 'Informe o titulo da se??o bonus.',
     })
   }
 
@@ -113,7 +113,7 @@ export const coursePublicPageFormSchema = z.object({
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
       path: ['mentor_bio'],
-      message: 'Informe o texto da secao bonus.',
+      message: 'Informe o texto da se??o bonus.',
     })
   }
 })
@@ -135,7 +135,7 @@ export const moduleFormSchema = z.object({
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
       path: ['ends_at'],
-      message: 'A data final do modulo deve ser posterior ao inicio.',
+      message: 'A data final do m?dulo deve ser posterior ao in?cio.',
     })
   }
 })
@@ -161,7 +161,7 @@ export const lessonFormSchema = z.object({
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
       path: ['ends_at'],
-      message: 'A data final da aula deve ser posterior ao inicio.',
+      message: 'A data final da aula deve ser posterior ao in?cio.',
     })
   }
 })

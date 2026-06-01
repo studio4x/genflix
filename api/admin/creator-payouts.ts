@@ -229,7 +229,7 @@ async function notifyCreatorPayoutEvent(input: {
     },
     failed: {
       title: 'Repasse com falha',
-      body: `O repasse de ${amountLabel} referente ao curso ${courseTitle} precisa de revisao. ${input.failureReason ?? 'Verifique o status no painel.'}`,
+      body: `O repasse de ${amountLabel} referente ao curso ${courseTitle} precisa de revis?o. ${input.failureReason ?? 'Verifique o status no painel.'}`,
       priority: 'high' as const,
     },
   }[input.kind]

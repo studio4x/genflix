@@ -539,7 +539,7 @@ export function StudentAssessmentExecutionPage() {
     if (finalAssessment) {
       return {
         label: 'Ir para a Prova Final',
-        href: `/aluno/cursos/${courseId}/player/avaliacoes/${finalAssessment.assessment_id}`,
+        href: `/aluno/cursos/${courseId}/player/avalia??es/${finalAssessment.assessment_id}`,
       }
     }
 
@@ -585,12 +585,12 @@ export function StudentAssessmentExecutionPage() {
     if (blockingQuiz && !blockingQuiz.last_is_approved) {
       return {
         title: 'Prova Final Bloqueada por Quiz Pendente',
-        description: `A prova final so sera liberada depois da aprovacao no quiz "${blockingQuiz.title}" do modulo "${incompleteModule.title}".`,
+        description: `A prova final so sera liberada depois da aprovacao no quiz "${blockingQuiz.title}" do m?dulo "${incompleteModule.title}".`,
       }
     }
 
     return {
-      title: 'Prova Final Bloqueada por Modulo Incompleto',
+      title: 'Prova Final Bloqueada por M?dulo Incompleto',
       description: `A prova final ainda não pode ser aberta porque o módulo "${incompleteModule.title}" não foi concluído por completo.`,
     }
   }, [assessments, modules, studentAssessment])

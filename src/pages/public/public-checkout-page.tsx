@@ -359,7 +359,7 @@ export function PublicCheckoutPage() {
       }
 
       if (!detail.id) {
-        throw new Error('Este curso ainda nao esta disponivel para checkout.')
+        throw new Error('Este curso ainda n?o esta disponivel para checkout.')
       }
 
       await updateProfile({
@@ -392,7 +392,7 @@ export function PublicCheckoutPage() {
 
       window.location.href = checkoutUrl
     } catch (error) {
-      setCheckoutError(error instanceof Error ? error.message : 'Nao foi possivel iniciar o checkout.')
+      setCheckoutError(error instanceof Error ? error.message : 'N?o foi possivel iniciar o checkout.')
     } finally {
       setIsStartingCheckout(false)
     }
@@ -453,7 +453,7 @@ export function PublicCheckoutPage() {
     }
 
     if (signupEmail.trim().toLowerCase() !== signupConfirmEmail.trim().toLowerCase()) {
-      setAuthError('Os e-mails nao conferem.')
+      setAuthError('Os e-mails n?o conferem.')
       return
     }
 
@@ -463,17 +463,17 @@ export function PublicCheckoutPage() {
     }
 
     if (signupPassword !== signupConfirmPassword) {
-      setAuthError('As senhas nao conferem.')
+      setAuthError('As senhas n?o conferem.')
       return
     }
 
     if (!acceptTerms) {
-      setAuthError('Voce precisa concordar com os Termos de Uso e a Politica de Privacidade.')
+      setAuthError('Voc? precisa concordar com os Termos de Uso e a Pol?tica de Privacidade.')
       return
     }
 
     if (!detail?.id) {
-      setAuthError('Este curso ainda nao esta disponivel para checkout.')
+      setAuthError('Este curso ainda n?o esta disponivel para checkout.')
       return
     }
 

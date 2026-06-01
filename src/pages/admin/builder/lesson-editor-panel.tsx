@@ -418,7 +418,7 @@ export function LessonEditorPanel() {
           title: 'Aula criada',
           message: `A aula "${form.title}" foi criada com sucesso.`,
         })
-        navigate(`/admin/cursos/${courseId}/builder/modulos/${moduleId}/aulas/${created.id}`, { replace: true })
+        navigate(`/admin/cursos/${courseId}/builder/m?dulos/${moduleId}/aulas/${created.id}`, { replace: true })
         return
       }
       await refreshTree()
@@ -549,12 +549,12 @@ export function LessonEditorPanel() {
     const materialId = value.slice('asset:'.length).trim()
     const linkedMaterial = lessonMaterials.find((item) => item.id === materialId)
     if (!linkedMaterial) {
-      setError('Nao foi possivel localizar o arquivo vinculado para remocao.')
+      setError('N?o foi possivel localizar o arquivo vinculado para remocao.')
       return
     }
 
     const confirmed = window.confirm(
-      `Deseja remover o video protegido "${linkedMaterial.file_name}"?\n\nEsta acao exclui o arquivo do storage privado.`,
+      `Deseja remover o video protegido "${linkedMaterial.file_name}"?\n\nEsta a??o exclui o arquivo do storage privado.`,
     )
     if (!confirmed) {
       return
@@ -607,7 +607,7 @@ export function LessonEditorPanel() {
             </p>
           </div>
           {!isNew && (
-            <Button variant="outline" size="sm" className="bg-white px-4 h-10 font-bold border-slate-200" onClick={() => navigate(`/admin/cursos/${courseId}/builder/modulos/${moduleId}/aulas/${lessonId}/materiais`)}>
+            <Button variant="outline" size="sm" className="bg-white px-4 h-10 font-bold border-slate-200" onClick={() => navigate(`/admin/cursos/${courseId}/builder/m?dulos/${moduleId}/aulas/${lessonId}/materiais`)}>
               <svg className="h-4 w-4 mr-2 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" /></svg>
               Botoes e URLs da Aula
             </Button>
@@ -1249,7 +1249,7 @@ export function LessonEditorPanel() {
                        type="button"
                        variant="outline"
                        className="border-slate-200 bg-white"
-                       onClick={() => navigate(`/admin/cursos/${courseId}/builder/modulos/${moduleId}/aulas/${lessonId}/materiais`)}
+                       onClick={() => navigate(`/admin/cursos/${courseId}/builder/m?dulos/${moduleId}/aulas/${lessonId}/materiais`)}
                      >
                        Gerenciar botoes
                      </Button>

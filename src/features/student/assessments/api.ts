@@ -197,8 +197,8 @@ export async function fetchAssessmentForExecution(assessmentId: string) {
       }
     }
 
-    const fallbackMessage = responseText.trim() || `Falha ao carregar avaliacao (${response.status}).`
-    console.error('Falha ao carregar avaliacao para execucao:', {
+    const fallbackMessage = responseText.trim() || `Falha ao carregar avalia??o (${response.status}).`
+    console.error('Falha ao carregar avalia??o para execucao:', {
       assessmentId,
       attempt,
       status: response.status,
@@ -215,7 +215,7 @@ export async function fetchAssessmentForExecution(assessmentId: string) {
       : fallbackMessage)
   }
 
-  throw new Error('Falha ao carregar avaliacao.')
+  throw new Error('Falha ao carregar avalia??o.')
 }
 
 export async function submitAssessmentAttempt(
@@ -256,7 +256,7 @@ export async function submitAssessmentAttempt(
 
     const errorMessage = payload && 'error' in payload && typeof payload.error === 'string'
       ? payload.error
-      : 'Falha ao processar tentativa de avaliacao.'
+      : 'Falha ao processar tentativa de avalia??o.'
 
     if (response.status === 401 && attempt < maxAttempts) {
       continue
@@ -265,7 +265,7 @@ export async function submitAssessmentAttempt(
     throw new Error(errorMessage)
   }
 
-  throw new Error('Falha ao processar tentativa de avaliacao.')
+  throw new Error('Falha ao processar tentativa de avalia??o.')
 }
 
 export async function fetchOwnAssessmentAttempts(assessmentId: string) {
@@ -374,7 +374,7 @@ async function resolveAccessToken(forceRefresh = false) {
   }
 
   if (!accessToken) {
-    throw new Error('Sessao expirada. Faca login novamente para enviar a avaliacao.')
+    throw new Error('Sess?o expirada. Faca login novamente para enviar a avalia??o.')
   }
 
   return accessToken

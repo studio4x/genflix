@@ -804,7 +804,7 @@ export async function exportAssessmentContent(assessmentId: string): Promise<Imp
 export async function exportFinalAssessmentContent(courseId: string): Promise<ImportAssessmentData> {
   const finalAssessment = await fetchFinalAssessment(courseId)
   if (!finalAssessment) {
-    throw new Error('Nenhuma avaliacao final encontrada para este curso.')
+    throw new Error('Nenhuma avalia??o final encontrada para este curso.')
   }
 
   return exportAssessmentContent(finalAssessment.id)

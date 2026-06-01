@@ -37,7 +37,7 @@ const communitySectionTemplates = [
   {
     id: 'newsletter',
     label: 'Newsletter',
-    description: 'Bloco global de captacao compartilhado com outras paginas publicas.',
+    description: 'Bloco global de captacao compartilhado com outras p?ginas publicas.',
     pageKey: 'global' as const,
   },
 ]
@@ -129,7 +129,7 @@ function CommunitySupportSection() {
               <p className="mt-4 text-[15px] leading-8 text-[#5f7178]">
                 <EditableText
                   entryKey="community.support.paragraph1"
-                  fallback="Oferecer a profissionais e estudantes universitarios conteudos modernos, objetivos e praticos, a precos justos, para que a compreensao aconteca de verdade. Nas comunidades da GenFlix, esse conhecimento ganha continuidade em conversas, trocas e repertorio compartilhado."
+                  fallback="Oferecer a profissionais e estudantes universitarios conte?dos modernos, objetivos e praticos, a precos justos, para que a compreensao aconteca de verdade. Nas comunidades da GenFlix, esse conhecimento ganha continuidade em conversas, trocas e repertorio compartilhado."
                   label="Texto de apoio 1"
                 />
               </p>
@@ -183,10 +183,10 @@ export function PublicCommunityPage() {
       <GenflixPublicHeader currentPage="community" navLinks={genflixNavLinks} />
       <BannerPlacementSlot pageKey="community" placementKey="hero" />
       <SectionStructureControl
-        buttonLabel="Gerenciar blocos da pagina"
+        buttonLabel="Gerenciar blocos da p?gina"
         pageKey="community"
         entryKey="community.layout.sections"
-        label="Estrutura da pagina Comunidade"
+        label="Estrutura da p?gina Comunidade"
         sections={communitySections}
         schema={communityLayoutSchema}
       />

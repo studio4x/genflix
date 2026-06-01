@@ -83,7 +83,7 @@ async function createAdminClient(req: ApiRequest, res: ApiResponse) {
 
   if (!supabaseUrl || !serviceRoleKey) {
     res.status(500).json({
-      error: 'Configuracao ausente: SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY sao obrigatorias.',
+      error: 'Configura??o ausente: SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY sao obrigatorias.',
     })
     return null
   }
@@ -113,7 +113,7 @@ async function createAdminClient(req: ApiRequest, res: ApiResponse) {
     .eq('user_id', requesterResult.data.user.id)
 
   if (requesterRolesResult.error) {
-    res.status(500).json({ error: 'Nao foi possivel validar perfil do solicitante.' })
+    res.status(500).json({ error: 'N?o foi possivel validar perfil do solicitante.' })
     return null
   }
 
@@ -135,7 +135,7 @@ function collectDistinctUserIds(...collections: Array<Array<{ user_id?: string |
 export default async function handler(req: ApiRequest, res: ApiResponse) {
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST')
-    res.status(405).json({ error: 'Metodo nao permitido.' })
+    res.status(405).json({ error: 'Metodo n?o permitido.' })
     return
   }
 
@@ -168,12 +168,12 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
     .maybeSingle()
 
   if (courseResult.error) {
-    res.status(500).json({ error: 'Nao foi possivel localizar o curso informado.' })
+    res.status(500).json({ error: 'N?o foi possivel localizar o curso informado.' })
     return
   }
 
   if (!courseResult.data) {
-    res.status(404).json({ error: 'Curso nao encontrado.' })
+    res.status(404).json({ error: 'Curso n?o encontrado.' })
     return
   }
 
@@ -183,7 +183,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
     .eq('course_id', courseId)
 
   if (modulesResult.error) {
-    res.status(500).json({ error: 'Nao foi possivel localizar os modulos do curso.' })
+    res.status(500).json({ error: 'N?o foi possivel localizar os m?dulos do curso.' })
     return
   }
 
@@ -197,7 +197,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
     : { data: [], error: null }
 
   if (lessonsResult.error) {
-    res.status(500).json({ error: 'Nao foi possivel localizar as aulas do curso.' })
+    res.status(500).json({ error: 'N?o foi possivel localizar as aulas do curso.' })
     return
   }
 
@@ -209,7 +209,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
     .eq('course_id', courseId)
 
   if (assessmentsResult.error) {
-    res.status(500).json({ error: 'Nao foi possivel localizar as avaliacoes do curso.' })
+    res.status(500).json({ error: 'N?o foi possivel localizar as avalia??es do curso.' })
     return
   }
 
@@ -235,7 +235,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
   ])
 
   if (existingCourseProgressResult.error || existingLessonProgressResult.error || existingAttemptsResult.error) {
-    res.status(500).json({ error: 'Nao foi possivel mapear o progresso atual do curso.' })
+    res.status(500).json({ error: 'N?o foi possivel mapear o progresso atual do curso.' })
     return
   }
 
@@ -285,7 +285,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
       .select('id')
 
     if (deleteAttemptsResult.error) {
-      res.status(500).json({ error: 'Falha ao limpar tentativas de avaliacao do curso.' })
+      res.status(500).json({ error: 'Falha ao limpar tentativas de avalia??o do curso.' })
       return
     }
     deletedCounts.assessment_attempts = deleteAttemptsResult.data?.length ?? 0

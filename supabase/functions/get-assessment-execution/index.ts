@@ -109,7 +109,7 @@ Deno.serve(async (request) => {
     } = await supabaseAdmin.auth.getUser(accessToken)
 
     if (authError || !user) {
-      return jsonResponse({ error: 'Token invalido ou usuario nao autenticado.' }, 401)
+      return jsonResponse({ error: 'Token invalido ou usuario n?o autenticado.' }, 401)
     }
 
     const [{ data: isAdmin, error: adminRoleError }, { data: isStudent, error: studentRoleError }] = await Promise.all([
@@ -128,7 +128,7 @@ Deno.serve(async (request) => {
     }
 
     if (!isAdmin && !isStudent) {
-      return jsonResponse({ error: 'Usuario sem permissao para acessar avaliacoes.' }, 403)
+      return jsonResponse({ error: 'Usuario sem permissao para acessar avalia??es.' }, 403)
     }
 
     const assessmentResult = await supabaseAdmin
@@ -143,7 +143,7 @@ Deno.serve(async (request) => {
 
     const assessment = (assessmentResult.data as AssessmentRow | null) ?? null
     if (!assessment || (!isAdmin && !assessment.is_active)) {
-      return jsonResponse({ error: 'Avaliacao nao encontrada ou inativa.' }, 404)
+      return jsonResponse({ error: 'Avalia??o n?o encontrada ou inativa.' }, 404)
     }
 
     if (!isAdmin) {
@@ -153,12 +153,12 @@ Deno.serve(async (request) => {
       })
 
       if (releaseError || !isReleased) {
-        return jsonResponse({ error: 'Avaliacao nao liberada para o usuario.' }, 403)
+        return jsonResponse({ error: 'Avalia??o n?o liberada para o usuario.' }, 403)
       }
 
       if (assessment.assessment_type === 'module') {
         if (!assessment.module_id) {
-          return jsonResponse({ error: 'Avaliacao de modulo invalida.' }, 400)
+          return jsonResponse({ error: 'Avalia??o de m?dulo invalida.' }, 400)
         }
 
         const { data: isUnlocked, error: unlockError } = await supabaseAdmin.rpc('is_module_unlocked', {
@@ -167,7 +167,7 @@ Deno.serve(async (request) => {
         })
 
         if (unlockError || !isUnlocked) {
-          return jsonResponse({ error: 'Modulo bloqueado para avaliacao.' }, 403)
+          return jsonResponse({ error: 'M?dulo bloqueado para avalia??o.' }, 403)
         }
       } else {
         const { data: allRequiredCompleted, error: completedError } = await supabaseAdmin.rpc('are_required_modules_completed', {
@@ -176,7 +176,7 @@ Deno.serve(async (request) => {
         })
 
         if (completedError || !allRequiredCompleted) {
-          return jsonResponse({ error: 'Avaliacao final bloqueada ate concluir os modulos obrigatorios.' }, 403)
+          return jsonResponse({ error: 'Avalia??o final bloqueada ate concluir os m?dulos obrigatorios.' }, 403)
         }
       }
     }
@@ -267,7 +267,7 @@ Deno.serve(async (request) => {
       caseStudies: caseStudyPayload,
     }, 200)
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Erro inesperado ao carregar avaliacao.'
+    const message = error instanceof Error ? error.message : 'Erro inesperado ao carregar avalia??o.'
     return jsonResponse({ error: message }, 500)
   }
 })
@@ -296,7 +296,7 @@ async function withSignedAssetUrl(
     .createSignedUrl(storagePath, 60 * 60)
 
   if (signedUrlResult.error) {
-    console.error('Falha ao assinar asset da avaliacao:', signedUrlResult.error)
+    console.error('Falha ao assinar asset da avalia??o:', signedUrlResult.error)
     return interaction
   }
 

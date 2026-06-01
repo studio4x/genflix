@@ -108,7 +108,7 @@ function normalizeOutlineModule(value: unknown): GenflixCourseModule | null {
 
 async function fetchPublicCourseOutline(courseId: string): Promise<GenflixCourseModule[]> {
   if (!supabaseUrl || !supabaseAnonKey) {
-    throw new Error('Configuracao publica do Supabase ausente.')
+    throw new Error('Configura??o publica do Supabase ausente.')
   }
 
   const response = await fetch(`${supabaseUrl}/rest/v1/rpc/get_public_course_outline`, {
@@ -125,7 +125,7 @@ async function fetchPublicCourseOutline(courseId: string): Promise<GenflixCourse
 
   if (!response.ok) {
     const message = await response.text()
-    throw new Error(message || 'Nao foi possivel carregar o outline publico do curso.')
+    throw new Error(message || 'N?o foi possivel carregar o outline publico do curso.')
   }
 
   const payload = (await response.json()) as unknown

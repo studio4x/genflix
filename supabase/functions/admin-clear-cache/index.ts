@@ -6,13 +6,13 @@ Deno.serve(async (request) => {
 
   if (request.method === 'OPTIONS') {
     if (!isAllowedOrigin(request.headers.get('origin'))) {
-      return new Response('origin nao permitida', { status: 403, headers: corsHeaders })
+      return new Response('origin n?o permitida', { status: 403, headers: corsHeaders })
     }
     return new Response('ok', { headers: corsHeaders })
   }
 
   if (request.method !== 'POST') {
-    return jsonResponse(request, { error: 'Metodo nao permitido.' }, 405)
+    return jsonResponse(request, { error: 'Metodo n?o permitido.' }, 405)
   }
 
   try {
@@ -25,7 +25,7 @@ Deno.serve(async (request) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     if (!supabaseUrl || !serviceRoleKey) {
-      return jsonResponse(request, { error: 'Configuracao ausente do Supabase.' }, 500)
+      return jsonResponse(request, { error: 'Configura??o ausente do Supabase.' }, 500)
     }
 
     const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey)

@@ -55,7 +55,7 @@ export function SupportTicketDetailPage() {
       setTicket(ticketDetail)
       setSettings(supportSettings)
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'Nao foi possivel carregar o ticket.')
+      setErrorMessage(error instanceof Error ? error.message : 'N?o foi possivel carregar o ticket.')
     } finally {
       setIsLoading(false)
     }
@@ -162,7 +162,7 @@ export function SupportTicketDetailPage() {
           : [...current.messages, message],
       } : current)
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'Nao foi possivel enviar a mensagem.')
+      setErrorMessage(error instanceof Error ? error.message : 'N?o foi possivel enviar a mensagem.')
     } finally {
       setIsSending(false)
     }
@@ -180,7 +180,7 @@ export function SupportTicketDetailPage() {
       const updated = await updateSupportTicketStatus(ticket.id, nextStatus)
       setTicket((current) => current ? { ...current, ...updated, messages: current.messages } : current)
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'Nao foi possivel atualizar o status do ticket.')
+      setErrorMessage(error instanceof Error ? error.message : 'N?o foi possivel atualizar o status do ticket.')
     } finally {
       setIsUpdatingStatus(false)
     }

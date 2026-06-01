@@ -189,7 +189,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
   const authUser: { id: string; email?: string | null; user_metadata?: Record<string, unknown> | null } = userData.user
 
   if (buyerUserId && buyerUserId !== authUser.id) {
-    jsonResponse(res, 403, { error: 'buyerUserId nao corresponde ao usuario autenticado.' })
+    jsonResponse(res, 403, { error: 'buyerUserId n?o corresponde ao usuario autenticado.' })
     return
   }
 
@@ -482,7 +482,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
 
   if (sessionInsert.error) {
     console.error('checkout_session_insert_failed', sessionInsert.error)
-    jsonResponse(res, 500, { error: 'Nao foi possivel registrar o pedido antes de enviar ao pagamento.' })
+    jsonResponse(res, 500, { error: 'N?o foi possivel registrar o pedido antes de enviar ao pagamento.' })
     return
   }
 

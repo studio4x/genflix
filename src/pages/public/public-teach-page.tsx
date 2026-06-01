@@ -54,7 +54,7 @@ export function PublicTeachPage() {
 
       const payload = await response.json().catch(() => null) as { error?: string } | null
       if (!response.ok) {
-        throw new Error(payload?.error ?? 'Nao foi possivel enviar sua mensagem.')
+        throw new Error(payload?.error ?? 'N?o foi possivel enviar sua mensagem.')
       }
 
       setName('')
@@ -63,7 +63,7 @@ export function PublicTeachPage() {
       setMessage('')
       setFeedback('Mensagem enviada com sucesso. Em breve entraremos em contato.')
     } catch (error) {
-      setFeedback(error instanceof Error ? error.message : 'Nao foi possivel enviar sua mensagem.')
+      setFeedback(error instanceof Error ? error.message : 'N?o foi possivel enviar sua mensagem.')
     } finally {
       setIsSubmitting(false)
     }
@@ -89,7 +89,7 @@ export function PublicTeachPage() {
               <EditableImage
                 entryKey="global.teach.form.image"
                 fallback={{ src: genflixHeroImage, alt: 'Ensine na GenFlix' }}
-                label="Imagem lateral da pagina Ensine na GenFlix"
+                label="Imagem lateral da p?gina Ensine na GenFlix"
                 pageKey="global"
               >
                 {(imageValue) => (
@@ -107,16 +107,16 @@ export function PublicTeachPage() {
               </EditableImage>
 
               <div className="flex items-center px-6 py-12 sm:px-10 lg:px-12">
-                <EditableContainer entryKey="global.teach.form.content.card" label="Container interno do conteudo Ensine na GenFlix" pageKey="global">
+                <EditableContainer entryKey="global.teach.form.content.card" label="Container interno do conte?do Ensine na GenFlix" pageKey="global">
                   <div className="w-full max-w-[420px]">
                     <h1 className="text-[2.45rem] font-extrabold leading-[0.95] tracking-[-0.05em] text-[#183139] sm:text-[3rem]">
-                      <EditableText entryKey="global.teach.title" fallback="Ensine na GenFlix" label="Titulo da pagina Ensine na GenFlix" pageKey="global" />
+                      <EditableText entryKey="global.teach.title" fallback="Ensine na GenFlix" label="Titulo da p?gina Ensine na GenFlix" pageKey="global" />
                     </h1>
                     <p className="mt-4 text-base leading-7 text-[#5f7178]">
                       <EditableText
                         entryKey="global.teach.description"
                         fallback="Duvidas, sugestoes ou suporte - estamos aqui."
-                        label="Descricao da pagina Ensine na GenFlix"
+                        label="Descricao da p?gina Ensine na GenFlix"
                         pageKey="global"
                       />
                     </p>

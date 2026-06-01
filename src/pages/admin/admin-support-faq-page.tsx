@@ -115,7 +115,7 @@ export function AdminSupportFaqPage() {
       setNewDraft((current) => ({ ...current, sort_order: faqRows.length + 1 }))
       setSelectedArticleId((current) => current ?? faqRows[0]?.id ?? null)
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'Nao foi possivel carregar os dados. Tente novamente.')
+      setErrorMessage(error instanceof Error ? error.message : 'N?o foi possivel carregar os dados. Tente novamente.')
     } finally {
       setIsRefreshing(false)
       setIsLoading(false)
@@ -307,7 +307,7 @@ export function AdminSupportFaqPage() {
       setFaqs((current) => current.map((entry) => (entry.id === item.id ? updated : entry)))
       setSuccessMessage('Alteracoes salvas com sucesso.')
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'Nao foi possivel salvar a FAQ.')
+      setErrorMessage(error instanceof Error ? error.message : 'N?o foi possivel salvar a FAQ.')
     } finally {
       setIsSaving(null)
     }
@@ -333,7 +333,7 @@ export function AdminSupportFaqPage() {
       })
       setSuccessMessage('Alteracoes salvas com sucesso.')
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'Nao foi possivel criar a FAQ.')
+      setErrorMessage(error instanceof Error ? error.message : 'N?o foi possivel criar a FAQ.')
     } finally {
       setIsSaving(null)
     }
@@ -353,7 +353,7 @@ export function AdminSupportFaqPage() {
       setSelectedArticleId((current) => (current === id ? null : current))
       setSuccessMessage('Alteracoes salvas com sucesso.')
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'Nao foi possivel excluir a FAQ.')
+      setErrorMessage(error instanceof Error ? error.message : 'N?o foi possivel excluir a FAQ.')
     } finally {
       setIsSaving(null)
     }

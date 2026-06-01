@@ -134,8 +134,8 @@ export function StudentDashboardPage() {
       .slice(0, 2)
       .map((course) => ({
         id: `progress-${course.id}`,
-        title: 'Retomar conteudo',
-        description: `Continue de onde voce parou em ${course.title}.`,
+        title: 'Retomar conte?do',
+        description: `Continue de onde voc? parou em ${course.title}.`,
         to: `/aluno/cursos/${course.id}`,
         cta: 'Continuar',
         tone: 'blue' as const,
@@ -150,7 +150,7 @@ export function StudentDashboardPage() {
       {
         id: 'catalog',
         title: 'Explorar o catalogo',
-        description: 'Revise seus treinamentos liberados e escolha o melhor proximo passo.',
+        description: 'Revise seus treinamentos liberados e escolha o melhor pr?ximo passo.',
         to: '/aluno/cursos',
         cta: 'Ver cursos',
         tone: 'slate' as const,

@@ -188,8 +188,8 @@ export function CourseSettingsPanel() {
       setSuccess(true)
       publishBuilderNotice({
         type: 'success',
-        title: 'Configuracoes salvas',
-        message: `As configuracoes do curso "${parsed.data.title}" foram salvas com sucesso.`,
+        title: 'Configura??es salvas',
+        message: `As configura??es do curso "${parsed.data.title}" foram salvas com sucesso.`,
       })
       setTimeout(() => setSuccess(false), 3000)
     } catch (err) {
@@ -213,7 +213,7 @@ export function CourseSettingsPanel() {
       publishBuilderNotice({
         type: 'success',
         title: 'Padroes da IA salvos',
-        message: 'Os padroes de revisao com IA foram atualizados com sucesso.',
+        message: 'Os padroes de revis?o com IA foram atualizados com sucesso.',
       })
       setTimeout(() => setAiStandardsSuccess(false), 3000)
     } catch (err) {

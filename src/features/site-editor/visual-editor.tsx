@@ -2310,7 +2310,7 @@ function EditorModal({
       replaceWorkspaceRecord(nextRecord)
       setMessage('Rascunho sincronizado no workspace compartilhado.')
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Nao foi possivel salvar o rascunho.')
+      setMessage(error instanceof Error ? error.message : 'N?o foi possivel salvar o rascunho.')
     }
   }
 
@@ -2339,7 +2339,7 @@ function EditorModal({
       replaceWorkspaceRecord(nextRecord)
       setMessage(`Status atualizado para ${formatWorkflowStatus(nextStatus)}.`)
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Nao foi possivel atualizar o status.')
+      setMessage(error instanceof Error ? error.message : 'N?o foi possivel atualizar o status.')
     }
   }
 
@@ -2360,7 +2360,7 @@ function EditorModal({
       setDraftComment('')
       setMessage('Comentario compartilhado registrado.')
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Nao foi possivel registrar o comentario.')
+      setMessage(error instanceof Error ? error.message : 'N?o foi possivel registrar o comentario.')
     }
   }
 
@@ -3121,7 +3121,7 @@ function EditorModal({
                         ['menuColor', 'Cor do menu'],
                         ['menuActiveColor', 'Cor ativa do menu'],
                         ['menuHoverColor', 'Cor de hover do menu'],
-                        ['pageBackgroundColor', 'Cor de fundo da pagina'],
+                        ['pageBackgroundColor', 'Cor de fundo da p?gina'],
                       ] as const).map(([field, label]) => (
                         <label key={field} className="grid gap-1.5">
                           <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">{label}</span>

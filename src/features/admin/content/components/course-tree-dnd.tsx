@@ -59,7 +59,7 @@ export function CourseTreeDnd({ tree, onRefresh }: CourseTreeDndProps) {
   }
 
   async function handleDeleteModule(moduleId: string, moduleTitle: string) {
-    if (!window.confirm(`ATENCAO: Excluir o modulo "${moduleTitle}"?\n\nTodas as aulas e quizzes vinculados serao removidos permanentemente.`)) {
+    if (!window.confirm(`ATENCAO: Excluir o m?dulo "${moduleTitle}"?\n\nTodas as aulas e quizzes vinculados serao removidos permanentemente.`)) {
       return
     }
 
@@ -67,7 +67,7 @@ export function CourseTreeDnd({ tree, onRefresh }: CourseTreeDndProps) {
     try {
       await deleteModule(moduleId)
       await onRefresh()
-      if (location.pathname.includes(`/modulos/${moduleId}`)) {
+      if (location.pathname.includes(`/m?dulos/${moduleId}`)) {
         navigate(coursePath, { replace: true })
       }
     } catch (err) {
@@ -87,7 +87,7 @@ export function CourseTreeDnd({ tree, onRefresh }: CourseTreeDndProps) {
       await deleteLesson(lessonId)
       await onRefresh()
       if (location.pathname.includes(`/aulas/${lessonId}`)) {
-        navigate(`/admin/cursos/${courseId}/builder/modulos/${moduleId}`, { replace: true })
+        navigate(`/admin/cursos/${courseId}/builder/m?dulos/${moduleId}`, { replace: true })
       }
     } catch (err) {
       alert(toErrorMessage(err))
@@ -98,7 +98,7 @@ export function CourseTreeDnd({ tree, onRefresh }: CourseTreeDndProps) {
 
   async function handleDeleteAssessment(moduleId: string | null, assessmentId: string, assessmentTitle: string, isFinalAssessment = false) {
     const confirmMessage = isFinalAssessment
-      ? `CUIDADO: Excluir a avaliacao final "${assessmentTitle}"?\n\nTodas as questoes, estudos de caso e tentativas vinculadas serao removidos permanentemente.`
+      ? `CUIDADO: Excluir a avalia??o final "${assessmentTitle}"?\n\nTodas as questoes, estudos de caso e tentativas vinculadas serao removidos permanentemente.`
       : `CUIDADO: Excluir o quiz "${assessmentTitle}"?\n\nTodas as questoes, estudos de caso e tentativas vinculadas serao removidos permanentemente.`
 
     if (!window.confirm(confirmMessage)) {
@@ -115,10 +115,10 @@ export function CourseTreeDnd({ tree, onRefresh }: CourseTreeDndProps) {
         return
       }
 
-      if (location.pathname.includes(`/avaliacoes/${assessmentId}`)) {
+      if (location.pathname.includes(`/avalia??es/${assessmentId}`)) {
         navigate(
           moduleId
-            ? `/admin/cursos/${courseId}/builder/modulos/${moduleId}`
+            ? `/admin/cursos/${courseId}/builder/m?dulos/${moduleId}`
             : `${coursePath}/assessments`,
           { replace: true },
         )
@@ -168,7 +168,7 @@ export function CourseTreeDnd({ tree, onRefresh }: CourseTreeDndProps) {
                           </div>
 
                           <Link 
-                            to={`/admin/cursos/${courseId}/builder/modulos/${m.id}`}
+                            to={`/admin/cursos/${courseId}/builder/m?dulos/${m.id}`}
                             className="flex-1 p-2 py-2.5 text-sm font-bold text-slate-800 truncate"
                           >
                              <div className="flex items-center gap-2 truncate">
@@ -185,7 +185,7 @@ export function CourseTreeDnd({ tree, onRefresh }: CourseTreeDndProps) {
                             }}
                             disabled={deletingKey === `module:${m.id}`}
                             className="mr-2 rounded-lg p-2 text-slate-300 opacity-0 transition-all hover:bg-rose-50 hover:text-rose-500 disabled:cursor-not-allowed disabled:opacity-100 group-hover:opacity-100"
-                            title="Excluir modulo"
+                            title="Excluir m?dulo"
                           >
                             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -214,7 +214,7 @@ export function CourseTreeDnd({ tree, onRefresh }: CourseTreeDndProps) {
                                           </div>
 
                                           <Link
-                                            to={`/admin/cursos/${courseId}/builder/modulos/${m.id}/aulas/${l.id}`}
+                                            to={`/admin/cursos/${courseId}/builder/m?dulos/${m.id}/aulas/${l.id}`}
                                             className="flex-1 py-1.5 px-1 rounded-md text-[13px] font-medium truncate"
                                           >
                                             <div className="flex items-center gap-2 truncate">
@@ -253,14 +253,14 @@ export function CourseTreeDnd({ tree, onRefresh }: CourseTreeDndProps) {
 
                           {/* Quizzes (Fixed position for now, not draggable in this version or could be added) */}
                           {m.assessments.map(a => {
-                            const isActiveAssessment = location.pathname.includes(`/avaliacoes/${a.id}`)
+                            const isActiveAssessment = location.pathname.includes(`/avalia??es/${a.id}`)
                             return (
                               <div key={a.id} className={`flex items-center group/quiz rounded-md transition-colors ${isActiveAssessment ? 'bg-amber-50 text-amber-700 border border-amber-100 shadow-sm' : 'hover:bg-amber-50/30'}`}>
                                 <div className="p-1 px-1.5 text-transparent">
                                    <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8h16M4 16h16" /></svg>
                                 </div>
                                 <Link
-                                  to={`/admin/cursos/${courseId}/builder/modulos/${m.id}/avaliacoes/${a.id}`}
+                                  to={`/admin/cursos/${courseId}/builder/m?dulos/${m.id}/avalia??es/${a.id}`}
                                   className="flex-1 py-1.5 px-1 text-[13px] font-medium truncate"
                                 >
                                    <div className="flex items-center gap-2 truncate">
@@ -289,11 +289,11 @@ export function CourseTreeDnd({ tree, onRefresh }: CourseTreeDndProps) {
                           
                           {/* Add Lesson/Quiz quick actions */}
                           <div className="flex items-center gap-1 mt-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <Link to={`/admin/cursos/${courseId}/builder/modulos/${m.id}/aulas/nova`} className="flex-1 flex items-center gap-1.5 py-1 px-1.5 rounded-md text-[11px] font-bold text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors">
+                            <Link to={`/admin/cursos/${courseId}/builder/m?dulos/${m.id}/aulas/nova`} className="flex-1 flex items-center gap-1.5 py-1 px-1.5 rounded-md text-[11px] font-bold text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors">
                               <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
                               Aula
                             </Link>
-                            <Link to={`/admin/cursos/${courseId}/builder/modulos/${m.id}/avaliacoes/nova`} className="flex-1 flex items-center gap-1.5 py-1 px-1.5 rounded-md text-[11px] font-bold text-slate-400 hover:text-amber-600 hover:bg-amber-50 transition-colors">
+                            <Link to={`/admin/cursos/${courseId}/builder/m?dulos/${m.id}/avalia??es/nova`} className="flex-1 flex items-center gap-1.5 py-1 px-1.5 rounded-md text-[11px] font-bold text-slate-400 hover:text-amber-600 hover:bg-amber-50 transition-colors">
                               <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
                               Quiz
                             </Link>
@@ -345,7 +345,7 @@ export function CourseTreeDnd({ tree, onRefresh }: CourseTreeDndProps) {
                     }}
                     disabled={deletingKey === `assessment:${assessment.id}`}
                     className="mr-2 rounded-lg p-2 text-slate-300 opacity-0 transition-all hover:bg-rose-50 hover:text-rose-500 disabled:cursor-not-allowed disabled:opacity-100 group-hover/final:opacity-100"
-                    title="Excluir avaliacao final"
+                    title="Excluir avalia??o final"
                   >
                     <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -359,7 +359,7 @@ export function CourseTreeDnd({ tree, onRefresh }: CourseTreeDndProps) {
 
         {/* Add Module Quick Action */}
         <div className="pt-4 pb-2">
-           <Link to={`/admin/cursos/${courseId}/builder/modulos/novo`} className="flex items-center gap-2 p-3 rounded-xl text-sm font-black text-blue-600 border border-dashed border-blue-200 bg-blue-50/50 hover:bg-blue-100 transition-all">
+           <Link to={`/admin/cursos/${courseId}/builder/m?dulos/novo`} className="flex items-center gap-2 p-3 rounded-xl text-sm font-black text-blue-600 border border-dashed border-blue-200 bg-blue-50/50 hover:bg-blue-100 transition-all">
               <div className="bg-blue-600 text-white p-1 rounded-md">
                 <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 4v16m8-8H4" /></svg>
               </div>

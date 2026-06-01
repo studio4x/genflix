@@ -147,7 +147,7 @@ export async function analyzeModuleWithAi(input: {
     } catch (error) {
       const isNetworkFailure = error instanceof TypeError
       if (isNetworkFailure && attempt < maxAttempts) {
-        lastError = new Error('Falha de rede temporaria ao analisar modulo.')
+        lastError = new Error('Falha de rede temporaria ao analisar m?dulo.')
         await waitUntilVisibleIfHidden()
         await sleep(attempt * 800)
         continue
@@ -326,7 +326,7 @@ async function resolveAccessToken(forceRefresh: boolean) {
   }
 
   if (!accessToken) {
-    throw new Error('Sessao expirada. Faca login novamente para usar a analise com IA.')
+    throw new Error('Sess?o expirada. Faca login novamente para usar a analise com IA.')
   }
 
   return accessToken

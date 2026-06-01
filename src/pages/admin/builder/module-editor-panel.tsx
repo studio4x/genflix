@@ -198,7 +198,7 @@ export function ModuleEditorPanel() {
           setCurrentReviewId(savedReview.id)
           setReviewHistory((previous) => [savedReview, ...previous])
         } catch (historyError) {
-          setError(`A analise foi concluida, mas o historico nao foi salvo: ${toErrorMessage(historyError)}`)
+          setError(`A analise foi concluida, mas o hist?rico n?o foi salvo: ${toErrorMessage(historyError)}`)
         }
       }
 
@@ -222,9 +222,9 @@ export function ModuleEditorPanel() {
     publishBuilderNotice({
       type: 'pending',
       title: 'Aplicando ajustes da IA',
-      message: `O modulo "${currentModule.title}" esta sendo atualizado agora.`,
+      message: `O m?dulo "${currentModule.title}" esta sendo atualizado agora.`,
       details: [
-        `Modulo em processamento: ${currentModule.title}`,
+        `M?dulo em processamento: ${currentModule.title}`,
         `Pontos identificados na analise: ${analysisResult.issues.length}`,
         'Aguarde a confirmacao final antes de sair da tela.',
       ],
@@ -245,7 +245,7 @@ export function ModuleEditorPanel() {
             )))
           }
         } catch (historyError) {
-          setError(`Os ajustes foram aplicados, mas o historico nao foi atualizado: ${toErrorMessage(historyError)}`)
+          setError(`Os ajustes foram aplicados, mas o hist?rico n?o foi atualizado: ${toErrorMessage(historyError)}`)
         }
       }
 
@@ -253,15 +253,15 @@ export function ModuleEditorPanel() {
       publishBuilderNotice({
         type: 'success',
         title: 'Ajustes da IA concluidos',
-        message: `Os ajustes foram aplicados ao modulo "${currentModule.title}".`,
+        message: `Os ajustes foram aplicados ao m?dulo "${currentModule.title}".`,
         details: [
-          `Modulo atualizado: ${currentModule.title}`,
+          `M?dulo atualizado: ${currentModule.title}`,
           `Horario: ${new Intl.DateTimeFormat('pt-BR', {
             dateStyle: 'short',
             timeStyle: 'medium',
           }).format(new Date(appliedAtIso))}`,
           `Pontos processados: ${analysisResult.issues.length}`,
-          analysisResult.ready_to_publish ? 'Status do modulo: pronto para publicar.' : 'Status do modulo: ainda requer revisao manual.',
+          analysisResult.ready_to_publish ? 'Status do m?dulo: pronto para publicar.' : 'Status do m?dulo: ainda requer revis?o manual.',
         ],
       })
     } catch (err) {
@@ -270,9 +270,9 @@ export function ModuleEditorPanel() {
       publishBuilderNotice({
         type: 'error',
         title: 'Falha ao aplicar ajustes da IA',
-        message: `Nao foi possivel concluir os ajustes no modulo "${currentModule.title}".`,
+        message: `N?o foi possivel concluir os ajustes no m?dulo "${currentModule.title}".`,
         details: [
-          `Modulo: ${currentModule.title}`,
+          `M?dulo: ${currentModule.title}`,
           `Erro retornado: ${message}`,
           'Nenhuma confirmacao de salvamento foi recebida.',
         ],
@@ -300,18 +300,18 @@ export function ModuleEditorPanel() {
         await updateModule(moduleId, parsed.data)
         publishBuilderNotice({
           type: 'success',
-          title: 'Modulo salvo',
-          message: `As alteracoes do modulo "${parsed.data.title}" foram salvas com sucesso.`,
+          title: 'M?dulo salvo',
+          message: `As alteracoes do m?dulo "${parsed.data.title}" foram salvas com sucesso.`,
         })
       } else {
         const created = await createModule(courseId, parsed.data)
         await refreshTree()
         publishBuilderNotice({
           type: 'success',
-          title: 'Modulo criado',
-          message: `O modulo "${parsed.data.title}" foi criado com sucesso.`,
+          title: 'M?dulo criado',
+          message: `O m?dulo "${parsed.data.title}" foi criado com sucesso.`,
         })
-        navigate(`/admin/cursos/${courseId}/builder/modulos/${created.id}`, { replace: true })
+        navigate(`/admin/cursos/${courseId}/builder/m?dulos/${created.id}`, { replace: true })
         return
       }
       await refreshTree()
@@ -352,7 +352,7 @@ export function ModuleEditorPanel() {
 
   async function handleDeleteModulePdf() {
     if (!currentModule) return
-    if (!window.confirm('Remover o PDF base deste modulo?')) return
+    if (!window.confirm('Remover o PDF base deste m?dulo?')) return
 
     try {
       await deleteModulePdf(currentModule)
@@ -607,7 +607,7 @@ export function ModuleEditorPanel() {
                         ? 'bg-emerald-100 text-emerald-700'
                         : 'bg-amber-100 text-amber-700'
                     }`}>
-                      {repeatReviewPrompt.applied_at ? 'Ajustes aplicados' : 'Ajustes nao aplicados'}
+                      {repeatReviewPrompt.applied_at ? 'Ajustes aplicados' : 'Ajustes n?o aplicados'}
                     </span>
                   </div>
                 </div>

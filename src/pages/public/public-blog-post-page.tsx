@@ -453,7 +453,7 @@ export function PublicBlogPostPage() {
       setCommentSuccess('Comentario enviado para aprovacao do administrador.')
       setIsCommentFormOpen(false)
     } catch (error) {
-      setCommentError(error instanceof Error ? error.message : 'Nao foi possivel enviar o comentario.')
+      setCommentError(error instanceof Error ? error.message : 'N?o foi possivel enviar o comentario.')
     } finally {
       setIsSubmittingComment(false)
     }

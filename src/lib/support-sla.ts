@@ -41,7 +41,7 @@ export const defaultSupportSlaConfig: SupportSlaConfig = {
       description: 'Primeira resposta em ate 24 horas uteis.',
     },
   ],
-  public_note: 'Os prazos acima se referem ao tempo da primeira resposta humana da equipe. Nao representam prazo de resolucao final.',
+  public_note: 'Os prazos acima se referem ao tempo da primeira resposta humana da equipe. N?o representam prazo de resolucao final.',
 }
 
 export const defaultSupportBusinessHoursConfig: SupportBusinessHoursConfig = {

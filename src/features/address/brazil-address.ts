@@ -53,7 +53,7 @@ async function loadBrazilCitiesByState(stateCode: string) {
   )
 
   if (!response.ok) {
-    throw new Error('Nao foi possivel carregar as cidades do estado selecionado.')
+    throw new Error('N?o foi possivel carregar as cidades do estado selecionado.')
   }
 
   const payload = (await response.json()) as Array<{ id: number; nome: string }>

@@ -53,7 +53,7 @@ export function LessonNotesPanel({
         setIsOpen(Boolean(currentNote?.note_text))
       } catch (loadError) {
         if (!isMounted) return
-        setError(loadError instanceof Error ? loadError.message : 'Nao foi possivel carregar a anotacao.')
+        setError(loadError instanceof Error ? loadError.message : 'N?o foi possivel carregar a anotacao.')
       } finally {
         if (isMounted) {
           setIsLoading(false)
@@ -106,7 +106,7 @@ export function LessonNotesPanel({
           statusTimeoutRef.current = window.setTimeout(() => setStatus('idle'), 2000)
         } catch (saveError) {
           setStatus('error')
-          setError(saveError instanceof Error ? saveError.message : 'Nao foi possivel salvar a anotacao.')
+          setError(saveError instanceof Error ? saveError.message : 'N?o foi possivel salvar a anotacao.')
         }
       })()
     }, 700)
@@ -130,7 +130,7 @@ export function LessonNotesPanel({
       setSavedValue('')
       setStatus('idle')
     } catch (deleteError) {
-      setError(deleteError instanceof Error ? deleteError.message : 'Nao foi possivel excluir a anotacao.')
+      setError(deleteError instanceof Error ? deleteError.message : 'N?o foi possivel excluir a anotacao.')
     } finally {
       setIsDeleting(false)
     }

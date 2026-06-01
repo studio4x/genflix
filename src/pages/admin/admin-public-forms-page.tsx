@@ -97,7 +97,7 @@ const formDefinitions: SiteFormDefinition[] = [
     pageKey: 'global',
     editableFields: [
       { key: 'title', label: 'Titulo', entryKey: 'global.newsletter.title', pageKey: 'global', fallback: 'Assine nossa newsletter' },
-      { key: 'description', label: 'Descricao', entryKey: 'global.newsletter.description', pageKey: 'global', fallback: 'Cadastre-se para receber atualizacoes sobre nossos cursos e conteudo.' },
+      { key: 'description', label: 'Descricao', entryKey: 'global.newsletter.description', pageKey: 'global', fallback: 'Cadastre-se para receber atualizacoes sobre nossos cursos e conte?do.' },
       { key: 'placeholder', label: 'Placeholder do e-mail', entryKey: 'global.newsletter.placeholder', pageKey: 'global', fallback: 'Seu@e-mail.com' },
       { key: 'button', label: 'Texto do botao', entryKey: 'global.newsletter.button.label', pageKey: 'global', fallback: 'Quero me inscrever' },
       { key: 'areasTitle', label: 'Titulo areas', entryKey: 'global.newsletter.form.interest.title', pageKey: 'global', fallback: 'Areas de interesse' },
@@ -115,7 +115,7 @@ const formDefinitions: SiteFormDefinition[] = [
     editableFields: [
       { key: 'title', label: 'Titulo', entryKey: 'global.auth.login.title', pageKey: 'global', fallback: 'Acesse sua conta' },
       { key: 'subtitle', label: 'Descricao', entryKey: 'global.auth.login.subtitle', pageKey: 'global', fallback: 'Entre para acompanhar seus cursos e progresso.' },
-      { key: 'backLinkLabel', label: 'Texto voltar', entryKey: 'global.auth.login.backLinkLabel', pageKey: 'global', fallback: 'Voltar ao inicio' },
+      { key: 'backLinkLabel', label: 'Texto voltar', entryKey: 'global.auth.login.backLinkLabel', pageKey: 'global', fallback: 'Voltar ao in?cio' },
     ],
   },
   {
@@ -127,7 +127,7 @@ const formDefinitions: SiteFormDefinition[] = [
     editableFields: [
       { key: 'title', label: 'Titulo', entryKey: 'global.auth.signup.title', pageKey: 'global', fallback: 'Crie sua conta' },
       { key: 'subtitle', label: 'Descricao', entryKey: 'global.auth.signup.subtitle', pageKey: 'global', fallback: 'Comece agora sua jornada de estudos.' },
-      { key: 'backLinkLabel', label: 'Texto voltar', entryKey: 'global.auth.signup.backLinkLabel', pageKey: 'global', fallback: 'Voltar ao inicio' },
+      { key: 'backLinkLabel', label: 'Texto voltar', entryKey: 'global.auth.signup.backLinkLabel', pageKey: 'global', fallback: 'Voltar ao in?cio' },
     ],
   },
   {
@@ -139,7 +139,7 @@ const formDefinitions: SiteFormDefinition[] = [
     editableFields: [
       { key: 'title', label: 'Titulo', entryKey: 'global.auth.forgotPassword.title', pageKey: 'global', fallback: 'Recuperar senha' },
       { key: 'subtitle', label: 'Descricao', entryKey: 'global.auth.forgotPassword.subtitle', pageKey: 'global', fallback: 'Informe seu e-mail para receber as instrucoes.' },
-      { key: 'backLinkLabel', label: 'Texto voltar', entryKey: 'global.auth.forgotPassword.backLinkLabel', pageKey: 'global', fallback: 'Voltar ao inicio' },
+      { key: 'backLinkLabel', label: 'Texto voltar', entryKey: 'global.auth.forgotPassword.backLinkLabel', pageKey: 'global', fallback: 'Voltar ao in?cio' },
     ],
   },
   {
@@ -151,7 +151,7 @@ const formDefinitions: SiteFormDefinition[] = [
     editableFields: [
       { key: 'title', label: 'Titulo', entryKey: 'global.auth.resetPassword.title', pageKey: 'global', fallback: 'Defina uma nova senha' },
       { key: 'subtitle', label: 'Descricao', entryKey: 'global.auth.resetPassword.subtitle', pageKey: 'global', fallback: 'Escolha uma senha forte para acessar sua conta.' },
-      { key: 'backLinkLabel', label: 'Texto voltar', entryKey: 'global.auth.resetPassword.backLinkLabel', pageKey: 'global', fallback: 'Voltar ao inicio' },
+      { key: 'backLinkLabel', label: 'Texto voltar', entryKey: 'global.auth.resetPassword.backLinkLabel', pageKey: 'global', fallback: 'Voltar ao in?cio' },
     ],
   },
 ]
@@ -210,7 +210,7 @@ export function AdminPublicFormsPage() {
 
       setItems((result.data ?? []) as PublicFormSubmission[])
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'Nao foi possivel carregar formularios.')
+      setErrorMessage(error instanceof Error ? error.message : 'N?o foi possivel carregar formularios.')
     } finally {
       setIsLoading(false)
     }
@@ -278,7 +278,7 @@ export function AdminPublicFormsPage() {
         setFieldValues(nextValues)
         setCustomFieldsByForm((current) => ({ ...current, [selectedForm.id]: customFields }))
       } catch (error) {
-        setConfigFeedback(error instanceof Error ? error.message : 'Nao foi possivel carregar as configuracoes do formulario.')
+        setConfigFeedback(error instanceof Error ? error.message : 'N?o foi possivel carregar as configura??es do formulario.')
       } finally {
         setIsLoadingConfig(false)
       }
@@ -348,9 +348,9 @@ export function AdminPublicFormsPage() {
           formId: selectedForm.id,
         },
       })
-      setConfigFeedback('Configuracoes do formulario salvas com sucesso.')
+      setConfigFeedback('Configura??es do formulario salvas com sucesso.')
     } catch (error) {
-      setConfigFeedback(error instanceof Error ? error.message : 'Nao foi possivel salvar as configuracoes do formulario.')
+      setConfigFeedback(error instanceof Error ? error.message : 'N?o foi possivel salvar as configura??es do formulario.')
     } finally {
       setIsSavingConfig(false)
     }
@@ -630,7 +630,7 @@ export function AdminPublicFormsPage() {
                     disabled={isSavingConfig || isLoadingConfig}
                     className="rounded-xl bg-[#1398B7] px-6 hover:bg-[#0A3640]"
                   >
-                    {isSavingConfig ? 'Salvando...' : 'Salvar configuracoes'}
+                    {isSavingConfig ? 'Salvando...' : 'Salvar configura??es'}
                   </Button>
                 </div>
               </>

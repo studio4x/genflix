@@ -85,12 +85,12 @@ function formatDateTime(value: string | null) {
 
 function formatDate(value: string | null) {
   if (!value) {
-    return 'Nao informado'
+    return 'N?o informado'
   }
 
   const parsed = new Date(value)
   if (Number.isNaN(parsed.getTime())) {
-    return 'Nao informado'
+    return 'N?o informado'
   }
 
   return new Intl.DateTimeFormat('pt-BR', {
@@ -102,7 +102,7 @@ function formatDate(value: string | null) {
 
 function formatShortAuthId(value: string) {
   if (!value) {
-    return 'Nao informado'
+    return 'N?o informado'
   }
 
   return value.length <= 8 ? value : `${value.slice(0, 8)}...`
@@ -755,7 +755,7 @@ export function AdminUsersPage() {
                       </td>
                       <td className="px-4 py-4 text-sm text-[#15323b]">
                         <div className="min-w-[220px] space-y-1 text-xs text-[#6d7a80]">
-                          <p>{user.email || 'E-mail nao informado'}</p>
+                          <p>{user.email || 'E-mail n?o informado'}</p>
                           <p>Sem telefone</p>
                           <p>auth: {formatShortAuthId(user.id)}</p>
                         </div>

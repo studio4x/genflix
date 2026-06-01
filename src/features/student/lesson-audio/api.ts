@@ -47,7 +47,7 @@ export async function prepareLessonNarration(
   }
 
   if (!accessToken) {
-    throw new Error('Sessao expirada. Faca login novamente para gerar a narracao.')
+    throw new Error('Sess?o expirada. Faca login novamente para gerar a narracao.')
   }
 
   const response = await fetch(`${env.VITE_SUPABASE_URL}/functions/v1/generate-lesson-audio`, {

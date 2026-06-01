@@ -275,8 +275,8 @@ export function AdminReportsPage() {
                         <p className="text-xs text-slate-500">{request.course_title}</p>
                         <p className="mt-1 text-xs text-slate-500">
                           {request.assessment_type === 'module'
-                            ? `Quiz do modulo ${request.module_title ?? '-'}`
-                            : 'Avaliacao final'}
+                            ? `Quiz do m?dulo ${request.module_title ?? '-'}`
+                            : 'Avalia??o final'}
                         </p>
                         {request.requested_message ? (
                           <p className="mt-2 rounded-md bg-slate-50 p-2 text-xs text-slate-600">{request.requested_message}</p>

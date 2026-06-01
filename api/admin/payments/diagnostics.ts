@@ -464,14 +464,14 @@ async function handleNarrationCredentialsScope(
   if (targetLocation === 'supabase') {
     const supabaseContext = getSupabaseManagementContext()
     if (!supabaseContext) {
-      jsonResponse(res, 500, { error: 'Nao foi possivel salvar no Supabase: credenciais de gerenciamento ausentes.' })
+      jsonResponse(res, 500, { error: 'N?o foi possivel salvar no Supabase: credenciais de gerenciamento ausentes.' })
       return
     }
     await upsertSupabaseSecrets(supabaseContext, { openAiApiKey, geminiApiKey })
   } else {
     const vercelContext = getVercelManagementContext()
     if (!vercelContext) {
-      jsonResponse(res, 500, { error: 'Nao foi possivel salvar na Vercel: credenciais de gerenciamento ausentes.' })
+      jsonResponse(res, 500, { error: 'N?o foi possivel salvar na Vercel: credenciais de gerenciamento ausentes.' })
       return
     }
     await upsertVercelEnv(vercelContext, { openAiApiKey, geminiApiKey })
@@ -515,7 +515,7 @@ async function assertAdmin(req: ApiRequest, res: ApiResponse) {
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
   if (!supabaseUrl || !serviceRoleKey) {
-    jsonResponse(res, 500, { error: 'Configuracao ausente: Supabase URL e service role sao obrigatorios.' })
+    jsonResponse(res, 500, { error: 'Configura??o ausente: Supabase URL e service role sao obrigatorios.' })
     return null
   }
 
@@ -541,7 +541,7 @@ async function assertAdmin(req: ApiRequest, res: ApiResponse) {
     .eq('user_id', userResult.data.user.id)
 
   if (rolesResult.error) {
-    jsonResponse(res, 500, { error: 'Nao foi possivel validar as permissoes do usuario.' })
+    jsonResponse(res, 500, { error: 'N?o foi possivel validar as permissoes do usuario.' })
     return null
   }
 
@@ -579,13 +579,13 @@ async function handleResolveInvoiceUrl(req: ApiRequest, res: ApiResponse, contex
     .maybeSingle()
 
   if (sessionResult.error) {
-    jsonResponse(res, 500, { error: 'Nao foi possivel carregar o pedido.' })
+    jsonResponse(res, 500, { error: 'N?o foi possivel carregar o pedido.' })
     return
   }
 
   const session = (sessionResult.data ?? null) as SessionRow | null
   if (!session) {
-    jsonResponse(res, 404, { error: 'Pedido nao encontrado.' })
+    jsonResponse(res, 404, { error: 'Pedido n?o encontrado.' })
     return
   }
 
@@ -613,7 +613,7 @@ async function handleResolveInvoiceUrl(req: ApiRequest, res: ApiResponse, contex
   )
 
   if (!fallbackUrl) {
-    jsonResponse(res, 404, { error: 'Fatura nao disponivel para este pedido.' })
+    jsonResponse(res, 404, { error: 'Fatura n?o disponivel para este pedido.' })
     return
   }
 
@@ -627,7 +627,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
   }
 
   if (req.method !== 'GET' && req.method !== 'POST') {
-    jsonResponse(res, 405, { error: 'Metodo nao permitido.' })
+    jsonResponse(res, 405, { error: 'Metodo n?o permitido.' })
     return
   }
 
@@ -736,7 +736,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
       status: process.env.APP_PUBLIC_URL || process.env.VERCEL_URL ? 'ok' : 'warning',
       detail: process.env.APP_PUBLIC_URL
         ? `APP_PUBLIC_URL configurada: ${process.env.APP_PUBLIC_URL}.`
-        : 'APP_PUBLIC_URL nao configurada. O sistema usara a origem da requisicao para montar callbacks e webhook.',
+        : 'APP_PUBLIC_URL n?o configurada. O sistema usara a origem da requisicao para montar callbacks e webhook.',
     })
 
     jsonResponse(res, 200, {
@@ -749,7 +749,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
       key: 'gateway-settings',
       label: 'Registro do gateway',
       status: 'error',
-      detail: error instanceof Error ? error.message : 'Nao foi possivel carregar a configuracao do gateway.',
+      detail: error instanceof Error ? error.message : 'N?o foi possivel carregar a configura??o do gateway.',
     })
 
     jsonResponse(res, 200, {

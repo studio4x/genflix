@@ -88,7 +88,7 @@ export function NotificationsOverviewPanel() {
       setItems(notificationRows)
       setUnreadCount(count)
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'Nao foi possivel carregar as notificacoes.')
+      setErrorMessage(error instanceof Error ? error.message : 'N?o foi possivel carregar as notificacoes.')
     } finally {
       setIsLoading(false)
     }

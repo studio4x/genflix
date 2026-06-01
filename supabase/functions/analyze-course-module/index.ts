@@ -119,7 +119,7 @@ Deno.serve(async (request) => {
     } = await supabaseAdmin.auth.getUser(accessToken)
 
     if (authError || !user) {
-      return jsonResponse({ error: 'Token invalido ou usuario nao autenticado.' }, 401)
+      return jsonResponse({ error: 'Token invalido ou usuario n?o autenticado.' }, 401)
     }
 
     const { data: isAdmin, error: roleError } = await supabaseAdmin.rpc('has_role', {
@@ -173,7 +173,7 @@ Deno.serve(async (request) => {
       ...analysis.usage,
     }, 200)
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Erro inesperado ao analisar modulo com IA.'
+    const message = error instanceof Error ? error.message : 'Erro inesperado ao analisar m?dulo com IA.'
     return jsonResponse({ error: message }, 500)
   }
 })
@@ -368,7 +368,7 @@ async function generateWithOpenAi(prompt: string, apiKey: string) {
   if (!text || typeof text !== 'string') {
     return {
       ok: false as const,
-      errorText: 'OpenAI nao retornou conteudo textual valido.',
+      errorText: 'OpenAI n?o retornou conte?do textual valido.',
     }
   }
 
@@ -415,7 +415,7 @@ async function generateWithGemini(prompt: string, apiKey: string) {
   const rawText = geminiPayload?.candidates?.[0]?.content?.parts?.[0]?.text
 
   if (!rawText || typeof rawText !== 'string') {
-    throw new Error('Gemini nao retornou um payload valido.')
+    throw new Error('Gemini n?o retornou um payload valido.')
   }
 
   return {

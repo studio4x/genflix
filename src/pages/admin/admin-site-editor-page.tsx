@@ -465,16 +465,16 @@ export function AdminSiteEditorPage() {
     try {
       await createSitePageVersion(selectedPageKey, 'page:manual-snapshot')
       setPageVersions(await fetchSitePageVersions(selectedPageKey))
-      setMessage('Versao da pagina registrada com sucesso.')
+      setMessage('Vers?o da p?gina registrada com sucesso.')
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Nao foi possivel registrar a versao da pagina.')
+      setMessage(error instanceof Error ? error.message : 'N?o foi possivel registrar a vers?o da p?gina.')
     } finally {
       setIsSaving(false)
     }
   }
 
   async function handleRestorePageVersion(version: SitePageVersion) {
-    const confirmed = window.confirm('Restaurar esta versao da pagina e substituir todos os ajustes atuais?')
+    const confirmed = window.confirm('Restaurar esta vers?o da p?gina e substituir todos os ajustes atuais?')
     if (!confirmed) {
       return
     }
@@ -486,9 +486,9 @@ export function AdminSiteEditorPage() {
       await restoreSitePageVersion(version)
       await loadData()
       setPageVersions(await fetchSitePageVersions(selectedPageKey))
-      setMessage('Versao da pagina restaurada com sucesso.')
+      setMessage('Vers?o da p?gina restaurada com sucesso.')
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Nao foi possivel restaurar a versao da pagina.')
+      setMessage(error instanceof Error ? error.message : 'N?o foi possivel restaurar a vers?o da p?gina.')
     } finally {
       setIsSaving(false)
     }
@@ -515,7 +515,7 @@ export function AdminSiteEditorPage() {
       setIconLibraryAssets((currentAssets) => currentAssets.filter((currentAsset) => currentAsset.id !== asset.id))
       setMessage(`Icone "${iconName}" removido da biblioteca.`)
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Nao foi possivel remover o icone da biblioteca.')
+      setMessage(error instanceof Error ? error.message : 'N?o foi possivel remover o icone da biblioteca.')
     } finally {
       setIsDeletingIconId(null)
     }
@@ -523,7 +523,7 @@ export function AdminSiteEditorPage() {
 
   async function handleDeleteAllUploadedIcons() {
     if (iconLibraryAssets.length === 0) {
-      setMessage('Nao ha icones enviados para excluir.')
+      setMessage('N?o ha icones enviados para excluir.')
       return
     }
 
@@ -552,7 +552,7 @@ export function AdminSiteEditorPage() {
       const failedSummary = failedCount > 0 ? ` ${failedCount} falharam.` : ''
       setMessage(`Exclusao massiva concluida: ${deletedCount} icone(s) removido(s).${failedSummary}`)
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Nao foi possivel concluir a exclusao massiva dos icones.')
+      setMessage(error instanceof Error ? error.message : 'N?o foi possivel concluir a exclusao massiva dos icones.')
     } finally {
       setIsDeletingAllIcons(false)
       setIsDeletingIconId(null)
@@ -689,7 +689,7 @@ export function AdminSiteEditorPage() {
       await loadData()
       setMessage('Padroes de tipografia global atualizados com sucesso.')
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Nao foi possivel salvar os padroes de tipografia.')
+      setMessage(error instanceof Error ? error.message : 'N?o foi possivel salvar os padroes de tipografia.')
     } finally {
       setIsSaving(false)
     }
@@ -1320,8 +1320,8 @@ export function AdminSiteEditorPage() {
               <p className="text-sm font-black text-[#15323b]">{pageEntries.length} campo(s) encontrado(s)</p>
               <p className="text-xs font-semibold text-[#5F7077]">
                 {editorMode === 'basic'
-                  ? 'Modo basico: foco em nome, tipo, resumo e acoes.'
-                  : 'Modo avancado: exibe pagina tecnica, preview salvo e estrutura completa.'}
+                  ? 'Modo basico: foco em nome, tipo, resumo e a??es.'
+                  : 'Modo avancado: exibe p?gina tecnica, preview salvo e estrutura completa.'}
               </p>
             </div>
             <div className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-[0.14em] text-[#5F7077]">
@@ -1360,7 +1360,7 @@ export function AdminSiteEditorPage() {
                       <td className="px-4 py-3">
                         <div className="font-black text-[#15323b]">{entry.entry_key}</div>
                         <div className="mt-1 text-xs font-semibold text-[#5F7077]">
-                          {entry.page_key === 'global' ? 'Campo global' : 'Campo desta pagina'}
+                          {entry.page_key === 'global' ? 'Campo global' : 'Campo desta p?gina'}
                         </div>
                       </td>
                       <td className="px-4 py-3 text-xs font-semibold leading-5 text-[#5F7077]">

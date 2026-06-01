@@ -62,7 +62,7 @@ export function AdminQuizTypesPage() {
     setSuccess(false)
 
     if (!user) {
-      setError('Sessao expirada. Faça login novamente.')
+      setError('Sess?o expirada. Faça login novamente.')
       return
     }
 

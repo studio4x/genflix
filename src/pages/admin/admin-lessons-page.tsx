@@ -179,7 +179,7 @@ export function AdminLessonsPage() {
           <svg className="h-4 w-4 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
           {module ? (
             <>
-              <Link to={`/admin/cursos/${module.course_id}/modulos`} className="hover:text-blue-600 transition-colors truncate max-w-[150px] sm:max-w-xs" title="Módulos do Curso">
+              <Link to={`/admin/cursos/${module.course_id}/m?dulos`} className="hover:text-blue-600 transition-colors truncate max-w-[150px] sm:max-w-xs" title="Módulos do Curso">
                 Módulos
               </Link>
               <svg className="h-4 w-4 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>

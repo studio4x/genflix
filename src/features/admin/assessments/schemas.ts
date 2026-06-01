@@ -50,7 +50,7 @@ export const assessmentQuestionFormSchema = z.object({
   grading_mode: z.enum(['partial_by_item', 'all_or_nothing']).optional(),
   answer_key: assessmentQuestionAnswerKeyPayloadSchema.nullable().optional(),
   is_required: z.boolean(),
-  points: z.number().min(0, 'Pontuacao nao pode ser negativa.'),
+  points: z.number().min(0, 'Pontuacao n?o pode ser negativa.'),
 }).superRefine((value, ctx) => {
   const isStandaloneEssay = value.question_type === 'essay_ai'
   const isCaseStudyAi = value.question_type === 'case_study_ai'
@@ -78,7 +78,7 @@ export const assessmentQuestionFormSchema = z.object({
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
       path: ['case_study_id'],
-      message: 'Perguntas independentes nao podem ser vinculadas a estudo de caso.',
+      message: 'Perguntas independentes n?o podem ser vinculadas a estudo de caso.',
     })
   }
 
@@ -86,7 +86,7 @@ export const assessmentQuestionFormSchema = z.object({
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
       path: ['case_question_position'],
-      message: 'Perguntas independentes nao usam posicao interna de estudo de caso.',
+      message: 'Perguntas independentes n?o usam posicao interna de estudo de caso.',
     })
   }
 
@@ -103,7 +103,7 @@ export const assessmentQuestionFormSchema = z.object({
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ['points'],
-        message: 'Questoes discursivas com IA nao geram pontos.',
+        message: 'Questoes discursivas com IA n?o geram pontos.',
       })
     }
 
@@ -123,7 +123,7 @@ export const assessmentQuestionFormSchema = z.object({
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ['question_type'],
-        message: 'Questoes gamificadas nao podem ficar dentro de estudo de caso na v1.',
+        message: 'Questoes gamificadas n?o podem ficar dentro de estudo de caso na v1.',
       })
     }
 

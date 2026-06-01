@@ -37,7 +37,7 @@ const adminNavGroups: AdminNavGroup[] = [
   {
     key: 'content',
     label: 'Conteudo',
-    description: 'Catalogo, experiencia publica e edicao da plataforma.',
+    description: 'Catalogo, experi?ncia publica e edi??o da plataforma.',
     links: [
       { to: '/admin/cursos', label: 'Catalogo de Cursos' },
       { to: '/admin/blog', label: 'Blog' },
@@ -75,10 +75,10 @@ const adminNavGroups: AdminNavGroup[] = [
   {
     key: 'system',
     label: 'Plataforma',
-    description: 'Configuracoes de apoio e administracao da conta.',
+    description: 'Configura??es de apoio e administracao da conta.',
     links: [
       { to: '/admin/minha-conta', label: 'Minha Conta' },
-      { to: '/admin/configuracoes-site', label: 'Configuracoes do Site' },
+      { to: '/admin/configuracoes-site', label: 'Configura??es do Site' },
     ],
   },
 ]
@@ -112,7 +112,7 @@ export function AdminLayout() {
 
   async function handleClearServerCache() {
     const shouldProceed = window.confirm(
-      'Esta acao vai:\n- Acionar limpeza de cache no servidor\n- Recarregar configuracoes do PostgREST (schema/config)\n- Refletir alteracoes recentes de dados/config mais rapido\n- Nao encerra seu login no navegador\n\nDeseja continuar?',
+      'Esta a??o vai:\n- Acionar limpeza de cache no servidor\n- Recarregar configura??es do PostgREST (schema/config)\n- Refletir alteracoes recentes de dados/config mais rapido\n- N?o encerra seu login no navegador\n\nDeseja continuar?',
     )
     if (!shouldProceed) {
       return
@@ -134,8 +134,8 @@ export function AdminLayout() {
   async function handleClearBrowserCache(preserveLogin: boolean) {
     const shouldProceed = window.confirm(
       preserveLogin
-        ? 'Esta acao vai:\n- Limpar cache do navegador (arquivos, caches e IndexedDB)\n- Limpar dados locais temporarios do painel\n- Preservar sua sessao de login atual\n- Recarregar a pagina ao final\n\nDeseja continuar?'
-        : 'Esta acao vai:\n- Limpar cache do navegador (arquivos, caches e IndexedDB)\n- Limpar localStorage e sessionStorage completos\n- Encerrar sua sessao atual (logout)\n- Recarregar a pagina ao final\n\nDeseja continuar?',
+        ? 'Esta a??o vai:\n- Limpar cache do navegador (arquivos, caches e IndexedDB)\n- Limpar dados locais temporarios do painel\n- Preservar sua sess?o de login atual\n- Recarregar a p?gina ao final\n\nDeseja continuar?'
+        : 'Esta a??o vai:\n- Limpar cache do navegador (arquivos, caches e IndexedDB)\n- Limpar localStorage e sessionStorage completos\n- Encerrar sua sess?o atual (logout)\n- Recarregar a p?gina ao final\n\nDeseja continuar?',
     )
     if (!shouldProceed) {
       return

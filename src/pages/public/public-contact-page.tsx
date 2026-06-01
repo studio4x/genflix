@@ -93,7 +93,7 @@ function ContactFormSection({
           </EditableImage>
 
           <div className="flex items-center px-6 py-12 sm:px-10 lg:px-12">
-            <EditableContainer entryKey="contact.form.content.card" label="Container interno do conteudo de contato" pageKey="contact">
+            <EditableContainer entryKey="contact.form.content.card" label="Container interno do conte?do de contato" pageKey="contact">
               <div className="w-full max-w-[420px]">
               <h1 className="text-[2.45rem] font-extrabold leading-[0.95] tracking-[-0.05em] text-[#183139] sm:text-[3rem]">
                 <EditableText entryKey="contact.title" fallback="Fale com a gente." label="Titulo de contato" />
@@ -232,7 +232,7 @@ export function PublicContactPage() {
 
       const payload = await response.json().catch(() => null) as { error?: string } | null
       if (!response.ok) {
-        throw new Error(payload?.error ?? 'Nao foi possivel enviar sua mensagem.')
+        throw new Error(payload?.error ?? 'N?o foi possivel enviar sua mensagem.')
       }
 
       setName('')
@@ -241,7 +241,7 @@ export function PublicContactPage() {
       setMessage('')
       setFeedback('Mensagem enviada com sucesso. Em breve entraremos em contato.')
     } catch (error) {
-      setFeedback(error instanceof Error ? error.message : 'Nao foi possivel enviar sua mensagem.')
+      setFeedback(error instanceof Error ? error.message : 'N?o foi possivel enviar sua mensagem.')
     } finally {
       setIsSubmitting(false)
     }
@@ -260,10 +260,10 @@ export function PublicContactPage() {
       <GenflixPublicHeader currentPage="contact" navLinks={genflixNavLinks} />
       <BannerPlacementSlot pageKey="contact" placementKey="hero" />
       <SectionStructureControl
-        buttonLabel="Gerenciar blocos da pagina"
+        buttonLabel="Gerenciar blocos da p?gina"
         pageKey="contact"
         entryKey="contact.layout.sections"
-        label="Estrutura da pagina Contato"
+        label="Estrutura da p?gina Contato"
         sections={contactSections}
         schema={contactLayoutSchema}
       />

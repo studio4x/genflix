@@ -115,7 +115,7 @@ export function SupportTicketModal({
           return
         }
 
-        setErrorMessage(error instanceof Error ? error.message : 'Nao foi possivel carregar as configuracoes de suporte.')
+        setErrorMessage(error instanceof Error ? error.message : 'N?o foi possivel carregar as configura??es de suporte.')
       })
       .finally(() => {
         if (isMounted) {
@@ -163,7 +163,7 @@ export function SupportTicketModal({
       onClose()
       navigate(`${supportBasePath}/${ticket.id}`)
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'Nao foi possivel abrir o chamado.')
+      setErrorMessage(error instanceof Error ? error.message : 'N?o foi possivel abrir o chamado.')
     } finally {
       setIsSubmitting(false)
     }
@@ -321,7 +321,7 @@ export function SupportTicketModal({
                     value={description}
                     onChange={(event) => setDescription(event.target.value)}
                     rows={5}
-                    placeholder="Explique o contexto, os passos ja tentados e o que voce precisa resolver."
+                    placeholder="Explique o contexto, os passos ja tentados e o que voc? precisa resolver."
                     className="resize-none rounded-[16px] border border-[#D8E6EB] bg-white px-4 py-3 text-sm font-semibold leading-6 text-[#15323b] outline-none"
                   />
                 </label>

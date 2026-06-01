@@ -28,7 +28,7 @@ type SmtpSettings = {
 function requireEnv(name: string, fallback?: string) {
   const value = process.env[name] ?? fallback
   if (!value?.trim()) {
-    throw new Error(`Configuracao SMTP ausente: ${name}.`)
+    throw new Error(`Configura??o SMTP ausente: ${name}.`)
   }
 
   return value.trim()
@@ -47,7 +47,7 @@ export function getSmtpSettings(): SmtpSettings {
   const port = Number.parseInt(process.env.SMTP_PORT ?? '465', 10)
 
   if (!Number.isFinite(port) || port <= 0) {
-    throw new Error('Configuracao SMTP invalida: SMTP_PORT.')
+    throw new Error('Configura??o SMTP invalida: SMTP_PORT.')
   }
 
   return {
@@ -147,7 +147,7 @@ function createPasswordResetText(payload: PasswordResetEmailPayload) {
     '',
     payload.actionLink,
     '',
-    'Se voce nao solicitou esta redefinicao, ignore este e-mail.',
+    'Se voc? n?o solicitou esta redefinicao, ignore este e-mail.',
   ].join('\n')
 }
 

@@ -92,7 +92,7 @@ Deno.serve(async (request) => {
     } = await adminSupabase.auth.getUser(accessToken)
 
     if (authError || !user) {
-      return jsonResponse({ error: 'Token invalido ou usuario nao autenticado.' }, 401)
+      return jsonResponse({ error: 'Token invalido ou usuario n?o autenticado.' }, 401)
     }
 
     const { lessonId } = requestBody
@@ -113,12 +113,12 @@ Deno.serve(async (request) => {
 
     const lesson = (lessonResult.data as LessonRow | null) ?? null
     if (!lesson) {
-      return jsonResponse({ error: 'Aula nao encontrada ou indisponivel para este usuario.' }, 404)
+      return jsonResponse({ error: 'Aula n?o encontrada ou indisponivel para este usuario.' }, 404)
     }
 
     const narrationText = buildNarrationText(lesson)
     if (!narrationText) {
-      return jsonResponse({ error: 'A aula nao possui conteudo textual suficiente para narracao.' }, 400)
+      return jsonResponse({ error: 'A aula n?o possui conte?do textual suficiente para narracao.' }, 400)
     }
 
     const chunks = splitNarrationText(narrationText, MAX_CHARS_PER_CHUNK)
@@ -518,7 +518,7 @@ async function generateGeminiAudioChunk(chunk: string, apiKey: string) {
   const mimeType = inlineData?.mimeType as string | undefined
 
   if (!base64Audio || typeof base64Audio !== 'string') {
-    throw new Error('Gemini nao retornou audio valido para a narracao.')
+    throw new Error('Gemini n?o retornou audio valido para a narracao.')
   }
 
   const decodedBytes = Uint8Array.from(atob(base64Audio), (char) => char.charCodeAt(0))

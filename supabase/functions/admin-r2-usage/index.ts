@@ -52,13 +52,13 @@ Deno.serve(async (request) => {
 
   if (request.method === 'OPTIONS') {
     if (!isAllowedOrigin(request.headers.get('origin'))) {
-      return new Response('origin nao permitida', { status: 403, headers: corsHeaders })
+      return new Response('origin n?o permitida', { status: 403, headers: corsHeaders })
     }
     return new Response('ok', { headers: corsHeaders })
   }
 
   if (request.method !== 'POST') {
-    return jsonResponse(request, { error: 'Metodo nao permitido.' }, 405)
+    return jsonResponse(request, { error: 'Metodo n?o permitido.' }, 405)
   }
 
   try {
@@ -72,7 +72,7 @@ Deno.serve(async (request) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     if (!supabaseUrl || !serviceRoleKey) {
-      return jsonResponse(request, { error: 'Configuracao ausente do Supabase.' }, 500)
+      return jsonResponse(request, { error: 'Configura??o ausente do Supabase.' }, 500)
     }
 
     const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey)
@@ -296,7 +296,7 @@ async function loadUsageFromR2S3() {
     if (configuredBuckets.length === 0) {
       const message = error instanceof Error ? error.message : 'Access Denied'
       throw new Error(
-        `Nao foi possivel listar buckets no R2 (${message}). Configure R2_PRIVATE_BUCKET ou R2_BUCKETS para usar credencial restrita.`,
+        `N?o foi possivel listar buckets no R2 (${message}). Configure R2_PRIVATE_BUCKET ou R2_BUCKETS para usar credencial restrita.`,
       )
     }
   }

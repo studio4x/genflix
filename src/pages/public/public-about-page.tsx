@@ -18,13 +18,13 @@ import { EditableContainer, EditableRichText, EditableText, isEditableItemVisibl
 import type { EditableListItem } from '@/features/site-editor/types'
 
 const aboutParagraphs = [
-  'Ha quem prefira abrir o livro, sublinhar, fazer anotacoes e avancar pagina por pagina. Ha tambem quem se envolva mais com videos, aulas curtas e recursos interativos.',
+  'Ha quem prefira abrir o livro, sublinhar, fazer anotacoes e avancar p?gina por p?gina. Ha tambem quem se envolva mais com videos, aulas curtas e recursos interativos.',
   'A plataforma GenFlix nasce para unir esses dois mundos e ir alem.',
-  'GenFlix e uma plataforma que reune cursos, aulas e conteudos digitais criados por especialistas e professores, com a curadoria e a qualidade editorial do GEN Grupo Editorial Nacional, maior conglomerado editorial de publicacoes academicas e que reune editoras como Guanabara Koogan, LTC, Forense e Saraiva, referencias na formacao de professores e profissionais.',
-  'Agora, esse conhecimento ganha uma experiencia digital completa.',
-  'A GenFlix e fruto de uma parceria entre o GEN e a e-Clix Solucoes em Conteudo Educacional, comandada por uma equipe com mais de 50 anos de atuacao no desenvolvimento de conteudos educacionais e projetos de aprendizagem para organizacoes no Brasil e no exterior.',
-  'O resultado e uma plataforma construida sobre tres pilares essenciais: conteudo confiavel e atual, experiencia digital moderna e intuitiva e aplicacao pratica do conhecimento.',
-  'Na GenFlix, aprender vai muito alem de assistir a videos. A plataforma integra uma ampla variedade de recursos didaticos contemporaneos, pensados para facilitar a compreensao, manter o ritmo de estudo, reduzir a evasao e transformar conteudo em conhecimento util no dia a dia academico e profissional.',
+  'GenFlix e uma plataforma que reune cursos, aulas e conte?dos digitais criados por especialistas e professores, com a curadoria e a qualidade editorial do GEN Grupo Editorial Nacional, maior conglomerado editorial de publicacoes academicas e que reune editoras como Guanabara Koogan, LTC, Forense e Saraiva, referencias na formacao de professores e profissionais.',
+  'Agora, esse conhecimento ganha uma experi?ncia digital completa.',
+  'A GenFlix e fruto de uma parceria entre o GEN e a e-Clix Solucoes em Conte?do Educacional, comandada por uma equipe com mais de 50 anos de atuacao no desenvolvimento de conte?dos educacionais e projetos de aprendizagem para organizacoes no Brasil e no exterior.',
+  'O resultado e uma plataforma construida sobre tres pilares essenciais: conte?do confiavel e atual, experi?ncia digital moderna e intuitiva e aplicacao pratica do conhecimento.',
+  'Na GenFlix, aprender vai muito alem de assistir a videos. A plataforma integra uma ampla variedade de recursos didaticos contemporaneos, pensados para facilitar a compreensao, manter o ritmo de estudo, reduzir a evasao e transformar conte?do em conhecimento util no dia a dia academico e profissional.',
   'Tudo isso com um proposito central que consideramos ser a nossa missao.',
 ]
 
@@ -32,7 +32,7 @@ const aboutSectionTemplates = [
   {
     id: 'hero',
     label: 'Hero institucional',
-    description: 'Bloco de abertura com titulo e subtitulo da pagina Sobre.',
+    description: 'Bloco de abertura com titulo e subtitulo da p?gina Sobre.',
   },
   {
     id: 'story',
@@ -47,7 +47,7 @@ const aboutSectionTemplates = [
   {
     id: 'newsletter',
     label: 'Newsletter',
-    description: 'Bloco global de captacao compartilhado com outras paginas publicas.',
+    description: 'Bloco global de captacao compartilhado com outras p?ginas publicas.',
     pageKey: 'global' as const,
   },
 ]
@@ -89,13 +89,13 @@ function AboutHeroSection() {
         <EditableContainer entryKey="about.hero.card" label="Container interno do Hero" pageKey="about">
           <div className="rounded-[30px] bg-[#F2F7F9] px-8 py-14 text-center shadow-[0_20px_44px_rgba(21,50,59,0.04)] sm:px-12">
             <h1 className="text-[2.65rem] font-extrabold leading-[0.94] tracking-[-0.05em] text-[#183139] sm:text-[3rem]">
-              <EditableText entryKey="about.hero.title" fallback="GenFlix" label="Titulo da pagina Sobre" />
+              <EditableText entryKey="about.hero.title" fallback="GenFlix" label="Titulo da p?gina Sobre" />
             </h1>
             <p className="mt-4 text-base font-medium text-[#1398B7]">
               <EditableText
                 entryKey="about.hero.subtitle"
-                fallback="Porque aprender e ensinar nao precisa ser complicado."
-                label="Subtitulo da pagina Sobre"
+                fallback="Porque aprender e ensinar n?o precisa ser complicado."
+                label="Subtitulo da p?gina Sobre"
               />
             </p>
           </div>
@@ -111,12 +111,12 @@ function AboutStorySection({ richTextFallback }: { richTextFallback: string }) {
       <div className="public-site-container">
         <EditableContainer entryKey="about.story.card" label="Container interno da Historia" pageKey="about">
           <div className="rounded-[28px] border border-[#D8E6EB] bg-white px-8 py-10 shadow-[0_18px_42px_rgba(21,50,59,0.03)] sm:px-10 lg:px-12">
-            <EditableContainer entryKey="about.story.contentWrap" label="Container de conteudo da Historia" pageKey="about">
+            <EditableContainer entryKey="about.story.contentWrap" label="Container de conte?do da Historia" pageKey="about">
               <div className="mx-auto max-w-[960px] border-t border-[#BEE3EA] pt-10">
                 <EditableRichText
                   entryKey="about.storyContent"
                   fallback={richTextFallback}
-                  label="Conteudo da pagina Sobre"
+                  label="Conte?do da p?gina Sobre"
                   pageKey="about"
                   className="rich-text-content space-y-5 text-[15px] leading-8 text-[#4f666d]"
                 />
@@ -148,14 +148,14 @@ function AboutMissionSection() {
             <p className="mt-4 text-[15px] leading-8 text-[#5f7178]">
               <EditableText
                 entryKey="about.mission.description"
-                fallback="Oferecer a estudantes universitarios, concurseiros e profissionais conteudos modernos, objetivos, praticos, de qualidade e a precos adequados, com materiais que proporcionem compreensao rapida e efetiva daquilo que os usuarios desejam aprender."
+                fallback="Oferecer a estudantes universitarios, concurseiros e profissionais conte?dos modernos, objetivos, praticos, de qualidade e a precos adequados, com materiais que proporcionem compreensao rapida e efetiva daquilo que os usuarios desejam aprender."
                 label="Descricao da missao"
               />
             </p>
             <p className="mt-5 text-sm font-semibold text-[#1398B7]">
               <EditableText
                 entryKey="about.mission.tagline"
-                fallback="Porque aprender e ensinar nao precisa ser complicado."
+                fallback="Porque aprender e ensinar n?o precisa ser complicado."
                 label="Frase final da missao"
               />
             </p>
@@ -197,10 +197,10 @@ export function PublicAboutPage() {
       <GenflixPublicHeader currentPage="about" navLinks={genflixNavLinks} />
       <BannerPlacementSlot pageKey="about" placementKey="hero" />
       <SectionStructureControl
-        buttonLabel="Gerenciar blocos da pagina"
+        buttonLabel="Gerenciar blocos da p?gina"
         pageKey="about"
         entryKey="about.layout.sections"
-        label="Estrutura da pagina Sobre"
+        label="Estrutura da p?gina Sobre"
         sections={aboutSections}
         schema={aboutLayoutSchema}
       />

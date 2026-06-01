@@ -150,7 +150,7 @@ export function StudentCoursesPage() {
                 }
               : {
                   dotClass: hasStartedCourse ? 'bg-blue-500 animate-pulse' : 'bg-slate-400',
-                  label: hasStartedCourse ? 'Em Andamento' : 'Nao Iniciado',
+                  label: hasStartedCourse ? 'Em Andamento' : 'N?o Iniciado',
                   cta: getLearningActionLabel(journeyStatus, hasStartedCourse),
                 }
 

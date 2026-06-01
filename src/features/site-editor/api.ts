@@ -629,7 +629,7 @@ export async function requestSiteEditorAssist(input: {
     | null
 
   if (!response.ok) {
-    throw new Error(payload?.error ?? 'Nao foi possivel gerar uma sugestao editorial.')
+    throw new Error(payload?.error ?? 'N?o foi possivel gerar uma sugestao editorial.')
   }
 
   return {

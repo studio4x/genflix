@@ -94,9 +94,9 @@ export function AdminSecurityScansPage() {
         enabled: scheduleEnabled,
       })
       setDashboard(data)
-      setSuccessMessage('Configuracao de cron e auto-correcao salva com sucesso.')
+      setSuccessMessage('Configura??o de cron e auto-correcao salva com sucesso.')
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'Falha ao salvar configuracao.')
+      setErrorMessage(error instanceof Error ? error.message : 'Falha ao salvar configura??o.')
     } finally {
       setIsSaving(false)
     }
@@ -109,7 +109,7 @@ export function AdminSecurityScansPage() {
     try {
       const data = await fixSecurityFinding(findingId)
       setDashboard(data)
-      setSuccessMessage('Correcao aplicada e registrada no historico.')
+      setSuccessMessage('Correcao aplicada e registrada no hist?rico.')
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : 'Falha ao aplicar correcao.')
     } finally {
@@ -204,7 +204,7 @@ export function AdminSecurityScansPage() {
             disabled={isSaving}
             className="h-12 rounded-none bg-gradient-to-b from-[#1398B7] to-[#0A3640] px-6 font-black text-white hover:opacity-95"
           >
-            {isSaving ? 'Salvando...' : 'Salvar configuracao'}
+            {isSaving ? 'Salvando...' : 'Salvar configura??o'}
           </Button>
         </div>
 

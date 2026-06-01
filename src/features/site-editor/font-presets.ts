@@ -28,7 +28,7 @@ export const SITE_TEXT_FONT_PRESETS: SiteTextFontPreset[] = [
     label: 'Inter',
     family: 'Inter, sans-serif',
     sample: 'Neutro e legivel',
-    description: 'Otima para paginas com muito conteudo.',
+    description: 'Otima para p?ginas com muito conte?do.',
   },
   {
     label: 'Montserrat',
@@ -52,7 +52,7 @@ export const SITE_TEXT_FONT_PRESETS: SiteTextFontPreset[] = [
     label: 'Lora',
     family: 'Lora, serif',
     sample: 'Serif editorial',
-    description: 'Boa para leitura longa e paginas legais.',
+    description: 'Boa para leitura longa e p?ginas legais.',
   },
   {
     label: 'Merriweather',

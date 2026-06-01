@@ -110,7 +110,7 @@ export function CreatorReportsPage() {
       setPayouts(payoutRows)
       setPayoutSettings(settings)
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'Nao foi possivel carregar os relatorios.')
+      setErrorMessage(error instanceof Error ? error.message : 'N?o foi possivel carregar os relatorios.')
     } finally {
       setIsLoading(false)
     }

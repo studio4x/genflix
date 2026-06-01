@@ -437,7 +437,7 @@ export function StudentCourseDetailsPage() {
           </div>
           {finalAssessment && (
             <Button asChild className="h-14 px-8 rounded-2xl bg-white text-orange-600 font-black text-base hover:bg-amber-50 shadow-lg">
-              <Link to={`/aluno/cursos/${courseId}/player/avaliacoes/${finalAssessment.assessment_id}`}>
+              <Link to={`/aluno/cursos/${courseId}/player/avalia??es/${finalAssessment.assessment_id}`}>
                 Fazer Prova Final
               </Link>
             </Button>
@@ -622,7 +622,7 @@ export function StudentCourseDetailsPage() {
                                                 moduleAssessment.state === 'approved' ? 'bg-white text-emerald-600 border-emerald-200 shadow-sm' :
                                                 moduleAssessment.state === 'failed_limit' ? 'bg-white text-rose-600 border-rose-200 shadow-sm' : 'bg-blue-600'
                                              }`}>
-                                                <Link to={`/aluno/cursos/${courseId}/player/avaliacoes/${moduleAssessment.assessment_id}`}>
+                                                <Link to={`/aluno/cursos/${courseId}/player/avalia??es/${moduleAssessment.assessment_id}`}>
                                                    {moduleQuizLockedByLessons ? 'Conclua todas as aulas do módulo para liberar o quiz' : moduleAssessment.state === 'approved' ? 'Refazer Quiz' :
                                                     moduleAssessment.state === 'failed_limit' ? 'Ver Status' : 'Iniciar Quiz'}
                                                 </Link>

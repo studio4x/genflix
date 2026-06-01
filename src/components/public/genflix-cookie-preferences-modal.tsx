@@ -135,7 +135,7 @@ export function GenflixCookiePreferencesModal({
           <div className="space-y-4">
             <PreferenceToggle
               title="Essenciais"
-              description="Necessarios para login, seguranca, sessao e operacao basica do site."
+              description="Necessarios para login, seguranca, sess?o e operacao basica do site."
               checked
               disabled
               onChange={() => {}}
@@ -148,7 +148,7 @@ export function GenflixCookiePreferencesModal({
             />
             <PreferenceToggle
               title="Personalizacao"
-              description="Permitem adaptar partes da experiencia conforme seu comportamento."
+              description="Permitem adaptar partes da experi?ncia conforme seu comportamento."
               checked={draft.personalization}
               onChange={(checked) => setDraft((current) => ({ ...current, personalization: checked }))}
             />

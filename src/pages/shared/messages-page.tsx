@@ -424,7 +424,7 @@ export function MessagesPage({ contextLabel }: { contextLabel: 'Admin' | 'Aluno'
       setSelectedConversationId(conversationId)
       await loadConversations()
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'Nao foi possivel abrir o canal com o criador.')
+      setErrorMessage(error instanceof Error ? error.message : 'N?o foi possivel abrir o canal com o criador.')
     }
   }
 

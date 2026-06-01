@@ -63,9 +63,9 @@ export function AdminSiteTrackingPanel() {
         schema: { kind: 'site-tracking' },
       })
       setTracking(nextTracking)
-      setMessage('Configuracoes de rastreamento salvas com sucesso.')
+      setMessage('Configura??es de rastreamento salvas com sucesso.')
     } catch (trackingError) {
-      setError(trackingError instanceof Error ? trackingError.message : 'Nao foi possivel salvar as configuracoes de rastreamento.')
+      setError(trackingError instanceof Error ? trackingError.message : 'N?o foi possivel salvar as configura??es de rastreamento.')
     } finally {
       setIsSaving(false)
     }
@@ -89,14 +89,14 @@ export function AdminSiteTrackingPanel() {
         <article className="border border-[#D8E6EB] bg-white p-5 shadow-sm">
           <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#5F7077]">GTM</p>
           <p className="mt-3 font-readex text-2xl font-semibold tracking-tight text-[#15323b]">
-            {tracking.gtmId || 'Nao configurado'}
+            {tracking.gtmId || 'N?o configurado'}
           </p>
           <p className="mt-2 text-xs font-semibold text-[#5F7077]">ID do container Google Tag Manager.</p>
         </article>
         <article className="border border-[#D8E6EB] bg-white p-5 shadow-sm">
           <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#5F7077]">Meta Pixel</p>
           <p className="mt-3 font-readex text-2xl font-semibold tracking-tight text-[#15323b]">
-            {tracking.metaPixelId || 'Nao configurado'}
+            {tracking.metaPixelId || 'N?o configurado'}
           </p>
           <p className="mt-2 text-xs font-semibold text-[#5F7077]">ID do pixel para eventos de marketing.</p>
         </article>
@@ -180,7 +180,7 @@ export function AdminSiteTrackingPanel() {
             value={tracking.customBodyCode}
             onChange={(event) => setTracking((current) => ({ ...current, customBodyCode: event.target.value }))}
             rows={6}
-            placeholder="HTML ou script a ser inserido no inicio do body"
+            placeholder="HTML ou script a ser inserido no in?cio do body"
             className="rounded-[18px] border border-[#D8E6EB] bg-white px-4 py-3 text-sm font-semibold text-[#15323b] outline-none"
           />
         </label>
@@ -211,7 +211,7 @@ export function AdminSiteTrackingPanel() {
             disabled={isLoading || isSaving}
             className="rounded-none bg-[#1398B7] font-black text-white hover:bg-[#0F7E99]"
           >
-            {isSaving ? 'Salvando...' : 'Salvar configuracoes de rastreamento'}
+            {isSaving ? 'Salvando...' : 'Salvar configura??es de rastreamento'}
           </Button>
         </div>
       </form>

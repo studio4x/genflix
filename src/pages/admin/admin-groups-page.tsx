@@ -103,7 +103,7 @@ export function AdminGroupsPage() {
   async function handleGroupSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (!user) {
-      setError('Usuario nao autenticado.')
+      setError('Usuario n?o autenticado.')
       return
     }
 

@@ -24,7 +24,7 @@ export async function fetchNarrationCredentialsDiagnostics() {
   const accessToken = sessionResult.data.session?.access_token
 
   if (!accessToken) {
-    throw new Error('Sessao expirada. Faca login novamente para gerenciar credenciais.')
+    throw new Error('Sess?o expirada. Faca login novamente para gerenciar credenciais.')
   }
 
   const response = await fetch('/api/admin/payments/diagnostics?scope=narration-ai', {
@@ -36,7 +36,7 @@ export async function fetchNarrationCredentialsDiagnostics() {
 
   const payload = await response.json().catch(() => null) as NarrationCredentialsDiagnostics & { error?: string } | null
   if (!response.ok || !payload) {
-    throw new Error(payload?.error ?? 'Nao foi possivel carregar o diagnostico de credenciais de narracao.')
+    throw new Error(payload?.error ?? 'N?o foi possivel carregar o diagnostico de credenciais de narracao.')
   }
 
   return payload as NarrationCredentialsDiagnostics
@@ -51,7 +51,7 @@ export async function saveNarrationCredentials(input: {
   const accessToken = sessionResult.data.session?.access_token
 
   if (!accessToken) {
-    throw new Error('Sessao expirada. Faca login novamente para salvar credenciais.')
+    throw new Error('Sess?o expirada. Faca login novamente para salvar credenciais.')
   }
 
   const response = await fetch('/api/admin/payments/diagnostics?scope=narration-ai', {
@@ -65,7 +65,7 @@ export async function saveNarrationCredentials(input: {
 
   const payload = await response.json().catch(() => null) as { error?: string; diagnostics?: NarrationCredentialsDiagnostics } | null
   if (!response.ok || !payload) {
-    throw new Error(payload?.error ?? 'Nao foi possivel salvar as credenciais de narracao.')
+    throw new Error(payload?.error ?? 'N?o foi possivel salvar as credenciais de narracao.')
   }
 
   return payload

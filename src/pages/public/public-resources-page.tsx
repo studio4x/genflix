@@ -422,14 +422,14 @@ function ResourcesCatalogSection({
             <EditableText
               entryKey="resources.title"
               fallback="Muito alem do video"
-              label="Titulo da secao de recursos"
+              label="Titulo da se??o de recursos"
             />
           </h1>
           <p className="mx-auto mt-4 max-w-[560px] text-base leading-7 text-[#61737a]">
             <EditableText
               entryKey="resources.description"
-              fallback="Ferramentas pensadas para voce aprender, fixar e revisar do seu jeito."
-              label="Descricao da secao de recursos"
+              fallback="Ferramentas pensadas para voc? aprender, fixar e revisar do seu jeito."
+              label="Descricao da se??o de recursos"
             />
           </p>
         </div>
@@ -575,7 +575,7 @@ function ResourcesCatalogSection({
               isInternal: true,
               tone: 'solid',
             }}
-            label="Botao principal da secao de recursos"
+            label="Botao principal da se??o de recursos"
           >
             {(buttonValue) => buttonValue.isHidden === true ? null : (
               <GenflixCtaButton asChild className="px-5 py-3">

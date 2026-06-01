@@ -79,7 +79,7 @@ const homeLayoutSchema = {
     {
       id: 'featured',
       label: 'Novidades',
-      description: 'Secao de listagem principal com CTA para cursos.',
+      description: 'Se??o de listagem principal com CTA para cursos.',
       item: {
         id: 'featured',
         label: 'Novidades',

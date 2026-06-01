@@ -39,7 +39,7 @@ export function StudentSupportTicketsPage({
       setTickets(ticketRows)
       setSettings(supportSettings)
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'Nao foi possivel carregar os chamados.')
+      setErrorMessage(error instanceof Error ? error.message : 'N?o foi possivel carregar os chamados.')
     } finally {
       setIsLoading(false)
     }

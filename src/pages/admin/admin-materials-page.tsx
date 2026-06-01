@@ -132,11 +132,11 @@ export function AdminMaterialsPage() {
           {module ? (
             <>
               <span>/</span>
-              <Link className="underline" to={`/admin/cursos/${module.course_id}/modulos`}>
+              <Link className="underline" to={`/admin/cursos/${module.course_id}/m?dulos`}>
                 Modulos
               </Link>
               <span>/</span>
-              <Link className="underline" to={`/admin/modulos/${module.id}/aulas`}>
+              <Link className="underline" to={`/admin/m?dulos/${module.id}/aulas`}>
                 Aulas
               </Link>
             </>

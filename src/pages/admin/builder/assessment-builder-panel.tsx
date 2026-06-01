@@ -99,7 +99,7 @@ function getGamifiedItemCount(question: AssessmentQuestionWithOptions) {
 
 function getQuestionScoringExplanation(question: AssessmentQuestionWithOptions) {
   if (question.question_type === 'essay_ai') {
-    return 'Pergunta com feedback da IA. Ela nao soma pontos na nota final do quiz.'
+    return 'Pergunta com feedback da IA. Ela n?o soma pontos na nota final do quiz.'
   }
 
   const points = Number(question.points || 0)
@@ -250,7 +250,7 @@ export function AssessmentBuilderPanel() {
   function ensureQuestionTypeEnabled(questionType: AssessmentQuestionType | 'case_study') {
     if (questionType === 'case_study') {
       if (!canUseCaseStudies) {
-        setError('Estudo de caso esta desativado nas configuracoes globais ou do curso.')
+        setError('Estudo de caso esta desativado nas configura??es globais ou do curso.')
         return false
       }
 
@@ -258,7 +258,7 @@ export function AssessmentBuilderPanel() {
     }
 
     if (!isCourseQuestionTypeEnabled(quizTypeSettings, questionType, globalQuizTypeSettings)) {
-      setError(`${getQuestionTypeDisplayLabel(questionType)} esta desativado nas configuracoes globais ou do curso.`)
+      setError(`${getQuestionTypeDisplayLabel(questionType)} esta desativado nas configura??es globais ou do curso.`)
       return false
     }
 
@@ -287,7 +287,7 @@ export function AssessmentBuilderPanel() {
 
         const assess = await fetchAssessmentById(assessmentId)
         if (!assess || assess.assessment_type !== 'module' || assess.module_id !== moduleId) {
-          throw new Error('Quiz nao encontrado para este modulo.')
+          throw new Error('Quiz n?o encontrado para este m?dulo.')
         }
 
         setAssessment(assess)
@@ -394,15 +394,15 @@ export function AssessmentBuilderPanel() {
           title: 'Quiz criado',
           message: `O quiz "${initialData.title}" foi criado com sucesso.`,
         })
-        navigate(`/admin/cursos/${courseId}/builder/modulos/${moduleId}/avaliacoes/${createdAssessment.id}`)
+        navigate(`/admin/cursos/${courseId}/builder/m?dulos/${moduleId}/avalia??es/${createdAssessment.id}`)
       } else {
         await createFinalAssessment(courseId, initialData, user.id)
         await loadData()
         await refreshTree()
         publishBuilderNotice({
           type: 'success',
-          title: 'Avaliacao final criada',
-          message: 'A avaliacao final foi criada com sucesso.',
+          title: 'Avalia??o final criada',
+          message: 'A avalia??o final foi criada com sucesso.',
         })
       }
     } catch (createError) {
@@ -479,8 +479,8 @@ export function AssessmentBuilderPanel() {
       setAssessmentDraft((prev) => (prev ? { ...prev, title: normalizedTitle } : prev))
       publishBuilderNotice({
         type: 'success',
-        title: isFinal ? 'Avaliacao final salva' : 'Quiz salvo',
-        message: `As configuracoes de "${normalizedTitle}" foram salvas com sucesso.`,
+        title: isFinal ? 'Avalia??o final salva' : 'Quiz salvo',
+        message: `As configura??es de "${normalizedTitle}" foram salvas com sucesso.`,
       })
     } catch (saveError) {
       setError(toErrorMessage(saveError))
@@ -647,7 +647,7 @@ export function AssessmentBuilderPanel() {
   ) {
     const question = findQuestion(questionId)
     if (!question) {
-      throw new Error('Questao nao encontrada.')
+      throw new Error('Questao n?o encontrada.')
     }
 
     const questionType = updates.question_type ?? question.question_type
@@ -872,7 +872,7 @@ export function AssessmentBuilderPanel() {
   }
 
   async function handleDeleteQuestion(questionId: string) {
-    if (!window.confirm('Excluir esta pergunta e todo o conteudo associado?')) return
+    if (!window.confirm('Excluir esta pergunta e todo o conte?do associado?')) return
 
     try {
       await deleteAssessmentQuestion(questionId)
@@ -1017,12 +1017,12 @@ export function AssessmentBuilderPanel() {
 
       if (firstDisabledImportedType) {
         throw new Error(
-          `${getQuestionTypeDisplayLabel(firstDisabledImportedType)} esta desativado nas configuracoes globais ou do curso.`,
+          `${getQuestionTypeDisplayLabel(firstDisabledImportedType)} esta desativado nas configura??es globais ou do curso.`,
         )
       }
 
       if ((importData.case_studies?.length ?? 0) > 0 && !canUseCaseStudies) {
-        throw new Error('Estudo de caso esta desativado nas configuracoes globais ou do curso.')
+        throw new Error('Estudo de caso esta desativado nas configura??es globais ou do curso.')
       }
 
       let targetAssessmentId = assessment?.id
@@ -1086,7 +1086,7 @@ export function AssessmentBuilderPanel() {
       navigate(
         isFinal
           ? `/admin/cursos/${courseId}/builder/assessments`
-          : `/admin/cursos/${courseId}/builder/modulos/${moduleId}`,
+          : `/admin/cursos/${courseId}/builder/m?dulos/${moduleId}`,
         { replace: true },
       )
     } catch (deleteError) {
@@ -1204,7 +1204,7 @@ export function AssessmentBuilderPanel() {
                     className={`rounded-full px-3 py-1 text-[11px] font-black uppercase tracking-widest transition-colors disabled:cursor-not-allowed disabled:opacity-70 ${
                       isActive ? button.activeClassName : button.idleClassName
                     }`}
-                    title={!isEnabled ? 'Tipo desativado nas configuracoes globais ou do curso.' : undefined}
+                    title={!isEnabled ? 'Tipo desativado nas configura??es globais ou do curso.' : undefined}
                   >
                     {button.label}
                   </button>
@@ -1356,7 +1356,7 @@ export function AssessmentBuilderPanel() {
                 <p className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-700">Gabarito da IA</p>
                 <p className="mt-2 text-sm font-medium text-amber-900">
                   {question.question_type === 'essay_ai'
-                    ? 'Informe a resposta considerada correta. A IA comparara esse texto com o que o aluno escrever e devolvera um feedback. Esta questao nao soma pontos no quiz.'
+                    ? 'Informe a resposta considerada correta. A IA comparara esse texto com o que o aluno escrever e devolvera um feedback. Esta questao n?o soma pontos no quiz.'
                     : 'Informe a resposta considerada correta para esta pergunta do estudo de caso. Esta pergunta soma pontos e sera validada pela IA.'}
                 </p>
               </div>
@@ -1540,7 +1540,7 @@ export function AssessmentBuilderPanel() {
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
             </svg>
-            {isLoading ? 'Salvando...' : (isFinal ? 'Salvar Avaliacao' : 'Salvar Quiz')}
+            {isLoading ? 'Salvando...' : (isFinal ? 'Salvar Avalia??o' : 'Salvar Quiz')}
           </Button>
           <Button
             variant="outline"

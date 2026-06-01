@@ -35,7 +35,7 @@ export function PublicSupportPage() {
       question: 'Como abrir um ticket de suporte?',
       answer: user
         ? `A abertura de ticket exige login. Acesse seu painel em ${supportListRoute} e use o botao "Abrir chamado" dentro da area logada.`
-        : 'A abertura de ticket exige login. Clique em "Entrar" no topo do site, acesse seu painel e abra o chamado na pagina de suporte.',
+        : 'A abertura de ticket exige login. Clique em "Entrar" no topo do site, acesse seu painel e abra o chamado na p?gina de suporte.',
       sort_order: -1,
       is_published: true,
       created_at: new Date(0).toISOString(),
@@ -156,7 +156,7 @@ export function PublicSupportPage() {
       setSuggestionDetails('')
       setSuggestionStatus('Sugestão enviada. Obrigado por ajudar a expandir a FAQ.')
     } catch {
-      setSuggestionStatus('Nao foi possivel enviar agora. Tente novamente em instantes.')
+      setSuggestionStatus('N?o foi possivel enviar agora. Tente novamente em instantes.')
     } finally {
       setIsSubmittingSuggestion(false)
     }

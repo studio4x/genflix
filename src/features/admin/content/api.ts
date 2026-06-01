@@ -128,7 +128,7 @@ async function getAccessTokenOrThrow() {
   const sessionResult = await supabase.auth.getSession()
   const accessToken = sessionResult.data.session?.access_token ?? ''
   if (!accessToken) {
-    throw new Error('Sessao expirada. Faça login novamente.')
+    throw new Error('Sess?o expirada. Faça login novamente.')
   }
   return accessToken
 }
@@ -152,7 +152,7 @@ async function preparePrivateAssetUpload(input: {
   })
 
   if (response.error || !response.data) {
-    throw new Error(response.error?.message ?? 'Nao foi possivel preparar o upload protegido.')
+    throw new Error(response.error?.message ?? 'N?o foi possivel preparar o upload protegido.')
   }
   return response.data
 }
@@ -593,7 +593,7 @@ export async function resetCourseProgress(courseId: string, session: Session) {
     throw new Error(
       payload && 'error' in payload && typeof payload.error === 'string'
         ? payload.error
-        : 'Nao foi possivel renovar o progresso do curso.',
+        : 'N?o foi possivel renovar o progresso do curso.',
     )
   }
 
@@ -937,7 +937,7 @@ export async function getSignedMaterialUrl(storagePath: string, expiresInSeconds
   })
 
   if (response.error || !response.data?.signed_url) {
-    throw new Error(response.error?.message ?? 'Nao foi possivel gerar URL assinada do material.')
+    throw new Error(response.error?.message ?? 'N?o foi possivel gerar URL assinada do material.')
   }
 
   return response.data.signed_url
@@ -1662,7 +1662,7 @@ export async function importCourseContent(
     const assessmentInput = assessmentOnlyInput as ImportAssessmentData | null
 
     if (!assessmentInput) {
-      throw new Error('Dados da avaliacao final invalidos.')
+      throw new Error('Dados da avalia??o final invalidos.')
     }
 
     const { data: assessment, error: assessmentError } = await supabase

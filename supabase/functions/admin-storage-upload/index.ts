@@ -19,7 +19,7 @@ Deno.serve(async (request) => {
 
   if (request.method === 'OPTIONS') {
     if (!isAllowedOrigin(request.headers.get('origin'))) {
-      return new Response('origin nao permitida', { status: 403, headers: corsHeaders })
+      return new Response('origin n?o permitida', { status: 403, headers: corsHeaders })
     }
     return new Response('ok', { headers: corsHeaders })
   }
@@ -43,7 +43,7 @@ Deno.serve(async (request) => {
       error: authError,
     } = await supabaseAdmin.auth.getUser(accessToken)
     if (authError || !user) {
-      return jsonResponse(request, { error: 'Token invalido ou usuario nao autenticado.' }, 401)
+      return jsonResponse(request, { error: 'Token invalido ou usuario n?o autenticado.' }, 401)
     }
 
     const hasAdminRoleResult = await supabaseAdmin.rpc('has_role', {
@@ -176,7 +176,7 @@ function resolveUploadProvider(uploadKind: UploadKind, value: unknown): StorageP
 function resolveR2Bucket() {
   const bucket = Deno.env.get('R2_PRIVATE_BUCKET')?.trim() ?? ''
   if (!bucket) {
-    throw new Error('R2_PRIVATE_BUCKET nao configurado.')
+    throw new Error('R2_PRIVATE_BUCKET n?o configurado.')
   }
   return bucket
 }

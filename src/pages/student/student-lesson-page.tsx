@@ -155,9 +155,9 @@ export function StudentLessonPage() {
 
   const nextAction = isLastLessonOfModule && nextModuleQuiz
     ? {
-      label: 'Ir para o Quiz do Modulo',
+      label: 'Ir para o Quiz do M?dulo',
       disabled: false,
-      onClick: () => navigate(`/aluno/cursos/${courseId}/player/avaliacoes/${nextModuleQuiz.assessment_id}`),
+      onClick: () => navigate(`/aluno/cursos/${courseId}/player/avalia??es/${nextModuleQuiz.assessment_id}`),
     }
     : {
       label: 'Proxima Aula',
@@ -306,7 +306,7 @@ export function StudentLessonPage() {
               onClick={() => void handleDownloadModulePdf()}
               className="rounded-xl border-slate-200 bg-white font-bold text-slate-600 hover:text-slate-900"
             >
-              {isGeneratingPdf ? 'Gerando PDF...' : 'Baixar PDF do Modulo'}
+              {isGeneratingPdf ? 'Gerando PDF...' : 'Baixar PDF do M?dulo'}
             </Button>
           ) : null}
         </div>

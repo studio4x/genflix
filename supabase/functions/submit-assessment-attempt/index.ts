@@ -197,7 +197,7 @@ Deno.serve(async (request) => {
     } = await supabaseAdmin.auth.getUser(accessToken)
 
     if (authError || !user) {
-      return jsonResponse({ error: 'Token invalido ou usuario nao autenticado.' }, 401)
+      return jsonResponse({ error: 'Token invalido ou usuario n?o autenticado.' }, 401)
     }
 
     const { data: isStudent, error: roleError } = await supabaseAdmin.rpc('has_role', {
@@ -206,7 +206,7 @@ Deno.serve(async (request) => {
     })
 
     if (roleError || !isStudent) {
-      return jsonResponse({ error: 'Apenas alunos podem responder avaliacao.' }, 403)
+      return jsonResponse({ error: 'Apenas alunos podem responder avalia??o.' }, 403)
     }
 
     const assessmentId = typeof requestBody?.assessment_id === 'string'
@@ -238,7 +238,7 @@ Deno.serve(async (request) => {
 
     const assessment = (assessmentResult.data as AssessmentRow | null) ?? null
     if (!assessment) {
-      return jsonResponse({ error: 'Avaliacao nao encontrada ou inativa.' }, 404)
+      return jsonResponse({ error: 'Avalia??o n?o encontrada ou inativa.' }, 404)
     }
 
     const { data: isReleased, error: releaseError } = await supabaseAdmin.rpc('is_course_released', {
@@ -247,12 +247,12 @@ Deno.serve(async (request) => {
     })
 
     if (releaseError || !isReleased) {
-      return jsonResponse({ error: 'Avaliacao nao liberada para o usuario.' }, 403)
+      return jsonResponse({ error: 'Avalia??o n?o liberada para o usuario.' }, 403)
     }
 
     if (assessment.assessment_type === 'module') {
       if (!assessment.module_id) {
-        return jsonResponse({ error: 'Avaliacao de modulo invalida.' }, 400)
+        return jsonResponse({ error: 'Avalia??o de m?dulo invalida.' }, 400)
       }
 
       const { data: isUnlocked, error: unlockError } = await supabaseAdmin.rpc('is_module_unlocked', {
@@ -261,7 +261,7 @@ Deno.serve(async (request) => {
       })
 
       if (unlockError || !isUnlocked) {
-        return jsonResponse({ error: 'Modulo bloqueado para avaliacao.' }, 403)
+        return jsonResponse({ error: 'M?dulo bloqueado para avalia??o.' }, 403)
       }
     } else {
       const { data: allRequiredCompleted, error: completedError } = await supabaseAdmin.rpc('are_required_modules_completed', {
@@ -270,7 +270,7 @@ Deno.serve(async (request) => {
       })
 
       if (completedError || !allRequiredCompleted) {
-        return jsonResponse({ error: 'Avaliacao final bloqueada ate concluir os modulos obrigatorios.' }, 403)
+        return jsonResponse({ error: 'Avalia??o final bloqueada ate concluir os m?dulos obrigatorios.' }, 403)
       }
     }
 
@@ -301,11 +301,11 @@ Deno.serve(async (request) => {
     const alreadyPerfect = attempts.some((attempt) => Boolean(attempt.is_approved) && Number(attempt.score_percent) >= 100)
 
     if (alreadyPerfect) {
-      return jsonResponse({ error: 'Avaliacao ja concluida com aproveitamento maximo.' }, 400)
+      return jsonResponse({ error: 'Avalia??o ja concluida com aproveitamento maximo.' }, 400)
     }
 
     if (attemptsUsed >= effectiveMaxAttempts) {
-      return jsonResponse({ error: 'Limite de tentativas atingido para esta avaliacao.' }, 400)
+      return jsonResponse({ error: 'Limite de tentativas atingido para esta avalia??o.' }, 400)
     }
 
     const questionIdsResult = await supabaseAdmin
@@ -376,7 +376,7 @@ Deno.serve(async (request) => {
     const interactions = ((interactionsResult.data ?? []) as InteractionRow[])
 
     if (questions.length === 0) {
-      return jsonResponse({ error: 'Avaliacao sem questoes cadastradas.' }, 400)
+      return jsonResponse({ error: 'Avalia??o sem questoes cadastradas.' }, 400)
     }
 
     const optionsByQuestion = new Map<string, OptionRow[]>()
@@ -659,7 +659,7 @@ Deno.serve(async (request) => {
       interaction_feedbacks: interactionFeedbacks,
     }, 200)
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Erro inesperado ao enviar avaliacao.'
+    const message = error instanceof Error ? error.message : 'Erro inesperado ao enviar avalia??o.'
     return jsonResponse({ error: message }, 500)
   }
 })
@@ -1138,7 +1138,7 @@ async function insertAttemptWithRetry(input: {
     return attemptId
   }
 
-  throw new Error('Nao foi possivel registrar a tentativa da avaliacao.')
+  throw new Error('N?o foi possivel registrar a tentativa da avalia??o.')
 }
 
 async function evaluateEssayAnswer(input: {
@@ -1205,7 +1205,7 @@ async function evaluateWithOpenAi(
   if (typeof rawContent !== 'string') {
     return {
       ok: false as const,
-      error: 'OpenAI nao retornou um conteudo valido.',
+      error: 'OpenAI n?o retornou um conte?do valido.',
     }
   }
 
@@ -1249,7 +1249,7 @@ async function evaluateWithGemini(
   const payload = await response.json()
   const rawText = payload?.candidates?.[0]?.content?.parts?.[0]?.text
   if (typeof rawText !== 'string') {
-    throw new Error('Gemini nao retornou um payload valido para a correcao.')
+    throw new Error('Gemini n?o retornou um payload valido para a correcao.')
   }
 
   return normalizeEssayEvaluation(extractJsonObject(rawText))
@@ -1308,7 +1308,7 @@ function extractJsonObject(value: string) {
     return trimmed.slice(firstBrace, lastBrace + 1)
   }
 
-  throw new Error('A IA nao retornou um JSON valido para a correcao.')
+  throw new Error('A IA n?o retornou um JSON valido para a correcao.')
 }
 
 function normalizeEssayEvaluation(rawJson: string) {
@@ -1319,6 +1319,6 @@ function normalizeEssayEvaluation(rawJson: string) {
 
   return {
     is_correct: Boolean(payload.is_correct),
-    feedback: feedback || 'Sua resposta foi analisada, mas nao foi possivel gerar um comentario detalhado.',
+    feedback: feedback || 'Sua resposta foi analisada, mas n?o foi possivel gerar um comentario detalhado.',
   }
 }

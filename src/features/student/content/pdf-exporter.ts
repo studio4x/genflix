@@ -330,7 +330,7 @@ function loadImage(url: string) {
     const image = new Image()
     image.crossOrigin = 'anonymous'
     image.onload = () => resolve(image)
-    image.onerror = () => reject(new Error('Nao foi possivel carregar o logotipo da marca dagua.'))
+    image.onerror = () => reject(new Error('N?o foi possivel carregar o logotipo da marca dagua.'))
     image.src = url
   })
 }
@@ -343,7 +343,7 @@ async function createTransparentImage(url: string, opacity: number): Promise<Pre
 
   const context = canvas.getContext('2d')
   if (!context) {
-    throw new Error('Nao foi possivel preparar a marca dagua do PDF.')
+    throw new Error('N?o foi possivel preparar a marca dagua do PDF.')
   }
 
   context.clearRect(0, 0, canvas.width, canvas.height)
@@ -520,7 +520,7 @@ export async function exportLicensedModulePdf(moduleTitle: string, storagePath: 
 
   const response = await fetch(signedUrl)
   if (!response.ok) {
-    throw new Error('Nao foi possivel baixar o PDF base do modulo.')
+    throw new Error('N?o foi possivel baixar o PDF base do m?dulo.')
   }
 
   const sourceBytes = new Uint8Array(await response.arrayBuffer())
@@ -565,7 +565,7 @@ export async function exportLicensedModulePdf(moduleTitle: string, storagePath: 
       color: rgb(0.38, 0.45, 0.55),
     })
 
-    page.drawText(`pagina ${index + 1} de ${pages.length}`, {
+    page.drawText(`p?gina ${index + 1} de ${pages.length}`, {
       x: width - 110,
       y: 22,
       size: 9,
@@ -576,7 +576,7 @@ export async function exportLicensedModulePdf(moduleTitle: string, storagePath: 
 
   const bytes = await pdfDoc.save()
   downloadPdfBytes(
-    `${PDF_FILENAME_PREFIX}_${sanitizeForFileName(moduleTitle || 'modulo') || 'modulo'}.pdf`,
+    `${PDF_FILENAME_PREFIX}_${sanitizeForFileName(moduleTitle || 'm?dulo') || 'm?dulo'}.pdf`,
     bytes,
   )
 }
@@ -662,7 +662,7 @@ function applyPdfFinishing(
     })
 
     pdf.setFontSize(6.8)
-    pdf.text(`pagina ${page} de ${totalPages}`, pageWidth - 12, footerPageNumberY, {
+    pdf.text(`p?gina ${page} de ${totalPages}`, pageWidth - 12, footerPageNumberY, {
       align: 'right',
       baseline: 'middle',
     })

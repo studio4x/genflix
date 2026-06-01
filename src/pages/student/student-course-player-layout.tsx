@@ -223,7 +223,7 @@ export function StudentCoursePlayerLayout() {
               <input
                 value={sidebarQuery}
                 onChange={(event) => setSidebarQuery(event.target.value)}
-                placeholder="Modulo, aula ou quiz"
+                placeholder="M?dulo, aula ou quiz"
                 className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 outline-none transition-colors placeholder:text-slate-400 focus:border-blue-500"
               />
             </label>
@@ -299,7 +299,7 @@ export function StudentCoursePlayerLayout() {
                     return (
                       <Link
                       key={moduleQuiz.assessment_id}
-                      to={isLocked ? '#' : `/aluno/cursos/${courseId}/player/avaliacoes/${moduleQuiz.assessment_id}`}
+                      to={isLocked ? '#' : `/aluno/cursos/${courseId}/player/avalia??es/${moduleQuiz.assessment_id}`}
                       onClick={(e) => isLocked && e.preventDefault()}
                       className={`relative mt-2 flex items-start gap-3 rounded-2xl border-2 p-3 transition-all group ${
                         isLocked ? 'cursor-not-allowed border-slate-100 bg-slate-50 opacity-50 grayscale' :
@@ -358,7 +358,7 @@ export function StudentCoursePlayerLayout() {
 
               <div className="mt-1 space-y-0.5 px-2">
                 <Link
-                  to={finalAssessment.state === 'blocked' ? '#' : `/aluno/cursos/${courseId}/player/avaliacoes/${finalAssessment.assessment_id}`}
+                  to={finalAssessment.state === 'blocked' ? '#' : `/aluno/cursos/${courseId}/player/avalia??es/${finalAssessment.assessment_id}`}
                   onClick={(e) => finalAssessment.state === 'blocked' && e.preventDefault()}
                   className={`relative mt-2 flex items-start gap-3 rounded-2xl border-2 p-3 transition-all group ${
                     finalAssessment.state === 'blocked'

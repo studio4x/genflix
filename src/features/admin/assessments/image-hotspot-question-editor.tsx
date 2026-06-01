@@ -43,7 +43,7 @@ function readImageDimensions(file: File) {
 
     image.onerror = () => {
       URL.revokeObjectURL(objectUrl)
-      reject(new Error('Nao foi possivel ler a imagem selecionada.'))
+      reject(new Error('N?o foi possivel ler a imagem selecionada.'))
     }
 
     image.src = objectUrl

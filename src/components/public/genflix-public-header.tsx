@@ -240,7 +240,7 @@ export function GenflixPublicHeader({
       pageKey: scopePageKey,
       entryKey: 'site.appearance',
       entryType: 'json',
-      label: scopePageKey === 'global' ? 'Header global' : 'Header da pagina',
+      label: scopePageKey === 'global' ? 'Header global' : 'Header da p?gina',
       fallback: fallbackAppearance,
       schema: { kind: 'site-appearance' },
       reload: scope.reload,
@@ -341,7 +341,7 @@ export function GenflixPublicHeader({
                 {editor?.isEditing && scope ? (
                   <div className="hidden items-center gap-2 xl:flex">
                     <HeaderAppearanceControl
-                      label={appearanceScopePageKey === 'global' ? 'Header global' : 'Header desta pagina'}
+                      label={appearanceScopePageKey === 'global' ? 'Header global' : 'Header desta p?gina'}
                       onClick={() => openAppearanceEditor(appearanceScopePageKey)}
                     />
                     {appearanceScopePageKey !== 'global' ? (
@@ -448,7 +448,7 @@ export function GenflixPublicHeader({
             {editor?.isEditing && scope ? (
               <div className="mt-3 flex flex-wrap gap-2 xl:hidden">
                 <HeaderAppearanceControl
-                  label={appearanceScopePageKey === 'global' ? 'Header global' : 'Header desta pagina'}
+                  label={appearanceScopePageKey === 'global' ? 'Header global' : 'Header desta p?gina'}
                   onClick={() => openAppearanceEditor(appearanceScopePageKey)}
                 />
                 {appearanceScopePageKey !== 'global' ? (

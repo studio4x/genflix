@@ -592,7 +592,7 @@ export function AdminBannersPage() {
       setSelectedBannerId(nextSelectedId)
       setDraft(nextSelectedId ? cloneBanner(rows.find((banner) => banner.id === nextSelectedId) ?? rows[0]) : null)
     } catch (loadError) {
-      setError(loadError instanceof Error ? loadError.message : 'Nao foi possivel carregar os banners.')
+      setError(loadError instanceof Error ? loadError.message : 'N?o foi possivel carregar os banners.')
     } finally {
       setLoading(false)
     }
@@ -619,7 +619,7 @@ export function AdminBannersPage() {
           return
         }
 
-        setError(loadError instanceof Error ? loadError.message : 'Nao foi possivel carregar a biblioteca de midia.')
+        setError(loadError instanceof Error ? loadError.message : 'N?o foi possivel carregar a biblioteca de midia.')
       })
       .finally(() => {
         if (!isMounted) {
@@ -668,7 +668,7 @@ export function AdminBannersPage() {
           return
         }
 
-        setError(loadError instanceof Error ? loadError.message : 'Nao foi possivel carregar o historico do banner.')
+        setError(loadError instanceof Error ? loadError.message : 'N?o foi possivel carregar o hist?rico do banner.')
         setBannerVersions([])
       })
       .finally(() => {
@@ -928,7 +928,7 @@ export function AdminBannersPage() {
       return
     }
 
-    if (isDirty && !window.confirm('Existem alteracoes nao salvas neste banner. Deseja descartar e trocar de item?')) {
+    if (isDirty && !window.confirm('Existem alteracoes n?o salvas neste banner. Deseja descartar e trocar de item?')) {
       return
     }
 
@@ -947,9 +947,9 @@ export function AdminBannersPage() {
     try {
       const created = await createSiteBanner(selectedLocationKey)
       await loadBanners(created.id)
-      setMessage('Novo banner criado. Configure o conteudo e salve quando terminar.')
+      setMessage('Novo banner criado. Configure o conte?do e salve quando terminar.')
     } catch (createError) {
-      setError(createError instanceof Error ? createError.message : 'Nao foi possivel criar o banner.')
+      setError(createError instanceof Error ? createError.message : 'N?o foi possivel criar o banner.')
     } finally {
       setSaving(false)
     }
@@ -969,7 +969,7 @@ export function AdminBannersPage() {
       await loadBanners(duplicated.id)
       setMessage('Banner duplicado com sucesso.')
     } catch (duplicateError) {
-      setError(duplicateError instanceof Error ? duplicateError.message : 'Nao foi possivel duplicar o banner.')
+      setError(duplicateError instanceof Error ? duplicateError.message : 'N?o foi possivel duplicar o banner.')
     } finally {
       setSaving(false)
     }
@@ -996,7 +996,7 @@ export function AdminBannersPage() {
       await loadBanners(fallbackBannerId)
       setMessage('Banner excluido com sucesso.')
     } catch (deleteError) {
-      setError(deleteError instanceof Error ? deleteError.message : 'Nao foi possivel excluir o banner.')
+      setError(deleteError instanceof Error ? deleteError.message : 'N?o foi possivel excluir o banner.')
     } finally {
       setSaving(false)
     }
@@ -1057,7 +1057,7 @@ export function AdminBannersPage() {
       setMessage('Banner salvo com sucesso.')
       setSaveConfirmationOpen(true)
     } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : 'Nao foi possivel salvar o banner.')
+      setError(saveError instanceof Error ? saveError.message : 'N?o foi possivel salvar o banner.')
     } finally {
       setSaving(false)
     }
@@ -1076,7 +1076,7 @@ export function AdminBannersPage() {
       }
       setMessage(updated.isActive ? 'Banner ativado.' : 'Banner desativado.')
     } catch (toggleError) {
-      setError(toggleError instanceof Error ? toggleError.message : 'Nao foi possivel alterar o status do banner.')
+      setError(toggleError instanceof Error ? toggleError.message : 'N?o foi possivel alterar o status do banner.')
     } finally {
       setSaving(false)
     }
@@ -1107,7 +1107,7 @@ export function AdminBannersPage() {
       await reorderSiteBanners(reordered.map((banner) => banner.id), selectedLocationKey)
       setMessage('Ordem dos banners atualizada.')
     } catch (reorderError) {
-      setError(reorderError instanceof Error ? reorderError.message : 'Nao foi possivel atualizar a ordem.')
+      setError(reorderError instanceof Error ? reorderError.message : 'N?o foi possivel atualizar a ordem.')
       await loadBanners(selectedBannerId)
     }
   }
@@ -1132,7 +1132,7 @@ export function AdminBannersPage() {
       setBannerVersions(versions)
       setMessage('Banner revertido para a revisão selecionada.')
     } catch (restoreError) {
-      setError(restoreError instanceof Error ? restoreError.message : 'Nao foi possivel restaurar esta revisao.')
+      setError(restoreError instanceof Error ? restoreError.message : 'N?o foi possivel restaurar esta revis?o.')
     } finally {
       setRestoringVersionId(null)
     }
@@ -1164,7 +1164,7 @@ export function AdminBannersPage() {
       setLibraryAssets((current) => [asset, ...current.filter((item) => item.id !== asset.id)])
       setMessage('Imagem do banner enviada. Salve para publicar a troca.')
     } catch (uploadError) {
-      setError(uploadError instanceof Error ? uploadError.message : 'Nao foi possivel enviar a imagem.')
+      setError(uploadError instanceof Error ? uploadError.message : 'N?o foi possivel enviar a imagem.')
     } finally {
       setUploadingBackground(null)
     }
@@ -1183,7 +1183,7 @@ export function AdminBannersPage() {
 
     const selectedAsset = libraryAssets.find((asset) => asset.id === selectedAssetId)
     if (!selectedAsset || !selectedAsset.public_url) {
-      setError('Nao foi possivel usar o item selecionado da biblioteca.')
+      setError('N?o foi possivel usar o item selecionado da biblioteca.')
       return
     }
     const selectedAssetUrl = selectedAsset.public_url
@@ -1265,7 +1265,7 @@ export function AdminBannersPage() {
       await loadBanners(created.id, key)
       setMessage(`Carrossel "${key}" criado.`)
     } catch (createError) {
-      setError(createError instanceof Error ? createError.message : 'Nao foi possivel criar o carrossel.')
+      setError(createError instanceof Error ? createError.message : 'N?o foi possivel criar o carrossel.')
     } finally {
       setSaving(false)
     }
@@ -1285,7 +1285,7 @@ export function AdminBannersPage() {
       setCarouselTargets(targets)
       setMessage('Destino de exibicao adicionado ao carrossel.')
     } catch (targetError) {
-      setError(targetError instanceof Error ? targetError.message : 'Nao foi possivel adicionar destino ao carrossel.')
+      setError(targetError instanceof Error ? targetError.message : 'N?o foi possivel adicionar destino ao carrossel.')
     } finally {
       setSaving(false)
     }
@@ -1301,7 +1301,7 @@ export function AdminBannersPage() {
       setCarouselTargets(targets)
       setMessage('Destino removido do carrossel.')
     } catch (targetError) {
-      setError(targetError instanceof Error ? targetError.message : 'Nao foi possivel remover destino do carrossel.')
+      setError(targetError instanceof Error ? targetError.message : 'N?o foi possivel remover destino do carrossel.')
     } finally {
       setSaving(false)
     }
@@ -1886,7 +1886,7 @@ export function AdminBannersPage() {
                 <div className="xl:col-span-5 2xl:col-span-4">
                   <div className="grid gap-6 xl:max-h-[calc(100vh-9rem)] xl:overflow-y-auto xl:pr-2">
                     <CollapsibleCard
-                      title="Conteudo e imagem"
+                      title="Conte?do e imagem"
                       summary="Troque a imagem, ajuste os textos-base e mantenha o preview visivel ao lado."
                       open={expandedCards.content}
                       onToggle={() => toggleCard('content')}
@@ -2280,7 +2280,7 @@ export function AdminBannersPage() {
                                 </select>
                               </label>
                               <label className="grid gap-2">
-                                <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">EspaÃ§amento (px)</span>
+                                <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Espaçamento (px)</span>
                                 <input
                                   type="number"
                                   min={-10}

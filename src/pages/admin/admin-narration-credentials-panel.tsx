@@ -24,7 +24,7 @@ function formatLocation(value: NarrationCredentialsDiagnostics['location']) {
     return 'Vercel (Environment Variables)'
   }
 
-  return 'Nao identificado'
+  return 'N?o identificado'
 }
 
 export function AdminNarrationCredentialsPanel() {
@@ -52,7 +52,7 @@ export function AdminNarrationCredentialsPanel() {
         }
       } catch (loadError) {
         if (isMounted) {
-          setError(loadError instanceof Error ? loadError.message : 'Nao foi possivel carregar credenciais de narracao.')
+          setError(loadError instanceof Error ? loadError.message : 'N?o foi possivel carregar credenciais de narracao.')
         }
       } finally {
         if (isMounted) {
@@ -102,9 +102,9 @@ export function AdminNarrationCredentialsPanel() {
       setDiagnostics(result.diagnostics ?? diagnostics)
       setOpenAiApiKey(result.diagnostics?.openAiApiKey ?? openAiApiKey)
       setGeminiApiKey(result.diagnostics?.geminiApiKey ?? geminiApiKey)
-      setMessage('Credenciais salvas com sucesso. A geracao de narracao ja pode usar a configuracao atualizada.')
+      setMessage('Credenciais salvas com sucesso. A geracao de narracao ja pode usar a configura??o atualizada.')
     } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : 'Nao foi possivel salvar as credenciais.')
+      setError(saveError instanceof Error ? saveError.message : 'N?o foi possivel salvar as credenciais.')
     } finally {
       setIsSaving(false)
     }
@@ -162,7 +162,7 @@ export function AdminNarrationCredentialsPanel() {
                 setOpenAiApiKey(refreshed.openAiApiKey ?? '')
                 setGeminiApiKey(refreshed.geminiApiKey ?? '')
               } catch (reloadError) {
-                setError(reloadError instanceof Error ? reloadError.message : 'Nao foi possivel atualizar o diagnostico.')
+                setError(reloadError instanceof Error ? reloadError.message : 'N?o foi possivel atualizar o diagnostico.')
               } finally {
                 setIsLoading(false)
               }

@@ -104,13 +104,13 @@ export function PublicGenericPage({
         <div className="public-site-container">
           <div className="max-w-[880px] px-2 sm:px-0">
             <p className="text-[11px] font-black uppercase tracking-[0.28em] text-[#1398B7]">
-              <EditableText entryKey={`${entryPrefix}.eyebrow`} fallback={eyebrow} label="Chamada da pagina institucional" pageKey="global" />
+              <EditableText entryKey={`${entryPrefix}.eyebrow`} fallback={eyebrow} label="Chamada da p?gina institucional" pageKey="global" />
             </p>
             <h1 className="mt-4 max-w-[760px] text-[2.5rem] font-extrabold leading-[0.94] tracking-[-0.05em] text-[#183139] sm:text-[3rem]">
-              <EditableText entryKey={`${entryPrefix}.title`} fallback={title} label="Titulo da pagina institucional" pageKey="global" />
+              <EditableText entryKey={`${entryPrefix}.title`} fallback={title} label="Titulo da p?gina institucional" pageKey="global" />
             </h1>
             <p className="mt-4 max-w-[720px] text-base leading-7 text-[#183139]">
-              <EditableText entryKey={`${entryPrefix}.description`} fallback={description} label="Descricao da pagina institucional" pageKey="global" />
+              <EditableText entryKey={`${entryPrefix}.description`} fallback={description} label="Descricao da p?gina institucional" pageKey="global" />
             </p>
           </div>
 
@@ -118,7 +118,7 @@ export function PublicGenericPage({
             <EditableRichText
               entryKey={`${entryPrefix}.content`}
               fallback={contentFallback}
-              label="Conteudo da pagina institucional"
+              label="Conte?do da p?gina institucional"
               pageKey="global"
               className="rich-text-content space-y-4 text-[15px] leading-8 text-[#5f7178] [&_h2]:mt-8 [&_h2]:text-[1.45rem] [&_h2]:font-bold [&_h2]:leading-tight [&_h2]:tracking-[-0.03em] [&_h2]:text-[#183139] [&_h2:first-child]:mt-0"
             />
@@ -135,7 +135,7 @@ export function PublicGenericPage({
                   tone: 'solid',
                   isHidden: false,
                 }}
-                label="CTA da pagina institucional"
+                label="CTA da p?gina institucional"
                 pageKey="global"
               >
                 {(buttonValue) => buttonValue.isHidden === true ? null : (

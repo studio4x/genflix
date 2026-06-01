@@ -56,12 +56,12 @@ export function SignUpPage() {
     }
 
     if (password !== confirmPassword) {
-      setError('As senhas nao conferem.')
+      setError('As senhas n?o conferem.')
       return
     }
 
     if (!acceptTerms) {
-      setError('Voce precisa concordar com os Termos de Uso e a Politica de Privacidade.')
+      setError('Voc? precisa concordar com os Termos de Uso e a Pol?tica de Privacidade.')
       return
     }
 

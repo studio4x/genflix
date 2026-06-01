@@ -317,11 +317,11 @@ export function AdminNotificationsPage() {
       setAdminNotificationEmail(savedSettings.admin_notification_email ?? '')
       setSuccessMessage(
         savedSettings.admin_notification_email
-          ? `E-mail administrativo padrÃ£o salvo: ${savedSettings.admin_notification_email}.`
-          : 'E-mail administrativo padrÃ£o removido.',
+          ? `E-mail administrativo padrão salvo: ${savedSettings.admin_notification_email}.`
+          : 'E-mail administrativo padrão removido.',
       )
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'NÃ£o foi possÃ­vel salvar o e-mail administrativo.')
+      setErrorMessage(error instanceof Error ? error.message : 'Não foi possível salvar o e-mail administrativo.')
     } finally {
       setIsSavingSettings(false)
     }
@@ -991,7 +991,7 @@ export function AdminNotificationsPage() {
                               'inline-flex border px-2 py-1 text-[10px] font-black uppercase tracking-[0.16em]',
                               item.read_at ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-amber-200 bg-amber-50 text-amber-700',
                             )}>
-                              {item.read_at ? 'lida' : 'nao lida'}
+                              {item.read_at ? 'lida' : 'n?o lida'}
                             </span>
                           </td>
                           <td className="px-4 py-3 text-xs font-semibold text-[#6d7f84]">{formatDateTime(item.created_at)}</td>

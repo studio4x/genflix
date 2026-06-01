@@ -11,14 +11,14 @@ async function getAuthenticatedEdgeContext() {
   const accessToken = sessionResult.data.session?.access_token
 
   if (!accessToken) {
-    throw new Error('Sessao expirada. Entre novamente para limpar o cache.')
+    throw new Error('Sess?o expirada. Entre novamente para limpar o cache.')
   }
 
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
   const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
   if (!supabaseUrl || !supabaseAnonKey) {
-    throw new Error('Configuracao do Supabase ausente no frontend.')
+    throw new Error('Configura??o do Supabase ausente no frontend.')
   }
 
   return { accessToken, supabaseUrl, supabaseAnonKey }
@@ -41,7 +41,7 @@ export async function clearServerCache() {
 
   const payload = await response.json().catch(() => null) as AdminClearServerCacheResponse | null
   if (!response.ok || !payload?.ok) {
-    throw new Error(payload?.error ?? 'Nao foi possivel limpar o cache do servidor.')
+    throw new Error(payload?.error ?? 'N?o foi possivel limpar o cache do servidor.')
   }
 }
 

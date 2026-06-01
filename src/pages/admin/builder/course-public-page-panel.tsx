@@ -65,7 +65,7 @@ function buildRealContentModules(courseTree: NonNullable<ReturnType<typeof useCo
     return {
       title: module.title,
       lessonCount: items.length,
-      summary: items.length ? `${items.length} itens reais serao exibidos nesta secao.` : 'Este modulo ainda nao possui itens publicados.',
+      summary: items.length ? `${items.length} itens reais serao exibidos nesta se??o.` : 'Este m?dulo ainda n?o possui itens publicados.',
       items,
       lessonLabel: items.length === 1 ? 'item' : 'itens',
     } satisfies GenflixCourseModule
@@ -73,9 +73,9 @@ function buildRealContentModules(courseTree: NonNullable<ReturnType<typeof useCo
 
   if (courseTree.courseAssessments.length) {
     modules.push({
-      title: courseTree.courseAssessments.length === 1 ? 'Avaliacao final' : 'Avaliacoes finais',
+      title: courseTree.courseAssessments.length === 1 ? 'Avalia??o final' : 'Avalia??es finais',
       lessonCount: courseTree.courseAssessments.length,
-      summary: 'Avaliacoes de encerramento vinculadas ao curso.',
+      summary: 'Avalia??es de encerramento vinculadas ao curso.',
       items: courseTree.courseAssessments.map((assessment) => assessment.title).filter(Boolean),
       lessonLabel: courseTree.courseAssessments.length === 1 ? 'item' : 'itens',
     })
@@ -241,7 +241,7 @@ export function CoursePublicPagePanel() {
       })
 
       if (!parsed.success) {
-        throw new Error(parsed.error.issues[0]?.message ?? 'Dados invalidos para a pagina publica.')
+        throw new Error(parsed.error.issues[0]?.message ?? 'Dados invalidos para a p?gina publica.')
       }
 
       await updateCoursePublicPage(courseTree.course.id, parsed.data)
@@ -249,8 +249,8 @@ export function CoursePublicPagePanel() {
       setSuccess(true)
       publishBuilderNotice({
         type: 'success',
-        title: 'Pagina publica salva',
-        message: `A pagina publica do curso "${courseTree.course.title}" foi atualizada com sucesso.`,
+        title: 'P?gina publica salva',
+        message: `A p?gina publica do curso "${courseTree.course.title}" foi atualizada com sucesso.`,
       })
       setTimeout(() => setSuccess(false), 3000)
     } catch (submitError) {
@@ -286,7 +286,7 @@ export function CoursePublicPagePanel() {
           <SectionHeading
             eyebrow="Hero"
             title="Cabecalho principal do curso"
-            description="Esses campos controlam a primeira dobra da pagina do curso, incluindo titulo, descricao e o bloco lateral de checkout. A imagem do hero continua sendo definida nas configuracoes do curso."
+            description="Esses campos controlam a primeira dobra da p?gina do curso, incluindo titulo, descricao e o bloco lateral de checkout. A imagem do hero continua sendo definida nas configura??es do curso."
           />
 
           <div className="mt-8 space-y-5">
@@ -316,7 +316,7 @@ export function CoursePublicPagePanel() {
                   className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-5 py-3 text-sm font-semibold outline-none focus:border-cyan-400 focus:bg-white"
                   value={form.marketing_title}
                   onChange={(event) => updateField('marketing_title', event.target.value)}
-                  placeholder="Titulo exibido no topo da pagina"
+                  placeholder="Titulo exibido no topo da p?gina"
                   required
                 />
               </label>
@@ -362,7 +362,7 @@ export function CoursePublicPagePanel() {
           <SectionHeading
             eyebrow="Sidebar"
             title="Mentor e itens inclusos"
-            description="Os campos abaixo abastecem o card lateral: mentor, secao bonus exibida abaixo do botao comprar e lista de beneficios do curso."
+            description="Os campos abaixo abastecem o card lateral: mentor, se??o bonus exibida abaixo do botao comprar e lista de beneficios do curso."
           />
 
           <div className="mt-8 grid gap-5 md:grid-cols-2">
@@ -401,7 +401,7 @@ export function CoursePublicPagePanel() {
                 className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-5 py-3 text-sm font-semibold outline-none focus:border-cyan-400 focus:bg-white"
                 value={form.bonus_title}
                 onChange={(event) => updateField('bonus_title', event.target.value)}
-                placeholder="Ex: Previa de conteudo"
+                placeholder="Ex: Previa de conte?do"
                 disabled={!form.bonus_enabled}
               />
             </label>
@@ -467,7 +467,7 @@ export function CoursePublicPagePanel() {
           <SectionHeading
             eyebrow="Corpo"
             title="Sobre o curso e destaques"
-            description="Esses blocos alimentam as secoes de texto corrido e os cards de O que voce vai aprender."
+            description="Esses blocos alimentam as secoes de texto corrido e os cards de O que voc? vai aprender."
           />
 
           <div className="mt-8 space-y-8">
@@ -489,7 +489,7 @@ export function CoursePublicPagePanel() {
                     className="min-h-[110px] flex-1 rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4 text-sm font-medium leading-7 text-slate-700 outline-none focus:border-cyan-400 focus:bg-white"
                     value={paragraph}
                     onChange={(event) => updateParagraph(index, event.target.value)}
-                    placeholder="Paragrafo da secao Sobre o Curso"
+                    placeholder="Paragrafo da se??o Sobre o Curso"
                   />
                   <Button
                     type="button"
@@ -559,9 +559,9 @@ export function CoursePublicPagePanel() {
 
         <section className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm md:p-10">
           <SectionHeading
-            eyebrow="Conteudo do curso"
-            title="Escolha entre outline real ou conteudo personalizado"
-            description="No modo real, a pagina publica lista apenas os nomes dos modulos, aulas e quizzes cadastrados no construtor. No modo personalizado, voce controla os cards manualmente."
+            eyebrow="Conte?do do curso"
+            title="Escolha entre outline real ou conte?do personalizado"
+            description="No modo real, a p?gina publica lista apenas os nomes dos m?dulos, aulas e quizzes cadastrados no construtor. No modo personalizado, voc? controla os cards manualmente."
           />
 
           <div className="mt-8 rounded-[28px] border border-slate-200 bg-slate-50 p-2">
@@ -708,7 +708,7 @@ export function CoursePublicPagePanel() {
                         className="min-h-[110px] w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium leading-6 text-slate-700 outline-none focus:border-cyan-400"
                         value={module.summary}
                         onChange={(event) => updateCustomModule(index, { summary: event.target.value })}
-                        placeholder="Resumo que aparece ao expandir o card na pagina publica."
+                        placeholder="Resumo que aparece ao expandir o card na p?gina publica."
                       />
                     </label>
                   </div>
@@ -720,7 +720,7 @@ export function CoursePublicPagePanel() {
 
         <div className="flex justify-end">
           <Button type="submit" className="h-12 rounded-2xl px-8 font-black" disabled={isSubmitting}>
-            {isSubmitting ? 'Salvando pagina publica...' : 'Salvar pagina publica'}
+            {isSubmitting ? 'Salvando p?gina publica...' : 'Salvar p?gina publica'}
           </Button>
         </div>
       </form>

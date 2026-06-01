@@ -55,14 +55,14 @@ async function getAuthenticatedEdgeContext() {
   const accessToken = sessionResult.data.session?.access_token
 
   if (!accessToken) {
-    throw new Error('Sessao expirada. Entre novamente para visualizar o uso do storage.')
+    throw new Error('Sess?o expirada. Entre novamente para visualizar o uso do storage.')
   }
 
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
   const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
   if (!supabaseUrl || !supabaseAnonKey) {
-    throw new Error('Configuracao do Supabase ausente no frontend.')
+    throw new Error('Configura??o do Supabase ausente no frontend.')
   }
 
   return { accessToken, supabaseUrl, supabaseAnonKey }
@@ -85,7 +85,7 @@ export async function fetchR2UsageOverview() {
 
   const payload = await response.json().catch(() => null) as (R2UsageOverview & { error?: string }) | null
   if (!response.ok || !payload) {
-    throw new Error(payload?.error ?? 'Nao foi possivel carregar o uso do storage R2.')
+    throw new Error(payload?.error ?? 'N?o foi possivel carregar o uso do storage R2.')
   }
 
   return payload
@@ -116,7 +116,7 @@ export async function fetchR2Objects(input: {
 
   const payload = await response.json().catch(() => null) as (R2ObjectsListResponse & { error?: string }) | null
   if (!response.ok || !payload) {
-    throw new Error(payload?.error ?? 'Nao foi possivel listar arquivos do R2.')
+    throw new Error(payload?.error ?? 'N?o foi possivel listar arquivos do R2.')
   }
 
   return payload
@@ -142,6 +142,6 @@ export async function deleteR2Object(input: { bucket: string; key: string }) {
 
   const payload = await response.json().catch(() => null) as { ok?: boolean; error?: string } | null
   if (!response.ok || !payload?.ok) {
-    throw new Error(payload?.error ?? 'Nao foi possivel excluir arquivo do R2.')
+    throw new Error(payload?.error ?? 'N?o foi possivel excluir arquivo do R2.')
   }
 }

@@ -195,7 +195,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
   }
 
   if (req.method !== 'POST') {
-    jsonResponse(res, 405, { error: 'MÃ©todo nÃ£o permitido.' })
+    jsonResponse(res, 405, { error: 'Método não permitido.' })
     return
   }
 
@@ -204,14 +204,14 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
   const webhookSecrets = getConfiguredAsaasWebhookSecrets()
 
   if (!supabaseUrl || !serviceRoleKey) {
-    jsonResponse(res, 500, { error: 'ConfiguraÃ§Ã£o do Supabase ausente.' })
+    jsonResponse(res, 500, { error: 'Configuração do Supabase ausente.' })
     return
   }
 
   if (webhookSecrets.length > 0) {
     const receivedSecret = getHeaderValue(req.headers['asaas-access-token'])
     if (!receivedSecret || !webhookSecrets.includes(receivedSecret)) {
-      jsonResponse(res, 401, { error: 'Token do webhook invÃ¡lido.' })
+      jsonResponse(res, 401, { error: 'Token do webhook inválido.' })
       return
     }
   }
@@ -425,7 +425,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
   })
 
   if (insertEvent.error) {
-    jsonResponse(res, 500, { error: 'NÃ£o foi possÃ­vel registrar o webhook.' })
+    jsonResponse(res, 500, { error: 'Não foi possível registrar o webhook.' })
     return
   }
 

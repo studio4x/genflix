@@ -118,7 +118,7 @@ function RefundRequestModal({
     try {
       await onSubmit(reason)
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'Nao foi possivel enviar a solicitacao de reembolso.')
+      setErrorMessage(error instanceof Error ? error.message : 'N?o foi possivel enviar a solicitacao de reembolso.')
     }
   }
 
@@ -245,7 +245,7 @@ export function StudentPaymentsPage() {
       const nextPayments = await fetchStudentPaymentHistory()
       setPayments(nextPayments)
     } catch (loadError) {
-      const message = loadError instanceof Error ? loadError.message : 'Nao foi possivel carregar o historico.'
+      const message = loadError instanceof Error ? loadError.message : 'N?o foi possivel carregar o hist?rico.'
       setError(message)
     } finally {
       setIsLoading(false)

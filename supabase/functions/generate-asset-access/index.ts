@@ -50,12 +50,12 @@ Deno.serve(async (request) => {
       error: authError,
     } = await supabaseAdmin.auth.getUser(accessToken)
     if (authError || !user) {
-      return jsonResponse({ error: 'Token invalido ou usuario nao autenticado.' }, 401)
+      return jsonResponse({ error: 'Token invalido ou usuario n?o autenticado.' }, 401)
     }
 
     const material = await resolveMaterial(supabaseAdmin, requestBody)
     if (!material) {
-      return jsonResponse({ error: 'Asset nao encontrado.' }, 404)
+      return jsonResponse({ error: 'Asset n?o encontrado.' }, 404)
     }
 
     const courseId = material.lessons?.course_modules?.course_id ?? null
@@ -83,7 +83,7 @@ Deno.serve(async (request) => {
         _course_id: courseId,
       })
       if (isReleasedResult.error || !isReleasedResult.data) {
-        return jsonResponse({ error: 'Curso nao liberado para este usuario.' }, 403)
+        return jsonResponse({ error: 'Curso n?o liberado para este usuario.' }, 403)
       }
 
       const unlockedLessonsResult = await supabaseAdmin.rpc('get_student_unlocked_lessons_progress', {
@@ -171,7 +171,7 @@ function getAccessToken(request: Request, body: Record<string, unknown>) {
 function resolveR2Bucket() {
   const bucket = Deno.env.get('R2_PRIVATE_BUCKET')?.trim() ?? ''
   if (!bucket) {
-    throw new Error('R2_PRIVATE_BUCKET nao configurado.')
+    throw new Error('R2_PRIVATE_BUCKET n?o configurado.')
   }
   return bucket
 }

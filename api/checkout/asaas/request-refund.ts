@@ -100,14 +100,14 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
   }
 
   if (req.method !== 'POST') {
-    jsonResponse(res, 405, { error: 'Metodo nao permitido.' })
+    jsonResponse(res, 405, { error: 'Metodo n?o permitido.' })
     return
   }
 
   const supabaseUrl = process.env.VITE_SUPABASE_URL ?? process.env.SUPABASE_URL
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
   if (!supabaseUrl || !serviceRoleKey) {
-    jsonResponse(res, 500, { error: 'Configuracao do Supabase ausente.' })
+    jsonResponse(res, 500, { error: 'Configura??o do Supabase ausente.' })
     return
   }
 
@@ -152,13 +152,13 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
     .maybeSingle()
 
   if (sessionError) {
-    jsonResponse(res, 500, { error: 'Nao foi possivel validar o pedido.' })
+    jsonResponse(res, 500, { error: 'N?o foi possivel validar o pedido.' })
     return
   }
 
   const checkout = session as CheckoutSessionRow | null
   if (!checkout || checkout.user_id !== userData.user.id) {
-    jsonResponse(res, 404, { error: 'Pedido nao encontrado para esta conta.' })
+    jsonResponse(res, 404, { error: 'Pedido n?o encontrado para esta conta.' })
     return
   }
 
@@ -183,7 +183,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
   }
 
   if (!checkout.external_payment_id) {
-    jsonResponse(res, 409, { error: 'Nao foi possivel identificar o pagamento no gateway para estorno automatico.' })
+    jsonResponse(res, 409, { error: 'N?o foi possivel identificar o pagamento no gateway para estorno automatico.' })
     return
   }
 
@@ -219,7 +219,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
   const asaasRefundPayload = await asaasRefundResponse.json().catch(() => null) as unknown
   if (!asaasRefundResponse.ok) {
     jsonResponse(res, 502, {
-      error: getAsaasRefundError(asaasRefundPayload) ?? 'Nao foi possivel processar o estorno automatico no gateway de pagamento.',
+      error: getAsaasRefundError(asaasRefundPayload) ?? 'N?o foi possivel processar o estorno automatico no gateway de pagamento.',
     })
     return
   }
@@ -242,7 +242,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
     .eq('id', checkout.id)
 
   if (updateSessionResult.error) {
-    jsonResponse(res, 500, { error: 'Nao foi possivel registrar a solicitacao de reembolso.' })
+    jsonResponse(res, 500, { error: 'N?o foi possivel registrar a solicitacao de reembolso.' })
     return
   }
 

@@ -160,7 +160,7 @@ export function LessonMaterialsPanel() {
   }
 
   async function handleDelete(action: LessonFooterAction) {
-    if (!window.confirm(`Excluir a acao "${action.label ?? action.file_name ?? 'Sem titulo'}"?`)) return
+    if (!window.confirm(`Excluir a a??o "${action.label ?? action.file_name ?? 'Sem titulo'}"?`)) return
 
     try {
       await deleteLessonFooterAction(action)
@@ -192,7 +192,7 @@ export function LessonMaterialsPanel() {
         <div>
           <div className="flex items-center gap-2 mb-1">
             <button
-              onClick={() => navigate(`/admin/cursos/${courseId}/builder/modulos/${moduleId}/aulas/${lessonId}`)}
+              onClick={() => navigate(`/admin/cursos/${courseId}/builder/m?dulos/${moduleId}/aulas/${lessonId}`)}
               className="text-blue-600 hover:underline text-sm font-bold flex items-center gap-1"
             >
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>

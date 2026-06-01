@@ -50,7 +50,7 @@ export function AdminSupportTicketsPage() {
       setTickets(ticketRows)
       setSettings(supportSettings)
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'Nao foi possivel carregar a fila de tickets.')
+      setErrorMessage(error instanceof Error ? error.message : 'N?o foi possivel carregar a fila de tickets.')
     } finally {
       setIsRefreshing(false)
       setIsLoading(false)
@@ -114,7 +114,7 @@ export function AdminSupportTicketsPage() {
       const updated = await updateSupportTicketStatus(ticketId, nextStatus)
       setTickets((current) => current.map((ticket) => ticket.id === ticketId ? { ...ticket, ...updated } : ticket))
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'Nao foi possivel atualizar o status do ticket.')
+      setErrorMessage(error instanceof Error ? error.message : 'N?o foi possivel atualizar o status do ticket.')
     }
   }
 
@@ -128,7 +128,7 @@ export function AdminSupportTicketsPage() {
       setTickets((current) => current.filter((ticket) => ticket.id !== ticketToDelete.id))
       setTicketToDelete(null)
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'Nao foi possivel excluir o ticket.')
+      setErrorMessage(error instanceof Error ? error.message : 'N?o foi possivel excluir o ticket.')
     }
   }
 

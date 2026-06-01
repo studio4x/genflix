@@ -210,7 +210,7 @@ export async function fetchAdminPaymentInvoiceUrl(sessionId: string) {
   const accessToken = sessionResult.data.session?.access_token
 
   if (!accessToken) {
-    throw new Error('Sessao expirada. Entre novamente para abrir a fatura.')
+    throw new Error('Sess?o expirada. Entre novamente para abrir a fatura.')
   }
 
   const response = await fetch('/api/admin/payments/diagnostics', {
@@ -225,7 +225,7 @@ export async function fetchAdminPaymentInvoiceUrl(sessionId: string) {
   const payload = await response.json().catch(() => null) as { url?: string; error?: string } | null
 
   if (!response.ok || !payload?.url) {
-    throw new Error(payload?.error ?? 'Nao foi possivel abrir a fatura do pedido.')
+    throw new Error(payload?.error ?? 'N?o foi possivel abrir a fatura do pedido.')
   }
 
   return payload.url

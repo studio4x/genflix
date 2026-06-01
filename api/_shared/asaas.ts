@@ -101,7 +101,7 @@ export async function fetchAsaasBalance(environment: AsaasEnvironment, accessTok
   const payload = await response.json().catch(() => null) as { balance?: number; errors?: Array<{ description?: string }> } | null
 
   if (!response.ok) {
-    throw new Error(payload?.errors?.[0]?.description ?? 'Nao foi possivel consultar o saldo disponivel no Asaas.')
+    throw new Error(payload?.errors?.[0]?.description ?? 'N?o foi possivel consultar o saldo disponivel no Asaas.')
   }
 
   return Number(payload?.balance ?? 0)
@@ -143,7 +143,7 @@ export async function createAsaasPixTransfer(input: {
   const payload = await response.json().catch(() => null) as AsaasTransferPayload | null
 
   if (!response.ok || !payload?.id) {
-    throw new Error(readAsaasError(payload, 'Nao foi possivel criar a transferencia PIX no Asaas.'))
+    throw new Error(readAsaasError(payload, 'N?o foi possivel criar a transferencia PIX no Asaas.'))
   }
 
   return {
@@ -167,7 +167,7 @@ export async function fetchAsaasTransfer(input: {
   const payload = await response.json().catch(() => null) as AsaasTransferPayload | null
 
   if (!response.ok || !payload?.id) {
-    throw new Error(readAsaasError(payload, 'Nao foi possivel consultar a transferencia PIX no Asaas.'))
+    throw new Error(readAsaasError(payload, 'N?o foi possivel consultar a transferencia PIX no Asaas.'))
   }
 
   return payload

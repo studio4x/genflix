@@ -85,7 +85,7 @@ export function validateSiteTrackingSettings(value: SiteTrackingSettings) {
       configured: hasGtm,
       valid: gtmValid,
       message: !hasGtm
-        ? 'Nao configurado'
+        ? 'N?o configurado'
         : gtmValid
           ? 'Formato valido'
           : 'Formato invalido. Use algo como GTM-XXXXXXX.',
@@ -94,7 +94,7 @@ export function validateSiteTrackingSettings(value: SiteTrackingSettings) {
       configured: hasMetaPixel,
       valid: metaPixelValid,
       message: !hasMetaPixel
-        ? 'Nao configurado'
+        ? 'N?o configurado'
         : metaPixelValid
           ? 'Formato valido'
           : 'Formato invalido. Use apenas numeros.',

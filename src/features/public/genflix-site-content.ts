@@ -155,7 +155,7 @@ export const genflixHeroImage = '/images/genflix/home/hero.jpg'
 export const genflixNewsletterImage = '/images/genflix/home/newsletter.jpg'
 
 export const genflixNavLinks: GenflixNavLink[] = [
-  { label: 'InÃ­cio', href: '/', isInternal: true, pageKey: 'home' },
+  { label: 'Início', href: '/', isInternal: true, pageKey: 'home' },
   { label: 'Cursos', href: '/cursos', isInternal: true, pageKey: 'courses' },
   { label: 'Blog', href: '/blog', isInternal: true, pageKey: 'blog' },
   { label: 'Suporte', href: '/suporte', isInternal: true, pageKey: 'support' },
@@ -166,7 +166,7 @@ export const genflixNavLinks: GenflixNavLink[] = [
 ]
 
 export const genflixFooterNavLinks: GenflixFooterNavItem[] = [
-  { label: 'InÃ­cio', href: '/', isInternal: true },
+  { label: 'Início', href: '/', isInternal: true },
   { label: 'Sobre', href: '/sobre', isInternal: true },
   { label: 'Recursos', href: '/recursos', isInternal: true },
   { label: 'Cursos', href: '/cursos', isInternal: true },
@@ -177,45 +177,45 @@ export const genflixFooterNavLinks: GenflixFooterNavItem[] = [
 ]
 
 export const genflixCategoryTiles: GenflixCategoryItem[] = [
-  { label: 'SaÃºde', icon: HeartPulse },
-  { label: 'JurÃ­dicos', icon: Scale },
+  { label: 'Saúde', icon: HeartPulse },
+  { label: 'Jurídicos', icon: Scale },
   { label: 'Exatas', icon: Sigma },
-  { label: 'GestÃ£o', icon: BriefcaseBusiness },
+  { label: 'Gestão', icon: BriefcaseBusiness },
   { label: 'Humanas', icon: Landmark },
-  { label: 'PsicanÃ¡lise / Psicologia', icon: BrainCircuit },
+  { label: 'Psicanálise / Psicologia', icon: BrainCircuit },
   { label: 'Interesse Geral', icon: Sparkles },
 ]
 
 export const genflixCommunityItems: GenflixCommunityItem[] = [
   {
-    label: 'SaÃºde',
+    label: 'Saúde',
     icon: HeartPulse,
-    description: 'Debates, dÃºvidas clÃ­nicas e troca de repertÃ³rio entre profissionais e estudantes da Ã¡rea da saÃºde.',
+    description: 'Debates, dúvidas clínicas e troca de repertório entre profissionais e estudantes da área da saúde.',
   },
   {
     label: 'Direito',
     icon: Scale,
-    description: 'EspaÃ§o para revisÃµes, questÃµes e conversas sobre prÃ¡tica jurÃ­dica, carreira e estudos.',
+    description: 'Espaço para revisões, questões e conversas sobre prática jurídica, carreira e estudos.',
   },
   {
     label: 'Exatas',
     icon: Sigma,
-    description: 'Compartilhe estratÃ©gias, exercÃ­cios e mÃ©todos de resoluÃ§Ã£o com foco em clareza e constÃ¢ncia.',
+    description: 'Compartilhe estratégias, exercícios e métodos de resolução com foco em clareza e constância.',
   },
   {
-    label: 'GestÃ£o',
+    label: 'Gestão',
     icon: BriefcaseBusiness,
-    description: 'Troque experiÃªncias sobre lideranÃ§a, processos, comunicaÃ§Ã£o e rotina de times em crescimento.',
+    description: 'Troque experiências sobre liderança, processos, comunicação e rotina de times em crescimento.',
   },
   {
     label: 'Humanas',
     icon: Landmark,
-    description: 'Converse sobre repertÃ³rio, interpretaÃ§Ã£o, leituras e formas de aprofundar sua visÃ£o crÃ­tica.',
+    description: 'Converse sobre repertório, interpretação, leituras e formas de aprofundar sua visão crítica.',
   },
   {
-    label: 'PsicanÃ¡lise / Psicologia',
+    label: 'Psicanálise / Psicologia',
     icon: BrainCircuit,
-    description: 'Uma comunidade para discutir teoria, clÃ­nica, escuta e formaÃ§Ã£o com mais continuidade.',
+    description: 'Uma comunidade para discutir teoria, clínica, escuta e formação com mais continuidade.',
   },
   {
     label: 'Interesse Geral',
@@ -225,32 +225,32 @@ export const genflixCommunityItems: GenflixCommunityItem[] = [
 ]
 
 export const genflixResourceItems: GenflixResourceItem[] = [
-  { label: 'Textos diretos ao ponto', icon: ScrollText, description: 'SÃ­nteses objetivas para revisar conceitos centrais sem perder profundidade.' },
-  { label: 'Texto para fala', icon: Mic, description: 'VersÃµes preparadas para narraÃ§Ã£o e escuta, ideais para aprender em movimento.' },
-  { label: 'VÃ­deos', icon: MonitorPlay, description: 'Aulas em vÃ­deo organizadas por trilha, com acesso contÃ­nuo e linguagem clara.' },
-  { label: 'Lives com autores', icon: Presentation, description: 'Encontros com especialistas para ampliar repertÃ³rio e discutir temas atuais.' },
-  { label: 'Bloco de notas pessoais', icon: NotebookPen, description: 'EspaÃ§o para registrar insights, referÃªncias e anotaÃ§Ãµes do seu processo.' },
-  { label: 'FÃ³runs de discussÃ£o', icon: MessageCircleMore, description: 'Debates e trocas com outros alunos para levar o estudo alÃ©m da aula.' },
-  { label: 'Descontos em livros do GEN', icon: BadgeCheck, description: 'BenefÃ­cios para conectar cursos GenFlix a livros acadÃªmicos do GEN.' },
-  { label: 'Podcasts', icon: Podcast, description: 'ConteÃºdo em Ã¡udio para reforÃ§ar entendimento e manter constÃ¢ncia no aprendizado.' },
-  { label: 'Resumos', icon: FileText, description: 'Materiais de apoio com os pontos essenciais de cada mÃ³dulo e tema estudado.' },
-  { label: 'Mapas mentais', icon: Waypoints, description: 'VisÃµes estruturadas dos assuntos para facilitar associaÃ§Ã£o e memÃ³ria.' },
-  { label: 'Flashcards', icon: BookMarked, description: 'CartÃµes de revisÃ£o para fixaÃ§Ã£o rÃ¡pida com repetiÃ§Ã£o espaÃ§ada.' },
-  { label: 'GlossÃ¡rio de termos', icon: BookOpenText, description: 'DefiniÃ§Ãµes claras para conceitos-chave, siglas e linguagem tÃ©cnica.' },
+  { label: 'Textos diretos ao ponto', icon: ScrollText, description: 'Sínteses objetivas para revisar conceitos centrais sem perder profundidade.' },
+  { label: 'Texto para fala', icon: Mic, description: 'Versões preparadas para narração e escuta, ideais para aprender em movimento.' },
+  { label: 'Vídeos', icon: MonitorPlay, description: 'Aulas em vídeo organizadas por trilha, com acesso contínuo e linguagem clara.' },
+  { label: 'Lives com autores', icon: Presentation, description: 'Encontros com especialistas para ampliar repertório e discutir temas atuais.' },
+  { label: 'Bloco de notas pessoais', icon: NotebookPen, description: 'Espaço para registrar insights, referências e anotações do seu processo.' },
+  { label: 'Fóruns de discussão', icon: MessageCircleMore, description: 'Debates e trocas com outros alunos para levar o estudo além da aula.' },
+  { label: 'Descontos em livros do GEN', icon: BadgeCheck, description: 'Benefícios para conectar cursos GenFlix a livros acadêmicos do GEN.' },
+  { label: 'Podcasts', icon: Podcast, description: 'Conteúdo em áudio para reforçar entendimento e manter constância no aprendizado.' },
+  { label: 'Resumos', icon: FileText, description: 'Materiais de apoio com os pontos essenciais de cada módulo e tema estudado.' },
+  { label: 'Mapas mentais', icon: Waypoints, description: 'Visões estruturadas dos assuntos para facilitar associação e memória.' },
+  { label: 'Flashcards', icon: BookMarked, description: 'Cartões de revisão para fixação rápida com repetição espaçada.' },
+  { label: 'Glossário de termos', icon: BookOpenText, description: 'Definições claras para conceitos-chave, siglas e linguagem técnica.' },
   { label: 'Download de suplementos', icon: Download, description: 'Arquivos extras e materiais complementares para aprofundar a trilha.' },
-  { label: 'QuestÃµes discursivas', icon: MessageSquareQuote, description: 'Propostas de resposta aberta para desenvolver argumentaÃ§Ã£o e clareza.' },
-  { label: 'Estudos de casos', icon: SquarePen, description: 'SituaÃ§Ãµes prÃ¡ticas para conectar teoria, anÃ¡lise e tomada de decisÃ£o.' },
-  { label: 'MÃºltipla escolha', icon: Target, description: 'QuestÃµes objetivas para treinar retenÃ§Ã£o, ritmo e leitura estratÃ©gica.' },
-  { label: 'ExercÃ­cios de progressÃ£o', icon: ClipboardCheck, description: 'Atividades organizadas por dificuldade para acompanhar sua evoluÃ§Ã£o.' },
-  { label: 'Preenchimento de lacunas', icon: SquarePen, description: 'ExercÃ­cios de completude para reforÃ§ar vocabulÃ¡rio e estruturas centrais.' },
+  { label: 'Questões discursivas', icon: MessageSquareQuote, description: 'Propostas de resposta aberta para desenvolver argumentação e clareza.' },
+  { label: 'Estudos de casos', icon: SquarePen, description: 'Situações práticas para conectar teoria, análise e tomada de decisão.' },
+  { label: 'Múltipla escolha', icon: Target, description: 'Questões objetivas para treinar retenção, ritmo e leitura estratégica.' },
+  { label: 'Exercícios de progressão', icon: ClipboardCheck, description: 'Atividades organizadas por dificuldade para acompanhar sua evolução.' },
+  { label: 'Preenchimento de lacunas', icon: SquarePen, description: 'Exercícios de completude para reforçar vocabulário e estruturas centrais.' },
 ]
 
 export const genflixCatalogFilters = [
   'Todos',
-  'SaÃºde',
+  'Saúde',
   'Direito',
   'Exatas',
-  'GestÃ£o',
+  'Gestão',
   'Humanas',
   'Psicologia',
   'Interesse Geral',
@@ -259,95 +259,95 @@ export const genflixCatalogFilters = [
 export const genflixCatalogCourses: GenflixCourseItem[] = [
   {
     slug: 'anatomia-clinica-aplicada',
-    title: 'Anatomia ClÃ­nica Aplicada',
-    category: 'SaÃºde',
+    title: 'Anatomia Clínica Aplicada',
+    category: 'Saúde',
     mentor: 'Dra. Carla Mendes',
-    role: 'Especialista em anatomia clÃ­nica',
+    role: 'Especialista em anatomia clínica',
     image: '/images/genflix/home/featured-1.jpg',
     mentorImage: '/images/genflix/home/mentor-1.jpg',
     initials: 'CM',
   },
   {
     slug: 'aprovacao-oab-primeira-fase',
-    title: 'AprovaÃ§Ã£o OAB 1Âª Fase',
+    title: 'Aprovação OAB 1ª Fase',
     category: 'Direito',
     mentor: 'Dr. Carlos Mendes',
-    role: 'Mentor para carreiras jurÃ­dicas',
+    role: 'Mentor para carreiras jurídicas',
     image: '/images/genflix/home/featured-2.jpg',
     mentorImage: '/images/genflix/home/mentor-2.jpg',
     initials: 'CM',
   },
   {
     slug: 'estatistica-para-concursos',
-    title: 'EstatÃ­stica para Concursos',
+    title: 'Estatística para Concursos',
     category: 'Exatas',
     mentor: 'Dra. Marina Costa',
-    role: 'Professora de raciocÃ­nio quantitativo',
+    role: 'Professora de raciocínio quantitativo',
     image: '/images/genflix/home/featured-3.jpg',
     mentorImage: '/images/genflix/home/mentor-3.jpg',
     initials: 'MC',
   },
   {
     slug: 'gestao-de-equipes-na-pratica',
-    title: 'GestÃ£o de Equipes na PrÃ¡tica',
-    category: 'GestÃ£o',
+    title: 'Gestão de Equipes na Prática',
+    category: 'Gestão',
     mentor: 'Prof. Rafael Lima',
-    role: 'Consultor em lideranÃ§a e processos',
+    role: 'Consultor em liderança e processos',
     image: '/images/genflix/home/featured-4.jpg',
     mentorImage: '/images/genflix/home/mentor-4.jpg',
     initials: 'RL',
   },
   {
     slug: 'introducao-a-filosofia-politica',
-    title: 'IntroduÃ§Ã£o Ã  Filosofia PolÃ­tica',
+    title: 'Introdução à Filosofia Política',
     category: 'Humanas',
     mentor: 'Prof. Carlos Mendes',
-    role: 'Curadoria em pensamento polÃ­tico',
+    role: 'Curadoria em pensamento político',
     image: '/images/genflix/home/featured-5.jpg',
     mentorImage: '/images/genflix/home/mentor-5.jpg',
     initials: 'CM',
   },
   {
     slug: 'fundamentos-da-psicanalise',
-    title: 'Fundamentos da PsicanÃ¡lise',
-    category: 'PsicanÃ¡lise / Psicologia',
+    title: 'Fundamentos da Psicanálise',
+    category: 'Psicanálise / Psicologia',
     mentor: 'Dr. Carlos Mendes',
-    role: 'Psicanalista e orientador clÃ­nico',
+    role: 'Psicanalista e orientador clínico',
     image: '/images/genflix/home/featured-6.jpg',
     mentorImage: '/images/genflix/home/mentor-6.jpg',
     initials: 'CM',
   },
   {
     slug: 'bioestatistica-aplicada',
-    title: 'BioestatÃ­stica Aplicada',
-    category: 'SaÃºde',
+    title: 'Bioestatística Aplicada',
+    category: 'Saúde',
     mentor: 'Dra. Helena Costa',
-    role: 'Docente em anÃ¡lise de dados em saÃºde',
+    role: 'Docente em análise de dados em saúde',
     image: '/images/genflix/home/featured-3.jpg',
     initials: 'HC',
   },
   {
     slug: 'legislacao-do-sus-e-regulacao',
-    title: 'LegislaÃ§Ã£o do SUS e RegulaÃ§Ã£o',
+    title: 'Legislação do SUS e Regulação',
     category: 'Direito',
     mentor: 'Dra. Juliana Prado',
-    role: 'Advogada em direito pÃºblico',
+    role: 'Advogada em direito público',
     image: '/images/genflix/home/featured-2.jpg',
     initials: 'JP',
   },
   {
     slug: 'raciocinio-logico-estrategico',
-    title: 'RaciocÃ­nio LÃ³gico EstratÃ©gico',
+    title: 'Raciocínio Lógico Estratégico',
     category: 'Exatas',
     mentor: 'Prof. Victor Nogueira',
-    role: 'Especialista em concursos e problemas lÃ³gicos',
+    role: 'Especialista em concursos e problemas lógicos',
     image: '/images/genflix/home/featured-1.jpg',
     initials: 'VN',
   },
   {
     slug: 'lideranca-em-ambientes-complexos',
-    title: 'LideranÃ§a em Ambientes Complexos',
-    category: 'GestÃ£o',
+    title: 'Liderança em Ambientes Complexos',
+    category: 'Gestão',
     mentor: 'Prof. Rafael Lima',
     role: 'Consultor em cultura organizacional',
     image: '/images/genflix/home/featured-4.jpg',
@@ -355,19 +355,19 @@ export const genflixCatalogCourses: GenflixCourseItem[] = [
   },
   {
     slug: 'escrita-academica-essencial',
-    title: 'Escrita AcadÃªmica Essencial',
+    title: 'Escrita Acadêmica Essencial',
     category: 'Humanas',
     mentor: 'Profa. Elisa Duarte',
-    role: 'Mentora de pesquisa e produÃ§Ã£o textual',
+    role: 'Mentora de pesquisa e produção textual',
     image: '/images/genflix/home/featured-5.jpg',
     initials: 'ED',
   },
   {
     slug: 'psicopatologia-contemporanea',
-    title: 'Psicopatologia ContemporÃ¢nea',
-    category: 'PsicanÃ¡lise / Psicologia',
+    title: 'Psicopatologia Contemporânea',
+    category: 'Psicanálise / Psicologia',
     mentor: 'Dra. Fernanda Moura',
-    role: 'Supervisora clÃ­nica em saÃºde mental',
+    role: 'Supervisora clínica em saúde mental',
     image: '/images/genflix/home/featured-6.jpg',
     initials: 'FM',
   },
@@ -378,117 +378,117 @@ export const genflixFeaturedCourses = genflixCatalogCourses.slice(0, 6)
 export const genflixStudyFeatures: GenflixFeatureItem[] = [
   {
     title: 'Videoaulas HD',
-    description: 'Mais de 200 aulas gravadas em alta definiÃ§Ã£o, organizadas por mÃ³dulo e disponÃ­veis para download offline.',
+    description: 'Mais de 200 aulas gravadas em alta definição, organizadas por módulo e disponíveis para download offline.',
     icon: MonitorPlay,
   },
   {
     title: 'Flashcards',
-    description: 'Mais de 1.500 cards com revisÃ£o espaÃ§ada adaptada ao seu ritmo e Ã s matÃ©rias que vocÃª mais precisa.',
+    description: 'Mais de 1.500 cards com revisão espaçada adaptada ao seu ritmo e às matérias que você mais precisa.',
     icon: BookOpenText,
   },
   {
     title: 'Podcasts',
-    description: 'DiscussÃµes aprofundadas dos temas mais cobrados, ideais para ouvir no deslocamento e fixar conteÃºdo.',
+    description: 'Discussões aprofundadas dos temas mais cobrados, ideais para ouvir no deslocamento e fixar conteúdo.',
     icon: Headphones,
   },
   {
     title: 'Resumos PDF',
-    description: 'Resumos densos e objetivos de cada mÃ³dulo, com destaque dos pontos mais cobrados nas provas recentes.',
+    description: 'Resumos densos e objetivos de cada módulo, com destaque dos pontos mais cobrados nas provas recentes.',
     icon: FileText,
   },
   {
     title: 'Simulados',
-    description: 'Simulados no formato real das principais bancas, com gabarito comentado e anÃ¡lise de desempenho.',
+    description: 'Simulados no formato real das principais bancas, com gabarito comentado e análise de desempenho.',
     icon: ClipboardCheck,
   },
   {
     title: 'Certificado',
-    description: 'Certificado digital de conclusÃ£o reconhecido, pronto para incluir no currÃ­culo e no perfil profissional.',
+    description: 'Certificado digital de conclusão reconhecido, pronto para incluir no currículo e no perfil profissional.',
     icon: BadgeCheck,
   },
 ]
 
 const defaultIncludedItems = [
   'Mentorias exclusivas',
-  'Certificado de conclusÃ£o',
+  'Certificado de conclusão',
   'Videoaulas HD ilimitadas',
   'Ferramentas de estudo',
-  'PlantÃµes de dÃºvidas',
-  'AtualizaÃ§Ãµes contÃ­nuas',
+  'Plantões de dúvidas',
+  'Atualizações contínuas',
 ]
 
 const categoryCoursePrefixes: Record<string, string> = {
-  SaÃºde: 'SAÃšDE - ONLINE',
+  Saúde: 'SAÚDE - ONLINE',
   Direito: 'DIREITO - ONLINE',
   Exatas: 'EXATAS - ONLINE',
-  'GestÃ£o': 'GESTÃƒO - ONLINE',
+  'Gestão': 'GESTÒO - ONLINE',
   Humanas: 'HUMANAS - ONLINE',
-  'PsicanÃ¡lise / Psicologia': 'PSICOLOGIA - ONLINE',
+  'Psicanálise / Psicologia': 'PSICOLOGIA - ONLINE',
 }
 
 const categoryAboutIntroductions: Record<string, string[]> = {
-  SaÃºde: [
-    'Este curso foi estruturado para transformar conteÃºdo tÃ©cnico em aplicaÃ§Ã£o clÃ­nica segura, com explicaÃ§Ãµes objetivas, materiais de revisÃ£o e acompanhamento do que realmente importa para a tomada de decisÃ£o profissional.',
-    'Ao longo da jornada, vocÃª encontra aulas organizadas por blocos de estudo, simulados comentados e ferramentas de memorizaÃ§Ã£o para acelerar a curva de aprendizado sem perder profundidade.',
+  Saúde: [
+    'Este curso foi estruturado para transformar conteúdo técnico em aplicação clínica segura, com explicações objetivas, materiais de revisão e acompanhamento do que realmente importa para a tomada de decisão profissional.',
+    'Ao longo da jornada, você encontra aulas organizadas por blocos de estudo, simulados comentados e ferramentas de memorização para acelerar a curva de aprendizado sem perder profundidade.',
   ],
   Direito: [
-    'O programa foi desenhado para organizar o estudo jurÃ­dico em ciclos claros, com foco em leitura estratÃ©gica de lei seca, interpretaÃ§Ã£o de questÃµes e consolidaÃ§Ã£o das teses mais recorrentes.',
-    'AlÃ©m das aulas e revisÃµes orientadas, o curso reÃºne simulados comentados e rotinas de prÃ¡tica pensadas para reduzir dispersÃ£o e aumentar consistÃªncia atÃ© a prova.',
+    'O programa foi desenhado para organizar o estudo jurídico em ciclos claros, com foco em leitura estratégica de lei seca, interpretação de questões e consolidação das teses mais recorrentes.',
+    'Além das aulas e revisões orientadas, o curso reúne simulados comentados e rotinas de prática pensadas para reduzir dispersão e aumentar consistência até a prova.',
   ],
   Exatas: [
-    'O conteÃºdo combina fundamentaÃ§Ã£o conceitual, resoluÃ§Ã£o guiada de exercÃ­cios e leitura de padrÃµes para ajudar vocÃª a enxergar mÃ©todo onde antes parecia sÃ³ dificuldade.',
-    'Com trilhas progressivas de treino, o curso sustenta evoluÃ§Ã£o prÃ¡tica em interpretaÃ§Ã£o, agilidade de cÃ¡lculo e domÃ­nio das estruturas que mais aparecem nas avaliaÃ§Ãµes.',
+    'O conteúdo combina fundamentação conceitual, resolução guiada de exercícios e leitura de padrões para ajudar você a enxergar método onde antes parecia só dificuldade.',
+    'Com trilhas progressivas de treino, o curso sustenta evolução prática em interpretação, agilidade de cálculo e domínio das estruturas que mais aparecem nas avaliações.',
   ],
-  'GestÃ£o': [
-    'A proposta Ã© aproximar teoria e execuÃ§Ã£o, traduzindo conceitos de lideranÃ§a, processos e gestÃ£o de pessoas em rotinas que funcionam no dia a dia de equipes reais.',
-    'VocÃª percorre ferramentas de organizaÃ§Ã£o, comunicaÃ§Ã£o e tomada de decisÃ£o com apoio de materiais complementares que facilitam implementaÃ§Ã£o imediata.',
+  'Gestão': [
+    'A proposta é aproximar teoria e execução, traduzindo conceitos de liderança, processos e gestão de pessoas em rotinas que funcionam no dia a dia de equipes reais.',
+    'Você percorre ferramentas de organização, comunicação e tomada de decisão com apoio de materiais complementares que facilitam implementação imediata.',
   ],
   Humanas: [
-    'O curso organiza autores, movimentos e debates centrais em uma trilha clara, ajudando vocÃª a construir repertÃ³rio, interpretar contextos e argumentar com seguranÃ§a.',
-    'A metodologia combina leitura orientada, sÃ­nteses crÃ­ticas e recursos de fixaÃ§Ã£o para ampliar profundidade sem tornar o estudo excessivamente abstrato.',
+    'O curso organiza autores, movimentos e debates centrais em uma trilha clara, ajudando você a construir repertório, interpretar contextos e argumentar com segurança.',
+    'A metodologia combina leitura orientada, sínteses críticas e recursos de fixação para ampliar profundidade sem tornar o estudo excessivamente abstrato.',
   ],
-  'PsicanÃ¡lise / Psicologia': [
-    'A trilha foi pensada para conectar teoria, escuta clÃ­nica e leitura de casos, oferecendo uma base consistente para quem deseja aprofundar repertÃ³rio conceitual e sensibilidade tÃ©cnica.',
-    'Com aulas densas, materiais de apoio e exercÃ­cios de revisÃ£o, o curso ajuda vocÃª a consolidar linguagem, escola teÃ³rica e aplicaÃ§Ãµes contemporÃ¢neas.',
+  'Psicanálise / Psicologia': [
+    'A trilha foi pensada para conectar teoria, escuta clínica e leitura de casos, oferecendo uma base consistente para quem deseja aprofundar repertório conceitual e sensibilidade técnica.',
+    'Com aulas densas, materiais de apoio e exercícios de revisão, o curso ajuda você a consolidar linguagem, escola teórica e aplicações contemporâneas.',
   ],
 }
 
 const categoryOutcomeTemplates: Record<string, GenflixCourseOutcome[]> = {
-  SaÃºde: [
-    { title: 'Dominar critÃ©rios tÃ©cnicos', description: 'Entenda prioridades clÃ­nicas, leitura de sinais e critÃ©rios usados na prÃ¡tica profissional.' },
-    { title: 'Organizar sua revisÃ£o', description: 'Monte um fluxo de estudo com simulados, resumos e ferramentas de memorizaÃ§Ã£o contÃ­nua.' },
-    { title: 'Resolver casos com seguranÃ§a', description: 'Treine raciocÃ­nio aplicado em situaÃ§Ãµes frequentes das provas e da rotina assistencial.' },
-    { title: 'Atualizar-se com confianÃ§a', description: 'Acompanhe mudanÃ§as de protocolo e mantenha o conteÃºdo alinhado ao cenÃ¡rio atual.' },
+  Saúde: [
+    { title: 'Dominar critérios técnicos', description: 'Entenda prioridades clínicas, leitura de sinais e critérios usados na prática profissional.' },
+    { title: 'Organizar sua revisão', description: 'Monte um fluxo de estudo com simulados, resumos e ferramentas de memorização contínua.' },
+    { title: 'Resolver casos com segurança', description: 'Treine raciocínio aplicado em situações frequentes das provas e da rotina assistencial.' },
+    { title: 'Atualizar-se com confiança', description: 'Acompanhe mudanças de protocolo e mantenha o conteúdo alinhado ao cenário atual.' },
   ],
   Direito: [
-    { title: 'Mapear temas de alta incidÃªncia', description: 'Priorize assuntos que mais aparecem nas provas e construa um plano de avanÃ§o realista.' },
-    { title: 'Interpretar questÃµes com mÃ©todo', description: 'Treine leitura de enunciados, eliminaÃ§Ã£o de alternativas e revisÃ£o por desempenho.' },
-    { title: 'Consolidar lei seca e jurisprudÃªncia', description: 'Conecte teoria, texto legal e entendimento prÃ¡tico sem estudar de forma fragmentada.' },
-    { title: 'Ganhar ritmo atÃ© a prova', description: 'Crie uma rotina consistente para revisar, testar e corrigir pontos fracos.' },
+    { title: 'Mapear temas de alta incidência', description: 'Priorize assuntos que mais aparecem nas provas e construa um plano de avanço realista.' },
+    { title: 'Interpretar questões com método', description: 'Treine leitura de enunciados, eliminação de alternativas e revisão por desempenho.' },
+    { title: 'Consolidar lei seca e jurisprudência', description: 'Conecte teoria, texto legal e entendimento prático sem estudar de forma fragmentada.' },
+    { title: 'Ganhar ritmo até a prova', description: 'Crie uma rotina consistente para revisar, testar e corrigir pontos fracos.' },
   ],
   Exatas: [
-    { title: 'Compreender fundamentos sem decorar', description: 'Aprenda os conceitos-base que sustentam questÃµes e aplicaÃ§Ãµes quantitativas.' },
-    { title: 'Resolver com estratÃ©gia', description: 'Use atalhos, leitura de padrÃ£o e lÃ³gica de resoluÃ§Ã£o para ganhar velocidade.' },
-    { title: 'Reduzir erros recorrentes', description: 'Identifique os pontos em que vocÃª mais falha e corrija a raiz do problema.' },
-    { title: 'Aumentar sua confianÃ§a em provas', description: 'Treine com progressÃ£o de dificuldade e simulados dirigidos.' },
+    { title: 'Compreender fundamentos sem decorar', description: 'Aprenda os conceitos-base que sustentam questões e aplicações quantitativas.' },
+    { title: 'Resolver com estratégia', description: 'Use atalhos, leitura de padrão e lógica de resolução para ganhar velocidade.' },
+    { title: 'Reduzir erros recorrentes', description: 'Identifique os pontos em que você mais falha e corrija a raiz do problema.' },
+    { title: 'Aumentar sua confiança em provas', description: 'Treine com progressão de dificuldade e simulados dirigidos.' },
   ],
-  'GestÃ£o': [
-    { title: 'Liderar com clareza', description: 'Transforme conceitos de lideranÃ§a em prÃ¡ticas objetivas para coordenaÃ§Ã£o de times.' },
-    { title: 'Tomar decisÃµes com contexto', description: 'Analise cenÃ¡rios, organize prioridades e conduza processos com mais previsibilidade.' },
-    { title: 'Melhorar comunicaÃ§Ã£o e rotina', description: 'Estruture rituais, alinhamentos e acompanhamento de entregas com menos fricÃ§Ã£o.' },
-    { title: 'Aplicar melhorias rapidamente', description: 'Leve os aprendizados para o trabalho com ferramentas simples e acionÃ¡veis.' },
+  'Gestão': [
+    { title: 'Liderar com clareza', description: 'Transforme conceitos de liderança em práticas objetivas para coordenação de times.' },
+    { title: 'Tomar decisões com contexto', description: 'Analise cenários, organize prioridades e conduza processos com mais previsibilidade.' },
+    { title: 'Melhorar comunicação e rotina', description: 'Estruture rituais, alinhamentos e acompanhamento de entregas com menos fricção.' },
+    { title: 'Aplicar melhorias rapidamente', description: 'Leve os aprendizados para o trabalho com ferramentas simples e acionáveis.' },
   ],
   Humanas: [
-    { title: 'Construir repertÃ³rio sÃ³lido', description: 'Entenda autores, correntes e contextos sem perder a linha histÃ³rica.' },
-    { title: 'Ler textos complexos com fluidez', description: 'Desenvolva uma rotina de interpretaÃ§Ã£o e sÃ­ntese mais inteligente.' },
-    { title: 'Argumentar melhor', description: 'Conecte conceitos e organize respostas com mais clareza e densidade analÃ­tica.' },
-    { title: 'Fixar temas de longa duraÃ§Ã£o', description: 'Use revisÃ£o guiada para manter domÃ­nio dos tÃ³picos ao longo do tempo.' },
+    { title: 'Construir repertório sólido', description: 'Entenda autores, correntes e contextos sem perder a linha histórica.' },
+    { title: 'Ler textos complexos com fluidez', description: 'Desenvolva uma rotina de interpretação e síntese mais inteligente.' },
+    { title: 'Argumentar melhor', description: 'Conecte conceitos e organize respostas com mais clareza e densidade analítica.' },
+    { title: 'Fixar temas de longa duração', description: 'Use revisão guiada para manter domínio dos tópicos ao longo do tempo.' },
   ],
-  'PsicanÃ¡lise / Psicologia': [
-    { title: 'Consolidar fundamentos teÃ³ricos', description: 'Estude conceitos centrais e escolas de pensamento com progressÃ£o clara.' },
-    { title: 'Aprimorar leitura clÃ­nica', description: 'Desenvolva sensibilidade para observar linguagem, caso e contexto com mais profundidade.' },
-    { title: 'Articular teoria e prÃ¡tica', description: 'Relacione autores, conceitos e aplicaÃ§Ãµes contemporÃ¢neas de forma consistente.' },
-    { title: 'Ganhar repertÃ³rio para supervisÃ£o', description: 'Chegue mais preparado para discussÃ£o de casos e aprofundamento profissional.' },
+  'Psicanálise / Psicologia': [
+    { title: 'Consolidar fundamentos teóricos', description: 'Estude conceitos centrais e escolas de pensamento com progressão clara.' },
+    { title: 'Aprimorar leitura clínica', description: 'Desenvolva sensibilidade para observar linguagem, caso e contexto com mais profundidade.' },
+    { title: 'Articular teoria e prática', description: 'Relacione autores, conceitos e aplicações contemporâneas de forma consistente.' },
+    { title: 'Ganhar repertório para supervisão', description: 'Chegue mais preparado para discussão de casos e aprofundamento profissional.' },
   ],
 }
 
@@ -497,22 +497,22 @@ function buildCourseModules(course: GenflixCourseItem): GenflixCourseModule[] {
     {
       title: `Dominar os fundamentos de ${course.title.toLowerCase()}`,
       lessonCount: 12,
-      summary: 'Conceitos-base, organizaÃ§Ã£o da trilha e leitura do cenÃ¡rio geral do curso.',
+      summary: 'Conceitos-base, organização da trilha e leitura do cenário geral do curso.',
     },
     {
-      title: `AplicaÃ§Ãµes prÃ¡ticas em ${course.category.toLowerCase()}`,
+      title: `Aplicações práticas em ${course.category.toLowerCase()}`,
       lessonCount: 8,
-      summary: 'Casos, exercÃ­cios dirigidos e modelos de execuÃ§Ã£o para ganhar seguranÃ§a tÃ©cnica.',
+      summary: 'Casos, exercícios dirigidos e modelos de execução para ganhar segurança técnica.',
     },
     {
-      title: 'RevisÃ£o estratÃ©gica e fixaÃ§Ã£o',
+      title: 'Revisão estratégica e fixação',
       lessonCount: 10,
-      summary: 'Ferramentas de reforÃ§o, simulados comentados e revisÃ£o inteligente por desempenho.',
+      summary: 'Ferramentas de reforço, simulados comentados e revisão inteligente por desempenho.',
     },
     {
-      title: 'Plano de continuidade e atualizaÃ§Ã£o',
+      title: 'Plano de continuidade e atualização',
       lessonCount: 6,
-      summary: 'Como manter o estudo ativo, acompanhar novidades e sustentar avanÃ§o apÃ³s a trilha principal.',
+      summary: 'Como manter o estudo ativo, acompanhar novidades e sustentar avanço após a trilha principal.',
     },
   ]
 }
@@ -526,14 +526,14 @@ function buildCourseDetail(course: GenflixCourseItem, overrides: Partial<Genflix
     categoryLine: categoryCoursePrefixes[course.category] ?? `${course.category.toUpperCase()} - ONLINE`,
     title: course.title,
     coverImage: course.image,
-    description: `${course.title} reÃºne uma trilha prÃ¡tica com aulas objetivas, revisÃ£o guiada e ferramentas de estudo para quem quer avanÃ§ar com consistÃªncia.`,
+    description: `${course.title} reúne uma trilha prática com aulas objetivas, revisão guiada e ferramentas de estudo para quem quer avançar com consistência.`,
     aboutParagraphs,
     outcomes,
     syllabus: buildCourseModules(course),
     mentor: {
       name: course.mentor,
       role: course.role,
-      bio: `Curadoria acadÃªmica e acompanhamento pedagÃ³gico conduzidos por ${course.mentor}, com experiÃªncia aplicada em ${course.category.toLowerCase()}.`,
+      bio: `Curadoria acadêmica e acompanhamento pedagógico conduzidos por ${course.mentor}, com experiência aplicada em ${course.category.toLowerCase()}.`,
       initials: course.initials,
     },
     priceLabel: 'R$ 294,90',
@@ -541,8 +541,8 @@ function buildCourseDetail(course: GenflixCourseItem, overrides: Partial<Genflix
     includedItems: defaultIncludedItems,
     bonusSection: {
       enabled: true,
-      title: 'PrÃ©via de conteÃºdo',
-      description: `Curadoria acadÃªmica e acompanhamento pedagÃ³gico conduzidos por ${course.mentor}, com experiÃªncia aplicada em ${course.category.toLowerCase()}.`,
+      title: 'Prévia de conteúdo',
+      description: `Curadoria acadêmica e acompanhamento pedagógico conduzidos por ${course.mentor}, com experiência aplicada em ${course.category.toLowerCase()}.`,
     },
     ...overrides,
   }
@@ -555,16 +555,16 @@ export const genflixCourseDetails: Record<string, GenflixCourseDetail> = Object.
       course,
       course.slug === 'anatomia-clinica-aplicada'
         ? {
-            description: 'Uma trilha intensiva para transformar anatomia em leitura clÃ­nica aplicada, com linguagem clara, prÃ¡tica guiada e recursos que aceleram a retenÃ§Ã£o do conteÃºdo.',
+            description: 'Uma trilha intensiva para transformar anatomia em leitura clínica aplicada, com linguagem clara, prática guiada e recursos que aceleram a retenção do conteúdo.',
             aboutParagraphs: [
-              'Este Ã© o curso ideal para quem precisa consolidar anatomia clÃ­nica sem estudar de forma fragmentada. A trilha foi organizada para conectar estruturas, funÃ§Ã£o e interpretaÃ§Ã£o aplicada ao contexto profissional.',
-              'Com videoaulas objetivas, simulados comentados, resumos e ferramentas de revisÃ£o ativa, vocÃª avanÃ§a com mais clareza, reduz a dispersÃ£o e ganha seguranÃ§a para aplicar o conteÃºdo em situaÃ§Ãµes reais.',
+              'Este é o curso ideal para quem precisa consolidar anatomia clínica sem estudar de forma fragmentada. A trilha foi organizada para conectar estruturas, função e interpretação aplicada ao contexto profissional.',
+              'Com videoaulas objetivas, simulados comentados, resumos e ferramentas de revisão ativa, você avança com mais clareza, reduz a dispersão e ganha segurança para aplicar o conteúdo em situações reais.',
             ],
             outcomes: [
-              { title: 'Ler anatomia com mais clareza', description: 'ReconheÃ§a estruturas, relaÃ§Ãµes e pontos de atenÃ§Ã£o com foco clÃ­nico.' },
-              { title: 'Conectar teoria e prÃ¡tica', description: 'Transforme conteÃºdos densos em decisÃµes mais seguras no estudo e no trabalho.' },
-              { title: 'Revisar com menos esforÃ§o', description: 'Use resumos, simulados e ferramentas de repetiÃ§Ã£o para fixar o essencial.' },
-              { title: 'Construir base para avanÃ§ar', description: 'Chegue mais preparado para mÃ³dulos seguintes, provas e discussÃµes clÃ­nicas.' },
+              { title: 'Ler anatomia com mais clareza', description: 'Reconheça estruturas, relações e pontos de atenção com foco clínico.' },
+              { title: 'Conectar teoria e prática', description: 'Transforme conteúdos densos em decisões mais seguras no estudo e no trabalho.' },
+              { title: 'Revisar com menos esforço', description: 'Use resumos, simulados e ferramentas de repetição para fixar o essencial.' },
+              { title: 'Construir base para avançar', description: 'Chegue mais preparado para módulos seguintes, provas e discussões clínicas.' },
             ],
           }
         : {},
@@ -574,93 +574,93 @@ export const genflixCourseDetails: Record<string, GenflixCourseDetail> = Object.
 
 const baseBlogPosts: Omit<GenflixBlogPost, 'slug' | 'category' | 'title'>[] = [
   {
-    seoDescription: 'Como organizar uma rotina de estudos consistente, com revisÃ£o ativa, blocos curtos e foco real no que precisa avanÃ§ar.',
+    seoDescription: 'Como organizar uma rotina de estudos consistente, com revisão ativa, blocos curtos e foco real no que precisa avançar.',
     image: '/images/genflix/home/featured-1.jpg',
     readTime: '6 min de leitura',
     author: 'Equipe GenFlix',
     publishedAt: '09 abr 2026',
     content: [
-      'Estudar melhor nÃ£o Ã© apenas estudar mais. Uma rotina consistente nasce da clareza sobre prioridades, da definiÃ§Ã£o de blocos possÃ­veis e da revisÃ£o frequente do que foi aprendido.',
-      'Na prÃ¡tica, isso significa alternar teoria, exercÃ­cios e momentos curtos de retomada. Quando vocÃª organiza o estudo dessa forma, a retenÃ§Ã£o melhora e a sensaÃ§Ã£o de progresso deixa de depender apenas de volume.',
-      'No GenFlix, esse princÃ­pio aparece em trilhas pensadas para manter ritmo, reduzir dispersÃ£o e transformar aprendizado em avanÃ§o concreto.',
+      'Estudar melhor não é apenas estudar mais. Uma rotina consistente nasce da clareza sobre prioridades, da definição de blocos possíveis e da revisão frequente do que foi aprendido.',
+      'Na prática, isso significa alternar teoria, exercícios e momentos curtos de retomada. Quando você organiza o estudo dessa forma, a retenção melhora e a sensação de progresso deixa de depender apenas de volume.',
+      'No GenFlix, esse princípio aparece em trilhas pensadas para manter ritmo, reduzir dispersão e transformar aprendizado em avanço concreto.',
     ],
     featured: true,
   },
   {
-    seoDescription: 'Recursos complementares, simulados e revisÃ£o espaÃ§ada podem mudar completamente a forma como vocÃª aprende e fixa conteÃºdo.',
+    seoDescription: 'Recursos complementares, simulados e revisão espaçada podem mudar completamente a forma como você aprende e fixa conteúdo.',
     image: '/images/genflix/home/featured-2.jpg',
     readTime: '5 min de leitura',
     author: 'Equipe GenFlix',
     publishedAt: '08 abr 2026',
     content: [
-      'A aula Ã© o ponto de partida, nÃ£o o destino final. Quando o estudo inclui resumos, questÃµes, flashcards e retomadas curtas, o conteÃºdo passa a circular melhor na memÃ³ria.',
-      'Isso reduz o efeito de assistir, entender na hora e esquecer depois. Recursos complementares existem justamente para sustentar o aprendizado alÃ©m do momento da explicaÃ§Ã£o.',
-      'A combinaÃ§Ã£o entre vÃ­deo, prÃ¡tica e revisÃ£o Ã© o que torna a experiÃªncia mais completa e eficiente.',
+      'A aula é o ponto de partida, não o destino final. Quando o estudo inclui resumos, questões, flashcards e retomadas curtas, o conteúdo passa a circular melhor na memória.',
+      'Isso reduz o efeito de assistir, entender na hora e esquecer depois. Recursos complementares existem justamente para sustentar o aprendizado além do momento da explicação.',
+      'A combinação entre vídeo, prática e revisão é o que torna a experiência mais completa e eficiente.',
     ],
   },
   {
-    seoDescription: 'Ler melhor, resumir melhor e argumentar melhor tambÃ©m sÃ£o habilidades treinÃ¡veis. Pequenos ajustes de mÃ©todo fazem diferenÃ§a.',
+    seoDescription: 'Ler melhor, resumir melhor e argumentar melhor também são habilidades treináveis. Pequenos ajustes de método fazem diferença.',
     image: '/images/genflix/home/featured-3.jpg',
     readTime: '4 min de leitura',
     author: 'Equipe GenFlix',
     publishedAt: '07 abr 2026',
     content: [
-      'Em Ã¡reas densas, a dificuldade muitas vezes nÃ£o estÃ¡ no conteÃºdo em si, mas na forma como ele Ã© abordado. Quando a leitura Ã© passiva, o entendimento tende a se dissipar rapidamente.',
-      'Criar sÃ­nteses curtas, responder perguntas-chave e testar a prÃ³pria interpretaÃ§Ã£o sÃ£o hÃ¡bitos simples que elevam a qualidade do estudo.',
+      'Em áreas densas, a dificuldade muitas vezes não está no conteúdo em si, mas na forma como ele é abordado. Quando a leitura é passiva, o entendimento tende a se dissipar rapidamente.',
+      'Criar sínteses curtas, responder perguntas-chave e testar a própria interpretação são hábitos simples que elevam a qualidade do estudo.',
       'Com o tempo, isso fortalece a autonomia e melhora a capacidade de conectar conceitos.',
     ],
   },
   {
-    seoDescription: 'Aprender com mais profundidade nÃ£o exige rigidez extrema. Exige constÃ¢ncia, repertÃ³rio e um ambiente que favoreÃ§a continuidade.',
+    seoDescription: 'Aprender com mais profundidade não exige rigidez extrema. Exige constância, repertório e um ambiente que favoreça continuidade.',
     image: '/images/genflix/home/featured-4.jpg',
     readTime: '5 min de leitura',
     author: 'Equipe GenFlix',
     publishedAt: '06 abr 2026',
     content: [
-      'Muita gente desiste nÃ£o por falta de capacidade, mas por excesso de atrito. Quando estudar parece sempre pesado demais, a tendÃªncia Ã© interromper antes de ganhar ritmo.',
-      'Um bom ambiente de aprendizagem reduz esse atrito com clareza de trilha, progressÃ£o visÃ­vel e materiais que acompanham o aluno em diferentes momentos da rotina.',
-      'ConsistÃªncia nasce quando o caminho Ã© mais sustentÃ¡vel.',
+      'Muita gente desiste não por falta de capacidade, mas por excesso de atrito. Quando estudar parece sempre pesado demais, a tendência é interromper antes de ganhar ritmo.',
+      'Um bom ambiente de aprendizagem reduz esse atrito com clareza de trilha, progressão visível e materiais que acompanham o aluno em diferentes momentos da rotina.',
+      'Consistência nasce quando o caminho é mais sustentável.',
     ],
   },
   {
-    seoDescription: 'O que diferencia um bom plano de estudos Ã© sua capacidade de se adaptar ao seu contexto sem perder direÃ§Ã£o.',
+    seoDescription: 'O que diferencia um bom plano de estudos é sua capacidade de se adaptar ao seu contexto sem perder direção.',
     image: '/images/genflix/home/featured-5.jpg',
     readTime: '7 min de leitura',
     author: 'Equipe GenFlix',
     publishedAt: '05 abr 2026',
     content: [
-      'Planejamento bom nÃ£o Ã© o que parece bonito na agenda; Ã© o que continua funcionando quando a semana fica mais apertada.',
-      'Em vez de depender de blocos longos e ideais, vale construir um plano com prioridades claras, revisÃµes inteligentes e flexibilidade controlada.',
-      'Assim, vocÃª preserva continuidade mesmo quando a rotina muda.',
+      'Planejamento bom não é o que parece bonito na agenda; é o que continua funcionando quando a semana fica mais apertada.',
+      'Em vez de depender de blocos longos e ideais, vale construir um plano com prioridades claras, revisões inteligentes e flexibilidade controlada.',
+      'Assim, você preserva continuidade mesmo quando a rotina muda.',
     ],
   },
   {
-    seoDescription: 'A revisÃ£o certa no momento certo reduz esquecimento e aumenta confianÃ§a antes de provas, avaliaÃ§Ãµes e tomadas de decisÃ£o reais.',
+    seoDescription: 'A revisão certa no momento certo reduz esquecimento e aumenta confiança antes de provas, avaliações e tomadas de decisão reais.',
     image: '/images/genflix/home/featured-6.jpg',
     readTime: '5 min de leitura',
     author: 'Equipe GenFlix',
     publishedAt: '04 abr 2026',
     content: [
-      'Revisar nÃ£o significa reler tudo desde o inÃ­cio. Significa identificar o que precisa voltar para a memÃ³ria e em qual formato isso funciona melhor.',
-      'Mapas rÃ¡pidos, flashcards, listas curtas e simulados comentados sÃ£o exemplos de ferramentas que tornam a revisÃ£o mais objetiva.',
-      'Com esse tipo de apoio, a confianÃ§a deixa de ser sÃ³ sensaÃ§Ã£o e passa a vir de evidÃªncia prÃ¡tica.',
+      'Revisar não significa reler tudo desde o início. Significa identificar o que precisa voltar para a memória e em qual formato isso funciona melhor.',
+      'Mapas rápidos, flashcards, listas curtas e simulados comentados são exemplos de ferramentas que tornam a revisão mais objetiva.',
+      'Com esse tipo de apoio, a confiança deixa de ser só sensação e passa a vir de evidência prática.',
     ],
   },
   {
-    seoDescription: 'Mais do que acompanhar tendÃªncias, vale entender o que realmente faz diferenÃ§a quando o objetivo Ã© aprender com aplicaÃ§Ã£o.',
+    seoDescription: 'Mais do que acompanhar tendências, vale entender o que realmente faz diferença quando o objetivo é aprender com aplicação.',
     image: '/images/genflix/home/hero.jpg',
     readTime: '6 min de leitura',
     author: 'Equipe GenFlix',
     publishedAt: '03 abr 2026',
     content: [
-      'Ferramentas educacionais aparecem o tempo inteiro, mas nem toda novidade melhora a experiÃªncia de aprender.',
-      'O critÃ©rio principal continua sendo utilidade: ajuda a entender? ajuda a revisar? ajuda a aplicar? Se a resposta for nÃ£o, Ã© sÃ³ ruÃ­do.',
-      'A construÃ§Ã£o de uma boa jornada passa por escolhas simples, consistentes e centradas no aluno.',
+      'Ferramentas educacionais aparecem o tempo inteiro, mas nem toda novidade melhora a experiência de aprender.',
+      'O critério principal continua sendo utilidade: ajuda a entender? ajuda a revisar? ajuda a aplicar? Se a resposta for não, é só ruído.',
+      'A construção de uma boa jornada passa por escolhas simples, consistentes e centradas no aluno.',
     ],
   },
 ]
 
-const blogCategories = ['SaÃºde', 'Direito', 'Exatas', 'GestÃ£o', 'Humanas', 'Psicologia', 'Interesse Geral'] as const
+const blogCategories = ['Saúde', 'Direito', 'Exatas', 'Gestão', 'Humanas', 'Psicologia', 'Interesse Geral'] as const
 
 export const genflixBlogFilters = ['Todos', ...blogCategories] as const
 
@@ -672,15 +672,15 @@ export const genflixBlogPosts: GenflixBlogPost[] = baseBlogPosts.map((post, inde
     category,
     title:
       index === 0
-        ? 'ConteÃºdo feito por quem ensina, para quem quer ir alÃ©m'
+        ? 'Conteúdo feito por quem ensina, para quem quer ir além'
         : [
-            'Como estudar com mais clareza e menos dispersÃ£o',
+            'Como estudar com mais clareza e menos dispersão',
             'Os recursos que tornam o aprendizado mais completo',
-            'MÃ©todo, revisÃ£o e autonomia intelectual',
+            'Método, revisão e autonomia intelectual',
             'O que sustenta uma rotina de estudo de verdade',
             'Planejamento realista para quem precisa continuar',
-            'RevisÃ£o inteligente para fixar melhor',
-            'O que realmente vale na educaÃ§Ã£o digital',
+            'Revisão inteligente para fixar melhor',
+            'O que realmente vale na educação digital',
           ][index - 1] ?? `Artigo GenFlix ${index + 1}`,
     ...post,
   }
@@ -703,10 +703,10 @@ export function getGenflixBlogPostBySlug(slug: string) {
 
 export const genflixFooterColumns: GenflixFooterColumn[] = [
   {
-    title: 'Links RÃ¡pidos',
+    title: 'Links Rápidos',
     items: [
-      { label: 'PolÃ­tica de privacidade', href: '/privacidade', isInternal: true },
-      { label: 'PolÃ­tica de reembolso', href: '/politica-de-reembolso', isInternal: true },
+      { label: 'Política de privacidade', href: '/privacidade', isInternal: true },
+      { label: 'Política de reembolso', href: '/politica-de-reembolso', isInternal: true },
       { label: 'Perguntas frequentes', href: '/suporte#perguntas-frequentes', isInternal: true },
       { label: 'Ajuda / Como usar', href: '/ajuda', isInternal: true },
       { label: 'Suporte', href: '/suporte', isInternal: true },
@@ -751,4 +751,3 @@ export const genflixSocialLinks: GenflixSocialLink[] = [
   { label: 'LinkedIn', href: 'https://linkedin.com', icon: Linkedin },
   { label: 'YouTube', href: 'https://youtube.com', icon: MonitorPlay },
 ]
-

@@ -16,7 +16,7 @@ async function getAuthenticatedUserId() {
 
   const userId = data.user?.id
   if (!userId) {
-    throw new Error('Usuario nao autenticado.')
+    throw new Error('Usuario n?o autenticado.')
   }
 
   return userId

@@ -221,9 +221,9 @@ async function notifyReferredContact(input: z.infer<typeof publicFormSchema>) {
   const customMessage = normalizeField(input.message)
   const publicAppUrl = getPublicAppUrl().replace(/\/$/, '')
 
-  const title = `${referrerName ?? 'Um contato'} indicou a GenFlix para voce`
+  const title = `${referrerName ?? 'Um contato'} indicou a GenFlix para voc?`
   const bodyLines = [
-    `${referrerName ?? 'Alguem'} inseriu seu contato na plataforma GenFlix para voce conhecer os cursos e recursos disponiveis.`,
+    `${referrerName ?? 'Alguem'} inseriu seu contato na plataforma GenFlix para voc? conhecer os cursos e recursos disponiveis.`,
     referrerEmail ? `Contato de quem indicou: ${referrerEmail}` : null,
     customMessage ? `Mensagem enviada: ${customMessage}` : null,
   ].filter((line): line is string => Boolean(line))

@@ -115,7 +115,7 @@ function getSupabaseConfig() {
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
   if (!supabaseUrl || !serviceRoleKey) {
-    throw new Error('Configuracao do Supabase ausente.')
+    throw new Error('Configura??o do Supabase ausente.')
   }
 
   return { supabaseUrl, serviceRoleKey }
@@ -128,7 +128,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
   }
 
   if (req.method !== 'POST') {
-    jsonResponse(res, 405, { error: 'Metodo nao permitido.' })
+    jsonResponse(res, 405, { error: 'Metodo n?o permitido.' })
     return
   }
 
@@ -195,7 +195,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
     jsonResponse(res, 200, { message: RESET_GENERIC_SUCCESS_MESSAGE })
   } catch (error) {
     jsonResponse(res, 500, {
-      error: error instanceof Error ? error.message : 'Nao foi possivel enviar o e-mail de recuperacao.',
+      error: error instanceof Error ? error.message : 'N?o foi possivel enviar o e-mail de recuperacao.',
     })
   }
 }

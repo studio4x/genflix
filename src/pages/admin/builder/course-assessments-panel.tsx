@@ -254,13 +254,13 @@ export function CourseAssessmentsPanel() {
 
                   <div className="flex flex-wrap items-center justify-end gap-2">
                     <Button variant="ghost" size="sm" className="font-bold text-blue-600 hover:bg-blue-50" asChild>
-                      <Link to={`/admin/cursos/${courseId}/builder/modulos/${module.id}/avaliacoes/nova`}>Adicionar Quiz</Link>
+                      <Link to={`/admin/cursos/${courseId}/builder/m?dulos/${module.id}/avalia??es/nova`}>Adicionar Quiz</Link>
                     </Button>
 
                     {module.assessments.map((assessment) => (
                       <div key={assessment.id} className="flex items-center gap-1">
                         <Button variant="outline" size="sm" className="bg-white" asChild>
-                          <Link to={`/admin/cursos/${courseId}/builder/modulos/${module.id}/avaliacoes/${assessment.id}`}>Editar Quiz</Link>
+                          <Link to={`/admin/cursos/${courseId}/builder/m?dulos/${module.id}/avalia??es/${assessment.id}`}>Editar Quiz</Link>
                         </Button>
                         <Button
                           variant="ghost"

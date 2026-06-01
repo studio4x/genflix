@@ -147,7 +147,7 @@ export function CreatorProfilePage() {
       await updateProfile({ avatar_url: asset.publicUrl })
       setAvatarMessage('Avatar atualizado com sucesso.')
     } catch (error) {
-      setAvatarError(error instanceof Error ? error.message : 'Nao foi possivel atualizar o avatar.')
+      setAvatarError(error instanceof Error ? error.message : 'N?o foi possivel atualizar o avatar.')
     } finally {
       setIsUploadingAvatar(false)
     }

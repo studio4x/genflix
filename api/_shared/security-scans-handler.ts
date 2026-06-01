@@ -87,7 +87,7 @@ async function assertAdmin(req: ApiRequest, res: ApiResponse): Promise<Context |
   const cronSecret = process.env.CRON_SECRET
 
   if (!supabaseUrl || !serviceRoleKey) {
-    jsonResponse(res, 500, { error: 'Configuracao ausente: SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY sao obrigatorios.' })
+    jsonResponse(res, 500, { error: 'Configura??o ausente: SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY sao obrigatorios.' })
     return null
   }
 
@@ -116,7 +116,7 @@ async function assertAdmin(req: ApiRequest, res: ApiResponse): Promise<Context |
     .eq('user_id', userResult.data.user.id)
 
   if (rolesResult.error) {
-    jsonResponse(res, 500, { error: 'Nao foi possivel validar as permissoes do usuario.' })
+    jsonResponse(res, 500, { error: 'N?o foi possivel validar as permissoes do usuario.' })
     return null
   }
 
@@ -188,9 +188,9 @@ async function scanChecklistFindings(): Promise<ScannerFinding[]> {
           scannerKey: `audit-checklist-${title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
           title: `Checklist de vulnerabilidade pendente: ${title}`,
           severity: 'high',
-          description: 'Existe item no checklist de auditoria que ainda nao foi marcado como resolvido.',
+          description: 'Existe item no checklist de auditoria que ainda n?o foi marcado como resolvido.',
           evidence: `Arquivo: docs/AUDITORIA_VULNERABILIDADES_SEGURANCA.md | item: ${title} | status atual: [${status}]`,
-          recommendation: 'Corrigir a vulnerabilidade correspondente e atualizar o checklist para [OK] apos validacao.',
+          recommendation: 'Corrigir a vulnerabilidade correspondente e atualizar o checklist para [OK] apos valida??o.',
           fixAvailable: false,
           autoFixSupported: false,
         })
@@ -216,7 +216,7 @@ async function scanDangerousHtml(): Promise<ScannerFinding[]> {
       scannerKey: `dangerous-html-${toRelative(file.filePath).replace(/[^a-z0-9]+/gi, '-')}`,
       title: 'Uso de dangerouslySetInnerHTML sem indicio de sanitizacao',
       severity: 'high',
-      description: 'Renderizacao direta de HTML pode permitir XSS persistente/refletido se o conteudo nao for sanitizado.',
+      description: 'Renderizacao direta de HTML pode permitir XSS persistente/refletido se o conte?do n?o for sanitizado.',
       evidence: `Arquivo: ${toRelative(file.filePath)}`,
       recommendation: 'Aplicar sanitizacao estrita com whitelist antes de renderizar HTML dinamico.',
       fixAvailable: false,
@@ -275,7 +275,7 @@ async function scanVercelSecurityHeaders(): Promise<ScannerFinding[]> {
       scannerKey: 'vercel-security-headers-missing',
       title: 'Headers de hardening HTTP ausentes no vercel.json',
       severity: 'medium',
-      description: 'Nao foram encontrados todos os headers de seguranca recomendados para producao.',
+      description: 'N?o foram encontrados todos os headers de seguranca recomendados para producao.',
       evidence: `Headers ausentes: ${missing.join(', ')}`,
       recommendation: 'Adicionar os headers faltantes no vercel.json para reduzir exposicao a clickjacking, sniffing e XSS.',
       fixAvailable: true,
@@ -389,7 +389,7 @@ async function scanSuspiciousPatterns(): Promise<ScannerFinding[]> {
           severity: 'high',
           description: 'Foi detectado um padrao comum em scripts ofuscados/maliciosos e o arquivo deve ser revisado.',
           evidence: `Arquivo: ${relativePath} | assinatura: ${signature.source}`,
-          recommendation: 'Revisar manualmente o arquivo e remover codigo suspeito nao autorizado.',
+          recommendation: 'Revisar manualmente o arquivo e remover codigo suspeito n?o autorizado.',
           fixAvailable: false,
           autoFixSupported: false,
         })
@@ -467,7 +467,7 @@ async function applyFixForFinding(scannerKey: string) {
     return applyNpmAuditFix()
   }
 
-  throw new Error('Nao existe correcao automatica implementada para este tipo de achado.')
+  throw new Error('N?o existe correcao automatica implementada para este tipo de achado.')
 }
 
 async function ensureSettings(adminClient: SupabaseClient) {
@@ -508,7 +508,7 @@ async function executeScan(adminClient: SupabaseClient, userId: string | null, t
     .single<{ id: string }>()
 
   if (runResult.error || !runResult.data) {
-    throw runResult.error ?? new Error('Nao foi possivel iniciar a execucao da varredura.')
+    throw runResult.error ?? new Error('N?o foi possivel iniciar a execucao da varredura.')
   }
 
   const runId = runResult.data.id
@@ -666,7 +666,7 @@ export async function handleSecurityScans(req: ApiRequest, res: ApiResponse) {
   }
 
   if (req.method !== 'GET' && req.method !== 'POST') {
-    jsonResponse(res, 405, { error: 'Metodo nao permitido.' })
+    jsonResponse(res, 405, { error: 'Metodo n?o permitido.' })
     return
   }
 
@@ -737,7 +737,7 @@ export async function handleSecurityScans(req: ApiRequest, res: ApiResponse) {
         .single<{ id: string; scanner_key: string; run_id: string; status: 'open' | 'fixed'; fix_available: boolean }>()
 
       if (findingResult.error || !findingResult.data) {
-        jsonResponse(res, 404, { error: 'Achado nao encontrado.' })
+        jsonResponse(res, 404, { error: 'Achado n?o encontrado.' })
         return
       }
 
@@ -748,7 +748,7 @@ export async function handleSecurityScans(req: ApiRequest, res: ApiResponse) {
       }
 
       if (!findingResult.data.fix_available) {
-        jsonResponse(res, 400, { error: 'Este achado nao possui correcao automatizada no painel.' })
+        jsonResponse(res, 400, { error: 'Este achado n?o possui correcao automatizada no painel.' })
         return
       }
 
@@ -789,7 +789,7 @@ export async function handleSecurityScans(req: ApiRequest, res: ApiResponse) {
       return
     }
 
-    jsonResponse(res, 400, { error: 'Acao invalida.' })
+    jsonResponse(res, 400, { error: 'A??o invalida.' })
   } catch (error) {
     jsonResponse(res, 500, {
       error: error instanceof Error ? error.message : 'Falha ao processar a central de seguranca.',
