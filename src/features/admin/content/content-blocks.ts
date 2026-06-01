@@ -71,6 +71,31 @@ const ALLOWED_HOTSPOT_BODY_TAGS = new Set([
 ])
 
 const ALLOWED_HOTSPOT_BODY_ATTRS = new Set(['href', 'target', 'rel'])
+const ALLOWED_RICH_TEXT_TAGS = new Set([
+  'a',
+  'blockquote',
+  'br',
+  'code',
+  'div',
+  'em',
+  'h1',
+  'h2',
+  'h3',
+  'h4',
+  'h5',
+  'h6',
+  'hr',
+  'li',
+  'ol',
+  'p',
+  'pre',
+  's',
+  'span',
+  'strong',
+  'u',
+  'ul',
+])
+const ALLOWED_RICH_TEXT_ATTRS = new Set(['href', 'target', 'rel'])
 
 function isBrowser(): boolean {
   return typeof window !== 'undefined' && typeof DOMParser !== 'undefined'
@@ -169,6 +194,64 @@ function sanitizeHotspotBodyNode(element: Element): void {
   }
 
   ;[...element.children].forEach((child) => sanitizeHotspotBodyNode(child))
+}
+
+function sanitizeRichTextNode(element: Element): void {
+  const tag = element.tagName.toLowerCase()
+
+  if (!ALLOWED_RICH_TEXT_TAGS.has(tag)) {
+    const parent = element.parentNode
+    if (!parent) {
+      element.remove()
+      return
+    }
+
+    while (element.firstChild) {
+      parent.insertBefore(element.firstChild, element)
+    }
+    element.remove()
+    return
+  }
+
+  ;[...element.attributes].forEach((attribute) => {
+    const name = attribute.name.toLowerCase()
+    if (name === 'style' || name.startsWith('on') || !ALLOWED_RICH_TEXT_ATTRS.has(name)) {
+      element.removeAttribute(attribute.name)
+      return
+    }
+
+    if (name === 'href' && !isSafeAnchorHref(attribute.value)) {
+      element.removeAttribute(attribute.name)
+      return
+    }
+
+    if (name === 'target' && attribute.value !== '_blank') {
+      element.setAttribute('target', '_blank')
+    }
+  })
+
+  if (tag === 'a') {
+    const href = element.getAttribute('href')
+    if (href) {
+      element.setAttribute('target', '_blank')
+      element.setAttribute('rel', 'noreferrer noopener')
+    }
+  }
+
+  ;[...element.children].forEach((child) => sanitizeRichTextNode(child))
+}
+
+export function sanitizeRichTextHtml(html: string): string {
+  const source = normalizeHtml(html)
+  if (!source || !isBrowser()) {
+    return source
+  }
+
+  const parser = new DOMParser()
+  const doc = parser.parseFromString(source, 'text/html')
+  removeDangerousNodes(doc)
+  ;[...doc.body.children].forEach((child) => sanitizeRichTextNode(child))
+  return normalizeHtml(doc.body.innerHTML)
 }
 
 export function sanitizeHotspotBodyHtml(bodyHtml: string): string {
@@ -340,7 +423,7 @@ function buildHotspotsFallbackHtml(content: LessonImageHotspotsBlockContent): st
 function normalizeColumnsContent(columns: string[], fallbackCount = 2): string[] {
   const safeFallbackCount = clamp(fallbackCount, 1, 4)
   const normalized = columns
-    .map((column) => normalizeHtml(column))
+    .map((column) => sanitizeRichTextHtml(column))
     .slice(0, 4)
 
   const withFallback = normalized.length > 0
@@ -650,16 +733,16 @@ export function splitContent(html: string): LessonContentBlock[] {
     if (containsForbiddenTableFragments(cleaned)) {
       blocks.push({
         type: 'rich-text',
-        content: cleaned
+        content: sanitizeRichTextHtml(cleaned
           .replace(/<(table|thead|tbody|tfoot|tr|th|td|caption|colgroup|col)\b[^>]*>/gi, '')
-          .replace(/<\/(table|thead|tbody|tfoot|tr|th|td|caption|colgroup|col)>/gi, ''),
+          .replace(/<\/(table|thead|tbody|tfoot|tr|th|td|caption|colgroup|col)>/gi, '')),
       })
       continue
     }
 
     blocks.push({
       type: 'rich-text',
-      content: cleaned,
+      content: sanitizeRichTextHtml(cleaned),
     })
   }
 
@@ -685,10 +768,10 @@ export function mergeContent(blocks: LessonContentBlock[]): string {
       }
 
       if (block.type === 'columns') {
-        return normalizeHtml(serializeLessonColumnsBlock(block.content))
+        return normalizeHtml(serializeLessonColumnsBlock(block.content.map((column) => sanitizeRichTextHtml(column))))
       }
 
-      return normalizeHtml(block.content)
+      return normalizeHtml(sanitizeRichTextHtml(block.content))
     })
     .filter(Boolean)
     .join('')

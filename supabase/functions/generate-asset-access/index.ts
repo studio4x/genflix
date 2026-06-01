@@ -6,7 +6,7 @@ import {
 } from '../_shared/storage-provider.ts'
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Origin': Deno.env.get('APP_PUBLIC_URL')?.trim() || 'https://genflix-omega.vercel.app',
   'Access-Control-Allow-Headers':
     'authorization, x-client-info, apikey, content-type, cache-control, pragma, x-requested-with',
 }

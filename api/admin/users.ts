@@ -124,20 +124,8 @@ function createTemporaryPassword() {
   return `Genflix#${token}9a`
 }
 
-function getRequestOrigin(req: ApiRequest) {
-  const origin = getHeaderValue(req.headers.origin)
-  if (origin) {
-    return origin
-  }
-
-  const host = getHeaderValue(req.headers['x-forwarded-host']) ?? getHeaderValue(req.headers.host)
-  const protocol = getHeaderValue(req.headers['x-forwarded-proto']) ?? 'https'
-
-  if (!host) {
-    return getPublicAppUrl()
-  }
-
-  return `${protocol}://${host}`
+function getRequestOrigin() {
+  return getPublicAppUrl()
 }
 
 function jsonResponse(res: ApiResponse, statusCode: number, payload: unknown) {
@@ -552,7 +540,7 @@ async function handleResetUserPassword(req: ApiRequest, res: ApiResponse) {
     type: 'recovery',
     email,
     options: {
-      redirectTo: `${getRequestOrigin(req)}/redefinir-senha`,
+      redirectTo: `${getRequestOrigin()}/redefinir-senha`,
     },
   })
 

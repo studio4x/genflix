@@ -1,4 +1,5 @@
 import type { LessonContentBlock } from "./content-blocks";
+import { sanitizeRichTextHtml, sanitizeTableHtml } from './content-blocks'
 import { LessonImageHotspotsBlockRenderer } from './lesson-image-hotspots-block'
 
 type Props = {
@@ -22,7 +23,7 @@ export function ContentBlocksRenderer({ blocks, className }: Props) {
                 <div key={`columns-${index}-${columnIndex}`} className="genflix-column">
                   <div
                     className="lesson-rich-text"
-                    dangerouslySetInnerHTML={{ __html: columnHtml }}
+                    dangerouslySetInnerHTML={{ __html: sanitizeRichTextHtml(columnHtml) }}
                   />
                 </div>
               ))}
@@ -38,7 +39,7 @@ export function ContentBlocksRenderer({ blocks, className }: Props) {
             >
               <div
                 className="table-content min-w-full"
-                dangerouslySetInnerHTML={{ __html: block.content }}
+                dangerouslySetInnerHTML={{ __html: sanitizeTableHtml(block.content) }}
               />
             </div>
           );
@@ -57,7 +58,7 @@ export function ContentBlocksRenderer({ blocks, className }: Props) {
           <div
             key={`rich-${index}`}
             className="lesson-rich-text"
-            dangerouslySetInnerHTML={{ __html: block.content }}
+            dangerouslySetInnerHTML={{ __html: sanitizeRichTextHtml(block.content) }}
           />
         );
       })}

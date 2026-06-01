@@ -1,4 +1,4 @@
-# Auditoria de Vulnerabilidades de Segurança - Genflix
+﻿# Auditoria de Vulnerabilidades de Segurança - Genflix
 
 Data: 2026-05-29  
 Escopo: Frontend (`src/`), APIs (`api/`), Edge Functions (`supabase/functions/`), configuração de deploy e dependências.
@@ -99,3 +99,40 @@ Ao corrigir qualquer vulnerabilidade listada neste documento, a plataforma **dev
 
 - Esta entrega é **somente auditoria**, sem aplicação de correções.
 - Próxima etapa recomendada: tratar as vulnerabilidades por ordem de severidade (Crítica -> Alta -> Média), com plano de teste de regressão funcional após cada correção.
+
+## Revarredura adicional (2026-06-01)
+
+### [OK] 9) Possvel Stored XSS no contedo das aulas (aluno)
+- Severidade: **Crtica**
+- Evidncia:
+  - `src/features/admin/content/content-blocks-renderer.tsx` renderiza blocos com `dangerouslySetInnerHTML`.
+  - `src/pages/student/student-lesson-page.tsx` usa esse renderer na rea do aluno.
+- Impacto:
+  - Possvel execuo de HTML malicioso persistido em contedo de aula.
+- Correo aplicada:
+  - Sanitizao estrita para rich-text/columns no parser e na renderizao (`src/features/admin/content/content-blocks.ts` e `src/features/admin/content/content-blocks-renderer.tsx`), removendo tags e atributos perigosos.
+
+### [OK] 10) Host Header / Origin poisoning no reset de senha via admin
+- Severidade: **Alta**
+- Evidncia:
+  - `api/admin/users.ts` montava `redirectTo` usando `origin`/`x-forwarded-host`/`host`.
+- Impacto:
+  - Link de redefinio poderia apontar para domnio controlado por atacante.
+- Correo aplicada:
+  - `api/admin/users.ts` passou a usar apenas URL cannica (`getPublicAppUrl`) para `redirectTo`.
+
+### [OK] 11) CORS permissivo (`*`) em Edge Functions no-administrativas
+- Severidade: **Mdia**
+- Evidncia:
+  - `supabase/functions/submit-assessment-attempt/index.ts`
+  - `supabase/functions/generate-lesson-audio/index.ts`
+  - `supabase/functions/generate-asset-access/index.ts`
+  - `supabase/functions/get-assessment-execution/index.ts`
+  - `supabase/functions/analyze-course-module/index.ts`
+- Impacto:
+  - Superfcie ampliada para abuso cross-origin.
+- Correo aplicada:
+  - Remoo de `Access-Control-Allow-Origin: *` e restrio para origem cannica via `APP_PUBLIC_URL`.
+
+
+
