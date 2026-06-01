@@ -3,7 +3,7 @@ import { existsSync, mkdtempSync, cpSync, rmSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { tmpdir } from 'node:os'
 const npxCommand = process.platform === 'win32' ? 'npx.cmd' : 'npx'
-const vercelCliPackage = 'vercel@48.4.1'
+const vercelCliPackage = 'vercel@56.0.0'
 const isWindows = process.platform === 'win32'
 const vercelApiBase = 'https://api.vercel.com'
 
