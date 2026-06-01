@@ -360,7 +360,7 @@ async function scanNpmAudit(): Promise<ScannerFinding[]> {
 
 async function scanSuspiciousPatterns(): Promise<ScannerFinding[]> {
   const files = await readFilesRecursively(process.cwd(), ['.ts', '.tsx', '.js', '.mjs', '.cjs', '.json'])
-  const selfScannerPath = toRelative(path.join(process.cwd(), 'api', '_shared', 'security-scans-handler.ts'))
+  const selfScannerPathSuffix = 'api/_shared/security-scans-handler.ts'
   const signatures = [
     /eval\s*\(\s*atob\s*\(/i,
     /fromCharCode\s*\(/i,
@@ -372,7 +372,7 @@ async function scanSuspiciousPatterns(): Promise<ScannerFinding[]> {
 
   for (const file of files) {
     const relativePath = toRelative(file.filePath)
-    if (relativePath === selfScannerPath) {
+    if (relativePath === selfScannerPathSuffix || relativePath.endsWith(`/${selfScannerPathSuffix}`)) {
       continue
     }
 
@@ -621,7 +621,7 @@ async function executeScan(adminClient: SupabaseClient, userId: string | null, t
 async function fetchDashboard(adminClient: SupabaseClient) {
   const settings = await ensureSettings(adminClient)
 
-  const [runsResult, latestFindingsResult, fixesResult] = await Promise.all([
+  const [runsResult, allFindingsResult, fixesResult] = await Promise.all([
     adminClient
       .from('security_scan_runs')
       .select('id, trigger_source, status, started_at, finished_at, findings_total, findings_open, findings_fixed, error_message, metadata')
@@ -631,7 +631,7 @@ async function fetchDashboard(adminClient: SupabaseClient) {
       .from('security_scan_findings')
       .select('id, run_id, scanner_key, title, severity, status, description, evidence, recommendation, fix_available, auto_fix_supported, fixed_at, fixed_via, metadata, created_at')
       .order('created_at', { ascending: false })
-      .limit(50),
+      .limit(200),
     adminClient
       .from('security_scan_fixes')
       .select('id, finding_id, run_id, action_type, status, details, created_at')
@@ -640,13 +640,16 @@ async function fetchDashboard(adminClient: SupabaseClient) {
   ])
 
   if (runsResult.error) throw runsResult.error
-  if (latestFindingsResult.error) throw latestFindingsResult.error
+  if (allFindingsResult.error) throw allFindingsResult.error
   if (fixesResult.error) throw fixesResult.error
+
+  const latestRunId = runsResult.data?.[0]?.id ?? null
+  const findings = (allFindingsResult.data ?? []).filter((finding) => finding.run_id === latestRunId)
 
   return {
     settings,
     runs: runsResult.data ?? [],
-    findings: latestFindingsResult.data ?? [],
+    findings,
     fixes: fixesResult.data ?? [],
   }
 }
