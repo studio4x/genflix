@@ -83,7 +83,7 @@ Ao corrigir qualquer vulnerabilidade listada neste documento, a plataforma **dev
   - Implementar política de headers de segurança por rota.
   - Definir CSP compatível com a aplicação (incluindo scripts de terceiros controlados).
 
-### [ ] 8) Vulnerabilidades conhecidas em dependências (supply chain)
+### [OK] 8) Vulnerabilidades conhecidas em dependências (supply chain)
 - Severidade: **Alta** (há ao menos 1 alta)
 - Evidência:
   - `npm.cmd audit --json` retornou:
