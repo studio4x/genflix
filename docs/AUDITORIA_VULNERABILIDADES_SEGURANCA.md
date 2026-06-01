@@ -62,7 +62,7 @@ Ao corrigir qualquer vulnerabilidade listada neste documento, a plataforma **dev
   - Rate limit por IP/e-mail e janela temporal.
   - Backoff progressivo e telemetria de abuso.
 
-### [ ] 6) CORS permissivo (`*`) em funções administrativas
+### [OK] 6) CORS permissivo (`*`) em funções administrativas
 - Severidade: **Média**
 - Evidência:
   - Exemplo: `supabase/functions/admin-clear-cache/index.ts` com `Access-Control-Allow-Origin: *`.

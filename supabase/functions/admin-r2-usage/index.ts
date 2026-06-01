@@ -1,10 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { DeleteObjectCommand, ListBucketsCommand, ListObjectsV2Command, S3Client } from 'https://esm.sh/@aws-sdk/client-s3@3.916.0'
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
+import { buildCorsHeaders, isAllowedOrigin } from '../_shared/cors.ts'
 
 type CloudflareApiEnvelope<T> = {
   success: boolean
@@ -52,12 +48,17 @@ type R2UsageBucketRow = {
 }
 
 Deno.serve(async (request) => {
+  const corsHeaders = buildCorsHeaders(request)
+
   if (request.method === 'OPTIONS') {
+    if (!isAllowedOrigin(request.headers.get('origin'))) {
+      return new Response('origin nao permitida', { status: 403, headers: corsHeaders })
+    }
     return new Response('ok', { headers: corsHeaders })
   }
 
   if (request.method !== 'POST') {
-    return jsonResponse({ error: 'Metodo nao permitido.' }, 405)
+    return jsonResponse(request, { error: 'Metodo nao permitido.' }, 405)
   }
 
   try {
@@ -65,13 +66,13 @@ Deno.serve(async (request) => {
     const action = resolveAction(body?.action)
     const accessToken = getAccessToken(request, body)
     if (!accessToken) {
-      return jsonResponse({ error: 'Token de acesso ausente.' }, 401)
+      return jsonResponse(request, { error: 'Token de acesso ausente.' }, 401)
     }
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     if (!supabaseUrl || !serviceRoleKey) {
-      return jsonResponse({ error: 'Configuracao ausente do Supabase.' }, 500)
+      return jsonResponse(request, { error: 'Configuracao ausente do Supabase.' }, 500)
     }
 
     const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey)
@@ -81,7 +82,7 @@ Deno.serve(async (request) => {
     } = await supabaseAdmin.auth.getUser(accessToken)
 
     if (userError || !user) {
-      return jsonResponse({ error: 'Token invalido ou expirado.' }, 401)
+      return jsonResponse(request, { error: 'Token invalido ou expirado.' }, 401)
     }
 
     const roleCheck = await supabaseAdmin.rpc('has_role', {
@@ -89,10 +90,10 @@ Deno.serve(async (request) => {
       _role_code: 'admin',
     })
     if (roleCheck.error) {
-      return jsonResponse({ error: 'Falha ao validar perfil de administrador.' }, 500)
+      return jsonResponse(request, { error: 'Falha ao validar perfil de administrador.' }, 500)
     }
     if (!roleCheck.data) {
-      return jsonResponse({ error: 'Apenas administradores podem visualizar o uso do storage.' }, 403)
+      return jsonResponse(request, { error: 'Apenas administradores podem visualizar o uso do storage.' }, 403)
     }
 
     if (action === 'list_objects') {
@@ -102,7 +103,7 @@ Deno.serve(async (request) => {
         ? body.continuation_token.trim()
         : ''
       if (!bucket) {
-        return jsonResponse({ error: 'bucket obrigatorio para listagem de arquivos.' }, 400)
+        return jsonResponse(request, { error: 'bucket obrigatorio para listagem de arquivos.' }, 400)
       }
 
       const listing = await listR2ObjectsViaS3({
@@ -111,7 +112,7 @@ Deno.serve(async (request) => {
         continuationToken: continuationToken || undefined,
       })
 
-      return jsonResponse({
+      return jsonResponse(request, {
         bucket,
         prefix,
         checked_at: new Date().toISOString(),
@@ -124,11 +125,11 @@ Deno.serve(async (request) => {
       const bucket = typeof body?.bucket === 'string' ? body.bucket.trim() : ''
       const key = typeof body?.key === 'string' ? body.key.trim() : ''
       if (!bucket || !key) {
-        return jsonResponse({ error: 'bucket e key sao obrigatorios para exclusao.' }, 400)
+        return jsonResponse(request, { error: 'bucket e key sao obrigatorios para exclusao.' }, 400)
       }
 
       await deleteR2ObjectViaS3({ bucket, key })
-      return jsonResponse({
+      return jsonResponse(request, {
         ok: true,
         bucket,
         key,
@@ -177,7 +178,7 @@ Deno.serve(async (request) => {
       },
     )
 
-    return jsonResponse({
+    return jsonResponse(request, {
       account_id: accountId,
       checked_at: new Date().toISOString(),
       source,
@@ -187,7 +188,7 @@ Deno.serve(async (request) => {
     })
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Erro inesperado ao consultar a Cloudflare.'
-    return jsonResponse({ error: message }, 500)
+    return jsonResponse(request, { error: message }, 500)
   }
 })
 
@@ -422,11 +423,11 @@ function resolveConfiguredBuckets() {
   return Array.from(new Set(merged))
 }
 
-function jsonResponse(payload: unknown, status = 200) {
+function jsonResponse(request: Request, payload: unknown, status = 200) {
   return new Response(JSON.stringify(payload), {
     status,
     headers: {
-      ...corsHeaders,
+      ...buildCorsHeaders(request),
       'Content-Type': 'application/json',
     },
   })

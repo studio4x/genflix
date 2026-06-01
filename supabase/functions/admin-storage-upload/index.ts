@@ -7,12 +7,7 @@ import {
   resolveStorageProvider,
   type StorageProvider,
 } from '../_shared/storage-provider.ts'
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers':
-    'authorization, x-client-info, apikey, content-type, cache-control, pragma, x-requested-with',
-}
+import { buildCorsHeaders, isAllowedOrigin } from '../_shared/cors.ts'
 
 const MATERIALS_BUCKET = 'materials'
 
@@ -20,7 +15,12 @@ type UploadKind = 'lesson_material'
 type Operation = 'prepare_upload' | 'delete_object'
 
 Deno.serve(async (request) => {
+  const corsHeaders = buildCorsHeaders(request)
+
   if (request.method === 'OPTIONS') {
+    if (!isAllowedOrigin(request.headers.get('origin'))) {
+      return new Response('origin nao permitida', { status: 403, headers: corsHeaders })
+    }
     return new Response('ok', { headers: corsHeaders })
   }
 
@@ -28,13 +28,13 @@ Deno.serve(async (request) => {
     const requestBody = await request.json().catch(() => ({}))
     const accessToken = getAccessToken(request, requestBody)
     if (!accessToken) {
-      return jsonResponse({ error: 'Token ausente.' }, 401)
+      return jsonResponse(request, { error: 'Token ausente.' }, 401)
     }
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
     const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     if (!supabaseUrl || !supabaseServiceRoleKey) {
-      return jsonResponse({ error: 'Variaveis do Supabase ausentes na edge function.' }, 500)
+      return jsonResponse(request, { error: 'Variaveis do Supabase ausentes na edge function.' }, 500)
     }
 
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceRoleKey)
@@ -43,7 +43,7 @@ Deno.serve(async (request) => {
       error: authError,
     } = await supabaseAdmin.auth.getUser(accessToken)
     if (authError || !user) {
-      return jsonResponse({ error: 'Token invalido ou usuario nao autenticado.' }, 401)
+      return jsonResponse(request, { error: 'Token invalido ou usuario nao autenticado.' }, 401)
     }
 
     const hasAdminRoleResult = await supabaseAdmin.rpc('has_role', {
@@ -55,30 +55,31 @@ Deno.serve(async (request) => {
       _role_code: 'criador',
     })
     if (hasAdminRoleResult.error || hasCreatorRoleResult.error) {
-      return jsonResponse({ error: 'Falha ao validar perfil do usuario.' }, 500)
+      return jsonResponse(request, { error: 'Falha ao validar perfil do usuario.' }, 500)
     }
     if (!hasAdminRoleResult.data && !hasCreatorRoleResult.data) {
-      return jsonResponse({ error: 'Usuario sem permissao para upload protegido.' }, 403)
+      return jsonResponse(request, { error: 'Usuario sem permissao para upload protegido.' }, 403)
     }
 
     const operation = normalizeOperation(requestBody?.operation)
     if (operation === 'delete_object') {
-      return await handleDeleteObject(requestBody, supabaseAdmin)
+      return await handleDeleteObject(request, requestBody, supabaseAdmin)
     }
-    return await handlePrepareUpload(requestBody, supabaseAdmin)
+    return await handlePrepareUpload(request, requestBody, supabaseAdmin)
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Erro inesperado no upload protegido.'
-    return jsonResponse({ error: message }, 500)
+    return jsonResponse(request, { error: message }, 500)
   }
 })
 
 async function handlePrepareUpload(
+  request: Request,
   requestBody: Record<string, unknown>,
   supabaseAdmin: ReturnType<typeof createClient>,
 ) {
   const uploadKind = normalizeUploadKind(requestBody?.upload_kind)
   if (!uploadKind) {
-    return jsonResponse({ error: 'upload_kind invalido.' }, 400)
+    return jsonResponse(request, { error: 'upload_kind invalido.' }, 400)
   }
 
   const entityId = typeof requestBody?.entity_id === 'string' ? requestBody.entity_id.trim() : ''
@@ -87,17 +88,17 @@ async function handlePrepareUpload(
   const fileSizeBytes = Number(requestBody?.file_size_bytes ?? 0)
 
   if (!entityId || !fileName) {
-    return jsonResponse({ error: 'entity_id e file_name sao obrigatorios.' }, 400)
+    return jsonResponse(request, { error: 'entity_id e file_name sao obrigatorios.' }, 400)
   }
 
   if (!Number.isFinite(fileSizeBytes) || fileSizeBytes <= 0) {
-    return jsonResponse({ error: 'file_size_bytes invalido.' }, 400)
+    return jsonResponse(request, { error: 'file_size_bytes invalido.' }, 400)
   }
 
   // Default mais alto para suportar materiais em video; ainda pode ser sobrescrito por R2_MAX_FILE_SIZE_BYTES.
   const maxUploadSize = getMaxUploadSizeBytes(1024 * 1024 * 1024)
   if (fileSizeBytes > maxUploadSize) {
-    return jsonResponse({ error: `Arquivo excede o limite permitido (${maxUploadSize} bytes).` }, 413)
+    return jsonResponse(request, { error: `Arquivo excede o limite permitido (${maxUploadSize} bytes).` }, 413)
   }
 
   const provider = resolveUploadProvider(uploadKind, requestBody?.provider)
@@ -112,7 +113,7 @@ async function handlePrepareUpload(
     supabaseAdmin,
   })
 
-  return jsonResponse({
+  return jsonResponse(request, {
     provider: ticket.provider,
     upload_method: ticket.upload_method,
     upload_path: ticket.upload_path,
@@ -125,6 +126,7 @@ async function handlePrepareUpload(
 }
 
 async function handleDeleteObject(
+  request: Request,
   requestBody: Record<string, unknown>,
   supabaseAdmin: ReturnType<typeof createClient>,
 ) {
@@ -133,7 +135,7 @@ async function handleDeleteObject(
   const provider = resolveStorageProvider(requestBody?.provider)
 
   if (!storagePath) {
-    return jsonResponse({ error: 'storage_path obrigatorio para deletar objeto.' }, 400)
+    return jsonResponse(request, { error: 'storage_path obrigatorio para deletar objeto.' }, 400)
   }
 
   await deleteObject({
@@ -143,7 +145,7 @@ async function handleDeleteObject(
     supabaseAdmin,
   })
 
-  return jsonResponse({ ok: true })
+  return jsonResponse(request, { ok: true })
 }
 
 function resolveBucket(uploadKind: UploadKind) {
@@ -200,11 +202,11 @@ function getAccessToken(request: Request, body: Record<string, unknown>) {
   return accessTokenFromBody || accessTokenFromHeader
 }
 
-function jsonResponse(payload: unknown, status = 200) {
+function jsonResponse(request: Request, payload: unknown, status = 200) {
   return new Response(JSON.stringify(payload), {
     status,
     headers: {
-      ...corsHeaders,
+      ...buildCorsHeaders(request),
       'Content-Type': 'application/json',
     },
   })
