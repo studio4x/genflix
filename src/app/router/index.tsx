@@ -76,6 +76,7 @@ const AdminOperationalPendingPage = lazy(async () => ({ default: (await import('
 const AdminSiteEditorPage = lazy(async () => ({ default: (await import('@/pages/admin/admin-site-editor-page')).AdminSiteEditorPage }))
 const AdminResourceVideosPage = lazy(async () => ({ default: (await import('@/pages/admin/admin-resource-videos-page')).AdminResourceVideosPage }))
 const AdminR2StoragePage = lazy(async () => ({ default: (await import('@/pages/admin/admin-r2-storage-page')).AdminR2StoragePage }))
+const AdminSecurityScansPage = lazy(async () => ({ default: (await import('@/pages/admin/admin-security-scans-page')).AdminSecurityScansPage }))
 const CourseOverviewPanel = lazy(async () => ({ default: (await import('@/pages/admin/builder/course-overview-panel')).CourseOverviewPanel }))
 const ModuleEditorPanel = lazy(async () => ({ default: (await import('@/pages/admin/builder/module-editor-panel')).ModuleEditorPanel }))
 const LessonEditorPanel = lazy(async () => ({ default: (await import('@/pages/admin/builder/lesson-editor-panel')).LessonEditorPanel }))
@@ -533,6 +534,10 @@ export const appRouter = createBrowserRouter([
           {
             path: '/admin/storage-r2',
             element: withRouteSuspense(<AdminR2StoragePage />),
+          },
+          {
+            path: '/admin/seguranca',
+            element: withRouteSuspense(<AdminSecurityScansPage />),
           },
         ],
       },

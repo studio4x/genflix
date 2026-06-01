@@ -31,6 +31,7 @@ const adminNavGroups: AdminNavGroup[] = [
       { to: '/admin/relatorios', label: 'Relatorios' },
       { to: '/admin/pendencias', label: 'Pendencias' },
       { to: '/admin/storage-r2', label: 'Storage R2' },
+      { to: '/admin/seguranca', label: 'Seguranca' },
     ],
   },
   {
