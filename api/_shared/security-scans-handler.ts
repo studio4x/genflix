@@ -360,7 +360,10 @@ async function scanNpmAudit(): Promise<ScannerFinding[]> {
 
 async function scanSuspiciousPatterns(): Promise<ScannerFinding[]> {
   const files = await readFilesRecursively(process.cwd(), ['.ts', '.tsx', '.js', '.mjs', '.cjs', '.json'])
-  const selfScannerPathSuffix = 'api/_shared/security-scans-handler.ts'
+  const selfScannerPathSuffixes = [
+    'api/_shared/security-scans-handler.ts',
+    'api/_shared/security-scans-handler.js',
+  ]
   const signatures = [
     /eval\s*\(\s*atob\s*\(/i,
     /fromCharCode\s*\(/i,
@@ -372,7 +375,9 @@ async function scanSuspiciousPatterns(): Promise<ScannerFinding[]> {
 
   for (const file of files) {
     const relativePath = toRelative(file.filePath)
-    if (relativePath === selfScannerPathSuffix || relativePath.endsWith(`/${selfScannerPathSuffix}`)) {
+    if (
+      selfScannerPathSuffixes.some((suffix) => relativePath === suffix || relativePath.endsWith(`/${suffix}`))
+    ) {
       continue
     }
 
