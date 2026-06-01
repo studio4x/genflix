@@ -73,7 +73,7 @@ Ao corrigir qualquer vulnerabilidade listada neste documento, a plataforma **dev
   - Restringir `Access-Control-Allow-Origin` ao domínio canônico de produção e ambientes permitidos.
   - Avaliar necessidade real de CORS para cada função.
 
-### [ ] 7) Ausência de headers de hardening HTTP em produção
+### [OK] 7) Ausência de headers de hardening HTTP em produção
 - Severidade: **Média**
 - Evidência:
   - `vercel.json` define essencialmente cache headers, sem CSP/HSTS/X-Frame-Options/X-Content-Type-Options/Referrer-Policy/Permissions-Policy.
