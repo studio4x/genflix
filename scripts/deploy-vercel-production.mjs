@@ -3,6 +3,7 @@ import { existsSync, mkdtempSync, cpSync, rmSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { tmpdir } from 'node:os'
 const npxCommand = process.platform === 'win32' ? 'npx.cmd' : 'npx'
+const vercelCliPackage = 'vercel@48.4.1'
 const isWindows = process.platform === 'win32'
 const vercelApiBase = 'https://api.vercel.com'
 
@@ -179,7 +180,7 @@ async function ensureAliasPointsTo(deploymentUrl, canonicalDomain, maxAttempts =
   const aliasRegex = new RegExp(`${escapedDeploymentHost}\\s+${escapedCanonicalDomain}`)
 
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
-    const aliasResult = run(npxCommand, withVercelAuthArgs(['vercel', 'alias', 'ls']), { captureOutput: true })
+    const aliasResult = run(npxCommand, withVercelAuthArgs([vercelCliPackage, 'alias', 'ls']), { captureOutput: true })
     const aliasOutput = aliasResult.stdout ?? ''
 
     if (aliasRegex.test(aliasOutput)) {
@@ -219,7 +220,7 @@ async function main() {
   const canonicalDomain = canonicalProductionUrl.replace(/^https?:\/\//, '').replace(/\/+$/, '')
 
   process.stdout.write('Gerando output prebuilt da Vercel sem bump adicional de build...\n')
-  run(npxCommand, withVercelAuthArgs(['vercel', 'build', '--prod']), {
+  run(npxCommand, withVercelAuthArgs([vercelCliPackage, 'build', '--prod']), {
     env: {
       CI: 'true',
     },
@@ -233,7 +234,7 @@ async function main() {
     cpSync(join(process.cwd(), '.vercel', 'output'), tempOutputDir, { recursive: true })
 
     const deployResult = run(npxCommand, withVercelAuthArgs([
-      'vercel',
+      vercelCliPackage,
       'deploy',
       '--prebuilt',
       '--prod',
@@ -268,7 +269,7 @@ async function main() {
     }
 
     process.stdout.write(`Atualizando alias canonico ${canonicalDomain} -> ${deploymentUrl}\n`)
-    run(npxCommand, withVercelAuthArgs(['vercel', 'alias', 'set', deploymentUrl, canonicalDomain]), {
+    run(npxCommand, withVercelAuthArgs([vercelCliPackage, 'alias', 'set', deploymentUrl, canonicalDomain]), {
       cwd: tempWorkspace,
     })
 
