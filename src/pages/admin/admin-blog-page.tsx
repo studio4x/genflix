@@ -1,2046 +1,1800 @@
-import { useEffect, useMemo, useState } from 'react'
-import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
-
-import { useAuth } from '@/app/providers/auth-provider'
-import { RichTextEditor } from '@/components/ui/RichTextEditor'
-import { Button } from '@/components/ui/button'
-import { AdminBlogCommentsPanel } from '@/features/blog/admin-blog-comments-panel'
-import { createDefaultBlogStyleSettings, normalizeBlogStyleSettings, type BlogStyleSettings, type BlogTagStyle } from '@/features/blog/blog-style-settings'
-import {
-  fetchBlogSeoDraft,
-  fetchBlogTagCreationSuggestions,
-  fetchBlogTagSuggestions,
-  type BlogAssistArticleInput,
-} from '@/features/admin/blog-ai/api'
-import { fetchSiteAssets, fetchSiteContent, saveSiteContentEntry, uploadSiteAsset } from '@/features/site-editor/api'
-import { SITE_TEXT_FONT_PRESETS } from '@/features/site-editor/font-presets'
-import type { SiteAsset } from '@/features/site-editor/types'
-import { supabase } from '@/services/supabase/client'
-import { ChevronDown, ChevronUp, Eye, Pencil, RotateCcw, Trash2, X } from 'lucide-react'
-
-type ArticleStatus = 'draft' | 'scheduled' | 'published'
-
+import { useEffect, useMemo, useState } from 'react';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { useAuth } from '@/app/providers/auth-provider';
+import { RichTextEditor } from '@/components/ui/RichTextEditor';
+import { Button } from '@/components/ui/button';
+import { AdminBlogCommentsPanel } from '@/features/blog/admin-blog-comments-panel';
+import { createDefaultBlogStyleSettings, normalizeBlogStyleSettings, type BlogStyleSettings, type BlogTagStyle } from '@/features/blog/blog-style-settings';
+import { fetchBlogSeoDraft, fetchBlogTagCreationSuggestions, fetchBlogTagSuggestions, type BlogAssistArticleInput, } from '@/features/admin/blog-ai/api';
+import { fetchSiteAssets, fetchSiteContent, saveSiteContentEntry, uploadSiteAsset } from '@/features/site-editor/api';
+import { SITE_TEXT_FONT_PRESETS } from '@/features/site-editor/font-presets';
+import type { SiteAsset } from '@/features/site-editor/types';
+import { supabase } from '@/services/supabase/client';
+import { ChevronDown, ChevronUp, Eye, Pencil, RotateCcw, Trash2, X } from 'lucide-react';
+type ArticleStatus = 'draft' | 'scheduled' | 'published';
 type SeoFields = {
-  seo_title: string
-  seo_description: string
-  seo_canonical_url: string
-  seo_robots: string
-  seo_og_title: string
-  seo_og_description: string
-  seo_og_image_url: string
-}
-
+    seo_title: string;
+    seo_description: string;
+    seo_canonical_url: string;
+    seo_robots: string;
+    seo_og_title: string;
+    seo_og_description: string;
+    seo_og_image_url: string;
+};
 type BlogArticleRow = {
-  id: string
-  title: string
-  slug: string
-  content_html: string | null
-  cover_image_url: string | null
-  card_image_url: string | null
-  status: ArticleStatus | null
-  featured: boolean | null
-  author_id: string | null
-  category_id: string | null
-  published_at: string | null
-  scheduled_publish_at: string | null
-  reading_time_minutes: number | null
-  focus_keyword: string | null
-  seo_title: string | null
-  seo_description: string | null
-  seo_canonical_url: string | null
-  seo_robots: string | null
-  seo_og_title: string | null
-  seo_og_description: string | null
-  seo_og_image_url: string | null
-  created_at: string
-  updated_at: string
-}
-
+    id: string;
+    title: string;
+    slug: string;
+    content_html: string | null;
+    cover_image_url: string | null;
+    card_image_url: string | null;
+    status: ArticleStatus | null;
+    featured: boolean | null;
+    author_id: string | null;
+    category_id: string | null;
+    published_at: string | null;
+    scheduled_publish_at: string | null;
+    reading_time_minutes: number | null;
+    focus_keyword: string | null;
+    seo_title: string | null;
+    seo_description: string | null;
+    seo_canonical_url: string | null;
+    seo_robots: string | null;
+    seo_og_title: string | null;
+    seo_og_description: string | null;
+    seo_og_image_url: string | null;
+    created_at: string;
+    updated_at: string;
+};
 type BlogCategoryRow = {
-  id: string
-  name: string
-  slug: string
-  description: string | null
-  parent_id: string | null
-  is_active: boolean | null
-  display_order: number | null
-  schema_json: string | null
-  seo_title: string | null
-  seo_description: string | null
-  seo_canonical_url: string | null
-  seo_robots: string | null
-  seo_og_title: string | null
-  seo_og_description: string | null
-  seo_og_image_url: string | null
-}
-
+    id: string;
+    name: string;
+    slug: string;
+    description: string | null;
+    parent_id: string | null;
+    is_active: boolean | null;
+    display_order: number | null;
+    schema_json: string | null;
+    seo_title: string | null;
+    seo_description: string | null;
+    seo_canonical_url: string | null;
+    seo_robots: string | null;
+    seo_og_title: string | null;
+    seo_og_description: string | null;
+    seo_og_image_url: string | null;
+};
 type BlogTagRow = {
-  id: string
-  name: string
-  slug: string
-  description: string | null
-  seo_title: string | null
-  seo_description: string | null
-  seo_canonical_url: string | null
-  seo_robots: string | null
-  seo_og_title: string | null
-  seo_og_description: string | null
-  seo_og_image_url: string | null
-}
-
+    id: string;
+    name: string;
+    slug: string;
+    description: string | null;
+    seo_title: string | null;
+    seo_description: string | null;
+    seo_canonical_url: string | null;
+    seo_robots: string | null;
+    seo_og_title: string | null;
+    seo_og_description: string | null;
+    seo_og_image_url: string | null;
+};
 type BlogArticleTagRow = {
-  article_id: string
-  tag_id: string
-}
-
+    article_id: string;
+    tag_id: string;
+};
 type LegacyBlogPostRow = {
-  id: string
-  slug: string
-  title: string
-  category: string | null
-  excerpt: string | null
-  seo_description: string | null
-  image_url: string | null
-  card_image_url?: string | null
-  read_time: string | null
-  author: string | null
-  published_at: string | null
-  content_html: string | null
-  content: unknown
-  featured: boolean | null
-  status: string | null
-  created_at: string
-  updated_at: string
-}
-
+    id: string;
+    slug: string;
+    title: string;
+    category: string | null;
+    excerpt: string | null;
+    seo_description: string | null;
+    image_url: string | null;
+    card_image_url?: string | null;
+    read_time: string | null;
+    author: string | null;
+    published_at: string | null;
+    content_html: string | null;
+    content: unknown;
+    featured: boolean | null;
+    status: string | null;
+    created_at: string;
+    updated_at: string;
+};
 type BlogArticleRevisionSnapshot = {
-  title: string
-  slug: string
-  content_html: string
-  cover_image_url: string | null
-  card_image_url: string | null
-  status: ArticleStatus
-  featured: boolean
-  category_id: string | null
-  tag_ids: string[]
-  published_at: string | null
-  scheduled_publish_at: string | null
-  focus_keyword: string
-  reading_time_minutes: number
-  seo_title: string
-  seo_description: string
-  seo_canonical_url: string
-  seo_robots: string
-  seo_og_title: string
-  seo_og_description: string
-  seo_og_image_url: string
-  plain_text_length: number
-  word_count: number
-}
-
+    title: string;
+    slug: string;
+    content_html: string;
+    cover_image_url: string | null;
+    card_image_url: string | null;
+    status: ArticleStatus;
+    featured: boolean;
+    category_id: string | null;
+    tag_ids: string[];
+    published_at: string | null;
+    scheduled_publish_at: string | null;
+    focus_keyword: string;
+    reading_time_minutes: number;
+    seo_title: string;
+    seo_description: string;
+    seo_canonical_url: string;
+    seo_robots: string;
+    seo_og_title: string;
+    seo_og_description: string;
+    seo_og_image_url: string;
+    plain_text_length: number;
+    word_count: number;
+};
 type BlogPostRevisionRow = {
-  id: string
-  article_id: string
-  revision_number: number
-  snapshot: BlogArticleRevisionSnapshot | null
-  changed_by: string | null
-  changed_by_name: string | null
-  changed_by_email: string | null
-  change_type: string | null
-  created_at: string
-}
-
-type ArticleActionModalTone = 'success' | 'warning' | 'error'
-
+    id: string;
+    article_id: string;
+    revision_number: number;
+    snapshot: BlogArticleRevisionSnapshot | null;
+    changed_by: string | null;
+    changed_by_name: string | null;
+    changed_by_email: string | null;
+    change_type: string | null;
+    created_at: string;
+};
+type ArticleActionModalTone = 'success' | 'warning' | 'error';
 type ArticleActionModalState = {
-  title: string
-  message: string
-  tone: ArticleActionModalTone
-}
-
+    title: string;
+    message: string;
+    tone: ArticleActionModalTone;
+};
 type SeoAiModalState = {
-  stage: 'processing' | 'success' | 'error'
-  message: string
-}
-
+    stage: 'processing' | 'success' | 'error';
+    message: string;
+};
 type ArticleFormState = SeoFields & {
-  title: string
-  slug: string
-  coverImageUrl: string
-  cardImageUrl: string
-  status: ArticleStatus
-  publishedAt: string
-  scheduledPublishAt: string
-  featured: boolean
-  categoryId: string
-  tagIds: string[]
-  contentHtml: string
-  focusKeyword: string
-  readingTimeMinutes: number
-}
-
+    title: string;
+    slug: string;
+    coverImageUrl: string;
+    cardImageUrl: string;
+    status: ArticleStatus;
+    publishedAt: string;
+    scheduledPublishAt: string;
+    featured: boolean;
+    categoryId: string;
+    tagIds: string[];
+    contentHtml: string;
+    focusKeyword: string;
+    readingTimeMinutes: number;
+};
 type CategoryFormState = SeoFields & {
-  name: string
-  slug: string
-  description: string
-  parentId: string
-  isActive: boolean
-  displayOrder: string
-  schemaJson: string
-}
-
+    name: string;
+    slug: string;
+    description: string;
+    parentId: string;
+    isActive: boolean;
+    displayOrder: string;
+    schemaJson: string;
+};
 type TagFormState = SeoFields & {
-  name: string
-  slug: string
-  description: string
-}
-
+    name: string;
+    slug: string;
+    description: string;
+};
 type BlogSidebarImageSlide = {
-  url: string
-  alt: string
-  linkUrl: string
-}
-
-type BlogSidebarImageMode = 'single' | 'carousel'
-
+    url: string;
+    alt: string;
+    linkUrl: string;
+};
+type BlogSidebarImageMode = 'single' | 'carousel';
 type BlogSidebarBlock = {
-  id: string
-  mode: BlogSidebarImageMode
-  slides: BlogSidebarImageSlide[]
-}
-
+    id: string;
+    mode: BlogSidebarImageMode;
+    slides: BlogSidebarImageSlide[];
+};
 function createSidebarBlockId() {
-  return `sidebar-block-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+    return `sidebar-block-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
-
 function createEmptySidebarSlide(): BlogSidebarImageSlide {
-  return { url: '', alt: '', linkUrl: '' }
+    return { url: '', alt: '', linkUrl: '' };
 }
-
 function createEmptySidebarBlock(): BlogSidebarBlock {
-  return {
-    id: createSidebarBlockId(),
-    mode: 'single',
-    slides: [createEmptySidebarSlide()],
-  }
+    return {
+        id: createSidebarBlockId(),
+        mode: 'single',
+        slides: [createEmptySidebarSlide()],
+    };
 }
-
 const DEFAULT_SEO: SeoFields = {
-  seo_title: '',
-  seo_description: '',
-  seo_canonical_url: '',
-  seo_robots: 'index,follow',
-  seo_og_title: '',
-  seo_og_description: '',
-  seo_og_image_url: '',
-}
-
-const DEFAULT_ARTICLE_FORM: ArticleFormState = {
-  title: '',
-  slug: '',
-  coverImageUrl: '',
-  cardImageUrl: '',
-  status: 'draft',
-  publishedAt: '',
-  scheduledPublishAt: '',
-  featured: false,
-  categoryId: '__none__',
-  tagIds: [],
-  contentHtml: '',
-  focusKeyword: '',
-  readingTimeMinutes: 1,
-  ...DEFAULT_SEO,
-}
-
-const DEFAULT_CATEGORY_FORM: CategoryFormState = {
-  name: '',
-  slug: '',
-  description: '',
-  parentId: '__none__',
-  isActive: true,
-  displayOrder: '',
-  schemaJson: '',
-  ...DEFAULT_SEO,
-}
-
-const DEFAULT_TAG_FORM: TagFormState = {
-  name: '',
-  slug: '',
-  description: '',
-  ...DEFAULT_SEO,
-}
-
-const BLOG_CARD_SUMMARY_MAX_LENGTH = 180
-
-const DEFAULT_INLINE_CATEGORY_FORM: CategoryFormState = {
-  ...DEFAULT_CATEGORY_FORM,
-}
-
-const TABLES = {
-  articles: 'blog_articles',
-  categories: 'blog_categories',
-  tags: 'blog_tags',
-  articleTags: 'blog_article_tags',
-}
-
-function slugify(value: string) {
-  return value
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9\s-]/g, '')
-    .replace(/\s+/g, '-')
-    .replace(/-+/g, '-')
-}
-
-function toDateTimeLocal(value: string | null) {
-  if (!value) {
-    return ''
-  }
-
-  const date = new Date(value)
-  const offset = date.getTimezoneOffset()
-  const localDate = new Date(date.getTime() - offset * 60_000)
-  return localDate.toISOString().slice(0, 16)
-}
-
-function formatDateTime(value: string | null) {
-  if (!value) {
-    return '-'
-  }
-
-  return new Intl.DateTimeFormat('pt-BR', {
-    dateStyle: 'short',
-    timeStyle: 'short',
-  }).format(new Date(value))
-}
-
-function statusLabel(status: ArticleStatus | null) {
-  if (status === 'scheduled') {
-    return 'Agendado'
-  }
-  if (status === 'published') {
-    return 'Publicado'
-  }
-  return 'Rascunho'
-}
-
-function removeInternalH1(html: string) {
-  if (!html.trim()) {
-    return ''
-  }
-
-  const parser = new DOMParser()
-  const doc = parser.parseFromString(html, 'text/html')
-
-  doc.querySelectorAll('h1').forEach((h1) => {
-    const h2 = doc.createElement('h2')
-    h2.innerHTML = h1.innerHTML
-    h1.replaceWith(h2)
-  })
-
-  return doc.body.innerHTML
-}
-
-function stripHtml(html: string) {
-  const parser = new DOMParser()
-  const doc = parser.parseFromString(html, 'text/html')
-  return (doc.body.textContent ?? '').replace(/\s+/g, ' ').trim()
-}
-
-function calculateReadingTimeMinutes(contentHtml: string) {
-  const plainText = stripHtml(contentHtml)
-  const words = plainText ? plainText.split(' ').length : 0
-  const minutes = Math.ceil(words / 200)
-  return Math.max(1, minutes)
-}
-
-function legacyContentToHtml(value: unknown) {
-  if (Array.isArray(value)) {
-    const paragraphs = value
-      .map((entry) => (typeof entry === 'string' ? entry.trim() : ''))
-      .filter(Boolean)
-    return paragraphs.map((paragraph) => `<p>${paragraph}</p>`).join('')
-  }
-
-  if (typeof value === 'string') {
-    return `<p>${value.trim()}</p>`
-  }
-
-  return ''
-}
-
-function parseLegacyReadTime(readTime: string | null, fallbackHtml: string) {
-  const extracted = readTime?.match(/\d+/)?.[0]
-  if (!extracted) {
-    return calculateReadingTimeMinutes(fallbackHtml)
-  }
-
-  const numeric = Number(extracted)
-  return Number.isNaN(numeric) ? calculateReadingTimeMinutes(fallbackHtml) : Math.max(1, numeric)
-}
-
-function normalizeLegacyStatus(status: string | null, publishedAt: string | null): ArticleStatus {
-  if (status === 'scheduled') {
-    return 'scheduled'
-  }
-  if (status === 'published' || publishedAt) {
-    return 'published'
-  }
-  return 'draft'
-}
-
-function mapLegacyPostToArticle(post: LegacyBlogPostRow): BlogArticleRow {
-  const contentHtml = post.content_html?.trim() ? post.content_html : legacyContentToHtml(post.content)
-  const readingTime = parseLegacyReadTime(post.read_time, contentHtml)
-  return {
-    id: post.id,
-    title: post.title,
-    slug: post.slug,
-    content_html: contentHtml,
-    cover_image_url: post.image_url ?? null,
-    card_image_url: post.card_image_url ?? post.image_url ?? null,
-    status: normalizeLegacyStatus(post.status, post.published_at),
-    featured: Boolean(post.featured),
-    author_id: post.author ?? null,
-    category_id: post.category ?? null,
-    published_at: post.published_at,
-    scheduled_publish_at: null,
-    reading_time_minutes: readingTime,
-    focus_keyword: null,
-    seo_title: null,
-    seo_description: post.seo_description?.trim() || post.excerpt?.trim() || null,
-    seo_canonical_url: null,
+    seo_title: '',
+    seo_description: '',
+    seo_canonical_url: '',
     seo_robots: 'index,follow',
-    seo_og_title: null,
-    seo_og_description: null,
-    seo_og_image_url: null,
-    created_at: post.created_at,
-    updated_at: post.updated_at,
-  }
+    seo_og_title: '',
+    seo_og_description: '',
+    seo_og_image_url: '',
+};
+const DEFAULT_ARTICLE_FORM: ArticleFormState = {
+    title: '',
+    slug: '',
+    coverImageUrl: '',
+    cardImageUrl: '',
+    status: 'draft',
+    publishedAt: '',
+    scheduledPublishAt: '',
+    featured: false,
+    categoryId: '__none__',
+    tagIds: [],
+    contentHtml: '',
+    focusKeyword: '',
+    readingTimeMinutes: 1,
+    ...DEFAULT_SEO,
+};
+const DEFAULT_CATEGORY_FORM: CategoryFormState = {
+    name: '',
+    slug: '',
+    description: '',
+    parentId: '__none__',
+    isActive: true,
+    displayOrder: '',
+    schemaJson: '',
+    ...DEFAULT_SEO,
+};
+const DEFAULT_TAG_FORM: TagFormState = {
+    name: '',
+    slug: '',
+    description: '',
+    ...DEFAULT_SEO,
+};
+const BLOG_CARD_SUMMARY_MAX_LENGTH = 180;
+const DEFAULT_INLINE_CATEGORY_FORM: CategoryFormState = {
+    ...DEFAULT_CATEGORY_FORM,
+};
+const TABLES = {
+    articles: 'blog_articles',
+    categories: 'blog_categories',
+    tags: 'blog_tags',
+    articleTags: 'blog_article_tags',
+};
+function slugify(value: string) {
+    return value
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .trim()
+        .replace(/[^a-z0-9\s-]/g, '')
+        .replace(/\s+/g, '-')
+        .replace(/-+/g, '-');
 }
-
+function toDateTimeLocal(value: string | null) {
+    if (!value) {
+        return '';
+    }
+    const date = new Date(value);
+    const offset = date.getTimezoneOffset();
+    const localDate = new Date(date.getTime() - offset * 60000);
+    return localDate.toISOString().slice(0, 16);
+}
+function formatDateTime(value: string | null) {
+    if (!value) {
+        return '-';
+    }
+    return new Intl.DateTimeFormat('pt-BR', {
+        dateStyle: 'short',
+        timeStyle: 'short',
+    }).format(new Date(value));
+}
+function statusLabel(status: ArticleStatus | null) {
+    if (status === 'scheduled') {
+        return 'Agendado';
+    }
+    if (status === 'published') {
+        return 'Publicado';
+    }
+    return 'Rascunho';
+}
+function removeInternalH1(html: string) {
+    if (!html.trim()) {
+        return '';
+    }
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, 'text/html');
+    doc.querySelectorAll('h1').forEach((h1) => {
+        const h2 = doc.createElement('h2');
+        h2.innerHTML = h1.innerHTML;
+        h1.replaceWith(h2);
+    });
+    return doc.body.innerHTML;
+}
+function stripHtml(html: string) {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, 'text/html');
+    return (doc.body.textContent ?? '').replace(/\s+/g, ' ').trim();
+}
+function calculateReadingTimeMinutes(contentHtml: string) {
+    const plainText = stripHtml(contentHtml);
+    const words = plainText ? plainText.split(' ').length : 0;
+    const minutes = Math.ceil(words / 200);
+    return Math.max(1, minutes);
+}
+function legacyContentToHtml(value: unknown) {
+    if (Array.isArray(value)) {
+        const paragraphs = value
+            .map((entry) => (typeof entry === 'string' ? entry.trim() : ''))
+            .filter(Boolean);
+        return paragraphs.map((paragraph) => `<p>${paragraph}</p>`).join('');
+    }
+    if (typeof value === 'string') {
+        return `<p>${value.trim()}</p>`;
+    }
+    return '';
+}
+function parseLegacyReadTime(readTime: string | null, fallbackHtml: string) {
+    const extracted = readTime?.match(/\d+/)?.[0];
+    if (!extracted) {
+        return calculateReadingTimeMinutes(fallbackHtml);
+    }
+    const numeric = Number(extracted);
+    return Number.isNaN(numeric) ? calculateReadingTimeMinutes(fallbackHtml) : Math.max(1, numeric);
+}
+function normalizeLegacyStatus(status: string | null, publishedAt: string | null): ArticleStatus {
+    if (status === 'scheduled') {
+        return 'scheduled';
+    }
+    if (status === 'published' || publishedAt) {
+        return 'published';
+    }
+    return 'draft';
+}
+function mapLegacyPostToArticle(post: LegacyBlogPostRow): BlogArticleRow {
+    const contentHtml = post.content_html?.trim() ? post.content_html : legacyContentToHtml(post.content);
+    const readingTime = parseLegacyReadTime(post.read_time, contentHtml);
+    return {
+        id: post.id,
+        title: post.title,
+        slug: post.slug,
+        content_html: contentHtml,
+        cover_image_url: post.image_url ?? null,
+        card_image_url: post.card_image_url ?? post.image_url ?? null,
+        status: normalizeLegacyStatus(post.status, post.published_at),
+        featured: Boolean(post.featured),
+        author_id: post.author ?? null,
+        category_id: post.category ?? null,
+        published_at: post.published_at,
+        scheduled_publish_at: null,
+        reading_time_minutes: readingTime,
+        focus_keyword: null,
+        seo_title: null,
+        seo_description: post.seo_description?.trim() || post.excerpt?.trim() || null,
+        seo_canonical_url: null,
+        seo_robots: 'index,follow',
+        seo_og_title: null,
+        seo_og_description: null,
+        seo_og_image_url: null,
+        created_at: post.created_at,
+        updated_at: post.updated_at,
+    };
+}
 function getCategoryPath(category: BlogCategoryRow, categories: BlogCategoryRow[]) {
-  const byId = new Map(categories.map((item) => [item.id, item]))
-  const path: string[] = [category.name]
-  let parentId = category.parent_id
-
-  while (parentId) {
-    const parent = byId.get(parentId)
-    if (!parent) {
-      break
+    const byId = new Map(categories.map((item) => [item.id, item]));
+    const path: string[] = [category.name];
+    let parentId = category.parent_id;
+    while (parentId) {
+        const parent = byId.get(parentId);
+        if (!parent) {
+            break;
+        }
+        path.unshift(parent.name);
+        parentId = parent.parent_id;
     }
-    path.unshift(parent.name)
-    parentId = parent.parent_id
-  }
-
-  return path.join(' > ')
+    return path.join(' > ');
 }
-
 function buildCategoryOptions(categories: BlogCategoryRow[]) {
-  const byParent = new Map<string, BlogCategoryRow[]>()
-  const roots: BlogCategoryRow[] = []
-
-  categories.forEach((category) => {
-    if (!category.parent_id) {
-      roots.push(category)
-      return
+    const byParent = new Map<string, BlogCategoryRow[]>();
+    const roots: BlogCategoryRow[] = [];
+    categories.forEach((category) => {
+        if (!category.parent_id) {
+            roots.push(category);
+            return;
+        }
+        const list = byParent.get(category.parent_id) ?? [];
+        list.push(category);
+        byParent.set(category.parent_id, list);
+    });
+    const sortByOrder = (a: BlogCategoryRow, b: BlogCategoryRow) => {
+        const orderA = a.display_order ?? Number.MAX_SAFE_INTEGER;
+        const orderB = b.display_order ?? Number.MAX_SAFE_INTEGER;
+        if (orderA !== orderB) {
+            return orderA - orderB;
+        }
+        return a.name.localeCompare(b.name, 'pt-BR');
+    };
+    roots.sort(sortByOrder);
+    byParent.forEach((entries) => entries.sort(sortByOrder));
+    const options: Array<{
+        id: string;
+        label: string;
+    }> = [];
+    function walk(node: BlogCategoryRow, trail: string[]) {
+        const nextTrail = [...trail, node.name];
+        options.push({ id: node.id, label: nextTrail.join(' > ') });
+        const children = byParent.get(node.id) ?? [];
+        children.forEach((child) => walk(child, nextTrail));
     }
-
-    const list = byParent.get(category.parent_id) ?? []
-    list.push(category)
-    byParent.set(category.parent_id, list)
-  })
-
-  const sortByOrder = (a: BlogCategoryRow, b: BlogCategoryRow) => {
-    const orderA = a.display_order ?? Number.MAX_SAFE_INTEGER
-    const orderB = b.display_order ?? Number.MAX_SAFE_INTEGER
-    if (orderA !== orderB) {
-      return orderA - orderB
-    }
-    return a.name.localeCompare(b.name, 'pt-BR')
-  }
-
-  roots.sort(sortByOrder)
-  byParent.forEach((entries) => entries.sort(sortByOrder))
-
-  const options: Array<{ id: string; label: string }> = []
-
-  function walk(node: BlogCategoryRow, trail: string[]) {
-    const nextTrail = [...trail, node.name]
-    options.push({ id: node.id, label: nextTrail.join(' > ') })
-    const children = byParent.get(node.id) ?? []
-    children.forEach((child) => walk(child, nextTrail))
-  }
-
-  roots.forEach((root) => walk(root, []))
-  return options
+    roots.forEach((root) => walk(root, []));
+    return options;
 }
-
 function getSeoValidationHints(form: ArticleFormState) {
-  const hints: string[] = []
-  const slug = form.slug.toLowerCase()
-  const title = form.title.toLowerCase()
-  const description = form.seo_description.toLowerCase()
-  const focus = form.focusKeyword.trim().toLowerCase()
-
-  if (!focus) {
-    hints.push('Defina uma palavra-chave de foco para melhorar as sugestões de SEO.')
-  } else {
-    if (!slug.includes(slugify(focus))) {
-      hints.push('A palavra-chave de foco ainda não aparece no slug.')
+    const hints: string[] = [];
+    const slug = form.slug.toLowerCase();
+    const title = form.title.toLowerCase();
+    const description = form.seo_description.toLowerCase();
+    const focus = form.focusKeyword.trim().toLowerCase();
+    if (!focus) {
+        hints.push('Defina uma palavra-chave de foco para melhorar as sugestões de SEO.');
     }
-    if (!title.includes(focus)) {
-      hints.push('A palavra-chave de foco não está presente no título do artigo.')
+    else {
+        if (!slug.includes(slugify(focus))) {
+            hints.push('A palavra-chave de foco ainda não aparece no slug.');
+        }
+        if (!title.includes(focus)) {
+            hints.push('A palavra-chave de foco não está presente no título do artigo.');
+        }
+        if (!description.includes(focus)) {
+            hints.push('A palavra-chave de foco não aparece na descrição SEO.');
+        }
     }
-    if (!description.includes(focus)) {
-      hints.push('A palavra-chave de foco não aparece na descrição SEO.')
+    if (form.seo_title.trim().length < 50 || form.seo_title.trim().length > 60) {
+        hints.push('O título SEO ideal fica entre 50 e 60 caracteres.');
     }
-  }
-
-  if (form.seo_title.trim().length < 50 || form.seo_title.trim().length > 60) {
-    hints.push('O título SEO ideal fica entre 50 e 60 caracteres.')
-  }
-
-  if (form.seo_description.trim().length < 140 || form.seo_description.trim().length > 160) {
-    hints.push('A meta description ideal fica entre 140 e 160 caracteres.')
-  }
-
-  return hints
+    if (form.seo_description.trim().length < 140 || form.seo_description.trim().length > 160) {
+        hints.push('A meta description ideal fica entre 140 e 160 caracteres.');
+    }
+    return hints;
 }
-
 function suggestFocusKeyword(form: ArticleFormState) {
-  const base = `${form.title} ${form.seo_description}`.trim()
-  if (!base) {
-    return ''
-  }
-
-  const words = base
-    .toLowerCase()
-    .split(/[^\p{L}\p{N}]+/u)
-    .map((entry) => entry.trim())
-    .filter((entry) => entry.length > 3)
-
-  const stopWords = new Set(['para', 'como', 'com', 'sem', 'uma', 'das', 'dos', 'que', 'sobre', 'pela', 'pelo', 'mais'])
-  const filtered = words.filter((entry) => !stopWords.has(entry))
-
-  if (filtered.length >= 2) {
-    return `${filtered[0]} ${filtered[1]}`
-  }
-
-  return filtered[0] ?? ''
-}
-
-function summarizeRevisionSnapshot(snapshot: BlogArticleRevisionSnapshot | null) {
-  if (!snapshot) {
-    return 'Sem snapshot disponível.'
-  }
-
-  const pieces = [
-    snapshot.title?.trim() || 'Sem título',
-    statusLabel(snapshot.status),
-    snapshot.tag_ids.length ? `${snapshot.tag_ids.length} tag(s)` : 'Sem tags',
-    `${snapshot.word_count} palavra(s)`,
-  ]
-
-  return pieces.join(' · ')
-}
-
-function toHexColor(value: string, fallback = '#000000') {
-  const trimmed = value.trim()
-  if (/^#[0-9a-fA-F]{6}$/.test(trimmed)) {
-    return trimmed
-  }
-  if (/^#[0-9a-fA-F]{3}$/.test(trimmed)) {
-    const hex = trimmed.slice(1)
-    return `#${hex[0]}${hex[0]}${hex[1]}${hex[1]}${hex[2]}${hex[2]}`
-  }
-  return fallback
-}
-
-function getBlogTagMeaning(tagKey: 'p' | 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6' | 'a' | 'li') {
-  if (tagKey === 'p') {
-    return 'Paragrafo: texto principal do artigo.'
-  }
-  if (tagKey === 'a') {
-    return 'Link: textos clicaveis dentro do artigo.'
-  }
-  if (tagKey === 'li') {
-    return 'Lista: itens de listas com marcadores ou numeradas.'
-  }
-  return null
-}
-
-type FontFamilyOption = {
-  label: string
-  value: string
-}
-
-const FONT_SIZE_OPTIONS = ['12px', '14px', '16px', '18px', '20px', '24px', '28px', '32px', '36px', '40px']
-const FONT_WEIGHT_OPTIONS = ['300', '400', '500', '600', '700', '800', '900']
-const LINE_HEIGHT_OPTIONS = ['1', '1.1', '1.2', '1.3', '1.4', '1.5', '1.6', '1.8', '2']
-const LETTER_SPACING_OPTIONS = ['-0.04em', '-0.02em', '0', '0.01em', '0.02em', '0.04em', '0.08em']
-
-function isMissingLegacyColumnError(message: string, column: string) {
-  return message.includes(`Could not find the '${column}' column`)
-}
-
-function isSingleObjectCoercionError(message: string) {
-  return message.includes('Cannot coerce the result to a single JSON object')
-}
-
-async function persistLegacyBlogPost(
-  payload: Record<string, unknown>,
-  selectedArticleId: string | null,
-) {
-  const runPersist = async (payloadToSave: Record<string, unknown>) => {
-    if (selectedArticleId) {
-      const updateResult = await supabase
-        .from('blog_posts')
-        .update(payloadToSave)
-        .eq('id', selectedArticleId)
-        .select('*')
-
-      if (updateResult.error) {
-        if (isSingleObjectCoercionError(updateResult.error.message)) {
-          const fetchById = await supabase.from('blog_posts').select('*').eq('id', selectedArticleId).limit(1)
-          if (!fetchById.error && Array.isArray(fetchById.data) && fetchById.data[0]) {
-            return { data: fetchById.data[0], error: null }
-          }
-        }
-        return updateResult
-      }
-
-      if (Array.isArray(updateResult.data) && updateResult.data[0]) {
-        return { data: updateResult.data[0], error: null }
-      }
-
-      const fetchById = await supabase.from('blog_posts').select('*').eq('id', selectedArticleId).limit(1)
-      if (!fetchById.error && Array.isArray(fetchById.data) && fetchById.data[0]) {
-        return { data: fetchById.data[0], error: null }
-      }
-      return fetchById
+    const base = `${form.title} ${form.seo_description}`.trim();
+    if (!base) {
+        return '';
     }
-
-    const insertResult = await supabase.from('blog_posts').insert(payloadToSave).select('*')
-    if (insertResult.error) {
-      return insertResult
-    }
-    if (Array.isArray(insertResult.data) && insertResult.data[0]) {
-      return { data: insertResult.data[0], error: null }
-    }
-    return insertResult
-  }
-
-  const firstAttempt = await runPersist(payload)
-  if (!firstAttempt.error) {
-    return firstAttempt
-  }
-
-  const removableColumns = ['seo_description', 'excerpt', 'card_image_url']
-  for (const column of removableColumns) {
-    if (!isMissingLegacyColumnError(firstAttempt.error.message, column)) {
-      continue
-    }
-    const { [column]: _removed, ...payloadWithoutColumn } = payload
-    void _removed
-    return await runPersist(payloadWithoutColumn)
-  }
-  return firstAttempt
-}
-
-function buildBlogAssistArticleInput(form: ArticleFormState, tags: BlogTagRow[]): BlogAssistArticleInput {
-  const fallbackSlug = slugify(form.title) || 'artigo'
-  return {
-    title: form.title.trim() || 'Artigo sem título',
-    slug: form.slug.trim() || fallbackSlug,
-    contentHtml: form.contentHtml ?? '',
-    seoDescription: form.seo_description?.trim() ?? '',
-    focusKeyword: form.focusKeyword?.trim() ?? '',
-    coverImageUrl: form.coverImageUrl?.trim() ?? '',
-    currentTagIds: [...form.tagIds],
-    availableTags: tags.map((tag) => ({
-      id: String(tag.id ?? ''),
-      name: String(tag.name ?? ''),
-      slug: String(tag.slug ?? ''),
-    })),
-  }
-}
-
-export function AdminBlogPage() {
-  const navigate = useNavigate()
-  const { articleSlug } = useParams()
-  const { user, profile } = useAuth()
-  const [searchParams, setSearchParams] = useSearchParams()
-  const [activeTab, setActiveTab] = useState<'articles' | 'categories' | 'tags' | 'layout' | 'styles' | 'comments'>(searchParams.get('tab') === 'comments' ? 'comments' : searchParams.get('tab') === 'styles' ? 'styles' : 'articles')
-  const [articleView, setArticleView] = useState<'list' | 'editor'>('list')
-  const [isLegacyMode, setIsLegacyMode] = useState(true)
-  const [isCategoryCrudAvailable, setIsCategoryCrudAvailable] = useState(false)
-  const [isLoading, setIsLoading] = useState(true)
-  const [isSavingArticle, setIsSavingArticle] = useState(false)
-  const [isSavingCategory, setIsSavingCategory] = useState(false)
-  const [isSavingTag, setIsSavingTag] = useState(false)
-  const [errorMessage, setErrorMessage] = useState<string | null>(null)
-  const [successMessage, setSuccessMessage] = useState<string | null>(null)
-  const [articleSuccessMessage, setArticleSuccessMessage] = useState<string | null>(null)
-  const [articleActionModal, setArticleActionModal] = useState<ArticleActionModalState | null>(null)
-  const [seoAiModal, setSeoAiModal] = useState<SeoAiModalState | null>(null)
-  const [blogSidebarBlocks, setBlogSidebarBlocks] = useState<BlogSidebarBlock[]>([createEmptySidebarBlock()])
-  const [blogStyleSettings, setBlogStyleSettings] = useState<BlogStyleSettings>(createDefaultBlogStyleSettings())
-  const [isSavingLayout, setIsSavingLayout] = useState(false)
-  const [isSavingStyleSettings, setIsSavingStyleSettings] = useState(false)
-  const [isUploadingLayoutImage, setIsUploadingLayoutImage] = useState(false)
-  const [isUploadingCoverImage, setIsUploadingCoverImage] = useState(false)
-  const [mediaLibraryAssets, setMediaLibraryAssets] = useState<SiteAsset[]>([])
-  const [isLoadingMediaLibrary, setIsLoadingMediaLibrary] = useState(false)
-  const [isMediaLibraryOpen, setIsMediaLibraryOpen] = useState(false)
-  const [selectedMediaAssetId, setSelectedMediaAssetId] = useState('')
-  const [mediaLibraryTarget, setMediaLibraryTarget] = useState<'cover' | 'card'>('cover')
-  const [fontFamilyOptions, setFontFamilyOptions] = useState<FontFamilyOption[]>(
-    SITE_TEXT_FONT_PRESETS.map((item) => ({ label: item.label, value: item.family })),
-  )
-
-  const [articles, setArticles] = useState<BlogArticleRow[]>([])
-  const [categories, setCategories] = useState<BlogCategoryRow[]>([])
-  const [tags, setTags] = useState<BlogTagRow[]>([])
-  const [articleTagRows, setArticleTagRows] = useState<BlogArticleTagRow[]>([])
-  const [articleRevisions, setArticleRevisions] = useState<BlogPostRevisionRow[]>([])
-  const [isLoadingArticleRevisions, setIsLoadingArticleRevisions] = useState(false)
-
-  const [selectedArticleId, setSelectedArticleId] = useState<string | null>(null)
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null)
-  const [selectedTagId, setSelectedTagId] = useState<string | null>(null)
-
-  const [articleSearch, setArticleSearch] = useState('')
-  const [articleStatusFilter, setArticleStatusFilter] = useState<'all' | ArticleStatus>('all')
-
-  useEffect(() => {
-    const next = new URLSearchParams(searchParams)
-    next.set('tab', activeTab)
-    setSearchParams(next, { replace: true })
-  }, [activeTab, searchParams, setSearchParams])
-
-  useEffect(() => {
-    if (activeTab === 'categories' && !isCategoryCrudAvailable) {
-      setActiveTab('articles')
-    }
-  }, [activeTab, isCategoryCrudAvailable])
-
-  const [isArticleSlugTouched, setIsArticleSlugTouched] = useState(false)
-  const [isCategorySlugTouched, setIsCategorySlugTouched] = useState(false)
-  const [isTagSlugTouched, setIsTagSlugTouched] = useState(false)
-  const [isArticleTagsExpanded, setIsArticleTagsExpanded] = useState(false)
-  const [isArticleSeoExpanded, setIsArticleSeoExpanded] = useState(false)
-
-  const [articleForm, setArticleForm] = useState<ArticleFormState>(DEFAULT_ARTICLE_FORM)
-  const [categoryForm, setCategoryForm] = useState<CategoryFormState>(DEFAULT_CATEGORY_FORM)
-  const [tagForm, setTagForm] = useState<TagFormState>(DEFAULT_TAG_FORM)
-  const [inlineCategoryForm, setInlineCategoryForm] = useState<CategoryFormState>(DEFAULT_INLINE_CATEGORY_FORM)
-  const [showInlineCategoryForm, setShowInlineCategoryForm] = useState(false)
-
-  useEffect(() => {
-    if (selectedArticleId || isArticleSlugTouched) {
-      return
-    }
-
-    const generatedSlug = slugify(articleForm.title)
-    setArticleForm((current) => (
-      current.slug === generatedSlug
-        ? current
-        : { ...current, slug: generatedSlug }
-    ))
-  }, [articleForm.title, isArticleSlugTouched, selectedArticleId])
-
-  const categoryOptions = useMemo(() => buildCategoryOptions(categories), [categories])
-  const seoHints = useMemo(() => getSeoValidationHints(articleForm), [articleForm])
-
-  const articleTagMap = useMemo(() => {
-    const map = new Map<string, string[]>()
-    articleTagRows.forEach((row) => {
-      const list = map.get(row.article_id) ?? []
-      list.push(row.tag_id)
-      map.set(row.article_id, list)
-    })
-    return map
-  }, [articleTagRows])
-
-  const statusSummary = useMemo(() => {
-    return articles.reduce(
-      (acc, article) => {
-        const status = article.status ?? 'draft'
-        acc.total += 1
-        acc[status] += 1
-        if (article.featured) {
-          acc.featured += 1
-        }
-        return acc
-      },
-      { total: 0, draft: 0, scheduled: 0, published: 0, featured: 0 } as Record<'total' | 'draft' | 'scheduled' | 'published' | 'featured', number>,
-    )
-  }, [articles])
-
-  const filteredArticles = useMemo(() => {
-    const normalized = articleSearch.trim().toLowerCase()
-    return articles.filter((article) => {
-      const matchesStatus = articleStatusFilter === 'all' ? true : (article.status ?? 'draft') === articleStatusFilter
-      const categoryPath = article.category_id
-        ? getCategoryPath(categories.find((item) => item.id === article.category_id) ?? {
-          id: '',
-          name: '',
-          slug: '',
-          description: null,
-          parent_id: null,
-          is_active: null,
-          display_order: null,
-          schema_json: null,
-          seo_title: null,
-          seo_description: null,
-          seo_canonical_url: null,
-          seo_robots: null,
-          seo_og_title: null,
-          seo_og_description: null,
-          seo_og_image_url: null,
-        }, categories)
-        : 'sem categoria'
-
-      const matchesSearch = normalized
-        ? [article.title, article.slug, article.seo_description ?? '', categoryPath].join(' ').toLowerCase().includes(normalized)
-        : true
-      return matchesStatus && matchesSearch
-    })
-  }, [articles, articleSearch, articleStatusFilter, categories])
-
-  async function loadLegacyData() {
-    const legacyResult = await supabase
-      .from('blog_posts')
-      .select('*')
-      .order('display_order', { ascending: true, nullsFirst: false })
-      .order('published_at', { ascending: false, nullsFirst: false })
-      .limit(300)
-
-    if (legacyResult.error) {
-      setErrorMessage(legacyResult.error.message)
-      return
-    }
-
-    const mapped = ((legacyResult.data ?? []) as LegacyBlogPostRow[]).map(mapLegacyPostToArticle)
-    setArticles(mapped)
-    setCategories([])
-    setTags([])
-    setArticleTagRows([])
-    setIsLegacyMode(true)
-    setActiveTab('articles')
-  }
-
-  async function loadCategoriesData() {
-    const categoriesResult = await supabase
-      .from(TABLES.categories)
-      .select('*')
-      .order('display_order', { ascending: true, nullsFirst: false })
-      .order('name', { ascending: true })
-
-    if (categoriesResult.error) {
-      if (categoriesResult.error.message.includes(`Could not find the table 'public.${TABLES.categories}'`)) {
-        setCategories([])
-        setIsCategoryCrudAvailable(false)
-        return
-      }
-      setErrorMessage(categoriesResult.error.message)
-      return
-    }
-
-    setIsCategoryCrudAvailable(true)
-    setCategories((categoriesResult.data ?? []) as BlogCategoryRow[])
-  }
-
-  async function loadTagsData() {
-    const [tagsResult, articleTagResult] = await Promise.all([
-      supabase
-        .from(TABLES.tags)
-        .select('*')
-        .order('name', { ascending: true }),
-      supabase
-        .from(TABLES.articleTags)
-        .select('*')
-        .order('article_id', { ascending: true })
-        .order('tag_id', { ascending: true }),
-    ])
-
-    const missingTagTable = tagsResult.error?.message.includes(`Could not find the table 'public.${TABLES.tags}'`)
-    const missingArticleTagTable = articleTagResult.error?.message.includes(`Could not find the table 'public.${TABLES.articleTags}'`)
-
-    if (missingTagTable || missingArticleTagTable) {
-      setTags([])
-      setArticleTagRows([])
-      setIsLegacyMode(true)
-      return
-    }
-
-    if (tagsResult.error) {
-      setErrorMessage(tagsResult.error.message)
-      return
-    }
-
-    if (articleTagResult.error) {
-      setErrorMessage(articleTagResult.error.message)
-      return
-    }
-
-    setTags((tagsResult.data ?? []) as BlogTagRow[])
-    setArticleTagRows((articleTagResult.data ?? []) as BlogArticleTagRow[])
-    setIsLegacyMode(false)
-  }
-
-  async function loadArticleRevisions(articleId: string) {
-    setIsLoadingArticleRevisions(true)
-    try {
-      const result = await supabase
-        .from('blog_post_revisions')
-        .select('*')
-        .eq('article_id', articleId)
-        .order('revision_number', { ascending: false })
-        .limit(12)
-
-      if (result.error) {
-        setArticleRevisions([])
-        return
-      }
-
-      setArticleRevisions((result.data ?? []) as BlogPostRevisionRow[])
-    } finally {
-      setIsLoadingArticleRevisions(false)
-    }
-  }
-
-  async function loadAllData() {
-    setIsLoading(true)
-    setErrorMessage(null)
-    try {
-      await loadLegacyData()
-      await loadCategoriesData()
-      await loadTagsData()
-      await loadBlogLayoutSettings()
-      await loadBlogStyleSettings()
-      if (selectedArticleId) {
-        await loadArticleRevisions(selectedArticleId)
-      } else {
-        setArticleRevisions([])
-      }
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  async function syncArticleTags(articleId: string, tagIds: string[]) {
-    if (isLegacyMode) {
-      return
-    }
-
-    const deleteResult = await supabase.from(TABLES.articleTags).delete().eq('article_id', articleId)
-    if (deleteResult.error) {
-      throw new Error(deleteResult.error.message)
-    }
-
-    if (tagIds.length === 0) {
-      return
-    }
-
-    const insertResult = await supabase.from(TABLES.articleTags).insert(
-      tagIds.map((tagId) => ({
-        article_id: articleId,
-        tag_id: tagId,
-      })),
-    )
-
-    if (insertResult.error) {
-      throw new Error(insertResult.error.message)
-    }
-  }
-  useEffect(() => {
-    void loadAllData()
-  }, [])
-
-  useEffect(() => {
-    if (!articleSlug) {
-      return
-    }
-
-    const target = articles.find((article) => article.slug === articleSlug)
-    if (!target) {
-      return
-    }
-
-    if (selectedArticleId === target.id && articleView === 'editor') {
-      return
-    }
-
-    populateArticleForm(target)
-  }, [articleSlug, articles, selectedArticleId, articleView])
-
-  useEffect(() => {
-    let isMounted = true
-    setIsLoadingMediaLibrary(true)
-
-    void fetchSiteAssets(120)
-      .then((assets) => {
-        if (!isMounted) {
-          return
-        }
-        const presetOptions: FontFamilyOption[] = SITE_TEXT_FONT_PRESETS.map((item) => ({ label: item.label, value: item.family }))
-        const uploadedOptions: FontFamilyOption[] = assets
-          .filter((asset) => {
-            const mime = (asset.mime_type ?? '').toLowerCase()
-            const path = asset.storage_path.toLowerCase()
-            return mime.includes('font') || path.endsWith('.woff2') || path.endsWith('.woff') || path.endsWith('.ttf') || path.endsWith('.otf')
-          })
-          .map((asset) => {
-            const originalName = typeof asset.metadata?.original_name === 'string' ? asset.metadata.original_name : ''
-            const rawName = (originalName || asset.alt || asset.storage_path.split('/').pop() || 'Fonte').trim()
-            const cleanName = rawName.replace(/\.(woff2|woff|ttf|otf)$/i, '')
-            return {
-              label: `${cleanName} (upload)`,
-              value: `'${cleanName}', sans-serif`,
-            }
-          })
-
-        const merged = [...presetOptions, ...uploadedOptions].filter((option, index, list) => (
-          list.findIndex((item) => item.value === option.value) === index
-        ))
-        setFontFamilyOptions(merged)
-        setMediaLibraryAssets(assets.filter((asset) => (asset.mime_type ?? '').startsWith('image/')))
-      })
-      .catch((error) => {
-        if (!isMounted) {
-          return
-        }
-        setErrorMessage(error instanceof Error ? error.message : 'Não foi possível carregar a biblioteca de mídia.')
-      })
-      .finally(() => {
-        if (!isMounted) {
-          return
-        }
-        setIsLoadingMediaLibrary(false)
-      })
-
-    return () => {
-      isMounted = false
-    }
-  }, [])
-
-  async function loadBlogLayoutSettings() {
-    try {
-      const entries = await fetchSiteContent('blog')
-      const layoutEntry = entries.find((entry) => entry.page_key === 'blog' && entry.entry_key === 'blog.sidebar.image')
-      const value = layoutEntry?.value
-
-      if (typeof value === 'string') {
-        setBlogSidebarBlocks([{
-          id: createSidebarBlockId(),
-          mode: 'single',
-          slides: [{ url: value, alt: '', linkUrl: '' }],
-        }])
-        return
-      }
-
-      if (value && typeof value === 'object' && !Array.isArray(value)) {
-        const record = value as Record<string, unknown>
-
-        const blocksValue = Array.isArray(record.blocks) ? record.blocks : []
-        const parsedBlocks = blocksValue
-          .map((block) => {
-            if (!block || typeof block !== 'object' || Array.isArray(block)) {
-              return null
-            }
-            const mappedBlock = block as Record<string, unknown>
-            const mappedSlides = (Array.isArray(mappedBlock.slides) ? mappedBlock.slides : [])
-              .map((slide) => {
-                if (!slide || typeof slide !== 'object' || Array.isArray(slide)) {
-                  return null
-                }
-                const image = slide as Record<string, unknown>
-                return {
-                  url: typeof image.url === 'string' ? image.url : '',
-                  alt: typeof image.alt === 'string' ? image.alt : '',
-                  linkUrl: typeof image.linkUrl === 'string' ? image.linkUrl : '',
-                } satisfies BlogSidebarImageSlide
-              })
-              .filter((slide): slide is BlogSidebarImageSlide => Boolean(slide && slide.url))
-
-            return {
-              id: createSidebarBlockId(),
-              mode: mappedBlock.mode === 'carousel' ? 'carousel' : 'single',
-              slides: mappedSlides.length > 0 ? mappedSlides : [createEmptySidebarSlide()],
-            } satisfies BlogSidebarBlock
-          })
-          .filter((block): block is BlogSidebarBlock => Boolean(block))
-
-        if (parsedBlocks.length > 0) {
-          setBlogSidebarBlocks(parsedBlocks)
-          return
-        }
-
-        const slidesValue = Array.isArray(record.slides) ? record.slides : []
-        const parsedSlides = slidesValue
-          .map((slide) => {
-            if (!slide || typeof slide !== 'object' || Array.isArray(slide)) {
-              return null
-            }
-            const image = slide as Record<string, unknown>
-            return {
-              url: typeof image.url === 'string' ? image.url : '',
-              alt: typeof image.alt === 'string' ? image.alt : '',
-              linkUrl: typeof image.linkUrl === 'string' ? image.linkUrl : '',
-            } satisfies BlogSidebarImageSlide
-          })
-          .filter((slide): slide is BlogSidebarImageSlide => Boolean(slide && slide.url))
-
-        if (parsedSlides.length > 0) {
-          setBlogSidebarBlocks([{
-            id: createSidebarBlockId(),
-            mode: record.mode === 'carousel' ? 'carousel' : 'single',
-            slides: parsedSlides,
-          }])
-          return
-        }
-
-        const legacyUrl = typeof record.url === 'string' ? record.url : ''
-        if (legacyUrl) {
-          setBlogSidebarBlocks([{
-            id: createSidebarBlockId(),
-            mode: 'single',
-            slides: [{
-              url: legacyUrl,
-              alt: typeof record.alt === 'string' ? record.alt : '',
-              linkUrl: typeof record.linkUrl === 'string' ? record.linkUrl : '',
-            }],
-          }])
-          return
-        }
-
-        setBlogSidebarBlocks([createEmptySidebarBlock()])
-        return
-      }
-
-      setBlogSidebarBlocks([createEmptySidebarBlock()])
-    } catch {
-      setBlogSidebarBlocks([createEmptySidebarBlock()])
-    }
-  }
-
-  async function loadBlogStyleSettings() {
-    try {
-      const entries = await fetchSiteContent('blog')
-      const styleEntry = entries.find((entry) => entry.page_key === 'blog' && entry.entry_key === 'blog.style.settings')
-      setBlogStyleSettings(normalizeBlogStyleSettings(styleEntry?.value))
-    } catch {
-      setBlogStyleSettings(createDefaultBlogStyleSettings())
-    }
-  }
-
-  async function handleUploadBlogSidebarImage(file: File | null, blockIndex: number, slideIndex: number) {
-    if (!file) {
-      return
-    }
-
-    setIsUploadingLayoutImage(true)
-    setErrorMessage(null)
-    setSuccessMessage(null)
-    try {
-      const uploaded = await uploadSiteAsset(file, {
-        alt: file.name,
-        pageKey: 'blog',
-        entryKey: 'blog.sidebar.image',
-      })
-      if (uploaded.public_url) {
-        const uploadedUrl = uploaded.public_url ?? ''
-        setBlogSidebarBlocks((currentBlocks) => currentBlocks.map((block, currentBlockIndex) => {
-          if (currentBlockIndex !== blockIndex) {
-            return block
-          }
-          return {
-            ...block,
-            slides: block.slides.map((slide, currentSlideIndex) => (
-              currentSlideIndex === slideIndex
-                ? { ...slide, url: uploadedUrl }
-                : slide
-            )),
-          }
-        }))
-      }
-      if (uploaded.alt) {
-        const uploadedAlt = uploaded.alt ?? ''
-        setBlogSidebarBlocks((currentBlocks) => currentBlocks.map((block, currentBlockIndex) => {
-          if (currentBlockIndex !== blockIndex) {
-            return block
-          }
-          return {
-            ...block,
-            slides: block.slides.map((slide, currentSlideIndex) => (
-              currentSlideIndex === slideIndex
-                ? { ...slide, alt: uploadedAlt }
-                : slide
-            )),
-          }
-        }))
-      }
-      setSuccessMessage('Imagem enviada com sucesso. Clique em "Salvar configuração lateral" para publicar.')
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Não foi possível enviar a imagem.'
-      setErrorMessage(message)
-    } finally {
-      setIsUploadingLayoutImage(false)
-    }
-  }
-
-  async function handleUploadArticleCoverImage(file: File | null) {
-    if (!file) {
-      return
-    }
-
-    setIsUploadingCoverImage(true)
-    setErrorMessage(null)
-    setSuccessMessage(null)
-    try {
-      const uploaded = await uploadSiteAsset(file, {
-        alt: articleForm.title.trim() || file.name,
-        pageKey: 'blog',
-        entryKey: 'article.cover_image_url',
-      })
-      if (uploaded.public_url) {
-        setArticleForm((current) => ({ ...current, coverImageUrl: uploaded.public_url ?? current.coverImageUrl }))
-      }
-      setMediaLibraryAssets((current) => [uploaded, ...current.filter((asset) => asset.id !== uploaded.id)])
-      setSuccessMessage('Imagem de capa enviada com sucesso.')
-    } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'Não foi possível enviar a imagem de capa.')
-    } finally {
-      setIsUploadingCoverImage(false)
-    }
-  }
-
-  async function handleUploadArticleCardImage(file: File | null) {
-    if (!file) {
-      return
-    }
-
-    setIsUploadingCoverImage(true)
-    setErrorMessage(null)
-    setSuccessMessage(null)
-    try {
-      const uploaded = await uploadSiteAsset(file, {
-        alt: articleForm.title.trim() || file.name,
-        pageKey: 'blog',
-        entryKey: 'article.card_image_url',
-      })
-      if (uploaded.public_url) {
-        setArticleForm((current) => ({ ...current, cardImageUrl: uploaded.public_url ?? current.cardImageUrl }))
-      }
-      setMediaLibraryAssets((current) => [uploaded, ...current.filter((asset) => asset.id !== uploaded.id)])
-      setSuccessMessage('Imagem do card enviada com sucesso.')
-    } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'Não foi possível enviar a imagem do card.')
-    } finally {
-      setIsUploadingCoverImage(false)
-    }
-  }
-
-  function handleApplyImageFromLibrary(target: 'cover' | 'card') {
-    if (!selectedMediaAssetId) {
-      setErrorMessage('Selecione uma imagem da biblioteca antes de aplicar.')
-      return
-    }
-
-    const selectedAsset = mediaLibraryAssets.find((asset) => asset.id === selectedMediaAssetId)
-    if (!selectedAsset || !selectedAsset.public_url) {
-      setErrorMessage('Não foi possível aplicar a imagem selecionada.')
-      return
-    }
-
-    if (target === 'cover') {
-      setArticleForm((current) => ({ ...current, coverImageUrl: selectedAsset.public_url ?? current.coverImageUrl }))
-      setSuccessMessage('Imagem de capa aplicada da biblioteca de mídia.')
-    } else {
-      setArticleForm((current) => ({ ...current, cardImageUrl: selectedAsset.public_url ?? current.cardImageUrl }))
-      setSuccessMessage('Imagem do card aplicada da biblioteca de mídia.')
-    }
-    setIsMediaLibraryOpen(false)
-  }
-
-  async function handleSaveBlogLayoutImage() {
-    setIsSavingLayout(true)
-    setErrorMessage(null)
-    setSuccessMessage(null)
-    try {
-      await saveSiteContentEntry({
-        pageKey: 'blog',
-        entryKey: 'blog.sidebar.image',
-        entryType: 'image',
-        value: {
-          blocks: blogSidebarBlocks.map((block) => ({
-            mode: block.mode,
-            slides: block.slides.map((slide) => ({
-              url: slide.url.trim(),
-              alt: slide.alt.trim(),
-              linkUrl: slide.linkUrl.trim(),
-            })).filter((slide) => slide.url),
-          })).filter((block) => block.slides.length > 0),
-        },
-        schema: {
-          kind: 'blog-sidebar-stack',
-        },
-      })
-      setSuccessMessage('Configurações da lateral do blog salvas com sucesso.')
-    } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'Não foi possível salvar a imagem lateral.')
-    } finally {
-      setIsSavingLayout(false)
-    }
-  }
-
-  function updateTagStyle(tag: keyof BlogStyleSettings['content'], field: keyof BlogTagStyle, value: string) {
-    setBlogStyleSettings((current) => ({
-      ...current,
-      content: {
-        ...current.content,
-        [tag]: {
-          ...current.content[tag],
-          [field]: value,
-        },
-      },
-    }))
-  }
-
-  function updateArticleTitleStyle(field: keyof BlogTagStyle, value: string) {
-    setBlogStyleSettings((current) => ({
-      ...current,
-      articleTitle: {
-        ...current.articleTitle,
-        [field]: value,
-      },
-    }))
-  }
-
-  function updateCardTextStyle(tag: keyof BlogStyleSettings['card']['text'], field: keyof BlogTagStyle, value: string) {
-    setBlogStyleSettings((current) => ({
-      ...current,
-      card: {
-        ...current.card,
-        text: {
-          ...current.card.text,
-          [tag]: {
-            ...current.card.text[tag],
-            [field]: value,
-          },
-        },
-      },
-    }))
-  }
-
-  async function handleSaveBlogStyleSettings() {
-    setIsSavingStyleSettings(true)
-    setErrorMessage(null)
-    setSuccessMessage(null)
-    try {
-      await saveSiteContentEntry({
-        pageKey: 'blog',
-        entryKey: 'blog.style.settings',
-        entryType: 'json',
-        value: blogStyleSettings,
-        schema: {
-          kind: 'blog-style-settings',
-        },
-      })
-      setSuccessMessage('Padrões de tipografia e cards do blog salvos com sucesso.')
-    } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'Não foi possível salvar os padrões do blog.')
-    } finally {
-      setIsSavingStyleSettings(false)
-    }
-  }
-
-  function resetArticleForm() {
-    setSelectedArticleId(null)
-    setIsArticleSlugTouched(false)
-    setIsArticleTagsExpanded(false)
-    setIsArticleSeoExpanded(false)
-    setArticleForm(DEFAULT_ARTICLE_FORM)
-    setShowInlineCategoryForm(false)
-    setInlineCategoryForm(DEFAULT_INLINE_CATEGORY_FORM)
-    setArticleSuccessMessage(null)
-    setArticleRevisions([])
-  }
-
-  function syncArticleEditorUrl(slug?: string) {
-    const params = new URLSearchParams(searchParams)
-    params.set('tab', 'articles')
-    const query = params.toString()
-    const path = slug ? `/admin/blog/${slug}` : '/admin/blog'
-    navigate(`${path}${query ? `?${query}` : ''}`)
-  }
-
-  function handleCreateArticle() {
-    resetArticleForm()
-    setArticleView('editor')
-    syncArticleEditorUrl()
-  }
-
-  function handleOpenArticlePreview() {
-    if (!articleForm.slug) {
-      return
-    }
-
-    const previewKey = selectedArticleId ? `id:${selectedArticleId}` : `slug:${articleForm.slug}`
-    const previewPayload = {
-      slug: articleForm.slug,
-      title: articleForm.title.trim() || 'Rascunho sem título',
-      category: 'Sem categoria',
-      seoDescription: articleForm.seo_description.trim(),
-      image: articleForm.coverImageUrl.trim() || '/images/genflix/home/featured-2.jpg',
-      readTime: `${Math.max(1, articleForm.readingTimeMinutes)} min`,
-      author: user?.email ?? 'Admin GenFlix',
-      publishedAt: articleForm.publishedAt || null,
-      contentHtml: articleForm.contentHtml,
-      status: articleForm.status,
-      savedAt: Date.now(),
-    }
-
-    try {
-      localStorage.setItem(`admin_blog_preview:${previewKey}`, JSON.stringify(previewPayload))
-      localStorage.setItem(`admin_blog_preview:slug:${articleForm.slug}`, JSON.stringify(previewPayload))
-    } catch {
-      // noop
-    }
-
-    const params = new URLSearchParams({
-      preview: 'admin',
-      previewKey,
-    })
-
-    window.open(`/blog/${articleForm.slug}?${params.toString()}`, '_blank', 'noopener,noreferrer')
-  }
-
-  function handleOpenArticleFromList(slug: string) {
-    if (!slug) {
-      return
-    }
-    window.open(`/blog/${slug}`, '_blank', 'noopener,noreferrer')
-  }
-
-  function resetCategoryForm() {
-    setSelectedCategoryId(null)
-    setIsCategorySlugTouched(false)
-    setCategoryForm(DEFAULT_CATEGORY_FORM)
-  }
-
-  function resetTagForm() {
-    setSelectedTagId(null)
-    setIsTagSlugTouched(false)
-    setTagForm(DEFAULT_TAG_FORM)
-  }
-
-  function populateArticleForm(article: BlogArticleRow) {
-    setSelectedArticleId(article.id)
-    setIsArticleSlugTouched(true)
-    setIsArticleTagsExpanded(false)
-    setIsArticleSeoExpanded(false)
-    setArticleForm({
-      title: article.title,
-      slug: article.slug,
-      coverImageUrl: article.cover_image_url ?? '',
-      cardImageUrl: article.card_image_url ?? article.cover_image_url ?? '',
-      status: article.status ?? 'draft',
-      publishedAt: toDateTimeLocal(article.published_at),
-      scheduledPublishAt: toDateTimeLocal(article.scheduled_publish_at),
-      featured: Boolean(article.featured),
-      categoryId: article.category_id ?? '__none__',
-      tagIds: articleTagMap.get(article.id) ?? [],
-      contentHtml: article.content_html ?? '',
-      focusKeyword: article.focus_keyword ?? '',
-      readingTimeMinutes: article.reading_time_minutes ?? calculateReadingTimeMinutes(article.content_html ?? ''),
-      seo_title: article.seo_title ?? '',
-      seo_description: article.seo_description ?? '',
-      seo_canonical_url: article.seo_canonical_url ?? '',
-      seo_robots: article.seo_robots ?? 'index,follow',
-      seo_og_title: article.seo_og_title ?? '',
-      seo_og_description: article.seo_og_description ?? '',
-      seo_og_image_url: article.seo_og_image_url ?? '',
-    })
-    setSuccessMessage(null)
-    setErrorMessage(null)
-    setArticleSuccessMessage(null)
-    setActiveTab('articles')
-    setArticleView('editor')
-    void loadArticleRevisions(article.id)
-    syncArticleEditorUrl(article.slug)
-  }
-
-  function populateCategoryForm(category: BlogCategoryRow) {
-    setSelectedCategoryId(category.id)
-    setIsCategorySlugTouched(true)
-    setCategoryForm({
-      name: category.name,
-      slug: category.slug,
-      description: category.description ?? '',
-      parentId: category.parent_id ?? '__none__',
-      isActive: category.is_active ?? true,
-      displayOrder: category.display_order == null ? '' : String(category.display_order),
-      schemaJson: category.schema_json ?? '',
-      seo_title: category.seo_title ?? '',
-      seo_description: category.seo_description ?? '',
-      seo_canonical_url: category.seo_canonical_url ?? '',
-      seo_robots: category.seo_robots ?? 'index,follow',
-      seo_og_title: category.seo_og_title ?? '',
-      seo_og_description: category.seo_og_description ?? '',
-      seo_og_image_url: category.seo_og_image_url ?? '',
-    })
-  }
-
-  function populateTagForm(tag: BlogTagRow) {
-    setSelectedTagId(tag.id)
-    setIsTagSlugTouched(true)
-    setTagForm({
-      name: tag.name,
-      slug: tag.slug,
-      description: tag.description ?? '',
-      seo_title: tag.seo_title ?? '',
-      seo_description: tag.seo_description ?? '',
-      seo_canonical_url: tag.seo_canonical_url ?? '',
-      seo_robots: tag.seo_robots ?? 'index,follow',
-      seo_og_title: tag.seo_og_title ?? '',
-      seo_og_description: tag.seo_og_description ?? '',
-      seo_og_image_url: tag.seo_og_image_url ?? '',
-    })
-  }
-
-  function restoreArticleFromRevision(revision: BlogPostRevisionRow) {
-    const snapshot = revision.snapshot
-    if (!snapshot) {
-      setErrorMessage('Esta revisão não possui snapshot para restaurar.')
-      return
-    }
-
-    setSelectedArticleId(revision.article_id)
-    setIsArticleSlugTouched(true)
-    setArticleForm({
-      title: snapshot.title ?? '',
-      slug: snapshot.slug ?? '',
-      coverImageUrl: snapshot.cover_image_url ?? '',
-      cardImageUrl: snapshot.card_image_url ?? snapshot.cover_image_url ?? '',
-      status: snapshot.status ?? 'draft',
-      publishedAt: toDateTimeLocal(snapshot.published_at),
-      scheduledPublishAt: toDateTimeLocal(snapshot.scheduled_publish_at),
-      featured: Boolean(snapshot.featured),
-      categoryId: snapshot.category_id ?? '__none__',
-      tagIds: [...(snapshot.tag_ids ?? [])],
-      contentHtml: snapshot.content_html ?? '',
-      focusKeyword: snapshot.focus_keyword ?? '',
-      readingTimeMinutes: snapshot.reading_time_minutes ?? calculateReadingTimeMinutes(snapshot.content_html ?? ''),
-      seo_title: snapshot.seo_title ?? '',
-      seo_description: snapshot.seo_description ?? '',
-      seo_canonical_url: snapshot.seo_canonical_url ?? '',
-      seo_robots: snapshot.seo_robots ?? 'index,follow',
-      seo_og_title: snapshot.seo_og_title ?? '',
-      seo_og_description: snapshot.seo_og_description ?? '',
-      seo_og_image_url: snapshot.seo_og_image_url ?? '',
-    })
-
-    setSuccessMessage(`Revisão #${revision.revision_number} carregada no editor. Revise e salve para aplicar a restauração.`)
-    setErrorMessage(null)
-    setArticleSuccessMessage(null)
-    setArticleView('editor')
-  }
-
-  function openArticleActionModal(modal: ArticleActionModalState) {
-    setArticleActionModal(modal)
-  }
-
-  async function saveArticleWithStatus(nextStatus?: ArticleStatus | null) {
-    setErrorMessage(null)
-    setSuccessMessage(null)
-    setArticleSuccessMessage(null)
-    setArticleActionModal(null)
-
-    const title = articleForm.title.trim()
-    const slug = articleForm.slug.trim()
-    const cleanedHtml = removeInternalH1(articleForm.contentHtml)
-    const plainText = stripHtml(cleanedHtml)
-    const readingTime = calculateReadingTimeMinutes(cleanedHtml)
-    const effectiveStatus = nextStatus ?? articleForm.status
-
-    if (!title || !slug) {
-      setErrorMessage('Informe título e slug do artigo.')
-      return
-    }
-
-    if (effectiveStatus === 'scheduled' && !articleForm.scheduledPublishAt) {
-      setErrorMessage('Para agendar, informe a data/hora de agendamento.')
-      return
-    }
-
-    setIsSavingArticle(true)
-
-    const legacyPayload = {
-      title,
-      slug,
-      category: articleForm.categoryId === '__none__' ? null : articleForm.categoryId,
-      seo_description: articleForm.seo_description.trim() || null,
-      excerpt: articleForm.seo_description.trim() || null,
-      image_url: articleForm.coverImageUrl.trim() || null,
-      card_image_url: articleForm.cardImageUrl.trim() || articleForm.coverImageUrl.trim() || null,
-      read_time: `${readingTime} min`,
-      author: user?.id ?? null,
-      published_at: effectiveStatus === 'published'
-        ? (articleForm.publishedAt ? new Date(articleForm.publishedAt).toISOString() : new Date().toISOString())
-        : null,
-      content_html: cleanedHtml,
-      content: plainText
-        .split('. ')
+    const words = base
+        .toLowerCase()
+        .split(/[^\p{L}\p{N}]+/u)
         .map((entry) => entry.trim())
-        .filter(Boolean),
-      featured: articleForm.featured,
-      status: effectiveStatus,
+        .filter((entry) => entry.length > 3);
+    const stopWords = new Set(['para', 'como', 'com', 'sem', 'uma', 'das', 'dos', 'que', 'sobre', 'pela', 'pelo', 'mais']);
+    const filtered = words.filter((entry) => !stopWords.has(entry));
+    if (filtered.length >= 2) {
+        return `${filtered[0]} ${filtered[1]}`;
     }
-
-    const legacyResult = await persistLegacyBlogPost(legacyPayload, selectedArticleId)
-
-    if (legacyResult.error) {
-      setErrorMessage(legacyResult.error.message)
-      openArticleActionModal({
-        title: 'Não foi possível salvar o artigo',
-        message: legacyResult.error.message,
-        tone: 'error',
-      })
-      setIsSavingArticle(false)
-      return
+    return filtered[0] ?? '';
+}
+function summarizeRevisionSnapshot(snapshot: BlogArticleRevisionSnapshot | null) {
+    if (!snapshot) {
+        return 'Sem snapshot disponível.';
     }
-
-    const savedLegacy = mapLegacyPostToArticle(legacyResult.data as LegacyBlogPostRow)
-    const savedArticleId = savedLegacy.id
-    const revisionSnapshot: BlogArticleRevisionSnapshot = {
-      title,
-      slug,
-      content_html: cleanedHtml,
-      cover_image_url: articleForm.coverImageUrl.trim() || null,
-      card_image_url: articleForm.cardImageUrl.trim() || articleForm.coverImageUrl.trim() || null,
-      status: effectiveStatus,
-      featured: articleForm.featured,
-      category_id: articleForm.categoryId === '__none__' ? null : articleForm.categoryId,
-      tag_ids: [...articleForm.tagIds],
-      published_at: effectiveStatus === 'published'
-        ? (articleForm.publishedAt ? new Date(articleForm.publishedAt).toISOString() : new Date().toISOString())
-        : null,
-      scheduled_publish_at: articleForm.scheduledPublishAt
-        ? new Date(articleForm.scheduledPublishAt).toISOString()
-        : null,
-      focus_keyword: articleForm.focusKeyword.trim(),
-      reading_time_minutes: readingTime,
-      seo_title: articleForm.seo_title.trim(),
-      seo_description: articleForm.seo_description.trim(),
-      seo_canonical_url: articleForm.seo_canonical_url.trim(),
-      seo_robots: articleForm.seo_robots.trim() || 'index,follow',
-      seo_og_title: articleForm.seo_og_title.trim(),
-      seo_og_description: articleForm.seo_og_description.trim(),
-      seo_og_image_url: articleForm.seo_og_image_url.trim(),
-      plain_text_length: plainText.length,
-      word_count: plainText ? plainText.split(/\s+/).filter(Boolean).length : 0,
+    const pieces = [
+        snapshot.title?.trim() || 'Sem título',
+        statusLabel(snapshot.status),
+        snapshot.tag_ids.length ? `${snapshot.tag_ids.length} tag(s)` : 'Sem tags',
+        `${snapshot.word_count} palavra(s)`,
+    ];
+    return pieces.join(' · ');
+}
+function toHexColor(value: string, fallback = '#000000') {
+    const trimmed = value.trim();
+    if (/^#[0-9a-fA-F]{6}$/.test(trimmed)) {
+        return trimmed;
     }
-    let tagsSyncError: string | null = null
-    let revisionHistoryError: string | null = null
-    try {
-      const revisionResult = await supabase.from('blog_post_revisions').insert({
-        article_id: savedArticleId,
-        snapshot: revisionSnapshot,
-        changed_by: user?.id ?? null,
-        changed_by_name: profile?.full_name?.trim() || user?.email?.trim() || null,
-        changed_by_email: user?.email ?? profile?.email ?? null,
-        change_type: selectedArticleId ? 'update' : 'create',
-      })
-
-      if (revisionResult.error) {
-        revisionHistoryError = revisionResult.error.message
-      }
-
-      await syncArticleTags(savedArticleId, articleForm.tagIds)
-    } catch (error) {
-      tagsSyncError = error instanceof Error ? error.message : 'Não foi possível salvar as tags do artigo.'
+    if (/^#[0-9a-fA-F]{3}$/.test(trimmed)) {
+        const hex = trimmed.slice(1);
+        return `#${hex[0]}${hex[0]}${hex[1]}${hex[1]}${hex[2]}${hex[2]}`;
     }
-
-    await loadAllData()
-    populateArticleForm(savedLegacy)
-    setArticleForm((current) => ({
-      ...current,
-      status: effectiveStatus,
-      contentHtml: cleanedHtml,
-      cardImageUrl: revisionSnapshot.card_image_url ?? '',
-      readingTimeMinutes: readingTime,
-      focusKeyword: revisionSnapshot.focus_keyword,
-      seo_title: revisionSnapshot.seo_title,
-      seo_description: revisionSnapshot.seo_description,
-      seo_canonical_url: revisionSnapshot.seo_canonical_url,
-      seo_robots: revisionSnapshot.seo_robots,
-      seo_og_title: revisionSnapshot.seo_og_title,
-      seo_og_description: revisionSnapshot.seo_og_description,
-      seo_og_image_url: revisionSnapshot.seo_og_image_url,
-    }))
-    if (tagsSyncError) {
-      setErrorMessage(tagsSyncError)
-      setArticleSuccessMessage('Artigo salvo, mas houve um problema ao sincronizar as tags.')
-      openArticleActionModal({
-        title: effectiveStatus === 'published' ? 'Artigo publicado' : effectiveStatus === 'scheduled' ? 'Artigo agendado' : 'Artigo salvo',
-        message: `O artigo foi ${effectiveStatus === 'published' ? 'publicado' : effectiveStatus === 'scheduled' ? 'agendado' : 'salvo'}, mas houve observações na sincronização das tags. ${tagsSyncError}`,
-        tone: 'warning',
-      })
-    } else if (revisionHistoryError) {
-      setErrorMessage(revisionHistoryError)
-      setArticleSuccessMessage('Artigo salvo, mas houve um problema ao registrar o histórico de revisões.')
-      openArticleActionModal({
-        title: effectiveStatus === 'published' ? 'Artigo publicado' : effectiveStatus === 'scheduled' ? 'Artigo agendado' : 'Artigo salvo',
-        message: `O artigo foi ${effectiveStatus === 'published' ? 'publicado' : effectiveStatus === 'scheduled' ? 'agendado' : 'salvo'}, mas houve observações no histórico de revisões. ${revisionHistoryError}`,
-        tone: 'warning',
-      })
-    } else {
-      const actionVerb = effectiveStatus === 'published' ? 'publicado' : effectiveStatus === 'scheduled' ? 'agendado' : 'salvo'
-      setArticleSuccessMessage(`Artigo ${actionVerb} com sucesso.`)
-      openArticleActionModal({
-        title: `Artigo ${actionVerb}`,
-        message: `O artigo foi ${actionVerb} com sucesso.`,
-        tone: 'success',
-      })
+    return fallback;
+}
+function getBlogTagMeaning(tagKey: 'p' | 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6' | 'a' | 'li') {
+    if (tagKey === 'p') {
+        return 'Paragrafo: texto principal do artigo.';
     }
-    setIsSavingArticle(false)
-  }
-
-  async function handleDeleteArticle(articleToDelete?: BlogArticleRow) {
-    const target = articleToDelete ?? articles.find((item) => item.id === selectedArticleId)
-    if (!target) {
-      return
+    if (tagKey === 'a') {
+        return 'Link: textos clicaveis dentro do artigo.';
     }
-
-    const shouldDelete = window.confirm(`Deseja excluir o artigo "${target.title}"?`)
-    if (!shouldDelete) {
-      return
+    if (tagKey === 'li') {
+        return 'Lista: itens de listas com marcadores ou numeradas.';
     }
-
-    setErrorMessage(null)
-    setSuccessMessage(null)
-
-    if (!isLegacyMode) {
-      const deleteLinks = await supabase.from(TABLES.articleTags).delete().eq('article_id', target.id)
-      if (deleteLinks.error) {
-        setErrorMessage(deleteLinks.error.message)
-        return
-      }
-    }
-
-    const deleteLegacy = await supabase.from('blog_posts').delete().eq('id', target.id)
-    if (deleteLegacy.error) {
-      setErrorMessage(deleteLegacy.error.message)
-      return
-    }
-
-    await loadAllData()
-    if (!selectedArticleId || selectedArticleId === target.id) {
-      resetArticleForm()
-    }
-    setArticleView('list')
-    syncArticleEditorUrl()
-    setSuccessMessage('Artigo excluído com sucesso.')
-  }
-
-  async function handleSaveCategory(inline = false) {
-    const form = inline ? inlineCategoryForm : categoryForm
-    const selectedId = inline ? null : selectedCategoryId
-
-    const name = form.name.trim()
-    const slug = form.slug.trim()
-    if (!name || !slug) {
-      setErrorMessage('Informe nome e slug da categoria.')
-      return
-    }
-
-    setIsSavingCategory(true)
-    setErrorMessage(null)
-    setSuccessMessage(null)
-
-    const payload = {
-      name,
-      slug,
-      description: form.description.trim() || null,
-      parent_id: form.parentId === '__none__' ? null : form.parentId,
-      is_active: form.isActive,
-      display_order: form.displayOrder.trim() ? Number(form.displayOrder) : 0,
-      schema_json: form.schemaJson.trim() || null,
-      seo_title: form.seo_title.trim() || null,
-      seo_description: form.seo_description.trim() || null,
-      seo_canonical_url: form.seo_canonical_url.trim() || null,
-      seo_robots: form.seo_robots.trim() || 'index,follow',
-      seo_og_title: form.seo_og_title.trim() || null,
-      seo_og_description: form.seo_og_description.trim() || null,
-      seo_og_image_url: form.seo_og_image_url.trim() || null,
-    }
-
-    if (payload.display_order != null && Number.isNaN(payload.display_order)) {
-      setErrorMessage('Ordem da categoria inválida.')
-      setIsSavingCategory(false)
-      return
-    }
-
-    const result = selectedId
-      ? await supabase.from(TABLES.categories).update(payload).eq('id', selectedId).select('*').single()
-      : await supabase.from(TABLES.categories).insert(payload).select('*').single()
-
-    if (result.error) {
-      setErrorMessage(result.error.message)
-      setIsSavingCategory(false)
-      return
-    }
-
-    const saved = result.data as BlogCategoryRow
-    await loadAllData()
-
-    if (inline) {
-      setShowInlineCategoryForm(false)
-      setInlineCategoryForm(DEFAULT_INLINE_CATEGORY_FORM)
-      setArticleForm((current) => ({ ...current, categoryId: saved.id }))
-      setSuccessMessage('Categoria/subcategoria criada e vinculada ao artigo.')
-    } else {
-      setSelectedCategoryId(saved.id)
-      populateCategoryForm(saved)
-      setSuccessMessage('Categoria salva com sucesso.')
-    }
-
-    setIsSavingCategory(false)
-  }
-
-  async function handleDeleteCategory() {
-    if (!selectedCategoryId) {
-      return
-    }
-
-    const selected = categories.find((item) => item.id === selectedCategoryId)
-    if (!selected) {
-      return
-    }
-
-    const shouldDelete = window.confirm(`Deseja excluir a categoria "${selected.name}"?`)
-    if (!shouldDelete) {
-      return
-    }
-
-    const result = await supabase.from(TABLES.categories).delete().eq('id', selectedCategoryId)
-    if (result.error) {
-      setErrorMessage(result.error.message)
-      return
-    }
-
-    await loadAllData()
-    resetCategoryForm()
-    setSuccessMessage('Categoria excluída com sucesso.')
-  }
-
-  async function handleSaveTag() {
-    const name = tagForm.name.trim()
-    const slug = tagForm.slug.trim()
-
-    if (!name || !slug) {
-      setErrorMessage('Informe nome e slug da tag.')
-      return
-    }
-
-    setIsSavingTag(true)
-    setErrorMessage(null)
-    setSuccessMessage(null)
-
-    const payload = {
-      name,
-      slug,
-      description: tagForm.description.trim() || null,
-    }
-
-    const result = selectedTagId
-      ? await supabase.from(TABLES.tags).update(payload).eq('id', selectedTagId).select('*').single()
-      : await supabase.from(TABLES.tags).insert(payload).select('*').single()
-
-    if (result.error) {
-      setErrorMessage(result.error.message)
-      setIsSavingTag(false)
-      return
-    }
-
-    const saved = result.data as BlogTagRow
-    await loadAllData()
-    setSelectedTagId(saved.id)
-    populateTagForm(saved)
-    setSuccessMessage('Tag salva com sucesso.')
-    setIsSavingTag(false)
-  }
-
-  async function handleDeleteTag() {
-    if (!selectedTagId) {
-      return
-    }
-
-    const selected = tags.find((item) => item.id === selectedTagId)
-    if (!selected) {
-      return
-    }
-
-    const shouldDelete = window.confirm(`Deseja excluir a tag "${selected.name}"?`)
-    if (!shouldDelete) {
-      return
-    }
-
-    const deleteLinks = await supabase.from(TABLES.articleTags).delete().eq('tag_id', selectedTagId)
-    if (deleteLinks.error) {
-      setErrorMessage(deleteLinks.error.message)
-      return
-    }
-
-    const deleteTag = await supabase.from(TABLES.tags).delete().eq('id', selectedTagId)
-    if (deleteTag.error) {
-      setErrorMessage(deleteTag.error.message)
-      return
-    }
-
-    await loadAllData()
-    resetTagForm()
-    setSuccessMessage('Tag excluída sem quebrar relacionamentos de artigos.')
-  }
-
-  async function handleFillTagsWithAI() {
-    setErrorMessage(null)
-    setSuccessMessage(null)
-
-    try {
-      const response = await fetchBlogTagSuggestions(buildBlogAssistArticleInput(articleForm, tags))
-      setArticleForm((current) => ({
-        ...current,
-        tagIds: Array.from(new Set([...current.tagIds, ...response.selectedTagIds])),
-      }))
-      setSuccessMessage(
-        response.selectedTagIds.length > 0
-          ? `Tags preenchidas com ${response.provider === 'heuristic' ? 'heurística local' : 'IA'} com sucesso.`
-          : 'Nenhuma tag existente foi sugerida para este artigo.',
-      )
-    } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'Não foi possível preencher as tags com IA.')
-    }
-  }
-
-  async function handleSuggestAndCreateTags() {
-    setErrorMessage(null)
-    setSuccessMessage(null)
-
-    try {
-      const response = await fetchBlogTagCreationSuggestions(buildBlogAssistArticleInput(articleForm, tags))
-      const existingSlugs = new Set(tags.map((tag) => tag.slug.toLowerCase()))
-      const rowsToInsert = response.suggestedTags
-        .filter((tag) => !existingSlugs.has(tag.slug.toLowerCase()))
-        .map((tag) => ({
-          name: tag.name,
-          slug: tag.slug,
-          description: tag.description,
-          seo_title: tag.name,
-          seo_description: tag.description,
-          seo_canonical_url: null,
-          seo_robots: 'index,follow',
-          seo_og_title: tag.name,
-          seo_og_description: tag.description,
-          seo_og_image_url: null,
-        }))
-
-      const createdTagIds: string[] = []
-      if (rowsToInsert.length > 0) {
-        const insertResult = await supabase.from(TABLES.tags).insert(rowsToInsert).select('*')
-        if (insertResult.error) {
-          throw new Error(insertResult.error.message)
+    return null;
+}
+type FontFamilyOption = {
+    label: string;
+    value: string;
+};
+const FONT_SIZE_OPTIONS = ['12px', '14px', '16px', '18px', '20px', '24px', '28px', '32px', '36px', '40px'];
+const FONT_WEIGHT_OPTIONS = ['300', '400', '500', '600', '700', '800', '900'];
+const LINE_HEIGHT_OPTIONS = ['1', '1.1', '1.2', '1.3', '1.4', '1.5', '1.6', '1.8', '2'];
+const LETTER_SPACING_OPTIONS = ['-0.04em', '-0.02em', '0', '0.01em', '0.02em', '0.04em', '0.08em'];
+function isMissingLegacyColumnError(message: string, column: string) {
+    return message.includes(`Could not find the '${column}' column`);
+}
+function isSingleObjectCoercionError(message: string) {
+    return message.includes('Cannot coerce the result to a single JSON object');
+}
+async function persistLegacyBlogPost(payload: Record<string, unknown>, selectedArticleId: string | null) {
+    const runPersist = async (payloadToSave: Record<string, unknown>) => {
+        if (selectedArticleId) {
+            const updateResult = await supabase
+                .from('blog_posts')
+                .update(payloadToSave)
+                .eq('id', selectedArticleId)
+                .select('*');
+            if (updateResult.error) {
+                if (isSingleObjectCoercionError(updateResult.error.message)) {
+                    const fetchById = await supabase.from('blog_posts').select('*').eq('id', selectedArticleId).limit(1);
+                    if (!fetchById.error && Array.isArray(fetchById.data) && fetchById.data[0]) {
+                        return { data: fetchById.data[0], error: null };
+                    }
+                }
+                return updateResult;
+            }
+            if (Array.isArray(updateResult.data) && updateResult.data[0]) {
+                return { data: updateResult.data[0], error: null };
+            }
+            const fetchById = await supabase.from('blog_posts').select('*').eq('id', selectedArticleId).limit(1);
+            if (!fetchById.error && Array.isArray(fetchById.data) && fetchById.data[0]) {
+                return { data: fetchById.data[0], error: null };
+            }
+            return fetchById;
         }
-
-        createdTagIds.push(...((insertResult.data ?? []) as BlogTagRow[]).map((tag) => tag.id))
-      }
-
-      await loadAllData()
-      setArticleForm((current) => ({
-        ...current,
-        tagIds: Array.from(new Set([...current.tagIds, ...response.selectedTagIds, ...createdTagIds])),
-      }))
-
-      setSuccessMessage(
-        rowsToInsert.length > 0
-          ? `Foram sugeridas e criadas ${rowsToInsert.length} novas tags com ajuda da IA.`
-          : 'A IA analisou o artigo, mas não havia novas tags elegíveis para criar.',
-      )
-    } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'Não foi possível sugerir novas tags com IA.')
+        const insertResult = await supabase.from('blog_posts').insert(payloadToSave).select('*');
+        if (insertResult.error) {
+            return insertResult;
+        }
+        if (Array.isArray(insertResult.data) && insertResult.data[0]) {
+            return { data: insertResult.data[0], error: null };
+        }
+        return insertResult;
+    };
+    const firstAttempt = await runPersist(payload);
+    if (!firstAttempt.error) {
+        return firstAttempt;
     }
-  }
-
-  async function handleFillSeoWithAI() {
-    setErrorMessage(null)
-    setSuccessMessage(null)
-    setSeoAiModal({
-      stage: 'processing',
-      message: 'Processando dados...',
-    })
-
-    try {
-      const response = await fetchBlogSeoDraft(buildBlogAssistArticleInput(articleForm, tags))
-      const { focus_keyword, ...seoFields } = response.seo
-      setArticleForm((current) => ({
-        ...current,
-        ...seoFields,
-        focusKeyword: focus_keyword,
-      }))
-      setSeoAiModal({
-        stage: 'success',
-        message: 'Campos preenchidos com sucesso.',
-      })
-      setSuccessMessage('Campos de SEO preenchidos com IA usando o conteúdo do artigo como contexto.')
-    } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'Não foi possível preencher o SEO com IA.')
+    const removableColumns = ["se??o_description", 'excerpt', 'card_image_url'];
+    for (const column of removableColumns) {
+        if (!isMissingLegacyColumnError(firstAttempt.error.message, column)) {
+            continue;
+        }
+        const { [column]: _removed, ...payloadWithoutColumn } = payload;
+        void _removed;
+        return await runPersist(payloadWithoutColumn);
     }
-  }
-  function renderSeoFields(
-    value: SeoFields,
-    onChange: (next: SeoFields) => void,
-    labelPrefix: string,
-    focusKeyword?: string,
-  ) {
-    const seoTitleLength = value.seo_title.trim().length
-    const seoDescriptionLength = value.seo_description.trim().length
-    const ogTitleLength = value.seo_og_title.trim().length
-    const ogDescriptionLength = value.seo_og_description.trim().length
-    const focus = focusKeyword?.trim().toLowerCase() ?? ''
-    const seoTitleHasFocus = !focus || value.seo_title.toLowerCase().includes(focus)
-    const seoDescriptionHasFocus = !focus || value.seo_description.toLowerCase().includes(focus)
-    const canonicalIsAbsolute = !value.seo_canonical_url.trim() || /^https?:\/\//i.test(value.seo_canonical_url.trim())
-    const ogImageLooksValid = !value.seo_og_image_url.trim() || /^https?:\/\/.+\.(jpg|jpeg|png|webp|gif)(\?.*)?$/i.test(value.seo_og_image_url.trim())
-    const robotsLooksValid = /^(index|noindex),(follow|nofollow)$/i.test(value.seo_robots.trim())
-
-    return (
-      <div className="grid gap-3">
+    return firstAttempt;
+}
+function buildBlogAssistArticleInput(form: ArticleFormState, tags: BlogTagRow[]): BlogAssistArticleInput {
+    const fallbackSlug = slugify(form.title) || 'artigo';
+    return {
+        title: form.title.trim() || 'Artigo sem título',
+        slug: form.slug.trim() || fallbackSlug,
+        contentHtml: form.contentHtml ?? '',
+        seoDescription: form.seo_description?.trim() ?? '',
+        focusKeyword: form.focusKeyword?.trim() ?? '',
+        coverImageUrl: form.coverImageUrl?.trim() ?? '',
+        currentTagIds: [...form.tagIds],
+        availableTags: tags.map((tag) => ({
+            id: String(tag.id ?? ''),
+            name: String(tag.name ?? ''),
+            slug: String(tag.slug ?? ''),
+        })),
+    };
+}
+export function AdminBlogPage() {
+    const navigate = useNavigate();
+    const { articleSlug } = useParams();
+    const { user, profile } = useAuth();
+    const [searchParams, setSearchParams] = useSearchParams();
+    const [activeTab, setActiveTab] = useState<'articles' | 'categories' | 'tags' | 'layout' | 'styles' | 'comments'>(searchParams.get('tab') === 'comments' ? 'comments' : searchParams.get('tab') === 'styles' ? 'styles' : 'articles');
+    const [articleView, setArticleView] = useState<'list' | 'editor'>('list');
+    const [isLegacyMode, setIsLegacyMode] = useState(true);
+    const [isCategoryCrudAvailable, setIsCategoryCrudAvailable] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
+    const [isSavingArticle, setIsSavingArticle] = useState(false);
+    const [isSavingCategory, setIsSavingCategory] = useState(false);
+    const [isSavingTag, setIsSavingTag] = useState(false);
+    const [errorMessage, setErrorMessage] = useState<string | null>(null);
+    const [successMessage, setSuccessMessage] = useState<string | null>(null);
+    const [articleSuccessMessage, setArticleSuccessMessage] = useState<string | null>(null);
+    const [articleActionModal, setArticleActionModal] = useState<ArticleActionModalState | null>(null);
+    const [seoAiModal, setSeoAiModal] = useState<SeoAiModalState | null>(null);
+    const [blogSidebarBlocks, setBlogSidebarBlocks] = useState<BlogSidebarBlock[]>([createEmptySidebarBlock()]);
+    const [blogStyleSettings, setBlogStyleSettings] = useState<BlogStyleSettings>(createDefaultBlogStyleSettings());
+    const [isSavingLayout, setIsSavingLayout] = useState(false);
+    const [isSavingStyleSettings, setIsSavingStyleSettings] = useState(false);
+    const [isUploadingLayoutImage, setIsUploadingLayoutImage] = useState(false);
+    const [isUploadingCoverImage, setIsUploadingCoverImage] = useState(false);
+    const [mediaLibraryAssets, setMediaLibraryAssets] = useState<SiteAsset[]>([]);
+    const [isLoadingMediaLibrary, setIsLoadingMediaLibrary] = useState(false);
+    const [isMediaLibraryOpen, setIsMediaLibraryOpen] = useState(false);
+    const [selectedMediaAssetId, setSelectedMediaAssetId] = useState('');
+    const [mediaLibraryTarget, setMediaLibraryTarget] = useState<'cover' | 'card'>('cover');
+    const [fontFamilyOptions, setFontFamilyOptions] = useState<FontFamilyOption[]>(SITE_TEXT_FONT_PRESETS.map((item) => ({ label: item.label, value: item.family })));
+    const [articles, setArticles] = useState<BlogArticleRow[]>([]);
+    const [categories, setCategories] = useState<BlogCategoryRow[]>([]);
+    const [tags, setTags] = useState<BlogTagRow[]>([]);
+    const [articleTagRows, setArticleTagRows] = useState<BlogArticleTagRow[]>([]);
+    const [articleRevisions, setArticleRevisions] = useState<BlogPostRevisionRow[]>([]);
+    const [isLoadingArticleRevisions, setIsLoadingArticleRevisions] = useState(false);
+    const [selectedArticleId, setSelectedArticleId] = useState<string | null>(null);
+    const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
+    const [selectedTagId, setSelectedTagId] = useState<string | null>(null);
+    const [articleSearch, setArticleSearch] = useState('');
+    const [articleStatusFilter, setArticleStatusFilter] = useState<'all' | ArticleStatus>('all');
+    useEffect(() => {
+        const next = new URLSearchParams(searchParams);
+        next.set('tab', activeTab);
+        setSearchParams(next, { replace: true });
+    }, [activeTab, searchParams, setSearchParams]);
+    useEffect(() => {
+        if (activeTab === 'categories' && !isCategoryCrudAvailable) {
+            setActiveTab('articles');
+        }
+    }, [activeTab, isCategoryCrudAvailable]);
+    const [isArticleSlugTouched, setIsArticleSlugTouched] = useState(false);
+    const [isCategorySlugTouched, setIsCategorySlugTouched] = useState(false);
+    const [isTagSlugTouched, setIsTagSlugTouched] = useState(false);
+    const [isArticleTagsExpanded, setIsArticleTagsExpanded] = useState(false);
+    const [isArticleSeoExpanded, setIsArticleSeoExpanded] = useState(false);
+    const [articleForm, setArticleForm] = useState<ArticleFormState>(DEFAULT_ARTICLE_FORM);
+    const [categoryForm, setCategoryForm] = useState<CategoryFormState>(DEFAULT_CATEGORY_FORM);
+    const [tagForm, setTagForm] = useState<TagFormState>(DEFAULT_TAG_FORM);
+    const [inlineCategoryForm, setInlineCategoryForm] = useState<CategoryFormState>(DEFAULT_INLINE_CATEGORY_FORM);
+    const [showInlineCategoryForm, setShowInlineCategoryForm] = useState(false);
+    useEffect(() => {
+        if (selectedArticleId || isArticleSlugTouched) {
+            return;
+        }
+        const generatedSlug = slugify(articleForm.title);
+        setArticleForm((current) => (current.slug === generatedSlug
+            ? current
+            : { ...current, slug: generatedSlug }));
+    }, [articleForm.title, isArticleSlugTouched, selectedArticleId]);
+    const categoryOptions = useMemo(() => buildCategoryOptions(categories), [categories]);
+    const seoHints = useMemo(() => getSeoValidationHints(articleForm), [articleForm]);
+    const articleTagMap = useMemo(() => {
+        const map = new Map<string, string[]>();
+        articleTagRows.forEach((row) => {
+            const list = map.get(row.article_id) ?? [];
+            list.push(row.tag_id);
+            map.set(row.article_id, list);
+        });
+        return map;
+    }, [articleTagRows]);
+    const statusSummary = useMemo(() => {
+        return articles.reduce((acc, article) => {
+            const status = article.status ?? 'draft';
+            acc.total += 1;
+            acc[status] += 1;
+            if (article.featured) {
+                acc.featured += 1;
+            }
+            return acc;
+        }, { total: 0, draft: 0, scheduled: 0, published: 0, featured: 0 } as Record<'total' | 'draft' | 'scheduled' | 'published' | 'featured', number>);
+    }, [articles]);
+    const filteredArticles = useMemo(() => {
+        const normalized = articleSearch.trim().toLowerCase();
+        return articles.filter((article) => {
+            const matchesStatus = articleStatusFilter === 'all' ? true : (article.status ?? 'draft') === articleStatusFilter;
+            const categoryPath = article.category_id
+                ? getCategoryPath(categories.find((item) => item.id === article.category_id) ?? {
+                    id: '',
+                    name: '',
+                    slug: '',
+                    description: null,
+                    parent_id: null,
+                    is_active: null,
+                    display_order: null,
+                    schema_json: null,
+                    seo_title: null,
+                    seo_description: null,
+                    seo_canonical_url: null,
+                    seo_robots: null,
+                    seo_og_title: null,
+                    seo_og_description: null,
+                    seo_og_image_url: null,
+                }, categories)
+                : 'sem categoria';
+            const matchesSearch = normalized
+                ? [article.title, article.slug, article.seo_description ?? '', categoryPath].join(' ').toLowerCase().includes(normalized)
+                : true;
+            return matchesStatus && matchesSearch;
+        });
+    }, [articles, articleSearch, articleStatusFilter, categories]);
+    async function loadLegacyData() {
+        const legacyResult = await supabase
+            .from('blog_posts')
+            .select('*')
+            .order('display_order', { ascending: true, nullsFirst: false })
+            .order('published_at', { ascending: false, nullsFirst: false })
+            .limit(300);
+        if (legacyResult.error) {
+            setErrorMessage(legacyResult.error.message);
+            return;
+        }
+        const mapped = ((legacyResult.data ?? []) as LegacyBlogPostRow[]).map(mapLegacyPostToArticle);
+        setArticles(mapped);
+        setCategories([]);
+        setTags([]);
+        setArticleTagRows([]);
+        setIsLegacyMode(true);
+        setActiveTab('articles');
+    }
+    async function loadCategoriesData() {
+        const categoriesResult = await supabase
+            .from(TABLES.categories)
+            .select('*')
+            .order('display_order', { ascending: true, nullsFirst: false })
+            .order('name', { ascending: true });
+        if (categoriesResult.error) {
+            if (categoriesResult.error.message.includes(`Could not find the table 'public.${TABLES.categories}'`)) {
+                setCategories([]);
+                setIsCategoryCrudAvailable(false);
+                return;
+            }
+            setErrorMessage(categoriesResult.error.message);
+            return;
+        }
+        setIsCategoryCrudAvailable(true);
+        setCategories((categoriesResult.data ?? []) as BlogCategoryRow[]);
+    }
+    async function loadTagsData() {
+        const [tagsResult, articleTagResult] = await Promise.all([
+            supabase
+                .from(TABLES.tags)
+                .select('*')
+                .order('name', { ascending: true }),
+            supabase
+                .from(TABLES.articleTags)
+                .select('*')
+                .order('article_id', { ascending: true })
+                .order('tag_id', { ascending: true }),
+        ]);
+        const missingTagTable = tagsResult.error?.message.includes(`Could not find the table 'public.${TABLES.tags}'`);
+        const missingArticleTagTable = articleTagResult.error?.message.includes(`Could not find the table 'public.${TABLES.articleTags}'`);
+        if (missingTagTable || missingArticleTagTable) {
+            setTags([]);
+            setArticleTagRows([]);
+            setIsLegacyMode(true);
+            return;
+        }
+        if (tagsResult.error) {
+            setErrorMessage(tagsResult.error.message);
+            return;
+        }
+        if (articleTagResult.error) {
+            setErrorMessage(articleTagResult.error.message);
+            return;
+        }
+        setTags((tagsResult.data ?? []) as BlogTagRow[]);
+        setArticleTagRows((articleTagResult.data ?? []) as BlogArticleTagRow[]);
+        setIsLegacyMode(false);
+    }
+    async function loadArticleRevisions(articleId: string) {
+        setIsLoadingArticleRevisions(true);
+        try {
+            const result = await supabase
+                .from('blog_post_revisions')
+                .select('*')
+                .eq('article_id', articleId)
+                .order('revision_number', { ascending: false })
+                .limit(12);
+            if (result.error) {
+                setArticleRevisions([]);
+                return;
+            }
+            setArticleRevisions((result.data ?? []) as BlogPostRevisionRow[]);
+        }
+        finally {
+            setIsLoadingArticleRevisions(false);
+        }
+    }
+    async function loadAllData() {
+        setIsLoading(true);
+        setErrorMessage(null);
+        try {
+            await loadLegacyData();
+            await loadCategoriesData();
+            await loadTagsData();
+            await loadBlogLayoutSettings();
+            await loadBlogStyleSettings();
+            if (selectedArticleId) {
+                await loadArticleRevisions(selectedArticleId);
+            }
+            else {
+                setArticleRevisions([]);
+            }
+        }
+        finally {
+            setIsLoading(false);
+        }
+    }
+    async function syncArticleTags(articleId: string, tagIds: string[]) {
+        if (isLegacyMode) {
+            return;
+        }
+        const deleteResult = await supabase.from(TABLES.articleTags).delete().eq('article_id', articleId);
+        if (deleteResult.error) {
+            throw new Error(deleteResult.error.message);
+        }
+        if (tagIds.length === 0) {
+            return;
+        }
+        const insertResult = await supabase.from(TABLES.articleTags).insert(tagIds.map((tagId) => ({
+            article_id: articleId,
+            tag_id: tagId,
+        })));
+        if (insertResult.error) {
+            throw new Error(insertResult.error.message);
+        }
+    }
+    useEffect(() => {
+        void loadAllData();
+    }, []);
+    useEffect(() => {
+        if (!articleSlug) {
+            return;
+        }
+        const target = articles.find((article) => article.slug === articleSlug);
+        if (!target) {
+            return;
+        }
+        if (selectedArticleId === target.id && articleView === 'editor') {
+            return;
+        }
+        populateArticleForm(target);
+    }, [articleSlug, articles, selectedArticleId, articleView]);
+    useEffect(() => {
+        let isMounted = true;
+        setIsLoadingMediaLibrary(true);
+        void fetchSiteAssets(120)
+            .then((assets) => {
+            if (!isMounted) {
+                return;
+            }
+            const presetOptions: FontFamilyOption[] = SITE_TEXT_FONT_PRESETS.map((item) => ({ label: item.label, value: item.family }));
+            const uploadedOptions: FontFamilyOption[] = assets
+                .filter((asset) => {
+                const mime = (asset.mime_type ?? '').toLowerCase();
+                const path = asset.storage_path.toLowerCase();
+                return mime.includes('font') || path.endsWith('.woff2') || path.endsWith('.woff') || path.endsWith('.ttf') || path.endsWith('.otf');
+            })
+                .map((asset) => {
+                const originalName = typeof asset.metadata?.original_name === 'string' ? asset.metadata.original_name : '';
+                const rawName = (originalName || asset.alt || asset.storage_path.split('/').pop() || 'Fonte').trim();
+                const cleanName = rawName.replace(/\.(woff2|woff|ttf|otf)$/i, '');
+                return {
+                    label: `${cleanName} (upload)`,
+                    value: `'${cleanName}', sans-serif`,
+                };
+            });
+            const merged = [...presetOptions, ...uploadedOptions].filter((option, index, list) => (list.findIndex((item) => item.value === option.value) === index));
+            setFontFamilyOptions(merged);
+            setMediaLibraryAssets(assets.filter((asset) => (asset.mime_type ?? '').startsWith('image/')));
+        })
+            .catch((error) => {
+            if (!isMounted) {
+                return;
+            }
+            setErrorMessage(error instanceof Error ? error.message : 'Não foi possível carregar a biblioteca de mídia.');
+        })
+            .finally(() => {
+            if (!isMounted) {
+                return;
+            }
+            setIsLoadingMediaLibrary(false);
+        });
+        return () => {
+            isMounted = false;
+        };
+    }, []);
+    async function loadBlogLayoutSettings() {
+        try {
+            const entries = await fetchSiteContent('blog');
+            const layoutEntry = entries.find((entry) => entry.page_key === 'blog' && entry.entry_key === 'blog.sidebar.image');
+            const value = layoutEntry?.value;
+            if (typeof value === 'string') {
+                setBlogSidebarBlocks([{
+                        id: createSidebarBlockId(),
+                        mode: 'single',
+                        slides: [{ url: value, alt: '', linkUrl: '' }],
+                    }]);
+                return;
+            }
+            if (value && typeof value === 'object' && !Array.isArray(value)) {
+                const record = value as Record<string, unknown>;
+                const blocksValue = Array.isArray(record.blocks) ? record.blocks : [];
+                const parsedBlocks = blocksValue
+                    .map((block) => {
+                    if (!block || typeof block !== 'object' || Array.isArray(block)) {
+                        return null;
+                    }
+                    const mappedBlock = block as Record<string, unknown>;
+                    const mappedSlides = (Array.isArray(mappedBlock.slides) ? mappedBlock.slides : [])
+                        .map((slide) => {
+                        if (!slide || typeof slide !== 'object' || Array.isArray(slide)) {
+                            return null;
+                        }
+                        const image = slide as Record<string, unknown>;
+                        return {
+                            url: typeof image.url === 'string' ? image.url : '',
+                            alt: typeof image.alt === 'string' ? image.alt : '',
+                            linkUrl: typeof image.linkUrl === 'string' ? image.linkUrl : '',
+                        } satisfies BlogSidebarImageSlide;
+                    })
+                        .filter((slide): slide is BlogSidebarImageSlide => Boolean(slide && slide.url));
+                    return {
+                        id: createSidebarBlockId(),
+                        mode: mappedBlock.mode === 'carousel' ? 'carousel' : 'single',
+                        slides: mappedSlides.length > 0 ? mappedSlides : [createEmptySidebarSlide()],
+                    } satisfies BlogSidebarBlock;
+                })
+                    .filter((block): block is BlogSidebarBlock => Boolean(block));
+                if (parsedBlocks.length > 0) {
+                    setBlogSidebarBlocks(parsedBlocks);
+                    return;
+                }
+                const slidesValue = Array.isArray(record.slides) ? record.slides : [];
+                const parsedSlides = slidesValue
+                    .map((slide) => {
+                    if (!slide || typeof slide !== 'object' || Array.isArray(slide)) {
+                        return null;
+                    }
+                    const image = slide as Record<string, unknown>;
+                    return {
+                        url: typeof image.url === 'string' ? image.url : '',
+                        alt: typeof image.alt === 'string' ? image.alt : '',
+                        linkUrl: typeof image.linkUrl === 'string' ? image.linkUrl : '',
+                    } satisfies BlogSidebarImageSlide;
+                })
+                    .filter((slide): slide is BlogSidebarImageSlide => Boolean(slide && slide.url));
+                if (parsedSlides.length > 0) {
+                    setBlogSidebarBlocks([{
+                            id: createSidebarBlockId(),
+                            mode: record.mode === 'carousel' ? 'carousel' : 'single',
+                            slides: parsedSlides,
+                        }]);
+                    return;
+                }
+                const legacyUrl = typeof record.url === 'string' ? record.url : '';
+                if (legacyUrl) {
+                    setBlogSidebarBlocks([{
+                            id: createSidebarBlockId(),
+                            mode: 'single',
+                            slides: [{
+                                    url: legacyUrl,
+                                    alt: typeof record.alt === 'string' ? record.alt : '',
+                                    linkUrl: typeof record.linkUrl === 'string' ? record.linkUrl : '',
+                                }],
+                        }]);
+                    return;
+                }
+                setBlogSidebarBlocks([createEmptySidebarBlock()]);
+                return;
+            }
+            setBlogSidebarBlocks([createEmptySidebarBlock()]);
+        }
+        catch {
+            setBlogSidebarBlocks([createEmptySidebarBlock()]);
+        }
+    }
+    async function loadBlogStyleSettings() {
+        try {
+            const entries = await fetchSiteContent('blog');
+            const styleEntry = entries.find((entry) => entry.page_key === 'blog' && entry.entry_key === 'blog.style.settings');
+            setBlogStyleSettings(normalizeBlogStyleSettings(styleEntry?.value));
+        }
+        catch {
+            setBlogStyleSettings(createDefaultBlogStyleSettings());
+        }
+    }
+    async function handleUploadBlogSidebarImage(file: File | null, blockIndex: number, slideIndex: number) {
+        if (!file) {
+            return;
+        }
+        setIsUploadingLayoutImage(true);
+        setErrorMessage(null);
+        setSuccessMessage(null);
+        try {
+            const uploaded = await uploadSiteAsset(file, {
+                alt: file.name,
+                pageKey: 'blog',
+                entryKey: 'blog.sidebar.image',
+            });
+            if (uploaded.public_url) {
+                const uploadedUrl = uploaded.public_url ?? '';
+                setBlogSidebarBlocks((currentBlocks) => currentBlocks.map((block, currentBlockIndex) => {
+                    if (currentBlockIndex !== blockIndex) {
+                        return block;
+                    }
+                    return {
+                        ...block,
+                        slides: block.slides.map((slide, currentSlideIndex) => (currentSlideIndex === slideIndex
+                            ? { ...slide, url: uploadedUrl }
+                            : slide)),
+                    };
+                }));
+            }
+            if (uploaded.alt) {
+                const uploadedAlt = uploaded.alt ?? '';
+                setBlogSidebarBlocks((currentBlocks) => currentBlocks.map((block, currentBlockIndex) => {
+                    if (currentBlockIndex !== blockIndex) {
+                        return block;
+                    }
+                    return {
+                        ...block,
+                        slides: block.slides.map((slide, currentSlideIndex) => (currentSlideIndex === slideIndex
+                            ? { ...slide, alt: uploadedAlt }
+                            : slide)),
+                    };
+                }));
+            }
+            setSuccessMessage('Imagem enviada com sucesso. Clique em "Salvar configuração lateral" para publicar.');
+        }
+        catch (error) {
+            const message = error instanceof Error ? error.message : 'Não foi possível enviar a imagem.';
+            setErrorMessage(message);
+        }
+        finally {
+            setIsUploadingLayoutImage(false);
+        }
+    }
+    async function handleUploadArticleCoverImage(file: File | null) {
+        if (!file) {
+            return;
+        }
+        setIsUploadingCoverImage(true);
+        setErrorMessage(null);
+        setSuccessMessage(null);
+        try {
+            const uploaded = await uploadSiteAsset(file, {
+                alt: articleForm.title.trim() || file.name,
+                pageKey: 'blog',
+                entryKey: 'article.cover_image_url',
+            });
+            if (uploaded.public_url) {
+                setArticleForm((current) => ({ ...current, coverImageUrl: uploaded.public_url ?? current.coverImageUrl }));
+            }
+            setMediaLibraryAssets((current) => [uploaded, ...current.filter((asset) => asset.id !== uploaded.id)]);
+            setSuccessMessage('Imagem de capa enviada com sucesso.');
+        }
+        catch (error) {
+            setErrorMessage(error instanceof Error ? error.message : 'Não foi possível enviar a imagem de capa.');
+        }
+        finally {
+            setIsUploadingCoverImage(false);
+        }
+    }
+    async function handleUploadArticleCardImage(file: File | null) {
+        if (!file) {
+            return;
+        }
+        setIsUploadingCoverImage(true);
+        setErrorMessage(null);
+        setSuccessMessage(null);
+        try {
+            const uploaded = await uploadSiteAsset(file, {
+                alt: articleForm.title.trim() || file.name,
+                pageKey: 'blog',
+                entryKey: 'article.card_image_url',
+            });
+            if (uploaded.public_url) {
+                setArticleForm((current) => ({ ...current, cardImageUrl: uploaded.public_url ?? current.cardImageUrl }));
+            }
+            setMediaLibraryAssets((current) => [uploaded, ...current.filter((asset) => asset.id !== uploaded.id)]);
+            setSuccessMessage('Imagem do card enviada com sucesso.');
+        }
+        catch (error) {
+            setErrorMessage(error instanceof Error ? error.message : 'Não foi possível enviar a imagem do card.');
+        }
+        finally {
+            setIsUploadingCoverImage(false);
+        }
+    }
+    function handleApplyImageFromLibrary(target: 'cover' | 'card') {
+        if (!selectedMediaAssetId) {
+            setErrorMessage('Selecione uma imagem da biblioteca antes de aplicar.');
+            return;
+        }
+        const selectedAsset = mediaLibraryAssets.find((asset) => asset.id === selectedMediaAssetId);
+        if (!selectedAsset || !selectedAsset.public_url) {
+            setErrorMessage('Não foi possível aplicar a imagem selecionada.');
+            return;
+        }
+        if (target === 'cover') {
+            setArticleForm((current) => ({ ...current, coverImageUrl: selectedAsset.public_url ?? current.coverImageUrl }));
+            setSuccessMessage('Imagem de capa aplicada da biblioteca de mídia.');
+        }
+        else {
+            setArticleForm((current) => ({ ...current, cardImageUrl: selectedAsset.public_url ?? current.cardImageUrl }));
+            setSuccessMessage('Imagem do card aplicada da biblioteca de mídia.');
+        }
+        setIsMediaLibraryOpen(false);
+    }
+    async function handleSaveBlogLayoutImage() {
+        setIsSavingLayout(true);
+        setErrorMessage(null);
+        setSuccessMessage(null);
+        try {
+            await saveSiteContentEntry({
+                pageKey: 'blog',
+                entryKey: 'blog.sidebar.image',
+                entryType: 'image',
+                value: {
+                    blocks: blogSidebarBlocks.map((block) => ({
+                        mode: block.mode,
+                        slides: block.slides.map((slide) => ({
+                            url: slide.url.trim(),
+                            alt: slide.alt.trim(),
+                            linkUrl: slide.linkUrl.trim(),
+                        })).filter((slide) => slide.url),
+                    })).filter((block) => block.slides.length > 0),
+                },
+                schema: {
+                    kind: 'blog-sidebar-stack',
+                },
+            });
+            setSuccessMessage('Configurações da lateral do blog salvas com sucesso.');
+        }
+        catch (error) {
+            setErrorMessage(error instanceof Error ? error.message : 'Não foi possível salvar a imagem lateral.');
+        }
+        finally {
+            setIsSavingLayout(false);
+        }
+    }
+    function updateTagStyle(tag: keyof BlogStyleSettings['content'], field: keyof BlogTagStyle, value: string) {
+        setBlogStyleSettings((current) => ({
+            ...current,
+            content: {
+                ...current.content,
+                [tag]: {
+                    ...current.content[tag],
+                    [field]: value,
+                },
+            },
+        }));
+    }
+    function updateArticleTitleStyle(field: keyof BlogTagStyle, value: string) {
+        setBlogStyleSettings((current) => ({
+            ...current,
+            articleTitle: {
+                ...current.articleTitle,
+                [field]: value,
+            },
+        }));
+    }
+    function updateCardTextStyle(tag: keyof BlogStyleSettings['card']['text'], field: keyof BlogTagStyle, value: string) {
+        setBlogStyleSettings((current) => ({
+            ...current,
+            card: {
+                ...current.card,
+                text: {
+                    ...current.card.text,
+                    [tag]: {
+                        ...current.card.text[tag],
+                        [field]: value,
+                    },
+                },
+            },
+        }));
+    }
+    async function handleSaveBlogStyleSettings() {
+        setIsSavingStyleSettings(true);
+        setErrorMessage(null);
+        setSuccessMessage(null);
+        try {
+            await saveSiteContentEntry({
+                pageKey: 'blog',
+                entryKey: 'blog.style.settings',
+                entryType: 'json',
+                value: blogStyleSettings,
+                schema: {
+                    kind: 'blog-style-settings',
+                },
+            });
+            setSuccessMessage('Padrões de tipografia e cards do blog salvos com sucesso.');
+        }
+        catch (error) {
+            setErrorMessage(error instanceof Error ? error.message : 'Não foi possível salvar os padrões do blog.');
+        }
+        finally {
+            setIsSavingStyleSettings(false);
+        }
+    }
+    function resetArticleForm() {
+        setSelectedArticleId(null);
+        setIsArticleSlugTouched(false);
+        setIsArticleTagsExpanded(false);
+        setIsArticleSeoExpanded(false);
+        setArticleForm(DEFAULT_ARTICLE_FORM);
+        setShowInlineCategoryForm(false);
+        setInlineCategoryForm(DEFAULT_INLINE_CATEGORY_FORM);
+        setArticleSuccessMessage(null);
+        setArticleRevisions([]);
+    }
+    function syncArticleEditorUrl(slug?: string) {
+        const params = new URLSearchParams(searchParams);
+        params.set('tab', 'articles');
+        const query = params.toString();
+        const path = slug ? `/admin/blog/${slug}` : '/admin/blog';
+        navigate(`${path}${query ? `${query}` : ''}`);
+    }
+    function handleCreateArticle() {
+        resetArticleForm();
+        setArticleView('editor');
+        syncArticleEditorUrl();
+    }
+    function handleOpenArticlePreview() {
+        if (!articleForm.slug) {
+            return;
+        }
+        const previewKey = selectedArticleId ? `id:${selectedArticleId}` : `slug:${articleForm.slug}`;
+        const previewPayload = {
+            slug: articleForm.slug,
+            title: articleForm.title.trim() || 'Rascunho sem título',
+            category: 'Sem categoria',
+            seoDescription: articleForm.seo_description.trim(),
+            image: articleForm.coverImageUrl.trim() || '/images/genflix/home/featured-2.jpg',
+            readTime: `${Math.max(1, articleForm.readingTimeMinutes)} min`,
+            author: user?.email ?? 'Admin GenFlix',
+            publishedAt: articleForm.publishedAt || null,
+            contentHtml: articleForm.contentHtml,
+            status: articleForm.status,
+            savedAt: Date.now(),
+        };
+        try {
+            localStorage.setItem(`admin_blog_preview:${previewKey}`, JSON.stringify(previewPayload));
+            localStorage.setItem(`admin_blog_preview:slug:${articleForm.slug}`, JSON.stringify(previewPayload));
+        }
+        catch {
+            // noop
+        }
+        const params = new URLSearchParams({
+            preview: 'admin',
+            previewKey,
+        });
+        window.open(`/blog/${articleForm.slug}${params.toString()}`, '_blank', 'noopener,noreferrer');
+    }
+    function handleOpenArticleFromList(slug: string) {
+        if (!slug) {
+            return;
+        }
+        window.open(`/blog/${slug}`, '_blank', 'noopener,noreferrer');
+    }
+    function resetCategoryForm() {
+        setSelectedCategoryId(null);
+        setIsCategorySlugTouched(false);
+        setCategoryForm(DEFAULT_CATEGORY_FORM);
+    }
+    function resetTagForm() {
+        setSelectedTagId(null);
+        setIsTagSlugTouched(false);
+        setTagForm(DEFAULT_TAG_FORM);
+    }
+    function populateArticleForm(article: BlogArticleRow) {
+        setSelectedArticleId(article.id);
+        setIsArticleSlugTouched(true);
+        setIsArticleTagsExpanded(false);
+        setIsArticleSeoExpanded(false);
+        setArticleForm({
+            title: article.title,
+            slug: article.slug,
+            coverImageUrl: article.cover_image_url ?? '',
+            cardImageUrl: article.card_image_url ?? article.cover_image_url ?? '',
+            status: article.status ?? 'draft',
+            publishedAt: toDateTimeLocal(article.published_at),
+            scheduledPublishAt: toDateTimeLocal(article.scheduled_publish_at),
+            featured: Boolean(article.featured),
+            categoryId: article.category_id ?? '__none__',
+            tagIds: articleTagMap.get(article.id) ?? [],
+            contentHtml: article.content_html ?? '',
+            focusKeyword: article.focus_keyword ?? '',
+            readingTimeMinutes: article.reading_time_minutes ?? calculateReadingTimeMinutes(article.content_html ?? ''),
+            seo_title: article.seo_title ?? '',
+            seo_description: article.seo_description ?? '',
+            seo_canonical_url: article.seo_canonical_url ?? '',
+            seo_robots: article.seo_robots ?? 'index,follow',
+            seo_og_title: article.seo_og_title ?? '',
+            seo_og_description: article.seo_og_description ?? '',
+            seo_og_image_url: article.seo_og_image_url ?? '',
+        });
+        setSuccessMessage(null);
+        setErrorMessage(null);
+        setArticleSuccessMessage(null);
+        setActiveTab('articles');
+        setArticleView('editor');
+        void loadArticleRevisions(article.id);
+        syncArticleEditorUrl(article.slug);
+    }
+    function populateCategoryForm(category: BlogCategoryRow) {
+        setSelectedCategoryId(category.id);
+        setIsCategorySlugTouched(true);
+        setCategoryForm({
+            name: category.name,
+            slug: category.slug,
+            description: category.description ?? '',
+            parentId: category.parent_id ?? '__none__',
+            isActive: category.is_active ?? true,
+            displayOrder: category.display_order == null ? '' : String(category.display_order),
+            schemaJson: category.schema_json ?? '',
+            seo_title: category.seo_title ?? '',
+            seo_description: category.seo_description ?? '',
+            seo_canonical_url: category.seo_canonical_url ?? '',
+            seo_robots: category.seo_robots ?? 'index,follow',
+            seo_og_title: category.seo_og_title ?? '',
+            seo_og_description: category.seo_og_description ?? '',
+            seo_og_image_url: category.seo_og_image_url ?? '',
+        });
+    }
+    function populateTagForm(tag: BlogTagRow) {
+        setSelectedTagId(tag.id);
+        setIsTagSlugTouched(true);
+        setTagForm({
+            name: tag.name,
+            slug: tag.slug,
+            description: tag.description ?? '',
+            seo_title: tag.seo_title ?? '',
+            seo_description: tag.seo_description ?? '',
+            seo_canonical_url: tag.seo_canonical_url ?? '',
+            seo_robots: tag.seo_robots ?? 'index,follow',
+            seo_og_title: tag.seo_og_title ?? '',
+            seo_og_description: tag.seo_og_description ?? '',
+            seo_og_image_url: tag.seo_og_image_url ?? '',
+        });
+    }
+    function restoreArticleFromRevision(revision: BlogPostRevisionRow) {
+        const snapshot = revision.snapshot;
+        if (!snapshot) {
+            setErrorMessage("Esta revis\u00E3o n\u00E3o possui snapshot para rest?urar.");
+            return;
+        }
+        setSelectedArticleId(revision.article_id);
+        setIsArticleSlugTouched(true);
+        setArticleForm({
+            title: snapshot.title ?? '',
+            slug: snapshot.slug ?? '',
+            coverImageUrl: snapshot.cover_image_url ?? '',
+            cardImageUrl: snapshot.card_image_url ?? snapshot.cover_image_url ?? '',
+            status: snapshot.status ?? 'draft',
+            publishedAt: toDateTimeLocal(snapshot.published_at),
+            scheduledPublishAt: toDateTimeLocal(snapshot.scheduled_publish_at),
+            featured: Boolean(snapshot.featured),
+            categoryId: snapshot.category_id ?? '__none__',
+            tagIds: [...(snapshot.tag_ids ?? [])],
+            contentHtml: snapshot.content_html ?? '',
+            focusKeyword: snapshot.focus_keyword ?? '',
+            readingTimeMinutes: snapshot.reading_time_minutes ?? calculateReadingTimeMinutes(snapshot.content_html ?? ''),
+            seo_title: snapshot.seo_title ?? '',
+            seo_description: snapshot.seo_description ?? '',
+            seo_canonical_url: snapshot.seo_canonical_url ?? '',
+            seo_robots: snapshot.seo_robots ?? 'index,follow',
+            seo_og_title: snapshot.seo_og_title ?? '',
+            seo_og_description: snapshot.seo_og_description ?? '',
+            seo_og_image_url: snapshot.seo_og_image_url ?? '',
+        });
+        setSuccessMessage(`Revisão #${revision.revision_number} carregada no editor. Revise e salve para aplicar a rest?ura\u00E7\u00E3o.`);
+        setErrorMessage(null);
+        setArticleSuccessMessage(null);
+        setArticleView('editor');
+    }
+    function openArticleActionModal(modal: ArticleActionModalState) {
+        setArticleActionModal(modal);
+    }
+    async function saveArticleWithStatus(nextStatus?: ArticleStatus | null) {
+        setErrorMessage(null);
+        setSuccessMessage(null);
+        setArticleSuccessMessage(null);
+        setArticleActionModal(null);
+        const title = articleForm.title.trim();
+        const slug = articleForm.slug.trim();
+        const cleanedHtml = removeInternalH1(articleForm.contentHtml);
+        const plainText = stripHtml(cleanedHtml);
+        const readingTime = calculateReadingTimeMinutes(cleanedHtml);
+        const effectiveStatus = nextStatus ?? articleForm.status;
+        if (!title || !slug) {
+            setErrorMessage('Informe título e slug do artigo.');
+            return;
+        }
+        if (effectiveStatus === 'scheduled' && !articleForm.scheduledPublishAt) {
+            setErrorMessage('Para agendar, informe a data/hora de agendamento.');
+            return;
+        }
+        setIsSavingArticle(true);
+        const legacyPayload = {
+            title,
+            slug,
+            category: articleForm.categoryId === '__none__' ? null : articleForm.categoryId,
+            seo_description: articleForm.seo_description.trim() || null,
+            excerpt: articleForm.seo_description.trim() || null,
+            image_url: articleForm.coverImageUrl.trim() || null,
+            card_image_url: articleForm.cardImageUrl.trim() || articleForm.coverImageUrl.trim() || null,
+            read_time: `${readingTime} min`,
+            author: user?.id ?? null,
+            published_at: effectiveStatus === 'published'
+                ? (articleForm.publishedAt ? new Date(articleForm.publishedAt).toISOString() : new Date().toISOString())
+                : null,
+            content_html: cleanedHtml,
+            content: plainText
+                .split('. ')
+                .map((entry) => entry.trim())
+                .filter(Boolean),
+            featured: articleForm.featured,
+            status: effectiveStatus,
+        };
+        const legacyResult = await persistLegacyBlogPost(legacyPayload, selectedArticleId);
+        if (legacyResult.error) {
+            setErrorMessage(legacyResult.error.message);
+            openArticleActionModal({
+                title: 'Não foi possível salvar o artigo',
+                message: legacyResult.error.message,
+                tone: 'error',
+            });
+            setIsSavingArticle(false);
+            return;
+        }
+        const savedLegacy = mapLegacyPostToArticle(legacyResult.data as LegacyBlogPostRow);
+        const savedArticleId = savedLegacy.id;
+        const revisionSnapshot: BlogArticleRevisionSnapshot = {
+            title,
+            slug,
+            content_html: cleanedHtml,
+            cover_image_url: articleForm.coverImageUrl.trim() || null,
+            card_image_url: articleForm.cardImageUrl.trim() || articleForm.coverImageUrl.trim() || null,
+            status: effectiveStatus,
+            featured: articleForm.featured,
+            category_id: articleForm.categoryId === '__none__' ? null : articleForm.categoryId,
+            tag_ids: [...articleForm.tagIds],
+            published_at: effectiveStatus === 'published'
+                ? (articleForm.publishedAt ? new Date(articleForm.publishedAt).toISOString() : new Date().toISOString())
+                : null,
+            scheduled_publish_at: articleForm.scheduledPublishAt
+                ? new Date(articleForm.scheduledPublishAt).toISOString()
+                : null,
+            focus_keyword: articleForm.focusKeyword.trim(),
+            reading_time_minutes: readingTime,
+            seo_title: articleForm.seo_title.trim(),
+            seo_description: articleForm.seo_description.trim(),
+            seo_canonical_url: articleForm.seo_canonical_url.trim(),
+            seo_robots: articleForm.seo_robots.trim() || 'index,follow',
+            seo_og_title: articleForm.seo_og_title.trim(),
+            seo_og_description: articleForm.seo_og_description.trim(),
+            seo_og_image_url: articleForm.seo_og_image_url.trim(),
+            plain_text_length: plainText.length,
+            word_count: plainText ? plainText.split(/\s+/).filter(Boolean).length : 0,
+        };
+        let tagsSyncError: string | null = null;
+        let revisionHistoryError: string | null = null;
+        try {
+            const revisionResult = await supabase.from('blog_post_revisions').insert({
+                article_id: savedArticleId,
+                snapshot: revisionSnapshot,
+                changed_by: user?.id ?? null,
+                changed_by_name: profile?.full_name?.trim() || user?.email?.trim() || null,
+                changed_by_email: user?.email ?? profile?.email ?? null,
+                change_type: selectedArticleId ? 'update' : 'create',
+            });
+            if (revisionResult.error) {
+                revisionHistoryError = revisionResult.error.message;
+            }
+            await syncArticleTags(savedArticleId, articleForm.tagIds);
+        }
+        catch (error) {
+            tagsSyncError = error instanceof Error ? error.message : 'Não foi possível salvar as tags do artigo.';
+        }
+        await loadAllData();
+        populateArticleForm(savedLegacy);
+        setArticleForm((current) => ({
+            ...current,
+            status: effectiveStatus,
+            contentHtml: cleanedHtml,
+            cardImageUrl: revisionSnapshot.card_image_url ?? '',
+            readingTimeMinutes: readingTime,
+            focusKeyword: revisionSnapshot.focus_keyword,
+            seo_title: revisionSnapshot.seo_title,
+            seo_description: revisionSnapshot.seo_description,
+            seo_canonical_url: revisionSnapshot.seo_canonical_url,
+            seo_robots: revisionSnapshot.seo_robots,
+            seo_og_title: revisionSnapshot.seo_og_title,
+            seo_og_description: revisionSnapshot.seo_og_description,
+            seo_og_image_url: revisionSnapshot.seo_og_image_url,
+        }));
+        if (tagsSyncError) {
+            setErrorMessage(tagsSyncError);
+            setArticleSuccessMessage('Artigo salvo, mas houve um problema ao sincronizar as tags.');
+            openArticleActionModal({
+                title: effectiveStatus === 'published' ? 'Artigo publicado' : effectiveStatus === 'scheduled' ? 'Artigo agendado' : 'Artigo salvo',
+                message: `O artigo foi ${effectiveStatus === 'published' ? 'publicado' : effectiveStatus === 'scheduled' ? 'agendado' : 'salvo'}, mas houve observações na sincronização das tags. ${tagsSyncError}`,
+                tone: 'warning',
+            });
+        }
+        else if (revisionHistoryError) {
+            setErrorMessage(revisionHistoryError);
+            setArticleSuccessMessage('Artigo salvo, mas houve um problema ao registrar o histórico de revisões.');
+            openArticleActionModal({
+                title: effectiveStatus === 'published' ? 'Artigo publicado' : effectiveStatus === 'scheduled' ? 'Artigo agendado' : 'Artigo salvo',
+                message: `O artigo foi ${effectiveStatus === 'published' ? 'publicado' : effectiveStatus === 'scheduled' ? 'agendado' : 'salvo'}, mas houve observações no histórico de revisões. ${revisionHistoryError}`,
+                tone: 'warning',
+            });
+        }
+        else {
+            const actionVerb = effectiveStatus === 'published' ? 'publicado' : effectiveStatus === 'scheduled' ? 'agendado' : 'salvo';
+            setArticleSuccessMessage(`Artigo ${actionVerb} com sucesso.`);
+            openArticleActionModal({
+                title: `Artigo ${actionVerb}`,
+                message: `O artigo foi ${actionVerb} com sucesso.`,
+                tone: 'success',
+            });
+        }
+        setIsSavingArticle(false);
+    }
+    async function handleDeleteArticle(articleToDelete?: BlogArticleRow) {
+        const target = articleToDelete ?? articles.find((item) => item.id === selectedArticleId);
+        if (!target) {
+            return;
+        }
+        const shouldDelete = window.confirm(`Deseja excluir o artigo "${target.title}"`);
+        if (!shouldDelete) {
+            return;
+        }
+        setErrorMessage(null);
+        setSuccessMessage(null);
+        if (!isLegacyMode) {
+            const deleteLinks = await supabase.from(TABLES.articleTags).delete().eq('article_id', target.id);
+            if (deleteLinks.error) {
+                setErrorMessage(deleteLinks.error.message);
+                return;
+            }
+        }
+        const deleteLegacy = await supabase.from('blog_posts').delete().eq('id', target.id);
+        if (deleteLegacy.error) {
+            setErrorMessage(deleteLegacy.error.message);
+            return;
+        }
+        await loadAllData();
+        if (!selectedArticleId || selectedArticleId === target.id) {
+            resetArticleForm();
+        }
+        setArticleView('list');
+        syncArticleEditorUrl();
+        setSuccessMessage('Artigo excluído com sucesso.');
+    }
+    async function handleSaveCategory(inline = false) {
+        const form = inline ? inlineCategoryForm : categoryForm;
+        const selectedId = inline ? null : selectedCategoryId;
+        const name = form.name.trim();
+        const slug = form.slug.trim();
+        if (!name || !slug) {
+            setErrorMessage('Informe nome e slug da categoria.');
+            return;
+        }
+        setIsSavingCategory(true);
+        setErrorMessage(null);
+        setSuccessMessage(null);
+        const payload = {
+            name,
+            slug,
+            description: form.description.trim() || null,
+            parent_id: form.parentId === '__none__' ? null : form.parentId,
+            is_active: form.isActive,
+            display_order: form.displayOrder.trim() ? Number(form.displayOrder) : 0,
+            schema_json: form.schemaJson.trim() || null,
+            seo_title: form.seo_title.trim() || null,
+            seo_description: form.seo_description.trim() || null,
+            seo_canonical_url: form.seo_canonical_url.trim() || null,
+            seo_robots: form.seo_robots.trim() || 'index,follow',
+            seo_og_title: form.seo_og_title.trim() || null,
+            seo_og_description: form.seo_og_description.trim() || null,
+            seo_og_image_url: form.seo_og_image_url.trim() || null,
+        };
+        if (payload.display_order != null && Number.isNaN(payload.display_order)) {
+            setErrorMessage('Ordem da categoria inválida.');
+            setIsSavingCategory(false);
+            return;
+        }
+        const result = selectedId
+            ? await supabase.from(TABLES.categories).update(payload).eq('id', selectedId).select('*').single()
+            : await supabase.from(TABLES.categories).insert(payload).select('*').single();
+        if (result.error) {
+            setErrorMessage(result.error.message);
+            setIsSavingCategory(false);
+            return;
+        }
+        const saved = result.data as BlogCategoryRow;
+        await loadAllData();
+        if (inline) {
+            setShowInlineCategoryForm(false);
+            setInlineCategoryForm(DEFAULT_INLINE_CATEGORY_FORM);
+            setArticleForm((current) => ({ ...current, categoryId: saved.id }));
+            setSuccessMessage('Categoria/subcategoria criada e vinculada ao artigo.');
+        }
+        else {
+            setSelectedCategoryId(saved.id);
+            populateCategoryForm(saved);
+            setSuccessMessage('Categoria salva com sucesso.');
+        }
+        setIsSavingCategory(false);
+    }
+    async function handleDeleteCategory() {
+        if (!selectedCategoryId) {
+            return;
+        }
+        const selected = categories.find((item) => item.id === selectedCategoryId);
+        if (!selected) {
+            return;
+        }
+        const shouldDelete = window.confirm(`Deseja excluir a categoria "${selected.name}"`);
+        if (!shouldDelete) {
+            return;
+        }
+        const result = await supabase.from(TABLES.categories).delete().eq('id', selectedCategoryId);
+        if (result.error) {
+            setErrorMessage(result.error.message);
+            return;
+        }
+        await loadAllData();
+        resetCategoryForm();
+        setSuccessMessage('Categoria excluída com sucesso.');
+    }
+    async function handleSaveTag() {
+        const name = tagForm.name.trim();
+        const slug = tagForm.slug.trim();
+        if (!name || !slug) {
+            setErrorMessage('Informe nome e slug da tag.');
+            return;
+        }
+        setIsSavingTag(true);
+        setErrorMessage(null);
+        setSuccessMessage(null);
+        const payload = {
+            name,
+            slug,
+            description: tagForm.description.trim() || null,
+        };
+        const result = selectedTagId
+            ? await supabase.from(TABLES.tags).update(payload).eq('id', selectedTagId).select('*').single()
+            : await supabase.from(TABLES.tags).insert(payload).select('*').single();
+        if (result.error) {
+            setErrorMessage(result.error.message);
+            setIsSavingTag(false);
+            return;
+        }
+        const saved = result.data as BlogTagRow;
+        await loadAllData();
+        setSelectedTagId(saved.id);
+        populateTagForm(saved);
+        setSuccessMessage('Tag salva com sucesso.');
+        setIsSavingTag(false);
+    }
+    async function handleDeleteTag() {
+        if (!selectedTagId) {
+            return;
+        }
+        const selected = tags.find((item) => item.id === selectedTagId);
+        if (!selected) {
+            return;
+        }
+        const shouldDelete = window.confirm(`Deseja excluir a tag "${selected.name}"`);
+        if (!shouldDelete) {
+            return;
+        }
+        const deleteLinks = await supabase.from(TABLES.articleTags).delete().eq('tag_id', selectedTagId);
+        if (deleteLinks.error) {
+            setErrorMessage(deleteLinks.error.message);
+            return;
+        }
+        const deleteTag = await supabase.from(TABLES.tags).delete().eq('id', selectedTagId);
+        if (deleteTag.error) {
+            setErrorMessage(deleteTag.error.message);
+            return;
+        }
+        await loadAllData();
+        resetTagForm();
+        setSuccessMessage('Tag excluída sem quebrar relacionamentos de artigos.');
+    }
+    async function handleFillTagsWithAI() {
+        setErrorMessage(null);
+        setSuccessMessage(null);
+        try {
+            const response = await fetchBlogTagSuggestions(buildBlogAssistArticleInput(articleForm, tags));
+            setArticleForm((current) => ({
+                ...current,
+                tagIds: Array.from(new Set([...current.tagIds, ...response.selectedTagIds])),
+            }));
+            setSuccessMessage(response.selectedTagIds.length > 0
+                ? `Tags preenchidas com ${response.provider === 'heuristic' ? 'heurística local' : 'IA'} com sucesso.`
+                : 'Nenhuma tag existente foi sugerida para este artigo.');
+        }
+        catch (error) {
+            setErrorMessage(error instanceof Error ? error.message : 'Não foi possível preencher as tags com IA.');
+        }
+    }
+    async function handleSuggestAndCreateTags() {
+        setErrorMessage(null);
+        setSuccessMessage(null);
+        try {
+            const response = await fetchBlogTagCreationSuggestions(buildBlogAssistArticleInput(articleForm, tags));
+            const existingSlugs = new Set(tags.map((tag) => tag.slug.toLowerCase()));
+            const rowsToInsert = response.suggestedTags
+                .filter((tag) => !existingSlugs.has(tag.slug.toLowerCase()))
+                .map((tag) => ({
+                name: tag.name,
+                slug: tag.slug,
+                description: tag.description,
+                seo_title: tag.name,
+                seo_description: tag.description,
+                seo_canonical_url: null,
+                seo_robots: 'index,follow',
+                seo_og_title: tag.name,
+                seo_og_description: tag.description,
+                seo_og_image_url: null,
+            }));
+            const createdTagIds: string[] = [];
+            if (rowsToInsert.length > 0) {
+                const insertResult = await supabase.from(TABLES.tags).insert(rowsToInsert).select('*');
+                if (insertResult.error) {
+                    throw new Error(insertResult.error.message);
+                }
+                createdTagIds.push(...((insertResult.data ?? []) as BlogTagRow[]).map((tag) => tag.id));
+            }
+            await loadAllData();
+            setArticleForm((current) => ({
+                ...current,
+                tagIds: Array.from(new Set([...current.tagIds, ...response.selectedTagIds, ...createdTagIds])),
+            }));
+            setSuccessMessage(rowsToInsert.length > 0
+                ? `Foram sugeridas e criadas ${rowsToInsert.length} novas tags com ajuda da IA.`
+                : 'A IA analisou o artigo, mas não havia novas tags elegíveis para criar.');
+        }
+        catch (error) {
+            setErrorMessage(error instanceof Error ? error.message : 'Não foi possível sugerir novas tags com IA.');
+        }
+    }
+    async function handleFillSeoWithAI() {
+        setErrorMessage(null);
+        setSuccessMessage(null);
+        setSeoAiModal({
+            stage: 'processing',
+            message: 'Processando dados...',
+        });
+        try {
+            const response = await fetchBlogSeoDraft(buildBlogAssistArticleInput(articleForm, tags));
+            const { focus_keyword, ...seoFields } = response.seo;
+            setArticleForm((current) => ({
+                ...current,
+                ...seoFields,
+                focusKeyword: focus_keyword,
+            }));
+            setSeoAiModal({
+                stage: 'success',
+                message: 'Campos preenchidos com sucesso.',
+            });
+            setSuccessMessage('Campos de SEO preenchidos com IA usando o conteúdo do artigo como contexto.');
+        }
+        catch (error) {
+            setErrorMessage(error instanceof Error ? error.message : 'Não foi possível preencher o SEO com IA.');
+        }
+    }
+    function renderSeoFields(value: SeoFields, onChange: (next: SeoFields) => void, labelPrefix: string, focusKeyword?: string) {
+        const seoTitleLength = value.seo_title.trim().length;
+        const seoDescriptionLength = value.seo_description.trim().length;
+        const ogTitleLength = value.seo_og_title.trim().length;
+        const ogDescriptionLength = value.seo_og_description.trim().length;
+        const focus = focusKeyword?.trim().toLowerCase() ?? '';
+        const seoTitleHasFocus = !focus || value.seo_title.toLowerCase().includes(focus);
+        const seoDescriptionHasFocus = !focus || value.seo_description.toLowerCase().includes(focus);
+        const canonicalIsAbsolute = !value.seo_canonical_url.trim() || /^https?:\/\//i.test(value.seo_canonical_url.trim());
+        const ogImageLooksValid = !value.seo_og_image_url.trim() || /^https?:\/\/.+\.(jpg|jpeg|png|webp|gif)(\?.*)?$/i.test(value.seo_og_image_url.trim());
+        const robotsLooksValid = /^(index|noindex),(follow|nofollow)$/i.test(value.seo_robots.trim());
+        return (<div className="grid gap-3">
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
             {labelPrefix} Título SEO
-            <input
-              value={value.seo_title}
-              onChange={(event) => onChange({ ...value, seo_title: event.target.value })}
-              className="h-10 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800 outline-none focus:border-[#1398B7]"
-              placeholder="Ex.: Método Pomodoro: guia prático para estudar melhor"
-            />
+            <input value={value.seo_title} onChange={(event) => onChange({ ...value, seo_title: event.target.value })} className="h-10 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800 outline-none focus:border-[#1398B7]" placeholder="Ex.: Método Pomodoro: guia prático para estudar melhor"/>
             <span className={`text-[11px] normal-case tracking-normal ${seoTitleLength >= 50 && seoTitleLength <= 60 && seoTitleHasFocus ? 'text-emerald-700' : 'text-amber-700'}`}>
               Recomendado: 50-60 caracteres e incluir a palavra-chave foco. ({seoTitleLength}/60)
             </span>
           </label>
           <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
             {labelPrefix} URL canônica
-            <input
-              value={value.seo_canonical_url}
-              onChange={(event) => onChange({ ...value, seo_canonical_url: event.target.value })}
-              className="h-10 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800 outline-none focus:border-[#1398B7]"
-              placeholder="https://seudominio.com/blog/seu-artigo"
-            />
+            <input value={value.seo_canonical_url} onChange={(event) => onChange({ ...value, seo_canonical_url: event.target.value })} className="h-10 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800 outline-none focus:border-[#1398B7]" placeholder="https://seudominio.com/blog/seu-artigo"/>
             <span className={`text-[11px] normal-case tracking-normal ${canonicalIsAbsolute ? 'text-emerald-700' : 'text-amber-700'}`}>
               Use URL absoluta (com https://) e sem parâmetros de rastreio.
             </span>
@@ -2049,16 +1803,10 @@ export function AdminBlogPage() {
 
         <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
           {labelPrefix} Descrição SEO
-          <textarea
-            value={value.seo_description}
-            onChange={(event) => {
-              const nextValue = event.target.value
-              onChange({ ...value, seo_description: nextValue })
-            }}
-            rows={2}
-            className="rounded-xl border border-slate-200 px-3 py-2 text-sm font-medium text-slate-800 outline-none focus:border-[#1398B7]"
-            placeholder="Resumo claro com benefício e intenção de busca do usuário."
-          />
+          <textarea value={value.seo_description} onChange={(event) => {
+                const nextValue = event.target.value;
+                onChange({ ...value, seo_description: nextValue });
+            }} rows={2} className="rounded-xl border border-slate-200 px-3 py-2 text-sm font-medium text-slate-800 outline-none focus:border-[#1398B7]" placeholder="Resumo claro com benefício e intenção de busca do usuário."/>
           <span className={`text-[11px] normal-case tracking-normal ${seoDescriptionLength >= 140 && seoDescriptionLength <= 160 && seoDescriptionHasFocus ? 'text-emerald-700' : 'text-amber-700'}`}>
             Recomendado: 140-160 caracteres e conter a palavra-chave foco. ({seoDescriptionLength}/160)
           </span>
@@ -2067,24 +1815,14 @@ export function AdminBlogPage() {
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
             {labelPrefix} Robots
-            <input
-              value={value.seo_robots}
-              onChange={(event) => onChange({ ...value, seo_robots: event.target.value })}
-              className="h-10 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800 outline-none focus:border-[#1398B7]"
-              placeholder="index,follow"
-            />
+            <input value={value.seo_robots} onChange={(event) => onChange({ ...value, seo_robots: event.target.value })} className="h-10 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800 outline-none focus:border-[#1398B7]" placeholder="index,follow"/>
             <span className={`text-[11px] normal-case tracking-normal ${robotsLooksValid ? 'text-emerald-700' : 'text-amber-700'}`}>
               Formato recomendado: `index,follow` ou `noindex,nofollow`.
             </span>
           </label>
           <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
             {labelPrefix} URL da imagem OG
-            <input
-              value={value.seo_og_image_url}
-              onChange={(event) => onChange({ ...value, seo_og_image_url: event.target.value })}
-              className="h-10 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800 outline-none focus:border-[#1398B7]"
-              placeholder="https://seudominio.com/imagens/capa-og.jpg"
-            />
+            <input value={value.seo_og_image_url} onChange={(event) => onChange({ ...value, seo_og_image_url: event.target.value })} className="h-10 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800 outline-none focus:border-[#1398B7]" placeholder="https://seudominio.com/imagens/capa-og.jpg"/>
             <span className={`text-[11px] normal-case tracking-normal ${ogImageLooksValid ? 'text-emerald-700' : 'text-amber-700'}`}>
               Use uma URL pública da imagem OG (ideal 1200x630).
             </span>
@@ -2094,37 +1832,23 @@ export function AdminBlogPage() {
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
             {labelPrefix} Título OG
-            <input
-              value={value.seo_og_title}
-              onChange={(event) => onChange({ ...value, seo_og_title: event.target.value })}
-              className="h-10 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800 outline-none focus:border-[#1398B7]"
-              placeholder="Título para compartilhamento em redes sociais"
-            />
+            <input value={value.seo_og_title} onChange={(event) => onChange({ ...value, seo_og_title: event.target.value })} className="h-10 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800 outline-none focus:border-[#1398B7]" placeholder="Título para compartilhamento em redes sociais"/>
             <span className={`text-[11px] normal-case tracking-normal ${ogTitleLength >= 40 && ogTitleLength <= 60 ? 'text-emerald-700' : 'text-amber-700'}`}>
               Recomendado: 40-60 caracteres. ({ogTitleLength}/60)
             </span>
           </label>
           <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
             {labelPrefix} Descrição OG
-            <input
-              value={value.seo_og_description}
-              onChange={(event) => onChange({ ...value, seo_og_description: event.target.value })}
-              className="h-10 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800 outline-none focus:border-[#1398B7]"
-              placeholder="Descrição curta para melhorar o clique social"
-            />
+            <input value={value.seo_og_description} onChange={(event) => onChange({ ...value, seo_og_description: event.target.value })} className="h-10 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800 outline-none focus:border-[#1398B7]" placeholder="Descrição curta para melhorar o clique social"/>
             <span className={`text-[11px] normal-case tracking-normal ${ogDescriptionLength >= 110 && ogDescriptionLength <= 160 ? 'text-emerald-700' : 'text-amber-700'}`}>
               Recomendado: 110-160 caracteres. ({ogDescriptionLength}/160)
             </span>
           </label>
         </div>
-      </div>
-    )
-  }
-
-  return (
-    <div className="space-y-6">
-      {isMediaLibraryOpen ? (
-        <div className="fixed inset-0 z-[90] flex items-center justify-center bg-[#0A3640]/50 px-4 py-6">
+      </div>);
+    }
+    return (<div className="space-y-6">
+      {isMediaLibraryOpen ? (<div className="fixed inset-0 z-[90] flex items-center justify-center bg-[#0A3640]/50 px-4 py-6">
           <div className="flex h-full max-h-[90vh] w-full max-w-5xl flex-col overflow-hidden rounded-[24px] border border-[#D8E6EB] bg-white shadow-2xl">
             <div className="flex items-center justify-between border-b border-[#D8E6EB] px-5 py-4">
               <div>
@@ -2139,88 +1863,55 @@ export function AdminBlogPage() {
             </div>
 
             <div className="min-h-0 flex-1 overflow-y-auto p-5">
-              {isLoadingMediaLibrary ? (
-                <p className="text-sm font-semibold text-[#5F7077]">Carregando biblioteca...</p>
-              ) : mediaLibraryAssets.length === 0 ? (
-                <div className="rounded-[18px] border border-dashed border-[#D8E6EB] bg-[#F8FBFC] px-4 py-6 text-sm font-semibold text-[#5F7077]">
+              {isLoadingMediaLibrary ? (<p className="text-sm font-semibold text-[#5F7077]">Carregando biblioteca...</p>) : mediaLibraryAssets.length === 0 ? (<div className="rounded-[18px] border border-dashed border-[#D8E6EB] bg-[#F8FBFC] px-4 py-6 text-sm font-semibold text-[#5F7077]">
                   Nenhuma imagem encontrada na biblioteca de mídia.
-                </div>
-              ) : (
-                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                </div>) : (<div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                   {mediaLibraryAssets.map((asset) => {
-                    const isSelected = selectedMediaAssetId === asset.id
-                    return (
-                      <button
-                        key={asset.id}
-                        type="button"
-                        onClick={() => setSelectedMediaAssetId(asset.id)}
-                        className={`overflow-hidden rounded-[16px] border bg-white text-left transition-all ${isSelected ? 'border-[#1398B7] ring-2 ring-[#1398B7]/20' : 'border-[#D8E6EB] hover:border-[#B8D8E1]'}`}
-                      >
+                    const isSelected = selectedMediaAssetId === asset.id;
+                    return (<button key={asset.id} type="button" onClick={() => setSelectedMediaAssetId(asset.id)} className={`overflow-hidden rounded-[16px] border bg-white text-left transition-all ${isSelected ? 'border-[#1398B7] ring-2 ring-[#1398B7]/20' : 'border-[#D8E6EB] hover:border-[#B8D8E1]'}`}>
                         <div className="aspect-[16/9] w-full bg-[#EAF2F5]">
-                          {asset.public_url ? <img src={asset.public_url} alt={asset.alt ?? 'Imagem'} className="h-full w-full object-cover" /> : null}
+                          {asset.public_url ? <img src={asset.public_url} alt={asset.alt ?? 'Imagem'} className="h-full w-full object-cover"/> : null}
                         </div>
                         <div className="space-y-1 px-3 py-2">
                           <p className="truncate text-xs font-black text-[#15323b]">{asset.alt ?? 'Imagem sem nome'}</p>
                           <p className="text-[11px] font-semibold text-[#5F7077]">{new Date(asset.created_at).toLocaleString('pt-BR')}</p>
                         </div>
-                      </button>
-                    )
-                  })}
-                </div>
-              )}
+                      </button>);
+                })}
+                </div>)}
             </div>
 
             <div className="flex flex-col-reverse gap-2 border-t border-[#D8E6EB] px-5 py-4 sm:flex-row sm:items-center sm:justify-end">
               <Button type="button" variant="outline" onClick={() => setIsMediaLibraryOpen(false)} className="h-11 w-full rounded-xl border-[#D8E6EB] sm:w-auto">
                 Cancelar
               </Button>
-              <Button
-                type="button"
-                onClick={() => handleApplyImageFromLibrary(mediaLibraryTarget)}
-                disabled={!selectedMediaAssetId}
-                className="h-11 w-full rounded-xl bg-[#1398B7] px-4 text-center text-xs font-black uppercase tracking-[0.1em] text-white hover:bg-[#1089A5] sm:w-auto"
-              >
+              <Button type="button" onClick={() => handleApplyImageFromLibrary(mediaLibraryTarget)} disabled={!selectedMediaAssetId} className="h-11 w-full rounded-xl bg-[#1398B7] px-4 text-center text-xs font-black uppercase tracking-[0.1em] text-white hover:bg-[#1089A5] sm:w-auto">
                 Usar imagem selecionada
               </Button>
             </div>
           </div>
-        </div>
-      ) : null}
-      {articleActionModal ? (
-        <div className="fixed inset-0 z-[95] flex items-center justify-center bg-[#06262D]/70 px-4 py-6">
+        </div>) : null}
+      {articleActionModal ? (<div className="fixed inset-0 z-[95] flex items-center justify-center bg-[#06262D]/70 px-4 py-6">
           <div className="w-full max-w-lg overflow-hidden rounded-[24px] border border-[#D8E6EB] bg-white shadow-2xl">
-            <div
-              className={`flex items-start justify-between border-b px-5 py-4 ${
-                articleActionModal.tone === 'error'
-                  ? 'border-[#F5B5B5] bg-gradient-to-r from-[#7F1D1D] to-[#DC2626]'
-                  : articleActionModal.tone === 'warning'
+            <div className={`flex items-start justify-between border-b px-5 py-4 ${articleActionModal.tone === 'error'
+                ? 'border-[#F5B5B5] bg-gradient-to-r from-[#7F1D1D] to-[#DC2626]'
+                : articleActionModal.tone === 'warning'
                     ? 'border-[#F2D16B] bg-gradient-to-r from-[#8A5B00] to-[#E39A00]'
-                    : 'border-[#7DD3A6] bg-gradient-to-r from-[#0A3640] to-[#1398B7]'
-              }`}
-            >
+                    : 'border-[#7DD3A6] bg-gradient-to-r from-[#0A3640] to-[#1398B7]'}`}>
               <div>
-                <p
-                  className={`text-[10px] font-black uppercase tracking-[0.2em] ${
-                    articleActionModal.tone === 'error'
-                      ? 'text-red-100'
-                      : articleActionModal.tone === 'warning'
-                        ? 'text-amber-100'
-                        : 'text-cyan-100'
-                  }`}
-                >
+                <p className={`text-[10px] font-black uppercase tracking-[0.2em] ${articleActionModal.tone === 'error'
+                ? 'text-red-100'
+                : articleActionModal.tone === 'warning'
+                    ? 'text-amber-100'
+                    : 'text-cyan-100'}`}>
                   Resultado da ação
                 </p>
                 <h2 className="mt-1 font-readex text-xl font-semibold tracking-tight text-white">
                   {articleActionModal.title}
                 </h2>
               </div>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setArticleActionModal(null)}
-                className="h-9 rounded-lg border-white/25 bg-white/10 px-3 text-white hover:bg-white/20 hover:text-white"
-              >
-                <X className="h-4 w-4" />
+              <Button type="button" variant="outline" onClick={() => setArticleActionModal(null)} className="h-9 rounded-lg border-white/25 bg-white/10 px-3 text-white hover:bg-white/20 hover:text-white">
+                <X className="h-4 w-4"/>
                 <span className="sr-only">Fechar modal</span>
               </Button>
             </div>
@@ -2229,26 +1920,18 @@ export function AdminBlogPage() {
                 {articleActionModal.message}
               </p>
               <div className="flex justify-end">
-                <Button
-                  type="button"
-                  className={`rounded-xl ${
-                    articleActionModal.tone === 'error'
-                      ? 'bg-[#C94B4B] hover:bg-[#B63E3E]'
-                      : articleActionModal.tone === 'warning'
-                        ? 'bg-[#D48B00] hover:bg-[#B77700]'
-                        : 'bg-[#1398B7] hover:bg-[#0A3640]'
-                  }`}
-                  onClick={() => setArticleActionModal(null)}
-                >
+                <Button type="button" className={`rounded-xl ${articleActionModal.tone === 'error'
+                ? 'bg-[#C94B4B] hover:bg-[#B63E3E]'
+                : articleActionModal.tone === 'warning'
+                    ? 'bg-[#D48B00] hover:bg-[#B77700]'
+                    : 'bg-[#1398B7] hover:bg-[#0A3640]'}`} onClick={() => setArticleActionModal(null)}>
                   Fechar
                 </Button>
               </div>
             </div>
           </div>
-        </div>
-      ) : null}
-      {seoAiModal ? (
-        <div className="fixed inset-0 z-[96] flex items-center justify-center bg-[#06262D]/70 px-4 py-6">
+        </div>) : null}
+      {seoAiModal ? (<div className="fixed inset-0 z-[96] flex items-center justify-center bg-[#06262D]/70 px-4 py-6">
           <div className="w-full max-w-md overflow-hidden rounded-[24px] border border-[#D8E6EB] bg-white shadow-2xl">
             <div className="border-b border-[#D8E6EB] bg-gradient-to-r from-[#0A3640] to-[#1398B7] px-5 py-4">
               <p className="text-[10px] font-black uppercase tracking-[0.2em] text-cyan-100">SEO com IA</p>
@@ -2258,17 +1941,14 @@ export function AdminBlogPage() {
             </div>
             <div className="space-y-4 px-5 py-5">
               <p className="text-sm font-medium leading-6 text-[#15323b]">{seoAiModal.message}</p>
-              {seoAiModal.stage !== 'processing' ? (
-                <div className="flex justify-end">
+              {seoAiModal.stage !== 'processing' ? (<div className="flex justify-end">
                   <Button type="button" className="rounded-xl bg-[#1398B7] hover:bg-[#0A3640]" onClick={() => setSeoAiModal(null)}>
                     Fechar
                   </Button>
-                </div>
-              ) : null}
+                </div>) : null}
             </div>
           </div>
-        </div>
-      ) : null}
+        </div>) : null}
       <header className="flex flex-col gap-4 border-b border-[#D8E6EB] pb-5 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <p className="text-[10px] font-black uppercase tracking-[0.28em] text-[#1398B7]">Admin / Blog</p>
@@ -2282,94 +1962,58 @@ export function AdminBlogPage() {
         </div>
       </header>
 
-      {errorMessage ? (
-        <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-bold text-red-700">
+      {errorMessage ? (<div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-bold text-red-700">
           {errorMessage}
-        </div>
-      ) : null}
-      {successMessage ? (
-        <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm font-bold text-emerald-700">
+        </div>) : null}
+      {successMessage ? (<div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm font-bold text-emerald-700">
           {successMessage}
-        </div>
-      ) : null}
+        </div>) : null}
 
       <section className="flex flex-wrap gap-2">
-        <button
-          type="button"
-          onClick={() => {
-            setActiveTab('articles')
-            setArticleView('list')
-            syncArticleEditorUrl()
-          }}
-          className={`rounded-full border px-4 py-2 text-sm font-bold ${activeTab === 'articles' ? 'border-[#1398B7] bg-[#1398B7] text-white' : 'border-[#D8E6EB] bg-white text-[#15323b]'}`}
-        >
+        <button type="button" onClick={() => {
+            setActiveTab('articles');
+            setArticleView('list');
+            syncArticleEditorUrl();
+        }} className={`rounded-full border px-4 py-2 text-sm font-bold ${activeTab === 'articles' ? 'border-[#1398B7] bg-[#1398B7] text-white' : 'border-[#D8E6EB] bg-white text-[#15323b]'}`}>
           Artigos
         </button>
-        {isCategoryCrudAvailable ? (
-          <button
-            type="button"
-            onClick={() => setActiveTab('categories')}
-            className={`rounded-full border px-4 py-2 text-sm font-bold ${activeTab === 'categories' ? 'border-[#1398B7] bg-[#1398B7] text-white' : 'border-[#D8E6EB] bg-white text-[#15323b]'}`}
-          >
+        {isCategoryCrudAvailable ? (<button type="button" onClick={() => setActiveTab('categories')} className={`rounded-full border px-4 py-2 text-sm font-bold ${activeTab === 'categories' ? 'border-[#1398B7] bg-[#1398B7] text-white' : 'border-[#D8E6EB] bg-white text-[#15323b]'}`}>
             Categorias
-          </button>
-        ) : null}
-        {!isLegacyMode ? (
-          <button
-            type="button"
-            onClick={() => setActiveTab('tags')}
-            className={`rounded-full border px-4 py-2 text-sm font-bold ${activeTab === 'tags' ? 'border-[#1398B7] bg-[#1398B7] text-white' : 'border-[#D8E6EB] bg-white text-[#15323b]'}`}
-          >
+          </button>) : null}
+        {!isLegacyMode ? (<button type="button" onClick={() => setActiveTab('tags')} className={`rounded-full border px-4 py-2 text-sm font-bold ${activeTab === 'tags' ? 'border-[#1398B7] bg-[#1398B7] text-white' : 'border-[#D8E6EB] bg-white text-[#15323b]'}`}>
             Tags
-          </button>
-        ) : null}
-        <button
-          type="button"
-          onClick={() => setActiveTab('layout')}
-          className={`rounded-full border px-4 py-2 text-sm font-bold ${activeTab === 'layout' ? 'border-[#1398B7] bg-[#1398B7] text-white' : 'border-[#D8E6EB] bg-white text-[#15323b]'}`}
-        >
+          </button>) : null}
+        <button type="button" onClick={() => setActiveTab('layout')} className={`rounded-full border px-4 py-2 text-sm font-bold ${activeTab === 'layout' ? 'border-[#1398B7] bg-[#1398B7] text-white' : 'border-[#D8E6EB] bg-white text-[#15323b]'}`}>
           Layout do blog
         </button>
-        <button
-          type="button"
-          onClick={() => setActiveTab('styles')}
-          className={`rounded-full border px-4 py-2 text-sm font-bold ${activeTab === 'styles' ? 'border-[#1398B7] bg-[#1398B7] text-white' : 'border-[#D8E6EB] bg-white text-[#15323b]'}`}
-        >
+        <button type="button" onClick={() => setActiveTab('styles')} className={`rounded-full border px-4 py-2 text-sm font-bold ${activeTab === 'styles' ? 'border-[#1398B7] bg-[#1398B7] text-white' : 'border-[#D8E6EB] bg-white text-[#15323b]'}`}>
           Estilos do blog
         </button>
-        <button
-          type="button"
-          onClick={() => setActiveTab('comments')}
-          className={`rounded-full border px-4 py-2 text-sm font-bold ${activeTab === 'comments' ? 'border-[#1398B7] bg-[#1398B7] text-white' : 'border-[#D8E6EB] bg-white text-[#15323b]'}`}
-        >
+        <button type="button" onClick={() => setActiveTab('comments')} className={`rounded-full border px-4 py-2 text-sm font-bold ${activeTab === 'comments' ? 'border-[#1398B7] bg-[#1398B7] text-white' : 'border-[#D8E6EB] bg-white text-[#15323b]'}`}>
           Comentários
         </button>
       </section>
 
-      {activeTab === 'comments' ? (
-        <AdminBlogCommentsPanel />
-      ) : null}
+      {activeTab === 'comments' ? (<AdminBlogCommentsPanel />) : null}
 
-      {activeTab === 'articles' ? (
-        <section className="space-y-6">
+      {activeTab === 'articles' ? (<section className="space-y-6">
           <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
             <div className="rounded-2xl border border-[#D8E6EB] bg-white p-4"><p className="text-xs font-bold uppercase text-[#5F7077]">Total</p><p className="mt-2 text-2xl font-black text-[#15323b]">{statusSummary.total}</p></div>
             <div className="rounded-2xl border border-[#D8E6EB] bg-white p-4"><p className="text-xs font-bold uppercase text-[#5F7077]">Rascunhos</p><p className="mt-2 text-2xl font-black text-[#15323b]">{statusSummary.draft}</p></div>
             <div className="rounded-2xl border border-[#D8E6EB] bg-white p-4"><p className="text-xs font-bold uppercase text-[#5F7077]">Agendados</p><p className="mt-2 text-2xl font-black text-[#15323b]">{statusSummary.scheduled}</p></div>
             <div className="rounded-2xl border border-[#D8E6EB] bg-white p-4"><p className="text-xs font-bold uppercase text-[#5F7077]">Publicado</p><p className="mt-2 text-2xl font-black text-[#15323b]">{statusSummary.published}</p></div>
-            <div className="rounded-2xl border border-[#D8E6EB] bg-white p-4"><p className="text-xs font-bold uppercase text-[#5F7077]">Destaque</p><p className="mt-2 text-2xl font-black text-[#15323b]">{statusSummary.featured}</p></div>
+            <div className="rounded-2xl border border-[#D8E6EB] bg-white p-4"><p className="text-xs font-bold uppercase text-[#5F7077]">Dest?que</p><p className="mt-2 text-2xl font-black text-[#15323b]">{statusSummary.featured}</p></div>
           </section>
 
           <section className="grid gap-6">
-            {articleView === 'editor' ? (
-              <article className="rounded-[28px] border border-[#D8E6EB] bg-white p-5">
+            {articleView === 'editor' ? (<article className="rounded-[28px] border border-[#D8E6EB] bg-white p-5">
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <h2 className="text-lg font-black tracking-tight text-[#15323b]">{selectedArticleId ? 'Editar artigo' : 'Novo artigo'}</h2>
+                <h2 className="text-lg font-black tracking-tight text-[#15323b]">{selectedArticleId ? 'Editar artigo' : "N?ovo artigo"}</h2>
                 <div className="flex gap-2">
                   <Button type="button" variant="outline" className="rounded-xl" onClick={() => {
-                    setArticleView('list')
-                    syncArticleEditorUrl()
-                  }}>Voltar para lista</Button>
+                    setArticleView('list');
+                    syncArticleEditorUrl();
+                }}>Voltar para lista</Button>
                   <Button type="button" variant="outline" className="rounded-xl" onClick={resetArticleForm}>Limpar</Button>
                 </div>
               </div>
@@ -2377,47 +2021,31 @@ export function AdminBlogPage() {
               <div className="mt-4 grid gap-4">
                 <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
                   Título
-                  <input
-                    value={articleForm.title}
-                    onChange={(event) => {
-                      setArticleForm((current) => ({ ...current, title: event.target.value }))
-                    }}
-                    className="h-11 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800 outline-none focus:border-[#1398B7]"
-                  />
-                  <span className="text-[11px] normal-case tracking-normal text-[#5F7077]">
-                    A slug é preenchida automaticamente a partir do título enquanto você não editá-la manualmente.
+                  <input value={articleForm.title} onChange={(event) => {
+                    setArticleForm((current) => ({ ...current, title: event.target.value }));
+                }} className="h-11 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800 outline-none focus:border-[#1398B7]"/>
+                  <span className="text-[11px] normal-case tracking-normal text-[#5F7077]">A slug é preenchida automticamente a partir do título enquanto você não editá-la manualmente.
                   </span>
                 </label>
 
                 <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
                   Slug
-                  <input
-                    value={articleForm.slug}
-                    onChange={(event) => {
-                      const nextSlug = slugify(event.target.value)
-                      setIsArticleSlugTouched(nextSlug.length > 0)
-                      setArticleForm((current) => ({
+                  <input value={articleForm.slug} onChange={(event) => {
+                    const nextSlug = slugify(event.target.value);
+                    setIsArticleSlugTouched(nextSlug.length > 0);
+                    setArticleForm((current) => ({
                         ...current,
                         slug: nextSlug || slugify(current.title),
-                      }))
-                    }}
-                    className="h-11 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800 outline-none focus:border-[#1398B7]"
-                  />
+                    }));
+                }} className="h-11 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800 outline-none focus:border-[#1398B7]"/>
                 </label>
 
                 <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
                   Resumo do card do artigo
-                  <textarea
-                    value={articleForm.seo_description}
-                    onChange={(event) => {
-                      const nextValue = event.target.value.slice(0, BLOG_CARD_SUMMARY_MAX_LENGTH)
-                      setArticleForm((current) => ({ ...current, seo_description: nextValue }))
-                    }}
-                    rows={3}
-                    maxLength={BLOG_CARD_SUMMARY_MAX_LENGTH}
-                    className="rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-800 outline-none focus:border-[#1398B7]"
-                    placeholder="Este texto aparece na descrição do card da página /blog."
-                  />
+                  <textarea value={articleForm.seo_description} onChange={(event) => {
+                    const nextValue = event.target.value.slice(0, BLOG_CARD_SUMMARY_MAX_LENGTH);
+                    setArticleForm((current) => ({ ...current, seo_description: nextValue }));
+                }} rows={3} maxLength={BLOG_CARD_SUMMARY_MAX_LENGTH} className="rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-800 outline-none focus:border-[#1398B7]" placeholder="Este texto aparece na descrição do card da página /blog."/>
                   <span className="text-[11px] normal-case tracking-normal text-[#5F7077]">
                     O texto inserido aqui aparece no card do artigo no grid de <code>/blog</code>. Limite: {BLOG_CARD_SUMMARY_MAX_LENGTH} caracteres ({articleForm.seo_description.length}/{BLOG_CARD_SUMMARY_MAX_LENGTH}).
                   </span>
@@ -2426,11 +2054,7 @@ export function AdminBlogPage() {
                 <div className="grid gap-3 sm:grid-cols-2">
                   <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
                     Status
-                    <select
-                      value={articleForm.status}
-                      onChange={(event) => setArticleForm((current) => ({ ...current, status: event.target.value as ArticleStatus }))}
-                      className="h-11 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800 outline-none focus:border-[#1398B7]"
-                    >
+                    <select value={articleForm.status} onChange={(event) => setArticleForm((current) => ({ ...current, status: event.target.value as ArticleStatus }))} className="h-11 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800 outline-none focus:border-[#1398B7]">
                       <option value="draft">Rascunho</option>
                       <option value="scheduled">Agendado</option>
                       <option value="published">Publicado</option>
@@ -2439,60 +2063,39 @@ export function AdminBlogPage() {
 
                   <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
                     Categoria
-                    <select
-                      value={articleForm.categoryId}
-                      onChange={(event) => {
-                        const selected = event.target.value
-                        if (selected === '__create__') {
-                          setShowInlineCategoryForm(true)
-                          return
-                        }
-                        setArticleForm((current) => ({ ...current, categoryId: selected }))
-                      }}
-                      className="h-11 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800 outline-none focus:border-[#1398B7]"
-                    >
+                    <select value={articleForm.categoryId} onChange={(event) => {
+                    const selected = event.target.value;
+                    if (selected === '__create__') {
+                        setShowInlineCategoryForm(true);
+                        return;
+                    }
+                    setArticleForm((current) => ({ ...current, categoryId: selected }));
+                }} className="h-11 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800 outline-none focus:border-[#1398B7]">
                       <option value="__none__">Sem categoria</option>
-                      {categoryOptions.map((option) => (
-                        <option key={option.id} value={option.id}>{option.label}</option>
-                      ))}
+                      {categoryOptions.map((option) => (<option key={option.id} value={option.id}>{option.label}</option>))}
                       <option value="__create__">+ Criar categoria/subcategoria</option>
                     </select>
                   </label>
                 </div>
 
-                {showInlineCategoryForm ? (
-                  <div className="space-y-3 rounded-2xl border border-dashed border-[#BEE3EA] bg-[#F4FBFD] p-4">
+                {showInlineCategoryForm ? (<div className="space-y-3 rounded-2xl border border-dashed border-[#BEE3EA] bg-[#F4FBFD] p-4">
                     <p className="text-xs font-black uppercase tracking-[0.2em] text-[#1398B7]">Criar categoria inline</p>
                     <div className="grid gap-3 sm:grid-cols-2">
-                      <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
-                        Nome
-                        <input
-                          value={inlineCategoryForm.name}
-                          onChange={(event) => setInlineCategoryForm((current) => ({
-                            ...current,
-                            name: event.target.value,
-                            slug: slugify(event.target.value),
-                          }))}
-                          className="h-10 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800"
-                        />
+                      <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">N?ome
+                        <input value={inlineCategoryForm.name} onChange={(event) => setInlineCategoryForm((current) => ({
+                        ...current,
+                        name: event.target.value,
+                        slug: slugify(event.target.value),
+                    }))} className="h-10 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800"/>
                       </label>
                       <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
                         Slug
-                        <input
-                          value={inlineCategoryForm.slug}
-                          onChange={(event) => setInlineCategoryForm((current) => ({ ...current, slug: slugify(event.target.value) }))}
-                          className="h-10 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800"
-                        />
+                        <input value={inlineCategoryForm.slug} onChange={(event) => setInlineCategoryForm((current) => ({ ...current, slug: slugify(event.target.value) }))} className="h-10 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800"/>
                       </label>
                     </div>
                     <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
                       Descrição
-                      <textarea
-                        value={inlineCategoryForm.description}
-                        onChange={(event) => setInlineCategoryForm((current) => ({ ...current, description: event.target.value }))}
-                        rows={2}
-                        className="rounded-xl border border-slate-200 px-3 py-2 text-sm font-medium text-slate-800"
-                      />
+                      <textarea value={inlineCategoryForm.description} onChange={(event) => setInlineCategoryForm((current) => ({ ...current, description: event.target.value }))} rows={2} className="rounded-xl border border-slate-200 px-3 py-2 text-sm font-medium text-slate-800"/>
                     </label>
                     <div className="flex gap-2">
                       <Button type="button" className="rounded-xl bg-[#1398B7] hover:bg-[#0A3640]" onClick={() => void handleSaveCategory(true)} disabled={isSavingCategory}>
@@ -2502,226 +2105,119 @@ export function AdminBlogPage() {
                         Cancelar
                       </Button>
                     </div>
-                  </div>
-                ) : null}
+                  </div>) : null}
 
                 <div className="grid gap-3 sm:grid-cols-2">
                   <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
                     Publicado em
-                    <input
-                      type="datetime-local"
-                      value={articleForm.publishedAt}
-                      onChange={(event) => setArticleForm((current) => ({ ...current, publishedAt: event.target.value }))}
-                      className="h-11 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800"
-                    />
+                    <input type="datetime-local" value={articleForm.publishedAt} onChange={(event) => setArticleForm((current) => ({ ...current, publishedAt: event.target.value }))} className="h-11 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800"/>
                   </label>
                   <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
                     Agendar para
-                    <input
-                      type="datetime-local"
-                      value={articleForm.scheduledPublishAt}
-                      onChange={(event) => setArticleForm((current) => ({ ...current, scheduledPublishAt: event.target.value }))}
-                      className="h-11 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800"
-                    />
+                    <input type="datetime-local" value={articleForm.scheduledPublishAt} onChange={(event) => setArticleForm((current) => ({ ...current, scheduledPublishAt: event.target.value }))} className="h-11 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800"/>
                   </label>
                 </div>
 
                 <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
                   Tempo de leitura (auto)
-                  <input
-                    value={String(articleForm.readingTimeMinutes)}
-                    readOnly
-                    className="h-11 rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm font-semibold text-slate-700"
-                  />
+                  <input value={String(articleForm.readingTimeMinutes)} readOnly className="h-11 rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm font-semibold text-slate-700"/>
                 </label>
                 <label className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-700">
-                  <input
-                    type="checkbox"
-                    checked={articleForm.featured}
-                    onChange={(event) => setArticleForm((current) => ({ ...current, featured: event.target.checked }))}
-                    className="h-4 w-4 rounded border-slate-300"
-                  />
-                  Artigo em destaque
+                  <input type="checkbox" checked={articleForm.featured} onChange={(event) => setArticleForm((current) => ({ ...current, featured: event.target.checked }))} className="h-4 w-4 rounded border-slate-300"/>Artigo em dest?que
                 </label>
 
                 <div className="space-y-1">
                   <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-500">Conteúdo (content_html)</p>
-                  <RichTextEditor
-                    value={articleForm.contentHtml}
-                    onChange={(nextHtml) => {
-                      const reading = calculateReadingTimeMinutes(removeInternalH1(nextHtml))
-                      setArticleForm((current) => ({
+                  <RichTextEditor value={articleForm.contentHtml} onChange={(nextHtml) => {
+                    const reading = calculateReadingTimeMinutes(removeInternalH1(nextHtml));
+                    setArticleForm((current) => ({
                         ...current,
                         contentHtml: nextHtml,
                         readingTimeMinutes: reading,
-                      }))
-                    }}
-                    enableHtmlMode
-                    showRawHtmlToggle={false}
-                    showHeadingHints
-                  />
+                    }));
+                }} enableHtmlMode showRawHtmlToggle={false} showHeadingHints/>
                 </div>
 
-                {!isLegacyMode ? (
-                  <section className="space-y-3 rounded-2xl border border-[#D8E6EB] bg-[#F8FBFC] p-4">
+                {!isLegacyMode ? (<section className="space-y-3 rounded-2xl border border-[#D8E6EB] bg-[#F8FBFC] p-4">
                     <div className="flex items-center justify-between gap-3">
                       <p className="text-xs font-black uppercase tracking-[0.2em] text-[#1398B7]">Tags (relacionamento em blog_article_tags)</p>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className="h-9 rounded-xl px-3 text-xs font-black uppercase tracking-[0.08em]"
-                        onClick={() => setIsArticleTagsExpanded((current) => !current)}
-                      >
-                        {isArticleTagsExpanded ? (
-                          <span className="inline-flex items-center gap-2"><ChevronUp className="h-4 w-4" /> Recolher</span>
-                        ) : (
-                          <span className="inline-flex items-center gap-2"><ChevronDown className="h-4 w-4" /> Expandir</span>
-                        )}
+                      <Button type="button" variant="outline" className="h-9 rounded-xl px-3 text-xs font-black uppercase tracking-[0.08em]" onClick={() => setIsArticleTagsExpanded((current) => !current)}>
+                        {isArticleTagsExpanded ? (<span className="inline-flex items-center gap-2"><ChevronUp className="h-4 w-4"/> Recolher</span>) : (<span className="inline-flex items-center gap-2"><ChevronDown className="h-4 w-4"/> Expandir</span>)}
                       </Button>
                     </div>
 
-                    {!isArticleTagsExpanded ? (
-                      <p className="text-sm font-medium text-[#5F7077]">
+                    {!isArticleTagsExpanded ? (<p className="text-sm font-medium text-[#5F7077]">
                         Seção recolhida. Expanda para vincular tags existentes, sugerir tags com IA ou criar novas tags.
-                      </p>
-                    ) : null}
+                      </p>) : null}
 
-                    {isArticleTagsExpanded ? (
-                      <div className="space-y-3">
+                    {isArticleTagsExpanded ? (<div className="space-y-3">
                         <div className="grid gap-2 sm:grid-cols-2">
                           {tags.map((tag) => {
-                            const checked = articleForm.tagIds.includes(tag.id)
-                            return (
-                              <label key={tag.id} className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700">
-                                <input
-                                  type="checkbox"
-                                  checked={checked}
-                                  onChange={(event) => setArticleForm((current) => ({
+                            const checked = articleForm.tagIds.includes(tag.id);
+                            return (<label key={tag.id} className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700">
+                                <input type="checkbox" checked={checked} onChange={(event) => setArticleForm((current) => ({
                                     ...current,
                                     tagIds: event.target.checked
-                                      ? [...current.tagIds, tag.id]
-                                      : current.tagIds.filter((entry) => entry !== tag.id),
-                                  }))}
-                                  className="h-4 w-4 rounded border-slate-300"
-                                />
+                                        ? [...current.tagIds, tag.id]
+                                        : current.tagIds.filter((entry) => entry !== tag.id),
+                                }))} className="h-4 w-4 rounded border-slate-300"/>
                                 #{tag.name}
-                              </label>
-                            )
-                          })}
+                              </label>);
+                        })}
                         </div>
                         <div className="flex flex-wrap gap-2">
-                          <Button
-                            type="button"
-                            variant="outline"
-                            className="rounded-xl"
-                            title="Preenche automaticamente as tags já existentes mais aderentes ao artigo usando a IA configurada no painel."
-                            aria-label="Preencher tags com IA"
-                            onClick={() => void handleFillTagsWithAI()}
-                          >
+                          <Button type="button" variant="outline" className="rounded-xl" title="Preenche automticamente as tags já existentes mais aderentes ao artigo usando a IA configurada no painel." aria-label="Preencher tags com IA" onClick={() => void handleFillTagsWithAI()}>
                             Preencher tags com IA
                           </Button>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            className="rounded-xl"
-                            title="Sugere novas tags com base no conteúdo do artigo e, quando possível, já cria essas tags no cadastro."
-                            aria-label="Sugerir e criar novas tags"
-                            onClick={() => void handleSuggestAndCreateTags()}
-                          >
+                          <Button type="button" variant="outline" className="rounded-xl" title="Sugere novas tags com base no conteúdo do artigo e, quando possível, já cria essas tags no cadastro." aria-label="Sugerir e criar novas tags" onClick={() => void handleSuggestAndCreateTags()}>
                             Sugerir e criar novas tags
                           </Button>
                         </div>
-                      </div>
-                    ) : null}
-                  </section>
-                ) : (
-                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs font-semibold text-slate-600">
+                      </div>) : null}
+                  </section>) : (<div className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs font-semibold text-slate-600">
                     Tags e relacionamento avançado estão indisponíveis no modelo atual do blog.
-                  </div>
-                )}
+                  </div>)}
 
                 <section className="space-y-3 rounded-2xl border border-[#D8E6EB] bg-[#F8FBFC] p-4">
                   <div className="flex items-center justify-between gap-3">
                     <p className="text-xs font-black uppercase tracking-[0.2em] text-[#1398B7]">SEO do artigo</p>
                     <div className="flex flex-wrap items-center gap-2">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className="h-9 rounded-xl px-3 text-xs font-black uppercase tracking-[0.08em]"
-                        title="Preenche os campos de SEO usando a IA configurada no painel e o conteúdo do artigo como contexto."
-                        aria-label="Preencher campos de SEO com IA"
-                        onClick={() => void handleFillSeoWithAI()}
-                        disabled={seoAiModal?.stage === 'processing'}
-                      >
+                      <Button type="button" variant="outline" className="h-9 rounded-xl px-3 text-xs font-black uppercase tracking-[0.08em]" title="Preenche os campos de SEO usando a IA configurada no painel e o conteúdo do artigo como contexto." aria-label="Preencher campos de SEO com IA" onClick={() => void handleFillSeoWithAI()} disabled={seoAiModal?.stage === 'processing'}>
                         {seoAiModal?.stage === 'processing' ? 'Processando...' : 'Preencher SEO com IA'}
                       </Button>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className="h-9 rounded-xl px-3 text-xs font-black uppercase tracking-[0.08em]"
-                        onClick={() => setIsArticleSeoExpanded((current) => !current)}
-                      >
-                        {isArticleSeoExpanded ? (
-                          <span className="inline-flex items-center gap-2"><ChevronUp className="h-4 w-4" /> Recolher</span>
-                        ) : (
-                          <span className="inline-flex items-center gap-2"><ChevronDown className="h-4 w-4" /> Expandir</span>
-                        )}
+                      <Button type="button" variant="outline" className="h-9 rounded-xl px-3 text-xs font-black uppercase tracking-[0.08em]" onClick={() => setIsArticleSeoExpanded((current) => !current)}>
+                        {isArticleSeoExpanded ? (<span className="inline-flex items-center gap-2"><ChevronUp className="h-4 w-4"/> Recolher</span>) : (<span className="inline-flex items-center gap-2"><ChevronDown className="h-4 w-4"/> Expandir</span>)}
                       </Button>
                     </div>
                   </div>
 
-                  {!isArticleSeoExpanded ? (
-                    <p className="text-sm font-medium text-[#5F7077]">
+                  {!isArticleSeoExpanded ? (<p className="text-sm font-medium text-[#5F7077]">
                       Seção recolhida. Expanda para configurar título SEO, descrição, canonical, robots e Open Graph.
-                    </p>
-                  ) : null}
+                    </p>) : null}
 
-                  {isArticleSeoExpanded ? (
-                    <>
+                  {isArticleSeoExpanded ? (<>
                       <div className="space-y-2">
                         <div className="flex flex-wrap items-center gap-2">
                           <label className="grid flex-1 gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
                             Palavra-chave foco
-                            <input
-                              value={articleForm.focusKeyword}
-                              onChange={(event) => setArticleForm((current) => ({ ...current, focusKeyword: event.target.value }))}
-                              className="h-11 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800"
-                              placeholder="Termo principal que o artigo quer ranquear"
-                            />
+                            <input value={articleForm.focusKeyword} onChange={(event) => setArticleForm((current) => ({ ...current, focusKeyword: event.target.value }))} className="h-11 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800" placeholder="Termo principal que o artigo quer ranquear"/>
                             <span className="text-[11px] normal-case tracking-normal text-[#5F7077]">
                               Use 1 termo principal e tente repeti-lo no slug, título SEO e descrição SEO.
                             </span>
                           </label>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            className="mt-5 rounded-xl"
-                            onClick={() => setArticleForm((current) => ({ ...current, focusKeyword: suggestFocusKeyword(current) }))}
-                          >
+                          <Button type="button" variant="outline" className="mt-5 rounded-xl" onClick={() => setArticleForm((current) => ({ ...current, focusKeyword: suggestFocusKeyword(current) }))}>
                             Sugerir palavra-chave
                           </Button>
                         </div>
                       </div>
 
-                      {seoHints.length > 0 ? (
-                        <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs font-semibold text-amber-800">
-                          {seoHints.map((hint) => (
-                            <p key={hint}>{hint}</p>
-                          ))}
-                        </div>
-                      ) : (
-                        <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-xs font-semibold text-emerald-700">
+                      {seoHints.length > 0 ? (<div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs font-semibold text-amber-800">
+                          {seoHints.map((hint) => (<p key={hint}>{hint}</p>))}
+                        </div>) : (<div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-xs font-semibold text-emerald-700">
                           SEO básico do artigo está consistente com a palavra-chave de foco.
-                        </div>
-                      )}
-                      {renderSeoFields(
-                        articleForm,
-                        (next) => setArticleForm((current) => ({ ...current, ...next })),
-                        'Artigo',
-                        articleForm.focusKeyword,
-                      )}
-                    </>
-                  ) : null}
+                        </div>)}
+                      {renderSeoFields(articleForm, (next) => setArticleForm((current) => ({ ...current, ...next })), 'Artigo', articleForm.focusKeyword)}
+                    </>) : null}
                 </section>
 
                 <section className="rounded-2xl border border-[#D8E6EB] bg-white p-4">
@@ -2734,13 +2230,9 @@ export function AdminBlogPage() {
                   <div className="mt-4 grid gap-4 lg:grid-cols-[220px_minmax(0,1fr)]">
                     <div className="overflow-hidden rounded-2xl border border-[#D8E6EB] bg-[#EAF2F5]">
                       <div className="aspect-[4/3] w-full">
-                        {articleForm.coverImageUrl ? (
-                          <img src={articleForm.coverImageUrl} alt={articleForm.title || 'Imagem de capa'} className="h-full w-full object-cover" />
-                        ) : (
-                          <div className="flex h-full w-full items-center justify-center px-4 text-center text-xs font-semibold text-[#5F7077]">
+                        {articleForm.coverImageUrl ? (<img src={articleForm.coverImageUrl} alt={articleForm.title || 'Imagem de capa'} className="h-full w-full object-cover"/>) : (<div className="flex h-full w-full items-center justify-center px-4 text-center text-xs font-semibold text-[#5F7077]">
                             Nenhuma capa definida
-                          </div>
-                        )}
+                          </div>)}
                       </div>
                     </div>
 
@@ -2750,62 +2242,34 @@ export function AdminBlogPage() {
 
                       <label className="mt-3 grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
                         URL da capa
-                        <input
-                          value={articleForm.coverImageUrl}
-                          onChange={(event) => setArticleForm((current) => ({ ...current, coverImageUrl: event.target.value }))}
-                          className="h-10 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800"
-                        />
+                        <input value={articleForm.coverImageUrl} onChange={(event) => setArticleForm((current) => ({ ...current, coverImageUrl: event.target.value }))} className="h-10 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800"/>
                       </label>
 
                       <div className="mt-3 grid gap-2 sm:grid-cols-2">
                         <label className="inline-flex h-10 cursor-pointer items-center justify-center rounded-xl bg-[#1398B7] px-3 text-center text-xs font-black uppercase tracking-[0.08em] text-white hover:bg-[#1089A5]">
                           {isUploadingCoverImage ? 'Enviando...' : 'Escolher arquivo'}
-                          <input
-                            type="file"
-                            accept=".jpg,.jpeg,.png,.webp,image/*"
-                            disabled={isUploadingCoverImage}
-                            onChange={(event) => {
-                              const file = event.target.files?.[0] ?? null
-                              void handleUploadArticleCoverImage(file)
-                              event.currentTarget.value = ''
-                            }}
-                            className="sr-only"
-                          />
+                          <input type="file" accept=".jpg,.jpeg,.png,.webp,image/*" disabled={isUploadingCoverImage} onChange={(event) => {
+                    const file = event.target.files?.[0] ?? null;
+                    void handleUploadArticleCoverImage(file);
+                    event.currentTarget.value = '';
+                }} className="sr-only"/>
                         </label>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={() => {
-                            setMediaLibraryTarget('cover')
-                            setIsMediaLibraryOpen(true)
-                          }}
-                          disabled={isLoadingMediaLibrary || isUploadingCoverImage}
-                          className="h-10 rounded-xl border-[#D8E6EB] text-xs font-black uppercase tracking-[0.08em]"
-                        >
+                        <Button type="button" variant="outline" onClick={() => {
+                    setMediaLibraryTarget('cover');
+                    setIsMediaLibraryOpen(true);
+                }} disabled={isLoadingMediaLibrary || isUploadingCoverImage} className="h-10 rounded-xl border-[#D8E6EB] text-xs font-black uppercase tracking-[0.08em]">
                           Abrir biblioteca
                         </Button>
                       </div>
 
-                      {articleForm.coverImageUrl ? (
-                        <div className="mt-3 flex flex-wrap items-center gap-3">
-                          <a
-                            href={articleForm.coverImageUrl}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="text-sm font-black text-[#1398B7] hover:text-[#0A3640]"
-                          >
+                      {articleForm.coverImageUrl ? (<div className="mt-3 flex flex-wrap items-center gap-3">
+                          <a href={articleForm.coverImageUrl} target="_blank" rel="noreferrer" className="text-sm font-black text-[#1398B7] hover:text-[#0A3640]">
                             Abrir imagem atual
                           </a>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() => setArticleForm((current) => ({ ...current, coverImageUrl: '' }))}
-                            className="h-8 rounded-lg border-rose-200 px-3 text-xs font-black text-rose-700 hover:bg-rose-50"
-                          >
+                          <Button type="button" variant="outline" onClick={() => setArticleForm((current) => ({ ...current, coverImageUrl: '' }))} className="h-8 rounded-lg border-rose-200 px-3 text-xs font-black text-rose-700 hover:bg-rose-50">
                             Remover imagem
                           </Button>
-                        </div>
-                      ) : null}
+                        </div>) : null}
                     </div>
                   </div>
                 </section>
@@ -2814,20 +2278,15 @@ export function AdminBlogPage() {
                   <section className="h-full rounded-2xl border border-[#D8E6EB] bg-white p-4">
                   <p className="text-xs font-black uppercase tracking-[0.2em] text-[#1398B7]">Imagem do card do artigo</p>
                   <h3 className="mt-2 text-2xl font-black tracking-tight text-[#15323b]">Upload para o grid</h3>
-                  <p className="mt-2 text-sm font-medium text-[#5F7077]">
-                    Esta imagem e usada somente nos cards do grid do blog. Formato obrigatorio 4:3. Tamanho recomendado: 1200x900 px (minimo 800x600 px).
+                  <p className="mt-2 text-sm font-medium text-[#5F7077]">Esta imagem e usada somente nos cards do grid do blog. Formato obrigatrio 4:3. Tamanho recomendado: 1200x900 px (minimo 800x600 px).
                   </p>
 
                   <div className="mt-4 grid gap-4 lg:grid-cols-[220px_minmax(0,1fr)]">
                     <div className="overflow-hidden rounded-2xl border border-[#D8E6EB] bg-[#EAF2F5]">
                       <div className="aspect-[4/3] w-full">
-                        {articleForm.cardImageUrl ? (
-                          <img src={articleForm.cardImageUrl} alt={`${articleForm.title || 'Artigo'} - card`} className="h-full w-full object-cover" />
-                        ) : (
-                          <div className="flex h-full w-full items-center justify-center px-4 text-center text-xs font-semibold text-[#5F7077]">
+                        {articleForm.cardImageUrl ? (<img src={articleForm.cardImageUrl} alt={`${articleForm.title || 'Artigo'} - card`} className="h-full w-full object-cover"/>) : (<div className="flex h-full w-full items-center justify-center px-4 text-center text-xs font-semibold text-[#5F7077]">
                             Nenhuma imagem de card definida
-                          </div>
-                        )}
+                          </div>)}
                       </div>
                     </div>
 
@@ -2837,62 +2296,34 @@ export function AdminBlogPage() {
 
                       <label className="mt-3 grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
                         URL da imagem do card
-                        <input
-                          value={articleForm.cardImageUrl}
-                          onChange={(event) => setArticleForm((current) => ({ ...current, cardImageUrl: event.target.value }))}
-                          className="h-10 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800"
-                        />
+                        <input value={articleForm.cardImageUrl} onChange={(event) => setArticleForm((current) => ({ ...current, cardImageUrl: event.target.value }))} className="h-10 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800"/>
                       </label>
 
                       <div className="mt-3 grid gap-2 sm:grid-cols-2">
                         <label className="inline-flex h-10 cursor-pointer items-center justify-center rounded-xl bg-[#1398B7] px-3 text-center text-xs font-black uppercase tracking-[0.08em] text-white hover:bg-[#1089A5]">
                           {isUploadingCoverImage ? 'Enviando...' : 'Escolher arquivo'}
-                          <input
-                            type="file"
-                            accept=".jpg,.jpeg,.png,.webp,image/*"
-                            disabled={isUploadingCoverImage}
-                            onChange={(event) => {
-                              const file = event.target.files?.[0] ?? null
-                              void handleUploadArticleCardImage(file)
-                              event.currentTarget.value = ''
-                            }}
-                            className="sr-only"
-                          />
+                          <input type="file" accept=".jpg,.jpeg,.png,.webp,image/*" disabled={isUploadingCoverImage} onChange={(event) => {
+                    const file = event.target.files?.[0] ?? null;
+                    void handleUploadArticleCardImage(file);
+                    event.currentTarget.value = '';
+                }} className="sr-only"/>
                         </label>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={() => {
-                            setMediaLibraryTarget('card')
-                            setIsMediaLibraryOpen(true)
-                          }}
-                          disabled={isLoadingMediaLibrary || isUploadingCoverImage}
-                          className="h-10 rounded-xl border-[#D8E6EB] text-xs font-black uppercase tracking-[0.08em]"
-                        >
+                        <Button type="button" variant="outline" onClick={() => {
+                    setMediaLibraryTarget('card');
+                    setIsMediaLibraryOpen(true);
+                }} disabled={isLoadingMediaLibrary || isUploadingCoverImage} className="h-10 rounded-xl border-[#D8E6EB] text-xs font-black uppercase tracking-[0.08em]">
                           Abrir biblioteca
                         </Button>
                       </div>
 
-                      {articleForm.cardImageUrl ? (
-                        <div className="mt-3 flex flex-wrap items-center gap-3">
-                          <a
-                            href={articleForm.cardImageUrl}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="text-sm font-black text-[#1398B7] hover:text-[#0A3640]"
-                          >
+                      {articleForm.cardImageUrl ? (<div className="mt-3 flex flex-wrap items-center gap-3">
+                          <a href={articleForm.cardImageUrl} target="_blank" rel="noreferrer" className="text-sm font-black text-[#1398B7] hover:text-[#0A3640]">
                             Abrir imagem atual
                           </a>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() => setArticleForm((current) => ({ ...current, cardImageUrl: '' }))}
-                            className="h-8 rounded-lg border-rose-200 px-3 text-xs font-black text-rose-700 hover:bg-rose-50"
-                          >
+                          <Button type="button" variant="outline" onClick={() => setArticleForm((current) => ({ ...current, cardImageUrl: '' }))} className="h-8 rounded-lg border-rose-200 px-3 text-xs font-black text-rose-700 hover:bg-rose-50">
                             Remover imagem
                           </Button>
-                        </div>
-                      ) : null}
+                        </div>) : null}
                     </div>
                   </div>
                   </section>
@@ -2908,24 +2339,16 @@ export function AdminBlogPage() {
                     </p>
                   </div>
 
-                  {isLoadingArticleRevisions ? (
-                    <div className="mt-4 rounded-[16px] border border-dashed border-[#D8E6EB] bg-[#F8FBFC] px-4 py-4 text-sm font-semibold text-[#5F7077]">
+                  {isLoadingArticleRevisions ? (<div className="mt-4 rounded-[16px] border border-dashed border-[#D8E6EB] bg-[#F8FBFC] px-4 py-4 text-sm font-semibold text-[#5F7077]">
                       Carregando histórico de revisões...
-                    </div>
-                  ) : !selectedArticleId ? (
-                    <div className="mt-4 rounded-[16px] border border-dashed border-[#D8E6EB] bg-[#F8FBFC] px-4 py-4 text-sm font-semibold text-[#5F7077]">
+                    </div>) : !selectedArticleId ? (<div className="mt-4 rounded-[16px] border border-dashed border-[#D8E6EB] bg-[#F8FBFC] px-4 py-4 text-sm font-semibold text-[#5F7077]">
                       Nenhuma revisão disponível ainda. Salve o artigo para começar a registrar as alterações.
-                    </div>
-                  ) : articleRevisions.length === 0 ? (
-                    <div className="mt-4 rounded-[16px] border border-dashed border-[#D8E6EB] bg-[#F8FBFC] px-4 py-4 text-sm font-semibold text-[#5F7077]">
+                    </div>) : articleRevisions.length === 0 ? (<div className="mt-4 rounded-[16px] border border-dashed border-[#D8E6EB] bg-[#F8FBFC] px-4 py-4 text-sm font-semibold text-[#5F7077]">
                       Este artigo ainda não possui histórico de revisões.
-                    </div>
-                  ) : (
-                    <div className="mt-4 max-h-80 space-y-3 overflow-y-auto pr-1">
+                    </div>) : (<div className="mt-4 max-h-80 space-y-3 overflow-y-auto pr-1">
                       {articleRevisions.map((revision) => {
-                        const snapshot = revision.snapshot
-                        return (
-                          <div key={revision.id} className="rounded-[16px] border border-[#D8E6EB] bg-[#F8FBFC] px-4 py-3">
+                        const snapshot = revision.snapshot;
+                        return (<div key={revision.id} className="rounded-[16px] border border-[#D8E6EB] bg-[#F8FBFC] px-4 py-3">
                             <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                               <div>
                                 <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#1398B7]">
@@ -2946,32 +2369,21 @@ export function AdminBlogPage() {
                                 <div className="rounded-full border border-[#D8E6EB] bg-white px-3 py-1 text-[11px] font-black uppercase tracking-[0.12em] text-[#0A3640]">
                                   {snapshot?.tag_ids?.length ?? 0} tag(s)
                                 </div>
-                                <Button
-                                  type="button"
-                                  variant="outline"
-                                  className="h-8 rounded-lg border-[#D8E6EB] px-3 text-[11px] font-black uppercase tracking-[0.08em] text-[#15323b] hover:bg-[#F8FBFC]"
-                                  onClick={() => restoreArticleFromRevision(revision)}
-                                  disabled={!snapshot}
-                                >
-                                  <RotateCcw className="mr-2 h-3.5 w-3.5" />
-                                  Restaurar
+                                <Button type="button" variant="outline" className="h-8 rounded-lg border-[#D8E6EB] px-3 text-[11px] font-black uppercase tracking-[0.08em] text-[#15323b] hover:bg-[#F8FBFC]" onClick={() => restoreArticleFromRevision(revision)} disabled={!snapshot}>
+                                  <RotateCcw className="mr-2 h-3.5 w-3.5"/>Rest?urar
                                 </Button>
                               </div>
                             </div>
                             <p className="mt-3 text-sm font-semibold text-[#15323b]">
                               {summarizeRevisionSnapshot(snapshot)}
                             </p>
-                            {snapshot?.content_html ? (
-                              <p className="mt-2 line-clamp-3 text-xs font-medium leading-5 text-[#5F7077]">
+                            {snapshot?.content_html ? (<p className="mt-2 line-clamp-3 text-xs font-medium leading-5 text-[#5F7077]">
                                 {stripHtml(snapshot.content_html).slice(0, 180)}
                                 {stripHtml(snapshot.content_html).length > 180 ? '...' : ''}
-                              </p>
-                            ) : null}
-                          </div>
-                        )
-                      })}
-                    </div>
-                  )}
+                              </p>) : null}
+                          </div>);
+                    })}
+                    </div>)}
                   </section>
                 </div>
 
@@ -2982,51 +2394,33 @@ export function AdminBlogPage() {
                   <Button type="button" variant="outline" className="rounded-xl" onClick={() => void saveArticleWithStatus('draft')} disabled={isSavingArticle}>
                     {isSavingArticle ? 'Salvando...' : 'Salvar rascunho'}
                   </Button>
-                  {articleForm.slug ? (
-                    <Button type="button" variant="outline" className="rounded-xl" onClick={handleOpenArticlePreview}>
+                  {articleForm.slug ? (<Button type="button" variant="outline" className="rounded-xl" onClick={handleOpenArticlePreview}>
                       {articleForm.status === 'published' ? 'Visualizar artigo' : 'Pré-visualizar artigo'}
-                    </Button>
-                  ) : null}
+                    </Button>) : null}
                   <Button type="button" variant="outline" className="rounded-xl" onClick={() => void saveArticleWithStatus('draft')} disabled={isSavingArticle}>
                     Despublicar
                   </Button>
                   <Button type="button" variant="outline" className="rounded-xl" onClick={() => void saveArticleWithStatus('scheduled')} disabled={isSavingArticle}>
                     Agendar
                   </Button>
-                  {selectedArticleId ? (
-                    <Button type="button" variant="outline" className="rounded-xl border-red-200 text-red-700 hover:bg-red-50" onClick={() => void handleDeleteArticle()}>
+                  {selectedArticleId ? (<Button type="button" variant="outline" className="rounded-xl border-red-200 text-red-700 hover:bg-red-50" onClick={() => void handleDeleteArticle()}>
                       Excluir
-                    </Button>
-                  ) : null}
+                    </Button>) : null}
                 </div>
-                {articleSuccessMessage ? (
-                  <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm font-bold text-emerald-700">
+                {articleSuccessMessage ? (<div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm font-bold text-emerald-700">
                     {articleSuccessMessage}
-                  </div>
-                ) : null}
+                  </div>) : null}
               </div>
-              </article>
-            ) : null}
+              </article>) : null}
 
-            {articleView === 'list' ? (
-              <article className="rounded-[28px] border border-[#D8E6EB] bg-white p-5">
+            {articleView === 'list' ? (<article className="rounded-[28px] border border-[#D8E6EB] bg-white p-5">
               <div className="flex flex-col gap-3 border-b border-[#D8E6EB] pb-4 sm:flex-row sm:items-center sm:justify-between">
                 <h2 className="text-lg font-black tracking-tight text-[#15323b]">Lista de artigos</h2>
                 <div className="flex flex-wrap gap-2">
-                  <Button type="button" className="rounded-xl bg-[#1398B7] hover:bg-[#0A3640]" onClick={handleCreateArticle}>
-                    Novo artigo
+                  <Button type="button" className="rounded-xl bg-[#1398B7] hover:bg-[#0A3640]" onClick={handleCreateArticle}>N?ovo artigo
                   </Button>
-                  <input
-                    value={articleSearch}
-                    onChange={(event) => setArticleSearch(event.target.value)}
-                    placeholder="Buscar por título, slug ou categoria..."
-                    className="h-10 min-w-[220px] rounded-xl border border-[#D8E6EB] bg-white px-3 text-sm font-medium text-[#15323b] outline-none focus:border-[#1398B7]"
-                  />
-                  <select
-                    value={articleStatusFilter}
-                    onChange={(event) => setArticleStatusFilter(event.target.value as 'all' | ArticleStatus)}
-                    className="h-10 rounded-xl border border-[#D8E6EB] bg-white px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]"
-                  >
+                  <input value={articleSearch} onChange={(event) => setArticleSearch(event.target.value)} placeholder="Buscar por título, slug ou categoria..." className="h-10 min-w-[220px] rounded-xl border border-[#D8E6EB] bg-white px-3 text-sm font-medium text-[#15323b] outline-none focus:border-[#1398B7]"/>
+                  <select value={articleStatusFilter} onChange={(event) => setArticleStatusFilter(event.target.value as 'all' | ArticleStatus)} className="h-10 rounded-xl border border-[#D8E6EB] bg-white px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]">
                     <option value="all">Todos os status</option>
                     <option value="draft">Rascunho</option>
                     <option value="scheduled">Agendado</option>
@@ -3035,12 +2429,7 @@ export function AdminBlogPage() {
                 </div>
               </div>
 
-              {isLoading ? (
-                <p className="py-8 text-sm font-medium text-[#6d7f84]">Carregando artigos...</p>
-              ) : filteredArticles.length === 0 ? (
-                <p className="py-8 text-sm font-medium text-[#6d7f84]">Nenhum artigo encontrado.</p>
-              ) : (
-                <div className="mt-4 overflow-x-auto">
+              {isLoading ? (<p className="py-8 text-sm font-medium text-[#6d7f84]">Carregando artigos...</p>) : filteredArticles.length === 0 ? (<p className="py-8 text-sm font-medium text-[#6d7f84]">Nenhum artigo encontrado.</p>) : (<div className="mt-4 overflow-x-auto">
                   <table className="min-w-full divide-y divide-[#D8E6EB] text-left text-sm">
                     <thead className="bg-[#F2F7F9] text-[10px] font-black uppercase tracking-[0.2em] text-[#5F7077]">
                       <tr>
@@ -3054,14 +2443,9 @@ export function AdminBlogPage() {
                     </thead>
                     <tbody className="divide-y divide-[#D8E6EB]">
                       {filteredArticles.map((article) => {
-                        const category = categories.find((item) => item.id === article.category_id)
-                        const categoryLabel = category ? getCategoryPath(category, categories) : 'Sem categoria'
-                        return (
-                          <tr
-                            key={article.id}
-                            className={`cursor-pointer transition-colors hover:bg-[#F8FBFC] ${selectedArticleId === article.id ? 'bg-[#E8F6FA]' : ''}`}
-                            onClick={() => populateArticleForm(article)}
-                          >
+                        const category = categories.find((item) => item.id === article.category_id);
+                        const categoryLabel = category ? getCategoryPath(category, categories) : 'Sem categoria';
+                        return (<tr key={article.id} className={`cursor-pointer transition-colors hover:bg-[#F8FBFC] ${selectedArticleId === article.id ? 'bg-[#E8F6FA]' : ''}`} onClick={() => populateArticleForm(article)}>
                             <td className="px-4 py-3">
                               <p className="font-black text-[#15323b]">{article.title}</p>
                               <p className="mt-1 text-xs font-semibold text-[#6d7f84]">/{article.slug}</p>
@@ -3072,155 +2456,96 @@ export function AdminBlogPage() {
                             <td className="px-4 py-3 font-semibold text-[#5F7077]">{article.reading_time_minutes ?? 1} min</td>
                             <td className="px-4 py-3">
                               <div className="flex items-center gap-1">
-                                <Button
-                                  type="button"
-                                  variant="outline"
-                                  title="Visualizar artigo"
-                                  aria-label="Visualizar artigo"
-                                  className="h-8 w-8 rounded-lg p-0"
-                                  onClick={(event) => {
-                                    event.stopPropagation()
-                                    handleOpenArticleFromList(article.slug)
-                                  }}
-                                >
-                                  <Eye className="h-4 w-4" />
+                                <Button type="button" variant="outline" title="Visualizar artigo" aria-label="Visualizar artigo" className="h-8 w-8 rounded-lg p-0" onClick={(event) => {
+                                event.stopPropagation();
+                                handleOpenArticleFromList(article.slug);
+                            }}>
+                                  <Eye className="h-4 w-4"/>
                                 </Button>
-                                <Button
-                                  type="button"
-                                  variant="outline"
-                                  title="Editar artigo"
-                                  aria-label="Editar artigo"
-                                  className="h-8 w-8 rounded-lg p-0"
-                                  onClick={(event) => {
-                                    event.stopPropagation()
-                                    populateArticleForm(article)
-                                  }}
-                                >
-                                  <Pencil className="h-4 w-4" />
+                                <Button type="button" variant="outline" title="Editar artigo" aria-label="Editar artigo" className="h-8 w-8 rounded-lg p-0" onClick={(event) => {
+                                event.stopPropagation();
+                                populateArticleForm(article);
+                            }}>
+                                  <Pencil className="h-4 w-4"/>
                                 </Button>
-                                <Button
-                                  type="button"
-                                  variant="outline"
-                                  title="Excluir artigo"
-                                  aria-label="Excluir artigo"
-                                  className="h-8 w-8 rounded-lg border-red-200 p-0 text-red-700 hover:bg-red-50"
-                                  onClick={(event) => {
-                                    event.stopPropagation()
-                                    void handleDeleteArticle(article)
-                                  }}
-                                >
-                                  <Trash2 className="h-4 w-4" />
+                                <Button type="button" variant="outline" title="Excluir artigo" aria-label="Excluir artigo" className="h-8 w-8 rounded-lg border-red-200 p-0 text-red-700 hover:bg-red-50" onClick={(event) => {
+                                event.stopPropagation();
+                                void handleDeleteArticle(article);
+                            }}>
+                                  <Trash2 className="h-4 w-4"/>
                                 </Button>
                               </div>
                             </td>
-                          </tr>
-                        )
-                      })}
+                          </tr>);
+                    })}
                     </tbody>
                   </table>
-                </div>
-              )}
-              </article>
-            ) : null}
+                </div>)}
+              </article>) : null}
           </section>
-        </section>
-      ) : null}
+        </section>) : null}
 
-      {activeTab === 'categories' ? (
-        <section className="grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,1.4fr)]">
+      {activeTab === 'categories' ? (<section className="grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,1.4fr)]">
           <article className="rounded-[28px] border border-[#D8E6EB] bg-white p-5">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-black tracking-tight text-[#15323b]">{selectedCategoryId ? 'Editar categoria' : 'Nova categoria'}</h2>
+              <h2 className="text-lg font-black tracking-tight text-[#15323b]">{selectedCategoryId ? 'Editar categoria' : "N?ova categoria"}</h2>
               <Button type="button" variant="outline" className="rounded-xl" onClick={resetCategoryForm}>Limpar</Button>
             </div>
             <div className="mt-4 grid gap-3">
               <div className="grid gap-3 sm:grid-cols-2">
-                <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
-                  Nome
-                  <input
-                    value={categoryForm.name}
-                    onChange={(event) => {
-                      const nextName = event.target.value
-                      setCategoryForm((current) => ({
-                        ...current,
-                        name: nextName,
-                        slug: isCategorySlugTouched ? current.slug : slugify(nextName),
-                      }))
-                    }}
-                    className="h-10 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800"
-                  />
+                <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">N?ome
+                  <input value={categoryForm.name} onChange={(event) => {
+                const nextName = event.target.value;
+                setCategoryForm((current) => ({
+                    ...current,
+                    name: nextName,
+                    slug: isCategorySlugTouched ? current.slug : slugify(nextName),
+                }));
+            }} className="h-10 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800"/>
                 </label>
                 <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
                   Slug
-                  <input
-                    value={categoryForm.slug}
-                    onChange={(event) => {
-                      setIsCategorySlugTouched(true)
-                      setCategoryForm((current) => ({ ...current, slug: slugify(event.target.value) }))
-                    }}
-                    className="h-10 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800"
-                  />
+                  <input value={categoryForm.slug} onChange={(event) => {
+                setIsCategorySlugTouched(true);
+                setCategoryForm((current) => ({ ...current, slug: slugify(event.target.value) }));
+            }} className="h-10 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800"/>
                 </label>
               </div>
 
               <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
                 Descrição
-                <textarea
-                  value={categoryForm.description}
-                  onChange={(event) => setCategoryForm((current) => ({ ...current, description: event.target.value }))}
-                  rows={2}
-                  className="rounded-xl border border-slate-200 px-3 py-2 text-sm font-medium text-slate-800"
-                />
+                <textarea value={categoryForm.description} onChange={(event) => setCategoryForm((current) => ({ ...current, description: event.target.value }))} rows={2} className="rounded-xl border border-slate-200 px-3 py-2 text-sm font-medium text-slate-800"/>
               </label>
 
               <label className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-700">
-                <input
-                  type="checkbox"
-                  checked={categoryForm.isActive}
-                  onChange={(event) => setCategoryForm((current) => ({ ...current, isActive: event.target.checked }))}
-                  className="h-4 w-4 rounded border-slate-300"
-                />
+                <input type="checkbox" checked={categoryForm.isActive} onChange={(event) => setCategoryForm((current) => ({ ...current, isActive: event.target.checked }))} className="h-4 w-4 rounded border-slate-300"/>
                 Categoria ativa
               </label>
 
-              {selectedCategoryId ? (
-                <>
+              {selectedCategoryId ? (<>
                   <div className="grid gap-3 sm:grid-cols-2">
                     <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
                       Categoria pai
-                      <select
-                        value={categoryForm.parentId}
-                        onChange={(event) => setCategoryForm((current) => ({ ...current, parentId: event.target.value }))}
-                        className="h-10 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800"
-                      >
+                      <select value={categoryForm.parentId} onChange={(event) => setCategoryForm((current) => ({ ...current, parentId: event.target.value }))} className="h-10 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800">
                         <option value="__none__">Raiz</option>
-                        {categoryOptions.map((option) => (
-                          <option key={option.id} value={option.id}>{option.label}</option>
-                        ))}
+                        {categoryOptions.map((option) => (<option key={option.id} value={option.id}>{option.label}</option>))}
                       </select>
                     </label>
                     <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
                       Ordem
-                      <input
-                        value={categoryForm.displayOrder}
-                        onChange={(event) => setCategoryForm((current) => ({ ...current, displayOrder: event.target.value }))}
-                        className="h-10 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800"
-                      />
+                      <input value={categoryForm.displayOrder} onChange={(event) => setCategoryForm((current) => ({ ...current, displayOrder: event.target.value }))} className="h-10 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800"/>
                     </label>
                   </div>
 
-                </>
-              ) : null}
+                </>) : null}
 
               <div className="flex flex-wrap gap-2 border-t border-[#D8E6EB] pt-3">
                 <Button type="button" className="rounded-xl bg-[#1398B7] hover:bg-[#0A3640]" onClick={() => void handleSaveCategory(false)} disabled={isSavingCategory}>
                   {isSavingCategory ? 'Salvando...' : 'Salvar categoria'}
                 </Button>
-                {selectedCategoryId ? (
-                  <Button type="button" variant="outline" className="rounded-xl border-red-200 text-red-700 hover:bg-red-50" onClick={() => void handleDeleteCategory()}>
+                {selectedCategoryId ? (<Button type="button" variant="outline" className="rounded-xl border-red-200 text-red-700 hover:bg-red-50" onClick={() => void handleDeleteCategory()}>
                     Excluir categoria
-                  </Button>
-                ) : null}
+                  </Button>) : null}
               </div>
             </div>
           </article>
@@ -3228,79 +2553,52 @@ export function AdminBlogPage() {
           <article className="rounded-[28px] border border-[#D8E6EB] bg-white p-5">
             <h2 className="text-lg font-black tracking-tight text-[#15323b]">Categorias e subcategorias</h2>
             <div className="mt-4 space-y-2">
-              {categories.length === 0 ? (
-                <p className="text-sm font-medium text-[#6d7f84]">Nenhuma categoria cadastrada.</p>
-              ) : categories.map((category) => (
-                <button
-                  type="button"
-                  key={category.id}
-                  onClick={() => populateCategoryForm(category)}
-                  className={`block w-full rounded-xl border px-4 py-3 text-left transition ${selectedCategoryId === category.id ? 'border-[#1398B7] bg-[#E8F6FA]' : 'border-[#D8E6EB] bg-white hover:bg-[#F8FBFC]'}`}
-                >
+              {categories.length === 0 ? (<p className="text-sm font-medium text-[#6d7f84]">Nenhuma categoria cadastrada.</p>) : categories.map((category) => (<button type="button" key={category.id} onClick={() => populateCategoryForm(category)} className={`block w-full rounded-xl border px-4 py-3 text-left transition ${selectedCategoryId === category.id ? 'border-[#1398B7] bg-[#E8F6FA]' : 'border-[#D8E6EB] bg-white hover:bg-[#F8FBFC]'}`}>
                   <p className="text-sm font-black text-[#15323b]">{getCategoryPath(category, categories)}</p>
                   <p className="mt-1 text-xs font-semibold text-[#6d7f84]">/{category.slug}</p>
-                </button>
-              ))}
+                </button>))}
             </div>
           </article>
-        </section>
-      ) : null}
+        </section>) : null}
 
-      {activeTab === 'tags' ? (
-        <section className="grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,1.4fr)]">
+      {activeTab === 'tags' ? (<section className="grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,1.4fr)]">
           <article className="rounded-[28px] border border-[#D8E6EB] bg-white p-5">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-black tracking-tight text-[#15323b]">{selectedTagId ? 'Editar tag' : 'Nova tag'}</h2>
+              <h2 className="text-lg font-black tracking-tight text-[#15323b]">{selectedTagId ? 'Editar tag' : "N?ova tag"}</h2>
               <Button type="button" variant="outline" className="rounded-xl" onClick={resetTagForm}>Limpar</Button>
             </div>
             <div className="mt-4 grid gap-3">
               <div className="grid gap-3 sm:grid-cols-2">
-                <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
-                  Nome
-                  <input
-                    value={tagForm.name}
-                    onChange={(event) => {
-                      const nextName = event.target.value
-                      setTagForm((current) => ({
-                        ...current,
-                        name: nextName,
-                        slug: isTagSlugTouched ? current.slug : slugify(nextName),
-                      }))
-                    }}
-                    className="h-10 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800"
-                  />
+                <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">N?ome
+                  <input value={tagForm.name} onChange={(event) => {
+                const nextName = event.target.value;
+                setTagForm((current) => ({
+                    ...current,
+                    name: nextName,
+                    slug: isTagSlugTouched ? current.slug : slugify(nextName),
+                }));
+            }} className="h-10 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800"/>
                 </label>
                 <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
                   Slug
-                  <input
-                    value={tagForm.slug}
-                    onChange={(event) => {
-                      setIsTagSlugTouched(true)
-                      setTagForm((current) => ({ ...current, slug: slugify(event.target.value) }))
-                    }}
-                    className="h-10 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800"
-                  />
+                  <input value={tagForm.slug} onChange={(event) => {
+                setIsTagSlugTouched(true);
+                setTagForm((current) => ({ ...current, slug: slugify(event.target.value) }));
+            }} className="h-10 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800"/>
                 </label>
               </div>
               <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
                 Descrição
-                <textarea
-                  value={tagForm.description}
-                  onChange={(event) => setTagForm((current) => ({ ...current, description: event.target.value }))}
-                  rows={2}
-                  className="rounded-xl border border-slate-200 px-3 py-2 text-sm font-medium text-slate-800"
-                />
+                <textarea value={tagForm.description} onChange={(event) => setTagForm((current) => ({ ...current, description: event.target.value }))} rows={2} className="rounded-xl border border-slate-200 px-3 py-2 text-sm font-medium text-slate-800"/>
               </label>
 
               <div className="flex flex-wrap gap-2 border-t border-[#D8E6EB] pt-3">
                 <Button type="button" className="rounded-xl bg-[#1398B7] hover:bg-[#0A3640]" onClick={() => void handleSaveTag()} disabled={isSavingTag}>
                   {isSavingTag ? 'Salvando...' : 'Salvar tag'}
                 </Button>
-                {selectedTagId ? (
-                  <Button type="button" variant="outline" className="rounded-xl border-red-200 text-red-700 hover:bg-red-50" onClick={() => void handleDeleteTag()}>
+                {selectedTagId ? (<Button type="button" variant="outline" className="rounded-xl border-red-200 text-red-700 hover:bg-red-50" onClick={() => void handleDeleteTag()}>
                     Excluir tag
-                  </Button>
-                ) : null}
+                  </Button>) : null}
               </div>
             </div>
           </article>
@@ -3308,38 +2606,25 @@ export function AdminBlogPage() {
           <article className="rounded-[28px] border border-[#D8E6EB] bg-white p-5">
             <h2 className="text-lg font-black tracking-tight text-[#15323b]">Tags cadastradas</h2>
             <div className="mt-4 grid gap-2 sm:grid-cols-2">
-              {tags.length === 0 ? (
-                <p className="text-sm font-medium text-[#6d7f84]">Nenhuma tag cadastrada.</p>
-              ) : tags.map((tag) => (
-                <button
-                  type="button"
-                  key={tag.id}
-                  onClick={() => populateTagForm(tag)}
-                  className={`rounded-xl border px-3 py-3 text-left transition ${selectedTagId === tag.id ? 'border-[#1398B7] bg-[#E8F6FA]' : 'border-[#D8E6EB] bg-white hover:bg-[#F8FBFC]'}`}
-                >
+              {tags.length === 0 ? (<p className="text-sm font-medium text-[#6d7f84]">Nenhuma tag cadastrada.</p>) : tags.map((tag) => (<button type="button" key={tag.id} onClick={() => populateTagForm(tag)} className={`rounded-xl border px-3 py-3 text-left transition ${selectedTagId === tag.id ? 'border-[#1398B7] bg-[#E8F6FA]' : 'border-[#D8E6EB] bg-white hover:bg-[#F8FBFC]'}`}>
                   <p className="text-sm font-black text-[#15323b]">#{tag.name}</p>
                   <p className="mt-1 text-xs font-semibold text-[#6d7f84]">/{tag.slug} · robots: {tag.seo_robots ?? 'index,follow'}</p>
-                </button>
-              ))}
+                </button>))}
             </div>
           </article>
-        </section>
-      ) : null}
+        </section>) : null}
 
-      {activeTab === 'styles' ? (
-        <section className="space-y-6">
+      {activeTab === 'styles' ? (<section className="space-y-6">
           <article className="rounded-[28px] border border-[#D8E6EB] bg-white p-5">
             <h2 className="text-lg font-black tracking-tight text-[#15323b]">Padrão tipográfico dos artigos</h2>
             <div className="mt-4 rounded-2xl border border-[#D8E6EB] bg-[#F8FBFC] p-4">
-              <p className="text-xs font-black uppercase tracking-[0.18em] text-[#1398B7]">Titulo da pagina do artigo</p>
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-[#1398B7]">T?tulo da p?gina do artigo</p>
               <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
                 <label className="grid gap-1">
                   <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Font family</span>
                   <select value={blogStyleSettings.articleTitle.fontFamily} onChange={(event) => updateArticleTitleStyle('fontFamily', event.target.value)} className="h-10 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800">
                     <option value="">Selecionar fonte</option>
-                    {fontFamilyOptions.map((option) => (
-                      <option key={option.value} value={option.value} style={{ fontFamily: option.value }}>{option.label}</option>
-                    ))}
+                    {fontFamilyOptions.map((option) => (<option key={option.value} value={option.value} style={{ fontFamily: option.value }}>{option.label}</option>))}
                   </select>
                 </label>
                 <label className="grid gap-1">
@@ -3372,27 +2657,22 @@ export function AdminBlogPage() {
                 </label>
                 <label className="grid gap-1">
                   <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Color</span>
-                  <input type="color" value={toHexColor(blogStyleSettings.articleTitle.color, '#008f9c')} onChange={(event) => updateArticleTitleStyle('color', event.target.value)} className="h-10 rounded-xl border border-slate-200 px-2 py-1" />
+                  <input type="color" value={toHexColor(blogStyleSettings.articleTitle.color, '#008f9c')} onChange={(event) => updateArticleTitleStyle('color', event.target.value)} className="h-10 rounded-xl border border-slate-200 px-2 py-1"/>
                 </label>
               </div>
             </div>
             <div className="mt-4 grid gap-4">
-              {(['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'a', 'li'] as const).map((tagKey) => (
-                <div key={tagKey} className="rounded-2xl border border-[#D8E6EB] bg-[#F8FBFC] p-4">
+              {(['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'a', 'li'] as const).map((tagKey) => (<div key={tagKey} className="rounded-2xl border border-[#D8E6EB] bg-[#F8FBFC] p-4">
                   <div className="flex flex-wrap items-center gap-2">
                     <p className="text-xs font-black uppercase tracking-[0.18em] text-[#1398B7]">{tagKey}</p>
-                    {getBlogTagMeaning(tagKey) ? (
-                      <span className="text-[11px] font-semibold text-[#5F7077]">{getBlogTagMeaning(tagKey)}</span>
-                    ) : null}
+                    {getBlogTagMeaning(tagKey) ? (<span className="text-[11px] font-semibold text-[#5F7077]">{getBlogTagMeaning(tagKey)}</span>) : null}
                   </div>
                   <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
                     <label className="grid gap-1">
                       <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Font family</span>
                       <select value={blogStyleSettings.content[tagKey].fontFamily} onChange={(event) => updateTagStyle(tagKey, 'fontFamily', event.target.value)} className="h-10 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800">
                         <option value="">Selecionar fonte</option>
-                        {fontFamilyOptions.map((option) => (
-                          <option key={option.value} value={option.value} style={{ fontFamily: option.value }}>{option.label}</option>
-                        ))}
+                        {fontFamilyOptions.map((option) => (<option key={option.value} value={option.value} style={{ fontFamily: option.value }}>{option.label}</option>))}
                       </select>
                     </label>
                     <label className="grid gap-1">
@@ -3425,35 +2705,26 @@ export function AdminBlogPage() {
                     </label>
                     <label className="grid gap-1">
                       <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Color</span>
-                      <input type="color" value={toHexColor(blogStyleSettings.content[tagKey].color, '#15323b')} onChange={(event) => updateTagStyle(tagKey, 'color', event.target.value)} className="h-10 rounded-xl border border-slate-200 px-2 py-1" />
+                      <input type="color" value={toHexColor(blogStyleSettings.content[tagKey].color, '#15323b')} onChange={(event) => updateTagStyle(tagKey, 'color', event.target.value)} className="h-10 rounded-xl border border-slate-200 px-2 py-1"/>
                     </label>
-                    {tagKey === 'a' ? (
-                      <label className="grid gap-1">
+                    {tagKey === 'a' ? (<label className="grid gap-1">
                         <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Sublinhado</span>
-                        <select
-                          value={blogStyleSettings.content.a.underline ? 'on' : 'off'}
-                          onChange={(event) =>
-                            setBlogStyleSettings((current) => ({
-                              ...current,
-                              content: {
-                                ...current.content,
-                                a: {
-                                  ...current.content.a,
-                                  underline: event.target.value === 'on',
-                                },
-                              },
-                            }))
-                          }
-                          className="h-10 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800"
-                        >
+                        <select value={blogStyleSettings.content.a.underline ? 'on' : 'off'} onChange={(event) => setBlogStyleSettings((current) => ({
+                        ...current,
+                        content: {
+                            ...current.content,
+                            a: {
+                                ...current.content.a,
+                                underline: event.target.value === 'on',
+                            },
+                        },
+                    }))} className="h-10 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800">
                           <option value="on">Ativado</option>
                           <option value="off">Desativado</option>
                         </select>
-                      </label>
-                    ) : null}
+                      </label>) : null}
                   </div>
-                </div>
-              ))}
+                </div>))}
             </div>
           </article>
           <article className="rounded-[28px] border border-[#D8E6EB] bg-white p-5">
@@ -3461,23 +2732,23 @@ export function AdminBlogPage() {
             <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
               <label className="grid gap-1">
                 <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Cor de fundo</span>
-                <input type="color" value={toHexColor(blogStyleSettings.card.container.backgroundColor, '#f5f5f5')} onChange={(event) => setBlogStyleSettings((current) => ({ ...current, card: { ...current.card, container: { ...current.card.container, backgroundColor: event.target.value } } }))} className="h-10 rounded-xl border border-slate-200 px-2 py-1" />
+                <input type="color" value={toHexColor(blogStyleSettings.card.container.backgroundColor, '#f5f5f5')} onChange={(event) => setBlogStyleSettings((current) => ({ ...current, card: { ...current.card, container: { ...current.card.container, backgroundColor: event.target.value } } }))} className="h-10 rounded-xl border border-slate-200 px-2 py-1"/>
               </label>
               <label className="grid gap-1">
                 <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Cor da borda</span>
-                <input type="color" value={toHexColor(blogStyleSettings.card.container.borderColor, '#dfdfdf')} onChange={(event) => setBlogStyleSettings((current) => ({ ...current, card: { ...current.card, container: { ...current.card.container, borderColor: event.target.value } } }))} className="h-10 rounded-xl border border-slate-200 px-2 py-1" />
+                <input type="color" value={toHexColor(blogStyleSettings.card.container.borderColor, '#dfdfdf')} onChange={(event) => setBlogStyleSettings((current) => ({ ...current, card: { ...current.card, container: { ...current.card.container, borderColor: event.target.value } } }))} className="h-10 rounded-xl border border-slate-200 px-2 py-1"/>
               </label>
               <label className="grid gap-1">
                 <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Raio da borda (px)</span>
-                <input value={blogStyleSettings.card.container.borderRadius} onChange={(event) => setBlogStyleSettings((current) => ({ ...current, card: { ...current.card, container: { ...current.card.container, borderRadius: event.target.value } } }))} placeholder="Ex.: 8px" className="h-10 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800" />
+                <input value={blogStyleSettings.card.container.borderRadius} onChange={(event) => setBlogStyleSettings((current) => ({ ...current, card: { ...current.card, container: { ...current.card.container, borderRadius: event.target.value } } }))} placeholder="Ex.: 8px" className="h-10 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800"/>
               </label>
               <label className="grid gap-1">
                 <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Padding interno (rem)</span>
-                <input value={blogStyleSettings.card.container.padding} onChange={(event) => setBlogStyleSettings((current) => ({ ...current, card: { ...current.card, container: { ...current.card.container, padding: event.target.value } } }))} placeholder="Ex.: 1.75rem" className="h-10 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800" />
+                <input value={blogStyleSettings.card.container.padding} onChange={(event) => setBlogStyleSettings((current) => ({ ...current, card: { ...current.card, container: { ...current.card.container, padding: event.target.value } } }))} placeholder="Ex.: 1.75rem" className="h-10 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800"/>
               </label>
               <label className="grid gap-1">
                 <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Altura minima (px)</span>
-                <input value={blogStyleSettings.card.container.minHeight} onChange={(event) => setBlogStyleSettings((current) => ({ ...current, card: { ...current.card, container: { ...current.card.container, minHeight: event.target.value } } }))} placeholder="Ex.: 360px" className="h-10 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800" />
+                <input value={blogStyleSettings.card.container.minHeight} onChange={(event) => setBlogStyleSettings((current) => ({ ...current, card: { ...current.card, container: { ...current.card.container, minHeight: event.target.value } } }))} placeholder="Ex.: 360px" className="h-10 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800"/>
               </label>
               <label className="grid gap-1">
                 <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Ajuste da imagem</span>
@@ -3485,17 +2756,14 @@ export function AdminBlogPage() {
               </label>
             </div>
             <div className="mt-4 grid gap-4">
-              {(['title', 'description', 'link'] as const).map((cardKey) => (
-                <div key={cardKey} className="rounded-2xl border border-[#D8E6EB] bg-[#F8FBFC] p-4">
+              {(['title', 'description', 'link'] as const).map((cardKey) => (<div key={cardKey} className="rounded-2xl border border-[#D8E6EB] bg-[#F8FBFC] p-4">
                   <p className="text-xs font-black uppercase tracking-[0.18em] text-[#1398B7]">Texto do card: {cardKey}</p>
                   <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
                     <label className="grid gap-1">
                       <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Font family</span>
                       <select value={blogStyleSettings.card.text[cardKey].fontFamily} onChange={(event) => updateCardTextStyle(cardKey, 'fontFamily', event.target.value)} className="h-10 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800">
                         <option value="">Selecionar fonte</option>
-                        {fontFamilyOptions.map((option) => (
-                          <option key={option.value} value={option.value} style={{ fontFamily: option.value }}>{option.label}</option>
-                        ))}
+                        {fontFamilyOptions.map((option) => (<option key={option.value} value={option.value} style={{ fontFamily: option.value }}>{option.label}</option>))}
                       </select>
                     </label>
                     <label className="grid gap-1">
@@ -3528,11 +2796,10 @@ export function AdminBlogPage() {
                     </label>
                     <label className="grid gap-1">
                       <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Color</span>
-                      <input type="color" value={toHexColor(blogStyleSettings.card.text[cardKey].color, cardKey === 'link' ? '#ff7a00' : '#243a64')} onChange={(event) => updateCardTextStyle(cardKey, 'color', event.target.value)} className="h-10 rounded-xl border border-slate-200 px-2 py-1" />
+                      <input type="color" value={toHexColor(blogStyleSettings.card.text[cardKey].color, cardKey === 'link' ? '#ff7a00' : '#243a64')} onChange={(event) => updateCardTextStyle(cardKey, 'color', event.target.value)} className="h-10 rounded-xl border border-slate-200 px-2 py-1"/>
                     </label>
                   </div>
-                </div>
-              ))}
+                </div>))}
             </div>
             <div className="mt-4 flex flex-wrap gap-2 border-t border-[#D8E6EB] pt-4">
               <Button type="button" className="rounded-xl bg-[#1398B7] hover:bg-[#0A3640]" onClick={() => void handleSaveBlogStyleSettings()} disabled={isSavingStyleSettings}>
@@ -3540,11 +2807,9 @@ export function AdminBlogPage() {
               </Button>
             </div>
           </article>
-        </section>
-      ) : null}
+        </section>) : null}
 
-      {activeTab === 'layout' ? (
-        <section className="grid gap-6 xl:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
+      {activeTab === 'layout' ? (<section className="grid gap-6 xl:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
           <article className="rounded-[28px] border border-[#D8E6EB] bg-white p-5">
             <h2 className="text-lg font-black tracking-tight text-[#15323b]">Blocos laterais da home do blog</h2>
             <p className="mt-2 text-sm font-medium text-[#5F7077]">
@@ -3555,182 +2820,123 @@ export function AdminBlogPage() {
             </p>
 
             <div className="mt-4 grid gap-3">
-              {blogSidebarBlocks.map((block, blockIndex) => (
-                <div key={block.id} className="rounded-2xl border border-[#D8E6EB] bg-[#F8FBFC] p-3">
+              {blogSidebarBlocks.map((block, blockIndex) => (<div key={block.id} className="rounded-2xl border border-[#D8E6EB] bg-[#F8FBFC] p-3">
                   <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                     <p className="text-xs font-black uppercase tracking-[0.16em] text-[#5F7077]">
                       Bloco lateral {blockIndex + 1}
                     </p>
-                    {blogSidebarBlocks.length > 1 ? (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setBlogSidebarBlocks((current) => current.filter((_, currentIndex) => currentIndex !== blockIndex))
-                        }}
-                        className="text-xs font-black uppercase tracking-[0.16em] text-red-600 hover:text-red-700"
-                      >
+                    {blogSidebarBlocks.length > 1 ? (<button type="button" onClick={() => {
+                        setBlogSidebarBlocks((current) => current.filter((_, currentIndex) => currentIndex !== blockIndex));
+                    }} className="text-xs font-black uppercase tracking-[0.16em] text-red-600 hover:text-red-700">
                         Remover bloco
-                      </button>
-                    ) : null}
+                      </button>) : null}
                   </div>
 
                   <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
                     Tipo de exibição
-                    <select
-                      value={block.mode}
-                      onChange={(event) => {
-                        const nextMode = event.target.value as BlogSidebarImageMode
-                        setBlogSidebarBlocks((current) => current.map((currentBlock, currentIndex) => (
-                          currentIndex === blockIndex
-                            ? { ...currentBlock, mode: nextMode }
-                            : currentBlock
-                        )))
-                      }}
-                      className="h-11 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800"
-                    >
+                    <select value={block.mode} onChange={(event) => {
+                    const nextMode = event.target.value as BlogSidebarImageMode;
+                    setBlogSidebarBlocks((current) => current.map((currentBlock, currentIndex) => (currentIndex === blockIndex
+                        ? { ...currentBlock, mode: nextMode }
+                        : currentBlock)));
+                }} className="h-11 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800">
                       <option value="single">Imagem única</option>
                       <option value="carousel">Carrossel / slider</option>
                     </select>
                   </label>
 
                   <div className="mt-3 grid gap-3">
-                    {block.slides.map((slide, slideIndex) => (
-                      <div key={`block-${blockIndex}-slide-${slideIndex}`} className="rounded-xl border border-[#D8E6EB] bg-white p-3">
+                    {block.slides.map((slide, slideIndex) => (<div key={`block-${blockIndex}-slide-${slideIndex}`} className="rounded-xl border border-[#D8E6EB] bg-white p-3">
                         <div className="mb-2 flex items-center justify-between">
                           <p className="text-xs font-black uppercase tracking-[0.16em] text-[#5F7077]">
                             {block.mode === 'single' ? 'Imagem' : `Slide ${slideIndex + 1}`}
                           </p>
-                          {block.mode === 'carousel' && block.slides.length > 1 ? (
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setBlogSidebarBlocks((current) => current.map((currentBlock, currentIndex) => {
-                                  if (currentIndex !== blockIndex) {
-                                    return currentBlock
-                                  }
-                                  return {
+                          {block.mode === 'carousel' && block.slides.length > 1 ? (<button type="button" onClick={() => {
+                            setBlogSidebarBlocks((current) => current.map((currentBlock, currentIndex) => {
+                                if (currentIndex !== blockIndex) {
+                                    return currentBlock;
+                                }
+                                return {
                                     ...currentBlock,
                                     slides: currentBlock.slides.filter((_, currentSlideIndex) => currentSlideIndex !== slideIndex),
-                                  }
-                                }))
-                              }}
-                              className="text-xs font-black uppercase tracking-[0.16em] text-red-600 hover:text-red-700"
-                            >
+                                };
+                            }));
+                        }} className="text-xs font-black uppercase tracking-[0.16em] text-red-600 hover:text-red-700">
                               Remover
-                            </button>
-                          ) : null}
+                            </button>) : null}
                         </div>
 
                         <div className="grid gap-3">
                           <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
                             URL da imagem
-                            <input
-                              value={slide.url}
-                              onChange={(event) => {
-                                const nextValue = event.target.value
-                                setBlogSidebarBlocks((current) => current.map((currentBlock, currentIndex) => {
-                                  if (currentIndex !== blockIndex) {
-                                    return currentBlock
-                                  }
-                                  return {
-                                    ...currentBlock,
-                                    slides: currentBlock.slides.map((currentSlide, currentSlideIndex) => (
-                                      currentSlideIndex === slideIndex ? { ...currentSlide, url: nextValue } : currentSlide
-                                    )),
-                                  }
-                                }))
-                              }}
-                              placeholder="https://..."
-                              className="h-11 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800"
-                            />
+                            <input value={slide.url} onChange={(event) => {
+                        const nextValue = event.target.value;
+                        setBlogSidebarBlocks((current) => current.map((currentBlock, currentIndex) => {
+                            if (currentIndex !== blockIndex) {
+                                return currentBlock;
+                            }
+                            return {
+                                ...currentBlock,
+                                slides: currentBlock.slides.map((currentSlide, currentSlideIndex) => (currentSlideIndex === slideIndex ? { ...currentSlide, url: nextValue } : currentSlide)),
+                            };
+                        }));
+                    }} placeholder="https://..." className="h-11 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800"/>
                           </label>
 
                           <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
                             Link da imagem (URL de clique ao tocar/clicar na imagem)
-                            <input
-                              value={slide.linkUrl}
-                              onChange={(event) => {
-                                const nextValue = event.target.value
-                                setBlogSidebarBlocks((current) => current.map((currentBlock, currentIndex) => {
-                                  if (currentIndex !== blockIndex) {
-                                    return currentBlock
-                                  }
-                                  return {
-                                    ...currentBlock,
-                                    slides: currentBlock.slides.map((currentSlide, currentSlideIndex) => (
-                                      currentSlideIndex === slideIndex ? { ...currentSlide, linkUrl: nextValue } : currentSlide
-                                    )),
-                                  }
-                                }))
-                              }}
-                              placeholder="https://..."
-                              className="h-11 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800"
-                            />
+                            <input value={slide.linkUrl} onChange={(event) => {
+                        const nextValue = event.target.value;
+                        setBlogSidebarBlocks((current) => current.map((currentBlock, currentIndex) => {
+                            if (currentIndex !== blockIndex) {
+                                return currentBlock;
+                            }
+                            return {
+                                ...currentBlock,
+                                slides: currentBlock.slides.map((currentSlide, currentSlideIndex) => (currentSlideIndex === slideIndex ? { ...currentSlide, linkUrl: nextValue } : currentSlide)),
+                            };
+                        }));
+                    }} placeholder="https://..." className="h-11 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800"/>
                           </label>
 
                           <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
                             Texto alternativo (ALT)
-                            <input
-                              value={slide.alt}
-                              onChange={(event) => {
-                                const nextValue = event.target.value
-                                setBlogSidebarBlocks((current) => current.map((currentBlock, currentIndex) => {
-                                  if (currentIndex !== blockIndex) {
-                                    return currentBlock
-                                  }
-                                  return {
-                                    ...currentBlock,
-                                    slides: currentBlock.slides.map((currentSlide, currentSlideIndex) => (
-                                      currentSlideIndex === slideIndex ? { ...currentSlide, alt: nextValue } : currentSlide
-                                    )),
-                                  }
-                                }))
-                              }}
-                              className="h-11 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800"
-                            />
+                            <input value={slide.alt} onChange={(event) => {
+                        const nextValue = event.target.value;
+                        setBlogSidebarBlocks((current) => current.map((currentBlock, currentIndex) => {
+                            if (currentIndex !== blockIndex) {
+                                return currentBlock;
+                            }
+                            return {
+                                ...currentBlock,
+                                slides: currentBlock.slides.map((currentSlide, currentSlideIndex) => (currentSlideIndex === slideIndex ? { ...currentSlide, alt: nextValue } : currentSlide)),
+                            };
+                        }));
+                    }} className="h-11 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-800"/>
                           </label>
 
                           <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
                             Enviar arquivo
-                            <input
-                              type="file"
-                              accept="image/*"
-                              onChange={(event) => {
-                                const file = event.target.files?.[0] ?? null
-                                void handleUploadBlogSidebarImage(file, blockIndex, slideIndex)
-                                event.currentTarget.value = ''
-                              }}
-                              className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700"
-                            />
+                            <input type="file" accept="image/*" onChange={(event) => {
+                        const file = event.target.files?.[0] ?? null;
+                        void handleUploadBlogSidebarImage(file, blockIndex, slideIndex);
+                        event.currentTarget.value = '';
+                    }} className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700"/>
                           </label>
                         </div>
-                      </div>
-                    ))}
+                      </div>))}
                   </div>
 
-                  {block.mode === 'carousel' ? (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setBlogSidebarBlocks((current) => current.map((currentBlock, currentIndex) => (
-                          currentIndex === blockIndex
+                  {block.mode === 'carousel' ? (<button type="button" onClick={() => {
+                        setBlogSidebarBlocks((current) => current.map((currentBlock, currentIndex) => (currentIndex === blockIndex
                             ? { ...currentBlock, slides: [...currentBlock.slides, createEmptySidebarSlide()] }
-                            : currentBlock
-                        )))
-                      }}
-                      className="mt-3 h-10 rounded-xl border border-[#D8E6EB] bg-white px-3 text-sm font-black uppercase tracking-[0.12em] text-[#15323b] hover:bg-[#F8FBFC]"
-                    >
+                            : currentBlock)));
+                    }} className="mt-3 h-10 rounded-xl border border-[#D8E6EB] bg-white px-3 text-sm font-black uppercase tracking-[0.12em] text-[#15323b] hover:bg-[#F8FBFC]">
                       Adicionar imagem ao slider
-                    </button>
-                  ) : null}
-                </div>
-              ))}
+                    </button>) : null}
+                </div>))}
 
-              <button
-                type="button"
-                onClick={() => setBlogSidebarBlocks((current) => [...current, createEmptySidebarBlock()])}
-                className="h-10 rounded-xl border border-[#D8E6EB] bg-white px-3 text-sm font-black uppercase tracking-[0.12em] text-[#15323b] hover:bg-[#F8FBFC]"
-              >
+              <button type="button" onClick={() => setBlogSidebarBlocks((current) => [...current, createEmptySidebarBlock()])} className="h-10 rounded-xl border border-[#D8E6EB] bg-white px-3 text-sm font-black uppercase tracking-[0.12em] text-[#15323b] hover:bg-[#F8FBFC]">
                 Adicionar novo bloco lateral
               </button>
 
@@ -3746,27 +2952,13 @@ export function AdminBlogPage() {
             <h3 className="text-sm font-black uppercase tracking-[0.16em] text-[#5F7077]">Preview</h3>
             <div className="mt-4 space-y-4">
               {blogSidebarBlocks.map((block) => {
-                const firstSlide = block.slides[0]
-                return (
-                  <div key={`preview-${block.id}`} className="overflow-hidden rounded-[8px] border border-[#D8E6EB] bg-[#F8FBFC]">
-                    {firstSlide?.url?.trim() ? (
-                      <img
-                        src={firstSlide.url}
-                        alt={firstSlide.alt || 'Imagem lateral do blog'}
-                        className="aspect-[7/10] w-full object-cover"
-                      />
-                    ) : (
-                      <div className="aspect-[7/10] w-full bg-[#23b6a1]" />
-                    )}
-                  </div>
-                )
-              })}
+                const firstSlide = block.slides[0];
+                return (<div key={`preview-${block.id}`} className="overflow-hidden rounded-[8px] border border-[#D8E6EB] bg-[#F8FBFC]">
+                    {firstSlide?.url?.trim() ? (<img src={firstSlide.url} alt={firstSlide.alt || 'Imagem lateral do blog'} className="aspect-[7/10] w-full object-cover"/>) : (<div className="aspect-[7/10] w-full bg-[#23b6a1]"/>)}
+                  </div>);
+            })}
             </div>
           </article>
-        </section>
-      ) : null}
-    </div>
-  )
+        </section>) : null}
+    </div>);
 }
-
-

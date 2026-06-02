@@ -5,8 +5,8 @@ create table if not exists public.site_banner_carousel_targets (
   placement_key text not null default 'hero',
   created_by uuid references public.profiles (id) on delete set null,
   updated_by uuid references public.profiles (id) on delete set null,
-  created_at timestamptz not null default timezone('utc', now()),
-  updated_at timestamptz not null default timezone('utc', now()),
+  created_at timest?mptz not null default timezone('utc', now()),
+  updated_at timest?mptz not null default timezone('utc', now()),
   unique (location_key, page_key, placement_key)
 );
 

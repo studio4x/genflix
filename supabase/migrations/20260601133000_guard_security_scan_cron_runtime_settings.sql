@@ -26,11 +26,11 @@ begin
   limit 1;
 
   if _app_public_url is null or length(trim(_app_public_url)) = 0 then
-    raise exception 'Configuracao integration_runtime_settings.app_public_url ausente.';
+    raise exception 'Configurao integration_runtime_settings.app_public_url ausente.';
   end if;
 
   if _cron_secret is null or length(trim(_cron_secret)) = 0 then
-    raise exception 'Configuracao integration_runtime_settings.admin_api_cron_secret ausente.';
+    raise exception 'Configurao integration_runtime_settings.admin_api_cron_secret ausente.';
   end if;
 
   perform public.unschedule_security_scan_cron();
@@ -50,7 +50,7 @@ begin
             body := '{"action":"run_scan"}'::jsonb
           ) as request_id;
       $job$,
-      rtrim(_app_public_url, '/') || '/api/admin/security-scans?task=run_scheduled',
+      rtrim(_app_public_url, '/') || '/api/admin/security-scanstask=run_scheduled',
       _cron_secret
     )
   ) into _job_id;

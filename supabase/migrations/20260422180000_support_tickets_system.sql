@@ -5,8 +5,8 @@ create table if not exists public.site_config (
   support_sla_config jsonb not null default '{}'::jsonb,
   support_business_hours_config jsonb not null default '{}'::jsonb,
   crisis_protocol_config jsonb not null default '{}'::jsonb,
-  created_at timestamptz not null default timezone('utc', now()),
-  updated_at timestamptz not null default timezone('utc', now())
+  created_at timest?mptz not null default timezone('utc', now()),
+  updated_at timest?mptz not null default timezone('utc', now())
 );
 
 drop trigger if exists set_site_config_updated_at on public.site_config;
@@ -32,7 +32,7 @@ values (
       jsonb_build_object('key', 'general', 'label', 'Duvida geral', 'first_response_hours', 24, 'position', 4, 'description', 'Primeira resposta em ate 24 horas uteis.')
     ),
     'public_note',
-    'Os prazos acima se referem ao tempo da primeira resposta humana da equipe. Nao representam prazo de resolucao final.'
+    'Os prazos acima se referem ao tempo da primeira resposta humana da equipe. N?o representam prazo de resolucao final.'
   ),
   jsonb_build_object(
     'timezone', 'America/Sao_Paulo',
@@ -42,8 +42,8 @@ values (
   ),
   jsonb_build_object(
     'title', 'Casos graves ou sensiveis',
-    'description', 'Para situacoes com fraude, seguranca, abuso ou necessidade urgente de orientacao, abra o chamado com o maximo de contexto e prioridade compativel.',
-    'note', 'Nossa equipe trata a fila de forma humana e responsavel, respeitando a ordem operacional e o SLA da categoria.'
+    'description', 'Para situacoes com fraude, seguran?a, abuso ou necessidade urgente de orientacao, abra o chamado com o maximo de contexto e prioridade compativel.',
+    'note', 'N?ossa equipe trata a fila de forma humana e responsavel, respeitando a ordem operacional e o SLA da categoria.'
   )
 )
 on conflict (id) do nothing;
@@ -55,8 +55,8 @@ create table if not exists public.support_faqs (
   answer text not null,
   sort_order integer not null default 0,
   is_published boolean not null default true,
-  created_at timestamptz not null default timezone('utc', now()),
-  updated_at timestamptz not null default timezone('utc', now())
+  created_at timest?mptz not null default timezone('utc', now()),
+  updated_at timest?mptz not null default timezone('utc', now())
 );
 
 drop trigger if exists set_support_faqs_updated_at on public.support_faqs;
@@ -67,12 +67,12 @@ execute procedure public.set_updated_at();
 
 insert into public.support_faqs (category_key, question, answer, sort_order, is_published)
 values
-  ('payment', 'Como acompanho meu pagamento?', 'Acesse sua area do aluno e confira os comprovantes e situacoes mais recentes relacionadas ao pedido. Se houver divergencia, abra um chamado na categoria Pagamentos.', 1, true),
-  ('payment', 'Meu acesso nao foi liberado apos a compra. O que fazer?', 'Em geral a liberacao ocorre em poucos instantes. Se o problema persistir, informe e-mail da conta, curso comprado e comprovante para que possamos verificar.', 2, true),
-  ('technical', 'A aula nao carrega ou trava. Como proceder?', 'Atualize a pagina, teste outro navegador e verifique sua conexao. Se continuar, envie o nome do curso, modulo e aula para investigarmos.', 3, true),
-  ('technical', 'Nao consigo abrir anexos ou materiais.', 'Confirme se o material foi liberado para sua turma e tente novamente em outro navegador. Se precisar, envie um print com a mensagem exibida.', 4, true),
-  ('account', 'Como altero meus dados de conta?', 'Na area do aluno, abra Minha Conta para atualizar nome, idioma, fuso e WhatsApp. Para ajustes mais sensiveis, abra um chamado.', 5, true),
-  ('general', 'Onde encontro orientacoes rapidas sobre a plataforma?', 'Nossa pagina publica de suporte organiza perguntas frequentes, horario de atendimento e o caminho para abrir um chamado quando necessario.', 6, true)
+  ('payment', 'Como acompanho meu pagamento', 'Acesse sua area do aluno e confira os comprovantes e situacoes mais recentes relacionadas ao pedido. Se houver divergencia, abra um chamado na categoria Pagamentos.', 1, true),
+  ('payment', 'Meu acesso n?o foi liberado apos a compra. O que fazer', 'Em geral a libera??o ocorre em poucos instantes. Se o problema persistir, informe e-mail da conta, curso comprado e comprovante para que possamos verificar.', 2, true),
+  ('technical', 'A aula n?o carrega ou trava. Como proceder', 'Atualize a p?gina, teste outro navegador e verifique sua conexao. Se continuar, envie o nome do curso, m?dulo e aula para investigarmos.', 3, true),
+  ('technical', 'N?o consigo abrir anexos ou materiais.', 'Confirme se o material foi liberado para sua turma e tente novamente em outro navegador. Se precisar, envie um print com a mensagem exibida.', 4, true),
+  ('account', 'Como altero meus dados de conta', 'Na area do aluno, abra Minha Conta para atualizar nome, idioma, fuso e WhatsApp. Para ajustes mais sensiveis, abra um chamado.', 5, true),
+  ('general', 'Onde encontro orientacoes rapidas sobre a plataforma', 'N?ossa p?gina publica de suporte organiza perguntas frequentes, horario de atendimento e o caminho para abrir um chamado quando necessrio.', 6, true)
 on conflict do nothing;
 
 create or replace function public.get_support_sla_config()
@@ -97,7 +97,7 @@ as $$
         jsonb_build_object('key', 'general', 'label', 'Duvida geral', 'first_response_hours', 24, 'position', 4, 'description', 'Primeira resposta em ate 24 horas uteis.')
       ),
       'public_note',
-      'Os prazos acima se referem ao tempo da primeira resposta humana da equipe. Nao representam prazo de resolucao final.'
+      'Os prazos acima se referem ao tempo da primeira resposta humana da equipe. N?o representam prazo de resolucao final.'
     )
   );
 $$;
@@ -139,8 +139,8 @@ as $$
     ),
     jsonb_build_object(
       'title', 'Casos graves ou sensiveis',
-      'description', 'Para situacoes com fraude, seguranca, abuso ou necessidade urgente de orientacao, abra o chamado com o maximo de contexto e prioridade compativel.',
-      'note', 'Nossa equipe trata a fila de forma humana e responsavel, respeitando a ordem operacional e o SLA da categoria.'
+      'description', 'Para situacoes com fraude, seguran?a, abuso ou necessidade urgente de orientacao, abra o chamado com o maximo de contexto e prioridade compativel.',
+      'note', 'N?ossa equipe trata a fila de forma humana e responsavel, respeitando a ordem operacional e o SLA da categoria.'
     )
   );
 $$;
@@ -174,7 +174,7 @@ begin
 end;
 $$;
 
-create or replace function public.is_support_business_minute(_ts timestamptz)
+create or replace function public.is_support_business_minute(_ts timest?mptz)
 returns boolean
 language plpgsql
 stable
@@ -184,7 +184,7 @@ as $$
 declare
   config jsonb := public.get_support_business_hours_config();
   timezone_name text := coalesce(config->>'timezone', 'America/Sao_Paulo');
-  local_ts timestamp;
+  local_ts timest?mp;
   local_dow integer;
   local_minutes integer;
   start_minutes integer := coalesce((config->>'start_hour')::integer, 8) * 60;
@@ -206,15 +206,15 @@ begin
 end;
 $$;
 
-create or replace function public.align_support_business_start(_ts timestamptz)
-returns timestamptz
+create or replace function public.align_support_business_start(_ts timest?mptz)
+returns timest?mptz
 language plpgsql
 stable
 security definer
 set search_path = public
 as $$
 declare
-  current_ts timestamptz := date_trunc('minute', coalesce(_ts, timezone('utc', now())));
+  current_ts timest?mptz := date_trunc('minute', coalesce(_ts, timezone('utc', now())));
   guard_counter integer := 0;
 begin
   while public.is_support_business_minute(current_ts) = false loop
@@ -230,8 +230,8 @@ begin
 end;
 $$;
 
-create or replace function public.add_support_business_minutes(_start_ts timestamptz, _minutes integer)
-returns timestamptz
+create or replace function public.add_support_business_minutes(_start_ts timest?mptz, _minutes integer)
+returns timest?mptz
 language plpgsql
 stable
 security definer
@@ -239,7 +239,7 @@ set search_path = public
 as $$
 declare
   target_minutes integer := greatest(coalesce(_minutes, 0), 0);
-  current_ts timestamptz := public.align_support_business_start(coalesce(_start_ts, timezone('utc', now())));
+  current_ts timest?mptz := public.align_support_business_start(coalesce(_start_ts, timezone('utc', now())));
   consumed integer := 0;
   guard_counter integer := 0;
 begin
@@ -267,7 +267,7 @@ begin
 end;
 $$;
 
-create or replace function public.compute_support_sla_status(_first_response_due_at timestamptz, _first_response_at timestamptz)
+create or replace function public.compute_support_sla_status(_first_response_due_at timest?mptz, _first_response_at timest?mptz)
 returns text
 language plpgsql
 stable
@@ -275,8 +275,8 @@ security definer
 set search_path = public
 as $$
 declare
-  due_at timestamptz := _first_response_due_at;
-  answered_at timestamptz := _first_response_at;
+  due_at timest?mptz := _first_response_due_at;
+  answered_at timest?mptz := _first_response_at;
 begin
   if answered_at is not null then
     return 'answered';
@@ -308,12 +308,12 @@ create table if not exists public.support_tickets (
   category text not null default 'general' check (category in ('payment', 'technical', 'account', 'general')),
   attachment_url text,
   attachment_name text,
-  first_response_due_at timestamptz,
-  first_response_at timestamptz,
+  first_response_due_at timest?mptz,
+  first_response_at timest?mptz,
   sla_policy_key text not null default 'general',
   sla_status text not null default 'on_time' check (sla_status in ('on_time', 'at_risk', 'overdue', 'answered')),
-  created_at timestamptz not null default timezone('utc', now()),
-  updated_at timestamptz not null default timezone('utc', now())
+  created_at timest?mptz not null default timezone('utc', now()),
+  updated_at timest?mptz not null default timezone('utc', now())
 );
 
 create index if not exists idx_support_tickets_category
@@ -335,7 +335,7 @@ create table if not exists public.support_messages (
   message text not null,
   attachment_url text,
   attachment_name text,
-  created_at timestamptz not null default timezone('utc', now())
+  created_at timest?mptz not null default timezone('utc', now())
 );
 
 create index if not exists idx_support_messages_ticket_created
@@ -518,7 +518,7 @@ declare
   notification_priority text;
 begin
   if current_user_id is null then
-    raise exception 'Usuario nao autenticado.';
+    raise exception 'Usurio n?o autenticado.';
   end if;
 
   select *
@@ -527,7 +527,7 @@ begin
   where id = _ticket_id;
 
   if ticket_record.id is null then
-    raise exception 'Ticket nao encontrado.';
+    raise exception 'Ticket n?o encontrado.';
   end if;
 
   if current_user_id <> ticket_record.user_id and public.has_role(current_user_id, 'admin') = false then
@@ -535,7 +535,7 @@ begin
   end if;
 
   if normalized_event not in ('new_ticket', 'new_message', 'ticket_closed') then
-    raise exception 'Evento de suporte invalido.';
+    raise exception 'Evento de suporte inv?lido.';
   end if;
 
   notification_priority := case ticket_record.priority
@@ -554,8 +554,8 @@ begin
 
   if normalized_event in ('new_ticket', 'new_message') and public.has_role(current_user_id, 'admin') = false then
     notification_title := case
-      when normalized_event = 'new_ticket' then 'Novo chamado aberto'
-      else 'Nova resposta em chamado'
+      when normalized_event = 'new_ticket' then 'N?ovo chamado aberto'
+      else 'N?ova resposta em chamado'
     end;
     notification_body := case
       when normalized_event = 'new_ticket' then ticket_record.subject
@@ -794,10 +794,10 @@ grant execute on function public.get_support_sla_config() to anon, authenticated
 grant execute on function public.get_support_business_hours_config() to anon, authenticated;
 grant execute on function public.get_support_crisis_protocol_config() to anon, authenticated;
 grant execute on function public.get_support_sla_target_hours(text) to anon, authenticated;
-grant execute on function public.is_support_business_minute(timestamptz) to service_role;
-grant execute on function public.align_support_business_start(timestamptz) to service_role;
-grant execute on function public.add_support_business_minutes(timestamptz, integer) to service_role;
-grant execute on function public.compute_support_sla_status(timestamptz, timestamptz) to authenticated, service_role;
+grant execute on function public.is_support_business_minute(timest?mptz) to service_role;
+grant execute on function public.align_support_business_start(timest?mptz) to service_role;
+grant execute on function public.add_support_business_minutes(timest?mptz, integer) to service_role;
+grant execute on function public.compute_support_sla_status(timest?mptz, timest?mptz) to authenticated, service_role;
 grant execute on function public.notify_support_ticket_event(uuid, text, uuid) to authenticated, service_role;
 grant all on public.site_config to service_role;
 grant all on public.support_faqs to service_role;

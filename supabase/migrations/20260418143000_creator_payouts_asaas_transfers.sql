@@ -6,11 +6,11 @@ create table if not exists public.creator_payout_settings (
   interval_days integer not null default 30 check (interval_days >= 1 and interval_days <= 90),
   minimum_amount_cents integer not null default 0 check (minimum_amount_cents >= 0),
   is_enabled boolean not null default true,
-  last_run_at timestamptz,
-  next_run_at timestamptz,
+  last_run_at timest?mptz,
+  next_run_at timest?mptz,
   updated_by uuid references auth.users (id) on delete set null,
-  created_at timestamptz not null default timezone('utc', now()),
-  updated_at timestamptz not null default timezone('utc', now())
+  created_at timest?mptz not null default timezone('utc', now()),
+  updated_at timest?mptz not null default timezone('utc', now())
 );
 
 insert into public.creator_payout_settings (id, mode, interval_days, minimum_amount_cents, is_enabled, next_run_at)
@@ -24,8 +24,8 @@ alter table public.creator_payouts
   add column if not exists external_transfer_id text,
   add column if not exists external_reference text,
   add column if not exists external_status text,
-  add column if not exists processing_started_at timestamptz,
-  add column if not exists failed_at timestamptz,
+  add column if not exists processing_started_at timest?mptz,
+  add column if not exists failed_at timest?mptz,
   add column if not exists failure_reason text,
   add column if not exists raw_request jsonb,
   add column if not exists raw_response jsonb;
@@ -143,7 +143,7 @@ $$;
 create or replace function public.register_creator_commission_payout(
   _creator_id uuid,
   _commission_ids uuid[],
-  _paid_at timestamptz default timezone('utc', now()),
+  _paid_at timest?mptz default timezone('utc', now()),
   _created_by uuid default null,
   _notes text default null,
   _course_id uuid default null,
@@ -278,7 +278,7 @@ $$;
 
 grant select, insert, update on public.creator_payout_settings to authenticated;
 grant all on public.creator_payout_settings to service_role;
-grant execute on function public.register_creator_commission_payout(uuid, uuid[], timestamptz, uuid, text, uuid, text, text, text, text, text, jsonb, jsonb) to service_role;
+grant execute on function public.register_creator_commission_payout(uuid, uuid[], timest?mptz, uuid, text, uuid, text, text, text, text, text, jsonb, jsonb) to service_role;
 
 alter table public.creator_payout_settings enable row level security;
 

@@ -1,364 +1,308 @@
-import { env } from '@/config/env'
-import { supabase } from '@/services/supabase/client'
-
-import type { ImportModuleData } from '@/features/admin/content/api'
-
+import { env } from '@/config/env';
+import { supabase } from '@/services/supabase/client';
+import type { ImportModuleData } from '@/features/admin/content/api';
 export interface CourseAiReviewStandards {
-  course_id: string
-  ideal_course_structure: string | null
-  required_elements: string | null
-  bibliography_rules: string | null
-  table_formatting_rules: string | null
-  additional_review_rules: string | null
-  created_at: string
-  updated_at: string
-  updated_by: string | null
+    course_id: string;
+    ideal_course_structure: string | null;
+    required_elements: string | null;
+    bibliography_rules: string | null;
+    table_formatting_rules: string | null;
+    additional_review_rules: string | null;
+    created_at: string;
+    updated_at: string;
+    updated_by: string | null;
 }
-
 export interface CourseAiReviewStandardsInput {
-  ideal_course_structure: string
-  required_elements: string
-  bibliography_rules: string
-  table_formatting_rules: string
-  additional_review_rules: string
+    ideal_course_structure: string;
+    required_elements: string;
+    bibliography_rules: string;
+    table_formatting_rules: string;
+    additional_review_rules: string;
 }
-
 export interface ModuleAiReviewIssue {
-  id: string
-  severity: 'critical' | 'high' | 'medium' | 'low'
-  category: 'structure' | 'lesson' | 'assessment' | 'bibliography' | 'table' | 'formatting' | 'consistency'
-  location: string
-  title: string
-  current_state: string
-  recommended_fix: string
-  suggested_result: string
+    id: string;
+    severity: 'critical' | 'high' | 'medium' | 'low';
+    category: 'structure' | 'lesson' | 'assessment' | 'bibliography' | 'table' | 'formatting' | 'consistency';
+    location: string;
+    title: string;
+    current_state: string;
+    recommended_fix: string;
+    suggested_result: string;
 }
-
 export interface ModuleAiReviewResult {
-  summary: string
-  quality_score: number
-  ready_to_publish: boolean
-  issues: ModuleAiReviewIssue[]
-  corrected_module: ImportModuleData | null
-  ai_provider: 'openai' | 'gemini' | null
-  ai_model: string | null
-  token_count_method: 'actual' | 'estimated' | null
-  input_tokens: number | null
-  output_tokens: number | null
-  total_tokens: number | null
-  estimated_cost_usd: number | null
+    summary: string;
+    quality_score: number;
+    ready_to_publish: boolean;
+    issues: ModuleAiReviewIssue[];
+    corrected_module: ImportModuleData | null;
+    ai_provider: 'openai' | 'gemini' | null;
+    ai_model: string | null;
+    token_count_method: 'actual' | 'estimated' | null;
+    input_tokens: number | null;
+    output_tokens: number | null;
+    total_tokens: number | null;
+    estimated_cost_usd: number | null;
 }
-
 export interface ModuleAiReviewHistoryEntry extends ModuleAiReviewResult {
-  id: string
-  course_id: string
-  module_id: string
-  created_at: string
-  created_by: string | null
-  applied_at: string | null
-  applied_by: string | null
+    id: string;
+    course_id: string;
+    module_id: string;
+    created_at: string;
+    created_by: string | null;
+    applied_at: string | null;
+    applied_by: string | null;
 }
-
 export async function fetchCourseAiReviewStandards(courseId: string) {
-  const result = await supabase
-    .from('course_ai_review_standards')
-    .select('*')
-    .eq('course_id', courseId)
-    .limit(1)
-
-  if (result.error) {
-    throw result.error
-  }
-
-  return ((result.data as CourseAiReviewStandards[] | null) ?? [])[0] ?? null
+    const result = await supabase
+        .from('course_ai_review_standards')
+        .select('*')
+        .eq('course_id', courseId)
+        .limit(1);
+    if (result.error) {
+        throw result.error;
+    }
+    return ((result.data as CourseAiReviewStandards[] | null) ?? [])[0] ?? null;
 }
-
-export async function upsertCourseAiReviewStandards(
-  courseId: string,
-  input: CourseAiReviewStandardsInput,
-  userId: string,
-) {
-  const result = await supabase
-    .from('course_ai_review_standards')
-    .upsert({
-      course_id: courseId,
-      ideal_course_structure: input.ideal_course_structure.trim() || null,
-      required_elements: input.required_elements.trim() || null,
-      bibliography_rules: input.bibliography_rules.trim() || null,
-      table_formatting_rules: input.table_formatting_rules.trim() || null,
-      additional_review_rules: input.additional_review_rules.trim() || null,
-      updated_by: userId,
+export async function upsertCourseAiReviewStandards(courseId: string, input: CourseAiReviewStandardsInput, userId: string) {
+    const result = await supabase
+        .from('course_ai_review_standards')
+        .upsert({
+        course_id: courseId,
+        ideal_course_structure: input.ideal_course_structure.trim() || null,
+        required_elements: input.required_elements.trim() || null,
+        bibliography_rules: input.bibliography_rules.trim() || null,
+        table_formatting_rules: input.table_formatting_rules.trim() || null,
+        additional_review_rules: input.additional_review_rules.trim() || null,
+        updated_by: userId,
     })
-    .select('*')
-    .limit(1)
-
-  if (result.error) {
-    throw result.error
-  }
-
-  return ((result.data as CourseAiReviewStandards[] | null) ?? [])[0] as CourseAiReviewStandards
+        .select('*')
+        .limit(1);
+    if (result.error) {
+        throw result.error;
+    }
+    return ((result.data as CourseAiReviewStandards[] | null) ?? [])[0] as CourseAiReviewStandards;
 }
-
 export async function analyzeModuleWithAi(input: {
-  courseId: string
-  moduleId: string
+    courseId: string;
+    moduleId: string;
 }) {
-  const maxAttempts = 6
-  let lastError: Error | null = null
-
-  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
-    try {
-      const accessToken = await resolveAccessToken(attempt > 1)
-      const response = await fetch(`${env.VITE_SUPABASE_URL}/functions/v1/analyze-course-module`, {
-        method: 'POST',
-        keepalive: true,
-        headers: {
-          'Content-Type': 'application/json',
-          apikey: env.VITE_SUPABASE_ANON_KEY,
-          Authorization: `Bearer ${accessToken}`,
-        },
-        body: JSON.stringify({
-          courseId: input.courseId,
-          moduleId: input.moduleId,
-          access_token: accessToken,
-        }),
-      })
-
-      const payload = await response.json().catch(() => null)
-      if (response.ok) {
-        return normalizeModuleAiReviewResult(payload as ModuleAiReviewResult)
-      }
-
-      const message =
-        typeof payload?.error === 'string'
-          ? payload.error
-          : 'Falha ao executar a analise com IA.'
-
-      if (response.status >= 500 || response.status === 429 || response.status === 408) {
-        lastError = new Error(message)
-        if (attempt < maxAttempts) {
-          await waitUntilVisibleIfHidden()
-          await sleep(attempt * 800)
-          continue
+    const maxAttempts = 6;
+    let lastError: Error | null = null;
+    for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+        try {
+            const accessToken = await resolveAccessToken(attempt > 1);
+            const response = await fetch(`${env.VITE_SUPABASE_URL}/functions/v1/analyze-course-module`, {
+                method: 'POST',
+                keepalive: true,
+                headers: {
+                    'Content-Type': 'application/json',
+                    apikey: env.VITE_SUPABASE_ANON_KEY,
+                    Authorization: `Bearer ${accessToken}`,
+                },
+                body: JSON.stringify({
+                    courseId: input.courseId,
+                    moduleId: input.moduleId,
+                    access_token: accessToken,
+                }),
+            });
+            const payload = await response.json().catch(() => null);
+            if (response.ok) {
+                return normalizeModuleAiReviewResult(payload as ModuleAiReviewResult);
+            }
+            const message = typeof payload?.error === 'string'
+                ? payload.error
+                : "Falha ao executar a an?lise com IA.";
+            if (response.status >= 500 || response.status === 429 || response.status === 408) {
+                lastError = new Error(message);
+                if (attempt < maxAttempts) {
+                    await waitUntilVisibleIfHidden();
+                    await sleep(attempt * 800);
+                    continue;
+                }
+            }
+            throw new Error(message);
         }
-      }
-
-      throw new Error(message)
-    } catch (error) {
-      const isNetworkFailure = error instanceof TypeError
-      if (isNetworkFailure && attempt < maxAttempts) {
-        lastError = new Error('Falha de rede temporaria ao analisar m?dulo.')
-        await waitUntilVisibleIfHidden()
-        await sleep(attempt * 800)
-        continue
-      }
-
-      throw error instanceof Error ? error : new Error('Falha ao executar a analise com IA.')
+        catch (error) {
+            const isNetworkFailure = error instanceof TypeError;
+            if (isNetworkFailure && attempt < maxAttempts) {
+                lastError = new Error('Falha de rede temporaria ao analisar m?dulo.');
+                await waitUntilVisibleIfHidden();
+                await sleep(attempt * 800);
+                continue;
+            }
+            throw error instanceof Error ? error : new Error("Falha ao executar a an?lise com IA.");
+        }
     }
-  }
-
-  throw lastError ?? new Error('Falha ao executar a analise com IA.')
+    throw lastError ?? new Error("Falha ao executar a an?lise com IA.");
 }
-
 export async function fetchModuleAiReviewHistory(moduleIds: string[]) {
-  if (moduleIds.length === 0) {
-    return [] as ModuleAiReviewHistoryEntry[]
-  }
-
-  const result = await supabase
-    .from('course_module_ai_reviews')
-    .select('*')
-    .in('module_id', moduleIds)
-    .order('created_at', { ascending: false })
-
-  if (result.error) {
-    throw result.error
-  }
-
-  return ((result.data as ModuleAiReviewHistoryEntry[] | null) ?? []).map(normalizeModuleAiReviewHistoryEntry)
+    if (moduleIds.length === 0) {
+        return [] as ModuleAiReviewHistoryEntry[];
+    }
+    const result = await supabase
+        .from('course_module_ai_reviews')
+        .select('*')
+        .in('module_id', moduleIds)
+        .order('created_at', { ascending: false });
+    if (result.error) {
+        throw result.error;
+    }
+    return ((result.data as ModuleAiReviewHistoryEntry[] | null) ?? []).map(normalizeModuleAiReviewHistoryEntry);
 }
-
 export async function createModuleAiReviewHistory(input: {
-  courseId: string
-  moduleId: string
-  userId: string
-  result: ModuleAiReviewResult
+    courseId: string;
+    moduleId: string;
+    userId: string;
+    result: ModuleAiReviewResult;
 }) {
-  const insertResult = await supabase
-    .from('course_module_ai_reviews')
-    .insert({
-      course_id: input.courseId,
-      module_id: input.moduleId,
-      summary: input.result.summary,
-      quality_score: input.result.quality_score,
-      ready_to_publish: input.result.ready_to_publish,
-      issues: input.result.issues,
-      corrected_module: input.result.corrected_module,
-      ai_provider: input.result.ai_provider,
-      ai_model: input.result.ai_model,
-      token_count_method: input.result.token_count_method,
-      input_tokens: input.result.input_tokens,
-      output_tokens: input.result.output_tokens,
-      total_tokens: input.result.total_tokens,
-      estimated_cost_usd: input.result.estimated_cost_usd,
-      created_by: input.userId,
+    const insertResult = await supabase
+        .from('course_module_ai_reviews')
+        .insert({
+        course_id: input.courseId,
+        module_id: input.moduleId,
+        summary: input.result.summary,
+        quality_score: input.result.quality_score,
+        ready_to_publish: input.result.ready_to_publish,
+        issues: input.result.issues,
+        corrected_module: input.result.corrected_module,
+        ai_provider: input.result.ai_provider,
+        ai_model: input.result.ai_model,
+        token_count_method: input.result.token_count_method,
+        input_tokens: input.result.input_tokens,
+        output_tokens: input.result.output_tokens,
+        total_tokens: input.result.total_tokens,
+        estimated_cost_usd: input.result.estimated_cost_usd,
+        created_by: input.userId,
     })
-    .select('*')
-    .limit(1)
-
-  if (insertResult.error) {
-    throw insertResult.error
-  }
-
-  return normalizeModuleAiReviewHistoryEntry(((insertResult.data as ModuleAiReviewHistoryEntry[] | null) ?? [])[0] as ModuleAiReviewHistoryEntry)
+        .select('*')
+        .limit(1);
+    if (insertResult.error) {
+        throw insertResult.error;
+    }
+    return normalizeModuleAiReviewHistoryEntry(((insertResult.data as ModuleAiReviewHistoryEntry[] | null) ?? [])[0] as ModuleAiReviewHistoryEntry);
 }
-
 export function formatAiReviewCost(costUsd: number | null) {
-  if (costUsd === null || !Number.isFinite(costUsd)) {
-    return 'Custo indisponivel'
-  }
-
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: costUsd < 0.01 ? 4 : 2,
-    maximumFractionDigits: costUsd < 0.01 ? 4 : 2,
-  }).format(costUsd)
+    if (costUsd === null || !Number.isFinite(costUsd)) {
+        return "Custo indisponvel";
+    }
+    return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD',
+        minimumFractionDigits: costUsd < 0.01 ? 4 : 2,
+        maximumFractionDigits: costUsd < 0.01 ? 4 : 2,
+    }).format(costUsd);
 }
-
 export function formatAiReviewTokens(tokens: number | null) {
-  if (tokens === null || !Number.isFinite(tokens)) {
-    return 'Tokens indisponiveis'
-  }
-
-  return new Intl.NumberFormat('pt-BR').format(tokens)
+    if (tokens === null || !Number.isFinite(tokens)) {
+        return 'Tokens indisponiveis';
+    }
+    return new Intl.NumberFormat('pt-BR').format(tokens);
 }
-
 export function getAiProviderLabel(provider: ModuleAiReviewResult['ai_provider']) {
-  if (provider === 'openai') return 'OpenAI'
-  if (provider === 'gemini') return 'Gemini'
-  return 'IA'
+    if (provider === 'openai')
+        return 'OpenAI';
+    if (provider === 'gemini')
+        return 'Gemini';
+    return 'IA';
 }
-
 export async function markModuleAiReviewApplied(reviewId: string, userId: string) {
-  const appliedAt = new Date().toISOString()
-  const updateResult = await supabase
-    .from('course_module_ai_reviews')
-    .update({
-      applied_at: appliedAt,
-      applied_by: userId,
+    const appliedAt = new Date().toISOString();
+    const updateResult = await supabase
+        .from('course_module_ai_reviews')
+        .update({
+        applied_at: appliedAt,
+        applied_by: userId,
     })
-    .eq('id', reviewId)
-    .select('*')
-    .limit(1)
-
-  if (updateResult.error) {
-    throw updateResult.error
-  }
-
-  const updatedReview = ((updateResult.data as ModuleAiReviewHistoryEntry[] | null) ?? [])[0] ?? null
-  if (updatedReview) {
-    return normalizeModuleAiReviewHistoryEntry(updatedReview)
-  }
-
-  const fetchResult = await supabase
-    .from('course_module_ai_reviews')
-    .select('*')
-    .eq('id', reviewId)
-    .limit(1)
-
-  if (fetchResult.error) {
-    throw fetchResult.error
-  }
-
-  const fetchedReview = ((fetchResult.data as ModuleAiReviewHistoryEntry[] | null) ?? [])[0] ?? null
-  if (!fetchedReview) {
-    return null
-  }
-
-  return {
-    ...normalizeModuleAiReviewHistoryEntry(fetchedReview),
-    applied_at: fetchedReview.applied_at ?? appliedAt,
-    applied_by: fetchedReview.applied_by ?? userId,
-  }
+        .eq('id', reviewId)
+        .select('*')
+        .limit(1);
+    if (updateResult.error) {
+        throw updateResult.error;
+    }
+    const updatedReview = ((updateResult.data as ModuleAiReviewHistoryEntry[] | null) ?? [])[0] ?? null;
+    if (updatedReview) {
+        return normalizeModuleAiReviewHistoryEntry(updatedReview);
+    }
+    const fetchResult = await supabase
+        .from('course_module_ai_reviews')
+        .select('*')
+        .eq('id', reviewId)
+        .limit(1);
+    if (fetchResult.error) {
+        throw fetchResult.error;
+    }
+    const fetchedReview = ((fetchResult.data as ModuleAiReviewHistoryEntry[] | null) ?? [])[0] ?? null;
+    if (!fetchedReview) {
+        return null;
+    }
+    return {
+        ...normalizeModuleAiReviewHistoryEntry(fetchedReview),
+        applied_at: fetchedReview.applied_at ?? appliedAt,
+        applied_by: fetchedReview.applied_by ?? userId,
+    };
 }
-
 function normalizeModuleAiReviewResult(review: ModuleAiReviewResult): ModuleAiReviewResult {
-  return {
-    ...review,
-    estimated_cost_usd: normalizeNullableNumber(review.estimated_cost_usd),
-    input_tokens: normalizeNullableNumber(review.input_tokens),
-    output_tokens: normalizeNullableNumber(review.output_tokens),
-    total_tokens: normalizeNullableNumber(review.total_tokens),
-  }
+    return {
+        ...review,
+        estimated_cost_usd: normalizeNullableNumber(review.estimated_cost_usd),
+        input_tokens: normalizeNullableNumber(review.input_tokens),
+        output_tokens: normalizeNullableNumber(review.output_tokens),
+        total_tokens: normalizeNullableNumber(review.total_tokens),
+    };
 }
-
 function normalizeModuleAiReviewHistoryEntry(review: ModuleAiReviewHistoryEntry): ModuleAiReviewHistoryEntry {
-  return normalizeModuleAiReviewResult(review) as ModuleAiReviewHistoryEntry
+    return normalizeModuleAiReviewResult(review) as ModuleAiReviewHistoryEntry;
 }
-
 function normalizeNullableNumber(value: unknown) {
-  if (value === null || value === undefined || value === '') {
-    return null
-  }
-
-  if (typeof value === 'number') {
-    return Number.isFinite(value) ? value : null
-  }
-
-  if (typeof value === 'string') {
-    const parsed = Number(value)
-    return Number.isFinite(parsed) ? parsed : null
-  }
-
-  return null
+    if (value === null || value === undefined || value === '') {
+        return null;
+    }
+    if (typeof value === 'number') {
+        return Number.isFinite(value) ? value : null;
+    }
+    if (typeof value === 'string') {
+        const parsed = Number(value);
+        return Number.isFinite(parsed) ? parsed : null;
+    }
+    return null;
 }
-
 async function resolveAccessToken(forceRefresh: boolean) {
-  let sessionResult = await supabase.auth.getSession()
-  let accessToken: string | undefined = sessionResult.data.session?.access_token ?? undefined
-
-  if (forceRefresh || !accessToken) {
-    const refreshResult = await supabase.auth.refreshSession()
-    accessToken = refreshResult.data.session?.access_token ?? undefined
-    sessionResult = await supabase.auth.getSession()
-    accessToken = accessToken ?? sessionResult.data.session?.access_token ?? undefined
-  }
-
-  if (!accessToken) {
-    throw new Error('Sess?o expirada. Faca login novamente para usar a analise com IA.')
-  }
-
-  return accessToken
+    let sessionResult = await supabase.auth.getSession();
+    let accessToken: string | undefined = sessionResult.data.session?.access_token ?? undefined;
+    if (forceRefresh || !accessToken) {
+        const refreshResult = await supabase.auth.refreshSession();
+        accessToken = refreshResult.data.session?.access_token ?? undefined;
+        sessionResult = await supabase.auth.getSession();
+        accessToken = accessToken ?? sessionResult.data.session?.access_token ?? undefined;
+    }
+    if (!accessToken) {
+        throw new Error("Sesso expirada. Faca login novamente para usar a an?lise com IA.");
+    }
+    return accessToken;
 }
-
 function sleep(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms))
+    return new Promise((resolve) => setTimeout(resolve, ms));
 }
-
 async function waitUntilVisibleIfHidden() {
-  if (typeof document === 'undefined' || !document.hidden) {
-    return
-  }
-
-  await new Promise<void>((resolve) => {
-    let settled = false
-
-    const finish = () => {
-      if (settled) return
-      settled = true
-      document.removeEventListener('visibilitychange', handleVisibilityChange)
-      clearTimeout(timeoutId)
-      resolve()
+    if (typeof document === 'undefined' || !document.hidden) {
+        return;
     }
-
-    const handleVisibilityChange = () => {
-      if (!document.hidden) {
-        finish()
-      }
-    }
-
-    const timeoutId = window.setTimeout(finish, 30_000)
-    document.addEventListener('visibilitychange', handleVisibilityChange)
-  })
+    await new Promise<void>((resolve) => {
+        let settled = false;
+        const finish = () => {
+            if (settled)
+                return;
+            settled = true;
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
+            clearTimeout(timeoutId);
+            resolve();
+        };
+        const handleVisibilityChange = () => {
+            if (!document.hidden) {
+                finish();
+            }
+        };
+        const timeoutId = window.setTimeout(finish, 30000);
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+    });
 }

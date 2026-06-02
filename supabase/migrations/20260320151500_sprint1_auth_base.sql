@@ -4,7 +4,7 @@ create table if not exists public.roles (
   id bigint generated always as identity primary key,
   code text not null unique,
   name text not null,
-  created_at timestamptz not null default timezone('utc', now())
+  created_at timest?mptz not null default timezone('utc', now())
 );
 
 insert into public.roles (code, name)
@@ -19,8 +19,8 @@ create table if not exists public.profiles (
   full_name text,
   timezone text not null default 'America/Sao_Paulo',
   locale text not null default 'pt-BR',
-  created_at timestamptz not null default timezone('utc', now()),
-  updated_at timestamptz not null default timezone('utc', now())
+  created_at timest?mptz not null default timezone('utc', now()),
+  updated_at timest?mptz not null default timezone('utc', now())
 );
 
 create index if not exists profiles_email_idx on public.profiles (email);
@@ -29,7 +29,7 @@ create table if not exists public.user_roles (
   id bigint generated always as identity primary key,
   user_id uuid not null references auth.users (id) on delete cascade,
   role_id bigint not null references public.roles (id) on delete cascade,
-  created_at timestamptz not null default timezone('utc', now()),
+  created_at timest?mptz not null default timezone('utc', now()),
   unique (user_id, role_id)
 );
 

@@ -8,8 +8,8 @@ create table if not exists public.lesson_audio_moderation_requests (
   requested_message text,
   technical_error text,
   admin_response text,
-  created_at timestamptz not null default timezone('utc', now()),
-  resolved_at timestamptz,
+  created_at timest?mptz not null default timezone('utc', now()),
+  resolved_at timest?mptz,
   resolved_by uuid references auth.users (id) on delete set null
 );
 

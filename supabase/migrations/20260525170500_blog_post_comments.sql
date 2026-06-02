@@ -12,10 +12,10 @@ create table if not exists public.blog_post_comments (
   moderation_status text not null default 'pending' check (moderation_status in ('pending', 'approved', 'rejected')),
   moderation_reason text,
   admin_response text,
-  approved_at timestamptz,
+  approved_at timest?mptz,
   approved_by uuid references auth.users(id) on delete set null,
-  created_at timestamptz not null default timezone('utc', now()),
-  updated_at timestamptz not null default timezone('utc', now())
+  created_at timest?mptz not null default timezone('utc', now()),
+  updated_at timest?mptz not null default timezone('utc', now())
 );
 
 create index if not exists blog_post_comments_post_slug_status_idx
@@ -95,11 +95,11 @@ begin
   loop
     perform public.create_user_notification(
       admin_record.id,
-      'Novo comentário aguardando aprovação',
+      'N?ovo comentário aguardando aprovação',
       body_preview,
       'blog',
       'normal',
-      '/admin/blog?tab=comments',
+      '/admin/blogtab=comments',
       array['in-app'],
       jsonb_build_object('blog_comment_id', new.id, 'post_slug', new.post_slug)
     );
@@ -202,10 +202,10 @@ returns table (
   moderation_status text,
   moderation_reason text,
   admin_response text,
-  approved_at timestamptz,
+  approved_at timest?mptz,
   approved_by uuid,
-  created_at timestamptz,
-  updated_at timestamptz
+  created_at timest?mptz,
+  updated_at timest?mptz
 )
 language plpgsql
 security definer

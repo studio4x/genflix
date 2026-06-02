@@ -4,8 +4,8 @@ create table if not exists public.notification_admin_settings (
   id smallint primary key default 1 check (id = 1),
   admin_notification_email text,
   updated_by uuid references public.profiles (id) on delete set null,
-  created_at timestamptz not null default timezone('utc', now()),
-  updated_at timestamptz not null default timezone('utc', now())
+  created_at timest?mptz not null default timezone('utc', now()),
+  updated_at timest?mptz not null default timezone('utc', now())
 );
 
 drop trigger if exists set_notification_admin_settings_updated_at on public.notification_admin_settings;

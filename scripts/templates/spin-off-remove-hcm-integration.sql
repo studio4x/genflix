@@ -7,7 +7,7 @@ exception
   when undefined_function then
     null;
   when others then
-    raise notice 'Nao foi possivel cancelar o cron de integracao durante o cleanup do spin-off: %', sqlerrm;
+    raise notice 'N?o foi possvel cancelar o cron de integracao durante o cleanup do spin-off: %', sqlerrm;
 end
 $$;
 

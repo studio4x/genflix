@@ -9,16 +9,16 @@ create table if not exists public.security_scan_settings (
   auto_fix_enabled boolean not null default false,
   enabled boolean not null default true,
   updated_by uuid references auth.users(id) on delete set null,
-  created_at timestamptz not null default timezone('utc', now()),
-  updated_at timestamptz not null default timezone('utc', now())
+  created_at timest?mptz not null default timezone('utc', now()),
+  updated_at timest?mptz not null default timezone('utc', now())
 );
 
 create table if not exists public.security_scan_runs (
   id uuid primary key default gen_random_uuid(),
   trigger_source text not null check (trigger_source in ('manual', 'scheduled')),
   status text not null check (status in ('running', 'completed', 'failed')) default 'running',
-  started_at timestamptz not null default timezone('utc', now()),
-  finished_at timestamptz,
+  started_at timest?mptz not null default timezone('utc', now()),
+  finished_at timest?mptz,
   findings_total integer not null default 0,
   findings_open integer not null default 0,
   findings_fixed integer not null default 0,
@@ -39,11 +39,11 @@ create table if not exists public.security_scan_findings (
   recommendation text,
   fix_available boolean not null default false,
   auto_fix_supported boolean not null default false,
-  fixed_at timestamptz,
+  fixed_at timest?mptz,
   fixed_by uuid references auth.users(id) on delete set null,
   fixed_via text check (fixed_via in ('manual', 'automatic')),
   metadata jsonb not null default '{}'::jsonb,
-  created_at timestamptz not null default timezone('utc', now())
+  created_at timest?mptz not null default timezone('utc', now())
 );
 
 create table if not exists public.security_scan_fixes (
@@ -54,7 +54,7 @@ create table if not exists public.security_scan_fixes (
   status text not null check (status in ('applied', 'failed')),
   details text,
   applied_by uuid references auth.users(id) on delete set null,
-  created_at timestamptz not null default timezone('utc', now())
+  created_at timest?mptz not null default timezone('utc', now())
 );
 
 create index if not exists idx_security_scan_runs_started_at on public.security_scan_runs(started_at desc);
@@ -149,11 +149,11 @@ begin
   limit 1;
 
   if _app_public_url is null or length(trim(_app_public_url)) = 0 then
-    raise exception 'Configuracao integration_runtime_settings.app_public_url ausente.';
+    raise exception 'Configurao integration_runtime_settings.app_public_url ausente.';
   end if;
 
   if _cron_secret is null or length(trim(_cron_secret)) = 0 then
-    raise exception 'Configuracao integration_runtime_settings.admin_api_cron_secret ausente.';
+    raise exception 'Configurao integration_runtime_settings.admin_api_cron_secret ausente.';
   end if;
 
   perform public.unschedule_security_scan_cron();
@@ -173,7 +173,7 @@ begin
             body := '{"action":"run_scan"}'::jsonb
           ) as request_id;
       $job$,
-      rtrim(_app_public_url, '/') || '/api/admin/security-scans?task=run_scheduled',
+      rtrim(_app_public_url, '/') || '/api/admin/security-scanstask=run_scheduled',
       _cron_secret
     )
   ) into _job_id;
@@ -238,7 +238,7 @@ begin
   perform public.sync_security_scan_cron();
 exception
   when others then
-    raise notice 'Nao foi possivel sincronizar cron de security scan automaticamente: %', sqlerrm;
+    raise notice 'N?o foi possvel sincronizar cron de security scan automticamente: %', sqlerrm;
 end
 $$;
 

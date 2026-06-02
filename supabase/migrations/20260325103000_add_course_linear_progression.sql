@@ -166,7 +166,7 @@ RETURNS TABLE (
   text_content text,
   estimated_minutes integer,
   is_completed boolean,
-  completed_at timestamptz
+  completed_at timest?mptz
 )
 LANGUAGE sql
 STABLE

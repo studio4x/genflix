@@ -16,9 +16,9 @@ create table if not exists public.reviews (
   moderation_reason varchar(300),
   helpful_count integer not null default 0 check (helpful_count >= 0),
   unhelpful_count integer not null default 0 check (unhelpful_count >= 0),
-  deleted_at timestamptz,
-  created_at timestamptz not null default timezone('utc', now()),
-  updated_at timestamptz not null default timezone('utc', now())
+  deleted_at timest?mptz,
+  created_at timest?mptz not null default timezone('utc', now()),
+  updated_at timest?mptz not null default timezone('utc', now())
 );
 
 create unique index if not exists reviews_author_target_active_idx
@@ -38,8 +38,8 @@ create table if not exists public.review_moderation_reports (
   moderated_by uuid references public.profiles (id) on delete set null,
   status text not null default 'pending' check (status in ('pending', 'resolved')),
   action text check (action is null or action in ('approve', 'reject', 'edit')),
-  created_at timestamptz not null default timezone('utc', now()),
-  resolved_at timestamptz
+  created_at timest?mptz not null default timezone('utc', now()),
+  resolved_at timest?mptz
 );
 
 create table if not exists public.review_helpful_votes (
@@ -47,7 +47,7 @@ create table if not exists public.review_helpful_votes (
   review_id uuid not null references public.reviews (id) on delete cascade,
   user_id uuid not null references public.profiles (id) on delete cascade,
   is_helpful boolean not null,
-  created_at timestamptz not null default timezone('utc', now()),
+  created_at timest?mptz not null default timezone('utc', now()),
   unique (review_id, user_id)
 );
 
@@ -58,7 +58,7 @@ create table if not exists public.review_stats (
   total_reviews integer not null default 0 check (total_reviews >= 0),
   avg_rating numeric(3,2) not null default 0 check (avg_rating >= 0 and avg_rating <= 5),
   rating_distribution jsonb not null default '{"1":0,"2":0,"3":0,"4":0,"5":0}'::jsonb,
-  updated_at timestamptz not null default timezone('utc', now()),
+  updated_at timest?mptz not null default timezone('utc', now()),
   unique (target_type, target_id)
 );
 
@@ -219,7 +219,7 @@ begin
   end if;
 
   if _rating < 1 or _rating > 5 then
-    raise exception 'A nota deve estar entre 1 e 5.';
+    raise exception 'A nota deve est?r entre 1 e 5.';
   end if;
 
   if char_length(normalized_title) < 3 or char_length(normalized_title) > 100 then

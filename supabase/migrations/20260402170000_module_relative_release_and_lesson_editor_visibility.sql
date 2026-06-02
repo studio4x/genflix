@@ -11,7 +11,7 @@ alter table public.course_modules
   check (release_days_after_enrollment is null or release_days_after_enrollment >= 0);
 
 create or replace function public.get_course_release_reference_at(_user_id uuid, _course_id uuid)
-returns timestamptz
+returns timest?mptz
 language sql
 stable
 security definer
@@ -43,12 +43,12 @@ as $$
   where effective_at is not null;
 $$;
 
-drop function if exists public.is_module_scheduled_open_for_user(uuid, uuid, timestamptz);
+drop function if exists public.is_module_scheduled_open_for_user(uuid, uuid, timest?mptz);
 
 create or replace function public.is_module_scheduled_open_for_user(
   _user_id uuid,
   _module_id uuid,
-  _reference timestamptz default timezone('utc', now())
+  _reference timest?mptz default timezone('utc', now())
 )
 returns boolean
 language plpgsql
@@ -58,10 +58,10 @@ set search_path = public
 as $$
 declare
   v_course_id uuid;
-  v_starts_at timestamptz;
-  v_ends_at timestamptz;
+  v_starts_at timest?mptz;
+  v_ends_at timest?mptz;
   v_release_days integer;
-  v_release_reference timestamptz;
+  v_release_reference timest?mptz;
 begin
   select
     cm.course_id,
@@ -169,8 +169,8 @@ returns table (
   has_required_assessment boolean,
   required_assessment_approved boolean,
   progress_percent integer,
-  starts_at timestamptz,
-  ends_at timestamptz,
+  starts_at timest?mptz,
+  ends_at timest?mptz,
   module_pdf_file_name text,
   module_pdf_storage_path text
 )
@@ -392,6 +392,6 @@ as $$
 $$;
 
 grant execute on function public.get_course_release_reference_at(uuid, uuid) to authenticated, service_role;
-grant execute on function public.is_module_scheduled_open_for_user(uuid, uuid, timestamptz) to authenticated, service_role;
+grant execute on function public.is_module_scheduled_open_for_user(uuid, uuid, timest?mptz) to authenticated, service_role;
 
 commit;

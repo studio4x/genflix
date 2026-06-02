@@ -10,12 +10,12 @@ create table if not exists public.global_quiz_type_settings (
   coloring boolean not null default true,
   case_study boolean not null default true,
   updated_by uuid references auth.users (id) on delete set null,
-  created_at timestamptz not null default timezone('utc', now()),
-  updated_at timestamptz not null default timezone('utc', now())
+  created_at timest?mptz not null default timezone('utc', now()),
+  updated_at timest?mptz not null default timezone('utc', now())
 );
 
 comment on table public.global_quiz_type_settings is
-  'Configura quais tipos de quiz estao disponiveis globalmente em toda a plataforma.';
+  'Configura quais tipos de quiz est?o disponiveis globalmente em toda a plataforma.';
 
 drop trigger if exists set_global_quiz_type_settings_updated_at on public.global_quiz_type_settings;
 create trigger set_global_quiz_type_settings_updated_at

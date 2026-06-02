@@ -5,14 +5,14 @@ create table if not exists public.conversations (
   conversation_type text not null default 'direct' check (conversation_type in ('direct', 'support', 'group')),
   title varchar(160),
   created_by uuid references public.profiles (id) on delete set null,
-  last_message_at timestamptz,
+  last_message_at timest?mptz,
   last_message_preview text,
   message_count integer not null default 0 check (message_count >= 0),
   is_archived boolean not null default false,
-  archived_at timestamptz,
+  archived_at timest?mptz,
   metadata jsonb not null default '{}'::jsonb,
-  created_at timestamptz not null default timezone('utc', now()),
-  updated_at timestamptz not null default timezone('utc', now())
+  created_at timest?mptz not null default timezone('utc', now()),
+  updated_at timest?mptz not null default timezone('utc', now())
 );
 
 create index if not exists conversations_last_message_idx
@@ -29,10 +29,10 @@ create table if not exists public.conversation_participants (
   conversation_id uuid not null references public.conversations (id) on delete cascade,
   user_id uuid not null references public.profiles (id) on delete cascade,
   role text not null default 'participant' check (role in ('participant', 'admin', 'observer')),
-  joined_at timestamptz not null default timezone('utc', now()),
-  last_read_at timestamptz,
+  joined_at timest?mptz not null default timezone('utc', now()),
+  last_read_at timest?mptz,
   unread_count integer not null default 0 check (unread_count >= 0),
-  created_at timestamptz not null default timezone('utc', now()),
+  created_at timest?mptz not null default timezone('utc', now()),
   unique (conversation_id, user_id)
 );
 
@@ -48,15 +48,15 @@ create table if not exists public.messages (
   sender_id uuid references public.profiles (id) on delete set null,
   content text not null check (char_length(content) <= 5000),
   message_type text not null default 'text' check (message_type in ('text', 'file', 'system', 'notification')),
-  edited_at timestamptz,
+  edited_at timest?mptz,
   edited_by uuid references public.profiles (id) on delete set null,
   edited_reason varchar(300),
   attachments jsonb not null default '[]'::jsonb,
   is_deleted boolean not null default false,
-  deleted_at timestamptz,
+  deleted_at timest?mptz,
   deleted_by uuid references public.profiles (id) on delete set null,
-  created_at timestamptz not null default timezone('utc', now()),
-  updated_at timestamptz not null default timezone('utc', now())
+  created_at timest?mptz not null default timezone('utc', now()),
+  updated_at timest?mptz not null default timezone('utc', now())
 );
 
 create index if not exists messages_conversation_created_idx
@@ -75,8 +75,8 @@ create table if not exists public.message_read_status (
   id uuid primary key default gen_random_uuid(),
   message_id uuid not null references public.messages (id) on delete cascade,
   user_id uuid not null references public.profiles (id) on delete cascade,
-  read_at timestamptz not null default timezone('utc', now()),
-  created_at timestamptz not null default timezone('utc', now()),
+  read_at timest?mptz not null default timezone('utc', now()),
+  created_at timest?mptz not null default timezone('utc', now()),
   unique (message_id, user_id)
 );
 
@@ -88,7 +88,7 @@ create table if not exists public.message_reactions (
   message_id uuid not null references public.messages (id) on delete cascade,
   user_id uuid not null references public.profiles (id) on delete cascade,
   reaction_type varchar(32) not null,
-  created_at timestamptz not null default timezone('utc', now()),
+  created_at timest?mptz not null default timezone('utc', now()),
   unique (message_id, user_id, reaction_type)
 );
 
@@ -99,8 +99,8 @@ create table if not exists public.message_reports (
   reason text not null check (reason in ('spam', 'harassment', 'inappropriate', 'abuse', 'other')),
   description text,
   status text not null default 'pending' check (status in ('pending', 'resolved')),
-  created_at timestamptz not null default timezone('utc', now()),
-  resolved_at timestamptz
+  created_at timest?mptz not null default timezone('utc', now()),
+  resolved_at timest?mptz
 );
 
 create or replace function public.is_conversation_participant(_conversation_id uuid, _user_id uuid)
@@ -221,7 +221,7 @@ returns table (
   conversation_id uuid,
   conversation_type text,
   title text,
-  last_message_at timestamptz,
+  last_message_at timest?mptz,
   last_message_preview text,
   message_count integer,
   unread_count integer,
@@ -283,8 +283,8 @@ returns table (
   message_type text,
   attachments jsonb,
   is_deleted boolean,
-  created_at timestamptz,
-  updated_at timestamptz
+  created_at timest?mptz,
+  updated_at timest?mptz
 )
 language plpgsql
 security definer
@@ -386,7 +386,7 @@ begin
   end if;
 
   if public.is_conversation_participant(_conversation_id, current_user_id) = false then
-    raise exception 'Você não participa desta conversa.';
+    raise exception 'Você não participa dest? conversa.';
   end if;
 
   if normalized_content = '' and jsonb_array_length(coalesce(_attachments, '[]'::jsonb)) = 0 then
@@ -439,11 +439,11 @@ begin
     where conversation_id = _conversation_id
       and user_id is distinct from current_user_id
   loop
-    action_url := '/mensagens?conversation=' || _conversation_id::text;
+    action_url := '/mensagensconversation=' || _conversation_id::text;
 
     perform public.create_user_notification(
       recipient_record.user_id,
-      'Nova mensagem de ' || coalesce(sender_name, 'GenFlix'),
+      'N?ova mensagem de ' || coalesce(sender_name, 'GenFlix'),
       left(coalesce(nullif(normalized_content, ''), 'Você recebeu um arquivo.'), 240),
       'message',
       'normal',

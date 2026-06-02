@@ -4,16 +4,16 @@ create table if not exists public.assessment_question_interactions (
   question_id uuid primary key references public.assessment_questions (id) on delete cascade,
   content jsonb not null default '{}'::jsonb,
   version integer not null default 1 check (version > 0),
-  created_at timestamptz not null default timezone('utc', now()),
-  updated_at timestamptz not null default timezone('utc', now())
+  created_at timest?mptz not null default timezone('utc', now()),
+  updated_at timest?mptz not null default timezone('utc', now())
 );
 
 create table if not exists public.assessment_question_answer_keys (
   question_id uuid primary key references public.assessment_questions (id) on delete cascade,
   grading_mode text not null default 'partial_by_item' check (grading_mode in ('partial_by_item', 'all_or_nothing')),
   answer_key jsonb not null default '{}'::jsonb,
-  created_at timestamptz not null default timezone('utc', now()),
-  updated_at timestamptz not null default timezone('utc', now())
+  created_at timest?mptz not null default timezone('utc', now()),
+  updated_at timest?mptz not null default timezone('utc', now())
 );
 
 create index if not exists assessment_question_interactions_version_idx

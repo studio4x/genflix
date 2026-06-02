@@ -25,11 +25,11 @@ begin
   loop
     perform public.create_user_notification(
       admin_record.id,
-      'Novo comentário aguardando aprovação',
+      'N?ovo comentário aguardando aprovação',
       body_preview,
       'blog',
       'normal',
-      '/admin/blog?tab=comments',
+      '/admin/blogtab=comments',
       array['in-app', 'email'],
       jsonb_build_object('blog_comment_id', new.id, 'post_slug', new.post_slug)
     );

@@ -1,27 +1,14 @@
-import { ArrowUpRight } from 'lucide-react'
-import { Link } from 'react-router-dom'
-
-import { CourseCoverMedia } from '@/components/public/course-cover-media'
-import type { GenflixCourseItem } from '@/features/public/genflix-public-types'
-
-export function GenflixCourseCard({
-  course,
-}: {
-  course: GenflixCourseItem
+import { ArrowUpRight } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { CourseCoverMedia } from '@/components/public/course-cover-media';
+import type { GenflixCourseItem } from '@/features/public/genflix-public-types';
+export function GenflixCourseCard({ course, }: {
+    course: GenflixCourseItem;
 }) {
-  return (
-    <article className="group overflow-hidden rounded-[4px] border border-[#D8E6EB] bg-[#F2F8FA] shadow-[0_20px_50px_rgba(10,54,64,0.08)] transition-transform duration-300 hover:-translate-y-1 hover:shadow-[0_28px_64px_rgba(10,54,64,0.12)]">
+    return (<article className="group overflow-hidden rounded-[4px] border border-[#D8E6EB] bg-[#F2F8FA] shadow-[0_20px_50px_rgba(10,54,64,0.08)] transition-transform duration-300 hover:-translate-y-1 hover:shadow-[0_28px_64px_rgba(10,54,64,0.12)]">
       <div className="relative aspect-[16/9] overflow-hidden">
-        <CourseCoverMedia
-          src={course.image}
-          alt={course.title}
-          title={course.title}
-          category={course.category}
-          initials={course.initials}
-          imageClassName="transition-transform duration-500 group-hover:scale-[1.03]"
-          placeholderClassName="transition-transform duration-500 group-hover:scale-[1.03]"
-        />
-        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(10,54,64,0.04)_0%,rgba(10,54,64,0)_38%,rgba(10,54,64,0.24)_100%)]" />
+        <CourseCoverMedia src={course.image} alt={course.title} title={course.title} category={course.category} initials={course.initials} imageClassName="transition-transform duration-500 group-hover:scale-[1.03]" placeholderClassName="transition-transform duration-500 group-hover:scale-[1.03]"/>
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(10,54,64,0.04)_0%,rgba(10,54,64,0)_38%,rgba(10,54,64,0.24)_100%)]"/>
         <div className="absolute left-4 top-4 rounded-full border border-emerald-300/80 bg-emerald-500 px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-white shadow-[0_6px_18px_rgba(5,150,105,0.35)]">
           {course.category}
         </div>
@@ -32,29 +19,16 @@ export function GenflixCourseCard({
           <h3 className="flex-1 text-[18px] font-semibold leading-[1.35] tracking-[-0.02em] text-[#15323B]">
             {course.title}
           </h3>
-          <Link
-            to={`/cursos/${course.slug}`}
-            className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#1C7082] text-white shadow-[0_4px_4px_rgba(0,0,0,0.12)] transition-transform duration-200 group-hover:translate-x-0.5"
-            aria-label={`Abrir ${course.title}`}
-          >
-            <ArrowUpRight className="h-3 w-3" />
+          <Link to={`/cursos/${course.slug}`} className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#1C7082] text-white shadow-[0_4px_4px_rgba(0,0,0,0.12)] transition-transform duration-200 group-hover:translate-x-0.5" aria-label={`Abrir ${course.title}`}>
+            <ArrowUpRight className="h-3 w-3"/>
           </Link>
         </div>
 
         <div className="mt-5 border-t border-[#D8E6EB] pt-4">
           <div className="flex items-center gap-3">
-            {course.mentorImage ? (
-              <img
-                src={course.mentorImage}
-                alt={course.mentor}
-                loading="lazy"
-                className="h-[46px] w-[46px] rounded-full object-cover ring-1 ring-[#D8E6EB]"
-              />
-            ) : (
-              <div className="flex h-[46px] w-[46px] items-center justify-center rounded-full bg-[#D9F0F5] text-sm font-extrabold text-[#0A3640]">
+            {course.mentorImage ? (<img src={course.mentorImage} alt={course.mentor} loading="lazy" className="h-[46px] w-[46px] rounded-full object-cover ring-1 ring-[#D8E6EB]"/>) : (<div className="flex h-[46px] w-[46px] items-center justify-center rounded-full bg-[#D9F0F5] text-sm font-extrabold text-[#0A3640]">
                 {course.initials}
-              </div>
-            )}
+              </div>)}
 
             <div className="min-w-0">
               <p className="truncate text-[13px] font-semibold leading-5 text-[#15323B]">{course.mentor}</p>
@@ -63,6 +37,5 @@ export function GenflixCourseCard({
           </div>
         </div>
       </div>
-    </article>
-  )
+    </article>);
 }

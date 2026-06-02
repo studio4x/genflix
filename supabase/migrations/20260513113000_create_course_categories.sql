@@ -6,8 +6,8 @@ create table if not exists public.course_categories (
   slug text not null,
   display_order integer not null default 1,
   is_active boolean not null default true,
-  created_at timestamptz not null default timezone('utc', now()),
-  updated_at timestamptz not null default timezone('utc', now()),
+  created_at timest?mptz not null default timezone('utc', now()),
+  updated_at timest?mptz not null default timezone('utc', now()),
   constraint course_categories_name_unique unique (name),
   constraint course_categories_slug_unique unique (slug)
 );

@@ -1,31 +1,24 @@
-import { createClient } from '@supabase/supabase-js'
-
-import { env } from '@/config/env'
-
+import { createClient } from '@supabase/supabase-js';
+import { env } from '@/config/env';
 function createNoCacheFetch() {
-  return (input: RequestInfo | URL, init?: RequestInit) => fetch(input, {
-    ...init,
-    cache: 'no-store',
-    headers: (() => {
-      const headers = new Headers(init?.headers)
-      headers.set('cache-control', 'no-store, max-age=0')
-      headers.set('pragma', 'no-cache')
-      return headers
-    })(),
-  })
+    return (input: RequestInfo | URL, init?: RequestInit) => fetch(input, {
+        ...init,
+        cache: 'no-store',
+        headers: (() => {
+            const headers = new Headers(init?.headers);
+            headers.set('cache-control', 'no-store, max-age=0');
+            headers.set('pragma', 'no-cache');
+            return headers;
+        })(),
+    });
 }
-
-export const publicSupabase = createClient(
-  env.VITE_SUPABASE_URL,
-  env.VITE_SUPABASE_ANON_KEY,
-  {
+export const publicSupabase = createClient(env.VITE_SUPABASE_URL, env.VITE_SUPABASE_ANON_KEY, {
     global: {
-      fetch: createNoCacheFetch(),
+        fetch: createNoCacheFetch(),
     },
     auth: {
-      persistSession: false,
-      autoRefreshToken: false,
-      detectSessionInUrl: false,
+        persistSession: false,
+        autoRefreshToken: false,
+        detectSessionInUrl: false,
     },
-  },
-)
+});

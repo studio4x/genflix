@@ -5,9 +5,9 @@ create table if not exists public.course_progress (
   user_id uuid not null references auth.users (id) on delete cascade,
   course_id uuid not null references public.courses (id) on delete cascade,
   is_completed boolean not null default false,
-  completed_at timestamptz,
-  created_at timestamptz not null default timezone('utc', now()),
-  updated_at timestamptz not null default timezone('utc', now()),
+  completed_at timest?mptz,
+  created_at timest?mptz not null default timezone('utc', now()),
+  updated_at timest?mptz not null default timezone('utc', now()),
   unique (user_id, course_id),
   check (
     (is_completed = true and completed_at is not null)
@@ -32,8 +32,8 @@ create table if not exists public.assessments (
   max_attempts integer not null default 3 check (max_attempts > 0 and max_attempts <= 20),
   is_active boolean not null default true,
   created_by uuid references auth.users (id) on delete set null,
-  created_at timestamptz not null default timezone('utc', now()),
-  updated_at timestamptz not null default timezone('utc', now()),
+  created_at timest?mptz not null default timezone('utc', now()),
+  updated_at timest?mptz not null default timezone('utc', now()),
   check (
     (assessment_type = 'module' and module_id is not null)
     or (assessment_type = 'final' and module_id is null)
@@ -59,8 +59,8 @@ create table if not exists public.assessment_questions (
   position integer not null check (position > 0),
   is_required boolean not null default true,
   points numeric(8, 2) not null default 1.00 check (points > 0),
-  created_at timestamptz not null default timezone('utc', now()),
-  updated_at timestamptz not null default timezone('utc', now()),
+  created_at timest?mptz not null default timezone('utc', now()),
+  updated_at timest?mptz not null default timezone('utc', now()),
   unique (assessment_id, position)
 );
 
@@ -73,7 +73,7 @@ create table if not exists public.assessment_options (
   option_text text not null check (length(trim(option_text)) >= 1),
   position integer not null check (position > 0),
   is_correct boolean not null default false,
-  created_at timestamptz not null default timezone('utc', now()),
+  created_at timest?mptz not null default timezone('utc', now()),
   unique (question_id, position)
 );
 
@@ -90,9 +90,9 @@ create table if not exists public.assessment_attempts (
   correct_answers integer not null default 0 check (correct_answers >= 0),
   total_questions integer not null default 0 check (total_questions >= 0),
   is_approved boolean not null default false,
-  started_at timestamptz not null default timezone('utc', now()),
-  submitted_at timestamptz not null default timezone('utc', now()),
-  created_at timestamptz not null default timezone('utc', now()),
+  started_at timest?mptz not null default timezone('utc', now()),
+  submitted_at timest?mptz not null default timezone('utc', now()),
+  created_at timest?mptz not null default timezone('utc', now()),
   unique (assessment_id, user_id, attempt_number)
 );
 
@@ -108,7 +108,7 @@ create table if not exists public.assessment_answers (
   question_id uuid not null references public.assessment_questions (id) on delete cascade,
   selected_option_id uuid references public.assessment_options (id) on delete set null,
   is_correct boolean not null default false,
-  created_at timestamptz not null default timezone('utc', now()),
+  created_at timest?mptz not null default timezone('utc', now()),
   unique (attempt_id, question_id)
 );
 
@@ -746,11 +746,11 @@ declare
 begin
   _user_id := auth.uid();
   if _user_id is null then
-    raise exception 'Usuario nao autenticado.';
+    raise exception 'Usurio n?o autenticado.';
   end if;
 
   if public.has_role(_user_id, 'student') = false then
-    raise exception 'Apenas alunos podem responder avaliacao.';
+    raise exception 'Apenas alunos podem responder avalia??o.';
   end if;
 
   select *
@@ -761,23 +761,23 @@ begin
   limit 1;
 
   if not found then
-    raise exception 'Avaliacao nao encontrada ou inativa.';
+    raise exception 'Avalia??o n?o encontrada ou inativa.';
   end if;
 
   if public.is_course_released(_user_id, _assessment.course_id) = false then
-    raise exception 'Avaliacao nao liberada para o usuario.';
+    raise exception 'Avalia??o n?o liberada para o usurio.';
   end if;
 
   if _assessment.assessment_type = 'module' then
     if _assessment.module_id is null then
-      raise exception 'Avaliacao de modulo invalida.';
+      raise exception 'Avalia??o de m?dulo invalida.';
     end if;
     if public.is_module_unlocked(_user_id, _assessment.module_id) = false then
-      raise exception 'Modulo bloqueado para avaliacao.';
+      raise exception 'Mdulo bloqueado para avalia??o.';
     end if;
   else
     if public.are_required_modules_completed(_user_id, _assessment.course_id) = false then
-      raise exception 'Avaliacao final bloqueada ate concluir os modulos obrigatorios.';
+      raise exception 'Avalia??o final bloqueada ate concluir os m?dulos obrigatrios.';
     end if;
   end if;
 
@@ -796,11 +796,11 @@ begin
       and aa.status = 'submitted'
       and aa.is_approved = true
   ) then
-    raise exception 'Avaliacao ja aprovada.';
+    raise exception 'Avalia??o ja aprovada.';
   end if;
 
   if _attempts_used >= _assessment.max_attempts then
-    raise exception 'Limite de tentativas atingido para esta avaliacao.';
+    raise exception 'Limite de tentativas atingido para est? avalia??o.';
   end if;
 
   if _answers is null or jsonb_typeof(_answers) <> 'array' then
@@ -844,7 +844,7 @@ begin
     limit 1;
 
     if _selected_option_id is null and _question.is_required then
-      raise exception 'Todas as questoes obrigatorias devem ser respondidas.';
+      raise exception 'Todas as questoes obrigatrias devem ser respondidas.';
     end if;
 
     _option_is_correct := false;
@@ -880,7 +880,7 @@ begin
   end loop;
 
   if _total_questions = 0 then
-    raise exception 'Avaliacao sem questoes cadastradas.';
+    raise exception 'Avalia??o sem questoes cadastradas.';
   end if;
 
   _score := round((_correct_answers::numeric * 100) / _total_questions, 2);

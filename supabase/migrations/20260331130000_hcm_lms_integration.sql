@@ -7,8 +7,8 @@ create table if not exists public.external_user_identities (
   external_user_id text not null check (length(trim(external_user_id)) >= 1),
   external_email text,
   external_reference_id text,
-  created_at timestamptz not null default timezone('utc', now()),
-  updated_at timestamptz not null default timezone('utc', now()),
+  created_at timest?mptz not null default timezone('utc', now()),
+  updated_at timest?mptz not null default timezone('utc', now()),
   unique (source_system, external_user_id),
   unique (source_system, user_id)
 );
@@ -23,8 +23,8 @@ create table if not exists public.external_course_mappings (
   external_course_id text not null check (length(trim(external_course_id)) >= 1),
   external_reference_id text,
   is_active boolean not null default true,
-  created_at timestamptz not null default timezone('utc', now()),
-  updated_at timestamptz not null default timezone('utc', now()),
+  created_at timest?mptz not null default timezone('utc', now()),
+  updated_at timest?mptz not null default timezone('utc', now()),
   unique (source_system, external_course_id),
   unique (source_system, course_id)
 );
@@ -48,7 +48,7 @@ create table if not exists public.integration_logs (
   payload jsonb not null default '{}'::jsonb,
   response_payload jsonb,
   error_message text,
-  created_at timestamptz not null default timezone('utc', now())
+  created_at timest?mptz not null default timezone('utc', now())
 );
 
 create index if not exists integration_logs_source_system_idx
@@ -67,9 +67,9 @@ create table if not exists public.integration_access_nonces (
   expected_user_id uuid references auth.users (id) on delete cascade,
   expected_course_id uuid references public.courses (id) on delete cascade,
   redirect_path text not null check (length(trim(redirect_path)) >= 1),
-  expires_at timestamptz not null,
-  consumed_at timestamptz,
-  created_at timestamptz not null default timezone('utc', now()),
+  expires_at timest?mptz not null,
+  consumed_at timest?mptz,
+  created_at timest?mptz not null default timezone('utc', now()),
   unique (source_system, jti)
 );
 
@@ -85,11 +85,11 @@ create table if not exists public.integration_event_outbox (
   payload jsonb not null default '{}'::jsonb,
   delivery_status text not null default 'pending' check (delivery_status in ('pending', 'processing', 'delivered', 'failed', 'dead_letter')),
   attempt_count integer not null default 0 check (attempt_count >= 0),
-  next_attempt_at timestamptz not null default timezone('utc', now()),
-  last_attempt_at timestamptz,
-  delivered_at timestamptz,
+  next_attempt_at timest?mptz not null default timezone('utc', now()),
+  last_attempt_at timest?mptz,
+  delivered_at timest?mptz,
   last_error text,
-  created_at timestamptz not null default timezone('utc', now())
+  created_at timest?mptz not null default timezone('utc', now())
 );
 
 create index if not exists integration_event_outbox_pending_idx
@@ -113,10 +113,10 @@ alter table public.course_releases
   add column if not exists managed_by_integration boolean not null default false;
 
 alter table public.course_releases
-  add column if not exists last_synced_at timestamptz;
+  add column if not exists last_synced_at timest?mptz;
 
 alter table public.course_releases
-  add column if not exists revoked_at timestamptz;
+  add column if not exists revoked_at timest?mptz;
 
 alter table public.course_releases
   add column if not exists revoked_reason text;
@@ -218,8 +218,8 @@ returns table (
   progress_percent integer,
   is_completed boolean,
   approval_status text,
-  completed_at timestamptz,
-  last_activity_at timestamptz
+  completed_at timest?mptz,
+  last_activity_at timest?mptz
 )
 language sql
 stable

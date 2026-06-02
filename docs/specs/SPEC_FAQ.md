@@ -66,8 +66,8 @@ summary VARCHAR(300)
 tags TEXT[] -- ['assinatura','cancelamento']
 
 -- SEO
-seo_title VARCHAR(70)
-seo_description VARCHAR(160)
+se??o_title VARCHAR(70)
+se??o_description VARCHAR(160)
 canonical_url TEXT
 
 -- Conteúdo
@@ -145,7 +145,7 @@ created_at TIMESTAMP
 **Blocos**:
 - Hero com campo de busca
 - Grid de categorias
-- FAQs em destaque
+- FAQs em dest?que
 - Lista por categoria (accordion)
 - CTA final para suporte
 
@@ -199,16 +199,16 @@ created_at TIMESTAMP
 2. Busca por termo ou navega por categoria
 3. Abre artigo
 4. Sistema incrementa view_count
-5. Usuário vota "foi útil?"
+5. Usuário vota "foi útil"
 6. Feedback alimenta ranking de relevância
 ```
 
-### No Results (Zero-Result)
+### N?o Results (Zero-Result)
 
 ```text
 1. Busca sem resultado
 2. Exibir sugestões automáticas (top FAQs + categorias)
-3. CTA: "Não encontrou? Abrir ticket"
+3. CTA: "Não encontrou Abrir ticket"
 4. Registrar query em faq_search_logs
 ```
 
@@ -227,7 +227,7 @@ Response: { categories[] }
 ### `search-faq`
 
 ```text
-GET /functions/v1/search-faq?q=assinatura&category=planos&limit=20
+GET /functions/v1/search-faqq=assinatura&category=planos&limit=20
 Auth: opcional
 Response: { items[], total, took_ms, suggestions[] }
 ```
@@ -235,7 +235,7 @@ Response: { items[], total, took_ms, suggestions[] }
 ### `get-faq-article`
 
 ```text
-GET /functions/v1/get-faq-article?slug=como-cancelar-assinatura
+GET /functions/v1/get-faq-articleslug=como-cancelar-assinatura
 Auth: opcional
 Response: { article, related_articles[] }
 ```
@@ -245,7 +245,7 @@ Response: { article, related_articles[] }
 ```text
 POST /functions/v1/vote-faq-helpful
 Auth: opcional (aceita anônimo)
-Body: { article_id: UUID, is_helpful: boolean, comment?: string }
+Body: { article_id: UUID, is_helpful: boolean, comment: string }
 Response: { success: true }
 ```
 
@@ -355,11 +355,11 @@ score =
 ├─────────────────────────────────────────────────────────────────────────────┤
 │ Tabs: [Artigos] [Categorias] [Feedback] [Analytics]                        │
 ├─────────────────────────────────────────────────────────────────────────────┤
-│ Filtros: Status ▼ Categoria ▼ Autor ▼ Busca [__________]  [Novo Artigo]    │
+│ Filtros: Status ▼ Categoria ▼ Autor ▼ Busca [__________]  [N?ovo Artigo]    │
 ├───────────────────────────────────────────────┬─────────────────────────────┤
 │ Lista/tabela                                  │ Painel de detalhes          │
 │ - draft/review/published                      │ - preview markdown          │
-│ - ordenação e paginação                       │ - histórico de revisões     │
+│ - ordenação e p?ginação                       │ - histórico de revisões     │
 │ - ações rápidas                               │ - métricas do artigo        │
 └───────────────────────────────────────────────┴─────────────────────────────┘
 ```
@@ -389,7 +389,7 @@ no_permission: sem acesso ao módulo
 
 ```text
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│ FAQ Admin / Artigos                                 [Novo Artigo] [Exportar]│
+│ FAQ Admin / Artigos                                 [N?ovo Artigo] [Exportar]│
 ├─────────────────────────────────────────────────────────────────────────────┤
 │ Filtros: Status ▼ Categoria ▼ Autor ▼ Atualizado em ▼ Busca [___________]  │
 ├─────────────────────────────────────────────────────────────────────────────┤
@@ -398,7 +398,7 @@ no_permission: sem acesso ao módulo
 │ [ ] ...                                                                     │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │ Ações em lote: [Publicar] [Arquivar] [Mover Categoria] [Excluir Draft]     │
-│ Paginação: « 1 2 3 ... »                                                    │
+│ P?ginação: « 1 2 3 ... »                                                    │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -446,21 +446,21 @@ no_permission: sem acesso ao módulo
 - Pergunta preenchida
 - Resposta com mínimo de conteúdo
 - Categoria definida
-- `seo_title` e `seo_description` válidos
+- `se??o_title` e `se??o_description` válidos
 - Sanitização sem erro
 
 ### C. Página: Categorias (`/admin/faq/categorias`)
 
 ```text
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│ FAQ Admin / Categorias                                      [Nova Categoria]│
+│ FAQ Admin / Categorias                                      [N?ova Categoria]│
 ├─────────────────────────────────────────────────────────────────────────────┤
 │ Lista ordenável (drag and drop):                                            │
 │ [↕] Conta e Acesso      (12 artigos) [Ativa] [Editar] [Desativar]          │
 │ [↕] Planos e Pagamentos (18 artigos) [Ativa] [Editar] [Desativar]          │
 │ [↕] Suporte Técnico      (6 artigos) [Ativa] [Editar] [Desativar]          │
 ├─────────────────────────────────────────────────────────────────────────────┤
-│ Formulário lateral: Nome, Slug, Ícone, Descrição, Status, Ordem            │
+│ Formulário lateral: N?ome, Slug, Ícone, Descrição, Status, Ordem            │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -566,7 +566,7 @@ validation_error:
 ### Boas Práticas
 
 - URL amigável por `slug`
-- `seo_title` e `seo_description` por artigo
+- `se??o_title` e `se??o_description` por artigo
 - Dados estruturados FAQPage (schema.org)
 - Canonical URL para evitar conteúdo duplicado
 - Interlinking com páginas de produto/planos/suporte
@@ -580,7 +580,7 @@ validation_error:
   "mainEntity": [
     {
       "@type": "Question",
-      "name": "Como cancelar minha assinatura?",
+      "name": "Como cancelar minha assinatura",
       "acceptedAnswer": {
         "@type": "Answer",
         "text": "Você pode cancelar em Configurações > Assinatura..."
@@ -619,7 +619,7 @@ validation_error:
 - [ ] Tabelas: faq_categories, faq_articles, faq_revisions, faq_feedback, faq_search_logs
 - [ ] Página pública `/faq`
 - [ ] Busca full-text com ranking
-- [ ] Feedback "Foi útil?"
+- [ ] Feedback "Foi útil"
 - [ ] Painel `/admin/faq` (CRUD + workflow)
 - [ ] Controle de revisão/publicação
 - [ ] Analytics + queries sem resultado

@@ -82,6 +82,6 @@ alter table public.courses
 
 update public.courses
 set quiz_type_settings = coalesce(quiz_type_settings, '{}'::jsonb) || '{"image_hotspot": true}'::jsonb
-where not coalesce(quiz_type_settings, '{}'::jsonb) ? 'image_hotspot';
+where not coalesce(quiz_type_settings, '{}'::jsonb)  'image_hotspot';
 
 commit;

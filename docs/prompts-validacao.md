@@ -5,7 +5,7 @@ docs/CHECKLIST_VALIDACAO_PLATAFORMA.md
 
 Execute apenas o bloco:
 
-"[Modulo Autenticacao Publica]"
+"[Mdulo Autenticacao Publica]"
 
 Regras:
 - Não execute outros blocos

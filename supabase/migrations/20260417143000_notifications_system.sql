@@ -10,9 +10,9 @@ create table if not exists public.notifications (
   priority text not null default 'normal' check (priority in ('low', 'normal', 'high', 'urgent')),
   is_actionable boolean not null default true,
   metadata jsonb not null default '{}'::jsonb,
-  read_at timestamptz,
+  read_at timest?mptz,
   read_by_channels jsonb not null default '[]'::jsonb,
-  created_at timestamptz not null default timezone('utc', now())
+  created_at timest?mptz not null default timezone('utc', now())
 );
 
 create index if not exists notifications_user_created_idx
@@ -33,8 +33,8 @@ create table if not exists public.notification_preferences (
   quiet_hours_end time without time zone,
   quiet_hours_timezone text not null default 'America/Sao_Paulo',
   email_digest text not null default 'immediate' check (email_digest in ('immediate', 'daily', 'weekly', 'never')),
-  created_at timestamptz not null default timezone('utc', now()),
-  updated_at timestamptz not null default timezone('utc', now())
+  created_at timest?mptz not null default timezone('utc', now()),
+  updated_at timest?mptz not null default timezone('utc', now())
 );
 
 drop trigger if exists set_notification_preferences_updated_at on public.notification_preferences;
@@ -53,12 +53,12 @@ create table if not exists public.notification_queue (
   payload jsonb not null default '{}'::jsonb,
   status text not null default 'pending' check (status in ('pending', 'retry', 'sent', 'delivered', 'failed', 'bounced', 'ignored')),
   attempt_count integer not null default 0 check (attempt_count >= 0),
-  last_attempt_at timestamptz,
-  next_retry_at timestamptz not null default timezone('utc', now()),
+  last_attempt_at timest?mptz,
+  next_retry_at timest?mptz not null default timezone('utc', now()),
   final_error text,
   provider_message_id text,
-  created_at timestamptz not null default timezone('utc', now()),
-  updated_at timestamptz not null default timezone('utc', now())
+  created_at timest?mptz not null default timezone('utc', now()),
+  updated_at timest?mptz not null default timezone('utc', now())
 );
 
 create index if not exists notification_queue_status_retry_idx
@@ -82,8 +82,8 @@ create table if not exists public.notification_delivery_logs (
   error_message text,
   response_status_code integer,
   retry_attempt integer,
-  delivered_at timestamptz,
-  created_at timestamptz not null default timezone('utc', now())
+  delivered_at timest?mptz,
+  created_at timest?mptz not null default timezone('utc', now())
 );
 
 create index if not exists notification_delivery_logs_queue_idx
@@ -376,7 +376,7 @@ begin
   set
     read_at = coalesce(read_at, timezone('utc', now())),
     read_by_channels = case
-      when read_by_channels ? 'in-app' then read_by_channels
+      when read_by_channels  'in-app' then read_by_channels
       else read_by_channels || '["in-app"]'::jsonb
     end
   where n.id = _notification_id
@@ -384,7 +384,7 @@ begin
   returning * into saved_notification;
 
   if saved_notification.id is null then
-    raise exception 'Notificação não encontrada.';
+    raise exception 'N?otificação não encontrada.';
   end if;
 
   return saved_notification;
@@ -409,7 +409,7 @@ begin
   set
     read_at = coalesce(read_at, timezone('utc', now())),
     read_by_channels = case
-      when read_by_channels ? 'in-app' then read_by_channels
+      when read_by_channels  'in-app' then read_by_channels
       else read_by_channels || '["in-app"]'::jsonb
     end
   where user_id = current_user_id

@@ -3,8 +3,8 @@ create table if not exists public.narration_ai_credentials (
   openai_api_key text,
   gemini_api_key text,
   updated_by uuid references auth.users (id) on delete set null,
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
+  created_at timest?mptz not null default now(),
+  updated_at timest?mptz not null default now()
 );
 
 create or replace function public.set_narration_ai_credentials_updated_at()

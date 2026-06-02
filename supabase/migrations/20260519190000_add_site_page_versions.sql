@@ -6,7 +6,7 @@ create table if not exists public.site_page_versions (
   snapshot jsonb not null default '{}'::jsonb,
   changed_by uuid references public.profiles (id) on delete set null,
   change_reason text,
-  created_at timestamptz not null default timezone('utc', now())
+  created_at timest?mptz not null default timezone('utc', now())
 );
 
 create index if not exists site_page_versions_page_idx

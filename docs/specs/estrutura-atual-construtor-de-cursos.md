@@ -14,9 +14,9 @@ Este documento descreve em detalhe a implementação atual do construtor de curs
 O recorte documentado corresponde ao builder aberto dentro do admin, especialmente nas rotas:
 
 - `/admin/cursos/:courseId/builder`
-- `/admin/cursos/:courseId/builder/modulos/:moduleId`
-- `/admin/cursos/:courseId/builder/modulos/:moduleId/aulas/:lessonId`
-- `/admin/cursos/:courseId/builder/modulos/:moduleId/avaliacoes/:assessmentId`
+- `/admin/cursos/:courseId/builder/m?dulos/:moduleId`
+- `/admin/cursos/:courseId/builder/m?dulos/:moduleId/aulas/:lessonId`
+- `/admin/cursos/:courseId/builder/m?dulos/:moduleId/avalia??es/:assessmentId`
 - `/admin/cursos/:courseId/builder/assessments/final`
 - `/admin/cursos/:courseId/builder/settings`
 - `/admin/cursos/:courseId/builder/assessments`
@@ -54,19 +54,19 @@ Em [src/app/router/index.tsx](/c:/PLATAFORMAS%20VS%20CODE/GENFLIX/genflix/src/ap
 
 - `/admin/cursos/:courseId/builder`
   Centro de controle do curso, resumo geral e mapa macro.
-- `/admin/cursos/:courseId/builder/modulos/novo`
+- `/admin/cursos/:courseId/builder/m?dulos/novo`
   Criação de módulo.
-- `/admin/cursos/:courseId/builder/modulos/:moduleId`
+- `/admin/cursos/:courseId/builder/m?dulos/:moduleId`
   Configurações completas do módulo.
-- `/admin/cursos/:courseId/builder/modulos/:moduleId/aulas/nova`
+- `/admin/cursos/:courseId/builder/m?dulos/:moduleId/aulas/nova`
   Criação de aula.
-- `/admin/cursos/:courseId/builder/modulos/:moduleId/aulas/:lessonId`
+- `/admin/cursos/:courseId/builder/m?dulos/:moduleId/aulas/:lessonId`
   Editor completo da aula.
-- `/admin/cursos/:courseId/builder/modulos/:moduleId/aulas/:lessonId/materiais`
+- `/admin/cursos/:courseId/builder/m?dulos/:moduleId/aulas/:lessonId/materiais`
   Gestão de botões e URLs no rodapé da aula.
-- `/admin/cursos/:courseId/builder/modulos/:moduleId/avaliacoes/nova`
+- `/admin/cursos/:courseId/builder/m?dulos/:moduleId/avalia??es/nova`
   Criação de quiz do módulo.
-- `/admin/cursos/:courseId/builder/modulos/:moduleId/avaliacoes/:assessmentId`
+- `/admin/cursos/:courseId/builder/m?dulos/:moduleId/avalia??es/:assessmentId`
   Builder do quiz do módulo.
 - `/admin/cursos/:courseId/builder/assessments/final`
   Builder da avaliação final do curso.
@@ -291,7 +291,7 @@ Cada módulo aparece como card próprio, contendo:
 - número sequencial `Módulo N`;
 - badge `Obrigatório` se `is_required` estiver ativo;
 - título do módulo;
-- botões `Ultimas revisoes`, `Analisar com IA`, `Editar Módulo`, excluir;
+- botões `Ultimas revis?es`, `Analisar com IA`, `Editar Módulo`, excluir;
 - lista interna de aulas e quizzes.
 
 Cada aula no mapa mostra:
@@ -317,7 +317,7 @@ A parte final da tela exibe:
 - tentativas;
 - botões `Editar` e excluir.
 
-### Funcionalidades de IA nesta tela
+### Funcionalidades de IA nest? tela
 
 O overview tem forte integração com revisão de módulo por IA:
 
@@ -342,7 +342,7 @@ O fluxo atual:
 - muitos cards brancos;
 - bordas leves;
 - azul para ação primária;
-- verde para estado positivo;
+- verde para est?do positivo;
 - âmbar e rosa para alertas;
 - conteúdo muito escaneável;
 - baixa densidade e bastante espaçamento vertical.
@@ -351,7 +351,7 @@ O fluxo atual:
 
 ### Rota
 
-- exemplo: `https://genflix-omega.vercel.app/admin/cursos/:courseId/builder/modulos/:moduleId`
+- exemplo: `https://genflix-omega.vercel.app/admin/cursos/:courseId/builder/m?dulos/:moduleId`
 - arquivo: [module-editor-panel.tsx](/c:/PLATAFORMAS%20VS%20CODE/GENFLIX/genflix/src/pages/admin/builder/module-editor-panel.tsx:1)
 
 ### Papel funcional
@@ -385,7 +385,7 @@ Blocos:
 
 O topo alterna entre:
 
-- `Criar Novo Módulo`
+- `Criar N?ovo Módulo`
 - `Configurações do Módulo`
 
 Subtítulo:
@@ -428,7 +428,7 @@ Ou seja, o módulo só libera quando todas as condições aplicáveis forem aten
 
 Quando o módulo já existe, surge um card adicional:
 
-- nome do PDF atual ou estado vazio;
+- nome do PDF atual ou est?do vazio;
 - descrição explicando que o aluno receberá versão licenciada com marca d'água;
 - botão `Enviar PDF`;
 - botão `Remover PDF`, se já houver arquivo.
@@ -468,14 +468,14 @@ Padrões visuais:
 - branco como base;
 - blocos internos em cinza claro ou azul claro;
 - labels pequenas em uppercase;
-- destaque azul em checkboxes e CTAs;
+- dest?que azul em checkboxes e CTAs;
 - modais grandes e muito informativos para IA.
 
 ## Editor da aula
 
 ### Rota
 
-- exemplo: `https://genflix-omega.vercel.app/admin/cursos/:courseId/builder/modulos/:moduleId/aulas/:lessonId`
+- exemplo: `https://genflix-omega.vercel.app/admin/cursos/:courseId/builder/m?dulos/:moduleId/aulas/:lessonId`
 - arquivo: [lesson-editor-panel.tsx](/c:/PLATAFORMAS%20VS%20CODE/GENFLIX/genflix/src/pages/admin/builder/lesson-editor-panel.tsx:1)
 
 ### Papel funcional
@@ -510,13 +510,13 @@ Blocos principais:
 
 Topo:
 
-- título `Criar Nova Aula` ou `Editor de Aula`;
+- título `Criar N?ova Aula` ou `Editor de Aula`;
 - subtítulo curto;
 - botão `Botoes e URLs da Aula` se a aula já existir.
 
 Esse botão leva para:
 
-- `/admin/cursos/:courseId/builder/modulos/:moduleId/aulas/:lessonId/materiais`
+- `/admin/cursos/:courseId/builder/m?dulos/:moduleId/aulas/:lessonId/materiais`
 
 ### Área de áudio e moderação
 
@@ -560,7 +560,7 @@ Visualmente é uma grade de 3 botões sobre:
 
 - `bg-slate-100/80 p-1.5 rounded-2xl`
 
-O estado ativo recebe:
+O est?do ativo recebe:
 
 - branco;
 - texto azul;
@@ -801,7 +801,7 @@ Quizzes por módulo:
 ### Rotas
 
 - quiz de módulo:
-  - `/admin/cursos/:courseId/builder/modulos/:moduleId/avaliacoes/:assessmentId`
+  - `/admin/cursos/:courseId/builder/m?dulos/:moduleId/avalia??es/:assessmentId`
 - avaliação final:
   - `/admin/cursos/:courseId/builder/assessments/final`
 
@@ -1160,13 +1160,13 @@ Ela cobre:
 
 ### Layout visual
 
-A tela é mais colorida que o restante do builder.
+A tela é mais colorida que o rest?nte do builder.
 
 Ela usa:
 
 - card branco grande para dados principais;
 - bloco ciano para checkout e vendas;
-- cartões de tipos de quiz por cor/estado;
+- cartões de tipos de quiz por cor/est?do;
 - card preto/cinza para padrões da IA;
 - card rosa para reset de progresso.
 
@@ -1206,7 +1206,7 @@ Serve mais ao catálogo e à venda do que ao builder interno.
 
 ### Status do curso
 
-O curso pode estar em:
+O curso pode est?r em:
 
 - `draft`
 - `published`
@@ -1315,18 +1315,18 @@ Aula:
 
 - indentada;
 - ícone por tipo;
-- destaque azul quando ativa.
+- dest?que azul quando ativa.
 
 Quiz:
 
 - linha com tom âmbar;
 - ícone de avaliação;
-- destaque âmbar quando ativo.
+- dest?que âmbar quando ativo.
 
 Avaliação final:
 
 - bloco próprio ao final da árvore;
-- destaque esverdeado.
+- dest?que esverdeado.
 
 ### Quick actions
 
@@ -1335,15 +1335,15 @@ Dentro de cada módulo aparecem, no hover:
 - `Aula`
 - `Quiz`
 
-No final da árvore:
+N?o final da árvore:
 
-- `Novo Módulo`
+- `N?ovo Módulo`
 
 ## Exportar conteúdo em JSON
 
 ### Onde aparece na UI
 
-No shell do builder, via botão `Exportar Conteúdo` na sidebar.
+N?o shell do builder, via botão `Exportar Conteúdo` na sidebar.
 
 Arquivo de layout:
 
@@ -1481,7 +1481,7 @@ Antes de importar:
 
 - remove avaliação final sem módulo;
 - remove todos os módulos do curso;
-- o cascade do banco cuida do restante dependente.
+- o cascade do banco cuida do rest?nte dependente.
 
 ### Formatos aceitos
 

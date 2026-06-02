@@ -3,15 +3,15 @@ create table if not exists public.blog_tags (
   name text not null,
   slug text not null,
   description text null,
-  seo_title text null,
-  seo_description text null,
-  seo_canonical_url text null,
-  seo_robots text null default 'index,follow',
-  seo_og_title text null,
-  seo_og_description text null,
-  seo_og_image_url text null,
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
+  se??o_title text null,
+  se??o_description text null,
+  se??o_canonical_url text null,
+  se??o_robots text null default 'index,follow',
+  se??o_og_title text null,
+  se??o_og_description text null,
+  se??o_og_image_url text null,
+  created_at timest?mptz not null default now(),
+  updated_at timest?mptz not null default now()
 );
 
 create unique index if not exists blog_tags_slug_key
@@ -67,7 +67,7 @@ using (true);
 create table if not exists public.blog_article_tags (
   article_id uuid not null references public.blog_posts(id) on delete cascade,
   tag_id uuid not null references public.blog_tags(id) on delete cascade,
-  created_at timestamptz not null default now(),
+  created_at timest?mptz not null default now(),
   primary key (article_id, tag_id)
 );
 

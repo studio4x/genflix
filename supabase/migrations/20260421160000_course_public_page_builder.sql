@@ -2,7 +2,7 @@ alter table public.courses
   add column if not exists public_page_content jsonb not null default '{}'::jsonb;
 
 comment on column public.courses.public_page_content is
-  'Configuracao complementar da pagina publica do curso: textos ricos, beneficios e modo de exibicao do conteudo.';
+  'Configurao complementar da p?gina publica do curso: textos ricos, beneficios e modo de exibi??o do contedo.';
 
 create or replace function public.get_public_course_outline(_course_id uuid)
 returns jsonb
@@ -38,7 +38,7 @@ as $$
     select
       mb.id as module_id,
       1000000 as item_position,
-      coalesce(nullif(trim(a.title), ''), 'Quiz do modulo') as item_name
+      coalesce(nullif(trim(a.title), ''), 'Quiz do m?dulo') as item_name
     from module_base mb
     join public.assessments a
       on a.module_id = mb.id
@@ -48,11 +48,11 @@ as $$
     select
       case
         when count(*) = 0 then null
-        when count(*) = 1 then 'Avaliacao final'
-        else 'Avaliacoes finais'
+        when count(*) = 1 then 'Avalia??o final'
+        else 'Avalia??es finais'
       end as title,
       coalesce(
-        jsonb_agg(coalesce(nullif(trim(a.title), ''), 'Avaliacao final') order by a.created_at),
+        jsonb_agg(coalesce(nullif(trim(a.title), ''), 'Avalia??o final') order by a.created_at),
         '[]'::jsonb
       ) as items
     from public.assessments a

@@ -1,19 +1,17 @@
 /// <reference types="vite/client" />
-
+/// <reference types="vite/client" />
 interface ImportMetaEnv {
-  readonly VITE_APP_ENV: 'development' | 'production'
-  readonly VITE_APP_TIMEZONE: string
-  readonly VITE_APP_LOCALE: string
-  readonly VITE_SUPABASE_URL: string
-  readonly VITE_SUPABASE_ANON_KEY: string
+    readonly VITE_APP_ENV: 'development' | 'production';
+    readonly VITE_APP_TIMEZONE: string;
+    readonly VITE_APP_LOCALE: string;
+    readonly VITE_SUPABASE_URL: string;
+    readonly VITE_SUPABASE_ANON_KEY: string;
 }
-
 interface ImportMeta {
-  readonly env: ImportMetaEnv
+    readonly env: ImportMetaEnv;
 }
-
 interface Window {
-  dataLayer?: Array<Record<string, unknown>>
-  fbq?: (...args: unknown[]) => void
-  gtag?: (...args: unknown[]) => void
+    dataLayer?: Array<Record<string, unknown>>;
+    fbq?: (...args: unknown[]) => void;
+    gtag?: (...args: unknown[]) => void;
 }

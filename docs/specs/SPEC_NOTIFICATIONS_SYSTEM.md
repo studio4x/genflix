@@ -2,7 +2,7 @@
 
 ## Visão Geral
 
-Sistema de **Notificações** implementa entrega multi-canal (Push, Email, WhatsApp, In-app) com fila persistida, retry automático, cron scheduler e auditoria completa. Essencial em qualquer plataforma que necessite comunicação assíncrona com usuários.
+Sistema de **N?otificações** implementa entrega multi-canal (Push, Email, WhatsApp, In-app) com fila persistida, retry automático, cron scheduler e auditoria completa. Essencial em qualquer plataforma que necessite comunicação assíncrona com usuários.
 
 ---
 
@@ -17,17 +17,17 @@ Sistema de **Notificações** implementa entrega multi-canal (Push, Email, Whats
 | **Email** | Assíncrono | 1-5 min | Sim (5x) | Caixa de entrada |
 | **WhatsApp** | Assíncrono | 1-2 min | Sim (5x) | Celular |
 
-### Eventos que Geram Notificação
+### Eventos que Geram N?otificação
 
 ```
-- Nova mensagem recebida
+- N?ova mensagem recebida
 - Perfil visualizado
 - Resposta a contato recebida
 - Plano expirar em 7 dias
 - Cobrança falhou
 - Ticket respondido
 - Certificado emitido
-- Novo cupom disponível
+- N?ovo cupom disponível
 - Alerta de crise SLA
 ```
 
@@ -124,20 +124,20 @@ updated_at TIMESTAMP
 
 ## 3. COMPONENTES
 
-### NotificationCenter (Dashboard)
+### N?otificationCenter (Dashboard)
 
-**Localização**: `src/components/NotificationCenter.tsx`
+**Localização**: `src/components/N?otificationCenter.tsx`
 
 ```
 ┌──────────────────────────────────┐
-│ 🔔 Notificações (3 novas)        │
+│ 🔔 N?otificações (3 novas)        │
 ├──────────────────────────────────┤
 │ [Ler Todos]                      │
 ├──────────────────────────────────┤
 │ ✓ João Silva viu seu perfil      │
 │   há 5 minutos                   │
 │                                  │
-│ ○ Nova mensagem de Empresa XYZ  │
+│ ○ N?ova mensagem de Empresa XYZ  │
 │   há 15 minutos                  │
 │                                  │
 │ ○ Seu plano expira em 7 dias    │
@@ -151,13 +151,13 @@ updated_at TIMESTAMP
 - ✅ Badge com unread count
 - ✅ Lista com filtro (todas, não-lidas, por tipo)
 - ✅ Marcar como lida / deletar
-- ✅ Timestamp relativo
+- ✅ Timest?mp relativo
 - ✅ Click abre action (redireciona)
 
-### NotificationBell
+### N?otificationBell
 
 ```typescript
-<NotificationBell
+<N?otificationBell
   unreadCount={3}
   onClick={openCenter}
 />
@@ -168,11 +168,11 @@ updated_at TIMESTAMP
 🔔(3) ← Badge numerado
 ```
 
-### InAppNotification (Toast)
+### InAppN?otification (Toast)
 
 ```typescript
 toast.notify({
-  title: "Nova mensagem",
+  title: "N?ova mensagem",
   body: "João Silva enviou uma mensagem",
   type: "info",
   duration: 5000,
@@ -182,7 +182,7 @@ toast.notify({
 
 **Exibe**:
 ```
-[ℹ] Nova mensagem
+[ℹ] N?ova mensagem
     João Silva enviou uma mensagem
     [Abrir]
 ```
@@ -208,8 +208,8 @@ toast.notify({
 6. Cron job pick up pending (a cada 1 min)
    ↓
 7. Para cada message_queue:
-   - Check userPreferences.enabled?
-   - Check quiet hours?
+   - Check userPreferences.enabled
+   - Check quiet hours
    - Enviar via provider
    ↓
 8. UPDATE status + log
@@ -258,7 +258,7 @@ Response: { processed: N, sent: N, failed: N, retrying: N }
 
 ### `get-notifications`
 ```
-GET /functions/v1/get-notifications?limit=20&unread_only=false
+GET /functions/v1/get-notificationslimit=20&unread_only=false
 Auth: Bearer token
 Response: { notifications[], total, unread_count }
 ```
@@ -299,14 +299,14 @@ Função: process-notification-queue
 
 ## 7. CANAIS
 
-### Push Notifications
+### Push N?otifications
 
 **Provider**: Firebase Cloud Messaging (FCM) ou Expo
 
 ```typescript
 const pushPayload = {
   notification: {
-    title: "Nova mensagem",
+    title: "N?ova mensagem",
     body: "João Silva enviou uma mensagem"
   },
   data: {
@@ -334,7 +334,7 @@ await admin.messaging().send({
 const emailPayload = {
   to: user.email,
   from: 'noreply@genflix.com.br',
-  subject: 'Nova mensagem de João Silva',
+  subject: 'N?ova mensagem de João Silva',
   html: emailTemplate(title, body),
   trackingSettings: {
     clickTracking: { enable: true },
@@ -387,7 +387,7 @@ supabase.channel('user-notifications')
 
 ```
 ┌─────────────────────────────────┐
-│ Notificações                    │
+│ N?otificações                    │
 ├─────────────────────────────────┤
 │ ☑ Push notifications            │
 │ ☑ Email                         │
@@ -413,7 +413,7 @@ supabase.channel('user-notifications')
 
 ## 9. ADMIN DASHBOARD
 
-### `/admin/notificacoes` - Notifications Hub
+### `/admin/notificacoes` - N?otifications Hub
 
 **Features**:
 
@@ -445,7 +445,7 @@ Fila por canal:
 #### 3. Analytics
 
 ```
-Notificações enviadas (7 dias):
+N?otificações enviadas (7 dias):
   Total: 25.342
   Push: 67%
   Email: 28%
@@ -546,8 +546,8 @@ Message | User | Channel | Error | Retry
 ## 12. CHECKLIST DE IMPLEMENTAÇÃO
 
 - [x] Tabelas: notifications, notification_queue, delivery_logs
-- [x] NotificationCenter component
-- [x] NotificationCenter page
+- [x] N?otificationCenter component
+- [x] N?otificationCenter page
 - [x] Preferences settings
 - [x] Edge functions (send, process queue, get, mark-read)
 - [x] Cron job para processar fila
@@ -567,7 +567,7 @@ Message | User | Channel | Error | Retry
 - [ ] SMS notifications
 - [ ] Telegram integration
 - [ ] Slack integration (para admin)
-- [ ] Notification scheduling (agendar futuro)
+- [ ] N?otification scheduling (agendar futuro)
 - [ ] A/B testing de notificações
 - [ ] ML-powered best send times
 - [ ] Do-not-disturb modes

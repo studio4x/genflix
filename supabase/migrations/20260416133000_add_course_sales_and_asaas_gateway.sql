@@ -12,7 +12,7 @@ create unique index if not exists courses_slug_unique_idx
   where slug is not null;
 
 comment on column public.courses.slug is
-  'Slug publico do curso para uso em catalogo, checkout e rotas publicas.';
+  'Slug pblico do curso para uso em catalogo, checkout e rotas publicas.';
 
 comment on column public.courses.launch_date is
   'Data de lancamento usada em relatorios e comunicacoes comerciais.';
@@ -24,7 +24,7 @@ comment on column public.courses.currency is
   'Moeda comercial do curso. Mantido para futuras expansoes.';
 
 comment on column public.courses.is_public is
-  'Define se o curso aparece no catalogo publico.';
+  'Define se o curso aparece no catalogo pblico.';
 
 create table if not exists public.payment_gateway_settings (
   id integer primary key check (id = 1),
@@ -32,8 +32,8 @@ create table if not exists public.payment_gateway_settings (
   environment text not null default 'sandbox' check (environment in ('sandbox', 'production')),
   is_active boolean not null default true,
   updated_by uuid references auth.users (id) on delete set null,
-  created_at timestamptz not null default timezone('utc', now()),
-  updated_at timestamptz not null default timezone('utc', now())
+  created_at timest?mptz not null default timezone('utc', now()),
+  updated_at timest?mptz not null default timezone('utc', now())
 );
 
 insert into public.payment_gateway_settings (id, gateway_code, environment, is_active)
@@ -61,9 +61,9 @@ create table if not exists public.commerce_checkout_sessions (
   status text not null default 'created' check (status in ('created', 'active', 'paid', 'canceled', 'expired', 'failed')),
   raw_request jsonb not null default '{}'::jsonb,
   raw_response jsonb not null default '{}'::jsonb,
-  released_at timestamptz,
-  created_at timestamptz not null default timezone('utc', now()),
-  updated_at timestamptz not null default timezone('utc', now())
+  released_at timest?mptz,
+  created_at timest?mptz not null default timezone('utc', now()),
+  updated_at timest?mptz not null default timezone('utc', now())
 );
 
 alter table public.commerce_checkout_sessions
@@ -82,9 +82,9 @@ alter table public.commerce_checkout_sessions
   add column if not exists status text not null default 'created',
   add column if not exists raw_request jsonb not null default '{}'::jsonb,
   add column if not exists raw_response jsonb not null default '{}'::jsonb,
-  add column if not exists released_at timestamptz,
-  add column if not exists created_at timestamptz not null default timezone('utc', now()),
-  add column if not exists updated_at timestamptz not null default timezone('utc', now());
+  add column if not exists released_at timest?mptz,
+  add column if not exists created_at timest?mptz not null default timezone('utc', now()),
+  add column if not exists updated_at timest?mptz not null default timezone('utc', now());
 
 create index if not exists commerce_checkout_sessions_course_id_idx
   on public.commerce_checkout_sessions (course_id);
@@ -112,7 +112,7 @@ create table if not exists public.commerce_events (
   external_payment_id text,
   status text not null default 'received' check (status in ('received', 'processed', 'ignored', 'failed')),
   payload jsonb not null default '{}'::jsonb,
-  received_at timestamptz not null default timezone('utc', now())
+  received_at timest?mptz not null default timezone('utc', now())
 );
 
 alter table public.commerce_events
@@ -127,7 +127,7 @@ alter table public.commerce_events
   add column if not exists external_payment_id text,
   add column if not exists status text not null default 'received',
   add column if not exists payload jsonb not null default '{}'::jsonb,
-  add column if not exists received_at timestamptz not null default timezone('utc', now());
+  add column if not exists received_at timest?mptz not null default timezone('utc', now());
 
 create index if not exists commerce_events_checkout_session_id_idx
   on public.commerce_events (checkout_session_id);

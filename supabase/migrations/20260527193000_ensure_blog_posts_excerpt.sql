@@ -3,20 +3,20 @@ alter table if exists public.blog_posts
 
 do $$
 declare
-  has_seo_description boolean;
+  has_se??o_description boolean;
 begin
   select exists (
     select 1
     from information_schema.columns
     where table_schema = 'public'
       and table_name = 'blog_posts'
-      and column_name = 'seo_description'
-  ) into has_seo_description;
+      and column_name = 'se??o_description'
+  ) into has_se??o_description;
 
-  if has_seo_description then
+  if has_se??o_description then
     execute $sql$
       update public.blog_posts
-      set excerpt = coalesce(nullif(trim(excerpt), ''), nullif(trim(seo_description), ''), '')
+      set excerpt = coalesce(nullif(trim(excerpt), ''), nullif(trim(se??o_description), ''), '')
       where coalesce(trim(excerpt), '') = ''
     $sql$;
   else

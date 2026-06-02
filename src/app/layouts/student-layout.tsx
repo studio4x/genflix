@@ -1,132 +1,96 @@
-import { Link, Outlet, useLocation } from 'react-router-dom'
-
-import { useAuth } from '@/app/providers/auth-provider'
-import { PlatformFooter } from '@/components/layout/platform-footer'
-import { GenflixLogo } from '@/components/public/genflix-logo'
-import { Button } from '@/components/ui/button'
-import { NotificationCenter } from '@/features/notifications/notification-center'
-
+import { Link, Outlet, useLocation } from 'react-router-dom';
+import { useAuth } from '@/app/providers/auth-provider';
+import { PlatformFooter } from '@/components/layout/platform-footer';
+import { GenflixLogo } from '@/components/public/genflix-logo';
+import { Button } from '@/components/ui/button';
+import { NotificationCenter } from '@/features/notifications/notification-center';
 const studentLinks = [
-  {
-    to: '/aluno/dashboard',
-    label: 'Início',
-    description: 'Painel principal',
-    icon: (
-      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-      </svg>
-    ),
-  },
-  {
-    to: '/aluno/cursos',
-    label: 'Cursos',
-    description: 'Treinamentos liberados',
-    icon: (
-      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-      </svg>
-    ),
-  },
-  {
-    to: '/aluno/mensagens',
-    label: 'Mensagens',
-    description: 'Conversas e suporte',
-    icon: (
-      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M21 12c0 4.418-4.03 8-9 8a9.77 9.77 0 01-4-.82L3 20l1.38-3.45A7.31 7.31 0 013 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-      </svg>
-    ),
-  },
-  {
-    to: '/aluno/pagamentos',
-    label: 'Pagamentos',
-    description: 'Pedidos e status',
-    icon: (
-      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7h16M4 12h16M4 17h10" />
-        <rect x="3" y="5" width="18" height="14" rx="2" ry="2" strokeWidth={2} />
-      </svg>
-    ),
-  },
-  {
-    to: '/aluno/suporte',
-    label: 'Suporte',
-    description: 'Tickets e atendimento',
-    icon: (
-      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2v10z" />
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 9h8M8 13h5" />
-      </svg>
-    ),
-  },
-  {
-    to: '/aluno/notificacoes',
-    label: 'Notificações',
-    description: 'Canais e preferências',
-    icon: (
-      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.4-1.4A2 2 0 0118 14.17V11a6 6 0 10-12 0v3.17c0 .53-.21 1.04-.59 1.41L4 17h5m6 0a3 3 0 11-6 0m6 0H9" />
-      </svg>
-    ),
-  },
-  {
-    to: '/aluno/minha-conta',
-    label: 'Minha Conta',
-    description: 'Dados e segurança',
-    icon: (
-      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0z" />
-      </svg>
-    ),
-  },
-]
-
+    {
+        to: '/aluno/dashboard',
+        label: 'Início',
+        description: 'Painel principal',
+        icon: (<svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+      </svg>),
+    },
+    {
+        to: '/aluno/cursos',
+        label: 'Cursos',
+        description: 'Treinamentos liberados',
+        icon: (<svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+      </svg>),
+    },
+    {
+        to: '/aluno/mensagens',
+        label: 'Mensagens',
+        description: 'Conversas e suporte',
+        icon: (<svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M21 12c0 4.418-4.03 8-9 8a9.77 9.77 0 01-4-.82L3 20l1.38-3.45A7.31 7.31 0 013 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+      </svg>),
+    },
+    {
+        to: '/aluno/pagamentos',
+        label: 'Pagamentos',
+        description: 'Pedidos e status',
+        icon: (<svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7h16M4 12h16M4 17h10"/>
+        <rect x="3" y="5" width="18" height="14" rx="2" ry="2" strokeWidth={2}/>
+      </svg>),
+    },
+    {
+        to: '/aluno/suporte',
+        label: 'Suporte',
+        description: 'Tickets e atendimento',
+        icon: (<svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2v10z"/>
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 9h8M8 13h5"/>
+      </svg>),
+    },
+    {
+        to: '/aluno/notificacoes',
+        label: "N?otifica\u00E7\u00F5es",
+        description: 'Canais e preferências',
+        icon: (<svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.4-1.4A2 2 0 0118 14.17V11a6 6 0 10-12 0v3.17c0 .53-.21 1.04-.59 1.41L4 17h5m6 0a3 3 0 11-6 0m6 0H9"/>
+      </svg>),
+    },
+    {
+        to: '/aluno/minha-conta',
+        label: 'Minha Conta',
+        description: 'Dados e segurança',
+        icon: (<svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0z"/>
+      </svg>),
+    },
+];
 function getStudentDisplayName(fullName: string | null | undefined, email: string | null | undefined) {
-  if (fullName?.trim()) {
-    return fullName.trim()
-  }
-
-  if (email?.trim()) {
-    return email.split('@')[0]
-  }
-
-  return 'Aluno'
+    if (fullName?.trim()) {
+        return fullName.trim();
+    }
+    if (email?.trim()) {
+        return email.split('@')[0];
+    }
+    return 'Aluno';
 }
-
-function StudentAvatar({
-  avatarUrl,
-  fallback,
-  className,
-}: {
-  avatarUrl: string | null | undefined
-  fallback: string
-  className: string
+function StudentAvatar({ avatarUrl, fallback, className, }: {
+    avatarUrl: string | null | undefined;
+    fallback: string;
+    className: string;
 }) {
-  if (avatarUrl?.trim()) {
-    return (
-      <img
-        src={avatarUrl}
-        alt="Avatar do aluno"
-        className={`${className} object-cover`}
-      />
-    )
-  }
-
-  return (
-    <div className={`${className} bg-gradient-to-br from-[#1398B7] to-[#0A3640] text-white`}>
+    if (avatarUrl?.trim()) {
+        return (<img src={avatarUrl} alt="Avatar do aluno" className={`${className} object-cover`}/>);
+    }
+    return (<div className={`${className} bg-gradient-to-br from-[#1398B7] to-[#0A3640] text-white`}>
       {fallback}
-    </div>
-  )
+    </div>);
 }
-
 export function StudentLayout() {
-  const { profile, signOut } = useAuth()
-  const location = useLocation()
-  const displayName = getStudentDisplayName(profile?.full_name, profile?.email)
-  const firstName = displayName.split(' ')[0] ?? displayName
-
-  return (
-    <main className="min-h-screen bg-[#F2F7F9] font-manrope text-[#163138]">
+    const { profile, signOut } = useAuth();
+    const location = useLocation();
+    const displayName = getStudentDisplayName(profile?.full_name, profile?.email);
+    const firstName = displayName.split(' ')[0] ?? displayName;
+    return (<main className="min-h-screen bg-[#F2F7F9] font-manrope text-[#163138]">
       <header className="sticky top-0 z-40 border-b border-[#D8E6EB] bg-[#F2F7F9]/95 backdrop-blur-md">
         <div className="px-4 py-3 sm:px-6 lg:px-8">
           <div className="relative flex min-h-[68px] items-center justify-between gap-4">
@@ -144,46 +108,25 @@ export function StudentLayout() {
             </div>
 
             <div className="flex items-center gap-3">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                asChild
-                className="rounded-xl border-[#D8E6EB] bg-white font-bold text-[#5f7077] hover:border-[#1398B7]/40 hover:text-[#163138]"
-              >
+              <Button type="button" variant="outline" size="sm" asChild className="rounded-xl border-[#D8E6EB] bg-white font-bold text-[#5f7077] hover:border-[#1398B7]/40 hover:text-[#163138]">
                 <Link to="/">
                   <svg className="mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
                   </svg>
                   Home
                 </Link>
               </Button>
-              <NotificationCenter compact />
-              <Link
-                to="/aluno/minha-conta"
-                className={`hidden items-center gap-3 rounded-full border px-2 py-1.5 shadow-sm transition-colors md:flex ${
-                  location.pathname.startsWith('/aluno/minha-conta')
-                    ? 'border-[#1398B7]/30 bg-[#E8F6FA]'
-                    : 'border-[#D8E6EB] bg-white hover:border-[#1398B7]/40'
-                }`}
-              >
-                <StudentAvatar
-                  avatarUrl={profile?.avatar_url}
-                  fallback={firstName.slice(0, 2).toUpperCase()}
-                  className="flex h-10 w-10 items-center justify-center rounded-full text-sm font-black shadow-sm"
-                />
+              <NotificationCenter compact/>
+              <Link to="/aluno/minha-conta" className={`hidden items-center gap-3 rounded-full border px-2 py-1.5 shadow-sm transition-colors md:flex ${location.pathname.startsWith('/aluno/minha-conta')
+            ? 'border-[#1398B7]/30 bg-[#E8F6FA]'
+            : 'border-[#D8E6EB] bg-white hover:border-[#1398B7]/40'}`}>
+                <StudentAvatar avatarUrl={profile?.avatar_url} fallback={firstName.slice(0, 2).toUpperCase()} className="flex h-10 w-10 items-center justify-center rounded-full text-sm font-black shadow-sm"/>
                 <div className="pr-2">
                   <p className="text-sm font-black text-[#163138]">{displayName}</p>
                   <p className="text-[11px] font-medium text-[#5F7077]">Minha conta</p>
                 </div>
               </Link>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => void signOut()}
-                className="rounded-xl border-[#D8E6EB] bg-white font-bold text-[#5f7077] hover:border-[#1398B7]/40 hover:text-[#163138]"
-              >
+              <Button type="button" variant="outline" size="sm" onClick={() => void signOut()} className="rounded-xl border-[#D8E6EB] bg-white font-bold text-[#5f7077] hover:border-[#1398B7]/40 hover:text-[#163138]">
                 Sair
               </Button>
             </div>
@@ -200,11 +143,7 @@ export function StudentLayout() {
           <div className="overflow-hidden rounded-[30px] border border-[#D8E6EB] bg-white shadow-[0_20px_50px_rgba(22,49,56,0.05)]">
             <div className="border-b border-[#D8E6EB] p-5">
               <div className="flex items-start gap-4">
-                <StudentAvatar
-                  avatarUrl={profile?.avatar_url}
-                  fallback={firstName.slice(0, 2).toUpperCase()}
-                  className="flex h-14 w-14 items-center justify-center rounded-full text-base font-black shadow-sm"
-                />
+                <StudentAvatar avatarUrl={profile?.avatar_url} fallback={firstName.slice(0, 2).toUpperCase()} className="flex h-14 w-14 items-center justify-center rounded-full text-base font-black shadow-sm"/>
                 <div className="min-w-0">
                   <p className="truncate text-lg font-black tracking-tight text-[#163138]">{displayName}</p>
                   <p className="mt-1 text-[11px] font-black uppercase tracking-[0.22em] text-[#1398B7]">Aluno</p>
@@ -215,17 +154,10 @@ export function StudentLayout() {
 
             <nav className="space-y-2 p-3">
               {studentLinks.map((link) => {
-                const isActive = location.pathname.startsWith(link.to)
-                return (
-                  <Link
-                    key={link.to}
-                    to={link.to}
-                    className={`flex items-center gap-3 rounded-2xl px-4 py-3 transition-all ${
-                      isActive
-                        ? 'bg-[#1398B7] text-white shadow-lg shadow-[#1398B7]/20'
-                        : 'text-[#5f7077] hover:bg-[#F2F7F9] hover:text-[#163138]'
-                    }`}
-                  >
+            const isActive = location.pathname.startsWith(link.to);
+            return (<Link key={link.to} to={link.to} className={`flex items-center gap-3 rounded-2xl px-4 py-3 transition-all ${isActive
+                    ? 'bg-[#1398B7] text-white shadow-lg shadow-[#1398B7]/20'
+                    : 'text-[#5f7077] hover:bg-[#F2F7F9] hover:text-[#163138]'}`}>
                     <span className={isActive ? 'text-white' : 'text-[#8BA0A7]'}>{link.icon}</span>
                     <span className="min-w-0">
                       <span className="block text-sm font-black">{link.label}</span>
@@ -233,18 +165,12 @@ export function StudentLayout() {
                         {link.description}
                       </span>
                     </span>
-                  </Link>
-                )
-              })}
+                  </Link>);
+        })}
             </nav>
 
             <div className="border-t border-[#D8E6EB] p-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => void signOut()}
-                className="h-12 w-full rounded-2xl border-[#D8E6EB] font-bold text-[#5f7077] hover:border-[#1398B7]/40 hover:text-[#163138]"
-              >
+              <Button type="button" variant="outline" onClick={() => void signOut()} className="h-12 w-full rounded-2xl border-[#D8E6EB] font-bold text-[#5f7077] hover:border-[#1398B7]/40 hover:text-[#163138]">
                 Sair da conta
               </Button>
             </div>
@@ -255,14 +181,8 @@ export function StudentLayout() {
           <section className="rounded-[34px] border border-[#D8E6EB] bg-white p-5 shadow-[0_20px_50px_rgba(22,49,56,0.04)] sm:p-7">
             <Outlet />
           </section>
-          <PlatformFooter
-            className="rounded-[28px] border border-[#D8E6EB] bg-white px-5 py-5 shadow-sm"
-            linksClassName="text-[#5F7077]"
-            versionClassName="text-[#5F7077]"
-            compact
-          />
+          <PlatformFooter className="rounded-[28px] border border-[#D8E6EB] bg-white px-5 py-5 shadow-sm" linksClassName="text-[#5F7077]" versionClassName="text-[#5F7077]" compact/>
         </div>
       </div>
-    </main>
-  )
+    </main>);
 }

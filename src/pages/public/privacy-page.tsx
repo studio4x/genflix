@@ -6,21 +6,21 @@ export function PrivacyPage() {
       entryPrefix="global.institutional.privacy"
       eyebrow="Privacidade"
       title="Privacidade e Protecao de Dados"
-      description="Esta p?gina resume como a GenFlix coleta, utiliza, protege e trata dados pessoais no contexto do acesso a plataforma, aos cursos e aos recursos educacionais."
+      description="Esta página resume como a GenFlix coleta, utiliza, protege e trata dados pessoais no contexto do acesso à plataforma, aos cursos e aos recursos educacionais."
       backgroundClassName="bg-white"
       sections={[
         {
           title: 'Como tratamos seus dados',
           paragraphs: [
-            'Os dados pessoais tratados na GenFlix seguem a legisla??o aplicavel, especialmente a LGPD, e sao utilizados para autenticacao, matr?cula, acesso ao conte?do, suporte, seguranca e melhoria da experi?ncia.',
-            'Informacoes cadastrais, dados de navega??o, hist?rico de progresso, respostas a atividades e interacoes com o ambiente podem ser usados para operacao legitima da plataforma.',
+            'Os dados pessoais tratados na GenFlix seguem a legislação aplicável, especialmente a LGPD, e são utilizados para autenticação, matrícula, acesso ao conteúdo, suporte, segurança e melhoria da experiência.',
+            'Informações cadastrais, dados de navegação, histórico de progresso, respostas a atividades e interações com o ambiente podem ser usados para operação legítima da plataforma.',
           ],
         },
         {
           title: 'Compartilhamento e direitos',
           paragraphs: [
-            'A GenFlix n?o vende dados pessoais. O compartilhamento acontece apenas quando necessario para a operacao do servi?o, cumprimento legal, prevencao a fraude ou defesa de direitos.',
-            'Sempre que aplicavel, o usuario podera exercer seus direitos de acesso, correcao, atualizacao e demais prerrogativas previstas em lei pelos canais oficiais da plataforma.',
+            'A GenFlix não vende dados pessoais. O compartilhamento acontece apenas quando necessário para a operação do serviço, cumprimento legal, prevenção a fraude ou defesa de direitos.',
+            'Sempre que aplicável, o usuário poderá exercer seus direitos de acesso, correção, atualização e demais prerrogativas previstas em lei pelos canais oficiais da plataforma.',
           ],
         },
       ]}

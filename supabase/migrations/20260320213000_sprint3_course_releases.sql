@@ -6,8 +6,8 @@ create table if not exists public.access_groups (
   description text,
   is_active boolean not null default true,
   created_by uuid references auth.users (id) on delete set null,
-  created_at timestamptz not null default timezone('utc', now()),
-  updated_at timestamptz not null default timezone('utc', now())
+  created_at timest?mptz not null default timezone('utc', now()),
+  updated_at timest?mptz not null default timezone('utc', now())
 );
 
 create unique index if not exists access_groups_name_unique_idx
@@ -17,7 +17,7 @@ create table if not exists public.access_group_members (
   id bigint generated always as identity primary key,
   group_id uuid not null references public.access_groups (id) on delete cascade,
   user_id uuid not null references auth.users (id) on delete cascade,
-  created_at timestamptz not null default timezone('utc', now()),
+  created_at timest?mptz not null default timezone('utc', now()),
   unique (group_id, user_id)
 );
 
@@ -32,11 +32,11 @@ create table if not exists public.course_releases (
   release_type text not null check (release_type in ('user', 'group')),
   user_id uuid references auth.users (id) on delete cascade,
   group_id uuid references public.access_groups (id) on delete cascade,
-  starts_at timestamptz,
-  ends_at timestamptz,
+  starts_at timest?mptz,
+  ends_at timest?mptz,
   is_active boolean not null default true,
   created_by uuid references auth.users (id) on delete set null,
-  created_at timestamptz not null default timezone('utc', now()),
+  created_at timest?mptz not null default timezone('utc', now()),
   check (
     (release_type = 'user' and user_id is not null and group_id is null)
     or (release_type = 'group' and group_id is not null and user_id is null)

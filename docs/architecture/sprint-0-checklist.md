@@ -6,5 +6,5 @@
 4. Supabase CLI inicializado com pasta `supabase/`.
 5. Ambientes `development` e `production` definidos por arquivos de exemplo.
 6. Pipeline CI GitHub adicionada (typecheck, lint, build).
-7. Configuracao de deploy Vercel adicionada.
+7. Configurao de deploy Vercel adicionada.
 8. Estrutura de pastas inicial do projeto criada.

@@ -9,7 +9,7 @@ create table if not exists public.blog_post_revisions (
   changed_by_name text,
   changed_by_email text,
   change_type text not null default 'update',
-  created_at timestamptz not null default timezone('utc', now())
+  created_at timest?mptz not null default timezone('utc', now())
 );
 
 create unique index if not exists blog_post_revisions_article_revision_key

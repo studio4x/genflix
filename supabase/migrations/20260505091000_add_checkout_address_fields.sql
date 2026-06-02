@@ -9,17 +9,17 @@ alter table public.profiles
   add column if not exists city text;
 
 comment on column public.profiles.address is
-  'Logradouro do usuario usado para checkout e dados cadastrais.';
+  'Logradouro do usurio usado para checkout e dados cadastrais.';
 comment on column public.profiles.address_number is
-  'Numero do endereco do usuario usado para checkout e dados cadastrais.';
+  'Numero do endereco do usurio usado para checkout e dados cadastrais.';
 comment on column public.profiles.address_complement is
-  'Complemento do endereco do usuario usado para checkout e dados cadastrais.';
+  'Complemento do endereco do usurio usado para checkout e dados cadastrais.';
 comment on column public.profiles.postal_code is
-  'CEP do usuario usado para checkout e dados cadastrais.';
+  'CEP do usurio usado para checkout e dados cadastrais.';
 comment on column public.profiles.province is
-  'Bairro do usuario usado para checkout e dados cadastrais.';
+  'Bairro do usurio usado para checkout e dados cadastrais.';
 comment on column public.profiles.city is
-  'Codigo IBGE da cidade do usuario usado para checkout e dados cadastrais.';
+  'Codigo IBGE da cidade do usurio usado para checkout e dados cadastrais.';
 
 alter table public.commerce_checkout_sessions
   add column if not exists buyer_address text,

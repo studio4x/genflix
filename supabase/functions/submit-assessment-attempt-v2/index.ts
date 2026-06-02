@@ -1,1 +1,1 @@
-import '../submit-assessment-attempt/index.ts'
+import '../submit-assessment-attempt/index.ts';

@@ -7,7 +7,7 @@ create table if not exists public.support_faq_events (
   query text null,
   user_id uuid null default auth.uid() references public.profiles (id) on delete set null,
   session_id text null,
-  created_at timestamptz not null default timezone('utc', now())
+  created_at timest?mptz not null default timezone('utc', now())
 );
 
 create index if not exists idx_support_faq_events_type_created

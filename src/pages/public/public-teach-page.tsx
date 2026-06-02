@@ -54,7 +54,7 @@ export function PublicTeachPage() {
 
       const payload = await response.json().catch(() => null) as { error?: string } | null
       if (!response.ok) {
-        throw new Error(payload?.error ?? 'N?o foi possivel enviar sua mensagem.')
+        throw new Error(payload?.error ?? 'Não foi possível enviar sua mensagem.')
       }
 
       setName('')
@@ -63,7 +63,7 @@ export function PublicTeachPage() {
       setMessage('')
       setFeedback('Mensagem enviada com sucesso. Em breve entraremos em contato.')
     } catch (error) {
-      setFeedback(error instanceof Error ? error.message : 'N?o foi possivel enviar sua mensagem.')
+      setFeedback(error instanceof Error ? error.message : 'Não foi possível enviar sua mensagem.')
     } finally {
       setIsSubmitting(false)
     }
@@ -89,7 +89,7 @@ export function PublicTeachPage() {
               <EditableImage
                 entryKey="global.teach.form.image"
                 fallback={{ src: genflixHeroImage, alt: 'Ensine na GenFlix' }}
-                label="Imagem lateral da p?gina Ensine na GenFlix"
+                label="Imagem lateral da página Ensine na GenFlix"
                 pageKey="global"
               >
                 {(imageValue) => (
@@ -107,16 +107,16 @@ export function PublicTeachPage() {
               </EditableImage>
 
               <div className="flex items-center px-6 py-12 sm:px-10 lg:px-12">
-                <EditableContainer entryKey="global.teach.form.content.card" label="Container interno do conte?do Ensine na GenFlix" pageKey="global">
+                <EditableContainer entryKey="global.teach.form.content.card" label="Container interno do conteúdo Ensine na GenFlix" pageKey="global">
                   <div className="w-full max-w-[420px]">
                     <h1 className="text-[2.45rem] font-extrabold leading-[0.95] tracking-[-0.05em] text-[#183139] sm:text-[3rem]">
-                      <EditableText entryKey="global.teach.title" fallback="Ensine na GenFlix" label="Titulo da p?gina Ensine na GenFlix" pageKey="global" />
+                      <EditableText entryKey="global.teach.title" fallback="Ensine na GenFlix" label="Título da página Ensine na GenFlix" pageKey="global" />
                     </h1>
                     <p className="mt-4 text-base leading-7 text-[#5f7178]">
                       <EditableText
                         entryKey="global.teach.description"
-                        fallback="Duvidas, sugestoes ou suporte - estamos aqui."
-                        label="Descricao da p?gina Ensine na GenFlix"
+                        fallback="Dúvidas, sugestões ou suporte - estamos aqui."
+                        label="Descrição da página Ensine na GenFlix"
                         pageKey="global"
                       />
                     </p>
@@ -124,7 +124,7 @@ export function PublicTeachPage() {
                     <form onSubmit={handleSubmit} className="mt-8 space-y-5">
                       <div>
                         <label htmlFor="teach-name" className="mb-2 block text-sm font-medium text-[#4f656c]">
-                          <EditableText entryKey="global.teach.form.name.label" fallback="Nome completo:" label="Rotulo do nome Ensine" pageKey="global" />
+                          <EditableText entryKey="global.teach.form.name.label" fallback="Nome completo:" label="Rótulo do nome Ensine" pageKey="global" />
                         </label>
                         <input
                           id="teach-name"
@@ -139,7 +139,7 @@ export function PublicTeachPage() {
 
                       <div>
                         <label htmlFor="teach-email" className="mb-2 block text-sm font-medium text-[#4f656c]">
-                          <EditableText entryKey="global.teach.form.email.label" fallback="E-mail:" label="Rotulo do e-mail Ensine" pageKey="global" />
+                          <EditableText entryKey="global.teach.form.email.label" fallback="E-mail:" label="Rótulo do e-mail Ensine" pageKey="global" />
                         </label>
                         <input
                           id="teach-email"
@@ -157,7 +157,7 @@ export function PublicTeachPage() {
                           <EditableText
                             entryKey="global.teach.form.email_confirmation.label"
                             fallback="Reinsira seu e-mail:"
-                            label="Rotulo de reinsira e-mail Ensine"
+                            label="Rótulo de reinsira e-mail Ensine"
                             pageKey="global"
                           />
                         </label>
@@ -174,7 +174,7 @@ export function PublicTeachPage() {
 
                       <div>
                         <label htmlFor="teach-message" className="mb-2 block text-sm font-medium text-[#4f656c]">
-                          <EditableText entryKey="global.teach.form.message.label" fallback="Assunto:" label="Rotulo do assunto Ensine" pageKey="global" />
+                          <EditableText entryKey="global.teach.form.message.label" fallback="Assunto:" label="Rótulo do assunto Ensine" pageKey="global" />
                         </label>
                         <textarea
                           id="teach-message"
@@ -188,7 +188,7 @@ export function PublicTeachPage() {
                       </div>
 
                       <GenflixCtaButton type="submit" disabled={isSubmitting} className="px-5 py-3">
-                        {isSubmitting ? 'Enviando...' : <EditableText entryKey="global.teach.form.submit" fallback="Enviar" label="Botao de envio Ensine" pageKey="global" />}
+                        {isSubmitting ? 'Enviando...' : <EditableText entryKey="global.teach.form.submit" fallback="Enviar" label="Botão de envio Ensine" pageKey="global" />}
                       </GenflixCtaButton>
                       {feedback ? <p className="text-sm font-semibold text-[#5f7178]">{feedback}</p> : null}
                     </form>

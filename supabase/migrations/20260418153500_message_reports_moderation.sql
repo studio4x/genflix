@@ -18,8 +18,8 @@ returns table (
   reason text,
   description text,
   status text,
-  created_at timestamptz,
-  resolved_at timestamptz
+  created_at timest?mptz,
+  resolved_at timest?mptz
 )
 language plpgsql
 security definer

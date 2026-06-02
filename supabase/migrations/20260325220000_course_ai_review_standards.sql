@@ -7,8 +7,8 @@ create table if not exists public.course_ai_review_standards (
   bibliography_rules text,
   table_formatting_rules text,
   additional_review_rules text,
-  created_at timestamptz not null default timezone('utc', now()),
-  updated_at timestamptz not null default timezone('utc', now()),
+  created_at timest?mptz not null default timezone('utc', now()),
+  updated_at timest?mptz not null default timezone('utc', now()),
   updated_by uuid references auth.users (id) on delete set null
 );
 

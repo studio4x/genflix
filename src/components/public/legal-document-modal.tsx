@@ -1,31 +1,22 @@
-import { useEffect } from 'react'
-import { X } from 'lucide-react'
-
-import { Button } from '@/components/ui/button'
-import { legalDocuments, type LegalDocumentKey } from '@/features/public/legal-documents'
-
-export function LegalDocumentModal({
-  documentKey,
-  onClose,
-}: {
-  documentKey: LegalDocumentKey
-  onClose: () => void
+import { useEffect } from 'react';
+import { X } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { legalDocuments, type LegalDocumentKey } from '@/features/public/legal-documents';
+export function LegalDocumentModal({ documentKey, onClose, }: {
+    documentKey: LegalDocumentKey;
+    onClose: () => void;
 }) {
-  const document = legalDocuments[documentKey]
-
-  useEffect(() => {
-    function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === 'Escape') {
-        onClose()
-      }
-    }
-
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [onClose])
-
-  return (
-    <div className="fixed inset-0 z-[140] flex items-center justify-center bg-[#061b21]/58 p-4 backdrop-blur-sm">
+    const document = legalDocuments[documentKey];
+    useEffect(() => {
+        function handleKeyDown(event: KeyboardEvent) {
+            if (event.key === 'Escape') {
+                onClose();
+            }
+        }
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [onClose]);
+    return (<div className="fixed inset-0 z-[140] flex items-center justify-center bg-[#061b21]/58 p-4 backdrop-blur-sm">
       <div className="relative flex max-h-[90vh] w-full max-w-4xl flex-col overflow-hidden rounded-[30px] border border-[#D8E6EB] bg-white shadow-[0_30px_90px_rgba(6,27,33,0.24)]">
         <div className="flex items-start justify-between gap-4 border-b border-[#D8E6EB] bg-[#F2F8FA] px-6 py-5 sm:px-8">
           <div className="min-w-0">
@@ -37,13 +28,8 @@ export function LegalDocumentModal({
             </p>
           </div>
 
-          <button
-            type="button"
-            onClick={onClose}
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#D8E6EB] text-[#5F7077] transition-colors hover:bg-white"
-            aria-label="Fechar modal"
-          >
-            <X className="h-4 w-4" />
+          <button type="button" onClick={onClose} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#D8E6EB] text-[#5F7077] transition-colors hover:bg-white" aria-label="Fechar modal">
+            <X className="h-4 w-4"/>
           </button>
         </div>
 
@@ -52,15 +38,10 @@ export function LegalDocumentModal({
         </div>
 
         <div className="border-t border-[#D8E6EB] bg-white px-6 py-4 sm:px-8">
-          <Button
-            type="button"
-            onClick={onClose}
-            className="bg-gradient-to-b from-[#1398B7] to-[#0A3640] font-black text-white hover:opacity-95"
-          >
+          <Button type="button" onClick={onClose} className="bg-gradient-to-b from-[#1398B7] to-[#0A3640] font-black text-white hover:opacity-95">
             Fechar e voltar ao cadastro
           </Button>
         </div>
       </div>
-    </div>
-  )
+    </div>);
 }

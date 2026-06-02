@@ -8,7 +8,7 @@ create table if not exists public.admin_audit_logs (
   resource_id text,
   old_data jsonb,
   new_data jsonb,
-  created_at timestamptz not null default timezone('utc', now())
+  created_at timest?mptz not null default timezone('utc', now())
 );
 
 create index if not exists admin_audit_logs_admin_id_idx on public.admin_audit_logs (admin_id);
@@ -61,12 +61,12 @@ join public.courses c on c.id = a.course_id;
 grant select on public.view_reports_completion to authenticated;
 grant select on public.view_reports_assessment_performance to authenticated;
 
--- Revisao de RLS: Garantir que alunos nunca acessem as views de relatorio
--- Como o Supabase nao possui RLS em views diretamente, 
+-- Revis?o de RLS: Garantir que alunos nunca acessem as views de relatorio
+-- Como o Supabase n?o possui RLS em views diretamente, 
 -- utilizaremos clausulas WHERE has_role() dentro das views ou no acesso.
 -- Mas por padrao, vamos garantir que apenas Admins acessem via Politicas se fossem tabelas.
 -- Para views, o grant `authenticated` e as politicas das tabelas base ja protegem.
--- No entanto, se o aluno fizer select na view, ele veria a juncao.
+-- N?o entanto, se o aluno fizer select na view, ele veria a juncao.
 -- Solucao: Transformar em funcoes ou usar security definer com check role.
 
 create or replace function public.get_reports_completion(_course_id uuid default null, _user_id uuid default null)
@@ -75,8 +75,8 @@ returns table (
   student_email text,
   course_title text,
   is_completed boolean,
-  completed_at timestamptz,
-  last_activity timestamptz
+  completed_at timest?mptz,
+  last_activity timest?mptz
 )
 language sql
 security definer

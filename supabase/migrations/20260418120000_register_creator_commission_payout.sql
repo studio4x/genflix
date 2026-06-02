@@ -3,7 +3,7 @@ begin;
 create or replace function public.register_creator_commission_payout(
   _creator_id uuid,
   _commission_ids uuid[],
-  _paid_at timestamptz default timezone('utc', now()),
+  _paid_at timest?mptz default timezone('utc', now()),
   _created_by uuid default null,
   _notes text default null
 )
@@ -107,6 +107,6 @@ begin
 end;
 $$;
 
-grant execute on function public.register_creator_commission_payout(uuid, uuid[], timestamptz, uuid, text) to service_role;
+grant execute on function public.register_creator_commission_payout(uuid, uuid[], timest?mptz, uuid, text) to service_role;
 
 commit;

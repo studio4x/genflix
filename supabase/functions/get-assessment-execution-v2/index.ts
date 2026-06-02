@@ -1,1 +1,1 @@
-import '../get-assessment-execution/index.ts'
+import '../get-assessment-execution/index.ts';

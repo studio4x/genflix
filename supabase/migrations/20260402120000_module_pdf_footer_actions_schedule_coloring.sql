@@ -1,15 +1,15 @@
 begin;
 
 alter table public.course_modules
-  add column if not exists starts_at timestamptz,
-  add column if not exists ends_at timestamptz,
+  add column if not exists starts_at timest?mptz,
+  add column if not exists ends_at timest?mptz,
   add column if not exists module_pdf_storage_path text,
   add column if not exists module_pdf_file_name text,
-  add column if not exists module_pdf_uploaded_at timestamptz;
+  add column if not exists module_pdf_uploaded_at timest?mptz;
 
 alter table public.lessons
-  add column if not exists starts_at timestamptz,
-  add column if not exists ends_at timestamptz;
+  add column if not exists starts_at timest?mptz,
+  add column if not exists ends_at timest?mptz;
 
 create table if not exists public.button_templates (
   id uuid primary key default gen_random_uuid(),
@@ -19,8 +19,8 @@ create table if not exists public.button_templates (
   theme text not null default 'slate' check (theme in ('blue', 'emerald', 'amber', 'rose', 'slate', 'violet')),
   icon text not null default 'link' check (length(trim(icon)) >= 2),
   is_active boolean not null default true,
-  created_at timestamptz not null default timezone('utc', now()),
-  updated_at timestamptz not null default timezone('utc', now())
+  created_at timest?mptz not null default timezone('utc', now()),
+  updated_at timest?mptz not null default timezone('utc', now())
 );
 
 create table if not exists public.lesson_footer_actions (
@@ -38,8 +38,8 @@ create table if not exists public.lesson_footer_actions (
   open_in_new_tab boolean not null default true,
   is_active boolean not null default true,
   created_by uuid references auth.users (id) on delete set null,
-  created_at timestamptz not null default timezone('utc', now()),
-  updated_at timestamptz not null default timezone('utc', now()),
+  created_at timest?mptz not null default timezone('utc', now()),
+  updated_at timest?mptz not null default timezone('utc', now()),
   check (
     (action_type = 'file' and storage_path is not null and coalesce(trim(file_name), '') <> '')
     or
@@ -331,7 +331,7 @@ alter table public.assessment_questions
     )
   );
 
-create or replace function public.is_module_scheduled_open(_module_id uuid, _reference timestamptz default timezone('utc', now()))
+create or replace function public.is_module_scheduled_open(_module_id uuid, _reference timest?mptz default timezone('utc', now()))
 returns boolean
 language sql
 stable
@@ -347,7 +347,7 @@ as $$
   );
 $$;
 
-create or replace function public.is_lesson_scheduled_open(_lesson_id uuid, _reference timestamptz default timezone('utc', now()))
+create or replace function public.is_lesson_scheduled_open(_lesson_id uuid, _reference timest?mptz default timezone('utc', now()))
 returns boolean
 language sql
 stable
@@ -466,8 +466,8 @@ returns table (
   has_required_assessment boolean,
   required_assessment_approved boolean,
   progress_percent integer,
-  starts_at timestamptz,
-  ends_at timestamptz,
+  starts_at timest?mptz,
+  ends_at timest?mptz,
   module_pdf_file_name text,
   module_pdf_storage_path text
 )
@@ -585,9 +585,9 @@ returns table (
   text_content text,
   estimated_minutes integer,
   is_completed boolean,
-  completed_at timestamptz,
-  starts_at timestamptz,
-  ends_at timestamptz
+  completed_at timest?mptz,
+  starts_at timest?mptz,
+  ends_at timest?mptz
 )
 language sql
 stable
@@ -770,8 +770,8 @@ using (
   )
 );
 
-grant execute on function public.is_module_scheduled_open(uuid, timestamptz) to authenticated, service_role;
-grant execute on function public.is_lesson_scheduled_open(uuid, timestamptz) to authenticated, service_role;
+grant execute on function public.is_module_scheduled_open(uuid, timest?mptz) to authenticated, service_role;
+grant execute on function public.is_lesson_scheduled_open(uuid, timest?mptz) to authenticated, service_role;
 grant execute on function public.is_lesson_unlocked(uuid, uuid) to authenticated, service_role;
 
 drop policy if exists "lesson_footer_actions_student_select" on public.lesson_footer_actions;

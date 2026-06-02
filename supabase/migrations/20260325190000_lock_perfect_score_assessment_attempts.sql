@@ -29,11 +29,11 @@ declare
 begin
   _user_id := auth.uid();
   if _user_id is null then
-    raise exception 'Usuario nao autenticado.';
+    raise exception 'Usurio n?o autenticado.';
   end if;
 
   if public.has_role(_user_id, 'student') = false then
-    raise exception 'Apenas alunos podem responder avaliacao.';
+    raise exception 'Apenas alunos podem responder avalia??o.';
   end if;
 
   select *
@@ -44,23 +44,23 @@ begin
   limit 1;
 
   if not found then
-    raise exception 'Avaliacao nao encontrada ou inativa.';
+    raise exception 'Avalia??o n?o encontrada ou inativa.';
   end if;
 
   if public.is_course_released(_user_id, _assessment.course_id) = false then
-    raise exception 'Avaliacao nao liberada para o usuario.';
+    raise exception 'Avalia??o n?o liberada para o usurio.';
   end if;
 
   if _assessment.assessment_type = 'module' then
     if _assessment.module_id is null then
-      raise exception 'Avaliacao de modulo invalida.';
+      raise exception 'Avalia??o de m?dulo invalida.';
     end if;
     if public.is_module_unlocked(_user_id, _assessment.module_id) = false then
-      raise exception 'Modulo bloqueado para avaliacao.';
+      raise exception 'Mdulo bloqueado para avalia??o.';
     end if;
   else
     if public.are_required_modules_completed(_user_id, _assessment.course_id) = false then
-      raise exception 'Avaliacao final bloqueada ate concluir os modulos obrigatorios.';
+      raise exception 'Avalia??o final bloqueada ate concluir os m?dulos obrigatrios.';
     end if;
   end if;
 
@@ -80,11 +80,11 @@ begin
       and aa.is_approved = true
       and coalesce(aa.score_percent, 0) >= 100
   ) then
-    raise exception 'Avaliacao ja concluida com aproveitamento maximo.';
+    raise exception 'Avalia??o ja concluida com aproveitamento maximo.';
   end if;
 
   if _attempts_used >= _assessment.max_attempts then
-    raise exception 'Limite de tentativas atingido para esta avaliacao.';
+    raise exception 'Limite de tentativas atingido para est? avalia??o.';
   end if;
 
   if _answers is null or jsonb_typeof(_answers) <> 'array' then
@@ -128,7 +128,7 @@ begin
     limit 1;
 
     if _selected_option_id is null and _question.is_required then
-      raise exception 'Todas as questoes obrigatorias devem ser respondidas.';
+      raise exception 'Todas as questoes obrigatrias devem ser respondidas.';
     end if;
 
     _option_is_correct := false;
@@ -164,7 +164,7 @@ begin
   end loop;
 
   if _total_questions = 0 then
-    raise exception 'Avaliacao sem questoes cadastradas.';
+    raise exception 'Avalia??o sem questoes cadastradas.';
   end if;
 
   _score := round((_correct_answers::numeric * 100) / _total_questions, 2);

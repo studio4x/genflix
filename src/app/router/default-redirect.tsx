@@ -1,26 +1,18 @@
-import { Navigate } from 'react-router-dom'
-
-import { useAuth } from '@/app/providers/auth-provider'
-
+import { Navigate } from 'react-router-dom';
+import { useAuth } from '@/app/providers/auth-provider';
 export function DefaultRedirect() {
-  const { isLoading, user, roles } = useAuth()
-  const waitingRoleResolution = !!user && roles.length === 0
-
-  if (isLoading || waitingRoleResolution) {
-    return (
-      <main className="flex min-h-screen items-center justify-center bg-slate-50 p-6">
+    const { isLoading, user, roles } = useAuth();
+    const waitingRoleResolution = !!user && roles.length === 0;
+    if (isLoading || waitingRoleResolution) {
+        return (<main className="flex min-h-screen items-center justify-center bg-slate-50 p-6">
         <p className="text-sm text-slate-600">Carregando...</p>
-      </main>
-    )
-  }
-
-  if (!user) {
-    return <Navigate to="/login" replace />
-  }
-
-  if (roles.includes('admin')) {
-    return <Navigate to="/admin" replace />
-  }
-
-  return <Navigate to="/aluno" replace />
+      </main>);
+    }
+    if (!user) {
+        return <Navigate to="/login" replace/>;
+    }
+    if (roles.includes('admin')) {
+        return <Navigate to="/admin" replace/>;
+    }
+    return <Navigate to="/aluno" replace/>;
 }

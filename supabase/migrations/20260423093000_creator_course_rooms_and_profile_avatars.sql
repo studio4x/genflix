@@ -82,7 +82,7 @@ returns table (
   conversation_type text,
   title text,
   metadata jsonb,
-  last_message_at timestamptz,
+  last_message_at timest?mptz,
   last_message_preview text,
   message_count integer,
   unread_count integer,
@@ -98,7 +98,7 @@ declare
   current_user_is_admin boolean := public.has_role(current_user_id, 'admin');
 begin
   if current_user_id is null then
-    raise exception 'Usuario nao autenticado.';
+    raise exception 'Usurio n?o autenticado.';
   end if;
 
   return query
@@ -121,7 +121,7 @@ begin
       and c.conversation_type = 'group'
       and not c.is_archived
       and coalesce(c.metadata ->> 'kind', '') = 'course_room'
-      and c.metadata ? 'course_id'
+      and c.metadata  'course_id'
       and exists (
         select 1
         from public.course_releases cr
@@ -143,7 +143,7 @@ begin
     where c.conversation_type = 'group'
       and not c.is_archived
       and coalesce(c.metadata ->> 'kind', '') = 'course_room'
-      and c.metadata ? 'course_id'
+      and c.metadata  'course_id'
       and course_record.creator_id = current_user_id
       and exists (
         select 1
@@ -205,8 +205,8 @@ returns table (
   message_type text,
   attachments jsonb,
   is_deleted boolean,
-  created_at timestamptz,
-  updated_at timestamptz
+  created_at timest?mptz,
+  updated_at timest?mptz
 )
 language plpgsql
 security definer
@@ -217,7 +217,7 @@ declare
   safe_limit integer := least(greatest(coalesce(_limit, 80), 1), 120);
 begin
   if current_user_id is null then
-    raise exception 'Usuario nao autenticado.';
+    raise exception 'Usurio n?o autenticado.';
   end if;
 
   if public.is_conversation_participant(_conversation_id, current_user_id) = false
@@ -231,7 +231,7 @@ begin
     m.id,
     m.conversation_id,
     m.sender_id,
-    coalesce(nullif(p.full_name, ''), p.email, 'Usuario GenFlix') as sender_name,
+    coalesce(nullif(p.full_name, ''), p.email, 'Usurio GenFlix') as sender_name,
     p.email as sender_email,
     m.content,
     m.message_type,
@@ -258,7 +258,7 @@ declare
   affected_count integer;
 begin
   if current_user_id is null then
-    raise exception 'Usuario nao autenticado.';
+    raise exception 'Usurio n?o autenticado.';
   end if;
 
   if public.is_conversation_participant(_conversation_id, current_user_id) = false

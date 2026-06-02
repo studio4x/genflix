@@ -1,70 +1,48 @@
-import { Link, Outlet, useLocation } from 'react-router-dom'
-
-import { useAuth } from '@/app/providers/auth-provider'
-import { PlatformFooter } from '@/components/layout/platform-footer'
-import { GenflixLogo } from '@/components/public/genflix-logo'
-import { Button } from '@/components/ui/button'
-import { NotificationCenter } from '@/features/notifications/notification-center'
-
+import { Link, Outlet, useLocation } from 'react-router-dom';
+import { useAuth } from '@/app/providers/auth-provider';
+import { PlatformFooter } from '@/components/layout/platform-footer';
+import { GenflixLogo } from '@/components/public/genflix-logo';
+import { Button } from '@/components/ui/button';
+import { NotificationCenter } from '@/features/notifications/notification-center';
 const creatorLinks = [
-  { to: '/criador/relatorios', label: 'Meus relatórios', description: 'Vendas e cancelamentos' },
-  { to: '/criador/mensagens', label: 'Mensagens', description: 'Conversas com usuários' },
-  { to: '/criador/suporte', label: 'Tickets', description: 'Chamados e atendimento' },
-  { to: '/criador/notificacoes', label: 'Notificações', description: 'Canais e preferências' },
-  { to: '/criador/perfil', label: 'Minha conta', description: 'Dados da conta' },
-]
-
+    { to: '/criador/relatorios', label: 'Meus relatórios', description: 'Vendas e cancelamentos' },
+    { to: '/criador/mensagens', label: 'Mensagens', description: 'Conversas com usuários' },
+    { to: '/criador/suporte', label: 'Tickets', description: 'Chamados e atendimento' },
+    { to: '/criador/notificacoes', label: "N?otifica\u00E7\u00F5es", description: 'Canais e preferências' },
+    { to: '/criador/perfil', label: 'Minha conta', description: 'Dados da conta' },
+];
 function getCreatorDisplayName(fullName: string | null | undefined, email: string | null | undefined) {
-  if (fullName?.trim()) {
-    return fullName.trim()
-  }
-
-  if (email?.trim()) {
-    return email.split('@')[0]
-  }
-
-  return 'Criador'
+    if (fullName?.trim()) {
+        return fullName.trim();
+    }
+    if (email?.trim()) {
+        return email.split('@')[0];
+    }
+    return 'Criador';
 }
-
-function CreatorAvatar({
-  avatarUrl,
-  fallback,
-  className,
-}: {
-  avatarUrl: string | null | undefined
-  fallback: string
-  className: string
+function CreatorAvatar({ avatarUrl, fallback, className, }: {
+    avatarUrl: string | null | undefined;
+    fallback: string;
+    className: string;
 }) {
-  if (avatarUrl?.trim()) {
-    return (
-      <img
-        src={avatarUrl}
-        alt="Avatar do criador"
-        className={`${className} object-cover`}
-      />
-    )
-  }
-
-  return (
-    <div className={`${className} bg-gradient-to-br from-[#1398B7] to-[#0A3640] text-white`}>
+    if (avatarUrl?.trim()) {
+        return (<img src={avatarUrl} alt="Avatar do criador" className={`${className} object-cover`}/>);
+    }
+    return (<div className={`${className} bg-gradient-to-br from-[#1398B7] to-[#0A3640] text-white`}>
       {fallback}
-    </div>
-  )
+    </div>);
 }
-
 export function CreatorLayout() {
-  const { profile, signOut } = useAuth()
-  const location = useLocation()
-  const displayName = getCreatorDisplayName(profile?.full_name, profile?.email)
-  const initials = displayName
-    .split(' ')
-    .slice(0, 2)
-    .map((namePart) => namePart[0])
-    .join('')
-    .toUpperCase()
-
-  return (
-    <main className="min-h-screen bg-[#F2F7F9] font-manrope text-[#163138]">
+    const { profile, signOut } = useAuth();
+    const location = useLocation();
+    const displayName = getCreatorDisplayName(profile?.full_name, profile?.email);
+    const initials = displayName
+        .split(' ')
+        .slice(0, 2)
+        .map((namePart) => namePart[0])
+        .join('')
+        .toUpperCase();
+    return (<main className="min-h-screen bg-[#F2F7F9] font-manrope text-[#163138]">
       <header className="sticky top-0 z-40 border-b border-[#D8E6EB] bg-[#F2F7F9]/95 backdrop-blur-md">
         <div className="flex w-full items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
           <div className="flex items-center gap-3">
@@ -78,25 +56,15 @@ export function CreatorLayout() {
           </div>
 
           <div className="flex items-center gap-3">
-            <NotificationCenter compact />
+            <NotificationCenter compact/>
             <div className="hidden items-center gap-3 rounded-full border border-[#D8E6EB] bg-white px-2 py-1.5 shadow-sm md:flex">
-              <CreatorAvatar
-                avatarUrl={profile?.avatar_url}
-                fallback={initials || 'CR'}
-                className="flex h-9 w-9 items-center justify-center rounded-full text-xs font-black"
-              />
+              <CreatorAvatar avatarUrl={profile?.avatar_url} fallback={initials || 'CR'} className="flex h-9 w-9 items-center justify-center rounded-full text-xs font-black"/>
               <div className="pr-2">
                 <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#5F7077]">Criador</p>
                 <p className="max-w-[220px] truncate text-sm font-semibold text-[#163138]">{displayName}</p>
               </div>
             </div>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => void signOut()}
-              className="rounded-xl border-[#D8E6EB] bg-white font-bold text-[#5f7077] hover:border-[#1398B7]/40 hover:text-[#163138]"
-            >
+            <Button type="button" variant="outline" size="sm" onClick={() => void signOut()} className="rounded-xl border-[#D8E6EB] bg-white font-bold text-[#5f7077] hover:border-[#1398B7]/40 hover:text-[#163138]">
               Sair
             </Button>
           </div>
@@ -112,24 +80,16 @@ export function CreatorLayout() {
             </div>
             <nav className="space-y-2 p-3">
               {creatorLinks.map((link) => {
-                const isActive = location.pathname.startsWith(link.to)
-                return (
-                  <Link
-                    key={link.to}
-                    to={link.to}
-                    className={`block rounded-2xl px-4 py-3 transition-all ${
-                      isActive
-                        ? 'bg-[#1398B7] text-white shadow-lg shadow-[#1398B7]/20'
-                        : 'text-[#5f7077] hover:bg-[#F2F7F9] hover:text-[#163138]'
-                    }`}
-                  >
+            const isActive = location.pathname.startsWith(link.to);
+            return (<Link key={link.to} to={link.to} className={`block rounded-2xl px-4 py-3 transition-all ${isActive
+                    ? 'bg-[#1398B7] text-white shadow-lg shadow-[#1398B7]/20'
+                    : 'text-[#5f7077] hover:bg-[#F2F7F9] hover:text-[#163138]'}`}>
                     <span className="block text-sm font-black">{link.label}</span>
                     <span className={`block text-[11px] font-medium ${isActive ? 'text-white/80' : 'text-[#5F7077]'}`}>
                       {link.description}
                     </span>
-                  </Link>
-                )
-              })}
+                  </Link>);
+        })}
             </nav>
           </div>
         </aside>
@@ -138,14 +98,8 @@ export function CreatorLayout() {
           <section className="rounded-[32px] border border-[#D8E6EB] bg-white p-5 shadow-[0_20px_50px_rgba(22,49,56,0.04)] sm:p-7">
             <Outlet />
           </section>
-          <PlatformFooter
-            className="rounded-[28px] border border-[#D8E6EB] bg-white px-5 py-5 shadow-sm"
-            linksClassName="text-[#5F7077]"
-            versionClassName="text-[#5F7077]"
-            compact
-          />
+          <PlatformFooter className="rounded-[28px] border border-[#D8E6EB] bg-white px-5 py-5 shadow-sm" linksClassName="text-[#5F7077]" versionClassName="text-[#5F7077]" compact/>
         </div>
       </div>
-    </main>
-  )
+    </main>);
 }

@@ -50,7 +50,7 @@ const defaultCourseImage = '/images/genflix/home/featured-1.jpg'
 const defaultOutcomeFallbacks: GenflixCourseOutcome[] = [
   {
     title: 'Avancar com clareza',
-    description: 'Siga uma trilha organizada para transformar conte?do em progresso real.',
+    description: 'Siga uma trilha organizada para transformar conteúdo em progresso real.',
   },
   {
     title: 'Aprender com recursos de apoio',
@@ -62,7 +62,7 @@ const defaultOutcomeFallbacks: GenflixCourseOutcome[] = [
   },
   {
     title: 'Receber acesso imediato',
-    description: 'A matr?cula e liberada automaticamente apos confirmacao do pagamento.',
+    description: 'A matrícula é liberada automaticamente após confirmação do pagamento.',
   },
 ]
 
@@ -219,7 +219,7 @@ export function buildCoursePublicCatalogItem(row: CoursePublicPageRowLike): Genf
     title: trimString(row.marketing_title) || row.title || staticCourse?.title || 'Curso GenFlix',
     category: trimString(row.category) || staticCourse?.category || 'Curso',
     mentor: trimString(row.mentor_name) || staticCourse?.mentor || 'Equipe GenFlix',
-    role: trimString(row.mentor_role) || staticCourse?.role || 'Curadoria de conte?do',
+    role: trimString(row.mentor_role) || staticCourse?.role || 'Curadoria de conteúdo',
     image: trimString(row.cover_image_url) || trimString(row.thumbnail_url) || staticCourse?.image || defaultCourseImage,
     initials: getInitials(row),
     mentorImage: staticCourse?.mentorImage,
@@ -274,9 +274,9 @@ export function buildCoursePublicDetail(
             summary: 'Aulas centrais, atividades praticas e materiais complementares.',
           },
           {
-            title: 'Revis?o e fechamento',
+            title: 'Revisão e fechamento',
             lessonCount: 2,
-            summary: 'Consolidacao dos principais pontos e proximos passos.',
+            summary: 'Consolidação dos principais pontos e próximos passos.',
           },
         ]
 
@@ -294,7 +294,7 @@ export function buildCoursePublicDetail(
       ? content.aboutParagraphs
       : staticDetail?.aboutParagraphs ?? [
         fallbackDescription || 'Curso publicado no catalogo GenFlix com trilha estruturada para aprendizado digital.',
-        'A experi?ncia combina aulas, recursos de apoio, atividades e acesso organizado pelo player da plataforma.',
+        'A experiência combina aulas, recursos de apoio, atividades e acesso organizado pelo player da plataforma.',
       ],
     outcomes: content.outcomes.length
       ? content.outcomes
@@ -306,14 +306,14 @@ export function buildCoursePublicDetail(
       bio:
         trimString(row.mentor_bio) ||
         staticDetail?.mentor.bio ||
-        'Criador responsavel pela experi?ncia de aprendizagem deste curso.',
+        'Criador responsável pela experiência de aprendizagem deste curso.',
       initials: item.initials,
     },
     priceLabel: formatPrice(row),
     secondaryPriceLabel:
       trimString(row.secondary_price_label) ||
       staticDetail?.secondaryPriceLabel ||
-      'Checkout seguro e acesso liberado apos pagamento',
+      'Checkout seguro e acesso liberado após pagamento',
     includedItems: content.includedItems.length
       ? content.includedItems
       : staticDetail?.includedItems ?? defaultIncludedItems,

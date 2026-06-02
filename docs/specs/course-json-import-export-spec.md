@@ -1,16 +1,16 @@
-# Especificacao Completa do Modulo de Importacao e Exportacao de Cursos via JSON
+# Especificacao Completa do Mdulo de Importacao e Exportacao de Cursos via JSON
 
 ## Objetivo
 
-Este documento descreve a implementacao real do modulo de importacao e exportacao de cursos via JSON usada no LMS HomeCare Match, para que o mesmo comportamento possa ser reproduzido em outra plataforma com estrutura equivalente.
+Este documento descreve a implementacao real do m?dulo de importacao e exportacao de cursos via JSON usada no LMS HomeCare Match, para que o mesmo comportamento possa ser reproduzido em outra plataforma com estrutura equivalente.
 
-O modulo cobre tres frentes:
+O m?dulo cobre tres frentes:
 
 1. Importacao e exportacao de curso completo.
-2. Importacao e exportacao de modulo isolado.
-3. Importacao e exportacao de avaliacao final ou quiz de modulo.
+2. Importacao e exportacao de m?dulo isolado.
+3. Importacao e exportacao de avalia??o final ou quiz de m?dulo.
 
-O foco desta spec e preservar:
+O foco dest? spec e preservar:
 
 - formato dos payloads;
 - regras de normalizacao;
@@ -26,8 +26,8 @@ O foco desta spec e preservar:
 O sistema aceita JSON em tres formas:
 
 1. Curso completo.
-2. Lista de modulos.
-3. Avaliacao isolada.
+2. Lista de m?dulos.
+3. Avalia??o isolada.
 
 O parser aceita tanto JSON puro quanto JSON dentro de bloco Markdown:
 
@@ -48,25 +48,25 @@ ou:
 O sistema exporta:
 
 1. Curso completo em um unico arquivo JSON.
-2. Um modulo especifico em um unico arquivo JSON.
-3. A avaliacao final de um curso em um unico arquivo JSON.
+2. Um m?dulo especifico em um unico arquivo JSON.
+3. A avalia??o final de um curso em um unico arquivo JSON.
 
 Os arquivos baixados usam `JSON.stringify(data, null, 2)` e nome sanitizado para arquivo.
 
 ## Localizacao da Implementacao Original
 
-### Importacao/exportacao de curso e modulo
+### Importacao/exportacao de curso e m?dulo
 
 - `src/features/admin/content/api.ts`
 - `src/pages/admin/admin-courses-page.tsx`
 - `src/app/layouts/admin-course-builder-layout.tsx`
 
-### Importacao/exportacao de avaliacoes
+### Importacao/exportacao de avalia??es
 
 - `src/features/admin/assessments/api.ts`
 - `src/pages/admin/builder/course-assessments-panel.tsx`
 
-### Tipos estruturais usados pelo modulo
+### Tipos estruturais usados pelo m?dulo
 
 - `src/types/content.ts`
 - `src/features/assessments/gamified.ts`
@@ -75,32 +75,32 @@ Os arquivos baixados usam `JSON.stringify(data, null, 2)` e nome sanitizado para
 
 ## 1. Importacao de curso completo
 
-Cria um novo curso e depois importa seus modulos e quizzes.
+Cria um novo curso e depois importa seus m?dulos e quizzes.
 
 Fluxo:
 
 1. Parse do JSON informado.
 2. Criacao do curso base em `courses`.
-3. Importacao do conteudo estrutural em `course_modules`, `lessons`, `assessments`, `assessment_questions`, `assessment_options`, `assessment_case_studies`, `assessment_question_interactions` e `assessment_question_answer_keys`.
+3. Importacao do contedo estrutural em `course_modules`, `lessons`, `assessments`, `assessment_questions`, `assessment_options`, `assessment_case_studies`, `assessment_question_interactions` e `assessment_question_answer_keys`.
 
 Funcao principal:
 
 - `importFullCourse(data, userId)`
 
-## 2. Importacao de conteudo em curso existente
+## 2. Importacao de contedo em curso existente
 
-Atualiza metadados do curso atual e injeta ou substitui modulos/avaliacoes.
+Atualiza metadados do curso atual e injeta ou substitui m?dulos/avalia??es.
 
 Funcao principal:
 
-- `importCourseContent(courseId, input, clearExisting = false, moduleIdToReplace?)`
+- `importCourseContent(courseId, input, clearExisting = false, moduleIdToReplace)`
 
 Esse fluxo suporta:
 
-- adicionar novos modulos ao final do curso;
-- substituir um modulo existente em linha;
+- adicionar novos m?dulos ao final do curso;
+- substituir um m?dulo existente em linha;
 - limpar todo o curso antes de reconstruir;
-- importar somente avaliacao final.
+- importar somente avalia??o final.
 
 ## 3. Exportacao de curso completo
 
@@ -111,12 +111,12 @@ Funcao principal:
 Retorna um JSON com:
 
 - metadados do curso;
-- configuracao de tipos de quiz;
-- lista ordenada de modulos;
-- aulas por modulo;
-- quizzes de modulo completos.
+- configura??o de tipos de quiz;
+- lista ordenada de m?dulos;
+- aulas por m?dulo;
+- quizzes de m?dulo completos.
 
-## 4. Exportacao de modulo
+## 4. Exportacao de m?dulo
 
 Funcao principal:
 
@@ -124,17 +124,17 @@ Funcao principal:
 
 Retorna:
 
-- titulo e descricao do modulo;
+- t?tulo e descri??o do m?dulo;
 - aulas ordenadas;
-- quizzes de modulo completos.
+- quizzes de m?dulo completos.
 
-## 5. Exportacao de avaliacao final
+## 5. Exportacao de avalia??o final
 
 Funcao principal:
 
 - `exportFinalAssessmentContent(courseId)`
 
-Retorna apenas o contrato da avaliacao.
+Retorna apenas o contrato da avalia??o.
 
 ## Contratos JSON
 
@@ -145,7 +145,7 @@ Retorna apenas o contrato da avaliacao.
 ```json
 {
   "title": "Curso de Exemplo",
-  "description": "<p>Descricao em HTML ou texto</p>",
+  "description": "<p>Descri??o em HTML ou texto</p>",
   "workload_minutes": 240,
   "thumbnail_url": "https://...",
   "status": "draft",
@@ -160,8 +160,8 @@ Retorna apenas o contrato da avaliacao.
   },
   "modules": [
     {
-      "title": "Modulo 1",
-      "description": "Descricao do modulo",
+      "title": "Mdulo 1",
+      "description": "Descri??o do m?dulo",
       "lessons": [],
       "assessments": []
     }
@@ -173,46 +173,46 @@ Retorna apenas o contrato da avaliacao.
 
 | Campo | Tipo | Obrigatorio | Observacoes |
 |---|---|---|---|
-| `title` | string | sim | usado tambem para atualizar o curso existente em importacao inline |
-| `description` | string | nao | pode conter HTML |
-| `workload_minutes` | number | nao | se ausente ou falsy, vira `0` na importacao |
-| `thumbnail_url` | string | nao | exportado, mas nao e reaplicado ao atualizar curso existente |
-| `status` | `draft \| published` no import full; export pode trazer `archived` | nao | no `importFullCourse`, default e `draft` |
-| `quiz_type_settings` | objeto | nao | normalizado antes de persistir |
-| `modules` | array | sim | deve conter ao menos um modulo, exceto em importacao exclusiva de avaliacao |
+| `title` | string | sim | usado tamb?m para atualizar o curso existente em importacao inline |
+| `description` | string | n?o | pode conter HTML |
+| `workload_minutes` | number | n?o | se ausente ou falsy, vira `0` na importacao |
+| `thumbnail_url` | string | n?o | exportado, mas n?o e reaplicado ao atualizar curso existente |
+| `status` | `draft \| published` no import full; export pode trazer `archived` | n?o | no `importFullCourse`, default e `draft` |
+| `quiz_type_settings` | objeto | n?o | normalizado antes de persistir |
+| `modules` | array | sim | deve conter ao menos um m?dulo, exceto em importacao exclusiva de avalia??o |
 
 ### Observacao importante sobre `thumbnail_url`
 
 Existe assimetria na implementacao:
 
 - `importFullCourse` persiste `thumbnail_url` ao criar um novo curso.
-- `importCourseContent` nao atualiza `thumbnail_url` quando recebe um curso completo para um curso ja existente.
+- `importCourseContent` n?o atualiza `thumbnail_url` quando recebe um curso completo para um curso ja existente.
 
 Se a outra plataforma quiser reproduzir o comportamento exato, mantenha essa assimetria.
-Se quiser corrigir, trate isso como melhoria explicita, nao como replica fiel.
+Se quiser corrigir, trate isso como melhoria explicita, n?o como replica fiel.
 
-## 2. Contrato de modulo
+## 2. Contrato de m?dulo
 
 ### Estrutura
 
 ```json
 {
-  "title": "Modulo 1",
-  "description": "Descricao do modulo",
+  "title": "Mdulo 1",
+  "description": "Descri??o do m?dulo",
   "lessons": [
     {
       "title": "Aula 1",
-      "description": "Descricao da aula",
+      "description": "Descri??o da aula",
       "lesson_type": "video",
       "youtube_url": "https://youtube.com/...",
-      "text_content": "<p>Conteudo</p>",
+      "text_content": "<p>Contedo</p>",
       "estimated_minutes": 12
     }
   ],
   "assessments": [
     {
-      "title": "Quiz do modulo",
-      "description": "Descricao",
+      "title": "Quiz do m?dulo",
+      "description": "Descri??o",
       "assessment_type": "module",
       "passing_score": 70,
       "max_attempts": 3,
@@ -228,14 +228,14 @@ Se quiser corrigir, trate isso como melhoria explicita, nao como replica fiel.
 
 | Campo | Tipo | Obrigatorio | Observacoes |
 |---|---|---|---|
-| `title` | string | sim | titulo do modulo |
-| `description` | string | nao | descricao textual/HTML |
-| `lessons` | array | nao | aulas do modulo |
-| `assessments` | array | nao | quizzes de modulo |
+| `title` | string | sim | t?tulo do m?dulo |
+| `description` | string | n?o | descri??o textual/HTML |
+| `lessons` | array | n?o | aulas do m?dulo |
+| `assessments` | array | n?o | quizzes de m?dulo |
 
-### Campos de modulo que NAO fazem parte do contrato JSON atual
+### Campos de m?dulo que NAO fazem parte do contrato JSON atual
 
-Os seguintes campos existem no banco, mas nao sao importados/exportados pelo modulo atual:
+Os seguintes campos existem no banco, mas n?o sao importados/exportados pelo m?dulo atual:
 
 - `is_required`
 - `starts_at`
@@ -247,9 +247,9 @@ Os seguintes campos existem no banco, mas nao sao importados/exportados pelo mod
 
 Na pratica:
 
-- exportacao de modulo/curso perde esses metadados;
-- importacao reconstrutora nao os restaura;
-- modulo importado usa defaults do banco para o que nao foi informado.
+- exportacao de m?dulo/curso perde esses metadados;
+- importacao reconstrutora n?o os rest?ura;
+- m?dulo importado usa defaults do banco para o que n?o foi informado.
 
 ## 3. Contrato de aula
 
@@ -258,10 +258,10 @@ Na pratica:
 ```json
 {
   "title": "Aula 1",
-  "description": "Descricao da aula",
+  "description": "Descri??o da aula",
   "lesson_type": "video",
   "youtube_url": "https://youtube.com/...",
-  "text_content": "<p>Conteudo da aula</p>",
+  "text_content": "<p>Contedo da aula</p>",
   "estimated_minutes": 15
 }
 ```
@@ -270,16 +270,16 @@ Na pratica:
 
 | Campo | Tipo | Obrigatorio | Observacoes |
 |---|---|---|---|
-| `title` | string | sim | titulo da aula |
-| `description` | string | nao | descricao curta |
+| `title` | string | sim | t?tulo da aula |
+| `description` | string | n?o | descri??o curta |
 | `lesson_type` | `video \| text \| hybrid` | sim | persistido como veio |
-| `youtube_url` | string | nao | usado em aulas `video` e `hybrid` |
-| `text_content` | string | nao | HTML/texto da aula |
-| `estimated_minutes` | number | nao | default de importacao: `10` |
+| `youtube_url` | string | n?o | usado em aulas `video` e `hybrid` |
+| `text_content` | string | n?o | HTML/texto da aula |
+| `estimated_minutes` | number | n?o | default de importacao: `10` |
 
 ### Campos de aula que ficam fora da spec atual
 
-Nao sao importados/exportados:
+N?o sao importados/exportados:
 
 - `is_required`
 - `starts_at`
@@ -288,14 +288,14 @@ Nao sao importados/exportados:
 - acoes de rodape em `lesson_footer_actions`
 - assets internos de blocos ricos, exceto quando o HTML referencia URLs externas ou paths persistidos em texto
 
-## 4. Contrato de avaliacao
+## 4. Contrato de avalia??o
 
 ### Estrutura
 
 ```json
 {
-  "title": "Avaliacao Final",
-  "description": "Descricao da prova",
+  "title": "Avalia??o Final",
+  "description": "Descri??o da prova",
   "passing_score": 70,
   "max_attempts": 3,
   "estimated_minutes": 20,
@@ -308,26 +308,26 @@ Nao sao importados/exportados:
 
 | Campo | Tipo | Obrigatorio | Observacoes |
 |---|---|---|---|
-| `title` | string | sim | titulo da avaliacao |
-| `description` | string | nao | descricao |
-| `passing_score` | number | nao | default de importacao: `70` |
-| `max_attempts` | number | nao | default de importacao: `3` |
-| `estimated_minutes` | number | nao | default de importacao: `10` |
-| `questions` | array | nao | perguntas avulsas |
-| `case_studies` | array | nao | estudos de caso com perguntas internas |
+| `title` | string | sim | t?tulo da avalia??o |
+| `description` | string | n?o | descri??o |
+| `passing_score` | number | n?o | default de importacao: `70` |
+| `max_attempts` | number | n?o | default de importacao: `3` |
+| `estimated_minutes` | number | n?o | default de importacao: `10` |
+| `questions` | array | n?o | perguntas avulsas |
+| `case_studies` | array | n?o | estudos de caso com perguntas internas |
 
 ### Observacao sobre `assessment_type`
 
-No export de quiz de modulo, cada item dentro de `assessments` recebe:
+N?o export de quiz de m?dulo, cada item dentro de `assessments` recebe:
 
 ```json
 { "assessment_type": "module" }
 ```
 
-Mas o importador de avaliacao nao depende desse campo. O destino e definido pelo fluxo:
+Mas o importador de avalia??o n?o depende desse campo. O destino e definido pelo fluxo:
 
-- quiz de modulo: criado dentro de um modulo;
-- avaliacao final: criada ou atualizada como `assessment_type = final`.
+- quiz de m?dulo: criado dentro de um m?dulo;
+- avalia??o final: criada ou atualizada como `assessment_type = final`.
 
 ## 5. Contrato de pergunta
 
@@ -354,13 +354,13 @@ Mas o importador de avaliacao nao depende desse campo. O destino e definido pelo
 | Campo | Tipo | Obrigatorio | Observacoes |
 |---|---|---|---|
 | `question_text` | string | sim | enunciado |
-| `question_type` | enum | nao | ha normalizacao silenciosa, detalhada abaixo |
-| `points` | number | nao | default `1`, exceto `essay_ai` standalone que vira `0` |
-| `is_required` | boolean | nao | default `true` |
-| `essay_expected_answer` | string | nao | so persistido para tipos discursivos |
-| `options` | array | nao | apenas para tipos de multipla escolha |
-| `interaction` | objeto | nao | usado em perguntas gamificadas |
-| `grading` | objeto | nao | usado em perguntas gamificadas |
+| `question_type` | enum | n?o | ha normalizacao silenciosa, detalhada abaixo |
+| `points` | number | n?o | default `1`, exceto `essay_ai` standalone que vira `0` |
+| `is_required` | boolean | n?o | default `true` |
+| `essay_expected_answer` | string | n?o | so persistido para tipos discursivos |
+| `options` | array | n?o | apenas para tipos de multipla escolha |
+| `interaction` | objeto | n?o | usado em perguntas gamificadas |
+| `grading` | objeto | n?o | usado em perguntas gamificadas |
 
 ### Tipos de pergunta suportados
 
@@ -384,8 +384,8 @@ Mas o importador de avaliacao nao depende desse campo. O destino e definido pelo
 
 Campos:
 
-- `option_text`: string obrigatoria.
-- `is_correct`: boolean obrigatorio.
+- `option_text`: string obrigatria.
+- `is_correct`: boolean obrigatrio.
 
 ## 7. Contrato de estudo de caso
 
@@ -410,17 +410,17 @@ Campos:
 Campos:
 
 - `title`: string opcional.
-- `case_text`: string obrigatoria.
-- `questions`: array obrigatoria.
+- `case_text`: string obrigatria.
+- `questions`: array obrigatria.
 
-## Regras de Normalizacao e Defaults
+## Regras de N?ormalizacao e Defaults
 
 ## 1. Parsing tolerante de JSON
 
 Antes de importar, o sistema:
 
 1. faz `trim()`;
-2. tenta extrair conteudo de bloco Markdown `````json ... `````;
+2. tenta extrair contedo de bloco Markdown `````json ... `````;
 3. tenta `JSON.parse`;
 4. se falhar, tenta substituir quebras de linha literais por `\\n` com regex defensiva;
 5. no builder, faz uma limpeza adicional de strings:
@@ -439,7 +439,7 @@ Essa tolerancia existe para lidar com JSON copiado de IA.
 
 - `estimated_minutes`: `10` se ausente/falsy.
 
-### Avaliacao
+### Avalia??o
 
 - `passing_score`: `70` se ausente/falsy.
 - `max_attempts`: `3` se ausente/falsy.
@@ -450,7 +450,7 @@ Essa tolerancia existe para lidar com JSON copiado de IA.
 - `is_required`: `true` se ausente.
 - `points`: `1` se ausente, exceto `essay_ai` fora de estudo de caso, que grava `0`.
 
-## 3. Normalizacao de `question_type`
+## 3. N?ormalizacao de `question_type`
 
 ### Fora de estudo de caso
 
@@ -479,7 +479,7 @@ Consequencia:
 
 Consequencia importante:
 
-- `essay_ai` dentro de `case_studies` nao vira `case_study_ai` automaticamente;
+- `essay_ai` dentro de `case_studies` n?o vira `case_study_ai` automticamente;
 - se vier `essay_ai`, o importador rebaixa para `case_study_single_choice`.
 
 Para reproduzir fielmente, mantenha essa regra.
@@ -504,10 +504,10 @@ Para tipos gamificados:
 
 o sistema executa validacao estrutural via `validateInteractionBundle`.
 
-Se o tipo da pergunta nao for gamificado:
+Se o tipo da pergunta n?o for gamificado:
 
 - quaisquer dados anteriores de interacao e gabarito sao apagados;
-- `interaction` e `grading` no JSON nao tem efeito persistente.
+- `interaction` e `grading` no JSON n?o tem efeito persistente.
 
 ## Contrato das Interacoes Gamificadas
 
@@ -688,28 +688,28 @@ ou, no modo SVG, usando `region_id` como `slot_id`.
 
 ## Ordem e Posicionamento
 
-## 1. Modulos
+## 1. Mdulos
 
 Na importacao incremental:
 
 - busca-se o maior `position` atual do curso;
-- novos modulos entram a partir dali.
+- novos m?dulos entram a partir dali.
 
-Na substituicao de modulo:
+Na substituicao de m?dulo:
 
-- o modulo existente e mantido;
-- seu titulo e descricao sao atualizados;
+- o m?dulo existente e mantido;
+- seu t?tulo e descri??o sao atualizados;
 - suas aulas e quizzes sao apagados;
-- o conteudo novo e recriado dentro do mesmo modulo;
-- se vierem modulos adicionais no JSON, os demais sao inseridos depois dos existentes.
+- o contedo novo e recriado dentro do mesmo m?dulo;
+- se vierem m?dulos adicionais no JSON, os demais sao inseridos depois dos existentes.
 
 ## 2. Aulas
 
 As aulas sao inseridas na ordem do array com `position = index + 1`.
 
-## 3. Avaliacoes
+## 3. Avalia??es
 
-Quizzes de modulo sao criados em ordem de iteracao.
+Quizzes de m?dulo sao criados em ordem de iteracao.
 
 ## 4. Perguntas
 
@@ -719,12 +719,12 @@ Recebem `position` sequencial crescente.
 
 ### Estudos de caso
 
-Cada estudo de caso ocupa um `position` unico no fluxo da avaliacao.
+Cada estudo de caso ocupa um `position` unico no fluxo da avalia??o.
 Todas as perguntas internas do caso recebem esse mesmo `position`, e a ordem interna e controlada por `case_question_position`.
 
 Isso significa:
 
-- a avaliacao mistura perguntas avulsas e blocos de estudo de caso em um eixo unico;
+- a avalia??o mistura perguntas avulsas e blocos de estudo de caso em um eixo unico;
 - dentro de um caso, a ordem visivel depende de `case_question_position`.
 
 ## Comportamento Destrutivo
@@ -735,12 +735,12 @@ Executa `clearCourseContent(courseId)`.
 
 Isso:
 
-1. apaga primeiro as avaliacoes sem modulo do curso, ou seja, a avaliacao final;
-2. apaga todos os modulos do curso;
+1. apaga primeiro as avalia??es sem m?dulo do curso, ou seja, a avalia??o final;
+2. apaga todos os m?dulos do curso;
 3. depende de cascade delete no banco para remover:
    - aulas;
    - materiais;
-   - quizzes de modulo;
+   - quizzes de m?dulo;
    - questoes;
    - opcoes;
    - estudos de caso;
@@ -748,25 +748,25 @@ Isso:
 
 Esse modo e destrutivo e reinicia o curso do zero.
 
-## 2. Substituicao em linha de modulo
+## 2. Substituicao em linha de m?dulo
 
 `replaceModuleContentInPlace(courseId, moduleId, moduleData)` faz:
 
-1. update de `title` e `description` do modulo;
-2. delete de todas as avaliacoes do modulo;
-3. delete de todas as aulas do modulo;
-4. recriacao das aulas;
-5. recriacao dos quizzes.
+1. update de `title` e `description` do m?dulo;
+2. delete de todas as avalia??es do m?dulo;
+3. delete de todas as aulas do m?dulo;
+4. recria??o das aulas;
+5. recria??o dos quizzes.
 
-Campos do modulo fora do contrato JSON permanecem como estavam, exceto o que foi apagado por cascata.
+Campos do m?dulo fora do contrato JSON permanecem como estavam, exceto o que foi apagado por cascata.
 
-## 3. Importacao de avaliacao final
+## 3. Importacao de avalia??o final
 
-Quando o input e somente avaliacao:
+Quando o input e somente avalia??o:
 
-1. faz `upsert` da avaliacao final com conflito em `course_id, assessment_type`;
-2. apaga todos os estudos de caso da avaliacao;
-3. apaga todas as questoes da avaliacao;
+1. faz `upsert` da avalia??o final com conflito em `course_id, assessment_type`;
+2. apaga todos os estudos de caso da avalia??o;
+3. apaga todas as questoes da avalia??o;
 4. recria tudo.
 
 ## Comportamento de Exportacao
@@ -781,18 +781,18 @@ Quando o input e somente avaliacao:
 - `thumbnail_url`
 - `status`
 - `quiz_type_settings`
-- modulos ordenados
+- m?dulos ordenados
 - aulas ordenadas
-- quizzes de modulo completos
+- quizzes de m?dulo completos
 
-### Modulo
+### Mdulo
 
 - `title`
 - `description`
 - aulas
-- quizzes de modulo
+- quizzes de m?dulo
 
-### Avaliacao
+### Avalia??o
 
 - `title`
 - `description`
@@ -811,38 +811,38 @@ Quando o input e somente avaliacao:
 - `display_order`
 - `has_linear_progression`
 - `created_by`
-- timestamps
+- timest?mps
 
-### Modulo
+### Mdulo
 
 - `is_required`
-- janelas de liberacao
-- PDF do modulo
-- timestamps
+- janelas de libera??o
+- PDF do m?dulo
+- timest?mps
 
 ### Aula
 
 - `is_required`
-- datas de liberacao
+- datas de libera??o
 - materiais anexos
 - acoes de rodape
-- timestamps
+- timest?mps
 
-### Avaliacao
+### Avalia??o
 
 - `is_required`
 - `is_active`
 - `created_by`
-- timestamps
+- timest?mps
 
 ### Perguntas/opcoes
 
 - IDs de banco
-- timestamps
+- timest?mps
 
 ## Entidades de Banco Impactadas
 
-O modulo atual interage diretamente com estas tabelas:
+O m?dulo atual interage diretamente com est?s tabelas:
 
 - `courses`
 - `course_modules`
@@ -863,13 +863,13 @@ Dependendo do modo destrutivo, a consistencia depende de cascade delete entre es
 ```text
 parse input
 criar curso em courses
-para cada modulo:
-  criar modulo
+para cada m?dulo:
+  criar m?dulo
   para cada aula:
     criar aula
   para cada quiz:
     criar assessment module
-    importar estrutura da avaliacao
+    importar estrutura da avalia??o
 retornar curso criado
 ```
 
@@ -878,37 +878,37 @@ retornar curso criado
 ```text
 parse input
 se clearExisting:
-  apagar avaliacao final
-  apagar modulos
+  apagar avalia??o final
+  apagar m?dulos
 
 se input tiver modules:
   atualizar metadados do curso atual
 
-se input for avaliacao apenas:
+se input for avalia??o apenas:
   criar/atualizar assessment final
   limpar questoes e estudos de caso
-  recriar estrutura da avaliacao
+  recriar estrutura da avalia??o
   encerrar
 
 se houver moduleIdToReplace:
-  atualizar modulo alvo
-  apagar aulas e quizzes desse modulo
-  recriar conteudo com o primeiro modulo do JSON
-  se houver modulos adicionais:
+  atualizar m?dulo alvo
+  apagar aulas e quizzes desse m?dulo
+  recriar contedo com o primeiro m?dulo do JSON
+  se houver m?dulos adicionais:
     inseri-los depois
 
-se nao houver replace:
-  inserir todos os modulos no final do curso
+se n?o houver replace:
+  inserir todos os m?dulos no final do curso
 ```
 
 ## 3. Exportar curso completo
 
 ```text
 carregar curso
-carregar modulos ordenados
-para cada modulo:
+carregar m?dulos ordenados
+para cada m?dulo:
   carregar aulas ordenadas
-  carregar quizzes de modulo
+  carregar quizzes de m?dulo
   exportar cada quiz
 retornar objeto final
 ```
@@ -921,51 +921,51 @@ O texto da UI explicitamente orienta colar JSON gerado por IA.
 
 Por isso, a implementacao inclui:
 
-- remocao de fences Markdown;
+- remo??o de fences Markdown;
 - parse tolerante;
 - tentativa de corrigir quebras de linha;
 - limpeza de escape adicional em algumas telas.
 
 ## 2. Modos expostos ao admin
 
-No builder de curso existente, a UI permite:
+N?o builder de curso existente, a UI permite:
 
-- adicionar novos modulos;
-- substituir um modulo existente;
+- adicionar novos m?dulos;
+- substituir um m?dulo existente;
 - limpar todo o curso antes.
 
-Na pagina de cursos, a UI permite:
+Na p?gina de cursos, a UI permite:
 
 - importar um curso completo e criar um curso novo.
 
-Na tela de avaliacoes, a UI permite:
+Na tela de avalia??es, a UI permite:
 
-- importar JSON para avaliacao final;
-- importar JSON para criar novo quiz de modulo.
+- importar JSON para avalia??o final;
+- importar JSON para criar novo quiz de m?dulo.
 
 ## Limitacoes e Gaps Conhecidos
 
-## 1. Round-trip nao e total
+## 1. Round-trip n?o e total
 
-Exportar e reimportar um curso nao preserva 100% da plataforma.
+Exportar e reimportar um curso n?o preserva 100% da plataforma.
 
 Perdem-se principalmente:
 
-- regras de liberacao de modulo/aula;
-- obrigatoriedade de modulo/aula;
+- regras de libera??o de m?dulo/aula;
+- obrigatoriedade de m?dulo/aula;
 - materiais anexos;
 - botoes/acoes de rodape;
-- PDF de modulo;
+- PDF de m?dulo;
 - `has_linear_progression`;
-- flags de `is_required` e `is_active` em avaliacao.
+- flags de `is_required` e `is_active` em avalia??o.
 
-## 2. `thumbnail_url` nao e atualizado em importacao inline
+## 2. `thumbnail_url` n?o e atualizado em importacao inline
 
 Ja descrito acima. E um gap de compatibilidade da implementacao atual.
 
-## 3. Normalizacao de tipos em estudo de caso e agressiva
+## 3. N?ormalizacao de tipos em estudo de caso e agressiva
 
-Dentro de `case_studies`, qualquer tipo nao explicito cai para `case_study_single_choice`.
+Dentro de `case_studies`, qualquer tipo n?o explicito cai para `case_study_single_choice`.
 
 ## 4. Dependencia de assets externos
 
@@ -973,9 +973,9 @@ Interacoes gamificadas exportam `storage_path` e eventualmente `signed_url`, mas
 
 - o mesmo bucket/storage existir;
 - os arquivos ainda existirem;
-- os paths forem validos no ambiente de destino.
+- os paths forem v?lidos no ambiente de destino.
 
-Se a nova plataforma usar outro storage, sera necessario:
+Se a nova plataforma usar outro storage, sera necessrio:
 
 1. migrar os arquivos;
 2. reescrever `storage_path`;
@@ -983,7 +983,7 @@ Se a nova plataforma usar outro storage, sera necessario:
 
 ## 5. Dependencia de integridade no banco
 
-O modulo assume integridade referencial correta e deletes em cascata entre tabelas relacionadas.
+O m?dulo assume integridade referencial correta e deletes em cascata entre tabelas relacionadas.
 Sem isso, o modo destrutivo pode falhar ou deixar lixo relacional.
 
 ## Recomendacoes para Reimplementacao na Outra Plataforma
@@ -997,12 +997,12 @@ Sem isso, o modo destrutivo pode falhar ou deixar lixo relacional.
 
 ## Contratos Minimos para Compatibilidade
 
-Se a prioridade for compatibilidade e nao replica integral de interface, a outra plataforma precisa no minimo suportar:
+Se a prioridade for compatibilidade e n?o replica integral de interface, a outra plataforma precisa no minimo suportar:
 
 - curso com `title`, `description`, `workload_minutes`, `status`, `quiz_type_settings`, `modules`;
-- modulo com `title`, `description`, `lessons`, `assessments`;
+- m?dulo com `title`, `description`, `lessons`, `assessments`;
 - aula com `title`, `description`, `lesson_type`, `youtube_url`, `text_content`, `estimated_minutes`;
-- avaliacao com `title`, `description`, `passing_score`, `max_attempts`, `estimated_minutes`, `questions`, `case_studies`;
+- avalia??o com `title`, `description`, `passing_score`, `max_attempts`, `estimated_minutes`, `questions`, `case_studies`;
 - perguntas de:
   - `single_choice`
   - `essay_ai`
@@ -1040,8 +1040,8 @@ Se a prioridade for compatibilidade e nao replica integral de interface, a outra
           "title": "Introducao",
           "description": "Visao geral",
           "lesson_type": "hybrid",
-          "youtube_url": "https://www.youtube.com/watch?v=abc123",
-          "text_content": "<p>Conteudo introdutorio</p>",
+          "youtube_url": "https://www.youtube.com/watchv=abc123",
+          "text_content": "<p>Contedo introdutorio</p>",
           "estimated_minutes": 15
         }
       ],
@@ -1055,7 +1055,7 @@ Se a prioridade for compatibilidade e nao replica integral de interface, a outra
           "estimated_minutes": 10,
           "questions": [
             {
-              "question_text": "Qual e a conduta inicial?",
+              "question_text": "Qual e a conduta inicial",
               "question_type": "single_choice",
               "points": 1,
               "is_required": true,
@@ -1071,7 +1071,7 @@ Se a prioridade for compatibilidade e nao replica integral de interface, a outra
               "case_text": "Paciente em atendimento domiciliar...",
               "questions": [
                 {
-                  "question_text": "Qual seria a melhor decisao?",
+                  "question_text": "Qual seria a melhor decisao",
                   "question_type": "case_study_single_choice",
                   "points": 1,
                   "is_required": true,
@@ -1092,18 +1092,18 @@ Se a prioridade for compatibilidade e nao replica integral de interface, a outra
 
 ## Resumo Executivo
 
-O modulo atual e um importador/exportador estrutural de curso, nao um backup integral da plataforma.
+O m?dulo atual e um importador/exportador estrutural de curso, n?o um backup integral da plataforma.
 Ele funciona muito bem para:
 
 - clonar curso;
 - portar curso entre ambientes;
 - alimentar construcao por IA;
-- reconstruir modulos e quizzes rapidamente.
+- reconstruir m?dulos e quizzes rapidamente.
 
-Ele nao cobre, por padrao:
+Ele n?o cobre, por padrao:
 
 - todo o ecossistema de anexos;
-- toda a configuracao de liberacao;
-- todo o estado operacional do curso.
+- toda a configura??o de libera??o;
+- todo o est?do operacional do curso.
 
-Se a outra plataforma usar a mesma modelagem base, replicar este contrato e suficiente para compatibilidade funcional de conteudo.
+Se a outra plataforma usar a mesma modelagem base, replicar este contrato e suficiente para compatibilidade funcional de contedo.

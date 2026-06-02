@@ -6,9 +6,9 @@ create table if not exists public.site_editor_workspace_records (
   draft_raw_value text,
   draft_text_style jsonb not null default '{}'::jsonb,
   updated_by uuid references public.profiles (id) on delete set null,
-  published_at timestamptz,
-  created_at timestamptz not null default timezone('utc', now()),
-  updated_at timestamptz not null default timezone('utc', now()),
+  published_at timest?mptz,
+  created_at timest?mptz not null default timezone('utc', now()),
+  updated_at timest?mptz not null default timezone('utc', now()),
   unique (page_key, entry_key)
 );
 
@@ -21,7 +21,7 @@ create table if not exists public.site_editor_workspace_comments (
   body text not null,
   author_role text not null default 'unknown',
   created_by uuid references public.profiles (id) on delete set null,
-  created_at timestamptz not null default timezone('utc', now())
+  created_at timest?mptz not null default timezone('utc', now())
 );
 
 create index if not exists site_editor_workspace_comments_workspace_idx

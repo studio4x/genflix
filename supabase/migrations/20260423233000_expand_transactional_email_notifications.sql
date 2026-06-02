@@ -28,11 +28,11 @@ begin
   end if;
 
   if _rating < 1 or _rating > 5 then
-    raise exception 'A nota deve estar entre 1 e 5.';
+    raise exception 'A nota deve est?r entre 1 e 5.';
   end if;
 
   if char_length(normalized_title) < 3 or char_length(normalized_title) > 100 then
-    raise exception 'O titulo deve ter entre 3 e 100 caracteres.';
+    raise exception 'O t?tulo deve ter entre 3 e 100 caracteres.';
   end if;
 
   if char_length(normalized_content) < 3 or char_length(normalized_content) > 3000 then
@@ -49,7 +49,7 @@ begin
   into course_exists;
 
   if not course_exists then
-    raise exception 'Curso indisponivel para avaliacao.';
+    raise exception 'Curso indisponvel para avalia??o.';
   end if;
 
   select exists (
@@ -142,7 +142,7 @@ begin
     loop
       perform public.create_user_notification(
         admin_record.id,
-        'Nova avaliacao aguardando moderacao',
+        'N?ova avalia??o aguardando modera??o',
         left(normalized_title || ' - ' || normalized_content, 240),
         'review',
         'normal',
@@ -175,7 +175,7 @@ declare
   normalized_reason text := nullif(trim(coalesce(_reason, '')), '');
 begin
   if current_user_id is null then
-    raise exception 'Usuario nao autenticado.';
+    raise exception 'Usurio n?o autenticado.';
   end if;
 
   if public.has_role(current_user_id, 'admin') = false then
@@ -183,7 +183,7 @@ begin
   end if;
 
   if normalized_action not in ('approve', 'reject') then
-    raise exception 'Acao de moderacao invalida.';
+    raise exception 'Acao de modera??o invalida.';
   end if;
 
   select *
@@ -194,7 +194,7 @@ begin
     and deleted_at is null;
 
   if review_record.id is null then
-    raise exception 'Avaliacao nao encontrada.';
+    raise exception 'Avalia??o n?o encontrada.';
   end if;
 
   next_status := case when normalized_action = 'approve' then 'approved' else 'rejected' end;
@@ -229,10 +229,10 @@ begin
 
   perform public.create_user_notification(
     review_record.author_id,
-    case when next_status = 'approved' then 'Sua avaliacao foi aprovada' else 'Sua avaliacao foi rejeitada' end,
+    case when next_status = 'approved' then 'Sua avalia??o foi aprovada' else 'Sua avalia??o foi rejeitada' end,
     case
-      when next_status = 'approved' then 'Sua avaliacao ja esta visivel na pagina publica do curso.'
-      else coalesce(normalized_reason, 'A avaliacao nao atende as diretrizes da GenFlix.')
+      when next_status = 'approved' then 'Sua avalia??o ja est? visivel na p?gina publica do curso.'
+      else coalesce(normalized_reason, 'A avalia??o n?o atende as diretrizes da GenFlix.')
     end,
     'review',
     'normal',

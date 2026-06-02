@@ -1,8 +1,8 @@
-# SPEC_REPLICACAO_AULAS_E_CONTEUDO: Configuracao Atual para Replicacao Exata
+# SPEC_REPLICACAO_AULAS_E_CONTEUDO: Configurao Atual para Replicacao Exata
 
 ## 1. Objetivo
 
-Este documento descreve, com fidelidade de implementacao, a configuracao atual de aulas e consumo de conteudo do projeto Mariana Explica para replicacao em outra plataforma com arquitetura semelhante.
+Este documento descreve, com fidelidade de implementacao, a configura??o atual de aulas e consumo de contedo do projeto Mariana Explica para replicacao em outra plataforma com arquitetura semelhante.
 
 Foco principal:
 
@@ -22,7 +22,7 @@ Canonicas:
 1. `docs/Estrutura Inicial/04-banco-dados.md`
 2. `docs/Estrutura Inicial/03-arquitetura.md`
 3. `docs/Estrutura Inicial/05-backend-edge-functions.md`
-4. `docs/Estrutura Inicial/10-autenticacao-seguranca.md`
+4. `docs/Estrutura Inicial/10-autentica??o-seguran?a.md`
 
 Implementacao real (codigo):
 
@@ -58,8 +58,8 @@ Campos relevantes:
 - `youtube_url text null`
 - `text_content text null`
 - `estimated_minutes integer not null default 0`
-- `starts_at timestamptz null`
-- `ends_at timestamptz null`
+- `starts_at timest?mptz null`
+- `ends_at timest?mptz null`
 - `status text not null default 'published'`
 
 Constraints:
@@ -125,8 +125,8 @@ Persistencia ao salvar:
 
 Comportamento:
 
-- aula centrada em conteudo textual editado em blocos.
-- nao depende de video.
+- aula centrada em contedo textual editado em blocos.
+- n?o depende de video.
 
 Persistencia ao salvar:
 
@@ -150,8 +150,8 @@ Persistencia ao salvar:
 
 Comportamento:
 
-- consumo principal orientado para materiais protegidos do modulo.
-- nao usa player de video como fonte principal da aula.
+- consumo principal orientado para materiais protegidos do m?dulo.
+- n?o usa player de video como fonte principal da aula.
 
 Persistencia ao salvar:
 
@@ -161,8 +161,8 @@ Persistencia ao salvar:
 
 Observacao importante de modelagem atual:
 
-- `module_assets` pertence ao **modulo**, nao a uma aula especifica.
-- logo, aula `file` consome o conjunto de materiais do modulo.
+- `module_assets` pertence ao **m?dulo**, n?o a uma aula especifica.
+- logo, aula `file` consome o conjunto de materiais do m?dulo.
 
 ---
 
@@ -187,7 +187,7 @@ Fluxo:
 2. backend responde:
    - bucket/path
    - token/signed URL de upload
-   - `max_file_size_bytes` (quando aplicavel)
+   - `max_file_size_bytes` (quando aplicvel)
 3. frontend envia ficheiro com `supabase.storage.uploadToSignedUrl(...)`
 4. frontend cria `module_asset` (`asset_type = "video_file"`, `allow_download = false`, `allow_stream = true`)
 5. frontend grava no draft da aula:
@@ -198,7 +198,7 @@ Fluxo:
 
 ## 6. Fluxo de Ficheiro no Admin (Exato)
 
-No modo de aula `file`, upload do bloco principal usa:
+N?o modo de aula `file`, upload do bloco principal usa:
 
 1. `admin-storage-upload` com `kind = "module_asset"` (upload direto)
 2. `create_asset` no `admin-content`
@@ -206,9 +206,9 @@ No modo de aula `file`, upload do bloco principal usa:
 Mapeamento atual do tipo de asset:
 
 - se MIME inicia com `video/` -> `asset_type = "video_file"`
-- senao -> `asset_type = "pdf"` (inclui imagens no comportamento atual)
+- sen?o -> `asset_type = "pdf"` (inclui imagens no comportamento atual)
 
-Flags aplicadas na criacao desse asset:
+Flags aplicadas na cria??o desse asset:
 
 - `allow_download = !file.type.startsWith("video/")`
 - `allow_stream = true`
@@ -227,8 +227,8 @@ Comportamento de consumo:
 2. se `lesson.text_content` existir, renderiza bloco textual
 3. se `lesson_type === "file"` e sem `text_content`, mostra card informando consumo via materiais
 4. secao "Materiais da aula" lista:
-   - PDF base do modulo (quando houver)
-   - todos os `module_assets` do modulo
+   - PDF base do m?dulo (quando houver)
+   - todos os `module_assets` do m?dulo
 
 Abertura de material:
 
@@ -248,7 +248,7 @@ Regras:
 - `asset:<uuid>` -> video protegido (solicita URL assinada backend)
 - YouTube suportado:
   - `youtu.be/<id>`
-  - `youtube.com/watch?v=<id>`
+  - `youtube.com/watchv=<id>`
   - `youtube.com/embed/<id>`
   - `youtube.com/shorts/<id>`
 - parametros de inicio aceitos:
@@ -280,13 +280,13 @@ Observacoes:
 Principios aplicados:
 
 - `access_grants` e a base real de autorizacao paga.
-- frontend nao decide acesso final a arquivo.
+- frontend n?o decide acesso final a arquivo.
 - URL temporaria sempre gerada no backend para asset privado.
 
 `generate-asset-access` valida:
 
-- status do asset/modulo/produto;
-- contexto do usuario (`admin`, `public`, `registered`, `paid_only`);
+- status do asset/m?dulo/produto;
+- contexto do usurio (`admin`, `public`, `registered`, `paid_only`);
 - grant ativo para `paid_only`;
 - retorna:
   - `mode = "external_url"` quando `external_url` existe
@@ -299,22 +299,22 @@ RLS relevante:
 
 ---
 
-## 11. Diretriz Obrigatoria: Sem Conteudo Padrao
+## 11. Diretriz Obrigatoria: Sem Contedo Padrao
 
-Para a plataforma de destino, este spec deve ser aplicado com **estrutura padrao**, mas **sem conteudo editorial padrao**.
+Para a plataforma de destino, este spec deve ser aplicado com **estrutura padrao**, mas **sem contedo editorial padrao**.
 
 Isso significa:
 
-- nao criar registros de exemplo (ex.: "Aula 1", "Modulo 1", textos ficticios);
-- nao preencher `title`, `description`, `text_content` com placeholders;
-- nao carregar URLs de video de teste;
-- nao manter seeds de materiais dummy em `module_assets`.
+- n?o criar registros de exemplo (ex.: "Aula 1", "Mdulo 1", textos ficticios);
+- n?o preencher `title`, `description`, `text_content` com placeholders;
+- n?o carregar URLs de video de teste;
+- n?o manter seeds de materiais dummy em `module_assets`.
 
 Regras de replicacao:
 
 - schema, constraints, policies e fluxos podem ser replicados 1:1;
-- conteudo (titulos, textos, arquivos, URLs) deve vir somente de importacao real da plataforma destino;
-- qualquer criacao automatica de aula/modulo no frontend admin deve usar labels dinamicas da plataforma destino, ou ficar desabilitada ate entrada manual.
+- contedo (t?tulos, textos, arquivos, URLs) deve vir somente de importacao real da plataforma destino;
+- qualquer cria??o automtica de aula/m?dulo no frontend admin deve usar labels dinamicas da plataforma destino, ou ficar desabilitada ate entrada manual.
 
 ---
 
@@ -341,7 +341,7 @@ Aplicar migracoes para garantir:
 
 ## 12.3 Migration SQL 01 - `product_lessons` com `file`
 
-Arquivo sugerido: `supabase/migrations/<timestamp>_lessons_file_type.sql`
+Arquivo sugerido: `supabase/migrations/<timest?mp>_lessons_file_type.sql`
 
 ```sql
 alter table public.product_lessons
@@ -354,7 +354,7 @@ alter table public.product_lessons
 
 ## 12.4 Migration SQL 02 - Garantir integridade de `module_assets`
 
-Arquivo sugerido: `supabase/migrations/<timestamp>_module_assets_integrity.sql`
+Arquivo sugerido: `supabase/migrations/<timest?mp>_module_assets_integrity.sql`
 
 ```sql
 alter table public.module_assets
@@ -390,14 +390,14 @@ alter table public.module_assets
   );
 ```
 
-## 12.5 Migration SQL 03 - Defaults tecnicos (nao editoriais)
+## 12.5 Migration SQL 03 - Defaults tecnicos (n?o editoriais)
 
-Arquivo sugerido: `supabase/migrations/<timestamp>_lessons_assets_technical_defaults.sql`
+Arquivo sugerido: `supabase/migrations/<timest?mp>_lessons_assets_technical_defaults.sql`
 
 Objetivo:
 
 - manter defaults de estrutura tecnica;
-- nao inserir conteudo padrao.
+- n?o inserir contedo padrao.
 
 ```sql
 alter table public.product_lessons
@@ -415,11 +415,11 @@ alter table public.module_assets
 
 Observacao:
 
-- estes defaults sao de **comportamento tecnico da estrutura**, nao de conteudo da aula.
+- estes defaults sao de **comportamento tecnico da estrutura**, n?o de contedo da aula.
 
 ## 12.6 Migration SQL 04 - RLS/policies minimas
 
-Arquivo sugerido: `supabase/migrations/<timestamp>_lessons_assets_rls.sql`
+Arquivo sugerido: `supabase/migrations/<timest?mp>_lessons_assets_rls.sql`
 
 ```sql
 alter table public.product_lessons enable row level security;
@@ -445,10 +445,10 @@ for all using (public.is_admin()) with check (public.is_admin());
 
 Observacao:
 
-- no desenho atual, aluno nao le `module_assets` diretamente para abrir arquivo;
+- no desenho atual, aluno n?o le `module_assets` diretamente para abrir arquivo;
 - acesso real ao ficheiro passa por `generate-asset-access`.
 
-## 12.7 Edge Functions obrigatorias na migracao
+## 12.7 Edge Functions obrigatrias na migracao
 
 Publicar e validar:
 
@@ -478,7 +478,7 @@ select conname, pg_get_constraintdef(oid)
 from pg_constraint
 where conname = 'module_assets_source_check';
 
--- 3) detectar assets invalidos (deve retornar 0 linhas)
+-- 3) detectar assets inv?lidos (deve retornar 0 linhas)
 select id, module_id, storage_bucket, storage_path, external_url
 from public.module_assets
 where (storage_bucket is null or storage_path is null) and external_url is null
@@ -490,9 +490,9 @@ from public.product_lessons
 where lesson_type not in ('video', 'text', 'hybrid', 'file');
 ```
 
-## 12.9 Rollback tecnico (se necessario)
+## 12.9 Rollback tecnico (se necessrio)
 
-Se a plataforma destino ainda nao usar `file`, rollback de constraint:
+Se a plataforma destino ainda n?o usar `file`, rollback de constraint:
 
 ```sql
 alter table public.product_lessons
@@ -503,7 +503,7 @@ alter table public.product_lessons
   check (lesson_type in ('video', 'text', 'hybrid'));
 ```
 
-Atencao:
+Aten??o:
 
 - antes do rollback, migrar/ajustar linhas com `lesson_type = 'file'`.
 
@@ -567,7 +567,7 @@ Saida:
 - [ ] Replicar fluxo de signed upload para video protegido
 - [ ] Replicar fluxo de acesso via Edge Function com URL temporaria
 - [ ] Replicar renderizacao de `text_content` por blocos
-- [ ] Replicar comportamento de aula `file` consumindo materiais do modulo
+- [ ] Replicar comportamento de aula `file` consumindo materiais do m?dulo
 - [ ] Garantir que `allow_download` e decidido no backend
 - [ ] Garantir auditoria de acesso a assets
 
@@ -579,8 +579,8 @@ Saida:
    - YouTube,
    - URL direta,
    - `asset:<uuid>`.
-2. Aula `file` nao possui vinculo 1:1 com asset; depende do inventario de materiais do modulo.
-3. Upload de ficheiro nao-video no modo `file` cai em `asset_type = "pdf"` no comportamento atual.
+2. Aula `file` n?o possui vinculo 1:1 com asset; depende do inventario de materiais do m?dulo.
+3. Upload de ficheiro n?o-video no modo `file` cai em `asset_type = "pdf"` no comportamento atual.
 4. O player pode abrir links externos quando o asset usa `external_url`; isto reduz controlo comparado ao storage privado.
 
-5. Para o projeto destino, manter este spec sem seeds editoriais: a migracao deve entregar apenas estrutura e seguranca.
+5. Para o projeto destino, manter este spec sem seeds editoriais: a migracao deve entregar apenas estrutura e seguran?a.

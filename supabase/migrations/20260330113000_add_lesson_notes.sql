@@ -5,8 +5,8 @@ create table if not exists public.lesson_notes (
   user_id uuid not null references auth.users (id) on delete cascade,
   lesson_id uuid not null references public.lessons (id) on delete cascade,
   note_text text not null check (length(trim(note_text)) between 1 and 20000),
-  created_at timestamptz not null default timezone('utc', now()),
-  updated_at timestamptz not null default timezone('utc', now()),
+  created_at timest?mptz not null default timezone('utc', now()),
+  updated_at timest?mptz not null default timezone('utc', now()),
   unique (user_id, lesson_id)
 );
 

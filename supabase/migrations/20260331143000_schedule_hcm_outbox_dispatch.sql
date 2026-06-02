@@ -7,7 +7,7 @@ create table if not exists public.integration_runtime_settings (
   key text primary key,
   value text not null,
   description text,
-  updated_at timestamptz not null default timezone('utc', now())
+  updated_at timest?mptz not null default timezone('utc', now())
 );
 
 drop trigger if exists set_integration_runtime_settings_updated_at on public.integration_runtime_settings;
@@ -70,11 +70,11 @@ begin
   limit 1;
 
   if _project_url is null or length(trim(_project_url)) = 0 then
-    raise exception 'Configuracao integration_runtime_settings.supabase_project_url ausente.';
+    raise exception 'Configurao integration_runtime_settings.supabase_project_url ausente.';
   end if;
 
   if _cron_secret is null or length(trim(_cron_secret)) = 0 then
-    raise exception 'Configuracao integration_runtime_settings.hcm_edge_cron_secret ausente.';
+    raise exception 'Configurao integration_runtime_settings.hcm_edge_cron_secret ausente.';
   end if;
 
   perform public.unschedule_hcm_outbox_dispatch();
@@ -119,7 +119,7 @@ begin
   end if;
 exception
   when others then
-    raise notice 'Nao foi possivel agendar hcm-outbox-dispatch automaticamente: %', sqlerrm;
+    raise notice 'N?o foi possvel agendar hcm-outbox-dispatch automticamente: %', sqlerrm;
 end
 $$;
 

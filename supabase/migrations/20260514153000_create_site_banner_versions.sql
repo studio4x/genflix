@@ -4,7 +4,7 @@ create table if not exists public.site_banner_versions (
   snapshot jsonb not null default '{}'::jsonb,
   changed_by uuid references public.profiles (id) on delete set null,
   change_reason text not null default 'update',
-  created_at timestamptz not null default timezone('utc', now())
+  created_at timest?mptz not null default timezone('utc', now())
 );
 
 create index if not exists site_banner_versions_banner_idx

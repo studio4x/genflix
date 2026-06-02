@@ -1,145 +1,124 @@
-import { useCallback, useEffect, useState } from 'react'
-import type { FormEvent } from 'react'
-import { Link, useParams } from 'react-router-dom'
-
-import { useAuth } from '@/app/providers/auth-provider'
-import { Button } from '@/components/ui/button'
-import { fetchCourse } from '@/features/admin/content/api'
-import {
-  createGroupRelease,
-  createUserRelease,
-  deleteCourseRelease,
-  fetchAccessGroups,
-  fetchCourseReleases,
-  fetchProfiles,
-  toErrorMessage,
-  type CourseReleaseView,
-} from '@/features/admin/releases/api'
-import {
-  groupReleaseSchema,
-  userReleaseSchema,
-} from '@/features/admin/releases/schemas'
-import type { Profile } from '@/types/auth'
-import type { AccessGroup, Course } from '@/types/content'
-
+import { useCallback, useEffect, useState } from 'react';
+import type { FormEvent } from 'react';
+import { Link, useParams } from 'react-router-dom';
+import { useAuth } from '@/app/providers/auth-provider';
+import { Button } from '@/components/ui/button';
+import { fetchCourse } from '@/features/admin/content/api';
+import { createGroupRelease, createUserRelease, deleteCourseRelease, fetchAccessGroups, fetchCourseReleases, fetchProfiles, toErrorMessage, type CourseReleaseView, } from '@/features/admin/releases/api';
+import { groupReleaseSchema, userReleaseSchema, } from '@/features/admin/releases/schemas';
+import type { Profile } from '@/types/auth';
+import type { AccessGroup, Course } from '@/types/content';
 export function AdminCourseReleasesPage() {
-  const { courseId } = useParams<{ courseId: string }>()
-  const { user } = useAuth()
-
-  const [course, setCourse] = useState<Course | null>(null)
-  const [profiles, setProfiles] = useState<Profile[]>([])
-  const [groups, setGroups] = useState<AccessGroup[]>([])
-  const [releases, setReleases] = useState<CourseReleaseView[]>([])
-  const [selectedUserId, setSelectedUserId] = useState('')
-  const [selectedGroupId, setSelectedGroupId] = useState('')
-  const [isLoading, setIsLoading] = useState(true)
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-
-  const loadData = useCallback(async () => {
-    if (!courseId) {
-      setError('Curso invalido.')
-      setIsLoading(false)
-      return
+    const { courseId } = useParams<{
+        courseId: string;
+    }>();
+    const { user } = useAuth();
+    const [course, setCourse] = useState<Course | null>(null);
+    const [profiles, setProfiles] = useState<Profile[]>([]);
+    const [groups, setGroups] = useState<AccessGroup[]>([]);
+    const [releases, setReleases] = useState<CourseReleaseView[]>([]);
+    const [selectedUserId, setSelectedUserId] = useState('');
+    const [selectedGroupId, setSelectedGroupId] = useState('');
+    const [isLoading, setIsLoading] = useState(true);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const loadData = useCallback(async () => {
+        if (!courseId) {
+            setError("Curso inv?lido.");
+            setIsLoading(false);
+            return;
+        }
+        setIsLoading(true);
+        setError(null);
+        try {
+            const [courseResult, profilesResult, groupsResult, releasesResult] = await Promise.all([
+                fetchCourse(courseId),
+                fetchProfiles(),
+                fetchAccessGroups(),
+                fetchCourseReleases(courseId),
+            ]);
+            setCourse(courseResult);
+            setProfiles(profilesResult);
+            setGroups(groupsResult);
+            setReleases(releasesResult);
+        }
+        catch (loadError) {
+            setError(toErrorMessage(loadError));
+        }
+        finally {
+            setIsLoading(false);
+        }
+    }, [courseId]);
+    useEffect(() => {
+        void loadData();
+    }, [loadData]);
+    async function handleAddUserRelease(event: FormEvent<HTMLFormElement>) {
+        event.preventDefault();
+        if (!courseId || !user) {
+            setError("Dados inv?lidos para liberar curso.");
+            return;
+        }
+        const parsed = userReleaseSchema.safeParse({ user_id: selectedUserId });
+        if (!parsed.success) {
+            setError(parsed.error.issues[0]?.message ?? "Usurio inv?lido.");
+            return;
+        }
+        setError(null);
+        setIsSubmitting(true);
+        try {
+            await createUserRelease(courseId, parsed.data, user.id);
+            setSelectedUserId('');
+            await loadData();
+        }
+        catch (submitError) {
+            setError(toErrorMessage(submitError));
+        }
+        finally {
+            setIsSubmitting(false);
+        }
     }
-
-    setIsLoading(true)
-    setError(null)
-    try {
-      const [courseResult, profilesResult, groupsResult, releasesResult] =
-        await Promise.all([
-          fetchCourse(courseId),
-          fetchProfiles(),
-          fetchAccessGroups(),
-          fetchCourseReleases(courseId),
-        ])
-      setCourse(courseResult)
-      setProfiles(profilesResult)
-      setGroups(groupsResult)
-      setReleases(releasesResult)
-    } catch (loadError) {
-      setError(toErrorMessage(loadError))
-    } finally {
-      setIsLoading(false)
+    async function handleAddGroupRelease(event: FormEvent<HTMLFormElement>) {
+        event.preventDefault();
+        if (!courseId || !user) {
+            setError("Dados inv?lidos para liberar curso.");
+            return;
+        }
+        const parsed = groupReleaseSchema.safeParse({ group_id: selectedGroupId });
+        if (!parsed.success) {
+            setError(parsed.error.issues[0]?.message ?? "Grupo inv?lido.");
+            return;
+        }
+        setError(null);
+        setIsSubmitting(true);
+        try {
+            await createGroupRelease(courseId, parsed.data, user.id);
+            setSelectedGroupId('');
+            await loadData();
+        }
+        catch (submitError) {
+            setError(toErrorMessage(submitError));
+        }
+        finally {
+            setIsSubmitting(false);
+        }
     }
-  }, [courseId])
-
-  useEffect(() => {
-    void loadData()
-  }, [loadData])
-
-  async function handleAddUserRelease(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    if (!courseId || !user) {
-      setError('Dados invalidos para liberar curso.')
-      return
+    async function handleDeleteRelease(release: CourseReleaseView) {
+        const target = release.release_type === 'user'
+            ? release.user_label ?? release.user_id
+            : release.group_label ?? release.group_id;
+        const confirmed = window.confirm(`Remover libera??o para ${target}`);
+        if (!confirmed) {
+            return;
+        }
+        try {
+            await deleteCourseRelease(release.id);
+            await loadData();
+        }
+        catch (deleteError) {
+            setError(toErrorMessage(deleteError));
+        }
     }
-
-    const parsed = userReleaseSchema.safeParse({ user_id: selectedUserId })
-    if (!parsed.success) {
-      setError(parsed.error.issues[0]?.message ?? 'Usuario invalido.')
-      return
-    }
-
-    setError(null)
-    setIsSubmitting(true)
-    try {
-      await createUserRelease(courseId, parsed.data, user.id)
-      setSelectedUserId('')
-      await loadData()
-    } catch (submitError) {
-      setError(toErrorMessage(submitError))
-    } finally {
-      setIsSubmitting(false)
-    }
-  }
-
-  async function handleAddGroupRelease(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    if (!courseId || !user) {
-      setError('Dados invalidos para liberar curso.')
-      return
-    }
-
-    const parsed = groupReleaseSchema.safeParse({ group_id: selectedGroupId })
-    if (!parsed.success) {
-      setError(parsed.error.issues[0]?.message ?? 'Grupo invalido.')
-      return
-    }
-
-    setError(null)
-    setIsSubmitting(true)
-    try {
-      await createGroupRelease(courseId, parsed.data, user.id)
-      setSelectedGroupId('')
-      await loadData()
-    } catch (submitError) {
-      setError(toErrorMessage(submitError))
-    } finally {
-      setIsSubmitting(false)
-    }
-  }
-
-  async function handleDeleteRelease(release: CourseReleaseView) {
-    const target =
-      release.release_type === 'user'
-        ? release.user_label ?? release.user_id
-        : release.group_label ?? release.group_id
-    const confirmed = window.confirm(`Remover liberacao para ${target}?`)
-    if (!confirmed) {
-      return
-    }
-
-    try {
-      await deleteCourseRelease(release.id)
-      await loadData()
-    } catch (deleteError) {
-      setError(toErrorMessage(deleteError))
-    }
-  }
-
-  return (
-    <div className="space-y-6">
+    return (<div className="space-y-6">
       <div className="space-y-2">
         <div className="flex flex-wrap items-center gap-2 text-sm text-slate-600">
           <Link className="underline" to="/admin/cursos">
@@ -157,52 +136,31 @@ export function AdminCourseReleasesPage() {
       {error ? <p className="text-sm text-red-600">{error}</p> : null}
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <form
-          className="space-y-3 rounded-lg border bg-slate-50 p-4"
-          onSubmit={handleAddUserRelease}
-        >
-          <h3 className="font-semibold text-slate-900">Liberar para usuario</h3>
-          <select
-            className="w-full rounded-md border px-3 py-2 text-sm"
-            value={selectedUserId}
-            onChange={(event) => setSelectedUserId(event.target.value)}
-            required
-          >
-            <option value="">Selecione o usuario</option>
-            {profiles.map((profile) => (
-              <option key={profile.id} value={profile.id}>
+        <form className="space-y-3 rounded-lg border bg-slate-50 p-4" onSubmit={handleAddUserRelease}>
+          <h3 className="font-semibold text-slate-900">Liberar para usurio</h3>
+          <select className="w-full rounded-md border px-3 py-2 text-sm" value={selectedUserId} onChange={(event) => setSelectedUserId(event.target.value)} required>
+            <option value="">Selecione o usurio</option>
+            {profiles.map((profile) => (<option key={profile.id} value={profile.id}>
                 {profile.email}
-              </option>
-            ))}
+              </option>))}
           </select>
           <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? 'Salvando...' : 'Adicionar liberacao por usuario'}
+            {isSubmitting ? 'Salvando...' : "Adicionar libera??o por usurio"}
           </Button>
         </form>
 
-        <form
-          className="space-y-3 rounded-lg border bg-slate-50 p-4"
-          onSubmit={handleAddGroupRelease}
-        >
+        <form className="space-y-3 rounded-lg border bg-slate-50 p-4" onSubmit={handleAddGroupRelease}>
           <h3 className="font-semibold text-slate-900">Liberar para grupo</h3>
-          <select
-            className="w-full rounded-md border px-3 py-2 text-sm"
-            value={selectedGroupId}
-            onChange={(event) => setSelectedGroupId(event.target.value)}
-            required
-          >
+          <select className="w-full rounded-md border px-3 py-2 text-sm" value={selectedGroupId} onChange={(event) => setSelectedGroupId(event.target.value)} required>
             <option value="">Selecione o grupo</option>
-            {groups.map((group) => (
-              <option key={group.id} value={group.id}>
+            {groups.map((group) => (<option key={group.id} value={group.id}>
                 {group.name}
-              </option>
-            ))}
+              </option>))}
           </select>
           <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? 'Salvando...' : 'Adicionar liberacao por grupo'}
+            {isSubmitting ? 'Salvando...' : "Adicionar libera??o por grupo"}
           </Button>
-          <p className="text-xs text-slate-500">
-            Precisa criar grupo? Use a tela de grupos.
+          <p className="text-xs text-slate-500">Precisa criar grupo Use a tela de grupos.
           </p>
           <Button type="button" variant="outline" asChild>
             <Link to="/admin/grupos">Abrir grupos</Link>
@@ -215,35 +173,25 @@ export function AdminCourseReleasesPage() {
           Liberacoes ativas
         </h3>
         <div className="grid gap-3">
-          {releases.map((release) => (
-            <article key={release.id} className="rounded-lg border bg-white p-4 shadow-sm">
+          {releases.map((release) => (<article key={release.id} className="rounded-lg border bg-white p-4 shadow-sm">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="space-y-1">
                   <p className="font-medium text-slate-900">
                     {release.release_type === 'user'
-                      ? `Usuario: ${release.user_label ?? release.user_id}`
-                      : `Grupo: ${release.group_label ?? release.group_id}`}
+                ? `Usurio: ${release.user_label ?? release.user_id}` : `Grupo: ${release.group_label ?? release.group_id}`}
                   </p>
                   <p className="text-sm text-slate-600">
                     Tipo: {release.release_type} | Ativo:{' '}
-                    {release.is_active ? 'Sim' : 'Nao'}
+                    {release.is_active ? 'Sim' : "N?o"}
                   </p>
                 </div>
-                <Button
-                  type="button"
-                  variant="destructive"
-                  onClick={() => void handleDeleteRelease(release)}
-                >
+                <Button type="button" variant="destructive" onClick={() => void handleDeleteRelease(release)}>
                   Remover
                 </Button>
               </div>
-            </article>
-          ))}
-          {!isLoading && releases.length === 0 ? (
-            <p className="text-sm text-slate-600">Nenhuma liberacao cadastrada.</p>
-          ) : null}
+            </article>))}
+          {!isLoading && releases.length === 0 ? (<p className="text-sm text-slate-600">Nenhuma libera??o cadastrada.</p>) : null}
         </div>
       </section>
-    </div>
-  )
+    </div>);
 }

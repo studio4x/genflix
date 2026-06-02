@@ -1,4 +1,4 @@
-﻿import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react'
+import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react'
 import {
   ArrowLeft,
   CheckCircle2,
@@ -359,7 +359,7 @@ export function PublicCheckoutPage() {
       }
 
       if (!detail.id) {
-        throw new Error('Este curso ainda n?o esta disponivel para checkout.')
+        throw new Error('Este curso ainda não está disponível para checkout.')
       }
 
       await updateProfile({
@@ -392,7 +392,7 @@ export function PublicCheckoutPage() {
 
       window.location.href = checkoutUrl
     } catch (error) {
-      setCheckoutError(error instanceof Error ? error.message : 'N?o foi possivel iniciar o checkout.')
+      setCheckoutError(error instanceof Error ? error.message : 'Não foi possível iniciar o checkout.')
     } finally {
       setIsStartingCheckout(false)
     }
@@ -428,7 +428,7 @@ export function PublicCheckoutPage() {
 
     try {
       await signIn(loginEmail, loginPassword)
-      setAuthMessage('Login concluido. Preparando seu acesso ao checkout.')
+      setAuthMessage('Login concluído. Preparando seu acesso ao checkout.')
     } catch (submitError) {
       setAuthError(submitError instanceof Error ? submitError.message : 'Falha no login.')
     } finally {
@@ -453,7 +453,7 @@ export function PublicCheckoutPage() {
     }
 
     if (signupEmail.trim().toLowerCase() !== signupConfirmEmail.trim().toLowerCase()) {
-      setAuthError('Os e-mails n?o conferem.')
+      setAuthError('Os e-mails não conferem.')
       return
     }
 
@@ -463,17 +463,17 @@ export function PublicCheckoutPage() {
     }
 
     if (signupPassword !== signupConfirmPassword) {
-      setAuthError('As senhas n?o conferem.')
+      setAuthError('As senhas não conferem.')
       return
     }
 
     if (!acceptTerms) {
-      setAuthError('Voc? precisa concordar com os Termos de Uso e a Pol?tica de Privacidade.')
+      setAuthError('Você precisa concordar com os Termos de Uso e a Política de Privacidade.')
       return
     }
 
     if (!detail?.id) {
-      setAuthError('Este curso ainda n?o esta disponivel para checkout.')
+      setAuthError('Este curso ainda não está disponível para checkout.')
       return
     }
 
@@ -600,16 +600,16 @@ export function PublicCheckoutPage() {
                     </div>
                     <div>
                       <p className="text-[11px] font-black uppercase tracking-[0.3em] text-white/72">Confirmação de pedido</p>
-                      <p className="mt-1 text-sm font-medium text-white/84">Seu acesso esta quase pronto.</p>
+                      <p className="mt-1 text-sm font-medium text-white/84">Seu acesso está quase pronto.</p>
                     </div>
                   </div>
 
                 <div className="mt-8 max-w-[340px] space-y-5">
                   <h1 className="text-[2.55rem] font-extrabold leading-[0.94] tracking-[-0.06em] sm:text-[3rem]">
-                    Quase la! Vamos finalizar sua inscricao.
+                    Quase lá! Vamos finalizar sua inscrição.
                   </h1>
                   <p className="text-base leading-7 text-white/82">
-                    Voce esta prestes a concluir a compra de <strong>{detail.title}</strong> em um ambiente seguro, com confirmacao automatica apos o pagamento.
+                    Você está prestes a concluir a compra de <strong>{detail.title}</strong> em um ambiente seguro, com confirmação automática após o pagamento.
                   </p>
                 </div>
 
@@ -639,12 +639,12 @@ export function PublicCheckoutPage() {
               </div>
 
               <div className="rounded-[32px] border border-[#d8e6eb] bg-white px-7 py-8 shadow-[0_28px_70px_rgba(21,50,59,0.08)] sm:px-10 sm:py-10">
-                <p className="hidden text-[11px] font-black uppercase tracking-[0.28em] text-[#1398b7]">Proximos passos</p>
+                <p className="hidden text-[11px] font-black uppercase tracking-[0.28em] text-[#1398b7]">Próximos passos</p>
                 <h2 className="hidden mt-4 text-2xl font-extrabold tracking-[-0.05em] text-[#183139]">
-                  Fique atento aos detalhes da sua inscricao
+                  Fique atento aos detalhes da sua inscrição
                 </h2>
                 <p className="hidden mt-3 max-w-[520px] text-sm leading-7 text-[#5f7077]">
-                  Revise o investimento, siga para o checkout e conclua o pagamento. Assim que o Asaas confirmar a transacao, o acesso ao curso sera liberado automaticamente.
+                  Revise o investimento, siga para o checkout e conclua o pagamento. Assim que o Asaas confirmar a transação, o acesso ao curso será liberado automaticamente.
                 </p>
 
                 <div className="mt-8 grid gap-4">
@@ -655,7 +655,7 @@ export function PublicCheckoutPage() {
                     <div>
                       <p className="text-sm font-bold text-[#183139]">Confira seu e-mail</p>
                       <p className="mt-1 text-sm leading-6 text-[#5f7077]">
-                        Enviaremos os detalhes da compra e os proximos avisos por e-mail.
+                        Enviaremos os detalhes da compra e os próximos avisos por e-mail.
                       </p>
                     </div>
                   </div>
@@ -665,9 +665,9 @@ export function PublicCheckoutPage() {
                       <ShieldCheck className="h-5 w-5" />
                     </div>
                     <div>
-                      <p className="text-sm font-bold text-[#183139]">Liberacao automatica</p>
+                      <p className="text-sm font-bold text-[#183139]">Liberação automática</p>
                       <p className="mt-1 text-sm leading-6 text-[#5f7077]">
-                        Apos a confirmacao do pagamento, o curso sera liberado automaticamente.
+                        Após a confirmação do pagamento, o curso será liberado automaticamente.
                       </p>
                     </div>
                   </div>
@@ -679,7 +679,7 @@ export function PublicCheckoutPage() {
                     <div>
                       <p className="text-sm font-bold text-[#183139]">Processamento em andamento</p>
                       <p className="mt-1 text-sm leading-6 text-[#5f7077]">
-                        A atualizacao do acesso pode levar alguns instantes dependendo do meio de pagamento.
+                        A atualização do acesso pode levar alguns instantes dependendo do meio de pagamento.
                       </p>
                     </div>
                   </div>
@@ -688,7 +688,7 @@ export function PublicCheckoutPage() {
                     <div className="flex items-start justify-between gap-4">
                       <div>
                         <p className="text-[11px] font-black uppercase tracking-[0.24em] text-[#1398b7]">Resumo financeiro</p>
-                        <h3 className="mt-2 text-xl font-black tracking-[-0.04em] text-[#183139]">Investimento unico</h3>
+                        <h3 className="mt-2 text-xl font-black tracking-[-0.04em] text-[#183139]">Investimento único</h3>
                       </div>
                       <CreditCard className="h-7 w-7 text-[#1398b7]" />
                     </div>
@@ -697,7 +697,7 @@ export function PublicCheckoutPage() {
                       <span>Valor do curso</span>
                       <span>{formatPriceLabel(detail.priceLabel)}</span>
                     </div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[#5f7077]">em ate 12x no cartao de credito</p>
+                    <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[#5f7077]">em até 12x no cartão de crédito</p>
                   </div>
                 </div>
 
@@ -805,7 +805,7 @@ export function PublicCheckoutPage() {
                             />
                             <p className="text-xs text-[#6f838a]">
                               {isLoadingCheckoutCepAddress
-                                ? 'Buscando endereco pelo CEP...'
+                                ? 'Buscando endereço pelo CEP...'
                                 : checkoutCepError || 'Preencha o CEP para autocompletar seus dados.'}
                             </p>
                           </label>
@@ -1008,7 +1008,7 @@ export function PublicCheckoutPage() {
                               <p className="text-[11px] font-black uppercase tracking-[0.22em] text-[#1398b7]">Criar conta</p>
                               <h3 className="mt-1 text-lg font-black tracking-[-0.04em] text-[#183139]">Cadastre-se e siga para o pagamento</h3>
                               <p className="mt-1 text-sm leading-5 text-[#5f7077]">
-                                Crie sua conta e conclua a compra sem sair da pagina.
+                                Crie sua conta e conclua a compra sem sair da página.
                               </p>
                             </div>
 
@@ -1125,7 +1125,7 @@ export function PublicCheckoutPage() {
                                   />
                                   <p className="text-xs text-[#6f838a]">
                                     {isLoadingCheckoutCepAddress
-                                      ? 'Buscando endereco pelo CEP...'
+                                      ? 'Buscando endereço pelo CEP...'
                                       : checkoutCepError || 'Preencha o CEP para autocompletar seus dados.'}
                                   </p>
                                 </label>

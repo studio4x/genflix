@@ -11,7 +11,7 @@ declare
 begin
   _admin_id := auth.uid();
   
-  -- Se nao houver admin no contexto, pode ser uma acao de sistema/service_role
+  -- Se n?o houver admin no contexto, pode ser uma acao de sistema/service_role
   if _admin_id is null or not public.has_role(_admin_id, 'admin') then
     return coalesce(new, old);
   end if;

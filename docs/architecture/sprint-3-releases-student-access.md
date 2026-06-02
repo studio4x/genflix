@@ -3,10 +3,10 @@
 ## Escopo implementado
 
 1. `/aluno/dashboard`
-2. `/aluno/cursos` com apenas cursos liberados ao usuario (RLS)
-3. Modelagem para liberacao por usuario e por grupo
-4. Gestao admin de liberacoes por curso
-5. Protecao de acesso por URL direta para cursos nao liberados
+2. `/aluno/cursos` com apenas cursos liberados ao usurio (RLS)
+3. Modelagem para libera??o por usurio e por grupo
+4. Gest?o admin de liberacoes por curso
+5. Protecao de acesso por URL direta para cursos n?o liberados
 
 ## Rotas adicionadas
 
@@ -16,9 +16,9 @@
 4. `/admin/grupos`
 5. `/admin/cursos/:courseId/liberacoes`
 
-## Fora do escopo desta sprint
+## Fora do escopo dest? sprint
 
 1. Progresso
-2. Bloqueio sequencial de modulos
-3. Avaliacoes
+2. Bloqueio sequencial de m?dulos
+3. Avalia??es
 4. Relatorios

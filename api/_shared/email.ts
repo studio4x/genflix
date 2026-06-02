@@ -1,96 +1,81 @@
-import nodemailer from 'nodemailer'
-
+import nodemailer from 'nodemailer';
 type PasswordResetEmailPayload = {
-  to: string
-  fullName?: string | null
-  actionLink: string
-}
-
+    to: string;
+    fullName?: string | null;
+    actionLink: string;
+};
 type NotificationEmailPayload = {
-  to: string
-  fullName?: string | null
-  title: string
-  body: string
-  actionUrl?: string | null
-  actionLabel?: string | null
-}
-
+    to: string;
+    fullName?: string | null;
+    title: string;
+    body: string;
+    actionUrl?: string | null;
+    actionLabel?: string | null;
+};
 type SmtpSettings = {
-  host: string
-  port: number
-  user: string
-  pass: string
-  fromEmail: string
-  fromName: string
-  secure: boolean
-}
-
+    host: string;
+    port: number;
+    user: string;
+    pass: string;
+    fromEmail: string;
+    fromName: string;
+    secure: boolean;
+};
 function requireEnv(name: string, fallback?: string) {
-  const value = process.env[name] ?? fallback
-  if (!value?.trim()) {
-    throw new Error(`Configura??o SMTP ausente: ${name}.`)
-  }
-
-  return value.trim()
+    const value = process.env[name] ?? fallback;
+    if (!value?.trim()) {
+        throw new Error(`Configurao SMTP ausente: ${name}.`);
+    }
+    return value.trim();
 }
-
 function parseBoolean(value: string | undefined, fallback: boolean) {
-  if (!value) {
-    return fallback
-  }
-
-  return ['1', 'true', 'yes', 'sim', 'ssl', 'tls'].includes(value.trim().toLowerCase())
+    if (!value) {
+        return fallback;
+    }
+    return ['1', 'true', 'yes', 'sim', 'ssl', 'tls'].includes(value.trim().toLowerCase());
 }
-
 export function getSmtpSettings(): SmtpSettings {
-  const host = requireEnv('SMTP_HOST')
-  const port = Number.parseInt(process.env.SMTP_PORT ?? '465', 10)
-
-  if (!Number.isFinite(port) || port <= 0) {
-    throw new Error('Configura??o SMTP invalida: SMTP_PORT.')
-  }
-
-  return {
-    host,
-    port,
-    user: requireEnv('SMTP_USER'),
-    pass: requireEnv('SMTP_PASSWORD'),
-    fromEmail: requireEnv('SMTP_FROM_EMAIL', process.env.SMTP_USER),
-    fromName: process.env.SMTP_FROM_NAME?.trim() || 'GenFlix',
-    secure: parseBoolean(process.env.SMTP_SECURE, port === 465),
-  }
+    const host = requireEnv('SMTP_HOST');
+    const port = Number.parseInt(process.env.SMTP_PORT ?? '465', 10);
+    if (!Number.isFinite(port) || port <= 0) {
+        throw new Error("Configurao SMTP invalida: SMTP_PORT.");
+    }
+    return {
+        host,
+        port,
+        user: requireEnv('SMTP_USER'),
+        pass: requireEnv('SMTP_PASSWORD'),
+        fromEmail: requireEnv('SMTP_FROM_EMAIL', process.env.SMTP_USER),
+        fromName: process.env.SMTP_FROM_NAME?.trim() || 'GenFlix',
+        secure: parseBoolean(process.env.SMTP_SECURE, port === 465),
+    };
 }
-
 function escapeHtml(value: string) {
-  return value
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;')
+    return value
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
 }
-
 function createTransporter(settings: SmtpSettings) {
-  return nodemailer.createTransport({
-    host: settings.host,
-    port: settings.port,
-    secure: settings.secure,
-    auth: {
-      user: settings.user,
-      pass: settings.pass,
-    },
-  })
+    return nodemailer.createTransport({
+        host: settings.host,
+        port: settings.port,
+        secure: settings.secure,
+        auth: {
+            user: settings.user,
+            pass: settings.pass,
+        },
+    });
 }
-
 function formatFrom(settings: SmtpSettings) {
-  return `"${settings.fromName.replace(/"/g, '\\"')}" <${settings.fromEmail}>`
+    return `"${settings.fromName.replace(/"/g, '\\"')}" <${settings.fromEmail}>`;
 }
-
 function createPasswordResetHtml(payload: PasswordResetEmailPayload) {
-  const safeName = escapeHtml(payload.fullName?.trim() || 'estudante')
-  const safeLink = escapeHtml(payload.actionLink)
-
-  return `<!doctype html>
+    const safeName = escapeHtml(payload.fullName?.trim() || 'estudante');
+    const safeLink = escapeHtml(payload.actionLink);
+    return `<!doctype html>
 <html lang="pt-BR">
   <head>
     <meta charset="utf-8">
@@ -134,44 +119,39 @@ function createPasswordResetHtml(payload: PasswordResetEmailPayload) {
       </tr>
     </table>
   </body>
-</html>`
+</html>`;
 }
-
 function createPasswordResetText(payload: PasswordResetEmailPayload) {
-  const name = payload.fullName?.trim() || 'estudante'
-  return [
-    `Ola, ${name}.`,
-    '',
-    'Recebemos uma solicitacao para redefinir a senha da sua conta GenFlix.',
-    'Acesse o link abaixo para criar uma nova senha:',
-    '',
-    payload.actionLink,
-    '',
-    'Se voc? n?o solicitou esta redefinicao, ignore este e-mail.',
-  ].join('\n')
+    const name = payload.fullName?.trim() || 'estudante';
+    return [
+        `Ola, ${name}.`,
+        '',
+        "Recebemos uma solicitao para redefinir a senha da sua conta GenFlix.",
+        'Acesse o link abaixo para criar uma nova senha:',
+        '',
+        payload.actionLink,
+        '',
+        "Se voc? n?o solicitou esta redefini??o, ignore este e-mail.",
+    ].join('\n');
 }
-
 export async function sendPasswordResetEmail(payload: PasswordResetEmailPayload) {
-  const settings = getSmtpSettings()
-  const transporter = createTransporter(settings)
-
-  await transporter.sendMail({
-    from: formatFrom(settings),
-    to: payload.to,
-    subject: 'Redefina sua senha na GenFlix',
-    text: createPasswordResetText(payload),
-    html: createPasswordResetHtml(payload),
-  })
+    const settings = getSmtpSettings();
+    const transporter = createTransporter(settings);
+    await transporter.sendMail({
+        from: formatFrom(settings),
+        to: payload.to,
+        subject: 'Redefina sua senha na GenFlix',
+        text: createPasswordResetText(payload),
+        html: createPasswordResetHtml(payload),
+    });
 }
-
 function createNotificationHtml(payload: NotificationEmailPayload) {
-  const safeName = escapeHtml(payload.fullName?.trim() || 'estudante')
-  const safeTitle = escapeHtml(payload.title)
-  const safeBody = escapeHtml(payload.body).replace(/\n/g, '<br>')
-  const safeActionUrl = payload.actionUrl ? escapeHtml(payload.actionUrl) : null
-  const safeActionLabel = escapeHtml(payload.actionLabel?.trim() || 'Acessar GenFlix')
-
-  return `<!doctype html>
+    const safeName = escapeHtml(payload.fullName?.trim() || 'estudante');
+    const safeTitle = escapeHtml(payload.title);
+    const safeBody = escapeHtml(payload.body).replace(/\n/g, '<br>');
+    const safeActionUrl = payload.actionUrl ? escapeHtml(payload.actionUrl) : null;
+    const safeActionLabel = escapeHtml(payload.actionLabel?.trim() || 'Acessar GenFlix');
+    return `<!doctype html>
 <html lang="pt-BR">
   <head>
     <meta charset="utf-8">
@@ -213,37 +193,31 @@ function createNotificationHtml(payload: NotificationEmailPayload) {
       </tr>
     </table>
   </body>
-</html>`
+</html>`;
 }
-
 function createNotificationText(payload: NotificationEmailPayload) {
-  const lines = [
-    `Olá, ${payload.fullName?.trim() || 'estudante'}.`,
-    '',
-    payload.title,
-    '',
-    payload.body,
-  ]
-
-  if (payload.actionUrl) {
-    lines.push('', payload.actionLabel?.trim() || 'Acessar GenFlix', payload.actionUrl)
-  }
-
-  lines.push('', 'Você recebeu esta mensagem porque suas preferências permitem notificações por e-mail na GenFlix.')
-
-  return lines.join('\n')
+    const lines = [
+        `Olá, ${payload.fullName?.trim() || 'estudante'}.`,
+        '',
+        payload.title,
+        '',
+        payload.body,
+    ];
+    if (payload.actionUrl) {
+        lines.push('', payload.actionLabel?.trim() || 'Acessar GenFlix', payload.actionUrl);
+    }
+    lines.push('', "Voc\u00EA recebeu esta mensagem porque suas prefer\u00EAncias permitem notifica\u00E7\u00F5es por e-mail na GenFlix.");
+    return lines.join('\n');
 }
-
 export async function sendNotificationEmail(payload: NotificationEmailPayload) {
-  const settings = getSmtpSettings()
-  const transporter = createTransporter(settings)
-  const info = await transporter.sendMail({
-    from: formatFrom(settings),
-    to: payload.to,
-    subject: payload.title,
-    text: createNotificationText(payload),
-    html: createNotificationHtml(payload),
-  })
-
-  return info.messageId
+    const settings = getSmtpSettings();
+    const transporter = createTransporter(settings);
+    const info = await transporter.sendMail({
+        from: formatFrom(settings),
+        to: payload.to,
+        subject: payload.title,
+        text: createNotificationText(payload),
+        html: createNotificationHtml(payload),
+    });
+    return info.messageId;
 }

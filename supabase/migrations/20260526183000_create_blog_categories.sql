@@ -7,15 +7,15 @@ create table if not exists public.blog_categories (
   is_active boolean not null default true,
   display_order integer not null default 0,
   schema_json text null,
-  seo_title text null,
-  seo_description text null,
-  seo_canonical_url text null,
-  seo_robots text null default 'index,follow',
-  seo_og_title text null,
-  seo_og_description text null,
-  seo_og_image_url text null,
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
+  se??o_title text null,
+  se??o_description text null,
+  se??o_canonical_url text null,
+  se??o_robots text null default 'index,follow',
+  se??o_og_title text null,
+  se??o_og_description text null,
+  se??o_og_image_url text null,
+  created_at timest?mptz not null default now(),
+  updated_at timest?mptz not null default now()
 );
 
 create unique index if not exists blog_categories_slug_key

@@ -12,7 +12,7 @@ declare
   existing_conversation_id uuid;
 begin
   if current_user_id is null then
-    raise exception 'Usuario nao autenticado.';
+    raise exception 'Usurio n?o autenticado.';
   end if;
 
   select *
@@ -22,7 +22,7 @@ begin
   limit 1;
 
   if target_course.id is null or target_course.creator_id is null then
-    raise exception 'Criador do curso nao encontrado.';
+    raise exception 'Criador do curso n?o encontrado.';
   end if;
 
   if current_user_id = target_course.creator_id then
@@ -31,7 +31,7 @@ begin
 
   if public.has_role(current_user_id, 'admin') = false
     and public.is_course_released(current_user_id, _course_id) = false then
-    raise exception 'Voce precisa ter acesso ativo ao curso para falar com o criador.';
+    raise exception 'Voc? precisa ter acesso ativo ao curso para falar com o criador.';
   end if;
 
   select c.id
@@ -143,7 +143,7 @@ returns table (
   conversation_type text,
   title text,
   metadata jsonb,
-  last_message_at timestamptz,
+  last_message_at timest?mptz,
   last_message_preview text,
   message_count integer,
   unread_count integer,
@@ -159,7 +159,7 @@ declare
   current_user_is_admin boolean := public.has_role(current_user_id, 'admin');
 begin
   if current_user_id is null then
-    raise exception 'Usuario nao autenticado.';
+    raise exception 'Usurio n?o autenticado.';
   end if;
 
   return query
@@ -182,7 +182,7 @@ begin
       and c.conversation_type = 'group'
       and not c.is_archived
       and coalesce(c.metadata ->> 'kind', '') = 'course_room'
-      and c.metadata ? 'course_id'
+      and c.metadata  'course_id'
       and exists (
         select 1
         from public.course_releases cr

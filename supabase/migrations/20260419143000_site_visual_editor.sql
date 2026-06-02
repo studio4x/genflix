@@ -5,8 +5,8 @@ create table if not exists public.site_editor_settings (
   editing_enabled boolean not null default true,
   fallback_mode boolean not null default false,
   updated_by uuid references public.profiles (id) on delete set null,
-  created_at timestamptz not null default timezone('utc', now()),
-  updated_at timestamptz not null default timezone('utc', now())
+  created_at timest?mptz not null default timezone('utc', now()),
+  updated_at timest?mptz not null default timezone('utc', now())
 );
 
 insert into public.site_editor_settings (id, is_enabled, read_overrides_enabled, editing_enabled, fallback_mode)
@@ -19,8 +19,8 @@ create table if not exists public.site_pages (
   path text not null,
   title text not null,
   status text not null default 'active' check (status in ('active', 'archived')),
-  created_at timestamptz not null default timezone('utc', now()),
-  updated_at timestamptz not null default timezone('utc', now())
+  created_at timest?mptz not null default timezone('utc', now()),
+  updated_at timest?mptz not null default timezone('utc', now())
 );
 
 create table if not exists public.site_content_entries (
@@ -32,8 +32,8 @@ create table if not exists public.site_content_entries (
   schema jsonb not null default '{}'::jsonb,
   is_enabled boolean not null default true,
   updated_by uuid references public.profiles (id) on delete set null,
-  created_at timestamptz not null default timezone('utc', now()),
-  updated_at timestamptz not null default timezone('utc', now()),
+  created_at timest?mptz not null default timezone('utc', now()),
+  updated_at timest?mptz not null default timezone('utc', now()),
   unique (page_key, entry_key)
 );
 
@@ -50,7 +50,7 @@ create table if not exists public.site_content_versions (
   next_value jsonb not null,
   changed_by uuid references public.profiles (id) on delete set null,
   change_reason text,
-  created_at timestamptz not null default timezone('utc', now())
+  created_at timest?mptz not null default timezone('utc', now())
 );
 
 create index if not exists site_content_versions_entry_idx
@@ -67,7 +67,7 @@ create table if not exists public.site_assets (
   file_size integer,
   metadata jsonb not null default '{}'::jsonb,
   uploaded_by uuid references public.profiles (id) on delete set null,
-  created_at timestamptz not null default timezone('utc', now())
+  created_at timest?mptz not null default timezone('utc', now())
 );
 
 insert into public.site_pages (page_key, path, title)

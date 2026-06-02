@@ -1,6 +1,6 @@
 # Plano de execução por fases da GenFlix
 
-Este documento controla a sequência combinada para execução das fases restantes da GenFlix. Sempre que uma fase alterar a estrutura de cursos, checkout, pagamentos, criadores ou repasses, a documentação principal em `docs/architecture/course-module-spec.md` também deve ser atualizada.
+Este documento controla a sequência combinada para execução das fases rest?ntes da GenFlix. Sempre que uma fase alterar a estrutura de cursos, checkout, pagamentos, criadores ou repasses, a documentação principal em `docs/architecture/course-module-spec.md` também deve ser atualizada.
 
 ## Regra de condução
 
@@ -25,7 +25,7 @@ Ao concluir cada fase, o fechamento deve informar:
 
 ## Fase 1 - Gateway Asaas, checkout e matrícula automática
 
-**Status atual:** concluída nesta rodada.
+**Status atual:** concluída nest? rodada.
 
 **Já existe:**
 
@@ -37,7 +37,7 @@ Ao concluir cada fase, o fechamento deve informar:
 - liberação automática do curso após pagamento confirmado;
 - página admin de pagamentos com ambiente, webhook e eventos recentes.
 
-**Concluído nesta rodada:**
+**Concluído nest? rodada:**
 
 - o formulário público de compra agora envia `buyerName` e `buyerEmail` para o backend;
 - o backend usa os dados informados no checkout Asaas e registra esses dados em `commerce_checkout_sessions`;
@@ -52,7 +52,7 @@ Ao concluir cada fase, o fechamento deve informar:
 
 ## Fase 2 - Página admin de pagamentos e operação comercial
 
-**Status atual:** concluída nesta rodada.
+**Status atual:** concluída nest? rodada.
 
 **Já existe:**
 
@@ -62,7 +62,7 @@ Ao concluir cada fase, o fechamento deve informar:
 - checklist de variáveis;
 - listagem de checkouts e eventos recentes.
 
-**Concluído nesta rodada:**
+**Concluído nest? rodada:**
 
 - indicadores resumidos de checkouts, pagos, ativos, estornos, eventos com falha, receita bruta estimada e último evento;
 - diagnóstico seguro de configuração via `GET /api/admin/payments/diagnostics`;
@@ -73,7 +73,7 @@ Ao concluir cada fase, o fechamento deve informar:
 
 ## Fase 3 - Criador, dashboard e perfil
 
-**Status atual:** concluída nesta rodada.
+**Status atual:** concluída nest? rodada.
 
 **Já existe:**
 
@@ -84,7 +84,7 @@ Ao concluir cada fase, o fechamento deve informar:
 - cadastro de dados PIX;
 - relatório básico de vendas, cancelamentos e comissões.
 
-**Concluído nesta rodada:**
+**Concluído nest? rodada:**
 
 - dashboard executivo em `/criador/relatorios`;
 - filtros por curso e por ciclo de seis meses;
@@ -92,12 +92,12 @@ Ao concluir cada fase, o fechamento deve informar:
 - seção de cursos vinculados ao criador com preço, status, comissão e desempenho;
 - tabela de semestres por curso com filtro aplicado;
 - tabela de comissões filtrada por curso/período;
-- estados vazios mais claros;
+- est?dos vazios mais claros;
 - revisão de mensagens visíveis do perfil do criador.
 
 ## Fase 4 - Comissões e repasses PIX
 
-**Status atual:** concluída nesta rodada.
+**Status atual:** concluída nest? rodada.
 
 **Já existe:**
 
@@ -108,7 +108,7 @@ Ao concluir cada fase, o fechamento deve informar:
 - função `cancel_creator_commission_for_checkout`;
 - comissão com elegibilidade em até 30 dias após a venda.
 
-**Concluído nesta rodada:**
+**Concluído nest? rodada:**
 
 - rota admin `/admin/repasses`;
 - menu admin `Repasses PIX`;
@@ -127,7 +127,7 @@ Ao concluir cada fase, o fechamento deve informar:
 - botão admin para `Pagar via Asaas`;
 - fallback admin para `Registrar pagamento externo`;
 - envio PIX via endpoint Asaas `/v3/transfers`;
-- Vercel Cron diário chamando `GET /api/admin/creator-payouts?task=process_due_payouts`;
+- Vercel Cron diário chamando `GET /api/admin/creator-payoutstask=process_due_payouts`;
 - painel do criador refletindo política de repasse e histórico de payouts;
 - ajuste negativo automático quando venda já repassada é estornada.
 
@@ -137,16 +137,16 @@ Ao concluir cada fase, o fechamento deve informar:
 
 **Já existe:**
 
-- site público restaurado para layout GenFlix;
+- site público rest?urado para layout GenFlix;
 - paleta azul/verde aplicada em várias áreas;
 - build discreto no rodapé;
 - ajustes pontuais no painel de pagamentos, usuários e criador.
 
-**Concluído nesta fase:**
+**Concluído nest? fase:**
 
 - varredura global de marrom/laranja antigo;
 - camada visual global para trocar azuis antigos por degradê GenFlix vertical `#1398B7 -> #0A3640`;
-- padronização global de botões, estados de foco e bordas para a nova paleta;
+- padronização global de botões, est?dos de foco e bordas para a nova paleta;
 - redução agressiva de cantos arredondados para um raio curto, próximo ao padrão do Figma;
 - revisão global de sombras para projeções mais contidas;
 - regra de contraste para textos brancos sobre fundos escuros/degradês.
@@ -164,12 +164,12 @@ Ao concluir cada fase, o fechamento deve informar:
 - roles `admin`, `aluno` e `criador`;
 - compatibilidade com `student` e `professor` legado.
 
-**Concluído nesta fase:**
+**Concluído nest? fase:**
 
-- refino visual da tela `/admin/usuarios`, com cadastro opcional para reduzir espaço vazio acima da tabela;
+- refino visual da tela `/admin/usurios`, com cadastro opcional para reduzir espaço vazio acima da tabela;
 - revisão de mensagens do fluxo administrativo de usuários com acentuação;
 - troca do atalho antigo de `Alunos` para `Usuários` no dashboard admin;
-- manutenção de `/admin/alunos` apenas como redirecionamento para `/admin/usuarios`;
+- manutenção de `/admin/alunos` apenas como redirecionamento para `/admin/usurios`;
 - remoção dos arquivos legados de alunos do admin que não estavam mais em uso.
 
 ## Fase 7 - Sistema de notificações
@@ -183,7 +183,7 @@ Ao concluir cada fase, o fechamento deve informar:
 - página admin de notificações;
 - integração visual nos layouts admin, aluno e criador.
 
-**Concluído nesta fase:**
+**Concluído nest? fase:**
 
 - página compartilhada de preferências de notificação para admin, aluno e criador;
 - leitura e gravação real em `notification_preferences`;
@@ -198,7 +198,7 @@ Ao concluir cada fase, o fechamento deve informar:
 
 ## Fase 8 - Mensagens em tempo real
 
-**Status atual:** concluída nesta rodada.
+**Status atual:** concluída nest? rodada.
 
 **Já existe:**
 
@@ -217,12 +217,12 @@ Ao concluir cada fase, o fechamento deve informar:
 
 ## Fase 9 - Reviews nos cursos
 
-**Status atual:** concluída nesta rodada.
+**Status atual:** concluída nest? rodada.
 
 **Já existe:**
 
 - tabelas de reviews;
-- estatísticas de avaliação;
+- est?tísticas de avaliação;
 - envio de avaliação pública;
 - votos úteis;
 - seção de reviews na página pública do curso.
@@ -239,7 +239,7 @@ Ao concluir cada fase, o fechamento deve informar:
 
 ## Fase 10 - Limpeza HomeCare/HCM residual
 
-**Status atual:** concluída nesta rodada.
+**Status atual:** concluída nest? rodada.
 
 **Auditoria prévia:** fase parcial.
 
@@ -249,7 +249,7 @@ Ao concluir cada fase, o fechamento deve informar:
 - core LMS independente usando `course_releases`;
 - checkout Asaas usando os metadados genéricos de origem/liberação do curso.
 
-**Concluído nesta rodada:**
+**Concluído nest? rodada:**
 
 - remover APIs legadas `api/integrations/hcm/*`;
 - remover Edge Function local `hcm-outbox-dispatch`;
@@ -261,12 +261,12 @@ Ao concluir cada fase, o fechamento deve informar:
 
 ## Pendências operacionais assumidas para as próximas fases
 
-- Asaas produção ainda não está configurado. A Fase 12 deverá concluir a estrutura e validação em sandbox, mantendo produção como pendência operacional até a conta/credenciais definitivas estarem prontas.
+- Asaas produção ainda não está configurado. A Fase 12 deverá concluir a estrutura e validação em sandbox, mantendo produção como pendência operacional até a conta/credenciais definitivas est?rem prontas.
 - SMTP/domínio final ainda não está contratado/configurado. A Fase 13 deverá concluir a estrutura técnica de fila/templates/processamento, mantendo o envio real em produção como pendência operacional até a contratação/configuração final.
 
 ## Fase 11 - Hardening de dependências e npm audit
 
-**Status atual:** concluída nesta rodada.
+**Status atual:** concluída nest? rodada.
 
 **Auditoria prévia:** fase parcial.
 
@@ -275,7 +275,7 @@ Ao concluir cada fase, o fechamento deve informar:
 - `package-lock.json` com dependências recentes em boa parte do stack;
 - componente local de editor rico em `src/components/forms/react-quill.tsx`, sem dependência runtime obrigatória do pacote externo `react-quill`.
 
-**Concluído nesta rodada:**
+**Concluído nest? rodada:**
 
 - `npm audit --audit-level=moderate` saiu de 11 vulnerabilidades para 0 vulnerabilidades;
 - atualização segura via `npm audit fix`, sem `--force`;
@@ -286,7 +286,7 @@ Ao concluir cada fase, o fechamento deve informar:
 
 ## Fase 12 - Validação operacional Asaas sandbox/produção
 
-**Status atual:** concluída tecnicamente nesta rodada.
+**Status atual:** concluída tecnicamente nest? rodada.
 
 **Auditoria prévia:** fase parcial.
 
@@ -298,12 +298,12 @@ Ao concluir cada fase, o fechamento deve informar:
 - migrations remotas de pagamento, comissões e repasses aplicadas no Supabase da GenFlix;
 - cron Vercel para processar repasses de criadores via Asaas.
 
-**Concluído nesta rodada:**
+**Concluído nest? rodada:**
 
 - confirmação de que o Supabase remoto (`axhlkilkqolvfecyhhxx`) está com todas as migrations locais aplicadas;
 - confirmação de que o ambiente Vercel atual ainda não possui variáveis `ASAAS_*`, mantendo a validação real de compra/PIX como pendência operacional;
 - melhoria do diagnóstico administrativo para validar separadamente token ativo, token sandbox, token produção, segredo do webhook e URL pública;
-- documentação atualizada em `course-module-spec.md` com o estado operacional do Asaas.
+- documentação atualizada em `course-module-spec.md` com o est?do operacional do Asaas.
 
 **Pendente operacional fora de código:**
 
@@ -314,7 +314,7 @@ Ao concluir cada fase, o fechamento deve informar:
 
 ## Preparação para Fase 13 - Pendências operacionais no admin
 
-**Status atual:** concluída nesta rodada.
+**Status atual:** concluída nest? rodada.
 
 Antes de iniciar o envio externo real de notificações por e-mail, foi criada uma página administrativa para centralizar dependências externas que ainda bloqueiam funcionalidades prontas ou parcialmente prontas.
 
@@ -335,7 +335,7 @@ Essa página deve ser atualizada sempre que uma nova funcionalidade ficar penden
 
 ## Fase 13 - Envio externo real de notificações por e-mail
 
-**Status atual:** concluída tecnicamente nesta rodada.
+**Status atual:** concluída tecnicamente nest? rodada.
 
 **Auditoria prévia:** fase parcial.
 
@@ -346,16 +346,16 @@ Essa página deve ser atualizada sempre que uma nova funcionalidade ficar penden
 - página admin `/admin/notificacoes`;
 - helper SMTP usado pelo fluxo de redefinição de senha.
 
-**Concluído nesta rodada:**
+**Concluído nest? rodada:**
 
-- rota administrativa `GET/POST /api/admin/notifications?task=process_queue` para processar a fila;
-- envio real do canal `email` via SMTP/Nodemailer quando as variáveis SMTP estiverem configuradas;
+- rota administrativa `GET/POST /api/admin/notificationstask=process_queue` para processar a fila;
+- envio real do canal `email` via SMTP/N?odemailer quando as variáveis SMTP estiverem configuradas;
 - respeito às preferências do usuário para e-mail imediato ou e-mail desativado;
 - logs de entrega em `notification_delivery_logs`;
 - retentativas com backoff e falha final após 5 tentativas;
 - tratamento seguro de canais ainda sem provedor externo (`push` e `whatsapp`) como ignorados;
 - botão `Processar fila` na página admin de notificações;
-- cron Vercel diário para processar a fila automaticamente via `CRON_SECRET`, compatível com o plano Hobby;
+- cron Vercel diário para processar a fila automticamente via `CRON_SECRET`, compatível com o plano Hobby;
 - pendência operacional de SMTP/domínio refletida em `/admin/pendencias`.
 
 **Pendente operacional fora de código:**

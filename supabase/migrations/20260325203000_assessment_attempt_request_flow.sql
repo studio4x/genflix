@@ -7,7 +7,7 @@ create table if not exists public.assessment_attempt_grants (
   extra_attempts integer not null check (extra_attempts > 0),
   reason text,
   granted_by uuid references auth.users (id) on delete set null,
-  created_at timestamptz not null default timezone('utc', now())
+  created_at timest?mptz not null default timezone('utc', now())
 );
 
 create index if not exists assessment_attempt_grants_assessment_user_idx
@@ -20,8 +20,8 @@ create table if not exists public.assessment_attempt_requests (
   status text not null default 'pending' check (status in ('pending', 'approved', 'rejected')),
   requested_message text,
   admin_response text,
-  requested_at timestamptz not null default timezone('utc', now()),
-  reviewed_at timestamptz,
+  requested_at timest?mptz not null default timezone('utc', now()),
+  reviewed_at timest?mptz,
   reviewed_by uuid references auth.users (id) on delete set null
 );
 
@@ -244,7 +244,7 @@ declare
 begin
   _user_id := auth.uid();
   if _user_id is null then
-    raise exception 'Usuario nao autenticado.';
+    raise exception 'Usurio n?o autenticado.';
   end if;
 
   if public.has_role(_user_id, 'student') = false then
@@ -259,11 +259,11 @@ begin
   limit 1;
 
   if not found then
-    raise exception 'Avaliacao nao encontrada ou inativa.';
+    raise exception 'Avalia??o n?o encontrada ou inativa.';
   end if;
 
   if public.is_course_released(_user_id, _assessment.course_id) = false then
-    raise exception 'Avaliacao nao liberada para o usuario.';
+    raise exception 'Avalia??o n?o liberada para o usurio.';
   end if;
 
   select count(*)::int
@@ -276,7 +276,7 @@ begin
   _effective_max_attempts := public.get_assessment_effective_max_attempts(_assessment_id, _user_id);
 
   if _attempts_used < _effective_max_attempts then
-    raise exception 'Esta avaliacao ainda possui tentativas disponiveis.';
+    raise exception 'Esta avalia??o ainda possui tentativas disponiveis.';
   end if;
 
   select *
@@ -333,7 +333,7 @@ declare
 begin
   _admin_id := auth.uid();
   if _admin_id is null then
-    raise exception 'Usuario nao autenticado.';
+    raise exception 'Usurio n?o autenticado.';
   end if;
 
   if public.has_role(_admin_id, 'admin') = false then
@@ -351,11 +351,11 @@ begin
   limit 1;
 
   if not found then
-    raise exception 'Solicitacao nao encontrada.';
+    raise exception 'Solicitacao n?o encontrada.';
   end if;
 
   if _request.status <> 'pending' then
-    raise exception 'Esta solicitacao ja foi analisada.';
+    raise exception 'Esta solicita??o ja foi analisada.';
   end if;
 
   if _decision = 'approved' then
@@ -401,8 +401,8 @@ returns table (
   status text,
   requested_message text,
   admin_response text,
-  requested_at timestamptz,
-  reviewed_at timestamptz,
+  requested_at timest?mptz,
+  reviewed_at timest?mptz,
   student_id uuid,
   student_email text,
   student_name text,
@@ -507,11 +507,11 @@ declare
 begin
   _user_id := auth.uid();
   if _user_id is null then
-    raise exception 'Usuario nao autenticado.';
+    raise exception 'Usurio n?o autenticado.';
   end if;
 
   if public.has_role(_user_id, 'student') = false then
-    raise exception 'Apenas alunos podem responder avaliacao.';
+    raise exception 'Apenas alunos podem responder avalia??o.';
   end if;
 
   select *
@@ -522,23 +522,23 @@ begin
   limit 1;
 
   if not found then
-    raise exception 'Avaliacao nao encontrada ou inativa.';
+    raise exception 'Avalia??o n?o encontrada ou inativa.';
   end if;
 
   if public.is_course_released(_user_id, _assessment.course_id) = false then
-    raise exception 'Avaliacao nao liberada para o usuario.';
+    raise exception 'Avalia??o n?o liberada para o usurio.';
   end if;
 
   if _assessment.assessment_type = 'module' then
     if _assessment.module_id is null then
-      raise exception 'Avaliacao de modulo invalida.';
+      raise exception 'Avalia??o de m?dulo invalida.';
     end if;
     if public.is_module_unlocked(_user_id, _assessment.module_id) = false then
-      raise exception 'Modulo bloqueado para avaliacao.';
+      raise exception 'Mdulo bloqueado para avalia??o.';
     end if;
   else
     if public.are_required_modules_completed(_user_id, _assessment.course_id) = false then
-      raise exception 'Avaliacao final bloqueada ate concluir os modulos obrigatorios.';
+      raise exception 'Avalia??o final bloqueada ate concluir os m?dulos obrigatrios.';
     end if;
   end if;
 
@@ -560,11 +560,11 @@ begin
       and aa.is_approved = true
       and coalesce(aa.score_percent, 0) >= 100
   ) then
-    raise exception 'Avaliacao ja concluida com aproveitamento maximo.';
+    raise exception 'Avalia??o ja concluida com aproveitamento maximo.';
   end if;
 
   if _attempts_used >= _effective_max_attempts then
-    raise exception 'Limite de tentativas atingido para esta avaliacao.';
+    raise exception 'Limite de tentativas atingido para est? avalia??o.';
   end if;
 
   if _answers is null or jsonb_typeof(_answers) <> 'array' then
@@ -608,7 +608,7 @@ begin
     limit 1;
 
     if _selected_option_id is null and _question.is_required then
-      raise exception 'Todas as questoes obrigatorias devem ser respondidas.';
+      raise exception 'Todas as questoes obrigatrias devem ser respondidas.';
     end if;
 
     _option_is_correct := false;
@@ -644,7 +644,7 @@ begin
   end loop;
 
   if _total_questions = 0 then
-    raise exception 'Avaliacao sem questoes cadastradas.';
+    raise exception 'Avalia??o sem questoes cadastradas.';
   end if;
 
   _score := round((_correct_answers::numeric * 100) / _total_questions, 2);

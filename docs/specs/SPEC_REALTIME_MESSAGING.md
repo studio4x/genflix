@@ -135,10 +135,10 @@ UNIQUE(message_id, user_id, reaction_type)
 #### Messages Area
 ```
 [João] 14:30
-Olá, tudo bem?
+Olá, tudo bem
 
 [Você] 14:31
-Tudo! Como posso ajudar?
+Tudo! Como posso ajudar
 
 [João] 14:35
 Digitando... ⏳
@@ -148,7 +148,7 @@ Digitando... ⏳
 - ✅ Auto-scroll para mensagem nova
 - ✅ "Digitando..." indicator
 - ✅ Read receipts (✓✓ azul = lido)
-- ✅ Timestamps
+- ✅ Timest?mps
 - ✅ Editar / deletar mensagem (próprias)
 - ✅ Reações com emoji
 - ✅ @ mentions
@@ -178,7 +178,7 @@ Digitando... ⏳
 
 **Infinite Scroll**:
 - Carrega antigas ao scroll up
-- Paginação: 50 mensagens por fetch
+- P?ginação: 50 mensagens por fetch
 
 ### TypingIndicator
 
@@ -232,7 +232,7 @@ João está digitando...
 - ✅ Busca por nome
 - ✅ Badge com unread count
 - ✅ Preview ultima mensagem
-- ✅ Timestamp (relativo)
+- ✅ Timest?mp (relativo)
 - ✅ Click para abrir chat
 
 ### `/dashboard/suporte` - Support Tickets
@@ -263,7 +263,7 @@ useEffect(() => {
         filter: `conversation_id=eq.${conversationId}`,
       },
       (payload) => {
-        // Nova mensagem chegou em tempo real
+        // N?ova mensagem chegou em tempo real
         setMessages(prev => [...prev, payload.new]);
       }
     )
@@ -290,7 +290,7 @@ const [typingTimer, setTypingTimer] = useState(null);
 const handleInput = (text) => {
   setText(text);
   
-  // Notify: "digitando"
+  // N?otify: "digitando"
   channel.send({
     type: 'broadcast',
     event: 'typing',
@@ -324,14 +324,14 @@ Auth: Bearer token
 Body: {
   conversation_id: UUID,
   content: string,
-  attachments?: File[]
+  attachments: File[]
 }
 Response: { message_id, created_at, ... }
 ```
 
 ### `get-messages`
 ```
-GET /functions/v1/get-messages?conversation_id=X&page=1&limit=50
+GET /functions/v1/get-messagesconversation_id=X&page=1&limit=50
 Auth: Bearer token
 Response: { messages[], total, page, has_more }
 ```
@@ -393,32 +393,32 @@ Response: { conversation_id }
    ↓
 10. Se recipient faz read: update read_at
     ↓
-11. Notificação read receipt para sender
+11. N?otificação read receipt para sender
 ```
 
 ---
 
 ## 8. NOTIFICAÇÕES
 
-### Push Notification
+### Push N?otification
 
 Se recipient offline/sem app:
 
 ```
 Title: "João Silva"
-Body: "Olá, tudo bem?"
+Body: "Olá, tudo bem"
 Action: Abre /dashboard/mensagens/:conversationId
 ```
 
-### Email Notification
+### Email N?otification
 
 Se recipient offline por > 2 horas:
 
 ```
-Subject: "Nova mensagem de João Silva"
+Subject: "N?ova mensagem de João Silva"
 Body:
 João Silva enviou uma mensagem:
-"Olá, tudo bem?"
+"Olá, tudo bem"
 
 [Responder no app]
 ```
@@ -443,7 +443,7 @@ CREATE INDEX idx_participants_user ON conversation_participants(user_id);
 CREATE INDEX idx_read_status ON message_read_status(message_id, user_id);
 ```
 
-### Pagination
+### P?gination
 
 ```
 - Load 50 messages initially
@@ -505,7 +505,7 @@ Conversas anteriores archived
 - [x] Edge functions (send, get, mark-read)
 - [x] Read receipts
 - [x] Typing indicator
-- [x] Notifications (push + email)
+- [x] N?otifications (push + email)
 - [x] File attachments
 - [x] Message reactions
 - [x] Report/Block system

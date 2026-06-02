@@ -32,7 +32,7 @@ target_resource_id UUID -- ID adicional (course_id, product_id)
 rating INTEGER CHECK (rating >= 1 AND rating <= 5)
 title VARCHAR (100 chars)
 content TEXT (3000 chars max)
-is_verified_purchase BOOLEAN -- Comprou mesmo?
+is_verified_purchase BOOLEAN -- Comprou mesmo
 is_moderated BOOLEAN DEFAULT false
 moderation_status ENUM: 'pending'|'approved'|'rejected'
 moderation_reason VARCHAR (se rejected)
@@ -146,7 +146,7 @@ updated_at TIMESTAMP
 ```
 
 **Features**:
-- ✅ Paginação
+- ✅ P?ginação
 - ✅ Filtro por rating (1-5)
 - ✅ Sort: newest, highest, lowest, most_helpful
 - ✅ Busca por texto
@@ -196,9 +196,9 @@ updated_at TIMESTAMP
 1. Usuário clica "Deixar avaliação"
    ↓
 2. Verificação:
-   - User autenticado?
-   - Já tem review para este alvo?
-   - Eligible (e.g. compra verificada)?
+   - User autenticado
+   - Já tem review para este alvo
+   - Eligible (e.g. compra verificada)
    ↓
 3. Dialog/Modal com ReviewForm
    ↓
@@ -211,7 +211,7 @@ updated_at TIMESTAMP
    ↓
 6. Backend valida + insere
    ↓
-7. Auto-moderation? (flags spam/bad words)
+7. Auto-moderation (flags spam/bad words)
    ↓
 8. Se passa: publica imediatamente
    Se flags: status "pending" (admin revisa)
@@ -244,7 +244,7 @@ updated_at TIMESTAMP
    ↓
 2. Confirmação dupla
    ↓
-3. Soft delete (deleted_at timestamp)
+3. Soft delete (deleted_at timest?mp)
    ↓
 4. Recalcula stats
    ↓
@@ -278,7 +278,7 @@ const needsModeration = (review) => {
   if (/viagra|casino|crypto/i.test(review.content)) return true;
   
   // Check 2: Too many links
-  const linkCount = (review.content.match(/https?:\/\//g) || []).length;
+  const linkCount = (review.content.match(/https:\/\//g) || []).length;
   if (linkCount > 2) return true;
   
   // Check 3: All caps
@@ -319,9 +319,9 @@ const needsModeration = (review) => {
 ```
 trust_score = (
   5 *  is_verified_purchase +
-  3 * (author.verified_profile ? 1 : 0) +
+  3 * (author.verified_profile  1 : 0) +
   2 * (review.helpful_count - review.unhelpful_count) / total_votes +
-  1 * (age_days < 7 ? 1 : 0) -- Reviews recentes têm peso
+  1 * (age_days < 7  1 : 0) -- Reviews recentes têm peso
 )
 ```
 
@@ -380,14 +380,14 @@ Auth: Bearer token
 Body: {
   target_id, target_type, rating, title, content
 }
-Response: { review_id, needs_moderation? }
+Response: { review_id, needs_moderation }
 ```
 
 ### `moderate-review`
 ```
 POST /functions/v1/moderate-review
 Auth: Bearer token (admin)
-Body: { review_id, action, reason? }
+Body: { review_id, action, reason }
 Response: { success }
 ```
 
@@ -401,7 +401,7 @@ Response: { helpful_count, unhelpful_count }
 
 ### `get-reviews`
 ```
-GET /functions/v1/get-reviews?target_id=X&sort=helpful
+GET /functions/v1/get-reviewstarget_id=X&sort=helpful
 Response: { reviews, total, pages }
 ```
 
@@ -409,7 +409,7 @@ Response: { reviews, total, pages }
 
 ## 9. REGRAS DE NEGÓCIO
 
-### Quem pode avaliar?
+### Quem pode avaliar
 
 ```
 - User autenticado ✅
@@ -418,7 +418,7 @@ Response: { reviews, total, pages }
 - Apenas 1 review por user/target (edit permite atualizar) ✅
 ```
 
-### Quando aparece?
+### Quando aparece
 
 ```
 Imediato: Se passa auto-moderation
@@ -445,7 +445,7 @@ Author + Alvo:
 
 ## 10. EMAIL NOTIFICATIONS
 
-### Template: Novo Review
+### Template: N?ovo Review
 
 ```
 Assunto: [Name] deixou uma avaliação

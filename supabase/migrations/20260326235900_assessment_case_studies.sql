@@ -6,8 +6,8 @@ create table if not exists public.assessment_case_studies (
   title text,
   case_text text not null check (length(trim(case_text)) >= 10),
   position integer not null check (position > 0),
-  created_at timestamptz not null default timezone('utc', now()),
-  updated_at timestamptz not null default timezone('utc', now())
+  created_at timest?mptz not null default timezone('utc', now()),
+  updated_at timest?mptz not null default timezone('utc', now())
 );
 
 create index if not exists assessment_case_studies_assessment_id_idx

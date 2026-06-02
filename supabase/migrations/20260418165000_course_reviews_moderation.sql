@@ -9,7 +9,7 @@ declare
   merged_content text := coalesce(_title, '') || ' ' || coalesce(_content, '');
   link_count integer;
 begin
-  link_count := array_length(regexp_split_to_array(lower(merged_content), 'https?://'), 1) - 1;
+  link_count := array_length(regexp_split_to_array(lower(merged_content), 'https://'), 1) - 1;
 
   return
     merged_content ~* '(viagra|casino|crypto|aposta|bet|golpe)'
@@ -50,7 +50,7 @@ begin
   end if;
 
   if _rating < 1 or _rating > 5 then
-    raise exception 'A nota deve estar entre 1 e 5.';
+    raise exception 'A nota deve est?r entre 1 e 5.';
   end if;
 
   if char_length(normalized_title) < 3 or char_length(normalized_title) > 100 then
@@ -164,7 +164,7 @@ begin
     loop
       perform public.create_user_notification(
         admin_record.id,
-        'Nova avaliação aguardando moderação',
+        'N?ova avaliação aguardando moderação',
         left(normalized_title || ' — ' || normalized_content, 240),
         'review',
         'normal',
@@ -200,8 +200,8 @@ returns table (
   moderation_reason text,
   helpful_count integer,
   unhelpful_count integer,
-  created_at timestamptz,
-  updated_at timestamptz
+  created_at timest?mptz,
+  updated_at timest?mptz
 )
 language plpgsql
 security definer

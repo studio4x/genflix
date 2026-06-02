@@ -7,8 +7,8 @@ create table if not exists public.courses (
   status text not null default 'draft' check (status in ('draft', 'published', 'archived')),
   workload_hours integer not null default 0 check (workload_hours >= 0),
   created_by uuid references auth.users (id) on delete set null,
-  created_at timestamptz not null default timezone('utc', now()),
-  updated_at timestamptz not null default timezone('utc', now())
+  created_at timest?mptz not null default timezone('utc', now()),
+  updated_at timest?mptz not null default timezone('utc', now())
 );
 
 create index if not exists courses_status_idx on public.courses (status);
@@ -21,8 +21,8 @@ create table if not exists public.course_modules (
   description text,
   position integer not null check (position > 0),
   is_required boolean not null default true,
-  created_at timestamptz not null default timezone('utc', now()),
-  updated_at timestamptz not null default timezone('utc', now()),
+  created_at timest?mptz not null default timezone('utc', now()),
+  updated_at timest?mptz not null default timezone('utc', now()),
   unique (course_id, position)
 );
 
@@ -38,11 +38,11 @@ create table if not exists public.lessons (
   lesson_type text not null default 'video' check (lesson_type in ('video')),
   youtube_url text check (
     youtube_url is null
-    or youtube_url ~* '^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/'
+    or youtube_url ~* '^(https:\/\/)(www\.)(youtube\.com|youtu\.be)\/'
   ),
   estimated_minutes integer not null default 0 check (estimated_minutes >= 0),
-  created_at timestamptz not null default timezone('utc', now()),
-  updated_at timestamptz not null default timezone('utc', now()),
+  created_at timest?mptz not null default timezone('utc', now()),
+  updated_at timest?mptz not null default timezone('utc', now()),
   unique (module_id, position)
 );
 
@@ -56,7 +56,7 @@ create table if not exists public.lesson_materials (
   mime_type text,
   file_size_bytes bigint not null default 0 check (file_size_bytes >= 0),
   created_by uuid references auth.users (id) on delete set null,
-  created_at timestamptz not null default timezone('utc', now())
+  created_at timest?mptz not null default timezone('utc', now())
 );
 
 create index if not exists lesson_materials_lesson_id_idx on public.lesson_materials (lesson_id);

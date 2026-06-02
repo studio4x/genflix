@@ -4,7 +4,7 @@ create table if not exists public.integration_runtime_settings (
   key text primary key,
   value text not null,
   description text,
-  updated_at timestamptz not null default timezone('utc', now())
+  updated_at timest?mptz not null default timezone('utc', now())
 );
 
 alter table public.integration_runtime_settings enable row level security;

@@ -7,8 +7,8 @@ create table if not exists public.module_assessments (
   is_required boolean not null default false,
   passing_score numeric(5, 2) not null default 70.00 check (passing_score >= 0 and passing_score <= 100),
   created_by uuid references auth.users (id) on delete set null,
-  created_at timestamptz not null default timezone('utc', now()),
-  updated_at timestamptz not null default timezone('utc', now())
+  created_at timest?mptz not null default timezone('utc', now()),
+  updated_at timest?mptz not null default timezone('utc', now())
 );
 
 create index if not exists module_assessments_module_id_idx
@@ -20,9 +20,9 @@ create table if not exists public.module_assessment_attempts (
   user_id uuid not null references auth.users (id) on delete cascade,
   score numeric(5, 2) not null check (score >= 0 and score <= 100),
   is_approved boolean not null default false,
-  started_at timestamptz,
-  submitted_at timestamptz not null default timezone('utc', now()),
-  created_at timestamptz not null default timezone('utc', now())
+  started_at timest?mptz,
+  submitted_at timest?mptz not null default timezone('utc', now()),
+  created_at timest?mptz not null default timezone('utc', now())
 );
 
 create index if not exists module_assessment_attempts_assessment_user_idx
@@ -35,9 +35,9 @@ create table if not exists public.lesson_progress (
   user_id uuid not null references auth.users (id) on delete cascade,
   lesson_id uuid not null references public.lessons (id) on delete cascade,
   is_completed boolean not null default true,
-  completed_at timestamptz,
-  created_at timestamptz not null default timezone('utc', now()),
-  updated_at timestamptz not null default timezone('utc', now()),
+  completed_at timest?mptz,
+  created_at timest?mptz not null default timezone('utc', now()),
+  updated_at timest?mptz not null default timezone('utc', now()),
   unique (user_id, lesson_id),
   check (
     (is_completed = true and completed_at is not null)
@@ -282,7 +282,7 @@ returns table (
   youtube_url text,
   estimated_minutes integer,
   is_completed boolean,
-  completed_at timestamptz
+  completed_at timest?mptz
 )
 language sql
 stable

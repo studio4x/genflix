@@ -29,8 +29,8 @@ create table if not exists public.creator_profiles (
   default_commission_percent numeric(5,2) not null default 0 check (default_commission_percent >= 0 and default_commission_percent <= 100),
   payout_hold_days integer not null default 30 check (payout_hold_days >= 0 and payout_hold_days <= 90),
   is_payout_enabled boolean not null default false,
-  created_at timestamptz not null default timezone('utc', now()),
-  updated_at timestamptz not null default timezone('utc', now())
+  created_at timest?mptz not null default timezone('utc', now()),
+  updated_at timest?mptz not null default timezone('utc', now())
 );
 
 create table if not exists public.creator_commissions (
@@ -43,14 +43,14 @@ create table if not exists public.creator_commissions (
   commission_rate numeric(5,2) not null default 0 check (commission_rate >= 0 and commission_rate <= 100),
   commission_amount_cents integer not null default 0 check (commission_amount_cents >= 0),
   status text not null default 'pending' check (status in ('pending', 'eligible', 'scheduled', 'paid', 'canceled', 'refunded', 'failed')),
-  sale_paid_at timestamptz not null default timezone('utc', now()),
-  eligible_at timestamptz not null default (timezone('utc', now()) + interval '30 days'),
-  canceled_at timestamptz,
-  refunded_at timestamptz,
-  paid_at timestamptz,
+  sale_paid_at timest?mptz not null default timezone('utc', now()),
+  eligible_at timest?mptz not null default (timezone('utc', now()) + interval '30 days'),
+  canceled_at timest?mptz,
+  refunded_at timest?mptz,
+  paid_at timest?mptz,
   notes text,
-  created_at timestamptz not null default timezone('utc', now()),
-  updated_at timestamptz not null default timezone('utc', now()),
+  created_at timest?mptz not null default timezone('utc', now()),
+  updated_at timest?mptz not null default timezone('utc', now()),
   unique (checkout_session_id)
 );
 
@@ -72,11 +72,11 @@ create table if not exists public.creator_payouts (
   pix_key text,
   payout_name text,
   scheduled_for date,
-  paid_at timestamptz,
+  paid_at timest?mptz,
   created_by uuid references auth.users (id) on delete set null,
   notes text,
-  created_at timestamptz not null default timezone('utc', now()),
-  updated_at timestamptz not null default timezone('utc', now())
+  created_at timest?mptz not null default timezone('utc', now()),
+  updated_at timest?mptz not null default timezone('utc', now())
 );
 
 create index if not exists creator_payouts_creator_id_idx
@@ -87,7 +87,7 @@ create table if not exists public.creator_payout_items (
   payout_id uuid not null references public.creator_payouts (id) on delete cascade,
   commission_id uuid not null references public.creator_commissions (id) on delete restrict,
   amount_cents integer not null default 0 check (amount_cents >= 0),
-  created_at timestamptz not null default timezone('utc', now()),
+  created_at timest?mptz not null default timezone('utc', now()),
   unique (commission_id)
 );
 

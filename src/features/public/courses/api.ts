@@ -1,98 +1,80 @@
-import { publicSupabase } from '@/services/supabase/public-client'
-import {
-  isLegacyCourseSalesSchemaError,
-  withLegacyCourseSalesDefaults,
-} from '@/features/courses/schema-compat'
-import type { Course } from '@/types/content'
-
+import { publicSupabase } from '@/services/supabase/public-client';
+import { isLegacyCourseSalesSchemaError, withLegacyCourseSalesDefaults, } from '@/features/courses/schema-compat';
+import type { Course } from '@/types/content';
 export async function fetchPublicCatalogCourses(): Promise<Course[]> {
-  const result = await publicSupabase
-    .from('courses')
-    .select('*')
-    .eq('status', 'published')
-    .eq('is_public', true)
-    .order('display_order', { ascending: true })
-    .order('created_at', { ascending: false })
-
-  if (result.error && isLegacyCourseSalesSchemaError(result.error)) {
-    const legacyResult = await publicSupabase
-      .from('courses')
-      .select('*')
-      .eq('status', 'published')
-      .order('display_order', { ascending: true })
-      .order('created_at', { ascending: false })
-
-    if (legacyResult.error) {
-      throw legacyResult.error
+    const result = await publicSupabase
+        .from('courses')
+        .select('*')
+        .eq('status', 'published')
+        .eq('is_public', true)
+        .order('display_order', { ascending: true })
+        .order('created_at', { ascending: false });
+    if (result.error && isLegacyCourseSalesSchemaError(result.error)) {
+        const legacyResult = await publicSupabase
+            .from('courses')
+            .select('*')
+            .eq('status', 'published')
+            .order('display_order', { ascending: true })
+            .order('created_at', { ascending: false });
+        if (legacyResult.error) {
+            throw legacyResult.error;
+        }
+        return ((legacyResult.data as Course[]) ?? []).map(withLegacyCourseSalesDefaults);
     }
-
-    return ((legacyResult.data as Course[]) ?? []).map(withLegacyCourseSalesDefaults)
-  }
-
-  if (result.error) {
-    throw result.error
-  }
-
-  return ((result.data as Course[]) ?? []).map(withLegacyCourseSalesDefaults)
+    if (result.error) {
+        throw result.error;
+    }
+    return ((result.data as Course[]) ?? []).map(withLegacyCourseSalesDefaults);
 }
-
 export type StartCourseCheckoutBuyer = {
-  buyerName?: string
-  buyerEmail?: string
-  buyerDocument?: string
-  buyerPhone?: string
-  buyerAddress?: string
-  buyerAddressNumber?: string
-  buyerAddressComplement?: string
-  buyerPostalCode?: string
-  buyerState?: string
-  buyerProvince?: string
-  buyerCity?: string
-  buyerUserId?: string
-}
-
-export async function startCourseCheckout(
-  courseId: string,
-  accessToken?: string | null,
-  buyer?: StartCourseCheckoutBuyer,
-) {
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-  }
-
-  if (accessToken) {
-    headers.Authorization = `Bearer ${accessToken}`
-  }
-
-  const response = await fetch('/api/checkout/asaas/start', {
-    method: 'POST',
-    headers,
-    body: JSON.stringify({
-      courseId,
-      buyerName: buyer?.buyerName,
-      buyerEmail: buyer?.buyerEmail,
-      buyerDocument: buyer?.buyerDocument,
-      buyerPhone: buyer?.buyerPhone,
-      buyerAddress: buyer?.buyerAddress,
-      buyerAddressNumber: buyer?.buyerAddressNumber,
-      buyerAddressComplement: buyer?.buyerAddressComplement,
-      buyerPostalCode: buyer?.buyerPostalCode,
-      buyerState: buyer?.buyerState,
-      buyerProvince: buyer?.buyerProvince,
-      buyerCity: buyer?.buyerCity,
-      buyerUserId: buyer?.buyerUserId,
-    }),
-  })
-
-  const payload = await response.json().catch(() => null) as { error?: string; checkoutUrl?: string } | null
-
-  if (!response.ok) {
-    throw new Error(payload?.error ?? 'Não foi possível iniciar o checkout.')
-  }
-
-  if (!payload?.checkoutUrl) {
-    throw new Error('Checkout gerado sem URL de redirecionamento.')
-  }
-
-  return payload.checkoutUrl
+    buyerName?: string;
+    buyerEmail?: string;
+    buyerDocument?: string;
+    buyerPhone?: string;
+    buyerAddress?: string;
+    buyerAddressNumber?: string;
+    buyerAddressComplement?: string;
+    buyerPostalCode?: string;
+    buyerState?: string;
+    buyerProvince?: string;
+    buyerCity?: string;
+    buyerUserId?: string;
+};
+export async function startCourseCheckout(courseId: string, accessToken?: string | null, buyer?: StartCourseCheckoutBuyer) {
+    const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+    };
+    if (accessToken) {
+        headers.Authorization = `Bearer ${accessToken}`;
+    }
+    const response = await fetch('/api/checkout/asaas/start', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+            courseId,
+            buyerName: buyer?.buyerName,
+            buyerEmail: buyer?.buyerEmail,
+            buyerDocument: buyer?.buyerDocument,
+            buyerPhone: buyer?.buyerPhone,
+            buyerAddress: buyer?.buyerAddress,
+            buyerAddressNumber: buyer?.buyerAddressNumber,
+            buyerAddressComplement: buyer?.buyerAddressComplement,
+            buyerPostalCode: buyer?.buyerPostalCode,
+            buyerState: buyer?.buyerState,
+            buyerProvince: buyer?.buyerProvince,
+            buyerCity: buyer?.buyerCity,
+            buyerUserId: buyer?.buyerUserId,
+        }),
+    });
+    const payload = await response.json().catch(() => null) as {
+        error?: string;
+        checkoutUrl?: string;
+    } | null;
+    if (!response.ok) {
+        throw new Error(payload?.error ?? 'Não foi possível iniciar o checkout.');
+    }
+    if (!payload?.checkoutUrl) {
+        throw new Error('Checkout gerado sem URL de redirecionamento.');
+    }
+    return payload.checkoutUrl;
 }

@@ -2,8 +2,8 @@ begin;
 
 create table if not exists public.admin_bootstrap_emails (
   email text primary key,
-  created_at timestamptz not null default timezone('utc', now()),
-  consumed_at timestamptz
+  created_at timest?mptz not null default timezone('utc', now()),
+  consumed_at timest?mptz
 );
 
 insert into public.admin_bootstrap_emails (email)

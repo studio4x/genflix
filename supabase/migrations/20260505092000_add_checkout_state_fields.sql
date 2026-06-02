@@ -4,7 +4,7 @@ alter table public.profiles
   add column if not exists state text;
 
 comment on column public.profiles.state is
-  'UF do usuario usado para checkout e dados cadastrais.';
+  'UF do usurio usado para checkout e dados cadastrais.';
 
 alter table public.commerce_checkout_sessions
   add column if not exists buyer_state text;

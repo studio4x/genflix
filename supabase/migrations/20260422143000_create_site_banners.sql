@@ -15,8 +15,8 @@ create table if not exists public.site_banners (
   sort_order integer not null default 0 check (sort_order >= 0),
   created_by uuid references public.profiles (id) on delete set null,
   updated_by uuid references public.profiles (id) on delete set null,
-  created_at timestamptz not null default timezone('utc', now()),
-  updated_at timestamptz not null default timezone('utc', now())
+  created_at timest?mptz not null default timezone('utc', now()),
+  updated_at timest?mptz not null default timezone('utc', now())
 );
 
 create index if not exists site_banners_location_idx

@@ -18,7 +18,7 @@ declare
   current_user_is_admin boolean := public.has_role(current_user_id, 'admin');
 begin
   if current_user_id is null then
-    raise exception 'Usuario nao autenticado.';
+    raise exception 'Usurio n?o autenticado.';
   end if;
 
   return query
@@ -405,7 +405,7 @@ returns table (
   conversation_type text,
   title text,
   metadata jsonb,
-  last_message_at timestamptz,
+  last_message_at timest?mptz,
   last_message_preview text,
   message_count integer,
   unread_count integer,
@@ -420,7 +420,7 @@ declare
   safe_limit integer := least(greatest(coalesce(_limit, 50), 1), 100);
 begin
   if current_user_id is null then
-    raise exception 'Usuario nao autenticado.';
+    raise exception 'Usurio n?o autenticado.';
   end if;
 
   return query

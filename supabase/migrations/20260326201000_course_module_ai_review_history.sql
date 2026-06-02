@@ -9,9 +9,9 @@ create table if not exists public.course_module_ai_reviews (
   ready_to_publish boolean not null default false,
   issues jsonb not null default '[]'::jsonb,
   corrected_module jsonb,
-  created_at timestamptz not null default timezone('utc', now()),
+  created_at timest?mptz not null default timezone('utc', now()),
   created_by uuid references auth.users (id) on delete set null,
-  applied_at timestamptz,
+  applied_at timest?mptz,
   applied_by uuid references auth.users (id) on delete set null
 );
 
