@@ -94,8 +94,8 @@ export function LessonMaterialsPanel() {
             await loadData();
             publishBuilderNotice({
                 type: 'success',
-                title: 'Botação da aula salvo',
-                message: `O arquivo "${file.name}" foi adicionado ação rodape da aula com sucesso.`,
+                title: 'Bot\u00e3o da aula salvo',
+                message: `O arquivo "${file.name}" foi adicionado ao rodap\u00e9 da aula com sucesso.`,
             });
         }
         catch (err) {
@@ -129,8 +129,8 @@ export function LessonMaterialsPanel() {
             await loadData();
             publishBuilderNotice({
                 type: 'success',
-                title: 'Botação da aula salvo',
-                message: `O link "${parsed.data.label}" foi adicionado ação rodape da aula com sucesso.`,
+                title: 'Bot\u00e3o da aula salvo',
+                message: `O link "${parsed.data.label}" foi adicionado ao rodap\u00e9 da aula com sucesso.`,
             });
         }
         catch (err) {
@@ -172,16 +172,16 @@ export function LessonMaterialsPanel() {
               Voltar para Aula
             </button>
           </div>
-          <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">Botoes do Rodape da Aula</h2>
+          <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">{'Bot\u00f5es do Rodap\u00e9 da Aula'}</h2>
           <p className="text-sm text-slate-500 mt-1">
-            Configure arquivos e links que apareceração como botoes no rodape da aula:
+            {'Configure arquivos e links que aparecer?o como bot?es no rodap? da aula:'}
             {' '}
             <span className="font-bold text-slate-700">{lesson?.title}</span>
           </p>
         </div>
 
         <Link to="/admin/botoes-aula" className="inline-flex items-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50">
-          Gerenciar Padroes Globais
+          {'Gerenciar Padr\u00f5es Globais'}
         </Link>
       </div>
 
@@ -189,13 +189,13 @@ export function LessonMaterialsPanel() {
         <section className="space-y-6 rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
           <div>
             <p className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">Novo botão</p>
-            <p className="mt-2 text-sm text-slate-500">Escolha o padração visual e adicione um arquivo ou link.</p>
+            <p className="mt-2 text-sm text-slate-500">{'Escolha o padr\u00e3o visual e adicione um arquivo ou link.'}</p>
           </div>
 
           <label className="block space-y-2">
-            <span className="text-sm font-bold text-slate-800">Padração visual</span>
+            <span className="text-sm font-bold text-slate-800">{'Padr\u00e3o visual'}</span>
             <select className="w-full rounded-2xl border border-slate-200 bg-slate-50/50 px-4 py-3 text-sm" value={selectedTemplateId} onChange={(event) => setSelectedTemplateId(event.target.value)}>
-              <option value="">Sem padração especifico</option>
+              <option value="">{'Sem padr\u00e3o espec\u00edfico'}</option>
               {activeTemplates.map((template) => (<option key={template.id} value={template.id}>
                   {template.name} • {template.default_label}
                 </option>))}
@@ -239,9 +239,9 @@ export function LessonMaterialsPanel() {
         </section>
 
         <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
-          <p className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">Acoes configuradas</p>
+          <p className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">{'A\u00e7\u00f5es configuradas'}</p>
 
-          {isLoading ? (<p className="mt-4 text-sm text-slate-500">Carregando botoes...</p>) : actions.length === 0 ? (<div className="mt-4 rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-5 py-10 text-center text-sm text-slate-500">Nenhum botão configurado para está aula.
+          {isLoading ? (<p className="mt-4 text-sm text-slate-500">{'Carregando bot?es...'}</p>) : actions.length === 0 ? (<div className="mt-4 rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-5 py-10 text-center text-sm text-slate-500">{'Nenhum bot?o configurado para esta aula.'}
             </div>) : (<div className="mt-4 grid gap-4">
               {actions.map((action) => (<article key={action.id} className="rounded-[24px] border border-slate-200 bg-slate-50/50 p-5">
                   <div className="flex flex-wrap items-start justify-between gap-4">
@@ -260,7 +260,7 @@ export function LessonMaterialsPanel() {
                       <div className="mt-3">
                         <Button type="button" variant="outline" className={getLessonFooterButtonClassName(action.template)}>
                           {renderButtonTemplateIcon(getLessonFooterActionIconName(action))}
-                          {action.label ?? action.file_name ?? action.template?.default_label ?? "Botação sem título"}
+                          {action.label ?? action.file_name ?? action.template?.default_label ?? "Bot\u00e3o sem t\u00edtulo"}
                         </Button>
                       </div>
                       <p className="mt-1 text-sm text-slate-500 break-all">

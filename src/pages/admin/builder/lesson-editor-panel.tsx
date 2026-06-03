@@ -195,7 +195,7 @@ export function LessonEditorPanel() {
                 setLessonMaterials(materials);
             }
             catch (err) {
-                console.error('Erro ação buscar materiais da aula:', err);
+                console.error('Erro ao buscar materiais da aula:', err);
             }
             finally {
                 setIsLoadingLessonMaterials(false);
@@ -244,7 +244,7 @@ export function LessonEditorPanel() {
                 setAudioRequests(requests);
             }
             catch (err) {
-                console.error('Erro ação buscar solicitações de narração:', err);
+                console.error('Erro ao buscar solicita\u00e7\u00f5es de narra\u00e7\u00e3o:', err);
             }
             finally {
                 setIsLoadingAudioRequests(false);
@@ -264,7 +264,7 @@ export function LessonEditorPanel() {
                 setFooterActions(actions);
             }
             catch (err) {
-                console.error('Erro ação buscar botoes da aula:', err);
+                console.error('Erro ao buscar bot\u00f5es da aula:', err);
             }
             finally {
                 setIsLoadingFooterActions(false);
@@ -309,7 +309,7 @@ export function LessonEditorPanel() {
                     await deleteLessonContentAsset(blockToRemove.content.asset.storage_path);
                 }
                 catch (err) {
-                    console.error('Erro ação remover asset do bloco interativo:', err);
+                    console.error('Erro ao remover asset do bloco interativo:', err);
                 }
             }
             setBlocks(prev => prev.filter((_, i) => i !== index));
@@ -480,7 +480,7 @@ export function LessonEditorPanel() {
                 publishBuilderNotice({
                     type: 'success',
                     title: 'Arquivo enviado',
-                    message: `O arquivo "${uploaded.file_name}" foi adicionado açãos materiais desta aula.`,
+                    message: `O arquivo "${uploaded.file_name}" foi adicionado aos materiais desta aula.`,
                 });
             }
         }
@@ -507,7 +507,7 @@ export function LessonEditorPanel() {
         const materialId = value.slice('asset:'.length).trim();
         const linkedMaterial = lessonMaterials.find((item) => item.id === materialId);
         if (!linkedMaterial) {
-            setError("Não foi possível localizar o arquivo vinculado para remo??o.");
+            setError("Não foi possível localizar o arquivo vinculado para remo\u00e7\u00e3o.");
             return;
         }
         const confirmed = window.confirm(`Deseja remover o vídeo protegido "${linkedMaterial.file_name}"
@@ -696,18 +696,18 @@ Esta ação exclui o arquivo do storage privado.`);
                          {videoInputMode === 'url' ? 'URL externa' : 'Upload protegido'}
                        </span>
                      </div>
-                     <p className="text-sm text-slate-500">Esta visualiza??o usa a origem selecionada no alternador acima.</p>
+                     <p className="text-sm text-slate-500">Esta visualiza\u00e7\u00e3o usa a origem selecionada no alternador acima.</p>
                      <div className="mt-4">
                        {videoInputMode === 'asset' ? (isLoadingProtectedVideoPreview ? (<div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">
                              Carregando pré-visualização do vídeo protegido...
                            </div>) : protectedVideoPreviewUrl ? (<div className="overflow-hidden rounded-xl border border-slate-200 bg-black">
-                             <video className="aspect-video w-full" controls preload="metadata" src={protectedVideoPreviewUrl}>O navegador não suporta reprodu??o de vídeo.
+                             <video className="aspect-video w-full" controls preload="metadata" src={protectedVideoPreviewUrl}>O navegador não suporta reprodu\u00e7\u00e3o de v\u00eddeo.
                              </video>
-                           </div>) : (<div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">Ainda não existe vídeo para pr?-visualizar neste modo.
+                           </div>) : (<div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">Ainda não existe vídeo para pr\u00e9-visualizar neste modo.
                            </div>)) : (() => {
                 const url = form.youtube_url?.trim() ?? '';
                 if (!url) {
-                    return (<div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">Ainda não existe vídeo para pr?-visualizar neste modo.
+                    return (<div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">Ainda não existe vídeo para pr\u00e9-visualizar neste modo.
                              </div>);
                 }
                 const youtubeEmbedUrl = getYouTubeEmbedUrl(url);
@@ -718,7 +718,7 @@ Esta ação exclui o arquivo do storage privado.`);
                 }
                 if (isDirectVideoUrl(url)) {
                     return (<div className="overflow-hidden rounded-xl border border-slate-200 bg-black">
-                               <video className="aspect-video w-full" controls preload="metadata" src={url}>O navegador não suporta reprodu??o de vídeo.
+                               <video className="aspect-video w-full" controls preload="metadata" src={url}>O navegador não suporta reprodu\u00e7\u00e3o de v\u00eddeo.
                                </video>
                              </div>);
                 }
@@ -962,19 +962,19 @@ Esta ação exclui o arquivo do storage privado.`);
                <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
                  <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                    <div>
-                     <p className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">Botoes no Rodape da Aula</p>
+                     <p className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">{'Bot\u00f5es no Rodap\u00e9 da Aula'}</p>
                      <p className="mt-2 text-sm text-slate-500">
-                       Configure arquivos e links que aparecem como botoes no rodape do player do aluno.
+                       {'Configure arquivos e links que aparecem como bot?es no rodap? do player do aluno.'}
                      </p>
                    </div>
                    {!isNew ? (<Button type="button" variant="outline" className="border-slate-200 bg-white" onClick={() => navigate(`/admin/cursos/${courseId}/builder/modulos/${moduleId}/aulas/${lessonId}/materiais`)}>
-                       Gerenciar botoes
+                       {'Gerenciar bot\u00f5es'}
                      </Button>) : null}
                  </div>
 
                  {isNew ? (<p className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-                     Salve a aula primeiro para cadastrar botoes, materiais e URLs do rodape.
-                   </p>) : isLoadingFooterActions ? (<p className="mt-4 text-sm text-slate-500">Carregando botoes configurados...</p>) : footerActions.length === 0 ? (<p className="mt-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">Nenhum botão configurado ainda para esta aula.
+                     {'Salve a aula primeiro para cadastrar bot?es, materiais e URLs do rodap?.'}
+                   </p>) : isLoadingFooterActions ? (<p className="mt-4 text-sm text-slate-500">{'Carregando bot?es configurados...'}</p>) : footerActions.length === 0 ? (<p className="mt-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">{'Nenhum bot?o configurado ainda para esta aula.'}
                    </p>) : (<div className="mt-4 grid gap-3">
                      {footerActions.map((action, index) => (<div key={action.id} className="rounded-xl border border-slate-200 bg-slate-50/70 px-4 py-3">
                          <div className="flex flex-wrap items-center gap-2">
@@ -988,7 +988,7 @@ Esta ação exclui o arquivo do storage privado.`);
                          <div className="mt-3">
                            <Button type="button" variant="outline" className={getLessonFooterButtonClassName(action.template)}>
                              {renderButtonTemplateIcon(getLessonFooterActionIconName(action))}
-                             {action.label?.trim() || action.template?.default_label || action.file_name || 'Botação sem rotulo'}
+                             {action.label?.trim() || action.template?.default_label || action.file_name || 'Bot\u00e3o sem r\u00f3tulo'}
                            </Button>
                          </div>
                        </div>))}

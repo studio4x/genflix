@@ -23,7 +23,7 @@ function AiReviewUsageSummary({ review }: {
       <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
         <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Provedor</p>
         <p className="mt-2 text-sm font-bold text-slate-900">{getAiProviderLabel(review.ai_provider)}</p>
-        <p className="mt-1 text-xs text-slate-500">{review.ai_model ?? "Modelo indisponvel"}</p>
+        <p className="mt-1 text-xs text-slate-500">{review.ai_model ?? "Modelo indispon\u00edvel"}</p>
       </div>
       <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
         <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Entrada</p>
@@ -197,7 +197,7 @@ export function ModuleEditorPanel() {
             details: [
                 `Módulo em processamento: ${currentModule.title}`,
                 `Pontos identificados na análise: ${analysisResult.issues.length}`,
-                'Aguarde a confirmacação final antes de sair da tela.',
+                'Aguarde a confirma\u00e7\u00e3o final antes de sair da tela.',
             ],
         });
         try {
@@ -218,8 +218,8 @@ export function ModuleEditorPanel() {
             setDidApplyCurrentAnalysis(true);
             publishBuilderNotice({
                 type: 'success',
-                title: 'Ajustes da IA concluidos',
-                message: `Os ajustes foram aplicados ação módulo "${currentModule.title}".`,
+                title: 'Ajustes da IA conclu\u00eddos',
+                message: `Os ajustes foram aplicados ao m\u00f3dulo "${currentModule.title}".`,
                 details: [
                     `Módulo atualizado: ${currentModule.title}`,
                     `Horário: ${new Intl.DateTimeFormat('pt-BR', {
@@ -236,12 +236,12 @@ export function ModuleEditorPanel() {
             setError(message);
             publishBuilderNotice({
                 type: 'error',
-                title: 'Falha ação aplicar ajustes da IA',
+                title: 'Falha ao aplicar ajustes da IA',
                 message: `Não foi possível concluir os ajustes no módulo "${currentModule.title}".`,
                 details: [
                     `Módulo: ${currentModule.title}`,
                     `Erro retornado: ${message}`,
-                    'Nenhuma confirmacação de salvamento foi recebida.',
+                    'Nenhuma confirma\u00e7\u00e3o de salvamento foi recebida.',
                 ],
             });
         }
@@ -338,7 +338,7 @@ export function ModuleEditorPanel() {
            {isNew ? "Criar Novo M\u00F3dulo" : 'Configurações do Módulo'}
          </h2>
          <p className="text-sm text-slate-500 mt-1">
-           {isNew ? 'Adicione uma nova seção principal para agrupar as aulas do seu curso.' : "Atualize os detalhes e restri\u00E7\u00F5es destá se\u00E7\u00E3o do curso."}
+           {isNew ? 'Adicione uma nova seção principal para agrupar as aulas do seu curso.' : "Atualize os detalhes e restri\u00E7\u00F5es desta se\u00e7\u00e3o do curso."}
          </p>
        </div>
 
@@ -349,7 +349,7 @@ export function ModuleEditorPanel() {
            {appliedReviews.length > 0 && (<Button type="button" variant="outline" onClick={() => setIsAppliedAdjustmentsModalOpen(true)} disabled={isLoadingReviewHistory} className="h-10 rounded-xl border-slate-200 text-slate-700 hover:bg-slate-50 hover:text-slate-900">
                Ver ajustes realizados
              </Button>)}
-           {isLoadingReviewHistory ? (<span className="text-xs font-semibold text-slate-400">Carregando histórico de revisões...</span>) : reviewHistory.length > 0 ? (<span className="text-xs font-semibold text-slate-500">Ultima revisão em{' '}
+           {isLoadingReviewHistory ? (<span className="text-xs font-semibold text-slate-400">Carregando histórico de revisões...</span>) : reviewHistory.length > 0 ? (<span className="text-xs font-semibold text-slate-500">\u00daltima revis\u00e3o em{' '}
                {new Intl.DateTimeFormat('pt-BR', {
                     dateStyle: 'short',
                     timeStyle: 'medium',

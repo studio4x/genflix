@@ -638,7 +638,7 @@ export function AssessmentBuilderPanel() {
         const nextCasePosition = (caseStudy?.questions.length ?? 0) + 1;
         try {
             const createdQuestion = await createAssessmentQuestion(assessment.id, {
-                question_text: "Nãova Pergunta do Caso...",
+                question_text: "Nova Pergunta do Caso...",
                 question_type: questionType,
                 essay_expected_answer: questionType === 'case_study_ai' ? 'Resposta correta esperada.' : '',
                 is_required: true,
@@ -750,7 +750,7 @@ export function AssessmentBuilderPanel() {
         try {
             const createdOption = await createAssessmentOption({
                 question_id: questionId,
-                option_text: "Nãova opção...",
+                option_text: "Nova op\u00e7\u00e3o...",
                 is_correct: false,
             });
             updateQuestionState(questionId, (questionItem) => ({
@@ -884,7 +884,7 @@ export function AssessmentBuilderPanel() {
             setImportJson('');
         }
         catch (importLoadError) {
-            console.error('Erro ação importar avaliação:', importLoadError);
+            console.error('Erro ao importar avalia\u00e7\u00e3o:', importLoadError);
             setImportError(toErrorMessage(importLoadError));
         }
         finally {
@@ -1001,7 +1001,7 @@ Todas as quest\u00F5es, estudos de caso e tentativas vinculadas ser\u00E3o remov
             })}
             </div>
 
-            {isCurrentTypeDisabled ? (<div className="rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3 text-xs font-semibold text-amber-800">Este tipo foi desativado nas configurações globais ou do curso. A pergunta continua disponvel aqui para revisão, mas não pode mais ser usada em novas criacoes.
+            {isCurrentTypeDisabled ? (<div className="rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3 text-xs font-semibold text-amber-800">Este tipo foi desativado nas configurações globais ou do curso. A pergunta continua dispon\u00edvel aqui para revisão, mas não pode mais ser usada em novas cria\u00e7\u00f5es.
               </div>) : null}
 
             {showLegacyControls ? (<div className="flex flex-wrap items-center gap-2">

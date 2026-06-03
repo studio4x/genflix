@@ -59,7 +59,7 @@ function buildRealContentModules(courseTree: NonNullable<ReturnType<typeof useCo
         modules.push({
             title: courseTree.courseAssessments.length === 1 ? "Avaliação final" : "Avaliações finais",
             lessonCount: courseTree.courseAssessments.length,
-            summary: "Avaliações de encerramento vinculadas ação curso.",
+            summary: "Avaliações de encerramento vinculadas ao curso.",
             items: courseTree.courseAssessments.map((assessment) => assessment.title).filter(Boolean),
             lessonLabel: courseTree.courseAssessments.length === 1 ? 'item' : 'itens',
         });
@@ -308,7 +308,7 @@ export function CoursePublicPagePanel() {
             </div>
 
             {form.includedItems.map((item, index) => (<div key={`included-item-${index}`} className="flex items-center gap-3">
-                <input className="h-12 flex-1 rounded-2xl border border-slate-200 bg-slate-50 px-5 text-sm font-semibold outline-none focus:border-cyan-400 focus:bg-white" value={item} onChange={(event) => updateIncludedItem(index, event.target.value)} placeholder="Ex: Acesso imediato ação curso"/>
+                <input className="h-12 flex-1 rounded-2xl border border-slate-200 bg-slate-50 px-5 text-sm font-semibold outline-none focus:border-cyan-400 focus:bg-white" value={item} onChange={(event) => updateIncludedItem(index, event.target.value)} placeholder="Ex: Acesso imediato ao curso"/>
                 <Button type="button" variant="outline" size="icon" className="h-12 w-12 rounded-2xl" onClick={() => updateField('includedItems', form.includedItems.filter((_, itemIndex) => itemIndex !== index))} disabled={form.includedItems.length === 1}>
                   <Trash2 className="h-4 w-4"/>
                 </Button>
@@ -460,7 +460,7 @@ export function CoursePublicPagePanel() {
 
                     <label className="block space-y-2 md:col-span-2">
                       <span className="text-xs font-black uppercase tracking-widest text-slate-400">Resumo do módulo</span>
-                      <textarea className="min-h-[110px] w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium leading-6 text-slate-700 outline-none focus:border-cyan-400" value={module.summary} onChange={(event) => updateCustomModule(index, { summary: event.target.value })} placeholder="Resumo que aparece ação expandir o card na página publica."/>
+                      <textarea className="min-h-[110px] w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium leading-6 text-slate-700 outline-none focus:border-cyan-400" value={module.summary} onChange={(event) => updateCustomModule(index, { summary: event.target.value })} placeholder="Resumo que aparece ao expandir o card na p\u00e1gina p\u00fablica."/>
                     </label>
                   </div>
                 </article>))}

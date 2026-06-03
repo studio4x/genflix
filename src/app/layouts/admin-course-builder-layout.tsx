@@ -302,7 +302,7 @@ export function AdminCourseBuilderLayout() {
 
                      {/* Toggle Mode */}
                      {!clearExisting && (<div className="flex bg-slate-100 p-1.5 rounded-2xl gap-2">
-                           <button onClick={() => { setIsReplaceMode(false); setModuleIdToReplace(null); }} className={`flex-1 py-3 px-4 rounded-xl text-xs font-black transition-all ${!isReplaceMode ? 'bg-white shadow-sm text-blue-600' : 'text-slate-500 hover:text-slate-700'}`}>Adicionar N?ovos Módulos
+                           <button onClick={() => { setIsReplaceMode(false); setModuleIdToReplace(null); }} className={`flex-1 py-3 px-4 rounded-xl text-xs font-black transition-all ${!isReplaceMode ? 'bg-white shadow-sm text-blue-600' : 'text-slate-500 hover:text-slate-700'}`}>{'Adicionar novos m\u00f3dulos'}
                            </button>
                            <button onClick={() => { setIsReplaceMode(true); }} className={`flex-1 py-3 px-4 rounded-xl text-xs font-black transition-all ${isReplaceMode ? 'bg-white shadow-sm text-blue-600' : 'text-slate-500 hover:text-slate-700'}`}>
                               Substituir Módulo Existente

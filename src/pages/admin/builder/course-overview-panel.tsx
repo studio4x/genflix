@@ -14,7 +14,7 @@ function AiReviewUsageSummary({ review }: {
       <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
         <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Provedor</p>
         <p className="mt-2 text-sm font-bold text-slate-900">{getAiProviderLabel(review.ai_provider)}</p>
-        <p className="mt-1 text-xs text-slate-500">{review.ai_model ?? "Modelo indisponvel"}</p>
+        <p className="mt-1 text-xs text-slate-500">{review.ai_model ?? "Modelo indispon\u00edvel"}</p>
       </div>
       <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
         <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Entrada</p>
@@ -169,11 +169,11 @@ export function CourseOverviewPanel() {
         publishBuilderNotice({
             type: 'pending',
             title: 'Aplicando ajustes da IA',
-            message: `O módulo "${analysisTarget.moduleTitle}" est? sendo atualizado agora.`,
+            message: `O módulo "${analysisTarget.moduleTitle}" est\u00e1 sendo atualizado agora.`,
             details: [
                 `Módulo em processamento: ${analysisTarget.moduleTitle}`,
                 `Pontos identificados na análise: ${analysisResult.issues.length}`,
-                'Aguarde a confirmacação final antes de sair da tela.',
+                'Aguarde a confirma\u00e7\u00e3o final antes de sair da tela.',
             ],
         });
         try {
@@ -190,7 +190,7 @@ export function CourseOverviewPanel() {
                     }
                 }
                 catch (historyError) {
-                    setAnalysisError(`Os ajustes foram aplicados, mas o histórico no foi atualizado: ${toErrorMessage(historyError)}`);
+                    setAnalysisError(`Os ajustes foram aplicados, mas o hist\u00f3rico n\u00e3o foi atualizado: ${toErrorMessage(historyError)}`);
                 }
             }
             setDidApplyCurrentAnalysis(true);
@@ -203,16 +203,16 @@ export function CourseOverviewPanel() {
             });
             publishBuilderNotice({
                 type: 'success',
-                title: 'Ajustes da IA concluidos',
-                message: `Os ajustes foram aplicados ação módulo "${analysisTarget.moduleTitle}".`,
+                title: 'Ajustes da IA conclu\u00eddos',
+                message: `Os ajustes foram aplicados ao m\u00f3dulo "${analysisTarget.moduleTitle}".`,
                 details: [
-                    `Módulo atualizado: ${analysisTarget.moduleTitle}`,
-                    `Horario: ${new Intl.DateTimeFormat('pt-BR', {
+                    `M\u00f3dulo atualizado: ${analysisTarget.moduleTitle}`,
+                    `Hor\u00e1rio: ${new Intl.DateTimeFormat('pt-BR', {
                         dateStyle: 'short',
                         timeStyle: 'medium',
                     }).format(new Date(appliedAtIso))}`,
                     `Pontos processados: ${analysisResult.issues.length}`,
-                    analysisResult.ready_to_publish ? 'Status do módulo: pronto para publicar.' : "Status do módulo: ainda requer revisão manual.",
+                    analysisResult.ready_to_publish ? 'Status do m\u00f3dulo: pronto para publicar.' : "Status do m\u00f3dulo: ainda requer revis\u00e3o manual.",
                 ],
             });
         }
@@ -221,12 +221,12 @@ export function CourseOverviewPanel() {
             setAnalysisError(message);
             publishBuilderNotice({
                 type: 'error',
-                title: 'Falha ação aplicar ajustes da IA',
+                title: 'Falha ao aplicar ajustes da IA',
                 message: `Não foi possível concluir os ajustes no módulo "${analysisTarget.moduleTitle}".`,
                 details: [
                     `Módulo: ${analysisTarget.moduleTitle}`,
                     `Erro retornado: ${message}`,
-                    'Nenhuma confirmacação de salvamento foi recebida.',
+                    'Nenhuma confirma\u00e7\u00e3o de salvamento foi recebida.',
                 ],
             });
         }
@@ -235,7 +235,7 @@ export function CourseOverviewPanel() {
         }
     }
     async function handleDeleteModule(moduleId: string, moduleTitle: string) {
-        if (!window.confirm(`ATEN??O: Excluir o módulo "${moduleTitle}"
+        if (!window.confirm(`ATEN\u00c7\u00c3O: Excluir o m\u00f3dulo "${moduleTitle}"
 
 Todas as aulas e quizzes vinculados serão removidos permanentemente.`)) {
             return;
@@ -249,7 +249,7 @@ Todas as aulas e quizzes vinculados serão removidos permanentemente.`)) {
         }
     }
     async function handleDeleteLesson(lessonId: string, lessonTitle: string) {
-        if (!window.confirm(`ATEN??O: Excluir a aula "${lessonTitle}"
+        if (!window.confirm(`ATEN\u00c7\u00c3O: Excluir a aula "${lessonTitle}"
 
 Todos os materiais vinculados serão removidos permanentemente.`)) {
             return;
@@ -266,9 +266,9 @@ Todos os materiais vinculados serão removidos permanentemente.`)) {
         const confirmMessage = isFinalAssessment
             ? `CUIDADO: Excluir a avaliação final "${assessmentTitle}"
 
-Todas as questoes, estudos de caso e tentativas vinculadas serão removidos permanentemente.` : `CUIDADO: Excluir o quiz "${assessmentTitle}"
+Todas as quest\u00f5es, estudos de caso e tentativas vinculadas serão removidos permanentemente.` : `CUIDADO: Excluir o quiz "${assessmentTitle}"
 
-Todas as questoes, estudos de caso e tentativas vinculadas serão removidos permanentemente.`;
+Todas as quest\u00f5es, estudos de caso e tentativas vinculadas serão removidos permanentemente.`;
         if (!window.confirm(confirmMessage)) {
             return;
         }
@@ -284,9 +284,9 @@ Todas as questoes, estudos de caso e tentativas vinculadas serão removidos perm
         return null;
     return (<div className="w-full space-y-8 pb-12 animate-in fade-in duration-500">
       <div className="border-b border-slate-200 pb-5">
-        <h2 className="text-3xl font-extrabold tracking-tight text-slate-900">Visação Geral do Curso</h2>
+        <h2 className="text-3xl font-extrabold tracking-tight text-slate-900">{'Vis\u00e3o Geral do Curso'}</h2>
         <p className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-500">
-          Este e o centro de controle do seu curso. Utilize o painel lateral para navegar, editar e construir a estrutura pedagogica.
+          {'Este \u00e9 o centro de controle do seu curso. Utilize o painel lateral para navegar, editar e construir a estrutura pedag\u00f3gica.'}
         </p>
       </div>
 
@@ -422,10 +422,10 @@ Todas as questoes, estudos de caso e tentativas vinculadas serão removidos perm
       <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
         <div className="flex items-center justify-between gap-4 border-b border-slate-100 bg-slate-50/50 p-6">
           <div>
-            <h3 className="text-lg font-bold text-slate-900">Avalia??o Final</h3>
+            <h3 className="text-lg font-bold text-slate-900">{'Avalia\u00e7\u00e3o Final'}</h3>
             <p className="text-sm text-slate-500">Gerencie a prova final e sua exclusão.</p>
           </div>
-          <Link to={`/admin/cursos/${course.id}/builder/assessments/final`} className="text-sm font-semibold text-blue-600 hover:text-blue-800">Editar Avalia??o
+          <Link to={`/admin/cursos/${course.id}/builder/assessments/final`} className="text-sm font-semibold text-blue-600 hover:text-blue-800">{'Editar Avalia\u00e7\u00e3o'}
           </Link>
         </div>
         <div className="p-6">
@@ -433,7 +433,7 @@ Todas as questoes, estudos de caso e tentativas vinculadas serão removidos perm
               {courseTree.courseAssessments.map((assessment) => (<div key={assessment.id} className="flex items-center justify-between gap-4 rounded-xl border border-emerald-100 bg-emerald-50/40 p-4">
                   <div className="min-w-0">
                     <p className="truncate text-sm font-bold text-emerald-900">{assessment.title}</p>
-                    <p className="mt-1 text-xs font-medium text-emerald-700">Nãota mínima {assessment.passing_score}% • {assessment.max_attempts} tentativa(s)
+                    <p className="mt-1 text-xs font-medium text-emerald-700">{`Nota m?nima ${assessment.passing_score}% ? ${assessment.max_attempts} tentativa(s)`}
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
@@ -548,8 +548,8 @@ Todas as questoes, estudos de caso e tentativas vinculadas serão removidos perm
       {repeatReviewPrompt && (<div className="fixed inset-0 z-[115] flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm animate-in fade-in duration-300">
           <div className="w-full max-w-2xl rounded-[32px] border border-white/20 bg-white shadow-2xl animate-in zoom-in-95 duration-300">
             <div className="border-b border-slate-100 p-8">
-              <h3 className="text-xl font-black tracking-tight text-slate-900">Este módulo j? possui análise com IA</h3>
-              <p className="mt-2 text-sm leading-relaxed text-slate-500">O módulo <strong>{repeatReviewPrompt.moduleTitle}</strong> j? possui uma análise salva. A ?ltima revisão foi em{' '}
+              <h3 className="text-xl font-black tracking-tight text-slate-900">{'Este m\u00f3dulo j\u00e1 possui an\u00e1lise com IA'}</h3>
+              <p className="mt-2 text-sm leading-relaxed text-slate-500">{'O m?dulo '}<strong>{repeatReviewPrompt.moduleTitle}</strong>{' j? possui uma an?lise salva. A ?ltima revis?o foi em '}
                 {new Intl.DateTimeFormat('pt-BR', {
                 dateStyle: 'short',
                 timeStyle: 'medium',
