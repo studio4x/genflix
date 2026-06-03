@@ -1,6 +1,7 @@
 import type { LessonImageHotspotsAsset, LessonImageHotspotsBlockContent, LessonImageHotspotItem, } from '@/types/content';
 export type LessonImageBlockSize = 'sm' | 'md' | 'lg' | 'full';
 export type LessonImageBlockCaptionAlignment = 'left' | 'center' | 'right';
+export type LessonVideoBlockSize = 'sm' | 'md' | 'lg' | 'full';
 export interface LessonImageBlockContent {
     source_type: 'url' | 'upload';
     image_url: string;
@@ -21,6 +22,7 @@ export interface LessonVideoBlockContent {
     file_name: string;
     mime_type: string | null;
     caption: string;
+    size: LessonVideoBlockSize;
 }
 export type LessonColumnsBlockContent = LessonContentBlock[][];
 export type LessonContentBlock = {
@@ -54,6 +56,12 @@ const LESSON_COLUMNS_BLOCK_COUNT_ATTR = 'data-hcm-columns';
 const LESSON_COLUMNS_BLOCK_TYPE = 'columns';
 const LESSON_IMAGE_BLOCK_TYPE = 'image';
 const LESSON_VIDEO_BLOCK_TYPE = 'video';
+const LESSON_VIDEO_MAX_WIDTH_STYLE: Record<LessonVideoBlockSize, string> = {
+    sm: 'max-width: 28rem;',
+    md: 'max-width: 42rem;',
+    lg: 'max-width: 56rem;',
+    full: 'max-width: none;',
+};
 const ALLOWED_TABLE_TAGS = new Set([
     'table',
     'thead',
@@ -408,6 +416,9 @@ function normalizeLessonVideoBlockContent(content: LessonVideoBlockContent): Les
         file_name: content.file_name?.trim() || '',
         mime_type: content.mime_type?.trim() || null,
         caption: content.caption?.trim() || '',
+        size: content.size === 'sm' || content.size === 'md' || content.size === 'lg' || content.size === 'full'
+            ? content.size
+            : 'md',
     };
 }
 export function createEmptyLessonVideoBlockContent(): LessonVideoBlockContent {
@@ -419,6 +430,7 @@ export function createEmptyLessonVideoBlockContent(): LessonVideoBlockContent {
         file_name: '',
         mime_type: null,
         caption: '',
+        size: 'md',
     });
 }
 export function createEmptyColumnsBlockContent(columnsCount = 2): LessonColumnsBlockContent {
@@ -445,6 +457,9 @@ function parseLessonVideoBlockContent(payload: unknown): LessonVideoBlockContent
         file_name: typeof candidate.file_name === 'string' ? candidate.file_name : '',
         mime_type: typeof candidate.mime_type === 'string' ? candidate.mime_type : null,
         caption: typeof candidate.caption === 'string' ? candidate.caption : '',
+        size: candidate.size === 'sm' || candidate.size === 'md' || candidate.size === 'lg' || candidate.size === 'full'
+            ? candidate.size
+            : 'md',
     });
 }
 export function createEmptyLessonImageHotspotsBlockContent(): LessonImageHotspotsBlockContent {
@@ -634,6 +649,7 @@ function encodeVideoPayload(content: LessonVideoBlockContent): string {
         file_name: content.file_name,
         mime_type: content.mime_type,
         caption: content.caption,
+        size: content.size,
     }));
 }
 function decodeVideoPayload(encodedPayload: string): LessonVideoBlockContent | null {
@@ -648,13 +664,14 @@ function decodeVideoPayload(encodedPayload: string): LessonVideoBlockContent | n
 function buildVideoFallbackHtml(content: LessonVideoBlockContent): string {
     const caption = content.caption.trim();
     const fileName = content.file_name.trim();
-    const summary = content.source_type === 'upload'
-        ? `Vídeo enviado${fileName ? `: ${escapeHtml(fileName)}` : ''}.`
-        : 'Vídeo por URL.';
+    const maxWidthStyle = LESSON_VIDEO_MAX_WIDTH_STYLE[content.size];
+    const summary = content.source_type === "upload"
+        ? `Vídeo enviado${fileName ? `: ${escapeHtml(fileName)}` : ""}.`
+        : "Vídeo por URL.";
     return `
-    <figure class="hcm-video-block-fallback">
+    <figure class="hcm-video-block-fallback" style="${maxWidthStyle} margin: 2rem auto;">
       <div class="hcm-video-block-fallback__surface">${summary}</div>
-      ${caption ? `<figcaption>${escapeHtml(caption)}</figcaption>` : ''}
+      ${caption ? `<figcaption>${escapeHtml(caption)}</figcaption>` : ""}
     </figure>
   `;
 }

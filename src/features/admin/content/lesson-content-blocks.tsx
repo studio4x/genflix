@@ -17,6 +17,7 @@ import {
     type LessonImageBlockContent,
     type LessonImageBlockSize,
     type LessonVideoBlockContent,
+    type LessonVideoBlockSize,
 } from '@/features/admin/content/content-blocks';
 
 const FULL_QUILL_MODULES = {
@@ -59,6 +60,13 @@ const IMAGE_CAPTION_ALIGNMENT_CLASSES: Record<LessonImageBlockCaptionAlignment, 
     left: 'text-left',
     center: 'text-center',
     right: 'text-right',
+};
+
+const VIDEO_SIZE_CLASSES: Record<LessonVideoBlockSize, string> = {
+    sm: 'max-w-md',
+    md: 'max-w-2xl',
+    lg: 'max-w-4xl',
+    full: 'max-w-none',
 };
 
 function isDirectVideoUrl(url: string): boolean {
@@ -445,7 +453,8 @@ export function LessonVideoBlockEditor({ content, onChange, onError }: LessonVid
                 signed_url: uploadResult.signed_url,
                 file_name: file.name,
                 mime_type: file.type || null,
-                caption: content.caption,
+                                caption: content.caption,
+                size: content.size,
             });
             if (previousStoragePath && previousStoragePath !== uploadResult.storage_path) {
                 void deleteLessonContentAsset(previousStoragePath).catch(() => null);
@@ -546,7 +555,7 @@ export function LessonVideoBlockEditor({ content, onChange, onError }: LessonVid
                 </div>
             )}
 
-            <div className="overflow-hidden rounded-[24px] border border-slate-200 bg-slate-50">
+            <div className={cn('mx-auto overflow-hidden rounded-[24px] border border-slate-200 bg-slate-50', VIDEO_SIZE_CLASSES[content.size])}>
                 {previewUrl ? (
                     embedUrl ? (
                         <iframe title="Prévia do vídeo" src={embedUrl} allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowFullScreen className="aspect-video w-full border-0 bg-black" />
@@ -565,6 +574,16 @@ export function LessonVideoBlockEditor({ content, onChange, onError }: LessonVid
                     </div>
                 )}
             </div>
+
+            <label className="block space-y-2">
+                <span className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Tamanho do vídeo</span>
+                <select value={content.size} onChange={(event) => onChange({ ...content, size: event.target.value as LessonVideoBlockSize })} className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-sky-300 focus:ring-4 focus:ring-sky-100">
+                    <option value="sm">Pequeno</option>
+                    <option value="md">Médio</option>
+                    <option value="lg">Grande</option>
+                    <option value="full">Largura total</option>
+                </select>
+            </label>
 
             <label className="block space-y-2">
                 <span className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Legenda</span>
@@ -618,11 +637,12 @@ export function LessonVideoBlockRenderer({ content }: LessonVideoBlockRendererPr
     const previewUrl = content.source_type === 'upload'
         ? (content.signed_url?.trim() || resolvedUploadUrl)
         : content.url.trim();
+    const sizeClasses = VIDEO_SIZE_CLASSES[content.size];
     const embedUrl = previewUrl ? getVideoEmbedUrl(previewUrl) : null;
     const isDirectVideo = previewUrl ? isDirectVideoUrl(previewUrl) : false;
 
     return (
-        <figure className="my-8 overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm">
+        <figure className={cn('my-8 mx-auto overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm', sizeClasses)}>
             <div className="bg-slate-50">
                 {previewUrl ? (
                     embedUrl ? (
