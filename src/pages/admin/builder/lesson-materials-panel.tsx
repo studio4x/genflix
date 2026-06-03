@@ -88,14 +88,14 @@ export function LessonMaterialsPanel() {
                 is_active: true,
             });
             if (!parsed.success) {
-                throw new Error(parsed.error.issues[0]?.message ?? "Dados inv?lidos.");
+                throw new Error(parsed.error.issues[0]?.message ?? "Dados inválidos.");
             }
             await createLessonFooterAction(lessonId, parsed.data, user.id, file);
             await loadData();
             publishBuilderNotice({
                 type: 'success',
-                title: 'Botao da aula salvo',
-                message: `O arquivo "${file.name}" foi adicionado ao rodape da aula com sucesso.`,
+                title: 'Botação da aula salvo',
+                message: `O arquivo "${file.name}" foi adicionado ação rodape da aula com sucesso.`,
             });
         }
         catch (err) {
@@ -121,7 +121,7 @@ export function LessonMaterialsPanel() {
                 is_active: true,
             });
             if (!parsed.success) {
-                throw new Error(parsed.error.issues[0]?.message ?? "Dados inv?lidos.");
+                throw new Error(parsed.error.issues[0]?.message ?? "Dados inválidos.");
             }
             await createLessonFooterAction(lessonId, parsed.data, user.id);
             setUrlLabel('');
@@ -129,8 +129,8 @@ export function LessonMaterialsPanel() {
             await loadData();
             publishBuilderNotice({
                 type: 'success',
-                title: 'Botao da aula salvo',
-                message: `O link "${parsed.data.label}" foi adicionado ao rodape da aula com sucesso.`,
+                title: 'Botação da aula salvo',
+                message: `O link "${parsed.data.label}" foi adicionado ação rodape da aula com sucesso.`,
             });
         }
         catch (err) {
@@ -138,7 +138,7 @@ export function LessonMaterialsPanel() {
         }
     }
     async function handleDelete(action: LessonFooterAction) {
-        if (!window.confirm(`Excluir a ao "${action.label ?? action.file_name ?? "Sem t?tulo"}"`))
+        if (!window.confirm(`Excluir a ação "${action.label ?? action.file_name ?? "Sem título"}"`))
             return;
         try {
             await deleteLessonFooterAction(action);
@@ -174,7 +174,7 @@ export function LessonMaterialsPanel() {
           </div>
           <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">Botoes do Rodape da Aula</h2>
           <p className="text-sm text-slate-500 mt-1">
-            Configure arquivos e links que aparecerao como botoes no rodape da aula:
+            Configure arquivos e links que apareceração como botoes no rodape da aula:
             {' '}
             <span className="font-bold text-slate-700">{lesson?.title}</span>
           </p>
@@ -188,14 +188,14 @@ export function LessonMaterialsPanel() {
       <div className="grid gap-6 xl:grid-cols-[380px_minmax(0,1fr)]">
         <section className="space-y-6 rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
           <div>
-            <p className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">N?ovo botao</p>
-            <p className="mt-2 text-sm text-slate-500">Escolha o padrao visual e adicione um arquivo ou link.</p>
+            <p className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">Novo botão</p>
+            <p className="mt-2 text-sm text-slate-500">Escolha o padração visual e adicione um arquivo ou link.</p>
           </div>
 
           <label className="block space-y-2">
-            <span className="text-sm font-bold text-slate-800">Padrao visual</span>
+            <span className="text-sm font-bold text-slate-800">Padração visual</span>
             <select className="w-full rounded-2xl border border-slate-200 bg-slate-50/50 px-4 py-3 text-sm" value={selectedTemplateId} onChange={(event) => setSelectedTemplateId(event.target.value)}>
-              <option value="">Sem padrao especifico</option>
+              <option value="">Sem padração especifico</option>
               {activeTemplates.map((template) => (<option key={template.id} value={template.id}>
                   {template.name} • {template.default_label}
                 </option>))}
@@ -203,7 +203,7 @@ export function LessonMaterialsPanel() {
           </label>
 
           {selectedTemplateId ? (<div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-4">
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Preview do botao</p>
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Preview do botão</p>
               <div className="mt-3">
                 {(() => {
                 const selectedTemplate = activeTemplates.find((template) => template.id === selectedTemplateId) ?? null;
@@ -219,7 +219,7 @@ export function LessonMaterialsPanel() {
 
           <label className={`block rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50 p-6 text-center ${isUploading ? 'opacity-70' : 'cursor-pointer'}`}>
             <input type="file" className="hidden" onChange={handleUpload} disabled={isUploading}/>
-            <p className="text-sm font-black text-slate-900">Enviar arquivo para virar botao</p>
+            <p className="text-sm font-black text-slate-900">Enviar arquivo para virar botão</p>
             <p className="mt-1 text-xs text-slate-500">PDF, ZIP, imagem, planilha e outros materiais de apoio.</p>
             <span className="mt-4 inline-flex rounded-xl bg-blue-600 px-5 py-2 text-sm font-bold text-white">
               {isUploading ? 'Enviando...' : 'Selecionar Arquivo'}
@@ -227,7 +227,7 @@ export function LessonMaterialsPanel() {
           </label>
 
           <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-4 space-y-3">
-            <p className="text-sm font-black text-slate-900">Criar botao de URL</p>
+            <p className="text-sm font-black text-slate-900">Criar botão de URL</p>
             <input className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm" placeholder="Rotulo personalizado opcional" value={urlLabel} onChange={(event) => setUrlLabel(event.target.value)}/>
             <input className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm" placeholder="https://..." value={urlValue} onChange={(event) => setUrlValue(event.target.value)}/>
             <Button className="w-full rounded-xl bg-slate-900 hover:bg-slate-800" onClick={() => void handleCreateUrlAction()}>
@@ -241,7 +241,7 @@ export function LessonMaterialsPanel() {
         <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
           <p className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">Acoes configuradas</p>
 
-          {isLoading ? (<p className="mt-4 text-sm text-slate-500">Carregando botoes...</p>) : actions.length === 0 ? (<div className="mt-4 rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-5 py-10 text-center text-sm text-slate-500">Nenhum botao configurado para est? aula.
+          {isLoading ? (<p className="mt-4 text-sm text-slate-500">Carregando botoes...</p>) : actions.length === 0 ? (<div className="mt-4 rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-5 py-10 text-center text-sm text-slate-500">Nenhum botão configurado para est? aula.
             </div>) : (<div className="mt-4 grid gap-4">
               {actions.map((action) => (<article key={action.id} className="rounded-[24px] border border-slate-200 bg-slate-50/50 p-5">
                   <div className="flex flex-wrap items-start justify-between gap-4">
@@ -260,7 +260,7 @@ export function LessonMaterialsPanel() {
                       <div className="mt-3">
                         <Button type="button" variant="outline" className={getLessonFooterButtonClassName(action.template)}>
                           {renderButtonTemplateIcon(getLessonFooterActionIconName(action))}
-                          {action.label ?? action.file_name ?? action.template?.default_label ?? "Botao sem t?tulo"}
+                          {action.label ?? action.file_name ?? action.template?.default_label ?? "Botação sem título"}
                         </Button>
                       </div>
                       <p className="mt-1 text-sm text-slate-500 break-all">

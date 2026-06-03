@@ -137,7 +137,7 @@ export function CourseSettingsPanel() {
             setForm(f => ({ ...f, thumbnail_url: url }));
         }
         catch {
-            setError('Falha ao subir imagem. Tente novamente.');
+            setError('Falha ação subir imagem. Tente novamente.');
         }
         finally {
             setIsUploadingThumbnail(false);
@@ -161,7 +161,7 @@ export function CourseSettingsPanel() {
             publishBuilderNotice({
                 type: 'success',
                 title: "Configura??es salvas",
-                message: `As configura??es do curso "${parsed.data.title}" foram salvas com sucesso.`,
+                message: `As configurações do curso "${parsed.data.title}" foram salvas com sucesso.`,
             });
             setTimeout(() => setSuccess(false), 3000);
         }
@@ -185,7 +185,7 @@ export function CourseSettingsPanel() {
             publishBuilderNotice({
                 type: 'success',
                 title: 'Padroes da IA salvos',
-                message: "Os padroes de revis?o com IA foram atualizados com sucesso.",
+                message: "Os padroes de revisão com IA foram atualizados com sucesso.",
             });
             setTimeout(() => setAiStandardsSuccess(false), 3000);
         }
@@ -252,7 +252,7 @@ export function CourseSettingsPanel() {
                <div className="max-w-3xl space-y-3">
                   <p className="text-[11px] font-black uppercase tracking-[0.26em] text-[#0F5AA3]">Capa do Curso</p>
                   <h3 className="text-[2rem] font-black tracking-tight text-slate-900">Upload de imagem</h3>
-                  <p className="max-w-[860px] text-base leading-8 text-slate-600">A capa alimenta cards e p?ginas publicas. O upload gera um asset pblico apenas para a imagem comercial do curso.
+                  <p className="max-w-[860px] text-base leading-8 text-slate-600">A capa alimenta cards e páginas publicas. O upload gera um asset pblico apenas para a imagem comercial do curso.
                   </p>
                </div>
 
@@ -276,7 +276,7 @@ export function CourseSettingsPanel() {
                   <div className="rounded-[28px] border border-slate-200 bg-white px-5 py-5 md:px-6 md:py-6">
                      <div className="space-y-2">
                         <p className="text-xl font-black tracking-tight text-slate-900">Enviar nova imagem</p>
-                        <p className="text-base leading-7 text-slate-600">Formatos recomendados: JPG, PNG ou WEBP. Depois do upload, confirme em guardar configura??es.
+                        <p className="text-base leading-7 text-slate-600">Formatos recomendados: JPG, PNG ou WEBP. Depois do upload, confirme em guardar configurações.
                         </p>
                      </div>
 
@@ -310,7 +310,7 @@ export function CourseSettingsPanel() {
 
             <div className="grid gap-8">
                <label className="block space-y-2">
-                  <span className="text-xs font-black text-slate-400 uppercase tracking-widest pl-1">N?ome do Curso</span>
+                  <span className="text-xs font-black text-slate-400 uppercase tracking-widest pl-1">Nãome do Curso</span>
                   <input className="w-full font-bold rounded-[20px] border border-slate-200 bg-slate-100/50 px-6 py-4 placeholder:text-slate-300 focus:bg-white focus:ring-4 focus:ring-blue-100 transition-all" placeholder="Ex: Primeiros Socorros Avançado" value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} required/>
                </label>
 
@@ -404,7 +404,7 @@ export function CourseSettingsPanel() {
                      </div>
                      <div className="space-y-1">
                         <span className="text-sm font-bold text-slate-900 block">Ativar Progressão Linear Obrigatória</span>
-                        <span className="text-[11px] text-slate-500 block leading-relaxed max-w-lg">Se ativado, o aluno deve concluir obrigatriamente a aula atual para liberar a próxima. Módulos bloqueados só serão liberados ao concluir o módulo anterior (incluindo provas).
+                        <span className="text-[11px] text-slate-500 block leading-relaxed max-w-lg">Se ativado, o aluno deve concluir obrigatoriamente a aula atual para liberar a próxima. Módulos bloqueados só serão liberados ação concluir o módulo anterior (incluindo provas).
                         </span>
                      </div>
                   </label>
@@ -413,11 +413,11 @@ export function CourseSettingsPanel() {
                <div className="pt-6 border-t border-slate-100 space-y-5">
                   <div className="flex flex-wrap items-start justify-between gap-4">
                      <div>
-                        <span className="text-xs font-black text-slate-400 uppercase tracking-widest pl-1">Tipos de Quiz Disponiveis</span>
-                        <p className="mt-2 max-w-3xl text-sm font-medium text-slate-500">Ative ou desative quais formatos de pergunta podem ser usados neste curso. O builder de avalia??es passa a respeitar essa configura??o.
+                        <span className="text-xs font-black text-slate-400 uppercase tracking-widest pl-1">Tipos de Quiz Disponíveis</span>
+                        <p className="mt-2 max-w-3xl text-sm font-medium text-slate-500">Ative ou desative quais formatos de pergunta podem ser usados neste curso. O builder de avaliações passa a respeitar essa configuração.
                         </p>
                         {hiddenQuizTypeCount > 0 ? (<p className="mt-2 max-w-3xl text-xs font-semibold leading-5 text-amber-700">
-                            {hiddenQuizTypeCount}tipo(s) de quiz est?o desativados globalmente e n?o aparecem nest? tela.
+                            {hiddenQuizTypeCount}tipo(s) de quiz estão desativados globalmente e não aparecem nesta tela.
                           </p>) : null}
                      </div>
                      <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-right shadow-sm">
@@ -427,7 +427,7 @@ export function CourseSettingsPanel() {
                   </div>
 
                   <div className="rounded-[28px] border border-slate-200 bg-slate-50/60 p-5">
-                     {visibleQuizTypeOptions.length === 0 ? (<div className="rounded-[24px] border border-dashed border-amber-200 bg-amber-50/70 px-5 py-6 text-sm font-semibold text-amber-800">Nenhum tipo de quiz est? habilitado globalmente no momento. Ative um tipo na configura??o global para liberá-lo neste curso.
+                     {visibleQuizTypeOptions.length === 0 ? (<div className="rounded-[24px] border border-dashed border-amber-200 bg-amber-50/70 px-5 py-6 text-sm font-semibold text-amber-800">Nenhum tipo de quiz est? habilitado globalmente no momento. Ative um tipo na configuração global para liberá-lo neste curso.
                        </div>) : (<div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                         {visibleQuizTypeOptions.map((option) => {
                 const isEnabled = form.quiz_type_settings[option.key];
@@ -460,7 +460,7 @@ export function CourseSettingsPanel() {
 
                   <div className={`rounded-[24px] border px-5 py-4 text-sm font-semibold ${canUseCaseStudies ? 'border-violet-100 bg-violet-50/70 text-violet-800' : 'border-amber-100 bg-amber-50/80 text-amber-800'}`}>
                      {canUseCaseStudies
-            ? "Estudo de caso est? pronto para uso no builder, porque pelo menos um tipo de pergunta interna est? ativo." : 'Estudo de caso exige Multipla Escolha ou Discursiva com IA ativos para aparecer como opcao no builder.'}
+            ? "Estudo de caso est? pronto para uso no builder, porque pelo menos um tipo de pergunta interna est? ativo." : 'Estudo de caso exige Multipla Escolha ou Discursiva com IA ativos para aparecer como opção no builder.'}
                   </div>
                </div>
             </div>
@@ -484,7 +484,7 @@ export function CourseSettingsPanel() {
           <div className="border-b border-slate-100 pb-5">
             <h3 className="text-2xl font-black text-slate-900 tracking-tight">Padrões do Curso Perfeito</h3>
             <p className="mt-1 text-sm text-slate-500">
-              Defina aqui os critérios que a IA deve usar ao revisar cada módulo individualmente.
+              Defina aqui os critérios que a IA deve usar ação revisar cada módulo individualmente.
             </p>
           </div>
 

@@ -75,7 +75,7 @@ export function CourseAssessmentsPanel() {
                 }
             }
             if (!assessmentId) {
-                throw new Error('Falha ao identificar avaliação de destino.');
+                throw new Error('Falha ação identificar avaliação de destino.');
             }
             await importAssessmentContent(assessmentId, data);
             await refreshTree();
@@ -101,8 +101,8 @@ export function CourseAssessmentsPanel() {
             await refreshTree();
         }
         catch (error) {
-            console.error('Erro ao deletar:', error);
-            alert('Falha ao excluir avaliação. Verifique as dependências.');
+            console.error('Erro ação deletar:', error);
+            alert('Falha ação excluir avaliação. Verifique as dependências.');
         }
         finally {
             setIsImporting(false);
@@ -115,7 +115,7 @@ export function CourseAssessmentsPanel() {
         try {
             const exportData = await exportFinalAssessmentContent(courseId);
             const courseTitle = tree.course.title || 'curso';
-            downloadJsonFile(`avalia??o_final_${courseTitle}`, exportData);
+            downloadJsonFile(`avaliação_final_${courseTitle}`, exportData);
         }
         catch (error) {
             setImportError(toErrorMessage(error));
@@ -142,7 +142,7 @@ export function CourseAssessmentsPanel() {
                 </div>
                 <div>
                   <h3 className="text-sm font-bold text-slate-800">Avaliação Final do Curso</h3>
-                  <p className="text-xs text-slate-500">Exibida ao fim de todos os módulos para certificação.</p>
+                  <p className="text-xs text-slate-500">Exibida ação fim de todos os módulos para certificação.</p>
                 </div>
               </div>
 
@@ -176,7 +176,7 @@ export function CourseAssessmentsPanel() {
               {courseTree.courseAssessments.length > 0 ? (courseTree.courseAssessments.map((assessment) => (<div key={assessment.id} className="flex items-center justify-between rounded-xl border border-emerald-100 bg-emerald-50/20 p-4">
                     <div>
                       <p className="font-bold leading-tight text-emerald-900">{assessment.title}</p>
-                      <p className="mt-1 text-[11px] font-medium uppercase text-emerald-600">Quiz de certificação • N?ota mínima {assessment.passing_score}%
+                      <p className="mt-1 text-[11px] font-medium uppercase text-emerald-600">Quiz de certificação • Nãota mínima {assessment.passing_score}%
                       </p>
                     </div>
 

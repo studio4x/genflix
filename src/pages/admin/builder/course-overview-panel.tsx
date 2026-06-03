@@ -148,7 +148,7 @@ export function CourseOverviewPanel() {
                     }));
                 }
                 catch (historyError) {
-                    setAnalysisError(`A an?lise foi concluida, mas o hist?rico no foi salvo: ${toErrorMessage(historyError)}`);
+                    setAnalysisError(`A análise foi concluida, mas o histórico no foi salvo: ${toErrorMessage(historyError)}`);
                 }
             }
             setAnalysisTarget({ moduleId, moduleTitle });
@@ -169,11 +169,11 @@ export function CourseOverviewPanel() {
         publishBuilderNotice({
             type: 'pending',
             title: 'Aplicando ajustes da IA',
-            message: `O m?dulo "${analysisTarget.moduleTitle}" est? sendo atualizado agora.`,
+            message: `O módulo "${analysisTarget.moduleTitle}" est? sendo atualizado agora.`,
             details: [
-                `Mdulo em processamento: ${analysisTarget.moduleTitle}`,
-                `Pontos identificados na an?lise: ${analysisResult.issues.length}`,
-                'Aguarde a confirmacao final antes de sair da tela.',
+                `Módulo em processamento: ${analysisTarget.moduleTitle}`,
+                `Pontos identificados na análise: ${analysisResult.issues.length}`,
+                'Aguarde a confirmacação final antes de sair da tela.',
             ],
         });
         try {
@@ -190,7 +190,7 @@ export function CourseOverviewPanel() {
                     }
                 }
                 catch (historyError) {
-                    setAnalysisError(`Os ajustes foram aplicados, mas o hist?rico no foi atualizado: ${toErrorMessage(historyError)}`);
+                    setAnalysisError(`Os ajustes foram aplicados, mas o histórico no foi atualizado: ${toErrorMessage(historyError)}`);
                 }
             }
             setDidApplyCurrentAnalysis(true);
@@ -204,15 +204,15 @@ export function CourseOverviewPanel() {
             publishBuilderNotice({
                 type: 'success',
                 title: 'Ajustes da IA concluidos',
-                message: `Os ajustes foram aplicados ao m?dulo "${analysisTarget.moduleTitle}".`,
+                message: `Os ajustes foram aplicados ação módulo "${analysisTarget.moduleTitle}".`,
                 details: [
-                    `Mdulo atualizado: ${analysisTarget.moduleTitle}`,
+                    `Módulo atualizado: ${analysisTarget.moduleTitle}`,
                     `Horario: ${new Intl.DateTimeFormat('pt-BR', {
                         dateStyle: 'short',
                         timeStyle: 'medium',
                     }).format(new Date(appliedAtIso))}`,
                     `Pontos processados: ${analysisResult.issues.length}`,
-                    analysisResult.ready_to_publish ? 'Status do m?dulo: pronto para publicar.' : "Status do m?dulo: ainda requer revis?o manual.",
+                    analysisResult.ready_to_publish ? 'Status do módulo: pronto para publicar.' : "Status do módulo: ainda requer revisão manual.",
                 ],
             });
         }
@@ -221,12 +221,12 @@ export function CourseOverviewPanel() {
             setAnalysisError(message);
             publishBuilderNotice({
                 type: 'error',
-                title: 'Falha ao aplicar ajustes da IA',
-                message: `N?o foi possvel concluir os ajustes no m?dulo "${analysisTarget.moduleTitle}".`,
+                title: 'Falha ação aplicar ajustes da IA',
+                message: `Não foi possível concluir os ajustes no módulo "${analysisTarget.moduleTitle}".`,
                 details: [
-                    `Mdulo: ${analysisTarget.moduleTitle}`,
+                    `Módulo: ${analysisTarget.moduleTitle}`,
                     `Erro retornado: ${message}`,
-                    'Nenhuma confirmacao de salvamento foi recebida.',
+                    'Nenhuma confirmacação de salvamento foi recebida.',
                 ],
             });
         }
@@ -235,9 +235,9 @@ export function CourseOverviewPanel() {
         }
     }
     async function handleDeleteModule(moduleId: string, moduleTitle: string) {
-        if (!window.confirm(`ATEN??O: Excluir o m?dulo "${moduleTitle}"
+        if (!window.confirm(`ATEN??O: Excluir o módulo "${moduleTitle}"
 
-Todas as aulas e quizzes vinculados ser?o removidos permanentemente.`)) {
+Todas as aulas e quizzes vinculados serão removidos permanentemente.`)) {
             return;
         }
         try {
@@ -251,7 +251,7 @@ Todas as aulas e quizzes vinculados ser?o removidos permanentemente.`)) {
     async function handleDeleteLesson(lessonId: string, lessonTitle: string) {
         if (!window.confirm(`ATEN??O: Excluir a aula "${lessonTitle}"
 
-Todos os materiais vinculados ser?o removidos permanentemente.`)) {
+Todos os materiais vinculados serão removidos permanentemente.`)) {
             return;
         }
         try {
@@ -264,11 +264,11 @@ Todos os materiais vinculados ser?o removidos permanentemente.`)) {
     }
     async function handleDeleteAssessment(assessmentId: string, assessmentTitle: string, isFinalAssessment = false) {
         const confirmMessage = isFinalAssessment
-            ? `CUIDADO: Excluir a avalia??o final "${assessmentTitle}"
+            ? `CUIDADO: Excluir a avaliação final "${assessmentTitle}"
 
-Todas as questoes, estudos de caso e tentativas vinculadas ser?o removidos permanentemente.` : `CUIDADO: Excluir o quiz "${assessmentTitle}"
+Todas as questoes, estudos de caso e tentativas vinculadas serão removidos permanentemente.` : `CUIDADO: Excluir o quiz "${assessmentTitle}"
 
-Todas as questoes, estudos de caso e tentativas vinculadas ser?o removidos permanentemente.`;
+Todas as questoes, estudos de caso e tentativas vinculadas serão removidos permanentemente.`;
         if (!window.confirm(confirmMessage)) {
             return;
         }
@@ -284,7 +284,7 @@ Todas as questoes, estudos de caso e tentativas vinculadas ser?o removidos perma
         return null;
     return (<div className="w-full space-y-8 pb-12 animate-in fade-in duration-500">
       <div className="border-b border-slate-200 pb-5">
-        <h2 className="text-3xl font-extrabold tracking-tight text-slate-900">Visao Geral do Curso</h2>
+        <h2 className="text-3xl font-extrabold tracking-tight text-slate-900">Visação Geral do Curso</h2>
         <p className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-500">
           Este e o centro de controle do seu curso. Utilize o painel lateral para navegar, editar e construir a estrutura pedagogica.
         </p>
@@ -293,12 +293,12 @@ Todas as questoes, estudos de caso e tentativas vinculadas ser?o removidos perma
       {analysisError && (<div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm font-bold text-rose-600">
           {analysisError}
         </div>)}
-      {applyFeedback && (<div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm font-semibold text-emerald-700">Ajustes aplicados com sucesso no m?dulo <strong>{applyFeedback.moduleTitle}</strong> em{' '}
+      {applyFeedback && (<div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm font-semibold text-emerald-700">Ajustes aplicados com sucesso no módulo <strong>{applyFeedback.moduleTitle}</strong> em{' '}
           {new Intl.DateTimeFormat('pt-BR', {
                 dateStyle: 'short',
                 timeStyle: 'medium',
             }).format(new Date(applyFeedback.appliedAt))}
-          . {applyFeedback.issuesCount > 0 ? `${applyFeedback.issuesCount} ponto(s) foram processados.` : "Nenhum ponto critico foi apontado nest? an?lise."}
+          . {applyFeedback.issuesCount > 0 ? `${applyFeedback.issuesCount} ponto(s) foram processados.` : "Nenhum ponto crítico foi apontado nesta análise."}
         </div>)}
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
@@ -307,7 +307,7 @@ Todas as questoes, estudos de caso e tentativas vinculadas ser?o removidos perma
             <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11v9h-2v-9H7v9H5v-9H3V9h18v2h-2z"/></svg>
           </div>
           <span className="text-3xl font-black text-slate-900">{modules.length}</span>
-          <span className="text-sm font-bold uppercase tracking-widest text-slate-500">Mdulos</span>
+          <span className="text-sm font-bold uppercase tracking-widest text-slate-500">Módulos</span>
         </div>
 
         <div className="flex flex-col items-center justify-center space-y-2 rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-sm">
@@ -333,31 +333,31 @@ Todas as questoes, estudos de caso e tentativas vinculadas ser?o removidos perma
             <h3 className="text-lg font-bold text-slate-900">Mapa do Curso</h3>
             <p className="text-sm text-slate-500">A hierarquia atual de aprendizado.</p>
           </div>
-          <Link to={`/admin/cursos/${course.id}/builder/modulos/novo`} className="inline-flex shrink-0 items-center justify-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600">Adicionar Mdulo
+          <Link to={`/admin/cursos/${course.id}/builder/modulos/novo`} className="inline-flex shrink-0 items-center justify-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600">Adicionar Módulo
           </Link>
         </div>
 
         <div className="space-y-6 p-6">
           {modules.length === 0 ? (<div className="py-12 text-center">
-              <p className="text-slate-500">Nenhum m?dulo criado ainda. Comece estruturando o curso.</p>
+              <p className="text-slate-500">Nenhum módulo criado ainda. Comece estruturando o curso.</p>
             </div>) : (modules.map((module, moduleIndex) => (<div key={module.id} className="relative rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
                 <div className="mb-4 flex items-start justify-between gap-4">
                   <div>
                     <div className="mb-1 flex items-center gap-2 text-[10px] font-extrabold uppercase tracking-widest text-slate-400">
-                      <span>Mdulo {moduleIndex + 1}</span>
+                      <span>Módulo {moduleIndex + 1}</span>
                       {module.is_required && <span className="rounded bg-slate-100 px-1.5 py-0.5 text-slate-500">Obrigatorio</span>}
                     </div>
                     <h4 className="text-base font-bold text-slate-900">{module.title}</h4>
                   </div>
                   <div className="flex shrink-0 items-center gap-3">
-                    {reviewHistoryByModule[module.id]?.length ? (<Button type="button" variant="outline" size="sm" className="h-9 rounded-xl border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-900" onClick={() => setHistoryTarget({ moduleId: module.id, moduleTitle: module.title })}>Ultimas revis?es
+                    {reviewHistoryByModule[module.id]?.length ? (<Button type="button" variant="outline" size="sm" className="h-9 rounded-xl border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-900" onClick={() => setHistoryTarget({ moduleId: module.id, moduleTitle: module.title })}>?ltimas revisões
                       </Button>) : null}
                     <Button type="button" variant="outline" size="sm" className="h-9 rounded-xl border-blue-200 text-blue-600 hover:bg-blue-50 hover:text-blue-700" onClick={() => void handleAnalyzeModule(module.id, module.title)} disabled={isAnalyzingModuleId === module.id}>
                       {isAnalyzingModuleId === module.id ? 'Analisando...' : 'Analisar com IA'}
                     </Button>
-                    <Link to={`/admin/cursos/${course.id}/builder/modulos/${module.id}`} className="text-sm font-semibold text-blue-600 hover:text-blue-800">Editar Mdulo
+                    <Link to={`/admin/cursos/${course.id}/builder/modulos/${module.id}`} className="text-sm font-semibold text-blue-600 hover:text-blue-800">Editar Módulo
                     </Link>
-                    <button type="button" onClick={() => void handleDeleteModule(module.id, module.title)} className="rounded-xl p-2 text-slate-300 transition-colors hover:bg-rose-50 hover:text-rose-500" title="Excluir m?dulo">
+                    <button type="button" onClick={() => void handleDeleteModule(module.id, module.title)} className="rounded-xl p-2 text-slate-300 transition-colors hover:bg-rose-50 hover:text-rose-500" title="Excluir módulo">
                       <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
                       </svg>
@@ -400,7 +400,7 @@ Todas as questoes, estudos de caso e tentativas vinculadas ser?o removidos perma
                         </div>
                       </div>))}
                   </div>) : (<div className="mt-4 border-l-2 border-slate-100 pl-4">
-                    <p className="text-sm italic text-slate-400">Nenhuma aula ou quiz neste m?dulo.</p>
+                    <p className="text-sm italic text-slate-400">Nenhuma aula ou quiz neste módulo.</p>
                   </div>)}
 
                 <div className="mt-4 border-t border-slate-100 pt-4">
@@ -423,7 +423,7 @@ Todas as questoes, estudos de caso e tentativas vinculadas ser?o removidos perma
         <div className="flex items-center justify-between gap-4 border-b border-slate-100 bg-slate-50/50 p-6">
           <div>
             <h3 className="text-lg font-bold text-slate-900">Avalia??o Final</h3>
-            <p className="text-sm text-slate-500">Gerencie a prova final e sua exclusao.</p>
+            <p className="text-sm text-slate-500">Gerencie a prova final e sua exclusação.</p>
           </div>
           <Link to={`/admin/cursos/${course.id}/builder/assessments/final`} className="text-sm font-semibold text-blue-600 hover:text-blue-800">Editar Avalia??o
           </Link>
@@ -433,21 +433,21 @@ Todas as questoes, estudos de caso e tentativas vinculadas ser?o removidos perma
               {courseTree.courseAssessments.map((assessment) => (<div key={assessment.id} className="flex items-center justify-between gap-4 rounded-xl border border-emerald-100 bg-emerald-50/40 p-4">
                   <div className="min-w-0">
                     <p className="truncate text-sm font-bold text-emerald-900">{assessment.title}</p>
-                    <p className="mt-1 text-xs font-medium text-emerald-700">N?ota minima {assessment.passing_score}% • {assessment.max_attempts} tentativa(s)
+                    <p className="mt-1 text-xs font-medium text-emerald-700">Nãota mínima {assessment.passing_score}% • {assessment.max_attempts} tentativa(s)
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
                     <Link to={`/admin/cursos/${course.id}/builder/assessments/final`} className="text-xs font-semibold text-emerald-700 hover:text-emerald-900">
                       Editar
                     </Link>
-                    <button type="button" onClick={() => void handleDeleteAssessment(assessment.id, assessment.title, true)} className="rounded-lg p-2 text-emerald-300 transition-colors hover:bg-rose-50 hover:text-rose-500" title="Excluir avalia??o final">
+                    <button type="button" onClick={() => void handleDeleteAssessment(assessment.id, assessment.title, true)} className="rounded-lg p-2 text-emerald-300 transition-colors hover:bg-rose-50 hover:text-rose-500" title="Excluir avaliação final">
                       <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
                       </svg>
                     </button>
                   </div>
                 </div>))}
-            </div>) : (<div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-500">Nenhuma avalia??o final criada ainda.
+            </div>) : (<div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-500">Nenhuma avaliação final criada ainda.
             </div>)}
         </div>
       </div>
@@ -456,7 +456,7 @@ Todas as questoes, estudos de caso e tentativas vinculadas ser?o removidos perma
           <div className="max-h-[95vh] w-full max-w-5xl overflow-y-auto rounded-[32px] border border-white/20 bg-white shadow-2xl animate-in zoom-in-95 duration-300">
             <div className="flex items-start justify-between gap-4 border-b border-slate-100 p-8">
               <div>
-                <h3 className="text-xl font-black tracking-tight text-slate-900">An?lise com IA do Mdulo</h3>
+                <h3 className="text-xl font-black tracking-tight text-slate-900">Análise com IA do Módulo</h3>
                 <p className="mt-1 text-sm font-medium text-slate-500">{analysisTarget.moduleTitle}</p>
               </div>
               <button onClick={() => {
@@ -471,10 +471,10 @@ Todas as questoes, estudos de caso e tentativas vinculadas ser?o removidos perma
 
             <div className="space-y-6 p-8">
               {didApplyCurrentAnalysis && analysisTarget && (<div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5">
-                  <p className="text-sm font-black text-emerald-700">Ajustes aplicados com sucesso neste m?dulo.</p>
-                  <p className="mt-2 text-sm text-emerald-700">O contedo foi atualizado e salvo. Revise o m?dulo para confirmar o resultado final.
+                  <p className="text-sm font-black text-emerald-700">Ajustes aplicados com sucesso neste módulo.</p>
+                  <p className="mt-2 text-sm text-emerald-700">O conteúdo foi atualizado e salvo. Revise o módulo para confirmar o resultado final.
                   </p>
-                  <Link to={`/admin/cursos/${course.id}/builder/modulos/${analysisTarget.moduleId}`} className="mt-4 inline-flex items-center rounded-xl border border-emerald-300 bg-white px-3 py-2 text-xs font-black uppercase tracking-widest text-emerald-700 hover:bg-emerald-100">Revisar m?dulo atualizado
+                  <Link to={`/admin/cursos/${course.id}/builder/modulos/${analysisTarget.moduleId}`} className="mt-4 inline-flex items-center rounded-xl border border-emerald-300 bg-white px-3 py-2 text-xs font-black uppercase tracking-widest text-emerald-700 hover:bg-emerald-100">Revisar módulo atualizado
                   </Link>
                 </div>)}
 
@@ -496,7 +496,7 @@ Todas as questoes, estudos de caso e tentativas vinculadas ser?o removidos perma
 
               <div className="space-y-3">
                 <h4 className="text-sm font-black uppercase tracking-widest text-slate-500">Pontos a ajustar</h4>
-                {analysisResult.issues.length === 0 ? (<div className="rounded-2xl border border-emerald-100 bg-emerald-50 p-5 text-sm font-bold text-emerald-700">Nenhum ajuste relevante foi apontado pela IA para este m?dulo.
+                {analysisResult.issues.length === 0 ? (<div className="rounded-2xl border border-emerald-100 bg-emerald-50 p-5 text-sm font-bold text-emerald-700">Nenhum ajuste relevante foi apontado pela IA para este módulo.
                   </div>) : (analysisResult.issues.map((issue) => (<div key={issue.id} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
                       <div className="flex flex-wrap items-center gap-2">
                         <span className={`rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-widest ${issue.severity === 'critical'
@@ -537,7 +537,7 @@ Todas as questoes, estudos de caso e tentativas vinculadas ser?o removidos perma
                 setAnalysisTarget(null);
                 setAnalysisResult(null);
                 setDidApplyCurrentAnalysis(false);
-            }}>Fechar An?lise
+            }}>Fechar Análise
               </Button>
               <Button className="h-12 rounded-2xl bg-blue-600 px-8 font-black shadow-xl shadow-blue-100 hover:bg-blue-700" disabled={!analysisResult.corrected_module || isApplyingFixes || didApplyCurrentAnalysis} onClick={() => void handleApplyAiFixes()}>
                 {isApplyingFixes ? 'Aplicando Ajustes...' : didApplyCurrentAnalysis ? 'Ajustes Aplicados' : 'Implementar Ajustes'}
@@ -548,17 +548,17 @@ Todas as questoes, estudos de caso e tentativas vinculadas ser?o removidos perma
       {repeatReviewPrompt && (<div className="fixed inset-0 z-[115] flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm animate-in fade-in duration-300">
           <div className="w-full max-w-2xl rounded-[32px] border border-white/20 bg-white shadow-2xl animate-in zoom-in-95 duration-300">
             <div className="border-b border-slate-100 p-8">
-              <h3 className="text-xl font-black tracking-tight text-slate-900">Este m?dulo ja possui an?lise com IA</h3>
-              <p className="mt-2 text-sm leading-relaxed text-slate-500">O m?dulo <strong>{repeatReviewPrompt.moduleTitle}</strong>ja possui uma an?lise salva. A ultima revis?o foi em{' '}
+              <h3 className="text-xl font-black tracking-tight text-slate-900">Este módulo j? possui análise com IA</h3>
+              <p className="mt-2 text-sm leading-relaxed text-slate-500">O módulo <strong>{repeatReviewPrompt.moduleTitle}</strong> j? possui uma análise salva. A ?ltima revisão foi em{' '}
                 {new Intl.DateTimeFormat('pt-BR', {
                 dateStyle: 'short',
                 timeStyle: 'medium',
-            }).format(new Date(repeatReviewPrompt.latestReview.created_at))}. Revise abaixo o resultado salvo ou inicie uma nova an?lise.
+            }).format(new Date(repeatReviewPrompt.latestReview.created_at))}. Revise abaixo o resultado salvo ou inicie uma nova análise.
               </p>
             </div>
             <div className="space-y-4 p-8">
               <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
-                <p className="text-xs font-black uppercase tracking-widest text-slate-400">Resumo da ultima an?lise</p>
+                <p className="text-xs font-black uppercase tracking-widest text-slate-400">Resumo da ?ltima análise</p>
                 <p className="mt-3 text-sm leading-relaxed text-slate-700">{repeatReviewPrompt.latestReview.summary}</p>
                 <div className="mt-4">
                   <AiReviewUsageSummary review={repeatReviewPrompt.latestReview}/>
@@ -573,7 +573,7 @@ Todas as questoes, estudos de caso e tentativas vinculadas ser?o removidos perma
                   <span className={`rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-widest ${repeatReviewPrompt.latestReview.applied_at
                 ? 'bg-emerald-100 text-emerald-700'
                 : 'bg-amber-100 text-amber-700'}`}>
-                    {repeatReviewPrompt.latestReview.applied_at ? 'Ajustes aplicados' : "Ajustes no aplicados"}
+                    {repeatReviewPrompt.latestReview.applied_at ? 'Ajustes aplicados' : "Ajustes não aplicados"}
                   </span>
                 </div>
               </div>
@@ -587,9 +587,9 @@ Todas as questoes, estudos de caso e tentativas vinculadas ser?o removidos perma
                     moduleId: repeatReviewPrompt.moduleId,
                     moduleTitle: repeatReviewPrompt.moduleTitle,
                 });
-            }}>Ver revis?es
+            }}>Ver revisões
               </Button>
-              <Button type="button" className="h-12 rounded-2xl bg-blue-600 px-8 font-black shadow-xl shadow-blue-100 hover:bg-blue-700" onClick={() => void handleAnalyzeModule(repeatReviewPrompt.moduleId, repeatReviewPrompt.moduleTitle, true)}>Fazer nova an?lise
+              <Button type="button" className="h-12 rounded-2xl bg-blue-600 px-8 font-black shadow-xl shadow-blue-100 hover:bg-blue-700" onClick={() => void handleAnalyzeModule(repeatReviewPrompt.moduleId, repeatReviewPrompt.moduleTitle, true)}>Fazer nova análise
               </Button>
             </div>
           </div>
@@ -598,7 +598,7 @@ Todas as questoes, estudos de caso e tentativas vinculadas ser?o removidos perma
           <div className="max-h-[95vh] w-full max-w-4xl overflow-y-auto rounded-[32px] border border-white/20 bg-white shadow-2xl animate-in zoom-in-95 duration-300">
             <div className="flex items-start justify-between gap-4 border-b border-slate-100 p-8">
               <div>
-                <h3 className="text-xl font-black tracking-tight text-slate-900">Hist?rico de revis?es com IA</h3>
+                <h3 className="text-xl font-black tracking-tight text-slate-900">Histórico de revisões com IA</h3>
                 <p className="mt-1 text-sm font-medium text-slate-500">{historyTarget.moduleTitle}</p>
               </div>
               <button type="button" onClick={() => setHistoryTarget(null)} className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-50 text-slate-400 transition-colors hover:text-slate-900">
@@ -608,10 +608,10 @@ Todas as questoes, estudos de caso e tentativas vinculadas ser?o removidos perma
               </button>
             </div>
             <div className="space-y-4 p-8">
-              {(reviewHistoryByModule[historyTarget.moduleId] ?? []).length === 0 ? (<div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 text-sm font-semibold text-slate-600">Nenhuma revis?o anterior foi encontrada para este m?dulo.
+              {(reviewHistoryByModule[historyTarget.moduleId] ?? []).length === 0 ? (<div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 text-sm font-semibold text-slate-600">Nenhuma revisão anterior foi encontrada para este módulo.
                 </div>) : ((reviewHistoryByModule[historyTarget.moduleId] ?? []).map((review, reviewIndex) => (<div key={review.id} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="rounded-full bg-slate-900 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-white">Revis?o {reviewIndex + 1}
+                      <span className="rounded-full bg-slate-900 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-white">Revisão {reviewIndex + 1}
                       </span>
                       <span className="rounded-full bg-slate-100 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-slate-600">
                         {new Intl.DateTimeFormat('pt-BR', {
@@ -631,7 +631,7 @@ Todas as questoes, estudos de caso e tentativas vinculadas ser?o removidos perma
                         dateStyle: 'short',
                         timeStyle: 'medium',
                     }).format(new Date(review.applied_at))}`
-                    : "Ajustes no aplicados"}
+                    : "Ajustes não aplicados"}
                       </span>
                     </div>
                     <p className="mt-4 text-sm leading-relaxed text-slate-700">{review.summary}</p>
@@ -639,7 +639,7 @@ Todas as questoes, estudos de caso e tentativas vinculadas ser?o removidos perma
                       <AiReviewUsageSummary review={review}/>
                     </div>
                     <div className="mt-4 space-y-3">
-                      {review.issues.length === 0 ? (<div className="rounded-xl border border-emerald-100 bg-emerald-50 p-4 text-sm font-semibold text-emerald-700">Nenhum ajuste foi apontado nest? revis?o.
+                      {review.issues.length === 0 ? (<div className="rounded-xl border border-emerald-100 bg-emerald-50 p-4 text-sm font-semibold text-emerald-700">Nenhum ajuste foi apontado nesta revisão.
                         </div>) : (review.issues.map((issue) => (<div key={issue.id} className="rounded-xl border border-slate-200 bg-slate-50 p-4">
                             <div className="flex flex-wrap items-center gap-2">
                               <span className="rounded-full bg-slate-200 px-2.5 py-1 text-[10px] font-black uppercase tracking-widest text-slate-700">

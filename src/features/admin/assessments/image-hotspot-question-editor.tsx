@@ -34,7 +34,7 @@ function readImageDimensions(file: File) {
         };
         image.onerror = () => {
             URL.revokeObjectURL(objectUrl);
-            reject(new Error("N?o foi possvel ler a imagem selecionada."));
+            reject(new Error("Não foi possvel ler a imagem selecionada."));
         };
         image.src = objectUrl;
     });
@@ -178,7 +178,7 @@ export function ImageHotspotQuestionEditor({ content, onDraftChange, onPersist, 
             }
         }
         catch (error) {
-            const message = error instanceof Error ? error.message : 'Falha ao enviar a imagem base do hotspot.';
+            const message = error instanceof Error ? error.message : 'Falha ação enviar a imagem base do hotspot.';
             setAssetError(message);
             onError(message);
         }
@@ -208,7 +208,7 @@ export function ImageHotspotQuestionEditor({ content, onDraftChange, onPersist, 
             return;
         }
         if (content.targets.length === 1) {
-            onError('Mantenha ao menos um hotspot na imagem.');
+            onError('Mantenha ação menos um hotspot na imagem.');
             return;
         }
         const nextTargets = content.targets.filter((target) => target.id !== selectedTarget.id);
@@ -376,7 +376,7 @@ export function ImageHotspotQuestionEditor({ content, onDraftChange, onPersist, 
             </div>
 
             <label className="block">
-              <span className="mb-2 block text-[10px] font-black uppercase tracking-[0.28em] text-slate-400">Feedback ao clicar fora</span>
+              <span className="mb-2 block text-[10px] font-black uppercase tracking-[0.28em] text-slate-400">Feedback ação clicar fora</span>
               <textarea value={content.outside_click_feedback ?? ''} onChange={(event) => emit({
             ...content,
             outside_click_feedback: event.target.value,
@@ -388,7 +388,7 @@ export function ImageHotspotQuestionEditor({ content, onDraftChange, onPersist, 
               <p className="mt-2 text-base font-black text-slate-900">
                 {content.show_feedback_as_popup ? 'Exibir como popup' : 'Exibir no card da questão'}
               </p>
-              <p className="mt-2 text-xs font-medium leading-relaxed text-slate-600">Define se o retorno do clique aparece em popup dest?cado ou na própria área da pergunta.
+              <p className="mt-2 text-xs font-medium leading-relaxed text-slate-600">Define se o retorno do clique aparece em popup destacado ou na própria área da pergunta.
               </p>
             </div>
           </div>
@@ -443,7 +443,7 @@ export function ImageHotspotQuestionEditor({ content, onDraftChange, onPersist, 
 
             <div className="mt-5 space-y-4">
               <label className="block">
-                <span className="mb-2 block text-[10px] font-black uppercase tracking-[0.28em] text-slate-400">N?ome interno</span>
+                <span className="mb-2 block text-[10px] font-black uppercase tracking-[0.28em] text-slate-400">Nãome interno</span>
                 <input type="text" value={selectedTarget.label ?? ''} onChange={(event) => updateTarget(selectedTarget.id, { label: event.target.value })} onBlur={() => void onPersist(content)} className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-700 outline-none transition focus:border-sky-300 focus:ring-4 focus:ring-sky-100" placeholder="Ex.: área do crânio, osso frontal, hotspot 1..."/>
               </label>
 

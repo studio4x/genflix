@@ -59,7 +59,7 @@ function getQuestionScoringExplanation(question: AssessmentQuestionWithOptions) 
             : 'area';
     const gradingMode = question.answer_key?.grading_mode ?? 'partial_by_item';
     if (itemCount === 0) {
-        return `Esta pergunta vale ${pointsText} ponto(s). Defina as ${itemLabel}s para calcular a divisao da nota.`;
+        return `Esta pergunta vale ${pointsText} ponto(s). Defina as ${itemLabel}s para calcular a divisação da nota.`;
     }
     if (gradingMode === 'all_or_nothing') {
         return `Esta pergunta vale ${pointsText} ponto(s). O aluno so recebe a nota se acertar todas as ${itemCount} ${itemLabel}${itemCount > 1 ? 's' : ''}. Se errar 1 item, recebe 0 nest? pergunta.`;
@@ -171,13 +171,13 @@ export function AssessmentBuilderPanel() {
     function ensureQuestionTypeEnabled(questionType: AssessmentQuestionType | 'case_study') {
         if (questionType === 'case_study') {
             if (!canUseCaseStudies) {
-                setError("Estudo de caso est? desativado nas configura??es globais ou do curso.");
+                setError("Estudo de caso est? desativado nas configurações globais ou do curso.");
                 return false;
             }
             return true;
         }
         if (!isCourseQuestionTypeEnabled(quizTypeSettings, questionType, globalQuizTypeSettings)) {
-            setError(`${getQuestionTypeDisplayLabel(questionType)} est? desativado nas configura??es globais ou do curso.`);
+            setError(`${getQuestionTypeDisplayLabel(questionType)} est? desativado nas configurações globais ou do curso.`);
             return false;
         }
         return true;
@@ -196,11 +196,11 @@ export function AssessmentBuilderPanel() {
                     return;
                 }
                 if (!assessmentId) {
-                    throw new Error("Quiz inv?lido.");
+                    throw new Error("Quiz inválido.");
                 }
                 const assess = await fetchAssessmentById(assessmentId);
                 if (!assess || assess.assessment_type !== 'module' || assess.module_id !== moduleId) {
-                    throw new Error("Quiz no encontrado para este m?dulo.");
+                    throw new Error("Quiz não encontrado para este módulo.");
                 }
                 setAssessment(assess);
                 const loadedQuestions = await fetchAssessmentQuestions(assess.id);
@@ -279,7 +279,7 @@ export function AssessmentBuilderPanel() {
         setIsLoading(true);
         try {
             const initialData = {
-                title: isFinal ? 'Avaliação Final' : `Quiz: ${module?.title || "N?ovo M\u00F3dulo"}`,
+                title: isFinal ? 'Avaliação Final' : `Quiz: ${module?.title || "Novo M\u00F3dulo"}`,
                 description: '',
                 is_required: true,
                 passing_score: 70,
@@ -304,7 +304,7 @@ export function AssessmentBuilderPanel() {
                 publishBuilderNotice({
                     type: 'success',
                     title: "Avalia??o final criada",
-                    message: "A avalia??o final foi criada com sucesso.",
+                    message: "A avaliação final foi criada com sucesso.",
                 });
             }
         }
@@ -359,7 +359,7 @@ export function AssessmentBuilderPanel() {
         try {
             const normalizedTitle = assessmentDraft.title.trim();
             if (normalizedTitle.length < 2) {
-                throw new Error("Informe um t?tulo de quiz com pelo menos 2 caracteres.");
+                throw new Error("Informe um título de quiz com pelo menos 2 caracteres.");
             }
             const payload = {
                 title: normalizedTitle,
@@ -376,7 +376,7 @@ export function AssessmentBuilderPanel() {
             publishBuilderNotice({
                 type: 'success',
                 title: isFinal ? "Avalia??o final salva" : 'Quiz salvo',
-                message: `As configura??es de "${normalizedTitle}" foram salvas com sucesso.`,
+                message: `As configurações de "${normalizedTitle}" foram salvas com sucesso.`,
             });
         }
         catch (saveError) {
@@ -499,7 +499,7 @@ export function AssessmentBuilderPanel() {
             isVisible: isCourseQuestionTypeEnabled(quizTypeSettings, 'coloring', globalQuizTypeSettings),
         },
         {
-            title: "N?ovo Estudo de Caso",
+            title: "Novo Estudo de Caso",
             description: 'Bloco com contexto compartilhado e perguntas mistas.',
             className: 'border-amber-100 text-amber-700 hover:bg-amber-50/60',
             iconClassName: 'border-amber-200 bg-amber-50',
@@ -510,7 +510,7 @@ export function AssessmentBuilderPanel() {
     function buildQuestionPayload(questionId: string, updates: Partial<AssessmentQuestionWithOptions>) {
         const question = findQuestion(questionId);
         if (!question) {
-            throw new Error("Quest?o no encontrada.");
+            throw new Error("Questão não encontrada.");
         }
         const questionType = updates.question_type ?? question.question_type;
         const interactionContent = updates.interaction?.content
@@ -549,7 +549,7 @@ export function AssessmentBuilderPanel() {
                 ? getDefaultGamifiedState('pending', questionType, options)
                 : { interaction: null, answer_key: null };
             const createdQuestion = await createAssessmentQuestion(assessment.id, {
-                question_text: "N?ova Pergunta...",
+                question_text: "Nova Pergunta...",
                 question_type: questionType,
                 essay_expected_answer: questionType === 'essay_ai' ? 'Resposta correta esperada.' : '',
                 is_required: true,
@@ -576,7 +576,7 @@ export function AssessmentBuilderPanel() {
             return;
         try {
             const createdCaseStudy = await createAssessmentCaseStudy(assessment.id, {
-                title: "N?ovo Estudo de Caso",
+                title: "Novo Estudo de Caso",
                 case_text: 'Descreva aqui o contexto do estudo de caso, com detalhes suficientes para orientar as respostas dos alunos.',
             });
             setCaseStudies((prev) => sortCaseStudiesByPosition([
@@ -638,7 +638,7 @@ export function AssessmentBuilderPanel() {
         const nextCasePosition = (caseStudy?.questions.length ?? 0) + 1;
         try {
             const createdQuestion = await createAssessmentQuestion(assessment.id, {
-                question_text: "N?ova Pergunta do Caso...",
+                question_text: "Nãova Pergunta do Caso...",
                 question_type: questionType,
                 essay_expected_answer: questionType === 'case_study_ai' ? 'Resposta correta esperada.' : '',
                 is_required: true,
@@ -750,7 +750,7 @@ export function AssessmentBuilderPanel() {
         try {
             const createdOption = await createAssessmentOption({
                 question_id: questionId,
-                option_text: "N?ova opcao...",
+                option_text: "Nãova opção...",
                 is_correct: false,
             });
             updateQuestionState(questionId, (questionItem) => ({
@@ -847,17 +847,17 @@ export function AssessmentBuilderPanel() {
             const importedTypes = collectImportedQuestionTypes(importData);
             const firstDisabledImportedType = importedTypes.find((questionType) => !isCourseQuestionTypeEnabled(quizTypeSettings, questionType, globalQuizTypeSettings));
             if (firstDisabledImportedType) {
-                throw new Error(`${getQuestionTypeDisplayLabel(firstDisabledImportedType)} est? desativado nas configura??es globais ou do curso.`);
+                throw new Error(`${getQuestionTypeDisplayLabel(firstDisabledImportedType)} est? desativado nas configurações globais ou do curso.`);
             }
             if ((importData.case_studies?.length ?? 0) > 0 && !canUseCaseStudies) {
-                throw new Error("Estudo de caso est? desativado nas configura??es globais ou do curso.");
+                throw new Error("Estudo de caso est? desativado nas configurações globais ou do curso.");
             }
             let targetAssessmentId = assessment?.id;
             if (!targetAssessmentId) {
                 const initialData = {
                     title: typeof data.title === 'string' && data.title.trim()
                         ? data.title
-                        : (isFinal ? 'Avaliação Final' : `Quiz: ${module?.title || "N?ovo M\u00F3dulo"}`),
+                        : (isFinal ? 'Avaliação Final' : `Quiz: ${module?.title || "Novo M\u00F3dulo"}`),
                     description: typeof data.description === 'string' ? data.description : '',
                     is_required: true,
                     passing_score: typeof data.passing_score === 'number' ? data.passing_score : 70,
@@ -884,7 +884,7 @@ export function AssessmentBuilderPanel() {
             setImportJson('');
         }
         catch (importLoadError) {
-            console.error('Erro ao importar avaliação:', importLoadError);
+            console.error('Erro ação importar avaliação:', importLoadError);
             setImportError(toErrorMessage(importLoadError));
         }
         finally {
@@ -995,13 +995,13 @@ Todas as quest\u00F5es, estudos de caso e tentativas vinculadas ser\u00E3o remov
               {typeButtons.map((button) => {
                 const isActive = question.question_type === button.type;
                 const isEnabled = isCourseQuestionTypeEnabled(quizTypeSettings, button.type, globalQuizTypeSettings);
-                return (<button key={button.type} type="button" onClick={() => setType(button.type)} disabled={!isEnabled} className={`rounded-full px-3 py-1 text-[11px] font-black uppercase tracking-widest transition-colors disabled:cursor-not-allowed disabled:opacity-70 ${isActive ? button.activeClassName : button.idleClassName}`} title={!isEnabled ? "Tipo desativado nas configura??es globais ou do curso." : undefined}>
+                return (<button key={button.type} type="button" onClick={() => setType(button.type)} disabled={!isEnabled} className={`rounded-full px-3 py-1 text-[11px] font-black uppercase tracking-widest transition-colors disabled:cursor-not-allowed disabled:opacity-70 ${isActive ? button.activeClassName : button.idleClassName}`} title={!isEnabled ? "Tipo desativado nas configurações globais ou do curso." : undefined}>
                     {button.label}
                   </button>);
             })}
             </div>
 
-            {isCurrentTypeDisabled ? (<div className="rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3 text-xs font-semibold text-amber-800">Este tipo foi desativado nas configura??es globais ou do curso. A pergunta continua disponvel aqui para revis?o, mas n?o pode mais ser usada em novas criacoes.
+            {isCurrentTypeDisabled ? (<div className="rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3 text-xs font-semibold text-amber-800">Este tipo foi desativado nas configurações globais ou do curso. A pergunta continua disponvel aqui para revisão, mas não pode mais ser usada em novas criacoes.
               </div>) : null}
 
             {showLegacyControls ? (<div className="flex flex-wrap items-center gap-2">
@@ -1081,7 +1081,7 @@ Todas as quest\u00F5es, estudos de caso e tentativas vinculadas ser\u00E3o remov
                 <p className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-700">Gabarito da IA</p>
                 <p className="mt-2 text-sm font-medium text-amber-900">
                   {question.question_type === 'essay_ai'
-                    ? "Informe a resposta considerada correta. A IA comparara esse texto com o que o aluno escrever e devolvera um feedback. Esta quest?o no soma pontos no quiz." : "Informe a resposta considerada correta para est? pergunta do estudo de caso. Esta pergunta soma pontos e sera validada pela IA."}
+                    ? "Informe a resposta considerada correta. A IA comparara esse texto com o que o aluno escrever e devolvera um feedback. Esta questão no soma pontos no quiz." : "Informe a resposta considerada correta para est? pergunta do estudo de caso. Esta pergunta soma pontos e sera validada pela IA."}
                 </p>
               </div>
 
@@ -1215,7 +1215,7 @@ Todas as quest\u00F5es, estudos de caso e tentativas vinculadas ser\u00E3o remov
             </p>
           </div>
           <div className="rounded-2xl border border-white/70 bg-white px-5 py-4 shadow-sm">
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">N?ota Minima Para Aprovar</p>
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Nota Mínima Para Aprovar</p>
             <p className="mt-2 text-3xl font-black text-blue-700">{requiredPoints}</p>
             <p className="mt-2 text-xs font-medium leading-relaxed text-slate-500">
               De um total de {formatPoints(totalPossiblePoints)} ponto(s) no quiz, o aluno precisa somar pelo menos {formatPoints(requiredPoints)}.
@@ -1231,7 +1231,7 @@ Todas as quest\u00F5es, estudos de caso e tentativas vinculadas ser\u00E3o remov
 
         <div className="rounded-3xl border border-cyan-100 bg-cyan-50/60 px-6 py-5">
           <p className="text-[10px] font-black uppercase tracking-[0.2em] text-cyan-700">Leitura Rapida da Regra</p>
-          <p className="mt-3 text-sm font-medium leading-relaxed text-cyan-950">A aprova??o sempre considera a soma dos pontos do quiz inteiro. Em outras palavras: o aluno n?o precisa acertar um numero fixo de perguntas, ele precisa atingir a nota minima definida para o total da avalia??o. Neste quiz, a nota maxima e {formatPoints(totalPossiblePoints)} ponto(s) e a nota minima para aprovar e {formatPoints(requiredPoints)} ponto(s).
+          <p className="mt-3 text-sm font-medium leading-relaxed text-cyan-950">A aprova??o sempre considera a soma dos pontos do quiz inteiro. Em outras palavras: o aluno não precisa acertar um número fixo de perguntas, ele precisa atingir a nota mínima definida para o total da avaliação. Neste quiz, a nota máxima ? {formatPoints(totalPossiblePoints)} ponto(s) e a nota mínima para aprovar ? {formatPoints(requiredPoints)} ponto(s).
           </p>
         </div>
 
@@ -1282,7 +1282,7 @@ Todas as quest\u00F5es, estudos de caso e tentativas vinculadas ser\u00E3o remov
               </div>
 
               {!isCourseQuestionTypeEnabled(quizTypeSettings, 'case_study_single_choice', globalQuizTypeSettings) &&
-                !isCourseQuestionTypeEnabled(quizTypeSettings, 'case_study_ai', globalQuizTypeSettings) ? (<div className="rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">Este curso est? com as perguntas internas de estudo de caso desativadas nas configura??es globais ou do curso.
+                !isCourseQuestionTypeEnabled(quizTypeSettings, 'case_study_ai', globalQuizTypeSettings) ? (<div className="rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">Este curso est? com as perguntas internas de estudo de caso desativadas nas configurações globais ou do curso.
                 </div>) : null}
             </div>
           </section>))}
@@ -1290,10 +1290,10 @@ Todas as quest\u00F5es, estudos de caso e tentativas vinculadas ser\u00E3o remov
         {availableAddCards.length === 0 ? (<div className="rounded-3xl border border-amber-100 bg-amber-50/70 px-6 py-8 text-center">
             <p className="text-sm font-black uppercase tracking-[0.24em] text-amber-700">Nenhum tipo de quiz ativo</p>
             <p className="mt-3 text-sm font-medium text-amber-900">
-              Ative pelo menos um formato em Configuracoes do Curso para voltar a criar perguntas e estudos de caso.
+              Ative pelo menos um formato em Configura??es do Curso para voltar a criar perguntas e estudos de caso.
             </p>
             <Button type="button" variant="outline" className="mt-5 rounded-2xl border-amber-200 bg-white text-amber-700 hover:bg-amber-100" onClick={() => navigate(`/admin/cursos/${courseId}/builder/settings`)}>
-              Abrir Configuracoes do Curso
+              Abrir Configura??es do Curso
             </Button>
           </div>) : (<div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           {availableAddCards.map((card) => (<button key={card.title} onClick={card.onClick} className={`flex w-full flex-col items-center justify-center gap-4 rounded-3xl border-4 border-dashed py-12 transition-all ${card.className}`}>
@@ -1387,7 +1387,7 @@ Todas as quest\u00F5es, estudos de caso e tentativas vinculadas ser\u00E3o remov
                     <svg className="h-5 w-5 animate-spin text-white" viewBox="0 0 24 24">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/>
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
-                    </svg>Importando Contedo...
+                    </svg>Importando Conteúdo...
                   </span>) : 'Importar Agora'}
               </Button>
             </div>

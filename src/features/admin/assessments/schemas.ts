@@ -1,30 +1,30 @@
 import { z } from 'zod';
 import { assessmentInteractionContentSchema, assessmentQuestionAnswerKeyPayloadSchema, isGamifiedQuestionType, validateInteractionBundle, } from '@/features/assessments/gamified';
 export const assessmentFormSchema = z.object({
-    title: z.string().trim().min(2, "T?tulo deve ter ao menos 2 caracteres."),
+    title: z.string().trim().min(2, "Título deve ter ação menos 2 caracteres."),
     description: z.string().trim().max(2000).optional(),
     is_required: z.boolean(),
     passing_score: z
         .number()
-        .min(0, "N?ota minima deve ser maior ou igual a 0.")
-        .max(100, "N?ota minima deve ser menor ou igual a 100."),
+        .min(0, "Nota mínima deve ser maior ou igual a 0.")
+        .max(100, "Nota mínima deve ser menor ou igual a 100."),
     max_attempts: z
         .number()
         .int()
-        .min(1, 'Tentativas deve ser ao menos 1.')
-        .max(20, 'Tentativas deve ser no maximo 20.'),
+        .min(1, 'Tentativas deve ser ação menos 1.')
+        .max(20, 'Tentativas deve ser no máximo 20.'),
     estimated_minutes: z
         .number()
         .int()
-        .min(1, 'Duracao deve ser ao menos 1 minuto.')
-        .max(600, 'Duracao deve ser no maximo 600 minutos.'),
+        .min(1, 'Duracação deve ser ação menos 1 minuto.')
+        .max(600, 'Duracação deve ser no máximo 600 minutos.'),
     is_active: z.boolean(),
 });
 export const assessmentQuestionFormSchema = z.object({
     question_text: z
         .string()
         .trim()
-        .min(2, 'Pergunta deve ter ao menos 2 caracteres.'),
+        .min(2, 'Pergunta deve ter ação menos 2 caracteres.'),
     question_type: z.enum([
         'single_choice',
         'essay_ai',
@@ -36,13 +36,13 @@ export const assessmentQuestionFormSchema = z.object({
         'coloring',
     ]),
     essay_expected_answer: z.string().trim().optional(),
-    case_study_id: z.string().uuid("Estudo de caso inv?lido.").nullable().optional(),
-    case_question_position: z.number().int().min(1, 'Posicao interna invalida.').nullable().optional(),
+    case_study_id: z.string().uuid("Estudo de caso inválido.").nullable().optional(),
+    case_question_position: z.number().int().min(1, 'Posicação interna invalida.').nullable().optional(),
     interaction_content: assessmentInteractionContentSchema.nullable().optional(),
     grading_mode: z.enum(['partial_by_item', 'all_or_nothing']).optional(),
     answer_key: assessmentQuestionAnswerKeyPayloadSchema.nullable().optional(),
     is_required: z.boolean(),
-    points: z.number().min(0, "Pontuacao no pode ser negativa."),
+    points: z.number().min(0, "Pontua??o não pode ser negativa."),
 }).superRefine((value, ctx) => {
     const isStandaloneEssay = value.question_type === 'essay_ai';
     const isCaseStudyAi = value.question_type === 'case_study_ai';
@@ -60,7 +60,7 @@ export const assessmentQuestionFormSchema = z.object({
         ctx.addIssue({
             code: z.ZodIssueCode.custom,
             path: ['case_question_position'],
-            message: 'Informe a posicao da pergunta dentro do estudo de caso.',
+            message: 'Informe a posicação da pergunta dentro do estudo de caso.',
         });
     }
     if (!isCaseStudyQuestion && value.case_study_id) {
@@ -74,7 +74,7 @@ export const assessmentQuestionFormSchema = z.object({
         ctx.addIssue({
             code: z.ZodIssueCode.custom,
             path: ['case_question_position'],
-            message: "Perguntas independentes no usam posicao interna de estudo de caso.",
+            message: "Perguntas independentes no usam posicação interna de estudo de caso.",
         });
     }
     if (isStandaloneEssay || isCaseStudyAi) {
@@ -82,7 +82,7 @@ export const assessmentQuestionFormSchema = z.object({
             ctx.addIssue({
                 code: z.ZodIssueCode.custom,
                 path: ['essay_expected_answer'],
-                message: "Informe a resposta valida esperada para a quest?o discursiva.",
+                message: "Informe a resposta valida esperada para a questão discursiva.",
             });
         }
         if (isStandaloneEssay && value.points !== 0) {
@@ -96,7 +96,7 @@ export const assessmentQuestionFormSchema = z.object({
             ctx.addIssue({
                 code: z.ZodIssueCode.custom,
                 path: ['points'],
-                message: 'Perguntas discursivas do estudo de caso devem ter pontuacao maior que zero.',
+                message: 'Perguntas discursivas do estudo de caso devem ter pontuacação maior que zero.',
             });
         }
         return;
@@ -113,7 +113,7 @@ export const assessmentQuestionFormSchema = z.object({
             ctx.addIssue({
                 code: z.ZodIssueCode.custom,
                 path: ['points'],
-                message: 'Pontuacao deve ser maior que zero.',
+                message: 'Pontuacação deve ser maior que zero.',
             });
         }
         try {
@@ -123,7 +123,7 @@ export const assessmentQuestionFormSchema = z.object({
             ctx.addIssue({
                 code: z.ZodIssueCode.custom,
                 path: ['interaction_content'],
-                message: error instanceof Error ? error.message : 'Interacao gamificada invalida.',
+                message: error instanceof Error ? error.message : 'Interacação gamificada invalida.',
             });
         }
         return;
@@ -132,7 +132,7 @@ export const assessmentQuestionFormSchema = z.object({
         ctx.addIssue({
             code: z.ZodIssueCode.custom,
             path: ['points'],
-            message: 'Pontuacao deve ser maior que zero.',
+            message: 'Pontuacação deve ser maior que zero.',
         });
     }
 });
@@ -141,8 +141,8 @@ export const assessmentCaseStudyFormSchema = z.object({
     case_text: z.string().trim().min(10, 'Descreva o caso com pelo menos 10 caracteres.'),
 });
 export const assessmentOptionFormSchema = z.object({
-    question_id: z.string().uuid("Quest?o invalida."),
-    option_text: z.string().trim().min(1, 'Opcao deve ter ao menos 1 caractere.'),
+    question_id: z.string().uuid("Questão inválida."),
+    option_text: z.string().trim().min(1, 'Opcação deve ter ação menos 1 caractere.'),
     is_correct: z.boolean(),
 });
 export type AssessmentFormInput = z.infer<typeof assessmentFormSchema>;

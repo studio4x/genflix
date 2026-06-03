@@ -50,7 +50,7 @@ function buildRealContentModules(courseTree: NonNullable<ReturnType<typeof useCo
         return {
             title: module.title,
             lessonCount: items.length,
-            summary: items.length ? `${items.length} itens reais ser?o exibidos nest? se??o.` : "Este m?dulo ainda no possui itens publicados.",
+            summary: items.length ? `${items.length} itens reais serão exibidos nesta se??o.` : "Este módulo ainda não possui itens publicados.",
             items,
             lessonLabel: items.length === 1 ? 'item' : 'itens',
         } satisfies GenflixCourseModule;
@@ -59,7 +59,7 @@ function buildRealContentModules(courseTree: NonNullable<ReturnType<typeof useCo
         modules.push({
             title: courseTree.courseAssessments.length === 1 ? "Avalia??o final" : "Avalia??es finais",
             lessonCount: courseTree.courseAssessments.length,
-            summary: "Avalia??es de encerramento vinculadas ao curso.",
+            summary: "Avalia??es de encerramento vinculadas ação curso.",
             items: courseTree.courseAssessments.map((assessment) => assessment.title).filter(Boolean),
             lessonLabel: courseTree.courseAssessments.length === 1 ? 'item' : 'itens',
         });
@@ -187,15 +187,15 @@ export function CoursePublicPagePanel() {
                     .filter((module) => module.title),
             });
             if (!parsed.success) {
-                throw new Error(parsed.error.issues[0]?.message ?? "Dados inv?lidos para a p?gina publica.");
+                throw new Error(parsed.error.issues[0]?.message ?? "Dados inválidos para a página pública.");
             }
             await updateCoursePublicPage(courseTree.course.id, parsed.data);
             await refreshTree();
             setSuccess(true);
             publishBuilderNotice({
                 type: 'success',
-                title: "Pgina publica salva",
-                message: `A p?gina publica do curso "${courseTree.course.title}" foi atualizada com sucesso.`,
+                title: "Página pública salva",
+                message: `A página pública do curso "${courseTree.course.title}" foi atualizada com sucesso.`,
             });
             setTimeout(() => setSuccess(false), 3000);
         }
@@ -208,7 +208,7 @@ export function CoursePublicPagePanel() {
     }
     return (<div className="w-full animate-in fade-in duration-500 pb-24">
       <div className="border-b border-slate-200 pb-5">
-        <h2 className="text-2xl font-black tracking-tight text-slate-900">P?gina publica do curso</h2>
+        <h2 className="text-2xl font-black tracking-tight text-slate-900">Página pública do curso</h2>
         <p className="mt-1 text-sm text-slate-500">
           Edite aqui todos os textos e blocos exibidos em <span className="font-semibold text-slate-700">/cursos/{courseTree.course.slug ?? courseTree.course.id}</span>.
         </p>
@@ -219,11 +219,11 @@ export function CoursePublicPagePanel() {
             {error}
           </div>) : null}
 
-        {success ? (<div className="rounded-2xl border border-emerald-100 bg-emerald-50 p-4 text-sm font-bold text-emerald-700">P?gina publica atualizada com sucesso.
+        {success ? (<div className="rounded-2xl border border-emerald-100 bg-emerald-50 p-4 text-sm font-bold text-emerald-700">Página pública atualizada com sucesso.
           </div>) : null}
 
         <section className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm md:p-10">
-          <SectionHeading eyebrow="Hero" title="Cabe?alho principal do curso" description="Esses campos controlam a primeira dobra da p?gina do curso, incluindo t?tulo, descri??o e o bloco lateral de checkout. A imagem do hero continua sendo definida nas configura??es do curso."/>
+          <SectionHeading eyebrow="Hero" title="Cabeçalho principal do curso" description="Esses campos controlam a primeira dobra da página do curso, incluindo título, descrição e o bloco lateral de checkout. A imagem do hero continua sendo definida nas configurações do curso."/>
 
           <div className="mt-8 space-y-5">
               <label className="block space-y-2">
@@ -237,23 +237,23 @@ export function CoursePublicPagePanel() {
               </label>
 
               <label className="block space-y-2">
-                <span className="text-xs font-black uppercase tracking-widest text-slate-400">T?tulo pblico</span>
-                <input className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-5 py-3 text-sm font-semibold outline-none focus:border-cyan-400 focus:bg-white" value={form.marketing_title} onChange={(event) => updateField('marketing_title', event.target.value)} placeholder="T?tulo exibido no topo da p?gina" required/>
+                <span className="text-xs font-black uppercase tracking-widest text-slate-400">Título público</span>
+                <input className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-5 py-3 text-sm font-semibold outline-none focus:border-cyan-400 focus:bg-white" value={form.marketing_title} onChange={(event) => updateField('marketing_title', event.target.value)} placeholder="Título exibido no topo da página" required/>
               </label>
 
               <label className="block space-y-2">
-                <span className="text-xs font-black uppercase tracking-widest text-slate-400">Descri??o principal</span>
+                <span className="text-xs font-black uppercase tracking-widest text-slate-400">Descrição principal</span>
                 <textarea className="min-h-[132px] w-full rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4 text-sm font-medium leading-7 text-slate-700 outline-none focus:border-cyan-400 focus:bg-white" value={form.marketing_description} onChange={(event) => updateField('marketing_description', event.target.value)} placeholder="Resumo principal do curso para a dobra inicial." required/>
               </label>
 
               <div className="grid gap-5 md:grid-cols-2">
                 <label className="block space-y-2">
-                  <span className="text-xs font-black uppercase tracking-widest text-slate-400">Preco exibido</span>
+                  <span className="text-xs font-black uppercase tracking-widest text-slate-400">Preço exibido</span>
                   <input className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-5 py-3 text-sm font-semibold outline-none focus:border-cyan-400 focus:bg-white" value={form.price_label} onChange={(event) => updateField('price_label', event.target.value)} placeholder="Ex: R$ 294,90" required/>
                 </label>
 
                 <label className="block space-y-2">
-                  <span className="text-xs font-black uppercase tracking-widest text-slate-400">Subt?tulo do checkout</span>
+                  <span className="text-xs font-black uppercase tracking-widest text-slate-400">Subtítulo do checkout</span>
                   <input className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-5 py-3 text-sm font-semibold outline-none focus:border-cyan-400 focus:bg-white" value={form.secondary_price_label} onChange={(event) => updateField('secondary_price_label', event.target.value)} placeholder="Ex: Acesso imediato + materiais inclusos" required/>
                 </label>
               </div>
@@ -261,32 +261,32 @@ export function CoursePublicPagePanel() {
         </section>
 
         <section className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm md:p-10">
-          <SectionHeading eyebrow="Sidebar" title="Mentor e itens inclusos" description="Os campos abaixo abastecem o card lateral: mentor, se??o bonus exibida abaixo do botao comprar e lista de beneficios do curso."/>
+          <SectionHeading eyebrow="Sidebar" title="Mentor e itens inclusos" description="Os campos abaixo abastecem o card lateral: mentor, se??o bonus exibida abaixo do botão comprar e lista de beneficios do curso."/>
 
           <div className="mt-8 grid gap-5 md:grid-cols-2">
             <label className="block space-y-2">
-              <span className="text-xs font-black uppercase tracking-widest text-slate-400">N?ome do mentor</span>
+              <span className="text-xs font-black uppercase tracking-widest text-slate-400">Nome do mentor</span>
               <input className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-5 py-3 text-sm font-semibold outline-none focus:border-cyan-400 focus:bg-white" value={form.mentor_name} onChange={(event) => updateField('mentor_name', event.target.value)} required/>
             </label>
 
             <label className="block space-y-2">
-              <span className="text-xs font-black uppercase tracking-widest text-slate-400">Cargo / funcao</span>
+              <span className="text-xs font-black uppercase tracking-widest text-slate-400">Cargo / fun??o</span>
               <input className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-5 py-3 text-sm font-semibold outline-none focus:border-cyan-400 focus:bg-white" value={form.mentor_role} onChange={(event) => updateField('mentor_role', event.target.value)} required/>
             </label>
 
             <label className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-700 md:col-span-2">
               <input type="checkbox" checked={form.bonus_enabled} onChange={(event) => updateField('bonus_enabled', event.target.checked)}/>
-              Exibir secao bonus abaixo do botao comprar
+              Exibir se??o bonus abaixo do botão comprar
             </label>
 
             <label className="block space-y-2 md:col-span-2">
-              <span className="text-xs font-black uppercase tracking-widest text-slate-400">T?tulo da secao bonus</span>
-              <input className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-5 py-3 text-sm font-semibold outline-none focus:border-cyan-400 focus:bg-white" value={form.bonus_title} onChange={(event) => updateField('bonus_title', event.target.value)} placeholder="Ex: Previa de contedo" disabled={!form.bonus_enabled}/>
+              <span className="text-xs font-black uppercase tracking-widest text-slate-400">Título da se??o bonus</span>
+              <input className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-5 py-3 text-sm font-semibold outline-none focus:border-cyan-400 focus:bg-white" value={form.bonus_title} onChange={(event) => updateField('bonus_title', event.target.value)} placeholder="Ex: Prévia de conteúdo" disabled={!form.bonus_enabled}/>
             </label>
 
             <label className="block space-y-2 md:col-span-2">
-              <span className="text-xs font-black uppercase tracking-widest text-slate-400">Descri??o da secao bonus</span>
-              <textarea className="min-h-[120px] w-full rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4 text-sm font-medium leading-7 text-slate-700 outline-none focus:border-cyan-400 focus:bg-white" value={form.mentor_bio} onChange={(event) => updateField('mentor_bio', event.target.value)} placeholder="Ex: Tenha acesso a uma previa completa dos principais topicos do curso." disabled={!form.bonus_enabled}/>
+              <span className="text-xs font-black uppercase tracking-widest text-slate-400">Descrição da se??o bonus</span>
+              <textarea className="min-h-[120px] w-full rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4 text-sm font-medium leading-7 text-slate-700 outline-none focus:border-cyan-400 focus:bg-white" value={form.mentor_bio} onChange={(event) => updateField('mentor_bio', event.target.value)} placeholder="Ex: Tenha acesso a uma prévia completa dos principais tópicos do curso." disabled={!form.bonus_enabled}/>
             </label>
 
             <label className="block space-y-2">
@@ -298,7 +298,7 @@ export function CoursePublicPagePanel() {
           <div className="mt-8 space-y-3">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="text-sm font-black text-slate-900">O que est? incluido</p>
+                <p className="text-sm font-black text-slate-900">O que está incluído</p>
                 <p className="text-xs font-medium text-slate-500">Lista dos chips exibidos abaixo do formulario de compra.</p>
               </div>
               <Button type="button" variant="outline" className="rounded-2xl" onClick={() => updateField('includedItems', [...form.includedItems, ''])}>
@@ -308,7 +308,7 @@ export function CoursePublicPagePanel() {
             </div>
 
             {form.includedItems.map((item, index) => (<div key={`included-item-${index}`} className="flex items-center gap-3">
-                <input className="h-12 flex-1 rounded-2xl border border-slate-200 bg-slate-50 px-5 text-sm font-semibold outline-none focus:border-cyan-400 focus:bg-white" value={item} onChange={(event) => updateIncludedItem(index, event.target.value)} placeholder="Ex: Acesso imediato ao curso"/>
+                <input className="h-12 flex-1 rounded-2xl border border-slate-200 bg-slate-50 px-5 text-sm font-semibold outline-none focus:border-cyan-400 focus:bg-white" value={item} onChange={(event) => updateIncludedItem(index, event.target.value)} placeholder="Ex: Acesso imediato ação curso"/>
                 <Button type="button" variant="outline" size="icon" className="h-12 w-12 rounded-2xl" onClick={() => updateField('includedItems', form.includedItems.filter((_, itemIndex) => itemIndex !== index))} disabled={form.includedItems.length === 1}>
                   <Trash2 className="h-4 w-4"/>
                 </Button>
@@ -317,14 +317,14 @@ export function CoursePublicPagePanel() {
         </section>
 
         <section className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm md:p-10">
-          <SectionHeading eyebrow="Corpo" title="Sobre o curso e dest?ques" description="Esses blocos alimentam as secoes de texto corrido e os cards de O que voc vai aprender."/>
+          <SectionHeading eyebrow="Corpo" title="Sobre o curso e destaques" description="Esses blocos alimentam as secoes de texto corrido e os cards de O que voc vai aprender."/>
 
           <div className="mt-8 space-y-8">
             <div className="space-y-3">
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <p className="text-sm font-black text-slate-900">Sobre o curso</p>
-                  <p className="text-xs font-medium text-slate-500">Cada campo abaixo representa um paragrafo exibido na secao.</p>
+                  <p className="text-xs font-medium text-slate-500">Cada campo abaixo representa um paragrafo exibido na se??o.</p>
                 </div>
                 <Button type="button" variant="outline" className="rounded-2xl" onClick={() => updateField('aboutParagraphs', [...form.aboutParagraphs, ''])}>
                   <Plus className="mr-2 h-4 w-4"/>
@@ -333,7 +333,7 @@ export function CoursePublicPagePanel() {
               </div>
 
               {form.aboutParagraphs.map((paragraph, index) => (<div key={`about-${index}`} className="flex items-start gap-3">
-                  <textarea className="min-h-[110px] flex-1 rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4 text-sm font-medium leading-7 text-slate-700 outline-none focus:border-cyan-400 focus:bg-white" value={paragraph} onChange={(event) => updateParagraph(index, event.target.value)} placeholder="Paragrafo da se??o Sobre o Curso"/>
+                  <textarea className="min-h-[110px] flex-1 rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4 text-sm font-medium leading-7 text-slate-700 outline-none focus:border-cyan-400 focus:bg-white" value={paragraph} onChange={(event) => updateParagraph(index, event.target.value)} placeholder="Parágrafo da seção Sobre o Curso"/>
                   <Button type="button" variant="outline" size="icon" className="mt-1 h-12 w-12 rounded-2xl" onClick={() => updateField('aboutParagraphs', form.aboutParagraphs.filter((_, paragraphIndex) => paragraphIndex !== index))} disabled={form.aboutParagraphs.length === 1}>
                     <Trash2 className="h-4 w-4"/>
                   </Button>
@@ -344,10 +344,10 @@ export function CoursePublicPagePanel() {
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <p className="text-sm font-black text-slate-900">O que voc? vai aprender</p>
-                  <p className="text-xs font-medium text-slate-500">Cards de dest?que exibidos em duas colunas na p?gina publica.</p>
+                  <p className="text-xs font-medium text-slate-500">Cards de destaque exibidos em duas colunas na página publica.</p>
                 </div>
                 <Button type="button" variant="outline" className="rounded-2xl" onClick={() => updateField('outcomes', [...form.outcomes, createEmptyOutcome()])}>
-                  <Plus className="mr-2 h-4 w-4"/>Adicionar dest?que
+                  <Plus className="mr-2 h-4 w-4"/>Adicionar destaque
                 </Button>
               </div>
 
@@ -363,8 +363,8 @@ export function CoursePublicPagePanel() {
                     </div>
 
                     <div className="mt-4 space-y-3">
-                      <input className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold outline-none focus:border-cyan-400" value={outcome.title} onChange={(event) => updateOutcome(index, { title: event.target.value })} placeholder="T?tulo do card"/>
-                      <textarea className="min-h-[110px] w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium leading-6 text-slate-700 outline-none focus:border-cyan-400" value={outcome.description} onChange={(event) => updateOutcome(index, { description: event.target.value })} placeholder="Descri??o do card"/>
+                      <input className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold outline-none focus:border-cyan-400" value={outcome.title} onChange={(event) => updateOutcome(index, { title: event.target.value })} placeholder="Título do card"/>
+                      <textarea className="min-h-[110px] w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium leading-6 text-slate-700 outline-none focus:border-cyan-400" value={outcome.description} onChange={(event) => updateOutcome(index, { description: event.target.value })} placeholder="Descrição do card"/>
                     </div>
                   </article>))}
               </div>
@@ -373,7 +373,7 @@ export function CoursePublicPagePanel() {
         </section>
 
         <section className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm md:p-10">
-          <SectionHeading eyebrow="Contedo do curso" title="Escolha entre outline real ou contedo personalizado" description="N?o modo real, a p?gina publica lista apenas os nomes dos m?dulos, aulas e quizzes cadastrados no construtor. N?o modo personalizado, voc controla os cards manualmente."/>
+          <SectionHeading eyebrow="Conteúdo do curso" title="Escolha entre outline real ou contedo personalizado" description="No modo real, a página pública lista apenas os nomes dos módulos, aulas e quizzes cadastrados no construtor. No modo personalizado, voc? controla os cards manualmente."/>
 
           <div className="mt-8 rounded-[28px] border border-slate-200 bg-slate-50 p-2">
             <div className="grid gap-2 md:grid-cols-2">
@@ -381,9 +381,9 @@ export function CoursePublicPagePanel() {
             ? 'bg-white shadow-sm ring-1 ring-cyan-200'
             : 'text-slate-600 hover:bg-white/70'}`}>
                 <span className="flex items-center gap-2 text-sm font-black text-slate-900">
-                  <Layers3 className="h-4 w-4 text-cyan-700"/>Mostrar contedo real do curso
+                  <Layers3 className="h-4 w-4 text-cyan-700"/>Mostrar conteúdo real do curso
                 </span>
-                <span className="mt-2 block text-xs font-medium leading-5 text-slate-500">Exibe dinamicamente os nomes dos m?dulos, aulas e quizzes criados no construtor.
+                <span className="mt-2 block text-xs font-medium leading-5 text-slate-500">Exibe dinamicamente os nomes dos módulos, aulas e quizzes criados no construtor.
                 </span>
               </button>
 
@@ -391,9 +391,9 @@ export function CoursePublicPagePanel() {
             ? 'bg-white shadow-sm ring-1 ring-cyan-200'
             : 'text-slate-600 hover:bg-white/70'}`}>
                 <span className="flex items-center gap-2 text-sm font-black text-slate-900">
-                  <BookOpen className="h-4 w-4 text-cyan-700"/>Mostrar contedo personalizado
+                  <BookOpen className="h-4 w-4 text-cyan-700"/>Mostrar conteúdo personalizado
                 </span>
-                <span className="mt-2 block text-xs font-medium leading-5 text-slate-500">Mantem a estrutura atual da p?gina publica com cards customizados por m?dulo.
+                <span className="mt-2 block text-xs font-medium leading-5 text-slate-500">Mantém a estrutura atual da página pública com cards customizados por módulo.
                 </span>
               </button>
             </div>
@@ -404,7 +404,7 @@ export function CoursePublicPagePanel() {
                   <div className="flex items-center justify-between gap-3">
                     <div>
                       <p className="text-base font-black text-slate-900">{module.title}</p>
-                      <p className="mt-1 text-[11px] font-black uppercase tracking-[0.22em] text-slate-500">Mdulo {index + 1}
+                      <p className="mt-1 text-[11px] font-black uppercase tracking-[0.22em] text-slate-500">Módulo {index + 1}
                       </p>
                     </div>
                     <span className="rounded-full bg-cyan-100 px-3 py-1 text-[11px] font-black uppercase tracking-[0.18em] text-cyan-800">
@@ -415,26 +415,26 @@ export function CoursePublicPagePanel() {
                   <div className="mt-4 space-y-2">
                     {module.items?.length ? module.items.map((item) => (<div key={`${module.title}-${item}`} className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700">
                         {item}
-                      </div>)) : (<div className="rounded-2xl border border-dashed border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-400">Nenhum item real criado neste m?dulo ainda.
+                      </div>)) : (<div className="rounded-2xl border border-dashed border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-400">Nenhum item real criado neste módulo ainda.
                       </div>)}
                   </div>
-                </article>)) : (<div className="rounded-[24px] border border-dashed border-slate-200 bg-slate-50 px-5 py-8 text-sm font-medium text-slate-500">Ainda n?o existem m?dulos, aulas ou quizzes suficientes para montar o outline real deste curso.
+                </article>)) : (<div className="rounded-[24px] border border-dashed border-slate-200 bg-slate-50 px-5 py-8 text-sm font-medium text-slate-500">Ainda não existem módulos, aulas ou quizzes suficientes para montar o outline real deste curso.
                 </div>)}
             </div>) : (<div className="mt-8 space-y-4">
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <p className="text-sm font-black text-slate-900">Cards personalizados de contedo</p>
-                  <p className="text-xs font-medium text-slate-500">Estrutura igual a secao atual da p?gina publica.</p>
+                  <p className="text-sm font-black text-slate-900">Cards personalizados de conteúdo</p>
+                  <p className="text-xs font-medium text-slate-500">Estrutura igual ? se??o atual da página pública.</p>
                 </div>
                 <Button type="button" variant="outline" className="rounded-2xl" onClick={() => updateField('customSyllabus', [...form.customSyllabus, createEmptyModule()])}>
-                  <Plus className="mr-2 h-4 w-4"/>Adicionar m?dulo
+                  <Plus className="mr-2 h-4 w-4"/>Adicionar módulo
                 </Button>
               </div>
 
               {form.customSyllabus.map((module, index) => (<article key={`custom-module-${index}`} className="rounded-[24px] border border-slate-200 bg-slate-50 p-5">
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <p className="text-[11px] font-black uppercase tracking-[0.22em] text-slate-500">Mdulo {index + 1}</p>
+                      <p className="text-[11px] font-black uppercase tracking-[0.22em] text-slate-500">Módulo {index + 1}</p>
                       <p className="mt-2 text-sm font-medium text-slate-500">Use essa estrutura quando quiser vender o curso com uma narrativa mais editorial.</p>
                     </div>
                     <Button type="button" variant="outline" size="icon" className="h-10 w-10 rounded-2xl bg-white" onClick={() => updateField('customSyllabus', form.customSyllabus.filter((_, moduleIndex) => moduleIndex !== index))} disabled={form.customSyllabus.length === 1}>
@@ -444,7 +444,7 @@ export function CoursePublicPagePanel() {
 
                   <div className="mt-4 grid gap-4 md:grid-cols-2">
                     <label className="block space-y-2 md:col-span-2">
-                      <span className="text-xs font-black uppercase tracking-widest text-slate-400">T?tulo do m?dulo</span>
+                      <span className="text-xs font-black uppercase tracking-widest text-slate-400">Título do módulo</span>
                       <input className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold outline-none focus:border-cyan-400" value={module.title} onChange={(event) => updateCustomModule(index, { title: event.target.value })} placeholder="Ex: Primeiros passos"/>
                     </label>
 
@@ -454,13 +454,13 @@ export function CoursePublicPagePanel() {
                     </label>
 
                     <label className="block space-y-2">
-                      <span className="text-xs font-black uppercase tracking-widest text-slate-400">Rotulo da quantidade</span>
+                      <span className="text-xs font-black uppercase tracking-widest text-slate-400">Rótulo da quantidade</span>
                       <input className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold outline-none focus:border-cyan-400" value={module.lessonLabel ?? ''} onChange={(event) => updateCustomModule(index, { lessonLabel: event.target.value })} placeholder="Ex: aulas"/>
                     </label>
 
                     <label className="block space-y-2 md:col-span-2">
-                      <span className="text-xs font-black uppercase tracking-widest text-slate-400">Resumo do m?dulo</span>
-                      <textarea className="min-h-[110px] w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium leading-6 text-slate-700 outline-none focus:border-cyan-400" value={module.summary} onChange={(event) => updateCustomModule(index, { summary: event.target.value })} placeholder="Resumo que aparece ao expandir o card na p?gina publica."/>
+                      <span className="text-xs font-black uppercase tracking-widest text-slate-400">Resumo do módulo</span>
+                      <textarea className="min-h-[110px] w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium leading-6 text-slate-700 outline-none focus:border-cyan-400" value={module.summary} onChange={(event) => updateCustomModule(index, { summary: event.target.value })} placeholder="Resumo que aparece ação expandir o card na página publica."/>
                     </label>
                   </div>
                 </article>))}
@@ -469,7 +469,7 @@ export function CoursePublicPagePanel() {
 
         <div className="flex justify-end">
           <Button type="submit" className="h-12 rounded-2xl px-8 font-black" disabled={isSubmitting}>
-            {isSubmitting ? 'Salvando p?gina publica...' : 'Salvar p?gina publica'}
+            {isSubmitting ? 'Salvando página pública...' : 'Salvar página pública'}
           </Button>
         </div>
       </form>

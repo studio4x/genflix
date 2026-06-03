@@ -702,7 +702,7 @@ export function GamifiedQuestionEditor({ question, onDraftChange, onPersist, onE
     }
     function addToken() {
         if (activeInteraction.kind !== 'fill_in_the_blanks') {
-            onError("N?o arrastar e soltar, o banco de respostas acompanha automticamente a quantidade de \u00E1reas.");
+            onError("Não arrastar e soltar, o banco de respostas acompanha automticamente a quantidade de \u00E1reas.");
             return;
         }
         const nextContent: FillInTheBlanksInteractionContent = {
@@ -723,7 +723,7 @@ export function GamifiedQuestionEditor({ question, onDraftChange, onPersist, onE
             return;
         }
         if (activeInteraction.tokens.length === 1) {
-            onError('Mantenha ao menos um item no banco de respostas.');
+            onError('Mantenha ação menos um item no banco de respostas.');
             return;
         }
         const nextContent: FillInTheBlanksInteractionContent = {
@@ -755,7 +755,7 @@ export function GamifiedQuestionEditor({ question, onDraftChange, onPersist, onE
             let nextContent: AssessmentInteractionContent;
             if (activeInteraction.kind === 'coloring' && getColoringRenderMode(activeInteraction) === 'svg_regions') {
                 if (!isSvgFile(file)) {
-                    throw new Error("N?o modo SVG, envie um arquivo `.svg` com `id` ou `data-region-id` nas pe\u00E7as pint\u00E1veis.");
+                    throw new Error("Não modo SVG, envie um arquivo `.svg` com `id` ou `data-region-id` nas pe\u00E7as pint\u00E1veis.");
                 }
                 const svgAsset = await parseColoringSvgFile(file);
                 nextContent = {
@@ -792,7 +792,7 @@ export function GamifiedQuestionEditor({ question, onDraftChange, onPersist, onE
             }
         }
         catch (error) {
-            const message = error instanceof Error ? error.message : 'Falha ao enviar a imagem do exercicio.';
+            const message = error instanceof Error ? error.message : 'Falha ação enviar a imagem do exercicio.';
             if (shouldOpenSvgInstructions(message)) {
                 setIsSvgInstructionsModalOpen(true);
             }
@@ -879,7 +879,7 @@ export function GamifiedQuestionEditor({ question, onDraftChange, onPersist, onE
             }
         }
         catch (error) {
-            const message = error instanceof Error ? error.message : 'Falha ao importar o código SVG/XML.';
+            const message = error instanceof Error ? error.message : 'Falha ação importar o código SVG/XML.';
             if (shouldOpenSvgInstructions(message)) {
                 setIsSvgInstructionsModalOpen(true);
             }
@@ -1103,7 +1103,7 @@ ${SVG_COLORING_EXAMPLE}`} className="min-h-[360px] w-full rounded-[28px] border 
             <p className="text-[10px] font-black uppercase tracking-[0.25em] text-cyan-700">Banco de respostas</p>
             <p className="mt-2 text-sm font-medium text-cyan-950">
               {activeInteraction.kind === 'drag_drop_labeling'
-                ? "N?o arrastar e soltar, cada \u00E1rea cria automticamente um campo correspondente no banco de respostas." : "Cada item do banco deve ser associado a uma \u00FAnica \u00E1rea ou lacuna nest? v1."}
+                ? "Não arrastar e soltar, cada \u00E1rea cria automticamente um campo correspondente no banco de respostas." : "Cada item do banco deve ser associado a uma \u00FAnica \u00E1rea ou lacuna nest? v1."}
             </p>
           </div>
 
@@ -1153,7 +1153,7 @@ ${SVG_COLORING_EXAMPLE}`} className="min-h-[360px] w-full rounded-[28px] border 
                             ? { ...item, label: nextLabel }
                             : item)),
                     });
-                }} onKeyDown={(event) => event.stopPropagation()} placeholder={activeInteraction.kind === 'drag_drop_labeling' ? `Rótulo ${index + 1}` : activeInteraction.kind === 'coloring' ? "N?ome da cor" : 'Resposta correta exibida ao aluno. Pode ter mais de uma palavra.'}/>
+                }} onKeyDown={(event) => event.stopPropagation()} placeholder={activeInteraction.kind === 'drag_drop_labeling' ? `Rótulo ${index + 1}` : activeInteraction.kind === 'coloring' ? "Nãome da cor" : 'Resposta correta exibida ação aluno. Pode ter mais de uma palavra.'}/>
             </div>))}
         </div>
 
@@ -1310,7 +1310,7 @@ ${SVG_COLORING_EXAMPLE}`} className="min-h-[360px] w-full rounded-[28px] border 
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-400">Regiões detectadas</p>
-                  <p className="mt-2 text-sm font-medium text-slate-600">Clique em uma região para dest?car no preview e ajustar o nome interno ou a cor correta.
+                  <p className="mt-2 text-sm font-medium text-slate-600">Clique em uma região para destacar no preview e ajustar o nome interno ou a cor correta.
                   </p>
                 </div>
                 <span className="rounded-full bg-white px-3 py-1 text-[10px] font-black uppercase tracking-widest text-cyan-700 shadow-sm">
@@ -1342,7 +1342,7 @@ ${SVG_COLORING_EXAMPLE}`} className="min-h-[360px] w-full rounded-[28px] border 
 
                       <div className="mt-4 space-y-3">
                         <label className="block space-y-2">
-                          <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">N?ome interno</span>
+                          <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Nãome interno</span>
                           <input className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 focus:border-cyan-300 focus:ring-4 focus:ring-cyan-100" value={region.label ?? ''} onChange={(event) => updateRegion(region.region_id, { label: event.target.value })} onBlur={(event) => commitRegion(region.region_id, { label: event.currentTarget.value })} placeholder={`Região ${index + 1}`}/>
                         </label>
 
@@ -1425,7 +1425,7 @@ ${SVG_COLORING_EXAMPLE}`} className="min-h-[360px] w-full rounded-[28px] border 
         }
         function removeTarget(targetId: string) {
             if (content.targets.length === 1) {
-                onError(isColoringPointMode ? 'Mantenha ao menos um ponto de cor.' : 'Mantenha ao menos uma área de encaixe.');
+                onError(isColoringPointMode ? 'Mantenha ação menos um ponto de cor.' : 'Mantenha ação menos uma área de encaixe.');
                 return;
             }
             const nextContent: CanvasInteractionContent = {
@@ -1485,8 +1485,8 @@ ${SVG_COLORING_EXAMPLE}`} className="min-h-[360px] w-full rounded-[28px] border 
               </p>
               <p className="mt-2 text-sm font-medium text-slate-600">
                 {isColoringPointMode
-                    ? 'Edite a posicao de cada ponto e associe a cor correta.'
-                    : 'Edite posicao, tamanho e a resposta correta de cada hotspot.'}
+                    ? 'Edite a posicação de cada ponto e associe a cor correta.'
+                    : 'Edite posicação, tamanho e a resposta correta de cada hotspot.'}
               </p>
             </div>
             <span className="rounded-full bg-cyan-100 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-cyan-700">
@@ -1509,7 +1509,7 @@ ${SVG_COLORING_EXAMPLE}`} className="min-h-[360px] w-full rounded-[28px] border 
 
                 <div className="mt-4 space-y-3">
                   <label className="block space-y-2">
-                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">N?ome interno</span>
+                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Nãome interno</span>
                     <input className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 focus:border-cyan-300 focus:ring-4 focus:ring-cyan-100" value={target.label ?? ''} onChange={(event) => updateTarget(target.id, 'label', event.target.value)} onBlur={() => void commitLatestDraft()} placeholder="Ex.: Mitocondria"/>
                   </label>
 
@@ -1547,7 +1547,7 @@ ${SVG_COLORING_EXAMPLE}`} className="min-h-[360px] w-full rounded-[28px] border 
               </p>
               <p className="mt-2 text-sm font-medium text-slate-600">
                     {isColoringPointMode
-                    ? "Selecione um ponto para dest?car na imagem ou abrir o ajuste detalhado." : "Selecione uma \u00E1rea para dest?car no canvas ou abrir o ajuste detalhado."}
+                    ? "Selecione um ponto para destacar na imagem ou abrir o ajuste detalhado." : "Selecione uma \u00E1rea para destacar no canvas ou abrir o ajuste detalhado."}
               </p>
             </div>
             <span className="rounded-full bg-white px-3 py-1 text-[10px] font-black uppercase tracking-widest text-cyan-700 shadow-sm">
@@ -1811,11 +1811,11 @@ ${SVG_COLORING_EXAMPLE}`} className="min-h-[360px] w-full rounded-[28px] border 
                 <section className="grid gap-3 md:grid-cols-3">
                   <div className="rounded-[24px] border border-slate-200 bg-slate-50/70 p-5">
                     <p className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-500">Passo 1</p>
-                    <p className="mt-3 text-sm font-semibold text-slate-900">Separe cada peca em uma regiao propria.</p>
+                    <p className="mt-3 text-sm font-semibold text-slate-900">Separe cada peca em uma regiação propria.</p>
                   </div>
                   <div className="rounded-[24px] border border-slate-200 bg-slate-50/70 p-5">
                     <p className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-500">Passo 2</p>
-                    <p className="mt-3 text-sm font-semibold text-slate-900">Defina `id` ou `data-region-id` em cada regiao.</p>
+                    <p className="mt-3 text-sm font-semibold text-slate-900">Defina `id` ou `data-region-id` em cada regiação.</p>
                   </div>
                   <div className="rounded-[24px] border border-slate-200 bg-slate-50/70 p-5">
                     <p className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-500">Passo 3</p>
@@ -1827,11 +1827,11 @@ ${SVG_COLORING_EXAMPLE}`} className="min-h-[360px] w-full rounded-[28px] border 
                   <section className="rounded-[28px] border border-cyan-100 bg-cyan-50/70 p-6">
                     <p className="text-[10px] font-black uppercase tracking-[0.25em] text-cyan-700">Checklist</p>
                     <div className="mt-4 space-y-4 text-sm font-medium leading-relaxed text-cyan-950">
-                      <p><strong>1.</strong>O arquivo precisa ser realmente `SVG`, n?o PNG, PDF ou imagem vetorizada exportada de forma errada.</p>
+                      <p><strong>1.</strong>O arquivo precisa ser realmente `SVG`, não PNG, PDF ou imagem vetorizada exportada de forma errada.</p>
                       <p><strong>2.</strong> Cada peca pintavel deve ter um `id` proprio ou `data-region-id`.</p>
                       <p><strong>3.</strong> As pecas devem ser formas fechadas. `path`, `polygon`, `rect`, `circle` e `ellipse` funcionam melhor.</p>
-                      <p><strong>4.</strong> `fill=\"none\"` pode ser usado. O sistema injeta o preenchimento durante a interacao do aluno.</p>
-                      <p><strong>5.</strong> Se usar {'<g>'}, o grupo tamb?m pode ter `data-region-id`, desde que os shapes internos pertençam a uma unica peca.</p>
+                      <p><strong>4.</strong> `fill=\"none\"` pode ser usado. O sistema injeta o preenchimento durante a interacação do aluno.</p>
+                      <p><strong>5.</strong> Se usar {'<g>'}, o grupo também pode ter `data-region-id`, desde que os shapes internos pertençam a uma única peca.</p>
                     </div>
                   </section>
 
@@ -1839,9 +1839,9 @@ ${SVG_COLORING_EXAMPLE}`} className="min-h-[360px] w-full rounded-[28px] border 
                     <p className="text-[10px] font-black uppercase tracking-[0.25em] text-amber-700">Evite</p>
                     <div className="mt-4 space-y-4 text-sm font-medium leading-relaxed text-amber-950">
                       <p><strong>1.</strong> Linhas soltas com {'<line>'} ou paths abertos sem area interna para preencher.</p>
-                      <p><strong>2.</strong> Deixar varias pecas diferentes dentro da mesma regiao quando o aluno precisa colori-las separadamente.</p>
+                      <p><strong>2.</strong> Deixar varias pecas diferentes dentro da mesma regiação quando o aluno precisa colori-las separadamente.</p>
                       <p><strong>3.</strong> Confiar apenas em nomes visuais da camada no editor grafico sem exportar o `id` no SVG final.</p>
-                      <p><strong>4.</strong> SVGs com tudo achatado em um unico path sem divisao por partes do desenho.</p>
+                      <p><strong>4.</strong> SVGs com tudo achatado em um unico path sem divisação por partes do desenho.</p>
                     </div>
                   </section>
                 </div>
@@ -1849,7 +1849,7 @@ ${SVG_COLORING_EXAMPLE}`} className="min-h-[360px] w-full rounded-[28px] border 
                 <section className="rounded-[28px] border border-slate-200 bg-slate-50/70 p-6">
                   <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                     <div>
-                      <p className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-500">Exemplo minimo</p>
+                      <p className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-500">Exemplo mínimo</p>
                       <p className="mt-2 text-sm font-medium text-slate-600">
                         Este formato ja pode ser detectado pelo editor.
                       </p>
@@ -1867,7 +1867,7 @@ ${SVG_COLORING_EXAMPLE}`} className="min-h-[360px] w-full rounded-[28px] border 
                 <section className="rounded-[28px] border border-slate-200 bg-white p-6">
                   <p className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-500">Ferramentas externas</p>
                   <div className="mt-4 space-y-4 text-sm font-medium leading-relaxed text-slate-700">
-                    <p>N?o Illustrator, Figma, Inkscape ou Corel, o ponto principal e garantir que cada peca exportada tenha identificador unico no SVG final.</p>
+                    <p>Não Illustrator, Figma, Inkscape ou Corel, o ponto principal e garantir que cada peca exportada tenha identificador unico no SVG final.</p>
                     <p>Se quiser, eu posso no proximo passo adicionar um validador visual no upload, mostrando quais ids o sistema encontrou antes de salvar.</p>
                   </div>
                 </section>
@@ -1936,7 +1936,7 @@ ${SVG_COLORING_EXAMPLE}`} className="min-h-[360px] w-full rounded-[28px] border 
         }
         function removePromptItem(groupId: string) {
             if (groups.length === 1) {
-                onError('Mantenha ao menos uma pergunta com lacuna neste exercício.');
+                onError('Mantenha ação menos uma pergunta com lacuna neste exercício.');
                 return;
             }
             const nextGroups = groups.filter((group) => group.id !== groupId);
@@ -2006,7 +2006,7 @@ ${SVG_COLORING_EXAMPLE}`} className="min-h-[360px] w-full rounded-[28px] border 
             if (!group)
                 return;
             if (group.blanks.length === 1) {
-                onError('Cada pergunta precisa manter ao menos uma lacuna.');
+                onError('Cada pergunta precisa manter ação menos uma lacuna.');
                 return;
             }
             void commitGroups(patchGroups(groupId, (currentGroup) => ({
@@ -2160,7 +2160,7 @@ ${SVG_COLORING_EXAMPLE}`} className="min-h-[360px] w-full rounded-[28px] border 
     return (<div className="space-y-6 rounded-[32px] border border-cyan-200 bg-[linear-gradient(180deg,_rgba(236,254,255,0.55),_rgba(255,255,255,1))] p-6">
       <div className="grid gap-6 xl:grid-cols-[1fr_260px]">
         <div className="space-y-2">
-          <p className="text-[10px] font-black uppercase tracking-[0.25em] text-cyan-700">Instrução ao aluno</p>
+          <p className="text-[10px] font-black uppercase tracking-[0.25em] text-cyan-700">Instrução ação aluno</p>
           <textarea className="min-h-[110px] w-full rounded-[28px] border border-cyan-100 bg-white px-5 py-4 text-sm font-medium text-slate-700 shadow-sm focus:border-cyan-300 focus:ring-4 focus:ring-cyan-100" value={activeInteraction.instruction} onChange={(event) => updateDraft({
             ...activeInteraction,
             instruction: event.target.value,

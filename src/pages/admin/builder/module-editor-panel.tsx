@@ -169,7 +169,7 @@ export function ModuleEditorPanel() {
                     setReviewHistory((previous) => [savedReview, ...previous]);
                 }
                 catch (historyError) {
-                    setError(`A an?lise foi concluida, mas o hist?rico no foi salvo: ${toErrorMessage(historyError)}`);
+                    setError(`A análise foi concluida, mas o histórico no foi salvo: ${toErrorMessage(historyError)}`);
                 }
             }
             setAnalysisTarget({
@@ -193,11 +193,11 @@ export function ModuleEditorPanel() {
         publishBuilderNotice({
             type: 'pending',
             title: 'Aplicando ajustes da IA',
-            message: `O m?dulo "${currentModule.title}" est? sendo atualizado agora.`,
+            message: `O módulo "${currentModule.title}" est? sendo atualizado agora.`,
             details: [
-                `Mdulo em processamento: ${currentModule.title}`,
-                `Pontos identificados na an?lise: ${analysisResult.issues.length}`,
-                'Aguarde a confirmacao final antes de sair da tela.',
+                `Módulo em processamento: ${currentModule.title}`,
+                `Pontos identificados na análise: ${analysisResult.issues.length}`,
+                'Aguarde a confirmacação final antes de sair da tela.',
             ],
         });
         try {
@@ -212,22 +212,22 @@ export function ModuleEditorPanel() {
                     }
                 }
                 catch (historyError) {
-                    setError(`Os ajustes foram aplicados, mas o hist?rico no foi atualizado: ${toErrorMessage(historyError)}`);
+                    setError(`Os ajustes foram aplicados, mas o histórico no foi atualizado: ${toErrorMessage(historyError)}`);
                 }
             }
             setDidApplyCurrentAnalysis(true);
             publishBuilderNotice({
                 type: 'success',
                 title: 'Ajustes da IA concluidos',
-                message: `Os ajustes foram aplicados ao m?dulo "${currentModule.title}".`,
+                message: `Os ajustes foram aplicados ação módulo "${currentModule.title}".`,
                 details: [
-                    `Mdulo atualizado: ${currentModule.title}`,
+                    `Módulo atualizado: ${currentModule.title}`,
                     `Horario: ${new Intl.DateTimeFormat('pt-BR', {
                         dateStyle: 'short',
                         timeStyle: 'medium',
                     }).format(new Date(appliedAtIso))}`,
                     `Pontos processados: ${analysisResult.issues.length}`,
-                    analysisResult.ready_to_publish ? 'Status do m?dulo: pronto para publicar.' : "Status do m?dulo: ainda requer revis?o manual.",
+                    analysisResult.ready_to_publish ? 'Status do módulo: pronto para publicar.' : "Status do módulo: ainda requer revisão manual.",
                 ],
             });
         }
@@ -236,12 +236,12 @@ export function ModuleEditorPanel() {
             setError(message);
             publishBuilderNotice({
                 type: 'error',
-                title: 'Falha ao aplicar ajustes da IA',
-                message: `N?o foi possvel concluir os ajustes no m?dulo "${currentModule.title}".`,
+                title: 'Falha ação aplicar ajustes da IA',
+                message: `Não foi possível concluir os ajustes no módulo "${currentModule.title}".`,
                 details: [
                     `Mdulo: ${currentModule.title}`,
                     `Erro retornado: ${message}`,
-                    'Nenhuma confirmacao de salvamento foi recebida.',
+                    'Nenhuma confirmacação de salvamento foi recebida.',
                 ],
             });
         }
@@ -265,8 +265,8 @@ export function ModuleEditorPanel() {
                 await updateModule(moduleId, parsed.data);
                 publishBuilderNotice({
                     type: 'success',
-                    title: "Mdulo salvo",
-                    message: `As alteracoes do m?dulo "${parsed.data.title}" foram salvas com sucesso.`,
+                    title: "Módulo salvo",
+                    message: `As altera??es do módulo "${parsed.data.title}" foram salvas com sucesso.`,
                 });
             }
             else {
@@ -274,8 +274,8 @@ export function ModuleEditorPanel() {
                 await refreshTree();
                 publishBuilderNotice({
                     type: 'success',
-                    title: "Mdulo criado",
-                    message: `O m?dulo "${parsed.data.title}" foi criado com sucesso.`,
+                    title: "Módulo criado",
+                    message: `O módulo "${parsed.data.title}" foi criado com sucesso.`,
                 });
                 navigate(`/admin/cursos/${courseId}/builder/modulos/${created.id}`, { replace: true });
                 return;
@@ -322,7 +322,7 @@ export function ModuleEditorPanel() {
     async function handleDeleteModulePdf() {
         if (!currentModule)
             return;
-        if (!window.confirm("Remover o PDF base deste m?dulo"))
+        if (!window.confirm("Remover o PDF base deste módulo"))
             return;
         try {
             await deleteModulePdf(currentModule);
@@ -335,7 +335,7 @@ export function ModuleEditorPanel() {
     return (<div className="w-full space-y-6 animate-in fade-in duration-500">
        <div className="border-b border-slate-200 pb-5">
          <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">
-           {isNew ? "Criar N?ovo M\u00F3dulo" : 'Configurações do Módulo'}
+           {isNew ? "Criar Novo M\u00F3dulo" : 'Configurações do Módulo'}
          </h2>
          <p className="text-sm text-slate-500 mt-1">
            {isNew ? 'Adicione uma nova seção principal para agrupar as aulas do seu curso.' : "Atualize os detalhes e restri\u00E7\u00F5es dest? se\u00E7\u00E3o do curso."}
@@ -349,12 +349,12 @@ export function ModuleEditorPanel() {
            {appliedReviews.length > 0 && (<Button type="button" variant="outline" onClick={() => setIsAppliedAdjustmentsModalOpen(true)} disabled={isLoadingReviewHistory} className="h-10 rounded-xl border-slate-200 text-slate-700 hover:bg-slate-50 hover:text-slate-900">
                Ver ajustes realizados
              </Button>)}
-           {isLoadingReviewHistory ? (<span className="text-xs font-semibold text-slate-400">Carregando hist?rico de revis?es...</span>) : reviewHistory.length > 0 ? (<span className="text-xs font-semibold text-slate-500">Ultima revis?o em{' '}
+           {isLoadingReviewHistory ? (<span className="text-xs font-semibold text-slate-400">Carregando histórico de revisões...</span>) : reviewHistory.length > 0 ? (<span className="text-xs font-semibold text-slate-500">Ultima revisão em{' '}
                {new Intl.DateTimeFormat('pt-BR', {
                     dateStyle: 'short',
                     timeStyle: 'medium',
                 }).format(new Date(reviewHistory[0].created_at))}
-             </span>) : (<span className="text-xs font-semibold text-slate-400">Nenhuma revis?o com IA registrada para este m?dulo.</span>)}
+             </span>) : (<span className="text-xs font-semibold text-slate-400">Nenhuma revisão com IA registrada para este módulo.</span>)}
          </div>)}
 
        <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
@@ -412,7 +412,7 @@ export function ModuleEditorPanel() {
             {!isNew ? (<div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <div>
-                    <p className="text-xs font-black uppercase tracking-[0.22em] text-slate-400">PDF Base do Mdulo</p>
+                    <p className="text-xs font-black uppercase tracking-[0.22em] text-slate-400">PDF Base do Módulo</p>
                     <h4 className="mt-2 text-lg font-black text-slate-900">
                       {currentModule?.module_pdf_file_name ?? 'Nenhum PDF enviado'}
                     </h4>
@@ -460,17 +460,17 @@ export function ModuleEditorPanel() {
         {repeatReviewPrompt && currentModule && (<div className="fixed inset-0 z-[115] flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm animate-in fade-in duration-300">
             <div className="w-full max-w-2xl rounded-[32px] border border-white/20 bg-white shadow-2xl animate-in zoom-in-95 duration-300">
               <div className="border-b border-slate-100 p-8">
-                <h3 className="text-xl font-black tracking-tight text-slate-900">Este m?dulo ja possui an?lise com IA</h3>
-                <p className="mt-2 text-sm leading-relaxed text-slate-500">O m?dulo <strong>{currentModule.title}</strong>ja possui uma an?lise salva. A ultima revis?o foi em{' '}
+                <h3 className="text-xl font-black tracking-tight text-slate-900">Este módulo j? possui análise com IA</h3>
+                <p className="mt-2 text-sm leading-relaxed text-slate-500">O módulo <strong>{currentModule.title}</strong> j? possui uma análise salva. A ?ltima revisão foi em{' '}
                   {new Intl.DateTimeFormat('pt-BR', {
                 dateStyle: 'short',
                 timeStyle: 'medium',
-            }).format(new Date(repeatReviewPrompt.created_at))}. Revise abaixo o resultado salvo ou inicie uma nova an?lise.
+            }).format(new Date(repeatReviewPrompt.created_at))}. Revise abaixo o resultado salvo ou inicie uma nova análise.
                 </p>
               </div>
               <div className="space-y-4 p-8">
                 <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
-                  <p className="text-xs font-black uppercase tracking-widest text-slate-400">Resumo da ultima an?lise</p>
+                  <p className="text-xs font-black uppercase tracking-widest text-slate-400">Resumo da ultima análise</p>
                   <p className="mt-3 text-sm leading-relaxed text-slate-700">{repeatReviewPrompt.summary}</p>
                   <div className="mt-4">
                     <AiReviewUsageSummary review={repeatReviewPrompt}/>
@@ -494,7 +494,7 @@ export function ModuleEditorPanel() {
                 <Button type="button" variant="ghost" className="h-12 rounded-2xl px-8 font-black text-slate-600" onClick={() => setRepeatReviewPrompt(null)}>
                   Fechar
                 </Button>
-                <Button type="button" className="h-12 rounded-2xl bg-blue-600 px-8 font-black shadow-xl shadow-blue-100 hover:bg-blue-700" onClick={() => void handleAnalyzeWithAi(true)}>Fazer nova an?lise
+                <Button type="button" className="h-12 rounded-2xl bg-blue-600 px-8 font-black shadow-xl shadow-blue-100 hover:bg-blue-700" onClick={() => void handleAnalyzeWithAi(true)}>Fazer nova análise
                 </Button>
               </div>
             </div>
@@ -503,7 +503,7 @@ export function ModuleEditorPanel() {
             <div className="max-h-[95vh] w-full max-w-5xl overflow-y-auto rounded-[32px] border border-white/20 bg-white shadow-2xl animate-in zoom-in-95 duration-300">
               <div className="flex items-start justify-between gap-4 border-b border-slate-100 p-8">
                 <div>
-                  <h3 className="text-xl font-black tracking-tight text-slate-900">An?lise com IA do Mdulo</h3>
+                  <h3 className="text-xl font-black tracking-tight text-slate-900">Análise com IA do Módulo</h3>
                   <p className="mt-1 text-sm font-medium text-slate-500">{analysisTarget.moduleTitle}</p>
                 </div>
                 <button type="button" onClick={() => {
@@ -518,7 +518,7 @@ export function ModuleEditorPanel() {
               </div>
               <div className="space-y-6 p-8">
                 {didApplyCurrentAnalysis && (<div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5">
-                    <p className="text-sm font-black text-emerald-700">Ajustes aplicados com sucesso neste m?dulo.</p>
+                    <p className="text-sm font-black text-emerald-700">Ajustes aplicados com sucesso neste módulo.</p>
                     <p className="mt-2 text-sm text-emerald-700">O contedo foi atualizado e salvo. Revise os campos e o contedo pedagogico para confirmar o resultado final.
                     </p>
                   </div>)}
@@ -539,7 +539,7 @@ export function ModuleEditorPanel() {
                 <AiReviewUsageSummary review={analysisResult}/>
                 <div className="space-y-3">
                   <h4 className="text-sm font-black uppercase tracking-widest text-slate-500">Pontos a ajustar</h4>
-                  {analysisResult.issues.length === 0 ? (<div className="rounded-2xl border border-emerald-100 bg-emerald-50 p-5 text-sm font-bold text-emerald-700">Nenhum ajuste relevante foi apontado pela IA para este m?dulo.
+                  {analysisResult.issues.length === 0 ? (<div className="rounded-2xl border border-emerald-100 bg-emerald-50 p-5 text-sm font-bold text-emerald-700">Nenhum ajuste relevante foi apontado pela IA para este módulo.
                     </div>) : (analysisResult.issues.map((issue) => (<div key={issue.id} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
                         <div className="flex flex-wrap items-center gap-2">
                           <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-black uppercase tracking-widest text-slate-500">
@@ -573,7 +573,7 @@ export function ModuleEditorPanel() {
                 setAnalysisTarget(null);
                 setAnalysisResult(null);
                 setDidApplyCurrentAnalysis(false);
-            }}>Fechar An?lise
+            }}>Fechar Análise
                 </Button>
                 <Button type="button" className="h-12 rounded-2xl bg-blue-600 px-8 font-black shadow-xl shadow-blue-100 hover:bg-blue-700" disabled={!analysisResult.corrected_module || isApplyingFixes || didApplyCurrentAnalysis} onClick={() => void handleApplyAiFixes()}>
                   {isApplyingFixes ? 'Aplicando Ajustes...' : didApplyCurrentAnalysis ? 'Ajustes Aplicados' : 'Implementar Ajustes'}
@@ -595,7 +595,7 @@ export function ModuleEditorPanel() {
                 </button>
               </div>
               <div className="space-y-4 p-8">
-                {appliedReviews.length === 0 ? (<div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 text-sm font-semibold text-slate-600">Nenhum ajuste aplicado com IA foi encontrado para este m?dulo.
+                {appliedReviews.length === 0 ? (<div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 text-sm font-semibold text-slate-600">Nenhum ajuste aplicado com IA foi encontrado para este módulo.
                   </div>) : (appliedReviews.map((review, index) => (<div key={review.id} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
                       <div className="flex flex-wrap items-center gap-2">
                         <span className="rounded-full bg-slate-900 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-white">
@@ -619,7 +619,7 @@ export function ModuleEditorPanel() {
                         <AiReviewUsageSummary review={review}/>
                       </div>
                       <div className="mt-4 space-y-3">
-                        {review.issues.length === 0 ? (<div className="rounded-xl border border-emerald-100 bg-emerald-50 p-4 text-sm font-semibold text-emerald-700">Nenhum ajuste foi apontado nest? revis?o.
+                        {review.issues.length === 0 ? (<div className="rounded-xl border border-emerald-100 bg-emerald-50 p-4 text-sm font-semibold text-emerald-700">Nenhum ajuste foi apontado nest? revisão.
                           </div>) : (review.issues.map((issue) => (<div key={issue.id} className="rounded-xl border border-slate-200 bg-slate-50 p-4">
                               <div className="flex flex-wrap items-center gap-2">
                                 <span className="rounded-full bg-slate-200 px-2.5 py-1 text-[10px] font-black uppercase tracking-widest text-slate-700">
