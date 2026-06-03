@@ -1,19 +1,17 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import ReactQuill from '@/components/forms/react-quill';
-import { createLesson, deleteMaterial, deleteLessonContentAsset, deleteLesson, fetchMaterials, fetchLessonFooterActions, getSignedMaterialUrl, uploadMaterial, updateLesson, toErrorMessage, type UploadProgressSnapshot, } from '@/features/admin/content/api';
+import { createLesson, deleteMaterial, deleteLesson, fetchMaterials, fetchLessonFooterActions, getSignedMaterialUrl, uploadMaterial, updateLesson, toErrorMessage, type UploadProgressSnapshot, } from '@/features/admin/content/api';
 import { lessonFormSchema, type LessonFormInput } from '@/features/admin/content/schemas';
 import { useCourseBuilder } from '@/app/layouts/admin-course-builder-layout';
 import { useAuth } from '@/app/providers/auth-provider';
 import { fetchLessonAudioModerationRequests, resolveLessonAudioModerationRequest, type LessonAudioModerationRequestAdminItem, } from '@/features/admin/lesson-audio/api';
-import { createEmptyLessonImageHotspotsBlockContent, splitContent, mergeContent, sanitizeTableHtml, } from '@/features/admin/content/content-blocks';
+import { splitContent, mergeContent, } from '@/features/admin/content/content-blocks';
 import type { LessonContentBlock } from '@/features/admin/content/content-blocks';
 import { Button } from '@/components/ui/button';
 import { getLessonFooterActionIconName, getLessonFooterButtonClassName, renderButtonTemplateIcon, } from '@/features/admin/content/button-template-icons';
-import { LessonImageHotspotsBlockEditor } from '@/features/admin/content/lesson-image-hotspots-block';
+import { LessonContentBlocksEditor } from '@/features/admin/content/lesson-content-blocks';
 import { LessonAudioPlayer } from '@/features/student/lesson-audio/lesson-audio-player';
-import { Plus, Trash2, Code2, Eye } from 'lucide-react';
 import { publishBuilderNotice } from '@/lib/builder-notice';
 import type { LessonFooterAction, LessonMaterial } from '@/types/content';
 const initialForm: LessonFormInput = {
@@ -27,50 +25,6 @@ const initialForm: LessonFormInput = {
     starts_at: '',
     ends_at: '',
 };
-const FULL_QUILL_MODULES = {
-    toolbar: [
-        [{ 'header': [1, 2, 3, 4, false] }],
-        ['bold', 'italic', 'underline', 'strike'],
-        [{ 'list': 'ordered' }, { 'list': 'bullet' }],
-        [{ 'align': [] }],
-        [{ 'color': [] }, { 'background': [] }],
-        ['blockquote', 'code-block'],
-        ['link', 'image', 'vídeo', 'table', 'hr'],
-        ['undo', 'redo', 'clean']
-    ]
-};
-const FULL_QUILL_FORMATS = [
-    'header', 'bold', 'italic', 'underline', 'strike',
-    'list', 'bullet', 'align', 'color', 'background',
-    'link', 'blockquote', 'code-block'
-];
-function createEmptyColumnsBlockContent(columnsCount = 2): string[] {
-    const safeCount = Math.min(4, Math.max(1, columnsCount));
-    return Array.from({ length: safeCount }, () => '<p></p>');
-}
-function resizeColumnsBlockContent(columns: string[], nextCount: number): string[] {
-    const safeCount = Math.min(4, Math.max(1, nextCount));
-    const next = [...columns];
-    if (next.length < safeCount) {
-        while (next.length < safeCount) {
-            next.push('<p></p>');
-        }
-        return next;
-    }
-    if (next.length > safeCount) {
-        return next.slice(0, safeCount);
-    }
-    return next;
-}
-function getColumnsGridClass(columnsCount: number): string {
-    if (columnsCount <= 1)
-        return 'md:grid-cols-1';
-    if (columnsCount === 2)
-        return 'md:grid-cols-2';
-    if (columnsCount === 3)
-        return 'md:grid-cols-3';
-    return 'md:grid-cols-4';
-}
 function formatBytes(value: number): string {
     if (value === 0)
         return '0 B';
@@ -272,70 +226,6 @@ export function LessonEditorPanel() {
         }
         void loadFooterActions();
     }, [isNew, lessonId]);
-    const updateBlock = (index: number, nextBlock: LessonContentBlock) => {
-        setBlocks(prev => {
-            const next = [...prev];
-            next[index] = nextBlock;
-            return next;
-        });
-    };
-    const addBlock = (type: 'rich-text' | 'table' | 'image-hotspots' | 'columns', columnsCount = 2) => {
-        if (type === 'image-hotspots') {
-            setBlocks(prev => [...prev, {
-                    type,
-                    content: createEmptyLessonImageHotspotsBlockContent(),
-                }]);
-            return;
-        }
-        if (type === 'columns') {
-            setBlocks(prev => [...prev, {
-                    type,
-                    content: createEmptyColumnsBlockContent(columnsCount),
-                }]);
-            return;
-        }
-        setBlocks(prev => [...prev, {
-                type,
-                content: type === 'table' ? '<table border="1"><thead><tr><th>Cabeçalho</th></tr></thead><tbody><tr><td>Dado</td></tr></tbody></table>' : ''
-            }]);
-    };
-    const removeBlock = async (index: number) => {
-        if (blocks.length <= 1)
-            return;
-        if (window.confirm("Excluir este bloco de conte\u00FAdo")) {
-            const blockToRemove = blocks[index];
-            if (blockToRemove?.type === 'image-hotspots' && blockToRemove.content.asset.storage_path) {
-                try {
-                    await deleteLessonContentAsset(blockToRemove.content.asset.storage_path);
-                }
-                catch (err) {
-                    console.error('Erro ao remover asset do bloco interativo:', err);
-                }
-            }
-            setBlocks(prev => prev.filter((_, i) => i !== index));
-        }
-    };
-    function getBlockLabel(block: LessonContentBlock) {
-        if (block.type === 'columns')
-            return 'Bloco em Colunas';
-        if (block.type === 'table')
-            return 'Bloco de Tabela';
-        if (block.type === 'image-hotspots')
-            return 'Bloco de Hotspots';
-        return 'Bloco de Texto Rico';
-    }
-    const moveBlock = (index: number, direction: 'up' | 'down') => {
-        setBlocks(prev => {
-            const next = [...prev];
-            const targetIndex = direction === 'up' ? index - 1 : index + 1;
-            if (targetIndex < 0 || targetIndex >= next.length)
-                return prev;
-            const temp = next[index];
-            next[index] = next[targetIndex];
-            next[targetIndex] = temp;
-            return next;
-        });
-    };
     async function handleSubmit(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
         if (!moduleId || !courseId)
@@ -428,14 +318,14 @@ export function LessonEditorPanel() {
         }
     }
     async function uploadLessonAsset(file: File | null, options: {
-        uploadType: 'protected-vídeo' | 'file-lesson';
+        uploadType: 'protected-v?deo' | 'file-lesson';
     }) {
         if (!file || !lessonId || !user?.id) {
             setError('Salve a aula e autentique-se para enviar arquivos.');
             return;
         }
         setError(null);
-        if (options.uploadType === 'protected-vídeo') {
+        if (options.uploadType === 'protected-v?deo') {
             setIsUploadingProtectedVideo(true);
             setProtectedVideoUploadProgress({
                 loadedBytes: 0,
@@ -456,7 +346,7 @@ export function LessonEditorPanel() {
         try {
             const uploaded = await uploadMaterial(lessonId, file, user.id, {
                 onProgress: (snapshot) => {
-                    if (options.uploadType === 'protected-vídeo') {
+                    if (options.uploadType === 'protected-v?deo') {
                         setProtectedVideoUploadProgress(snapshot);
                     }
                     else {
@@ -465,7 +355,7 @@ export function LessonEditorPanel() {
                 },
             });
             setLessonMaterials((prev) => [uploaded, ...prev.filter((item) => item.id !== uploaded.id)]);
-            if (options.uploadType === 'protected-vídeo') {
+            if (options.uploadType === 'protected-v?deo') {
                 setForm((prev) => ({ ...prev, youtube_url: `asset:${uploaded.id}` }));
                 setVideoInputMode('asset');
                 setPendingProtectedVideoFile(null);
@@ -488,7 +378,7 @@ export function LessonEditorPanel() {
             setError(toErrorMessage(err));
         }
         finally {
-            if (options.uploadType === 'protected-vídeo') {
+            if (options.uploadType === 'protected-v?deo') {
                 setIsUploadingProtectedVideo(false);
                 setProtectedVideoUploadProgress(null);
             }
@@ -501,18 +391,18 @@ export function LessonEditorPanel() {
     async function removeProtectedVideoAsset() {
         const value = form.youtube_url?.trim() ?? '';
         if (!value.startsWith('asset:')) {
-            setError('Nenhum vídeo protegido vinculado para remover.');
+            setError('Nenhum v?deo protegido vinculado para remover.');
             return;
         }
         const materialId = value.slice('asset:'.length).trim();
         const linkedMaterial = lessonMaterials.find((item) => item.id === materialId);
         if (!linkedMaterial) {
-            setError("Não foi possível localizar o arquivo vinculado para remo\u00e7\u00e3o.");
+            setError("N?o foi poss?vel localizar o arquivo vinculado para remo\u00e7\u00e3o.");
             return;
         }
-        const confirmed = window.confirm(`Deseja remover o vídeo protegido "${linkedMaterial.file_name}"
+        const confirmed = window.confirm(`Deseja remover o v?deo protegido "${linkedMaterial.file_name}"
 
-Esta ação exclui o arquivo do storage privado.`);
+Esta a??o exclui o arquivo do storage privado.`);
         if (!confirmed) {
             return;
         }
@@ -559,7 +449,7 @@ Esta ação exclui o arquivo do storage privado.`);
               {isNew ? "Criar Nova Aula" : 'Editor de Aula'}
             </h2>
             <p className="text-sm text-slate-500 mt-1">
-              Configure o formato pedagógico e o conteúdo da sua aula.
+              Configure o formato pedag?gico e o conte?do da sua aula.
             </p>
           </div>
           {!isNew && (<Button variant="outline" size="sm" className="bg-white px-4 h-10 font-bold border-slate-200" onClick={() => navigate(`/admin/cursos/${courseId}/builder/modulos/${moduleId}/aulas/${lessonId}/materiais`)}>
@@ -574,11 +464,11 @@ Esta ação exclui o arquivo do storage privado.`);
            <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
              <div className="border-b border-slate-100 px-6 py-4">
                <h3 className="text-sm font-black uppercase tracking-widest text-slate-500">
-                 Solicitações de moderação da narração
+                 Solicita??es de modera??o da narra??o
                </h3>
              </div>
              <div className="space-y-4 p-6">
-               {isLoadingAudioRequests ? (<p className="text-sm text-slate-500">Carregando solicitações...</p>) : audioRequests.length === 0 ? (<p className="text-sm text-slate-500">Nenhuma solicitação registrada para esta aula.</p>) : (audioRequests.map((request) => {
+               {isLoadingAudioRequests ? (<p className="text-sm text-slate-500">Carregando solicita??es...</p>) : audioRequests.length === 0 ? (<p className="text-sm text-slate-500">Nenhuma solicita??o registrada para esta aula.</p>) : (audioRequests.map((request) => {
                 const isPending = request.status === 'pending';
                 const isResolving = resolvingRequestId === request.id;
                 return (<div key={request.id} className="rounded-xl border border-slate-200 bg-slate-50/40 p-4">
@@ -591,7 +481,7 @@ Esta ação exclui o arquivo do storage privado.`);
                          </span>
                        </div>
                        <p className="mt-2 text-xs text-slate-500">
-                         Solicitação em {new Date(request.created_at).toLocaleString('pt-BR')}
+                         Solicita??o em {new Date(request.created_at).toLocaleString('pt-BR')}
                        </p>
                        {request.technical_error ? (<p className="mt-3 rounded-lg bg-white p-3 text-xs text-slate-600">{request.technical_error}</p>) : null}
 
@@ -613,21 +503,21 @@ Esta ação exclui o arquivo do storage privado.`);
        <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
           <div className="p-6 md:p-8 space-y-10 flex-1">
              
-             {/* Bloco 1: Identificação */}
+             {/* Bloco 1: Identifica??o */}
              <fieldset className="space-y-4">
                <legend className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] border-b border-slate-100 pb-3 w-full mb-6 flex items-center gap-2">
                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-slate-100 text-[10px] text-slate-600">01</span>
-                 Identificação da Aula
+                 Identifica??o da Aula
                </legend>
                
                <label className="block space-y-2">
-                 <span className="text-sm font-bold text-slate-800">Título da Aula <span className="text-rose-500">*</span></span>
-                 <input className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-3 text-sm shadow-inner transition-all focus:border-blue-500 focus:ring-2 focus:ring-blue-100 focus:bg-white placeholder:text-slate-400" placeholder="Ex: Princípios do módulo" value={form.title} onChange={(e) => setForm((prev) => ({ ...prev, title: e.target.value }))} required/>
+                 <span className="text-sm font-bold text-slate-800">T?tulo da Aula <span className="text-rose-500">*</span></span>
+                 <input className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-3 text-sm shadow-inner transition-all focus:border-blue-500 focus:ring-2 focus:ring-blue-100 focus:bg-white placeholder:text-slate-400" placeholder="Ex: Princ?pios do m?dulo" value={form.title} onChange={(e) => setForm((prev) => ({ ...prev, title: e.target.value }))} required/>
                </label>
 
                <label className="block space-y-2">
-                 <span className="text-sm font-bold text-slate-800">Descrição Curta (Opcional)</span>
-                 <textarea className="min-h-[80px] w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-3 text-sm shadow-inner transition-all focus:border-blue-500 focus:ring-2 focus:ring-blue-100 focus:bg-white resize-y placeholder:text-slate-400" placeholder="Uma breve introdução sobre o que será abordado." value={form.description} onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))}/>
+                 <span className="text-sm font-bold text-slate-800">Descri??o Curta (Opcional)</span>
+                 <textarea className="min-h-[80px] w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-3 text-sm shadow-inner transition-all focus:border-blue-500 focus:ring-2 focus:ring-blue-100 focus:bg-white resize-y placeholder:text-slate-400" placeholder="Uma breve introdu??o sobre o que ser? abordado." value={form.description} onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))}/>
                </label>
              </fieldset>
 
@@ -635,13 +525,13 @@ Esta ação exclui o arquivo do storage privado.`);
              <fieldset className="space-y-6">
                <legend className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] border-b border-slate-100 pb-3 w-full mb-6 flex items-center gap-2">
                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-slate-100 text-[10px] text-slate-600">02</span>
-                 Formato Pedagógico
+                 Formato Pedag?gico
                </legend>
                
                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 bg-slate-100/80 p-1.5 rounded-2xl">
                  <button type="button" onClick={() => setForm(prev => ({ ...prev, lesson_type: 'video' }))} className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-xs font-black transition-all uppercase tracking-wider ${form.lesson_type === 'video' ? 'bg-white text-blue-600 shadow-sm ring-1 ring-slate-200' : 'text-slate-500 hover:text-slate-700'}`}>
                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
-                   Apenas Vídeo
+                   Apenas V?deo
                  </button>
                  <button type="button" onClick={() => setForm(prev => ({ ...prev, lesson_type: 'text' }))} className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-xs font-black transition-all uppercase tracking-wider ${form.lesson_type === 'text' ? 'bg-white text-blue-600 shadow-sm ring-1 ring-slate-200' : 'text-slate-500 hover:text-slate-700'}`}>
                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
@@ -649,7 +539,7 @@ Esta ação exclui o arquivo do storage privado.`);
                  </button>
                  <button type="button" onClick={() => setForm(prev => ({ ...prev, lesson_type: 'hybrid' }))} className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-xs font-black transition-all uppercase tracking-wider ${form.lesson_type === 'hybrid' ? 'bg-white text-blue-600 shadow-sm ring-1 ring-slate-200' : 'text-slate-500 hover:text-slate-700'}`}>
                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4"/></svg>
-                   Vídeo + Texto
+                   V?deo + Texto
                  </button>
                  <button type="button" onClick={() => setForm(prev => ({ ...prev, lesson_type: 'file' }))} className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-xs font-black transition-all uppercase tracking-wider ${form.lesson_type === 'file' ? 'bg-white text-blue-600 shadow-sm ring-1 ring-slate-200' : 'text-slate-500 hover:text-slate-700'}`}>
                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3M4 17v1a2 2 0 002 2h12a2 2 0 002-2v-1M7 7h10"/></svg>
@@ -658,12 +548,12 @@ Esta ação exclui o arquivo do storage privado.`);
                </div>
 
                {(form.lesson_type === 'video' || form.lesson_type === 'hybrid') && (<div className="animate-in slide-in-from-top-2 duration-300 space-y-4 rounded-2xl border border-slate-200 bg-slate-50/50 p-4 md:p-5">
-                   <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-500">Bloco 03: Conteúdo em Vídeo</p>
+                   <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-500">Bloco 03: Conte?do em V?deo</p>
                    <h4 className="text-2xl font-black text-slate-900">Fonte audiovisual</h4>
 
                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 rounded-xl border border-slate-200 bg-white p-1">
                      <button type="button" onClick={() => setVideoInputMode('url')} className={`rounded-xl px-4 py-4 text-left transition ${videoInputMode === 'url' ? 'bg-slate-950 text-white' : 'text-slate-700 hover:bg-slate-50'}`}>
-                       <p className="text-sm font-black">Usar URL do vídeo</p>
+                       <p className="text-sm font-black">Usar URL do v?deo</p>
                        <p className={`mt-1 text-sm ${videoInputMode === 'url' ? 'text-slate-200' : 'text-slate-500'}`}>
                          Usa YouTube ou link direto quando quiser apontar para um arquivo externo.
                        </p>
@@ -671,88 +561,88 @@ Esta ação exclui o arquivo do storage privado.`);
                      <button type="button" onClick={() => setVideoInputMode('asset')} className={`rounded-xl px-4 py-4 text-left transition ${videoInputMode === 'asset' ? 'bg-slate-950 text-white' : 'text-slate-700 hover:bg-slate-50'}`}>
                        <p className="text-sm font-black">Usar upload protegido</p>
                        <p className={`mt-1 text-sm ${videoInputMode === 'asset' ? 'text-slate-200' : 'text-slate-500'}`}>
-                         Envia o vídeo para a plataforma e publica apenas a referência protegida.
+                         Envia o v?deo para a plataforma e publica apenas a refer?ncia protegida.
                        </p>
                      </button>
                    </div>
 
                    <div className="rounded-xl border border-slate-200 bg-white p-4">
                      <p className="text-lg font-black text-slate-900">
-                       {videoInputMode === 'url' ? 'Sem URL de vídeo' : 'Upload protegido selecionado'}
+                       {videoInputMode === 'url' ? 'Sem URL de v?deo' : 'Upload protegido selecionado'}
                      </p>
                      <p className="mt-2 text-sm text-slate-600">
                        {videoInputMode === 'url'
-                ? 'Defina um link do YouTube ou de um vídeo direto enquanto o modo de URL estiver ativo.'
-                : "Selecione um arquivo e clique em Enviar vídeo protegido para concluir esta aula sem depender de link externo."}
+                ? 'Defina um link do YouTube ou de um v?deo direto enquanto o modo de URL estiver ativo.'
+                : "Selecione um arquivo e clique em Enviar v?deo protegido para concluir esta aula sem depender de link externo."}
                      </p>
                    </div>
 
                    <div className="rounded-xl border border-slate-200 bg-white p-4">
                      <div className="flex flex-wrap items-center justify-between gap-3">
-                       <p className="text-lg font-black text-slate-900">Pré-visualização do vídeo</p>
+                       <p className="text-lg font-black text-slate-900">Pr?-visualiza??o do v?deo</p>
                        <span className={`rounded-full px-3 py-1 text-[11px] font-black uppercase tracking-[0.2em] ${videoInputMode === 'url'
                 ? 'bg-sky-100 text-sky-800'
                 : 'bg-emerald-100 text-emerald-800'}`}>
                          {videoInputMode === 'url' ? 'URL externa' : 'Upload protegido'}
                        </span>
                      </div>
-                     <p className="text-sm text-slate-500">Esta visualização usa a origem selecionada no alternador acima.</p>
+                     <p className="text-sm text-slate-500">Esta visualiza??o usa a origem selecionada no alternador acima.</p>
                      <div className="mt-4">
                        {videoInputMode === 'asset' ? (isLoadingProtectedVideoPreview ? (<div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">
-                             Carregando pré-visualização do vídeo protegido...
+                             Carregando pr?-visualiza??o do v?deo protegido...
                            </div>) : protectedVideoPreviewUrl ? (<div className="overflow-hidden rounded-xl border border-slate-200 bg-black">
-                             <video className="aspect-video w-full" controls preload="metadata" src={protectedVideoPreviewUrl}>O navegador não suporta reprodu\u00e7\u00e3o de v\u00eddeo.
+                             <video className="aspect-video w-full" controls preload="metadata" src={protectedVideoPreviewUrl}>O navegador n?o suporta reprodu\u00e7\u00e3o de v\u00eddeo.
                              </video>
-                           </div>) : (<div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">Ainda não existe vídeo para pré-visualizar neste modo.
+                           </div>) : (<div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">Ainda n?o existe v?deo para pr?-visualizar neste modo.
                            </div>)) : (() => {
                 const url = form.youtube_url?.trim() ?? '';
                 if (!url) {
-                    return (<div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">Ainda não existe vídeo para pré-visualizar neste modo.
+                    return (<div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">Ainda n?o existe v?deo para pr?-visualizar neste modo.
                              </div>);
                 }
                 const youtubeEmbedUrl = getYouTubeEmbedUrl(url);
                 if (youtubeEmbedUrl) {
                     return (<div className="overflow-hidden rounded-xl border border-slate-200 bg-black">
-                               <iframe className="aspect-video w-full" src={youtubeEmbedUrl} title="Pré-visualização do vídeo" frameBorder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen/>
+                               <iframe className="aspect-video w-full" src={youtubeEmbedUrl} title="Pr?-visualiza??o do v?deo" frameBorder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen/>
                              </div>);
                 }
                 if (isDirectVideoUrl(url)) {
                     return (<div className="overflow-hidden rounded-xl border border-slate-200 bg-black">
-                               <video className="aspect-video w-full" controls preload="metadata" src={url}>O navegador não suporta reprodu\u00e7\u00e3o de v\u00eddeo.
+                               <video className="aspect-video w-full" controls preload="metadata" src={url}>O navegador n?o suporta reprodu\u00e7\u00e3o de v\u00eddeo.
                                </video>
                              </div>);
                 }
                 return (<div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">
-                             URL inválida para pré-visualização.
+                             URL inv?lida para pr?-visualiza??o.
                            </div>);
             })()}
                      </div>
                    </div>
 
                    <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-amber-900">
-                     <p className="font-black">Nota de proteção</p>
+                     <p className="font-black">Nota de prote??o</p>
                      <p className="mt-2 text-sm">
-                       Nenhum player web garante proteção total contra pirataria. O upload protegido reduz o risco com bucket privado e referência assinada temporária.
+                       Nenhum player web garante prote??o total contra pirataria. O upload protegido reduz o risco com bucket privado e refer?ncia assinada tempor?ria.
                      </p>
                    </div>
 
                    {videoInputMode === 'url' ? (<label className="block space-y-2">
-                       <span className="text-xs font-black uppercase tracking-[0.2em] text-slate-600">URL do vídeo</span>
-                       <input className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm shadow-inner transition-all focus:border-slate-400 focus:ring-2 focus:ring-slate-100 placeholder:text-slate-400" placeholder="https://youtube.com/watchv=... ou https://cdn.exemplo.com/vídeo.mp4" value={form.youtube_url} onChange={(event) => setForm((prev) => ({ ...prev, youtube_url: event.target.value }))}/>
+                       <span className="text-xs font-black uppercase tracking-[0.2em] text-slate-600">URL do v?deo</span>
+                       <input className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm shadow-inner transition-all focus:border-slate-400 focus:ring-2 focus:ring-slate-100 placeholder:text-slate-400" placeholder="https://youtube.com/watchv=... ou https://cdn.exemplo.com/v?deo.mp4" value={form.youtube_url} onChange={(event) => setForm((prev) => ({ ...prev, youtube_url: event.target.value }))}/>
                        <p className="text-sm text-slate-600">
-                         Aceita links do YouTube ou URLs diretas de arquivo de vídeo como .mp4, .webm, .mov e .m4v.
+                         Aceita links do YouTube ou URLs diretas de arquivo de v?deo como .mp4, .webm, .mov e .m4v.
                        </p>
                      </label>) : (<div className="space-y-3 rounded-xl border border-slate-200 bg-white p-4">
-                       <p className="text-lg font-black text-slate-900">Upload protegido de vídeo</p>
+                       <p className="text-lg font-black text-slate-900">Upload protegido de v?deo</p>
                        <p className="text-sm text-slate-600">
-                         Recomendado para aulas pagas. O vídeo fica em storage privado e a aula salva a referência no formato <code>asset:uuid</code>.
+                         Recomendado para aulas pagas. O v?deo fica em storage privado e a aula salva a refer?ncia no formato <code>asset:uuid</code>.
                        </p>
                        {isNew || !lessonId ? (<p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
                            Salve a aula primeiro para habilitar o upload protegido.
                          </p>) : (<div className="flex flex-col gap-3 sm:flex-row sm:items-center">
                            <input type="file" accept="video/*" onChange={(event) => setPendingProtectedVideoFile(event.target.files?.[0] ?? null)} className="text-sm"/>
-                           <Button type="button" disabled={!pendingProtectedVideoFile || isUploadingProtectedVideo} onClick={() => void uploadLessonAsset(pendingProtectedVideoFile, { uploadType: 'protected-vídeo' })} className="bg-slate-900 text-white hover:bg-slate-800">
-                             {isUploadingProtectedVideo ? 'Enviando vídeo...' : 'Enviar vídeo protegido'}
+                           <Button type="button" disabled={!pendingProtectedVideoFile || isUploadingProtectedVideo} onClick={() => void uploadLessonAsset(pendingProtectedVideoFile, { uploadType: 'protected-v?deo' })} className="bg-slate-900 text-white hover:bg-slate-800">
+                             {isUploadingProtectedVideo ? 'Enviando v?deo...' : 'Enviar v?deo protegido'}
                            </Button>
                          </div>)}
                        {protectedVideoUploadProgress ? (<div className="mt-3 rounded-lg border border-slate-200 bg-slate-50 p-3">
@@ -764,20 +654,20 @@ Esta ação exclui o arquivo do storage privado.`);
                              <div className="h-full rounded-full bg-slate-900 transition-all duration-300" style={{ width: `${protectedVideoUploadProgress.percent}%` }}/>
                            </div>
                            <p className="mt-2 text-xs text-slate-600">
-                             {formatBytes(protectedVideoUploadProgress.loadedBytes)} de {formatBytes(protectedVideoUploadProgress.totalBytes)} •
-                             {' '}Previsão de término: {formatEtaSeconds(protectedVideoUploadProgress.etaSeconds)}
+                             {formatBytes(protectedVideoUploadProgress.loadedBytes)} de {formatBytes(protectedVideoUploadProgress.totalBytes)} â€¢
+                             {' '}Previs?o de t?rmino: {formatEtaSeconds(protectedVideoUploadProgress.etaSeconds)}
                            </p>
                          </div>) : null}
                        {form.youtube_url?.startsWith('asset:') ? (<div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                           <p className="text-xs text-slate-500">Referência protegida atual: {form.youtube_url}</p>
+                           <p className="text-xs text-slate-500">Refer?ncia protegida atual: {form.youtube_url}</p>
                            <Button type="button" variant="outline" className="h-9 rounded-lg border-rose-200 bg-white px-3 text-xs font-black text-rose-700 hover:bg-rose-50" onClick={() => void removeProtectedVideoAsset()} disabled={isRemovingProtectedVideo || isUploadingProtectedVideo}>
-                             {isRemovingProtectedVideo ? 'Removendo...' : 'Remover vídeo protegido'}
+                             {isRemovingProtectedVideo ? 'Removendo...' : 'Remover v?deo protegido'}
                            </Button>
                          </div>) : null}
                      </div>)}
                  </div>)}
                {form.lesson_type === 'file' ? (<div className="animate-in slide-in-from-top-2 duration-300 space-y-4 rounded-2xl border border-slate-200 bg-slate-50/50 p-4 md:p-5">
-                   <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-500">Bloco 03: Conteúdo em Arquivo</p>
+                   <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-500">Bloco 03: Conte?do em Arquivo</p>
                    <h4 className="text-xl font-black text-slate-900">Upload do arquivo principal</h4>
                    <p className="text-sm text-slate-600">No formato "apenas arquivo", envie o arquivo para os materiais desta aula.
                    </p>
@@ -790,7 +680,7 @@ Esta ação exclui o arquivo do storage privado.`);
                            {isUploadingFileLessonAsset ? 'Enviando arquivo...' : 'Enviar arquivo'}
                          </Button>
                        </div>
-                       <p className="text-xs text-slate-500">Limite atual conforme configuração do storage protegido.</p>
+                       <p className="text-xs text-slate-500">Limite atual conforme configura??o do storage protegido.</p>
                        {fileLessonUploadProgress ? (<div className="mt-3 rounded-lg border border-slate-200 bg-slate-50 p-3">
                            <div className="flex items-center justify-between text-xs font-semibold text-slate-600">
                              <span>Progresso do upload</span>
@@ -800,8 +690,8 @@ Esta ação exclui o arquivo do storage privado.`);
                              <div className="h-full rounded-full bg-slate-900 transition-all duration-300" style={{ width: `${fileLessonUploadProgress.percent}%` }}/>
                            </div>
                            <p className="mt-2 text-xs text-slate-600">
-                             {formatBytes(fileLessonUploadProgress.loadedBytes)} de {formatBytes(fileLessonUploadProgress.totalBytes)} •
-                             {' '}Previsão de término: {formatEtaSeconds(fileLessonUploadProgress.etaSeconds)}
+                             {formatBytes(fileLessonUploadProgress.loadedBytes)} de {formatBytes(fileLessonUploadProgress.totalBytes)} â€¢
+                             {' '}Previs?o de t?rmino: {formatEtaSeconds(fileLessonUploadProgress.etaSeconds)}
                            </p>
                          </div>) : null}
                      </div>)}
@@ -817,111 +707,15 @@ Esta ação exclui o arquivo do storage privado.`);
                  </div>) : null}
                 {(form.lesson_type === 'text' || form.lesson_type === 'hybrid') && (<div className="animate-in slide-in-from-top-2 duration-300 space-y-6">
                       <div className="flex items-center justify-between">
-                         <span className="text-sm font-bold text-slate-800">Estrutura do Conteúdo</span>
+                         <span className="text-sm font-bold text-slate-800">Estrutura do Conte?do</span>
                       </div>
 
-                      <div className="space-y-8">
-                        {blocks.map((block, index) => (<div key={index} className="group relative bg-slate-50/50 rounded-2xl border border-slate-200 p-6 transition-all hover:bg-white hover:shadow-md">
-                              <div className="flex items-center justify-between mb-4 border-b border-slate-100 pb-3">
-                                 <div className="flex items-center gap-2">
-                                    <span className="flex h-6 w-6 items-center justify-center rounded bg-blue-100 text-[10px] font-black text-blue-700">
-                                       {index + 1}
-                                    </span>
-                                    <span className="text-[11px] font-black uppercase tracking-widest text-slate-400">
-                                       {getBlockLabel(block)}
-                                    </span>
-                                 </div>
-                                 <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-blue-600" onClick={() => moveBlock(index, 'up')} disabled={index === 0}><Plus className="h-4 w-4 rotate-180"/></Button>
-                                    <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-blue-600" onClick={() => moveBlock(index, 'down')} disabled={index === blocks.length - 1}><Plus className="h-4 w-4"/></Button>
-                                    <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-rose-600" onClick={() => void removeBlock(index)}><Trash2 className="h-4 w-4"/></Button>
-                                 </div>
-                              </div>
-
-                              {block.type === 'table' ? (<div className="space-y-4">
-                                    <div className="rounded-lg border border-blue-100 bg-white p-4 shadow-inner overflow-x-auto">
-                                       <div className="mb-2 text-[10px] font-black text-blue-500 uppercase flex items-center gap-2">
-                                          <Eye className="h-3 w-3"/> Preview da Tabela
-                                       </div>
-                                       <div key={`table-preview-${index}-${block.content}`} className="table-content min-w-full" dangerouslySetInnerHTML={{ __html: sanitizeTableHtml(block.content) }}/>
-                                    </div>
-                                    <div className="space-y-2">
-                                       <div className="text-[10px] font-black text-slate-400 uppercase flex items-center gap-2">
-                                          <Code2 className="h-3 w-3"/> Editor de Código HTML
-                                       </div>
-                                       <textarea className="w-full min-h-[150px] p-4 font-mono text-[13px] bg-slate-900 text-emerald-400 rounded-xl border border-slate-800 transition-all focus:ring-4 focus:ring-blue-100 shadow-inner leading-relaxed" value={block.content} onChange={(e) => updateBlock(index, { ...block, content: e.target.value })} placeholder="<table>...</table>"/>
-                                    </div>
-                                 </div>) : block.type === 'image-hotspots' ? (<LessonImageHotspotsBlockEditor content={block.content} onChange={(nextContent) => updateBlock(index, { ...block, content: nextContent })} onError={setError}/>) : block.type === 'columns' ? (<div className="space-y-4">
-                                   <div className="flex flex-col gap-2 rounded-xl border border-slate-200 bg-white p-4 md:flex-row md:items-center md:justify-between">
-                                     <div>
-                                       <p className="text-xs font-black uppercase tracking-[0.16em] text-slate-500">Layout em colunas</p>
-                                       <p className="text-xs text-slate-500">Cada coluna possui um editor próprio para facilitar ajustes de conteúdo.</p>
-                                     </div>
-                                     <label className="inline-flex items-center gap-2 text-xs font-semibold text-slate-600">
-                                       Quantidade:
-                                       <select className="rounded-md border border-slate-200 bg-white px-2 py-1 text-xs font-semibold" value={block.content.length} onChange={(event) => {
-                        const nextCount = Number.parseInt(event.target.value, 10);
-                        if (!Number.isFinite(nextCount))
-                            return;
-                        updateBlock(index, {
-                            ...block,
-                            content: resizeColumnsBlockContent(block.content, nextCount),
-                        });
-                    }}>
-                                         <option value="1">1 coluna</option>
-                                         <option value="2">2 colunas</option>
-                                         <option value="3">3 colunas</option>
-                                         <option value="4">4 colunas</option>
-                                       </select>
-                                     </label>
-                                   </div>
-                                   <div className={`grid grid-cols-1 gap-4 ${getColumnsGridClass(block.content.length)}`}>
-                                     {block.content.map((columnContent, columnIndex) => (<div key={`column-editor-${index}-${columnIndex}`} className="rounded-xl border border-slate-200 bg-white p-3">
-                                         <p className="mb-2 text-[11px] font-black uppercase tracking-widest text-slate-500">
-                                           Coluna {columnIndex + 1}
-                                         </p>
-                                         <ReactQuill theme="snow" value={columnContent} onChange={(value: string) => {
-                            const nextColumns = [...block.content];
-                            nextColumns[columnIndex] = value;
-                            updateBlock(index, { ...block, content: nextColumns });
-                        }} modules={FULL_QUILL_MODULES} formats={FULL_QUILL_FORMATS} enableHtmlMode placeholder={`Escreva aqui o texto da coluna ${columnIndex + 1}...`}/>
-                                       </div>))}
-                                   </div>
-                                 </div>) : (<ReactQuill theme="snow" value={block.content} onChange={(value: string) => updateBlock(index, { ...block, content: value })} modules={FULL_QUILL_MODULES} formats={FULL_QUILL_FORMATS} enableHtmlMode placeholder="Escreva aqui o texto da aula..."/>)}
-                           </div>))}
-                      </div>
-
-                      <div className="flex flex-wrap items-center gap-3 p-4 border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50/50">
-                        <span className="text-xs font-bold text-slate-500 mr-2">Adicionar Bloco:</span>
-                        <Button type="button" variant="outline" size="sm" onClick={() => addBlock('rich-text')} className="bg-white hover:bg-blue-50 hover:text-blue-600 border-slate-200">
-                           <Plus className="h-4 w-4 mr-2"/> Bloco de Texto
-                        </Button>
-                        <Button type="button" variant="outline" size="sm" onClick={() => addBlock('table')} className="bg-white hover:bg-emerald-50 hover:text-emerald-600 border-slate-200">
-                           <Plus className="h-4 w-4 mr-2"/> Bloco de Tabela
-                        </Button>
-                        <Button type="button" variant="outline" size="sm" onClick={() => addBlock('image-hotspots')} className="bg-white hover:bg-violet-50 hover:text-violet-600 border-slate-200">
-                           <Plus className="h-4 w-4 mr-2"/> Bloco de Hotspots
-                        </Button>
-                        <div className="mx-1 h-6 w-px bg-slate-200"/>
-                        <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Colunas:</span>
-                        <Button type="button" variant="outline" size="sm" onClick={() => addBlock('columns', 1)} className="bg-white hover:bg-cyan-50 hover:text-cyan-700 border-slate-200">
-                          1 coluna
-                        </Button>
-                        <Button type="button" variant="outline" size="sm" onClick={() => addBlock('columns', 2)} className="bg-white hover:bg-cyan-50 hover:text-cyan-700 border-slate-200">
-                          2 colunas
-                        </Button>
-                        <Button type="button" variant="outline" size="sm" onClick={() => addBlock('columns', 3)} className="bg-white hover:bg-cyan-50 hover:text-cyan-700 border-slate-200">
-                          3 colunas
-                        </Button>
-                        <Button type="button" variant="outline" size="sm" onClick={() => addBlock('columns', 4)} className="bg-white hover:bg-cyan-50 hover:text-cyan-700 border-slate-200">
-                          4 colunas
-                        </Button>
-                      </div>
+                      <LessonContentBlocksEditor blocks={blocks} onChange={setBlocks} onError={setError} />
                    </div>)}
 
                <div className="pt-4 border-t border-slate-50">
                  <label className="block space-y-2 max-w-[200px]">
-                   <span className="text-sm font-bold text-slate-800">Carga Horária Estimada (Min)</span>
+                   <span className="text-sm font-bold text-slate-800">Carga Hor?ria Estimada (Min)</span>
                    <input className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-3 text-sm shadow-inner transition-all focus:border-blue-500 focus:ring-2 focus:ring-blue-100 focus:bg-white placeholder:text-slate-400" type="number" min={0} placeholder="Ex: 20" value={form.estimated_minutes === 0 ? '' : form.estimated_minutes} onChange={(e) => setForm((prev) => ({ ...prev, estimated_minutes: Number(e.target.value || 0) }))}/>
                  </label>
                </div>
@@ -931,20 +725,20 @@ Esta ação exclui o arquivo do storage privado.`);
              <fieldset className="space-y-4">
                <legend className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] border-b border-slate-100 pb-3 w-full mb-6 flex items-center gap-2">
                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-slate-100 text-[10px] text-slate-600">03</span>
-                 Configurações de Conclusão
+                 Configura??es de Conclus?o
                </legend>
                <label className="flex items-start gap-4 p-5 rounded-2xl border border-blue-100 bg-blue-50/20 cursor-pointer hover:bg-blue-50/40 transition-colors shadow-sm">
                  <div className="flex items-center h-6">
                    <input checked={form.is_required} type="checkbox" className="h-5 w-5 rounded border-blue-300 text-blue-600 focus:ring-blue-600 shadow-sm transition-all" onChange={(e) => setForm((prev) => ({ ...prev, is_required: e.target.checked }))}/>
                  </div>
                  <div>
-                   <span className="text-sm font-bold text-slate-900 block">Marcar como Aula Obrigatória</span>
-                   <span className="text-[11px] text-slate-500 mt-1 block leading-relaxed">Se ativado, esta aula deve ser visualizada/lida para que o aluno receba o certificado de conclusão do curso.</span>
+                   <span className="text-sm font-bold text-slate-900 block">Marcar como Aula Obrigat?ria</span>
+                   <span className="text-[11px] text-slate-500 mt-1 block leading-relaxed">Se ativado, esta aula deve ser visualizada/lida para que o aluno receba o certificado de conclus?o do curso.</span>
                  </div>
                </label>
 
                <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                 <p className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">Liberação Programada</p>
+                 <p className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">Libera??o Programada</p>
                  <div className="mt-4 grid gap-4 md:grid-cols-2">
                    <label className="block space-y-2">
                      <span className="text-sm font-bold text-slate-800">Liberar em</span>
@@ -955,7 +749,7 @@ Esta ação exclui o arquivo do storage privado.`);
                      <input type="datetime-local" className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-3 text-sm shadow-inner" value={form.ends_at ?? ''} onChange={(e) => setForm((prev) => ({ ...prev, ends_at: e.target.value }))}/>
                    </label>
                  </div>
-                 <p className="mt-3 text-[11px] text-slate-500">A aula só libera quando o módulo também estiver dentro da janela configurada.
+                 <p className="mt-3 text-[11px] text-slate-500">A aula s? libera quando o m?dulo tamb?m estiver dentro da janela configurada.
                  </p>
                </div>
 
@@ -964,17 +758,17 @@ Esta ação exclui o arquivo do storage privado.`);
                    <div>
                      <p className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">{'Bot\u00f5es no Rodap\u00e9 da Aula'}</p>
                      <p className="mt-2 text-sm text-slate-500">
-                       {'Configure arquivos e links que aparecem como botões no rodapé do player do aluno.'}
+                       {'Configure arquivos e links que aparecem como bot?es no rodap? do player do aluno.'}
                      </p>
                    </div>
                    {!isNew ? (<Button type="button" variant="outline" className="border-slate-200 bg-white" onClick={() => navigate(`/admin/cursos/${courseId}/builder/modulos/${moduleId}/aulas/${lessonId}/materiais`)}>
-                       {'Gerenciar botões'}
+                       {'Gerenciar bot?es'}
                      </Button>) : null}
                  </div>
 
                  {isNew ? (<p className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-                     {'Salve a aula primeiro para cadastrar botões, materiais e URLs do rodapé.'}
-                   </p>) : isLoadingFooterActions ? (<p className="mt-4 text-sm text-slate-500">{'Carregando botões configurados...'}</p>) : footerActions.length === 0 ? (<p className="mt-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">{'Nenhum botão configurado ainda para esta aula.'}
+                     {'Salve a aula primeiro para cadastrar bot?es, materiais e URLs do rodap?.'}
+                   </p>) : isLoadingFooterActions ? (<p className="mt-4 text-sm text-slate-500">{'Carregando bot?es configurados...'}</p>) : footerActions.length === 0 ? (<p className="mt-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">{'Nenhum bot?o configurado ainda para esta aula.'}
                    </p>) : (<div className="mt-4 grid gap-3">
                      {footerActions.map((action, index) => (<div key={action.id} className="rounded-xl border border-slate-200 bg-slate-50/70 px-4 py-3">
                          <div className="flex flex-wrap items-center gap-2">
@@ -988,7 +782,7 @@ Esta ação exclui o arquivo do storage privado.`);
                          <div className="mt-3">
                            <Button type="button" variant="outline" className={getLessonFooterButtonClassName(action.template)}>
                              {renderButtonTemplateIcon(getLessonFooterActionIconName(action))}
-                             {action.label?.trim() || action.template?.default_label || action.file_name || 'Botão sem rótulo'}
+                             {action.label?.trim() || action.template?.default_label || action.file_name || 'Bot?o sem r?tulo'}
                            </Button>
                          </div>
                        </div>))}
@@ -1016,3 +810,5 @@ Esta ação exclui o arquivo do storage privado.`);
        </form>
     </div>);
 }
+
+

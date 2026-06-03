@@ -1,18 +1,43 @@
 import type { LessonImageHotspotsAsset, LessonImageHotspotsBlockContent, LessonImageHotspotItem, } from '@/types/content';
+export type LessonImageBlockSize = 'sm' | 'md' | 'lg' | 'full';
+export interface LessonImageBlockContent {
+    image_url: string;
+    alt: string;
+    size: LessonImageBlockSize;
+    caption: string;
+}
+export interface LessonVideoBlockContent {
+    source_type: 'url' | 'upload';
+    url: string;
+    storage_path: string;
+    signed_url?: string | null;
+    file_name: string;
+    mime_type: string | null;
+    caption: string;
+}
+export type LessonColumnsBlockContent = LessonContentBlock[][];
 export type LessonContentBlock = {
     type: 'rich-text';
     content: string;
 } | {
     type: 'columns';
-    content: string[];
+    content: LessonColumnsBlockContent;
 } | {
     type: 'table';
     content: string;
+} | {
+    type: 'image';
+    content: LessonImageBlockContent;
+} | {
+    type: 'video';
+    content: LessonVideoBlockContent;
 } | {
     type: 'image-hotspots';
     content: LessonImageHotspotsBlockContent;
 };
 const TABLE_PLACEHOLDER_PREFIX = '__TABLE_BLOCK__';
+const IMAGE_PLACEHOLDER_PREFIX = '__IMAGE_BLOCK__';
+const VIDEO_PLACEHOLDER_PREFIX = '__VIDEO_BLOCK__';
 const HOTSPOTS_PLACEHOLDER_PREFIX = '__HOTSPOTS_BLOCK__';
 const COLUMNS_PLACEHOLDER_PREFIX = '__COLUMNS_BLOCK__';
 const LESSON_IMAGE_HOTSPOTS_BLOCK_ATTR = 'data-hcm-block';
@@ -20,6 +45,8 @@ const LESSON_IMAGE_HOTSPOTS_BLOCK_PAYLOAD_ATTR = 'data-hcm-payload';
 const LESSON_IMAGE_HOTSPOTS_BLOCK_TYPE = 'image-hotspots';
 const LESSON_COLUMNS_BLOCK_COUNT_ATTR = 'data-hcm-columns';
 const LESSON_COLUMNS_BLOCK_TYPE = 'columns';
+const LESSON_IMAGE_BLOCK_TYPE = 'image';
+const LESSON_VIDEO_BLOCK_TYPE = 'video';
 const ALLOWED_TABLE_TAGS = new Set([
     'table',
     'thead',
@@ -302,6 +329,89 @@ export function parseLessonImageHotspotsBlockContent(payload: unknown): LessonIm
         hotspots,
     };
 }
+function normalizeLessonImageBlockContent(content: LessonImageBlockContent): LessonImageBlockContent {
+    return {
+        image_url: content.image_url?.trim() || '',
+        alt: content.alt?.trim() || 'Imagem da aula',
+        size: content.size === 'sm' || content.size === 'md' || content.size === 'lg' || content.size === 'full'
+            ? content.size
+            : 'md',
+        caption: content.caption?.trim() || '',
+    };
+}
+export function createEmptyLessonImageBlockContent(): LessonImageBlockContent {
+    return normalizeLessonImageBlockContent({
+        image_url: '',
+        alt: 'Imagem da aula',
+        size: 'md',
+        caption: '',
+    });
+}
+function parseLessonImageBlockContent(payload: unknown): LessonImageBlockContent | null {
+    if (!payload || typeof payload !== 'object') {
+        return null;
+    }
+    const candidate = payload as Partial<LessonImageBlockContent>;
+    if (typeof candidate.image_url !== 'string') {
+        return null;
+    }
+    return normalizeLessonImageBlockContent({
+        image_url: candidate.image_url,
+        alt: typeof candidate.alt === 'string' ? candidate.alt : 'Imagem da aula',
+        size: candidate.size === 'sm' || candidate.size === 'md' || candidate.size === 'lg' || candidate.size === 'full'
+            ? candidate.size
+            : 'md',
+        caption: typeof candidate.caption === 'string' ? candidate.caption : '',
+    });
+}
+function normalizeLessonVideoBlockContent(content: LessonVideoBlockContent): LessonVideoBlockContent {
+    return {
+        source_type: content.source_type === 'upload' ? 'upload' : 'url',
+        url: content.url?.trim() || '',
+        storage_path: content.storage_path?.trim() || '',
+        signed_url: content.signed_url?.trim() || null,
+        file_name: content.file_name?.trim() || '',
+        mime_type: content.mime_type?.trim() || null,
+        caption: content.caption?.trim() || '',
+    };
+}
+export function createEmptyLessonVideoBlockContent(): LessonVideoBlockContent {
+    return normalizeLessonVideoBlockContent({
+        source_type: 'url',
+        url: '',
+        storage_path: '',
+        signed_url: null,
+        file_name: '',
+        mime_type: null,
+        caption: '',
+    });
+}
+export function createEmptyColumnsBlockContent(columnsCount = 2): LessonColumnsBlockContent {
+    const safeCount = clamp(columnsCount, 1, 4);
+    return Array.from({ length: safeCount }, () => createFallbackBlock('<p></p>'));
+}
+function parseLessonVideoBlockContent(payload: unknown): LessonVideoBlockContent | null {
+    if (!payload || typeof payload !== 'object') {
+        return null;
+    }
+    const candidate = payload as Partial<LessonVideoBlockContent>;
+    const sourceType = candidate.source_type === 'upload' ? 'upload' : candidate.source_type === 'url' ? 'url' : null;
+    if (!sourceType) {
+        return null;
+    }
+    if (sourceType === 'url' && typeof candidate.url !== 'string') {
+        return null;
+    }
+    return normalizeLessonVideoBlockContent({
+        source_type: sourceType,
+        url: typeof candidate.url === 'string' ? candidate.url : '',
+        storage_path: typeof candidate.storage_path === 'string' ? candidate.storage_path : '',
+        signed_url: typeof candidate.signed_url === 'string' ? candidate.signed_url : null,
+        file_name: typeof candidate.file_name === 'string' ? candidate.file_name : '',
+        mime_type: typeof candidate.mime_type === 'string' ? candidate.mime_type : null,
+        caption: typeof candidate.caption === 'string' ? candidate.caption : '',
+    });
+}
 export function createEmptyLessonImageHotspotsBlockContent(): LessonImageHotspotsBlockContent {
     return {
         asset: {
@@ -351,23 +461,23 @@ function buildHotspotsFallbackHtml(content: LessonImageHotspotsBlockContent): st
     </div>
   `;
 }
-function normalizeColumnsContent(columns: string[], fallbackCount = 2): string[] {
+function normalizeColumnsContent(columns: LessonColumnsBlockContent, fallbackCount = 2): LessonColumnsBlockContent {
     const safeFallbackCount = clamp(fallbackCount, 1, 4);
     const normalized = columns
-        .map((column) => sanitizeRichTextHtml(column))
-        .slice(0, 4);
+        .slice(0, 4)
+        .map((column) => (Array.isArray(column) && column.length > 0 ? column : createFallbackBlock('<p></p>')));
     const withFallback = normalized.length > 0
         ? normalized
-        : Array.from({ length: safeFallbackCount }, () => '<p></p>');
+        : Array.from({ length: safeFallbackCount }, () => createFallbackBlock('<p></p>'));
     while (withFallback.length < safeFallbackCount) {
-        withFallback.push('<p></p>');
+        withFallback.push(createFallbackBlock('<p></p>'));
     }
     return withFallback;
 }
-function extractColumnsContent(element: Element): string[] {
+function extractColumnsContent(element: Element): LessonColumnsBlockContent {
     const columns = Array.from(element.children)
         .filter((child): child is HTMLElement => (child instanceof HTMLElement && child.classList.contains('genflix-column')))
-        .map((column) => normalizeHtml(column.innerHTML));
+        .map((column) => splitContent(normalizeHtml(column.innerHTML)));
     const requestedCount = clamp(Number.parseInt(element.getAttribute(LESSON_COLUMNS_BLOCK_COUNT_ATTR) ?? '', 10) || columns.length || 2, 1, 4);
     return normalizeColumnsContent(columns, requestedCount);
 }
@@ -378,12 +488,12 @@ function isColumnsBlockElement(element: Element): boolean {
     return (element.classList.contains('genflix-columns')
         && Array.from(element.children).some((child) => (child instanceof HTMLElement && child.classList.contains('genflix-column'))));
 }
-function serializeLessonColumnsBlock(columns: string[]): string {
+function serializeLessonColumnsBlock(columns: LessonColumnsBlockContent): string {
     const normalizedColumns = normalizeColumnsContent(columns);
     const count = clamp(normalizedColumns.length, 1, 4);
     const columnsHtml = normalizedColumns
         .slice(0, count)
-        .map((columnHtml) => `<div class="genflix-column">${columnHtml || '<p></p>'}</div>`)
+        .map((columnBlocks) => `<div class="genflix-column">${mergeContent(columnBlocks) || '<p></p>'}</div>`)
         .join('');
     return `
     <div
@@ -404,6 +514,136 @@ function extractLessonColumnsBlock(element: Element): LessonContentBlock | null 
         type: 'columns',
         content: columns,
     };
+}
+function encodeImagePayload(content: LessonImageBlockContent): string {
+    return encodeURIComponent(JSON.stringify({
+        image_url: content.image_url,
+        alt: content.alt,
+        size: content.size,
+        caption: content.caption,
+    }));
+}
+function decodeImagePayload(encodedPayload: string): LessonImageBlockContent | null {
+    try {
+        const decoded = decodeURIComponent(encodedPayload);
+        return parseLessonImageBlockContent(JSON.parse(decoded));
+    }
+    catch {
+        return null;
+    }
+}
+function buildImageFallbackHtml(content: LessonImageBlockContent): string {
+    const caption = content.caption.trim();
+    return `
+    <figure class="hcm-image-block-fallback">
+      ${content.image_url ? `<img src="${escapeHtml(content.image_url)}" alt="${escapeHtml(content.alt)}" />` : '<div class="hcm-image-block-fallback__placeholder">Imagem sem URL configurada.</div>'}
+      ${caption ? `<figcaption>${escapeHtml(caption)}</figcaption>` : ''}
+    </figure>
+  `;
+}
+export function serializeLessonImageBlock(content: LessonImageBlockContent): string {
+    const normalized = normalizeLessonImageBlockContent(content);
+    const payload = encodeImagePayload(normalized);
+    return `
+    <div
+      ${LESSON_IMAGE_HOTSPOTS_BLOCK_ATTR}="${LESSON_IMAGE_BLOCK_TYPE}"
+      ${LESSON_IMAGE_HOTSPOTS_BLOCK_PAYLOAD_ATTR}="${payload}"
+    >
+      ${buildImageFallbackHtml(normalized)}
+    </div>
+  `;
+}
+function extractLessonImageBlock(element: Element): LessonContentBlock | null {
+    const payload = element.getAttribute(LESSON_IMAGE_HOTSPOTS_BLOCK_PAYLOAD_ATTR);
+    if (!payload) {
+        return null;
+    }
+    const content = decodeImagePayload(payload);
+    if (!content) {
+        return null;
+    }
+    return {
+        type: 'image',
+        content,
+    };
+}
+export function parseLessonImageBlockElement(element: Element): LessonImageBlockContent | null {
+    if (element.getAttribute(LESSON_IMAGE_HOTSPOTS_BLOCK_ATTR) !== LESSON_IMAGE_BLOCK_TYPE) {
+        return null;
+    }
+    const payload = element.getAttribute(LESSON_IMAGE_HOTSPOTS_BLOCK_PAYLOAD_ATTR);
+    if (!payload) {
+        return null;
+    }
+    return decodeImagePayload(payload);
+}
+function encodeVideoPayload(content: LessonVideoBlockContent): string {
+    return encodeURIComponent(JSON.stringify({
+        source_type: content.source_type,
+        url: content.url,
+        storage_path: content.storage_path,
+        file_name: content.file_name,
+        mime_type: content.mime_type,
+        caption: content.caption,
+    }));
+}
+function decodeVideoPayload(encodedPayload: string): LessonVideoBlockContent | null {
+    try {
+        const decoded = decodeURIComponent(encodedPayload);
+        return parseLessonVideoBlockContent(JSON.parse(decoded));
+    }
+    catch {
+        return null;
+    }
+}
+function buildVideoFallbackHtml(content: LessonVideoBlockContent): string {
+    const caption = content.caption.trim();
+    const fileName = content.file_name.trim();
+    const summary = content.source_type === 'upload'
+        ? `Vídeo enviado${fileName ? `: ${escapeHtml(fileName)}` : ''}.`
+        : 'Vídeo por URL.';
+    return `
+    <figure class="hcm-video-block-fallback">
+      <div class="hcm-video-block-fallback__surface">${summary}</div>
+      ${caption ? `<figcaption>${escapeHtml(caption)}</figcaption>` : ''}
+    </figure>
+  `;
+}
+export function serializeLessonVideoBlock(content: LessonVideoBlockContent): string {
+    const normalized = normalizeLessonVideoBlockContent(content);
+    const payload = encodeVideoPayload(normalized);
+    return `
+    <div
+      ${LESSON_IMAGE_HOTSPOTS_BLOCK_ATTR}="${LESSON_VIDEO_BLOCK_TYPE}"
+      ${LESSON_IMAGE_HOTSPOTS_BLOCK_PAYLOAD_ATTR}="${payload}"
+    >
+      ${buildVideoFallbackHtml(normalized)}
+    </div>
+  `;
+}
+function extractLessonVideoBlock(element: Element): LessonContentBlock | null {
+    const payload = element.getAttribute(LESSON_IMAGE_HOTSPOTS_BLOCK_PAYLOAD_ATTR);
+    if (!payload) {
+        return null;
+    }
+    const content = decodeVideoPayload(payload);
+    if (!content) {
+        return null;
+    }
+    return {
+        type: 'video',
+        content,
+    };
+}
+export function parseLessonVideoBlockElement(element: Element): LessonVideoBlockContent | null {
+    if (element.getAttribute(LESSON_IMAGE_HOTSPOTS_BLOCK_ATTR) !== LESSON_VIDEO_BLOCK_TYPE) {
+        return null;
+    }
+    const payload = element.getAttribute(LESSON_IMAGE_HOTSPOTS_BLOCK_PAYLOAD_ATTR);
+    if (!payload) {
+        return null;
+    }
+    return decodeVideoPayload(payload);
 }
 export function serializeLessonImageHotspotsBlock(content: LessonImageHotspotsBlockContent): string {
     const normalized = normalizeLessonImageHotspotsBlockContent(content);
@@ -514,8 +754,25 @@ export function splitContent(html: string): LessonContentBlock[] {
     }
     removeDangerousNodes(doc);
     const blockMap = new Map<string, LessonContentBlock>();
+    Array.from(doc.querySelectorAll(`[${LESSON_IMAGE_HOTSPOTS_BLOCK_ATTR}="${LESSON_COLUMNS_BLOCK_TYPE}"]`))
+        .forEach((element, index) => {
+        if (!element.isConnected || !isColumnsBlockElement(element)) {
+            return;
+        }
+        const placeholder = `${COLUMNS_PLACEHOLDER_PREFIX}_${index}__`;
+        const parsedBlock = extractLessonColumnsBlock(element);
+        blockMap.set(placeholder, parsedBlock ?? {
+            type: 'rich-text',
+            content: normalizeHtml((element as HTMLElement).innerHTML),
+        });
+        const marker = doc.createTextNode(placeholder);
+        element.replaceWith(marker);
+    });
     Array.from(doc.querySelectorAll(`[${LESSON_IMAGE_HOTSPOTS_BLOCK_ATTR}="${LESSON_IMAGE_HOTSPOTS_BLOCK_TYPE}"]`))
         .forEach((element, index) => {
+        if (!element.isConnected) {
+            return;
+        }
         const placeholder = `${HOTSPOTS_PLACEHOLDER_PREFIX}_${index}__`;
         const parsedBlock = extractLessonImageHotspotsBlock(element);
         blockMap.set(placeholder, parsedBlock ?? {
@@ -525,13 +782,27 @@ export function splitContent(html: string): LessonContentBlock[] {
         const marker = doc.createTextNode(placeholder);
         element.replaceWith(marker);
     });
-    Array.from(doc.querySelectorAll(`.${'genflix-columns'}, [${LESSON_IMAGE_HOTSPOTS_BLOCK_ATTR}="${LESSON_COLUMNS_BLOCK_TYPE}"]`))
+    Array.from(doc.querySelectorAll(`[${LESSON_IMAGE_HOTSPOTS_BLOCK_ATTR}="${LESSON_IMAGE_BLOCK_TYPE}"]`))
         .forEach((element, index) => {
-        if (!isColumnsBlockElement(element)) {
+        if (!element.isConnected) {
             return;
         }
-        const placeholder = `${COLUMNS_PLACEHOLDER_PREFIX}_${index}__`;
-        const parsedBlock = extractLessonColumnsBlock(element);
+        const placeholder = `${IMAGE_PLACEHOLDER_PREFIX}_${index}__`;
+        const parsedBlock = extractLessonImageBlock(element);
+        blockMap.set(placeholder, parsedBlock ?? {
+            type: 'rich-text',
+            content: normalizeHtml((element as HTMLElement).innerHTML),
+        });
+        const marker = doc.createTextNode(placeholder);
+        element.replaceWith(marker);
+    });
+    Array.from(doc.querySelectorAll(`[${LESSON_IMAGE_HOTSPOTS_BLOCK_ATTR}="${LESSON_VIDEO_BLOCK_TYPE}"]`))
+        .forEach((element, index) => {
+        if (!element.isConnected) {
+            return;
+        }
+        const placeholder = `${VIDEO_PLACEHOLDER_PREFIX}_${index}__`;
+        const parsedBlock = extractLessonVideoBlock(element);
         blockMap.set(placeholder, parsedBlock ?? {
             type: 'rich-text',
             content: normalizeHtml((element as HTMLElement).innerHTML),
@@ -552,7 +823,7 @@ export function splitContent(html: string): LessonContentBlock[] {
         return [];
     }
     const blocks: LessonContentBlock[] = [];
-    const placeholderRegex = new RegExp(`(${TABLE_PLACEHOLDER_PREFIX}_\\d+__|${HOTSPOTS_PLACEHOLDER_PREFIX}_\\d+__|${COLUMNS_PLACEHOLDER_PREFIX}_\\d+__)`, 'g');
+    const placeholderRegex = new RegExp(`(${TABLE_PLACEHOLDER_PREFIX}_\\d+__|${HOTSPOTS_PLACEHOLDER_PREFIX}_\\d+__|${COLUMNS_PLACEHOLDER_PREFIX}_\\d+__|${IMAGE_PLACEHOLDER_PREFIX}_\\d+__|${VIDEO_PLACEHOLDER_PREFIX}_\\d+__)`, 'g');
     const parts = rawHtml.split(placeholderRegex);
     for (const part of parts) {
         if (!part)
@@ -603,8 +874,14 @@ export function mergeContent(blocks: LessonContentBlock[]): string {
         if (block.type === 'image-hotspots') {
             return normalizeHtml(serializeLessonImageHotspotsBlock(block.content));
         }
+        if (block.type === 'image') {
+            return normalizeHtml(serializeLessonImageBlock(block.content));
+        }
+        if (block.type === 'video') {
+            return normalizeHtml(serializeLessonVideoBlock(block.content));
+        }
         if (block.type === 'columns') {
-            return normalizeHtml(serializeLessonColumnsBlock(block.content.map((column) => sanitizeRichTextHtml(column))));
+            return normalizeHtml(serializeLessonColumnsBlock(block.content));
         }
         return normalizeHtml(sanitizeRichTextHtml(block.content));
     })
