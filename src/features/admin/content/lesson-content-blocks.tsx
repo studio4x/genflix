@@ -157,6 +157,9 @@ function collectDeletableAssetPaths(block: LessonContentBlock): string[] {
     if (block.type === 'image-hotspots' && block.content.asset.storage_path) {
         return [block.content.asset.storage_path];
     }
+    if (block.type === 'image' && block.content.source_type === 'upload' && block.content.storage_path) {
+        return [block.content.storage_path];
+    }
     if (block.type === 'video' && block.content.source_type === 'upload' && block.content.storage_path) {
         return [block.content.storage_path];
     }
@@ -188,32 +191,162 @@ function getBlockLabel(block: LessonContentBlock) {
 interface LessonImageBlockEditorProps {
     content: LessonImageBlockContent;
     onChange: (content: LessonImageBlockContent) => void;
+    onError?: (message: string | null) => void;
 }
 
-export function LessonImageBlockEditor({ content, onChange }: LessonImageBlockEditorProps) {
+export function LessonImageBlockEditor({ content, onChange, onError }: LessonImageBlockEditorProps) {
+    const fileInputRef = useRef<HTMLInputElement | null>(null);
+    const [inputMode, setInputMode] = useState<'url' | 'upload'>(content.source_type);
+    const [isUploading, setIsUploading] = useState(false);
+    const [previewError, setPreviewError] = useState<string | null>(null);
+    const resolvedUploadUrl = useResolvedLessonAssetUrl(content.storage_path, content.signed_url);
+
+    useEffect(() => {
+        setInputMode(content.source_type);
+    }, [content.source_type]);
+
+    const previewUrl = content.source_type === 'upload'
+        ? (content.signed_url?.trim() || resolvedUploadUrl)
+        : content.image_url.trim();
+
     const sizeClasses = IMAGE_SIZE_CLASSES[content.size];
+
+    async function handleFileSelected(event: ChangeEvent<HTMLInputElement>) {
+        const file = event.target.files?.[0];
+        if (!file) {
+            return;
+        }
+        setIsUploading(true);
+        setPreviewError(null);
+        onError?.(null);
+        try {
+            const previousStoragePath = content.source_type === 'upload' ? content.storage_path.trim() : '';
+            const uploadResult = await uploadLessonContentAsset(file);
+            onChange({
+                ...content,
+                source_type: 'upload',
+                image_url: content.image_url,
+                storage_path: uploadResult.storage_path,
+                signed_url: uploadResult.signed_url,
+                file_name: file.name,
+                mime_type: file.type || null,
+            });
+            if (previousStoragePath && previousStoragePath !== uploadResult.storage_path) {
+                void deleteLessonContentAsset(previousStoragePath).catch(() => null);
+            }
+        }
+        catch (error) {
+            const message = error instanceof Error ? error.message : 'Falha ao enviar a imagem.';
+            setPreviewError(message);
+            onError?.(message);
+        }
+        finally {
+            setIsUploading(false);
+            if (event.target) {
+                event.target.value = '';
+            }
+        }
+    }
+
+    async function switchToUrlMode() {
+        const previousStoragePath = content.source_type === 'upload' ? content.storage_path.trim() : '';
+        if (previousStoragePath) {
+            try {
+                await deleteLessonContentAsset(previousStoragePath);
+            }
+            catch {
+                // Mant?m a troca mesmo se a remo??o falhar.
+            }
+        }
+        setInputMode('url');
+        setPreviewError(null);
+        onError?.(null);
+        onChange({
+            ...content,
+            source_type: 'url',
+            storage_path: '',
+            signed_url: null,
+            file_name: '',
+            mime_type: null,
+        });
+    }
+
+    function switchToUploadMode() {
+        setInputMode('upload');
+        setPreviewError(null);
+        onError?.(null);
+        onChange({
+            ...content,
+            source_type: 'upload',
+        });
+    }
+
+    function handlePreviewError() {
+        if (previewError) {
+            return;
+        }
+        const message = 'Não foi possível carregar a prévia da imagem.';
+        setPreviewError(message);
+        onError?.(message);
+    }
+
     return (
         <div className="space-y-4 rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm">
             <div className="flex flex-wrap items-start justify-between gap-4 border-b border-slate-100 pb-4">
                 <div>
                     <p className="text-[10px] font-black uppercase tracking-[0.28em] text-sky-700">Imagem Simples</p>
-                    <p className="mt-2 text-sm font-semibold text-slate-600">Adicione uma imagem com legenda e ajuste de tamanho.</p>
+                    <p className="mt-2 text-sm font-semibold text-slate-600">Adicione uma imagem com URL ou upload, legenda e ajuste de tamanho.</p>
                 </div>
             </div>
+            <div className="grid gap-3 md:grid-cols-2">
+                <button type="button" onClick={() => void switchToUrlMode()} className={cn('rounded-2xl border px-4 py-4 text-left transition', inputMode === 'url'
+                    ? 'border-slate-950 bg-slate-950 text-white'
+                    : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50')}>
+                    <p className="text-xs font-black uppercase tracking-[0.18em]">Imagem via URL</p>
+                    <p className={cn('mt-1 text-sm', inputMode === 'url' ? 'text-slate-200' : 'text-slate-500')}>Cole um link de imagem pública.</p>
+                </button>
+                <button type="button" onClick={() => void switchToUploadMode()} className={cn('rounded-2xl border px-4 py-4 text-left transition', inputMode === 'upload'
+                    ? 'border-slate-950 bg-slate-950 text-white'
+                    : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50')}>
+                    <p className="text-xs font-black uppercase tracking-[0.18em]">Imagem por upload</p>
+                    <p className={cn('mt-1 text-sm', inputMode === 'upload' ? 'text-slate-200' : 'text-slate-500')}>Envie um arquivo e use a imagem protegida.</p>
+                </button>
+            </div>
             <div className={cn('mx-auto overflow-hidden rounded-[24px] border border-dashed border-slate-200 bg-slate-50 p-4', sizeClasses)}>
-                {content.image_url ? (
-                    <img src={content.image_url} alt={content.alt} className="h-auto w-full rounded-[18px] object-contain" />
+                {previewUrl ? (
+                    <img src={previewUrl} alt={content.alt} onError={handlePreviewError} className="h-auto w-full rounded-[18px] object-contain" />
                 ) : (
                     <div className="flex min-h-[220px] items-center justify-center rounded-[18px] bg-white text-sm text-slate-500">
                         Prévia da imagem
                     </div>
                 )}
             </div>
-            <div className="grid gap-4 md:grid-cols-2">
+            {inputMode === 'url' ? (
                 <label className="block space-y-2">
                     <span className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">URL da imagem</span>
-                    <input type="url" value={content.image_url} onChange={(event) => onChange({ ...content, image_url: event.target.value })} className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-sky-300 focus:ring-4 focus:ring-sky-100" placeholder="https://..." />
+                    <input type="url" value={content.image_url} onChange={(event) => {
+                        setPreviewError(null);
+                        onError?.(null);
+                        onChange({ ...content, source_type: 'url', image_url: event.target.value });
+                    }} className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-sky-300 focus:ring-4 focus:ring-sky-100" placeholder="https://..." />
                 </label>
+            ) : (
+                <div className="space-y-3">
+                    <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={(event) => void handleFileSelected(event)} />
+                    <Button type="button" variant="outline" className="rounded-2xl border-slate-200 bg-white" onClick={() => fileInputRef.current?.click()} disabled={isUploading}>
+                        {content.storage_path ? 'Trocar imagem' : 'Enviar imagem'}
+                    </Button>
+                    {content.file_name ? (
+                        <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+                            {content.file_name}
+                        </div>
+                    ) : null}
+                    <Button type="button" variant="ghost" className="px-0 text-xs font-bold text-slate-500 hover:text-slate-800" onClick={() => void switchToUrlMode()}>
+                        Voltar para URL
+                    </Button>
+                </div>
+            )}
+            <div className="grid gap-4 md:grid-cols-2">
                 <label className="block space-y-2">
                     <span className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Ajuste de tamanho</span>
                     <select value={content.size} onChange={(event) => onChange({ ...content, size: event.target.value as LessonImageBlockSize })} className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-sky-300 focus:ring-4 focus:ring-sky-100">
@@ -223,19 +356,23 @@ export function LessonImageBlockEditor({ content, onChange }: LessonImageBlockEd
                         <option value="full">Largura total</option>
                     </select>
                 </label>
+                <label className="block space-y-2">
+                    <span className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Texto alternativo</span>
+                    <input type="text" value={content.alt} onChange={(event) => onChange({ ...content, alt: event.target.value })} className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-sky-300 focus:ring-4 focus:ring-sky-100" placeholder="Descrição da imagem para acessibilidade" />
+                </label>
             </div>
-            <label className="block space-y-2">
-                <span className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Texto alternativo</span>
-                <input type="text" value={content.alt} onChange={(event) => onChange({ ...content, alt: event.target.value })} className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-sky-300 focus:ring-4 focus:ring-sky-100" placeholder="Descrição da imagem para acessibilidade" />
-            </label>
             <label className="block space-y-2">
                 <span className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Legenda</span>
                 <textarea value={content.caption} onChange={(event) => onChange({ ...content, caption: event.target.value })} className="min-h-[96px] w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-sky-300 focus:ring-4 focus:ring-sky-100" placeholder="Legenda opcional da imagem" />
             </label>
+            {previewError ? (
+                <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">
+                    {previewError}
+                </div>
+            ) : null}
         </div>
     );
 }
-
 interface LessonVideoBlockEditorProps {
     content: LessonVideoBlockContent;
     onChange: (content: LessonVideoBlockContent) => void;
@@ -415,10 +552,15 @@ interface LessonImageBlockRendererProps {
 
 export function LessonImageBlockRenderer({ content }: LessonImageBlockRendererProps) {
     const sizeClasses = IMAGE_SIZE_CLASSES[content.size];
+    const resolvedUploadUrl = useResolvedLessonAssetUrl(content.storage_path, content.signed_url);
+    const previewUrl = content.source_type === 'upload'
+        ? (content.signed_url?.trim() || resolvedUploadUrl)
+        : content.image_url.trim();
+
     return (
         <figure className={cn('my-8 mx-auto overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm', sizeClasses)}>
-            {content.image_url ? (
-                <img src={content.image_url} alt={content.alt} className="h-auto w-full object-contain" />
+            {previewUrl ? (
+                <img src={previewUrl} alt={content.alt} className="h-auto w-full object-contain" />
             ) : (
                 <div className="flex min-h-[220px] items-center justify-center bg-slate-50 px-6 text-sm text-slate-500">
                     Imagem não configurada.
@@ -432,7 +574,6 @@ export function LessonImageBlockRenderer({ content }: LessonImageBlockRendererPr
         </figure>
     );
 }
-
 interface LessonVideoBlockRendererProps {
     content: LessonVideoBlockContent;
 }
@@ -567,7 +708,7 @@ export function LessonContentBlocksEditor({ blocks, onChange, onError, level = 0
                     ) : block.type === 'image-hotspots' ? (
                         <LessonImageHotspotsBlockEditor content={block.content} onChange={(nextContent) => updateBlock(index, { ...block, content: nextContent })} onError={onError} />
                     ) : block.type === 'image' ? (
-                        <LessonImageBlockEditor content={block.content} onChange={(nextContent) => updateBlock(index, { ...block, content: nextContent })} />
+                        <LessonImageBlockEditor content={block.content} onChange={(nextContent) => updateBlock(index, { ...block, content: nextContent })} onError={onError} />
                     ) : block.type === 'video' ? (
                         <LessonVideoBlockEditor content={block.content} onChange={(nextContent) => updateBlock(index, { ...block, content: nextContent })} onError={onError} />
                     ) : block.type === 'columns' ? (

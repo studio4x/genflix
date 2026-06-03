@@ -1,7 +1,12 @@
 import type { LessonImageHotspotsAsset, LessonImageHotspotsBlockContent, LessonImageHotspotItem, } from '@/types/content';
 export type LessonImageBlockSize = 'sm' | 'md' | 'lg' | 'full';
 export interface LessonImageBlockContent {
+    source_type: 'url' | 'upload';
     image_url: string;
+    storage_path: string;
+    signed_url?: string | null;
+    file_name: string;
+    mime_type: string | null;
     alt: string;
     size: LessonImageBlockSize;
     caption: string;
@@ -330,8 +335,14 @@ export function parseLessonImageHotspotsBlockContent(payload: unknown): LessonIm
     };
 }
 function normalizeLessonImageBlockContent(content: LessonImageBlockContent): LessonImageBlockContent {
+    const sourceType = content.source_type === 'upload' ? 'upload' : 'url';
     return {
-        image_url: content.image_url?.trim() || '',
+        source_type: sourceType,
+        image_url: sourceType === 'url' ? content.image_url?.trim() || '' : '',
+        storage_path: sourceType === 'upload' ? content.storage_path?.trim() || '' : '',
+        signed_url: sourceType === 'upload' ? content.signed_url?.trim() || null : null,
+        file_name: sourceType === 'upload' ? content.file_name?.trim() || '' : '',
+        mime_type: sourceType === 'upload' ? content.mime_type?.trim() || null : null,
         alt: content.alt?.trim() || 'Imagem da aula',
         size: content.size === 'sm' || content.size === 'md' || content.size === 'lg' || content.size === 'full'
             ? content.size
@@ -341,7 +352,12 @@ function normalizeLessonImageBlockContent(content: LessonImageBlockContent): Les
 }
 export function createEmptyLessonImageBlockContent(): LessonImageBlockContent {
     return normalizeLessonImageBlockContent({
+        source_type: 'url',
         image_url: '',
+        storage_path: '',
+        signed_url: null,
+        file_name: '',
+        mime_type: null,
         alt: 'Imagem da aula',
         size: 'md',
         caption: '',
@@ -352,11 +368,21 @@ function parseLessonImageBlockContent(payload: unknown): LessonImageBlockContent
         return null;
     }
     const candidate = payload as Partial<LessonImageBlockContent>;
-    if (typeof candidate.image_url !== 'string') {
+    const sourceType = candidate.source_type === 'upload' || candidate.source_type === 'url'
+        ? candidate.source_type
+        : typeof candidate.storage_path === 'string' && candidate.storage_path.trim()
+            ? 'upload'
+            : 'url';
+    if (sourceType === 'url' && typeof candidate.image_url !== 'string') {
         return null;
     }
     return normalizeLessonImageBlockContent({
-        image_url: candidate.image_url,
+        source_type: sourceType,
+        image_url: typeof candidate.image_url === 'string' ? candidate.image_url : '',
+        storage_path: typeof candidate.storage_path === 'string' ? candidate.storage_path : '',
+        signed_url: typeof candidate.signed_url === 'string' ? candidate.signed_url : null,
+        file_name: typeof candidate.file_name === 'string' ? candidate.file_name : '',
+        mime_type: typeof candidate.mime_type === 'string' ? candidate.mime_type : null,
         alt: typeof candidate.alt === 'string' ? candidate.alt : 'Imagem da aula',
         size: candidate.size === 'sm' || candidate.size === 'md' || candidate.size === 'lg' || candidate.size === 'full'
             ? candidate.size
@@ -517,7 +543,12 @@ function extractLessonColumnsBlock(element: Element): LessonContentBlock | null 
 }
 function encodeImagePayload(content: LessonImageBlockContent): string {
     return encodeURIComponent(JSON.stringify({
+        source_type: content.source_type,
         image_url: content.image_url,
+        storage_path: content.storage_path,
+        signed_url: content.signed_url,
+        file_name: content.file_name,
+        mime_type: content.mime_type,
         alt: content.alt,
         size: content.size,
         caption: content.caption,
@@ -534,9 +565,12 @@ function decodeImagePayload(encodedPayload: string): LessonImageBlockContent | n
 }
 function buildImageFallbackHtml(content: LessonImageBlockContent): string {
     const caption = content.caption.trim();
+    const imageUrl = content.source_type === 'upload'
+        ? (content.signed_url?.trim() || '')
+        : content.image_url.trim();
     return `
     <figure class="hcm-image-block-fallback">
-      ${content.image_url ? `<img src="${escapeHtml(content.image_url)}" alt="${escapeHtml(content.alt)}" />` : '<div class="hcm-image-block-fallback__placeholder">Imagem sem URL configurada.</div>'}
+      ${imageUrl ? `<img src="${escapeHtml(imageUrl)}" alt="${escapeHtml(content.alt)}" />` : '<div class="hcm-image-block-fallback__placeholder">Imagem sem URL configurada.</div>'}
       ${caption ? `<figcaption>${escapeHtml(caption)}</figcaption>` : ''}
     </figure>
   `;
