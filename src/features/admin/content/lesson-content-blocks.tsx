@@ -17,6 +17,7 @@ import {
     type LessonImageBlockContent,
     type LessonImageBlockSize,
     type LessonVideoBlockContent,
+    type LessonVideoBlockCaptionAlignment,
     type LessonVideoBlockSize,
 } from '@/features/admin/content/content-blocks';
 
@@ -67,6 +68,12 @@ const VIDEO_SIZE_CLASSES: Record<LessonVideoBlockSize, string> = {
     md: 'max-w-2xl',
     lg: 'max-w-4xl',
     full: 'max-w-none',
+};
+
+const VIDEO_CAPTION_ALIGNMENT_CLASSES: Record<LessonVideoBlockCaptionAlignment, string> = {
+    left: 'text-left',
+    center: 'text-center',
+    right: 'text-right',
 };
 
 function isDirectVideoUrl(url: string): boolean {
@@ -453,8 +460,9 @@ export function LessonVideoBlockEditor({ content, onChange, onError }: LessonVid
                 signed_url: uploadResult.signed_url,
                 file_name: file.name,
                 mime_type: file.type || null,
-                                caption: content.caption,
+                caption: content.caption,
                 size: content.size,
+                caption_alignment: content.caption_alignment,
             });
             if (previousStoragePath && previousStoragePath !== uploadResult.storage_path) {
                 void deleteLessonContentAsset(previousStoragePath).catch(() => null);
@@ -586,6 +594,15 @@ export function LessonVideoBlockEditor({ content, onChange, onError }: LessonVid
             </label>
 
             <label className="block space-y-2">
+                <span className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Alinhamento da legenda</span>
+                <select value={content.caption_alignment} onChange={(event) => onChange({ ...content, caption_alignment: event.target.value as LessonVideoBlockCaptionAlignment })} className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-sky-300 focus:ring-4 focus:ring-sky-100">
+                    <option value="left">Esquerda</option>
+                    <option value="center">Centro</option>
+                    <option value="right">Direita</option>
+                </select>
+            </label>
+
+            <label className="block space-y-2">
                 <span className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Legenda</span>
                 <textarea value={content.caption} onChange={(event) => onChange({ ...content, caption: event.target.value })} className="min-h-[96px] w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-sky-300 focus:ring-4 focus:ring-sky-100" placeholder="Legenda opcional do vídeo" />
             </label>
@@ -638,6 +655,7 @@ export function LessonVideoBlockRenderer({ content }: LessonVideoBlockRendererPr
         ? (content.signed_url?.trim() || resolvedUploadUrl)
         : content.url.trim();
     const sizeClasses = VIDEO_SIZE_CLASSES[content.size];
+    const captionAlignmentClass = VIDEO_CAPTION_ALIGNMENT_CLASSES[content.caption_alignment];
     const embedUrl = previewUrl ? getVideoEmbedUrl(previewUrl) : null;
     const isDirectVideo = previewUrl ? isDirectVideoUrl(previewUrl) : false;
 
@@ -663,7 +681,7 @@ export function LessonVideoBlockRenderer({ content }: LessonVideoBlockRendererPr
                 )}
             </div>
             {content.caption ? (
-                <figcaption className="border-t border-slate-100 bg-slate-50 px-5 py-3 text-sm text-slate-600">
+                <figcaption className={cn('border-t border-slate-100 bg-slate-50 px-5 py-3 text-sm text-slate-600', captionAlignmentClass)}>
                     {content.caption}
                 </figcaption>
             ) : null}
@@ -738,10 +756,10 @@ export function LessonContentBlocksEditor({ blocks, onChange, onError, level = 0
                         </div>
                         <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
                             <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-blue-600" onClick={() => moveBlock(index, 'up')} disabled={index === 0}>
-                                ↑
+                                ?
                             </Button>
                             <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-blue-600" onClick={() => moveBlock(index, 'down')} disabled={index === blocks.length - 1}>
-                                ↓
+                                ?
                             </Button>
                             <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-rose-600" onClick={() => void removeBlock(index)}>
                                 ×
@@ -913,3 +931,4 @@ export function LessonContentBlocksRenderer({ blocks, className }: LessonContent
         </div>
     );
 }
+

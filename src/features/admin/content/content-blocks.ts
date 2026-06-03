@@ -2,6 +2,7 @@ import type { LessonImageHotspotsAsset, LessonImageHotspotsBlockContent, LessonI
 export type LessonImageBlockSize = 'sm' | 'md' | 'lg' | 'full';
 export type LessonImageBlockCaptionAlignment = 'left' | 'center' | 'right';
 export type LessonVideoBlockSize = 'sm' | 'md' | 'lg' | 'full';
+export type LessonVideoBlockCaptionAlignment = 'left' | 'center' | 'right';
 export interface LessonImageBlockContent {
     source_type: 'url' | 'upload';
     image_url: string;
@@ -23,6 +24,7 @@ export interface LessonVideoBlockContent {
     mime_type: string | null;
     caption: string;
     size: LessonVideoBlockSize;
+    caption_alignment: LessonVideoBlockCaptionAlignment;
 }
 export type LessonColumnsBlockContent = LessonContentBlock[][];
 export type LessonContentBlock = {
@@ -61,6 +63,11 @@ const LESSON_VIDEO_MAX_WIDTH_STYLE: Record<LessonVideoBlockSize, string> = {
     md: 'max-width: 42rem;',
     lg: 'max-width: 56rem;',
     full: 'max-width: none;',
+};
+const LESSON_VIDEO_CAPTION_ALIGNMENT_STYLE: Record<LessonVideoBlockCaptionAlignment, string> = {
+    left: 'left',
+    center: 'center',
+    right: 'right',
 };
 const ALLOWED_TABLE_TAGS = new Set([
     'table',
@@ -419,6 +426,9 @@ function normalizeLessonVideoBlockContent(content: LessonVideoBlockContent): Les
         size: content.size === 'sm' || content.size === 'md' || content.size === 'lg' || content.size === 'full'
             ? content.size
             : 'md',
+        caption_alignment: content.caption_alignment === 'center' || content.caption_alignment === 'right'
+            ? content.caption_alignment
+            : 'left',
     };
 }
 export function createEmptyLessonVideoBlockContent(): LessonVideoBlockContent {
@@ -431,6 +441,7 @@ export function createEmptyLessonVideoBlockContent(): LessonVideoBlockContent {
         mime_type: null,
         caption: '',
         size: 'md',
+        caption_alignment: 'left',
     });
 }
 export function createEmptyColumnsBlockContent(columnsCount = 2): LessonColumnsBlockContent {
@@ -460,6 +471,9 @@ function parseLessonVideoBlockContent(payload: unknown): LessonVideoBlockContent
         size: candidate.size === 'sm' || candidate.size === 'md' || candidate.size === 'lg' || candidate.size === 'full'
             ? candidate.size
             : 'md',
+        caption_alignment: candidate.caption_alignment === 'center' || candidate.caption_alignment === 'right'
+            ? candidate.caption_alignment
+            : 'left',
     });
 }
 export function createEmptyLessonImageHotspotsBlockContent(): LessonImageHotspotsBlockContent {
@@ -650,6 +664,7 @@ function encodeVideoPayload(content: LessonVideoBlockContent): string {
         mime_type: content.mime_type,
         caption: content.caption,
         size: content.size,
+        caption_alignment: content.caption_alignment,
     }));
 }
 function decodeVideoPayload(encodedPayload: string): LessonVideoBlockContent | null {
@@ -665,13 +680,14 @@ function buildVideoFallbackHtml(content: LessonVideoBlockContent): string {
     const caption = content.caption.trim();
     const fileName = content.file_name.trim();
     const maxWidthStyle = LESSON_VIDEO_MAX_WIDTH_STYLE[content.size];
+    const captionAlignment = LESSON_VIDEO_CAPTION_ALIGNMENT_STYLE[content.caption_alignment];
     const summary = content.source_type === "upload"
-        ? `Vídeo enviado${fileName ? `: ${escapeHtml(fileName)}` : ""}.`
-        : "Vídeo por URL.";
+        ? `VÃ­deo enviado${fileName ? `: ${escapeHtml(fileName)}` : ""}.`
+        : "VÃ­deo por URL.";
     return `
     <figure class="hcm-video-block-fallback" style="${maxWidthStyle} margin: 2rem auto;">
       <div class="hcm-video-block-fallback__surface">${summary}</div>
-      ${caption ? `<figcaption>${escapeHtml(caption)}</figcaption>` : ""}
+      ${caption ? `<figcaption style="text-align: ${captionAlignment};">${escapeHtml(caption)}</figcaption>` : ""}
     </figure>
   `;
 }
