@@ -252,7 +252,7 @@ export function CourseSettingsPanel() {
                <div className="max-w-3xl space-y-3">
                   <p className="text-[11px] font-black uppercase tracking-[0.26em] text-[#0F5AA3]">Capa do Curso</p>
                   <h3 className="text-[2rem] font-black tracking-tight text-slate-900">Upload de imagem</h3>
-                  <p className="max-w-[860px] text-base leading-8 text-slate-600">A capa alimenta cards e páginas publicas. O upload gera um asset pblico apenas para a imagem comercial do curso.
+                  <p className="max-w-[860px] text-base leading-8 text-slate-600">A capa alimenta cards e páginas publicas. O upload gera um asset público apenas para a imagem comercial do curso.
                   </p>
                </div>
 
@@ -403,8 +403,8 @@ export function CourseSettingsPanel() {
                         <input type="checkbox" checked={form.has_linear_progression} onChange={e => setForm(f => ({ ...f, has_linear_progression: e.target.checked }))} className="h-5 w-5 rounded border-blue-300 text-blue-600 focus:ring-blue-600 shadow-sm transition-all"/>
                      </div>
                      <div className="space-y-1">
-                        <span className="text-sm font-bold text-slate-900 block">{'Ativar Progress\u00e3o Linear Obrigat\u00f3ria'}</span>
-                        <span className="text-[11px] text-slate-500 block leading-relaxed max-w-lg">{'Se ativado, o aluno deve concluir obrigatoriamente a aula atual para liberar a pr?xima. M?dulos bloqueados s? ser?o liberados ao concluir o m?dulo anterior (incluindo provas).'}
+                        <span className="text-sm font-bold text-slate-900 block">{'Ativar Progressão Linear Obrigatória'}</span>
+                        <span className="text-[11px] text-slate-500 block leading-relaxed max-w-lg">{'Se ativado, o aluno deve concluir obrigatoriamente a aula atual para liberar a próxima. Módulos bloqueados só serão liberados ao concluir o módulo anterior (incluindo provas).'}
                         </span>
                      </div>
                   </label>
@@ -413,11 +413,11 @@ export function CourseSettingsPanel() {
                <div className="pt-6 border-t border-slate-100 space-y-5">
                   <div className="flex flex-wrap items-start justify-between gap-4">
                      <div>
-                        <span className="text-xs font-black text-slate-400 uppercase tracking-widest pl-1">{'Tipos de Quiz Dispon?veis'}</span>
-                        <p className="mt-2 max-w-3xl text-sm font-medium text-slate-500">{'Ative ou desative quais formatos de pergunta podem ser usados neste curso. O builder de avalia??es passa a respeitar essa configura??o.'}
+                        <span className="text-xs font-black text-slate-400 uppercase tracking-widest pl-1">{'Tipos de Quiz Disponíveis'}</span>
+                        <p className="mt-2 max-w-3xl text-sm font-medium text-slate-500">{'Ative ou desative quais formatos de pergunta podem ser usados neste curso. O builder de avaliações passa a respeitar essa configuração.'}
                         </p>
                         {hiddenQuizTypeCount > 0 ? (<p className="mt-2 max-w-3xl text-xs font-semibold leading-5 text-amber-700">
-                            {`${hiddenQuizTypeCount} tipo(s) de quiz est?o desativados globalmente e n?o aparecem nesta tela.`}
+                            {`${hiddenQuizTypeCount} tipo(s) de quiz estão desativados globalmente e não aparecem nesta tela.`}
                           </p>) : null}
                      </div>
                      <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-right shadow-sm">
@@ -460,7 +460,7 @@ export function CourseSettingsPanel() {
 
                   <div className={`rounded-[24px] border px-5 py-4 text-sm font-semibold ${canUseCaseStudies ? 'border-violet-100 bg-violet-50/70 text-violet-800' : 'border-amber-100 bg-amber-50/80 text-amber-800'}`}>
                      {canUseCaseStudies
-            ? "Estudo de caso est? pronto para uso no builder, porque pelo menos um tipo de pergunta interna est? ativo." : 'Estudo de caso exige M?ltipla Escolha ou Discursiva com IA ativas para aparecer como op??o no builder.'}
+            ? "Estudo de caso está pronto para uso no builder, porque pelo menos um tipo de pergunta interna está ativo." : 'Estudo de caso exige Múltipla Escolha ou Discursiva com IA ativas para aparecer como opção no builder.'}
                   </div>
                </div>
             </div>
@@ -477,14 +477,14 @@ export function CourseSettingsPanel() {
 
       <form onSubmit={handleSaveAiStandards} className="space-y-8">
         {aiStandardsSuccess && (<div className="rounded-2xl border border-emerald-100 bg-emerald-50 p-4 text-sm font-bold tracking-tight text-emerald-600 animate-in slide-in-from-top-2 duration-300">
-            {'Padr?es da revis?o com IA salvos com sucesso!'}
+            {'Padrões da revisão com IA salvos com sucesso!'}
           </div>)}
 
         <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm md:p-10 space-y-8">
           <div className="border-b border-slate-100 pb-5">
-            <h3 className="text-2xl font-black text-slate-900 tracking-tight">{'Padr?es do Curso Perfeito'}</h3>
+            <h3 className="text-2xl font-black text-slate-900 tracking-tight">{'Padrões do Curso Perfeito'}</h3>
             <p className="mt-1 text-sm text-slate-500">
-              {'Defina aqui os crit?rios que a IA deve usar ao revisar cada m?dulo individualmente.'}
+              {'Defina aqui os critérios que a IA deve usar ao revisar cada módulo individualmente.'}
             </p>
           </div>
 
@@ -524,7 +524,7 @@ export function CourseSettingsPanel() {
       <section className="space-y-6 rounded-[32px] border border-rose-200 bg-white p-6 shadow-sm md:p-10">
         <div className="border-b border-rose-100 pb-5">
           <h3 className="text-2xl font-black tracking-tight text-slate-900">Renovar Progresso do Curso</h3>
-          <p className="mt-1 text-sm text-slate-500">{'Use esta a??o quando precisar reiniciar o curso para todos os alunos e liberar um novo ciclo completo de aulas e avalia??es.'}
+          <p className="mt-1 text-sm text-slate-500">{'Use esta ação quando precisar reiniciar o curso para todos os alunos e liberar um novo ciclo completo de aulas e avaliações.'}
           </p>
         </div>
 

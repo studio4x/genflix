@@ -94,7 +94,7 @@ export function LessonMaterialsPanel() {
             await loadData();
             publishBuilderNotice({
                 type: 'success',
-                title: 'Bot\u00e3o da aula salvo',
+                title: 'Botão da aula salvo',
                 message: `O arquivo "${file.name}" foi adicionado ao rodap\u00e9 da aula com sucesso.`,
             });
         }
@@ -129,7 +129,7 @@ export function LessonMaterialsPanel() {
             await loadData();
             publishBuilderNotice({
                 type: 'success',
-                title: 'Bot\u00e3o da aula salvo',
+                title: 'Botão da aula salvo',
                 message: `O link "${parsed.data.label}" foi adicionado ao rodap\u00e9 da aula com sucesso.`,
             });
         }
@@ -172,16 +172,16 @@ export function LessonMaterialsPanel() {
               Voltar para Aula
             </button>
           </div>
-          <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">{'Bot\u00f5es do Rodap\u00e9 da Aula'}</h2>
+          <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">{'Botões do Rodapé da Aula'}</h2>
           <p className="text-sm text-slate-500 mt-1">
-            {'Configure arquivos e links que aparecer?o como bot?es no rodap? da aula:'}
+            {'Configure arquivos e links que aparecerão como botões no rodapé da aula:'}
             {' '}
             <span className="font-bold text-slate-700">{lesson?.title}</span>
           </p>
         </div>
 
         <Link to="/admin/botoes-aula" className="inline-flex items-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50">
-          {'Gerenciar Padr\u00f5es Globais'}
+          {'Gerenciar Padrões Globais'}
         </Link>
       </div>
 
@@ -189,13 +189,13 @@ export function LessonMaterialsPanel() {
         <section className="space-y-6 rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
           <div>
             <p className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">Novo botão</p>
-            <p className="mt-2 text-sm text-slate-500">{'Escolha o padr\u00e3o visual e adicione um arquivo ou link.'}</p>
+            <p className="mt-2 text-sm text-slate-500">{'Escolha o padrão visual e adicione um arquivo ou link.'}</p>
           </div>
 
           <label className="block space-y-2">
-            <span className="text-sm font-bold text-slate-800">{'Padr\u00e3o visual'}</span>
+            <span className="text-sm font-bold text-slate-800">{'Padrão visual'}</span>
             <select className="w-full rounded-2xl border border-slate-200 bg-slate-50/50 px-4 py-3 text-sm" value={selectedTemplateId} onChange={(event) => setSelectedTemplateId(event.target.value)}>
-              <option value="">{'Sem padr\u00e3o espec\u00edfico'}</option>
+              <option value="">{'Sem padrão específico'}</option>
               {activeTemplates.map((template) => (<option key={template.id} value={template.id}>
                   {template.name} • {template.default_label}
                 </option>))}
@@ -228,7 +228,7 @@ export function LessonMaterialsPanel() {
 
           <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-4 space-y-3">
             <p className="text-sm font-black text-slate-900">Criar botão de URL</p>
-            <input className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm" placeholder="Rotulo personalizado opcional" value={urlLabel} onChange={(event) => setUrlLabel(event.target.value)}/>
+            <input className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm" placeholder="Rótulo personalizado opcional" value={urlLabel} onChange={(event) => setUrlLabel(event.target.value)}/>
             <input className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm" placeholder="https://..." value={urlValue} onChange={(event) => setUrlValue(event.target.value)}/>
             <Button className="w-full rounded-xl bg-slate-900 hover:bg-slate-800" onClick={() => void handleCreateUrlAction()}>
               Adicionar Link
@@ -239,9 +239,9 @@ export function LessonMaterialsPanel() {
         </section>
 
         <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
-          <p className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">{'A\u00e7\u00f5es configuradas'}</p>
+          <p className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">{'Ações configuradas'}</p>
 
-          {isLoading ? (<p className="mt-4 text-sm text-slate-500">{'Carregando bot?es...'}</p>) : actions.length === 0 ? (<div className="mt-4 rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-5 py-10 text-center text-sm text-slate-500">{'Nenhum bot?o configurado para esta aula.'}
+          {isLoading ? (<p className="mt-4 text-sm text-slate-500">{'Carregando botões...'}</p>) : actions.length === 0 ? (<div className="mt-4 rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-5 py-10 text-center text-sm text-slate-500">{'Nenhum botão configurado para esta aula.'}
             </div>) : (<div className="mt-4 grid gap-4">
               {actions.map((action) => (<article key={action.id} className="rounded-[24px] border border-slate-200 bg-slate-50/50 p-5">
                   <div className="flex flex-wrap items-start justify-between gap-4">
@@ -260,7 +260,7 @@ export function LessonMaterialsPanel() {
                       <div className="mt-3">
                         <Button type="button" variant="outline" className={getLessonFooterButtonClassName(action.template)}>
                           {renderButtonTemplateIcon(getLessonFooterActionIconName(action))}
-                          {action.label ?? action.file_name ?? action.template?.default_label ?? "Bot\u00e3o sem t\u00edtulo"}
+                          {action.label ?? action.file_name ?? action.template?.default_label ?? "Botão sem título"}
                         </Button>
                       </div>
                       <p className="mt-1 text-sm text-slate-500 break-all">

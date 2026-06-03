@@ -964,17 +964,17 @@ Esta ação exclui o arquivo do storage privado.`);
                    <div>
                      <p className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">{'Bot\u00f5es no Rodap\u00e9 da Aula'}</p>
                      <p className="mt-2 text-sm text-slate-500">
-                       {'Configure arquivos e links que aparecem como bot?es no rodap? do player do aluno.'}
+                       {'Configure arquivos e links que aparecem como botões no rodapé do player do aluno.'}
                      </p>
                    </div>
                    {!isNew ? (<Button type="button" variant="outline" className="border-slate-200 bg-white" onClick={() => navigate(`/admin/cursos/${courseId}/builder/modulos/${moduleId}/aulas/${lessonId}/materiais`)}>
-                       {'Gerenciar bot\u00f5es'}
+                       {'Gerenciar botões'}
                      </Button>) : null}
                  </div>
 
                  {isNew ? (<p className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-                     {'Salve a aula primeiro para cadastrar bot?es, materiais e URLs do rodap?.'}
-                   </p>) : isLoadingFooterActions ? (<p className="mt-4 text-sm text-slate-500">{'Carregando bot?es configurados...'}</p>) : footerActions.length === 0 ? (<p className="mt-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">{'Nenhum bot?o configurado ainda para esta aula.'}
+                     {'Salve a aula primeiro para cadastrar botões, materiais e URLs do rodapé.'}
+                   </p>) : isLoadingFooterActions ? (<p className="mt-4 text-sm text-slate-500">{'Carregando botões configurados...'}</p>) : footerActions.length === 0 ? (<p className="mt-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">{'Nenhum botão configurado ainda para esta aula.'}
                    </p>) : (<div className="mt-4 grid gap-3">
                      {footerActions.map((action, index) => (<div key={action.id} className="rounded-xl border border-slate-200 bg-slate-50/70 px-4 py-3">
                          <div className="flex flex-wrap items-center gap-2">
@@ -988,7 +988,7 @@ Esta ação exclui o arquivo do storage privado.`);
                          <div className="mt-3">
                            <Button type="button" variant="outline" className={getLessonFooterButtonClassName(action.template)}>
                              {renderButtonTemplateIcon(getLessonFooterActionIconName(action))}
-                             {action.label?.trim() || action.template?.default_label || action.file_name || 'Bot\u00e3o sem r\u00f3tulo'}
+                             {action.label?.trim() || action.template?.default_label || action.file_name || 'Botão sem rótulo'}
                            </Button>
                          </div>
                        </div>))}

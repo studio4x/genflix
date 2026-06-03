@@ -279,7 +279,7 @@ export function AssessmentBuilderPanel() {
         setIsLoading(true);
         try {
             const initialData = {
-                title: isFinal ? 'Avaliação Final' : `Quiz: ${module?.title || "Novo M\u00F3dulo"}`,
+                title: isFinal ? 'Avaliação Final' : `Quiz: ${module?.title || "Novo Módulo"}`,
                 description: '',
                 is_required: true,
                 passing_score: 70,
@@ -857,7 +857,7 @@ export function AssessmentBuilderPanel() {
                 const initialData = {
                     title: typeof data.title === 'string' && data.title.trim()
                         ? data.title
-                        : (isFinal ? 'Avaliação Final' : `Quiz: ${module?.title || "Novo M\u00F3dulo"}`),
+                        : (isFinal ? 'Avaliação Final' : `Quiz: ${module?.title || "Novo Módulo"}`),
                     description: typeof data.description === 'string' ? data.description : '',
                     is_required: true,
                     passing_score: typeof data.passing_score === 'number' ? data.passing_score : 70,

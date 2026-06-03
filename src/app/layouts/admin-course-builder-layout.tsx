@@ -246,7 +246,7 @@ export function AdminCourseBuilderLayout() {
             <div className="p-3 border-t border-slate-100">
                <div className="space-y-1">
                   <Link to={`/admin/cursos/${courseId}/builder/public-page`} className="group flex items-center gap-2.5 p-2.5 rounded-lg text-sm transition-colors text-slate-600 hover:bg-slate-100">
-                     <svg className="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h10"/><circle cx="18" cy="18" r="3" strokeWidth={2}/></svg>Pgina Publica do Curso
+                     <svg className="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h10"/><circle cx="18" cy="18" r="3" strokeWidth={2}/></svg>Página Pública do Curso
                   </Link>
                   <Link to={`/admin/cursos/${courseId}/builder/settings`} className="group flex items-center gap-2.5 p-2.5 rounded-lg text-sm transition-colors text-slate-600 hover:bg-slate-100">
                      <svg className="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
@@ -302,7 +302,7 @@ export function AdminCourseBuilderLayout() {
 
                      {/* Toggle Mode */}
                      {!clearExisting && (<div className="flex bg-slate-100 p-1.5 rounded-2xl gap-2">
-                           <button onClick={() => { setIsReplaceMode(false); setModuleIdToReplace(null); }} className={`flex-1 py-3 px-4 rounded-xl text-xs font-black transition-all ${!isReplaceMode ? 'bg-white shadow-sm text-blue-600' : 'text-slate-500 hover:text-slate-700'}`}>{'Adicionar novos m\u00f3dulos'}
+                           <button onClick={() => { setIsReplaceMode(false); setModuleIdToReplace(null); }} className={`flex-1 py-3 px-4 rounded-xl text-xs font-black transition-all ${!isReplaceMode ? 'bg-white shadow-sm text-blue-600' : 'text-slate-500 hover:text-slate-700'}`}>{'Adicionar novos módulos'}
                            </button>
                            <button onClick={() => { setIsReplaceMode(true); }} className={`flex-1 py-3 px-4 rounded-xl text-xs font-black transition-all ${isReplaceMode ? 'bg-white shadow-sm text-blue-600' : 'text-slate-500 hover:text-slate-700'}`}>
                               Substituir Módulo Existente
@@ -404,7 +404,7 @@ export function AdminCourseBuilderLayout() {
                 : builderNotice.type === 'error'
                     ? 'bg-rose-100 text-rose-700'
                     : 'bg-amber-100 text-amber-700'}`}>
-                    {builderNotice.type === 'success' ? 'Concluido' : builderNotice.type === 'error' ? 'Erro' : 'Processando'}
+                    {builderNotice.type === 'success' ? 'Concluído' : builderNotice.type === 'error' ? 'Erro' : 'Processando'}
                   </div>
                   <h3 className="mt-3 text-2xl font-black tracking-tight text-slate-900">{builderNotice.title}</h3>
                   <p className="mt-2 text-sm font-medium text-slate-500">

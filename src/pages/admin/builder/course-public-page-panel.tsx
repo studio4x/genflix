@@ -299,7 +299,7 @@ export function CoursePublicPagePanel() {
             <div className="flex items-center justify-between gap-3">
               <div>
                 <p className="text-sm font-black text-slate-900">O que está incluído</p>
-                <p className="text-xs font-medium text-slate-500">Lista dos chips exibidos abaixo do formulario de compra.</p>
+                <p className="text-xs font-medium text-slate-500">Lista dos chips exibidos abaixo do formulário de compra.</p>
               </div>
               <Button type="button" variant="outline" className="rounded-2xl" onClick={() => updateField('includedItems', [...form.includedItems, ''])}>
                 <Plus className="mr-2 h-4 w-4"/>
@@ -317,7 +317,7 @@ export function CoursePublicPagePanel() {
         </section>
 
         <section className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm md:p-10">
-          <SectionHeading eyebrow="Corpo" title="Sobre o curso e destaques" description="Esses blocos alimentam as secoes de texto corrido e os cards de O que voc vai aprender."/>
+          <SectionHeading eyebrow="Corpo" title="Sobre o curso e destaques" description="Esses blocos alimentam as seções de texto corrido e os cards de O que voc vai aprender."/>
 
           <div className="mt-8 space-y-8">
             <div className="space-y-3">

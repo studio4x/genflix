@@ -23,7 +23,7 @@ function AiReviewUsageSummary({ review }: {
       <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
         <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Provedor</p>
         <p className="mt-2 text-sm font-bold text-slate-900">{getAiProviderLabel(review.ai_provider)}</p>
-        <p className="mt-1 text-xs text-slate-500">{review.ai_model ?? "Modelo indispon\u00edvel"}</p>
+        <p className="mt-1 text-xs text-slate-500">{review.ai_model ?? "Modelo indisponível"}</p>
       </div>
       <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
         <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Entrada</p>
@@ -335,10 +335,10 @@ export function ModuleEditorPanel() {
     return (<div className="w-full space-y-6 animate-in fade-in duration-500">
        <div className="border-b border-slate-200 pb-5">
          <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">
-           {isNew ? "Criar Novo M\u00F3dulo" : 'Configurações do Módulo'}
+           {isNew ? "Criar Novo Módulo" : 'Configurações do Módulo'}
          </h2>
          <p className="text-sm text-slate-500 mt-1">
-           {isNew ? 'Adicione uma nova seção principal para agrupar as aulas do seu curso.' : "Atualize os detalhes e restri\u00E7\u00F5es desta se\u00e7\u00e3o do curso."}
+           {isNew ? 'Adicione uma nova seção principal para agrupar as aulas do seu curso.' : "Atualize os detalhes e restrições desta seção do curso."}
          </p>
        </div>
 

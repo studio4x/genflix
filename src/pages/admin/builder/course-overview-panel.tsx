@@ -14,7 +14,7 @@ function AiReviewUsageSummary({ review }: {
       <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
         <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Provedor</p>
         <p className="mt-2 text-sm font-bold text-slate-900">{getAiProviderLabel(review.ai_provider)}</p>
-        <p className="mt-1 text-xs text-slate-500">{review.ai_model ?? "Modelo indispon\u00edvel"}</p>
+        <p className="mt-1 text-xs text-slate-500">{review.ai_model ?? "Modelo indisponível"}</p>
       </div>
       <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
         <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Entrada</p>
@@ -148,7 +148,7 @@ export function CourseOverviewPanel() {
                     }));
                 }
                 catch (historyError) {
-                    setAnalysisError(`A análise foi concluida, mas o histórico no foi salvo: ${toErrorMessage(historyError)}`);
+                    setAnalysisError(`A análise foi concluída, mas o histórico não foi salvo: ${toErrorMessage(historyError)}`);
                 }
             }
             setAnalysisTarget({ moduleId, moduleTitle });
@@ -345,12 +345,12 @@ Todas as quest\u00f5es, estudos de caso e tentativas vinculadas serão removidos
                   <div>
                     <div className="mb-1 flex items-center gap-2 text-[10px] font-extrabold uppercase tracking-widest text-slate-400">
                       <span>Módulo {moduleIndex + 1}</span>
-                      {module.is_required && <span className="rounded bg-slate-100 px-1.5 py-0.5 text-slate-500">Obrigatorio</span>}
+                      {module.is_required && <span className="rounded bg-slate-100 px-1.5 py-0.5 text-slate-500">Obrigatório</span>}
                     </div>
                     <h4 className="text-base font-bold text-slate-900">{module.title}</h4>
                   </div>
                   <div className="flex shrink-0 items-center gap-3">
-                    {reviewHistoryByModule[module.id]?.length ? (<Button type="button" variant="outline" size="sm" className="h-9 rounded-xl border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-900" onClick={() => setHistoryTarget({ moduleId: module.id, moduleTitle: module.title })}>?ltimas revisões
+                    {reviewHistoryByModule[module.id]?.length ? (<Button type="button" variant="outline" size="sm" className="h-9 rounded-xl border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-900" onClick={() => setHistoryTarget({ moduleId: module.id, moduleTitle: module.title })}>Últimas revisões
                       </Button>) : null}
                     <Button type="button" variant="outline" size="sm" className="h-9 rounded-xl border-blue-200 text-blue-600 hover:bg-blue-50 hover:text-blue-700" onClick={() => void handleAnalyzeModule(module.id, module.title)} disabled={isAnalyzingModuleId === module.id}>
                       {isAnalyzingModuleId === module.id ? 'Analisando...' : 'Analisar com IA'}
@@ -549,7 +549,7 @@ Todas as quest\u00f5es, estudos de caso e tentativas vinculadas serão removidos
           <div className="w-full max-w-2xl rounded-[32px] border border-white/20 bg-white shadow-2xl animate-in zoom-in-95 duration-300">
             <div className="border-b border-slate-100 p-8">
               <h3 className="text-xl font-black tracking-tight text-slate-900">{'Este m\u00f3dulo j\u00e1 possui an\u00e1lise com IA'}</h3>
-              <p className="mt-2 text-sm leading-relaxed text-slate-500">{'O m?dulo '}<strong>{repeatReviewPrompt.moduleTitle}</strong>{' j? possui uma an?lise salva. A ?ltima revis?o foi em '}
+              <p className="mt-2 text-sm leading-relaxed text-slate-500">{'O módulo '}<strong>{repeatReviewPrompt.moduleTitle}</strong>{' já possui uma análise salva. A última revisão foi em '}
                 {new Intl.DateTimeFormat('pt-BR', {
                 dateStyle: 'short',
                 timeStyle: 'medium',
@@ -558,7 +558,7 @@ Todas as quest\u00f5es, estudos de caso e tentativas vinculadas serão removidos
             </div>
             <div className="space-y-4 p-8">
               <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
-                <p className="text-xs font-black uppercase tracking-widest text-slate-400">Resumo da ?ltima análise</p>
+                <p className="text-xs font-black uppercase tracking-widest text-slate-400">Resumo da última análise</p>
                 <p className="mt-3 text-sm leading-relaxed text-slate-700">{repeatReviewPrompt.latestReview.summary}</p>
                 <div className="mt-4">
                   <AiReviewUsageSummary review={repeatReviewPrompt.latestReview}/>
