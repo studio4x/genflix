@@ -35,7 +35,7 @@ export function PublicSupportPage() {
       question: 'Como abrir um ticket de suporte?',
       answer: user
         ? `A abertura de ticket exige login. Acesse seu painel em ${supportListRoute} e use o botao "Abrir chamado" dentro da area logada.`
-        : 'A abertura de ticket exige login. Clique em "Entrar" no topo do site, acesse seu painel e abra o chamado na p?gina de suporte.',
+        : 'A abertura de ticket exige login. Clique em "Entrar" no topo do site, acesse seu painel e abra o chamado na página de suporte.',
       sort_order: -1,
       is_published: true,
       created_at: new Date(0).toISOString(),
@@ -156,7 +156,7 @@ export function PublicSupportPage() {
       setSuggestionDetails('')
       setSuggestionStatus('Sugestão enviada. Obrigado por ajudar a expandir a FAQ.')
     } catch {
-      setSuggestionStatus('N?o foi possivel enviar agora. Tente novamente em instantes.')
+      setSuggestionStatus('Não foi possível enviar agora. Tente novamente em instantes.')
     } finally {
       setIsSubmittingSuggestion(false)
     }
@@ -188,7 +188,7 @@ export function PublicSupportPage() {
           entryKey="support.textBlocks"
           label="Blocos de texto"
           title="Adicionar novos textos de suporte"
-          description="Use esta area para incluir avisos, orientacoes, mensagens institucionais ou qualquer bloco de apoio adicional."
+          description="Use esta área para incluir avisos, orientações, mensagens institucionais ou qualquer bloco de apoio adicional."
           fallback={[]}
           pageKey="support"
         />
@@ -207,7 +207,7 @@ export function PublicSupportPage() {
                   setSearchQuery(event.target.value)
                   setSuggestionStatus(null)
                 }}
-                placeholder="Busque por pagamentos, acesso, erro tecnico, conta..."
+                placeholder="Busque por pagamentos, acesso, erro t?cnico, conta..."
                 className="h-14 w-full rounded-[18px] border border-[#D8E6EB] bg-white pl-14 pr-6 text-sm font-semibold text-[#15323b] outline-none shadow-sm"
               />
             </label>
@@ -266,7 +266,7 @@ export function PublicSupportPage() {
 
                 <div className="mt-6 grid gap-4">
                   <label className="grid gap-2 text-left">
-                    <span className="text-xs font-black uppercase tracking-[0.16em] text-[#5F7077]">Que pergunta frequente voce quer ver?</span>
+                    <span className="text-xs font-black uppercase tracking-[0.16em] text-[#5F7077]">Que pergunta frequente voc? quer ver?</span>
                     <input
                       value={suggestedQuestion}
                       onChange={(event) => setSuggestedQuestion(event.target.value)}
@@ -293,7 +293,7 @@ export function PublicSupportPage() {
                       onClick={() => void handleFaqSuggestionSubmit()}
                       disabled={isSubmittingSuggestion}
                     >
-                      {isSubmittingSuggestion ? 'Enviando...' : 'Enviar sugestao'}
+                      {isSubmittingSuggestion ? 'Enviando...' : 'Enviar sugest?o'}
                     </GenflixCtaButton>
                     {suggestionStatus ? (
                       <p className="text-sm font-semibold text-[#5F7077]">{suggestionStatus}</p>

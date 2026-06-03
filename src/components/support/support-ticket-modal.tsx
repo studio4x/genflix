@@ -32,7 +32,7 @@ function getPriorityLabel(priority: SupportTicketPriority) {
         case 'low':
             return 'Baixa';
         case 'medium':
-            return 'Media';
+            return 'Média';
         case 'high':
             return 'Alta';
         case 'urgent':
@@ -89,7 +89,7 @@ export function SupportTicketModal({ initialStep = 'choice', supportBasePath = '
             if (!isMounted) {
                 return;
             }
-            setErrorMessage(error instanceof Error ? error.message : "N?o foi possvel carregar as configura??es de suporte.");
+            setErrorMessage(error instanceof Error ? error.message : 'Não foi possível carregar as configurações de suporte.');
         })
             .finally(() => {
             if (isMounted) {
@@ -112,7 +112,7 @@ export function SupportTicketModal({ initialStep = 'choice', supportBasePath = '
             return;
         }
         if (!subject.trim() || !description.trim()) {
-            setErrorMessage("Preencha assunto e descri??o para abrir o chamado.");
+            setErrorMessage('Preencha assunto e descrição para abrir o chamado.');
             return;
         }
         setIsSubmitting(true);
@@ -130,7 +130,7 @@ export function SupportTicketModal({ initialStep = 'choice', supportBasePath = '
             navigate(`${supportBasePath}/${ticket.id}`);
         }
         catch (error) {
-            setErrorMessage(error instanceof Error ? error.message : "N?o foi possvel abrir o chamado.");
+            setErrorMessage(error instanceof Error ? error.message : 'Não foi possível abrir o chamado.');
         }
         finally {
             setIsSubmitting(false);
@@ -142,7 +142,7 @@ export function SupportTicketModal({ initialStep = 'choice', supportBasePath = '
           <div>
             <p className="text-[10px] font-black uppercase tracking-[0.28em] text-[#1398B7]">Suporte</p>
             <h2 className="mt-2 font-readex text-2xl font-semibold tracking-tight text-[#15323b]">
-              {step === 'choice' ? "Como podemos ajudar" : "N?ovo chamado"}
+              {step === 'choice' ? "Como podemos ajudar" : "Novo chamado"}
             </h2>
             <p className="mt-2 text-sm leading-6 text-[#5F7077]">
               {step === 'choice'
@@ -164,12 +164,12 @@ export function SupportTicketModal({ initialStep = 'choice', supportBasePath = '
                 </div>
                 <h3 className="mt-4 font-readex text-xl font-semibold text-[#15323b]">Ver perguntas frequentes</h3>
                 <p className="mt-2 text-sm leading-6 text-[#5F7077]">
-                  Consulte nossa base publica com respostas rapidas sobre acesso, pagamentos e uso da plataforma.
+                  Consulte nossa base pública com respostas rápidas sobre acesso, pagamentos e uso da plataforma.
                 </p>
                 <Button type="button" variant="outline" asChild className="mt-4 h-11 w-full rounded-2xl border-[#D8E6EB] bg-white font-black text-[#15323b]">
                   <Link to="/suporte">
                     <Search className="mr-2 h-4 w-4"/>
-                    Ir para FAQ publica
+                    Ir para FAQ pública
                   </Link>
                 </Button>
               </div>
@@ -179,7 +179,7 @@ export function SupportTicketModal({ initialStep = 'choice', supportBasePath = '
                   <LifeBuoy className="h-5 w-5"/>
                 </div>
                 <h3 className="mt-4 font-readex text-xl font-semibold text-[#15323b]">Abrir um chamado</h3>
-                <p className="mt-2 text-sm leading-6 text-[#5F7077]">Quando a FAQ n?o resolver, envie um chamado com contexto, passos e o que voc? precisa no momento.
+                <p className="mt-2 text-sm leading-6 text-[#5F7077]">Quando a FAQ não resolver, envie um chamado com contexto, passos e o que você precisa no momento.
                 </p>
                 <Button type="button" onClick={() => setStep('form')} className="mt-4 h-11 w-full rounded-2xl bg-gradient-to-b from-[#1398B7] to-[#0A3640] font-black text-white hover:opacity-95">
                   Abrir um chamado
@@ -196,12 +196,12 @@ export function SupportTicketModal({ initialStep = 'choice', supportBasePath = '
             <div className="rounded-[24px] border border-[#BEE3EA] bg-[#F2F8FA] p-4">
               <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#1398B7]">SLA de primeira resposta</p>
               <p className="mt-2 text-sm font-semibold leading-6 text-[#15323b]">
-                {selectedCategory?.description ?? "N?ossa equipe responde conforme a categoria do chamado e o horario de atendimento."}
+                {selectedCategory?.description ?? "Nossa equipe responde conforme a categoria do chamado e o horário de atendimento."}
               </p>
               <p className="mt-2 text-xs font-semibold leading-5 text-[#5F7077]">
                 Atendimento: {String(settings.businessHours.start_hour).padStart(2, '0')}h às {String(settings.businessHours.end_hour).padStart(2, '0')}h ({settings.businessHours.timezone}).
               </p>
-              <p className="mt-1 text-xs font-semibold leading-5 text-[#5F7077]">A prioridade interna ajuda na triagem, mas n?o altera a promessa publica de SLA.
+              <p className="mt-1 text-xs font-semibold leading-5 text-[#5F7077]">A prioridade interna ajuda na triagem, mas não altera a promessa pública de SLA.
               </p>
             </div>
 
@@ -209,7 +209,7 @@ export function SupportTicketModal({ initialStep = 'choice', supportBasePath = '
                 {errorMessage}
               </div>) : null}
 
-            {isLoadingSettings ? (<p className="mt-4 text-sm font-semibold text-[#5F7077]">Carregando formulario...</p>) : (<div className="mt-5 space-y-4">
+            {isLoadingSettings ? (<p className="mt-4 text-sm font-semibold text-[#5F7077]">Carregando formul?rio...</p>) : (<div className="mt-5 space-y-4">
                 <label className="grid gap-2">
                   <span className="text-[10px] font-black uppercase tracking-[0.18em] text-[#5F7077]">Categoria</span>
                   <select value={category} onChange={(event) => setCategory(event.target.value as SupportTicketCategory)} className="h-12 rounded-[16px] border border-[#D8E6EB] bg-white px-4 text-sm font-semibold text-[#15323b] outline-none">
@@ -229,13 +229,13 @@ export function SupportTicketModal({ initialStep = 'choice', supportBasePath = '
                   </select>
                   {!isAdmin && !priorityOptions.includes('urgent') ? (<p className="inline-flex items-center gap-2 text-xs font-semibold text-[#5F7077]">
                       <Lock className="h-3.5 w-3.5 text-[#8BA0A7]"/>
-                      A prioridade serve apenas para triagem interna e segue as regras do perfil autenticado.
+                      A prioridade serve apenas para triagem interna e segue as regras do perfil autenpr?ticado.
                     </p>) : null}
                 </label>
 
                 <label className="grid gap-2">
                   <span className="text-[10px] font-black uppercase tracking-[0.18em] text-[#5F7077]">Descri??o</span>
-                  <textarea value={description} onChange={(event) => setDescription(event.target.value)} rows={5} placeholder="Explique o contexto, os passos ja tentados e o que voc precisa resolver." className="resize-none rounded-[16px] border border-[#D8E6EB] bg-white px-4 py-3 text-sm font-semibold leading-6 text-[#15323b] outline-none"/>
+                  <textarea value={description} onChange={(event) => setDescription(event.target.value)} rows={5} placeholder="Explique o contexto, os passos j? tentados e o que voc? precisa resolver." className="resize-none rounded-[16px] border border-[#D8E6EB] bg-white px-4 py-3 text-sm font-semibold leading-6 text-[#15323b] outline-none"/>
                 </label>
 
                 <div className="grid gap-2">
@@ -252,7 +252,7 @@ export function SupportTicketModal({ initialStep = 'choice', supportBasePath = '
                     </button>) : null}
                 </div>
 
-                {!user?.id ? (<div className="rounded-[18px] border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">Entre na sua conta para enviar o chamado e acompanhar o hist?rico em tempo real.
+                {!user?.id ? (<div className="rounded-[18px] border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">Entre na sua conta para enviar o chamado e acompanhar o histórico em tempo real.
                   </div>) : null}
               </div>)}
 
@@ -269,7 +269,7 @@ export function SupportTicketModal({ initialStep = 'choice', supportBasePath = '
                   </Button>)}
 
                 {user?.id ? (<Button type="button" variant="outline" asChild className="h-11 rounded-2xl border-[#D8E6EB] bg-white font-black text-[#15323b]">
-                    <Link to={supportBasePath}>Ver hist?rico</Link>
+                    <Link to={supportBasePath}>Ver histórico</Link>
                   </Button>) : null}
               </div>
             </div>

@@ -132,7 +132,7 @@ function formatFormTypeLabel(formType: string) {
         newsletter: 'newsletter',
         lead: 'lead',
         support: 'suporte',
-        refer: "indicao",
+        refer: "indica??o",
     };
     return labels[formType] ?? formType;
 }
@@ -148,28 +148,28 @@ function buildNotificationTemplate(input: z.infer<typeof publicFormSchema>): Not
         ? input.interest_areas.map((area) => area.trim()).filter((area) => area.length > 0)
         : [];
     const titleMap: Record<string, string> = {
-        contact: "N?ovo formul\u00E1rio de contato recebido",
-        teach: "N?ova proposta de curso recebida",
-        newsletter: "N?ovo cadastro na newsletter",
-        lead: "N?ovo lead recebido",
-        support: "N?ovo formul\u00E1rio de suporte recebido",
-        refer: "N?ova indicao recebida",
+        contact: "Novo formulário de contato recebido",
+        teach: "Nova proposta de curso recebida",
+        newsletter: "Novo cadastro na newsletter",
+        lead: "Novo lead recebido",
+        support: "Novo formulário de suporte recebido",
+        refer: "Nova indicação recebida",
     };
-    const title = titleMap[input.form_type] ?? "N?ovo formul\u00E1rio recebido";
+    const title = titleMap[input.form_type] ?? "Novo formulário recebido";
     const parts = [
         `Tipo: ${formLabel}`,
-        name ? `N?ome: ${name}` : null,
+        name ? `Nome: ${name}` : null,
         email ? `E-mail: ${email}` : null,
-        recipientName ? `N?ome indicado: ${recipientName}` : null,
+        recipientName ? `Nome indicado: ${recipientName}` : null,
         recipientEmail ? `E-mail indicado: ${recipientEmail}` : null,
-        interestAreas.length > 0 ? `Areas de interesse: ${interestAreas.join(', ')}` : null,
+        interestAreas.length > 0 ? `Áreas de interesse: ${interestAreas.join(', ')}` : null,
         subject ? `Assunto do curso: ${subject}` : null,
         message ? `Mensagem: ${message.slice(0, 280)}` : null,
         input.source_path ? `Origem: ${input.source_path}` : null,
     ].filter((part): part is string => Boolean(part));
     return {
         title,
-        body: parts.length > 0 ? parts.join(' | ') : "N?ovo formul\u00E1rio recebido pela plataforma.",
+        body: parts.length > 0 ? parts.join(' | ') : "Novo formulário recebido pela plataforma.",
     };
 }
 async function notifyReferredContact(input: z.infer<typeof publicFormSchema>) {
@@ -185,9 +185,9 @@ async function notifyReferredContact(input: z.infer<typeof publicFormSchema>) {
     const referrerEmail = normalizeField(input.email);
     const customMessage = normalizeField(input.message);
     const publicAppUrl = getPublicAppUrl().replace(/\/$/, '');
-    const title = `${referrerName ?? 'Um contato'} indicou a GenFlix para voc`;
+    const title = `${referrerName ?? 'Um contato'} indicou a GenFlix para você`;
     const bodyLines = [
-        `${referrerName ?? 'Alguem'} inseriu seu contato na plataforma GenFlix para voc conhecer os cursos e recursos disponiveis.`,
+        `${referrerName ?? 'Alguém'} inseriu seu contato na plataforma GenFlix para você conhecer os cursos e recursos disponíveis.`,
         referrerEmail ? `Contato de quem indicou: ${referrerEmail}` : null,
         customMessage ? `Mensagem enviada: ${customMessage}` : null,
     ].filter((line): line is string => Boolean(line));

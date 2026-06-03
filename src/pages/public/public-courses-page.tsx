@@ -48,13 +48,13 @@ const COURSES_PER_PAGE = 6
 const coursesSectionTemplates = [
   {
     id: 'hero',
-    label: 'Hero da p?gina Cursos',
-    description: 'Bloco de abertura com busca e filtros da p?gina Cursos.',
+    label: 'Hero da página Cursos',
+    description: 'Bloco de abertura com busca e filtros da página Cursos.',
   },
   {
     id: 'catalog',
     label: 'Catalogo de cursos',
-    description: 'Bloco principal com a grade de cursos e paginacao.',
+    description: 'Bloco principal com a grade de cursos e pagina??o.',
   },
   {
     id: 'features',
@@ -64,7 +64,7 @@ const coursesSectionTemplates = [
   {
     id: 'newsletter',
     label: 'Newsletter',
-    description: 'Bloco de captacao ao final da p?gina Cursos.',
+    description: 'Bloco de captação ao final da página Cursos.',
     pageKey: 'global' as const,
   },
 ]
@@ -190,10 +190,10 @@ export function PublicCoursesPage() {
       <BannerPlacementSlot pageKey="courses" placementKey="hero" />
 
       <SectionStructureControl
-        buttonLabel="Gerenciar blocos da p?gina"
+        buttonLabel="Gerenciar blocos da página"
         pageKey="courses"
         entryKey="courses.layout.sections"
-        label="Estrutura da p?gina Cursos"
+        label="Estrutura da página Cursos"
         sections={coursesSections}
         schema={coursesLayoutSchema}
       />
@@ -205,7 +205,7 @@ export function PublicCoursesPage() {
 
         if (templateKey === 'hero') {
           return (
-            <EditableContainer entryKey={`${sectionEntryPrefix}.layout`} label="Bloco Hero da p?gina Cursos" pageKey={sectionPageKey}>
+            <EditableContainer entryKey={`${sectionEntryPrefix}.layout`} label="Bloco Hero da página Cursos" pageKey={sectionPageKey}>
               <section className="bg-white pb-14 pt-6">
                 <div className="public-site-container">
                   <EditableContainer entryKey={`${sectionEntryPrefix}.card`} label="Container interno do Hero" pageKey={sectionPageKey}>
@@ -214,7 +214,7 @@ export function PublicCoursesPage() {
                         <EditableText
                           entryKey="courses.hero.title"
                           fallback="Encontre o curso que vai mudar sua vida"
-                          label="Titulo do catalogo"
+                          label="T?tulo do cat?logo"
                           pageKey={sectionPageKey}
                         />
                       </h1>
@@ -264,7 +264,7 @@ export function PublicCoursesPage() {
 
         if (templateKey === 'catalog') {
           return (
-            <EditableContainer entryKey={`${sectionEntryPrefix}.layout`} label="Bloco Catalogo da p?gina Cursos" pageKey={sectionPageKey}>
+            <EditableContainer entryKey={`${sectionEntryPrefix}.layout`} label="Bloco Catálogo da página Cursos" pageKey={sectionPageKey}>
               <section className="bg-white pb-16">
                 <EditableContainer entryKey={`${sectionEntryPrefix}.content`} label="Container interno do catalogo" pageKey={sectionPageKey}>
                   <div className="public-site-container">
@@ -332,7 +332,7 @@ export function PublicCoursesPage() {
 
         if (templateKey === 'features') {
           return (
-            <EditableContainer entryKey={`${sectionEntryPrefix}.layout`} label="Bloco Recursos da p?gina Cursos" pageKey={sectionPageKey}>
+            <EditableContainer entryKey={`${sectionEntryPrefix}.layout`} label="Bloco Recursos da página Cursos" pageKey={sectionPageKey}>
               <section className="bg-[#F2F8FA] py-16">
                 <EditableContainer entryKey={`${sectionEntryPrefix}.content`} label="Container interno de recursos" pageKey={sectionPageKey}>
                   <div className="public-site-container">
@@ -340,8 +340,8 @@ export function PublicCoursesPage() {
                       <h2 className="text-[2.1rem] font-bold tracking-[-0.04em] text-[#183139] sm:text-[2.35rem]">
                         <EditableText
                           entryKey="courses.features.title"
-                          fallback="Muito alem do video"
-                          label="Titulo de recursos em cursos"
+                          fallback="Muito além do vídeo"
+                          label="T?tulo de recursos em cursos"
                           pageKey={sectionPageKey}
                         />
                       </h2>
@@ -349,7 +349,7 @@ export function PublicCoursesPage() {
                         <EditableText
                           entryKey="courses.features.description"
                           fallback="Ferramentas pensadas para voc? aprender, fixar e revisar do seu jeito."
-                          label="Descricao de recursos em cursos"
+                          label="Descri??o de recursos em cursos"
                           pageKey={sectionPageKey}
                         />
                       </p>
@@ -428,7 +428,7 @@ export function PublicCoursesPage() {
 
         if (templateKey === 'newsletter') {
           return (
-            <EditableContainer entryKey={`${sectionEntryPrefix}.layout`} label="Bloco Newsletter da p?gina Cursos" pageKey={sectionPageKey}>
+            <EditableContainer entryKey={`${sectionEntryPrefix}.layout`} label="Bloco Newsletter da página Cursos" pageKey={sectionPageKey}>
               <GenflixNewsletterSection entryPrefix="courses.newsletter" pageKey={sectionPageKey} />
             </EditableContainer>
           )

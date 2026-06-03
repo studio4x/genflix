@@ -19,7 +19,7 @@ const communitySectionTemplates = [
     {
         id: 'support',
         label: 'Bloco de apoio',
-        description: 'Area com video institucional, textos de apoio e CTA.',
+        description: 'Área com vídeo institucional, textos de apoio e CTA.',
     },
     {
         id: 'newsletter',
@@ -125,7 +125,7 @@ export function PublicCommunityPage() {
     return (<main className="min-h-screen bg-[#F2F7F9] font-manrope text-[#163138]">
       <GenflixPublicHeader currentPage="community" navLinks={genflixNavLinks}/>
       <BannerPlacementSlot pageKey="community" placementKey="hero"/>
-      <SectionStructureControl buttonLabel="Gerenciar blocos da pgina" pageKey="community" entryKey="community.layout.sections" label="Estrutura da pgina Comunidade" sections={communitySections} schema={communityLayoutSchema}/>
+      <SectionStructureControl buttonLabel="Gerenciar blocos da página" pageKey="community" entryKey="community.layout.sections" label="Estrutura da página Comunidade" sections={communitySections} schema={communityLayoutSchema}/>
       {renderVisibleSectionList(communitySections.filter(isEditableItemVisible), (item) => {
             const templateKey = resolveSectionRegistryTemplateKey(item);
             const sectionPageKey = resolveSectionRegistryPageKey(item, 'community');

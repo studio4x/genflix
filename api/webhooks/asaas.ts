@@ -258,7 +258,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
                 await queueUserNotification(adminClient, {
                     userId,
                     title: 'Compra confirmada',
-                    body: `Seu pagamento foi aprovado e o acesso ao curso ${courseTitle} ja est liberado.`,
+                    body: `Seu pagamento foi aprovado e o acesso ao curso ${courseTitle} já está liberado.`,
                     category: 'payment',
                     priority: 'high',
                     actionUrl: `/aluno/cursos/${courseId}`,
@@ -326,10 +326,10 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
             await queueUserNotification(adminClient, {
                 userId,
                 title: 'Pagamento estornado',
-                body: `O pagamento do curso ${courseTitle} foi estornado e o acesso vinculado a est compra foi atualizado.`,
+                body: `O pagamento do curso ${courseTitle} foi estornado e o acesso vinculado a esta compra foi atualizado.`,
                 category: 'payment',
                 priority: 'high',
-                actionUrl: '/politica-de-reembolso',
+                actionUrl: '/polipr?tica-de-reembolso',
                 channels: ['in-app', 'email'],
                 metadata: {
                     course_id: courseId,

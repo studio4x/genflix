@@ -16,7 +16,7 @@ const homeLayoutFallback: EditableListItem[] = [
     {
         id: 'home-categories',
         label: 'Areas de conhecimento',
-        description: "Grade de categorias em destque na home.",
+        description: "Grade de categorias em destaque na home.",
         metadata: {
             templateKey: 'categories',
         },
@@ -24,7 +24,7 @@ const homeLayoutFallback: EditableListItem[] = [
     {
         id: 'home-featured',
         label: "Novidades",
-        description: "Listagem principal de cursos em destque.",
+        description: "Listagem principal de cursos em destaque.",
         metadata: {
             templateKey: 'featured',
         },
@@ -49,11 +49,11 @@ const homeLayoutSchema = {
         {
             id: 'categories',
             label: 'Areas de conhecimento',
-            description: 'Grade de areas com cards editaveis e ordem controlada.',
+            description: 'Grade de áreas com cards editáveis e ordem controlada.',
             item: {
                 id: 'categories',
                 label: 'Areas de conhecimento',
-                description: "Grade de categorias em destque na home.",
+                description: "Grade de categorias em destaque na home.",
                 metadata: {
                     templateKey: 'categories',
                 },
@@ -62,11 +62,11 @@ const homeLayoutSchema = {
         {
             id: 'featured',
             label: "Novidades",
-            description: "Seo de listagem principal com CTA para cursos.",
+            description: "Se??o de listagem principal com CTA para cursos.",
             item: {
                 id: 'featured',
                 label: "Novidades",
-                description: "Listagem principal de cursos em destque.",
+                description: "Listagem principal de cursos em destaque.",
                 metadata: {
                     templateKey: 'featured',
                 },
@@ -221,11 +221,11 @@ function HomeFeaturedSection({ entryPrefix, sectionId, pageKey = 'home', }: {
           <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
             <div>
               <h2 className="text-[2rem] font-bold tracking-[-0.04em] text-[#15323B] sm:text-[2.25rem]">
-                <EditableText entryKey={`${entryPrefix}.title`} fallback="Novidades" label="T?tulo de cursos em destque" pageKey={pageKey}/>
+                <EditableText entryKey={`${entryPrefix}.title`} fallback="Novidades" label="T?tulo de cursos em destaque" pageKey={pageKey}/>
               </h2>
             </div>
 
-            <EditableButton entryKey={`${entryPrefix}.cta`} fallback={{ label: legacyFeaturedCtaLabel, href: '/cursos', isInternal: true, tone: 'solid' }} label="CTA de cursos em destque" pageKey={pageKey}>
+            <EditableButton entryKey={`${entryPrefix}.cta`} fallback={{ label: legacyFeaturedCtaLabel, href: '/cursos', isInternal: true, tone: 'solid' }} label="CTA de cursos em destaque" pageKey={pageKey}>
               {(buttonValue) => buttonValue.isHidden === true ? null : (<GenflixCtaButton asChild className="h-11 self-start px-5" tone={normalizeGenflixCtaTone(buttonValue.tone)}>
                   {buttonValue.isInternal === true ? (<Link to={typeof buttonValue.href === 'string' ? buttonValue.href : '/cursos'}>
                       {typeof buttonValue.label === 'string' ? buttonValue.label : 'Conheca todos os cursos'}
@@ -274,7 +274,7 @@ export function PublicHomePage() {
                 return <HomeCategoriesSection key={section.id} entryPrefix={entryPrefix} pageKey={pageKey}/>;
             }
             if (templateKey === 'featured') {
-                return <HomeFeaturedSection key={section.id} entryPrefix={entryPrefix} sectionId={occurrence === 0 ? "destques" : `destques-${occurrence + 1}`} pageKey={pageKey}/>;
+                return <HomeFeaturedSection key={section.id} entryPrefix={entryPrefix} sectionId={occurrence === 0 ? "destaques" : `destaques-${occurrence + 1}`} pageKey={pageKey}/>;
             }
             if (templateKey === 'cta' || templateKey === 'newsletter') {
                 return null;

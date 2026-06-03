@@ -56,12 +56,12 @@ export function SignUpPage() {
     }
 
     if (password !== confirmPassword) {
-      setError('As senhas n?o conferem.')
+      setError('As senhas não conferem.')
       return
     }
 
     if (!acceptTerms) {
-      setError('Voc? precisa concordar com os Termos de Uso e a Pol?tica de Privacidade.')
+      setError('Voc? precisa concordar com os Termos de Uso e a Pol?pr?tica de Privacidade.')
       return
     }
 
@@ -71,7 +71,7 @@ export function SignUpPage() {
       const result = await signUp(fullName, email, password)
 
       if (result.needsEmailConfirmation) {
-        setMessage('Conta criada. Confira seu e-mail para confirmar o acesso ao GenFlix.')
+        setMessage('Conta criada. Confira seu e-mail para confirmar o acesso ? GenFlix.')
       } else {
         navigate('/aluno', { replace: true })
       }
@@ -181,7 +181,7 @@ export function SignUpPage() {
               onClick={() => setOpenDocument('privacy')}
               className="font-semibold text-[#1398B7] hover:text-[#1398B7]"
             >
-              Politica de Privacidade
+              Pol?pr?tica de Privacidade
             </button>
             .
           </span>
@@ -200,7 +200,7 @@ export function SignUpPage() {
         ) : null}
 
         <GenflixCtaButton type="submit" disabled={isSubmitting} className="h-12 w-full px-5">
-          {isSubmitting ? 'Criando conta...' : 'Criar conta gratis'}
+          {isSubmitting ? 'Criando conta...' : 'Criar conta gr?tis'}
         </GenflixCtaButton>
 
         <div className="flex items-center gap-4 py-1">

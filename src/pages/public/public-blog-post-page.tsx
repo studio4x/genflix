@@ -125,7 +125,7 @@ function mapDraftRowToBlogPost(row: DraftBlogPostRow): GenflixBlogPost {
 function mapAdminPreviewToBlogPost(preview: AdminPreviewPayload): GenflixBlogPost {
     return {
         slug: preview.slug,
-        title: preview.title || "Rascunho sem t?tulo",
+        title: preview.title || "Rascunho sem título",
         category: preview.category || 'Sem categoria',
         seoDescription: preview.seoDescription || '',
         image: preview.image || '/images/genflix/home/featured-2.jpg',
@@ -396,7 +396,7 @@ export function PublicBlogPostPage() {
         setIsSubmittingComment(true);
         try {
             if (captchaInput.trim() !== captcha.answer) {
-                throw new Error("Captcha invlido. Confira o resultado e tente novamente.");
+                throw new Error("Captcha inv?lido. Confira o resultado e tente novamente.");
             }
             await submitBlogComment({
                 postSlug: slug,
@@ -409,11 +409,11 @@ export function PublicBlogPostPage() {
             setContent('');
             setCaptchaInput('');
             setCaptcha(createCaptchaChallenge());
-            setCommentSuccess("Comentario enviado para aprovao do administrador.");
+            setCommentSuccess("Coment?rio enviado para aprova??o do administrador.");
             setIsCommentFormOpen(false);
         }
         catch (error) {
-            setCommentError(error instanceof Error ? error.message : "N?o foi possvel enviar o comentario.");
+            setCommentError(error instanceof Error ? error.message : 'Não foi possível enviar o comentário.');
         }
         finally {
             setIsSubmittingComment(false);
@@ -442,7 +442,7 @@ export function PublicBlogPostPage() {
               <img src={post.image} alt={post.title} className="aspect-[1920/500] w-full object-cover object-center"/>
             </div>
 
-            {isDraftPreview ? (<p className="mt-4 text-center text-sm font-semibold uppercase tracking-[0.15em] text-amber-700">Preview de rascunho (admin)</p>) : null}
+            {isDraftPreview ? (<p className="mt-4 text-center text-sm font-semibold uppercase tracking-[0.15em] text-amber-700">Prévia de rascunho (admin)</p>) : null}
 
             <div className="mt-10 grid gap-10 lg:grid-cols-[280px_minmax(0,1fr)]">
               <h1 className="font-lora text-[42px] leading-[1.12] text-[#008f9c] sm:text-[48px] lg:text-[56px]" style={articleTitleStyle}>
@@ -468,14 +468,14 @@ export function PublicBlogPostPage() {
           </section>
 
           <section className="mt-10 rounded-[18px] border border-[#D8E6EB] bg-white p-5 shadow-sm sm:p-7">
-            <h2 className="font-readex text-2xl font-semibold text-[#15323b]">Comentarios</h2>
-            <p className="mt-2 text-sm font-medium text-[#5f7077]">Envie seu comentario. A publicao acontece apos aprovao do administrador.</p>
+            <h2 className="font-readex text-2xl font-semibold text-[#15323b]">Coment?rios</h2>
+            <p className="mt-2 text-sm font-medium text-[#5f7077]">Envie seu comentário. A publicação acontece após aprovação do administrador.</p>
 
             {commentError ? <p className="mt-4 border border-red-200 bg-red-50 p-3 text-sm font-bold text-red-700">{commentError}</p> : null}
             {commentSuccess ? <p className="mt-4 border border-emerald-200 bg-emerald-50 p-3 text-sm font-bold text-emerald-700">{commentSuccess}</p> : null}
 
             <div className="mt-6 space-y-4">
-              {isLoadingComments ? (<p className="text-sm font-semibold text-[#6d7f84]">Carregando comentarios...</p>) : comments.length === 0 ? (<p className="text-sm font-semibold text-[#6d7f84]">Ainda no ha comentarios aprovados neste artigo.</p>) : comments.map((item) => (<article key={item.id} className="rounded-[18px] border border-[#D8E6EB] bg-[#F8FBFC] p-4">
+              {isLoadingComments ? (<p className="text-sm font-semibold text-[#6d7f84]">Carregando comentários...</p>) : comments.length === 0 ? (<p className="text-sm font-semibold text-[#6d7f84]">Ainda não há comentários aprovados neste artigo.</p>) : comments.map((item) => (<article key={item.id} className="rounded-[18px] border border-[#D8E6EB] bg-[#F8FBFC] p-4">
                   <div className="flex items-start gap-3">
                     <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#0E8CA6] text-xs font-black uppercase text-white">
                       {(item.first_name?.[0] ?? '').toUpperCase()}{(item.last_name?.[0] ?? '').toUpperCase()}
@@ -500,23 +500,23 @@ export function PublicBlogPostPage() {
 
             <div className="mt-6 border-t border-[#D8E6EB] pt-6">
               <button type="button" onClick={() => setIsCommentFormOpen((current) => !current)} className="h-11 w-full max-w-[300px] rounded-full bg-[#1398B7] px-5 text-sm font-black uppercase tracking-[0.02em] text-white hover:bg-[#0A3640]">
-                {isCommentFormOpen ? 'Fechar formulario' : 'Enviar comentario'}
+                {isCommentFormOpen ? 'Fechar formulário' : 'Enviar comentário'}
               </button>
 
               {isCommentFormOpen ? (<form onSubmit={(event) => void handleSubmitComment(event)} className="mt-4 grid gap-3">
                   <div className="grid gap-3 sm:grid-cols-3">
-                    <input value={firstName} onChange={(event) => setFirstName(event.target.value)} placeholder="N?ome" disabled={isAuthenticated} className="h-11 border border-[#D8E6EB] px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7] disabled:cursor-not-allowed disabled:bg-slate-100"/>
+                    <input value={firstName} onChange={(event) => setFirstName(event.target.value)} placeholder="Nome" disabled={isAuthenticated} className="h-11 border border-[#D8E6EB] px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7] disabled:cursor-not-allowed disabled:bg-slate-100"/>
                     <input value={lastName} onChange={(event) => setLastName(event.target.value)} placeholder="Sobrenome" disabled={isAuthenticated} className="h-11 border border-[#D8E6EB] px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7] disabled:cursor-not-allowed disabled:bg-slate-100"/>
                     <input value={email} onChange={(event) => setEmail(event.target.value)} type="email" placeholder="E-mail" disabled={isAuthenticated} className="h-11 border border-[#D8E6EB] px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7] disabled:cursor-not-allowed disabled:bg-slate-100"/>
                   </div>
-                  <RichTextEditor value={content} onChange={setContent} placeholder="Escreva seu comentario" showRawHtmlToggle={false} minHeightClassName="min-h-[140px]" simpleMode/>
+                  <RichTextEditor value={content} onChange={setContent} placeholder="Escreva seu comentário" showRawHtmlToggle={false} minHeightClassName="min-h-[140px]" simpleMode/>
                   <div className="grid gap-2 sm:max-w-[280px]">
                     <p className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">Captcha anti-spam</p>
                     <label className="text-sm font-semibold text-[#15323b]">Resolva: {captcha.prompt}</label>
                     <input value={captchaInput} onChange={(event) => setCaptchaInput(event.target.value)} placeholder="Digite o resultado" className="h-11 border border-[#D8E6EB] px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]"/>
                   </div>
                   <button type="submit" disabled={isSubmittingComment} className="h-11 w-full max-w-[260px] rounded-full bg-[#1398B7] px-5 text-sm font-black uppercase tracking-[0.02em] text-white hover:bg-[#0A3640] disabled:opacity-70">
-                    {isSubmittingComment ? 'Enviando...' : 'Enviar comentario'}
+                    {isSubmittingComment ? 'Enviando...' : 'Enviar comentário'}
                   </button>
                 </form>) : null}
             </div>

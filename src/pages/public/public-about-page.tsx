@@ -9,12 +9,12 @@ import { createSectionRegistryFallback, createSectionRegistrySchema, renderVisib
 import { EditableContainer, EditableRichText, EditableText, isEditableItemVisible, useEditableValue } from '@/features/site-editor/visual-editor';
 import type { EditableListItem } from '@/features/site-editor/types';
 const aboutParagraphs = [
-    "Ha quem prefira abrir o livro, sublinhar, fazer anotacoes e avancar pgina por pgina. Ha tambm quem se envolva mais com videos, aulas curtas e recursos interativos.",
+    "Há quem prefira abrir o livro, sublinhar, fazer anotações e avançar página por página. Há também quem se envolva mais com vídeos, aulas curtas e recursos interativos.",
     'A plataforma GenFlix nasce para unir esses dois mundos e ir além.',
     "GenFlix é uma plataforma que reúne cursos, aulas e conteúdos digitais criados por especialistas e professores, com a curadoria e a qualidade editorial do GEN Grupo Editorial Nacional, maior conglomerado editorial de publicações acadêmicas e que reúne editoras como Guanabara Koogan, LTC, Forense e Saraiva, referências na formação de professores e profissionais.",
     "Agora, esse conhecimento ganha uma experiência digital completa.",
     "A GenFlix é fruto de uma parceria entre o GEN e a e-Clix Soluções em Conteúdo Educacional, comandada por uma equipe com mais de 50 anos de atuação no desenvolvimento de conteúdos educacionais e projetos de aprendizagem para organizações no Brasil e no exterior.",
-    "O resultado é uma plataforma construída sobre três pilares essenciais: conteúdo confiável e atual, experiência digital moderna e intuitiva e aplicação prática do conhecimento.",
+    "O resultado é uma plataforma construída sobre três pilares essenciais: conteúdo confiável e atual, experiência digital moderna e intuitiva e aplicação prápr?tica do conhecimento.",
     "Na GenFlix, aprender vai muito além de assistir a vídeos. A plataforma integra uma ampla variedade de recursos didáticos contemporâneos, pensados para facilitar a compreensão, manter o ritmo de estudo, reduzir a evasão e transformar conteúdo em conhecimento útil no dia a dia acadêmico e profissional.",
     'Tudo isso com um propósito central que consideramos ser a nossa missão.',
 ];

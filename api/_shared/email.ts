@@ -82,7 +82,7 @@ function createPasswordResetHtml(payload: PasswordResetEmailPayload) {
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Redefina sua senha</title>
   </head>
-  <body style="margin:0;background:#F4F8F9;color:#15323b;font-family:Arial,Helvetica,sans-serif;">
+  <body style="margin:0;background:#F4F8F9;color:#15323b;font-family:Arial,Helvepr?tica,sans-serif;">
     <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#F4F8F9;padding:32px 16px;">
       <tr>
         <td align="center">
@@ -124,14 +124,14 @@ function createPasswordResetHtml(payload: PasswordResetEmailPayload) {
 function createPasswordResetText(payload: PasswordResetEmailPayload) {
     const name = payload.fullName?.trim() || 'estudante';
     return [
-        `Ola, ${name}.`,
+        `Ol?, ${name}.`,
         '',
-        "Recebemos uma solicitao para redefinir a senha da sua conta GenFlix.",
+        'Recebemos uma solicita??o para redefinir a senha da sua conta GenFlix.',
         'Acesse o link abaixo para criar uma nova senha:',
         '',
         payload.actionLink,
         '',
-        "Se voc? n?o solicitou esta redefini??o, ignore este e-mail.",
+        'Se você não solicitou esta redefinição, ignore este e-mail.',
     ].join('\n');
 }
 export async function sendPasswordResetEmail(payload: PasswordResetEmailPayload) {
@@ -158,7 +158,7 @@ function createNotificationHtml(payload: NotificationEmailPayload) {
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>${safeTitle}</title>
   </head>
-  <body style="margin:0;background:#F2F7F9;color:#15323b;font-family:Arial,Helvetica,sans-serif;">
+  <body style="margin:0;background:#F2F7F9;color:#15323b;font-family:Arial,Helvepr?tica,sans-serif;">
     <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#F2F7F9;padding:32px 16px;">
       <tr>
         <td align="center">

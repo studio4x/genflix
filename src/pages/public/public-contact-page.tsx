@@ -171,7 +171,7 @@ export function PublicContactPage() {
     return (<main className="min-h-screen bg-[#F2F7F9] font-manrope text-[#163138]">
       <GenflixPublicHeader currentPage="contact" navLinks={genflixNavLinks}/>
       <BannerPlacementSlot pageKey="contact" placementKey="hero"/>
-      <SectionStructureControl buttonLabel="Gerenciar blocos da pgina" pageKey="contact" entryKey="contact.layout.sections" label="Estrutura da pgina Contato" sections={contactSections} schema={contactLayoutSchema}/>
+      <SectionStructureControl buttonLabel="Gerenciar blocos da página" pageKey="contact" entryKey="contact.layout.sections" label="Estrutura da página Contato" sections={contactSections} schema={contactLayoutSchema}/>
       {renderVisibleSectionList(contactSections, (item) => {
             const templateKey = resolveSectionRegistryTemplateKey(item);
             const sectionPageKey = resolveSectionRegistryPageKey(item, 'contact');

@@ -76,14 +76,14 @@ function normalizeOutlineModule(value: unknown): GenflixCourseModule | null {
     return {
         title,
         lessonCount: items.length,
-        summary: items.length ? `${items.length} itens liberados nest etapa.` : "Sem itens publicados nest etapa.",
+        summary: items.length ? `${items.length} itens liberados nesta etapa.` : "Sem itens publicados nesta etapa.",
         items,
         lessonLabel: items.length === 1 ? 'item' : 'itens',
     };
 }
 async function fetchPublicCourseOutline(courseId: string): Promise<GenflixCourseModule[]> {
     if (!supabaseUrl || !supabaseAnonKey) {
-        throw new Error("Configurao publica do Supabase ausente.");
+        throw new Error('Configuração pública do Supabase ausente.');
     }
     const response = await fetch(`${supabaseUrl}/rest/v1/rpc/get_public_course_outline`, {
         method: 'POST',
