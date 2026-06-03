@@ -11,6 +11,7 @@ import {
     createEmptyLessonVideoBlockContent,
     sanitizeRichTextHtml,
     sanitizeTableHtml,
+    type LessonImageBlockCaptionAlignment,
     type LessonContentBlock,
     type LessonColumnsBlockContent,
     type LessonImageBlockContent,
@@ -52,6 +53,12 @@ const IMAGE_SIZE_CLASSES: Record<LessonImageBlockSize, string> = {
     md: 'max-w-2xl',
     lg: 'max-w-4xl',
     full: 'max-w-none',
+};
+
+const IMAGE_CAPTION_ALIGNMENT_CLASSES: Record<LessonImageBlockCaptionAlignment, string> = {
+    left: 'text-left',
+    center: 'text-center',
+    right: 'text-right',
 };
 
 function isDirectVideoUrl(url: string): boolean {
@@ -210,6 +217,7 @@ export function LessonImageBlockEditor({ content, onChange, onError }: LessonIma
         : content.image_url.trim();
 
     const sizeClasses = IMAGE_SIZE_CLASSES[content.size];
+    const captionAlignmentClass = IMAGE_CAPTION_ALIGNMENT_CLASSES[content.caption_alignment];
 
     async function handleFileSelected(event: ChangeEvent<HTMLInputElement>) {
         const file = event.target.files?.[0];
@@ -312,7 +320,7 @@ export function LessonImageBlockEditor({ content, onChange, onError }: LessonIma
                     <p className={cn('mt-1 text-sm', inputMode === 'upload' ? 'text-slate-200' : 'text-slate-500')}>Envie um arquivo e use a imagem protegida.</p>
                 </button>
             </div>
-            <div className={cn('mx-auto overflow-hidden rounded-[24px] border border-dashed border-slate-200 bg-slate-50 p-4', sizeClasses)}>
+            <div className={cn('mx-auto overflow-hidden rounded-[24px] border border-dashed border-slate-200 bg-slate-50', sizeClasses)}>
                 {previewUrl ? (
                     <img src={previewUrl} alt={content.alt} onError={handlePreviewError} className="h-auto w-full rounded-[18px] object-contain" />
                 ) : (
@@ -320,6 +328,11 @@ export function LessonImageBlockEditor({ content, onChange, onError }: LessonIma
                         Prévia da imagem
                     </div>
                 )}
+                {content.caption ? (
+                    <figcaption className={cn('border-t border-slate-100 bg-white px-5 py-3 text-sm text-slate-600', captionAlignmentClass)}>
+                        {content.caption}
+                    </figcaption>
+                ) : null}
             </div>
             {inputMode === 'url' ? (
                 <label className="block space-y-2">
@@ -346,7 +359,7 @@ export function LessonImageBlockEditor({ content, onChange, onError }: LessonIma
                     </Button>
                 </div>
             )}
-            <div className="grid gap-4 md:grid-cols-2">
+            <div className="grid gap-4 md:grid-cols-3">
                 <label className="block space-y-2">
                     <span className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Ajuste de tamanho</span>
                     <select value={content.size} onChange={(event) => onChange({ ...content, size: event.target.value as LessonImageBlockSize })} className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-sky-300 focus:ring-4 focus:ring-sky-100">
@@ -359,6 +372,14 @@ export function LessonImageBlockEditor({ content, onChange, onError }: LessonIma
                 <label className="block space-y-2">
                     <span className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Texto alternativo</span>
                     <input type="text" value={content.alt} onChange={(event) => onChange({ ...content, alt: event.target.value })} className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-sky-300 focus:ring-4 focus:ring-sky-100" placeholder="Descrição da imagem para acessibilidade" />
+                </label>
+                <label className="block space-y-2">
+                    <span className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Alinhamento da legenda</span>
+                    <select value={content.caption_alignment} onChange={(event) => onChange({ ...content, caption_alignment: event.target.value as LessonImageBlockCaptionAlignment })} className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-sky-300 focus:ring-4 focus:ring-sky-100">
+                        <option value="left">Esquerda</option>
+                        <option value="center">Centro</option>
+                        <option value="right">Direita</option>
+                    </select>
                 </label>
             </div>
             <label className="block space-y-2">
@@ -565,6 +586,7 @@ interface LessonImageBlockRendererProps {
 
 export function LessonImageBlockRenderer({ content }: LessonImageBlockRendererProps) {
     const sizeClasses = IMAGE_SIZE_CLASSES[content.size];
+    const captionAlignmentClass = IMAGE_CAPTION_ALIGNMENT_CLASSES[content.caption_alignment];
     const resolvedUploadUrl = useResolvedLessonAssetUrl(content.storage_path, content.signed_url);
     const previewUrl = content.source_type === 'upload'
         ? (content.signed_url?.trim() || resolvedUploadUrl)
@@ -580,7 +602,7 @@ export function LessonImageBlockRenderer({ content }: LessonImageBlockRendererPr
                 </div>
             )}
             {content.caption ? (
-                <figcaption className="border-t border-slate-100 bg-slate-50 px-5 py-3 text-sm text-slate-600">
+                <figcaption className={cn('border-t border-slate-100 bg-slate-50 px-5 py-3 text-sm text-slate-600', captionAlignmentClass)}>
                     {content.caption}
                 </figcaption>
             ) : null}

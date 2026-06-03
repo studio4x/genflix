@@ -1,5 +1,6 @@
 import type { LessonImageHotspotsAsset, LessonImageHotspotsBlockContent, LessonImageHotspotItem, } from '@/types/content';
 export type LessonImageBlockSize = 'sm' | 'md' | 'lg' | 'full';
+export type LessonImageBlockCaptionAlignment = 'left' | 'center' | 'right';
 export interface LessonImageBlockContent {
     source_type: 'url' | 'upload';
     image_url: string;
@@ -10,6 +11,7 @@ export interface LessonImageBlockContent {
     alt: string;
     size: LessonImageBlockSize;
     caption: string;
+    caption_alignment: LessonImageBlockCaptionAlignment;
 }
 export interface LessonVideoBlockContent {
     source_type: 'url' | 'upload';
@@ -348,6 +350,9 @@ function normalizeLessonImageBlockContent(content: LessonImageBlockContent): Les
             ? content.size
             : 'md',
         caption: content.caption?.trim() || '',
+        caption_alignment: content.caption_alignment === 'center' || content.caption_alignment === 'right'
+            ? content.caption_alignment
+            : 'left',
     };
 }
 export function createEmptyLessonImageBlockContent(): LessonImageBlockContent {
@@ -361,6 +366,7 @@ export function createEmptyLessonImageBlockContent(): LessonImageBlockContent {
         alt: 'Imagem da aula',
         size: 'md',
         caption: '',
+        caption_alignment: 'left',
     });
 }
 function parseLessonImageBlockContent(payload: unknown): LessonImageBlockContent | null {
@@ -388,6 +394,9 @@ function parseLessonImageBlockContent(payload: unknown): LessonImageBlockContent
             ? candidate.size
             : 'md',
         caption: typeof candidate.caption === 'string' ? candidate.caption : '',
+        caption_alignment: candidate.caption_alignment === 'center' || candidate.caption_alignment === 'right'
+            ? candidate.caption_alignment
+            : 'left',
     });
 }
 function normalizeLessonVideoBlockContent(content: LessonVideoBlockContent): LessonVideoBlockContent {
@@ -552,6 +561,7 @@ function encodeImagePayload(content: LessonImageBlockContent): string {
         alt: content.alt,
         size: content.size,
         caption: content.caption,
+        caption_alignment: content.caption_alignment,
     }));
 }
 function decodeImagePayload(encodedPayload: string): LessonImageBlockContent | null {
@@ -565,13 +575,18 @@ function decodeImagePayload(encodedPayload: string): LessonImageBlockContent | n
 }
 function buildImageFallbackHtml(content: LessonImageBlockContent): string {
     const caption = content.caption.trim();
+    const captionAlignment = content.caption_alignment === 'center'
+        ? 'center'
+        : content.caption_alignment === 'right'
+            ? 'right'
+            : 'left';
     const imageUrl = content.source_type === 'upload'
         ? (content.signed_url?.trim() || '')
         : content.image_url.trim();
     return `
     <figure class="hcm-image-block-fallback">
       ${imageUrl ? `<img src="${escapeHtml(imageUrl)}" alt="${escapeHtml(content.alt)}" />` : '<div class="hcm-image-block-fallback__placeholder">Imagem sem URL configurada.</div>'}
-      ${caption ? `<figcaption>${escapeHtml(caption)}</figcaption>` : ''}
+      ${caption ? `<figcaption style="text-align: ${captionAlignment};">${escapeHtml(caption)}</figcaption>` : ''}
     </figure>
   `;
 }
