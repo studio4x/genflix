@@ -381,6 +381,7 @@ interface LessonVideoBlockEditorProps {
 
 export function LessonVideoBlockEditor({ content, onChange, onError }: LessonVideoBlockEditorProps) {
     const fileInputRef = useRef<HTMLInputElement | null>(null);
+    const lastUrlRef = useRef(content.url);
     const [inputMode, setInputMode] = useState<'url' | 'upload'>(content.source_type);
     const [isUploading, setIsUploading] = useState(false);
     const [previewError, setPreviewError] = useState<string | null>(null);
@@ -389,6 +390,12 @@ export function LessonVideoBlockEditor({ content, onChange, onError }: LessonVid
     useEffect(() => {
         setInputMode(content.source_type);
     }, [content.source_type]);
+
+    useEffect(() => {
+        if (content.source_type === 'url' && content.url.trim()) {
+            lastUrlRef.current = content.url;
+        }
+    }, [content.source_type, content.url]);
 
     const previewUrl = content.source_type === 'upload'
         ? (content.signed_url?.trim() || resolvedUploadUrl)
@@ -406,6 +413,9 @@ export function LessonVideoBlockEditor({ content, onChange, onError }: LessonVid
         onError?.(null);
         try {
             const previousStoragePath = content.storage_path.trim();
+            if (content.url.trim()) {
+                lastUrlRef.current = content.url;
+            }
             const uploadResult = await uploadLessonContentAsset(file);
             onChange({
                 source_type: 'upload',
@@ -447,7 +457,7 @@ export function LessonVideoBlockEditor({ content, onChange, onError }: LessonVid
         onChange({
             ...content,
             source_type: 'url',
-            url: content.url,
+            url: lastUrlRef.current || content.url,
             storage_path: '',
             signed_url: null,
             file_name: '',
@@ -493,7 +503,10 @@ export function LessonVideoBlockEditor({ content, onChange, onError }: LessonVid
             {inputMode === 'url' ? (
                 <label className="block space-y-2">
                     <span className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">URL do vídeo</span>
-                    <input type="url" value={content.url} onChange={(event) => onChange({ ...content, source_type: 'url', url: event.target.value })} className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-sky-300 focus:ring-4 focus:ring-sky-100" placeholder="https://..." />
+                    <input type="url" value={content.url} onChange={(event) => {
+                        lastUrlRef.current = event.target.value;
+                        onChange({ ...content, source_type: 'url', url: event.target.value });
+                    }} className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-sky-300 focus:ring-4 focus:ring-sky-100" placeholder="https://..." />
                 </label>
             ) : (
                 <div className="space-y-3">
