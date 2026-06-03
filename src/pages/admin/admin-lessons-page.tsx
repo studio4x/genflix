@@ -216,7 +216,7 @@ Todos os materiais vinculados ser\u00E3o removidos permanentemente.`);
 
               <label className="block space-y-1.5">
                 <span className="text-sm font-semibold text-slate-700">Resumo da Aula <span className="text-slate-400 font-normal ml-1">(Opcional)</span></span>
-                <textarea className="min-h-[100px] w-full rounded-lg border-slate-200 bg-white px-4 py-3 text-sm shadow-sm transition-all focus:border-blue-500 focus:ring-1 focus:ring-blue-500 resize-y placeholder:text-slate-400" placeholder="Descreva brevemente o conteúdo dest? aula." value={form.description} onChange={(event) => setDraft((prev) => ({
+                <textarea className="min-h-[100px] w-full rounded-lg border-slate-200 bg-white px-4 py-3 text-sm shadow-sm transition-all focus:border-blue-500 focus:ring-1 focus:ring-blue-500 resize-y placeholder:text-slate-400" placeholder="Descreva brevemente o conteúdo desta aula." value={form.description} onChange={(event) => setDraft((prev) => ({
             ...prev,
             form: { ...prev.form, description: event.target.value },
         }))}/>

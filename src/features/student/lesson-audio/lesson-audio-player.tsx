@@ -52,7 +52,7 @@ export function LessonAudioPlayer({ lessonId, isAdmin = false }: LessonAudioPlay
                     setError(message);
                 }
                 else {
-                    setError("N\u00E3o foi poss\u00EDvel carregar a narra\u00E7\u00E3o dest? aula no momento.");
+                    setError("N\u00E3o foi poss\u00EDvel carregar a narra\u00E7\u00E3o desta aula no momento.");
                     setTechnicalErrorMessage(message);
                 }
             }
@@ -86,7 +86,7 @@ export function LessonAudioPlayer({ lessonId, isAdmin = false }: LessonAudioPlay
                 setError(message);
             }
             else {
-                setError("N\u00E3o foi poss\u00EDvel gerar o \u00E1udio dest? aula no momento.");
+                setError("N\u00E3o foi poss\u00EDvel gerar o \u00E1udio desta aula no momento.");
                 setTechnicalErrorMessage(message);
             }
         }
@@ -138,7 +138,7 @@ export function LessonAudioPlayer({ lessonId, isAdmin = false }: LessonAudioPlay
               Texto para Fala
             </span>
             <h3 className="text-2xl font-black tracking-tight text-black">Narração em áudio da aula</h3>
-            <p className="max-w-2xl text-sm font-medium leading-relaxed text-black">O conteúdo textual dest? aula pode ser narrado em áudio gerado por IA para escuta no player abaixo.
+            <p className="max-w-2xl text-sm font-medium leading-relaxed text-black">O conteúdo textual desta aula pode ser narrado em áudio gerado por IA para escuta no player abaixo.
             </p>
           </div>
 
@@ -147,7 +147,7 @@ export function LessonAudioPlayer({ lessonId, isAdmin = false }: LessonAudioPlay
             </Button>) : null}
 
           {canRegenerateAsAdmin ? (<Button size="lg" className="h-12 rounded-2xl bg-slate-900 px-6 font-bold hover:bg-slate-800" disabled={isPreparing} onClick={() => void handlePrepareNarration(narration ? 'regenerate' : 'generate')}>
-              {isPreparing ? 'Preparando áudio...' : narration ? "Gerar N?ovamente" : 'Gerar Narração'}
+              {isPreparing ? 'Preparando áudio...' : narration ? "Gerar Novamente" : 'Gerar Narração'}
             </Button>) : null}
         </div>
 

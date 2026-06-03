@@ -689,7 +689,7 @@ export function StudentAssessmentExecutionPage() {
                 Voltar para o Curso
               </Button>
               <Button size="lg" variant="outline" className="h-14 flex-1 rounded-2xl border-slate-300 font-bold text-slate-700 hover:bg-slate-50" disabled={hasPendingRetryRequest || isRequestingRetry} onClick={() => void handleRequestRetry()}>
-                {hasPendingRetryRequest ? 'Solicitação Enviada' : isRequestingRetry ? 'Enviando...' : "Solicitar N?ova Tentativa"}
+                {hasPendingRetryRequest ? 'Solicitação Enviada' : isRequestingRetry ? 'Enviando...' : "Solicitar Nova Tentativa"}
               </Button>
             </div>
             {error ? <p className="mt-4 text-sm font-medium text-rose-600">{error}</p> : null}
@@ -903,7 +903,7 @@ export function StudentAssessmentExecutionPage() {
                 </div>
 
                 <Button variant="outline" size="lg" className="h-14 rounded-2xl border-slate-300 text-slate-700 shadow-sm hover:bg-white" disabled={hasPendingRetryRequest || isRequestingRetry} onClick={() => void handleRequestRetry()}>
-                  {hasPendingRetryRequest ? 'Solicitação Enviada' : isRequestingRetry ? 'Enviando...' : "Solicitar N?ova Tentativa"}
+                  {hasPendingRetryRequest ? 'Solicitação Enviada' : isRequestingRetry ? 'Enviando...' : "Solicitar Nova Tentativa"}
                 </Button>
               </div>)}
 
@@ -911,7 +911,7 @@ export function StudentAssessmentExecutionPage() {
               <Button size="lg" className="h-14 flex-1 shrink-0 rounded-2xl bg-slate-900 font-bold shadow-xl shadow-slate-200 hover:bg-slate-800" onClick={() => navigate(result.is_approved ? approvedAction.href : `/aluno/cursos/${courseId}`)}>
                 {result.is_approved ? approvedAction.label : 'Ir para o Dashboard'}
               </Button>
-              {!result.is_approved && result.remaining_attempts > 0 && (<Button variant="outline" size="lg" className="h-14 flex-1 shrink-0 rounded-2xl border-slate-300 text-slate-700 shadow-sm hover:bg-slate-50" onClick={() => resetAttemptState(activeAttemptNumber + 1)}>Tentar N?ovamente
+              {!result.is_approved && result.remaining_attempts > 0 && (<Button variant="outline" size="lg" className="h-14 flex-1 shrink-0 rounded-2xl border-slate-300 text-slate-700 shadow-sm hover:bg-slate-50" onClick={() => resetAttemptState(activeAttemptNumber + 1)}>Tentar Novamente
                 </Button>)}
             </div>
           </div>

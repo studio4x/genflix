@@ -121,13 +121,13 @@ export function LessonNotesPanel({ lessonId, userId, }: LessonNotesPanelProps) {
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
             <div className="flex items-center gap-3">
-              <span className="rounded-full border border-amber-100 bg-amber-50 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-amber-700">Bloco de N?otas
+              <span className="rounded-full border border-amber-100 bg-amber-50 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-amber-700">Bloco de Notas
               </span>
               {updatedAtLabel ? (<span className="text-xs font-medium text-slate-500">
                   Atualizado em {updatedAtLabel}
                 </span>) : null}
             </div>
-            <p className="mt-3 text-sm font-medium text-slate-500">Registre insights, pontos de revisão e observações dest? aula.
+            <p className="mt-3 text-sm font-medium text-slate-500">Registre insights, pontos de revisão e observações desta aula.
             </p>
           </div>
 
@@ -139,21 +139,21 @@ export function LessonNotesPanel({ lessonId, userId, }: LessonNotesPanelProps) {
 
       {isOpen ? (<div className="space-y-4 p-6 sm:p-8">
           {isLoading ? (<div className="rounded-[24px] border border-dashed border-slate-200 bg-slate-50 px-6 py-10 text-center text-sm font-medium text-slate-500">
-              Carregando anotacoes...
+              Carregando anotações...
             </div>) : (<>
               <textarea value={draft} onChange={(event) => {
                     setDraft(event.target.value);
                     if (status !== 'saving') {
                         setStatus('idle');
                     }
-                }} placeholder="Escreva aqui suas anotacoes dest? aula. O texto sera salvo automticamente." className="min-h-[240px] w-full rounded-[28px] border border-slate-200 bg-slate-50/50 px-5 py-4 text-sm font-medium leading-7 text-slate-700 shadow-inner focus:border-blue-300 focus:outline-none focus:ring-4 focus:ring-blue-100"/>
+                }} placeholder="Escreva aqui suas anotações desta aula. O texto será salvo automaticamente." className="min-h-[240px] w-full rounded-[28px] border border-slate-200 bg-slate-50/50 px-5 py-4 text-sm font-medium leading-7 text-slate-700 shadow-inner focus:border-blue-300 focus:outline-none focus:ring-4 focus:ring-blue-100"/>
 
               <div className="flex flex-col gap-3 rounded-[24px] border border-slate-100 bg-slate-50 px-5 py-4 md:flex-row md:items-center md:justify-between">
                 <div className="space-y-1 text-sm font-medium text-slate-500">
                   <p>
                     {status === 'saving'
-                    ? "Salvando anotacao automticamente..." : status === 'saved'
-                    ? "Anotacao salva automticamente." : draft.trim().length === 0
+                    ? "Salvando anotação automaticamente..." : status === 'saved'
+                    ? "Anotação salva automaticamente." : draft.trim().length === 0
                     ? "Digite para criar sua anotacao. O salvamento acontece automticamente." : "As altera\u00E7\u00F5es ser\u00E3o salvas automticamente em instantes."}
                   </p>
                   {error ? <p className="font-bold text-rose-600">{error}</p> : null}

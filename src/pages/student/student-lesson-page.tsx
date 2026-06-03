@@ -291,7 +291,7 @@ export function StudentLessonPage() {
         </div>)}
 
       {(lessonType === 'video' || lessonType === 'hybrid') && videoSource?.type === 'asset' && !isLoadingProtectedVideo && !protectedVideoPlaybackUrl && (<div className="rounded-[28px] border border-amber-200 bg-amber-50 p-6 text-amber-900">
-          <p className="text-sm font-semibold">N?o foi possvel carregar o video protegido dest? aula. Tente novamente em instantes.
+          <p className="text-sm font-semibold">Não foi possível carregar o vídeo protegido desta aula. Tente novamente em instantes.
           </p>
         </div>)}
 
@@ -306,7 +306,7 @@ export function StudentLessonPage() {
         </div>)}
 
       {lessonType === 'file' && !textContent && (<div className="rounded-[28px] border border-amber-200 bg-amber-50 p-6 text-amber-900">
-          <p className="text-sm font-semibold">Esta aula e consumida pelos materiais do m?dulo. Use a secao "Botoes e Recursos" abaixo para acessar os ficheiros.
+          <p className="text-sm font-semibold">Esta aula é consumida pelos materiais do módulo. Use a seção "Botões e Recursos" abaixo para acessar os arquivos.
           </p>
         </div>)}
 
@@ -314,16 +314,16 @@ export function StudentLessonPage() {
         <div className="border-b border-slate-100 px-6 py-5 sm:px-8">
           <div className="flex items-center gap-3">
             <span className="rounded-full border border-blue-100 bg-blue-50 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-blue-600">
-              Botoes e Recursos
+              Botões e Recursos
             </span>
-            <span className="text-xs font-medium text-slate-500">Arquivos e links extras dest? aula
+            <span className="text-xs font-medium text-slate-500">Arquivos e links extras desta aula
             </span>
           </div>
         </div>
 
         <div className="space-y-4 p-6 sm:p-8">
           {footerActions.length === 0 ? (<div className="rounded-[24px] border border-dashed border-slate-200 bg-slate-50 px-6 py-10 text-center">
-              <p className="text-sm font-medium text-slate-500">Nenhum recurso adicional configurado para est? aula.
+              <p className="text-sm font-medium text-slate-500">Nenhum recurso adicional configurado para esta aula.
               </p>
             </div>) : (<div className="flex flex-wrap gap-3">
               {footerActions.map((action) => (<Button key={action.id} type="button" variant="outline" disabled={isLoadingFooterActions} onClick={() => void handleOpenFooterAction(action)} className={getLessonFooterButtonClassName(action.template)}>

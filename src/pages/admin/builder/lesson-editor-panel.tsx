@@ -696,18 +696,18 @@ Esta ação exclui o arquivo do storage privado.`);
                          {videoInputMode === 'url' ? 'URL externa' : 'Upload protegido'}
                        </span>
                      </div>
-                     <p className="text-sm text-slate-500">Esta visualiza\u00e7\u00e3o usa a origem selecionada no alternador acima.</p>
+                     <p className="text-sm text-slate-500">Esta visualização usa a origem selecionada no alternador acima.</p>
                      <div className="mt-4">
                        {videoInputMode === 'asset' ? (isLoadingProtectedVideoPreview ? (<div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">
                              Carregando pré-visualização do vídeo protegido...
                            </div>) : protectedVideoPreviewUrl ? (<div className="overflow-hidden rounded-xl border border-slate-200 bg-black">
                              <video className="aspect-video w-full" controls preload="metadata" src={protectedVideoPreviewUrl}>O navegador não suporta reprodu\u00e7\u00e3o de v\u00eddeo.
                              </video>
-                           </div>) : (<div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">Ainda não existe vídeo para pr\u00e9-visualizar neste modo.
+                           </div>) : (<div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">Ainda não existe vídeo para pré-visualizar neste modo.
                            </div>)) : (() => {
                 const url = form.youtube_url?.trim() ?? '';
                 if (!url) {
-                    return (<div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">Ainda não existe vídeo para pr\u00e9-visualizar neste modo.
+                    return (<div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">Ainda não existe vídeo para pré-visualizar neste modo.
                              </div>);
                 }
                 const youtubeEmbedUrl = getYouTubeEmbedUrl(url);

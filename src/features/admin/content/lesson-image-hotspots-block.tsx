@@ -468,7 +468,7 @@ export function LessonImageHotspotsBlockRenderer({ content, }: LessonImageHotspo
 
       <div className="p-4 sm:p-6">
         <div className="relative mx-auto overflow-hidden rounded-[28px] border border-slate-200 bg-slate-50 shadow-inner" style={{ aspectRatio: `${content.asset.width} / ${content.asset.height}` }}>
-          {assetUrl ? (<img src={assetUrl} alt={content.asset.alt} className="h-full w-full object-contain" draggable={false}/>) : (<div className="flex h-full w-full items-center justify-center px-6 text-center text-sm font-medium text-slate-500">A imagem interativa dest? aula ainda não foi carregada.
+          {assetUrl ? (<img src={assetUrl} alt={content.asset.alt} className="h-full w-full object-contain" draggable={false}/>) : (<div className="flex h-full w-full items-center justify-center px-6 text-center text-sm font-medium text-slate-500">A imagem interativa desta aula ainda não foi carregada.
             </div>)}
 
           {activeHotspot ? (<button type="button" className="absolute inset-0 z-10 bg-slate-950/32 transition-opacity" onClick={() => setActiveHotspotId(null)} aria-label="Fechar hotspot"/>) : null}
