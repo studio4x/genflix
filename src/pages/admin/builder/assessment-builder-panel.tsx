@@ -49,7 +49,7 @@ function getQuestionScoringExplanation(question: AssessmentQuestionWithOptions) 
     const points = Number(question.points || 0);
     const pointsText = formatPoints(points);
     if (!isGamifiedQuestionType(question.question_type)) {
-        return `Esta pergunta vale ${pointsText} ponto(s) e entra normalmente no calculo da aprova??o.`;
+        return `Esta pergunta vale ${pointsText} ponto(s) e entra normalmente no cálculo da aprovação.`;
     }
     const itemCount = getGamifiedItemCount(question);
     const itemLabel = question.question_type === 'fill_in_the_blanks'
@@ -59,10 +59,10 @@ function getQuestionScoringExplanation(question: AssessmentQuestionWithOptions) 
             : 'area';
     const gradingMode = question.answer_key?.grading_mode ?? 'partial_by_item';
     if (itemCount === 0) {
-        return `Esta pergunta vale ${pointsText} ponto(s). Defina as ${itemLabel}s para calcular a divisação da nota.`;
+        return `Esta pergunta vale ${pointsText} ponto(s). Defina as ${itemLabel}s para calcular a divisão da nota.`;
     }
     if (gradingMode === 'all_or_nothing') {
-        return `Esta pergunta vale ${pointsText} ponto(s). O aluno so recebe a nota se acertar todas as ${itemCount} ${itemLabel}${itemCount > 1 ? 's' : ''}. Se errar 1 item, recebe 0 nest? pergunta.`;
+        return `Esta pergunta vale ${pointsText} ponto(s). O aluno so recebe a nota se acertar todas as ${itemCount} ${itemLabel}${itemCount > 1 ? 's' : ''}. Se errar 1 item, recebe 0 nesta pergunta.`;
     }
     const pointsPerItem = points / itemCount;
     return `Esta pergunta vale ${pointsText} ponto(s), divididos entre ${itemCount} ${itemLabel}${itemCount > 1 ? 's' : ''}. Cada item correto vale ${formatPoints(pointsPerItem)} ponto(s).`;
@@ -171,13 +171,13 @@ export function AssessmentBuilderPanel() {
     function ensureQuestionTypeEnabled(questionType: AssessmentQuestionType | 'case_study') {
         if (questionType === 'case_study') {
             if (!canUseCaseStudies) {
-                setError("Estudo de caso est? desativado nas configurações globais ou do curso.");
+                setError("Estudo de caso está desativado nas configurações globais ou do curso.");
                 return false;
             }
             return true;
         }
         if (!isCourseQuestionTypeEnabled(quizTypeSettings, questionType, globalQuizTypeSettings)) {
-            setError(`${getQuestionTypeDisplayLabel(questionType)} est? desativado nas configurações globais ou do curso.`);
+            setError(`${getQuestionTypeDisplayLabel(questionType)} está desativado nas configurações globais ou do curso.`);
             return false;
         }
         return true;
@@ -303,7 +303,7 @@ export function AssessmentBuilderPanel() {
                 await refreshTree();
                 publishBuilderNotice({
                     type: 'success',
-                    title: "Avalia??o final criada",
+                    title: "Avaliação final criada",
                     message: "A avaliação final foi criada com sucesso.",
                 });
             }
@@ -375,7 +375,7 @@ export function AssessmentBuilderPanel() {
             setAssessmentDraft((prev) => (prev ? { ...prev, title: normalizedTitle } : prev));
             publishBuilderNotice({
                 type: 'success',
-                title: isFinal ? "Avalia??o final salva" : 'Quiz salvo',
+                title: isFinal ? "Avaliação final salva" : 'Quiz salvo',
                 message: `As configurações de "${normalizedTitle}" foram salvas com sucesso.`,
             });
         }
@@ -687,7 +687,7 @@ export function AssessmentBuilderPanel() {
         if (!ensureQuestionTypeEnabled(questionType))
             return;
         if (currentQuestion.case_study_id && isGamifiedQuestionType(questionType)) {
-            setError("Questoes gamificadas ficam apenas como perguntas independentes nest? v1.");
+            setError("Questões gamificadas ficam apenas como perguntas independentes nesta v1.");
             return;
         }
         try {
@@ -725,7 +725,7 @@ export function AssessmentBuilderPanel() {
         updateQuestionState(questionId, (question) => ({ ...question, essay_expected_answer: expectedAnswer }));
     }
     async function handleDeleteQuestion(questionId: string) {
-        if (!window.confirm("Excluir est? pergunta e todo o contedo associado"))
+        if (!window.confirm("Excluir esta pergunta e todo o conteúdo associado"))
             return;
         try {
             await deleteAssessmentQuestion(questionId);
@@ -847,10 +847,10 @@ export function AssessmentBuilderPanel() {
             const importedTypes = collectImportedQuestionTypes(importData);
             const firstDisabledImportedType = importedTypes.find((questionType) => !isCourseQuestionTypeEnabled(quizTypeSettings, questionType, globalQuizTypeSettings));
             if (firstDisabledImportedType) {
-                throw new Error(`${getQuestionTypeDisplayLabel(firstDisabledImportedType)} est? desativado nas configurações globais ou do curso.`);
+                throw new Error(`${getQuestionTypeDisplayLabel(firstDisabledImportedType)} está desativado nas configurações globais ou do curso.`);
             }
             if ((importData.case_studies?.length ?? 0) > 0 && !canUseCaseStudies) {
-                throw new Error("Estudo de caso est? desativado nas configurações globais ou do curso.");
+                throw new Error("Estudo de caso está desativado nas configurações globais ou do curso.");
             }
             let targetAssessmentId = assessment?.id;
             if (!targetAssessmentId) {
@@ -1081,7 +1081,7 @@ Todas as quest\u00F5es, estudos de caso e tentativas vinculadas ser\u00E3o remov
                 <p className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-700">Gabarito da IA</p>
                 <p className="mt-2 text-sm font-medium text-amber-900">
                   {question.question_type === 'essay_ai'
-                    ? "Informe a resposta considerada correta. A IA comparara esse texto com o que o aluno escrever e devolvera um feedback. Esta questão no soma pontos no quiz." : "Informe a resposta considerada correta para est? pergunta do estudo de caso. Esta pergunta soma pontos e sera validada pela IA."}
+                    ? "Informe a resposta considerada correta. A IA comparará esse texto com o que o aluno escrever e devolverá um feedback. Esta questão não soma pontos no quiz." : "Informe a resposta considerada correta para esta pergunta do estudo de caso. Esta pergunta soma pontos e será validada pela IA."}
                 </p>
               </div>
 
@@ -1181,7 +1181,7 @@ Todas as quest\u00F5es, estudos de caso e tentativas vinculadas ser\u00E3o remov
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7"/>
             </svg>
-            {isLoading ? 'Salvando...' : (isFinal ? "Salvar Avalia??o" : 'Salvar Quiz')}
+            {isLoading ? 'Salvando...' : (isFinal ? "Salvar Avaliação" : 'Salvar Quiz')}
           </Button>
           <Button variant="outline" onClick={() => void handleDeleteAssessment()} disabled={isDeletingAssessment} className="flex h-10 items-center gap-2 rounded-xl border-rose-200 bg-white px-4 font-bold text-rose-600 transition-all hover:bg-rose-50 hover:text-rose-700">
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1211,7 +1211,7 @@ Todas as quest\u00F5es, estudos de caso e tentativas vinculadas ser\u00E3o remov
             <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Questões Pontuáveis</p>
             <p className="mt-2 text-3xl font-black text-slate-900">{scoredQuestionsCount}</p>
             <p className="mt-2 text-xs font-medium leading-relaxed text-slate-500">
-              Quantas perguntas realmente entram no calculo da nota final.
+              Quantas perguntas realmente entram no cálculo da nota final.
             </p>
           </div>
           <div className="rounded-2xl border border-white/70 bg-white px-5 py-4 shadow-sm">
@@ -1222,7 +1222,7 @@ Todas as quest\u00F5es, estudos de caso e tentativas vinculadas ser\u00E3o remov
             </p>
           </div>
           <div className="rounded-2xl border border-white/70 bg-white px-5 py-4 shadow-sm">
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Como a Aprova??o Funciona</p>
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Como a Aprovação Funciona</p>
             <p className="mt-2 text-sm font-medium leading-relaxed text-slate-600">
               O quiz vale {formatPoints(totalPossiblePoints)} ponto(s) no total. Para ser aprovado, o aluno precisa somar pelo menos {formatPoints(requiredPoints)} ponto(s), que correspondem a {assessmentDraft.passing_score}% da nota maxima.
             </p>
@@ -1231,7 +1231,7 @@ Todas as quest\u00F5es, estudos de caso e tentativas vinculadas ser\u00E3o remov
 
         <div className="rounded-3xl border border-cyan-100 bg-cyan-50/60 px-6 py-5">
           <p className="text-[10px] font-black uppercase tracking-[0.2em] text-cyan-700">Leitura Rapida da Regra</p>
-          <p className="mt-3 text-sm font-medium leading-relaxed text-cyan-950">A aprova??o sempre considera a soma dos pontos do quiz inteiro. Em outras palavras: o aluno não precisa acertar um número fixo de perguntas, ele precisa atingir a nota mínima definida para o total da avaliação. Neste quiz, a nota máxima ? {formatPoints(totalPossiblePoints)} ponto(s) e a nota mínima para aprovar ? {formatPoints(requiredPoints)} ponto(s).
+          <p className="mt-3 text-sm font-medium leading-relaxed text-cyan-950">A aprovação sempre considera a soma dos pontos do quiz inteiro. Em outras palavras: o aluno não precisa acertar um número fixo de perguntas, ele precisa atingir a nota mínima definida para o total da avaliação. Neste quiz, a nota máxima é {formatPoints(totalPossiblePoints)} ponto(s) e a nota mínima para aprovar é {formatPoints(requiredPoints)} ponto(s).
           </p>
         </div>
 
@@ -1282,7 +1282,7 @@ Todas as quest\u00F5es, estudos de caso e tentativas vinculadas ser\u00E3o remov
               </div>
 
               {!isCourseQuestionTypeEnabled(quizTypeSettings, 'case_study_single_choice', globalQuizTypeSettings) &&
-                !isCourseQuestionTypeEnabled(quizTypeSettings, 'case_study_ai', globalQuizTypeSettings) ? (<div className="rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">Este curso est? com as perguntas internas de estudo de caso desativadas nas configurações globais ou do curso.
+                !isCourseQuestionTypeEnabled(quizTypeSettings, 'case_study_ai', globalQuizTypeSettings) ? (<div className="rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">Este curso está com as perguntas internas de estudo de caso desativadas nas configurações globais ou do curso.
                 </div>) : null}
             </div>
           </section>))}
@@ -1290,10 +1290,10 @@ Todas as quest\u00F5es, estudos de caso e tentativas vinculadas ser\u00E3o remov
         {availableAddCards.length === 0 ? (<div className="rounded-3xl border border-amber-100 bg-amber-50/70 px-6 py-8 text-center">
             <p className="text-sm font-black uppercase tracking-[0.24em] text-amber-700">Nenhum tipo de quiz ativo</p>
             <p className="mt-3 text-sm font-medium text-amber-900">
-              Ative pelo menos um formato em Configura??es do Curso para voltar a criar perguntas e estudos de caso.
+              Ative pelo menos um formato em Configurações do Curso para voltar a criar perguntas e estudos de caso.
             </p>
             <Button type="button" variant="outline" className="mt-5 rounded-2xl border-amber-200 bg-white text-amber-700 hover:bg-amber-100" onClick={() => navigate(`/admin/cursos/${courseId}/builder/settings`)}>
-              Abrir Configura??es do Curso
+              Abrir Configurações do Curso
             </Button>
           </div>) : (<div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           {availableAddCards.map((card) => (<button key={card.title} onClick={card.onClick} className={`flex w-full flex-col items-center justify-center gap-4 rounded-3xl border-4 border-dashed py-12 transition-all ${card.className}`}>

@@ -61,7 +61,7 @@ export function SignUpPage() {
     }
 
     if (!acceptTerms) {
-      setError('Voc? precisa concordar com os Termos de Uso e a Pol?pr?tica de Privacidade.')
+      setError('Você precisa concordar com os Termos de Uso e a Pol?pr?tica de Privacidade.')
       return
     }
 

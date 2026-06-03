@@ -702,7 +702,7 @@ export function GamifiedQuestionEditor({ question, onDraftChange, onPersist, onE
     }
     function addToken() {
         if (activeInteraction.kind !== 'fill_in_the_blanks') {
-            onError("Não arrastar e soltar, o banco de respostas acompanha automticamente a quantidade de \u00E1reas.");
+            onError("Não arrastar e soltar, o banco de respostas acompanha automaticamente a quantidade de \u00E1reas.");
             return;
         }
         const nextContent: FillInTheBlanksInteractionContent = {
@@ -985,7 +985,7 @@ export function GamifiedQuestionEditor({ question, onDraftChange, onPersist, onE
                 <p className="text-[10px] font-black uppercase tracking-[0.25em] text-amber-700">Evite</p>
                 <div className="mt-4 space-y-4 text-sm font-medium leading-relaxed text-amber-950">
                   <p><strong>1.</strong> Pedir para uma IA gerar o `path d` final direto de um PNG ou JPG. Para anatomia e ilustrações complexas, isso costuma sair errado.</p>
-                  <p><strong>2.</strong>Vetorizar automticamente uma imagem com textura, sombra ou degradê e usar esse resultado cru como SVG final.</p>
+                  <p><strong>2.</strong>Vetorizar automaticamente uma imagem com textura, sombra ou degradê e usar esse resultado cru como SVG final.</p>
                   <p><strong>3.</strong> Deixar várias partes diferentes dentro da mesma região quando o aluno precisa colori-las separadamente.</p>
                   <p><strong>4.</strong> Usar paths abertos, máscaras, `clipPath`, filtros ou efeitos que escondem a área real de preenchimento.</p>
                   <p><strong>5.</strong> Colocar o `id` em grupos gigantes que também carregam linhas ou formas de outras peças.</p>
@@ -1103,7 +1103,7 @@ ${SVG_COLORING_EXAMPLE}`} className="min-h-[360px] w-full rounded-[28px] border 
             <p className="text-[10px] font-black uppercase tracking-[0.25em] text-cyan-700">Banco de respostas</p>
             <p className="mt-2 text-sm font-medium text-cyan-950">
               {activeInteraction.kind === 'drag_drop_labeling'
-                ? "Não arrastar e soltar, cada \u00E1rea cria automticamente um campo correspondente no banco de respostas." : "Cada item do banco deve ser associado a uma \u00FAnica \u00E1rea ou lacuna nest? v1."}
+                ? "Não arrastar e soltar, cada \u00E1rea cria automaticamente um campo correspondente no banco de respostas." : "Cada item do banco deve ser associado a uma \u00FAnica \u00E1rea ou lacuna nesta v1."}
             </p>
           </div>
 
@@ -1841,7 +1841,7 @@ ${SVG_COLORING_EXAMPLE}`} className="min-h-[360px] w-full rounded-[28px] border 
                       <p><strong>1.</strong> Linhas soltas com {'<line>'} ou paths abertos sem area interna para preencher.</p>
                       <p><strong>2.</strong> Deixar varias pecas diferentes dentro da mesma regiação quando o aluno precisa colori-las separadamente.</p>
                       <p><strong>3.</strong> Confiar apenas em nomes visuais da camada no editor grafico sem exportar o `id` no SVG final.</p>
-                      <p><strong>4.</strong> SVGs com tudo achatado em um unico path sem divisação por partes do desenho.</p>
+                      <p><strong>4.</strong> SVGs com tudo achatado em um único path sem divisão por partes do desenho.</p>
                     </div>
                   </section>
                 </div>
@@ -2006,7 +2006,7 @@ ${SVG_COLORING_EXAMPLE}`} className="min-h-[360px] w-full rounded-[28px] border 
             if (!group)
                 return;
             if (group.blanks.length === 1) {
-                onError('Cada pergunta precisa manter ação menos uma lacuna.');
+                onError('Cada pergunta precisa manter ao menos uma lacuna.');
                 return;
             }
             void commitGroups(patchGroups(groupId, (currentGroup) => ({
@@ -2018,7 +2018,7 @@ ${SVG_COLORING_EXAMPLE}`} className="min-h-[360px] w-full rounded-[28px] border 
         <div className="flex flex-col gap-4 border-b border-slate-100 pb-5 md:flex-row md:items-center md:justify-between">
           <div>
             <p className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-400">Perguntas com lacunas</p>
-            <p className="mt-2 text-sm font-medium text-slate-600">Cada card representa uma pergunta. Dentro dela voc? pode escrever o texto inicial e adicionar uma ou varias lacunas.
+            <p className="mt-2 text-sm font-medium text-slate-600">Cada card representa uma pergunta. Dentro dela você pode escrever o texto inicial e adicionar uma ou várias lacunas.
             </p>
           </div>
 
@@ -2047,7 +2047,7 @@ ${SVG_COLORING_EXAMPLE}`} className="min-h-[360px] w-full rounded-[28px] border 
                       </div>
                       <p className="mt-2 text-xs font-medium text-slate-500">
                         {group.leading_text.trim() || group.blanks.some((blank) => blank.trailing_text.trim().length > 0)
-                        ? `${group.blanks.length} lacuna(s) nest? pergunta` : 'Clique para escrever a frase e definir as lacunas.'}
+                        ? `${group.blanks.length} lacuna(s) nesta pergunta` : 'Clique para escrever a frase e definir as lacunas.'}
                       </p>
                     </div>
 
@@ -2100,13 +2100,13 @@ ${SVG_COLORING_EXAMPLE}`} className="min-h-[360px] w-full rounded-[28px] border 
                           </div>
 
                           <label className="mt-4 block space-y-2">
-                            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Texto depois dest? lacuna</span>
-                            <textarea className="min-h-[110px] w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 focus:border-teal-300 focus:ring-4 focus:ring-teal-100" value={blank.trailing_text} onChange={(event) => updateBlank(group.id, blank.blank_id, { trailing_text: event.target.value })} onBlur={(event) => void commitGroups(patchBlank(group.id, blank.blank_id, { trailing_text: event.currentTarget.value }))} placeholder="Texto que continua depois dest? lacuna."/>
+                            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Texto depois destá lacuna</span>
+                            <textarea className="min-h-[110px] w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 focus:border-teal-300 focus:ring-4 focus:ring-teal-100" value={blank.trailing_text} onChange={(event) => updateBlank(group.id, blank.blank_id, { trailing_text: event.target.value })} onBlur={(event) => void commitGroups(patchBlank(group.id, blank.blank_id, { trailing_text: event.currentTarget.value }))} placeholder="Texto que continua depois destá lacuna."/>
                           </label>
                         </div>))}
                     </div>
 
-                    <Button type="button" variant="outline" className="rounded-2xl border-teal-200 bg-white text-teal-700 hover:bg-teal-50" onClick={() => addBlankToGroup(group.id)}>Adicionar lacuna nest? pergunta
+                    <Button type="button" variant="outline" className="rounded-2xl border-teal-200 bg-white text-teal-700 hover:bg-teal-50" onClick={() => addBlankToGroup(group.id)}>Adicionar lacuna nesta pergunta
                     </Button>
 
                     <div className="rounded-[24px] border border-slate-200 bg-slate-50/70 p-5">
@@ -2135,7 +2135,7 @@ ${SVG_COLORING_EXAMPLE}`} className="min-h-[360px] w-full rounded-[28px] border 
                                 </svg>
                               </button>
                             </div>))}
-                        </div>) : (<p className="mt-4 text-sm font-medium text-slate-500">Nenhuma alternativa extra cadastrada nest? pergunta.
+                        </div>) : (<p className="mt-4 text-sm font-medium text-slate-500">Nenhuma alternativa extra cadastrada nesta pergunta.
                         </p>)}
                     </div>
 
@@ -2147,7 +2147,7 @@ ${SVG_COLORING_EXAMPLE}`} className="min-h-[360px] w-full rounded-[28px] border 
                             <span className="mx-2 inline-flex min-w-[140px] items-center justify-center rounded-2xl border border-teal-200 bg-white px-4 py-2 text-sm font-black text-teal-700 shadow-sm">
                               {blank.answer_text || blank.placeholder || 'Lacuna'}
                             </span>
-                            {blank.trailing_text || <span className="text-slate-400">texto depois dest? lacuna</span>}
+                            {blank.trailing_text || <span className="text-slate-400">texto depois destá lacuna</span>}
                           </span>))}
                       </p>
                     </div>
@@ -2160,7 +2160,7 @@ ${SVG_COLORING_EXAMPLE}`} className="min-h-[360px] w-full rounded-[28px] border 
     return (<div className="space-y-6 rounded-[32px] border border-cyan-200 bg-[linear-gradient(180deg,_rgba(236,254,255,0.55),_rgba(255,255,255,1))] p-6">
       <div className="grid gap-6 xl:grid-cols-[1fr_260px]">
         <div className="space-y-2">
-          <p className="text-[10px] font-black uppercase tracking-[0.25em] text-cyan-700">Instrução ação aluno</p>
+          <p className="text-[10px] font-black uppercase tracking-[0.25em] text-cyan-700">Instrução ao aluno</p>
           <textarea className="min-h-[110px] w-full rounded-[28px] border border-cyan-100 bg-white px-5 py-4 text-sm font-medium text-slate-700 shadow-sm focus:border-cyan-300 focus:ring-4 focus:ring-cyan-100" value={activeInteraction.instruction} onChange={(event) => updateDraft({
             ...activeInteraction,
             instruction: event.target.value,
@@ -2175,13 +2175,13 @@ ${SVG_COLORING_EXAMPLE}`} className="min-h-[360px] w-full rounded-[28px] border 
                 value: 'partial_by_item' as const,
                 title: 'Parcial por item',
                 description: scoringItemCount > 0
-                    ? `A nota dest? pergunta sera dividida entre ${scoringItemCount} item(ns). Cada item correto vale ${formatPoints(pointsPerItem)} ponto(s).` : "A nota dest? pergunta sera dividida igualmente entre os itens corretos.",
+                    ? `A nota desta pergunta sera dividida entre ${scoringItemCount} item(ns). Cada item correto vale ${formatPoints(pointsPerItem)} ponto(s).` : "A nota desta pergunta sera dividida igualmente entre os itens corretos.",
             },
             {
                 value: 'all_or_nothing' as const,
                 title: 'Tudo ou nada',
                 description: scoringItemCount > 0
-                    ? `O aluno so recebe os ${formatPoints(questionPoints)} ponto(s) dest? pergunta se acertar todos os ${scoringItemCount} item(ns). Se errar 1, recebe 0.` : 'O aluno so pontua se acertar todos os itens da pergunta.',
+                    ? `O aluno só recebe os ${formatPoints(questionPoints)} ponto(s) desta pergunta se acertar todos os ${scoringItemCount} item(ns). Se errar 1, recebe 0.` : 'O aluno só pontua se acertar todos os itens da pergunta.',
             },
         ].map((mode) => (<button key={mode.value} type="button" className={cn('rounded-2xl border px-4 py-4 text-left transition-all', gradingMode === mode.value
                 ? 'border-cyan-300 bg-cyan-50 text-cyan-900 shadow-sm'
@@ -2217,7 +2217,7 @@ ${SVG_COLORING_EXAMPLE}`} className="min-h-[360px] w-full rounded-[28px] border 
       <div className={cn('rounded-[28px] border px-5 py-4 text-sm font-semibold', validationMessage
             ? 'border-amber-200 bg-amber-50 text-amber-900'
             : 'border-emerald-200 bg-emerald-50 text-emerald-900')}>
-        {validationMessage ?? "Intera\u00E7\u00E3o v\u00E1lida. O backend j\u00E1 possui o gabarito necess\u00E1rio para corrigir est? quest\u00E3o."}
+        {validationMessage ?? "Intera\u00E7\u00E3o v\u00E1lida. O backend j\u00E1 possui o gabarito necess\u00E1rio para corrigir está quest\u00E3o."}
       </div>
     </div>);
 }

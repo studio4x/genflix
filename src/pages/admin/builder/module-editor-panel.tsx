@@ -169,7 +169,7 @@ export function ModuleEditorPanel() {
                     setReviewHistory((previous) => [savedReview, ...previous]);
                 }
                 catch (historyError) {
-                    setError(`A análise foi concluida, mas o histórico no foi salvo: ${toErrorMessage(historyError)}`);
+                    setError(`A análise foi concluída, mas o histórico não foi salvo: ${toErrorMessage(historyError)}`);
                 }
             }
             setAnalysisTarget({
@@ -193,7 +193,7 @@ export function ModuleEditorPanel() {
         publishBuilderNotice({
             type: 'pending',
             title: 'Aplicando ajustes da IA',
-            message: `O módulo "${currentModule.title}" est? sendo atualizado agora.`,
+            message: `O módulo "${currentModule.title}" está sendo atualizado agora.`,
             details: [
                 `Módulo em processamento: ${currentModule.title}`,
                 `Pontos identificados na análise: ${analysisResult.issues.length}`,
@@ -212,7 +212,7 @@ export function ModuleEditorPanel() {
                     }
                 }
                 catch (historyError) {
-                    setError(`Os ajustes foram aplicados, mas o histórico no foi atualizado: ${toErrorMessage(historyError)}`);
+                    setError(`Os ajustes foram aplicados, mas o histórico não foi atualizado: ${toErrorMessage(historyError)}`);
                 }
             }
             setDidApplyCurrentAnalysis(true);
@@ -222,7 +222,7 @@ export function ModuleEditorPanel() {
                 message: `Os ajustes foram aplicados ação módulo "${currentModule.title}".`,
                 details: [
                     `Módulo atualizado: ${currentModule.title}`,
-                    `Horario: ${new Intl.DateTimeFormat('pt-BR', {
+                    `Horário: ${new Intl.DateTimeFormat('pt-BR', {
                         dateStyle: 'short',
                         timeStyle: 'medium',
                     }).format(new Date(appliedAtIso))}`,
@@ -239,7 +239,7 @@ export function ModuleEditorPanel() {
                 title: 'Falha ação aplicar ajustes da IA',
                 message: `Não foi possível concluir os ajustes no módulo "${currentModule.title}".`,
                 details: [
-                    `Mdulo: ${currentModule.title}`,
+                    `Módulo: ${currentModule.title}`,
                     `Erro retornado: ${message}`,
                     'Nenhuma confirmacação de salvamento foi recebida.',
                 ],
@@ -266,7 +266,7 @@ export function ModuleEditorPanel() {
                 publishBuilderNotice({
                     type: 'success',
                     title: "Módulo salvo",
-                    message: `As altera??es do módulo "${parsed.data.title}" foram salvas com sucesso.`,
+                    message: `As alterações do módulo "${parsed.data.title}" foram salvas com sucesso.`,
                 });
             }
             else {
@@ -338,7 +338,7 @@ export function ModuleEditorPanel() {
            {isNew ? "Criar Novo M\u00F3dulo" : 'Configurações do Módulo'}
          </h2>
          <p className="text-sm text-slate-500 mt-1">
-           {isNew ? 'Adicione uma nova seção principal para agrupar as aulas do seu curso.' : "Atualize os detalhes e restri\u00E7\u00F5es dest? se\u00E7\u00E3o do curso."}
+           {isNew ? 'Adicione uma nova seção principal para agrupar as aulas do seu curso.' : "Atualize os detalhes e restri\u00E7\u00F5es destá se\u00E7\u00E3o do curso."}
          </p>
        </div>
 
@@ -395,7 +395,7 @@ export function ModuleEditorPanel() {
                 <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
                   <div className="space-y-1">
                     <span className="block text-sm font-bold text-slate-800">Liberar após X dias da inscrição no curso</span>
-                    <p className="text-xs leading-relaxed text-slate-500">Use est? opção para liberar o módulo automticamente após um período contado desde a inscrição do aluno.
+                    <p className="text-xs leading-relaxed text-slate-500">Use esta opção para liberar o módulo automaticamente após um período contado desde a inscrição do aluno.
                     </p>
                   </div>
                   <label className="block space-y-2 md:min-w-[220px]">
@@ -460,8 +460,8 @@ export function ModuleEditorPanel() {
         {repeatReviewPrompt && currentModule && (<div className="fixed inset-0 z-[115] flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm animate-in fade-in duration-300">
             <div className="w-full max-w-2xl rounded-[32px] border border-white/20 bg-white shadow-2xl animate-in zoom-in-95 duration-300">
               <div className="border-b border-slate-100 p-8">
-                <h3 className="text-xl font-black tracking-tight text-slate-900">Este módulo j? possui análise com IA</h3>
-                <p className="mt-2 text-sm leading-relaxed text-slate-500">O módulo <strong>{currentModule.title}</strong> j? possui uma análise salva. A ?ltima revisão foi em{' '}
+                <h3 className="text-xl font-black tracking-tight text-slate-900">Este módulo já possui análise com IA</h3>
+                <p className="mt-2 text-sm leading-relaxed text-slate-500">O módulo <strong>{currentModule.title}</strong> já possui uma análise salva. A última revisão foi em{' '}
                   {new Intl.DateTimeFormat('pt-BR', {
                 dateStyle: 'short',
                 timeStyle: 'medium',
@@ -485,7 +485,7 @@ export function ModuleEditorPanel() {
                     <span className={`rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-widest ${repeatReviewPrompt.applied_at
                 ? 'bg-emerald-100 text-emerald-700'
                 : 'bg-amber-100 text-amber-700'}`}>
-                      {repeatReviewPrompt.applied_at ? 'Ajustes aplicados' : "Ajustes no aplicados"}
+                      {repeatReviewPrompt.applied_at ? 'Ajustes aplicados' : "Ajustes não aplicados"}
                     </span>
                   </div>
                 </div>
@@ -519,7 +519,7 @@ export function ModuleEditorPanel() {
               <div className="space-y-6 p-8">
                 {didApplyCurrentAnalysis && (<div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5">
                     <p className="text-sm font-black text-emerald-700">Ajustes aplicados com sucesso neste módulo.</p>
-                    <p className="mt-2 text-sm text-emerald-700">O contedo foi atualizado e salvo. Revise os campos e o contedo pedagogico para confirmar o resultado final.
+                    <p className="mt-2 text-sm text-emerald-700">O conteúdo foi atualizado e salvo. Revise os campos e o conteúdo pedagógico para confirmar o resultado final.
                     </p>
                   </div>)}
                 <div className="grid gap-4 md:grid-cols-[180px_1fr]">
@@ -553,7 +553,7 @@ export function ModuleEditorPanel() {
                         <h5 className="mt-3 text-base font-black text-slate-900">{issue.title}</h5>
                         <div className="mt-4 grid gap-4 lg:grid-cols-3">
                           <div>
-                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Como est? hoje</p>
+                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Como está hoje</p>
                             <p className="mt-2 text-sm leading-relaxed text-slate-600">{issue.current_state}</p>
                           </div>
                           <div>
@@ -619,7 +619,7 @@ export function ModuleEditorPanel() {
                         <AiReviewUsageSummary review={review}/>
                       </div>
                       <div className="mt-4 space-y-3">
-                        {review.issues.length === 0 ? (<div className="rounded-xl border border-emerald-100 bg-emerald-50 p-4 text-sm font-semibold text-emerald-700">Nenhum ajuste foi apontado nest? revisão.
+                        {review.issues.length === 0 ? (<div className="rounded-xl border border-emerald-100 bg-emerald-50 p-4 text-sm font-semibold text-emerald-700">Nenhum ajuste foi apontado nesta revisão.
                           </div>) : (review.issues.map((issue) => (<div key={issue.id} className="rounded-xl border border-slate-200 bg-slate-50 p-4">
                               <div className="flex flex-wrap items-center gap-2">
                                 <span className="rounded-full bg-slate-200 px-2.5 py-1 text-[10px] font-black uppercase tracking-widest text-slate-700">

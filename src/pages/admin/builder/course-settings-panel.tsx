@@ -160,7 +160,7 @@ export function CourseSettingsPanel() {
             setSuccess(true);
             publishBuilderNotice({
                 type: 'success',
-                title: "Configura??es salvas",
+                title: "Configurações salvas",
                 message: `As configurações do curso "${parsed.data.title}" foram salvas com sucesso.`,
             });
             setTimeout(() => setSuccess(false), 3000);
@@ -427,7 +427,7 @@ export function CourseSettingsPanel() {
                   </div>
 
                   <div className="rounded-[28px] border border-slate-200 bg-slate-50/60 p-5">
-                     {visibleQuizTypeOptions.length === 0 ? (<div className="rounded-[24px] border border-dashed border-amber-200 bg-amber-50/70 px-5 py-6 text-sm font-semibold text-amber-800">Nenhum tipo de quiz est? habilitado globalmente no momento. Ative um tipo na configuração global para liberá-lo neste curso.
+                     {visibleQuizTypeOptions.length === 0 ? (<div className="rounded-[24px] border border-dashed border-amber-200 bg-amber-50/70 px-5 py-6 text-sm font-semibold text-amber-800">Nenhum tipo de quiz está habilitado globalmente no momento. Ative um tipo na configuração global para liberá-lo neste curso.
                        </div>) : (<div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                         {visibleQuizTypeOptions.map((option) => {
                 const isEnabled = form.quiz_type_settings[option.key];
@@ -460,7 +460,7 @@ export function CourseSettingsPanel() {
 
                   <div className={`rounded-[24px] border px-5 py-4 text-sm font-semibold ${canUseCaseStudies ? 'border-violet-100 bg-violet-50/70 text-violet-800' : 'border-amber-100 bg-amber-50/80 text-amber-800'}`}>
                      {canUseCaseStudies
-            ? "Estudo de caso est? pronto para uso no builder, porque pelo menos um tipo de pergunta interna est? ativo." : 'Estudo de caso exige Multipla Escolha ou Discursiva com IA ativos para aparecer como opção no builder.'}
+            ? "Estudo de caso está pronto para uso no builder, porque pelo menos um tipo de pergunta interna está ativo." : 'Estudo de caso exige Multipla Escolha ou Discursiva com IA ativos para aparecer como opção no builder.'}
                   </div>
                </div>
             </div>
@@ -524,7 +524,7 @@ export function CourseSettingsPanel() {
       <section className="space-y-6 rounded-[32px] border border-rose-200 bg-white p-6 shadow-sm md:p-10">
         <div className="border-b border-rose-100 pb-5">
           <h3 className="text-2xl font-black tracking-tight text-slate-900">Renovar Progresso do Curso</h3>
-          <p className="mt-1 text-sm text-slate-500">Use est? ação quando precisar reiniciar o curso para todos os alunos e liberar um novo ciclo completo de aulas e avaliações.
+          <p className="mt-1 text-sm text-slate-500">Use está ação quando precisar reiniciar o curso para todos os alunos e liberar um novo ciclo completo de aulas e avaliações.
           </p>
         </div>
 

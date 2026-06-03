@@ -423,7 +423,7 @@ Todas as questoes, estudos de caso e tentativas vinculadas serão removidos perm
         <div className="flex items-center justify-between gap-4 border-b border-slate-100 bg-slate-50/50 p-6">
           <div>
             <h3 className="text-lg font-bold text-slate-900">Avalia??o Final</h3>
-            <p className="text-sm text-slate-500">Gerencie a prova final e sua exclusação.</p>
+            <p className="text-sm text-slate-500">Gerencie a prova final e sua exclusão.</p>
           </div>
           <Link to={`/admin/cursos/${course.id}/builder/assessments/final`} className="text-sm font-semibold text-blue-600 hover:text-blue-800">Editar Avalia??o
           </Link>

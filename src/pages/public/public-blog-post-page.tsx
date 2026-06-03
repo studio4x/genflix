@@ -409,7 +409,7 @@ export function PublicBlogPostPage() {
             setContent('');
             setCaptchaInput('');
             setCaptcha(createCaptchaChallenge());
-            setCommentSuccess("Coment?rio enviado para aprova??o do administrador.");
+            setCommentSuccess("Comentário enviado para aprovação do administrador.");
             setIsCommentFormOpen(false);
         }
         catch (error) {
@@ -468,7 +468,7 @@ export function PublicBlogPostPage() {
           </section>
 
           <section className="mt-10 rounded-[18px] border border-[#D8E6EB] bg-white p-5 shadow-sm sm:p-7">
-            <h2 className="font-readex text-2xl font-semibold text-[#15323b]">Coment?rios</h2>
+            <h2 className="font-readex text-2xl font-semibold text-[#15323b]">Comentários</h2>
             <p className="mt-2 text-sm font-medium text-[#5f7077]">Envie seu comentário. A publicação acontece após aprovação do administrador.</p>
 
             {commentError ? <p className="mt-4 border border-red-200 bg-red-50 p-3 text-sm font-bold text-red-700">{commentError}</p> : null}

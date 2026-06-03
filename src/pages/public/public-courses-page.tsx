@@ -53,8 +53,8 @@ const coursesSectionTemplates = [
   },
   {
     id: 'catalog',
-    label: 'Catalogo de cursos',
-    description: 'Bloco principal com a grade de cursos e pagina??o.',
+    label: 'Catálogo de cursos',
+    description: 'Bloco principal com a grade de cursos e página??o.',
   },
   {
     id: 'features',
@@ -169,7 +169,7 @@ export function PublicCoursesPage() {
   const pageCount = Math.max(1, Math.ceil(filteredCourses.length / COURSES_PER_PAGE))
   const visibleCurrentPage = Math.min(currentPage, pageCount)
 
-  const paginatedCourses = useMemo(() => {
+  const páginatedCourses = useMemo(() => {
     const start = (visibleCurrentPage - 1) * COURSES_PER_PAGE
     return filteredCourses.slice(start, start + COURSES_PER_PAGE)
   }, [visibleCurrentPage, filteredCourses])
@@ -214,7 +214,7 @@ export function PublicCoursesPage() {
                         <EditableText
                           entryKey="courses.hero.title"
                           fallback="Encontre o curso que vai mudar sua vida"
-                          label="T?tulo do cat?logo"
+                          label="Título do cat?logo"
                           pageKey={sectionPageKey}
                         />
                       </h1>
@@ -269,7 +269,7 @@ export function PublicCoursesPage() {
                 <EditableContainer entryKey={`${sectionEntryPrefix}.content`} label="Container interno do catalogo" pageKey={sectionPageKey}>
                   <div className="public-site-container">
                     <div className="grid gap-8 md:grid-cols-2 xl:grid-cols-3">
-                      {paginatedCourses.map((course) => (
+                      {páginatedCourses.map((course) => (
                         <GenflixCourseCard key={course.slug} course={course} />
                       ))}
                     </div>
@@ -341,15 +341,15 @@ export function PublicCoursesPage() {
                         <EditableText
                           entryKey="courses.features.title"
                           fallback="Muito além do vídeo"
-                          label="T?tulo de recursos em cursos"
+                          label="Título de recursos em cursos"
                           pageKey={sectionPageKey}
                         />
                       </h2>
                       <p className="mt-3 text-base leading-7 text-[#183139]">
                         <EditableText
                           entryKey="courses.features.description"
-                          fallback="Ferramentas pensadas para voc? aprender, fixar e revisar do seu jeito."
-                          label="Descri??o de recursos em cursos"
+                          fallback="Ferramentas pensadas para você aprender, fixar e revisar do seu jeito."
+                          label="Descrição de recursos em cursos"
                           pageKey={sectionPageKey}
                         />
                       </p>

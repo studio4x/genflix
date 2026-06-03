@@ -266,7 +266,7 @@ export function PublicSupportPage() {
 
                 <div className="mt-6 grid gap-4">
                   <label className="grid gap-2 text-left">
-                    <span className="text-xs font-black uppercase tracking-[0.16em] text-[#5F7077]">Que pergunta frequente voc? quer ver?</span>
+                    <span className="text-xs font-black uppercase tracking-[0.16em] text-[#5F7077]">Que pergunta frequente você quer ver?</span>
                     <input
                       value={suggestedQuestion}
                       onChange={(event) => setSuggestedQuestion(event.target.value)}
@@ -293,7 +293,7 @@ export function PublicSupportPage() {
                       onClick={() => void handleFaqSuggestionSubmit()}
                       disabled={isSubmittingSuggestion}
                     >
-                      {isSubmittingSuggestion ? 'Enviando...' : 'Enviar sugest?o'}
+                      {isSubmittingSuggestion ? 'Enviando...' : 'Enviar sugestáo'}
                     </GenflixCtaButton>
                     {suggestionStatus ? (
                       <p className="text-sm font-semibold text-[#5F7077]">{suggestionStatus}</p>

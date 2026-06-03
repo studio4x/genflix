@@ -351,7 +351,7 @@ export function PublicBlogPage() {
     const listingPosts = filteredPosts;
     const pageCount = Math.max(1, Math.ceil(listingPosts.length / POSTS_PER_PAGE));
     const visibleCurrentPage = Math.min(currentPage, pageCount);
-    const paginatedPosts = useMemo(() => {
+    const páginatedPosts = useMemo(() => {
         const start = (visibleCurrentPage - 1) * POSTS_PER_PAGE;
         return listingPosts.slice(start, start + POSTS_PER_PAGE);
     }, [visibleCurrentPage, listingPosts]);
@@ -401,7 +401,7 @@ export function PublicBlogPage() {
                 </div>
 
                 <div className="blog-grid-theme grid gap-8 md:grid-cols-2 xl:grid-cols-3" style={blogGridStyleVars}>
-                  {paginatedPosts.map((post) => (<article key={post.slug} className="blog-grid-card flex h-full flex-col overflow-hidden rounded-[4px] border border-[#dfdfdf] bg-[#f5f5f5] shadow-sm">
+                  {páginatedPosts.map((post) => (<article key={post.slug} className="blog-grid-card flex h-full flex-col overflow-hidden rounded-[4px] border border-[#dfdfdf] bg-[#f5f5f5] shadow-sm">
                       <div className="aspect-[4/3] overflow-hidden">
                         <img src={getGridCoverImageUrl((post as GenflixBlogPost & {
                 cardImage?: string;
@@ -425,7 +425,7 @@ export function PublicBlogPage() {
                     </article>))}
                 </div>
 
-                {paginatedPosts.length === 0 ? (<div className="mt-10 rounded-[4px] border border-dashed border-[#d8d8d8] bg-[#f8f8f8] px-6 py-12 text-center">
+                {páginatedPosts.length === 0 ? (<div className="mt-10 rounded-[4px] border border-dashed border-[#d8d8d8] bg-[#f8f8f8] px-6 py-12 text-center">
                     <p className="text-lg font-semibold text-[#20364f]">Nenhum artigo encontrado com esse filtro.</p>
                   </div>) : null}
 

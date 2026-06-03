@@ -92,7 +92,7 @@ export function CourseAssessmentsPanel() {
         }
     }
     async function handleDeleteAssessment(assessmentId: string) {
-        if (!window.confirm("CUIDADO: Tem certeza que deseja excluir permanentemente est? avalia\u00E7\u00E3o Esta a\u00E7\u00E3o remover\u00E1 todas as quest\u00F5es vinculadas e n\u00E3o pode ser desfeita.")) {
+        if (!window.confirm("CUIDADO: Tem certeza que deseja excluir permanentemente está avalia\u00E7\u00E3o Esta a\u00E7\u00E3o remover\u00E1 todas as quest\u00F5es vinculadas e n\u00E3o pode ser desfeita.")) {
             return;
         }
         setIsImporting(true);

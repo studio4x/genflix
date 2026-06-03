@@ -241,7 +241,7 @@ export function LessonMaterialsPanel() {
         <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
           <p className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">Acoes configuradas</p>
 
-          {isLoading ? (<p className="mt-4 text-sm text-slate-500">Carregando botoes...</p>) : actions.length === 0 ? (<div className="mt-4 rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-5 py-10 text-center text-sm text-slate-500">Nenhum botão configurado para est? aula.
+          {isLoading ? (<p className="mt-4 text-sm text-slate-500">Carregando botoes...</p>) : actions.length === 0 ? (<div className="mt-4 rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-5 py-10 text-center text-sm text-slate-500">Nenhum botão configurado para está aula.
             </div>) : (<div className="mt-4 grid gap-4">
               {actions.map((action) => (<article key={action.id} className="rounded-[24px] border border-slate-200 bg-slate-50/50 p-5">
                   <div className="flex flex-wrap items-start justify-between gap-4">

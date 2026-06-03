@@ -50,16 +50,16 @@ function buildRealContentModules(courseTree: NonNullable<ReturnType<typeof useCo
         return {
             title: module.title,
             lessonCount: items.length,
-            summary: items.length ? `${items.length} itens reais serão exibidos nesta se??o.` : "Este módulo ainda não possui itens publicados.",
+            summary: items.length ? `${items.length} itens reais serão exibidos nesta seção.` : "Este módulo ainda não possui itens publicados.",
             items,
             lessonLabel: items.length === 1 ? 'item' : 'itens',
         } satisfies GenflixCourseModule;
     });
     if (courseTree.courseAssessments.length) {
         modules.push({
-            title: courseTree.courseAssessments.length === 1 ? "Avalia??o final" : "Avalia??es finais",
+            title: courseTree.courseAssessments.length === 1 ? "Avaliação final" : "Avaliações finais",
             lessonCount: courseTree.courseAssessments.length,
-            summary: "Avalia??es de encerramento vinculadas ação curso.",
+            summary: "Avaliações de encerramento vinculadas ação curso.",
             items: courseTree.courseAssessments.map((assessment) => assessment.title).filter(Boolean),
             lessonLabel: courseTree.courseAssessments.length === 1 ? 'item' : 'itens',
         });
@@ -228,7 +228,7 @@ export function CoursePublicPagePanel() {
           <div className="mt-8 space-y-5">
               <label className="block space-y-2">
                 <span className="text-xs font-black uppercase tracking-widest text-slate-400">Categoria</span>
-                <input className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-5 py-3 text-sm font-semibold outline-none focus:border-cyan-400 focus:bg-white" value={form.category} onChange={(event) => updateField('category', event.target.value)} placeholder="Ex: Saude"/>
+                <input className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-5 py-3 text-sm font-semibold outline-none focus:border-cyan-400 focus:bg-white" value={form.category} onChange={(event) => updateField('category', event.target.value)} placeholder="Ex: Saúde"/>
               </label>
 
               <label className="block space-y-2">
@@ -261,7 +261,7 @@ export function CoursePublicPagePanel() {
         </section>
 
         <section className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm md:p-10">
-          <SectionHeading eyebrow="Sidebar" title="Mentor e itens inclusos" description="Os campos abaixo abastecem o card lateral: mentor, se??o bonus exibida abaixo do botão comprar e lista de beneficios do curso."/>
+          <SectionHeading eyebrow="Sidebar" title="Mentor e itens inclusos" description="Os campos abaixo abastecem o card lateral: mentor, seção bonus exibida abaixo do botão comprar e lista de beneficios do curso."/>
 
           <div className="mt-8 grid gap-5 md:grid-cols-2">
             <label className="block space-y-2">
@@ -270,22 +270,22 @@ export function CoursePublicPagePanel() {
             </label>
 
             <label className="block space-y-2">
-              <span className="text-xs font-black uppercase tracking-widest text-slate-400">Cargo / fun??o</span>
+              <span className="text-xs font-black uppercase tracking-widest text-slate-400">Cargo / função</span>
               <input className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-5 py-3 text-sm font-semibold outline-none focus:border-cyan-400 focus:bg-white" value={form.mentor_role} onChange={(event) => updateField('mentor_role', event.target.value)} required/>
             </label>
 
             <label className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-700 md:col-span-2">
               <input type="checkbox" checked={form.bonus_enabled} onChange={(event) => updateField('bonus_enabled', event.target.checked)}/>
-              Exibir se??o bonus abaixo do botão comprar
+              Exibir seção bonus abaixo do botão comprar
             </label>
 
             <label className="block space-y-2 md:col-span-2">
-              <span className="text-xs font-black uppercase tracking-widest text-slate-400">Título da se??o bonus</span>
+              <span className="text-xs font-black uppercase tracking-widest text-slate-400">Título da seção bonus</span>
               <input className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-5 py-3 text-sm font-semibold outline-none focus:border-cyan-400 focus:bg-white" value={form.bonus_title} onChange={(event) => updateField('bonus_title', event.target.value)} placeholder="Ex: Prévia de conteúdo" disabled={!form.bonus_enabled}/>
             </label>
 
             <label className="block space-y-2 md:col-span-2">
-              <span className="text-xs font-black uppercase tracking-widest text-slate-400">Descrição da se??o bonus</span>
+              <span className="text-xs font-black uppercase tracking-widest text-slate-400">Descrição da seção bonus</span>
               <textarea className="min-h-[120px] w-full rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4 text-sm font-medium leading-7 text-slate-700 outline-none focus:border-cyan-400 focus:bg-white" value={form.mentor_bio} onChange={(event) => updateField('mentor_bio', event.target.value)} placeholder="Ex: Tenha acesso a uma prévia completa dos principais tópicos do curso." disabled={!form.bonus_enabled}/>
             </label>
 
@@ -324,7 +324,7 @@ export function CoursePublicPagePanel() {
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <p className="text-sm font-black text-slate-900">Sobre o curso</p>
-                  <p className="text-xs font-medium text-slate-500">Cada campo abaixo representa um paragrafo exibido na se??o.</p>
+                  <p className="text-xs font-medium text-slate-500">Cada campo abaixo representa um paragrafo exibido na seção.</p>
                 </div>
                 <Button type="button" variant="outline" className="rounded-2xl" onClick={() => updateField('aboutParagraphs', [...form.aboutParagraphs, ''])}>
                   <Plus className="mr-2 h-4 w-4"/>
@@ -343,7 +343,7 @@ export function CoursePublicPagePanel() {
             <div className="space-y-3">
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <p className="text-sm font-black text-slate-900">O que voc? vai aprender</p>
+                  <p className="text-sm font-black text-slate-900">O que você vai aprender</p>
                   <p className="text-xs font-medium text-slate-500">Cards de destaque exibidos em duas colunas na página publica.</p>
                 </div>
                 <Button type="button" variant="outline" className="rounded-2xl" onClick={() => updateField('outcomes', [...form.outcomes, createEmptyOutcome()])}>
@@ -373,7 +373,7 @@ export function CoursePublicPagePanel() {
         </section>
 
         <section className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm md:p-10">
-          <SectionHeading eyebrow="Conteúdo do curso" title="Escolha entre outline real ou contedo personalizado" description="No modo real, a página pública lista apenas os nomes dos módulos, aulas e quizzes cadastrados no construtor. No modo personalizado, voc? controla os cards manualmente."/>
+          <SectionHeading eyebrow="Conteúdo do curso" title="Escolha entre outline real ou conteúdo personalizado" description="No modo real, a página pública lista apenas os nomes dos módulos, aulas e quizzes cadastrados no construtor. No modo personalizado, você controla os cards manualmente."/>
 
           <div className="mt-8 rounded-[28px] border border-slate-200 bg-slate-50 p-2">
             <div className="grid gap-2 md:grid-cols-2">
@@ -424,7 +424,7 @@ export function CoursePublicPagePanel() {
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <p className="text-sm font-black text-slate-900">Cards personalizados de conteúdo</p>
-                  <p className="text-xs font-medium text-slate-500">Estrutura igual ? se??o atual da página pública.</p>
+                  <p className="text-xs font-medium text-slate-500">Estrutura igual à seção atual da página pública.</p>
                 </div>
                 <Button type="button" variant="outline" className="rounded-2xl" onClick={() => updateField('customSyllabus', [...form.customSyllabus, createEmptyModule()])}>
                   <Plus className="mr-2 h-4 w-4"/>Adicionar módulo
