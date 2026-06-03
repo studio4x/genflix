@@ -32,9 +32,44 @@ function listChangedFiles() {
 
 function findEncodingArtifacts(content) {
   const artifacts = []
-  if (/Ã[\u0080-\u00BF]/u.test(content)) artifacts.push('Ã<continuation-byte>')
-  if (/Â[\u0080-\u00BF]/u.test(content)) artifacts.push('Â<continuation-byte>')
+  if (/Ãƒ[\u0080-\u00BF]/u.test(content)) artifacts.push('Ãƒ<continuation-byte>')
+  if (/Ã‚[\u0080-\u00BF]/u.test(content)) artifacts.push('Ã‚<continuation-byte>')
   if (/\uFFFD/u.test(content)) artifacts.push('replacement-char(U+FFFD)')
+  return artifacts
+}
+
+function findTextCorruptionArtifacts(content, filePath) {
+  const isTargetedUiFolder =
+    filePath.startsWith('src/pages/admin/builder/') ||
+    filePath.startsWith('src/features/admin/content/')
+
+  if (!isTargetedUiFolder) {
+    return []
+  }
+
+  const artifacts = []
+  const suspiciousStringPatterns = [
+    /[A-Za-zÀ-ÿ]{1,20}\?{1,3}[A-Za-zÀ-ÿ]{1,20}/u,
+    /[A-Za-zÀ-ÿ]{1,20}\?-[A-Za-zÀ-ÿ]{1,20}/u,
+    /[A-Za-zÀ-ÿ]{1,20}Ã[A-Za-zÀ-ÿ]/u,
+  ]
+  const stringLiteralPattern = /'([^'\\]*(?:\\.[^'\\]*)*)'|"([^"\\]*(?:\\.[^"\\]*)*)"|`([^`\\]*(?:\\.[^`\\]*)*)`/g
+
+  for (const line of content.split(/\r?\n/)) {
+    if (line.includes('http://') || line.includes('https://')) {
+      continue
+    }
+    for (const match of line.matchAll(stringLiteralPattern)) {
+      const literal = match[1] ?? match[2] ?? match[3] ?? ''
+      if (!literal) {
+        continue
+      }
+      if (suspiciousStringPatterns.some((pattern) => pattern.test(literal))) {
+        artifacts.push(`suspect-text:${literal}`)
+      }
+    }
+  }
+
   return artifacts
 }
 
@@ -44,7 +79,10 @@ const offenders = []
 for (const filePath of changedFiles) {
   if (!fs.existsSync(filePath)) continue
   const content = fs.readFileSync(filePath, 'utf8')
-  const artifacts = findEncodingArtifacts(content)
+  const artifacts = [
+    ...findEncodingArtifacts(content),
+    ...findTextCorruptionArtifacts(content, filePath),
+  ]
   if (artifacts.length > 0) {
     offenders.push({ filePath, artifacts })
   }
