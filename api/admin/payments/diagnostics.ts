@@ -237,7 +237,7 @@ async function buildAiCredentialsDiagnostics(context: {
       ? 'Credenciais disponíveis no banco de dados da plataforma.'
       : location === 'vercel'
         ? 'Credenciais disponíveis no ambiente do deploy.'
-        : 'Nenhuma fonte de credenciais foi encontrada.',
+      : 'Nenhuma fonte de credenciais foi encontrada.',
   });
 
   if (!hasOpenAiKey && !hasGeminiKey) {
@@ -277,8 +277,10 @@ async function buildAiCredentialsDiagnostics(context: {
     checks.push({
       key: 'supabase-management',
       label: 'Gerenciamento Supabase',
-      status: 'warning',
-      detail: 'SUPABASE_ACCESS_TOKEN ou SUPABASE_PROJECT_REF ausente.',
+      status: dbCredentials.openAiApiKey || dbCredentials.geminiApiKey ? 'ok' : 'warning',
+      detail: dbCredentials.openAiApiKey || dbCredentials.geminiApiKey
+        ? 'Gerenciamento direto opcional. As credenciais já estão persistidas no banco de dados.'
+        : 'SUPABASE_ACCESS_TOKEN ou SUPABASE_PROJECT_REF ausente.',
     });
   }
 
@@ -294,8 +296,10 @@ async function buildAiCredentialsDiagnostics(context: {
     checks.push({
       key: 'vercel-management',
       label: 'Gerenciamento Vercel',
-      status: 'warning',
-      detail: 'VERCEL_ACCESS_TOKEN/VERCEL_TOKEN, VERCEL_PROJECT_ID ou VERCEL_ORG_ID ausente.',
+      status: envOpenAiKey || envGeminiKey || dbCredentials.openAiApiKey || dbCredentials.geminiApiKey ? 'ok' : 'warning',
+      detail: envOpenAiKey || envGeminiKey || dbCredentials.openAiApiKey || dbCredentials.geminiApiKey
+        ? 'Gerenciamento direto opcional. A plataforma já possui fonte válida de credenciais de IA.'
+        : 'VERCEL_ACCESS_TOKEN/VERCEL_TOKEN, VERCEL_PROJECT_ID ou VERCEL_ORG_ID ausente.',
     });
   }
 
