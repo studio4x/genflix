@@ -213,6 +213,7 @@ export function AdminNarrationCredentialsPanel() {
           <span className="text-[10px] font-black uppercase tracking-[0.18em] text-[#5F7077]">OpenAI API Key (primaria)</span>
           <input
             type="password"
+            autoComplete="new-password"
             value={openAiApiKey}
             onChange={(event) => setOpenAiApiKey(event.target.value)}
             placeholder={diagnostics.hasOpenAiKey ? 'Ja configurada (digite apenas para substituir)' : 'sk-...'}
@@ -224,6 +225,7 @@ export function AdminNarrationCredentialsPanel() {
           <span className="text-[10px] font-black uppercase tracking-[0.18em] text-[#5F7077]">Gemini API Key (fallback)</span>
           <input
             type="password"
+            autoComplete="new-password"
             value={geminiApiKey}
             onChange={(event) => setGeminiApiKey(event.target.value)}
             placeholder={diagnostics.hasGeminiKey ? 'Ja configurada (digite apenas para substituir)' : 'AIza...'}
