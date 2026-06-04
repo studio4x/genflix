@@ -278,7 +278,7 @@ export function StudentAccountPage() {
 
           <div className="mt-6 grid gap-5 md:grid-cols-2">
             <label className="block space-y-2 md:col-span-2">
-              <span className="text-sm font-bold text-slate-700">N?ome completo</span>
+              <span className="text-sm font-bold text-slate-700">Nome completo</span>
               <input className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm font-medium text-slate-800 outline-none transition focus:border-blue-400 focus:bg-white" type="text" value={fullName} onChange={(event) => setFullName(event.target.value)} placeholder="Como você deseja aparecer na plataforma"/>
             </label>
 
@@ -412,7 +412,7 @@ export function StudentAccountPage() {
 
             <div className="mt-5 space-y-4">
               <label className="block space-y-2">
-                <span className="text-sm font-bold text-slate-700">N?ova imagem</span>
+                <span className="text-sm font-bold text-slate-700">Nova imagem</span>
                 <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" onChange={(event) => void handleAvatarChange(event)} className="block w-full cursor-pointer rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700 file:mr-4 file:rounded-xl file:border-0 file:bg-blue-600 file:px-4 file:py-2 file:font-bold file:text-white hover:file:bg-blue-700" disabled={isUploadingAvatar}/>
               </label>
 
@@ -441,7 +441,7 @@ export function StudentAccountPage() {
 
             <div className="mt-6 space-y-5">
               <label className="block space-y-2">
-                <span className="text-sm font-bold text-slate-700">N?ova senha</span>
+                <span className="text-sm font-bold text-slate-700">Nova senha</span>
                 <PasswordField className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm font-medium text-slate-800 outline-none transition focus:border-blue-400 focus:bg-white" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Mínimo de 8 caracteres" required/>
               </label>
 

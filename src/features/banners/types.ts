@@ -184,8 +184,8 @@ export const bannerTonePresetOptions: Array<{
     { value: 'surface', label: 'Superficie clara' },
 ];
 export const bannerElementLabels: Record<SiteBannerLayoutKey, string> = {
-    title: "T?tulo",
-    subtitle: "Subt?tulo",
+    title: 'Título',
+    subtitle: 'Subtítulo',
     body: 'Texto complementar',
     primaryCta: 'CTA principal',
     secondaryCta: 'CTA secundario',

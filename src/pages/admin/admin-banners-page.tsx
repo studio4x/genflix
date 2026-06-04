@@ -721,7 +721,7 @@ export function AdminBannersPage() {
         try {
             const created = await createSiteBanner(selectedLocationKey);
             await loadBanners(created.id);
-            setMessage("N?ovo banner criado. Configure o contedo e salve quando terminar.");
+            setMessage('Novo banner criado. Configure o conteúdo e salve quando terminar.');
         }
         catch (createError) {
             setError(createError instanceof Error ? createError.message : "N?o foi possvel criar o banner.");
@@ -1086,8 +1086,8 @@ export function AdminBannersPage() {
         }
         return overlay ? `${overlay}, url(${normalizedBackgroundUrl})` : `url(${normalizedBackgroundUrl})`;
     };
-    const canvasTitle = draft?.title.trim() || "T?tulo do banner";
-    const canvasSubtitle = draft?.subtitle.trim() || "Subt?tulo opcional";
+    const canvasTitle = draft?.title.trim() || 'Título do banner';
+    const canvasSubtitle = draft?.subtitle.trim() || 'Subtítulo opcional';
     const canvasBody = draft?.body.trim() || 'Texto complementar opcional';
     const isMobilePreview = previewMode === 'mobile';
     const previewHeight = draft ? (isMobilePreview ? draft.heightMobile : draft.heightDesktop) : 560;
@@ -1293,7 +1293,7 @@ export function AdminBannersPage() {
               Fechar tela cheia
             </Button>) : null}
           <Button type="button" onClick={() => void handleCreateCarousel()} disabled={saving} className="rounded-2xl bg-[#1398B7] px-5 font-black text-white hover:bg-[#1089A5]">
-            <Plus className="mr-2 h-4 w-4"/>N?ovo carrossel
+            <Plus className="mr-2 h-4 w-4"/>Novo carrossel
           </Button>
           <Button type="button" variant="outline" onClick={() => void handleDuplicateBanner()} disabled={!selectedBanner || saving} className="rounded-2xl border-[#D8E6EB]">
             <Copy className="mr-2 h-4 w-4"/>
@@ -1326,9 +1326,9 @@ export function AdminBannersPage() {
                 <select value={selectedLocationKey} onChange={(event) => setSelectedLocationKey(event.target.value)} className="h-9 rounded-xl border border-[#D8E6EB] bg-white px-3 text-xs font-black uppercase tracking-[0.12em] text-[#15323b]">
                   {locationKeys.map((key) => (<option key={key} value={key}>{key}</option>))}
                 </select>
-                <Button type="button" variant="outline" onClick={() => void handleCreateCarousel()} className="h-9 rounded-xl border-[#D8E6EB] px-3 text-[10px] font-black uppercase tracking-[0.12em]">N?ovo carrossel
+                <Button type="button" variant="outline" onClick={() => void handleCreateCarousel()} className="h-9 rounded-xl border-[#D8E6EB] px-3 text-[10px] font-black uppercase tracking-[0.12em]">Novo carrossel
                 </Button>
-                <Button type="button" onClick={() => void handleCreateBanner()} disabled={saving} className="h-9 rounded-xl bg-[#1398B7] px-3 text-[10px] font-black uppercase tracking-[0.12em] text-white hover:bg-[#1089A5]">N?ovo banner
+                <Button type="button" onClick={() => void handleCreateBanner()} disabled={saving} className="h-9 rounded-xl bg-[#1398B7] px-3 text-[10px] font-black uppercase tracking-[0.12em] text-white hover:bg-[#1089A5]">Novo banner
                 </Button>
               </div>
               <div className="rounded-full bg-[#E8F6FA] px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-[#1398B7]">
@@ -1387,15 +1387,15 @@ export function AdminBannersPage() {
 
             <div className="mt-6 rounded-[20px] border border-[#D8E6EB] bg-white p-4">
               <p className="text-[10px] font-black uppercase tracking-[0.16em] text-[#5F7077]">Exibicao do carrossel</p>
-              <p className="mt-1 text-xs font-semibold text-[#5F7077]">Defina em quais p?ginas e locais este carrossel deve aparecer.</p>
+              <p className="mt-1 text-xs font-semibold text-[#5F7077]">Defina em quais páginas e locais este carrossel deve aparecer.</p>
               <div className="mt-3 flex flex-wrap items-center gap-2">
                 <select value={targetPageKey} onChange={(event) => setTargetPageKey(event.target.value as SitePageKey)} className="h-9 rounded-xl border border-[#D8E6EB] bg-[#F8FBFC] px-3 text-xs font-semibold text-[#15323b]">
                   {pageOptions.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
                 </select>
                 <select value={targetPlacementKey} onChange={(event) => setTargetPlacementKey(event.target.value as SiteBannerPlacementKey)} className="h-9 rounded-xl border border-[#D8E6EB] bg-[#F8FBFC] px-3 text-xs font-semibold text-[#15323b]">
                   <option value="hero">Hero</option>
-                  <option value="mid">Meio da p?gina</option>
-                  <option value="footer">Rodape da p?gina</option>
+                  <option value="mid">Meio da página</option>
+                  <option value="footer">Rodapé da página</option>
                 </select>
                 <Button type="button" variant="outline" onClick={() => void handleAddCarouselTarget()} disabled={saving} className="h-9 rounded-xl border-[#D8E6EB] px-3 text-[10px] font-black uppercase tracking-[0.12em]">
                   Adicionar destino
@@ -1419,7 +1419,7 @@ export function AdminBannersPage() {
                 <div>
                   <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#1398B7]">Editor do banner</p>
                   <h2 className="mt-1 font-readex text-2xl font-semibold text-[#15323b]">{draft.name || 'Banner sem nome'}</h2>
-                  <p className="mt-2 text-sm font-semibold text-[#5F7077]">O preview fica est?vel ao lado dos cards de ajuste para facilitar a composicao do slide em tempo real.
+                  <p className="mt-2 text-sm font-semibold text-[#5F7077]">O preview fica estável ao lado dos cards de ajuste para facilitar a composição do slide em tempo real.
                     Base de desktop: 1920px de largura.
                   </p>
                 </div>
@@ -1431,7 +1431,7 @@ export function AdminBannersPage() {
                     Alinhar no canvas
                   </Button>
                   <Button type="button" variant="outline" onClick={() => setIsVersionsModalOpen(true)} disabled={saving} className="rounded-2xl border-[#D8E6EB]">
-                    <History className="mr-2 h-4 w-4"/>Revis?oes
+                    <History className="mr-2 h-4 w-4"/>Revisões
                   </Button>
                   <Button type="button" onClick={() => void handleSaveBanner()} disabled={saving || uploadingBackground !== null} className="rounded-2xl bg-[#1398B7] px-5 font-black text-white hover:bg-[#1089A5]">
                     <Save className="mr-2 h-4 w-4"/>
@@ -1473,7 +1473,7 @@ export function AdminBannersPage() {
 
                 <div className="xl:col-span-5 2xl:col-span-4">
                   <div className="grid gap-6 xl:max-h-[calc(100vh-9rem)] xl:overflow-y-auto xl:pr-2">
-                    <CollapsibleCard title="Contedo e imagem" summary="Troque a imagem, ajuste os textos-base e mantenha o preview visivel ao lado." open={expandedCards.content} onToggle={() => toggleCard('content')}>
+                    <CollapsibleCard title="Conteúdo e imagem" summary="Troque a imagem, ajuste os textos-base e mantenha o preview visível ao lado." open={expandedCards.content} onToggle={() => toggleCard('content')}>
                     <div className="grid gap-4">
                       <div className="rounded-[18px] border border-[#D8E6EB] bg-white p-4">
                         <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#5F7077]">Imagem de fundo</p>
@@ -1557,17 +1557,17 @@ export function AdminBannersPage() {
                       </div>
 
                       <label className="grid gap-2">
-                        <span className="text-[10px] font-black uppercase tracking-[0.18em] text-[#5F7077]">N?ome interno</span>
+                        <span className="text-[10px] font-black uppercase tracking-[0.18em] text-[#5F7077]">Nome interno</span>
                         <input value={draft.name} onChange={(event) => setDraftField('name', event.target.value)} className="h-11 rounded-[16px] border border-[#D8E6EB] bg-white px-4 text-sm font-semibold text-[#15323b] outline-none"/>
                       </label>
 
                       <label className="grid gap-2">
-                        <span className="text-[10px] font-black uppercase tracking-[0.18em] text-[#5F7077]">T?tulo</span>
+                        <span className="text-[10px] font-black uppercase tracking-[0.18em] text-[#5F7077]">Título</span>
                         <textarea value={draft.title} onChange={(event) => setDraftField('title', event.target.value)} rows={3} className="rounded-[16px] border border-[#D8E6EB] bg-white px-4 py-3 text-sm font-semibold text-[#15323b] outline-none"/>
                       </label>
 
                       <label className="grid gap-2">
-                        <span className="text-[10px] font-black uppercase tracking-[0.18em] text-[#5F7077]">Subt?tulo</span>
+                        <span className="text-[10px] font-black uppercase tracking-[0.18em] text-[#5F7077]">Subtítulo</span>
                         <textarea value={draft.subtitle} onChange={(event) => setDraftField('subtitle', event.target.value)} rows={4} className="rounded-[16px] border border-[#D8E6EB] bg-white px-4 py-3 text-sm font-semibold text-[#15323b] outline-none"/>
                       </label>
 
@@ -1611,8 +1611,8 @@ export function AdminBannersPage() {
                 globalLinkOpenInNewTab: event.target.value !== 'same-tab',
             }) : current)} className="h-11 rounded-[16px] border border-[#D8E6EB] bg-white px-4 text-sm font-semibold text-[#15323b] outline-none">
                               <option value="same-tab">Mesma aba</option>
-                              <option value="new-tab">N?ova aba</option>
-                              <option value="new-window">N?ova janela</option>
+                              <option value="new-tab">Nova aba</option>
+                              <option value="new-window">Nova janela</option>
                             </select>
                           </label>
                         </div>
@@ -1620,11 +1620,11 @@ export function AdminBannersPage() {
                     </div>
                     </CollapsibleCard>
 
-                    <CollapsibleCard title={`Composicao ${activeLayoutLabel}`} summary={`Ajuste t?tulos e textos no layout ${activeLayoutLabel}, mantendo o preview ao lado.`} open={expandedCards.composition} onToggle={() => toggleCard('composition')}>
+                    <CollapsibleCard title={`Composição ${activeLayoutLabel}`} summary={`Ajuste títulos e textos no layout ${activeLayoutLabel}, mantendo o preview ao lado.`} open={expandedCards.composition} onToggle={() => toggleCard('composition')}>
                     <div className="grid gap-3">
                       <div className="rounded-[18px] border border-[#D8E6EB] bg-white p-3">
                         <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Altura do banner</p>
-                        <p className="mt-1 text-[10px] font-semibold text-[#7C8E94]">A largura de referencia do desktop e 1920px. N?o mobile, use 420px como base recomendada.</p>
+                        <p className="mt-1 text-[10px] font-semibold text-[#7C8E94]">A largura de referência do desktop é 1920px. No mobile, use 420px como base recomendada.</p>
                         <div className="mt-3 grid gap-3 sm:grid-cols-2">
                           <label className="grid gap-2">
                             <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Desktop (px)</span>
@@ -1686,7 +1686,7 @@ export function AdminBannersPage() {
                         const value = event.target.value as 'left' | 'center' | 'right' | '';
                         setElementStyle(layoutKey, (current) => ({ ...current, textAlign: value || undefined }));
                     }} className="h-11 rounded-[16px] border border-[#D8E6EB] bg-white px-4 text-sm font-semibold text-[#15323b] outline-none">
-                                  <option value="">Padrao</option>
+                                  <option value="">Padrão</option>
                                   <option value="left">Esquerda</option>
                                   <option value="center">Centro</option>
                                   <option value="right">Direita</option>
@@ -1774,7 +1774,7 @@ export function AdminBannersPage() {
                     }} minWidth={getMinWidthForLayoutKey(key)} onWidthChange={(width) => setLayoutItem(key, (current) => applyWidthWithinCanvas(current, width, getMinWidthForLayoutKey(key)))} onZIndexChange={(nextValue) => setLayoutItem(key, (current) => ({ ...current, zIndex: nextValue }))}/>
 
                             <label className="grid gap-2">
-                              <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Texto do botao</span>
+                              <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Texto do botão</span>
                               <input value={cta?.label ?? ''} onChange={(event) => setCta(key, (current) => ({
                         ...(current ?? {
                             href: '#',

@@ -100,10 +100,10 @@ export function GenflixNewsletterSection({ id = 'newsletter', entryPrefix = 'glo
                         <div className="flex items-start justify-between gap-4">
                           <div>
                             <p className="text-[10px] font-black uppercase tracking-[0.22em] !text-white">
-                              <EditableText entryKey={`${entryPrefix}.form.interest.title`} fallback="Areas de interesse" label="T?tulo das areas da newsletter" pageKey={pageKey}/>
+                              <EditableText entryKey={`${entryPrefix}.form.interest.title`} fallback="Áreas de interesse" label="Título das áreas da newsletter" pageKey={pageKey}/>
                             </p>
                             <p className="mt-2 text-sm leading-6 !text-white">
-                              <EditableText entryKey={`${entryPrefix}.form.interest.description`} fallback="Selecione as areas que mais combinam com o seu foco de estudos." label="Descrio das areas da newsletter" pageKey={pageKey}/>
+                              <EditableText entryKey={`${entryPrefix}.form.interest.description`} fallback="Selecione as áreas que mais combinam com o seu foco de estudos." label="Descrição das áreas da newsletter" pageKey={pageKey}/>
                             </p>
                           </div>
                         </div>
@@ -117,7 +117,7 @@ export function GenflixNewsletterSection({ id = 'newsletter', entryPrefix = 'glo
                 ].join(' ')}>
                             <input type="checkbox" checked={areAllInterestAreasSelected} onChange={(event) => setAllInterestAreas(event.target.checked)} className="h-4 w-4 rounded border-white/40 text-[#1398B7] focus:ring-[#1398B7]"/>
                             <span className="!text-white">
-                              <EditableText entryKey={`${entryPrefix}.form.interest.all_label`} fallback="Todas as areas" label="Rotulo todas as areas da newsletter" pageKey={pageKey}/>
+                              <EditableText entryKey={`${entryPrefix}.form.interest.all_label`} fallback="Todas as áreas" label="Rótulo todas as áreas da newsletter" pageKey={pageKey}/>
                             </span>
                           </label>
 
@@ -131,7 +131,7 @@ export function GenflixNewsletterSection({ id = 'newsletter', entryPrefix = 'glo
                         ].join(' ')}>
                                 <input type="checkbox" checked={isSelected} onChange={() => toggleInterestArea(area)} className="h-4 w-4 rounded border-white/40 text-[#1398B7] focus:ring-[#1398B7]"/>
                                 <span className="!text-white">
-                                  <EditableText entryKey={`${entryPrefix}.form.interest.option.${area.toLowerCase().replace(/[^a-z0-9]+/g, '_')}`} fallback={area} label={`Rotulo da area ${area}`} pageKey={pageKey}/>
+                                  <EditableText entryKey={`${entryPrefix}.form.interest.option.${area.toLowerCase().replace(/[^a-z0-9]+/g, '_')}`} fallback={area} label={`Rótulo da área ${area}`} pageKey={pageKey}/>
                                 </span>
                               </label>);
                 })}

@@ -148,7 +148,7 @@ export function AdminBrandingSettingsPage() {
         <article className="border border-[#D8E6EB] bg-white p-5 shadow-sm">
           <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#5F7077]">Favicon</p>
           <p className="mt-3 font-readex text-2xl font-semibold tracking-tight text-[#15323b]">
-            {summary.favicon ? 'Ativo' : 'Padrao'}
+            {summary.favicon ? 'Ativo' : 'Padrão'}
           </p>
           <p className="mt-2 text-xs font-semibold text-[#5F7077]">Atualizado em runtime no navegador.</p>
         </article>
@@ -172,7 +172,7 @@ export function AdminBrandingSettingsPage() {
                                 : 'border-[#D8E6EB] bg-[#F7FBFC]',
                     ].join(' ')}>
                 {card.previewTone === 'favicon' ? (currentAsset?.src ? (<img src={currentAsset.src} alt={currentAsset.alt || 'Favicon'} className="h-16 w-16 rounded-[18px] object-contain shadow-sm"/>) : (<div className="flex h-16 w-16 items-center justify-center rounded-[18px] border border-dashed border-[#B8CDD4] text-[11px] font-black uppercase tracking-[0.18em] text-[#5F7077]">
-                      Padrao
+                      Padrão
                     </div>)) : (<GenflixLogo theme={card.previewTone} className="origin-center scale-110"/>)}
               </div>
 

@@ -79,7 +79,7 @@ export function AdminButtonTemplatesPage() {
         }
     }
     async function handleDelete(template: ButtonTemplate) {
-        if (!window.confirm(`Excluir o padrao "${template.name}"`))
+        if (!window.confirm(`Excluir o padrão "${template.name}"`))
             return;
         try {
             await deleteButtonTemplate(template.id);
@@ -94,26 +94,26 @@ export function AdminButtonTemplatesPage() {
     }
     return (<div className="space-y-8">
       <div className="border-b border-slate-200 pb-5">
-        <h2 className="text-2xl font-extrabold tracking-tight text-slate-900">Padroes de Botoes das Aulas</h2>
+        <h2 className="text-2xl font-extrabold tracking-tight text-slate-900">Padrões de Botões das Aulas</h2>
         <p className="mt-1 text-sm text-slate-500">
-          Defina o visual, o rotulo padrao e o icone que poderao ser usados no rodape de cada aula.
+          Defina o visual, o rótulo padrão e o ícone que poderão ser usados no rodapé de cada aula.
         </p>
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[380px_minmax(0,1fr)]">
         <section className="rounded-[28px] border border-slate-200 bg-slate-50/60 p-6">
           <h3 className="text-sm font-black uppercase tracking-[0.22em] text-slate-400">
-            {editingId ? 'Editar padrao' : "N?ovo padrao"}
+            {editingId ? 'Editar padrão' : 'Novo padrão'}
           </h3>
 
           <div className="mt-5 space-y-4">
             <label className="block space-y-2">
-              <span className="text-sm font-bold text-slate-700">N?ome interno</span>
+              <span className="text-sm font-bold text-slate-700">Nome interno</span>
               <input className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm" value={form.name} onChange={(event) => setForm((prev) => ({ ...prev, name: event.target.value }))}/>
             </label>
 
             <label className="block space-y-2">
-              <span className="text-sm font-bold text-slate-700">Rotulo padrao</span>
+              <span className="text-sm font-bold text-slate-700">Rótulo padrão</span>
               <input className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm" value={form.default_label} onChange={(event) => setForm((prev) => ({ ...prev, default_label: event.target.value }))}/>
             </label>
 
@@ -148,7 +148,7 @@ export function AdminButtonTemplatesPage() {
 
             <label className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3">
               <input type="checkbox" checked={form.is_active} onChange={(event) => setForm((prev) => ({ ...prev, is_active: event.target.checked }))}/>
-              <span className="text-sm font-bold text-slate-700">Padrao ativo</span>
+              <span className="text-sm font-bold text-slate-700">Padrão ativo</span>
             </label>
           </div>
 
@@ -158,7 +158,7 @@ export function AdminButtonTemplatesPage() {
 
           <div className="mt-6 flex gap-3">
             <Button className="flex-1 rounded-2xl bg-blue-600 hover:bg-blue-700" disabled={isSaving} onClick={() => void handleSubmit()}>
-              {isSaving ? 'Salvando...' : editingId ? 'Salvar Padrao' : 'Criar Padrao'}
+              {isSaving ? 'Salvando...' : editingId ? 'Salvar Padrão' : 'Criar Padrão'}
             </Button>
             {editingId ? (<Button variant="outline" className="rounded-2xl" onClick={resetForm}>
                 Cancelar
@@ -166,14 +166,14 @@ export function AdminButtonTemplatesPage() {
           </div>
 
           <div className="mt-6 rounded-[24px] border border-slate-200 bg-white p-4">
-            <p className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">Preview do botao</p>
+            <p className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">Preview do botão</p>
             <div className="mt-4">
               <Button type="button" variant="outline" className={getLessonFooterButtonClassName({
             variant: form.variant,
             theme: form.theme,
         })}>
                 {renderButtonTemplateIcon(form.icon)}
-                {form.default_label || "N?ome do Botao"}
+                {form.default_label || 'Nome do Botão'}
               </Button>
             </div>
           </div>
@@ -182,8 +182,8 @@ export function AdminButtonTemplatesPage() {
         <section className="rounded-[28px] border border-slate-200 bg-white p-6">
           <h3 className="text-sm font-black uppercase tracking-[0.22em] text-slate-400">Catalogo</h3>
 
-          {isLoading ? (<p className="mt-5 text-sm text-slate-500">Carregando padroes...</p>) : templates.length === 0 ? (<div className="mt-5 rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-5 py-10 text-center text-sm text-slate-500">
-              Nenhum padrao encontrado.
+          {isLoading ? (<p className="mt-5 text-sm text-slate-500">Carregando padrões...</p>) : templates.length === 0 ? (<div className="mt-5 rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-5 py-10 text-center text-sm text-slate-500">
+              Nenhum padrão encontrado.
             </div>) : (<div className="mt-5 grid gap-4">
               {templates.map((template) => (<article key={template.id} className="rounded-[24px] border border-slate-200 bg-slate-50/60 p-5">
                   <div className="flex flex-wrap items-start justify-between gap-4">

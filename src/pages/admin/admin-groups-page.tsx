@@ -180,7 +180,7 @@ export function AdminGroupsPage() {
       <form className="grid gap-4 rounded-lg border bg-slate-50 p-4" onSubmit={handleGroupSubmit}>
         <div className="grid gap-4 md:grid-cols-2">
           <label className="space-y-1">
-            <span className="text-sm text-slate-700">N?ome do grupo</span>
+            <span className="text-sm text-slate-700">Nome do grupo</span>
             <input className="w-full rounded-md border px-3 py-2 text-sm" value={groupForm.name} onChange={(event) => setGroupForm((prev) => ({ ...prev, name: event.target.value }))} required/>
           </label>
 

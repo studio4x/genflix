@@ -1057,7 +1057,7 @@ function ListItemEditorCard({ item, index, total, depth = 0, onChange, onMove, o
               </label>
               <label className="grid gap-1.5">
                 <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Label</span>
-                <input value={item.label ?? ''} onChange={(event) => updateField('label', event.target.value)} className="h-11 rounded-[14px] border border-[#D8E6EB] px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]" placeholder="N?ome exibido no editor"/>
+                <input value={item.label ?? ''} onChange={(event) => updateField('label', event.target.value)} className="h-11 rounded-[14px] border border-[#D8E6EB] px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]" placeholder="Nome exibido no editor"/>
               </label>
               <label className="grid gap-1.5 md:col-span-2">
                 <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Título opcional</span>
@@ -1152,7 +1152,7 @@ function ListItemEditorCard({ item, index, total, depth = 0, onChange, onMove, o
           </div>) : (<>
         <div className="mt-4 grid gap-3 md:grid-cols-2">
           <label className="grid gap-1.5">
-            <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">N?ome do bloco</span>
+            <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Nome do bloco</span>
             <input value={item.label ?? ''} onChange={(event) => updateField('label', event.target.value)} className="h-11 rounded-[14px] border border-[#D8E6EB] px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]"/>
           </label>
           <label className="grid gap-1.5 md:col-span-2">
@@ -1322,7 +1322,7 @@ function ListItemEditorCard({ item, index, total, depth = 0, onChange, onMove, o
 
       <div className={cn('mt-4 grid gap-3 md:grid-cols-2', isCollapsed && 'hidden')}>
         <label className="grid gap-1.5">
-          <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Texto do botao opcional</span>
+          <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Texto do botão opcional</span>
           <input value={buttonLabel} onChange={(event) => updateMetadataField('buttonLabel', event.target.value)} className="h-11 rounded-[14px] border border-[#D8E6EB] px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]" placeholder="Ex.: Falar com a equipe"/>
         </label>
         <div className="grid gap-2 md:grid-cols-3 md:col-span-2">
@@ -1331,7 +1331,7 @@ function ListItemEditorCard({ item, index, total, depth = 0, onChange, onMove, o
             <input type="checkbox" checked={isInternal} onChange={(event) => updateMetadataField('isInternal', event.target.checked)}/>
           </label>
           <label className="flex items-center justify-between rounded-[14px] border border-[#D8E6EB] px-3 py-3 text-sm font-semibold text-[#15323b]">
-            <span>N?ova aba</span>
+            <span>Nova aba</span>
             <input type="checkbox" checked={openInNewTab} onChange={(event) => updateMetadataField('openInNewTab', event.target.checked)}/>
           </label>
           <label className="flex items-center justify-between rounded-[14px] border border-[#D8E6EB] px-3 py-3 text-sm font-semibold text-[#15323b]">
@@ -1349,7 +1349,7 @@ function ListItemEditorCard({ item, index, total, depth = 0, onChange, onMove, o
             </div>
             <button type="button" onClick={() => updateNestedItems([
                 ...nestedItems,
-                { id: `item-${nestedItems.length + 1}`, label: "N?ovo item", href: '#' },
+                { id: `item-${nestedItems.length + 1}`, label: 'Novo item', href: '#' },
             ])} className="rounded-full border border-[#D8E6EB] px-3 py-2 text-[10px] font-black uppercase tracking-[0.14em] text-[#0A3640] hover:bg-white">
               Adicionar item
             </button>
@@ -2167,7 +2167,7 @@ function EditorModal({ editor, onClose, onSaved, }: {
                   <div className="flex flex-wrap gap-2">
                     {listEditorConfig.templates.length === 0 ? (<button type="button" onClick={() => updateListEditor([
                     ...normalizeEditableListItems(parsedPreview.value),
-                    { id: `item-${previewList.length + 1}`, label: "N?ovo item" },
+                    { id: `item-${previewList.length + 1}`, label: 'Novo item' },
                 ])} className="rounded-full border border-[#D8E6EB] px-4 py-2 text-[10px] font-black uppercase tracking-[0.14em] text-[#0A3640] hover:bg-white">
                         {listEditorConfig.addLabel}
                       </button>) : null}
@@ -2211,7 +2211,7 @@ function EditorModal({ editor, onClose, onSaved, }: {
                         ? createListItemFromTemplate(template, listEditorConfig)
                         : {
                             id: `item-${Date.now()}`,
-                            label: "N?ovo bloco",
+                            label: 'Novo bloco',
                             description: '',
                         };
                     nextItems.splice(insertIndex + 1, 0, nextItem);
@@ -2327,7 +2327,7 @@ function EditorModal({ editor, onClose, onSaved, }: {
                     ['menuColor', 'Cor do menu'],
                     ['menuActiveColor', 'Cor ativa do menu'],
                     ['menuHoverColor', 'Cor de hover do menu'],
-                    ['pageBackgroundColor', 'Cor de fundo da p?gina'],
+                    ['pageBackgroundColor', 'Cor de fundo da página'],
                 ] as const).map(([field, label]) => (<label key={field} className="grid gap-1.5">
                           <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">{label}</span>
                           <div className="flex items-center gap-3">
@@ -2406,7 +2406,7 @@ function EditorModal({ editor, onClose, onSaved, }: {
                     </label>
                     {editor.entryType === 'button' ? (<div className="md:col-span-2">
                         <div className="flex items-center justify-between gap-3">
-                          <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Padrao de botoes</span>
+                          <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Padrão de botões</span>
                           <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#8BA0A7]">Clique para trocar o estilo</span>
                         </div>
                         <div className="mt-3 grid gap-3 lg:grid-cols-2">
@@ -2429,7 +2429,7 @@ function EditorModal({ editor, onClose, onSaved, }: {
                                     <div className="h-11 w-full justify-between px-4 text-[13px]">
                                       {typeof previewRecord.label === 'string' && previewRecord.label.trim() !== ''
                                 ? previewRecord.label
-                                : 'Botao de exemplo'}
+                                : 'Botão de exemplo'}
                                     </div>
                                   </GenflixCtaButton>
                                 </div>
@@ -2443,7 +2443,7 @@ function EditorModal({ editor, onClose, onSaved, }: {
                         <input type="checkbox" checked={previewRecord.isInternal === true} onChange={(event) => updateRecordEditor({ ...previewRecord, isInternal: event.target.checked })}/>
                       </label>
                       <label className="flex items-center justify-between rounded-[14px] border border-[#D8E6EB] bg-white px-3 py-3 text-sm font-semibold text-[#15323b]">
-                        <span>N?ova aba</span>
+                        <span>Nova aba</span>
                         <input type="checkbox" checked={previewRecord.openInNewTab === true} onChange={(event) => updateRecordEditor({ ...previewRecord, openInNewTab: event.target.checked })}/>
                       </label>
                       <label className="flex items-center justify-between rounded-[14px] border border-[#D8E6EB] bg-white px-3 py-3 text-sm font-semibold text-[#15323b]">
@@ -2634,7 +2634,7 @@ function EditorModal({ editor, onClose, onSaved, }: {
                     <div className="grid gap-3">
                       <div className="grid w-full gap-2 sm:grid-cols-2 xl:grid-cols-3">
                         <button type="button" onClick={() => setTextStyle((current) => ({ ...current, fontFamily: undefined }))} className={cn('w-full rounded-[16px] border px-4 py-3 text-left transition-all', textStyle.fontFamily ? 'border-[#D8E6EB] bg-white text-[#15323b] hover:bg-[#F2F7F9]' : 'border-[#1398B7] bg-[#E8F6FA] text-[#0A3640]')}>
-                          <span className="block text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Padrao</span>
+                          <span className="block text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Padrão</span>
                           <span className="mt-1 block text-sm font-semibold">Herda a fonte base do site</span>
                         </button>
                         {SITE_TEXT_FONT_PRESETS.map((fontPreset) => {

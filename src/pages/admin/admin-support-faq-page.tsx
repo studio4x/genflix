@@ -445,7 +445,7 @@ export function AdminSupportFaqPage() {
             </div>
 
             <article className="rounded-[22px] border border-[#D8E6EB] bg-[#F8FBFC] p-4">
-              <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#5F7077]">N?ova pergunta frequente</p>
+              <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#5F7077]">Nova pergunta frequente</p>
               <div className="mt-3 grid gap-2 lg:grid-cols-[180px_120px_1fr]">
                 <select value={newDraft.category_key} onChange={(event) => setNewDraft((current) => ({ ...current, category_key: event.target.value }))} className="h-10 rounded-[12px] border border-[#D8E6EB] bg-white px-3 text-sm font-semibold text-[#15323b] outline-none">
                   {faqCategoryOptions.map((item) => (<option key={item.key} value={item.key}>{item.label}</option>))}
@@ -458,7 +458,7 @@ export function AdminSupportFaqPage() {
               </div>
               <input value={newDraft.question} onChange={(event) => setNewDraft((current) => ({ ...current, question: event.target.value }))} placeholder="Pergunta" className="mt-2 h-10 w-full rounded-[12px] border border-[#D8E6EB] bg-white px-3 text-sm font-semibold text-[#15323b] outline-none"/>
               <textarea value={newDraft.answer} onChange={(event) => setNewDraft((current) => ({ ...current, answer: event.target.value }))} placeholder="Resposta" className="mt-2 min-h-24 w-full rounded-[12px] border border-[#D8E6EB] bg-white px-3 py-2 text-sm font-medium text-[#15323b] outline-none"/>
-              <Button type="button" onClick={() => void handleCreate()} disabled={isSaving === 'new'} className="mt-3 h-11 w-full rounded-[12px] px-4 text-sm font-black">N?ova pergunta frequente
+              <Button type="button" onClick={() => void handleCreate()} disabled={isSaving === 'new'} className="mt-3 h-11 w-full rounded-[12px] px-4 text-sm font-black">Nova pergunta frequente
               </Button>
             </article>
           </div>) : null}
@@ -470,7 +470,7 @@ export function AdminSupportFaqPage() {
             </div>
             <p className="mt-2 text-sm text-[#5F7077]">Categorias usadas na FAQ. Voc? pode adicionar novas categorias personalizadas diretamente por est? aba.</p>
             <div className="mt-4 rounded-[14px] border border-[#D8E6EB] bg-white p-3">
-              <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#5F7077]">N?ova categoria</p>
+              <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#5F7077]">Nova categoria</p>
               <div className="mt-2 flex flex-col gap-2 sm:flex-row">
                 <input value={newCategoryName} onChange={(event) => setNewCategoryName(event.target.value)} placeholder="Ex.: Certificados" className="h-10 w-full rounded-[12px] border border-[#D8E6EB] bg-white px-3 text-sm font-semibold text-[#15323b] outline-none"/>
                 <Button type="button" onClick={() => {
@@ -511,7 +511,7 @@ export function AdminSupportFaqPage() {
               <FileText className="h-4 w-4 text-[#1398B7]"/>
               <p className="text-sm font-semibold text-[#15323b]">FAQ Admin / Feedback</p>
             </div>
-            <p className="mt-2 text-sm text-[#5F7077]">Esta aba mostra votos de utilidade enviados na secao de perguntas frequentes da p?gina publica de suporte.</p>
+            <p className="mt-2 text-sm text-[#5F7077]">Esta aba mostra votos de utilidade enviados na seção de perguntas frequentes da página pública de suporte.</p>
             <div className="mt-4 grid gap-3 sm:grid-cols-3">
               <article className="rounded-[14px] border border-[#D8E6EB] bg-white p-3">
                 <p className="text-xs font-semibold text-[#5F7077]">Votos uteis</p>
@@ -533,7 +533,7 @@ export function AdminSupportFaqPage() {
               <FileText className="h-4 w-4 text-[#1398B7]"/>
               <p className="text-sm font-semibold text-[#15323b]">FAQ Admin / Sugestoes</p>
             </div>
-            <p className="mt-2 text-sm text-[#5F7077]">Sugestoes enviadas pelos usurios quando a busca n?o encontra correspondencia na p?gina publica de suporte.</p>
+            <p className="mt-2 text-sm text-[#5F7077]">Sugestões enviadas pelos usuários quando a busca não encontra correspondência na página pública de suporte.</p>
             <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
               <article className="rounded-[14px] border border-[#D8E6EB] bg-white p-3">
                 <p className="text-xs font-semibold text-[#5F7077]">Total de sugestoes</p>
@@ -574,7 +574,7 @@ export function AdminSupportFaqPage() {
             <div className="flex items-center gap-2">
               <p className="text-sm font-semibold text-[#15323b]">FAQ Admin / Analytics</p>
             </div>
-            <p className="mt-2 text-sm text-[#5F7077]">Esta aba consolida eventos de busca sem resultado capturados na busca de FAQ da p?gina publica de suporte.</p>
+            <p className="mt-2 text-sm text-[#5F7077]">Esta aba consolida eventos de busca sem resultado capturados na busca de FAQ da página pública de suporte.</p>
             <div className="mt-4 rounded-[14px] border border-[#D8E6EB] bg-white p-3">
               <p className="text-xs font-semibold text-[#5F7077]">Buscas sem resultado no periodo</p>
               <p className="mt-1 text-xl font-black text-[#15323b]">{analyticsSummary.noResultCount}</p>

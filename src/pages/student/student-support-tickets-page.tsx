@@ -73,7 +73,7 @@ export function StudentSupportTicketsPage({ contextLabel = 'Aluno', supportBaseP
           <Button type="button" variant="outline" asChild className="h-11 rounded-2xl border-[#D8E6EB] bg-white font-black text-[#15323b]">
             <Link to="/suporte">Ver FAQs</Link>
           </Button>
-          <Button type="button" onClick={() => setIsModalOpen(true)} className="h-11 rounded-2xl bg-gradient-to-b from-[#1398B7] to-[#0A3640] font-black text-white hover:opacity-95">N?ovo chamado
+          <Button type="button" onClick={() => setIsModalOpen(true)} className="h-11 rounded-2xl bg-gradient-to-b from-[#1398B7] to-[#0A3640] font-black text-white hover:opacity-95">Novo chamado
           </Button>
         </div>
       </header>

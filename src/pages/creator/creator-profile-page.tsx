@@ -153,7 +153,7 @@ export function CreatorProfilePage() {
           <h2 className="font-readex text-xl font-semibold text-[#15323b]">Dados do perfil</h2>
           <div className="mt-5 space-y-4">
             <label className="block">
-              <span className="text-xs font-black uppercase tracking-[0.2em] text-[#5F7077]">N?ome</span>
+              <span className="text-xs font-black uppercase tracking-[0.2em] text-[#5F7077]">Nome</span>
               <input value={fullName} onChange={(event) => setFullName(event.target.value)} className="mt-2 h-12 w-full rounded-2xl border border-[#D8E6EB] bg-white px-4 text-sm font-semibold outline-none focus:border-[#1398B7]" placeholder="Seu nome"/>
             </label>
             <label className="block">
@@ -203,7 +203,7 @@ export function CreatorProfilePage() {
             <h2 className="font-readex text-xl font-semibold text-[#15323b]">Seguranca</h2>
             <div className="mt-5 space-y-4">
               <label className="block">
-                <span className="text-xs font-black uppercase tracking-[0.2em] text-[#5F7077]">N?ova senha</span>
+                <span className="text-xs font-black uppercase tracking-[0.2em] text-[#5F7077]">Nova senha</span>
                 <PasswordField value={newPassword} onChange={(event) => setNewPassword(event.target.value)} minLength={8} className="mt-2 h-12 w-full rounded-2xl border border-[#D8E6EB] bg-white px-4 text-sm font-semibold outline-none focus:border-[#1398B7]" placeholder="Digite a nova senha" required/>
               </label>
             </div>
@@ -228,8 +228,8 @@ export function CreatorProfilePage() {
 
         <div className="mt-5 grid gap-4 md:grid-cols-2">
           <label className="block">
-            <span className="text-xs font-black uppercase tracking-[0.2em] text-[#5F7077]">N?ome do favorecido</span>
-            <input value={payoutName} onChange={(event) => setPayoutName(event.target.value)} className="mt-2 h-12 w-full rounded-2xl border border-[#D8E6EB] bg-white px-4 text-sm font-semibold outline-none focus:border-[#1398B7]" placeholder="N?ome completo ou razão social"/>
+            <span className="text-xs font-black uppercase tracking-[0.2em] text-[#5F7077]">Nome do favorecido</span>
+            <input value={payoutName} onChange={(event) => setPayoutName(event.target.value)} className="mt-2 h-12 w-full rounded-2xl border border-[#D8E6EB] bg-white px-4 text-sm font-semibold outline-none focus:border-[#1398B7]" placeholder="Nome completo ou razão social"/>
           </label>
 
           <label className="block">

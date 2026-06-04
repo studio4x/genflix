@@ -215,7 +215,7 @@ function normalizeInteractionContent(content: AssessmentInteractionContent, curr
         }
         const nextToken = {
             id: crypto.randomUUID(),
-            label: `Rotulo ${index + 1}`,
+            label: `Rótulo ${index + 1}`,
         };
         usedTokenIds.add(nextToken.id);
         return nextToken;
@@ -1529,7 +1529,7 @@ ${SVG_COLORING_EXAMPLE}`} className="min-h-[360px] w-full rounded-[28px] border 
                     <select className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 focus:border-cyan-300 focus:ring-4 focus:ring-cyan-100" value={assignedTokenBySlot.get(target.id) ?? ''} onChange={(event) => updateSlotAnswer(target.id, event.target.value)}>
                       <option value="" disabled>Selecione um item</option>
                       {content.tokens.map((token, tokenIndex) => (<option key={token.id} value={token.id}>
-                          {token.label.trim() || `${isColoringPointMode ? 'Cor' : 'Rotulo'} ${tokenIndex + 1}`}
+                          {token.label.trim() || `${isColoringPointMode ? 'Cor' : 'Rótulo'} ${tokenIndex + 1}`}
                         </option>))}
                     </select>
                   </label>
@@ -1584,7 +1584,7 @@ ${SVG_COLORING_EXAMPLE}`} className="min-h-[360px] w-full rounded-[28px] border 
                     {target.label?.trim() || `${targetLabelPrefix} ${index + 1}`}
                   </p>
                   <p className="mt-2 text-xs font-semibold text-slate-500">
-                    {content.kind === 'coloring' ? 'Cor' : 'Resposta'}: {assignedToken?.label.trim() || `${isColoringPointMode ? 'Cor' : 'Rotulo'} ${index + 1}`}
+                    {content.kind === 'coloring' ? 'Cor' : 'Resposta'}: {assignedToken?.label.trim() || `${isColoringPointMode ? 'Cor' : 'Rótulo'} ${index + 1}`}
                   </p>
                 </button>);
                 })}

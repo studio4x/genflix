@@ -379,7 +379,7 @@ Essa a\u00E7\u00E3o \u00E9 irrevers\u00EDvel.`);
                </Button>
 
                <Button onClick={openNewCourseForm} className="bg-blue-600 hover:bg-blue-700 text-white font-bold h-12 px-6 rounded-2xl shadow-xl shadow-blue-100 flex items-center gap-2 group transition-all transform active:scale-95">
-                 <svg className="h-5 w-5 transition-transform group-hover:rotate-90" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4"/></svg>Adicionar N?ovo Curso
+                 <svg className="h-5 w-5 transition-transform group-hover:rotate-90" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4"/></svg>Adicionar Novo Curso
                </Button>
              </>) : null}
         </div>
@@ -435,8 +435,8 @@ Essa a\u00E7\u00E3o \u00E9 irrevers\u00EDvel.`);
       <section className="rounded-[32px] border border-slate-100 bg-white p-6 shadow-sm">
          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <div>
-               <h3 className="text-lg font-black tracking-tight text-slate-900">Ordem de Exibicao dos Cursos</h3>
-               <p className="text-sm font-medium text-slate-500">Recurso recolhido por padrao para n?o ocupar a tela.
+               <h3 className="text-lg font-black tracking-tight text-slate-900">Ordem de Exibição dos Cursos</h3>
+               <p className="text-sm font-medium text-slate-500">Recurso recolhido por padrão para não ocupar a tela.
                </p>
             </div>
             <div className="flex items-center gap-3">
@@ -448,7 +448,7 @@ Essa a\u00E7\u00E3o \u00E9 irrevers\u00EDvel.`);
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={isDisplayOrderPanelOpen ? 'M19 9l-7 7-7-7' : 'M9 5l7 7-7 7'}/>
                 </svg>
-                {isDisplayOrderPanelOpen ? 'Ocultar ordenação' : "Organizar exibição"}
+                {isDisplayOrderPanelOpen ? 'Ocultar ordenação' : 'Organizar exibição'}
               </button>
             </div>
          </div>
@@ -579,11 +579,11 @@ Essa a\u00E7\u00E3o \u00E9 irrevers\u00EDvel.`);
       </>) : (<section className="grid grid-cols-1 gap-6 lg:grid-cols-[360px_1fr]">
         <article className="rounded-[28px] border border-slate-100 bg-white p-6 shadow-sm">
           <h3 className="text-lg font-black text-slate-900">
-            {editingCategoryId ? 'Editar categoria' : "N?ova categoria"}
+            {editingCategoryId ? 'Editar categoria' : 'Nova categoria'}
           </h3>
           <form className="mt-4 space-y-4" onSubmit={handleCategorySubmit}>
             <label className="block space-y-2">
-              <span className="text-xs font-black uppercase tracking-widest text-slate-400">N?ome</span>
+              <span className="text-xs font-black uppercase tracking-widest text-slate-400">Nome</span>
               <input className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold" value={categoryName} onChange={(event) => setCategoryName(event.target.value)} placeholder="Ex.: Saude" required/>
             </label>
             <label className="block space-y-2">
@@ -636,7 +636,7 @@ Essa a\u00E7\u00E3o \u00E9 irrevers\u00EDvel.`);
                <div className="flex items-center justify-between p-8 border-b border-slate-50 bg-slate-50/50">
                   <div>
                     <h3 className="text-2xl font-black text-slate-900 leading-tight">
-                       {isEditing ? 'Configurações do Curso' : "N?ovo Alinhamento"}
+                       {isEditing ? 'Configurações do Curso' : 'Novo Curso'}
                     </h3>
                     <p className="text-sm font-medium text-slate-500">Preencha as informações essenciais do treinamento.</p>
                   </div>
@@ -805,7 +805,7 @@ Essa a\u00E7\u00E3o \u00E9 irrevers\u00EDvel.`);
                 <div className="p-8 space-y-6">
                    <div className="space-y-2">
                       <span className="text-xs font-black text-slate-400 uppercase tracking-widest pl-1">Código JSON Estruturado</span>
-                      <textarea className="w-full h-80 font-mono text-xs p-6 bg-slate-900 text-emerald-400 rounded-2xl border border-slate-800 focus:ring-4 focus:ring-blue-100 transition-all no-scrollbar" placeholder="{ &quot;title&quot;: &quot;N?ovo Curso&quot;, &quot;modules&quot;: [...] }" value={importJson} onChange={e => setImportJson(e.target.value)}/>
+                      <textarea className="w-full h-80 font-mono text-xs p-6 bg-slate-900 text-emerald-400 rounded-2xl border border-slate-800 focus:ring-4 focus:ring-blue-100 transition-all no-scrollbar" placeholder="{ &quot;title&quot;: &quot;Novo Curso&quot;, &quot;modules&quot;: [...] }" value={importJson} onChange={e => setImportJson(e.target.value)}/>
                    </div>
 
                    {importError && (<div className="p-4 rounded-xl bg-rose-50 border border-rose-100 text-rose-600 text-xs font-bold animate-in slide-in-from-left-2 transition-all">

@@ -308,7 +308,7 @@ export function StudentLessonPage() {
         </div>)}
 
       {(lessonType === 'video' || lessonType === 'hybrid') && videoSource?.type === 'asset' && !isLoadingProtectedVideo && !protectedVideoPlaybackUrl && (<div className="rounded-[28px] border border-amber-200 bg-amber-50 p-6 text-amber-900">
-          <p className="text-sm font-semibold">NÃ£o foi possÃ­vel carregar o vÃ­deo protegido desta aula. Tente novamente em instantes.
+          <p className="text-sm font-semibold">Não foi possível carregar o vídeo protegido desta aula. Tente novamente em instantes.
           </p>
         </div>)}
 
@@ -323,7 +323,7 @@ export function StudentLessonPage() {
         </div>)}
 
       {lessonType === 'file' && !textContent && (<div className="rounded-[28px] border border-amber-200 bg-amber-50 p-6 text-amber-900">
-          <p className="text-sm font-semibold">Esta aula Ã© consumida pelos materiais do mÃ³dulo. Use a seÃ§Ã£o "BotÃµes e Recursos" abaixo para acessar os arquivos.
+          <p className="text-sm font-semibold">Esta aula é consumida pelos materiais do módulo. Use a seção "Botões e Recursos" abaixo para acessar os arquivos.
           </p>
         </div>)}
 

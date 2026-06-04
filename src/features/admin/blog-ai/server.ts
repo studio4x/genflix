@@ -219,7 +219,7 @@ Regras:
 - responda somente JSON v?lido.
 
 Conte\u00FAdo do artigo:
-T?tulo: ${article.title}
+Título: ${article.title}
 Slug: ${article.slug}
 Palavra-chave foco: ${article.focusKeyword}
 Descrição SEO atual: ${article.seoDescription}
@@ -245,7 +245,7 @@ Regras:
 - responda somente JSON v?lido.
 
 Conte\u00FAdo do artigo:
-T?tulo: ${article.title}
+Título: ${article.title}
 Slug: ${article.slug}
 Palavra-chave foco: ${article.focusKeyword}
 Descrição SEO atual: ${article.seoDescription}
@@ -271,7 +271,7 @@ Regras:
 - responda somente JSON v?lido.
 
 Conte\u00FAdo do artigo:
-T?tulo: ${article.title}
+Título: ${article.title}
 Slug: ${article.slug}
 Palavra-chave foco atual: ${article.focusKeyword}
 Descrição SEO atual: ${article.seoDescription}

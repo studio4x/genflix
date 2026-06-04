@@ -161,7 +161,7 @@ export function AdminPdfWatermarkPanel() {
           </h3>
           <p className="mt-2 max-w-2xl text-sm leading-7 text-[#5F7077]">
             Esta configuracao e aplicada quando o PDF do modulo e gerado automaticamente sem um arquivo base enviado.
-            O logo escolhido abaixo vira a marca dagua padrao do documento.
+            O logo escolhido abaixo vira a marca d'água padrão do documento.
           </p>
 
           {error ? (<div className="mt-4 border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">{error}</div>) : null}
@@ -170,7 +170,7 @@ export function AdminPdfWatermarkPanel() {
           <div className="mt-5 grid gap-4 sm:grid-cols-3">
             <div className="rounded-[18px] border border-[#D8E6EB] bg-[#F8FBFC] p-4">
               <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#5F7077]">Logo atual</p>
-              <p className="mt-2 text-sm font-semibold text-[#15323b]">{currentLogo?.alt || 'Padrao GenFlix'}</p>
+              <p className="mt-2 text-sm font-semibold text-[#15323b]">{currentLogo?.alt || 'Padrão GenFlix'}</p>
             </div>
             <div className="rounded-[18px] border border-[#D8E6EB] bg-[#F8FBFC] p-4">
               <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#5F7077]">Transparencia</p>
@@ -221,7 +221,7 @@ export function AdminPdfWatermarkPanel() {
             </Button>
             <Button type="button" variant="outline" disabled={isSaving} onClick={handleRestoreDefault} className="rounded-xl border-[#D8E6EB] font-black text-[#5F7077] hover:bg-[#F2F7F9]">
               <Trash2 className="mr-2 h-4 w-4"/>
-              Restaurar padrao
+              Restaurar padrão
             </Button>
           </div>
         </article>
@@ -243,7 +243,7 @@ export function AdminPdfWatermarkPanel() {
                     <div className="space-y-2">
                       <GenflixLogo className="mx-auto scale-90" theme="dark"/>
                       <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#5F7077]">
-                        Usando marca padrao da GenFlix
+                        Usando marca padrão da GenFlix
                       </p>
                     </div>
                   </div>)}

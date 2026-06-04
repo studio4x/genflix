@@ -2,7 +2,7 @@ import { z } from 'zod';
 export const assignableUserRoleCodes = ['aluno', 'criador', 'admin'] as const;
 export const createAdminUserFormSchema = z.object({
     email: z.string().email('Informe um e-mail válido.'),
-    fullName: z.string().min(2, "N?ome deve ter ao menos 2 caracteres.").max(120).optional(),
+    fullName: z.string().min(2, 'Nome deve ter ao menos 2 caracteres.').max(120).optional(),
     password: z
         .string()
         .min(10, 'Senha deve ter pelo menos 10 caracteres.')

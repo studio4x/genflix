@@ -39,13 +39,13 @@ type CustomFormField = {
     placeholder?: string;
     required?: boolean;
 };
-const hiddenNewsletterAreas = new Set(["Psican?lise / Psicologia", 'Interesse Geral']);
+const hiddenNewsletterAreas = new Set(['Psicanálise / Psicologia', 'Interesse Geral']);
 const newsletterSelectableAreas = genflixCategoryTiles
     .map((category) => category.label)
     .filter((area) => !hiddenNewsletterAreas.has(area));
 const newsletterAreaFields: FormEditableField[] = newsletterSelectableAreas.map((area) => ({
     key: `areaOption_${area.toLowerCase().replace(/[^a-z0-9]+/g, '_')}`,
-    label: `Opcao de area: ${area}`,
+    label: `Opção de área: ${area}`,
     entryKey: `global.newsletter.form.interest.option.${area.toLowerCase().replace(/[^a-z0-9]+/g, '_')}`,
     pageKey: 'global',
     fallback: area,
@@ -58,12 +58,12 @@ const formDefinitions: SiteFormDefinition[] = [
         route: '/contato',
         pageKey: 'contact',
         editableFields: [
-            { key: 'title', label: "T?tulo", entryKey: 'contact.title', pageKey: 'contact', fallback: 'Fale com a gente.' },
-            { key: 'description', label: "Descri??o", entryKey: 'contact.description', pageKey: 'contact', fallback: "Duvidas, sugestoes ou suporte - est?mos aqui." },
-            { key: 'submit', label: 'Texto do botao', entryKey: 'contact.form.submit', pageKey: 'contact', fallback: 'Enviar' },
-            { key: 'nameLabel', label: 'Rotulo nome', entryKey: 'contact.form.name.label', pageKey: 'contact', fallback: "N?ome completo:" },
-            { key: 'emailLabel', label: 'Rotulo e-mail', entryKey: 'contact.form.email.label', pageKey: 'contact', fallback: 'E-mail:' },
-            { key: 'messageLabel', label: 'Rotulo mensagem', entryKey: 'contact.form.message.label', pageKey: 'contact', fallback: 'Assunto:' },
+            { key: 'title', label: 'Título', entryKey: 'contact.title', pageKey: 'contact', fallback: 'Fale com a gente.' },
+            { key: 'description', label: 'Descrição', entryKey: 'contact.description', pageKey: 'contact', fallback: 'Dúvidas, sugestões ou suporte - estamos aqui.' },
+            { key: 'submit', label: 'Texto do botão', entryKey: 'contact.form.submit', pageKey: 'contact', fallback: 'Enviar' },
+            { key: 'nameLabel', label: 'Rótulo nome', entryKey: 'contact.form.name.label', pageKey: 'contact', fallback: 'Nome completo:' },
+            { key: 'emailLabel', label: 'Rótulo e-mail', entryKey: 'contact.form.email.label', pageKey: 'contact', fallback: 'E-mail:' },
+            { key: 'messageLabel', label: 'Rótulo mensagem', entryKey: 'contact.form.message.label', pageKey: 'contact', fallback: 'Assunto:' },
         ],
     },
     {
@@ -73,12 +73,12 @@ const formDefinitions: SiteFormDefinition[] = [
         route: '/ensine-na-genflix',
         pageKey: 'global',
         editableFields: [
-            { key: 'title', label: "T?tulo", entryKey: 'global.teach.title', pageKey: 'global', fallback: 'Ensine na GenFlix' },
-            { key: 'description', label: "Descri??o", entryKey: 'global.teach.description', pageKey: 'global', fallback: "Duvidas, sugestoes ou suporte - est?mos aqui." },
-            { key: 'submit', label: 'Texto do botao', entryKey: 'global.teach.form.submit', pageKey: 'global', fallback: 'Enviar' },
-            { key: 'nameLabel', label: 'Rotulo nome', entryKey: 'global.teach.form.name.label', pageKey: 'global', fallback: "N?ome completo:" },
-            { key: 'emailLabel', label: 'Rotulo e-mail', entryKey: 'global.teach.form.email.label', pageKey: 'global', fallback: 'E-mail:' },
-            { key: 'messageLabel', label: 'Rotulo mensagem', entryKey: 'global.teach.form.message.label', pageKey: 'global', fallback: 'Assunto:' },
+            { key: 'title', label: 'Título', entryKey: 'global.teach.title', pageKey: 'global', fallback: 'Ensine na GenFlix' },
+            { key: 'description', label: 'Descrição', entryKey: 'global.teach.description', pageKey: 'global', fallback: 'Dúvidas, sugestões ou suporte - estamos aqui.' },
+            { key: 'submit', label: 'Texto do botão', entryKey: 'global.teach.form.submit', pageKey: 'global', fallback: 'Enviar' },
+            { key: 'nameLabel', label: 'Rótulo nome', entryKey: 'global.teach.form.name.label', pageKey: 'global', fallback: 'Nome completo:' },
+            { key: 'emailLabel', label: 'Rótulo e-mail', entryKey: 'global.teach.form.email.label', pageKey: 'global', fallback: 'E-mail:' },
+            { key: 'messageLabel', label: 'Rótulo mensagem', entryKey: 'global.teach.form.message.label', pageKey: 'global', fallback: 'Assunto:' },
         ],
     },
     {
@@ -88,13 +88,13 @@ const formDefinitions: SiteFormDefinition[] = [
         route: '/#newsletter',
         pageKey: 'global',
         editableFields: [
-            { key: 'title', label: "T?tulo", entryKey: 'global.newsletter.title', pageKey: 'global', fallback: 'Assine nossa newsletter' },
-            { key: 'description', label: "Descri??o", entryKey: 'global.newsletter.description', pageKey: 'global', fallback: "Cadastre-se para receber atualizacoes sobre nossos cursos e contedo." },
+            { key: 'title', label: 'Título', entryKey: 'global.newsletter.title', pageKey: 'global', fallback: 'Assine nossa newsletter' },
+            { key: 'description', label: 'Descrição', entryKey: 'global.newsletter.description', pageKey: 'global', fallback: 'Cadastre-se para receber atualizações sobre nossos cursos e conteúdo.' },
             { key: 'placeholder', label: 'Placeholder do e-mail', entryKey: 'global.newsletter.placeholder', pageKey: 'global', fallback: 'Seu@e-mail.com' },
-            { key: 'button', label: 'Texto do botao', entryKey: 'global.newsletter.button.label', pageKey: 'global', fallback: 'Quero me inscrever' },
-            { key: 'areasTitle', label: "T?tulo areas", entryKey: 'global.newsletter.form.interest.title', pageKey: 'global', fallback: 'Areas de interesse' },
-            { key: 'areasDescription', label: "Descri??o areas", entryKey: 'global.newsletter.form.interest.description', pageKey: 'global', fallback: 'Selecione as areas que mais combinam com o seu foco de estudos.' },
-            { key: 'allAreasLabel', label: 'Opcao todas as areas', entryKey: 'global.newsletter.form.interest.all_label', pageKey: 'global', fallback: 'Todas as areas' },
+            { key: 'button', label: 'Texto do botão', entryKey: 'global.newsletter.button.label', pageKey: 'global', fallback: 'Quero me inscrever' },
+            { key: 'areasTitle', label: 'Título áreas', entryKey: 'global.newsletter.form.interest.title', pageKey: 'global', fallback: 'Áreas de interesse' },
+            { key: 'areasDescription', label: 'Descrição áreas', entryKey: 'global.newsletter.form.interest.description', pageKey: 'global', fallback: 'Selecione as áreas que mais combinam com o seu foco de estudos.' },
+            { key: 'allAreasLabel', label: 'Opção todas as áreas', entryKey: 'global.newsletter.form.interest.all_label', pageKey: 'global', fallback: 'Todas as áreas' },
             ...newsletterAreaFields,
         ],
     },
@@ -105,9 +105,9 @@ const formDefinitions: SiteFormDefinition[] = [
         route: '/login',
         pageKey: 'global',
         editableFields: [
-            { key: 'title', label: "T?tulo", entryKey: 'global.auth.login.title', pageKey: 'global', fallback: 'Acesse sua conta' },
-            { key: 'subtitle', label: "Descri??o", entryKey: 'global.auth.login.subtitle', pageKey: 'global', fallback: 'Entre para acompanhar seus cursos e progresso.' },
-            { key: 'backLinkLabel', label: 'Texto voltar', entryKey: 'global.auth.login.backLinkLabel', pageKey: 'global', fallback: "Voltar ao incio" },
+            { key: 'title', label: 'Título', entryKey: 'global.auth.login.title', pageKey: 'global', fallback: 'Acesse sua conta' },
+            { key: 'subtitle', label: 'Descrição', entryKey: 'global.auth.login.subtitle', pageKey: 'global', fallback: 'Entre para acompanhar seus cursos e progresso.' },
+            { key: 'backLinkLabel', label: 'Texto voltar', entryKey: 'global.auth.login.backLinkLabel', pageKey: 'global', fallback: 'Voltar ao início' },
         ],
     },
     {
@@ -117,9 +117,9 @@ const formDefinitions: SiteFormDefinition[] = [
         route: '/criar-conta',
         pageKey: 'global',
         editableFields: [
-            { key: 'title', label: "T?tulo", entryKey: 'global.auth.signup.title', pageKey: 'global', fallback: 'Crie sua conta' },
-            { key: 'subtitle', label: "Descri??o", entryKey: 'global.auth.signup.subtitle', pageKey: 'global', fallback: 'Comece agora sua jornada de estudos.' },
-            { key: 'backLinkLabel', label: 'Texto voltar', entryKey: 'global.auth.signup.backLinkLabel', pageKey: 'global', fallback: "Voltar ao incio" },
+            { key: 'title', label: 'Título', entryKey: 'global.auth.signup.title', pageKey: 'global', fallback: 'Crie sua conta' },
+            { key: 'subtitle', label: 'Descrição', entryKey: 'global.auth.signup.subtitle', pageKey: 'global', fallback: 'Comece agora sua jornada de estudos.' },
+            { key: 'backLinkLabel', label: 'Texto voltar', entryKey: 'global.auth.signup.backLinkLabel', pageKey: 'global', fallback: 'Voltar ao início' },
         ],
     },
     {
@@ -129,9 +129,9 @@ const formDefinitions: SiteFormDefinition[] = [
         route: '/recuperar-senha',
         pageKey: 'global',
         editableFields: [
-            { key: 'title', label: "T?tulo", entryKey: 'global.auth.forgotPassword.title', pageKey: 'global', fallback: 'Recuperar senha' },
-            { key: 'subtitle', label: "Descri??o", entryKey: 'global.auth.forgotPassword.subtitle', pageKey: 'global', fallback: 'Informe seu e-mail para receber as instrucoes.' },
-            { key: 'backLinkLabel', label: 'Texto voltar', entryKey: 'global.auth.forgotPassword.backLinkLabel', pageKey: 'global', fallback: "Voltar ao incio" },
+            { key: 'title', label: 'Título', entryKey: 'global.auth.forgotPassword.title', pageKey: 'global', fallback: 'Recuperar senha' },
+            { key: 'subtitle', label: 'Descrição', entryKey: 'global.auth.forgotPassword.subtitle', pageKey: 'global', fallback: 'Informe seu e-mail para receber as instruções.' },
+            { key: 'backLinkLabel', label: 'Texto voltar', entryKey: 'global.auth.forgotPassword.backLinkLabel', pageKey: 'global', fallback: 'Voltar ao início' },
         ],
     },
     {
@@ -141,9 +141,9 @@ const formDefinitions: SiteFormDefinition[] = [
         route: '/redefinir-senha',
         pageKey: 'global',
         editableFields: [
-            { key: 'title', label: "T?tulo", entryKey: 'global.auth.resetPassword.title', pageKey: 'global', fallback: 'Defina uma nova senha' },
-            { key: 'subtitle', label: "Descri??o", entryKey: 'global.auth.resetPassword.subtitle', pageKey: 'global', fallback: 'Escolha uma senha forte para acessar sua conta.' },
-            { key: 'backLinkLabel', label: 'Texto voltar', entryKey: 'global.auth.resetPassword.backLinkLabel', pageKey: 'global', fallback: "Voltar ao incio" },
+            { key: 'title', label: 'Título', entryKey: 'global.auth.resetPassword.title', pageKey: 'global', fallback: 'Defina uma nova senha' },
+            { key: 'subtitle', label: 'Descrição', entryKey: 'global.auth.resetPassword.subtitle', pageKey: 'global', fallback: 'Escolha uma senha forte para acessar sua conta.' },
+            { key: 'backLinkLabel', label: 'Texto voltar', entryKey: 'global.auth.resetPassword.backLinkLabel', pageKey: 'global', fallback: 'Voltar ao início' },
         ],
     },
 ];
@@ -194,7 +194,7 @@ export function AdminPublicFormsPage() {
             setItems((result.data ?? []) as PublicFormSubmission[]);
         }
         catch (error) {
-            setErrorMessage(error instanceof Error ? error.message : "N?o foi possvel carregar formularios.");
+            setErrorMessage(error instanceof Error ? error.message : 'Não foi possível carregar formulários.');
         }
         finally {
             setIsLoading(false);
@@ -249,7 +249,7 @@ export function AdminPublicFormsPage() {
                 setCustomFieldsByForm((current) => ({ ...current, [selectedForm.id]: customFields }));
             }
             catch (error) {
-                setConfigFeedback(error instanceof Error ? error.message : "N?o foi possvel carregar as configura??es do formulario.");
+                setConfigFeedback(error instanceof Error ? error.message : 'Não foi possível carregar as configurações do formulário.');
             }
             finally {
                 setIsLoadingConfig(false);
@@ -274,7 +274,7 @@ export function AdminPublicFormsPage() {
             return;
         const nextField: CustomFormField = {
             id: `field-${crypto.randomUUID()}`,
-            label: "N?ovo campo",
+            label: 'Novo campo',
             type: 'text',
             placeholder: '',
             required: false,
@@ -315,10 +315,10 @@ export function AdminPublicFormsPage() {
                     formId: selectedForm.id,
                 },
             });
-            setConfigFeedback("Configura??es do formulario salvas com sucesso.");
+            setConfigFeedback('Configurações do formulário salvas com sucesso.');
         }
         catch (error) {
-            setConfigFeedback(error instanceof Error ? error.message : "N?o foi possvel salvar as configura??es do formulario.");
+            setConfigFeedback(error instanceof Error ? error.message : 'Não foi possível salvar as configurações do formulário.');
         }
         finally {
             setIsSavingConfig(false);
@@ -350,9 +350,9 @@ export function AdminPublicFormsPage() {
     return (<div className="space-y-6">
       <header className="flex flex-col gap-4 border-b border-[#D8E6EB] pb-5 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <p className="text-[10px] font-black uppercase tracking-[0.28em] text-[#1398B7]">Admin / Formularios</p>
-          <h1 className="mt-2 font-readex text-3xl font-semibold tracking-tight text-[#15323b]">Formularios pblicos</h1>
-          <p className="mt-2 max-w-2xl text-sm font-medium leading-6 text-[#6d7f84]">Leads de contato, newsletter e outros formularios enviados pelas p?ginas publicas.
+          <p className="text-[10px] font-black uppercase tracking-[0.28em] text-[#1398B7]">Admin / Formulários</p>
+          <h1 className="mt-2 font-readex text-3xl font-semibold tracking-tight text-[#15323b]">Formulários públicos</h1>
+          <p className="mt-2 max-w-2xl text-sm font-medium leading-6 text-[#6d7f84]">Leads de contato, newsletter e outros formulários enviados pelas páginas públicas.
           </p>
         </div>
 
@@ -375,7 +375,7 @@ export function AdminPublicFormsPage() {
             <option value="support">Suporte</option>
           </select>
           {formFilter === 'newsletter' ? (<select value={interestAreaFilter} onChange={(event) => setInterestAreaFilter(event.target.value)} className="h-11 rounded-2xl border border-[#D8E6EB] bg-white px-4 text-sm font-black text-[#15323b] outline-none" disabled={activeTab !== 'submissions'}>
-              <option value="all">Todas as areas</option>
+              <option value="all">Todas as áreas</option>
               {newsletterInterestAreas.map((area) => (<option key={area} value={area}>
                   {area}
                 </option>))}
@@ -394,7 +394,7 @@ export function AdminPublicFormsPage() {
         </div>) : null}
 
       {activeTab === 'submissions' ? (<section className="overflow-hidden rounded-[28px] border border-[#D8E6EB] bg-white">
-          {isLoading ? (<p className="p-5 text-sm font-medium text-[#6d7f84]">Carregando formularios...</p>) : filteredItems.length === 0 ? (<p className="p-5 text-sm font-medium text-[#6d7f84]">Nenhum formulario encontrado.</p>) : (<div className="overflow-x-auto">
+          {isLoading ? (<p className="p-5 text-sm font-medium text-[#6d7f84]">Carregando formulários...</p>) : filteredItems.length === 0 ? (<p className="p-5 text-sm font-medium text-[#6d7f84]">Nenhum formulário encontrado.</p>) : (<div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-[#D8E6EB] text-left text-sm">
                 <thead className="bg-[#F2F7F9] text-[10px] font-black uppercase tracking-[0.2em] text-[#5F7077]">
                   <tr>
@@ -412,7 +412,7 @@ export function AdminPublicFormsPage() {
                         <p className="font-black text-[#15323b]">{item.name || 'Sem nome'}</p>
                         <p className="mt-1 text-xs font-semibold text-[#6d7f84]">{item.email || 'Sem e-mail'}</p>
                         {readInterestAreas(item).length > 0 ? (<p className="mt-2 inline-flex rounded-full border border-[#D8E6EB] bg-[#F2F7F9] px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-[#5F7077]">
-                            Areas: {readInterestAreas(item).join(', ')}
+                          Áreas: {readInterestAreas(item).join(', ')}
                           </p>) : null}
                       </td>
                       <td className="max-w-[360px] px-5 py-4 text-[#5f7077]">
@@ -428,7 +428,7 @@ export function AdminPublicFormsPage() {
             </div>)}
         </section>) : (<section className="grid gap-5 xl:grid-cols-[360px_minmax(0,1fr)]">
           <aside className="rounded-[24px] border border-[#D8E6EB] bg-white p-4">
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#5F7077]">Formularios do site</p>
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#5F7077]">Formulários do site</p>
             <div className="mt-3 space-y-2">
               {formDefinitions.map((form) => (<button key={form.id} type="button" onClick={() => setSelectedFormId(form.id)} className={`w-full rounded-2xl border px-4 py-3 text-left transition ${selectedForm?.id === form.id ? 'border-[#1398B7] bg-[#E8F6FA]' : 'border-[#D8E6EB] bg-white hover:border-[#BEE3EA]'}`}>
                   <p className="text-sm font-black text-[#15323b]">{form.label}</p>
@@ -451,7 +451,7 @@ export function AdminPublicFormsPage() {
 
                 <div className="mt-5 space-y-4">
                   <p className="text-xs font-black uppercase tracking-[0.16em] text-[#5F7077]">Textos principais</p>
-                  {isLoadingConfig ? (<p className="text-sm font-medium text-[#6d7f84]">Carregando configura??es...</p>) : (<div className="grid gap-4 md:grid-cols-2">
+                  {isLoadingConfig ? (<p className="text-sm font-medium text-[#6d7f84]">Carregando configurações...</p>) : (<div className="grid gap-4 md:grid-cols-2">
                       {selectedForm.editableFields.map((field) => (<label key={field.key} className="space-y-1">
                           <span className="text-xs font-black uppercase tracking-[0.12em] text-[#5F7077]">{field.label}</span>
                           <input type="text" value={fieldValues[field.key] ?? ''} onChange={(event) => setFieldValues((current) => ({ ...current, [field.key]: event.target.value }))} className="h-11 w-full rounded-xl border border-[#D8E6EB] bg-white px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]"/>
@@ -472,19 +472,19 @@ export function AdminPublicFormsPage() {
                   <div className="mt-3 space-y-3">
                     {selectedCustomFields.length === 0 ? (<p className="text-sm font-medium text-[#6d7f84]">Nenhum campo personalizado cadastrado.</p>) : selectedCustomFields.map((field) => (<div key={field.id} className="rounded-2xl border border-[#D8E6EB] bg-[#F8FBFC] p-3">
                         <div className="grid gap-3 md:grid-cols-2">
-                          <input type="text" value={field.label} onChange={(event) => updateCustomField(field.id, (current) => ({ ...current, label: event.target.value }))} placeholder="N?ome do campo" className="h-10 rounded-xl border border-[#D8E6EB] bg-white px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]"/>
+                          <input type="text" value={field.label} onChange={(event) => updateCustomField(field.id, (current) => ({ ...current, label: event.target.value }))} placeholder="Nome do campo" className="h-10 rounded-xl border border-[#D8E6EB] bg-white px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]"/>
                           <select value={field.type} onChange={(event) => updateCustomField(field.id, (current) => ({ ...current, type: event.target.value as CustomFormField['type'] }))} className="h-10 rounded-xl border border-[#D8E6EB] bg-white px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]">
                             <option value="text">Texto</option>
                             <option value="email">E-mail</option>
                             <option value="textarea">Texto longo</option>
-                            <option value="select">Selecao</option>
+                            <option value="select">Seleção</option>
                             <option value="checkbox">Checkbox</option>
                           </select>
                           <input type="text" value={field.placeholder ?? ''} onChange={(event) => updateCustomField(field.id, (current) => ({ ...current, placeholder: event.target.value }))} placeholder="Placeholder (opcional)" className="h-10 rounded-xl border border-[#D8E6EB] bg-white px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7] md:col-span-2"/>
                         </div>
                         <div className="mt-3 flex items-center justify-between">
                           <label className="inline-flex items-center gap-2 text-xs font-semibold text-[#5F7077]">
-                            <input type="checkbox" checked={field.required === true} onChange={(event) => updateCustomField(field.id, (current) => ({ ...current, required: event.target.checked }))}/>Campo obrigatrio
+                            <input type="checkbox" checked={field.required === true} onChange={(event) => updateCustomField(field.id, (current) => ({ ...current, required: event.target.checked }))}/>Campo obrigatório
                           </label>
                           <button type="button" onClick={() => removeCustomField(field.id)} className="text-xs font-black uppercase tracking-[0.14em] text-[#A53A3A]">
                             Remover
@@ -498,7 +498,7 @@ export function AdminPublicFormsPage() {
 
                 <div className="mt-5 flex justify-end">
                   <Button type="button" onClick={() => void saveSelectedFormConfig()} disabled={isSavingConfig || isLoadingConfig} className="rounded-xl bg-[#1398B7] px-6 hover:bg-[#0A3640]">
-                    {isSavingConfig ? 'Salvando...' : "Salvar configura??es"}
+                    {isSavingConfig ? 'Salvando...' : 'Salvar configurações'}
                   </Button>
                 </div>
               </>)}

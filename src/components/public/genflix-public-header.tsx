@@ -213,7 +213,7 @@ export function GenflixPublicHeader({ currentPage, navLinks, }: {
             href: ctaPath,
             isInternal: ctaPath.startsWith('/'),
             tone: 'warm',
-        }} label="Botao do cabealho" pageKey="global">
+        }} label="Botão do cabeçalho" pageKey="global">
                   {(buttonValue) => buttonValue.isHidden === true ? null : (<GenflixCtaButton asChild tone="warm" className="hidden h-11 px-5 sm:inline-flex">
                       {buttonValue.isInternal === true ? (<Link to={typeof buttonValue.href === 'string' ? buttonValue.href : ctaPath}>
                           {typeof buttonValue.label === 'string' ? buttonValue.label : ctaLabel}
@@ -265,7 +265,7 @@ export function GenflixPublicHeader({ currentPage, navLinks, }: {
                 href: ctaPath,
                 isInternal: ctaPath.startsWith('/'),
                 tone: 'warm',
-            }} label="Botao do cabealho mobile" pageKey="global">
+            }} label="Botão do cabeçalho mobile" pageKey="global">
                     {(buttonValue) => buttonValue.isHidden === true ? null : (<GenflixCtaButton asChild tone="warm" className="h-11 w-full px-5">
                         {buttonValue.isInternal === true ? (<Link to={typeof buttonValue.href === 'string' ? buttonValue.href : ctaPath}>
                             {typeof buttonValue.label === 'string' ? buttonValue.label : ctaLabel}

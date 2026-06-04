@@ -420,7 +420,7 @@ function ResourcesCatalogSection({ cardStyle, uploadedIcons, onOpenVideo, onOpen
             href: '/login',
             isInternal: true,
             tone: 'solid',
-        }} label="Botao principal da seo de recursos">
+        }} label="Botão principal da seção de recursos">
             {(buttonValue) => buttonValue.isHidden === true ? null : (<GenflixCtaButton asChild className="px-5 py-3">
                 {buttonValue.isInternal === true ? (<Link to={typeof buttonValue.href === 'string' ? buttonValue.href : '/login'}>
                     {typeof buttonValue.label === 'string' ? buttonValue.label : 'Entrar para explorar tudo'}

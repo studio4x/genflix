@@ -204,7 +204,7 @@ export function SupportTicketDetailPage() {
             <div className="flex h-[600px] flex-col">
               <div className="flex-1 space-y-4 overflow-y-auto bg-[#F8FBFC] p-5">
                 <div className="max-w-[min(82%,720px)] rounded-[22px] border border-[#D8E6EB] bg-white px-4 py-4 shadow-sm">
-                  <p className="text-[11px] font-black uppercase tracking-[0.18em] text-[#8BA0A7]">Descrio do problema</p>
+                  <p className="text-[11px] font-black uppercase tracking-[0.18em] text-[#8BA0A7]">Descrição do problema</p>
                   <p className="mt-3 whitespace-pre-wrap text-sm font-semibold leading-7 text-[#15323b]">{ticket.description}</p>
                   {ticket.attachment_url ? (<div className="mt-4">
                       <TicketAttachment url={ticket.attachment_url} name={ticket.attachment_name}/>

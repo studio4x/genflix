@@ -78,7 +78,7 @@ export function AdminAccountPage() {
 
           <div className="mt-5 space-y-4">
             <label className="block">
-              <span className="text-xs font-black uppercase tracking-[0.2em] text-[#5F7077]">N?ome</span>
+              <span className="text-xs font-black uppercase tracking-[0.2em] text-[#5F7077]">Nome</span>
               <input value={fullName} onChange={(event) => setFullName(event.target.value)} className="mt-2 h-12 w-full rounded-2xl border border-[#D8E6EB] bg-white px-4 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7] focus:ring-4 focus:ring-[#E8F6FA]" placeholder="Seu nome"/>
             </label>
 
@@ -113,7 +113,7 @@ export function AdminAccountPage() {
 
           <div className="mt-5 space-y-4">
             <label className="block">
-              <span className="text-xs font-black uppercase tracking-[0.2em] text-[#5F7077]">N?ova senha</span>
+              <span className="text-xs font-black uppercase tracking-[0.2em] text-[#5F7077]">Nova senha</span>
               <PasswordField value={newPassword} onChange={(event) => setNewPassword(event.target.value)} minLength={8} className="mt-2 h-12 w-full rounded-2xl border border-[#D8E6EB] bg-white px-4 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7] focus:ring-4 focus:ring-[#E8F6FA]" placeholder="Digite a nova senha" required/>
             </label>
 

@@ -100,7 +100,7 @@ function formatEntryTypeLabel(entryType: SiteContentEntry['entry_type']) {
         case 'link':
             return 'Link';
         case 'button':
-            return 'Botao';
+            return 'Botão';
         case 'list':
             return 'Listagem';
         case 'json':
@@ -125,9 +125,9 @@ function summarizeEntryValue(value: unknown) {
     return String(value);
 }
 const siteTypographyGroupLabels: Record<SiteTypographyGroupKey, string> = {
-    h1: "T?tulos H1",
-    h2: "T?tulos H2",
-    h3: "T?tulos H3",
+    h1: 'Títulos H1',
+    h2: 'Títulos H2',
+    h3: 'Títulos H3',
     body: 'Corpo de texto',
     list: 'Topicos de lista',
     link: 'Links',
@@ -391,17 +391,17 @@ export function AdminSiteEditorPage() {
         try {
             await createSitePageVersion(selectedPageKey, 'page:manual-snapshot');
             setPageVersions(await fetchSitePageVersions(selectedPageKey));
-            setMessage("Vers?o da p?gina registrada com sucesso.");
+            setMessage('Versão da página registrada com sucesso.');
         }
         catch (error) {
-            setMessage(error instanceof Error ? error.message : "N?o foi possvel registrar a vers?o da p?gina.");
+            setMessage(error instanceof Error ? error.message : 'Não foi possível registrar a versão da página.');
         }
         finally {
             setIsSaving(false);
         }
     }
     async function handleRestorePageVersion(version: SitePageVersion) {
-        const confirmed = window.confirm("Rest?urar est? vers?o da p?gina e substituir todos os ajustes atuais");
+        const confirmed = window.confirm('Restaurar esta versão da página e substituir todos os ajustes atuais');
         if (!confirmed) {
             return;
         }
@@ -411,10 +411,10 @@ export function AdminSiteEditorPage() {
             await restoreSitePageVersion(version);
             await loadData();
             setPageVersions(await fetchSitePageVersions(selectedPageKey));
-            setMessage("Vers?o da p?gina rest?urada com sucesso.");
+            setMessage('Versão da página restaurada com sucesso.');
         }
         catch (error) {
-            setMessage(error instanceof Error ? error.message : "N?o foi possvel rest?urar a vers?o da p?gina.");
+            setMessage(error instanceof Error ? error.message : 'Não foi possível restaurar a versão da página.');
         }
         finally {
             setIsSaving(false);
@@ -592,7 +592,7 @@ export function AdminSiteEditorPage() {
                 schema: { kind: 'site-typography' },
             });
             await loadData();
-            setMessage('Padroes de tipografia global atualizados com sucesso.');
+            setMessage('Padrões de tipografia global atualizados com sucesso.');
         }
         catch (error) {
             setMessage(error instanceof Error ? error.message : "N?o foi possvel salvar os padroes de tipografia.");
@@ -838,7 +838,7 @@ export function AdminSiteEditorPage() {
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
                 <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#1398B7]">Tipografia</p>
-                <h2 className="mt-1 font-readex text-xl font-semibold text-[#15323b]">Padrao global de textos</h2>
+                <h2 className="mt-1 font-readex text-xl font-semibold text-[#15323b]">Padrão global de textos</h2>
                 <p className="mt-2 max-w-3xl text-sm font-semibold leading-6 text-[#5F7077]">Defina fonte, tamanho e peso para H1, H2, H3, corpo, topicos e links em todo o site pblico.
                 </p>
               </div>
@@ -961,12 +961,12 @@ export function AdminSiteEditorPage() {
                 {selectedPage?.title ?? selectedPageKey}
               </h2>
               <p className="mt-2 text-sm font-semibold text-[#5F7077]">
-                {selectedPage?.path ?? selectedPageKey} · {selectedPageStat}campo(s) cadastrados para est? p?gina
+                {selectedPage?.path ?? selectedPageKey} · {selectedPageStat} campo(s) cadastrados para esta página
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
               {selectedPage ? (<Link to={selectedPage.path} className="inline-flex items-center gap-2 border border-[#D8E6EB] bg-white px-4 py-2 text-xs font-black uppercase tracking-[0.14em] text-[#0A3640] hover:bg-[#F2F7F9]">
-                  <ExternalLink className="h-3.5 w-3.5"/>Abrir p?gina
+                  <ExternalLink className="h-3.5 w-3.5"/>Abrir página
                 </Link>) : null}
               <Button type="button" variant="outline" disabled={isSaving} onClick={() => void handleClearPage()} className="rounded-none border-[#D8E6EB]">Rest?urar conteúdo original dest? página
               </Button>
@@ -1036,7 +1036,7 @@ export function AdminSiteEditorPage() {
               <p className="text-sm font-black text-[#15323b]">{pageEntries.length} campo(s) encontrado(s)</p>
               <p className="text-xs font-semibold text-[#5F7077]">
                 {editorMode === 'basic'
-                ? "Modo basico: foco em nome, tipo, resumo e aes." : 'Modo avancado: exibe p?gina tecnica, preview salvo e estrutura completa.'}
+                ? 'Modo básico: foco em nome, tipo, resumo e ações.' : 'Modo avançado: exibe página técnica, preview salvo e estrutura completa.'}
               </p>
             </div>
             <div className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-[0.14em] text-[#5F7077]">
@@ -1067,7 +1067,7 @@ export function AdminSiteEditorPage() {
                       <td className="px-4 py-3">
                         <div className="font-black text-[#15323b]">{entry.entry_key}</div>
                         <div className="mt-1 text-xs font-semibold text-[#5F7077]">
-                          {entry.page_key === 'global' ? 'Campo global' : "Campo dest? p?gina"}
+                          {entry.page_key === 'global' ? 'Campo global' : 'Campo desta página'}
                         </div>
                       </td>
                       <td className="px-4 py-3 text-xs font-semibold leading-5 text-[#5F7077]">

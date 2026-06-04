@@ -2008,7 +2008,7 @@ export function AdminBlogPage() {
           <section className="grid gap-6">
             {articleView === 'editor' ? (<article className="rounded-[28px] border border-[#D8E6EB] bg-white p-5">
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <h2 className="text-lg font-black tracking-tight text-[#15323b]">{selectedArticleId ? 'Editar artigo' : "N?ovo artigo"}</h2>
+                <h2 className="text-lg font-black tracking-tight text-[#15323b]">{selectedArticleId ? 'Editar artigo' : 'Novo artigo'}</h2>
                 <div className="flex gap-2">
                   <Button type="button" variant="outline" className="rounded-xl" onClick={() => {
                     setArticleView('list');
@@ -2081,7 +2081,7 @@ export function AdminBlogPage() {
                 {showInlineCategoryForm ? (<div className="space-y-3 rounded-2xl border border-dashed border-[#BEE3EA] bg-[#F4FBFD] p-4">
                     <p className="text-xs font-black uppercase tracking-[0.2em] text-[#1398B7]">Criar categoria inline</p>
                     <div className="grid gap-3 sm:grid-cols-2">
-                      <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">N?ome
+                      <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">Nome
                         <input value={inlineCategoryForm.name} onChange={(event) => setInlineCategoryForm((current) => ({
                         ...current,
                         name: event.target.value,
@@ -2417,7 +2417,7 @@ export function AdminBlogPage() {
               <div className="flex flex-col gap-3 border-b border-[#D8E6EB] pb-4 sm:flex-row sm:items-center sm:justify-between">
                 <h2 className="text-lg font-black tracking-tight text-[#15323b]">Lista de artigos</h2>
                 <div className="flex flex-wrap gap-2">
-                  <Button type="button" className="rounded-xl bg-[#1398B7] hover:bg-[#0A3640]" onClick={handleCreateArticle}>N?ovo artigo
+                  <Button type="button" className="rounded-xl bg-[#1398B7] hover:bg-[#0A3640]" onClick={handleCreateArticle}>Novo artigo
                   </Button>
                   <input value={articleSearch} onChange={(event) => setArticleSearch(event.target.value)} placeholder="Buscar por título, slug ou categoria..." className="h-10 min-w-[220px] rounded-xl border border-[#D8E6EB] bg-white px-3 text-sm font-medium text-[#15323b] outline-none focus:border-[#1398B7]"/>
                   <select value={articleStatusFilter} onChange={(event) => setArticleStatusFilter(event.target.value as 'all' | ArticleStatus)} className="h-10 rounded-xl border border-[#D8E6EB] bg-white px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]">
@@ -2488,12 +2488,12 @@ export function AdminBlogPage() {
       {activeTab === 'categories' ? (<section className="grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,1.4fr)]">
           <article className="rounded-[28px] border border-[#D8E6EB] bg-white p-5">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-black tracking-tight text-[#15323b]">{selectedCategoryId ? 'Editar categoria' : "N?ova categoria"}</h2>
+              <h2 className="text-lg font-black tracking-tight text-[#15323b]">{selectedCategoryId ? 'Editar categoria' : 'Nova categoria'}</h2>
               <Button type="button" variant="outline" className="rounded-xl" onClick={resetCategoryForm}>Limpar</Button>
             </div>
             <div className="mt-4 grid gap-3">
               <div className="grid gap-3 sm:grid-cols-2">
-                <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">N?ome
+                <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">Nome
                   <input value={categoryForm.name} onChange={(event) => {
                 const nextName = event.target.value;
                 setCategoryForm((current) => ({
@@ -2564,12 +2564,12 @@ export function AdminBlogPage() {
       {activeTab === 'tags' ? (<section className="grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,1.4fr)]">
           <article className="rounded-[28px] border border-[#D8E6EB] bg-white p-5">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-black tracking-tight text-[#15323b]">{selectedTagId ? 'Editar tag' : "N?ova tag"}</h2>
+              <h2 className="text-lg font-black tracking-tight text-[#15323b]">{selectedTagId ? 'Editar tag' : 'Nova tag'}</h2>
               <Button type="button" variant="outline" className="rounded-xl" onClick={resetTagForm}>Limpar</Button>
             </div>
             <div className="mt-4 grid gap-3">
               <div className="grid gap-3 sm:grid-cols-2">
-                <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">N?ome
+                <label className="grid gap-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">Nome
                   <input value={tagForm.name} onChange={(event) => {
                 const nextName = event.target.value;
                 setTagForm((current) => ({
@@ -2618,7 +2618,7 @@ export function AdminBlogPage() {
           <article className="rounded-[28px] border border-[#D8E6EB] bg-white p-5">
             <h2 className="text-lg font-black tracking-tight text-[#15323b]">Padrão tipográfico dos artigos</h2>
             <div className="mt-4 rounded-2xl border border-[#D8E6EB] bg-[#F8FBFC] p-4">
-              <p className="text-xs font-black uppercase tracking-[0.18em] text-[#1398B7]">T?tulo da p?gina do artigo</p>
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-[#1398B7]">Título da página do artigo</p>
               <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
                 <label className="grid gap-1">
                   <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Font family</span>

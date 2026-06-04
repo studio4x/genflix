@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils';
 import { supabase } from '@/services/supabase/client';
 function formatConversationDate(value: string | null) {
     if (!value) {
-        return "N?ova";
+        return 'Nova';
     }
     const date = new Date(value);
     const today = new Date();

@@ -88,15 +88,15 @@ export function PublicGenericPage({ entryPrefix, title, description, eyebrow, se
               <EditableText entryKey={`${entryPrefix}.eyebrow`} fallback={eyebrow} label="Chamada da pgina institucional" pageKey="global"/>
             </p>
             <h1 className="mt-4 max-w-[760px] text-[2.5rem] font-extrabold leading-[0.94] tracking-[-0.05em] text-[#183139] sm:text-[3rem]">
-              <EditableText entryKey={`${entryPrefix}.title`} fallback={title} label="T?tulo da pgina institucional" pageKey="global"/>
+              <EditableText entryKey={`${entryPrefix}.title`} fallback={title} label="Título da página institucional" pageKey="global"/>
             </h1>
             <p className="mt-4 max-w-[720px] text-base leading-7 text-[#183139]">
-              <EditableText entryKey={`${entryPrefix}.description`} fallback={description} label="Descrio da pgina institucional" pageKey="global"/>
+              <EditableText entryKey={`${entryPrefix}.description`} fallback={description} label="Descrição da página institucional" pageKey="global"/>
             </p>
           </div>
 
           <div className="mt-10 max-w-[880px] px-2 sm:px-0">
-            <EditableRichText entryKey={`${entryPrefix}.content`} fallback={contentFallback} label="Contedo da pgina institucional" pageKey="global" className="rich-text-content space-y-4 text-[15px] leading-8 text-[#5f7178] [&_h2]:mt-8 [&_h2]:text-[1.45rem] [&_h2]:font-bold [&_h2]:leading-tight [&_h2]:tracking-[-0.03em] [&_h2]:text-[#183139] [&_h2:first-child]:mt-0"/>
+            <EditableRichText entryKey={`${entryPrefix}.content`} fallback={contentFallback} label="Conteúdo da página institucional" pageKey="global" className="rich-text-content space-y-4 text-[15px] leading-8 text-[#5f7178] [&_h2]:mt-8 [&_h2]:text-[1.45rem] [&_h2]:font-bold [&_h2]:leading-tight [&_h2]:tracking-[-0.03em] [&_h2]:text-[#183139] [&_h2:first-child]:mt-0"/>
           </div>
 
           {cta ? (<div className="mt-10 flex justify-start">

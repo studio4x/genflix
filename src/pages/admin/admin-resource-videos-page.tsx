@@ -150,7 +150,7 @@ export function AdminResourceVideosPage() {
             setCardStyleVersions(versions);
         }
         catch (loadError) {
-            setError(loadError instanceof Error ? loadError.message : "N?o foi possvel carregar o hist?rico do padrao dos cards.");
+            setError(loadError instanceof Error ? loadError.message : 'Não foi possível carregar o histórico do padrão dos cards.');
         }
         finally {
             setIsLoadingCardStyleVersions(false);
@@ -179,7 +179,7 @@ export function AdminResourceVideosPage() {
                     setItems(createResourcesItemsFallback());
                     setCardStyle({ ...defaultCardStyle });
                     setCardStyleVersions([]);
-                    setError(loadError instanceof Error ? loadError.message : "N?o foi possvel carregar os recursos.");
+                    setError(loadError instanceof Error ? loadError.message : 'Não foi possível carregar os recursos.');
                 }
             }
             finally {
@@ -297,10 +297,10 @@ export function AdminResourceVideosPage() {
                 schema: { kind: 'resources-card-style' },
             });
             await reloadResourcesData();
-            setMessage('Padrao dos cards salvo com sucesso. Os tamanhos individuais dos icones foram resetados e o tamanho global passou a valer para todos os recursos, ate que algum item seja editado individualmente no editor visual.');
+            setMessage('Padrão dos cards salvo com sucesso. Os tamanhos individuais dos ícones foram resetados e o tamanho global passou a valer para todos os recursos, até que algum item seja editado individualmente no editor visual.');
         }
         catch (saveError) {
-            setError(saveError instanceof Error ? saveError.message : "N?o foi possvel salvar o padrao dos cards.");
+            setError(saveError instanceof Error ? saveError.message : 'Não foi possível salvar o padrão dos cards.');
         }
         finally {
             setIsSaving(false);
@@ -320,10 +320,10 @@ export function AdminResourceVideosPage() {
         try {
             await restoreSiteContentVersion(version);
             await reloadResourcesData();
-            setMessage("Revis\u00E3o do padr\u00E3o dos cards rest?urada com sucesso.");
+            setMessage('Revisão do padrão dos cards restaurada com sucesso.');
         }
         catch (restoreError) {
-            setError(restoreError instanceof Error ? restoreError.message : "N?o foi possvel rest?urar est? revis?o do padrao dos cards.");
+            setError(restoreError instanceof Error ? restoreError.message : 'Não foi possível restaurar esta revisão do padrão dos cards.');
         }
         finally {
             setRestoringCardStyleVersionId(null);
@@ -333,9 +333,9 @@ export function AdminResourceVideosPage() {
       <header className="space-y-2">
         <p className="text-[11px] font-black uppercase tracking-[0.22em] text-[#5F7077]">Recursos</p>
         <h1 className="font-readex text-3xl font-semibold tracking-tight text-[#15323b]">Recursos</h1>
-        <p className="max-w-3xl text-sm leading-6 text-[#5F7077]">Edite os cards de recursos por item e tamb?m o padrao visual global que sera aplicado na p?gina publica.
+        <p className="max-w-3xl text-sm leading-6 text-[#5F7077]">Edite os cards de recursos por item e também o padrão visual global que será aplicado na página pública.
         </p>
-        <div className="max-w-4xl rounded-[16px] border border-amber-200 bg-amber-50 px-5 py-4 text-sm font-semibold leading-6 text-amber-900">O tamanho do icone definido nest? p?gina e global. Ao salvar esse tamanho global, os tamanhos configurados individualmente no editor visual sao resetados para que todos os recursos passem a seguir o novo padrao. Se depois disso um recurso for editado individualmente no editor visual, o tamanho definido naquele recurso sobrescrevera o tamanho global apenas para ele.
+        <div className="max-w-4xl rounded-[16px] border border-amber-200 bg-amber-50 px-5 py-4 text-sm font-semibold leading-6 text-amber-900">O tamanho do ícone definido nesta página é global. Ao salvar esse tamanho global, os tamanhos configurados individualmente no editor visual são resetados para que todos os recursos passem a seguir o novo padrão. Se depois disso um recurso for editado individualmente no editor visual, o tamanho definido naquele recurso sobrescreverá o tamanho global apenas para ele.
         </div>
       </header>
 
@@ -345,7 +345,7 @@ export function AdminResourceVideosPage() {
             Itens de recursos
           </button>
           <button type="button" onClick={() => setActiveTab('style')} className={`rounded-xl px-4 py-2 text-xs font-black uppercase tracking-[0.14em] ${activeTab === 'style' ? 'bg-[#1398B7] text-white' : 'bg-[#F2F7F9] text-[#5F7077]'}`}>
-            Padrao dos cards
+            Padrão dos cards
           </button>
         </div>
       </section>
@@ -375,7 +375,7 @@ export function AdminResourceVideosPage() {
           </section>
 
           <form onSubmit={(event) => void handleItemsSubmit(event)} className="space-y-4">
-            <div className="rounded-[16px] border border-[#D8E6EB] bg-[#F8FCFD] px-5 py-4 text-sm font-semibold leading-6 text-[#4F636A]">Os demais campos dos recursos (t?tulo, icone, descri??o e cor) devem ser editados pelo editor visual. O tamanho global do icone fica na aba "Padrao dos cards". Se um recurso receber tamanho proprio no editor visual, ele sobrescreve o tamanho global.
+            <div className="rounded-[16px] border border-[#D8E6EB] bg-[#F8FCFD] px-5 py-4 text-sm font-semibold leading-6 text-[#4F636A]">Os demais campos dos recursos (título, ícone, descrição e cor) devem ser editados pelo editor visual. O tamanho global do ícone fica na aba "Padrão dos cards". Se um recurso receber tamanho próprio no editor visual, ele sobrescreve o tamanho global.
             </div>
 
             <div className="grid gap-4">
@@ -411,7 +411,7 @@ export function AdminResourceVideosPage() {
                     </label>
 
                     {readMoreEnabled ? (<label className="mt-4 grid gap-2">
-                        <span className="text-[10px] font-black uppercase tracking-[0.16em] text-[#5F7077]">Contedo do "Leia mais"</span>
+                        <span className="text-[10px] font-black uppercase tracking-[0.16em] text-[#5F7077]">Conteúdo do "Leia mais"</span>
                         <textarea value={readMoreContent} onChange={(event) => updateReadMoreContent(index, event.target.value)} rows={6} className="rounded-[14px] border border-[#D8E6EB] bg-white px-4 py-3 text-sm font-semibold leading-6 text-[#15323b] outline-none focus:border-[#1398B7]"/>
                       </label>) : null}
 
@@ -487,14 +487,14 @@ export function AdminResourceVideosPage() {
               <input type="color" value={cardStyle.iconBackgroundColor} onChange={(e) => setCardStyle((p) => ({ ...p, iconBackgroundColor: e.target.value }))} className="h-11 w-full rounded-[14px] border border-[#D8E6EB] bg-white px-2"/>
             </label>
             <label className="grid gap-2">
-              <span className="text-[10px] font-black uppercase tracking-[0.16em] text-[#5F7077]">Cor padrao do icone</span>
+              <span className="text-[10px] font-black uppercase tracking-[0.16em] text-[#5F7077]">Cor padrão do ícone</span>
               <input type="color" value={cardStyle.iconColor} onChange={(e) => setCardStyle((p) => ({ ...p, iconColor: e.target.value }))} className="h-11 w-full rounded-[14px] border border-[#D8E6EB] bg-white px-2"/>
             </label>
             <label className="grid gap-2">
               <span className="text-[10px] font-black uppercase tracking-[0.16em] text-[#5F7077]">Tamanho global do icone (px)</span>
               <input type="number" min={12} max={36} value={cardStyle.iconSize} onChange={(e) => setCardStyle((p) => ({ ...p, iconSize: Math.min(36, Math.max(12, Number(e.target.value) || 18)) }))} className="h-11 rounded-[14px] border border-[#D8E6EB] bg-white px-4"/>
             </label>
-            <div className="rounded-[14px] border border-[#D8E6EB] bg-[#F8FCFD] px-4 py-3 text-sm font-semibold leading-6 text-[#4F636A]">Ao salvar aqui, esse tamanho vira o padrao global da p?gina e limpa os tamanhos individuais antigos. Depois, se voc? ajustar um recurso especifico no editor visual, aquele recurso passa a usar o tamanho proprio dele.
+            <div className="rounded-[14px] border border-[#D8E6EB] bg-[#F8FCFD] px-4 py-3 text-sm font-semibold leading-6 text-[#4F636A]">Ao salvar aqui, esse tamanho vira o padrão global da página e limpa os tamanhos individuais antigos. Depois, se você ajustar um recurso específico no editor visual, aquele recurso passa a usar o tamanho próprio dele.
             </div>
             <label className="grid gap-2">
               <span className="text-[10px] font-black uppercase tracking-[0.16em] text-[#5F7077]">Background do botao</span>
@@ -516,10 +516,10 @@ export function AdminResourceVideosPage() {
 
           <div className="flex flex-wrap items-center gap-3">
             <Button type="button" variant="outline" disabled={isSaving || isLoading} onClick={() => setCardStyle({ ...defaultCardStyle })} className="rounded-none border-[#D8E6EB] bg-white font-black text-[#15323b] hover:bg-[#F2F7F9]">
-              Redefinir para padrao
+              Redefinir para padrão
             </Button>
             <Button type="submit" disabled={isSaving || isLoading} className="rounded-none bg-[#1398B7] font-black text-white hover:bg-[#0F7E99]">
-              {isSaving ? 'Salvando...' : 'Salvar padrao dos cards'}
+              {isSaving ? 'Salvando...' : 'Salvar padrão dos cards'}
             </Button>
           </div>
 

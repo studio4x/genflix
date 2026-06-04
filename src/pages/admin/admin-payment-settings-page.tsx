@@ -230,7 +230,7 @@ export function AdminPaymentSettingsPage() {
             <p className="text-xs font-black uppercase tracking-[0.28em] text-[#274E79]">Admin / Pagamentos</p>
             <h3 className="font-readex text-4xl font-bold tracking-tight text-[#021B41]">Hist?rico de pagamentos</h3>
             <p className="max-w-3xl text-lg text-[#1C304A]">Consulta os pedidos processados, acompanha os est?dos e alterna o ambiente do checkout sem sair da
-              p?gina.
+              página.
             </p>
           </div>
           <Button type="button" onClick={() => {

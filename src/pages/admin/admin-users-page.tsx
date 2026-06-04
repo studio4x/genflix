@@ -368,7 +368,7 @@ Essa a\u00E7\u00E3o remove o acesso e os dados vinculados de forma permanente.`)
             }
             setIsCreatePanelOpen(true);
         }} className="rounded-2xl bg-[#1398B7] font-black hover:bg-[#0A3640]">
-            {isCreatePanelOpen || created ? 'Fechar cadastro' : "N?ovo usu\u00E1rio"}
+            {isCreatePanelOpen || created ? 'Fechar cadastro' : 'Novo usuário'}
           </Button>
           <Button type="button" variant="outline" onClick={() => void loadUsers()} disabled={isLoading} className="rounded-2xl border-[#D8E6EB] bg-white font-bold text-[#5f7077] hover:border-[#1398B7]/40 hover:text-[#163138]">
             {isLoading ? 'Atualizando...' : 'Atualizar lista'}
@@ -462,7 +462,7 @@ Essa a\u00E7\u00E3o remove o acesso e os dados vinculados de forma permanente.`)
               </Button>
             </div>) : (<form className="space-y-4" onSubmit={handleSubmit}>
               <div>
-                <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#1398B7]">N?ovo usuário</p>
+                <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#1398B7]">Novo usuário</p>
                 <h3 className="mt-1 font-readex text-xl font-semibold text-[#15323b]">Cadastrar acesso</h3>
               </div>
 
@@ -489,7 +489,7 @@ Essa a\u00E7\u00E3o remove o acesso e os dados vinculados de forma permanente.`)
               </label>
 
               <label className="block space-y-2">
-                <span className="text-xs font-black uppercase tracking-[0.2em] text-[#5F7077]">N?ome completo</span>
+                <span className="text-xs font-black uppercase tracking-[0.2em] text-[#5F7077]">Nome completo</span>
                 <input className="h-12 w-full rounded-2xl border border-[#D8E6EB] bg-white px-4 text-sm font-semibold text-[#163138] outline-none transition placeholder:text-[#5F7077] focus:border-[#1398B7] focus:ring-4 focus:ring-[#1398B7]/10" type="text" placeholder="Ex: Joana Lima" value={form.fullName} onChange={(event) => setForm((previous) => ({ ...previous, fullName: event.target.value }))} maxLength={120}/>
               </label>
 

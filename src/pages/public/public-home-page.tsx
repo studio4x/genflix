@@ -221,7 +221,7 @@ function HomeFeaturedSection({ entryPrefix, sectionId, pageKey = 'home', }: {
           <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
             <div>
               <h2 className="text-[2rem] font-bold tracking-[-0.04em] text-[#15323B] sm:text-[2.25rem]">
-                <EditableText entryKey={`${entryPrefix}.title`} fallback="Novidades" label="T?tulo de cursos em destaque" pageKey={pageKey}/>
+                <EditableText entryKey={`${entryPrefix}.title`} fallback="Novidades" label="Título de cursos em destaque" pageKey={pageKey}/>
               </h2>
             </div>
 

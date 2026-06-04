@@ -1,6 +1,6 @@
 import { z } from 'zod';
 export const accessGroupFormSchema = z.object({
-    name: z.string().trim().min(2, "N?ome do grupo deve ter ao menos 2 caracteres"),
+    name: z.string().trim().min(2, 'Nome do grupo deve ter ao menos 2 caracteres'),
     description: z.string().trim().max(1000).optional(),
     is_active: z.boolean(),
 });

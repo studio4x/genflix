@@ -424,7 +424,7 @@ export function AdminNotificationsPage() {
               <div className="mt-5 grid gap-4">
                 <label className="grid gap-2">
                   <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#5F7077]">Título</span>
-                  <input value={title} onChange={(event) => setTitle(event.target.value)} required maxLength={200} className="h-12 border border-[#D8E6EB] bg-white px-4 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]" placeholder="Ex.: N?ovo curso disponível"/>
+                  <input value={title} onChange={(event) => setTitle(event.target.value)} required maxLength={200} className="h-12 border border-[#D8E6EB] bg-white px-4 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]" placeholder="Ex.: Novo curso disponível"/>
                 </label>
 
                 <label className="grid gap-2">

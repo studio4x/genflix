@@ -49,9 +49,9 @@ export function CourseTreeDnd({ tree, onRefresh }: CourseTreeDndProps) {
         }
     }
     async function handleDeleteModule(moduleId: string, moduleTitle: string) {
-        if (!window.confirm(`ATEN??O: Excluir o m?dulo "${moduleTitle}"
+        if (!window.confirm(`ATENÇÃO: Excluir o módulo "${moduleTitle}"
 
-Todas as aulas e quizzes vinculados ser?o removidos permanentemente.`)) {
+Todas as aulas e quizzes vinculados serão removidos permanentemente.`)) {
             return;
         }
         setDeletingKey(`module:${moduleId}`);
@@ -70,9 +70,9 @@ Todas as aulas e quizzes vinculados ser?o removidos permanentemente.`)) {
         }
     }
     async function handleDeleteLesson(moduleId: string, lessonId: string, lessonTitle: string) {
-        if (!window.confirm(`ATEN??O: Excluir a aula "${lessonTitle}"
+        if (!window.confirm(`ATENÇÃO: Excluir a aula "${lessonTitle}"
 
-Todos os materiais vinculados ser?o removidos permanentemente.`)) {
+Todos os materiais vinculados serão removidos permanentemente.`)) {
             return;
         }
         setDeletingKey(`lesson:${lessonId}`);
@@ -92,11 +92,11 @@ Todos os materiais vinculados ser?o removidos permanentemente.`)) {
     }
     async function handleDeleteAssessment(moduleId: string | null, assessmentId: string, assessmentTitle: string, isFinalAssessment = false) {
         const confirmMessage = isFinalAssessment
-            ? `CUIDADO: Excluir a avalia??o final "${assessmentTitle}"
+            ? `CUIDADO: Excluir a avaliação final "${assessmentTitle}"
 
-Todas as questoes, estudos de caso e tentativas vinculadas ser?o removidos permanentemente.` : `CUIDADO: Excluir o quiz "${assessmentTitle}"
+Todas as questões, estudos de caso e tentativas vinculadas serão removidos permanentemente.` : `CUIDADO: Excluir o quiz "${assessmentTitle}"
 
-Todas as questoes, estudos de caso e tentativas vinculadas ser?o removidos permanentemente.`;
+Todas as questões, estudos de caso e tentativas vinculadas serão removidos permanentemente.`;
         if (!window.confirm(confirmMessage)) {
             return;
         }
@@ -156,7 +156,7 @@ Todas as questoes, estudos de caso e tentativas vinculadas ser?o removidos perma
                         event.preventDefault();
                         event.stopPropagation();
                         void handleDeleteModule(m.id, m.title);
-                    }} disabled={deletingKey === `module:${m.id}`} className="mr-2 rounded-lg p-2 text-slate-300 opacity-0 transition-all hover:bg-rose-50 hover:text-rose-500 disabled:cursor-not-allowed disabled:opacity-100 group-hover:opacity-100" title="Excluir m?dulo">
+                    }} disabled={deletingKey === `module:${m.id}`} className="mr-2 rounded-lg p-2 text-slate-300 opacity-0 transition-all hover:bg-rose-50 hover:text-rose-500 disabled:cursor-not-allowed disabled:opacity-100 group-hover:opacity-100" title="Excluir módulo">
                             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
                             </svg>
@@ -263,7 +263,7 @@ Todas as questoes, estudos de caso e tentativas vinculadas ser?o removidos perma
                         event.preventDefault();
                         event.stopPropagation();
                         void handleDeleteAssessment(null, assessment.id, assessment.title, true);
-                    }} disabled={deletingKey === `assessment:${assessment.id}`} className="mr-2 rounded-lg p-2 text-slate-300 opacity-0 transition-all hover:bg-rose-50 hover:text-rose-500 disabled:cursor-not-allowed disabled:opacity-100 group-hover/final:opacity-100" title="Excluir avalia??o final">
+                    }} disabled={deletingKey === `assessment:${assessment.id}`} className="mr-2 rounded-lg p-2 text-slate-300 opacity-0 transition-all hover:bg-rose-50 hover:text-rose-500 disabled:cursor-not-allowed disabled:opacity-100 group-hover/final:opacity-100" title="Excluir avaliação final">
                     <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
                     </svg>
@@ -277,7 +277,7 @@ Todas as questoes, estudos de caso e tentativas vinculadas ser?o removidos perma
            <Link to={`/admin/cursos/${courseId}/builder/modulos/novo`} className="flex items-center gap-2 p-3 rounded-xl text-sm font-black text-blue-600 border border-dashed border-blue-200 bg-blue-50/50 hover:bg-blue-100 transition-all">
               <div className="bg-blue-600 text-white p-1 rounded-md">
                 <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 4v16m8-8H4"/></svg>
-              </div>N?ovo Módulo
+              </div>Novo Módulo
            </Link>
         </div>
       </div>

@@ -757,8 +757,8 @@ function buildVideoFallbackHtml(content: LessonVideoBlockContent): string {
     const maxWidthStyle = LESSON_VIDEO_MAX_WIDTH_STYLE[content.size];
     const captionAlignment = LESSON_VIDEO_CAPTION_ALIGNMENT_STYLE[content.caption_alignment];
     const summary = content.source_type === "upload"
-        ? `VÃ­deo enviado${fileName ? `: ${escapeHtml(fileName)}` : ""}.`
-        : "VÃ­deo por URL.";
+        ? `Vídeo enviado${fileName ? `: ${escapeHtml(fileName)}` : ''}.`
+        : 'Vídeo por URL.';
     return `
     <figure class="hcm-video-block-fallback" style="${maxWidthStyle} margin: 2rem auto;">
       <div class="hcm-video-block-fallback__surface">${summary}</div>
