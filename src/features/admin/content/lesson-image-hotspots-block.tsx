@@ -273,7 +273,7 @@ export function LessonImageHotspotsBlockEditor({ content, onChange, onError, }: 
           </div>
 
           <div className="space-y-4 p-4 sm:p-6">
-            <input ref={fileInputRef} type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" className="hidden" onChange={(event) => void handleAssetSelected(event)}/>
+            <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={(event) => void handleAssetSelected(event)}/>
 
             <div className="overflow-auto rounded-[28px] border border-slate-200 bg-slate-50/60 p-4">
               <div ref={stageRef} className="relative mx-auto overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-inner" style={{

@@ -364,14 +364,14 @@ export function LessonImageBlockEditor({ content, onChange, onError }: LessonIma
                     <Button type="button" variant="outline" className="rounded-2xl border-slate-200 bg-white" onClick={() => fileInputRef.current?.click()} disabled={isUploading}>
                         {content.storage_path ? 'Trocar imagem' : 'Enviar imagem'}
                     </Button>
+                    <Button type="button" variant="ghost" className="px-0 text-xs font-bold text-slate-500 hover:text-slate-800" onClick={() => void switchToUrlMode()}>
+                        Voltar para URL
+                    </Button>
                     {content.file_name ? (
                         <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
                             {content.file_name}
                         </div>
                     ) : null}
-                    <Button type="button" variant="ghost" className="px-0 text-xs font-bold text-slate-500 hover:text-slate-800" onClick={() => void switchToUrlMode()}>
-                        Voltar para URL
-                    </Button>
                 </div>
             )}
             <div className="grid gap-4 md:grid-cols-3">
