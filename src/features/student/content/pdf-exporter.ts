@@ -1,6 +1,7 @@
 import genflixWordmarkUrl from '@/assets/genflix-wordmark.svg';
 import { getSignedLessonContentAssetUrl } from '@/features/admin/content/api';
 import { parseLessonImageHotspotsBlockElement } from '@/features/admin/content/content-blocks';
+import { fetchPdfWatermarkSettings } from '@/features/branding/api';
 import { supabase } from '@/services/supabase/client';
 import { PDFDocument, StandardFonts, degrees, rgb } from 'pdf-lib';
 import html2pdf from 'html2pdf.js';
@@ -475,7 +476,7 @@ export async function exportLicensedModulePdf(moduleTitle: string, storagePath: 
     const bytes = await pdfDoc.save();
     downloadPdfBytes(`${PDF_FILENAME_PREFIX}_${sanitizeForFileName(moduleTitle || 'm?dulo') || 'm?dulo'}.pdf`, bytes);
 }
-function applyPdfFinishing(pdf: JsPdfDocument, watermark: PreparedImage, courseTitle: string, licenseContext: LicenseContext) {
+function applyPdfFinishing(pdf: JsPdfDocument, watermark: PreparedImage, watermarkSizePercent: number, courseTitle: string, licenseContext: LicenseContext) {
     const totalPages = pdf.internal.getNumberOfPages();
     const pageWidth = pdf.internal.pageSize.getWidth();
     const pageHeight = pdf.internal.pageSize.getHeight();
@@ -485,7 +486,8 @@ function applyPdfFinishing(pdf: JsPdfDocument, watermark: PreparedImage, courseT
     const footerPageNumberY = pageHeight - 8;
     const footerCourseY = footerTopY + 4.2;
     const footerNoticeY = footerTopY + 8.4;
-    const watermarkBounds = fitImageWithin(watermark.width, watermark.height, pageWidth * 0.58, pageHeight * 0.34);
+    const normalizedSizePercent = Math.max(25, Math.min(300, watermarkSizePercent));
+    const watermarkBounds = fitImageWithin(watermark.width, watermark.height, pageWidth * 0.58 * (normalizedSizePercent / 100), pageHeight * 0.34 * (normalizedSizePercent / 100));
     const watermarkX = (pageWidth - watermarkBounds.width) / 2;
     const watermarkY = (pageHeight - watermarkBounds.height) / 2 - 4;
     const licenseText = `Este documento foi licenciado para ${licenseContext.studentDisplayName} - ${licenseContext.userCode} ` + `atraves da plataforma GenFlix Academy. Codigo de libera??o: ${licenseContext.releaseCode}`;
@@ -855,7 +857,7 @@ function buildPdfStyles() {
     return style;
 }
 export async function exportModuleToPdf(courseTitle: string, moduleTitle: string, moduleId: string) {
-    const [lessonsResult, moduleResult, licenseContext, materialsMap] = await Promise.all([
+    const [lessonsResult, moduleResult, licenseContext, materialsMap, watermarkSettings] = await Promise.all([
         supabase
             .from('lessons')
             .select('id, title, text_content, youtube_url, estimated_minutes, position')
@@ -881,6 +883,7 @@ export async function exportModuleToPdf(courseTitle: string, moduleTitle: string
             }[]) ?? []).map((lesson) => lesson.id);
             return fetchLessonMaterialsMap(lessonIds);
         })(),
+        fetchPdfWatermarkSettings().catch(() => null),
     ]);
     if (lessonsResult.error)
         throw lessonsResult.error;
@@ -925,10 +928,13 @@ export async function exportModuleToPdf(courseTitle: string, moduleTitle: string
         },
     };
     try {
-        const watermark = await createTransparentImage(genflixWordmarkUrl, 0.08);
+        const watermarkLogoUrl = watermarkSettings?.logo?.src || genflixWordmarkUrl;
+        const watermarkOpacity = Math.max(0, Math.min(1, (watermarkSettings?.opacity_percent ?? 8) / 100));
+        const watermarkSizePercent = watermarkSettings?.size_percent ?? 100;
+        const watermark = await createTransparentImage(watermarkLogoUrl, watermarkOpacity).catch(async () => createTransparentImage(genflixWordmarkUrl, 0.08));
         const worker = (html2pdf() as Html2PdfWorker).set(opt).from(element).toPdf();
         const pdf = await worker.get('pdf');
-        applyPdfFinishing(pdf, watermark, courseTitle, licenseContext);
+        applyPdfFinishing(pdf, watermark, watermarkSizePercent, courseTitle, licenseContext);
         await worker.save();
     }
     catch (error) {

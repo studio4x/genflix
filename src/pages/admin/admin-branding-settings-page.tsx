@@ -4,6 +4,7 @@ import { GenflixLogo } from '@/components/public/genflix-logo';
 import { createBrandingAssetValue } from '@/features/branding/api';
 import { brandingEntryKeys, type BrandingSlotKey } from '@/features/branding/types';
 import { saveSiteContentEntry, uploadSiteAsset } from '@/features/site-editor/api';
+import { AdminPdfWatermarkPanel } from '@/pages/admin/admin-pdf-watermark-panel';
 import { AdminNarrationCredentialsPanel } from '@/pages/admin/admin-narration-credentials-panel';
 import { AdminSiteTrackingPanel } from '@/pages/admin/admin-site-tracking-panel';
 const brandingCards: Array<{
@@ -41,7 +42,7 @@ const brandingCards: Array<{
 ];
 export function AdminBrandingSettingsPage() {
     const { branding, setBrandingAsset } = useBranding();
-    const [activeTab, setActiveTab] = useState<'branding' | 'tracking' | 'narration'>('branding');
+    const [activeTab, setActiveTab] = useState<'branding' | 'watermark' | 'tracking' | 'narration'>('branding');
     const [uploadingSlot, setUploadingSlot] = useState<BrandingSlotKey | null>(null);
     const [message, setMessage] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
@@ -103,6 +104,11 @@ export function AdminBrandingSettingsPage() {
             ? 'border-[#1398B7] bg-[#1398B7] text-white'
             : 'border-[#D8E6EB] bg-white text-[#5F7077] hover:bg-[#F2F7F9]'}`}>
             Branding
+          </button>
+          <button type="button" onClick={() => setActiveTab('watermark')} className={`inline-flex h-11 items-center justify-center rounded-full border px-5 text-xs font-black uppercase tracking-[0.16em] ${activeTab === 'watermark'
+            ? 'border-[#1398B7] bg-[#1398B7] text-white'
+            : 'border-[#D8E6EB] bg-white text-[#5F7077] hover:bg-[#F2F7F9]'}`}>
+            Marca dagua PDF
           </button>
           <button type="button" onClick={() => setActiveTab('tracking')} className={`inline-flex h-11 items-center justify-center rounded-full border px-5 text-xs font-black uppercase tracking-[0.16em] ${activeTab === 'tracking'
             ? 'border-[#1398B7] bg-[#1398B7] text-white'
@@ -197,6 +203,8 @@ export function AdminBrandingSettingsPage() {
             })}
           </section>
         </>) : null}
+
+      {activeTab === 'watermark' ? (<AdminPdfWatermarkPanel />) : null}
 
       {activeTab === 'tracking' ? (<AdminSiteTrackingPanel />) : null}
 
