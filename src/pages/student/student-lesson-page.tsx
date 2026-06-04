@@ -327,13 +327,13 @@ export function StudentLessonPage() {
           </p>
         </div>)}
 
-      <div className="overflow-hidden rounded-[32px] border border-blue-100 bg-gradient-to-br from-white via-sky-50/30 to-white shadow-sm">
-        <div className="border-b border-blue-100 px-6 py-5 sm:px-8">
+      <div className="overflow-hidden rounded-[32px] border border-slate-200 bg-white shadow-sm">
+        <div className="border-b border-slate-200 bg-slate-50 px-6 py-5 sm:px-8">
           <div className="flex flex-col gap-2">
-            <span className="inline-flex w-fit rounded-full border border-blue-100 bg-blue-50 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-blue-600">
+            <span className="inline-flex w-fit rounded-full border border-blue-200 bg-blue-100 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-blue-800">
               Recursos adicionais da aula
             </span>
-            <p className="text-sm text-slate-600">
+            <p className="text-sm text-slate-700">
               Acesse aqui os materiais complementares disponíveis para esta aula.
             </p>
           </div>
@@ -341,18 +341,18 @@ export function StudentLessonPage() {
 
         <div className="p-6 sm:p-8">
           {footerActions.length === 0 ? (
-            <div className="rounded-[28px] border border-dashed border-slate-200 bg-white/80 px-6 py-10 text-center">
-              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 text-slate-400">
+            <div className="rounded-[28px] border border-dashed border-slate-300 bg-slate-50 px-6 py-10 text-center">
+              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-200 text-slate-500">
                 <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-3-3v6m8-7.5V7a2 2 0 00-2-2h-3.5L15 3.5A2 2 0 0013.5 2h-3A2.5 2.5 0 008 4.5V5H6a2 2 0 00-2 2v3.5M4 13v5a2 2 0 002 2h12a2 2 0 002-2v-5" />
                 </svg>
               </div>
-              <p className="mt-4 text-sm font-medium text-slate-500">
+              <p className="mt-4 text-sm font-medium text-slate-600">
                 Nenhum recurso adicional configurado para esta aula.
               </p>
             </div>
           ) : (
-            <div className="rounded-[28px] border border-slate-100 bg-white/90 p-4 shadow-[0_1px_0_rgba(15,23,42,0.03)]">
+            <div className="rounded-[28px] border border-slate-200 bg-slate-50 p-4 shadow-[0_1px_0_rgba(15,23,42,0.04)]">
               <div className="flex flex-wrap gap-3">
                 {footerActions.map((action) => (
                   <Button
