@@ -56,6 +56,27 @@ type NarrationCredentialsRow = {
     openai_api_key: string | null;
     gemini_api_key: string | null;
 };
+function isLikelyOpenAiApiKey(value: string) {
+    return /^sk-(proj-|pro-)?[A-Za-z0-9_-]{12,}$/i.test(value);
+}
+function isLikelyGeminiApiKey(value: string) {
+    return /^AIza[0-9A-Za-z_-]{20,}$/i.test(value);
+}
+function resolveConfiguredApiKey(envKey: string, dbKey: string, provider: 'openai' | 'gemini') {
+    const normalizedEnvKey = envKey.trim();
+    const normalizedDbKey = dbKey.trim();
+    const looksLikeValidKey = provider === 'openai' ? isLikelyOpenAiApiKey : isLikelyGeminiApiKey;
+    if (looksLikeValidKey(normalizedEnvKey)) {
+        return normalizedEnvKey;
+    }
+    if (looksLikeValidKey(normalizedDbKey)) {
+        return normalizedDbKey;
+    }
+    if (normalizedEnvKey) {
+        return normalizedEnvKey;
+    }
+    return normalizedDbKey;
+}
 function readOptionalString(value: unknown) {
     if (typeof value !== 'string') {
         return null;
@@ -196,8 +217,8 @@ async function loadNarrationCredentials(adminClient: any) {
         .maybeSingle();
     const row = (credentialsResult.data ?? null) as NarrationCredentialsRow | null;
     return {
-        openAiApiKey: readOptionalString(row?.openai_api_key) ?? readOptionalString(process.env.OPENAI_API_KEY),
-        geminiApiKey: readOptionalString(row?.gemini_api_key) ?? readOptionalString(process.env.GEMINI_API_KEY),
+        openAiApiKey: resolveConfiguredApiKey(readOptionalString(process.env.OPENAI_API_KEY) ?? '', readOptionalString(row?.openai_api_key) ?? '', 'openai'),
+        geminiApiKey: resolveConfiguredApiKey(readOptionalString(process.env.GEMINI_API_KEY) ?? '', readOptionalString(row?.gemini_api_key) ?? '', 'gemini'),
     };
 }
 function buildAiPrompt(input: BlogAssistInput, action: BlogAssistAction) {

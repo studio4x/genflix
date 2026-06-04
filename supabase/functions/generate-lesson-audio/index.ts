@@ -19,6 +19,27 @@ interface LessonRow {
     text_content: string | null;
 }
 type NarrationMode = 'read' | 'generate' | 'regenerate';
+function isLikelyOpenAiApiKey(value: string) {
+    return /^sk-(proj-|pro-)?[A-Za-z0-9_-]{12,}$/i.test(value);
+}
+function isLikelyGeminiApiKey(value: string) {
+    return /^AIza[0-9A-Za-z_-]{20,}$/i.test(value);
+}
+function resolveConfiguredApiKey(envKey: string, dbKey: string, provider: 'openai' | 'gemini') {
+    const normalizedEnvKey = envKey.trim();
+    const normalizedDbKey = dbKey.trim();
+    const looksLikeValidKey = provider === 'openai' ? isLikelyOpenAiApiKey : isLikelyGeminiApiKey;
+    if (looksLikeValidKey(normalizedEnvKey)) {
+        return normalizedEnvKey;
+    }
+    if (looksLikeValidKey(normalizedDbKey)) {
+        return normalizedDbKey;
+    }
+    if (normalizedEnvKey) {
+        return normalizedEnvKey;
+    }
+    return normalizedDbKey;
+}
 Deno.serve(async (request) => {
     if (request.method === 'OPTIONS') {
         return new Response('ok', { headers: corsHeaders });
@@ -65,12 +86,8 @@ Deno.serve(async (request) => {
             const dbGeminiKey = typeof credentialsResult.data.gemini_api_key === 'string'
                 ? credentialsResult.data.gemini_api_key.trim()
                 : '';
-            if (dbOpenAiKey) {
-                openAiApiKey = dbOpenAiKey;
-            }
-            if (dbGeminiKey) {
-                geminiApiKey = dbGeminiKey;
-            }
+            openAiApiKey = resolveConfiguredApiKey(openAiApiKey, dbOpenAiKey, 'openai');
+            geminiApiKey = resolveConfiguredApiKey(geminiApiKey, dbGeminiKey, 'gemini');
         }
         const { data: { user }, error: authError, } = await adminSupabase.auth.getUser(accessToken);
         if (authError || !user) {
