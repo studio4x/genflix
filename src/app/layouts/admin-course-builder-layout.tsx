@@ -14,6 +14,84 @@ interface BuilderContextData {
     refreshTree: () => Promise<void>;
     isLoading: boolean;
 }
+type ImportJsonFormatKind = 'course' | 'module' | 'assessment' | 'unknown';
+function extractCleanImportJson(rawJson: string) {
+    let cleanedJson = rawJson.trim();
+    const match = cleanedJson.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+    if (match && match[1]) {
+        cleanedJson = match[1].trim();
+    }
+    else {
+        cleanedJson = cleanedJson.replace(/^```(json)?\s+/, '').replace(/\s+```$/, '').trim();
+    }
+    return cleanedJson;
+}
+function parseImportJson(rawJson: string) {
+    const cleanedJson = extractCleanImportJson(rawJson);
+    let data: unknown;
+    try {
+        data = JSON.parse(cleanedJson);
+    }
+    catch (err1) {
+        try {
+            const fixedJson = cleanedJson.replace(/\n(?!\s*[{}[\]",:0-9\-.tfn])/g, '\\n');
+            data = JSON.parse(fixedJson);
+        }
+        catch (err2) {
+            console.error('Falha em ambos os parses:', err1, err2);
+            const errorMsg = err2 instanceof Error ? err2.message : String(err2);
+            throw new Error(`Erro de sintaxe no JSON: ${errorMsg}. Verifique aspas e quebras de linha.`);
+        }
+    }
+    const cleanData = JSON.parse(JSON.stringify(data), (_key, value) => {
+        if (typeof value === 'string') {
+            let v = value.replace(/\\"/g, '"');
+            v = v.replace(/\\'/g, "'");
+            return v;
+        }
+        return value;
+    });
+    return cleanData;
+}
+function detectImportJsonFormat(input: unknown): { kind: ImportJsonFormatKind; label: string; description: string } | null {
+    if (!input || typeof input !== 'object') {
+        return null;
+    }
+    if (Array.isArray(input)) {
+        return {
+            kind: 'module',
+            label: 'Lista de módulos',
+            description: 'O JSON contém vários módulos para importar de uma vez.',
+        };
+    }
+    const record = input as Record<string, unknown>;
+    if ('modules' in record && Array.isArray(record.modules)) {
+        return {
+            kind: 'course',
+            label: 'Curso completo',
+            description: 'O JSON contém título, metadados e a lista de módulos do curso.',
+        };
+    }
+    if (('questions' in record || 'case_studies' in record) && !('modules' in record)) {
+        return {
+            kind: 'assessment',
+            label: 'Avaliação final',
+            description: 'O JSON contém apenas a estrutura da avaliação final.',
+        };
+    }
+    if ('lessons' in record || 'assessments' in record) {
+        return {
+            kind: 'module',
+            label: 'Módulo único',
+            description: 'O JSON contém um módulo isolado com aulas e, opcionalmente, avaliações.',
+        };
+    }
+    return {
+        kind: 'unknown',
+        label: 'Formato não reconhecido',
+        description: 'O JSON foi lido, mas não corresponde aos formatos esperados de curso, módulo ou avaliação.',
+    };
+}
 const BuilderContext = createContext<BuilderContextData | undefined>(undefined);
 export function useCourseBuilder() {
     const context = useContext(BuilderContext);
@@ -121,37 +199,7 @@ export function AdminCourseBuilderLayout() {
         setImportError(null);
         try {
             // 1. Extração robusta do JSON de blocos de código Markdown
-            let cleanedJson = importJson.trim();
-            const match = cleanedJson.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
-            if (match && match[1]) {
-                cleanedJson = match[1].trim();
-            }
-            else {
-                cleanedJson = cleanedJson.replace(/^```(json)?\s+/, '').replace(/\s+```$/, '').trim();
-            }
-            let data;
-            try {
-                data = JSON.parse(cleanedJson);
-            }
-            catch (err1) {
-                try {
-                    const fixedJson = cleanedJson.replace(/\n(?!\s*[{}[\]",:0-9\-.tfn])/g, '\\n');
-                    data = JSON.parse(fixedJson);
-                }
-                catch (err2) {
-                    console.error('Falha em ambos os parses:', err1, err2);
-                    const errorMsg = err2 instanceof Error ? err2.message : String(err2);
-                    throw new Error(`Erro de sintaxe no JSON: ${errorMsg}. Verifique aspas e quebras de linha.`);
-                }
-            }
-            const cleanData = JSON.parse(JSON.stringify(data), (_key, value) => {
-                if (typeof value === 'string') {
-                    let v = value.replace(/\\"/g, '"');
-                    v = v.replace(/\\'/g, "'");
-                    return v;
-                }
-                return value;
-            });
+            const cleanData = parseImportJson(importJson);
             await importCourseContent(courseId, cleanData, clearExisting, moduleIdToReplace || undefined);
             await refreshTree();
             closeImportModal();
@@ -171,6 +219,17 @@ export function AdminCourseBuilderLayout() {
             setIsImporting(false);
         }
     }
+    const importJsonPreview = (() => {
+        if (!importJson.trim()) {
+            return null;
+        }
+        try {
+            return detectImportJsonFormat(parseImportJson(importJson));
+        }
+        catch {
+            return null;
+        }
+    })();
     async function handleExportCourse() {
         if (!courseId || !courseTree)
             return;
@@ -335,6 +394,17 @@ export function AdminCourseBuilderLayout() {
                           <input type="file" accept=".json,application/json" className="hidden" onChange={(event) => void handleImportFileChange(event)} />
                         </label>
                         <textarea className="w-full h-80 font-mono text-xs p-6 bg-slate-900 text-emerald-400 rounded-2xl border border-slate-800 focus:ring-4 focus:ring-blue-100 transition-all no-scrollbar" placeholder='[ { "title": "Módulo 1", "lessons": [...] } ]' value={importJson} onChange={e => setImportJson(e.target.value)}/>
+                        {importJsonPreview && (<div className={`rounded-xl border px-4 py-3 text-xs font-semibold ${importJsonPreview.kind === 'course'
+                ? 'border-blue-100 bg-blue-50 text-blue-700'
+                : importJsonPreview.kind === 'assessment'
+                    ? 'border-amber-100 bg-amber-50 text-amber-700'
+                    : importJsonPreview.kind === 'module'
+                        ? 'border-emerald-100 bg-emerald-50 text-emerald-700'
+                        : 'border-slate-200 bg-slate-50 text-slate-600'}`}>
+                           <span className="block font-black uppercase tracking-widest text-[10px] mb-1">Formato detectado</span>
+                           <span className="block">{importJsonPreview.label}</span>
+                           <span className="mt-1 block text-[11px] font-medium leading-relaxed opacity-90">{importJsonPreview.description}</span>
+                        </div>)}
                      </div>
 
                      {importError && (<div className="p-4 rounded-xl bg-rose-50 border border-rose-100 text-rose-600 text-xs font-bold animate-in slide-in-from-left-2 transition-all">
