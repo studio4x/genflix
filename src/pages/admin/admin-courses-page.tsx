@@ -448,7 +448,7 @@ Essa a\u00E7\u00E3o \u00E9 irrevers\u00EDvel.`);
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={isDisplayOrderPanelOpen ? 'M19 9l-7 7-7-7' : 'M9 5l7 7-7 7'}/>
                 </svg>
-                {isDisplayOrderPanelOpen ? 'Ocultar ordenacao' : "Organizar exibi??o"}
+                {isDisplayOrderPanelOpen ? 'Ocultar ordenação' : "Organizar exibição"}
               </button>
             </div>
          </div>

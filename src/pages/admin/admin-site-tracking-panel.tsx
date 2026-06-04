@@ -49,10 +49,10 @@ export function AdminSiteTrackingPanel() {
                 schema: { kind: 'site-tracking' },
             });
             setTracking(nextTracking);
-            setMessage("Configura??es de rastreamento salvas com sucesso.");
+            setMessage("Configurações de rastreamento salvas com sucesso.");
         }
         catch (trackingError) {
-            setError(trackingError instanceof Error ? trackingError.message : "N?o foi possvel salvar as configura??es de rastreamento.");
+            setError(trackingError instanceof Error ? trackingError.message : "Não foi possível salvar as configurações de rastreamento.");
         }
         finally {
             setIsSaving(false);
@@ -71,14 +71,14 @@ export function AdminSiteTrackingPanel() {
         <article className="border border-[#D8E6EB] bg-white p-5 shadow-sm">
           <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#5F7077]">GTM</p>
           <p className="mt-3 font-readex text-2xl font-semibold tracking-tight text-[#15323b]">
-            {tracking.gtmId || "N?o configurado"}
+            {tracking.gtmId || "Não configurado"}
           </p>
           <p className="mt-2 text-xs font-semibold text-[#5F7077]">ID do container Google Tag Manager.</p>
         </article>
         <article className="border border-[#D8E6EB] bg-white p-5 shadow-sm">
           <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#5F7077]">Meta Pixel</p>
           <p className="mt-3 font-readex text-2xl font-semibold tracking-tight text-[#15323b]">
-            {tracking.metaPixelId || "N?o configurado"}
+            {tracking.metaPixelId || "Não configurado"}
           </p>
           <p className="mt-2 text-xs font-semibold text-[#5F7077]">ID do pixel para eventos de marketing.</p>
         </article>
@@ -112,8 +112,8 @@ export function AdminSiteTrackingPanel() {
         </article>
       </section>
 
-      {validation.hasIssues ? (<div className="border border-amber-200 bg-amber-50 px-5 py-4 text-sm font-semibold text-amber-800">A validacao basica encontrou dados incompletos ou com formato inv?lido. Isso n?o bloqueia o salvamento, mas o rastreamento pode n?o funcionar corretamente.
-        </div>) : (<div className="border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm font-semibold text-emerald-700">Validacao basica concluida: GTM e Meta Pixel est?o configurados com formato v?lido.
+      {validation.hasIssues ? (<div className="border border-amber-200 bg-amber-50 px-5 py-4 text-sm font-semibold text-amber-800">A validação básica encontrou dados incompletos ou com formato inválido. Isso não bloqueia o salvamento, mas o rastreamento pode não funcionar corretamente.
+        </div>) : (<div className="border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm font-semibold text-emerald-700">Validação básica concluída: GTM e Meta Pixel estão configurados com formato válido.
         </div>)}
 
       <form onSubmit={(event) => void handleSubmit(event)} className="space-y-5">

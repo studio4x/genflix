@@ -919,8 +919,8 @@ export function StudentAssessmentExecutionPage() {
       </div>);
     }
     if (!assessment || executionItems.length === 0) {
-        return (<div className="mx-auto mt-20 max-w-2xl rounded-3xl border border-slate-200 bg-white p-12 text-center font-bold uppercase tracking-widest text-slate-500 shadow-sm">Nenhuma questão configurada para est? avaliação.
-      </div>);
+        return (<div className="mx-auto mt-20 max-w-2xl rounded-3xl border border-slate-200 bg-white p-12 text-center font-bold uppercase tracking-widest text-slate-500 shadow-sm">Nenhuma questão configurada para esta avaliação.
+          </div>);
     }
     return (<div className="mx-auto max-w-[1440px] animate-in fade-in space-y-8 p-4 pb-32 duration-500 sm:p-8">
       <header className="space-y-6">

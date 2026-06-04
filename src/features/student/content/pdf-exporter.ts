@@ -465,7 +465,7 @@ export async function exportLicensedModulePdf(moduleTitle: string, storagePath: 
             font,
             color: rgb(0.38, 0.45, 0.55),
         });
-        page.drawText(`p?gina ${index + 1} de ${pages.length}`, {
+        page.drawText(`página ${index + 1} de ${pages.length}`, {
             x: width - 110,
             y: 22,
             size: 9,
@@ -490,7 +490,7 @@ function applyPdfFinishing(pdf: JsPdfDocument, watermark: PreparedImage, waterma
     const watermarkBounds = fitImageWithin(watermark.width, watermark.height, pageWidth * 0.58 * (normalizedSizePercent / 100), pageHeight * 0.34 * (normalizedSizePercent / 100));
     const watermarkX = (pageWidth - watermarkBounds.width) / 2;
     const watermarkY = (pageHeight - watermarkBounds.height) / 2 - 4;
-    const licenseText = `Este documento foi licenciado para ${licenseContext.studentDisplayName} - ${licenseContext.userCode} ` + `atraves da plataforma GenFlix Academy. Codigo de libera??o: ${licenseContext.releaseCode}`;
+    const licenseText = `Este documento foi licenciado para ${licenseContext.studentDisplayName} - ${licenseContext.userCode} ` + `através da plataforma GenFlix Academy. Código de liberação: ${licenseContext.releaseCode}`;
     let headerFontSize = 5.4;
     let headerLines = pdf.splitTextToSize(licenseText, pageWidth - 28);
     while (headerLines.length > 2 && headerFontSize > 4.2) {
@@ -527,7 +527,7 @@ function applyPdfFinishing(pdf: JsPdfDocument, watermark: PreparedImage, waterma
             baseline: 'middle',
         });
         pdf.setFontSize(6.8);
-        pdf.text(`p?gina ${page} de ${totalPages}`, pageWidth - 12, footerPageNumberY, {
+        pdf.text(`página ${page} de ${totalPages}`, pageWidth - 12, footerPageNumberY, {
             align: 'right',
             baseline: 'middle',
         });

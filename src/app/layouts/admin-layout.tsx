@@ -20,39 +20,39 @@ type AdminNavGroup = {
 const adminNavGroups: AdminNavGroup[] = [
     {
         key: 'overview',
-        label: 'Visao Geral',
+        label: 'Visão Geral',
         description: 'Painel executivo e acompanhamento operacional.',
         links: [
             { to: '/admin', label: 'Dashboard' },
-            { to: '/admin/relatorios', label: 'Relatorios' },
-            { to: '/admin/pendencias', label: 'Pendencias' },
+            { to: '/admin/relatorios', label: 'Relatórios' },
+            { to: '/admin/pendencias', label: 'Pendências' },
             { to: '/admin/storage-r2', label: 'Storage R2' },
-            { to: '/admin/seguranca', label: 'Seguranca' },
+            { to: '/admin/seguranca', label: 'Segurança' },
         ],
     },
     {
         key: 'content',
-        label: "Contedo",
-        description: "Catalogo, experincia publica e edio da plataforma.",
+        label: "Conteúdo",
+        description: "Catálogo, experiência pública e edição da plataforma.",
         links: [
-            { to: '/admin/cursos', label: 'Catalogo de Cursos' },
+            { to: '/admin/cursos', label: 'Catálogo de Cursos' },
             { to: '/admin/blog', label: 'Blog' },
-            { to: '/admin/botoes-aula', label: 'Botoes de Aula' },
+            { to: '/admin/botoes-aula', label: 'Botões de Aula' },
             { to: '/admin/banners', label: 'Banners' },
             { to: '/admin/site-editor', label: 'Editor Visual' },
             { to: '/admin/recursos', label: 'Recursos' },
-            { to: '/admin/formularios', label: 'Formularios' },
+            { to: '/admin/formularios', label: 'Formulários' },
             { to: '/admin/tipos-quiz', label: 'Tipos de Quiz' },
         ],
     },
     {
         key: 'community',
         label: 'Relacionamento',
-        description: 'Pessoas, mensagens, reputacao e atendimento.',
+        description: 'Pessoas, mensagens, reputação e atendimento.',
         links: [
-            { to: "/admin/usu?rios", label: "Usurios" },
+            { to: "/admin/usu?rios", label: "Usuários" },
             { to: '/admin/grupos', label: 'Grupos' },
-            { to: '/admin/notificacoes', label: "N?otificacoes" },
+            { to: '/admin/notificacoes', label: "Notificações" },
             { to: '/admin/mensagens', label: 'Mensagens' },
             { to: '/admin/suporte', label: 'Tickets' },
             { to: '/admin/faq', label: 'FAQ/Ajuda' },
@@ -71,10 +71,10 @@ const adminNavGroups: AdminNavGroup[] = [
     {
         key: 'system',
         label: 'Plataforma',
-        description: "Configuraes de apoio e administracao da conta.",
+        description: "Configurações de apoio e administração da conta.",
         links: [
             { to: '/admin/minha-conta', label: 'Minha Conta' },
-            { to: '/admin/configuracoes-site', label: "Configuraes do Site" },
+            { to: '/admin/configuracoes-site', label: "Configurações do Site" },
         ],
     },
 ];
@@ -100,7 +100,7 @@ export function AdminLayout() {
             : [...current, groupKey]);
     }
     async function handleClearServerCache() {
-        const shouldProceed = window.confirm("Esta ao vai:\n- Acionar limpeza de cache no servidor\n- Recarregar configuraes do PostgREST (schema/config)\n- Refletir alteracoes recentes de dados/config mais rapido\n- No encerra seu login no navegador\n\nDeseja continuar");
+        const shouldProceed = window.confirm("Esta ação vai:\n- Acionar limpeza de cache no servidor\n- Recarregar configurações do PostgREST (schema/config)\n- Refletir alterações recentes de dados/config mais rápido\n- Não encerrar seu login no navegador\n\nDeseja continuar");
         if (!shouldProceed) {
             return;
         }
@@ -120,7 +120,7 @@ export function AdminLayout() {
     }
     async function handleClearBrowserCache(preserveLogin: boolean) {
         const shouldProceed = window.confirm(preserveLogin
-            ? "Esta ao vai:\n- Limpar cache do navegador (arquivos, caches e IndexedDB)\n- Limpar dados locais temporarios do painel\n- Preservar sua sesso de login atual\n- Recarregar a pgina ao final\n\nDeseja continuar" : "Esta ao vai:\n- Limpar cache do navegador (arquivos, caches e IndexedDB)\n- Limpar localStorage e sessionStorage completos\n- Encerrar sua sesso atual (logout)\n- Recarregar a pgina ao final\n\nDeseja continuar");
+            ? "Esta ação vai:\n- Limpar cache do navegador (arquivos, caches e IndexedDB)\n- Limpar dados locais temporários do painel\n- Preservar sua sessão de login atual\n- Recarregar a página ao final\n\nDeseja continuar" : "Esta ação vai:\n- Limpar cache do navegador (arquivos, caches e IndexedDB)\n- Limpar localStorage e sessionStorage completos\n- Encerrar sua sessão atual (logout)\n- Recarregar a página ao final\n\nDeseja continuar");
         if (!shouldProceed) {
             return;
         }
