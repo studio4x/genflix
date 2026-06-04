@@ -736,15 +736,16 @@ interface LessonContentBlocksEditorProps {
     onChange: (blocks: LessonContentBlock[]) => void;
     onError?: (message: string | null) => void;
     level?: number;
+    allowEmptyState?: boolean;
 }
 
-export function LessonContentBlocksEditor({ blocks, onChange, onError, level = 0 }: LessonContentBlocksEditorProps) {
+export function LessonContentBlocksEditor({ blocks, onChange, onError, level = 0, allowEmptyState = false }: LessonContentBlocksEditorProps) {
     const updateBlock = (index: number, nextBlock: LessonContentBlock) => {
         onChange(blocks.map((block, blockIndex) => (blockIndex === index ? nextBlock : block)));
     };
 
     const removeBlock = async (index: number) => {
-        if (blocks.length <= 1) {
+        if (blocks.length <= 1 && !allowEmptyState) {
             return;
         }
         const blockToRemove = blocks[index];
@@ -760,7 +761,8 @@ export function LessonContentBlocksEditor({ blocks, onChange, onError, level = 0
                 console.error('Erro ao remover asset do bloco:', error);
             }
         }
-        onChange(blocks.filter((_, blockIndex) => blockIndex !== index));
+        const nextBlocks = blocks.filter((_, blockIndex) => blockIndex !== index);
+        onChange(nextBlocks);
     };
 
     const moveBlock = (index: number, direction: 'up' | 'down') => {
@@ -785,6 +787,11 @@ export function LessonContentBlocksEditor({ blocks, onChange, onError, level = 0
 
     return (
         <div className={level === 0 ? 'space-y-8' : 'space-y-4'}>
+            {blocks.length === 0 ? (
+                <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">
+                    Sem blocos inseridos
+                </div>
+            ) : null}
             {blocks.map((block, index) => (
                 <div key={`${block.type}-${index}`} className={cn('group relative rounded-2xl border border-slate-200 bg-slate-50/50 p-5 transition-all hover:bg-white hover:shadow-md', level > 0 && 'bg-white')}>
                     <div className="mb-4 flex items-center justify-between border-b border-slate-100 pb-3">
@@ -910,6 +917,7 @@ export function LessonContentBlocksEditor({ blocks, onChange, onError, level = 0
                                         <LessonContentBlocksEditor
                                             blocks={column.blocks}
                                             level={level + 1}
+                                            allowEmptyState
                                             onError={onError}
                                             onChange={(nextBlocks) => {
                                                 const nextColumns: LessonColumnsBlockContent = [...block.content];
