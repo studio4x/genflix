@@ -262,6 +262,9 @@ Na pratica:
   "lesson_type": "video",
   "youtube_url": "https://youtube.com/...",
   "text_content": "<p>Contedo da aula</p>",
+  "blocks": [
+    { "type": "rich-text", "content": "<p>Contedo da aula</p>" }
+  ],
   "estimated_minutes": 15
 }
 ```
@@ -275,6 +278,7 @@ Na pratica:
 | `lesson_type` | `video \| text \| hybrid` | sim | persistido como veio |
 | `youtube_url` | string | n?o | usado em aulas `video` e `hybrid` |
 | `text_content` | string | n?o | HTML/texto da aula |
+| `blocks` | array | n?o | estrutura completa dos blocos inseridos na aula |
 | `estimated_minutes` | number | n?o | default de importacao: `10` |
 
 ### Campos de aula que ficam fora da spec atual
@@ -287,6 +291,12 @@ N?o sao importados/exportados:
 - anexos de `lesson_materials`
 - acoes de rodape em `lesson_footer_actions`
 - assets internos de blocos ricos, exceto quando o HTML referencia URLs externas ou paths persistidos em texto
+
+Observacao:
+
+- a exportacao de aula passa a incluir `blocks` para preservar a estrutura rica do editor;
+- `text_content` segue sendo exportado por compatibilidade e continua sendo a base do armazenamento no banco;
+- na importacao, quando `blocks` estiver presente, ele tem prioridade na reconstrucao do `text_content`.
 
 ## 4. Contrato de avalia??o
 

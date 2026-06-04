@@ -1,4 +1,5 @@
 ﻿import { supabase } from '@/services/supabase/client';
+import { mergeContent, splitContent, type LessonContentBlock, } from './content-blocks';
 import { exportAssessmentContent, importAssessmentContentStructured, type ImportAssessmentData, } from '@/features/admin/assessments/api';
 import { normalizeCourseQuizTypeSettings } from '@/features/assessments/course-quiz-type-settings';
 import { isLegacyCourseSalesSchemaError, stripLegacyCourseSalesFields, withLegacyCourseSalesDefaults, } from '@/features/courses/schema-compat';
@@ -1138,6 +1139,7 @@ export interface ImportModuleData {
         lesson_type: 'video' | 'text' | 'hybrid' | 'file';
         youtube_url?: string;
         text_content?: string;
+        blocks?: LessonContentBlock[];
         estimated_minutes?: number;
     }[];
     assessments?: {
@@ -1160,6 +1162,7 @@ export interface ExportModuleData {
         lesson_type: 'video' | 'text' | 'hybrid' | 'file';
         youtube_url?: string;
         text_content?: string;
+        blocks?: LessonContentBlock[];
         estimated_minutes?: number;
     }[];
     assessments?: (ImportAssessmentData & {
@@ -1219,6 +1222,8 @@ export async function exportModuleContent(moduleId: string): Promise<ExportModul
             lesson_type: lesson.lesson_type,
             youtube_url: lesson.youtube_url ?? '',
             text_content: lesson.text_content ?? '',
+            // Inclui a estrutura dos blocos para preservar a edição rica no JSON exportado.
+            blocks: splitContent(lesson.text_content ?? ''),
             estimated_minutes: lesson.estimated_minutes,
         })),
         assessments: exportedAssessments,
@@ -1272,13 +1277,24 @@ export async function clearCourseContent(courseId: string) {
 async function createModuleLessons(moduleId: string, lessons: ImportModuleData['lessons']) {
     if (!lessons || lessons.length === 0)
         return;
+    const resolveLessonTextContent = (lesson: NonNullable<ImportModuleData['lessons']>[number]) => {
+        if (Array.isArray(lesson.blocks) && lesson.blocks.length > 0) {
+            try {
+                return mergeContent(lesson.blocks);
+            }
+            catch (error) {
+                console.warn('Falha ao reconstruir blocks da aula; usando text_content como fallback.', error);
+            }
+        }
+        return lesson.text_content || null;
+    };
     const lessonsToInsert = lessons.map((lesson, index) => ({
         module_id: moduleId,
         title: lesson.title,
         description: lesson.description || null,
         lesson_type: lesson.lesson_type,
         youtube_url: lesson.youtube_url || null,
-        text_content: lesson.text_content || null,
+        text_content: resolveLessonTextContent(lesson),
         estimated_minutes: lesson.estimated_minutes || 10,
         position: index + 1,
     }));
