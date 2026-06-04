@@ -433,7 +433,7 @@ Todas as quest\u00f5es, estudos de caso e tentativas vinculadas serão removidos
               {courseTree.courseAssessments.map((assessment) => (<div key={assessment.id} className="flex items-center justify-between gap-4 rounded-xl border border-emerald-100 bg-emerald-50/40 p-4">
                   <div className="min-w-0">
                     <p className="truncate text-sm font-bold text-emerald-900">{assessment.title}</p>
-                    <p className="mt-1 text-xs font-medium text-emerald-700">{`Nota m?nima ${assessment.passing_score}% ? ${assessment.max_attempts} tentativa(s)`}
+                    <p className="mt-1 text-xs font-medium text-emerald-700">{`Nota mínima ${assessment.passing_score}% · ${assessment.max_attempts} tentativa(s)`}
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
@@ -549,7 +549,7 @@ Todas as quest\u00f5es, estudos de caso e tentativas vinculadas serão removidos
           <div className="w-full max-w-2xl rounded-[32px] border border-white/20 bg-white shadow-2xl animate-in zoom-in-95 duration-300">
             <div className="border-b border-slate-100 p-8">
               <h3 className="text-xl font-black tracking-tight text-slate-900">{'Este m\u00f3dulo j\u00e1 possui an\u00e1lise com IA'}</h3>
-              <p className="mt-2 text-sm leading-relaxed text-slate-500">{'O módulo '}<strong>{repeatReviewPrompt.moduleTitle}</strong>{' já possui uma análise salva. A última revisão foi em '}
+              <p className="mt-2 text-sm leading-relaxed text-slate-500">{'O módulo '}<strong>{repeatReviewPrompt.moduleTitle}</strong>{' já possui uma análise salva. Última revisão em '}
                 {new Intl.DateTimeFormat('pt-BR', {
                 dateStyle: 'short',
                 timeStyle: 'medium',

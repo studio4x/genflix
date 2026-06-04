@@ -461,7 +461,7 @@ export function ModuleEditorPanel() {
             <div className="w-full max-w-2xl rounded-[32px] border border-white/20 bg-white shadow-2xl animate-in zoom-in-95 duration-300">
               <div className="border-b border-slate-100 p-8">
                 <h3 className="text-xl font-black tracking-tight text-slate-900">Este módulo já possui análise com IA</h3>
-                <p className="mt-2 text-sm leading-relaxed text-slate-500">O módulo <strong>{currentModule.title}</strong> já possui uma análise salva. A última revisão foi em{' '}
+                <p className="mt-2 text-sm leading-relaxed text-slate-500">O módulo <strong>{currentModule.title}</strong> já possui uma análise salva. Última revisão em{' '}
                   {new Intl.DateTimeFormat('pt-BR', {
                 dateStyle: 'short',
                 timeStyle: 'medium',
