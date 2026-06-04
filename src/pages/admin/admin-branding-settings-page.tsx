@@ -118,7 +118,7 @@ export function AdminBrandingSettingsPage() {
           <button type="button" onClick={() => setActiveTab('narration')} className={`inline-flex h-11 items-center justify-center rounded-full border px-5 text-xs font-black uppercase tracking-[0.16em] ${activeTab === 'narration'
             ? 'border-[#1398B7] bg-[#1398B7] text-white'
             : 'border-[#D8E6EB] bg-white text-[#5F7077] hover:bg-[#F2F7F9]'}`}>
-            IA de narracao
+            IA da plataforma
           </button>
         </div>
       </header>

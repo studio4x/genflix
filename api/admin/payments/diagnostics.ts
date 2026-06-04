@@ -581,7 +581,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
         return;
     }
     const scope = getHeaderValue(req.query.scope);
-    if (scope === 'narration-ai') {
+    if (scope === 'narration-ai' || scope === 'platform-ai' || scope === 'ai-credentials') {
         await handleNarrationCredentialsScope(req, res, context);
         return;
     }

@@ -347,7 +347,7 @@ async function generateWithOpenAi(prompt: string, apiKey: string) {
     };
 }
 async function generateWithGemini(prompt: string, apiKey: string) {
-    const geminiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_ANALYSIS_MODEL}:generateContentkey=${apiKey}`, {
+    const geminiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_ANALYSIS_MODEL}:generateContent?key=${apiKey}`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
