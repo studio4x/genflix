@@ -1361,12 +1361,15 @@ async function replaceModuleContentInPlace(courseId: string, moduleId: string, m
     await createModuleLessons(moduleId, moduleData.lessons);
     await createModuleAssessments(courseId, moduleId, moduleData.assessments);
 }
-export async function importCourseContent(courseId: string, input: ImportCourseFullData | ImportModuleData[] | ImportAssessmentData, clearExisting: boolean = false, moduleIdToReplace?: string) {
+export async function importCourseContent(courseId: string, input: ImportCourseFullData | ImportModuleData | ImportModuleData[] | ImportAssessmentData, clearExisting: boolean = false, moduleIdToReplace?: string) {
     if (clearExisting) {
         await clearCourseContent(courseId);
     }
     const fullCourseInput = !Array.isArray(input) && 'modules' in input ? input : null;
     const assessmentOnlyInput = !Array.isArray(input) && ('questions' in input || 'case_studies' in input) && !('modules' in input) ? input : null;
+    const moduleLikeInput = !Array.isArray(input) && !fullCourseInput && !assessmentOnlyInput && ('lessons' in input || 'assessments' in input)
+        ? input
+        : null;
     // Se for um curso completo, atualizamos os metadados do curso atual também
     if (fullCourseInput) {
         const { error: updateError } = await supabase
@@ -1381,7 +1384,8 @@ export async function importCourseContent(courseId: string, input: ImportCourseF
         if (updateError)
             throw updateError;
     }
-    const modules = (Array.isArray(input) ? input : fullCourseInput?.modules ?? []) as ImportModuleData[];
+    const inputModules = Array.isArray(input) ? input : fullCourseInput?.modules;
+    const modules = (inputModules ?? (moduleLikeInput ? [moduleLikeInput] : [])) as ImportModuleData[];
     const isAssessmentOnly = assessmentOnlyInput !== null;
     if (modules.length === 0 && !isAssessmentOnly) {
         throw new Error('Nenhum módulo ou conjunto de questões encontrado no JSON para importar.');
