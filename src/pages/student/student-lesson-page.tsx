@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import { useNavigate, useOutletContext, useParams } from 'react-router-dom';
 import { useAuth } from '@/app/providers/auth-provider';
 import { Button } from '@/components/ui/button';
@@ -308,7 +308,7 @@ export function StudentLessonPage() {
         </div>)}
 
       {(lessonType === 'video' || lessonType === 'hybrid') && videoSource?.type === 'asset' && !isLoadingProtectedVideo && !protectedVideoPlaybackUrl && (<div className="rounded-[28px] border border-amber-200 bg-amber-50 p-6 text-amber-900">
-          <p className="text-sm font-semibold">Não foi possível carregar o vídeo protegido desta aula. Tente novamente em instantes.
+          <p className="text-sm font-semibold">NÃ£o foi possÃ­vel carregar o vÃ­deo protegido desta aula. Tente novamente em instantes.
           </p>
         </div>)}
 
@@ -323,7 +323,7 @@ export function StudentLessonPage() {
         </div>)}
 
       {lessonType === 'file' && !textContent && (<div className="rounded-[28px] border border-amber-200 bg-amber-50 p-6 text-amber-900">
-          <p className="text-sm font-semibold">Esta aula é consumida pelos materiais do módulo. Use a seção "Botões e Recursos" abaixo para acessar os arquivos.
+          <p className="text-sm font-semibold">Esta aula Ã© consumida pelos materiais do mÃ³dulo. Use a seÃ§Ã£o "BotÃµes e Recursos" abaixo para acessar os arquivos.
           </p>
         </div>)}
 
@@ -331,11 +331,9 @@ export function StudentLessonPage() {
         <div className="border-b border-slate-100 px-6 py-5 sm:px-8">
           <div className="flex items-center gap-3">
             <span className="rounded-full border border-blue-100 bg-blue-50 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-blue-600">
-              Botões e Recursos
+              Recursos adicionais da aula
             </span>
-            <span className="text-xs font-medium text-slate-500">Arquivos e links extras desta aula
-            </span>
-          </div>
+            </div>
         </div>
 
         <div className="space-y-4 p-6 sm:p-8">
@@ -370,10 +368,6 @@ export function StudentLessonPage() {
               {currentLesson.is_completed ? 'Aula Concluida' : 'Marcar como Concluida'}
             </button>
 
-            {footerActions.map((action) => (<Button key={action.id} variant="outline" onClick={() => void handleOpenFooterAction(action)} className={getLessonFooterButtonClassName(action.template)}>
-                {renderButtonTemplateIcon(getLessonFooterActionIconName(action))}
-                {action.label ?? action.file_name ?? action.template?.default_label ?? 'Abrir'}
-              </Button>))}
           </div>
 
           <div className="flex w-full items-center gap-3 xl:w-auto">
@@ -394,3 +388,5 @@ export function StudentLessonPage() {
       </div>
     </div>);
 }
+
+
