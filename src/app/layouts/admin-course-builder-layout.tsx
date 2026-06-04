@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useState } from 'react';
+import type { ChangeEvent } from 'react';
 import { Link, Outlet, useNavigate, useParams } from 'react-router-dom';
 import { AppVersion } from '@/components/layout/AppVersion';
 import { Button } from '@/components/ui/button';
@@ -34,6 +35,7 @@ export function AdminCourseBuilderLayout() {
     // AI Import State
     const [isImportModalOpen, setIsImportModalOpen] = useState(false);
     const [importJson, setImportJson] = useState('');
+    const [importFileName, setImportFileName] = useState<string | null>(null);
     const [isImporting, setIsImporting] = useState(false);
     const [importError, setImportError] = useState<string | null>(null);
     const [clearExisting, setClearExisting] = useState(false);
@@ -84,6 +86,34 @@ export function AdminCourseBuilderLayout() {
         window.addEventListener(BUILDER_NOTICE_EVENT, syncNotice as EventListener);
         return () => window.removeEventListener(BUILDER_NOTICE_EVENT, syncNotice as EventListener);
     }, []);
+    async function handleImportFileChange(event: ChangeEvent<HTMLInputElement>) {
+        const file = event.target.files?.[0];
+        if (!file) {
+            return;
+        }
+        if (!file.name.toLowerCase().endsWith('.json')) {
+            setImportError('Selecione um arquivo .json válido.');
+            event.target.value = '';
+            return;
+        }
+        try {
+            const fileContent = await file.text();
+            setImportJson(fileContent);
+            setImportFileName(file.name);
+            setImportError(null);
+        }
+        catch (error) {
+            console.error('Falha ao ler arquivo JSON:', error);
+            setImportError('Não foi possível ler o arquivo JSON selecionado.');
+        }
+        finally {
+            event.target.value = '';
+        }
+    }
+    function closeImportModal() {
+        setIsImportModalOpen(false);
+        setImportFileName(null);
+    }
     async function handleImport() {
         if (!courseId)
             return;
@@ -124,7 +154,7 @@ export function AdminCourseBuilderLayout() {
             });
             await importCourseContent(courseId, cleanData, clearExisting, moduleIdToReplace || undefined);
             await refreshTree();
-            setIsImportModalOpen(false);
+            closeImportModal();
             setImportJson('');
             setClearExisting(false);
             setModuleIdToReplace(null);
@@ -284,7 +314,7 @@ export function AdminCourseBuilderLayout() {
                         <h3 className="text-xl font-black text-slate-900 tracking-tight">Importação em Massa (IA)</h3>
                         <p className="text-sm text-slate-500 mt-1 font-medium">Cole o JSON gerado pela sua IA favorita abaixo.</p>
                      </div>
-                     <button onClick={() => setIsImportModalOpen(false)} className="h-10 w-10 flex items-center justify-center rounded-xl bg-slate-50 text-slate-400 hover:text-slate-900 transition-colors">
+                     <button onClick={closeImportModal} className="h-10 w-10 flex items-center justify-center rounded-xl bg-slate-50 text-slate-400 hover:text-slate-900 transition-colors">
                         <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/></svg>
                      </button>
                   </div>
@@ -292,6 +322,18 @@ export function AdminCourseBuilderLayout() {
                   <div className="p-8 space-y-6">
                      <div className="space-y-2">
                         <span className="text-xs font-black text-slate-400 uppercase tracking-widest pl-1">Código JSON Estruturado</span>
+                        <label className="flex cursor-pointer items-center justify-between gap-3 rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-3 text-sm transition-colors hover:bg-slate-100">
+                          <div className="min-w-0">
+                            <span className="block text-sm font-black text-slate-900">Anexar arquivo .json</span>
+                            <span className="mt-0.5 block truncate text-xs font-medium text-slate-500">
+                              {importFileName ? `Arquivo selecionado: ${importFileName}` : 'Escolha um arquivo JSON para preencher o campo automaticamente.'}
+                            </span>
+                          </div>
+                          <span className="shrink-0 rounded-xl bg-white px-4 py-2 text-xs font-black uppercase tracking-widest text-blue-600 shadow-sm">
+                            Selecionar arquivo
+                          </span>
+                          <input type="file" accept=".json,application/json" className="hidden" onChange={(event) => void handleImportFileChange(event)} />
+                        </label>
                         <textarea className="w-full h-80 font-mono text-xs p-6 bg-slate-900 text-emerald-400 rounded-2xl border border-slate-800 focus:ring-4 focus:ring-blue-100 transition-all no-scrollbar" placeholder='[ { "title": "Módulo 1", "lessons": [...] } ]' value={importJson} onChange={e => setImportJson(e.target.value)}/>
                      </div>
 
@@ -337,7 +379,7 @@ export function AdminCourseBuilderLayout() {
                   </div>
 
                   <div className="p-8 bg-slate-50/50 flex gap-4 border-t border-slate-100">
-                     <Button variant="ghost" onClick={() => setIsImportModalOpen(false)} className="flex-1 h-14 rounded-2xl font-bold text-slate-500">
+                     <Button variant="ghost" onClick={closeImportModal} className="flex-1 h-14 rounded-2xl font-bold text-slate-500">
                         Cancelar
                      </Button>
                      <Button onClick={handleImport} disabled={isImporting || !importJson.trim()} className="flex-[2] h-14 rounded-2xl bg-blue-600 font-black shadow-xl shadow-blue-100">
