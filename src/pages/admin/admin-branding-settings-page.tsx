@@ -1,8 +1,12 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { Copy, Download } from 'lucide-react';
 import { useBranding } from '@/app/providers/branding-provider';
+import { Button } from '@/components/ui/button';
 import { GenflixLogo } from '@/components/public/genflix-logo';
 import { createBrandingAssetValue } from '@/features/branding/api';
+import { JSON_MODEL_TEMPLATES, stringifyJsonModel } from '@/features/admin/content/json-model-templates';
 import { brandingEntryKeys, type BrandingSlotKey } from '@/features/branding/types';
+import { downloadJsonFile } from '@/lib/download';
 import { saveSiteContentEntry, uploadSiteAsset } from '@/features/site-editor/api';
 import { AdminPdfWatermarkPanel } from '@/pages/admin/admin-pdf-watermark-panel';
 import { AdminNarrationCredentialsPanel } from '@/pages/admin/admin-narration-credentials-panel';
@@ -42,8 +46,9 @@ const brandingCards: Array<{
 ];
 export function AdminBrandingSettingsPage() {
     const { branding, setBrandingAsset } = useBranding();
-    const [activeTab, setActiveTab] = useState<'branding' | 'watermark' | 'tracking' | 'narration'>('branding');
+    const [activeTab, setActiveTab] = useState<'branding' | 'watermark' | 'tracking' | 'narration' | 'json-models'>('branding');
     const [uploadingSlot, setUploadingSlot] = useState<BrandingSlotKey | null>(null);
+    const [copiedModelId, setCopiedModelId] = useState<string | null>(null);
     const [message, setMessage] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
     const summary = useMemo(() => ({
@@ -51,6 +56,13 @@ export function AdminBrandingSettingsPage() {
         logoDark: Boolean(branding.logoDark?.src),
         favicon: Boolean(branding.favicon?.src),
     }), [branding]);
+    useEffect(() => {
+        if (!copiedModelId) {
+            return;
+        }
+        const timeoutId = window.setTimeout(() => setCopiedModelId(null), 2000);
+        return () => window.clearTimeout(timeoutId);
+    }, [copiedModelId]);
     async function handleUpload(slot: BrandingSlotKey, file: File | null) {
         if (!file) {
             return;
@@ -90,6 +102,27 @@ export function AdminBrandingSettingsPage() {
             setUploadingSlot(null);
         }
     }
+    async function copyModelJson(templateId: string) {
+        const template = JSON_MODEL_TEMPLATES.find((item) => item.id === templateId);
+        if (!template) {
+            return;
+        }
+        try {
+            await navigator.clipboard.writeText(stringifyJsonModel(template.data));
+            setCopiedModelId(templateId);
+            setError(null);
+        }
+        catch {
+            setError('Não foi possível copiar o JSON para a área de transferência.');
+        }
+    }
+    function downloadModelJson(templateId: string) {
+        const template = JSON_MODEL_TEMPLATES.find((item) => item.id === templateId);
+        if (!template) {
+            return;
+        }
+        downloadJsonFile(template.fileName, template.data);
+    }
     return (<div className="animate-in space-y-7 fade-in duration-500">
       <header className="space-y-3 border-b border-[#D8E6EB] pb-6">
         <div className="inline-flex border border-[#D8E6EB] bg-[#E8F6FA] px-4 py-2 text-[10px] font-black uppercase tracking-[0.28em] text-[#1398B7]">
@@ -119,6 +152,11 @@ export function AdminBrandingSettingsPage() {
             ? 'border-[#1398B7] bg-[#1398B7] text-white'
             : 'border-[#D8E6EB] bg-white text-[#5F7077] hover:bg-[#F2F7F9]'}`}>
             IA da plataforma
+          </button>
+          <button type="button" onClick={() => setActiveTab('json-models')} className={`inline-flex h-11 items-center justify-center rounded-full border px-5 text-xs font-black uppercase tracking-[0.16em] ${activeTab === 'json-models'
+            ? 'border-[#1398B7] bg-[#1398B7] text-white'
+            : 'border-[#D8E6EB] bg-white text-[#5F7077] hover:bg-[#F2F7F9]'}`}>
+            Modelos JSON
           </button>
         </div>
       </header>
@@ -209,5 +247,41 @@ export function AdminBrandingSettingsPage() {
       {activeTab === 'tracking' ? (<AdminSiteTrackingPanel />) : null}
 
       {activeTab === 'narration' ? (<AdminNarrationCredentialsPanel />) : null}
+
+      {activeTab === 'json-models' ? (<section className="space-y-5">
+          <div className="border border-[#D8E6EB] bg-white p-5 shadow-sm">
+            <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#1398B7]">Modelos de importação</p>
+            <h2 className="mt-1 font-readex text-xl font-semibold text-[#15323b]">JSON prontos para copiar ou baixar</h2>
+            <p className="mt-2 max-w-3xl text-sm font-medium leading-6 text-[#5F7077]">
+              Use estes modelos como base para gerar ou revisar conteúdos importáveis. Cada botão copia apenas o JSON, sem mostrar o código inteiro na página.
+            </p>
+          </div>
+
+          <div className="grid gap-5 xl:grid-cols-2">
+            {JSON_MODEL_TEMPLATES.map((template) => {
+                const isCopied = copiedModelId === template.id;
+                return (<article key={template.id} className="border border-[#D8E6EB] bg-white p-5 shadow-sm">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#5F7077]">{template.fileName}</p>
+                      <h3 className="mt-2 font-readex text-xl font-semibold text-[#15323b]">{template.title}</h3>
+                      <p className="mt-2 text-sm leading-6 text-[#5F7077]">{template.description}</p>
+                    </div>
+                  </div>
+
+                  <div className="mt-5 flex flex-wrap gap-3">
+                    <Button type="button" variant="outline" onClick={() => void copyModelJson(template.id)} className="h-11 rounded-full border-[#D8E6EB] bg-white font-bold text-[#15323b] hover:border-[#1398B7]/40 hover:text-[#1398B7]">
+                      <Copy className="mr-2 h-4 w-4"/>
+                      {isCopied ? 'Copiado' : 'Copiar JSON'}
+                    </Button>
+                    <Button type="button" onClick={() => downloadModelJson(template.id)} className="h-11 rounded-full bg-[#1398B7] font-black text-white hover:bg-[#0A7D97]">
+                      <Download className="mr-2 h-4 w-4"/>
+                      Baixar JSON modelo
+                    </Button>
+                  </div>
+                </article>);
+            })}
+          </div>
+        </section>) : null}
     </div>);
 }
