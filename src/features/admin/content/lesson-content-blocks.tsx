@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ChangeEvent } from 'react';
+import { useEffect, useRef, useState, type CSSProperties, type ChangeEvent } from 'react';
 import ReactQuill from '@/components/forms/react-quill';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -9,6 +9,8 @@ import {
     createEmptyLessonImageBlockContent,
     createEmptyLessonImageHotspotsBlockContent,
     createEmptyLessonVideoBlockContent,
+    getColumnsTemplateValue,
+    getColumnsWidthsAttributeValue,
     sanitizeRichTextHtml,
     sanitizeTableHtml,
     type LessonImageBlockCaptionAlignment,
@@ -75,6 +77,45 @@ const VIDEO_CAPTION_ALIGNMENT_CLASSES: Record<LessonVideoBlockCaptionAlignment, 
     center: 'text-center',
     right: 'text-right',
 };
+
+const COLUMN_WIDTH_STEP = 5;
+
+function buildColumnWidthOptions(columnCount: number): number[] {
+    if (columnCount <= 1) {
+        return [100];
+    }
+    const safeCount = Math.min(4, Math.max(2, columnCount));
+    const maxWidth = 100 - ((safeCount - 1) * COLUMN_WIDTH_STEP);
+    const options: number[] = [];
+    for (let width = COLUMN_WIDTH_STEP; width <= maxWidth; width += COLUMN_WIDTH_STEP) {
+        options.push(width);
+    }
+    return options;
+}
+
+function distributeColumnWidths(columnCount: number, selectedIndex: number, selectedWidth: number): number[] {
+    const safeCount = Math.min(4, Math.max(1, columnCount));
+    if (safeCount === 1) {
+        return [100];
+    }
+    const maxSelectedWidth = 100 - ((safeCount - 1) * COLUMN_WIDTH_STEP);
+    const safeSelectedWidth = Math.min(maxSelectedWidth, Math.max(COLUMN_WIDTH_STEP, Math.round(selectedWidth / COLUMN_WIDTH_STEP) * COLUMN_WIDTH_STEP));
+    const remainingWidth = 100 - safeSelectedWidth;
+    const otherCount = safeCount - 1;
+    const baseWidth = Math.floor((remainingWidth / otherCount) / COLUMN_WIDTH_STEP) * COLUMN_WIDTH_STEP;
+    const widths = Array.from({ length: safeCount }, () => baseWidth);
+    widths[selectedIndex] = safeSelectedWidth;
+    let leftoverWidth = remainingWidth - (baseWidth * otherCount);
+    let cursor = 0;
+    while (leftoverWidth > 0) {
+        if (cursor !== selectedIndex) {
+            widths[cursor] += COLUMN_WIDTH_STEP;
+            leftoverWidth -= COLUMN_WIDTH_STEP;
+        }
+        cursor = (cursor + 1) % safeCount;
+    }
+    return widths;
+}
 
 function isDirectVideoUrl(url: string): boolean {
     return /^https?:\/\/[^\s]+\.(mp4|webm|ogg|ogv|m4v|mov)(\?.*)?(#.*)?$/i.test(url);
@@ -186,7 +227,7 @@ function collectDeletableAssetPaths(block: LessonContentBlock): string[] {
         return [block.content.storage_path];
     }
     if (block.type === 'columns') {
-        return block.content.flatMap((columnBlocks) => columnBlocks.flatMap((columnBlock) => collectDeletableAssetPaths(columnBlock)));
+        return block.content.flatMap((column) => column.blocks.flatMap((columnBlock) => collectDeletableAssetPaths(columnBlock)));
     }
     return [];
 }
@@ -800,7 +841,7 @@ export function LessonContentBlocksEditor({ blocks, onChange, onError, level = 0
                                         }
                                         const safeCount = Math.min(4, Math.max(1, nextCount));
                                         const removedColumns = block.content.slice(safeCount);
-                                        const removedAssetPaths = Array.from(new Set(removedColumns.flatMap((columnBlocks) => columnBlocks.flatMap((columnBlock) => collectDeletableAssetPaths(columnBlock)))));
+                                        const removedAssetPaths = Array.from(new Set(removedColumns.flatMap((column) => column.blocks.flatMap((columnBlock) => collectDeletableAssetPaths(columnBlock)))));
                                         void Promise.all(removedAssetPaths.map(async (assetPath) => {
                                             try {
                                                 await deleteLessonContentAsset(assetPath);
@@ -809,11 +850,13 @@ export function LessonContentBlocksEditor({ blocks, onChange, onError, level = 0
                                                 console.error('Erro ao remover asset da coluna:', error);
                                             }
                                         }));
-                                        const nextColumns: LessonColumnsBlockContent = block.content.slice(0, safeCount);
-                                        const blankColumn = createEmptyColumnsBlockContent(1)[0]!;
-                                        while (nextColumns.length < safeCount) {
-                                            nextColumns.push(blankColumn);
-                                        }
+                                        const preservedColumns = block.content.slice(0, safeCount);
+                                        const nextColumns = createEmptyColumnsBlockContent(safeCount);
+                                        preservedColumns.forEach((column, columnIndex) => {
+                                            if (nextColumns[columnIndex]) {
+                                                nextColumns[columnIndex].blocks = column.blocks;
+                                            }
+                                        });
                                         updateBlock(index, {
                                             ...block,
                                             content: nextColumns,
@@ -828,18 +871,51 @@ export function LessonContentBlocksEditor({ blocks, onChange, onError, level = 0
                             </div>
 
                             <div className={`grid grid-cols-1 gap-4 ${block.content.length === 1 ? 'md:grid-cols-1' : block.content.length === 2 ? 'md:grid-cols-2' : block.content.length === 3 ? 'md:grid-cols-3' : 'md:grid-cols-4'}`}>
-                                {block.content.map((columnBlocks, columnIndex) => (
+                                {block.content.map((column, columnIndex) => (
                                     <div key={`column-editor-${index}-${columnIndex}`} className="rounded-xl border border-slate-200 bg-white p-3">
-                                        <p className="mb-3 text-[11px] font-black uppercase tracking-widest text-slate-500">
-                                            Coluna {columnIndex + 1}
-                                        </p>
+                                        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                                            <p className="text-[11px] font-black uppercase tracking-widest text-slate-500">
+                                                Coluna {columnIndex + 1}
+                                            </p>
+                                            <label className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">
+                                                Largura
+                                                <select
+                                                    className="rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] font-semibold text-slate-600"
+                                                    value={column.width}
+                                                    onChange={(event) => {
+                                                        const nextWidth = Number.parseInt(event.target.value, 10);
+                                                        if (!Number.isFinite(nextWidth)) {
+                                                            return;
+                                                        }
+                                                        const nextWidths = distributeColumnWidths(block.content.length, columnIndex, nextWidth);
+                                                        const nextColumns = block.content.map((item, itemIndex) => ({
+                                                            ...item,
+                                                            width: nextWidths[itemIndex] ?? item.width,
+                                                        }));
+                                                        updateBlock(index, {
+                                                            ...block,
+                                                            content: nextColumns,
+                                                        });
+                                                    }}
+                                                >
+                                                    {buildColumnWidthOptions(block.content.length).map((option) => (
+                                                        <option key={`column-width-${index}-${columnIndex}-${option}`} value={option}>
+                                                            {option}%
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                            </label>
+                                        </div>
                                         <LessonContentBlocksEditor
-                                            blocks={columnBlocks}
+                                            blocks={column.blocks}
                                             level={level + 1}
                                             onError={onError}
                                             onChange={(nextBlocks) => {
                                                 const nextColumns: LessonColumnsBlockContent = [...block.content];
-                                                nextColumns[columnIndex] = nextBlocks;
+                                                nextColumns[columnIndex] = {
+                                                    ...nextColumns[columnIndex],
+                                                    blocks: nextBlocks,
+                                                };
                                                 updateBlock(index, { ...block, content: nextColumns });
                                             }}
                                         />
@@ -900,11 +976,20 @@ export function LessonContentBlocksRenderer({ blocks, className }: LessonContent
             {blocks.map((block, index) => {
                 if (block.type === 'columns') {
                     const columnsCount = Math.min(4, Math.max(1, block.content.length));
+                    const columnsTemplate = getColumnsTemplateValue(block.content);
+                    const columnsWidths = getColumnsWidthsAttributeValue(block.content);
                     return (
-                        <div key={`columns-${index}`} className={`genflix-columns genflix-columns-${columnsCount}`}>
-                            {block.content.map((columnBlocks, columnIndex) => (
+                        <div
+                            key={`columns-${index}`}
+                            className={`genflix-columns genflix-columns-${columnsCount}`}
+                            data-hcm-column-widths={columnsWidths}
+                            style={{
+                                '--hcm-columns-template': columnsTemplate,
+                            } as CSSProperties}
+                        >
+                            {block.content.map((column, columnIndex) => (
                                 <div key={`columns-${index}-${columnIndex}`} className="genflix-column">
-                                    <LessonContentBlocksRenderer blocks={columnBlocks} />
+                                    <LessonContentBlocksRenderer blocks={column.blocks} />
                                 </div>
                             ))}
                         </div>

@@ -26,7 +26,11 @@ export interface LessonVideoBlockContent {
     size: LessonVideoBlockSize;
     caption_alignment: LessonVideoBlockCaptionAlignment;
 }
-export type LessonColumnsBlockContent = LessonContentBlock[][];
+export interface LessonColumnBlockContent {
+    width: number;
+    blocks: LessonContentBlock[];
+}
+export type LessonColumnsBlockContent = LessonColumnBlockContent[];
 export type LessonContentBlock = {
     type: 'rich-text';
     content: string;
@@ -55,9 +59,11 @@ const LESSON_IMAGE_HOTSPOTS_BLOCK_ATTR = 'data-hcm-block';
 const LESSON_IMAGE_HOTSPOTS_BLOCK_PAYLOAD_ATTR = 'data-hcm-payload';
 const LESSON_IMAGE_HOTSPOTS_BLOCK_TYPE = 'image-hotspots';
 const LESSON_COLUMNS_BLOCK_COUNT_ATTR = 'data-hcm-columns';
+const LESSON_COLUMNS_BLOCK_WIDTHS_ATTR = 'data-hcm-column-widths';
 const LESSON_COLUMNS_BLOCK_TYPE = 'columns';
 const LESSON_IMAGE_BLOCK_TYPE = 'image';
 const LESSON_VIDEO_BLOCK_TYPE = 'video';
+const COLUMN_WIDTH_STEP = 5;
 const LESSON_VIDEO_MAX_WIDTH_STYLE: Record<LessonVideoBlockSize, string> = {
     sm: 'max-width: 28rem;',
     md: 'max-width: 42rem;',
@@ -145,6 +151,19 @@ function normalizeHtml(html: string): string {
 }
 function clamp(value: number, min: number, max: number) {
     return Math.min(Math.max(value, min), max);
+}
+function buildEqualColumnWidths(columnsCount: number): number[] {
+    const safeCount = clamp(columnsCount, 1, 4);
+    const baseWidth = Math.floor((100 / safeCount) / COLUMN_WIDTH_STEP) * COLUMN_WIDTH_STEP;
+    const widths = Array.from({ length: safeCount }, () => baseWidth);
+    let remainingWidth = 100 - widths.reduce((sum, value) => sum + value, 0);
+    let index = 0;
+    while (remainingWidth > 0) {
+        widths[index % safeCount] += COLUMN_WIDTH_STEP;
+        remainingWidth -= COLUMN_WIDTH_STEP;
+        index += 1;
+    }
+    return widths;
 }
 function roundPercent(value: number) {
     return Math.round(value * 100) / 100;
@@ -446,7 +465,11 @@ export function createEmptyLessonVideoBlockContent(): LessonVideoBlockContent {
 }
 export function createEmptyColumnsBlockContent(columnsCount = 2): LessonColumnsBlockContent {
     const safeCount = clamp(columnsCount, 1, 4);
-    return Array.from({ length: safeCount }, () => createFallbackBlock('<p></p>'));
+    const widths = buildEqualColumnWidths(safeCount);
+    return Array.from({ length: safeCount }, (_, index) => ({
+        width: widths[index] ?? widths[0] ?? 100,
+        blocks: createFallbackBlock('<p></p>'),
+    }));
 }
 function parseLessonVideoBlockContent(payload: unknown): LessonVideoBlockContent | null {
     if (!payload || typeof payload !== 'object') {
@@ -525,25 +548,73 @@ function buildHotspotsFallbackHtml(content: LessonImageHotspotsBlockContent): st
     </div>
   `;
 }
-function normalizeColumnsContent(columns: LessonColumnsBlockContent, fallbackCount = 2): LessonColumnsBlockContent {
+type LegacyLessonColumnsBlockContent = LessonContentBlock[][];
+function normalizeColumnsContent(columns: LessonColumnsBlockContent | LegacyLessonColumnsBlockContent, fallbackCount = 2): LessonColumnsBlockContent {
     const safeFallbackCount = clamp(fallbackCount, 1, 4);
     const normalized = columns
         .slice(0, 4)
-        .map((column) => (Array.isArray(column) && column.length > 0 ? column : createFallbackBlock('<p></p>')));
+        .map((column) => {
+        if (Array.isArray(column)) {
+            return {
+                width: 0,
+                blocks: column.length > 0 ? column : createFallbackBlock('<p></p>'),
+            };
+        }
+        return {
+            width: Number.isFinite(column.width) ? column.width : 0,
+            blocks: Array.isArray(column.blocks) && column.blocks.length > 0 ? column.blocks : createFallbackBlock('<p></p>'),
+        };
+    });
     const withFallback = normalized.length > 0
         ? normalized
-        : Array.from({ length: safeFallbackCount }, () => createFallbackBlock('<p></p>'));
+        : Array.from({ length: safeFallbackCount }, () => ({
+            width: 0,
+            blocks: createFallbackBlock('<p></p>'),
+        }));
     while (withFallback.length < safeFallbackCount) {
-        withFallback.push(createFallbackBlock('<p></p>'));
+        withFallback.push({
+            width: 0,
+            blocks: createFallbackBlock('<p></p>'),
+        });
     }
-    return withFallback;
+    const widths = withFallback.map((column) => column.width);
+    const resolvedWidths = widths.length === withFallback.length && widths.every((value) => Number.isFinite(value) && value > 0)
+        ? (() => {
+            const totalWidth = widths.reduce((sum, value) => sum + value, 0);
+            if (totalWidth <= 0) {
+                return buildEqualColumnWidths(withFallback.length);
+            }
+            const normalizedWidths = widths.map((value) => Number.parseFloat(((value / totalWidth) * 100).toFixed(2)));
+            const normalizedTotal = normalizedWidths.reduce((sum, value) => sum + value, 0);
+            normalizedWidths[normalizedWidths.length - 1] = Number.parseFloat((normalizedWidths[normalizedWidths.length - 1] + (100 - normalizedTotal)).toFixed(2));
+            return normalizedWidths;
+        })()
+        : buildEqualColumnWidths(withFallback.length);
+    return withFallback.map((column, index) => ({
+        width: resolvedWidths[index] ?? resolvedWidths[0] ?? 100,
+        blocks: column.blocks,
+    }));
+}
+export function getColumnsTemplateValue(columns: LessonColumnsBlockContent): string {
+    return columns.map((column) => `${column.width}%`).join(' ');
+}
+export function getColumnsWidthsAttributeValue(columns: LessonColumnsBlockContent): string {
+    return columns.map((column) => column.width.toFixed(2).replace(/\.00$/, '')).join(', ');
 }
 function extractColumnsContent(element: Element): LessonColumnsBlockContent {
     const columns = Array.from(element.children)
         .filter((child): child is HTMLElement => (child instanceof HTMLElement && child.classList.contains('genflix-column')))
         .map((column) => splitContent(normalizeHtml(column.innerHTML)));
     const requestedCount = clamp(Number.parseInt(element.getAttribute(LESSON_COLUMNS_BLOCK_COUNT_ATTR) ?? '', 10) || columns.length || 2, 1, 4);
-    return normalizeColumnsContent(columns, requestedCount);
+    const widths = (element.getAttribute(LESSON_COLUMNS_BLOCK_WIDTHS_ATTR) ?? '')
+        .split(',')
+        .map((part) => Number.parseFloat(part.trim().replace('%', '')))
+        .filter((value) => Number.isFinite(value) && value > 0);
+    const columnsWithWidths = columns.map((blocks, index) => ({
+        width: widths[index] ?? 0,
+        blocks,
+    }));
+    return normalizeColumnsContent(columnsWithWidths, requestedCount);
 }
 function isColumnsBlockElement(element: Element): boolean {
     if (element.getAttribute(LESSON_IMAGE_HOTSPOTS_BLOCK_ATTR) === LESSON_COLUMNS_BLOCK_TYPE) {
@@ -555,14 +626,18 @@ function isColumnsBlockElement(element: Element): boolean {
 function serializeLessonColumnsBlock(columns: LessonColumnsBlockContent): string {
     const normalizedColumns = normalizeColumnsContent(columns);
     const count = clamp(normalizedColumns.length, 1, 4);
+    const widthsValue = getColumnsWidthsAttributeValue(normalizedColumns);
+    const templateValue = getColumnsTemplateValue(normalizedColumns);
     const columnsHtml = normalizedColumns
         .slice(0, count)
-        .map((columnBlocks) => `<div class="genflix-column">${mergeContent(columnBlocks) || '<p></p>'}</div>`)
+        .map((column) => `<div class="genflix-column">${mergeContent(column.blocks) || '<p></p>'}</div>`)
         .join('');
     return `
     <div
       ${LESSON_IMAGE_HOTSPOTS_BLOCK_ATTR}="${LESSON_COLUMNS_BLOCK_TYPE}"
       ${LESSON_COLUMNS_BLOCK_COUNT_ATTR}="${count}"
+      ${LESSON_COLUMNS_BLOCK_WIDTHS_ATTR}="${widthsValue}"
+      style="--hcm-columns-template: ${templateValue};"
       class="genflix-columns genflix-columns-${count}"
     >
       ${columnsHtml}
