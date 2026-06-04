@@ -342,65 +342,6 @@ export function LessonMaterialsPanel() {
             </Button>
           </div>
 
-          {editingAction ? (<div className="rounded-2xl border border-blue-200 bg-blue-50/40 p-4 space-y-4">
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div>
-                  <p className="text-sm font-black text-slate-900">Editar botão</p>
-                  <p className="text-xs text-slate-500">
-                    {editingAction.action_type === 'file' ? 'Você pode trocar o arquivo e atualizar o rótulo.' : 'Você pode alterar o rótulo, a URL e o destino.'}
-                  </p>
-                </div>
-                <Button type="button" variant="ghost" className="rounded-xl" onClick={cancelEditingAction}>
-                  Cancelar
-                </Button>
-              </div>
-
-              <label className="block space-y-2">
-                <span className="text-sm font-bold text-slate-800">Padrão visual</span>
-                <select className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm" value={editingTemplateId} onChange={(event) => setEditingTemplateId(event.target.value)}>
-                  <option value="">{'Sem padrão específico'}</option>
-                  {activeTemplates.map((template) => (<option key={template.id} value={template.id}>
-                      {template.name} • {template.default_label}
-                    </option>))}
-                </select>
-              </label>
-
-              <label className="block space-y-2">
-                <span className="text-sm font-bold text-slate-800">Rótulo</span>
-                <input className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm" placeholder="Rótulo personalizado opcional" value={editingLabel} onChange={(event) => setEditingLabel(event.target.value)}/>
-              </label>
-
-              {editingAction.action_type === 'url' ? (<label className="block space-y-2">
-                  <span className="text-sm font-bold text-slate-800">URL</span>
-                  <input className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm" placeholder="https://..." value={editingUrl} onChange={(event) => setEditingUrl(event.target.value)}/>
-                </label>) : (<label className="block space-y-2">
-                  <span className="text-sm font-bold text-slate-800">Arquivo atual</span>
-                  <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-600">
-                    {editingAction.file_name || 'Arquivo enviado'}
-                  </div>
-                  <input type="file" className="block w-full cursor-pointer rounded-2xl border border-dashed border-slate-200 bg-white px-4 py-3 text-sm" onChange={(event) => setEditingFile(event.target.files?.[0] ?? null)}/>
-                  <p className="text-xs text-slate-500">Se nenhum novo arquivo for escolhido, o arquivo atual será mantido.</p>
-                </label>)}
-
-              <label className="block space-y-2">
-                <span className="text-sm font-bold text-slate-800">Abrir em</span>
-                <select className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm" value={editingOpenTarget} onChange={(event) => setEditingOpenTarget(event.target.value as LessonFooterActionOpenTarget)}>
-                  {LESSON_FOOTER_OPEN_TARGET_OPTIONS.map((option) => (<option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>))}
-                </select>
-              </label>
-
-              <div className="flex flex-wrap gap-3">
-                <Button type="button" className="rounded-xl bg-slate-900 hover:bg-slate-800" onClick={() => void handleSaveEditingAction()} disabled={isSavingEdit}>
-                  {isSavingEdit ? 'Salvando...' : 'Salvar alterações'}
-                </Button>
-                <Button type="button" variant="outline" className="rounded-xl" onClick={cancelEditingAction} disabled={isSavingEdit}>
-                  Fechar editor
-                </Button>
-              </div>
-            </div>) : null}
-
           {error ? (<div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</div>) : null}
         </section>
 
@@ -455,5 +396,108 @@ export function LessonMaterialsPanel() {
             </div>)}
         </section>
       </div>
+      {editingAction ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4"
+          onClick={cancelEditingAction}
+        >
+          <div
+            className="w-full max-w-2xl rounded-[28px] border border-slate-200 bg-white p-6 shadow-2xl"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="flex flex-wrap items-start justify-between gap-3 border-b border-slate-100 pb-4">
+              <div>
+                <p className="text-sm font-black text-slate-900">Editar botão</p>
+                <p className="text-xs text-slate-500">
+                  {editingAction.action_type === 'file'
+                    ? 'Você pode trocar o arquivo e atualizar o rótulo.'
+                    : 'Você pode alterar o rótulo, a URL e o destino.'}
+                </p>
+              </div>
+              <Button type="button" variant="ghost" className="rounded-xl" onClick={cancelEditingAction} disabled={isSavingEdit}>
+                Fechar
+              </Button>
+            </div>
+
+            <div className="mt-5 grid gap-4">
+              <label className="block space-y-2">
+                <span className="text-sm font-bold text-slate-800">Padrão visual</span>
+                <select
+                  className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm"
+                  value={editingTemplateId}
+                  onChange={(event) => setEditingTemplateId(event.target.value)}
+                >
+                  <option value="">Sem padrão específico</option>
+                  {activeTemplates.map((template) => (
+                    <option key={template.id} value={template.id}>
+                      {template.name} • {template.default_label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="block space-y-2">
+                <span className="text-sm font-bold text-slate-800">Rótulo</span>
+                <input
+                  className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm"
+                  placeholder="Rótulo personalizado opcional"
+                  value={editingLabel}
+                  onChange={(event) => setEditingLabel(event.target.value)}
+                />
+              </label>
+
+              {editingAction.action_type === 'url' ? (
+                <label className="block space-y-2">
+                  <span className="text-sm font-bold text-slate-800">URL</span>
+                  <input
+                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm"
+                    placeholder="https://..."
+                    value={editingUrl}
+                    onChange={(event) => setEditingUrl(event.target.value)}
+                  />
+                </label>
+              ) : (
+                <label className="block space-y-2">
+                  <span className="text-sm font-bold text-slate-800">Arquivo atual</span>
+                  <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-600">
+                    {editingAction.file_name || 'Arquivo enviado'}
+                  </div>
+                  <input
+                    type="file"
+                    className="block w-full cursor-pointer rounded-2xl border border-dashed border-slate-200 bg-white px-4 py-3 text-sm"
+                    onChange={(event) => setEditingFile(event.target.files?.[0] ?? null)}
+                  />
+                  <p className="text-xs text-slate-500">Se nenhum novo arquivo for escolhido, o arquivo atual será mantido.</p>
+                </label>
+              )}
+
+              <label className="block space-y-2">
+                <span className="text-sm font-bold text-slate-800">Abrir em</span>
+                <select
+                  className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm"
+                  value={editingOpenTarget}
+                  onChange={(event) => setEditingOpenTarget(event.target.value as LessonFooterActionOpenTarget)}
+                >
+                  {LESSON_FOOTER_OPEN_TARGET_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+
+            <div className="mt-6 flex flex-wrap gap-3">
+              <Button type="button" className="rounded-xl bg-slate-900 hover:bg-slate-800" onClick={() => void handleSaveEditingAction()} disabled={isSavingEdit}>
+                {isSavingEdit ? 'Salvando...' : 'Salvar alterações'}
+              </Button>
+              <Button type="button" variant="outline" className="rounded-xl" onClick={cancelEditingAction} disabled={isSavingEdit}>
+                Cancelar
+              </Button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
     </div>);
 }
