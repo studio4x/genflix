@@ -211,13 +211,30 @@ export function StudentLessonPage() {
     async function handleOpenFooterAction(action: LessonFooterAction) {
         setIsLoadingFooterActions(true);
         try {
+            const openTarget = action.open_target ?? (action.open_in_new_tab ? 'new-tab' : 'same-tab');
             if (action.action_type === 'url' && action.url) {
-                window.open(action.url, '_blank', 'noopener,noreferrer');
+                if (openTarget === 'same-tab') {
+                    window.location.assign(action.url);
+                }
+                else if (openTarget === 'new-window') {
+                    window.open(action.url, '_blank', 'noopener,noreferrer,width=1280,height=800');
+                }
+                else {
+                    window.open(action.url, '_blank', 'noopener,noreferrer');
+                }
                 return;
             }
             if (action.storage_path) {
                 const signedUrl = await getSignedLessonFooterActionUrl(action.storage_path);
-                window.open(signedUrl, '_blank', 'noopener,noreferrer');
+                if (openTarget === 'same-tab') {
+                    window.location.assign(signedUrl);
+                }
+                else if (openTarget === 'new-window') {
+                    window.open(signedUrl, '_blank', 'noopener,noreferrer,width=1280,height=800');
+                }
+                else {
+                    window.open(signedUrl, '_blank', 'noopener,noreferrer');
+                }
             }
         }
         catch (err) {

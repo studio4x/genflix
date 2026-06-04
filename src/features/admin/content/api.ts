@@ -1,4 +1,4 @@
-import { supabase } from '@/services/supabase/client';
+﻿import { supabase } from '@/services/supabase/client';
 import { exportAssessmentContent, importAssessmentContentStructured, type ImportAssessmentData, } from '@/features/admin/assessments/api';
 import { normalizeCourseQuizTypeSettings } from '@/features/assessments/course-quiz-type-settings';
 import { isLegacyCourseSalesSchemaError, stripLegacyCourseSalesFields, withLegacyCourseSalesDefaults, } from '@/features/courses/schema-compat';
@@ -104,7 +104,7 @@ async function preparePrivateAssetUpload(input: {
         },
     });
     if (response.error || !response.data) {
-        throw new Error(response.error?.message ?? "N?o foi possvel preparar o upload protegido.");
+        throw new Error(response.error?.message ?? "Não foi possível preparar o upload protegido.");
     }
     return response.data;
 }
@@ -492,7 +492,7 @@ export async function resetCourseProgress(courseId: string, session: Session) {
     if (!response.ok) {
         throw new Error(payload && 'error' in payload && typeof payload.error === 'string'
             ? payload.error
-            : "N?o foi possvel renovar o progresso do curso.");
+            : "Não foi possível renovar o progresso do curso.");
     }
     return payload as ResetCourseProgressResult;
 }
@@ -774,7 +774,7 @@ export async function getSignedMaterialUrl(storagePath: string, expiresInSeconds
         },
     });
     if (response.error || !response.data?.signed_url) {
-        throw new Error(response.error?.message ?? "N?o foi possvel gerar URL assinada do material.");
+        throw new Error(response.error?.message ?? "Não foi possível gerar URL assinada do material.");
     }
     return response.data.signed_url;
 }
@@ -970,7 +970,8 @@ export async function createLessonFooterAction(lessonId: string, input: LessonFo
         mime_type: mimeType,
         file_size_bytes: fileSizeBytes,
         position: input.position,
-        open_in_new_tab: input.open_in_new_tab,
+        open_target: input.open_target,
+        open_in_new_tab: input.open_target !== 'same-tab',
         is_active: input.is_active,
         created_by: userId,
     })
@@ -1030,7 +1031,8 @@ export async function updateLessonFooterAction(actionId: string, input: LessonFo
         mime_type: input.action_type === 'file' ? mimeType : null,
         file_size_bytes: input.action_type === 'file' ? fileSizeBytes : 0,
         position: input.position,
-        open_in_new_tab: input.open_in_new_tab,
+        open_target: input.open_target,
+        open_in_new_tab: input.open_target !== 'same-tab',
         is_active: input.is_active,
     })
         .eq('id', actionId)
@@ -1378,7 +1380,7 @@ export async function importCourseContent(courseId: string, input: ImportCourseF
     if (isAssessmentOnly) {
         const assessmentInput = assessmentOnlyInput as ImportAssessmentData | null;
         if (!assessmentInput) {
-            throw new Error("Dados da avalia??o final inv?lidos.");
+            throw new Error("Dados da avaliação final inválidos.");
         }
         const { data: assessment, error: assessmentError } = await supabase
             .from('assessments')
@@ -1472,3 +1474,7 @@ export async function importFullCourse(data: ImportCourseFullData, userId: strin
     await importCourseContent(course.id, data, false);
     return course;
 }
+
+
+
+

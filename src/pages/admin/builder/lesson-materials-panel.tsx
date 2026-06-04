@@ -4,11 +4,46 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '@/app/providers/auth-provider';
 import { Button } from '@/components/ui/button';
 import { getLessonFooterActionIconName, getLessonFooterButtonClassName, renderButtonTemplateIcon, } from '@/features/admin/content/button-template-icons';
-import { createLessonFooterAction, deleteLessonFooterAction, fetchButtonTemplates, fetchLessonFooterActions, getSignedLessonFooterActionUrl, toErrorMessage, } from '@/features/admin/content/api';
+import { createLessonFooterAction, deleteLessonFooterAction, fetchButtonTemplates, fetchLessonFooterActions, getSignedLessonFooterActionUrl, toErrorMessage, updateLessonFooterAction, } from '@/features/admin/content/api';
 import { publishBuilderNotice } from '@/lib/builder-notice';
 import { lessonFooterActionFormSchema } from '@/features/admin/content/schemas';
 import { useCourseBuilder } from '@/app/layouts/admin-course-builder-layout';
 import type { ButtonTemplate, Lesson, LessonFooterAction } from '@/types/content';
+
+type LessonFooterActionOpenTarget = 'same-tab' | 'new-tab' | 'new-window';
+
+const LESSON_FOOTER_OPEN_TARGET_OPTIONS: Array<{
+    label: string;
+    value: LessonFooterActionOpenTarget;
+    description: string;
+}> = [
+    { label: 'Mesma página', value: 'same-tab', description: 'Abre substituindo a página atual.' },
+    { label: 'Nova aba', value: 'new-tab', description: 'Abre em uma aba nova do navegador.' },
+    { label: 'Nova janela', value: 'new-window', description: 'Abre em uma janela separada.' },
+];
+
+function getLessonFooterOpenTargetLabel(target: LessonFooterActionOpenTarget) {
+    return LESSON_FOOTER_OPEN_TARGET_OPTIONS.find((option) => option.value === target)?.label ?? 'Nova aba';
+}
+
+function getLessonFooterOpenTargetFeatures(target: LessonFooterActionOpenTarget) {
+    if (target === 'new-window') {
+        return 'noopener,noreferrer,width=1280,height=800';
+    }
+    if (target === 'new-tab') {
+        return 'noopener,noreferrer';
+    }
+    return '';
+}
+
+function openLessonFooterActionUrl(url: string, target: LessonFooterActionOpenTarget) {
+    if (target === 'same-tab') {
+        window.location.assign(url);
+        return;
+    }
+    window.open(url, '_blank', getLessonFooterOpenTargetFeatures(target));
+}
+
 function formatBytes(value: number): string {
     if (value === 0)
         return '0 B';
@@ -31,9 +66,17 @@ export function LessonMaterialsPanel() {
     const [actions, setActions] = useState<LessonFooterAction[]>([]);
     const [urlLabel, setUrlLabel] = useState('');
     const [urlValue, setUrlValue] = useState('');
+    const [urlOpenTarget, setUrlOpenTarget] = useState<LessonFooterActionOpenTarget>('new-tab');
     const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
+    const [editingAction, setEditingAction] = useState<LessonFooterAction | null>(null);
+    const [editingTemplateId, setEditingTemplateId] = useState<string>('');
+    const [editingLabel, setEditingLabel] = useState('');
+    const [editingUrl, setEditingUrl] = useState('');
+    const [editingOpenTarget, setEditingOpenTarget] = useState<LessonFooterActionOpenTarget>('new-tab');
+    const [editingFile, setEditingFile] = useState<File | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isUploading, setIsUploading] = useState(false);
+    const [isSavingEdit, setIsSavingEdit] = useState(false);
     const [error, setError] = useState<string | null>(null);
     useEffect(() => {
         if (courseTree && lessonId) {
@@ -68,6 +111,22 @@ export function LessonMaterialsPanel() {
             setIsLoading(false);
         }
     }, [lessonId]);
+    function startEditingAction(action: LessonFooterAction) {
+        setEditingAction(action);
+        setEditingTemplateId(action.template_id || '');
+        setEditingLabel(action.label ?? '');
+        setEditingUrl(action.url ?? '');
+        setEditingOpenTarget(action.open_target ?? (action.open_in_new_tab ? 'new-tab' : 'same-tab'));
+        setEditingFile(null);
+    }
+    function cancelEditingAction() {
+        setEditingAction(null);
+        setEditingTemplateId('');
+        setEditingLabel('');
+        setEditingUrl('');
+        setEditingOpenTarget('new-tab');
+        setEditingFile(null);
+    }
     useEffect(() => {
         void loadData();
     }, [loadData]);
@@ -84,7 +143,7 @@ export function LessonMaterialsPanel() {
                 action_type: 'file',
                 label: '',
                 position: nextPosition,
-                open_in_new_tab: true,
+                open_target: urlOpenTarget,
                 is_active: true,
             });
             if (!parsed.success) {
@@ -117,7 +176,7 @@ export function LessonMaterialsPanel() {
                 label: urlLabel,
                 url: urlValue,
                 position: nextPosition,
-                open_in_new_tab: true,
+                open_target: urlOpenTarget,
                 is_active: true,
             });
             if (!parsed.success) {
@@ -126,6 +185,7 @@ export function LessonMaterialsPanel() {
             await createLessonFooterAction(lessonId, parsed.data, user.id);
             setUrlLabel('');
             setUrlValue('');
+            setUrlOpenTarget('new-tab');
             await loadData();
             publishBuilderNotice({
                 type: 'success',
@@ -148,15 +208,50 @@ export function LessonMaterialsPanel() {
             setError(toErrorMessage(err));
         }
     }
+    async function handleSaveEditingAction() {
+        if (!lessonId || !user || !editingAction)
+            return;
+        setIsSavingEdit(true);
+        setError(null);
+        try {
+            const parsed = lessonFooterActionFormSchema.safeParse({
+                template_id: editingTemplateId || null,
+                action_type: editingAction.action_type,
+                label: editingLabel,
+                url: editingAction.action_type === 'url' ? editingUrl : '',
+                position: editingAction.position,
+                open_target: editingOpenTarget,
+                is_active: editingAction.is_active,
+            });
+            if (!parsed.success) {
+                throw new Error(parsed.error.issues[0]?.message ?? 'Dados inválidos.');
+            }
+            await updateLessonFooterAction(editingAction.id, parsed.data, editingAction.action_type === 'file' ? editingFile : null);
+            cancelEditingAction();
+            await loadData();
+            publishBuilderNotice({
+                type: 'success',
+                title: 'Botão da aula atualizado',
+                message: 'As alterações do botão foram salvas com sucesso.',
+            });
+        }
+        catch (err) {
+            setError(toErrorMessage(err));
+        }
+        finally {
+            setIsSavingEdit(false);
+        }
+    }
     async function handleOpen(action: LessonFooterAction) {
         try {
+            const openTarget = action.open_target ?? (action.open_in_new_tab ? 'new-tab' : 'same-tab');
             if (action.action_type === 'url' && action.url) {
-                window.open(action.url, '_blank', 'noopener,noreferrer');
+                openLessonFooterActionUrl(action.url, openTarget);
                 return;
             }
             if (action.storage_path) {
                 const signedUrl = await getSignedLessonFooterActionUrl(action.storage_path);
-                window.open(signedUrl, '_blank', 'noopener,noreferrer');
+                openLessonFooterActionUrl(signedUrl, openTarget);
             }
         }
         catch (err) {
@@ -202,6 +297,18 @@ export function LessonMaterialsPanel() {
             </select>
           </label>
 
+          <label className="block space-y-2">
+            <span className="text-sm font-bold text-slate-800">Abrir link em</span>
+            <select className="w-full rounded-2xl border border-slate-200 bg-slate-50/50 px-4 py-3 text-sm" value={urlOpenTarget} onChange={(event) => setUrlOpenTarget(event.target.value as LessonFooterActionOpenTarget)}>
+              {LESSON_FOOTER_OPEN_TARGET_OPTIONS.map((option) => (<option key={option.value} value={option.value}>
+                  {option.label}
+                </option>))}
+            </select>
+            <p className="text-xs text-slate-500">
+              {LESSON_FOOTER_OPEN_TARGET_OPTIONS.find((option) => option.value === urlOpenTarget)?.description}
+            </p>
+          </label>
+
           {selectedTemplateId ? (<div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-4">
               <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Preview do botão</p>
               <div className="mt-3">
@@ -235,6 +342,65 @@ export function LessonMaterialsPanel() {
             </Button>
           </div>
 
+          {editingAction ? (<div className="rounded-2xl border border-blue-200 bg-blue-50/40 p-4 space-y-4">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <p className="text-sm font-black text-slate-900">Editar botão</p>
+                  <p className="text-xs text-slate-500">
+                    {editingAction.action_type === 'file' ? 'Você pode trocar o arquivo e atualizar o rótulo.' : 'Você pode alterar o rótulo, a URL e o destino.'}
+                  </p>
+                </div>
+                <Button type="button" variant="ghost" className="rounded-xl" onClick={cancelEditingAction}>
+                  Cancelar
+                </Button>
+              </div>
+
+              <label className="block space-y-2">
+                <span className="text-sm font-bold text-slate-800">Padrão visual</span>
+                <select className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm" value={editingTemplateId} onChange={(event) => setEditingTemplateId(event.target.value)}>
+                  <option value="">{'Sem padrão específico'}</option>
+                  {activeTemplates.map((template) => (<option key={template.id} value={template.id}>
+                      {template.name} • {template.default_label}
+                    </option>))}
+                </select>
+              </label>
+
+              <label className="block space-y-2">
+                <span className="text-sm font-bold text-slate-800">Rótulo</span>
+                <input className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm" placeholder="Rótulo personalizado opcional" value={editingLabel} onChange={(event) => setEditingLabel(event.target.value)}/>
+              </label>
+
+              {editingAction.action_type === 'url' ? (<label className="block space-y-2">
+                  <span className="text-sm font-bold text-slate-800">URL</span>
+                  <input className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm" placeholder="https://..." value={editingUrl} onChange={(event) => setEditingUrl(event.target.value)}/>
+                </label>) : (<label className="block space-y-2">
+                  <span className="text-sm font-bold text-slate-800">Arquivo atual</span>
+                  <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-600">
+                    {editingAction.file_name || 'Arquivo enviado'}
+                  </div>
+                  <input type="file" className="block w-full cursor-pointer rounded-2xl border border-dashed border-slate-200 bg-white px-4 py-3 text-sm" onChange={(event) => setEditingFile(event.target.files?.[0] ?? null)}/>
+                  <p className="text-xs text-slate-500">Se nenhum novo arquivo for escolhido, o arquivo atual será mantido.</p>
+                </label>)}
+
+              <label className="block space-y-2">
+                <span className="text-sm font-bold text-slate-800">Abrir em</span>
+                <select className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm" value={editingOpenTarget} onChange={(event) => setEditingOpenTarget(event.target.value as LessonFooterActionOpenTarget)}>
+                  {LESSON_FOOTER_OPEN_TARGET_OPTIONS.map((option) => (<option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>))}
+                </select>
+              </label>
+
+              <div className="flex flex-wrap gap-3">
+                <Button type="button" className="rounded-xl bg-slate-900 hover:bg-slate-800" onClick={() => void handleSaveEditingAction()} disabled={isSavingEdit}>
+                  {isSavingEdit ? 'Salvando...' : 'Salvar alterações'}
+                </Button>
+                <Button type="button" variant="outline" className="rounded-xl" onClick={cancelEditingAction} disabled={isSavingEdit}>
+                  Fechar editor
+                </Button>
+              </div>
+            </div>) : null}
+
           {error ? (<div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</div>) : null}
         </section>
 
@@ -252,6 +418,9 @@ export function LessonMaterialsPanel() {
                         </span>
                         <span className="rounded-full bg-slate-200 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-slate-600">
                           {action.action_type === 'file' ? 'Arquivo' : 'URL'}
+                        </span>
+                        <span className="rounded-full bg-blue-100 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-blue-700">
+                          {getLessonFooterOpenTargetLabel(action.open_target ?? (action.open_in_new_tab ? 'new-tab' : 'same-tab'))}
                         </span>
                         {action.template?.name ? (<span className="rounded-full bg-blue-100 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-blue-700">
                             {action.template.name}
@@ -273,6 +442,9 @@ export function LessonMaterialsPanel() {
                     <div className="flex gap-2">
                       <Button variant="outline" className="rounded-xl" onClick={() => void handleOpen(action)}>
                         Visualizar
+                      </Button>
+                      <Button variant="outline" className="rounded-xl border-blue-200 text-blue-700 hover:bg-blue-50" onClick={() => startEditingAction(action)}>
+                        Editar
                       </Button>
                       <Button variant="outline" className="rounded-xl border-rose-200 text-rose-600 hover:bg-rose-50" onClick={() => void handleDelete(action)}>
                         Excluir

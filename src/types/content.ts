@@ -292,6 +292,7 @@ export interface LessonFooterAction {
     mime_type: string | null;
     file_size_bytes: number;
     position: number;
+    open_target: 'same-tab' | 'new-tab' | 'new-window';
     open_in_new_tab: boolean;
     is_active: boolean;
     created_by: string | null;

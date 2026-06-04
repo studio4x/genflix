@@ -1,4 +1,4 @@
-import { z } from 'zod';
+﻿import { z } from 'zod';
 import { DEFAULT_COURSE_QUIZ_TYPE_SETTINGS } from '@/features/assessments/course-quiz-type-settings';
 const youtubeRegex = /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/[^\s]+$/i;
 const directVideoRegex = /^https?:\/\/[^\s]+\.(mp4|webm|ogg|ogv|m4v|mov)(\?.*)?(#.*)?$/i;
@@ -28,7 +28,7 @@ export const courseQuizTypeSettingsSchema = z.object({
     }
 });
 export const courseFormSchema = z.object({
-    title: z.string().trim().min(3, "T?tulo deve ter ao menos 3 caracteres"),
+    title: z.string().trim().min(3, "Título deve ter ao menos 3 caracteres"),
     category: z.string().trim().optional().or(z.literal('')),
     description: z.string().trim().max(2000).optional(),
     status: z.enum(['draft', 'published', 'archived']),
@@ -44,11 +44,11 @@ export const courseFormSchema = z.object({
     quiz_type_settings: courseQuizTypeSettingsSchema.default({ ...DEFAULT_COURSE_QUIZ_TYPE_SETTINGS }),
 });
 export const publicCourseOutcomeSchema = z.object({
-    title: z.string().trim().min(1, "Informe o t?tulo do dest?que."),
-    description: z.string().trim().min(1, "Informe a descri??o do dest?que."),
+    title: z.string().trim().min(1, "Informe o título do destaque."),
+    description: z.string().trim().min(1, "Informe a descrição do destaque."),
 });
 export const publicCourseModuleSchema = z.object({
-    title: z.string().trim().min(1, "Informe o t?tulo do m?dulo."),
+    title: z.string().trim().min(1, "Informe o título do módulo."),
     lessonCount: z.number().int().min(0).default(0),
     summary: z.string().trim().default(''),
     items: z.array(z.string().trim().min(1)).default([]),
@@ -61,8 +61,8 @@ export const coursePublicPageContentSchema = z.object({
     includedItems: z.array(z.string().trim().min(1)).default([]),
     bonusSection: z.object({
         enabled: z.boolean().default(true),
-        title: z.string().trim().min(1, "Informe o t?tulo da se??o bonus."),
-        description: z.string().trim().min(1, "Informe o texto da se??o bonus."),
+        title: z.string().trim().min(1, "Informe o título da seção bônus."),
+        description: z.string().trim().min(1, "Informe o texto da seção bônus."),
     }).nullable().optional(),
     contentSource: z.enum(['real', 'custom']).default('custom'),
     customSyllabus: z.array(publicCourseModuleSchema).default([]),
@@ -70,19 +70,19 @@ export const coursePublicPageContentSchema = z.object({
 export const coursePublicPageFormSchema = z.object({
     category: z.string().trim().optional().or(z.literal('')),
     categoryLine: z.string().trim().optional().or(z.literal('')),
-    marketing_title: z.string().trim().min(3, "Informe o t?tulo pblico do curso."),
-    marketing_description: z.string().trim().min(10, "Informe a descri??o principal do curso."),
+    marketing_title: z.string().trim().min(3, "Informe o título público do curso."),
+    marketing_description: z.string().trim().min(10, "Informe a descrição principal do curso."),
     mentor_name: z.string().trim().min(2, 'Informe o nome do mentor.'),
     mentor_role: z.string().trim().min(2, 'Informe o cargo ou funcao do mentor.'),
     mentor_bio: z.string().trim().optional().or(z.literal('')),
     bonus_enabled: z.boolean().default(true),
     bonus_title: z.string().trim().optional().or(z.literal('')),
     mentor_initials: z.string().trim().max(4).optional().or(z.literal('')),
-    price_label: z.string().trim().min(1, 'Informe o preco exibido na p?gina publica.'),
-    secondary_price_label: z.string().trim().min(1, "Informe o subt?tulo do checkout."),
+    price_label: z.string().trim().min(1, 'Informe o preço exibido na página pública.'),
+    secondary_price_label: z.string().trim().min(1, "Informe o subtítulo do checkout."),
     aboutParagraphs: z.array(z.string().trim().min(1)).min(1, 'Adicione pelo menos um paragrafo em Sobre o Curso.'),
-    outcomes: z.array(publicCourseOutcomeSchema).min(1, "Adicione pelo menos um dest?que em O que voc vai aprender."),
-    includedItems: z.array(z.string().trim().min(1)).min(1, "Adicione pelo menos um item do que est? incluido."),
+    outcomes: z.array(publicCourseOutcomeSchema).min(1, "Adicione pelo menos um destaque em O que você vai aprender."),
+    includedItems: z.array(z.string().trim().min(1)).min(1, "Adicione pelo menos um item do que está incluído."),
     contentSource: z.enum(['real', 'custom']).default('custom'),
     customSyllabus: z.array(publicCourseModuleSchema).default([]),
 }).superRefine((value, ctx) => {
@@ -93,19 +93,19 @@ export const coursePublicPageFormSchema = z.object({
         ctx.addIssue({
             code: z.ZodIssueCode.custom,
             path: ['bonus_title'],
-            message: "Informe o t?tulo da se??o bonus.",
+            message: "Informe o título da seção bônus.",
         });
     }
     if (!value.mentor_bio?.trim()) {
         ctx.addIssue({
             code: z.ZodIssueCode.custom,
             path: ['mentor_bio'],
-            message: "Informe o texto da se??o bonus.",
+            message: "Informe o texto da seção bônus.",
         });
     }
 });
 export const moduleFormSchema = z.object({
-    title: z.string().trim().min(2, "T?tulo deve ter ao menos 2 caracteres"),
+    title: z.string().trim().min(2, "Título deve ter ao menos 2 caracteres"),
     description: z.string().trim().max(2000).optional(),
     is_required: z.boolean(),
     starts_at: z.string().optional().or(z.literal('')),
@@ -122,12 +122,12 @@ export const moduleFormSchema = z.object({
         ctx.addIssue({
             code: z.ZodIssueCode.custom,
             path: ['ends_at'],
-            message: "A data final do m?dulo deve ser posterior ao incio.",
+            message: "A data final do módulo deve ser posterior ao início.",
         });
     }
 });
 export const lessonFormSchema = z.object({
-    title: z.string().trim().min(2, "T?tulo deve ter ao menos 2 caracteres"),
+    title: z.string().trim().min(2, "Título deve ter ao menos 2 caracteres"),
     description: z.string().trim().max(2000).optional(),
     is_required: z.boolean(),
     lesson_type: z.enum(['video', 'text', 'hybrid', 'file']).default('video'),
@@ -147,32 +147,32 @@ export const lessonFormSchema = z.object({
         ctx.addIssue({
             code: z.ZodIssueCode.custom,
             path: ['ends_at'],
-            message: "A data final da aula deve ser posterior ao incio.",
+            message: "A data final da aula deve ser posterior ao início.",
         });
     }
 });
 export const buttonTemplateFormSchema = z.object({
-    name: z.string().trim().min(2, "N?ome do padrao obrigatrio."),
-    default_label: z.string().trim().min(2, "Rotulo padrao obrigatrio."),
+    name: z.string().trim().min(2, "Nome do padrão obrigatório."),
+    default_label: z.string().trim().min(2, "Rótulo padrão obrigatório."),
     variant: z.enum(['primary', 'secondary', 'outline', 'ghost', 'link']),
     theme: z.enum(['blue', 'emerald', 'amber', 'rose', 'slate', 'violet']),
-    icon: z.string().trim().min(2, "Icone obrigatrio."),
+    icon: z.string().trim().min(2, "Ícone obrigatório."),
     is_active: z.boolean().default(true),
 });
 export const lessonFooterActionFormSchema = z.object({
     template_id: z.string().uuid().nullable().optional(),
     action_type: z.enum(['file', 'url']),
     label: z.string().trim().optional().or(z.literal('')),
-    url: z.string().trim().url('URL invalida').optional().or(z.literal('')),
+    url: z.string().trim().url('URL inválida').optional().or(z.literal('')),
     position: z.number().int().min(1),
-    open_in_new_tab: z.boolean().default(true),
+    open_target: z.enum(['same-tab', 'new-tab', 'new-window']).default('new-tab'),
     is_active: z.boolean().default(true),
 }).superRefine((value, ctx) => {
     if (value.action_type === 'url' && !value.url) {
         ctx.addIssue({
             code: z.ZodIssueCode.custom,
             path: ['url'],
-            message: 'Informe a URL do botao.',
+            message: 'Informe a URL do botão.',
         });
     }
 });
@@ -183,3 +183,4 @@ export type ModuleFormInput = z.infer<typeof moduleFormSchema>;
 export type LessonFormInput = z.infer<typeof lessonFormSchema>;
 export type ButtonTemplateFormInput = z.infer<typeof buttonTemplateFormSchema>;
 export type LessonFooterActionFormInput = z.infer<typeof lessonFooterActionFormSchema>;
+
