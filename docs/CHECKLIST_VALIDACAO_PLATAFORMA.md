@@ -7,6 +7,8 @@ Este checklist foi criado para apoiar a validacao funcional da plataforma por se
 - Marque `[OK]` quando o item for validado.
 - Marque `[NOK]` quando houver falha e registre evidencias (print, erro, rota, horario).
 - Marque `[NA]` quando o item n?o se aplicar ao escopo atual do teste.
+- Antes de encerrar qualquer ajuste, revise todos os textos exibidos ao usuario para garantir acentuacao correta, ausencia de simbolos quebrados e nenhuma regressao de encoding.
+- Nao considere a entrega finalizada sem uma leitura visual final da tela, modal ou documento alterado.
 
 ---
 

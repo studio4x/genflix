@@ -83,6 +83,8 @@ Ao concluir qualquer tarefa de implementacao neste repositorio, o agente deve:
 
 1. Publicar as alteracoes no GitHub (commit + push).
 2. Publicar as alteracoes de banco no Supabase (migracoes/funcoes/policies), quando houver mudancas em `supabase/`.
+3. Antes de considerar qualquer ajuste finalizado, revisar o texto de ponta a ponta para evitar acentos ausentes, caracteres quebrados, simbolos indevidos e artefatos de encoding.
+4. Se houver qualquer texto exibido ao usuario, confirmar que a revisao final foi feita no proprio arquivo/tela alterada e que o conteudo ficou legivel em pt-BR.
 
 ## Deploy Vercel
 
