@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type CSSProperties, type ChangeEvent } from 'react';
+import { ChevronDown, ChevronUp } from 'lucide-react';
 import ReactQuill from '@/components/forms/react-quill';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -797,10 +798,10 @@ export function LessonContentBlocksEditor({ blocks, onChange, onError, level = 0
                         </div>
                         <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
                             <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-blue-600" onClick={() => moveBlock(index, 'up')} disabled={index === 0}>
-                                ?
+                                <ChevronUp className="h-4 w-4" />
                             </Button>
                             <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-blue-600" onClick={() => moveBlock(index, 'down')} disabled={index === blocks.length - 1}>
-                                ?
+                                <ChevronDown className="h-4 w-4" />
                             </Button>
                             <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-rose-600" onClick={() => void removeBlock(index)}>
                                 ×
