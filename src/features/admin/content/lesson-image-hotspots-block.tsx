@@ -68,7 +68,12 @@ export function LessonImageHotspotsBlockEditor({ content, onChange, onError, }: 
     } | null>(null);
     const [selectedHotspotId, setSelectedHotspotId] = useState<string | null>(content.hotspots[0]?.id ?? null);
     const [zoomPercent, setZoomPercent] = useState(100);
-    const [resolvedAssetUrl, setResolvedAssetUrl] = useState<string | null>(content.asset.signed_url ?? null);
+    const [resolvedAssetUrl, setResolvedAssetUrl] = useState<string | null>(() => {
+        if (content.asset.storage_path?.trim()) {
+            return null;
+        }
+        return content.asset.signed_url?.trim() || null;
+    });
     const [isUploadingAsset, setIsUploadingAsset] = useState(false);
     const [assetError, setAssetError] = useState<string | null>(null);
     const selectedHotspot = useMemo(() => content.hotspots.find((hotspot) => hotspot.id === selectedHotspotId) ?? null, [content.hotspots, selectedHotspotId]);
@@ -80,10 +85,12 @@ export function LessonImageHotspotsBlockEditor({ content, onChange, onError, }: 
     }, [content.hotspots, selectedHotspotId]);
     useEffect(() => {
         const storagePath = content.asset.storage_path?.trim();
-        if (!storagePath || content.asset.signed_url?.trim()) {
+        if (!storagePath) {
+            setResolvedAssetUrl(content.asset.signed_url?.trim() || null);
             return;
         }
         let isMounted = true;
+        setResolvedAssetUrl(null);
         void getSignedLessonContentAssetUrl(storagePath)
             .then((url) => {
             if (isMounted) {
@@ -99,8 +106,7 @@ export function LessonImageHotspotsBlockEditor({ content, onChange, onError, }: 
             isMounted = false;
         };
     }, [content.asset.signed_url, content.asset.storage_path]);
-    const assetUrl = content.asset.signed_url?.trim()
-        || (content.asset.storage_path?.trim() ? resolvedAssetUrl : null);
+    const assetUrl = resolvedAssetUrl;
     useEffect(() => {
         function handlePointerMove(event: PointerEvent) {
             const dragState = dragStateRef.current;
@@ -414,15 +420,22 @@ interface LessonImageHotspotsBlockRendererProps {
     content: LessonImageHotspotsBlockContent;
 }
 export function LessonImageHotspotsBlockRenderer({ content, }: LessonImageHotspotsBlockRendererProps) {
-    const [resolvedAssetUrl, setResolvedAssetUrl] = useState<string | null>(content.asset.signed_url ?? null);
+    const [resolvedAssetUrl, setResolvedAssetUrl] = useState<string | null>(() => {
+        if (content.asset.storage_path?.trim()) {
+            return null;
+        }
+        return content.asset.signed_url?.trim() || null;
+    });
     const [activeHotspotId, setActiveHotspotId] = useState<string | null>(null);
     const activeHotspot = useMemo(() => content.hotspots.find((hotspot) => hotspot.id === activeHotspotId) ?? null, [activeHotspotId, content.hotspots]);
     useEffect(() => {
         const storagePath = content.asset.storage_path?.trim();
-        if (!storagePath || content.asset.signed_url?.trim()) {
+        if (!storagePath) {
+            setResolvedAssetUrl(content.asset.signed_url?.trim() || null);
             return;
         }
         let isMounted = true;
+        setResolvedAssetUrl(null);
         void getSignedLessonContentAssetUrl(storagePath)
             .then((url) => {
             if (isMounted) {
@@ -438,8 +451,7 @@ export function LessonImageHotspotsBlockRenderer({ content, }: LessonImageHotspo
             isMounted = false;
         };
     }, [content.asset.signed_url, content.asset.storage_path]);
-    const assetUrl = content.asset.signed_url?.trim()
-        || (content.asset.storage_path?.trim() ? resolvedAssetUrl : null);
+    const assetUrl = resolvedAssetUrl;
     const desktopPopupPlacement = activeHotspot
         ? activeHotspot.x > 50
             ? {

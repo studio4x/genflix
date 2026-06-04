@@ -154,15 +154,22 @@ function getVideoEmbedUrl(url: string): string | null {
 }
 
 function useResolvedLessonAssetUrl(storagePath: string, signedUrl?: string | null) {
-    const [resolvedUrl, setResolvedUrl] = useState<string | null>(signedUrl?.trim() || null);
+    const trimmedStoragePath = storagePath.trim();
+    const [resolvedUrl, setResolvedUrl] = useState<string | null>(() => {
+        if (trimmedStoragePath) {
+            return null;
+        }
+        return signedUrl?.trim() || null;
+    });
     useEffect(() => {
-        const trimmedStoragePath = storagePath.trim();
-        if (!trimmedStoragePath || signedUrl?.trim()) {
+        const nextStoragePath = storagePath.trim();
+        if (!nextStoragePath) {
             setResolvedUrl(signedUrl?.trim() || null);
             return;
         }
         let isMounted = true;
-        void getSignedLessonContentAssetUrl(trimmedStoragePath)
+        setResolvedUrl(null);
+        void getSignedLessonContentAssetUrl(nextStoragePath)
             .then((url) => {
             if (isMounted) {
                 setResolvedUrl(url);
@@ -270,7 +277,7 @@ export function LessonImageBlockEditor({ content, onChange, onError }: LessonIma
     }, [content.source_type]);
 
     const previewUrl = content.source_type === 'upload'
-        ? (content.signed_url?.trim() || resolvedUploadUrl)
+        ? resolvedUploadUrl
         : content.image_url.trim();
 
     const sizeClasses = IMAGE_SIZE_CLASSES[content.size];
@@ -476,7 +483,7 @@ export function LessonVideoBlockEditor({ content, onChange, onError }: LessonVid
     }, [content.source_type, content.url]);
 
     const previewUrl = content.source_type === 'upload'
-        ? (content.signed_url?.trim() || resolvedUploadUrl)
+        ? resolvedUploadUrl
         : content.url.trim();
     const embedUrl = previewUrl ? getVideoEmbedUrl(previewUrl) : null;
     const isDirectVideo = previewUrl ? isDirectVideoUrl(previewUrl) : false;
@@ -667,7 +674,7 @@ export function LessonImageBlockRenderer({ content }: LessonImageBlockRendererPr
     const captionAlignmentClass = IMAGE_CAPTION_ALIGNMENT_CLASSES[content.caption_alignment];
     const resolvedUploadUrl = useResolvedLessonAssetUrl(content.storage_path, content.signed_url);
     const previewUrl = content.source_type === 'upload'
-        ? (content.signed_url?.trim() || resolvedUploadUrl)
+        ? resolvedUploadUrl
         : content.image_url.trim();
 
     return (
@@ -694,7 +701,7 @@ interface LessonVideoBlockRendererProps {
 export function LessonVideoBlockRenderer({ content }: LessonVideoBlockRendererProps) {
     const resolvedUploadUrl = useResolvedLessonAssetUrl(content.storage_path, content.signed_url);
     const previewUrl = content.source_type === 'upload'
-        ? (content.signed_url?.trim() || resolvedUploadUrl)
+        ? resolvedUploadUrl
         : content.url.trim();
     const sizeClasses = VIDEO_SIZE_CLASSES[content.size];
     const captionAlignmentClass = VIDEO_CAPTION_ALIGNMENT_CLASSES[content.caption_alignment];
