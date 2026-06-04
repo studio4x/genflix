@@ -11,6 +11,8 @@ export interface AiCredentialsDiagnostics {
     checkedAt: string;
     hasOpenAiKey: boolean;
     hasGeminiKey: boolean;
+    openAiKeyValid: boolean;
+    geminiKeyValid: boolean;
     openAiApiKey?: string | null;
     geminiApiKey?: string | null;
     checks: AiCredentialsCheck[];

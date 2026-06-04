@@ -44,6 +44,8 @@ type CredentialsDiagnosticsResponse = {
   checkedAt: string;
   hasOpenAiKey: boolean;
   hasGeminiKey: boolean;
+  openAiKeyValid: boolean;
+  geminiKeyValid: boolean;
   openAiApiKey: string | null;
   geminiApiKey: string | null;
   checks: CredentialsCheck[];
@@ -61,6 +63,14 @@ type NarrationCredentialsRow = {
   openai_api_key: string | null;
   gemini_api_key: string | null;
 };
+
+function isLikelyOpenAiApiKey(value: string) {
+  return /^sk-(proj-|pro-)?[A-Za-z0-9_-]{12,}$/i.test(value);
+}
+
+function isLikelyGeminiApiKey(value: string) {
+  return /^AIza[0-9A-Za-z_-]{20,}$/i.test(value);
+}
 
 function jsonResponse(res: ApiResponse, statusCode: number, payload: unknown) {
   res.status(statusCode);
@@ -212,8 +222,12 @@ async function buildAiCredentialsDiagnostics(context: {
 
   const envOpenAiKey = readOptionalString(process.env.OPENAI_API_KEY);
   const envGeminiKey = readOptionalString(process.env.GEMINI_API_KEY);
-  const hasOpenAiKey = Boolean(dbCredentials.openAiApiKey || envOpenAiKey);
-  const hasGeminiKey = Boolean(dbCredentials.geminiApiKey || envGeminiKey);
+  const dbOpenAiKeyValid = Boolean(dbCredentials.openAiApiKey && isLikelyOpenAiApiKey(dbCredentials.openAiApiKey));
+  const dbGeminiKeyValid = Boolean(dbCredentials.geminiApiKey && isLikelyGeminiApiKey(dbCredentials.geminiApiKey));
+  const envOpenAiKeyValid = Boolean(envOpenAiKey && isLikelyOpenAiApiKey(envOpenAiKey));
+  const envGeminiKeyValid = Boolean(envGeminiKey && isLikelyGeminiApiKey(envGeminiKey));
+  const hasOpenAiKey = Boolean(dbOpenAiKeyValid || envOpenAiKeyValid);
+  const hasGeminiKey = Boolean(dbGeminiKeyValid || envGeminiKeyValid);
 
   let location: CredentialLocation = 'unavailable';
   if (dbCredentials.openAiApiKey || dbCredentials.geminiApiKey) {
@@ -265,6 +279,24 @@ async function buildAiCredentialsDiagnostics(context: {
     });
   }
 
+  if (dbCredentials.openAiApiKey && !dbOpenAiKeyValid) {
+    checks.push({
+      key: 'openai-key-format',
+      label: 'OpenAI API Key',
+      status: 'error',
+      detail: 'A chave salva no banco parece inválida. O formato esperado costuma começar com "sk-" ou "sk-proj-".',
+    });
+  }
+
+  if (dbCredentials.geminiApiKey && !dbGeminiKeyValid) {
+    checks.push({
+      key: 'gemini-key-format',
+      label: 'Gemini API Key',
+      status: 'error',
+      detail: 'A chave salva no banco parece inválida. O formato esperado costuma começar com "AIza".',
+    });
+  }
+
   if (supabaseContext) {
     checks.push({
       key: 'supabase-management',
@@ -308,6 +340,8 @@ async function buildAiCredentialsDiagnostics(context: {
     checkedAt: new Date().toISOString(),
     hasOpenAiKey,
     hasGeminiKey,
+    openAiKeyValid: hasOpenAiKey,
+    geminiKeyValid: hasGeminiKey,
     openAiApiKey: location === 'supabase' ? dbCredentials.openAiApiKey : null,
     geminiApiKey: location === 'supabase' ? dbCredentials.geminiApiKey : null,
     checks,

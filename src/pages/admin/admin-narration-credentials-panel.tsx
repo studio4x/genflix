@@ -11,6 +11,8 @@ const emptyDiagnostics: AiCredentialsDiagnostics = {
   checkedAt: '',
   hasOpenAiKey: false,
   hasGeminiKey: false,
+  openAiKeyValid: false,
+  geminiKeyValid: false,
   checks: [],
 };
 
@@ -66,7 +68,21 @@ export function AdminNarrationCredentialsPanel() {
     };
   }, []);
 
+  const invalidCredentialWarnings = useMemo(() => {
+    const warnings: string[] = [];
+    if (diagnostics.openAiApiKey && !diagnostics.openAiKeyValid) {
+      warnings.push('A chave OpenAI salva no banco parece inválida.');
+    }
+    if (diagnostics.geminiApiKey && !diagnostics.geminiKeyValid) {
+      warnings.push('A chave Gemini salva no banco parece inválida.');
+    }
+    return warnings;
+  }, [diagnostics.geminiApiKey, diagnostics.geminiKeyValid, diagnostics.openAiApiKey, diagnostics.openAiKeyValid]);
+
   const providerStatus = useMemo(() => {
+    if (invalidCredentialWarnings.length > 0) {
+      return 'Credenciais com formato inválido';
+    }
     if (diagnostics.hasOpenAiKey && diagnostics.hasGeminiKey) {
       return 'OpenAI + Gemini configuradas';
     }
@@ -77,7 +93,7 @@ export function AdminNarrationCredentialsPanel() {
       return 'Apenas Gemini configurada';
     }
     return 'Sem credenciais de IA';
-  }, [diagnostics.hasGeminiKey, diagnostics.hasOpenAiKey]);
+  }, [diagnostics.hasGeminiKey, diagnostics.hasOpenAiKey, invalidCredentialWarnings.length]);
 
   async function handleSave(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -122,6 +138,15 @@ export function AdminNarrationCredentialsPanel() {
       {message ? (
         <div className="border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm font-semibold text-emerald-700">
           {message}
+        </div>
+      ) : null}
+
+      {invalidCredentialWarnings.length > 0 ? (
+        <div className="border border-rose-200 bg-rose-50 px-5 py-4 text-sm font-semibold text-rose-700">
+          <p className="font-black uppercase tracking-[0.18em] text-[10px] text-rose-600">Atenção</p>
+          <p className="mt-2">
+            {invalidCredentialWarnings.join(' ')} Revise a credencial salva antes de usar a análise com IA.
+          </p>
         </div>
       ) : null}
 
@@ -198,6 +223,12 @@ export function AdminNarrationCredentialsPanel() {
             </article>
           ))}
         </div>
+
+        {invalidCredentialWarnings.length > 0 ? (
+          <p className="text-xs font-semibold text-rose-700">
+            Dica: a análise com IA pode falhar até que a credencial inválida seja substituída por uma chave válida.
+          </p>
+        ) : null}
       </section>
 
       <form onSubmit={(event) => void handleSave(event)} className="space-y-5 border border-[#D8E6EB] bg-white p-5 shadow-sm">
