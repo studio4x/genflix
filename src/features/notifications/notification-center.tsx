@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Bell, CheckCheck, ExternalLink, Inbox, RefreshCw } from 'lucide-react'
+import { Bell, CheckCheck, ExternalLink, Inbox, RefreshCw, X } from 'lucide-react'
 
 import { useAuth } from '@/app/providers/auth-provider'
 import { Button } from '@/components/ui/button'
@@ -68,14 +68,22 @@ export function NotificationCenter({ compact = false }: { compact?: boolean }) {
   const [unreadCount, setUnreadCount] = useState(0)
   const [isLoading, setIsLoading] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [clearedAt, setClearedAt] = useState<number | null>(null)
   const rootRef = useRef<HTMLDivElement | null>(null)
 
-  const visibleItems = useMemo(() => items.slice(0, compact ? 5 : 8), [compact, items])
+  const visibleItems = useMemo(() => {
+    const filteredItems = clearedAt
+      ? items.filter((item) => new Date(item.created_at).getTime() > clearedAt)
+      : items
+
+    return filteredItems.slice(0, compact ? 5 : 8)
+  }, [clearedAt, compact, items])
 
   const loadNotifications = useCallback(async () => {
     if (!user?.id) {
       setItems([])
       setUnreadCount(0)
+      setClearedAt(null)
       return
     }
 
@@ -161,6 +169,10 @@ export function NotificationCenter({ compact = false }: { compact?: boolean }) {
   async function handleMarkAllRead() {
     await markAllNotificationsRead()
     await loadNotifications()
+  }
+
+  function handleClearAllVisible() {
+    setClearedAt(Date.now())
   }
 
   return (
@@ -273,14 +285,26 @@ export function NotificationCenter({ compact = false }: { compact?: boolean }) {
           </div>
 
           <div className="border-t border-[#D8E6EB] bg-[#F2F7F9] p-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => void handleMarkAllRead()}
-              className="h-10 w-full rounded-none border-[#D8E6EB] bg-white text-xs font-black text-[#0A3640] hover:border-[#1398B7]"
-            >
-              Marcar todas como lidas
-            </Button>
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleClearAllVisible}
+                disabled={visibleItems.length === 0}
+                className="h-10 rounded-none border-[#D8E6EB] bg-white text-xs font-black text-[#0A3640] hover:border-[#1398B7]"
+              >
+                <X className="mr-2 h-4 w-4" />
+                Limpar todas
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => void handleMarkAllRead()}
+                className="h-10 rounded-none border-[#D8E6EB] bg-white text-xs font-black text-[#0A3640] hover:border-[#1398B7]"
+              >
+                Marcar todas como lidas
+              </Button>
+            </div>
           </div>
         </div>
       ) : null}
