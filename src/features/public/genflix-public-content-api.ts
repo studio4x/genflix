@@ -41,7 +41,8 @@ async function fetchPublicRows<T>(path: string, searchParams: URLSearchParams): 
     if (!supabaseUrl || !supabaseAnonKey) {
         throw new Error('Configuração pública do Supabase ausente.');
     }
-    const response = await fetch(`${supabaseUrl}/rest/v1/${path}${searchParams.toString()}`, {
+    const queryString = searchParams.toString();
+    const response = await fetch(`${supabaseUrl}/rest/v1/${path}${queryString ? `?${queryString}` : ''}`, {
         cache: 'no-store',
         headers: {
             apikey: supabaseAnonKey,
