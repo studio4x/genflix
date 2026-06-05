@@ -352,22 +352,20 @@ export function StudentLessonPage() {
               </p>
             </div>
           ) : (
-            <div className="rounded-[28px] border border-slate-200 bg-slate-50 p-4 shadow-[0_1px_0_rgba(15,23,42,0.04)]">
-              <div className="flex flex-wrap items-center gap-3">
-                {footerActions.map((action) => (
-                  <Button
-                    key={action.id}
-                    type="button"
-                    variant="outline"
-                    disabled={isLoadingFooterActions}
-                    onClick={() => void handleOpenFooterAction(action)}
-                    className={getLessonFooterButtonClassName(action.template)}
-                  >
-                    {renderButtonTemplateIcon(getLessonFooterActionIconName(action))}
-                    {action.label ?? action.file_name ?? action.template?.default_label ?? 'Recurso'}
-                  </Button>
-                ))}
-              </div>
+            <div className="flex flex-wrap items-center gap-3">
+              {footerActions.map((action) => (
+                <Button
+                  key={action.id}
+                  type="button"
+                  variant="outline"
+                  disabled={isLoadingFooterActions}
+                  onClick={() => void handleOpenFooterAction(action)}
+                  className={getLessonFooterButtonClassName(action.template)}
+                >
+                  {renderButtonTemplateIcon(getLessonFooterActionIconName(action))}
+                  {action.label ?? action.file_name ?? action.template?.default_label ?? 'Recurso'}
+                </Button>
+              ))}
             </div>
           )}
         </div>
