@@ -4,7 +4,7 @@ import { useAuth } from '@/app/providers/auth-provider';
 import { Button } from '@/components/ui/button';
 import { splitContent } from '@/features/admin/content/content-blocks';
 import { ContentBlocksRenderer } from '@/features/admin/content/content-blocks-renderer';
-import { getLessonFooterActionIconName, getLessonFooterActionScopeLabel, getLessonFooterButtonClassName, renderButtonTemplateIcon, } from '@/features/admin/content/button-template-icons';
+import { getLessonFooterActionIconName, getLessonFooterButtonClassName, renderButtonTemplateIcon, } from '@/features/admin/content/button-template-icons';
 import { fetchMaterials, fetchLessonFooterActions, getSignedMaterialUrl, getSignedLessonFooterActionUrl, } from '@/features/admin/content/api';
 import type { StudentCourseAssessmentSummary } from '@/features/student/assessments/api';
 import { exportLicensedModulePdf, exportModuleToPdf, } from '@/features/student/content/pdf-exporter';
@@ -353,28 +353,19 @@ export function StudentLessonPage() {
             </div>
           ) : (
             <div className="rounded-[28px] border border-slate-200 bg-slate-50 p-4 shadow-[0_1px_0_rgba(15,23,42,0.04)]">
-              <div className="flex flex-wrap gap-3">
+              <div className="flex flex-wrap items-center gap-3">
                 {footerActions.map((action) => (
-                  <div key={action.id} className="flex flex-col gap-2">
-                    <div className="flex flex-wrap items-center gap-2 px-1">
-                      <span className="rounded-full bg-cyan-100 px-2.5 py-1 text-[10px] font-black uppercase tracking-widest text-cyan-700">
-                        {getLessonFooterActionScopeLabel(action.scope)}
-                      </span>
-                      <span className="rounded-full bg-slate-200 px-2.5 py-1 text-[10px] font-black uppercase tracking-widest text-slate-600">
-                        {action.action_type === 'file' ? 'Arquivo' : 'URL'}
-                      </span>
-                    </div>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      disabled={isLoadingFooterActions}
-                      onClick={() => void handleOpenFooterAction(action)}
-                      className={getLessonFooterButtonClassName(action.template)}
-                    >
-                      {renderButtonTemplateIcon(getLessonFooterActionIconName(action))}
-                      {action.label ?? action.file_name ?? action.template?.default_label ?? 'Recurso'}
-                    </Button>
-                  </div>
+                  <Button
+                    key={action.id}
+                    type="button"
+                    variant="outline"
+                    disabled={isLoadingFooterActions}
+                    onClick={() => void handleOpenFooterAction(action)}
+                    className={getLessonFooterButtonClassName(action.template)}
+                  >
+                    {renderButtonTemplateIcon(getLessonFooterActionIconName(action))}
+                    {action.label ?? action.file_name ?? action.template?.default_label ?? 'Recurso'}
+                  </Button>
                 ))}
               </div>
             </div>
