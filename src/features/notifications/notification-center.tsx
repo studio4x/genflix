@@ -4,6 +4,7 @@ import { Bell, CheckCheck, ExternalLink, Inbox, RefreshCw, X } from 'lucide-reac
 
 import { useAuth } from '@/app/providers/auth-provider'
 import { Button } from '@/components/ui/button'
+import { useLocalStorageState } from '@/hooks/use-local-storage-state'
 import { cn } from '@/lib/utils'
 import { supabase } from '@/services/supabase/client'
 
@@ -25,17 +26,17 @@ function formatRelativeTime(value: string) {
 
   const diffInMinutes = Math.floor(diffInSeconds / 60)
   if (diffInMinutes < 60) {
-    return `há ${diffInMinutes} min`
+    return `hÃ¡ ${diffInMinutes} min`
   }
 
   const diffInHours = Math.floor(diffInMinutes / 60)
   if (diffInHours < 24) {
-    return `há ${diffInHours} h`
+    return `hÃ¡ ${diffInHours} h`
   }
 
   const diffInDays = Math.floor(diffInHours / 24)
   if (diffInDays < 7) {
-    return `há ${diffInDays} dia${diffInDays === 1 ? '' : 's'}`
+    return `hÃ¡ ${diffInDays} dia${diffInDays === 1 ? '' : 's'}`
   }
 
   return new Intl.DateTimeFormat('pt-BR', {
@@ -68,8 +69,9 @@ export function NotificationCenter({ compact = false }: { compact?: boolean }) {
   const [unreadCount, setUnreadCount] = useState(0)
   const [isLoading, setIsLoading] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
-  const [clearedAt, setClearedAt] = useState<number | null>(null)
   const rootRef = useRef<HTMLDivElement | null>(null)
+  const storageKey = user?.id ? `notifications:cleared-at:${user.id}` : 'notifications:cleared-at:anonymous'
+  const { state: clearedAt, setState: setClearedAt } = useLocalStorageState<number | null>(storageKey, null)
 
   const visibleItems = useMemo(() => {
     const filteredItems = clearedAt
@@ -83,7 +85,6 @@ export function NotificationCenter({ compact = false }: { compact?: boolean }) {
     if (!user?.id) {
       setItems([])
       setUnreadCount(0)
-      setClearedAt(null)
       return
     }
 
@@ -93,16 +94,16 @@ export function NotificationCenter({ compact = false }: { compact?: boolean }) {
     try {
       const [notificationRows, count] = await Promise.all([
         fetchNotifications(compact ? 8 : 15),
-        fetchUnreadNotificationCount(),
+        fetchUnreadNotificationCount(clearedAt ? new Date(clearedAt).toISOString() : null),
       ])
       setItems(notificationRows)
-      setUnreadCount(count)
+      setUnreadCount(count ?? 0)
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'Não foi possível carregar as notificações.')
+      setErrorMessage(error instanceof Error ? error.message : 'NÃ£o foi possÃ­vel carregar as notificaÃ§Ãµes.')
     } finally {
       setIsLoading(false)
     }
-  }, [compact, user?.id])
+  }, [clearedAt, compact, user?.id])
 
   useEffect(() => {
     void loadNotifications()
@@ -181,7 +182,7 @@ export function NotificationCenter({ compact = false }: { compact?: boolean }) {
         type="button"
         onClick={() => setIsOpen((current) => !current)}
         className="relative inline-flex h-10 w-10 items-center justify-center border border-[#D8E6EB] bg-white text-[#0A3640] shadow-sm transition hover:border-[#1398B7]/50 hover:bg-[#E8F6FA]"
-        aria-label="Abrir notificações"
+        aria-label="Abrir notificaÃ§Ãµes"
       >
         <Bell className="h-4 w-4" />
         {unreadCount > 0 ? (
@@ -195,7 +196,7 @@ export function NotificationCenter({ compact = false }: { compact?: boolean }) {
         <div className="absolute right-0 z-50 mt-3 w-[min(92vw,420px)] border border-[#D8E6EB] bg-white shadow-[0_24px_60px_rgba(10,54,64,0.16)]">
           <div className="flex items-start justify-between gap-4 border-b border-[#D8E6EB] bg-[#F2F7F9] px-5 py-4">
             <div>
-              <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#1398B7]">Notificações</p>
+              <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#1398B7]">NotificaÃ§Ãµes</p>
               <h2 className="mt-1 font-readex text-lg font-semibold text-[#15323b]">
                 {unreadCount > 0 ? `${unreadCount} nova${unreadCount === 1 ? '' : 's'}` : 'Tudo em dia'}
               </h2>
@@ -205,7 +206,7 @@ export function NotificationCenter({ compact = false }: { compact?: boolean }) {
                 type="button"
                 onClick={() => void loadNotifications()}
                 className="inline-flex h-9 w-9 items-center justify-center border border-[#D8E6EB] bg-white text-[#5F7077] hover:border-[#1398B7]/50 hover:text-[#0A3640]"
-                aria-label="Atualizar notificações"
+                aria-label="Atualizar notificaÃ§Ãµes"
               >
                 <RefreshCw className={cn('h-4 w-4', isLoading ? 'animate-spin' : '')} />
               </button>
@@ -228,11 +229,11 @@ export function NotificationCenter({ compact = false }: { compact?: boolean }) {
 
           <div className="max-h-[420px] overflow-y-auto">
             {isLoading && visibleItems.length === 0 ? (
-              <div className="p-5 text-sm font-semibold text-[#6d7f84]">Carregando notificações...</div>
+              <div className="p-5 text-sm font-semibold text-[#6d7f84]">Carregando notificaÃ§Ãµes...</div>
             ) : visibleItems.length === 0 ? (
               <div className="p-8 text-center">
                 <Inbox className="mx-auto h-8 w-8 text-[#1398B7]" />
-                <p className="mt-3 font-readex text-base font-semibold text-[#15323b]">Nenhuma notificação</p>
+                <p className="mt-3 font-readex text-base font-semibold text-[#15323b]">Nenhuma notificaÃ§Ã£o</p>
                 <p className="mt-1 text-sm font-medium text-[#6d7f84]">Quando algo importante acontecer, aparece aqui.</p>
               </div>
             ) : (

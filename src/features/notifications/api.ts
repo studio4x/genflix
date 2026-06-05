@@ -198,11 +198,15 @@ export async function fetchPlatformNotifications(limit = 25) {
         } satisfies PlatformNotification;
     });
 }
-export async function fetchUnreadNotificationCount() {
-    const { count, error } = await supabase
+export async function fetchUnreadNotificationCount(createdAfter?: string | null) {
+    const query = supabase
         .from('notifications')
         .select('id', { count: 'exact', head: true })
         .is('read_at', null);
+    if (createdAfter) {
+        query.gte('created_at', createdAfter);
+    }
+    const { count, error } = await query;
     if (error) {
         throw error;
     }
