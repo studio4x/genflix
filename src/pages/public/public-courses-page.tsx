@@ -10,7 +10,6 @@ import { GenflixPublicFooter } from '@/components/public/genflix-public-footer'
 import { GenflixPublicHeader } from '@/components/public/genflix-public-header'
 import { BannerPlacementSlot } from '@/features/banners/banner-placement-slot'
 import {
-  genflixCatalogCourses,
   genflixNavLinks,
   type GenflixCourseItem,
 } from '@/features/public/genflix-site-content'
@@ -82,7 +81,7 @@ export function PublicCoursesPage() {
   const [query, setQuery] = useState('')
   const [selectedFilter, setSelectedFilter] = useState('Todos')
   const [currentPage, setCurrentPage] = useState(1)
-  const [courses, setCourses] = useState<GenflixCourseItem[]>(genflixCatalogCourses)
+  const [courses, setCourses] = useState<GenflixCourseItem[]>([])
   const [configuredCategories, setConfiguredCategories] = useState<string[]>([])
   const coursesSections = useEditableValue('courses.layout.sections', coursesLayoutFallback, { pageKey: 'courses' })
   const searchPlaceholder = useEditableValue('courses.search.placeholder', 'Buscar curso, area ou instrutor...', { pageKey: 'courses' })
@@ -96,7 +95,7 @@ export function PublicCoursesPage() {
           fetchPublicCoursesFromSupabase(),
           fetchPublicCourseCategoriesFromSupabase(),
         ])
-        if (isMounted && publicCourses.length > 0) {
+        if (isMounted) {
           setCourses(publicCourses)
         }
         if (isMounted) {
@@ -104,7 +103,7 @@ export function PublicCoursesPage() {
         }
       } catch {
         if (isMounted) {
-          setCourses(genflixCatalogCourses)
+          setCourses([])
         }
       }
     }

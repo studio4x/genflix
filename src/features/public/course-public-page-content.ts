@@ -1,6 +1,4 @@
 import {
-  getGenflixCourseBySlug,
-  getGenflixCourseDetailBySlug,
   type GenflixCourseDetail,
   type GenflixCourseItem,
   type GenflixCourseModule,
@@ -211,18 +209,16 @@ function getInitials(row: CoursePublicPageRowLike) {
 
 export function buildCoursePublicCatalogItem(row: CoursePublicPageRowLike): GenflixCourseItem {
   const slug = row.slug ?? row.id
-  const staticCourse = getGenflixCourseBySlug(slug)
 
   return {
     id: row.id,
     slug,
-    title: trimString(row.marketing_title) || row.title || staticCourse?.title || 'Curso GenFlix',
-    category: trimString(row.category) || staticCourse?.category || 'Curso',
-    mentor: trimString(row.mentor_name) || staticCourse?.mentor || 'Equipe GenFlix',
-    role: trimString(row.mentor_role) || staticCourse?.role || 'Curadoria de conteúdo',
-    image: trimString(row.cover_image_url) || trimString(row.thumbnail_url) || staticCourse?.image || defaultCourseImage,
+    title: trimString(row.marketing_title) || row.title || 'Curso GenFlix',
+    category: trimString(row.category) || 'Curso',
+    mentor: trimString(row.mentor_name) || 'Equipe GenFlix',
+    role: trimString(row.mentor_role) || 'Curadoria de conteúdo',
+    image: trimString(row.cover_image_url) || trimString(row.thumbnail_url) || defaultCourseImage,
     initials: getInitials(row),
-    mentorImage: staticCourse?.mentorImage,
   }
 }
 
@@ -233,18 +229,12 @@ export function buildCoursePublicDetail(
   },
 ): GenflixCourseDetail {
   const item = buildCoursePublicCatalogItem(row)
-  const staticDetail = getGenflixCourseDetailBySlug(item.slug)
   const content = normalizeCoursePublicPageContent(row.public_page_content)
   const fallbackDescription =
     trimString(row.marketing_description) ||
-    trimString(row.description) ||
-    staticDetail?.description ||
-    ''
+    trimString(row.description)
   const fallbackBonusDescription =
-    trimString(row.mentor_bio) ||
-    staticDetail?.bonusSection.description ||
-    staticDetail?.mentor.bio ||
-    ''
+    trimString(row.mentor_bio)
   const bonusSection = content.bonusSection
     ? {
       enabled: content.bonusSection.enabled,
@@ -253,7 +243,7 @@ export function buildCoursePublicDetail(
     }
     : {
       enabled: Boolean(fallbackBonusDescription),
-      title: staticDetail?.bonusSection.title || 'Prévia de conteúdo',
+      title: 'Prévia de conteúdo',
       description: fallbackBonusDescription,
     }
 
@@ -262,7 +252,7 @@ export function buildCoursePublicDetail(
       ? options.realSyllabus
       : content.customSyllabus.length
         ? content.customSyllabus
-        : staticDetail?.syllabus ?? [
+        : [
           {
             title: 'Primeiros passos',
             lessonCount: 2,
@@ -285,38 +275,35 @@ export function buildCoursePublicDetail(
     slug: item.slug,
     categoryLine:
       content.categoryLine ||
-      staticDetail?.categoryLine ||
       `${item.category.toUpperCase()} - ONLINE`,
     title: item.title,
     coverImage: item.image,
     description: fallbackDescription,
     aboutParagraphs: content.aboutParagraphs.length
       ? content.aboutParagraphs
-      : staticDetail?.aboutParagraphs ?? [
+      : [
         fallbackDescription || 'Curso publicado no catalogo GenFlix com trilha estruturada para aprendizado digital.',
         'A experiência combina aulas, recursos de apoio, atividades e acesso organizado pelo player da plataforma.',
       ],
     outcomes: content.outcomes.length
       ? content.outcomes
-      : staticDetail?.outcomes ?? defaultOutcomeFallbacks,
+      : defaultOutcomeFallbacks,
     syllabus,
     mentor: {
-      name: trimString(row.mentor_name) || staticDetail?.mentor.name || item.mentor,
-      role: trimString(row.mentor_role) || staticDetail?.mentor.role || item.role,
+      name: trimString(row.mentor_name) || item.mentor,
+      role: trimString(row.mentor_role) || item.role,
       bio:
         trimString(row.mentor_bio) ||
-        staticDetail?.mentor.bio ||
         'Criador responsável pela experiência de aprendizagem deste curso.',
       initials: item.initials,
     },
     priceLabel: formatPrice(row),
     secondaryPriceLabel:
       trimString(row.secondary_price_label) ||
-      staticDetail?.secondaryPriceLabel ||
       'Checkout seguro e acesso liberado após pagamento',
     includedItems: content.includedItems.length
       ? content.includedItems
-      : staticDetail?.includedItems ?? defaultIncludedItems,
+      : defaultIncludedItems,
     bonusSection,
   }
 }

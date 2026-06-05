@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react'
+import { useCallback, useEffect, useState, type FormEvent } from 'react'
 import {
   ArrowLeft,
   CheckCircle2,
@@ -22,7 +22,7 @@ import { LegalDocumentModal } from '@/components/public/legal-document-modal'
 import { brazilStateOptions, useBrazilCities } from '@/features/address/brazil-address'
 import { resolveBrazilCepAddress, useBrazilCepLookup } from '@/features/address/brazil-cep'
 import { fetchPublicCourseDetailFromSupabase } from '@/features/public/genflix-public-content-api'
-import { genflixNavLinks, getGenflixCourseDetailBySlug, type GenflixCourseDetail } from '@/features/public/genflix-site-content'
+import { genflixNavLinks, type GenflixCourseDetail } from '@/features/public/genflix-site-content'
 import { startCourseCheckout } from '@/features/public/courses/api'
 import type { LegalDocumentKey } from '@/features/public/legal-documents'
 import { dispatchSiteBeginCheckoutEvent } from '@/features/site-editor/site-tracking'
@@ -103,8 +103,7 @@ export function PublicCheckoutPage() {
   const { slug = '' } = useParams()
   const { isLoading, session, user, roles, profile, signIn, signUp, updateProfile } = useAuth()
   const waitingRoleResolution = !!user && roles.length === 0
-  const staticDetail = useMemo(() => getGenflixCourseDetailBySlug(slug), [slug])
-  const [detail, setDetail] = useState<GenflixCourseDetail | null>(staticDetail)
+  const [detail, setDetail] = useState<GenflixCourseDetail | null>(null)
   const [isLoadingDetail, setIsLoadingDetail] = useState(true)
   const [authMode, setAuthMode] = useState<CheckoutAuthMode>('signup')
   const [loginEmail, setLoginEmail] = useState('')
@@ -257,11 +256,11 @@ export function PublicCheckoutPage() {
       try {
         const publicDetail = await fetchPublicCourseDetailFromSupabase(slug)
         if (isMounted) {
-          setDetail(publicDetail ?? staticDetail)
+          setDetail(publicDetail)
         }
       } catch {
         if (isMounted) {
-          setDetail(staticDetail)
+          setDetail(null)
         }
       } finally {
         if (isMounted) {
@@ -275,7 +274,7 @@ export function PublicCheckoutPage() {
     return () => {
       isMounted = false
     }
-  }, [slug, staticDetail])
+  }, [slug])
 
   useEffect(() => {
     if (!detail) {
@@ -572,7 +571,7 @@ export function PublicCheckoutPage() {
     )
   }
 
-  if (!isLoadingDetail && !staticDetail && !detail) {
+  if (!isLoadingDetail && !detail) {
     return <Navigate to="/cursos" replace />
   }
 

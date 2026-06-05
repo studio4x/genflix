@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { BadgeCheck, ChevronDown, CirclePlay, Play, Sparkles } from 'lucide-react';
 import { Link, Navigate, useParams } from 'react-router-dom';
 import { CourseCoverMedia } from '@/components/public/course-cover-media';
@@ -6,7 +6,7 @@ import { GenflixCtaButton } from '@/components/public/genflix-cta-button';
 import { GenflixPublicFooter } from '@/components/public/genflix-public-footer';
 import { GenflixPublicHeader } from '@/components/public/genflix-public-header';
 import { BannerPlacementSlot } from '@/features/banners/banner-placement-slot';
-import { genflixNavLinks, getGenflixCourseBySlug, getGenflixCourseDetailBySlug, type GenflixCourseDetail, } from '@/features/public/genflix-site-content';
+import { genflixNavLinks, type GenflixCourseDetail, } from '@/features/public/genflix-site-content';
 import { genflixStudyFeatureCardsFallback, genflixStudyFeatureCardsSchema, resolveStudyFeatureIconKey, } from '@/features/public/genflix-study-feature-editor';
 import { fetchPublicCourseDetailFromSupabase } from '@/features/public/genflix-public-content-api';
 import { CourseReviewsSection } from '@/features/reviews/course-reviews-section';
@@ -21,9 +21,7 @@ function parsePriceLabelToNumber(priceLabel: string) {
 }
 export function PublicCourseDetailsPage() {
     const { slug = '' } = useParams();
-    const staticCourse = useMemo(() => getGenflixCourseBySlug(slug), [slug]);
-    const staticDetail = useMemo(() => getGenflixCourseDetailBySlug(slug), [slug]);
-    const [detail, setDetail] = useState<GenflixCourseDetail | null>(staticDetail);
+    const [detail, setDetail] = useState<GenflixCourseDetail | null>(null);
     const [isLoadingDetail, setIsLoadingDetail] = useState(true);
     const [openModule, setOpenModule] = useState(0);
     const trackedCourseRef = useRef<string | null>(null);
@@ -34,12 +32,12 @@ export function PublicCourseDetailsPage() {
             try {
                 const publicDetail = await fetchPublicCourseDetailFromSupabase(slug);
                 if (isMounted) {
-                    setDetail(publicDetail ?? staticDetail);
+                    setDetail(publicDetail);
                 }
             }
             catch {
                 if (isMounted) {
-                    setDetail(staticDetail);
+                    setDetail(null);
                 }
             }
             finally {
@@ -52,7 +50,7 @@ export function PublicCourseDetailsPage() {
         return () => {
             isMounted = false;
         };
-    }, [slug, staticDetail]);
+    }, [slug]);
     useEffect(() => {
         if (!detail) {
             return;
@@ -69,7 +67,7 @@ export function PublicCourseDetailsPage() {
             value: parsePriceLabelToNumber(detail.priceLabel),
         });
     }, [detail]);
-    if (!isLoadingDetail && !staticCourse && !detail) {
+    if (!isLoadingDetail && !detail) {
         return <Navigate to="/cursos" replace/>;
     }
     if (!detail) {
