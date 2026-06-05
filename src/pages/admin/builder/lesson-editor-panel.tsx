@@ -769,8 +769,8 @@ Esta ação exclui o arquivo do storage privado.`);
                  {isNew ? (<p className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
                      {'Salve a aula primeiro para cadastrar botões, materiais e URLs do rodapé.'}
                    </p>) : isLoadingFooterActions ? (<p className="mt-4 text-sm text-slate-500">{'Carregando botões configurados...'}</p>) : footerActions.length === 0 ? (<p className="mt-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">{'Nenhum botão configurado ainda para esta aula.'}
-                   </p>) : (<div className="mt-4 grid gap-3">
-                    {footerActions.map((action) => (<div key={action.id} className="rounded-xl border border-slate-200 bg-slate-50/70 px-4 py-3">
+                   </p>) : (<div className="mt-4 grid gap-3 lg:grid-cols-2 2xl:grid-cols-3">
+                    {footerActions.map((action) => (<div key={action.id} className="h-full rounded-xl border border-slate-200 bg-slate-50/70 px-4 py-3">
                          <div className="flex flex-wrap items-center gap-2">
                            <span className="rounded-full bg-blue-100 px-2.5 py-1 text-[10px] font-black uppercase tracking-widest text-blue-700">
                              #{action.position}
@@ -783,7 +783,7 @@ Esta ação exclui o arquivo do storage privado.`);
                            </span>
                          </div>
                          <div className="mt-3">
-                           <Button type="button" variant="outline" className={getLessonFooterButtonClassName(action.template)}>
+                           <Button type="button" variant="outline" className={`${getLessonFooterButtonClassName(action.template)} w-full justify-start`}>
                              {renderButtonTemplateIcon(getLessonFooterActionIconName(action))}
                              {action.label?.trim() || action.template?.default_label || action.file_name || 'Botão sem rótulo'}
                            </Button>
