@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '@/app/providers/auth-provider';
 import { GenflixPublicFooter } from '@/components/public/genflix-public-footer';
 import { GenflixPublicHeader } from '@/components/public/genflix-public-header';
-import { genflixBlogFilters, genflixBlogPosts, genflixNavLinks, type GenflixBlogPost, } from '@/features/public/genflix-site-content';
+import { genflixBlogFilters, genflixNavLinks, type GenflixBlogPost, } from '@/features/public/genflix-site-content';
 import { BannerPlacementSlot } from '@/features/banners/banner-placement-slot';
 import { fetchPublicBlogCategoriesFromSupabase, fetchPublicBlogPostsFromSupabase, } from '@/features/public/genflix-public-content-api';
 import { createDefaultBlogStyleSettings, normalizeBlogStyleSettings, type BlogStyleSettings } from '@/features/blog/blog-style-settings';
@@ -91,7 +91,7 @@ export function PublicBlogPage() {
     const waitingSiteContent = siteContentScope?.isReady === false;
     const [selectedFilter, setSelectedFilter] = useState('all');
     const [currentPage, setCurrentPage] = useState(1);
-    const [posts, setPosts] = useState<GenflixBlogPost[]>(genflixBlogPosts);
+    const [posts, setPosts] = useState<GenflixBlogPost[]>([]);
     const [blogCategories, setBlogCategories] = useState<BlogCategoryFilter[]>([]);
     const [sidebarBlocks, setSidebarBlocks] = useState<BlogSidebarBlock[]>([]);
     const [sidebarCarouselTick, setSidebarCarouselTick] = useState(0);
@@ -101,13 +101,13 @@ export function PublicBlogPage() {
         async function loadPosts() {
             try {
                 const publicPosts = await fetchPublicBlogPostsFromSupabase();
-                if (isMounted && publicPosts.length > 0) {
+                if (isMounted) {
                     setPosts(publicPosts);
                 }
             }
             catch {
                 if (isMounted) {
-                    setPosts(genflixBlogPosts);
+                    setPosts([]);
                 }
             }
         }

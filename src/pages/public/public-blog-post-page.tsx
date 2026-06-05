@@ -6,7 +6,7 @@ import { GenflixPublicFooter } from '@/components/public/genflix-public-footer';
 import { GenflixPublicHeader } from '@/components/public/genflix-public-header';
 import { RichTextEditor } from '@/components/ui/RichTextEditor';
 import { fetchApprovedBlogComments, submitBlogComment, type BlogComment } from '@/features/blog/comments-api';
-import { genflixNavLinks, getGenflixBlogPostBySlug, type GenflixBlogPost, } from '@/features/public/genflix-site-content';
+import { genflixNavLinks, type GenflixBlogPost, } from '@/features/public/genflix-site-content';
 import { fetchPublicBlogPostFromSupabase } from '@/features/public/genflix-public-content-api';
 import { createDefaultBlogStyleSettings, normalizeBlogStyleSettings, type BlogStyleSettings } from '@/features/blog/blog-style-settings';
 import { fetchSiteContent } from '@/features/site-editor/api';
@@ -184,7 +184,7 @@ export function PublicBlogPostPage() {
     const previewKey = searchParams.get('previewKey') || `slug:${slug}`;
     const waitingRoleResolution = !!user && roles.length === 0;
     const canUseAdminPreviewPayload = isAdmin || (isAdminPreviewRequest && !!user && waitingRoleResolution);
-    const [post, setPost] = useState<GenflixBlogPost | null>(() => getGenflixBlogPostBySlug(slug));
+    const [post, setPost] = useState<GenflixBlogPost | null>(null);
     const [isLoadingPost, setIsLoadingPost] = useState(true);
     const [isDraftPreview, setIsDraftPreview] = useState(false);
     const [comments, setComments] = useState<BlogComment[]>([]);
@@ -342,13 +342,13 @@ export function PublicBlogPostPage() {
                     }
                 }
                 if (isMounted) {
-                    setPost(resolvedPost ?? getGenflixBlogPostBySlug(slug));
+                    setPost(resolvedPost);
                     setIsDraftPreview(draftPreview);
                 }
             }
             catch {
                 if (isMounted) {
-                    setPost(getGenflixBlogPostBySlug(slug));
+                    setPost(null);
                     setIsDraftPreview(false);
                 }
             }
