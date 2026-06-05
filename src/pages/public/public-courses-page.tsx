@@ -91,15 +91,9 @@ export function PublicCoursesPage() {
 
     async function loadCourses() {
       try {
-        const [publicCourses, publicCategories] = await Promise.all([
-          fetchPublicCoursesFromSupabase(),
-          fetchPublicCourseCategoriesFromSupabase(),
-        ])
+        const publicCourses = await fetchPublicCoursesFromSupabase()
         if (isMounted) {
           setCourses(publicCourses)
-        }
-        if (isMounted) {
-          setConfiguredCategories(publicCategories)
         }
       } catch {
         if (isMounted) {
@@ -108,7 +102,21 @@ export function PublicCoursesPage() {
       }
     }
 
+    async function loadCategories() {
+      try {
+        const publicCategories = await fetchPublicCourseCategoriesFromSupabase()
+        if (isMounted) {
+          setConfiguredCategories(publicCategories)
+        }
+      } catch {
+        if (isMounted) {
+          setConfiguredCategories([])
+        }
+      }
+    }
+
     void loadCourses()
+    void loadCategories()
 
     return () => {
       isMounted = false
