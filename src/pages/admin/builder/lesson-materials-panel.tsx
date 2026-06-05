@@ -3,7 +3,7 @@ import type { ChangeEvent } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '@/app/providers/auth-provider';
 import { Button } from '@/components/ui/button';
-import { getLessonFooterActionIconName, getLessonFooterButtonClassName, renderButtonTemplateIcon, } from '@/features/admin/content/button-template-icons';
+import { getLessonFooterActionIconName, getLessonFooterActionScopeLabel, getLessonFooterButtonClassName, renderButtonTemplateIcon, } from '@/features/admin/content/button-template-icons';
 import { createLessonFooterAction, deleteLessonFooterAction, fetchButtonTemplates, fetchLessonFooterActions, getSignedLessonFooterActionUrl, toErrorMessage, updateLessonFooterAction, } from '@/features/admin/content/api';
 import { publishBuilderNotice } from '@/lib/builder-notice';
 import { lessonFooterActionFormSchema } from '@/features/admin/content/schemas';
@@ -89,7 +89,8 @@ export function LessonMaterialsPanel() {
             }
         }
     }, [courseTree, lessonId]);
-    const nextPosition = useMemo(() => (actions.length ? Math.max(...actions.map((action) => action.position)) + 1 : 1), [actions]);
+    const lessonActions = useMemo(() => actions.filter((action) => action.scope === 'lesson'), [actions]);
+    const nextPosition = useMemo(() => (lessonActions.length ? Math.max(...lessonActions.map((action) => action.position)) + 1 : 1), [lessonActions]);
     const activeTemplates = useMemo(() => templates.filter((template) => template.is_active), [templates]);
     const loadData = useCallback(async () => {
         if (!lessonId)
@@ -139,6 +140,7 @@ export function LessonMaterialsPanel() {
         try {
             const templateId = selectedTemplateId || activeTemplates[0]?.id || null;
             const parsed = lessonFooterActionFormSchema.safeParse({
+                scope: 'lesson',
                 template_id: templateId,
                 action_type: 'file',
                 label: '',
@@ -171,6 +173,7 @@ export function LessonMaterialsPanel() {
         setError(null);
         try {
             const parsed = lessonFooterActionFormSchema.safeParse({
+                scope: 'lesson',
                 template_id: selectedTemplateId || null,
                 action_type: 'url',
                 label: urlLabel,
@@ -215,6 +218,7 @@ export function LessonMaterialsPanel() {
         setError(null);
         try {
             const parsed = lessonFooterActionFormSchema.safeParse({
+                scope: 'lesson',
                 template_id: editingTemplateId || null,
                 action_type: editingAction.action_type,
                 label: editingLabel,
@@ -356,6 +360,9 @@ export function LessonMaterialsPanel() {
                       <div className="flex flex-wrap items-center gap-2">
                         <span className="rounded-full bg-slate-900 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-white">
                           #{action.position}
+                        </span>
+                        <span className="rounded-full bg-cyan-100 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-cyan-700">
+                          {getLessonFooterActionScopeLabel(action.scope)}
                         </span>
                         <span className="rounded-full bg-slate-200 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-slate-600">
                           {action.action_type === 'file' ? 'Arquivo' : 'URL'}

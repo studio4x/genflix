@@ -8,6 +8,7 @@ import { moduleFormSchema, type ModuleFormInput } from '@/features/admin/content
 import { useCourseBuilder } from '@/app/layouts/admin-course-builder-layout';
 import { publishBuilderNotice } from '@/lib/builder-notice';
 import { Button } from '@/components/ui/button';
+import { FooterActionsPanel } from '@/features/admin/content/footer-actions-panel';
 const initialForm: ModuleFormInput = {
     title: '',
     description: '',
@@ -357,7 +358,7 @@ export function ModuleEditorPanel() {
              </span>) : (<span className="text-xs font-semibold text-slate-400">Nenhuma revisão com IA registrada para este módulo.</span>)}
          </div>)}
 
-       <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
          <div className="p-6 md:p-8 space-y-6">
             <label className="block space-y-2">
               <span className="text-sm font-bold text-slate-800">Capa / Título do Módulo <span className="text-rose-500">*</span></span>
@@ -457,6 +458,15 @@ export function ModuleEditorPanel() {
            </div>
          </div>
         </form>
+        {!isNew && moduleId && courseId ? (
+          <FooterActionsPanel
+            scope="module"
+            courseId={courseId}
+            moduleId={moduleId}
+            title="Botões globais do módulo"
+            description="Configure arquivos e links disponíveis em todas as aulas deste módulo."
+          />
+        ) : null}
         {repeatReviewPrompt && currentModule && (<div className="fixed inset-0 z-[115] flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm animate-in fade-in duration-300">
             <div className="w-full max-w-2xl rounded-[32px] border border-white/20 bg-white shadow-2xl animate-in zoom-in-95 duration-300">
               <div className="border-b border-slate-100 p-8">

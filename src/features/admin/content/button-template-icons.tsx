@@ -1,7 +1,7 @@
 import type { LucideIcon } from 'lucide-react';
 import { BookOpen, CirclePlay, Download, ExternalLink, FileArchive, FileImage, FileSpreadsheet, FileText, FolderOpen, GraduationCap, Headphones, Link as LinkIcon, MonitorPlay, } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import type { ButtonTemplate, LessonFooterAction } from '@/types/content';
+import type { ButtonTemplate, FooterActionScope, LessonFooterAction } from '@/types/content';
 export const BUTTON_ICON_OPTIONS: Array<{
     value: string;
     label: string;
@@ -110,4 +110,15 @@ export function getLessonFooterActionIconName(action: Pick<LessonFooterAction, '
     if (mimeType.startsWith('video/'))
         return 'play-circle';
     return 'file-text';
+}
+export function getLessonFooterActionScopeLabel(scope: FooterActionScope) {
+    switch (scope) {
+        case 'course':
+            return 'Curso';
+        case 'module':
+            return 'Módulo';
+        case 'lesson':
+        default:
+            return 'Aula';
+    }
 }

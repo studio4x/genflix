@@ -4,6 +4,7 @@ import { useCourseBuilder } from '@/app/layouts/admin-course-builder-layout';
 import { useAuth } from '@/app/providers/auth-provider';
 import { analyzeModuleWithAi, createModuleAiReviewHistory, fetchModuleAiReviewHistory, formatAiReviewCost, formatAiReviewTokens, getAiProviderLabel, markModuleAiReviewApplied, type ModuleAiReviewHistoryEntry, type ModuleAiReviewResult, } from '@/features/admin/ai-review/api';
 import { deleteLesson, deleteModule, importCourseContent, toErrorMessage, } from '@/features/admin/content/api';
+import { FooterActionsPanel } from '@/features/admin/content/footer-actions-panel';
 import { deleteAssessment } from '@/features/admin/assessments/api';
 import { publishBuilderNotice } from '@/lib/builder-notice';
 import { Button } from '@/components/ui/button';
@@ -418,6 +419,13 @@ Todas as quest\u00f5es, estudos de caso e tentativas vinculadas serão removidos
               </div>)))}
         </div>
       </div>
+
+      <FooterActionsPanel
+        scope="course"
+        courseId={course.id}
+        title="Botões globais do curso"
+        description="Configure arquivos e links disponíveis em todas as aulas deste curso."
+      />
 
       <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
         <div className="flex items-center justify-between gap-4 border-b border-slate-100 bg-slate-50/50 p-6">

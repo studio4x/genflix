@@ -280,9 +280,13 @@ export interface ButtonTemplate {
     created_at: string;
     updated_at: string;
 }
+export type FooterActionScope = 'lesson' | 'module' | 'course';
 export interface LessonFooterAction {
     id: string;
-    lesson_id: string;
+    scope: FooterActionScope;
+    lesson_id: string | null;
+    module_id: string | null;
+    course_id: string | null;
     template_id: string | null;
     action_type: 'file' | 'url';
     label: string | null;

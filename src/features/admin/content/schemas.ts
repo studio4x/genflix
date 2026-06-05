@@ -160,6 +160,7 @@ export const buttonTemplateFormSchema = z.object({
     is_active: z.boolean().default(true),
 });
 export const lessonFooterActionFormSchema = z.object({
+    scope: z.enum(['lesson', 'module', 'course']).default('lesson'),
     template_id: z.string().uuid().nullable().optional(),
     action_type: z.enum(['file', 'url']),
     label: z.string().trim().optional().or(z.literal('')),

@@ -9,7 +9,7 @@ import { fetchLessonAudioModerationRequests, resolveLessonAudioModerationRequest
 import { splitContent, mergeContent, } from '@/features/admin/content/content-blocks';
 import type { LessonContentBlock } from '@/features/admin/content/content-blocks';
 import { Button } from '@/components/ui/button';
-import { getLessonFooterActionIconName, getLessonFooterButtonClassName, renderButtonTemplateIcon, } from '@/features/admin/content/button-template-icons';
+import { getLessonFooterActionIconName, getLessonFooterActionScopeLabel, getLessonFooterButtonClassName, renderButtonTemplateIcon, } from '@/features/admin/content/button-template-icons';
 import { LessonContentBlocksEditor } from '@/features/admin/content/lesson-content-blocks';
 import { LessonAudioPlayer } from '@/features/student/lesson-audio/lesson-audio-player';
 import { publishBuilderNotice } from '@/lib/builder-notice';
@@ -770,10 +770,13 @@ Esta ação exclui o arquivo do storage privado.`);
                      {'Salve a aula primeiro para cadastrar botões, materiais e URLs do rodapé.'}
                    </p>) : isLoadingFooterActions ? (<p className="mt-4 text-sm text-slate-500">{'Carregando botões configurados...'}</p>) : footerActions.length === 0 ? (<p className="mt-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">{'Nenhum botão configurado ainda para esta aula.'}
                    </p>) : (<div className="mt-4 grid gap-3">
-                     {footerActions.map((action, index) => (<div key={action.id} className="rounded-xl border border-slate-200 bg-slate-50/70 px-4 py-3">
+                    {footerActions.map((action) => (<div key={action.id} className="rounded-xl border border-slate-200 bg-slate-50/70 px-4 py-3">
                          <div className="flex flex-wrap items-center gap-2">
                            <span className="rounded-full bg-blue-100 px-2.5 py-1 text-[10px] font-black uppercase tracking-widest text-blue-700">
-                             {index + 1}
+                             #{action.position}
+                           </span>
+                           <span className="rounded-full bg-cyan-100 px-2.5 py-1 text-[10px] font-black uppercase tracking-widest text-cyan-700">
+                             {getLessonFooterActionScopeLabel(action.scope)}
                            </span>
                            <span className="rounded-full bg-white px-2.5 py-1 text-[10px] font-black uppercase tracking-widest text-slate-500">
                              {action.action_type === 'file' ? 'Arquivo' : 'URL'}

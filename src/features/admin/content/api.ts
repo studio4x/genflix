@@ -3,7 +3,7 @@ import { mergeContent, splitContent, type LessonContentBlock, } from './content-
 import { exportAssessmentContent, importAssessmentContentStructured, type ImportAssessmentData, } from '@/features/admin/assessments/api';
 import { normalizeCourseQuizTypeSettings } from '@/features/assessments/course-quiz-type-settings';
 import { isLegacyCourseSalesSchemaError, stripLegacyCourseSalesFields, withLegacyCourseSalesDefaults, } from '@/features/courses/schema-compat';
-import type { ButtonTemplate, Course, CourseCategory, CourseQuizTypeSettings, CourseModule, Lesson, LessonFooterAction, LessonMaterial, ModulePdfAsset, Assessment, } from '@/types/content';
+import type { ButtonTemplate, Course, CourseCategory, CourseQuizTypeSettings, CourseModule, FooterActionScope, Lesson, LessonFooterAction, LessonMaterial, ModulePdfAsset, Assessment, } from '@/types/content';
 import type { ButtonTemplateFormInput, CourseFormInput, CoursePublicPageContentInput, CoursePublicPageFormInput, LessonFormInput, LessonFooterActionFormInput, ModuleFormInput, } from './schemas';
 import type { Session } from '@supabase/supabase-js';
 const MATERIALS_BUCKET = 'materials';
@@ -926,24 +926,136 @@ export async function deleteButtonTemplate(templateId: string) {
         throw result.error;
     }
 }
-export async function fetchLessonFooterActions(lessonId: string) {
-    const result = await supabase
+type FooterActionContext = {
+    scope: FooterActionScope;
+    lessonId?: string | null;
+    moduleId?: string | null;
+    courseId?: string | null;
+};
+const FOOTER_ACTION_SCOPE_ORDER: Record<FooterActionScope, number> = {
+    course: 0,
+    module: 1,
+    lesson: 2,
+};
+function getFooterActionStoragePrefix(context: FooterActionContext) {
+    switch (context.scope) {
+        case 'course':
+            if (!context.courseId) {
+                throw new Error('Curso ausente para o botão global.');
+            }
+            return `courses/${context.courseId}`;
+        case 'module':
+            if (!context.moduleId) {
+                throw new Error('Módulo ausente para o botão global.');
+            }
+            return `modules/${context.moduleId}`;
+        case 'lesson':
+        default:
+            if (!context.lessonId) {
+                throw new Error('Aula ausente para o botão da aula.');
+            }
+            return `lessons/${context.lessonId}`;
+    }
+}
+function resolveFooterActionInsertPayload(context: FooterActionContext, input: LessonFooterActionFormInput, userId: string, storagePath: string | null, file?: File | null) {
+    const payload: Record<string, unknown> = {
+        scope: context.scope,
+        template_id: input.template_id ?? null,
+        action_type: input.action_type,
+        label: input.label?.trim() || null,
+        url: input.action_type === 'url' ? input.url?.trim() || null : null,
+        storage_path: storagePath,
+        file_name: null,
+        mime_type: null,
+        file_size_bytes: 0,
+        position: input.position,
+        open_target: input.open_target,
+        open_in_new_tab: input.open_target !== 'same-tab',
+        is_active: input.is_active,
+        created_by: userId,
+        lesson_id: context.scope === 'lesson' ? context.lessonId ?? null : null,
+        module_id: context.scope === 'module' ? context.moduleId ?? null : null,
+        course_id: context.scope === 'course' ? context.courseId ?? null : null,
+    };
+    if (input.action_type === 'file' && file) {
+        payload.file_name = file.name;
+        payload.mime_type = file.type || null;
+        payload.file_size_bytes = file.size;
+    }
+    return payload;
+}
+async function fetchFooterActionsByScope(context: FooterActionContext) {
+    if (context.scope === 'lesson' && !context.lessonId) {
+        return [];
+    }
+    if (context.scope === 'module' && !context.moduleId) {
+        return [];
+    }
+    if (context.scope === 'course' && !context.courseId) {
+        return [];
+    }
+    const query = supabase
         .from('lesson_footer_actions')
         .select('*, template:button_templates(*)')
-        .eq('lesson_id', lessonId)
+        .eq('scope', context.scope)
         .order('position', { ascending: true });
+    const scopedQuery = context.scope === 'lesson'
+        ? query.eq('lesson_id', context.lessonId)
+        : context.scope === 'module'
+            ? query.eq('module_id', context.moduleId)
+            : query.eq('course_id', context.courseId);
+    const result = await scopedQuery;
     if (result.error) {
         throw result.error;
     }
     return (result.data as LessonFooterAction[]) ?? [];
 }
-export async function createLessonFooterAction(lessonId: string, input: LessonFooterActionFormInput, userId: string, file?: File | null) {
+export async function fetchLessonFooterActions(lessonId: string) {
+    const lessonResult = await supabase
+        .from('lessons')
+        .select('id, module_id')
+        .eq('id', lessonId)
+        .single();
+    if (lessonResult.error) {
+        throw lessonResult.error;
+    }
+    const moduleResult = await supabase
+        .from('course_modules')
+        .select('id, course_id')
+        .eq('id', lessonResult.data?.module_id)
+        .single();
+    if (moduleResult.error) {
+        throw moduleResult.error;
+    }
+    const [courseActions, moduleActions, lessonActions] = await Promise.all([
+        fetchFooterActionsByScope({ scope: 'course', courseId: moduleResult.data?.course_id ?? null }),
+        fetchFooterActionsByScope({ scope: 'module', moduleId: lessonResult.data?.module_id ?? null }),
+        fetchFooterActionsByScope({ scope: 'lesson', lessonId }),
+    ]);
+    return [...courseActions, ...moduleActions, ...lessonActions].sort((first, second) => {
+        const scopeDelta = FOOTER_ACTION_SCOPE_ORDER[first.scope] - FOOTER_ACTION_SCOPE_ORDER[second.scope];
+        if (scopeDelta !== 0) {
+            return scopeDelta;
+        }
+        if (first.position !== second.position) {
+            return first.position - second.position;
+        }
+        return first.created_at.localeCompare(second.created_at);
+    });
+}
+export async function fetchModuleFooterActions(moduleId: string) {
+    return fetchFooterActionsByScope({ scope: 'module', moduleId });
+}
+export async function fetchCourseFooterActions(courseId: string) {
+    return fetchFooterActionsByScope({ scope: 'course', courseId });
+}
+async function createFooterAction(context: FooterActionContext, input: LessonFooterActionFormInput, userId: string, file?: File | null) {
+    if (input.action_type === 'file' && !file) {
+        throw new Error('Selecione um arquivo para o botão.');
+    }
     let storagePath: string | null = null;
-    let fileName: string | null = null;
-    let mimeType: string | null = null;
-    let fileSizeBytes = 0;
     if (input.action_type === 'file' && file) {
-        storagePath = `${lessonId}/${crypto.randomUUID()}-${sanitizeFileName(file.name)}`;
+        storagePath = `${getFooterActionStoragePrefix(context)}/${crypto.randomUUID()}-${sanitizeFileName(file.name)}`;
         const uploadResult = await supabase.storage
             .from(LESSON_FOOTER_ASSETS_BUCKET)
             .upload(storagePath, file, {
@@ -954,28 +1066,10 @@ export async function createLessonFooterAction(lessonId: string, input: LessonFo
         if (uploadResult.error) {
             throw uploadResult.error;
         }
-        fileName = file.name;
-        mimeType = file.type || null;
-        fileSizeBytes = file.size;
     }
     const result = await supabase
         .from('lesson_footer_actions')
-        .insert({
-        lesson_id: lessonId,
-        template_id: input.template_id ?? null,
-        action_type: input.action_type,
-        label: input.label?.trim() || null,
-        url: input.action_type === 'url' ? input.url?.trim() || null : null,
-        storage_path: storagePath,
-        file_name: fileName,
-        mime_type: mimeType,
-        file_size_bytes: fileSizeBytes,
-        position: input.position,
-        open_target: input.open_target,
-        open_in_new_tab: input.open_target !== 'same-tab',
-        is_active: input.is_active,
-        created_by: userId,
-    })
+        .insert(resolveFooterActionInsertPayload(context, input, userId, storagePath, file))
         .select('*, template:button_templates(*)')
         .single();
     if (result.error) {
@@ -985,6 +1079,24 @@ export async function createLessonFooterAction(lessonId: string, input: LessonFo
         throw result.error;
     }
     return result.data as LessonFooterAction;
+}
+export async function createLessonFooterAction(lessonId: string, input: LessonFooterActionFormInput, userId: string, file?: File | null) {
+    if (!lessonId) {
+        throw new Error('Aula ausente para criar o botão.');
+    }
+    return createFooterAction({ scope: 'lesson', lessonId }, input, userId, file);
+}
+export async function createModuleFooterAction(moduleId: string, input: LessonFooterActionFormInput, userId: string, file?: File | null) {
+    if (!moduleId) {
+        throw new Error('Módulo ausente para criar o botão.');
+    }
+    return createFooterAction({ scope: 'module', moduleId }, input, userId, file);
+}
+export async function createCourseFooterAction(courseId: string, input: LessonFooterActionFormInput, userId: string, file?: File | null) {
+    if (!courseId) {
+        throw new Error('Curso ausente para criar o botão.');
+    }
+    return createFooterAction({ scope: 'course', courseId }, input, userId, file);
 }
 export async function updateLessonFooterAction(actionId: string, input: LessonFooterActionFormInput, file?: File | null) {
     const currentResult = await supabase
@@ -1001,7 +1113,15 @@ export async function updateLessonFooterAction(actionId: string, input: LessonFo
     let mimeType = current.mime_type;
     let fileSizeBytes = current.file_size_bytes;
     if (input.action_type === 'file' && file) {
-        const nextStoragePath = `${current.lesson_id}/${crypto.randomUUID()}-${sanitizeFileName(file.name)}`;
+        const contextPrefix = current.scope === 'course'
+            ? `courses/${current.course_id}`
+            : current.scope === 'module'
+                ? `modules/${current.module_id}`
+                : `lessons/${current.lesson_id}`;
+        if (contextPrefix.includes('null')) {
+            throw new Error('Não foi possível identificar o destino do arquivo do botão.');
+        }
+        const nextStoragePath = `${contextPrefix}/${crypto.randomUUID()}-${sanitizeFileName(file.name)}`;
         const uploadResult = await supabase.storage
             .from(LESSON_FOOTER_ASSETS_BUCKET)
             .upload(nextStoragePath, file, {
@@ -1023,10 +1143,14 @@ export async function updateLessonFooterAction(actionId: string, input: LessonFo
     const result = await supabase
         .from('lesson_footer_actions')
         .update({
+        scope: current.scope,
         template_id: input.template_id ?? null,
         action_type: input.action_type,
         label: input.label?.trim() || null,
         url: input.action_type === 'url' ? input.url?.trim() || null : null,
+        lesson_id: current.scope === 'lesson' ? current.lesson_id : null,
+        module_id: current.scope === 'module' ? current.module_id : null,
+        course_id: current.scope === 'course' ? current.course_id : null,
         storage_path: input.action_type === 'file' ? storagePath : null,
         file_name: input.action_type === 'file' ? fileName : null,
         mime_type: input.action_type === 'file' ? mimeType : null,
