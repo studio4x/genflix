@@ -317,6 +317,13 @@ function calculateReadingTimeMinutes(contentHtml: string) {
     const minutes = Math.ceil(words / 200);
     return Math.max(1, minutes);
 }
+function buildLegacyExcerpt(seoDescription: string, plainText: string) {
+    const trimmedSeoDescription = seoDescription.trim();
+    if (trimmedSeoDescription) {
+        return trimmedSeoDescription;
+    }
+    return plainText.replace(/\s+/g, ' ').trim().slice(0, BLOG_CARD_SUMMARY_MAX_LENGTH);
+}
 function legacyContentToHtml(value: unknown) {
     if (Array.isArray(value)) {
         const paragraphs = value
@@ -1433,7 +1440,7 @@ export function AdminBlogPage() {
             scheduled_publish_at: articleForm.scheduledPublishAt
                 ? new Date(articleForm.scheduledPublishAt).toISOString()
                 : null,
-            excerpt: articleForm.seo_description.trim() || null,
+            excerpt: buildLegacyExcerpt(articleForm.seo_description, plainText),
             image_url: articleForm.coverImageUrl.trim() || null,
             card_image_url: articleForm.cardImageUrl.trim() || articleForm.coverImageUrl.trim() || null,
             read_time: `${readingTime} min`,
