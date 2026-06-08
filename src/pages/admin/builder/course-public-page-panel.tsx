@@ -116,9 +116,8 @@ export function CoursePublicPagePanel() {
             return;
         }
         const content = normalizeCoursePublicPageContent(courseTree.course.public_page_content);
-        const fallbackCategory = courseTree.course.category ?? resolvedDetail.categoryLine.split(' - ')[0] ?? '';
         setForm({
-            category: fallbackCategory,
+            category: courseTree.course.category ?? '',
             categoryLine: content.categoryLine ?? resolvedDetail.categoryLine,
             marketing_description: courseTree.course.marketing_description ?? resolvedDetail.description,
             mentor_name: courseTree.course.mentor_name ?? resolvedDetail.mentor.name,
@@ -166,6 +165,7 @@ export function CoursePublicPagePanel() {
         try {
             const parsed = coursePublicPageFormSchema.safeParse({
                 ...form,
+                category: courseTree.course.category ?? form.category,
                 mentor_bio: form.mentor_bio.trim(),
                 bonus_title: form.bonus_title.trim(),
                 aboutParagraphs: form.aboutParagraphs.map((item) => item.trim()).filter(Boolean),
@@ -223,10 +223,11 @@ export function CoursePublicPagePanel() {
           <SectionHeading eyebrow="Hero" title="Cabeçalho principal do curso" description="Esses campos controlam a primeira dobra da página do curso, incluindo título, descrição e o bloco lateral de checkout. A imagem do hero continua sendo definida nas configurações do curso."/>
 
           <div className="mt-8 space-y-5">
-              <label className="block space-y-2">
-                <span className="text-xs font-black uppercase tracking-widest text-slate-400">Categoria</span>
-                <input className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-5 py-3 text-sm font-semibold outline-none focus:border-cyan-400 focus:bg-white" value={form.category} onChange={(event) => updateField('category', event.target.value)} placeholder="Ex: Saúde"/>
-              </label>
+              <div className="rounded-2xl border border-cyan-100 bg-cyan-50/40 px-5 py-4">
+                <span className="text-xs font-black uppercase tracking-widest text-cyan-700">Categoria do curso</span>
+                <p className="mt-2 text-lg font-black tracking-tight text-slate-900">{courseTree.course.category || 'Sem categoria definida'}</p>
+                <p className="mt-1 text-xs font-medium text-slate-500">Essa categoria vem do modal de edição do curso e é usada também na página pública.</p>
+              </div>
 
               <label className="block space-y-2">
                 <span className="text-xs font-black uppercase tracking-widest text-slate-400">Linha de categoria</span>
