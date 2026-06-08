@@ -10,7 +10,6 @@ import type { GenflixCourseModule, GenflixCourseOutcome, } from '@/features/publ
 type CoursePublicPageFormState = {
     category: string;
     categoryLine: string;
-    marketing_title: string;
     marketing_description: string;
     mentor_name: string;
     mentor_role: string;
@@ -82,7 +81,6 @@ export function CoursePublicPagePanel() {
     const [form, setForm] = useState<CoursePublicPageFormState>({
         category: '',
         categoryLine: '',
-        marketing_title: '',
         marketing_description: '',
         mentor_name: '',
         mentor_role: '',
@@ -122,7 +120,6 @@ export function CoursePublicPagePanel() {
         setForm({
             category: fallbackCategory,
             categoryLine: content.categoryLine ?? resolvedDetail.categoryLine,
-            marketing_title: courseTree.course.marketing_title ?? resolvedDetail.title,
             marketing_description: courseTree.course.marketing_description ?? resolvedDetail.description,
             mentor_name: courseTree.course.mentor_name ?? resolvedDetail.mentor.name,
             mentor_role: courseTree.course.mentor_role ?? resolvedDetail.mentor.role,
@@ -236,10 +233,11 @@ export function CoursePublicPagePanel() {
                 <input className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-5 py-3 text-sm font-semibold outline-none focus:border-cyan-400 focus:bg-white" value={form.categoryLine} onChange={(event) => updateField('categoryLine', event.target.value)} placeholder="Ex: SAUDE - ONLINE"/>
               </label>
 
-              <label className="block space-y-2">
-                <span className="text-xs font-black uppercase tracking-widest text-slate-400">Título público</span>
-                <input className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-5 py-3 text-sm font-semibold outline-none focus:border-cyan-400 focus:bg-white" value={form.marketing_title} onChange={(event) => updateField('marketing_title', event.target.value)} placeholder="Título exibido no topo da página" required/>
-              </label>
+              <div className="rounded-2xl border border-cyan-100 bg-cyan-50/40 px-5 py-4">
+                <span className="text-xs font-black uppercase tracking-widest text-cyan-700">Nome do curso</span>
+                <p className="mt-2 text-lg font-black tracking-tight text-slate-900">{courseTree.course.title}</p>
+                <p className="mt-1 text-xs font-medium text-slate-500">Edite esse nome em Configurações do Curso. A página pública usa o mesmo título.</p>
+              </div>
 
               <label className="block space-y-2">
                 <span className="text-xs font-black uppercase tracking-widest text-slate-400">Descrição principal</span>

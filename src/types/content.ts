@@ -187,7 +187,6 @@ export interface Course {
     category: string | null;
     thumbnail_url: string | null;
     cover_image_url: string | null;
-    marketing_title: string | null;
     marketing_description: string | null;
     mentor_name: string | null;
     mentor_role: string | null;

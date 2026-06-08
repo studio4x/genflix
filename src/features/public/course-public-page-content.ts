@@ -31,7 +31,6 @@ export interface CoursePublicPageRowLike {
   category: string | null
   thumbnail_url: string | null
   cover_image_url: string | null
-  marketing_title: string | null
   marketing_description: string | null
   mentor_name: string | null
   mentor_role: string | null
@@ -213,11 +212,11 @@ export function buildCoursePublicCatalogItem(row: CoursePublicPageRowLike): Genf
   return {
     id: row.id,
     slug,
-    title: trimString(row.marketing_title) || row.title || 'Curso GenFlix',
+    title: trimString(row.title) || 'Curso GenFlix',
     category: trimString(row.category) || 'Curso',
     mentor: trimString(row.mentor_name) || 'Equipe GenFlix',
     role: trimString(row.mentor_role) || 'Curadoria de conteúdo',
-    image: trimString(row.cover_image_url) || trimString(row.thumbnail_url) || defaultCourseImage,
+    image: trimString(row.thumbnail_url) || trimString(row.cover_image_url) || defaultCourseImage,
     initials: getInitials(row),
   }
 }
@@ -276,7 +275,7 @@ export function buildCoursePublicDetail(
     categoryLine:
       content.categoryLine ||
       `${item.category.toUpperCase()} - ONLINE`,
-    title: item.title,
+    title: trimString(row.title) || item.title,
     coverImage: item.image,
     description: fallbackDescription,
     aboutParagraphs: content.aboutParagraphs.length

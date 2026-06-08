@@ -34,7 +34,7 @@ interface PublicBlogCategoryRow {
 }
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
-const publicCourseSelect = 'id, slug, title, description, category, thumbnail_url, cover_image_url, marketing_title, marketing_description, mentor_name, mentor_role, mentor_bio, mentor_initials, price_label, secondary_price_label, price_cents, currency, public_page_content, display_order';
+const publicCourseSelect = 'id, slug, title, description, category, thumbnail_url, cover_image_url, marketing_description, mentor_name, mentor_role, mentor_bio, mentor_initials, price_label, secondary_price_label, price_cents, currency, public_page_content, display_order';
 const publicBlogPostLegacySelect = 'slug, title, category, excerpt, image_url, card_image_url, read_time, author, published_at, content, content_html, featured, status';
 const publicBlogPostAllLegacySelect = 'slug, title, category, excerpt, image_url, card_image_url, read_time, author, published_at, content, content_html, featured, status, created_at';
 async function fetchPublicRows<T>(path: string, searchParams: URLSearchParams): Promise<T[]> {
