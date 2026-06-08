@@ -252,7 +252,7 @@ export function CourseSettingsPanel() {
                <div className="max-w-3xl space-y-3">
                   <p className="text-[11px] font-black uppercase tracking-[0.26em] text-[#0F5AA3]">Capa do Curso</p>
                   <h3 className="text-[2rem] font-black tracking-tight text-slate-900">Upload de imagem</h3>
-                  <p className="max-w-[860px] text-base leading-8 text-slate-600">A capa alimenta cards e páginas publicas. O upload gera um asset público apenas para a imagem comercial do curso.
+                  <p className="max-w-[860px] text-base leading-8 text-slate-600">A capa alimenta cards e páginas públicas. Use uma imagem em aspecto 4:3, com tamanho recomendado de 1200x900 px (mínimo 800x600 px). O upload gera um asset público apenas para a imagem comercial do curso.
                   </p>
                </div>
 
@@ -278,6 +278,7 @@ export function CourseSettingsPanel() {
                         <p className="text-xl font-black tracking-tight text-slate-900">Enviar nova imagem</p>
                         <p className="text-base leading-7 text-slate-600">Formatos recomendados: JPG, PNG ou WEBP. Depois do upload, confirme em guardar configurações.
                         </p>
+                        <p className="text-sm font-semibold text-slate-500">Aspecto definido: 4:3. Recomendado: 1200x900 px. Mínimo: 800x600 px.</p>
                      </div>
 
                      <div className="mt-5 flex flex-wrap items-center gap-4">

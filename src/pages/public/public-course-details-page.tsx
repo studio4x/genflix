@@ -154,7 +154,7 @@ export function PublicCourseDetailsPage() {
 
             <aside className="lg:sticky lg:top-24">
               <div className="overflow-hidden rounded-[26px] border border-[#D8E6EB] bg-white shadow-[0_24px_60px_rgba(21,50,59,0.08)]">
-                <div className="relative aspect-[16/10] overflow-hidden bg-[#173039]">
+                <div className="relative aspect-[4/3] overflow-hidden bg-[#173039]">
                   <CourseCoverMedia src={detail.coverImage} alt={detail.title} title={detail.title} category={detail.categoryLine} initials={detail.mentor.initials} placeholderClassName="p-6"/>
                 </div>
 

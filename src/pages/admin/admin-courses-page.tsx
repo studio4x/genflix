@@ -660,7 +660,8 @@ Essa a\u00E7\u00E3o \u00E9 irrevers\u00EDvel.`);
                                </button>)}
                          </div>
                          
-                         <span className="text-xs font-black text-slate-400 uppercase tracking-widest pl-1">Imagem de Capa (1024x768)</span>
+                         <span className="text-xs font-black text-slate-400 uppercase tracking-widest pl-1">Imagem de Capa (4:3)</span>
+                         <p className="pl-1 text-xs font-semibold text-slate-500">Tamanho recomendado: 1200x900 px. Mínimo: 800x600 px.</p>
                           <label className={`
                                 relative flex flex-col items-center justify-center w-full rounded-[32px] border-2 border-dashed transition-all cursor-pointer overflow-hidden
                                ${form.thumbnail_url ? 'border-emerald-200 bg-emerald-50/10' : 'border-slate-200 bg-slate-100/30 hover:bg-white hover:border-blue-300'}
