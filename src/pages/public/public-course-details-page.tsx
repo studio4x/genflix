@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { BadgeCheck, ChevronDown, CirclePlay, Play, Sparkles } from 'lucide-react';
+import { BadgeCheck, ChevronDown, CirclePlay, Sparkles } from 'lucide-react';
 import { Link, Navigate, useParams } from 'react-router-dom';
 import { CourseCoverMedia } from '@/components/public/course-cover-media';
 import { GenflixCtaButton } from '@/components/public/genflix-cta-button';
@@ -155,11 +155,7 @@ export function PublicCourseDetailsPage() {
             <aside className="lg:sticky lg:top-24">
               <div className="overflow-hidden rounded-[26px] border border-[#D8E6EB] bg-white shadow-[0_24px_60px_rgba(21,50,59,0.08)]">
                 <div className="relative aspect-[16/10] overflow-hidden bg-[#173039]">
-                  <CourseCoverMedia src={detail.coverImage} alt={detail.title} title={detail.title} category={detail.categoryLine} initials={detail.mentor.initials} imageClassName="grayscale" placeholderClassName="p-6"/>
-                  <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(11,31,36,0.08)_0%,rgba(11,31,36,0.54)_100%)]"/>
-                  <button type="button" className="absolute left-1/2 top-1/2 flex h-16 w-16 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-white/40 bg-white/18 text-white backdrop-blur-sm transition-transform hover:scale-105" aria-label="Assistir prévia">
-                    <Play className="ml-1 h-6 w-6 fill-current"/>
-                  </button>
+                  <CourseCoverMedia src={detail.coverImage} alt={detail.title} title={detail.title} category={detail.categoryLine} initials={detail.mentor.initials} placeholderClassName="p-6"/>
                 </div>
 
                 <div className="space-y-6 p-6">
