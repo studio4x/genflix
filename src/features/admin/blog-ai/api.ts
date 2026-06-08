@@ -1,5 +1,5 @@
 import { supabase } from '@/services/supabase/client';
-export type BlogAssistAction = 'suggest_tags' | 'create_tags' | "generate_se??o";
+export type BlogAssistAction = 'suggest_tags' | 'create_tags' | 'generate_seo';
 export interface BlogAssistTagInput {
     id: string;
     name: string;
@@ -46,7 +46,7 @@ export interface BlogAssistCreateTagsResponse extends BlogAssistBaseResponse {
     suggestedTags: BlogAssistTagSuggestion[];
 }
 export interface BlogAssistSeoResponse extends BlogAssistBaseResponse {
-    action: "generate_se??o";
+    action: 'generate_seo';
     seo: BlogAssistSeoDraft;
 }
 export type BlogAssistResponse = BlogAssistSuggestTagsResponse | BlogAssistCreateTagsResponse | BlogAssistSeoResponse;
@@ -96,7 +96,7 @@ export async function fetchBlogTagCreationSuggestions(input: BlogAssistArticleIn
 }
 export async function fetchBlogSeoDraft(input: BlogAssistArticleInput) {
     return await requestBlogAssist<BlogAssistSeoResponse>({
-        action: "generate_se??o",
+        action: 'generate_seo',
         article: input,
     });
 }

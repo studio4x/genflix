@@ -1,9 +1,10 @@
 import { z } from 'zod';
 import { getPublicAppUrl } from '../../../../api/_shared/app-url.js';
 type AssistantProvider = 'openai' | 'gemini' | 'heuristic';
-type BlogAssistAction = 'suggest_tags' | 'create_tags' | "generate_se??o";
+const BLOG_ASSIST_SEO_ACTION = 'generate_seo' as const;
+type BlogAssistAction = 'suggest_tags' | 'create_tags' | typeof BLOG_ASSIST_SEO_ACTION;
 export const blogAssistSchema = z.object({
-    action: z.enum(['suggest_tags', 'create_tags', "generate_se??o"]),
+    action: z.enum(['suggest_tags', 'create_tags', BLOG_ASSIST_SEO_ACTION]),
     article: z.object({
         title: z.string().min(1),
         slug: z.string().min(1),
@@ -40,7 +41,7 @@ type BlogAssistCreateTagsResponse = BlogAssistBaseResponse & {
     }>;
 };
 type BlogAssistSeoResponse = BlogAssistBaseResponse & {
-    action: "generate_se??o";
+    action: typeof BLOG_ASSIST_SEO_ACTION;
     seo: {
         seo_title: string;
         seo_description: string;
@@ -281,7 +282,7 @@ ${cleanContent}
     return `
 Voc\u00EA \u00E9 um assistente editorial da GenFlix especializado em SEO para artigos.
 An?lise o artigo e retorne apenas JSON puro no formato:
-{"se??o":{"se??o_title":"...","se??o_description":"...","se??o_canonical_url":"...","se??o_robots":"index,follow","se??o_og_title":"...","se??o_og_description":"...","se??o_og_image_url":"...","focus_keyword":"..."},"notes":["..."],"warnings":["..."]}
+{"seo":{"seo_title":"...","seo_description":"...","seo_canonical_url":"...","seo_robots":"index,follow","seo_og_title":"...","seo_og_description":"...","seo_og_image_url":"...","focus_keyword":"..."},"notes":["..."],"warnings":["..."]}
 
 Regras:
 - gere t\u00EDtulo SEO entre 50 e 60 caracteres quando poss\u00EDvel;
@@ -474,6 +475,13 @@ function normalizeSeoDraft(value: unknown) {
         focus_keyword,
     };
 }
+function normalizeSeoResponse(payload: unknown) {
+    if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
+        return null;
+    }
+    const row = payload as Record<string, unknown>;
+    return normalizeSeoDraft(row.seo ?? row['se??o'] ?? row);
+}
 function normalizeSelectedTagIds(value: unknown) {
     if (!Array.isArray(value)) {
         return [];
@@ -513,7 +521,7 @@ function normalizeAiResponse(action: BlogAssistAction, payload: unknown, provide
             suggestedTags: normalizeTagSuggestions(parsed.suggestedTags),
         };
     }
-    const seo = normalizeSeoDraft(parsed.seo) ?? {
+    const seo = normalizeSeoResponse(parsed) ?? {
         seo_title: '',
         seo_description: '',
         seo_canonical_url: '',
@@ -553,7 +561,7 @@ function buildDefaultSuggestions(input: BlogAssistInput): BlogAssistSuggestTagsR
     }
     const heuristic = buildHeuristicSeoDraft(input);
     return {
-        action: "generate_se??o",
+        action: BLOG_ASSIST_SEO_ACTION,
         provider: 'heuristic',
         model: null,
         notes: heuristic.notes,
