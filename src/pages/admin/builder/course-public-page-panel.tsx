@@ -240,6 +240,36 @@ export function CoursePublicPagePanel() {
                 <p className="mt-1 text-xs font-medium text-slate-500">Edite esse nome em Configurações do Curso. A página pública usa o mesmo título.</p>
               </div>
 
+              <div className="space-y-2">
+                <div className="flex items-center justify-between gap-3 px-1">
+                  <span className="text-xs font-black uppercase tracking-widest text-slate-400">Prévia do banner do aluno</span>
+                  <span className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">3:1</span>
+                </div>
+                <div className="overflow-hidden rounded-[28px] border border-slate-200 bg-slate-50">
+                  <div className="relative aspect-[3/1] w-full overflow-hidden bg-slate-900">
+                    {courseTree.course.student_hero_image_url ? (
+                      <img
+                        src={courseTree.course.student_hero_image_url}
+                        alt="Prévia do banner da área do aluno"
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center bg-[linear-gradient(145deg,#1AA0C7_0%,#104E6B_100%)] px-6 text-center text-white">
+                        <div>
+                          <p className="text-[10px] font-black uppercase tracking-[0.28em] text-white/70">Nenhum banner configurado</p>
+                          <p className="mt-2 text-sm font-semibold text-white/85">Envie uma imagem em Configurações do Curso para visualizar essa área.</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  <div className="border-t border-slate-200 bg-white px-4 py-3">
+                    <p className="text-xs font-medium leading-6 text-slate-500">
+                      Essa imagem aparece no topo da área do aluno. Se ainda estiver vazia, o curso usa um fallback neutro.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
               <label className="block space-y-2">
                 <span className="text-xs font-black uppercase tracking-widest text-slate-400">Descrição principal</span>
                 <textarea className="min-h-[132px] w-full rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4 text-sm font-medium leading-7 text-slate-700 outline-none focus:border-cyan-400 focus:bg-white" value={form.marketing_description} onChange={(event) => updateField('marketing_description', event.target.value)} placeholder="Resumo principal do curso para a dobra inicial." required/>
