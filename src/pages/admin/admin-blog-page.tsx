@@ -1215,7 +1215,7 @@ export function AdminBlogPage() {
         params.set('tab', 'articles');
         const query = params.toString();
         const path = slug ? `/admin/blog/${slug}` : '/admin/blog';
-        navigate(`${path}${query ? `${query}` : ''}`);
+        navigate(query ? `${path}?${query}` : path);
     }
     function handleCreateArticle() {
         resetArticleForm();
@@ -1251,7 +1251,7 @@ export function AdminBlogPage() {
             preview: 'admin',
             previewKey,
         });
-        window.open(`/blog/${articleForm.slug}${params.toString()}`, '_blank', 'noopener,noreferrer');
+        window.open(`/blog/${articleForm.slug}?${params.toString()}`, '_blank', 'noopener,noreferrer');
     }
     function handleOpenArticleFromList(slug: string) {
         if (!slug) {
