@@ -452,7 +452,14 @@ export function CourseSettingsPanel() {
             <div className="grid gap-8">
                <label className="block space-y-2">
                   <span className="text-xs font-black text-slate-400 uppercase tracking-widest pl-1">{'Nome do Curso'}</span>
-                  <input className="w-full font-bold rounded-[20px] border border-slate-200 bg-slate-100/50 px-6 py-4 placeholder:text-slate-300 focus:bg-white focus:ring-4 focus:ring-blue-100 transition-all" placeholder="Ex: Primeiros Socorros Avançado" value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} required/>
+                  <input
+                     className="w-full cursor-not-allowed rounded-[20px] border border-slate-200 bg-slate-100/70 px-6 py-4 font-bold text-slate-500 shadow-none outline-none transition-all"
+                     value={courseTree?.course.title ?? form.title}
+                     readOnly
+                     aria-readonly="true"
+                     tabIndex={-1}
+                  />
+                  <p className="text-xs font-medium text-slate-500 pl-1">Esse nome é definido no cadastro principal do curso e é usado também na página pública.</p>
                </label>
 
                <section className="rounded-[28px] border border-cyan-100 bg-cyan-50/60 p-6 space-y-5">
