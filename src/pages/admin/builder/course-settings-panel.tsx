@@ -450,17 +450,11 @@ export function CourseSettingsPanel() {
             </section>
 
             <div className="grid gap-8">
-               <label className="block space-y-2">
-                  <span className="text-xs font-black text-slate-400 uppercase tracking-widest pl-1">{'Nome do Curso'}</span>
-                  <input
-                     className="w-full cursor-not-allowed rounded-[20px] border border-slate-200 bg-slate-100/70 px-6 py-4 font-bold text-slate-500 shadow-none outline-none transition-all"
-                     value={courseTree?.course.title ?? form.title}
-                     readOnly
-                     aria-readonly="true"
-                     tabIndex={-1}
-                  />
-                  <p className="text-xs font-medium text-slate-500 pl-1">Esse nome é definido no cadastro principal do curso e é usado também na página pública.</p>
-               </label>
+               <div className="rounded-2xl border border-cyan-100 bg-cyan-50/40 px-5 py-4">
+                  <span className="text-xs font-black uppercase tracking-widest text-cyan-700">Nome do curso</span>
+                  <p className="mt-2 text-lg font-black tracking-tight text-slate-900">{courseTree?.course.title ?? form.title}</p>
+                  <p className="mt-1 text-xs font-medium text-slate-500">Esse nome e definido no cadastro principal do curso e e usado tambem na pagina publica.</p>
+               </div>
 
                <section className="rounded-[28px] border border-cyan-100 bg-cyan-50/60 p-6 space-y-5">
                   <div>
