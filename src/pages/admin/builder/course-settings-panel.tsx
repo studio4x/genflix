@@ -388,6 +388,67 @@ export function CourseSettingsPanel() {
                </div>
             </section>
 
+            <section className="rounded-[32px] border border-slate-200 bg-white p-5 md:p-6">
+               <div className="flex flex-wrap items-end justify-between gap-4">
+                  <div className="max-w-3xl space-y-2">
+                     <p className="text-[11px] font-black uppercase tracking-[0.26em] text-[#0F5AA3]">Prévia dos banners</p>
+                     <h3 className="text-xl font-black tracking-tight text-slate-900">Conferência rápida da capa e do cabeçalho</h3>
+                     <p className="text-sm leading-7 text-slate-600">Veja como as duas imagens aparecem no curso antes de salvar. A capa mantém o aspecto 4:3 e o banner do aluno mantém o aspecto 3:1.</p>
+                  </div>
+                  <div className="rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-xs font-black uppercase tracking-[0.24em] text-slate-500">
+                     Preview sem sombra
+                  </div>
+               </div>
+
+               <div className="mt-6 grid gap-5 xl:grid-cols-2">
+                  <div className="overflow-hidden rounded-[28px] border border-slate-200 bg-slate-50">
+                     <div className="border-b border-slate-200 px-5 py-4">
+                        <p className="text-[11px] font-black uppercase tracking-[0.24em] text-[#0F5AA3]">Capa do curso</p>
+                        <p className="mt-1 text-sm font-semibold text-slate-600">Aspecto 4:3 - 1200x900 px recomendado</p>
+                     </div>
+                     <div className="relative aspect-[4/3] bg-slate-100">
+                        {form.thumbnail_url ? (
+                           <img
+                              src={form.thumbnail_url}
+                              alt="Prévia da capa do curso"
+                              className="absolute inset-0 h-full w-full object-cover"
+                           />
+                        ) : (
+                           <div className="flex h-full items-center justify-center px-6 text-center">
+                              <div className="space-y-2">
+                                 <p className="text-sm font-black uppercase tracking-[0.2em] text-slate-400">Sem capa definida</p>
+                                 <p className="text-sm leading-6 text-slate-500">Envie uma imagem de capa para visualizar aqui a prévia do curso.</p>
+                              </div>
+                           </div>
+                        )}
+                     </div>
+                  </div>
+
+                  <div className="overflow-hidden rounded-[28px] border border-slate-200 bg-slate-50">
+                     <div className="border-b border-slate-200 px-5 py-4">
+                        <p className="text-[11px] font-black uppercase tracking-[0.24em] text-[#0F5AA3]">Banner da área do aluno</p>
+                        <p className="mt-1 text-sm font-semibold text-slate-600">Aspecto 3:1 - 1800x600 px recomendado</p>
+                     </div>
+                     <div className="relative aspect-[3/1] bg-slate-100">
+                        {form.student_hero_image_url ? (
+                           <img
+                              src={form.student_hero_image_url}
+                              alt="Prévia do banner do aluno"
+                              className="absolute inset-0 h-full w-full object-cover"
+                           />
+                        ) : (
+                           <div className="flex h-full items-center justify-center px-6 text-center">
+                              <div className="space-y-2">
+                                 <p className="text-sm font-black uppercase tracking-[0.2em] text-slate-400">Sem banner definido</p>
+                                 <p className="text-sm leading-6 text-slate-500">Envie a imagem do cabeçalho para visualizar o banner da área do aluno.</p>
+                              </div>
+                           </div>
+                        )}
+                     </div>
+                  </div>
+               </div>
+            </section>
+
             <div className="grid gap-8">
                <label className="block space-y-2">
                   <span className="text-xs font-black text-slate-400 uppercase tracking-widest pl-1">{'Nome do Curso'}</span>
