@@ -327,8 +327,7 @@ export function StudentCourseDetailsPage() {
       
       {/* HERO SECTION */}
       <section className="relative rounded-[48px] overflow-hidden bg-slate-900 min-h-[400px] flex flex-col justify-end p-8 md:p-16 shadow-2xl">
-         {course.thumbnail_url ? (<img src={course.thumbnail_url} alt="" className="absolute inset-0 w-full h-full object-cover opacity-40"/>) : (<div className="absolute inset-0 bg-gradient-to-br from-blue-900 to-indigo-950 opacity-100"/>)}
-         <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/60 to-transparent z-10"/>
+         {(course.student_hero_image_url || course.cover_image_url || course.thumbnail_url) ? (<img src={course.student_hero_image_url || course.cover_image_url || course.thumbnail_url || ''} alt="" className="absolute inset-0 w-full h-full object-cover"/>) : (<div className="absolute inset-0 bg-gradient-to-br from-blue-900 to-indigo-950 opacity-100"/>)}
 
          <div className="relative z-20 space-y-6 max-w-4xl">
             <div className="space-y-4">

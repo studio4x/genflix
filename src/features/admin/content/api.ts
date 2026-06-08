@@ -356,6 +356,7 @@ export async function createCourse(input: CourseFormInput, userId: string) {
         display_order: nextDisplayOrder,
         thumbnail_url: input.thumbnail_url?.trim() || null,
         cover_image_url: input.thumbnail_url?.trim() || null,
+        student_hero_image_url: input.student_hero_image_url?.trim() || null,
         slug: input.slug?.trim() || slugify(input.title),
         launch_date: input.launch_date?.trim() || null,
         price_cents: input.price_cents ?? 0,
@@ -402,6 +403,7 @@ export async function updateCourse(courseId: string, input: CourseFormInput) {
         status: input.status,
         thumbnail_url: input.thumbnail_url?.trim() || null,
         cover_image_url: input.thumbnail_url?.trim() || null,
+        student_hero_image_url: input.student_hero_image_url?.trim() || null,
         slug: input.slug?.trim() || slugify(input.title),
         launch_date: input.launch_date?.trim() || null,
         price_cents: input.price_cents ?? 0,
@@ -1300,6 +1302,7 @@ export interface ExportCourseFullData {
     workload_minutes?: number;
     thumbnail_url?: string;
     cover_image_url?: string;
+    student_hero_image_url?: string;
     status?: 'draft' | 'published' | 'archived';
     quiz_type_settings?: CourseQuizTypeSettings;
     modules: ExportModuleData[];
@@ -1379,6 +1382,7 @@ export async function exportFullCourseContent(courseId: string): Promise<ExportC
         workload_minutes: course.workload_minutes,
         thumbnail_url: course.thumbnail_url ?? '',
         cover_image_url: course.cover_image_url ?? course.thumbnail_url ?? '',
+        student_hero_image_url: course.student_hero_image_url ?? '',
         status: course.status,
         quiz_type_settings: normalizeCourseQuizTypeSettings(course.quiz_type_settings),
         modules: exportedModules,
@@ -1505,6 +1509,7 @@ export async function importCourseContent(courseId: string, input: ImportCourseF
             title: fullCourseInput.title,
             description: fullCourseInput.description || null,
             workload_minutes: fullCourseInput.workload_minutes || 0,
+            student_hero_image_url: fullCourseInput.student_hero_image_url || null,
             quiz_type_settings: normalizeCourseQuizTypeSettings(fullCourseInput.quiz_type_settings),
         })
             .eq('id', courseId);
@@ -1587,6 +1592,7 @@ export interface ImportCourseFullData {
     description?: string;
     workload_minutes?: number;
     thumbnail_url?: string;
+    student_hero_image_url?: string;
     status?: 'draft' | 'published';
     quiz_type_settings?: CourseQuizTypeSettings;
     modules: ImportModuleData[];
@@ -1611,6 +1617,7 @@ export async function importFullCourse(data: ImportCourseFullData, userId: strin
         workload_minutes: data.workload_minutes || 0,
         thumbnail_url: data.thumbnail_url || null,
         cover_image_url: data.thumbnail_url || null,
+        student_hero_image_url: data.student_hero_image_url || null,
         quiz_type_settings: normalizeCourseQuizTypeSettings(data.quiz_type_settings),
         created_by: userId
     })

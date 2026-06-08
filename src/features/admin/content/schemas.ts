@@ -33,6 +33,7 @@ export const courseFormSchema = z.object({
     description: z.string().trim().max(2000).optional(),
     status: z.enum(['draft', 'published', 'archived']),
     thumbnail_url: z.string().optional().or(z.literal('')),
+    student_hero_image_url: z.string().optional().or(z.literal('')),
     slug: z.string().trim().optional().or(z.literal('')),
     launch_date: z.string().optional().or(z.literal('')),
     price_cents: z.number().int().min(0).default(0),

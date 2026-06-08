@@ -17,6 +17,7 @@ type CourseSettingsFormState = {
     description: string;
     status: Course['status'];
     thumbnail_url: string;
+    student_hero_image_url: string;
     slug: string;
     launch_date: string;
     price_cents: number;
@@ -35,6 +36,7 @@ export function CourseSettingsPanel() {
         description: '',
         status: 'draft',
         thumbnail_url: '',
+        student_hero_image_url: '',
         slug: '',
         launch_date: '',
         price_cents: 0,
@@ -46,6 +48,7 @@ export function CourseSettingsPanel() {
         quiz_type_settings: { ...DEFAULT_COURSE_QUIZ_TYPE_SETTINGS },
     });
     const [isUploadingThumbnail, setIsUploadingThumbnail] = useState(false);
+    const [isUploadingStudentHero, setIsUploadingStudentHero] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isSavingAiStandards, setIsSavingAiStandards] = useState(false);
     const [isResettingProgress, setIsResettingProgress] = useState(false);
@@ -69,6 +72,7 @@ export function CourseSettingsPanel() {
                 description: courseTree.course.description ?? '',
                 status: courseTree.course.status || 'draft',
                 thumbnail_url: courseTree.course.thumbnail_url ?? '',
+                student_hero_image_url: courseTree.course.student_hero_image_url ?? '',
                 slug: courseTree.course.slug ?? '',
                 launch_date: courseTree.course.launch_date ?? '',
                 price_cents: courseTree.course.price_cents ?? 0,
@@ -141,6 +145,23 @@ export function CourseSettingsPanel() {
         }
         finally {
             setIsUploadingThumbnail(false);
+        }
+    }
+    async function handleStudentHeroUpload(event: React.ChangeEvent<HTMLInputElement>) {
+        const file = event.target.files?.[0];
+        if (!file)
+            return;
+        setError(null);
+        setIsUploadingStudentHero(true);
+        try {
+            const url = await uploadCourseThumbnail(file);
+            setForm((current) => ({ ...current, student_hero_image_url: url }));
+        }
+        catch {
+            setError('Falha ao subir imagem. Tente novamente.');
+        }
+        finally {
+            setIsUploadingStudentHero(false);
         }
     }
     async function handleSubmit(e: React.FormEvent) {
@@ -302,6 +323,64 @@ export function CourseSettingsPanel() {
                               Abrir imagem atual
                            </a>
                            <Button type="button" variant="outline" size="sm" onClick={() => setForm((current) => ({ ...current, thumbnail_url: '' }))} className="rounded-xl border-slate-200 bg-white font-bold text-slate-600 hover:text-slate-900">
+                              Remover imagem
+                           </Button>
+                        </div>) : null}
+                  </div>
+               </div>
+           </section>
+
+            <section className="rounded-[32px] border border-slate-200 bg-slate-50/40 p-5 md:p-6">
+               <div className="max-w-3xl space-y-3">
+                  <p className="text-[11px] font-black uppercase tracking-[0.26em] text-[#0F5AA3]">Banner da Área do Aluno</p>
+                  <h3 className="text-[2rem] font-black tracking-tight text-slate-900">Imagem do cabeçalho do curso</h3>
+                  <p className="max-w-[860px] text-base leading-8 text-slate-600">Essa imagem aparece no topo da área do aluno do curso. Use um banner em aspecto 3:1, com tamanho recomendado de 1800x600 px (mínimo 1200x400 px). Evite colocar textos importantes nas bordas, porque a imagem pode ser recortada em telas menores.</p>
+               </div>
+
+               <div className="mt-6 grid gap-4 xl:grid-cols-[260px_minmax(0,1fr)]">
+                  <div className={`relative overflow-hidden rounded-[28px] border border-[#0B5D8D]/20 bg-[radial-gradient(circle_at_top,_rgba(36,188,224,0.24),_transparent_55%),linear-gradient(145deg,#1AA0C7_0%,#104E6B_100%)] shadow-[0_24px_44px_rgba(16,78,107,0.18)] ${form.student_hero_image_url ? 'min-h-[194px]' : 'min-h-[194px]'}`}>
+                     {form.student_hero_image_url ? (<>
+                           <img src={form.student_hero_image_url} alt="" className="absolute inset-0 h-full w-full object-cover"/>
+                        </>) : null}
+
+                     <div className="relative flex h-full min-h-[194px] items-center justify-center p-6">
+                        <div className={`flex h-16 w-16 items-center justify-center rounded-[20px] border border-white/50 bg-white/92 text-[#0F5AA3] shadow-lg shadow-black/10 transition-all ${isUploadingStudentHero ? 'animate-pulse' : ''}`}>
+                           {isUploadingStudentHero ? (<svg className="h-7 w-7 animate-spin" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>) : (<svg className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 8h10m-5-3v6"/>
+                              </svg>)}
+                        </div>
+                     </div>
+                  </div>
+
+                  <div className="rounded-[28px] border border-slate-200 bg-white px-5 py-5 md:px-6 md:py-6">
+                     <div className="space-y-2">
+                        <p className="text-xl font-black tracking-tight text-slate-900">Enviar novo banner</p>
+                        <p className="text-base leading-7 text-slate-600">Formatos recomendados: JPG, PNG ou WEBP. Depois do upload, confirme em guardar configurações.</p>
+                        <p className="text-sm font-semibold text-slate-500">Aspecto definido: 3:1. Recomendado: 1800x600 px. Mínimo: 1200x400 px.</p>
+                     </div>
+
+                     <div className="mt-5 flex flex-wrap items-center gap-4">
+                        <label className="inline-flex cursor-pointer items-center gap-3">
+                           <span className="inline-flex h-11 items-center rounded-xl border border-slate-300 bg-slate-50 px-4 text-sm font-bold text-slate-800 transition-colors hover:border-[#1398B7]/40 hover:bg-white">
+                              Escolher arquivo
+                           </span>
+                           <input type="file" accept="image/*" onChange={handleStudentHeroUpload} className="sr-only" title="Selecionar imagem do banner do aluno"/>
+                        </label>
+                        <span className="text-sm font-medium text-slate-500">
+                           {isUploadingStudentHero
+            ? 'Enviando imagem...'
+            : form.student_hero_image_url
+                ? 'Imagem atual carregada. Escolha outro arquivo para substituir.'
+                : 'Nenhum arquivo escolhido'}
+                        </span>
+                     </div>
+
+                     {form.student_hero_image_url ? (<div className="mt-5 flex flex-wrap items-center gap-3">
+                           <a href={form.student_hero_image_url} target="_blank" rel="noreferrer" className="text-sm font-bold text-[#1398B7] transition-colors hover:text-[#0F5AA3]">
+                              Abrir imagem atual
+                           </a>
+                           <Button type="button" variant="outline" size="sm" onClick={() => setForm((current) => ({ ...current, student_hero_image_url: '' }))} className="rounded-xl border-slate-200 bg-white font-bold text-slate-600 hover:text-slate-900">
                               Remover imagem
                            </Button>
                         </div>) : null}

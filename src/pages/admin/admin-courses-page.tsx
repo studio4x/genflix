@@ -18,6 +18,7 @@ const initialForm: CourseFormInput = {
     description: '',
     status: 'draft',
     thumbnail_url: '',
+    student_hero_image_url: '',
     slug: '',
     launch_date: '',
     price_cents: 0,
@@ -33,12 +34,14 @@ interface CourseEditorDraft {
     editingCourseId: string | null;
     isFormOpen: boolean;
     isUploadingThumbnail: boolean;
+    isUploadingStudentHero: boolean;
 }
 const initialDraft: CourseEditorDraft = {
     form: initialForm,
     editingCourseId: null,
     isFormOpen: false,
-    isUploadingThumbnail: false
+    isUploadingThumbnail: false,
+    isUploadingStudentHero: false,
 };
 function formatCourseWorkload(minutes: number) {
     const safeMinutes = Math.max(0, minutes);
@@ -66,11 +69,12 @@ export function AdminCoursesPage() {
     const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
     const [isCategoryActive, setIsCategoryActive] = useState(true);
     const { state: draft, setState: setDraft, clear: clearDraft } = useLocalStorageState<CourseEditorDraft>('admin:courses:editor-draft', initialDraft);
-    const form = draft.form;
+    const form: CourseFormInput = { ...initialForm, ...draft.form };
     const editingCourseId = draft.editingCourseId;
     const isEditing = useMemo(() => !!editingCourseId, [editingCourseId]);
     const isFormOpen = draft.isFormOpen;
     const isUploadingThumbnail = draft.isUploadingThumbnail;
+    const isUploadingStudentHero = draft.isUploadingStudentHero ?? false;
     // AI Import State
     const [isImportModalOpen, setIsImportModalOpen] = useState(false);
     const [importJson, setImportJson] = useState('');
@@ -125,6 +129,18 @@ export function AdminCoursesPage() {
             setDraft((p) => ({ ...p, isUploadingThumbnail: false }));
         }
     }
+    async function handleStudentHeroUpload(file: File) {
+        setDraft((p) => ({ ...p, isUploadingStudentHero: true }));
+        setError(null);
+        try {
+            const url = await uploadCourseThumbnail(file);
+            setDraft((p) => ({ ...p, form: { ...p.form, student_hero_image_url: url }, isUploadingStudentHero: false }));
+        }
+        catch (err) {
+            setError(toErrorMessage(err));
+            setDraft((p) => ({ ...p, isUploadingStudentHero: false }));
+        }
+    }
     async function handleSubmit(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
         if (!user) {
@@ -168,6 +184,7 @@ export function AdminCoursesPage() {
                 description: course.description ?? '',
                 status: course.status,
                 thumbnail_url: course.thumbnail_url ?? '',
+                student_hero_image_url: course.student_hero_image_url ?? '',
                 slug: course.slug ?? '',
                 launch_date: course.launch_date ?? '',
                 price_cents: course.price_cents ?? 0,
@@ -685,10 +702,51 @@ Essa a\u00E7\u00E3o \u00E9 irrevers\u00EDvel.`);
                                         <p className="text-xs text-slate-400 font-medium max-w-[200px]">Formatos aceitos: JPG, PNG, WEBP (Recomendado 16:9)</p>
                                      </>)}
                                </div>)}
-                            <input type="file" className="sr-only" accept="image/*" disabled={isUploadingThumbnail} onChange={(e) => {
+                             <input type="file" className="sr-only" accept="image/*" disabled={isUploadingThumbnail} onChange={(e) => {
                 const file = e.target.files?.[0];
                 if (file)
                     handleThumbnailUpload(file);
+            }}/>
+                         </label>
+                      </div>
+
+                      <div className="space-y-4">
+                         <div className="flex items-center justify-between px-1">
+                            <span className="text-xs font-black text-slate-400 uppercase tracking-widest">Banner da Área do Aluno</span>
+                            {form.student_hero_image_url && (<button type="button" onClick={() => setDraft(p => ({ ...p, form: { ...p.form, student_hero_image_url: '' } }))} className="text-[10px] font-black text-rose-500 hover:text-rose-600 uppercase tracking-widest">
+                                  Remover Imagem
+                               </button>)}
+                         </div>
+                         
+                         <span className="text-xs font-black text-slate-400 uppercase tracking-widest pl-1">Imagem do cabeçalho do aluno (3:1)</span>
+                         <p className="pl-1 text-xs font-semibold text-slate-500">Tamanho recomendado: 1800x600 px. Mínimo: 1200x400 px.</p>
+                          <label className={`
+                                relative flex flex-col items-center justify-center w-full rounded-[32px] border-2 border-dashed transition-all cursor-pointer overflow-hidden
+                               ${form.student_hero_image_url ? 'border-emerald-200 bg-emerald-50/10' : 'border-slate-200 bg-slate-100/30 hover:bg-white hover:border-blue-300'}
+                               ${isUploadingStudentHero ? 'animate-pulse' : ''}
+                             `} style={{ aspectRatio: '3/1' }}>
+                            {form.student_hero_image_url ? (<div className="absolute inset-0 group">
+                                  <img src={form.student_hero_image_url} alt="Banner do aluno" className="w-full h-full object-cover"/>
+                                  <div className="absolute inset-0 bg-blue-600/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white p-4 text-center">
+                                     <svg className="h-8 w-8 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+                                     <span className="font-black text-sm uppercase">Alterar Banner do Aluno</span>
+                                  </div>
+                                </div>) : (<div className="flex flex-col items-center justify-center p-6 text-center space-y-2">
+                                  {isUploadingStudentHero ? (<div className="flex flex-col items-center">
+                                        <div className="h-8 w-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4"/>
+                                        <span className="text-sm font-black text-slate-400 uppercase">Subindo imagem...</span>
+                                     </div>) : (<>
+                                        <div className="h-14 w-14 rounded-2xl bg-white shadow-sm border border-slate-100 text-slate-400 flex items-center justify-center mb-2">
+                                           <svg className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                                        </div>
+                                        <p className="text-sm font-black text-slate-500 uppercase">Fazer Upload do Banner</p>
+                                        <p className="text-xs text-slate-400 font-medium max-w-[220px]">Imagem usada no cabeçalho da área do aluno.</p>
+                                     </>)}
+                               </div>)}
+                            <input type="file" className="sr-only" accept="image/*" disabled={isUploadingStudentHero} onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file)
+                    handleStudentHeroUpload(file);
             }}/>
                          </label>
                       </div>
