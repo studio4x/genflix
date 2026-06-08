@@ -1,5 +1,5 @@
-import { Navigate, createBrowserRouter } from 'react-router-dom';
-import { Suspense, lazy, type ReactNode } from 'react';
+import { Navigate, Outlet, createBrowserRouter, isRouteErrorResponse, useRouteError } from 'react-router-dom';
+import { Suspense, lazy, useEffect, type ReactNode } from 'react';
 import { AdminLayout } from '@/app/layouts/admin-layout';
 import { AdminCourseBuilderLayout } from '@/app/layouts/admin-course-builder-layout';
 import { CreatorLayout } from '@/app/layouts/creator-layout';
@@ -10,6 +10,7 @@ import { MessagesRedirectPage } from '@/pages/shared/messages-redirect-page';
 import { EditablePageSeo } from '@/features/site-editor/editable-page-seo';
 import { EditableControlsHintPanel, SiteContentScope, VisualEditorProvider } from '@/features/site-editor/visual-editor';
 import type { SitePageKey } from '@/features/site-editor/types';
+const ROUTE_CHUNK_RELOAD_FLAG = 'genflix:route-chunk-reload-attempted';
 const PublicHomePage = lazy(async () => ({ default: (await import('@/pages/public/public-home-page')).PublicHomePage }));
 const PublicCoursesPage = lazy(async () => ({ default: (await import('@/pages/public/public-courses-page')).PublicCoursesPage }));
 const PublicCourseDetailsPage = lazy(async () => ({ default: (await import('@/pages/public/public-course-details-page')).PublicCourseDetailsPage }));
@@ -84,6 +85,77 @@ const CoursePublicPagePanel = lazy(async () => ({ default: (await import('@/page
 const CourseSettingsPanel = lazy(async () => ({ default: (await import('@/pages/admin/builder/course-settings-panel')).CourseSettingsPanel }));
 const CourseAssessmentsPanel = lazy(async () => ({ default: (await import('@/pages/admin/builder/course-assessments-panel')).CourseAssessmentsPanel }));
 const SupportTicketDetailPage = lazy(async () => ({ default: (await import('@/pages/shared/support-ticket-detail-page')).SupportTicketDetailPage }));
+function getRouteChunkErrorMessage(error: unknown) {
+    if (!error) {
+        return '';
+    }
+    if (typeof error === 'string') {
+        return error;
+    }
+    if (error instanceof Error) {
+        return error.message;
+    }
+    if (typeof error === 'object') {
+        const candidate = error as {
+            message?: unknown;
+            reason?: unknown;
+        };
+        if (typeof candidate.message === 'string') {
+            return candidate.message;
+        }
+        if (typeof candidate.reason === 'string') {
+            return candidate.reason;
+        }
+        if (candidate.reason instanceof Error) {
+            return candidate.reason.message;
+        }
+    }
+    return '';
+}
+function isRouteChunkLoadError(error: unknown) {
+    const message = getRouteChunkErrorMessage(error).toLowerCase();
+    return message.includes('failed to fetch dynamically imported module')
+        || message.includes('error loading dynamically imported module')
+        || message.includes('loading chunk')
+        || message.includes('chunkloaderror')
+        || message.includes('importing a module script failed');
+}
+function AppRouteErrorBoundary() {
+    const error = useRouteError();
+    const isChunkError = isRouteChunkLoadError(error);
+    useEffect(() => {
+        if (!isChunkError || sessionStorage.getItem(ROUTE_CHUNK_RELOAD_FLAG)) {
+            return;
+        }
+        sessionStorage.setItem(ROUTE_CHUNK_RELOAD_FLAG, '1');
+        window.location.reload();
+    }, [isChunkError]);
+    const errorMessage = getRouteChunkErrorMessage(error);
+    const routeErrorText = isRouteErrorResponse(error)
+        ? `${error.status} ${error.statusText}`
+        : errorMessage || 'Nao foi possivel carregar a pagina.';
+    return (<div className="flex min-h-screen items-center justify-center bg-[#F2F7F9] px-6 py-16">
+      <div className="w-full max-w-xl rounded-[28px] border border-[#D8E3E8] bg-white p-8 text-[#16323B] shadow-[0_24px_80px_rgba(22,50,59,0.08)]">
+        <p className="text-xs font-black uppercase tracking-[0.28em] text-[#5F7077]">Erro de carregamento</p>
+        <h1 className="mt-3 text-3xl font-black tracking-[-0.04em] text-[#0F2530]">Algo saiu do ar por aqui</h1>
+        <p className="mt-3 text-sm leading-6 text-[#4F636C]">
+          {isChunkError
+            ? 'Detectamos um bundle antigo no navegador. Vamos recarregar a pagina para buscar a versao mais recente.'
+            : 'Nao conseguimos abrir esta pagina no momento.'}
+        </p>
+        <p className="mt-4 rounded-2xl bg-[#F2F7F9] px-4 py-3 text-xs font-medium text-[#4F636C]">
+          {routeErrorText}
+        </p>
+        <button
+          type="button"
+          className="mt-6 inline-flex items-center justify-center rounded-full bg-[#0F2530] px-5 py-3 text-sm font-bold text-white transition hover:bg-[#163944]"
+          onClick={() => window.location.reload()}
+        >
+          Recarregar pagina
+        </button>
+      </div>
+    </div>);
+}
 function withRouteSuspense(children: ReactNode) {
     return (<Suspense fallback={(<div className="flex min-h-[320px] items-center justify-center bg-[#F2F7F9] px-6 py-10 text-sm font-bold text-[#5F7077]">Carregando pgina...
         </div>)}>
@@ -113,7 +185,7 @@ function PublicEditableRoute({ pageKey, children, seo, }: {
       </SiteContentScope>
     </VisualEditorProvider>);
 }
-export const appRouter = createBrowserRouter([
+const appRoutes = [
     {
         path: '/',
         element: <PublicEditableRoute pageKey="home" seo={{ entryKey: "home.seo", fallback: { title: 'GenFlix | Início', description: 'A plataforma GenFlix reúne cursos, trilhas e ferramentas de estudo para avanço real de carreira.', slug: '/', image: '' } }}><PublicHomePage /></PublicEditableRoute>,
@@ -523,5 +595,12 @@ export const appRouter = createBrowserRouter([
                 ],
             },
         ],
+    },
+];
+export const appRouter = createBrowserRouter([
+    {
+        errorElement: <AppRouteErrorBoundary />,
+        element: <Outlet />,
+        children: appRoutes,
     },
 ]);
