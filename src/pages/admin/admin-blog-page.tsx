@@ -86,7 +86,15 @@ type LegacyBlogPostRow = {
     title: string;
     category: string | null;
     excerpt: string | null;
+    focus_keyword: string | null;
+    scheduled_publish_at: string | null;
     seo_description: string | null;
+    seo_title: string | null;
+    seo_canonical_url: string | null;
+    seo_robots: string | null;
+    seo_og_title: string | null;
+    seo_og_description: string | null;
+    seo_og_image_url: string | null;
     image_url: string | null;
     card_image_url?: string | null;
     read_time: string | null;
@@ -353,16 +361,16 @@ function mapLegacyPostToArticle(post: LegacyBlogPostRow): BlogArticleRow {
         author_id: post.author ?? null,
         category_id: post.category ?? null,
         published_at: post.published_at,
-        scheduled_publish_at: null,
+        scheduled_publish_at: post.scheduled_publish_at,
         reading_time_minutes: readingTime,
-        focus_keyword: null,
-        seo_title: null,
+        focus_keyword: post.focus_keyword ?? null,
+        seo_title: post.seo_title ?? null,
         seo_description: post.seo_description?.trim() || post.excerpt?.trim() || null,
-        seo_canonical_url: null,
-        seo_robots: 'index,follow',
-        seo_og_title: null,
-        seo_og_description: null,
-        seo_og_image_url: null,
+        seo_canonical_url: post.seo_canonical_url ?? null,
+        seo_robots: post.seo_robots ?? 'index,follow',
+        seo_og_title: post.seo_og_title ?? null,
+        seo_og_description: post.seo_og_description ?? null,
+        seo_og_image_url: post.seo_og_image_url ?? null,
         created_at: post.created_at,
         updated_at: post.updated_at,
     };
@@ -549,7 +557,19 @@ async function persistLegacyBlogPost(payload: Record<string, unknown>, selectedA
     if (!firstAttempt.error) {
         return firstAttempt;
     }
-    const removableColumns = ["se??o_description", 'excerpt', 'card_image_url'];
+    const removableColumns = [
+        "seo_description",
+        'excerpt',
+        'card_image_url',
+        'focus_keyword',
+        'scheduled_publish_at',
+        'seo_title',
+        'seo_canonical_url',
+        'seo_robots',
+        'seo_og_title',
+        'seo_og_description',
+        'seo_og_image_url',
+    ];
     for (const column of removableColumns) {
         if (!isMissingLegacyColumnError(firstAttempt.error.message, column)) {
             continue;
@@ -1402,7 +1422,17 @@ export function AdminBlogPage() {
             title,
             slug,
             category: articleForm.categoryId === '__none__' ? null : articleForm.categoryId,
+            focus_keyword: articleForm.focusKeyword.trim() || null,
             seo_description: articleForm.seo_description.trim() || null,
+            seo_title: articleForm.seo_title.trim() || null,
+            seo_canonical_url: articleForm.seo_canonical_url.trim() || null,
+            seo_robots: articleForm.seo_robots.trim() || 'index,follow',
+            seo_og_title: articleForm.seo_og_title.trim() || null,
+            seo_og_description: articleForm.seo_og_description.trim() || null,
+            seo_og_image_url: articleForm.seo_og_image_url.trim() || null,
+            scheduled_publish_at: articleForm.scheduledPublishAt
+                ? new Date(articleForm.scheduledPublishAt).toISOString()
+                : null,
             excerpt: articleForm.seo_description.trim() || null,
             image_url: articleForm.coverImageUrl.trim() || null,
             card_image_url: articleForm.cardImageUrl.trim() || articleForm.coverImageUrl.trim() || null,

@@ -6,4 +6,3 @@ set seo_description = coalesce(seo_description, excerpt)
 where seo_description is null
   and excerpt is not null
   and excerpt <> '';
-
