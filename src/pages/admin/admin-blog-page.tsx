@@ -2304,7 +2304,7 @@ export function AdminBlogPage() {
                   </div>
                 </section>
 
-                <div className="grid gap-4 lg:grid-cols-2">
+                <div className="grid gap-4">
                   <section className="h-full rounded-2xl border border-[#D8E6EB] bg-white p-4">
                   <p className="text-xs font-black uppercase tracking-[0.2em] text-[#1398B7]">Imagem do card do artigo</p>
                   <h3 className="mt-2 text-2xl font-black tracking-tight text-[#15323b]">Upload para o grid</h3>
