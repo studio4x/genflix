@@ -50,7 +50,7 @@ const adminNavGroups: AdminNavGroup[] = [
         label: 'Relacionamento',
         description: 'Pessoas, mensagens, reputação e atendimento.',
         links: [
-            { to: "/admin/usu?rios", label: "Usuários" },
+            { to: "/admin/usuarios", label: "Usuários" },
             { to: '/admin/grupos', label: 'Grupos' },
             { to: '/admin/notificacoes', label: "Notificações" },
             { to: '/admin/mensagens', label: 'Mensagens' },

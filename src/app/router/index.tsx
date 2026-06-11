@@ -482,10 +482,10 @@ const appRoutes = [
                     },
                     {
                         path: '/admin/alunos',
-                        element: <Navigate to="/admin/usu?rios" replace/>,
+                        element: <Navigate to="/admin/usuarios" replace/>,
                     },
                     {
-                        path: "/admin/usu?rios",
+                        path: "/admin/usuarios",
                         element: withRouteSuspense(<AdminUsersPage />),
                     },
                     {

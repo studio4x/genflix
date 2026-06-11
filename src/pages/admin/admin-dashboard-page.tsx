@@ -60,7 +60,7 @@ export function AdminDashboardPage() {
           <p className="text-sm text-slate-600 mb-6">Gerencie o acesso, permissões e cadastro de novos usuários.</p>
           <div className="flex gap-3">
              <Button variant="outline" className="flex-1 shadow-sm" asChild>
-              <Link to="/admin/usu?rios">Usuários</Link>
+              <Link to="/admin/usuarios">Usuários</Link>
             </Button>
             <Button variant="outline" className="flex-1 shadow-sm" asChild>
               <Link to="/admin/grupos">Grupos</Link>
