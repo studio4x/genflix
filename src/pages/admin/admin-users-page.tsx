@@ -33,7 +33,7 @@ const roleOptions: Array<{
     {
         code: 'criador',
         title: 'Criador',
-        description: 'Acompanha relatÃ³rios dos cursos vinculados e edita o prÃ³prio perfil.',
+        description: 'Acompanha relatórios dos cursos vinculados e edita o próprio perfil.',
     },
     {
         code: 'admin',
@@ -53,11 +53,11 @@ const roleFilters: Array<{
 ];
 function formatDateTime(value: string | null) {
     if (!value) {
-        return 'NÃ£o informado';
+        return 'Não informado';
     }
     const parsed = new Date(value);
     if (Number.isNaN(parsed.getTime())) {
-        return 'NÃ£o informado';
+        return 'Não informado';
     }
     return new Intl.DateTimeFormat('pt-BR', {
         dateStyle: 'short',
@@ -66,11 +66,11 @@ function formatDateTime(value: string | null) {
 }
 function formatDate(value: string | null) {
     if (!value) {
-        return "N?o informado";
+        return "Não informado";
     }
     const parsed = new Date(value);
     if (Number.isNaN(parsed.getTime())) {
-        return "N?o informado";
+        return "Não informado";
     }
     return new Intl.DateTimeFormat('pt-BR', {
         day: '2-digit',
@@ -80,7 +80,7 @@ function formatDate(value: string | null) {
 }
 function formatShortAuthId(value: string) {
     if (!value) {
-        return "N?o informado";
+        return "Não informado";
     }
     return value.length <= 8 ? value : `${value.slice(0, 8)}...`;
 }
@@ -166,7 +166,7 @@ export function AdminUsersPage() {
     async function loadUsers() {
         if (!session) {
             setUsers([]);
-            setError('SessÃ£o expirada. FaÃ§a login novamente.');
+            setError('Sessão expirada. Faça login novamente.');
             setIsLoading(false);
             return;
         }
@@ -219,7 +219,7 @@ export function AdminUsersPage() {
     async function handleSubmit(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
         if (!session) {
-            setFormError('SessÃ£o expirada. FaÃ§a login novamente.');
+            setFormError('Sessão expirada. Faça login novamente.');
             return;
         }
         const parsed = createAdminUserFormSchema.safeParse({
@@ -229,7 +229,7 @@ export function AdminUsersPage() {
             roleCode: form.roleCode,
         });
         if (!parsed.success) {
-            setFormError(parsed.error.issues[0]?.message ?? 'Dados invÃ¡lidos.');
+            setFormError(parsed.error.issues[0]?.message ?? 'Dados inválidos.');
             return;
         }
         setIsSubmitting(true);
@@ -251,14 +251,14 @@ export function AdminUsersPage() {
     }
     async function handleResetUserPassword(user: AdminUserListItem) {
         if (!session) {
-            setError('SessÃ£o expirada. FaÃ§a login novamente.');
+            setError('Sessão expirada. Faça login novamente.');
             return;
         }
         if (!user.email) {
-            setError('Este usuÃ¡rio nÃ£o possui e-mail cadastrado para redefiniÃ§Ã£o.');
+            setError('Este usuário não possui e-mail cadastrado para redefinição.');
             return;
         }
-        const shouldSendResetEmail = window.confirm(`Enviar um e-mail de redefiniÃ§Ã£o de senha para ${user.full_name?.trim() || user.email} O pr\u00F3prio usu\u00E1rio criar\u00E1 a nova senha pelo link recebido.`);
+        const shouldSendResetEmail = window.confirm(`Enviar um e-mail de redefinição de senha para ${user.full_name?.trim() || user.email}. O próprio usuário criará a nova senha pelo link recebido.`);
         if (!shouldSendResetEmail) {
             return;
         }
@@ -278,10 +278,10 @@ export function AdminUsersPage() {
     }
     async function handleDeleteUser(user: AdminUserListItem) {
         if (!session) {
-            setError('SessÃ£o expirada. FaÃ§a login novamente.');
+            setError('Sessão expirada. Faça login novamente.');
             return;
         }
-        const confirmed = window.confirm(`Excluir o usuÃ¡rio "${user.full_name?.trim() || user.email || user.id}"
+        const confirmed = window.confirm(`Excluir o usuário "${user.full_name?.trim() || user.email || user.id}"
 
 Essa a\u00E7\u00E3o remove o acesso e os dados vinculados de forma permanente.`);
         if (!confirmed) {
@@ -317,7 +317,7 @@ Essa a\u00E7\u00E3o remove o acesso e os dados vinculados de forma permanente.`)
     }
     async function handleUpdateRole() {
         if (!session) {
-            setError('SessÃ£o expirada. FaÃ§a login novamente.');
+            setError('Sessão expirada. Faça login novamente.');
             return;
         }
         if (!editingRoleUser) {
@@ -344,7 +344,7 @@ Essa a\u00E7\u00E3o remove o acesso e os dados vinculados de forma permanente.`)
             onCopied();
         }
         catch {
-            setError("N\u00E3o foi poss\u00EDvel copiar automticamente. Copie manualmente.");
+            setError("N\u00E3o foi poss\u00EDvel copiar automaticamente. Copie manualmente.");
         }
     }
     function closeCreateUserModal() {
@@ -357,12 +357,12 @@ Essa a\u00E7\u00E3o remove o acesso e os dados vinculados de forma permanente.`)
     return (<div className="space-y-7 pb-8">
       <header className="flex flex-col gap-3 border-b border-[#D8E6EB] pb-6 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <p className="text-[10px] font-black uppercase tracking-[0.26em] text-[#1398B7]">Admin / UsuÃ¡rios</p>
+          <p className="text-[10px] font-black uppercase tracking-[0.26em] text-[#1398B7]">Admin / Usuários</p>
           <h2 className="mt-2 font-readex text-3xl font-semibold tracking-tight text-[#15323b]">
-            UsuÃ¡rios e Regras
+            Usuários e Regras
           </h2>
           <p className="mt-2 max-w-3xl text-sm font-medium text-[#6d7a80]">
-            Cadastre usuÃ¡rios como aluno, criador ou admin e acompanhe as regras atribuÃ­das em um Ãºnico lugar.
+            Cadastre usuários como aluno, criador ou admin e acompanhe as regras atribuídas em um único lugar.
           </p>
         </div>
 
@@ -375,7 +375,7 @@ Essa a\u00E7\u00E3o remove o acesso e os dados vinculados de forma permanente.`)
             }
             setIsCreatePanelOpen(true);
         }} className="rounded-2xl bg-[#1398B7] font-black hover:bg-[#0A3640]">
-            {isCreatePanelOpen || created ? 'Fechar cadastro' : 'Novo usuÃ¡rio'}
+            {isCreatePanelOpen || created ? 'Fechar cadastro' : 'Novo usuário'}
           </Button>
           <Button type="button" variant="outline" onClick={() => void loadUsers()} disabled={isLoading} className="rounded-2xl border-[#D8E6EB] bg-white font-bold text-[#5f7077] hover:border-[#1398B7]/40 hover:text-[#163138]">
             {isLoading ? 'Atualizando...' : 'Atualizar lista'}
@@ -385,7 +385,7 @@ Essa a\u00E7\u00E3o remove o acesso e os dados vinculados de forma permanente.`)
 
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
         <article className="rounded-[26px] border border-[#D8E6EB] bg-[#F2F7F9] p-5">
-          <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#5F7077]">UsuÃ¡rios</p>
+          <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#5F7077]">Usuários</p>
           <p className="mt-3 text-3xl font-black text-[#15323b]">{summary.total}</p>
         </article>
         <article className="rounded-[26px] border border-[#D9F0F5] bg-[#E8F6FA] p-5">
@@ -409,7 +409,7 @@ Essa a\u00E7\u00E3o remove o acesso e os dados vinculados de forma permanente.`)
       <section className="rounded-[30px] border border-[#D8E6EB] bg-white p-5 shadow-sm">
         <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_220px]">
           <label className="block">
-            <span className="sr-only">Buscar usuÃ¡rio</span>
+            <span className="sr-only">Buscar usuário</span>
             <input value={search} onChange={(event) => setSearch(event.target.value)} className="h-12 w-full rounded-2xl border border-[#D8E6EB] bg-[#F2F7F9] px-4 text-sm font-semibold text-[#163138] outline-none transition focus:border-[#1398B7] focus:ring-4 focus:ring-[#1398B7]/10" placeholder="Buscar por nome, e-mail, ID ou regra"/>
           </label>
 
@@ -428,7 +428,7 @@ Essa a\u00E7\u00E3o remove o acesso e os dados vinculados de forma permanente.`)
               <div>
                 <p className="text-[10px] font-black uppercase tracking-[0.24em] text-emerald-700">E-mail enviado</p>
                 <p className="mt-1 text-sm font-bold text-emerald-900">
-                  Enviamos um link de redefiniÃ§Ã£o para {passwordResetFeedback.email}.
+                  Enviamos um link de redefinição para {passwordResetFeedback.email}.
                 </p>
               </div>
               <Button type="button" variant="outline" onClick={() => setPasswordResetFeedback(null)} className="rounded-2xl border-emerald-300 bg-white text-emerald-800 hover:bg-emerald-100">
@@ -446,12 +446,12 @@ Essa a\u00E7\u00E3o remove o acesso e os dados vinculados de forma permanente.`)
         <div className="relative flex max-h-[90vh] w-full max-w-[760px] flex-col overflow-hidden rounded-[30px] border border-[#D8E6EB] bg-white shadow-[0_30px_90px_rgba(6,27,33,0.24)]">
           <div className="flex items-start justify-between gap-4 border-b border-[#D8E6EB] bg-[#F2F8FA] px-6 py-5">
             <div>
-              <p className="text-[10px] font-black uppercase tracking-[0.28em] text-[#1398B7]">Admin / UsuÃ¡rios</p>
+              <p className="text-[10px] font-black uppercase tracking-[0.28em] text-[#1398B7]">Admin / Usuários</p>
               <h2 id="admin-user-create-modal-title" className="mt-2 font-readex text-2xl font-semibold tracking-tight text-[#15323b]">
-                {created ? 'UsuÃ¡rio criado' : 'Novo usuÃ¡rio'}
+                {created ? 'Usuário criado' : 'Novo usuário'}
               </h2>
               <p className="mt-2 text-sm leading-6 text-[#5F7077]">
-                {created ? 'O acesso foi criado com sucesso. VocÃª pode copiar a senha temporÃ¡ria ou iniciar um novo cadastro.' : 'Cadastre um novo acesso com e-mail, nome, senha e tipo de usuÃ¡rio.'}
+                {created ? 'O acesso foi criado com sucesso. Você pode copiar a senha temporária ou iniciar um novo cadastro.' : 'Cadastre um novo acesso com e-mail, nome, senha e tipo de usuário.'}
               </p>
             </div>
 
@@ -463,7 +463,7 @@ Essa a\u00E7\u00E3o remove o acesso e os dados vinculados de forma permanente.`)
           <div className="overflow-y-auto px-6 py-6">
             {created ? (<div className="space-y-4">
                 <div className="rounded-2xl border border-emerald-100 bg-emerald-50 p-4">
-                  <p className="text-[10px] font-black uppercase tracking-[0.24em] text-emerald-600">UsuÃ¡rio criado</p>
+                  <p className="text-[10px] font-black uppercase tracking-[0.24em] text-emerald-600">Usuário criado</p>
                   <h3 className="mt-1 font-readex text-xl font-semibold text-emerald-950">
                     {getPrimaryRoleLabel(created.role_code)} cadastrado
                   </h3>
@@ -584,24 +584,24 @@ Essa a\u00E7\u00E3o remove o acesso e os dados vinculados de forma permanente.`)
       <section className="overflow-hidden rounded-[30px] border border-[#D8E6EB] bg-white shadow-sm">
         <div className="border-b border-[#D8E6EB] px-5 py-4">
           <p className="text-sm font-bold text-[#6d7a80]">
-            {filteredUsers.length} usuÃ¡rio(s) encontrado(s)
+            {filteredUsers.length} usuário(s) encontrado(s)
           </p>
         </div>
 
         {isLoading ? (<div className="flex h-44 items-center justify-center">
             <div className="h-9 w-9 animate-spin rounded-full border-4 border-[#1398B7] border-t-transparent"/>
           </div>) : filteredUsers.length === 0 ? (<div className="p-8 text-center text-sm font-bold text-[#5F7077]">
-            Nenhum usuÃ¡rio encontrado com os filtros atuais.
+            Nenhum usuário encontrado com os filtros atuais.
           </div>) : (<div className="overflow-x-auto">
             <table className="w-full min-w-[860px] border-collapse text-sm">
               <thead className="bg-[#F2F7F9]/90 text-left">
                 <tr>
-                  <th className="px-4 py-3 text-xs font-semibold uppercase tracking-[0.08em] text-[#5F7077]">Usurio</th>
+                  <th className="px-4 py-3 text-xs font-semibold uppercase tracking-[0.08em] text-[#5F7077]">Usuário</th>
                   <th className="px-4 py-3 text-xs font-semibold uppercase tracking-[0.08em] text-[#5F7077]">Contato</th>
                   <th className="px-4 py-3 text-xs font-semibold uppercase tracking-[0.08em] text-[#5F7077]">Papel</th>
                   <th className="px-4 py-3 text-xs font-semibold uppercase tracking-[0.08em] text-[#5F7077]">Status</th>
                   <th className="px-4 py-3 text-xs font-semibold uppercase tracking-[0.08em] text-[#5F7077]">Atividade</th>
-                  <th className="w-[240px] px-4 py-3 text-right text-xs font-semibold uppercase tracking-[0.08em] text-[#5F7077]">Acoes</th>
+                  <th className="w-[240px] px-4 py-3 text-right text-xs font-semibold uppercase tracking-[0.08em] text-[#5F7077]">Ações</th>
                 </tr>
               </thead>
               <tbody>
@@ -613,14 +613,14 @@ Essa a\u00E7\u00E3o remove o acesso e os dados vinculados de forma permanente.`)
                       <td className="px-4 py-4 text-sm text-[#15323b]">
                         <div className="min-w-[220px] space-y-1">
                           <p className="font-readex text-[15px] font-semibold text-[#15323b]">
-                            {user.full_name?.trim() || "Usurio sem nome"}
+                            {user.full_name?.trim() || "Usuário sem nome"}
                           </p>
                           <p className="text-xs text-[#6d7a80]">Criado em {formatDate(user.created_at)}</p>
                         </div>
                       </td>
                       <td className="px-4 py-4 text-sm text-[#15323b]">
                         <div className="min-w-[220px] space-y-1 text-xs text-[#6d7a80]">
-                          <p>{user.email || "E-mail no informado"}</p>
+                          <p>{user.email || "E-mail não informado"}</p>
                           <p>Sem telefone</p>
                           <p>auth: {formatShortAuthId(user.id)}</p>
                         </div>
@@ -628,7 +628,7 @@ Essa a\u00E7\u00E3o remove o acesso e os dados vinculados de forma permanente.`)
                       <td className="px-4 py-4 text-sm text-[#15323b]">
                         <div className="space-y-2">
                           <span className={`inline-flex items-center rounded-md border px-2.5 py-1 text-xs font-medium ${getPrimaryRolePillClass(primaryRole?.code ?? null)}`} title={primaryRole?.assigned_at
-                        ? `Atribuida em ${formatDateTime(primaryRole.assigned_at)}`
+                        ? `Atribuída em ${formatDateTime(primaryRole.assigned_at)}`
                         : undefined}>
                             {primaryRoleLabel}
                           </span>
