@@ -5,12 +5,16 @@ import type { GenflixCourseItem } from '@/features/public/genflix-public-types';
 export function GenflixCourseCard({ course, }: {
     course: GenflixCourseItem;
 }) {
+    const categoryCount = course.categories?.length ?? 0;
+    const primaryCategory = course.categories?.[0] ?? course.category;
+    const displayCategory = primaryCategory || 'Curso';
+    const categoryLabel = categoryCount > 1 ? `${displayCategory} +${categoryCount - 1}` : displayCategory;
     return (<article className="group overflow-hidden rounded-[4px] border border-[#D8E6EB] bg-[#F2F8FA] shadow-[0_20px_50px_rgba(10,54,64,0.08)] transition-transform duration-300 hover:-translate-y-1 hover:shadow-[0_28px_64px_rgba(10,54,64,0.12)]">
       <div className="relative aspect-[4/3] overflow-hidden">
-        <CourseCoverMedia src={course.image} alt={course.title} title={course.title} category={course.category} initials={course.initials} imageClassName="transition-transform duration-500 group-hover:scale-[1.03]" placeholderClassName="transition-transform duration-500 group-hover:scale-[1.03]"/>
+        <CourseCoverMedia src={course.image} alt={course.title} title={course.title} category={displayCategory} initials={course.initials} imageClassName="transition-transform duration-500 group-hover:scale-[1.03]" placeholderClassName="transition-transform duration-500 group-hover:scale-[1.03]"/>
         <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(10,54,64,0.04)_0%,rgba(10,54,64,0)_38%,rgba(10,54,64,0.24)_100%)]"/>
         <div className="absolute left-4 top-4 rounded-full border border-emerald-300/80 bg-emerald-500 px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-white shadow-[0_6px_18px_rgba(5,150,105,0.35)]">
-          {course.category}
+          {categoryLabel}
         </div>
       </div>
 

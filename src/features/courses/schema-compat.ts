@@ -24,18 +24,28 @@ export function isLegacyCourseSalesSchemaError(error: unknown) {
     });
 }
 export function withLegacyCourseSalesDefaults<T extends Partial<Course>>(course: T) {
+    const categories = Array.isArray(course.categories)
+        ? course.categories.filter((item): item is string => typeof item === 'string' && item.trim().length > 0)
+        : [];
+    const primaryCategory = typeof course.category === 'string' && course.category.trim().length > 0
+        ? course.category.trim()
+        : null;
     return {
         ...course,
         slug: course.slug ?? null,
+        category: primaryCategory,
+        categories: categories.length > 0 ? categories : primaryCategory ? [primaryCategory] : [],
         launch_date: course.launch_date ?? null,
         price_cents: course.price_cents ?? 0,
         currency: course.currency ?? 'BRL',
         is_public: course.is_public ?? true,
-    } as T & Pick<Course, 'slug' | 'launch_date' | 'price_cents' | 'currency' | 'is_public'>;
+    } as T & Pick<Course, 'slug' | 'category' | 'categories' | 'launch_date' | 'price_cents' | 'currency' | 'is_public'>;
 }
 export function stripLegacyCourseSalesFields<T extends Record<string, unknown>>(payload: T) {
-    const { slug, launch_date, price_cents, currency, is_public, ...legacySafePayload } = payload;
+    const { slug, category, categories, launch_date, price_cents, currency, is_public, ...legacySafePayload } = payload;
     void slug;
+    void category;
+    void categories;
     void launch_date;
     void price_cents;
     void currency;

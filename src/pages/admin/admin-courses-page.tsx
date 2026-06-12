@@ -10,11 +10,13 @@ import { createCourseCategory, createCourse, deleteCourseCategory, deleteCourse,
 import { downloadJsonFile } from '@/lib/download';
 import { formatCurrencyInputFromCents, parseCurrencyInputToCents } from '@/lib/currency';
 import { DEFAULT_COURSE_QUIZ_TYPE_SETTINGS, normalizeCourseQuizTypeSettings, } from '@/features/assessments/course-quiz-type-settings';
+import { normalizeCourseCategoryList } from '@/features/courses/course-categories';
 import { courseFormSchema, type CourseFormInput, } from '@/features/admin/content/schemas';
 import type { Course, CourseCategory, CourseStatus } from '@/types/content';
 const initialForm: CourseFormInput = {
     title: '',
     category: '',
+    categories: [],
     description: '',
     status: 'draft',
     thumbnail_url: '',
@@ -174,6 +176,7 @@ export function AdminCoursesPage() {
         }
     }
     function handleEdit(course: Course) {
+        const categories = normalizeCourseCategoryList(course.categories.length > 0 ? course.categories : course.category ? [course.category] : []);
         setDraft((p) => ({
             ...p,
             isFormOpen: true,
@@ -181,6 +184,7 @@ export function AdminCoursesPage() {
             form: {
                 title: course.title,
                 category: course.category ?? '',
+                categories,
                 description: course.description ?? '',
                 status: course.status,
                 thumbnail_url: course.thumbnail_url ?? '',
@@ -760,17 +764,39 @@ Essa a\u00E7\u00E3o \u00E9 irrevers\u00EDvel.`);
                                <option value="archived">📦 Arquivado</option>
                             </select>
                          </label>
-                         <label className="block space-y-2 w-full">
-                            <span className="text-xs font-black text-slate-400 uppercase tracking-widest pl-1">Categoria</span>
-                            <select className="w-full font-bold rounded-2xl border border-slate-200 bg-slate-100/50 px-6 py-4 focus:bg-white focus:ring-4 focus:ring-blue-100 transition-all appearance-none" value={form.category ?? ''} onChange={(event) => setDraft((p) => ({ ...p, form: { ...p.form, category: event.target.value } }))}>
-                               <option value="">Sem categoria</option>
-                               {categories
-                .filter((category) => category.is_active || category.name === form.category)
-                .map((category) => (<option key={category.id} value={category.name}>
-                                     {category.name}
-                                   </option>))}
-                            </select>
-                         </label>
+                         <div className="block space-y-2 w-full">
+                            <span className="text-xs font-black text-slate-400 uppercase tracking-widest pl-1">Categorias</span>
+                            <div className="rounded-2xl border border-slate-200 bg-slate-100/50 px-5 py-4">
+                               <p className="text-xs font-semibold text-slate-500">Selecione uma ou mais categorias. A primeira vira a categoria principal.</p>
+                               <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                                  {categories
+                .filter((category) => category.is_active || form.categories.includes(category.name))
+                .map((category) => {
+                const checked = form.categories.includes(category.name);
+                return (<label key={category.id} className={`flex cursor-pointer items-center gap-3 rounded-2xl border px-4 py-3 transition-all ${checked ? 'border-blue-300 bg-blue-50 text-blue-700' : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'}`}>
+                                           <input type="checkbox" checked={checked} onChange={(event) => setDraft((p) => {
+                        const currentCategories = normalizeCourseCategoryList(p.form.categories);
+                        const nextCategories = event.target.checked
+                            ? normalizeCourseCategoryList([...currentCategories, category.name])
+                            : currentCategories.filter((item) => item !== category.name);
+                        return {
+                            ...p,
+                            form: {
+                                ...p.form,
+                                categories: nextCategories,
+                                category: nextCategories[0] ?? '',
+                            },
+                        };
+                    })} className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"/>
+                                           <span className="text-sm font-bold">{category.name}</span>
+                                        </label>);
+            })}
+                               </div>
+                               {form.category ? (<p className="mt-4 text-xs font-semibold text-slate-500">
+                                    Categoria principal: <span className="font-black text-slate-700">{form.category}</span>
+                                  </p>) : null}
+                            </div>
+                         </div>
                       </div>
 
                       <div className="rounded-[28px] border border-cyan-100 bg-cyan-50/60 p-6 space-y-5">

@@ -138,6 +138,11 @@ export function CoursePublicPagePanel() {
     if (!courseTree || !resolvedDetail) {
         return null;
     }
+    const courseCategories = courseTree.course.categories?.length
+        ? courseTree.course.categories
+        : courseTree.course.category
+            ? [courseTree.course.category]
+            : [];
     function updateField<K extends keyof CoursePublicPageFormState>(key: K, value: CoursePublicPageFormState[K]) {
         setForm((current) => ({ ...current, [key]: value }));
         setSuccess(false);
@@ -225,7 +230,7 @@ export function CoursePublicPagePanel() {
           <div className="mt-8 space-y-5">
               <div className="rounded-2xl border border-cyan-100 bg-cyan-50/40 px-5 py-4">
                 <span className="text-xs font-black uppercase tracking-widest text-cyan-700">Categoria do curso</span>
-                <p className="mt-2 text-lg font-black tracking-tight text-slate-900">{courseTree.course.category || 'Sem categoria definida'}</p>
+                <p className="mt-2 text-lg font-black tracking-tight text-slate-900">{courseCategories.length ? courseCategories.join(' • ') : 'Sem categoria definida'}</p>
                 <p className="mt-1 text-xs font-medium text-slate-500">Essa categoria vem do modal de edição do curso e é usada também na página pública.</p>
               </div>
 

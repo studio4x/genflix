@@ -4,6 +4,7 @@ import {
   type GenflixCourseModule,
   type GenflixCourseOutcome,
 } from '@/features/public/genflix-site-content'
+import { getCourseCategories, getCoursePrimaryCategory } from '@/features/courses/course-categories'
 
 export type CoursePublicContentSource = 'real' | 'custom'
 
@@ -29,6 +30,7 @@ export interface CoursePublicPageRowLike {
   title: string
   description: string | null
   category: string | null
+  categories?: string[] | null
   thumbnail_url: string | null
   cover_image_url: string | null
   marketing_description: string | null
@@ -208,12 +210,17 @@ function getInitials(row: CoursePublicPageRowLike) {
 
 export function buildCoursePublicCatalogItem(row: CoursePublicPageRowLike): GenflixCourseItem {
   const slug = row.slug ?? row.id
+  const categories = getCourseCategories({
+    category: row.category,
+    categories: row.categories ?? undefined,
+  })
 
   return {
     id: row.id,
     slug,
     title: trimString(row.title) || 'Curso GenFlix',
-    category: trimString(row.category) || 'Curso',
+    category: categories[0] ?? 'Curso',
+    categories,
     mentor: trimString(row.mentor_name) || 'Equipe GenFlix',
     role: trimString(row.mentor_role) || 'Curadoria de conteúdo',
     image: trimString(row.thumbnail_url) || trimString(row.cover_image_url) || defaultCourseImage,
@@ -229,6 +236,10 @@ export function buildCoursePublicDetail(
 ): GenflixCourseDetail {
   const item = buildCoursePublicCatalogItem(row)
   const content = normalizeCoursePublicPageContent(row.public_page_content)
+  const primaryCategory = getCoursePrimaryCategory({
+    category: row.category,
+    categories: row.categories ?? undefined,
+  })
   const fallbackDescription =
     trimString(row.marketing_description) ||
     trimString(row.description)
@@ -274,7 +285,7 @@ export function buildCoursePublicDetail(
     slug: item.slug,
     categoryLine:
       content.categoryLine ||
-      `${item.category.toUpperCase()} - ONLINE`,
+      `${(primaryCategory ?? item.category).toUpperCase()} - ONLINE`,
     title: trimString(row.title) || item.title,
     coverImage: item.image,
     description: fallbackDescription,

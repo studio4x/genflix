@@ -16,6 +16,7 @@ export interface GenflixCourseItem {
     slug: string;
     title: string;
     category: string;
+    categories?: string[];
     mentor: string;
     role: string;
     image: string;

@@ -2,6 +2,7 @@
 import { mergeContent, splitContent, type LessonContentBlock, } from './content-blocks';
 import { exportAssessmentContent, importAssessmentContentStructured, type ImportAssessmentData, } from '@/features/admin/assessments/api';
 import { normalizeCourseQuizTypeSettings } from '@/features/assessments/course-quiz-type-settings';
+import { getCourseCategories, normalizeCoursePrimaryCategory, } from '@/features/courses/course-categories';
 import { isLegacyCourseSalesSchemaError, stripLegacyCourseSalesFields, withLegacyCourseSalesDefaults, } from '@/features/courses/schema-compat';
 import type { ButtonTemplate, Course, CourseCategory, CourseQuizTypeSettings, CourseModule, FooterActionScope, Lesson, LessonFooterAction, LessonMaterial, ModulePdfAsset, Assessment, } from '@/types/content';
 import type { ButtonTemplateFormInput, CourseFormInput, CoursePublicPageContentInput, CoursePublicPageFormInput, LessonFormInput, LessonFooterActionFormInput, ModuleFormInput, } from './schemas';
@@ -339,6 +340,10 @@ export async function deleteCourseCategory(categoryId: string) {
     }
 }
 export async function createCourse(input: CourseFormInput, userId: string) {
+    const categories = getCourseCategories({
+        category: input.category,
+        categories: input.categories,
+    });
     const positionResult = await supabase
         .from('courses')
         .select('display_order')
@@ -350,7 +355,8 @@ export async function createCourse(input: CourseFormInput, userId: string) {
     const nextDisplayOrder = (positionResult.data?.[0]?.display_order ?? 0) + 1;
     const payload = {
         title: input.title,
-        category: input.category?.trim() || null,
+        category: categories[0] ?? null,
+        categories,
         description: input.description?.trim() || null,
         status: input.status,
         display_order: nextDisplayOrder,
@@ -396,9 +402,14 @@ export async function updateCoursesDisplayOrder(courses: Pick<Course, 'id' | 'di
     }
 }
 export async function updateCourse(courseId: string, input: CourseFormInput) {
+    const categories = getCourseCategories({
+        category: input.category,
+        categories: input.categories,
+    });
     const payload = {
         title: input.title,
-        category: input.category?.trim() || null,
+        category: categories[0] ?? null,
+        categories,
         description: input.description?.trim() || null,
         status: input.status,
         thumbnail_url: input.thumbnail_url?.trim() || null,
@@ -434,6 +445,22 @@ export async function updateCourse(courseId: string, input: CourseFormInput) {
     return withLegacyCourseSalesDefaults(result.data as Course);
 }
 export async function updateCoursePublicPage(courseId: string, input: CoursePublicPageFormInput) {
+    const currentResult = await supabase
+        .from('courses')
+        .select('category,categories')
+        .eq('id', courseId)
+        .maybeSingle();
+    if (currentResult.error) {
+        throw currentResult.error;
+    }
+    const existingCategories = getCourseCategories({
+        category: currentResult.data?.category ?? null,
+        categories: currentResult.data?.categories ?? undefined,
+    });
+    const nextPrimaryCategory = normalizeCoursePrimaryCategory(input.category);
+    const categories = nextPrimaryCategory
+        ? [nextPrimaryCategory, ...existingCategories.filter((category) => category.toLocaleLowerCase('pt-BR') !== nextPrimaryCategory.toLocaleLowerCase('pt-BR'))]
+        : existingCategories;
     const publicPageContent: CoursePublicPageContentInput = {
         categoryLine: input.categoryLine?.trim() || null,
         aboutParagraphs: input.aboutParagraphs,
@@ -450,7 +477,8 @@ export async function updateCoursePublicPage(courseId: string, input: CoursePubl
     const result = await supabase
         .from('courses')
         .update({
-        category: input.category?.trim() || null,
+        category: categories[0] ?? null,
+        categories,
         marketing_description: input.marketing_description.trim(),
         mentor_name: input.mentor_name.trim(),
         mentor_role: input.mentor_role.trim(),
@@ -1614,6 +1642,7 @@ export async function importFullCourse(data: ImportCourseFullData, userId: strin
         description: data.description || null,
         status: data.status || 'draft',
         display_order: nextDisplayOrder,
+        categories: [],
         workload_minutes: data.workload_minutes || 0,
         thumbnail_url: data.thumbnail_url || null,
         cover_image_url: data.thumbnail_url || null,
@@ -1627,7 +1656,7 @@ export async function importFullCourse(data: ImportCourseFullData, userId: strin
         throw cError;
     // 2. Importar Conteúdo (Módulos/Aulas/Quizzes ou Avaliação Direta)
     await importCourseContent(course.id, data, false);
-    return course;
+    return withLegacyCourseSalesDefaults(course as Course);
 }
 
 

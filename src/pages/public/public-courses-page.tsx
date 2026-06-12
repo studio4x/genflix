@@ -131,14 +131,12 @@ export function PublicCoursesPage() {
     const categoriesByKey = new Map<string, string>()
 
     for (const course of courses) {
-      const category = course.category.trim()
-      if (!category) {
-        continue
-      }
-
-      const normalizedCategory = category.toLocaleLowerCase('pt-BR')
-      if (!categoriesByKey.has(normalizedCategory)) {
-        categoriesByKey.set(normalizedCategory, category)
+      const categories = (course.categories?.length ? course.categories : [course.category]).map((category) => category.trim()).filter(Boolean)
+      for (const category of categories) {
+        const normalizedCategory = category.toLocaleLowerCase('pt-BR')
+        if (!categoriesByKey.has(normalizedCategory)) {
+          categoriesByKey.set(normalizedCategory, category)
+        }
       }
     }
 
@@ -157,13 +155,16 @@ export function PublicCoursesPage() {
     const normalizedQuery = query.trim().toLowerCase()
 
     return courses.filter((course) => {
+      const courseCategories = (course.categories?.length ? course.categories : [course.category])
+        .map((category) => category.trim())
+        .filter(Boolean)
       const matchesFilter =
         selectedFilter === 'Todos'
           ? true
-          : course.category.trim() === selectedFilter
+          : courseCategories.some((category) => category === selectedFilter)
 
       const matchesQuery = normalizedQuery
-        ? [course.title, course.category, course.mentor, course.role]
+        ? [course.title, ...courseCategories, course.mentor, course.role]
             .join(' ')
             .toLowerCase()
             .includes(normalizedQuery)

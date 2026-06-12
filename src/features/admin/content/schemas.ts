@@ -30,6 +30,7 @@ export const courseQuizTypeSettingsSchema = z.object({
 export const courseFormSchema = z.object({
     title: z.string().trim().min(3, "Título deve ter ao menos 3 caracteres"),
     category: z.string().trim().optional().or(z.literal('')),
+    categories: z.array(z.string().trim().min(1)).default([]),
     description: z.string().trim().max(2000).optional(),
     status: z.enum(['draft', 'published', 'archived']),
     thumbnail_url: z.string().optional().or(z.literal('')),

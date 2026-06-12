@@ -185,6 +185,7 @@ export interface Course {
     status: CourseStatus;
     display_order: number;
     category: string | null;
+    categories: string[];
     thumbnail_url: string | null;
     cover_image_url: string | null;
     student_hero_image_url: string | null;
