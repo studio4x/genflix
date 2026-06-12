@@ -49,13 +49,13 @@ const COURSES_PER_PAGE = 6
 const coursesSectionTemplates = [
   {
     id: 'hero',
-    label: 'Hero da página Cursos',
-    description: 'Bloco de abertura com busca e filtros da página Cursos.',
+    label: 'Hero da pagina Cursos',
+    description: 'Bloco de abertura com busca e filtros da pagina Cursos.',
   },
   {
     id: 'catalog',
-    label: 'Catálogo de cursos',
-    description: 'Bloco principal com a grade de cursos e página??o.',
+    label: 'Catalogo de cursos',
+    description: 'Bloco principal com a grade de cursos e paginacao.',
   },
   {
     id: 'features',
@@ -65,7 +65,7 @@ const coursesSectionTemplates = [
   {
     id: 'newsletter',
     label: 'Newsletter',
-    description: 'Bloco de captação ao final da página Cursos.',
+    description: 'Bloco de captacao ao final da pagina Cursos.',
     pageKey: 'global' as const,
   },
 ]
@@ -199,7 +199,7 @@ export function PublicCoursesPage() {
   const pageCount = Math.max(1, Math.ceil(filteredCourses.length / COURSES_PER_PAGE))
   const visibleCurrentPage = Math.min(currentPage, pageCount)
 
-  const páginatedCourses = useMemo(() => {
+  const paginatedCourses = useMemo(() => {
     const start = (visibleCurrentPage - 1) * COURSES_PER_PAGE
     return filteredCourses.slice(start, start + COURSES_PER_PAGE)
   }, [visibleCurrentPage, filteredCourses])
@@ -220,10 +220,10 @@ export function PublicCoursesPage() {
       <BannerPlacementSlot pageKey="courses" placementKey="hero" />
 
       <SectionStructureControl
-        buttonLabel="Gerenciar blocos da página"
+        buttonLabel="Gerenciar blocos da pagina"
         pageKey="courses"
         entryKey="courses.layout.sections"
-        label="Estrutura da página Cursos"
+        label="Estrutura da pagina Cursos"
         sections={coursesSections}
         schema={coursesLayoutSchema}
       />
@@ -235,7 +235,7 @@ export function PublicCoursesPage() {
 
         if (templateKey === 'hero') {
           return (
-            <EditableContainer entryKey={`${sectionEntryPrefix}.layout`} label="Bloco Hero da página Cursos" pageKey={sectionPageKey}>
+            <EditableContainer entryKey={`${sectionEntryPrefix}.layout`} label="Bloco Hero da pagina Cursos" pageKey={sectionPageKey}>
               <section className="bg-white pb-14 pt-6">
                 <div className="public-site-container">
                   <EditableContainer entryKey={`${sectionEntryPrefix}.card`} label="Container interno do Hero" pageKey={sectionPageKey}>
@@ -244,7 +244,7 @@ export function PublicCoursesPage() {
                         <EditableText
                           entryKey="courses.hero.title"
                           fallback="Encontre o curso que vai mudar sua vida"
-                          label="Título do cat?logo"
+                          label="Titulo do catalogo"
                           pageKey={sectionPageKey}
                         />
                       </h1>
@@ -290,12 +290,12 @@ export function PublicCoursesPage() {
 
         if (templateKey === 'catalog') {
           return (
-            <EditableContainer entryKey={`${sectionEntryPrefix}.layout`} label="Bloco Catálogo da página Cursos" pageKey={sectionPageKey}>
+            <EditableContainer entryKey={`${sectionEntryPrefix}.layout`} label="Bloco Catalogo da pagina Cursos" pageKey={sectionPageKey}>
               <section className="bg-white pb-16">
                 <EditableContainer entryKey={`${sectionEntryPrefix}.content`} label="Container interno do catalogo" pageKey={sectionPageKey}>
                   <div className="public-site-container">
                     <div className="grid gap-8 md:grid-cols-2 xl:grid-cols-3">
-                      {páginatedCourses.map((course) => (
+                      {paginatedCourses.map((course) => (
                         <GenflixCourseCard key={course.slug} course={course} />
                       ))}
                     </div>
@@ -303,12 +303,18 @@ export function PublicCoursesPage() {
                     {filteredCourses.length === 0 ? (
                       <div className="mt-10 overflow-hidden rounded-[24px] border border-dashed border-[#D8E6EB] bg-[#F2F8FA] text-center shadow-[0_18px_40px_rgba(21,50,59,0.05)]">
                         <div className="bg-white/70 px-4 pt-4 sm:px-6 sm:pt-6">
-                          <img
-                            src="/images/genflix/nao-ha-cursos.jpeg"
-                            alt="Nenhum curso disponível nesta categoria"
-                            className="mx-auto w-full max-w-[560px] rounded-[20px] object-cover"
-                            loading="lazy"
-                          />
+                          <Link
+                            to="/ensine-na-genflix"
+                            aria-label="Ir para a pagina Ensine na Genflix"
+                            className="mb-6 block transition-transform duration-200 ease-out hover:-translate-y-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1398B7] focus-visible:ring-offset-2"
+                          >
+                            <img
+                              src="/images/genflix/nao-ha-cursos.jpeg"
+                              alt="Nenhum curso disponivel nesta categoria"
+                              className="mx-auto w-full max-w-[560px] rounded-[20px] object-cover"
+                              loading="lazy"
+                            />
+                          </Link>
                         </div>
                         <div className="px-6 py-10 sm:px-10">
                           <p className="text-lg font-bold text-[#183139]">Nenhum curso encontrado com esse filtro.</p>
@@ -368,7 +374,7 @@ export function PublicCoursesPage() {
 
         if (templateKey === 'features') {
           return (
-            <EditableContainer entryKey={`${sectionEntryPrefix}.layout`} label="Bloco Recursos da página Cursos" pageKey={sectionPageKey}>
+            <EditableContainer entryKey={`${sectionEntryPrefix}.layout`} label="Bloco Recursos da pÃ¡gina Cursos" pageKey={sectionPageKey}>
               <section className="bg-[#F2F8FA] py-16">
                 <EditableContainer entryKey={`${sectionEntryPrefix}.content`} label="Container interno de recursos" pageKey={sectionPageKey}>
                   <div className="public-site-container">
@@ -376,16 +382,16 @@ export function PublicCoursesPage() {
                       <h2 className="text-[2.1rem] font-bold tracking-[-0.04em] text-[#183139] sm:text-[2.35rem]">
                         <EditableText
                           entryKey="courses.features.title"
-                          fallback="Muito além do vídeo"
-                          label="Título de recursos em cursos"
+                          fallback="Muito alem do video"
+                          label="Titulo de recursos em cursos"
                           pageKey={sectionPageKey}
                         />
                       </h2>
                       <p className="mt-3 text-base leading-7 text-[#183139]">
                         <EditableText
                           entryKey="courses.features.description"
-                          fallback="Ferramentas pensadas para você aprender, fixar e revisar do seu jeito."
-                          label="Descrição de recursos em cursos"
+                          fallback="Ferramentas pensadas para vocÃª aprender, fixar e revisar do seu jeito."
+                          label="Descricao de recursos em cursos"
                           pageKey={sectionPageKey}
                         />
                       </p>
@@ -464,7 +470,7 @@ export function PublicCoursesPage() {
 
         if (templateKey === 'newsletter') {
           return (
-            <EditableContainer entryKey={`${sectionEntryPrefix}.layout`} label="Bloco Newsletter da página Cursos" pageKey={sectionPageKey}>
+            <EditableContainer entryKey={`${sectionEntryPrefix}.layout`} label="Bloco Newsletter da pagina Cursos" pageKey={sectionPageKey}>
               <GenflixNewsletterSection entryPrefix="courses.newsletter" pageKey={sectionPageKey} />
             </EditableContainer>
           )
@@ -477,3 +483,6 @@ export function PublicCoursesPage() {
     </main>
   )
 }
+
+
+

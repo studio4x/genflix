@@ -21,6 +21,7 @@ import { GenflixPublicHeader } from '@/components/public/genflix-public-header'
 import { LegalDocumentModal } from '@/components/public/legal-document-modal'
 import { brazilStateOptions, useBrazilCities } from '@/features/address/brazil-address'
 import { resolveBrazilCepAddress, useBrazilCepLookup } from '@/features/address/brazil-cep'
+import { formatCpf } from '@/features/document/cpf'
 import { fetchPublicCourseDetailFromSupabase } from '@/features/public/genflix-public-content-api'
 import { genflixNavLinks, type GenflixCourseDetail } from '@/features/public/genflix-site-content'
 import { startCourseCheckout } from '@/features/public/courses/api'
@@ -41,24 +42,6 @@ function normalizeDigits(value: string) {
 function normalizeText(value: string) {
   const trimmed = value.trim()
   return trimmed.length > 0 ? trimmed : ''
-}
-
-function formatCpf(value: string) {
-  const digits = normalizeDigits(value).slice(0, 11)
-
-  if (digits.length <= 3) {
-    return digits
-  }
-
-  if (digits.length <= 6) {
-    return `${digits.slice(0, 3)}.${digits.slice(3)}`
-  }
-
-  if (digits.length <= 9) {
-    return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6)}`
-  }
-
-  return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9)}`
 }
 
 function formatPhone(value: string) {
@@ -117,6 +100,7 @@ export function PublicCheckoutPage() {
   const [authError, setAuthError] = useState<string | null>(null)
   const [authMessage, setAuthMessage] = useState<string | null>(null)
   const [checkoutError, setCheckoutError] = useState<string | null>(null)
+  const [checkoutCpfFieldError, setCheckoutCpfFieldError] = useState(false)
   const [isAuthSubmitting, setIsAuthSubmitting] = useState(false)
   const [isStartingCheckout, setIsStartingCheckout] = useState(false)
   const [checkoutFullName, setCheckoutFullName] = useState('')
