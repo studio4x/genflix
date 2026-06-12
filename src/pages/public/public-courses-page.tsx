@@ -301,21 +301,19 @@ export function PublicCoursesPage() {
                     </div>
 
                     {filteredCourses.length === 0 ? (
-                      <div className="mt-10 overflow-hidden rounded-[24px] border border-dashed border-[#D8E6EB] bg-[#F2F8FA] text-center shadow-[0_18px_40px_rgba(21,50,59,0.05)]">
-                        <div className="bg-white/70 px-4 pt-4 sm:px-6 sm:pt-6">
-                          <Link
-                            to="/ensine-na-genflix"
-                            aria-label="Ir para a pagina Ensine na Genflix"
-                            className="mb-6 block transition-transform duration-200 ease-out hover:-translate-y-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1398B7] focus-visible:ring-offset-2"
-                          >
-                            <img
-                              src="/images/genflix/nao-ha-cursos.jpeg"
-                              alt="Nenhum curso disponivel nesta categoria"
-                              className="mx-auto w-full max-w-[560px] rounded-[20px] object-cover"
-                              loading="lazy"
-                            />
-                          </Link>
-                        </div>
+                      <div className="mt-10 flex justify-center">
+                        <Link
+                          to="/ensine-na-genflix"
+                          aria-label="Ir para a pagina Ensine na Genflix"
+                          className="block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1398B7] focus-visible:ring-offset-2"
+                        >
+                          <img
+                            src="/images/genflix/nao-ha-cursos.jpeg"
+                            alt="Nenhum curso disponivel nesta categoria"
+                            className="block w-full max-w-[560px] object-cover"
+                            loading="lazy"
+                          />
+                        </Link>
                       </div>
                     ) : null}
 
