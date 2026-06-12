@@ -316,17 +316,6 @@ export function PublicCoursesPage() {
                             />
                           </Link>
                         </div>
-                        <div className="px-6 py-10 sm:px-10">
-                          <p className="text-lg font-bold text-[#183139]">Nenhum curso encontrado com esse filtro.</p>
-                          <p className="mt-3 text-sm text-[#6d7f85]">
-                          <EditableText
-                            entryKey="courses.empty.description"
-                            fallback="Tente outra palavra-chave ou escolha uma categoria diferente."
-                            label="Mensagem sem cursos"
-                            pageKey={sectionPageKey}
-                          />
-                          </p>
-                        </div>
                       </div>
                     ) : null}
 
