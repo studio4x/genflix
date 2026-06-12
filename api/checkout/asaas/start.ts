@@ -317,9 +317,9 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
         minutesToExpire: 1440,
         externalReference: checkoutSessionId,
         callback: {
-            successUrl: `${origin}/checkout/confirmacaocourseId=${course.id}&courseTitle=${encodeURIComponent(course.title)}&courseValue=${priceCents / 100}&currency=${encodeURIComponent(course.currency  'BRL')}`,
-            cancelUrl: `${origin}/aluno/cursos/${course.id}checkout=cancel`,
-            expiredUrl: `${origin}/aluno/cursos/${course.id}checkout=expired`,
+            successUrl: `${origin}/checkout/confirmacao?courseId=${course.id}&courseTitle=${encodeURIComponent(course.title)}&courseValue=${priceCents / 100}&currency=${encodeURIComponent(course.currency ?? 'BRL')}`,
+            cancelUrl: `${origin}/aluno/cursos/${course.id}?checkout=cancel`,
+            expiredUrl: `${origin}/aluno/cursos/${course.id}?checkout=expired`,
         },
         items: [
             {
@@ -372,7 +372,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
         });
         return;
     }
-    const checkoutUrl = `${gatewayConfig.environment === 'sandbox'  'https://sandbox.asaas.com' : 'https://asaas.com'}/checkoutSession/showid=${checkoutPayload.id}`;
+    const checkoutUrl = `${gatewayConfig.environment === 'sandbox' ? 'https://sandbox.asaas.com' : 'https://asaas.com'}/checkoutSession/show?id=${checkoutPayload.id}`;
     const sessionInsert = await adminClient.from('commerce_checkout_sessions').insert({
         id: checkoutSessionId,
         course_id: course.id,
