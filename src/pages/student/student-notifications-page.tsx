@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 
 import { Button } from '@/components/ui/button'
@@ -9,8 +9,6 @@ type StudentNotificationsTab = 'notificacoes' | 'preferencias'
 
 export function StudentNotificationsPage() {
   const [searchParams, setSearchParams] = useSearchParams()
-  const [isReady] = useState(true)
-
   const activeTab = useMemo<StudentNotificationsTab>(() => {
     return searchParams.get('tab') === 'preferencias' ? 'preferencias' : 'notificacoes'
   }, [searchParams])
@@ -75,8 +73,6 @@ export function StudentNotificationsPage() {
       ) : (
         <NotificationsOverviewPanel />
       )}
-
-      {isReady ? null : null}
     </div>
   )
 }
