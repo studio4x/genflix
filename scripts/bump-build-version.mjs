@@ -2,7 +2,9 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { execSync } from 'node:child_process'
 
-const shouldSkipForCi = process.env.CI === 'true' && process.env.HCM_BUMP_IN_CI !== '1'
+const shouldSkipForCi = (
+  process.env.CI === 'true' && process.env.HCM_BUMP_IN_CI !== '1'
+) || process.env.VERCEL_DEPLOY_PREBUILT === '1'
 if (shouldSkipForCi) {
   process.exit(0)
 }
