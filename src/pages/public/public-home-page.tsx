@@ -199,7 +199,7 @@ function HomeCategoriesSection({ entryPrefix, pageKey = 'home', }: {
                     ? Math.min(36, Math.max(12, Math.round(Number(item.metadata.iconSize) || 20)))
                     : 20;
             const href = resolveHomeCategoryHref(item);
-            const cardContent = (<article className="min-h-[124px] w-[145px] rounded-[4px] bg-[linear-gradient(180deg,#1BA8C5_0%,#0A3640_100%)] px-4 py-4 text-white shadow-[0_18px_30px_rgba(10,54,64,0.14)] sm:w-[150px]">
+            const cardContent = (<article className="min-h-[124px] w-[145px] rounded-[4px] bg-[linear-gradient(180deg,#1BA8C5_0%,#0A3640_100%)] px-4 py-4 text-white shadow-[0_18px_30px_rgba(10,54,64,0.14)] transition-transform duration-200 ease-out group-hover:-translate-y-1 group-hover:shadow-[0_22px_36px_rgba(10,54,64,0.22)] sm:w-[150px]">
                     <div className="flex h-11 w-11 items-center justify-center text-white/95">
                       {renderSiteIconVisual({
                     iconKey,
@@ -217,11 +217,11 @@ function HomeCategoriesSection({ entryPrefix, pageKey = 'home', }: {
                 return <div key={item.id}>{cardContent}</div>;
             }
             if (isExternalHref(href)) {
-                return (<a key={item.id} href={href} target="_blank" rel="noreferrer" className="block">
+                return (<a key={item.id} href={href} target="_blank" rel="noreferrer" aria-label={`Abrir ${item.label}`} className="group block cursor-pointer transition-transform duration-200 ease-out hover:-translate-y-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1398B7] focus-visible:ring-offset-2">
                     {cardContent}
                   </a>);
             }
-            return (<Link key={item.id} to={href} className="block">
+            return (<Link key={item.id} to={href} aria-label={`Abrir ${item.label}`} className="group block cursor-pointer transition-transform duration-200 ease-out hover:-translate-y-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1398B7] focus-visible:ring-offset-2">
                 {cardContent}
               </Link>);
         })}
