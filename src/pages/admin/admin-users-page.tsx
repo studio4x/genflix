@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
-import { KeyRound, Trash2 } from 'lucide-react';
+import { KeyRound, Trash2, X } from 'lucide-react';
 import { useAuth } from '@/app/providers/auth-provider';
 import { Button } from '@/components/ui/button';
 import { deleteAdminUser, createAdminUser, fetchAdminUsers, resetAdminUserPassword, toErrorMessage, updateAdminUserRole, type AdminAssignableRoleCode, type AdminUserListItem, type AdminUserRole, type CreateAdminUserResponse, } from '@/features/admin/users/api';
@@ -33,7 +33,7 @@ const roleOptions: Array<{
     {
         code: 'criador',
         title: 'Criador',
-        description: 'Acompanha relatórios dos cursos vinculados e edita o próprio perfil.',
+        description: 'Acompanha relatÃ³rios dos cursos vinculados e edita o prÃ³prio perfil.',
     },
     {
         code: 'admin',
@@ -53,11 +53,11 @@ const roleFilters: Array<{
 ];
 function formatDateTime(value: string | null) {
     if (!value) {
-        return 'Não informado';
+        return 'NÃ£o informado';
     }
     const parsed = new Date(value);
     if (Number.isNaN(parsed.getTime())) {
-        return 'Não informado';
+        return 'NÃ£o informado';
     }
     return new Intl.DateTimeFormat('pt-BR', {
         dateStyle: 'short',
@@ -166,7 +166,7 @@ export function AdminUsersPage() {
     async function loadUsers() {
         if (!session) {
             setUsers([]);
-            setError('Sessão expirada. Faça login novamente.');
+            setError('SessÃ£o expirada. FaÃ§a login novamente.');
             setIsLoading(false);
             return;
         }
@@ -219,7 +219,7 @@ export function AdminUsersPage() {
     async function handleSubmit(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
         if (!session) {
-            setFormError('Sessão expirada. Faça login novamente.');
+            setFormError('SessÃ£o expirada. FaÃ§a login novamente.');
             return;
         }
         const parsed = createAdminUserFormSchema.safeParse({
@@ -229,7 +229,7 @@ export function AdminUsersPage() {
             roleCode: form.roleCode,
         });
         if (!parsed.success) {
-            setFormError(parsed.error.issues[0]?.message ?? 'Dados inválidos.');
+            setFormError(parsed.error.issues[0]?.message ?? 'Dados invÃ¡lidos.');
             return;
         }
         setIsSubmitting(true);
@@ -251,14 +251,14 @@ export function AdminUsersPage() {
     }
     async function handleResetUserPassword(user: AdminUserListItem) {
         if (!session) {
-            setError('Sessão expirada. Faça login novamente.');
+            setError('SessÃ£o expirada. FaÃ§a login novamente.');
             return;
         }
         if (!user.email) {
-            setError('Este usuário não possui e-mail cadastrado para redefinição.');
+            setError('Este usuÃ¡rio nÃ£o possui e-mail cadastrado para redefiniÃ§Ã£o.');
             return;
         }
-        const shouldSendResetEmail = window.confirm(`Enviar um e-mail de redefinição de senha para ${user.full_name?.trim() || user.email} O pr\u00F3prio usu\u00E1rio criar\u00E1 a nova senha pelo link recebido.`);
+        const shouldSendResetEmail = window.confirm(`Enviar um e-mail de redefiniÃ§Ã£o de senha para ${user.full_name?.trim() || user.email} O pr\u00F3prio usu\u00E1rio criar\u00E1 a nova senha pelo link recebido.`);
         if (!shouldSendResetEmail) {
             return;
         }
@@ -278,10 +278,10 @@ export function AdminUsersPage() {
     }
     async function handleDeleteUser(user: AdminUserListItem) {
         if (!session) {
-            setError('Sessão expirada. Faça login novamente.');
+            setError('SessÃ£o expirada. FaÃ§a login novamente.');
             return;
         }
-        const confirmed = window.confirm(`Excluir o usuário "${user.full_name?.trim() || user.email || user.id}"
+        const confirmed = window.confirm(`Excluir o usuÃ¡rio "${user.full_name?.trim() || user.email || user.id}"
 
 Essa a\u00E7\u00E3o remove o acesso e os dados vinculados de forma permanente.`);
         if (!confirmed) {
@@ -317,7 +317,7 @@ Essa a\u00E7\u00E3o remove o acesso e os dados vinculados de forma permanente.`)
     }
     async function handleUpdateRole() {
         if (!session) {
-            setError('Sessão expirada. Faça login novamente.');
+            setError('SessÃ£o expirada. FaÃ§a login novamente.');
             return;
         }
         if (!editingRoleUser) {
@@ -347,15 +347,22 @@ Essa a\u00E7\u00E3o remove o acesso e os dados vinculados de forma permanente.`)
             setError("N\u00E3o foi poss\u00EDvel copiar automticamente. Copie manualmente.");
         }
     }
+    function closeCreateUserModal() {
+        setIsCreatePanelOpen(false);
+        setCreated(null);
+        setForm(initialForm);
+        setFormError(null);
+        setIsSubmitting(false);
+    }
     return (<div className="space-y-7 pb-8">
       <header className="flex flex-col gap-3 border-b border-[#D8E6EB] pb-6 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <p className="text-[10px] font-black uppercase tracking-[0.26em] text-[#1398B7]">Admin / Usuários</p>
+          <p className="text-[10px] font-black uppercase tracking-[0.26em] text-[#1398B7]">Admin / UsuÃ¡rios</p>
           <h2 className="mt-2 font-readex text-3xl font-semibold tracking-tight text-[#15323b]">
-            Usuários e Regras
+            UsuÃ¡rios e Regras
           </h2>
           <p className="mt-2 max-w-3xl text-sm font-medium text-[#6d7a80]">
-            Cadastre usuários como aluno, criador ou admin e acompanhe as regras atribuídas em um único lugar.
+            Cadastre usuÃ¡rios como aluno, criador ou admin e acompanhe as regras atribuÃ­das em um Ãºnico lugar.
           </p>
         </div>
 
@@ -368,7 +375,7 @@ Essa a\u00E7\u00E3o remove o acesso e os dados vinculados de forma permanente.`)
             }
             setIsCreatePanelOpen(true);
         }} className="rounded-2xl bg-[#1398B7] font-black hover:bg-[#0A3640]">
-            {isCreatePanelOpen || created ? 'Fechar cadastro' : 'Novo usuário'}
+            {isCreatePanelOpen || created ? 'Fechar cadastro' : 'Novo usuÃ¡rio'}
           </Button>
           <Button type="button" variant="outline" onClick={() => void loadUsers()} disabled={isLoading} className="rounded-2xl border-[#D8E6EB] bg-white font-bold text-[#5f7077] hover:border-[#1398B7]/40 hover:text-[#163138]">
             {isLoading ? 'Atualizando...' : 'Atualizar lista'}
@@ -378,7 +385,7 @@ Essa a\u00E7\u00E3o remove o acesso e os dados vinculados de forma permanente.`)
 
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
         <article className="rounded-[26px] border border-[#D8E6EB] bg-[#F2F7F9] p-5">
-          <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#5F7077]">Usuários</p>
+          <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#5F7077]">UsuÃ¡rios</p>
           <p className="mt-3 text-3xl font-black text-[#15323b]">{summary.total}</p>
         </article>
         <article className="rounded-[26px] border border-[#D9F0F5] bg-[#E8F6FA] p-5">
@@ -399,119 +406,151 @@ Essa a\u00E7\u00E3o remove o acesso e os dados vinculados de forma permanente.`)
         </article>
       </section>
 
-      <section className={`grid items-start gap-5 ${isCreatePanelOpen || created ? 'xl:grid-cols-[minmax(0,1.1fr)_420px]' : ''}`}>
-        <div className="self-start rounded-[30px] border border-[#D8E6EB] bg-white p-5 shadow-sm">
-          <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_220px]">
-            <label className="block">
-              <span className="sr-only">Buscar usuário</span>
-              <input value={search} onChange={(event) => setSearch(event.target.value)} className="h-12 w-full rounded-2xl border border-[#D8E6EB] bg-[#F2F7F9] px-4 text-sm font-semibold text-[#163138] outline-none transition focus:border-[#1398B7] focus:ring-4 focus:ring-[#1398B7]/10" placeholder="Buscar por nome, e-mail, ID ou regra"/>
-            </label>
+      <section className="rounded-[30px] border border-[#D8E6EB] bg-white p-5 shadow-sm">
+        <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_220px]">
+          <label className="block">
+            <span className="sr-only">Buscar usuÃ¡rio</span>
+            <input value={search} onChange={(event) => setSearch(event.target.value)} className="h-12 w-full rounded-2xl border border-[#D8E6EB] bg-[#F2F7F9] px-4 text-sm font-semibold text-[#163138] outline-none transition focus:border-[#1398B7] focus:ring-4 focus:ring-[#1398B7]/10" placeholder="Buscar por nome, e-mail, ID ou regra"/>
+          </label>
 
-            <label className="block">
-              <span className="sr-only">Filtrar por regra</span>
-              <select value={roleFilter} onChange={(event) => setRoleFilter(event.target.value as RoleFilter)} className="h-12 w-full rounded-2xl border border-[#D8E6EB] bg-[#F2F7F9] px-4 text-sm font-black text-[#163138] outline-none transition focus:border-[#1398B7] focus:ring-4 focus:ring-[#1398B7]/10">
-                {roleFilters.map((filter) => (<option key={filter.value} value={filter.value}>
-                    {filter.label}
-                  </option>))}
-              </select>
-            </label>
-          </div>
-
-          {passwordResetFeedback ? (<div className="mt-5 rounded-[26px] border border-emerald-200 bg-emerald-50 p-4">
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <p className="text-[10px] font-black uppercase tracking-[0.24em] text-emerald-700">E-mail enviado</p>
-                  <p className="mt-1 text-sm font-bold text-emerald-900">
-                    Enviamos um link de redefinição para {passwordResetFeedback.email}.
-                  </p>
-                </div>
-                <Button type="button" variant="outline" onClick={() => setPasswordResetFeedback(null)} className="rounded-2xl border-emerald-300 bg-white text-emerald-800 hover:bg-emerald-100">
-                  Fechar
-                </Button>
-              </div>
-            </div>) : null}
+          <label className="block">
+            <span className="sr-only">Filtrar por regra</span>
+            <select value={roleFilter} onChange={(event) => setRoleFilter(event.target.value as RoleFilter)} className="h-12 w-full rounded-2xl border border-[#D8E6EB] bg-[#F2F7F9] px-4 text-sm font-black text-[#163138] outline-none transition focus:border-[#1398B7] focus:ring-4 focus:ring-[#1398B7]/10">
+              {roleFilters.map((filter) => (<option key={filter.value} value={filter.value}>
+                  {filter.label}
+                </option>))}
+            </select>
+          </label>
         </div>
 
-        {isCreatePanelOpen || created ? (<div className="self-start rounded-[30px] border border-[#D8E6EB] bg-[#F2F7F9] p-5 shadow-sm">
-          {created ? (<div className="space-y-4">
+        {passwordResetFeedback ? (<div className="mt-5 rounded-[26px] border border-emerald-200 bg-emerald-50 p-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <p className="text-[10px] font-black uppercase tracking-[0.24em] text-emerald-600">Usuário criado</p>
-                <h3 className="mt-1 font-readex text-xl font-semibold text-emerald-950">
-                  {getPrimaryRoleLabel(created.role_code)} cadastrado
-                </h3>
-                <p className="mt-2 text-sm font-semibold text-emerald-800">{created.email}</p>
+                <p className="text-[10px] font-black uppercase tracking-[0.24em] text-emerald-700">E-mail enviado</p>
+                <p className="mt-1 text-sm font-bold text-emerald-900">
+                  Enviamos um link de redefiniÃ§Ã£o para {passwordResetFeedback.email}.
+                </p>
               </div>
-
-              {created.temporary_password ? (<div className="rounded-2xl border border-emerald-100 bg-white p-4">
-                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-600">Senha de acesso</p>
-                  <code className="mt-2 block overflow-x-auto rounded-xl bg-emerald-50 px-3 py-2 font-mono text-sm font-black text-emerald-800">
-                    {created.temporary_password}
-                  </code>
-                  <Button type="button" size="sm" onClick={() => void copyText(created.temporary_password ?? '', () => undefined)} className="mt-3 rounded-2xl bg-emerald-600 hover:bg-emerald-700">
-                    Copiar senha
-                  </Button>
-                </div>) : (<p className="rounded-2xl border border-emerald-100 bg-white p-4 text-sm font-bold text-emerald-800">
-                  Senha definida manualmente no cadastro.
-                </p>)}
-
-              <Button type="button" onClick={() => {
-                    setCreated(null);
-                    setIsCreatePanelOpen(true);
-                }} className="w-full rounded-2xl bg-[#15323b] hover:bg-[#0f252d]">
-                Cadastrar outro usuário
+              <Button type="button" variant="outline" onClick={() => setPasswordResetFeedback(null)} className="rounded-2xl border-emerald-300 bg-white text-emerald-800 hover:bg-emerald-100">
+                Fechar
               </Button>
-            </div>) : (<form className="space-y-4" onSubmit={handleSubmit}>
-              <div>
-                <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#1398B7]">Novo usuário</p>
-                <h3 className="mt-1 font-readex text-xl font-semibold text-[#15323b]">Cadastrar acesso</h3>
-              </div>
-
-              <label className="block space-y-2">
-                <span className="text-xs font-black uppercase tracking-[0.2em] text-[#5F7077]">Tipo de usuário</span>
-                <div className="grid gap-2">
-                  {roleOptions.map((role) => {
-                    const isSelected = form.roleCode === role.code;
-                    return (<button key={role.code} type="button" onClick={() => setForm((previous) => ({ ...previous, roleCode: role.code }))} className={`rounded-2xl border p-4 text-left transition ${isSelected
-                            ? 'border-[#1398B7] bg-white shadow-[0_12px_28px_rgba(19,152,183,0.12)]'
-                            : 'border-[#D8E6EB] bg-white/70 hover:border-[#1398B7]/40'}`}>
-                        <span className="font-readex text-sm font-semibold text-[#15323b]">{role.title}</span>
-                        <span className="mt-1 block text-xs font-semibold leading-relaxed text-[#6d7a80]">
-                          {role.description}
-                        </span>
-                      </button>);
-                })}
-                </div>
-              </label>
-
-              <label className="block space-y-2">
-                <span className="text-xs font-black uppercase tracking-[0.2em] text-[#5F7077]">E-mail</span>
-                <input className="h-12 w-full rounded-2xl border border-[#D8E6EB] bg-white px-4 text-sm font-semibold text-[#163138] outline-none transition placeholder:text-[#5F7077] focus:border-[#1398B7] focus:ring-4 focus:ring-[#1398B7]/10" type="email" placeholder="nome@email.com" value={form.email} onChange={(event) => setForm((previous) => ({ ...previous, email: event.target.value }))} required/>
-              </label>
-
-              <label className="block space-y-2">
-                <span className="text-xs font-black uppercase tracking-[0.2em] text-[#5F7077]">Nome completo</span>
-                <input className="h-12 w-full rounded-2xl border border-[#D8E6EB] bg-white px-4 text-sm font-semibold text-[#163138] outline-none transition placeholder:text-[#5F7077] focus:border-[#1398B7] focus:ring-4 focus:ring-[#1398B7]/10" type="text" placeholder="Ex: Joana Lima" value={form.fullName} onChange={(event) => setForm((previous) => ({ ...previous, fullName: event.target.value }))} maxLength={120}/>
-              </label>
-
-              <label className="block space-y-2">
-                <div className="flex items-center justify-between gap-3">
-                  <span className="text-xs font-black uppercase tracking-[0.2em] text-[#5F7077]">Senha</span>
-                  <span className="text-[10px] font-black uppercase tracking-[0.18em] text-[#1398B7]">Gerada se vazio</span>
-                </div>
-                <input className="h-12 w-full rounded-2xl border border-[#D8E6EB] bg-white px-4 text-sm font-semibold text-[#163138] outline-none transition placeholder:text-[#5F7077] focus:border-[#1398B7] focus:ring-4 focus:ring-[#1398B7]/10" type="text" placeholder="Ex: GenFlix@2026!" value={form.password} onChange={(event) => setForm((previous) => ({ ...previous, password: event.target.value }))}/>
-              </label>
-
-              {formError ? (<div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-bold text-red-700">
-                  {formError}
-                </div>) : null}
-
-              <Button type="submit" disabled={isSubmitting} className="h-12 w-full rounded-2xl bg-[#1398B7] font-black hover:bg-[#0A3640]">
-                {isSubmitting ? 'Processando...' : 'Cadastrar usuário'}
-              </Button>
-            </form>)}
-        </div>) : null}
+            </div>
+          </div>) : null}
       </section>
 
+      {isCreatePanelOpen ? (<div className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="admin-user-create-modal-title" onMouseDown={(event) => {
+            if (event.target === event.currentTarget) {
+                closeCreateUserModal();
+            }
+        }}>
+        <div className="relative flex max-h-[90vh] w-full max-w-[760px] flex-col overflow-hidden rounded-[30px] border border-[#D8E6EB] bg-white shadow-[0_30px_90px_rgba(6,27,33,0.24)]">
+          <div className="flex items-start justify-between gap-4 border-b border-[#D8E6EB] bg-[#F2F8FA] px-6 py-5">
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-[0.28em] text-[#1398B7]">Admin / UsuÃ¡rios</p>
+              <h2 id="admin-user-create-modal-title" className="mt-2 font-readex text-2xl font-semibold tracking-tight text-[#15323b]">
+                {created ? 'UsuÃ¡rio criado' : 'Novo usuÃ¡rio'}
+              </h2>
+              <p className="mt-2 text-sm leading-6 text-[#5F7077]">
+                {created ? 'O acesso foi criado com sucesso. VocÃª pode copiar a senha temporÃ¡ria ou iniciar um novo cadastro.' : 'Cadastre um novo acesso com e-mail, nome, senha e tipo de usuÃ¡rio.'}
+              </p>
+            </div>
+
+            <button type="button" onClick={closeCreateUserModal} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#D8E6EB] text-[#5F7077] transition-colors hover:bg-white" aria-label="Fechar modal">
+              <X className="h-4 w-4"/>
+            </button>
+          </div>
+
+          <div className="overflow-y-auto px-6 py-6">
+            {created ? (<div className="space-y-4">
+                <div className="rounded-2xl border border-emerald-100 bg-emerald-50 p-4">
+                  <p className="text-[10px] font-black uppercase tracking-[0.24em] text-emerald-600">UsuÃ¡rio criado</p>
+                  <h3 className="mt-1 font-readex text-xl font-semibold text-emerald-950">
+                    {getPrimaryRoleLabel(created.role_code)} cadastrado
+                  </h3>
+                  <p className="mt-2 text-sm font-semibold text-emerald-800">{created.email}</p>
+                </div>
+
+                {created.temporary_password ? (<div className="rounded-2xl border border-emerald-100 bg-white p-4">
+                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-600">Senha de acesso</p>
+                    <code className="mt-2 block overflow-x-auto rounded-xl bg-emerald-50 px-3 py-2 font-mono text-sm font-black text-emerald-800">
+                      {created.temporary_password}
+                    </code>
+                    <Button type="button" size="sm" onClick={() => void copyText(created.temporary_password ?? '', () => undefined)} className="mt-3 rounded-2xl bg-emerald-600 hover:bg-emerald-700">
+                      Copiar senha
+                    </Button>
+                  </div>) : (<p className="rounded-2xl border border-emerald-100 bg-white p-4 text-sm font-bold text-emerald-800">
+                    Senha definida manualmente no cadastro.
+                  </p>)}
+
+                <div className="flex flex-col gap-3 sm:flex-row sm:justify-between">
+                  <Button type="button" variant="outline" onClick={closeCreateUserModal} className="h-11 rounded-2xl border-[#D8E6EB] bg-white font-black text-[#15323b]">
+                    Fechar
+                  </Button>
+                  <Button type="button" onClick={() => {
+                        setCreated(null);
+                        setForm(initialForm);
+                        setFormError(null);
+                    }} className="h-11 rounded-2xl bg-[#15323b] font-black hover:bg-[#0f252d]">
+                    Cadastrar outro usuário
+                  </Button>
+                </div>
+              </div>) : (<form className="space-y-4" onSubmit={handleSubmit}>
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#1398B7]">Novo usuário</p>
+                  <h3 className="mt-1 font-readex text-xl font-semibold text-[#15323b]">Cadastrar acesso</h3>
+                </div>
+
+                <label className="block space-y-2">
+                  <span className="text-xs font-black uppercase tracking-[0.2em] text-[#5F7077]">Tipo de usuário</span>
+                  <div className="grid gap-2">
+                    {roleOptions.map((role) => {
+                      const isSelected = form.roleCode === role.code;
+                      return (<button key={role.code} type="button" onClick={() => setForm((previous) => ({ ...previous, roleCode: role.code }))} className={`rounded-2xl border p-4 text-left transition ${isSelected
+                              ? 'border-[#1398B7] bg-white shadow-[0_12px_28px_rgba(19,152,183,0.12)]'
+                              : 'border-[#D8E6EB] bg-white/70 hover:border-[#1398B7]/40'}`}>
+                          <span className="font-readex text-sm font-semibold text-[#15323b]">{role.title}</span>
+                          <span className="mt-1 block text-xs font-semibold leading-relaxed text-[#6d7a80]">
+                            {role.description}
+                          </span>
+                        </button>);
+                    })}
+                  </div>
+                </label>
+
+                <label className="block space-y-2">
+                  <span className="text-xs font-black uppercase tracking-[0.2em] text-[#5F7077]">E-mail</span>
+                  <input className="h-12 w-full rounded-2xl border border-[#D8E6EB] bg-white px-4 text-sm font-semibold text-[#163138] outline-none transition placeholder:text-[#5F7077] focus:border-[#1398B7] focus:ring-4 focus:ring-[#1398B7]/10" type="email" placeholder="nome@email.com" value={form.email} onChange={(event) => setForm((previous) => ({ ...previous, email: event.target.value }))} required/>
+                </label>
+
+                <label className="block space-y-2">
+                  <span className="text-xs font-black uppercase tracking-[0.2em] text-[#5F7077]">Nome completo</span>
+                  <input className="h-12 w-full rounded-2xl border border-[#D8E6EB] bg-white px-4 text-sm font-semibold text-[#163138] outline-none transition placeholder:text-[#5F7077] focus:border-[#1398B7] focus:ring-4 focus:ring-[#1398B7]/10" type="text" placeholder="Ex: Joana Lima" value={form.fullName} onChange={(event) => setForm((previous) => ({ ...previous, fullName: event.target.value }))} maxLength={120}/>
+                </label>
+
+                <label className="block space-y-2">
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-xs font-black uppercase tracking-[0.2em] text-[#5F7077]">Senha</span>
+                    <span className="text-[10px] font-black uppercase tracking-[0.18em] text-[#1398B7]">Gerada se vazio</span>
+                  </div>
+                  <input className="h-12 w-full rounded-2xl border border-[#D8E6EB] bg-white px-4 text-sm font-semibold text-[#163138] outline-none transition placeholder:text-[#5F7077] focus:border-[#1398B7] focus:ring-4 focus:ring-[#1398B7]/10" type="text" placeholder="Ex: GenFlix@2026!" value={form.password} onChange={(event) => setForm((previous) => ({ ...previous, password: event.target.value }))}/>
+                </label>
+
+                {formError ? (<div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-bold text-red-700">
+                    {formError}
+                  </div>) : null}
+
+                <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-between">
+                  <Button type="button" variant="outline" onClick={closeCreateUserModal} className="h-11 rounded-2xl border-[#D8E6EB] bg-white font-black text-[#15323b]">
+                    Cancelar
+                  </Button>
+                  <Button type="submit" disabled={isSubmitting} className="h-11 rounded-2xl bg-[#1398B7] px-5 font-black hover:bg-[#0A3640]">
+                    {isSubmitting ? 'Processando...' : 'Cadastrar usuário'}
+                  </Button>
+                </div>
+              </form>)}
+          </div>
+        </div>
+      </div>) : null}
       {error ? (<div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-bold text-red-700">
           {error}
         </div>) : null}
@@ -545,14 +584,14 @@ Essa a\u00E7\u00E3o remove o acesso e os dados vinculados de forma permanente.`)
       <section className="overflow-hidden rounded-[30px] border border-[#D8E6EB] bg-white shadow-sm">
         <div className="border-b border-[#D8E6EB] px-5 py-4">
           <p className="text-sm font-bold text-[#6d7a80]">
-            {filteredUsers.length} usuário(s) encontrado(s)
+            {filteredUsers.length} usuÃ¡rio(s) encontrado(s)
           </p>
         </div>
 
         {isLoading ? (<div className="flex h-44 items-center justify-center">
             <div className="h-9 w-9 animate-spin rounded-full border-4 border-[#1398B7] border-t-transparent"/>
           </div>) : filteredUsers.length === 0 ? (<div className="p-8 text-center text-sm font-bold text-[#5F7077]">
-            Nenhum usuário encontrado com os filtros atuais.
+            Nenhum usuÃ¡rio encontrado com os filtros atuais.
           </div>) : (<div className="overflow-x-auto">
             <table className="w-full min-w-[860px] border-collapse text-sm">
               <thead className="bg-[#F2F7F9]/90 text-left">
