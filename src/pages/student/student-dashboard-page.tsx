@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 
 import { useAuth } from '@/app/providers/auth-provider'
 import { Button } from '@/components/ui/button'
 import { fetchStartedCourseIds, fetchReleasedCourses, fetchStudentCoursesStatusMap, getStudentCourseJourneyStatus, toErrorMessage, type StudentCourseJourneyStatus, type StudentCourseStatus, } from '@/features/student/courses/api'
+import { StudentNotificationsPage } from '@/pages/student/student-notifications-page'
 import type { Course } from '@/types/content'
 
 function getFirstName(fullName: string | null | undefined, email: string | null | undefined) {
@@ -36,6 +37,7 @@ function getLearningActionLabel(journeyStatus: StudentCourseJourneyStatus, hasSt
 
 export function StudentDashboardPage() {
   const { profile } = useAuth()
+  const [searchParams] = useSearchParams()
   const [courses, setCourses] = useState<Course[]>([])
   const [courseStatuses, setCourseStatuses] = useState<Map<string, StudentCourseStatus | null>>(new Map())
   const [startedCourseIds, setStartedCourseIds] = useState<Set<string>>(new Set())
@@ -160,6 +162,12 @@ export function StudentDashboardPage() {
   const featuredCourseLabel = featuredCourse
     ? getLearningActionLabel(getStudentCourseJourneyStatus(courseStatuses.get(featuredCourse.id) ?? null), startedCourseIds.has(featuredCourse.id))
     : null
+
+  const dashboardTab = searchParams.get('tab')
+
+  if (dashboardTab === 'notificacoes' || dashboardTab === 'preferencias') {
+    return <StudentNotificationsPage initialTab={dashboardTab} />
+  }
 
   return (
     <div className="space-y-8">
