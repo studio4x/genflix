@@ -379,22 +379,23 @@ export function PublicBlogPage() {
 
             <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_224px]">
               <div className="space-y-8">
-                <div className="flex flex-col items-center gap-4 text-[#1f2e39]">
-                  <span className="text-base font-medium leading-none sm:text-lg">Filtre por Áreas:</span>
-                  <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-[18px] leading-none sm:gap-x-5 sm:text-[20px]">
+                <div className="mx-auto max-w-[1040px] space-y-4">
+                  <div className="flex flex-wrap items-center justify-center gap-3">
                     <button type="button" onClick={() => {
             setSelectedFilter('all');
             setCurrentPage(1);
-        }} className={cn('rounded-full border px-3 py-1.5 text-[16px] font-semibold leading-none transition-colors sm:text-[17px]', selectedFilter === 'all'
-            ? 'border-[#ff7a00] bg-[#ff7a00] text-white'
-            : 'border-[#ffb57a] bg-[#fff3e8] text-[#ff7a00] hover:border-[#ff7a00] hover:bg-[#ffe6d0]')}>
+        }} className={cn('rounded-full border px-4 py-2 text-sm font-medium transition-colors', selectedFilter === 'all'
+            ? 'border-[#1398B7] bg-[#1398B7] text-white shadow-[0_10px_24px_rgba(19,152,183,0.22)]'
+            : 'border-[#D8E6EB] bg-[#EBF3F5] text-[#15323B] hover:border-[#BEE3EA] hover:bg-[#E1EDF0] hover:text-[#15323B]')}>
                       Todos
                     </button>
 
                     {categoryFilters.map((filter) => (<button key={filter.id} type="button" onClick={() => {
                 setSelectedFilter(filter.id);
                 setCurrentPage(1);
-            }} className={cn('whitespace-nowrap text-[18px] leading-none transition-colors sm:text-[20px]', selectedFilter === filter.id ? 'text-[#ff7a00]' : 'hover:text-[#ff7a00]')}>
+            }} className={cn('rounded-full border px-4 py-2 text-sm font-medium transition-colors', selectedFilter === filter.id
+                ? 'border-[#1398B7] bg-[#1398B7] text-white shadow-[0_10px_24px_rgba(19,152,183,0.22)]'
+                : 'border-[#D8E6EB] bg-[#EBF3F5] text-[#15323B] hover:border-[#BEE3EA] hover:bg-[#E1EDF0] hover:text-[#15323B]')}>
                         {filter.name}
                       </button>))}
                   </div>
