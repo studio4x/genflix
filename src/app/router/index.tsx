@@ -41,6 +41,7 @@ const StudentCoursesPage = lazy(async () => ({ default: (await import('@/pages/s
 const StudentCourseDetailsPage = lazy(async () => ({ default: (await import('@/pages/student/student-course-details-page')).StudentCourseDetailsPage }));
 const StudentPaymentsPage = lazy(async () => ({ default: (await import('@/pages/student/student-payments-page')).StudentPaymentsPage }));
 const StudentAccountPage = lazy(async () => ({ default: (await import('@/pages/student/student-account-page')).StudentAccountPage }));
+const StudentNotificationsPage = lazy(async () => ({ default: (await import('@/pages/student/student-notifications-page')).StudentNotificationsPage }));
 const StudentSupportTicketsPage = lazy(async () => ({ default: (await import('@/pages/student/student-support-tickets-page')).StudentSupportTicketsPage }));
 const CreatorSupportTicketsPage = lazy(async () => ({ default: (await import('@/pages/creator/creator-support-tickets-page')).CreatorSupportTicketsPage }));
 const CreatorNotificationsPage = lazy(async () => ({ default: (await import('@/pages/creator/creator-notifications-page')).CreatorNotificationsPage }));
@@ -339,7 +340,7 @@ const appRoutes = [
                     },
                     {
                         path: '/aluno/notificacoes',
-                        element: <Navigate to="/aluno/dashboard?tab=notificacoes" replace/>,
+                        element: withRouteSuspense(<StudentNotificationsPage />),
                     },
                 ],
             },

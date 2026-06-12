@@ -48,7 +48,7 @@ const studentLinks = [
       </svg>),
     },
     {
-        to: '/aluno/dashboard?tab=notificacoes',
+        to: '/aluno/notificacoes',
         label: 'Notificações',
         description: 'Canais e preferências',
         icon: (<svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
