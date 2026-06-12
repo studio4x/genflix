@@ -86,6 +86,7 @@ export function PublicCoursesPage() {
   const [currentPage, setCurrentPage] = useState(1)
   const [courses, setCourses] = useState<GenflixCourseItem[]>([])
   const [configuredCategories, setConfiguredCategories] = useState<PublicCourseCategoryFilter[]>([])
+  const [hasLoadedCourses, setHasLoadedCourses] = useState(false)
   const coursesSections = useEditableValue('courses.layout.sections', coursesLayoutFallback, { pageKey: 'courses' })
   const searchPlaceholder = useEditableValue('courses.search.placeholder', 'Buscar curso, area ou instrutor...', { pageKey: 'courses' })
   const selectedFilterSlug = categorySlug ? slugifyCourseCategoryValue(categorySlug) : 'all'
@@ -102,6 +103,10 @@ export function PublicCoursesPage() {
       } catch {
         if (isMounted) {
           setCourses([])
+        }
+      } finally {
+        if (isMounted) {
+          setHasLoadedCourses(true)
         }
       }
     }
@@ -157,7 +162,7 @@ export function PublicCoursesPage() {
   }, [selectedFilterSlug])
 
   useEffect(() => {
-    if (availableFilters.length === 0 || selectedFilterSlug === 'all') {
+    if (!hasLoadedCourses || availableFilters.length === 0 || selectedFilterSlug === 'all') {
       return
     }
 
@@ -165,7 +170,7 @@ export function PublicCoursesPage() {
     if (!hasMatch) {
       navigate('/cursos', { replace: true })
     }
-  }, [availableFilters, navigate, selectedFilterSlug])
+  }, [availableFilters, hasLoadedCourses, navigate, selectedFilterSlug])
 
   const filteredCourses = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase()
