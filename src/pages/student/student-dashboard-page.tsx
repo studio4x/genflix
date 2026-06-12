@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+﻿import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/app/providers/auth-provider';
 import { Button } from '@/components/ui/button';
@@ -109,8 +109,8 @@ export function StudentDashboardPage() {
             .slice(0, 2)
             .map((course) => ({
             id: `progress-${course.id}`,
-            title: "Retomar contedo",
-            description: `Continue de onde voc parou em ${course.title}.`,
+            title: 'Retomar conteúdo',
+            description: `Continue de onde você parou em ${course.title}.`,
             to: `/aluno/cursos/${course.id}`,
             cta: 'Continuar',
             tone: 'blue' as const,
@@ -122,8 +122,8 @@ export function StudentDashboardPage() {
         return [
             {
                 id: 'catalog',
-                title: 'Explorar o catalogo',
-                description: "Revise seus treinamentos liberados e escolha o melhor prximo passo.",
+                title: 'Explorar o catálogo',
+                description: 'Revise seus treinamentos liberados e escolha o melhor próximo passo.',
                 to: '/aluno/cursos',
                 cta: 'Ver cursos',
                 tone: 'slate' as const,
@@ -168,14 +168,14 @@ export function StudentDashboardPage() {
               Painel do Aluno
             </div>
             <div className="space-y-3">
-              <h2 className="text-4xl font-black tracking-tight text-slate-900 sm:text-5xl">N?otificações</h2>
+              <h2 className="text-4xl font-black tracking-tight text-slate-900 sm:text-5xl">Notifica??es</h2>
               <p className="max-w-3xl text-lg leading-relaxed text-slate-600">
                 Consulte avisos transacionais e comunicados enviados pela plataforma sem sair do painel.
               </p>
             </div>
             <div className="flex flex-wrap gap-3">
               {renderTabButton('resumo', 'Resumo')}
-              {renderTabButton('notificacoes', "N?otifica\u00E7\u00F5es")}
+              {renderTabButton('notificacoes', 'Notificações')}
               {renderTabButton('preferencias', 'Preferências')}
             </div>
           </div>
@@ -199,7 +199,7 @@ export function StudentDashboardPage() {
             </div>
             <div className="flex flex-wrap gap-3">
               {renderTabButton('resumo', 'Resumo')}
-              {renderTabButton('notificacoes', "N?otifica\u00E7\u00F5es")}
+              {renderTabButton('notificacoes', 'Notificações')}
               {renderTabButton('preferencias', 'Preferências')}
             </div>
           </div>
@@ -225,7 +225,7 @@ export function StudentDashboardPage() {
             </p>
             <div className="flex flex-wrap gap-3 pt-2">
               {renderTabButton('resumo', 'Resumo')}
-              {renderTabButton('notificacoes', "N?otifica\u00E7\u00F5es")}
+              {renderTabButton('notificacoes', 'Notificações')}
               {renderTabButton('preferencias', 'Preferências')}
             </div>
           </div>
@@ -266,7 +266,7 @@ export function StudentDashboardPage() {
         <div className="space-y-6">
           <article className="hidden rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
             <div>
-              <p className="text-[10px] font-black uppercase tracking-[0.24em] text-slate-400">Aten??o imediata</p>
+              <p className="text-[10px] font-black uppercase tracking-[0.24em] text-slate-400">Atenção imediata</p>
               <h3 className="mt-2 text-2xl font-black tracking-tight text-slate-900">O que vale priorizar agora</h3>
             </div>
 
@@ -335,7 +335,7 @@ export function StudentDashboardPage() {
 
           <article className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm">
             <div>
-              <p className="text-[10px] font-black uppercase tracking-[0.24em] text-slate-400">Dest?que</p>
+              <p className="text-[10px] font-black uppercase tracking-[0.24em] text-slate-400">Destaque</p>
               <h3 className="mt-2 text-2xl font-black tracking-tight text-slate-900">Próximos cursos recomendados</h3>
             </div>
 

@@ -339,7 +339,7 @@ const appRoutes = [
                     },
                     {
                         path: '/aluno/notificacoes',
-                        element: <Navigate to="/aluno/dashboardtab=notificacoes" replace/>,
+                        element: <Navigate to="/aluno/dashboard?tab=notificacoes" replace/>,
                     },
                 ],
             },
