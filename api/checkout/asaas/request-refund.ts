@@ -78,7 +78,7 @@ function getAsaasRefundError(payload: unknown) {
     if (typeof typed.message === 'string' && typed.message.trim().length > 0) {
         return typed.message.trim();
     }
-    const description = typed.errors.[0].description;
+    const description = typed.errors?.[0]?.description;
     if (typeof description === 'string' && description.trim().length > 0) {
         return description.trim();
     }
@@ -93,13 +93,13 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
         jsonResponse(res, 405, { error: "M?todo no permitido." });
         return;
     }
-    const supabaseUrl = process.env.VITE_SUPABASE_URL  process.env.SUPABASE_URL;
+    const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
     const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
     if (!supabaseUrl || !serviceRoleKey) {
         jsonResponse(res, 500, { error: "Configura??o do Supabase ausente." });
         return;
     }
-    const accessToken = getBearerToken(getHeaderValue(req.headers.authorization)  getHeaderValue(req.headers.Authorization));
+    const accessToken = getBearerToken(getHeaderValue(req.headers.authorization) || getHeaderValue(req.headers.Authorization));
     if (!accessToken) {
         jsonResponse(res, 401, { error: "Token ausente ou inv?lido." });
         return;
@@ -107,7 +107,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
     const body = parseBody(req.body);
     const parsed = requestSchema.safeParse(body);
     if (!parsed.success) {
-        jsonResponse(res, 400, { error: parsed.error.issues[0].message  "Dados inv?lidos." });
+        jsonResponse(res, 400, { error: parsed.error.issues[0]?.message || 'Dados invalidos.' });
         return;
     }
     const adminClient = createClient(supabaseUrl, serviceRoleKey, {
@@ -156,7 +156,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
         jsonResponse(res, 409, { error: 'Apenas pedidos pagos podem solicitar reembolso.' });
         return;
     }
-    const referenceDate = checkout.released_at  checkout.created_at;
+    const referenceDate = checkout.released_at || checkout.created_at;
     if (!canRefundWithinWindow(referenceDate)) {
         jsonResponse(res, 409, { error: 'O prazo de 7 dias para solicitar reembolso deste pedido ja expirou.' });
         return;
@@ -171,12 +171,12 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
         return;
     }
     const nowIso = new Date().toISOString();
-    const requestedReason = parsed.data.reason.trim()  '';
+    const requestedReason = parsed.data.reason?.trim() || '';
     const refundDescription = requestedReason.length > 0
-         requestedReason.slice(0, 240)
-        : "Solicitacao automtica de reembolso via painel do aluno.";
-    const courseRelation = Array.isArray(checkout.courses)  checkout.courses[0] : checkout.courses;
-    const courseTitle = courseRelation.title.trim() || "Curso sem ttulo";
+        ? requestedReason.slice(0, 240)
+        : 'Solicitacao automatica de reembolso via painel do aluno.';
+    const courseRelation = Array.isArray(checkout.courses) ? checkout.courses[0] : checkout.courses;
+    const courseTitle = courseRelation?.title?.trim() || 'Curso sem titulo';
     const asaasRefundResponse = await fetch(`${getAsaasBaseUrl(checkout.gateway_environment)}/v3/payments/${checkout.external_payment_id}/refund`, {
         method: 'POST',
         headers: {
@@ -190,7 +190,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
     const asaasRefundPayload = await asaasRefundResponse.json().catch(() => null) as unknown;
     if (!asaasRefundResponse.ok) {
         jsonResponse(res, 502, {
-            error: getAsaasRefundError(asaasRefundPayload)  "No foi possvel processar o estorno autom?tico no gateway de pagamento.",
+            error: getAsaasRefundError(asaasRefundPayload) || 'Nao foi possivel processar o estorno automatico no gateway de pagamento.',
         });
         return;
     }
@@ -199,11 +199,11 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
         .update({
         status: 'refund_pending',
         raw_response: {
-            ...(checkout.raw_response  {}),
+            ...(checkout.raw_response || {}),
             refundRequest: {
                 requestedAt: nowIso,
                 description: refundDescription,
-                gatewayResponse: asaasRefundPayload  {},
+                gatewayResponse: asaasRefundPayload || {},
                 source: 'student_dashboard',
             },
         },
@@ -211,7 +211,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
     })
         .eq('id', checkout.id);
     if (updateSessionResult.error) {
-        jsonResponse(res, 500, { error: "No foi possvel registrar a solicitao de reembolso." });
+        jsonResponse(res, 500, { error: 'Nao foi possivel registrar a solicitacao de reembolso.' });
         return;
     }
     await adminClient.rpc('cancel_creator_commission_for_checkout', {
@@ -235,7 +235,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
     jsonResponse(res, 200, {
         ok: true,
         status: 'refund_pending',
-        message: `Estorno solicitado automticamente para o curso ${courseTitle}.`,
+        message: `Estorno solicitado automaticamente para o curso ${courseTitle}.`,
         supportTicketId: null,
     });
 }
