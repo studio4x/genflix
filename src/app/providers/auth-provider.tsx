@@ -271,7 +271,8 @@ export function AuthProvider({ children }: {
         setProfile(nextProfile);
     }, []);
     const updateProfile = useCallback(async (payload: UpdateProfileInput) => {
-        if (!currentUserIdRef.current) {
+        const currentSession = session ?? (await supabase.auth.getSession()).data.session;
+        if (!currentUserIdRef.current || !currentSession?.access_token) {
             throw new Error('Usuário não autenticado.');
         }
         const nextPayload = {
@@ -318,19 +319,28 @@ export function AuthProvider({ children }: {
         if (Object.keys(nextPayload).length === 0) {
             throw new Error('Nenhuma alteracao de perfil foi informada.');
         }
-        const result = await supabase
-            .from('profiles')
-            .update(nextPayload)
-            .eq('id', currentUserIdRef.current)
-            .select('id, email, full_name, avatar_url, cpf, whatsapp_number, address, address_number, address_complement, postal_code, state, province, city, timezone, locale')
-            .single();
-        if (result.error) {
-            throw result.error;
+        const response = await fetch('/api/account/profile', {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${currentSession.access_token}`,
+            },
+            body: JSON.stringify(nextPayload),
+        });
+        const result = (await response.json().catch(() => null)) as {
+            error?: string;
+            profile?: Profile;
+        } | null;
+        if (!response.ok) {
+            throw new Error(result?.error ?? 'Não foi possível atualizar o perfil.');
         }
-        const nextProfile = result.data as Profile;
+        const nextProfile = result?.profile ?? null;
+        if (!nextProfile) {
+            throw new Error('Não foi possível atualizar o perfil.');
+        }
         setProfile(nextProfile);
         return nextProfile;
-    }, []);
+    }, [session]);
     const value = useMemo<AuthContextValue>(() => ({
         isLoading,
         user,

@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { brazilStateOptions, useBrazilCities } from '@/features/address/brazil-address';
 import { useBrazilCepLookup } from '@/features/address/brazil-cep';
 import { uploadProfileAvatar } from '@/features/account/avatar-api';
+import { formatCpf, isValidCpf, normalizeCpfDigits } from '@/features/document/cpf';
 const localeOptions = [
     { value: 'pt-BR', label: 'Português (Brasil)' },
     { value: 'en-US', label: 'English (United States)' },
@@ -22,28 +23,12 @@ function normalizeFullName(value: string) {
     const trimmed = value.trim();
     return trimmed.length > 0 ? trimmed : null;
 }
-function normalizeDigits(value: string) {
-    return value.replace(/\D/g, '');
-}
 function normalizeText(value: string) {
     const trimmed = value.trim();
     return trimmed.length > 0 ? trimmed : '';
 }
-function formatCpf(value: string) {
-    const digits = normalizeDigits(value).slice(0, 11);
-    if (digits.length <= 3) {
-        return digits;
-    }
-    if (digits.length <= 6) {
-        return `${digits.slice(0, 3)}.${digits.slice(3)}`;
-    }
-    if (digits.length <= 9) {
-        return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6)}`;
-    }
-    return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9)}`;
-}
 function formatPhone(value: string) {
-    const digits = normalizeDigits(value).slice(0, 11);
+    const digits = value.replace(/\D/g, '').slice(0, 11);
     if (digits.length <= 2) {
         return digits.length > 0 ? `(${digits}` : '';
     }
@@ -56,7 +41,7 @@ function formatPhone(value: string) {
     return `(${ddd}) ${remaining.slice(0, firstPartLength)}-${remaining.slice(firstPartLength)}`;
 }
 function formatPostalCode(value: string) {
-    const digits = normalizeDigits(value).slice(0, 8);
+    const digits = value.replace(/\D/g, '').slice(0, 8);
     if (digits.length <= 5) {
         return digits;
     }
@@ -83,6 +68,7 @@ export function StudentAccountPage() {
     const [confirmPassword, setConfirmPassword] = useState('');
     const [profileError, setProfileError] = useState<string | null>(null);
     const [profileMessage, setProfileMessage] = useState<string | null>(null);
+    const [cpfFieldError, setCpfFieldError] = useState(false);
     const [passwordError, setPasswordError] = useState<string | null>(null);
     const [passwordMessage, setPasswordMessage] = useState<string | null>(null);
     const [avatarMessage, setAvatarMessage] = useState<string | null>(null);
@@ -123,15 +109,15 @@ export function StudentAccountPage() {
             return false;
         }
         return (normalizeFullName(fullName) !== profile.full_name ||
-            normalizeDigits(cpf) !== normalizeDigits(profile.cpf ?? '') ||
-            normalizeDigits(whatsAppNumber) !== normalizeDigits(profile.whatsapp_number ?? '') ||
+            normalizeCpfDigits(cpf) !== normalizeCpfDigits(profile.cpf ?? '') ||
+            whatsAppNumber.replace(/\D/g, '') !== (profile.whatsapp_number ?? '').replace(/\D/g, '') ||
             normalizeText(address) !== (profile.address ?? '') ||
             normalizeText(addressNumber) !== (profile.address_number ?? '') ||
             normalizeText(addressComplement) !== (profile.address_complement ?? '') ||
-            normalizeDigits(postalCode) !== normalizeDigits(profile.postal_code ?? '') ||
+            postalCode.replace(/\D/g, '') !== (profile.postal_code ?? '').replace(/\D/g, '') ||
             normalizeStateCode(state) !== (profile.state ?? '') ||
             normalizeText(province) !== (profile.province ?? '') ||
-            normalizeDigits(city) !== normalizeDigits(profile.city ?? '') ||
+            city.replace(/\D/g, '') !== (profile.city ?? '').replace(/\D/g, '') ||
             locale !== profile.locale ||
             timezone !== profile.timezone);
     }, [
@@ -153,23 +139,30 @@ export function StudentAccountPage() {
         event.preventDefault();
         setProfileError(null);
         setProfileMessage(null);
+        setCpfFieldError(false);
         if (!profile) {
             setProfileError('Perfil do aluno não carregado.');
+            return;
+        }
+        const normalizedCpf = normalizeCpfDigits(cpf);
+        if (normalizedCpf.length > 0 && !isValidCpf(normalizedCpf)) {
+            setCpfFieldError(true);
+            setProfileError('CPF inválido.');
             return;
         }
         setIsSavingProfile(true);
         try {
             await updateProfile({
                 full_name: normalizeFullName(fullName),
-                cpf: normalizeDigits(cpf) || null,
-                whatsapp_number: normalizeDigits(whatsAppNumber) || null,
+                cpf: normalizedCpf || null,
+                whatsapp_number: whatsAppNumber.replace(/\D/g, '') || null,
                 address: normalizeText(address) || null,
                 address_number: normalizeText(addressNumber) || null,
                 address_complement: normalizeText(addressComplement) || null,
-                postal_code: normalizeDigits(postalCode) || null,
+                postal_code: postalCode.replace(/\D/g, '') || null,
                 state: normalizeStateCode(state) || null,
                 province: normalizeText(province) || null,
-                city: normalizeDigits(city) || null,
+                city: city.replace(/\D/g, '') || null,
                 locale,
                 timezone,
             });
@@ -178,6 +171,7 @@ export function StudentAccountPage() {
         catch (submitError) {
             const message = submitError instanceof Error ? submitError.message : 'Falha ao atualizar os dados.';
             setProfileError(message);
+            setCpfFieldError(message === 'CPF inválido.');
         }
         finally {
             setIsSavingProfile(false);
@@ -284,9 +278,12 @@ export function StudentAccountPage() {
 
             <label className="block space-y-2">
               <span className="text-sm font-bold text-slate-700">CPF</span>
-              <input className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm font-medium text-slate-800 outline-none transition focus:border-blue-400 focus:bg-white" type="text" inputMode="numeric" value={cpf} onChange={(event) => setCpf(formatCpf(event.target.value))} placeholder="000.000.000-00" autoComplete="off"/>
-              <p className="text-xs font-medium text-slate-500">
-                O CPF sera usado no checkout e na validacao cadastral da conta.
+              <input className={`h-12 w-full rounded-2xl border bg-slate-50 px-4 text-sm font-medium text-slate-800 outline-none transition focus:bg-white ${cpfFieldError ? 'border-red-400 focus:border-red-500' : 'border-slate-200 focus:border-blue-400'}`} type="text" inputMode="numeric" value={cpf} onChange={(event) => {
+            setCpfFieldError(false);
+            setCpf(formatCpf(event.target.value));
+        }} placeholder="000.000.000-00" autoComplete="off" aria-invalid={cpfFieldError || undefined}/>
+              <p className={`text-xs font-medium ${cpfFieldError ? 'text-red-600' : 'text-slate-500'}`}>
+                {cpfFieldError ? 'CPF inválido.' : 'O CPF sera usado no checkout e na validacao cadastral da conta.'}
               </p>
             </label>
 
