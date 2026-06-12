@@ -126,6 +126,14 @@ function resolveHomeSectionPageKey(item: EditableListItem): SitePageKey {
     }
     return 'home';
 }
+
+function resolveHomeCategoryHref(item: EditableListItem) {
+    return typeof item.href === 'string' ? item.href.trim() : '';
+}
+
+function isExternalHref(href: string) {
+    return /^https?:\/\//i.test(href) || href.startsWith('//');
+}
 function HomeStructureControl({ sections }: {
     sections: EditableListItem[];
 }) {
@@ -190,7 +198,8 @@ function HomeCategoriesSection({ entryPrefix, pageKey = 'home', }: {
                 : typeof item.metadata?.iconSize === 'string'
                     ? Math.min(36, Math.max(12, Math.round(Number(item.metadata.iconSize) || 20)))
                     : 20;
-            return (<article key={item.id} className="min-h-[124px] w-[145px] rounded-[4px] bg-[linear-gradient(180deg,#1BA8C5_0%,#0A3640_100%)] px-4 py-4 text-white shadow-[0_18px_30px_rgba(10,54,64,0.14)] sm:w-[150px]">
+            const href = resolveHomeCategoryHref(item);
+            const cardContent = (<article className="min-h-[124px] w-[145px] rounded-[4px] bg-[linear-gradient(180deg,#1BA8C5_0%,#0A3640_100%)] px-4 py-4 text-white shadow-[0_18px_30px_rgba(10,54,64,0.14)] sm:w-[150px]">
                     <div className="flex h-11 w-11 items-center justify-center text-white/95">
                       {renderSiteIconVisual({
                     iconKey,
@@ -204,6 +213,17 @@ function HomeCategoriesSection({ entryPrefix, pageKey = 'home', }: {
                     </div>
                     <p className="mt-3 text-[15px] font-semibold leading-6 tracking-[-0.02em]">{item.label}</p>
                   </article>);
+            if (!href) {
+                return <div key={item.id}>{cardContent}</div>;
+            }
+            if (isExternalHref(href)) {
+                return (<a key={item.id} href={href} target="_blank" rel="noreferrer" className="block">
+                    {cardContent}
+                  </a>);
+            }
+            return (<Link key={item.id} to={href} className="block">
+                {cardContent}
+              </Link>);
         })}
             </EditableList>
           </div>
