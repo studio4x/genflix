@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/app/providers/auth-provider';
 import { BannerPlacementSlot } from '@/features/banners/banner-placement-slot';
@@ -5,7 +6,8 @@ import { GenflixCtaButton, normalizeGenflixCtaTone } from '@/components/public/g
 import { GenflixCourseCard } from '@/components/public/genflix-course-card';
 import { GenflixPublicFooter } from '@/components/public/genflix-public-footer';
 import { GenflixPublicHeader } from '@/components/public/genflix-public-header';
-import { genflixCategoryTiles, genflixFeaturedCourses, genflixNavLinks, } from '@/features/public/genflix-site-content';
+import { genflixCategoryTiles, genflixNavLinks, type GenflixCourseItem, } from '@/features/public/genflix-site-content';
+import { fetchLatestPublicCoursesFromSupabase } from '@/features/public/genflix-public-content-api';
 import { EditableContainer, EditableButton, EditableList, EditableText, isEditableItemVisible, useEditableValue, useSiteContentScope, useVisualEditorState, } from '@/features/site-editor/visual-editor';
 import { renderSiteIconVisual } from '@/features/site-editor/site-icons';
 import type { EditableListItem, SitePageKey } from '@/features/site-editor/types';
@@ -215,6 +217,37 @@ function HomeFeaturedSection({ entryPrefix, sectionId, pageKey = 'home', }: {
     pageKey?: SitePageKey;
 }) {
     const legacyFeaturedCtaLabel = useEditableValue(`${entryPrefix}.cta`, 'Conheca todos os cursos', { pageKey });
+    const [featuredCourses, setFeaturedCourses] = useState<GenflixCourseItem[]>([]);
+    const [isLoadingCourses, setIsLoadingCourses] = useState(true);
+    const [coursesError, setCoursesError] = useState(false);
+    useEffect(() => {
+        let isMounted = true;
+        async function loadCourses() {
+            setIsLoadingCourses(true);
+            setCoursesError(false);
+            try {
+                const courses = await fetchLatestPublicCoursesFromSupabase(6);
+                if (isMounted) {
+                    setFeaturedCourses(courses);
+                }
+            }
+            catch {
+                if (isMounted) {
+                    setFeaturedCourses([]);
+                    setCoursesError(true);
+                }
+            }
+            finally {
+                if (isMounted) {
+                    setIsLoadingCourses(false);
+                }
+            }
+        }
+        void loadCourses();
+        return () => {
+            isMounted = false;
+        };
+    }, []);
     return (<section id={sectionId} className="bg-white py-16 sm:py-20">
       <div className="public-site-container">
         <EditableContainer entryKey={`${entryPrefix}.header.wrap`} label="Container interno do cabealho de novidades" pageKey={pageKey}>
@@ -238,9 +271,18 @@ function HomeFeaturedSection({ entryPrefix, sectionId, pageKey = 'home', }: {
         </EditableContainer>
 
         <EditableContainer entryKey={`${entryPrefix}.grid.wrap`} label="Container interno da grade de novidades" pageKey={pageKey}>
-          <div className="mt-10 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-          {genflixFeaturedCourses.map((course) => (<GenflixCourseCard key={course.slug} course={course}/>))}
-        </div>
+          {isLoadingCourses ? (<div className="mt-10 rounded-[4px] border border-dashed border-[#D8E6EB] bg-[#F2F8FA] px-6 py-12 text-center text-sm font-semibold text-[#5F7077]">
+              Carregando cursos publicados...
+            </div>) : featuredCourses.length > 0 ? (<div className="mt-10 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+              {featuredCourses.map((course) => (<GenflixCourseCard key={course.slug} course={course}/>))}
+            </div>) : (<div className="mt-10 rounded-[4px] border border-dashed border-[#D8E6EB] bg-[#F2F8FA] px-6 py-12 text-center">
+              <p className="text-lg font-bold text-[#15323B]">Nenhum curso publicado ainda.</p>
+              <p className="mt-3 text-sm text-[#5F7077]">
+                {coursesError
+                    ? 'Não foi possível carregar os cursos agora.'
+                    : 'Assim que houver publicações, elas aparecerão aqui em ordem da mais recente para a mais antiga.'}
+              </p>
+            </div>)}
         </EditableContainer>
       </div>
     </section>);
