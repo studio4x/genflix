@@ -283,16 +283,26 @@ export function PublicCoursesPage() {
                     </div>
 
                     {filteredCourses.length === 0 ? (
-                      <div className="mt-10 rounded-[24px] border border-dashed border-[#D8E6EB] bg-[#F2F8FA] px-6 py-12 text-center">
-                        <p className="text-lg font-bold text-[#183139]">Nenhum curso encontrado com esse filtro.</p>
-                        <p className="mt-3 text-sm text-[#6d7f85]">
+                      <div className="mt-10 overflow-hidden rounded-[24px] border border-dashed border-[#D8E6EB] bg-[#F2F8FA] text-center shadow-[0_18px_40px_rgba(21,50,59,0.05)]">
+                        <div className="bg-white/70 px-4 pt-4 sm:px-6 sm:pt-6">
+                          <img
+                            src="/images/genflix/nao-ha-cursos.jpeg"
+                            alt="Nenhum curso disponível nesta categoria"
+                            className="mx-auto w-full max-w-[560px] rounded-[20px] object-cover"
+                            loading="lazy"
+                          />
+                        </div>
+                        <div className="px-6 py-10 sm:px-10">
+                          <p className="text-lg font-bold text-[#183139]">Nenhum curso encontrado com esse filtro.</p>
+                          <p className="mt-3 text-sm text-[#6d7f85]">
                           <EditableText
                             entryKey="courses.empty.description"
                             fallback="Tente outra palavra-chave ou escolha uma categoria diferente."
                             label="Mensagem sem cursos"
                             pageKey={sectionPageKey}
                           />
-                        </p>
+                          </p>
+                        </div>
                       </div>
                     ) : null}
 
