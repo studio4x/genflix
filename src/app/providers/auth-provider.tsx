@@ -45,6 +45,20 @@ function extractRoles(data: RoleRelationRow[]): RoleCode[] {
         .filter((code): code is RoleCode => KNOWN_ROLE_CODES.has(code as RoleCode));
     return Array.from(new Set(roleCodes));
 }
+function toProfileUpdateError(error: {
+    message?: string | null;
+    details?: string | null;
+    hint?: string | null;
+}) {
+    const rawMessage = [error.message, error.details, error.hint]
+        .filter((value): value is string => typeof value === 'string' && value.trim().length > 0)
+        .join(' ')
+        .toLowerCase();
+    if (rawMessage.includes('cpf') && (rawMessage.includes('invalid') || rawMessage.includes('inválido') || rawMessage.includes('invalido'))) {
+        return new Error('CPF inválido.');
+    }
+    return new Error(error.message || 'Não foi possível atualizar o perfil.');
+}
 async function loadProfileAndRoles(userId: string) {
     const [profileResult, rolesResult] = await Promise.all([
         supabase
@@ -325,7 +339,7 @@ export function AuthProvider({ children }: {
             .select('id, email, full_name, avatar_url, cpf, whatsapp_number, address, address_number, address_complement, postal_code, state, province, city, timezone, locale')
             .single();
         if (result.error) {
-            throw result.error;
+            throw toProfileUpdateError(result.error);
         }
         const nextProfile = result.data as Profile;
         setProfile(nextProfile);

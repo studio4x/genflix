@@ -21,7 +21,7 @@ import { GenflixPublicHeader } from '@/components/public/genflix-public-header'
 import { LegalDocumentModal } from '@/components/public/legal-document-modal'
 import { brazilStateOptions, useBrazilCities } from '@/features/address/brazil-address'
 import { resolveBrazilCepAddress, useBrazilCepLookup } from '@/features/address/brazil-cep'
-import { formatCpf } from '@/features/document/cpf'
+import { formatCpf, isValidCpf, normalizeCpfDigits } from '@/features/document/cpf'
 import { fetchPublicCourseDetailFromSupabase } from '@/features/public/genflix-public-content-api'
 import { genflixNavLinks, type GenflixCourseDetail } from '@/features/public/genflix-site-content'
 import { startCourseCheckout } from '@/features/public/courses/api'
@@ -292,9 +292,10 @@ export function PublicCheckoutPage() {
         throw new Error('Entre ou crie sua conta para continuar a compra.')
       }
 
-      const normalizedDocument = checkoutDocument.replace(/\D/g, '')
-      if (normalizedDocument.length !== 11) {
-        throw new Error('Informe um CPF válido para continuar.')
+      const normalizedDocument = normalizeCpfDigits(checkoutDocument)
+      if (!isValidCpf(normalizedDocument)) {
+        setCheckoutCpfFieldError(true)
+        throw new Error('CPF inválido.')
       }
 
       const normalizedPhone = checkoutPhone.replace(/\D/g, '')
@@ -375,7 +376,9 @@ export function PublicCheckoutPage() {
 
       window.location.href = checkoutUrl
     } catch (error) {
-      setCheckoutError(error instanceof Error ? error.message : 'Não foi possível iniciar o checkout.')
+      const message = error instanceof Error ? error.message : 'Não foi possível iniciar o checkout.'
+      setCheckoutCpfFieldError(message === 'CPF inválido.')
+      setCheckoutError(message)
     } finally {
       setIsStartingCheckout(false)
     }
@@ -407,6 +410,7 @@ export function PublicCheckoutPage() {
     setAuthError(null)
     setAuthMessage(null)
     setCheckoutError(null)
+    setCheckoutCpfFieldError(false)
     setIsAuthSubmitting(true)
 
     try {
@@ -460,9 +464,10 @@ export function PublicCheckoutPage() {
       return
     }
 
-    const normalizedDocument = checkoutDocument.replace(/\D/g, '')
-    if (normalizedDocument.length !== 11) {
-      setAuthError('Informe um CPF válido para continuar.')
+    const normalizedDocument = normalizeCpfDigits(checkoutDocument)
+    if (!isValidCpf(normalizedDocument)) {
+      setCheckoutCpfFieldError(true)
+      setAuthError('CPF inválido.')
       return
     }
 
@@ -541,7 +546,9 @@ export function PublicCheckoutPage() {
 
       window.location.href = checkoutUrl
     } catch (submitError) {
-      setAuthError(submitError instanceof Error ? submitError.message : 'Falha ao criar a conta.')
+      const message = submitError instanceof Error ? submitError.message : 'Falha ao criar a conta.'
+      setCheckoutCpfFieldError(message === 'CPF inválido.')
+      setAuthError(message)
     } finally {
       setIsAuthSubmitting(false)
     }
@@ -751,14 +758,21 @@ export function PublicCheckoutPage() {
                         <label className="block space-y-2">
                           <span className="text-sm font-semibold text-[#4f656c]">CPF</span>
                           <input
-                            className="h-12 w-full rounded-[12px] border border-[#D8E6EB] bg-[#EDF4F6] px-4 text-sm text-[#183139] outline-none transition-colors placeholder:text-[#8BA0A7] focus:border-[#1398B7] focus:bg-white"
+                            className={`h-12 w-full rounded-[12px] border bg-[#EDF4F6] px-4 text-sm text-[#183139] outline-none transition-colors placeholder:text-[#8BA0A7] focus:bg-white ${checkoutCpfFieldError ? 'border-red-400 focus:border-red-500' : 'border-[#D8E6EB] focus:border-[#1398B7]'}`}
                             type="text"
                             value={checkoutDocument}
-                            onChange={(event) => setCheckoutDocument(formatCpf(event.target.value))}
+                            onChange={(event) => {
+                              setCheckoutCpfFieldError(false)
+                              setCheckoutDocument(formatCpf(event.target.value))
+                            }}
                             placeholder="000.000.000-00"
                             inputMode="numeric"
                             autoComplete="off"
+                            aria-invalid={checkoutCpfFieldError || undefined}
                           />
+                          <p className={`text-xs ${checkoutCpfFieldError ? 'text-red-600' : 'text-[#6f838a]'}`}>
+                            {checkoutCpfFieldError ? 'CPF inválido.' : 'Informe o CPF do titular para concluir o pagamento.'}
+                          </p>
                         </label>
 
                         <label className="block space-y-2">
@@ -1072,14 +1086,21 @@ export function PublicCheckoutPage() {
                                 <label className="block space-y-2">
                                   <span className="text-sm font-semibold text-[#4f656c]">CPF</span>
                                   <input
-                                    className="h-11 w-full rounded-[12px] border border-[#D8E6EB] bg-[#EDF4F6] px-4 text-sm text-[#183139] outline-none transition-colors placeholder:text-[#8BA0A7] focus:border-[#1398B7] focus:bg-white"
+                                    className={`h-11 w-full rounded-[12px] border bg-[#EDF4F6] px-4 text-sm text-[#183139] outline-none transition-colors placeholder:text-[#8BA0A7] focus:bg-white ${checkoutCpfFieldError ? 'border-red-400 focus:border-red-500' : 'border-[#D8E6EB] focus:border-[#1398B7]'}`}
                                     type="text"
                                     value={checkoutDocument}
-                                    onChange={(event) => setCheckoutDocument(formatCpf(event.target.value))}
+                                    onChange={(event) => {
+                                      setCheckoutCpfFieldError(false)
+                                      setCheckoutDocument(formatCpf(event.target.value))
+                                    }}
                                     placeholder="000.000.000-00"
                                     inputMode="numeric"
                                     autoComplete="off"
+                                    aria-invalid={checkoutCpfFieldError || undefined}
                                   />
+                                  <p className={`text-xs ${checkoutCpfFieldError ? 'text-red-600' : 'text-[#6f838a]'}`}>
+                                    {checkoutCpfFieldError ? 'CPF inválido.' : 'Informe o CPF do titular para concluir o pagamento.'}
+                                  </p>
                                 </label>
 
                                 <label className="block space-y-2">
