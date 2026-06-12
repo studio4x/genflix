@@ -195,6 +195,10 @@ const appRoutes = [
         element: <PublicEditableRoute pageKey="courses" seo={{ entryKey: "courses.seo", fallback: { title: 'GenFlix | Cursos', description: 'Explore os cursos e trilhas da GenFlix para aprofundar seu conhecimento com mais clareza.', slug: '/cursos', image: '' } }}><PublicCoursesPage /></PublicEditableRoute>,
     },
     {
+        path: '/cursos/categoria/:categorySlug',
+        element: <PublicEditableRoute pageKey="courses" seo={{ entryKey: "courses.seo", fallback: { title: 'GenFlix | Cursos', description: 'Explore os cursos e trilhas da GenFlix para aprofundar seu conhecimento com mais clareza.', slug: '/cursos', image: '' } }}><PublicCoursesPage /></PublicEditableRoute>,
+    },
+    {
         path: '/cursos/:slug',
         element: <PublicEditableRoute pageKey="course-detail" seo={{ entryKey: "course-detail.seo", fallback: { title: 'GenFlix | Detalhes do curso', description: 'Conheça a estrutura, os benefícios e os diferenciais do curso selecionado na GenFlix.', slug: '/cursos', image: '' } }}><PublicCourseDetailsPage /></PublicEditableRoute>,
     },

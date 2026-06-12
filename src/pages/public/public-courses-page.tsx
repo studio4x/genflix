@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import { ChevronLeft, ChevronRight, Search } from 'lucide-react'
 
 import { useAuth } from '@/app/providers/auth-provider'
@@ -16,6 +16,7 @@ import {
 import {
   fetchPublicCourseCategoriesFromSupabase,
   fetchPublicCoursesFromSupabase,
+  type PublicCourseCategoryFilter,
 } from '@/features/public/genflix-public-content-api'
 import {
   genflixStudyFeatureCardsFallback,
@@ -41,6 +42,7 @@ import {
 } from '@/features/site-editor/visual-editor'
 import { renderSiteIconVisual } from '@/features/site-editor/site-icons'
 import { cn } from '@/lib/utils'
+import { slugifyCourseCategoryValue } from '@/features/courses/course-categories'
 
 const COURSES_PER_PAGE = 6
 
@@ -77,14 +79,16 @@ const coursesLayoutSchema = createSectionRegistrySchema({
 
 export function PublicCoursesPage() {
   const { isLoading, user, roles } = useAuth()
+  const navigate = useNavigate()
+  const { categorySlug } = useParams<{ categorySlug?: string }>()
   const waitingRoleResolution = !!user && roles.length === 0
   const [query, setQuery] = useState('')
-  const [selectedFilter, setSelectedFilter] = useState('Todos')
   const [currentPage, setCurrentPage] = useState(1)
   const [courses, setCourses] = useState<GenflixCourseItem[]>([])
-  const [configuredCategories, setConfiguredCategories] = useState<string[]>([])
+  const [configuredCategories, setConfiguredCategories] = useState<PublicCourseCategoryFilter[]>([])
   const coursesSections = useEditableValue('courses.layout.sections', coursesLayoutFallback, { pageKey: 'courses' })
   const searchPlaceholder = useEditableValue('courses.search.placeholder', 'Buscar curso, area ou instrutor...', { pageKey: 'courses' })
+  const selectedFilterSlug = categorySlug ? slugifyCourseCategoryValue(categorySlug) : 'all'
 
   useEffect(() => {
     let isMounted = true
@@ -125,31 +129,43 @@ export function PublicCoursesPage() {
 
   const availableFilters = useMemo(() => {
     if (configuredCategories.length > 0) {
-      return ['Todos', ...configuredCategories]
+      return [{ name: 'Todos', slug: 'all' }, ...configuredCategories]
     }
 
-    const categoriesByKey = new Map<string, string>()
+    const categoriesByKey = new Map<string, PublicCourseCategoryFilter>()
 
     for (const course of courses) {
       const categories = (course.categories?.length ? course.categories : [course.category]).map((category) => category.trim()).filter(Boolean)
       for (const category of categories) {
-        const normalizedCategory = category.toLocaleLowerCase('pt-BR')
-        if (!categoriesByKey.has(normalizedCategory)) {
-          categoriesByKey.set(normalizedCategory, category)
+        const slug = slugifyCourseCategoryValue(category)
+        if (!categoriesByKey.has(slug)) {
+          categoriesByKey.set(slug, {
+            name: category,
+            slug,
+            displayOrder: 0,
+          })
         }
       }
     }
 
-    const categories = [...categoriesByKey.values()].sort((left, right) => left.localeCompare(right, 'pt-BR'))
-    return ['Todos', ...categories]
+    const categories = [...categoriesByKey.values()].sort((left, right) => left.name.localeCompare(right.name, 'pt-BR'))
+    return [{ name: 'Todos', slug: 'all' }, ...categories]
   }, [configuredCategories, courses])
 
   useEffect(() => {
-    if (!availableFilters.includes(selectedFilter)) {
-      setSelectedFilter('Todos')
-      setCurrentPage(1)
+    setCurrentPage(1)
+  }, [selectedFilterSlug])
+
+  useEffect(() => {
+    if (availableFilters.length === 0 || selectedFilterSlug === 'all') {
+      return
     }
-  }, [availableFilters, selectedFilter])
+
+    const hasMatch = availableFilters.some((filter) => filter.slug === selectedFilterSlug)
+    if (!hasMatch) {
+      navigate('/cursos', { replace: true })
+    }
+  }, [availableFilters, navigate, selectedFilterSlug])
 
   const filteredCourses = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase()
@@ -158,10 +174,11 @@ export function PublicCoursesPage() {
       const courseCategories = (course.categories?.length ? course.categories : [course.category])
         .map((category) => category.trim())
         .filter(Boolean)
+      const courseCategorySlugs = courseCategories.map((category) => slugifyCourseCategoryValue(category))
       const matchesFilter =
-        selectedFilter === 'Todos'
+        selectedFilterSlug === 'all'
           ? true
-          : courseCategories.some((category) => category === selectedFilter)
+          : courseCategorySlugs.some((slug) => slug === selectedFilterSlug)
 
       const matchesQuery = normalizedQuery
         ? [course.title, ...courseCategories, course.mentor, course.role]
@@ -172,7 +189,7 @@ export function PublicCoursesPage() {
 
       return matchesFilter && matchesQuery
     })
-  }, [courses, query, selectedFilter])
+  }, [courses, query, selectedFilterSlug])
 
   const pageCount = Math.max(1, Math.ceil(filteredCourses.length / COURSES_PER_PAGE))
   const visibleCurrentPage = Math.min(currentPage, pageCount)
@@ -243,22 +260,18 @@ export function PublicCoursesPage() {
 
                         <div className="flex flex-wrap items-center justify-center gap-3">
                           {availableFilters.map((filter) => (
-                            <button
-                              key={filter}
-                              type="button"
-                              onClick={() => {
-                                setSelectedFilter(filter)
-                                setCurrentPage(1)
-                              }}
+                            <Link
+                              key={filter.slug}
+                              to={filter.slug === 'all' ? '/cursos' : `/cursos/categoria/${filter.slug}`}
                               className={cn(
                                 'rounded-full border px-4 py-2 text-sm font-medium transition-colors',
-                                selectedFilter === filter
+                                selectedFilterSlug === filter.slug
                                   ? 'border-[#1398B7] bg-[#1398B7] text-white shadow-[0_10px_24px_rgba(19,152,183,0.22)]'
                                   : 'border-[#D8E6EB] bg-[#EBF3F5] text-[#15323B] hover:border-[#BEE3EA] hover:bg-[#E1EDF0] hover:text-[#15323B]',
                               )}
                             >
-                              {filter}
-                            </button>
+                              {filter.name}
+                            </Link>
                           ))}
                         </div>
                       </div>

@@ -2,6 +2,22 @@ function trimCategory(value: unknown) {
   return typeof value === 'string' ? value.trim() : ''
 }
 
+function normalizeCategoryValue(value: string) {
+  return value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim()
+}
+
+export function slugifyCourseCategoryValue(value: string) {
+  return normalizeCategoryValue(value)
+    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '')
+}
+
 export function normalizeCourseCategoryList(values: unknown): string[] {
   if (!Array.isArray(values)) {
     return []

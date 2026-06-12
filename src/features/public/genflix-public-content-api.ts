@@ -1,5 +1,6 @@
 import { buildCoursePublicCatalogItem, buildCoursePublicDetail, normalizeCoursePublicPageContent, type CoursePublicPageRowLike, } from '@/features/public/course-public-page-content';
 import type { GenflixBlogPost, GenflixCourseDetail, GenflixCourseItem, GenflixCourseModule, } from '@/features/public/genflix-site-content';
+import { slugifyCourseCategoryValue } from '@/features/courses/course-categories';
 import { fixMojibakeText } from '@/lib/text-encoding';
 interface PublicCourseRow extends CoursePublicPageRowLike {
     display_order: number;
@@ -27,6 +28,11 @@ interface PublicCourseCategoryRow {
     name: string;
     slug: string;
     display_order: number;
+}
+export interface PublicCourseCategoryFilter {
+    name: string;
+    slug: string;
+    displayOrder: number;
 }
 interface PublicBlogCategoryRow {
     id: string;
@@ -324,5 +330,15 @@ export async function fetchPublicCourseCategoriesFromSupabase() {
         order: 'display_order.asc,name.asc',
     });
     const rows = await fetchPublicRows<PublicCourseCategoryRow>('course_categories', params);
-    return rows.map((row) => row.name.trim()).filter(Boolean);
+    return rows
+        .map((row) => {
+        const name = row.name.trim();
+        const slug = row.slug.trim() || slugifyCourseCategoryValue(name);
+        return {
+            name,
+            slug,
+            displayOrder: row.display_order,
+        } satisfies PublicCourseCategoryFilter;
+    })
+        .filter((row) => Boolean(row.name && row.slug));
 }
