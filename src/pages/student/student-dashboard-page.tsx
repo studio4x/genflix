@@ -289,7 +289,7 @@ export function StudentDashboardPage() {
                 </svg>
               </Link>
 
-              <Link to="/aluno/notificacoes?tab=preferencias" className="flex items-center justify-between rounded-[24px] border border-slate-200 bg-white px-5 py-4 transition-all hover:border-slate-300 hover:bg-slate-50">
+              <Link to="/aluno/preferencias-notificacoes" className="flex items-center justify-between rounded-[24px] border border-slate-200 bg-white px-5 py-4 transition-all hover:border-slate-300 hover:bg-slate-50">
                 <div className="flex items-center gap-4">
                   <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-slate-50 text-slate-700 shadow-sm">
                     <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">

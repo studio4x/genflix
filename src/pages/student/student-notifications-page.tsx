@@ -1,5 +1,4 @@
-import { useMemo } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 
 import { Button } from '@/components/ui/button'
 import { NotificationPreferencesPage } from '@/pages/shared/notification-preferences-page'
@@ -7,30 +6,19 @@ import { NotificationsOverviewPanel } from '@/features/notifications/notificatio
 
 type StudentNotificationsTab = 'notificacoes' | 'preferencias'
 
-export function StudentNotificationsPage() {
-  const [searchParams, setSearchParams] = useSearchParams()
-  const activeTab = useMemo<StudentNotificationsTab>(() => {
-    return searchParams.get('tab') === 'preferencias' ? 'preferencias' : 'notificacoes'
-  }, [searchParams])
+interface StudentNotificationsPageProps {
+  initialTab?: StudentNotificationsTab
+}
 
-  function renderTabButton(tab: StudentNotificationsTab, label: string) {
+export function StudentNotificationsPage({ initialTab = 'notificacoes' }: StudentNotificationsPageProps) {
+  const activeTab = initialTab
+
+  function renderTabLink(tab: StudentNotificationsTab, label: string, to: string) {
     const isActive = activeTab === tab
 
     return (
-      <button
-        key={tab}
-        type="button"
-        onClick={() =>
-          setSearchParams((current) => {
-            const next = new URLSearchParams(current)
-            if (tab === 'notificacoes') {
-              next.delete('tab')
-            } else {
-              next.set('tab', tab)
-            }
-            return next
-          }, { replace: true })
-        }
+      <Link
+        to={to}
         className={`rounded-full border px-4 py-2 text-xs font-black uppercase tracking-[0.2em] transition ${
           isActive
             ? 'border-blue-200 bg-blue-600 text-white'
@@ -38,7 +26,7 @@ export function StudentNotificationsPage() {
         }`}
       >
         {label}
-      </button>
+      </Link>
     )
   }
 
@@ -56,8 +44,8 @@ export function StudentNotificationsPage() {
             </p>
           </div>
           <div className="flex flex-wrap gap-3">
-            {renderTabButton('notificacoes', 'Notificações')}
-            {renderTabButton('preferencias', 'Preferências')}
+            {renderTabLink('notificacoes', 'Notificações', '/aluno/notificacoes')}
+            {renderTabLink('preferencias', 'Preferências', '/aluno/preferencias-notificacoes')}
           </div>
         </div>
 
