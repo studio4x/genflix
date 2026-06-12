@@ -2,8 +2,9 @@ import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { KeyRound, Trash2, X } from 'lucide-react';
 import { useAuth } from '@/app/providers/auth-provider';
 import { Button } from '@/components/ui/button';
-import { deleteAdminUser, createAdminUser, fetchAdminUsers, resetAdminUserPassword, toErrorMessage, updateAdminUserRole, type AdminAssignableRoleCode, type AdminUserListItem, type AdminUserRole, type CreateAdminUserResponse, } from '@/features/admin/users/api';
+import { deleteAdminUser, createAdminUser, fetchAdminUsers, resetAdminUserPassword, toErrorMessage, updateAdminUser, type AdminAssignableRoleCode, type AdminUserListItem, type AdminUserRole, type CreateAdminUserResponse, type UpdateAdminUserInput, } from '@/features/admin/users/api';
 import { createAdminUserFormSchema } from '@/features/admin/users/schemas';
+import { AdminUserEditModal } from '@/features/admin/users/admin-user-edit-modal';
 type RoleFilter = 'all' | AdminAssignableRoleCode | 'without-role';
 interface UserFormState {
     email: string;
@@ -151,11 +152,10 @@ export function AdminUsersPage() {
     const [form, setForm] = useState<UserFormState>(initialForm);
     const [created, setCreated] = useState<CreateAdminUserResponse | null>(null);
     const [passwordResetFeedback, setPasswordResetFeedback] = useState<PasswordResetFeedback | null>(null);
-    const [editingRoleUser, setEditingRoleUser] = useState<AdminUserListItem | null>(null);
-    const [roleEditCode, setRoleEditCode] = useState<AdminAssignableRoleCode>('aluno');
+    const [editingUser, setEditingUser] = useState<AdminUserListItem | null>(null);
     const [resettingUserId, setResettingUserId] = useState<string | null>(null);
     const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
-    const [updatingRoleUserId, setUpdatingRoleUserId] = useState<string | null>(null);
+    const [updatingUserId, setUpdatingUserId] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isCreatePanelOpen, setIsCreatePanelOpen] = useState(false);
@@ -292,8 +292,8 @@ Essa a\u00E7\u00E3o remove o acesso e os dados vinculados de forma permanente.`)
         setPasswordResetFeedback(null);
         try {
             await deleteAdminUser(user.id, session);
-            if (editingRoleUser?.id === user.id) {
-                setEditingRoleUser(null);
+            if (editingUser?.id === user.id) {
+                setEditingUser(null);
             }
             await loadUsers();
         }
@@ -304,38 +304,36 @@ Essa a\u00E7\u00E3o remove o acesso e os dados vinculados de forma permanente.`)
             setDeletingUserId(null);
         }
     }
-    function startRoleEdit(user: AdminUserListItem) {
-        const roleCodes = new Set(user.roles.map((role) => role.code));
-        const currentRole: AdminAssignableRoleCode = roleCodes.has('admin')
-            ? 'admin'
-            : roleCodes.has('criador') || roleCodes.has('professor')
-                ? 'criador'
-                : 'aluno';
-        setEditingRoleUser(user);
-        setRoleEditCode(currentRole);
+    function startUserEdit(user: AdminUserListItem) {
+        setEditingUser(user);
         setPasswordResetFeedback(null);
+        setError(null);
     }
-    async function handleUpdateRole() {
+    async function handleUpdateUser(payload: UpdateAdminUserInput) {
         if (!session) {
             setError('Sessão expirada. Faça login novamente.');
             return;
         }
-        if (!editingRoleUser) {
+        if (!editingUser) {
             return;
         }
-        const targetUser = editingRoleUser;
-        setUpdatingRoleUserId(targetUser.id);
+        if (!payload.email?.trim()) {
+            setError('Informe um e-mail válido.');
+            return;
+        }
+        const targetUser = editingUser;
+        setUpdatingUserId(targetUser.id);
         setError(null);
         try {
-            await updateAdminUserRole(targetUser.id, roleEditCode, session);
-            setEditingRoleUser(null);
+            await updateAdminUser(targetUser.id, payload, session);
+            setEditingUser(null);
             await loadUsers();
         }
-        catch (roleError) {
-            setError(toErrorMessage(roleError));
+        catch (updateError) {
+            setError(toErrorMessage(updateError));
         }
         finally {
-            setUpdatingRoleUserId(null);
+            setUpdatingUserId(null);
         }
     }
     async function copyText(value: string, onCopied: () => void) {
@@ -555,31 +553,15 @@ Essa a\u00E7\u00E3o remove o acesso e os dados vinculados de forma permanente.`)
           {error}
         </div>) : null}
 
-      {editingRoleUser ? (<section className="rounded-[30px] border border-blue-200 bg-blue-50 p-5 shadow-sm">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <div>
-              <p className="text-[10px] font-black uppercase tracking-[0.24em] text-blue-700">Editar regra</p>
-              <h3 className="mt-1 font-readex text-xl font-semibold text-blue-950">
-                {editingRoleUser.full_name?.trim() || editingRoleUser.email}
-              </h3>
-              <p className="mt-1 text-sm font-semibold text-blue-900">{editingRoleUser.email}</p>
-            </div>
-
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-              <select value={roleEditCode} onChange={(event) => setRoleEditCode(event.target.value as AdminAssignableRoleCode)} className="h-12 min-w-[220px] rounded-2xl border border-blue-200 bg-white px-4 text-sm font-black text-[#15323b] outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10">
-                {roleOptions.map((role) => (<option key={role.code} value={role.code}>
-                    {role.title}
-                  </option>))}
-              </select>
-              <Button type="button" onClick={() => void handleUpdateRole()} disabled={updatingRoleUserId === editingRoleUser.id} className="h-12 rounded-2xl bg-blue-700 px-5 font-black hover:bg-blue-800">
-                {updatingRoleUserId === editingRoleUser.id ? 'Salvando...' : 'Salvar regra'}
-              </Button>
-              <Button type="button" variant="outline" onClick={() => setEditingRoleUser(null)} className="h-12 rounded-2xl border-blue-200 bg-white font-black text-blue-900 hover:bg-blue-100">
-                Cancelar
-              </Button>
-            </div>
-          </div>
-        </section>) : null}
+      {editingUser ? (
+        <AdminUserEditModal
+          user={editingUser}
+          error={error}
+          isSaving={updatingUserId === editingUser.id}
+          onClose={() => setEditingUser(null)}
+          onSubmit={handleUpdateUser}
+        />
+      ) : null}
 
       <section className="overflow-hidden rounded-[30px] border border-[#D8E6EB] bg-white shadow-sm">
         <div className="border-b border-[#D8E6EB] px-5 py-4">
@@ -655,7 +637,7 @@ Essa a\u00E7\u00E3o remove o acesso e os dados vinculados de forma permanente.`)
                       </td>
                       <td className="w-[240px] px-4 py-4 text-right text-sm text-[#15323b]">
                         <div className="flex min-w-[260px] justify-end gap-2">
-                          <Button type="button" variant="outline" size="sm" onClick={() => startRoleEdit(user)} disabled={updatingRoleUserId === user.id} className="h-9 rounded-full border border-[#D8E6EB] bg-white/90 px-4 text-xs text-[#15323b] hover:bg-[#F2F7F9] hover:text-[#15323b]">
+                          <Button type="button" variant="outline" size="sm" onClick={() => startUserEdit(user)} disabled={updatingUserId === user.id} className="h-9 rounded-full border border-[#D8E6EB] bg-white/90 px-4 text-xs text-[#15323b] hover:bg-[#F2F7F9] hover:text-[#15323b]">
                             Editar
                           </Button>
                           <Button type="button" variant="outline" size="sm" onClick={() => void handleResetUserPassword(user)} disabled={resettingUserId === user.id} className="h-9 rounded-full border border-[#D8E6EB] bg-white/90 px-4 text-xs text-[#15323b] hover:bg-[#F2F7F9] hover:text-[#15323b]">

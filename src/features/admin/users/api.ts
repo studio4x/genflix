@@ -11,6 +11,18 @@ export interface AdminUserListItem {
     id: string;
     email: string;
     full_name: string | null;
+    avatar_url: string | null;
+    cpf: string | null;
+    whatsapp_number: string | null;
+    address: string | null;
+    address_number: string | null;
+    address_complement: string | null;
+    postal_code: string | null;
+    state: string | null;
+    province: string | null;
+    city: string | null;
+    timezone: string;
+    locale: string;
     created_at: string;
     updated_at: string;
     roles: AdminUserRole[];
@@ -40,6 +52,30 @@ export interface UpdateAdminUserRoleResponse {
     email: string;
     role_code: AdminAssignableRoleCode;
     message: string;
+}
+export interface UpdateAdminUserResponse {
+    user_id: string;
+    email: string;
+    role_code: AdminAssignableRoleCode | null;
+    message: string;
+}
+export interface UpdateAdminUserInput {
+    email?: string;
+    fullName?: string | null;
+    password?: string;
+    roleCode?: AdminAssignableRoleCode;
+    avatarUrl?: string | null;
+    cpf?: string | null;
+    whatsappNumber?: string | null;
+    address?: string | null;
+    addressNumber?: string | null;
+    addressComplement?: string | null;
+    postalCode?: string | null;
+    state?: string | null;
+    province?: string | null;
+    city?: string | null;
+    timezone?: string;
+    locale?: string;
 }
 export interface DeleteAdminUserResponse {
     user_id: string;
@@ -106,21 +142,27 @@ export async function resetAdminUserPassword(userId: string, session: Session) {
     return data as ResetAdminUserPasswordResponse;
 }
 export async function updateAdminUserRole(userId: string, roleCode: AdminAssignableRoleCode, session: Session) {
+    return updateAdminUser(userId, { roleCode }, session);
+}
+export async function updateAdminUser(userId: string, payload: UpdateAdminUserInput, session: Session) {
     const response = await fetch('/api/admin/users', {
         method: 'PUT',
         headers: {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${session.access_token}`,
         },
-        body: JSON.stringify({ userId, roleCode }),
+        body: JSON.stringify({
+            userId,
+            ...payload,
+        }),
     });
     const data = (await response
         .json()
-        .catch(() => null)) as ErrorResponse | UpdateAdminUserRoleResponse | null;
+        .catch(() => null)) as ErrorResponse | UpdateAdminUserResponse | null;
     if (!response.ok) {
-        throw new Error((data as ErrorResponse | null)?.error ?? 'Não foi possível atualizar a regra do usuário.');
+        throw new Error((data as ErrorResponse | null)?.error ?? 'Não foi possível atualizar o usuário.');
     }
-    return data as UpdateAdminUserRoleResponse;
+    return data as UpdateAdminUserResponse;
 }
 export async function deleteAdminUser(userId: string, session: Session) {
     const response = await fetch('/api/admin/users', {

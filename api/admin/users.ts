@@ -33,6 +33,18 @@ type ProfileRow = {
     id: string;
     email: string;
     full_name: string | null;
+    avatar_url: string | null;
+    cpf: string | null;
+    whatsapp_number: string | null;
+    address: string | null;
+    address_number: string | null;
+    address_complement: string | null;
+    postal_code: string | null;
+    state: string | null;
+    province: string | null;
+    city: string | null;
+    timezone: string;
+    locale: string;
     created_at: string;
     updated_at: string;
 };
@@ -60,6 +72,33 @@ const createUserSchema = z.object({
 const updateRoleSchema = z.object({
     userId: z.string().uuid('Usuário inválido.'),
     roleCode: z.enum(assignableRoleCodes),
+});
+const updateUserSchema = z.object({
+    userId: z.string().uuid('Usuário inválido.'),
+    email: z.string().email('E-mail inválido.').optional(),
+    fullName: z.string().min(2, 'Nome deve ter ao menos 2 caracteres.').max(120).nullable().optional(),
+    password: z
+        .string()
+        .min(10, 'Senha deve ter pelo menos 10 caracteres.')
+        .max(72, 'Senha deve ter no máximo 72 caracteres.')
+        .regex(/[a-z]/, 'Senha deve conter letra minúscula.')
+        .regex(/[A-Z]/, 'Senha deve conter letra maiúscula.')
+        .regex(/\d/, 'Senha deve conter número.')
+        .regex(/[^A-Za-z0-9]/, 'Senha deve conter símbolo.')
+        .optional(),
+    roleCode: z.enum(assignableRoleCodes).optional(),
+    avatarUrl: z.string().url('Avatar inválido.').nullable().optional(),
+    cpf: z.string().trim().min(1).max(11).nullable().optional(),
+    whatsappNumber: z.string().trim().min(1).max(11).nullable().optional(),
+    address: z.string().trim().min(1).max(255).nullable().optional(),
+    addressNumber: z.string().trim().min(1).max(40).nullable().optional(),
+    addressComplement: z.string().trim().min(1).max(120).nullable().optional(),
+    postalCode: z.string().trim().min(1).max(8).nullable().optional(),
+    state: z.string().trim().min(1).max(2).nullable().optional(),
+    province: z.string().trim().min(1).max(120).nullable().optional(),
+    city: z.string().trim().min(1).max(120).nullable().optional(),
+    timezone: z.string().trim().min(1).max(120).optional(),
+    locale: z.string().trim().min(1).max(20).optional(),
 });
 const resetPasswordSchema = z.object({
     userId: z.string().uuid('Usuário inválido.'),
@@ -222,7 +261,7 @@ async function handleListUsers(req: ApiRequest, res: ApiResponse) {
     const [profilesResult, rolesResult] = await Promise.all([
         adminClient
             .from('profiles')
-            .select('id, email, full_name, created_at, updated_at'),
+            .select('id, email, full_name, avatar_url, cpf, whatsapp_number, address, address_number, address_complement, postal_code, state, province, city, timezone, locale, created_at, updated_at'),
         adminClient
             .from('user_roles')
             .select('user_id, created_at, roles(code, name)'),
@@ -239,6 +278,18 @@ async function handleListUsers(req: ApiRequest, res: ApiResponse) {
             id: profile.id,
             email: profile.email,
             full_name: profile.full_name,
+            avatar_url: profile.avatar_url,
+            cpf: profile.cpf,
+            whatsapp_number: profile.whatsapp_number,
+            address: profile.address,
+            address_number: profile.address_number,
+            address_complement: profile.address_complement,
+            postal_code: profile.postal_code,
+            state: profile.state,
+            province: profile.province,
+            city: profile.city,
+            timezone: profile.timezone,
+            locale: profile.locale,
             created_at: profile.created_at,
             updated_at: profile.updated_at,
             roles: [] as Array<{
@@ -305,6 +356,34 @@ async function ensureRoleAssignment(adminClient: SupabaseClient, roleMap: Map<st
         throw insertResult.error;
     }
 }
+function normalizeTextInput(value: unknown) {
+    if (typeof value !== 'string') {
+        return undefined;
+    }
+    const trimmed = value.trim();
+    return trimmed.length > 0 ? trimmed : null;
+}
+function normalizeDigitsInput(value: unknown, maxLength: number) {
+    if (typeof value !== 'string') {
+        return undefined;
+    }
+    const digits = value.replace(/\D/g, '').slice(0, maxLength);
+    return digits.length > 0 ? digits : null;
+}
+function normalizeStateInput(value: unknown) {
+    if (typeof value !== 'string') {
+        return undefined;
+    }
+    const normalized = value.trim().toUpperCase().slice(0, 2);
+    return normalized.length > 0 ? normalized : null;
+}
+function normalizeEmailInput(value: unknown) {
+    if (typeof value !== 'string') {
+        return undefined;
+    }
+    const normalized = value.trim().toLowerCase();
+    return normalized.length > 0 ? normalized : undefined;
+}
 async function handleCreateUser(req: ApiRequest, res: ApiResponse) {
     const context = await createAdminClient(req, res);
     if (!context) {
@@ -368,6 +447,148 @@ async function handleCreateUser(req: ApiRequest, res: ApiResponse) {
         role_code: payload.roleCode,
         temporary_password: generatedPassword,
         message: 'Usuário criado com sucesso.',
+    });
+}
+async function handleUpdateUser(req: ApiRequest, res: ApiResponse) {
+    const context = await createAdminClient(req, res);
+    if (!context) {
+        return;
+    }
+    const { adminClient } = context;
+    const parsedBody = parseBody(req.body);
+    if (!parsedBody) {
+        jsonResponse(res, 400, { error: 'Body inválido.' });
+        return;
+    }
+    const hasEmail = Object.prototype.hasOwnProperty.call(parsedBody, 'email');
+    const hasFullName = Object.prototype.hasOwnProperty.call(parsedBody, 'fullName');
+    const hasPassword = Object.prototype.hasOwnProperty.call(parsedBody, 'password');
+    const hasRoleCode = Object.prototype.hasOwnProperty.call(parsedBody, 'roleCode');
+    const hasAvatarUrl = Object.prototype.hasOwnProperty.call(parsedBody, 'avatarUrl');
+    const hasCpf = Object.prototype.hasOwnProperty.call(parsedBody, 'cpf');
+    const hasWhatsappNumber = Object.prototype.hasOwnProperty.call(parsedBody, 'whatsappNumber');
+    const hasAddress = Object.prototype.hasOwnProperty.call(parsedBody, 'address');
+    const hasAddressNumber = Object.prototype.hasOwnProperty.call(parsedBody, 'addressNumber');
+    const hasAddressComplement = Object.prototype.hasOwnProperty.call(parsedBody, 'addressComplement');
+    const hasPostalCode = Object.prototype.hasOwnProperty.call(parsedBody, 'postalCode');
+    const hasState = Object.prototype.hasOwnProperty.call(parsedBody, 'state');
+    const hasProvince = Object.prototype.hasOwnProperty.call(parsedBody, 'province');
+    const hasCity = Object.prototype.hasOwnProperty.call(parsedBody, 'city');
+    const hasTimezone = Object.prototype.hasOwnProperty.call(parsedBody, 'timezone');
+    const hasLocale = Object.prototype.hasOwnProperty.call(parsedBody, 'locale');
+    const validationResult = updateUserSchema.safeParse({
+        userId: typeof parsedBody.userId === 'string' ? parsedBody.userId.trim() : undefined,
+        ...(hasEmail ? { email: normalizeEmailInput(parsedBody.email) } : {}),
+        ...(hasFullName ? { fullName: normalizeTextInput(parsedBody.fullName) } : {}),
+        ...(hasPassword ? { password: typeof parsedBody.password === 'string' ? parsedBody.password.trim() || undefined : undefined } : {}),
+        ...(hasRoleCode ? { roleCode: parsedBody.roleCode } : {}),
+        ...(hasAvatarUrl ? { avatarUrl: normalizeTextInput(parsedBody.avatarUrl) } : {}),
+        ...(hasCpf ? { cpf: normalizeDigitsInput(parsedBody.cpf, 11) } : {}),
+        ...(hasWhatsappNumber ? { whatsappNumber: normalizeDigitsInput(parsedBody.whatsappNumber, 11) } : {}),
+        ...(hasAddress ? { address: normalizeTextInput(parsedBody.address) } : {}),
+        ...(hasAddressNumber ? { addressNumber: normalizeTextInput(parsedBody.addressNumber) } : {}),
+        ...(hasAddressComplement ? { addressComplement: normalizeTextInput(parsedBody.addressComplement) } : {}),
+        ...(hasPostalCode ? { postalCode: normalizeDigitsInput(parsedBody.postalCode, 8) } : {}),
+        ...(hasState ? { state: normalizeStateInput(parsedBody.state) } : {}),
+        ...(hasProvince ? { province: normalizeTextInput(parsedBody.province) } : {}),
+        ...(hasCity ? { city: normalizeTextInput(parsedBody.city) } : {}),
+        ...(hasTimezone ? { timezone: typeof parsedBody.timezone === 'string' ? parsedBody.timezone.trim() || undefined : undefined } : {}),
+        ...(hasLocale ? { locale: typeof parsedBody.locale === 'string' ? parsedBody.locale.trim() || undefined : undefined } : {}),
+    });
+    if (!validationResult.success) {
+        jsonResponse(res, 400, { error: validationResult.error.issues[0]?.message ?? 'Dados inválidos.' });
+        return;
+    }
+    const payload = validationResult.data;
+    const userResult = await adminClient
+        .from('profiles')
+        .select('id, email, full_name, avatar_url, cpf, whatsapp_number, address, address_number, address_complement, postal_code, state, province, city, timezone, locale, created_at, updated_at')
+        .eq('id', payload.userId)
+        .maybeSingle();
+    if (userResult.error) {
+        jsonResponse(res, 500, { error: 'Não foi possível localizar o usuário.' });
+        return;
+    }
+    if (!userResult.data) {
+        jsonResponse(res, 404, { error: 'Usuário não encontrado.' });
+        return;
+    }
+    const currentProfile = userResult.data as ProfileRow;
+    const roleRows = await loadRoleRows(adminClient);
+    const roleMap = createRoleMap(roleRows);
+    if (hasEmail || hasPassword || hasFullName) {
+        const authUpdateResult = await adminClient.auth.admin.updateUserById(payload.userId, {
+            ...(hasEmail && payload.email ? { email: payload.email } : {}),
+            ...(hasPassword && payload.password ? { password: payload.password } : {}),
+            ...(hasFullName
+                ? { user_metadata: { full_name: payload.fullName } }
+                : {}),
+        });
+        if (authUpdateResult.error || !authUpdateResult.data.user) {
+            jsonResponse(res, 400, {
+                error: authUpdateResult.error?.message ?? 'Não foi possível atualizar o acesso do usuário.',
+            });
+            return;
+        }
+    }
+    const profileUpdatePayload = {
+        ...(payload.email ? { email: payload.email } : {}),
+        ...(hasFullName ? { full_name: payload.fullName } : {}),
+        ...(hasAvatarUrl ? { avatar_url: payload.avatarUrl } : {}),
+        ...(hasCpf ? { cpf: payload.cpf } : {}),
+        ...(hasWhatsappNumber ? { whatsapp_number: payload.whatsappNumber } : {}),
+        ...(hasAddress ? { address: payload.address } : {}),
+        ...(hasAddressNumber ? { address_number: payload.addressNumber } : {}),
+        ...(hasAddressComplement ? { address_complement: payload.addressComplement } : {}),
+        ...(hasPostalCode ? { postal_code: payload.postalCode } : {}),
+        ...(hasState ? { state: payload.state } : {}),
+        ...(hasProvince ? { province: payload.province } : {}),
+        ...(hasCity ? { city: payload.city } : {}),
+        ...(payload.timezone ? { timezone: payload.timezone } : {}),
+        ...(payload.locale ? { locale: payload.locale } : {}),
+    };
+    const profileChanged = Object.keys(profileUpdatePayload).length > 0;
+    if (profileChanged) {
+        const profileUpdateResult = await adminClient
+            .from('profiles')
+            .update(profileUpdatePayload)
+            .eq('id', payload.userId)
+            .select('id, email, full_name, avatar_url, cpf, whatsapp_number, address, address_number, address_complement, postal_code, state, province, city, timezone, locale, created_at, updated_at')
+            .maybeSingle();
+        if (profileUpdateResult.error || !profileUpdateResult.data) {
+            jsonResponse(res, 500, {
+                error: profileUpdateResult.error?.message ?? 'Não foi possível atualizar o perfil do usuário.',
+            });
+            return;
+        }
+    }
+    if (payload.roleCode) {
+        try {
+            await ensureRoleAssignment(adminClient, roleMap, payload.userId, payload.roleCode);
+        }
+        catch (assignmentError) {
+            jsonResponse(res, 500, {
+                error: assignmentError instanceof Error ? assignmentError.message : 'Não foi possível atualizar a regra do usuário.',
+            });
+            return;
+        }
+    }
+    const refreshedUserResult = profileChanged
+        ? await adminClient
+            .from('profiles')
+            .select('id, email, full_name, avatar_url, cpf, whatsapp_number, address, address_number, address_complement, postal_code, state, province, city, timezone, locale, created_at, updated_at')
+            .eq('id', payload.userId)
+            .maybeSingle()
+        : { data: currentProfile, error: null };
+    if (refreshedUserResult.error || !refreshedUserResult.data) {
+        jsonResponse(res, 500, { error: 'Não foi possível concluir a atualização do usuário.' });
+        return;
+    }
+    jsonResponse(res, 200, {
+        user_id: payload.userId,
+        email: refreshedUserResult.data.email,
+        role_code: payload.roleCode ?? null,
+        message: 'Usuário atualizado com sucesso.',
     });
 }
 async function handleUpdateUserRole(req: ApiRequest, res: ApiResponse) {
@@ -593,7 +814,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
         return;
     }
     if (req.method === 'PUT') {
-        await handleUpdateUserRole(req, res);
+        await handleUpdateUser(req, res);
         return;
     }
     if (req.method === 'PATCH') {
