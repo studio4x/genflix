@@ -118,7 +118,7 @@ export function StudentCoursesPage() {
                     }
                     : {
                         dotClass: hasStartedCourse ? 'bg-blue-500 animate-pulse' : 'bg-slate-400',
-                        label: hasStartedCourse ? 'Em Andamento' : "N?o Iniciado",
+                        label: hasStartedCourse ? 'Em Andamento' : 'Não Iniciado',
                         cta: getLearningActionLabel(journeyStatus, hasStartedCourse),
                     };
             return (<article key={course.id} className="group relative flex flex-col overflow-hidden rounded-[32px] border border-slate-100 bg-white shadow-sm transition-all duration-500 hover:border-blue-200 hover:shadow-2xl">

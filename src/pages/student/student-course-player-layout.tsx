@@ -206,7 +206,7 @@ export function StudentCoursePlayerLayout() {
             <label className="mt-4 block">
               <span className="mb-2 block text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Buscar no contedo
               </span>
-              <input value={sidebarQuery} onChange={(event) => setSidebarQuery(event.target.value)} placeholder="Mdulo, aula ou quiz" className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 outline-none transition-colors placeholder:text-slate-400 focus:border-blue-500"/>
+              <input value={sidebarQuery} onChange={(event) => setSidebarQuery(event.target.value)} placeholder="Módulo, aula ou quiz" className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 outline-none transition-colors placeholder:text-slate-400 focus:border-blue-500"/>
             </label>
           </div>
         </div>
