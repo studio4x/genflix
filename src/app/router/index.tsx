@@ -39,6 +39,7 @@ const TermsOfUsePage = lazy(async () => ({ default: (await import('@/pages/publi
 const StudentDashboardPage = lazy(async () => ({ default: (await import('@/pages/student/student-dashboard-page')).StudentDashboardPage }));
 const StudentCoursesPage = lazy(async () => ({ default: (await import('@/pages/student/student-courses-page')).StudentCoursesPage }));
 const StudentCourseDetailsPage = lazy(async () => ({ default: (await import('@/pages/student/student-course-details-page')).StudentCourseDetailsPage }));
+const StudentNotificationsPage = lazy(async () => ({ default: (await import('@/pages/student/student-notifications-page')).StudentNotificationsPage }));
 const StudentPaymentsPage = lazy(async () => ({ default: (await import('@/pages/student/student-payments-page')).StudentPaymentsPage }));
 const StudentAccountPage = lazy(async () => ({ default: (await import('@/pages/student/student-account-page')).StudentAccountPage }));
 const StudentSupportTicketsPage = lazy(async () => ({ default: (await import('@/pages/student/student-support-tickets-page')).StudentSupportTicketsPage }));
@@ -339,7 +340,11 @@ const appRoutes = [
                     },
                     {
                         path: '/aluno/notificacoes',
-                        element: <Navigate to="/aluno/dashboard?tab=notificacoes" replace/>,
+                        element: withRouteSuspense(<StudentNotificationsPage initialTab="notificacoes" />),
+                    },
+                    {
+                        path: '/aluno/preferencias-notificacoes',
+                        element: withRouteSuspense(<StudentNotificationsPage initialTab="preferencias" />),
                     },
                 ],
             },
