@@ -30,15 +30,15 @@ export function CreatorNotificationsPage() {
         <div>
           <p className="text-[10px] font-black uppercase tracking-[0.28em] text-[#1398B7]">Criador / Relacionamento</p>
           <h1 className="mt-2 font-readex text-3xl font-semibold tracking-tight text-[#15323b]">
-            {activeTab === 'preferencias' ? 'Preferencias' : "N?otificacoes"}
+            {activeTab === 'preferencias' ? 'Preferências' : 'Notificações'}
           </h1>
           <p className="mt-2 max-w-3xl text-sm font-medium leading-6 text-[#6d7f84]">
             {activeTab === 'preferencias'
-            ? "Ajuste seus canais e horarios de silencio sem misturar essas configura??es com a tela de relatorios." : 'Consulte avisos transacionais e comunicados da plataforma em uma area dedicada para notificacoes.'}
+            ? 'Ajuste seus canais e horários de silêncio sem misturar essas configurações com a tela de relatórios.' : 'Consulte avisos transacionais e comunicados da plataforma em uma área dedicada para notificações.'}
           </p>
           <div className="mt-4 flex flex-wrap gap-3">
-            {renderTabButton('notificacoes', "N?otificacoes")}
-            {renderTabButton('preferencias', 'Preferencias')}
+            {renderTabButton('notificacoes', 'Notificações')}
+            {renderTabButton('preferencias', 'Preferências')}
           </div>
         </div>
       </header>

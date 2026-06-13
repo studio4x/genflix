@@ -17,7 +17,7 @@ const timezoneOptions = [
     { value: 'America/Recife', label: 'Recife (UTC-03:00)' },
     { value: 'America/Manaus', label: 'Manaus (UTC-04:00)' },
     { value: 'America/Rio_Branco', label: 'Rio Branco (UTC-05:00)' },
-    { value: 'America/Noronha', label: "Fernando de N?oronha (UTC-02:00)" },
+    { value: 'America/Noronha', label: 'Fernando de Noronha (UTC-02:00)' },
 ];
 function normalizeFullName(value: string) {
     const trimmed = value.trim();
@@ -283,7 +283,7 @@ export function StudentAccountPage() {
             setCpf(formatCpf(event.target.value));
         }} placeholder="000.000.000-00" autoComplete="off" aria-invalid={cpfFieldError || undefined}/>
               <p className={`text-xs font-medium ${cpfFieldError ? 'text-red-600' : 'text-slate-500'}`}>
-                {cpfFieldError ? 'CPF inválido.' : 'O CPF sera usado no checkout e na validacao cadastral da conta.'}
+                {cpfFieldError ? 'CPF inválido.' : 'O CPF será usado no checkout e na validação cadastral da conta.'}
               </p>
             </label>
 
@@ -291,7 +291,7 @@ export function StudentAccountPage() {
               <span className="text-sm font-bold text-slate-700">Celular</span>
               <input className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm font-medium text-slate-800 outline-none transition focus:border-blue-400 focus:bg-white" type="tel" inputMode="tel" value={whatsAppNumber} onChange={(event) => setWhatsAppNumber(formatPhone(event.target.value))} placeholder="(99) 99999-9999" autoComplete="tel"/>
               <p className="text-xs font-medium text-slate-500">
-                Esse numero podera ser usado nas notificacoes e no checkout da compra.
+                Esse número poderá ser usado nas notificações e no checkout da compra.
               </p>
             </label>
 
@@ -299,7 +299,7 @@ export function StudentAccountPage() {
               <span className="text-sm font-bold text-slate-700">CEP</span>
               <input className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm font-medium text-slate-800 outline-none transition focus:border-blue-400 focus:bg-white" type="text" value={postalCode} onChange={(event) => setPostalCode(formatPostalCode(event.target.value))} placeholder="00000-000" inputMode="numeric" autoComplete="postal-code"/>
               <p className="text-xs font-medium text-slate-500">
-                {isLoadingCepAddress ? 'Buscando endereco pelo CEP...' : cepError || "Digite o CEP para preencher os dados automticamente."}
+                {isLoadingCepAddress ? 'Buscando endereço pelo CEP...' : cepError || 'Digite o CEP para preencher os dados automaticamente.'}
               </p>
             </label>
 
@@ -320,7 +320,7 @@ export function StudentAccountPage() {
               <span className="text-sm font-bold text-slate-700">Cidade</span>
               <select className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm font-medium text-slate-800 outline-none transition focus:border-blue-400 focus:bg-white disabled:cursor-not-allowed disabled:opacity-60" value={city} onChange={(event) => setCity(event.target.value)} disabled={!state || isLoadingCities} autoComplete="address-level2">
                 <option value="">
-                  {!state ? "Selecione o est?do" : isLoadingCities ? 'Carregando cidades...' : 'Selecione a cidade'}
+                  {!state ? 'Selecione o estado' : isLoadingCities ? 'Carregando cidades...' : 'Selecione a cidade'}
                 </option>
                 {cities.map((option) => (<option key={option.value} value={option.value}>
                     {option.label}
@@ -369,7 +369,7 @@ export function StudentAccountPage() {
             <label className="block space-y-2 md:col-span-2">
               <span className="text-sm font-bold text-slate-700">E-mail</span>
               <input className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-100 px-4 text-sm font-medium text-slate-500 outline-none" type="email" value={profile?.email ?? ''} readOnly disabled/>
-              <p className="text-xs font-medium text-slate-500">O e-mail atual é exibido para referência. Nest? versão, a alteração permanece centralizada no fluxo administrativo.
+              <p className="text-xs font-medium text-slate-500">O e-mail atual é exibido para referência. Nesta versão, a alteração permanece centralizada no fluxo administrativo.
               </p>
             </label>
           </div>

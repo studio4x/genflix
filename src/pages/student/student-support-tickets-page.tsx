@@ -31,7 +31,7 @@ export function StudentSupportTicketsPage({ contextLabel = 'Aluno', supportBaseP
             setSettings(supportSettings);
         }
         catch (error) {
-            setErrorMessage(error instanceof Error ? error.message : "N?o foi possvel carregar os chamados.");
+            setErrorMessage(error instanceof Error ? error.message : 'Não foi possível carregar os chamados.');
         }
         finally {
             setIsLoading(false);
@@ -85,12 +85,12 @@ export function StudentSupportTicketsPage({ contextLabel = 'Aluno', supportBaseP
       <article className="rounded-[28px] border border-[#BEE3EA] bg-[#F2F8FA] p-5">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
           <div>
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#1398B7]">SLA pblico de primeira resposta</p>
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#1398B7]">SLA público de primeira resposta</p>
             <p className="mt-2 text-sm font-semibold leading-6 text-[#15323b]">
-              Pagamentos em ate 2 horas uteis. Demais categorias em ate 24 horas uteis, conforme o horario de atendimento.
+              Pagamentos em até 2 horas úteis. Demais categorias em até 24 horas úteis, conforme o horário de atendimento.
             </p>
           </div>
-          <div className="inline-flex items-center rounded-full border border-[#D8E6EB] bg-white px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">N?o e prazo de resolucao final
+          <div className="inline-flex items-center rounded-full border border-[#D8E6EB] bg-white px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Não é prazo de resolução final
           </div>
         </div>
       </article>
@@ -98,7 +98,7 @@ export function StudentSupportTicketsPage({ contextLabel = 'Aluno', supportBaseP
       <section className="overflow-hidden rounded-[30px] border border-[#D8E6EB] bg-white shadow-sm">
         {isLoading ? (<p className="px-6 py-8 text-sm font-semibold text-[#5F7077]">Carregando chamados...</p>) : tickets.length === 0 ? (<div className="px-6 py-12 text-center">
             <MessageSquare className="mx-auto h-10 w-10 text-[#1398B7]/42"/>
-            <p className="mt-4 font-readex text-xl font-semibold text-[#15323b]">Voc? ainda n?o abriu nenhum chamado.</p>
+            <p className="mt-4 font-readex text-xl font-semibold text-[#15323b]">Você ainda não abriu nenhum chamado.</p>
           </div>) : (<div className="overflow-x-auto">
             <table className="min-w-[900px] w-full border-collapse text-left text-sm">
               <thead className="bg-[#F2F7F9]">
@@ -108,7 +108,7 @@ export function StudentSupportTicketsPage({ contextLabel = 'Aluno', supportBaseP
                   <th className="px-4 py-3 text-xs font-semibold uppercase tracking-[0.08em] text-[#8BA0A7]">Status</th>
                   <th className="px-4 py-3 text-xs font-semibold uppercase tracking-[0.08em] text-[#8BA0A7]">SLA</th>
                   <th className="px-4 py-3 text-xs font-semibold uppercase tracking-[0.08em] text-[#8BA0A7]">Prazo</th>
-                  <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-[0.08em] text-[#8BA0A7]">Acoes</th>
+                  <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-[0.08em] text-[#8BA0A7]">Ações</th>
                 </tr>
               </thead>
               <tbody>

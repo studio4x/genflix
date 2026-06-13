@@ -8,7 +8,7 @@ const creatorLinks = [
     { to: '/criador/relatorios', label: 'Meus relatórios', description: 'Vendas e cancelamentos' },
     { to: '/criador/mensagens', label: 'Mensagens', description: 'Conversas com usuários' },
     { to: '/criador/suporte', label: 'Tickets', description: 'Chamados e atendimento' },
-    { to: '/criador/notificacoes', label: "N?otifica\u00E7\u00F5es", description: 'Canais e preferências' },
+    { to: '/criador/notificacoes', label: 'Notificações', description: 'Canais e preferências' },
     { to: '/criador/perfil', label: 'Minha conta', description: 'Dados da conta' },
 ];
 function getCreatorDisplayName(fullName: string | null | undefined, email: string | null | undefined) {

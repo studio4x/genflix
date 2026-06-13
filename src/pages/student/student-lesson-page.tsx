@@ -142,8 +142,8 @@ export function StudentLessonPage() {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
           </svg>
         </div>
-        <h2 className="text-xl font-black text-slate-900">Aula n?o encontrada</h2>
-        <p className="mt-2 text-slate-500">O contedo solicitado pode ter sido movido, expirado ou ainda n?o foi liberado.</p>
+        <h2 className="text-xl font-black text-slate-900">Aula não encontrada</h2>
+        <p className="mt-2 text-slate-500">O conteúdo solicitado pode ter sido movido, expirado ou ainda não foi liberado.</p>
         <Button onClick={() => navigate(`/aluno/cursos/${courseId}`)} className="mt-8 rounded-2xl">
           Voltar ao curso
         </Button>
@@ -276,7 +276,7 @@ export function StudentLessonPage() {
           </div>
 
           {currentModule ? (<Button type="button" variant="outline" disabled={isGeneratingPdf} onClick={() => void handleDownloadModulePdf()} className="rounded-xl border-slate-200 bg-white font-bold text-slate-600 hover:text-slate-900">
-              {isGeneratingPdf ? 'Gerando PDF...' : "Baixar PDF do Mdulo"}
+              {isGeneratingPdf ? 'Gerando PDF...' : 'Baixar PDF do Módulo'}
             </Button>) : null}
         </div>
 
@@ -294,7 +294,7 @@ export function StudentLessonPage() {
         </div>)}
 
       {(lessonType === 'video' || lessonType === 'hybrid') && videoSource?.type === 'direct' && (<div className="mx-auto aspect-video w-[70%] animate-in zoom-in-95 overflow-hidden rounded-[32px] bg-black shadow-2xl ring-1 ring-slate-900/10 duration-500">
-          <video className="h-full w-full" controls preload="metadata" src={videoSource.value}>Seu navegador n?o suporta reproduo de video.
+          <video className="h-full w-full" controls preload="metadata" src={videoSource.value}>Seu navegador não suporta reprodução de vídeo.
           </video>
         </div>)}
 
@@ -303,7 +303,7 @@ export function StudentLessonPage() {
         </div>)}
 
       {(lessonType === 'video' || lessonType === 'hybrid') && videoSource?.type === 'asset' && !isLoadingProtectedVideo && protectedVideoPlaybackUrl && (<div className="mx-auto aspect-video w-[70%] animate-in zoom-in-95 overflow-hidden rounded-[32px] bg-black shadow-2xl ring-1 ring-slate-900/10 duration-500">
-          <video className="h-full w-full" controls preload="metadata" src={protectedVideoPlaybackUrl}>Seu navegador n?o suporta reproduo de video.
+          <video className="h-full w-full" controls preload="metadata" src={protectedVideoPlaybackUrl}>Seu navegador não suporta reprodução de vídeo.
           </video>
         </div>)}
 
@@ -387,7 +387,7 @@ export function StudentLessonPage() {
                 </svg>) : (<svg className="h-5 w-5 text-emerald-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
                 </svg>)}
-              {currentLesson.is_completed ? 'Aula Concluida' : 'Marcar como Concluida'}
+              {currentLesson.is_completed ? 'Aula Concluída' : 'Marcar como Concluída'}
             </button>
 
           </div>

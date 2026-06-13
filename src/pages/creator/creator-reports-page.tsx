@@ -84,7 +84,7 @@ export function CreatorReportsPage() {
             setPayoutSettings(settings);
         }
         catch (error) {
-            setErrorMessage(error instanceof Error ? error.message : "N?o foi possvel carregar os relatorios.");
+            setErrorMessage(error instanceof Error ? error.message : 'Não foi possível carregar os relatórios.');
         }
         finally {
             setIsLoading(false);
@@ -166,8 +166,8 @@ export function CreatorReportsPage() {
         { label: 'Vendas', value: totals.sales.toString(), detail: 'no filtro atual' },
         { label: 'Receita bruta', value: formatMoneyFromCents(totals.revenue), detail: 'sem descontar taxas' },
         { label: 'Cancelamentos', value: totals.cancellations.toString(), detail: formatMoneyFromCents(totals.canceledAmount) },
-        { label: 'Comissoes pendentes', value: formatMoneyFromCents(commissionTotals.pending), detail: 'pendentes ou elegiveis' },
-        { label: 'Comissoes pagas', value: formatMoneyFromCents(commissionTotals.paid), detail: 'repasse confirmado' },
+        { label: 'Comissões pendentes', value: formatMoneyFromCents(commissionTotals.pending), detail: 'pendentes ou elegíveis' },
+        { label: 'Comissões pagas', value: formatMoneyFromCents(commissionTotals.paid), detail: 'repasse confirmado' },
         { label: 'Estornadas', value: formatMoneyFromCents(commissionTotals.canceled), detail: 'canceladas ou refundadas' },
     ];
     const payoutTotals = useMemo(() => {
@@ -204,15 +204,15 @@ export function CreatorReportsPage() {
         return (<div className="space-y-6">
         <header className="flex flex-col gap-4 border-b border-[#D8E6EB] pb-5 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <p className="text-[10px] font-black uppercase tracking-[0.28em] text-[#1398B7]">Relatorios</p>
-            <h1 className="mt-2 font-readex text-3xl font-semibold tracking-tight text-[#15323b]">N?otificacoes</h1>
+            <p className="text-[10px] font-black uppercase tracking-[0.28em] text-[#1398B7]">Relatórios</p>
+            <h1 className="mt-2 font-readex text-3xl font-semibold tracking-tight text-[#15323b]">Notificações</h1>
             <p className="mt-2 max-w-3xl text-sm font-medium leading-6 text-[#6d7f84]">
               Acompanhe comunicados enviados pela plataforma e avisos transacionais sem sair do painel do criador.
             </p>
             <div className="hidden">
-              {renderTabButton('relatorios', 'Relatorios')}
-              {renderTabButton('notificacoes', "N?otificacoes")}
-              {renderTabButton('preferencias', 'Preferencias')}
+              {renderTabButton('relatorios', 'Relatórios')}
+              {renderTabButton('notificacoes', 'Notificações')}
+              {renderTabButton('preferencias', 'Preferências')}
             </div>
           </div>
         </header>
@@ -224,14 +224,14 @@ export function CreatorReportsPage() {
         return (<div className="space-y-6">
         <header className="flex flex-col gap-4 border-b border-[#D8E6EB] pb-5 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <p className="text-[10px] font-black uppercase tracking-[0.28em] text-[#1398B7]">Relatorios</p>
-            <h1 className="mt-2 font-readex text-3xl font-semibold tracking-tight text-[#15323b]">Preferencias</h1>
-            <p className="mt-2 max-w-3xl text-sm font-medium leading-6 text-[#6d7f84]">Ajuste os canais e horarios de notificacao do criador diretamente nest? area.
+            <p className="text-[10px] font-black uppercase tracking-[0.28em] text-[#1398B7]">Relatórios</p>
+            <h1 className="mt-2 font-readex text-3xl font-semibold tracking-tight text-[#15323b]">Preferências</h1>
+            <p className="mt-2 max-w-3xl text-sm font-medium leading-6 text-[#6d7f84]">Ajuste os canais e horários de notificação do criador diretamente nesta área.
             </p>
             <div className="hidden">
-              {renderTabButton('relatorios', 'Relatorios')}
-              {renderTabButton('notificacoes', "N?otificacoes")}
-              {renderTabButton('preferencias', 'Preferencias')}
+              {renderTabButton('relatorios', 'Relatórios')}
+              {renderTabButton('notificacoes', 'Notificações')}
+              {renderTabButton('preferencias', 'Preferências')}
             </div>
           </div>
         </header>
@@ -242,15 +242,15 @@ export function CreatorReportsPage() {
     return (<div className="space-y-6">
       <header className="flex flex-col gap-4 border-b border-[#D8E6EB] pb-5 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <p className="text-[10px] font-black uppercase tracking-[0.28em] text-[#1398B7]">Relatorios</p>
+          <p className="text-[10px] font-black uppercase tracking-[0.28em] text-[#1398B7]">Relatórios</p>
           <h1 className="mt-2 font-readex text-3xl font-semibold tracking-tight text-[#15323b]">Painel do criador</h1>
-          <p className="mt-2 max-w-3xl text-sm font-medium leading-6 text-[#6d7f84]">Acompanhe os cursos vinculados a voc?, vendas por ciclos de seis meses, cancelamentos e comissoes previstas
+          <p className="mt-2 max-w-3xl text-sm font-medium leading-6 text-[#6d7f84]">Acompanhe os cursos vinculados a você, vendas por ciclos de seis meses, cancelamentos e comissões previstas
             para repasse PIX.
           </p>
           <div className="hidden">
-            {renderTabButton('relatorios', 'Relatorios')}
-            {renderTabButton('notificacoes', "N?otificacoes")}
-            {renderTabButton('preferencias', 'Preferencias')}
+            {renderTabButton('relatorios', 'Relatórios')}
+            {renderTabButton('notificacoes', 'Notificações')}
+            {renderTabButton('preferencias', 'Preferências')}
           </div>
         </div>
 
@@ -266,13 +266,13 @@ export function CreatorReportsPage() {
 
       <section className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
         <article className="border border-[#D8E6EB] bg-white p-5 shadow-sm">
-          <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#1398B7]">Politica de repasse</p>
+          <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#1398B7]">Política de repasse</p>
           <h2 className="mt-2 font-readex text-xl font-semibold text-[#15323b]">
-            {payoutSettings?.mode === 'manual' ? 'Repasse manual pelo administrador' : "Repasse automtico via Asaas"}
+            {payoutSettings?.mode === 'manual' ? 'Repasse manual pelo administrador' : 'Repasse automático via Asaas'}
           </h2>
           <p className="mt-2 text-sm font-medium leading-6 text-[#6d7f84]">
             {payoutSettings?.is_enabled === false
-            ? "Os repasses automticos est?o pausados pela administracao." : `Ciclo a cada ${payoutSettings?.interval_days ?? 30} dia(s), com minimo de ${formatMoneyFromCents(payoutSettings?.minimum_amount_cents ?? 0)} por lote.`}
+            ? 'Os repasses automáticos estão pausados pela administração.' : `Ciclo a cada ${payoutSettings?.interval_days ?? 30} dia(s), com mínimo de ${formatMoneyFromCents(payoutSettings?.minimum_amount_cents ?? 0)} por lote.`}
           </p>
           <div className="mt-4 grid gap-3 text-sm md:grid-cols-2">
             <div className="border border-[#D8E6EB] bg-[#F2F7F9] p-3">
@@ -314,7 +314,7 @@ export function CreatorReportsPage() {
         </label>
 
         <label className="block border border-[#D8E6EB] bg-[#F2F7F9] p-4">
-          <span className="text-[10px] font-black uppercase tracking-[0.22em] text-[#5F7077]">Periodo</span>
+          <span className="text-[10px] font-black uppercase tracking-[0.22em] text-[#5F7077]">Período</span>
           <select value={selectedPeriodKey} onChange={(event) => setSelectedPeriodKey(event.target.value)} className="mt-2 h-12 w-full border border-[#D8E6EB] bg-white px-4 text-sm font-bold text-[#15323b] outline-none focus:border-[#1398B7]">
             <option value="">Todos os ciclos de 6 meses</option>
             {periodOptions.map((period) => (<option key={period.key} value={period.key}>
@@ -340,7 +340,7 @@ export function CreatorReportsPage() {
 
         {isLoading ? (<p className="p-5 text-sm font-medium text-[#6d7f84]">Carregando cursos...</p>) : courseSummaries.length === 0 ? (<div className="p-6">
             <p className="font-readex text-lg font-semibold text-[#15323b]">Nenhum curso vinculado ainda.</p>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-[#6d7f84]">Quando um admin vincular um curso ao seu usurio, ele aparecer- aqui com m-tricas comerciais e comissoes.
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-[#6d7f84]">Quando um admin vincular um curso ao seu usuário, ele aparecerá aqui com métricas comerciais e comissões.
             </p>
           </div>) : (<div className="grid gap-3 p-4 md:grid-cols-2 xl:grid-cols-3">
             {courseSummaries.map(({ course, sales, revenue, cancellations }) => (<article key={course.id} className="border border-[#D8E6EB] bg-[#F2F7F9] p-4">
@@ -348,7 +348,7 @@ export function CreatorReportsPage() {
                   <div>
                     <h3 className="font-readex text-lg font-semibold tracking-tight text-[#15323b]">{course.title}</h3>
                     <p className="mt-1 text-xs font-semibold text-[#5F7077]">
-                      Lancamento: {formatDate(course.launch_date)}
+                      Lançamento: {formatDate(course.launch_date)}
                     </p>
                   </div>
                   <span className={`border px-2.5 py-1 text-[10px] font-black uppercase tracking-widest ${statusTone(course.status)}`}>
@@ -370,7 +370,7 @@ export function CreatorReportsPage() {
                   </div>
                 </div>
                 <p className="mt-4 text-xs font-semibold text-[#6d7f84]">
-                  Preco: {formatMoneyFromCents(Number(course.price_cents ?? 0))} - Comissao: {Number(course.creator_commission_percent ?? 0)}%
+                  Preço: {formatMoneyFromCents(Number(course.price_cents ?? 0))} - Comissão: {Number(course.creator_commission_percent ?? 0)}%
                 </p>
               </article>))}
           </div>)}
@@ -384,17 +384,17 @@ export function CreatorReportsPage() {
           </p>
         </div>
 
-        {isLoading ? (<p className="p-5 text-sm font-medium text-[#6d7f84]">Carregando relat-rios...</p>) : filteredRows.length === 0 ? (<div className="p-6">
+        {isLoading ? (<p className="p-5 text-sm font-medium text-[#6d7f84]">Carregando relatórios...</p>) : filteredRows.length === 0 ? (<div className="p-6">
             <p className="font-readex text-lg font-semibold text-[#15323b]">Sem dados para o filtro atual.</p>
             <p className="mt-2 text-sm leading-6 text-[#6d7f84]">
-              Experimente selecionar outro curso ou per-odo. As vendas aparecem ap-s o webhook confirmar o pagamento.
+              Experimente selecionar outro curso ou período. As vendas aparecem após o webhook confirmar o pagamento.
             </p>
           </div>) : (<div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-[#D8E6EB] text-left text-sm">
               <thead className="bg-[#F2F7F9] text-[10px] font-black uppercase tracking-[0.2em] text-[#5F7077]">
                 <tr>
                   <th className="px-5 py-3">Curso</th>
-                  <th className="px-5 py-3">Periodo</th>
+                  <th className="px-5 py-3">Período</th>
                   <th className="px-5 py-3">Vendas</th>
                   <th className="px-5 py-3">Receita</th>
                   <th className="px-5 py-3">Cancelamentos</th>
@@ -405,7 +405,7 @@ export function CreatorReportsPage() {
                 {filteredRows.map((row) => (<tr key={`${row.course_id}-${row.period_index}`} className="align-top">
                     <td className="px-5 py-4">
                       <p className="font-black text-[#15323b]">{row.course_title}</p>
-                      <p className="mt-1 text-xs font-medium text-[#5F7077]">Lancamento: {formatDate(row.launch_date)}</p>
+                      <p className="mt-1 text-xs font-medium text-[#5F7077]">Lançamento: {formatDate(row.launch_date)}</p>
                     </td>
                     <td className="px-5 py-4 font-semibold text-[#5f7077]">
                       {formatDate(row.period_starts_at)} a {formatDate(row.period_ends_at)}
@@ -426,21 +426,21 @@ export function CreatorReportsPage() {
         <div className="border-b border-[#D8E6EB] px-5 py-4">
           <h2 className="font-readex text-xl font-semibold text-[#15323b]">Meus repasses</h2>
           <p className="mt-1 text-sm font-medium text-[#6d7f84]">
-            Hist-rico dos lotes pagos, em processamento ou com falha. Os pagamentos via Asaas usam a chave PIX cadastrada no seu perfil.
+            Histórico dos lotes pagos, em processamento ou com falha. Os pagamentos via Asaas usam a chave PIX cadastrada no seu perfil.
           </p>
         </div>
 
         {payouts.length === 0 ? (<div className="p-6">
             <p className="font-readex text-lg font-semibold text-[#15323b]">Nenhum repasse registrado ainda.</p>
             <p className="mt-2 text-sm leading-6 text-[#6d7f84]">
-              Quando suas comissoes forem pagas ou enviadas ao Asaas, os lotes aparecer-o aqui.
+              Quando suas comissões forem pagas ou enviadas ao Asaas, os lotes aparecerão aqui.
             </p>
           </div>) : (<div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-[#D8E6EB] text-left text-sm">
               <thead className="bg-[#F2F7F9] text-[10px] font-black uppercase tracking-[0.2em] text-[#5F7077]">
                 <tr>
                   <th className="px-5 py-3">Curso</th>
-                  <th className="px-5 py-3">M-todo</th>
+                  <th className="px-5 py-3">Método</th>
                   <th className="px-5 py-3">Valor</th>
                   <th className="px-5 py-3">Data</th>
                   <th className="px-5 py-3">Status</th>
@@ -473,16 +473,16 @@ export function CreatorReportsPage() {
 
       <section className="overflow-hidden border border-[#D8E6EB] bg-white">
         <div className="border-b border-[#D8E6EB] px-5 py-4">
-          <h2 className="font-readex text-xl font-semibold text-[#15323b]">Ultimas comissoes</h2>
+          <h2 className="font-readex text-xl font-semibold text-[#15323b]">Últimas comissões</h2>
           <p className="mt-1 text-sm font-medium text-[#6d7f84]">
-            Comissoes ficam elegiveis em ate 30 dias apos a venda e podem ser canceladas se houver estorno.
+            Comissões ficam elegíveis em até 30 dias após a venda e podem ser canceladas se houver estorno.
           </p>
         </div>
 
         {filteredCommissions.length === 0 ? (<div className="p-6">
-            <p className="font-readex text-lg font-semibold text-[#15323b]">Nenhuma comissao no filtro atual.</p>
+            <p className="font-readex text-lg font-semibold text-[#15323b]">Nenhuma comissão no filtro atual.</p>
             <p className="mt-2 text-sm leading-6 text-[#6d7f84]">
-              Elas aparecerao aqui quando uma venda paga tiver curso vinculado e percentual configurado.
+              Elas aparecerão aqui quando uma venda paga tiver curso vinculado e percentual configurado.
             </p>
           </div>) : (<div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-[#D8E6EB] text-left text-sm">
@@ -490,7 +490,7 @@ export function CreatorReportsPage() {
                 <tr>
                   <th className="px-5 py-3">Curso</th>
                   <th className="px-5 py-3">Venda</th>
-                  <th className="px-5 py-3">Comissao</th>
+                  <th className="px-5 py-3">Comissão</th>
                   <th className="px-5 py-3">Venda paga em</th>
                   <th className="px-5 py-3">Elegivel em</th>
                   <th className="px-5 py-3">Status</th>

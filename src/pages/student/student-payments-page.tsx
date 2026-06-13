@@ -84,7 +84,7 @@ function RefundRequestModal({ payment, isSubmitting, onClose, onSubmit, }: {
             await onSubmit(reason);
         }
         catch (error) {
-            setErrorMessage(error instanceof Error ? error.message : "N?o foi possvel enviar a solicita??o de reembolso.");
+            setErrorMessage(error instanceof Error ? error.message : 'Não foi possível enviar a solicitação de reembolso.');
         }
     }
     return (<div className="fixed inset-0 z-[150] flex items-center justify-center bg-[#09131fb0] p-4 backdrop-blur-sm">
@@ -99,7 +99,7 @@ function RefundRequestModal({ payment, isSubmitting, onClose, onSubmit, }: {
             <div>
               <p className="text-[12px] font-black uppercase tracking-[0.3em] text-[#C96A1B]">Antes de cancelar</p>
               <h3 className="mt-3 max-w-[500px] text-4xl font-black leading-[1.05] tracking-tight text-[#09142A]">Podemos tentar resolver isto contigo</h3>
-              <p className="mt-4 text-lg leading-8 text-[#445166]">O reembolso remove o acesso ao curso. Se o problema for acesso, pagamento, contedo ou duvida de uso, o suporte pode ajudar rapidamente.
+              <p className="mt-4 text-lg leading-8 text-[#445166]">O reembolso remove o acesso ao curso. Se o problema for acesso, pagamento, conteúdo ou dúvida de uso, o suporte pode ajudar rapidamente.
               </p>
             </div>
 
@@ -125,9 +125,9 @@ function RefundRequestModal({ payment, isSubmitting, onClose, onSubmit, }: {
             </button>
           </div>) : (<div className="space-y-6">
             <div>
-              <p className="text-[12px] font-black uppercase tracking-[0.3em] text-[#D31C4B]">Confirmar solicita??o</p>
+              <p className="text-[12px] font-black uppercase tracking-[0.3em] text-[#D31C4B]">Confirmar solicitação</p>
               <h3 className="mt-3 max-w-[520px] text-4xl font-black leading-[1.05] tracking-tight text-[#09142A]">Tens certeza que queres pedir o reembolso</h3>
-              <p className="mt-4 text-lg leading-8 text-[#445166]">O estorno sera solicitado automticamente no gateway de pagamento. O acesso ao curso sera removido apos a confirmacao.
+              <p className="mt-4 text-lg leading-8 text-[#445166]">O estorno será solicitado automaticamente no gateway de pagamento. O acesso ao curso será removido após a confirmação.
               </p>
             </div>
 
@@ -140,7 +140,7 @@ function RefundRequestModal({ payment, isSubmitting, onClose, onSubmit, }: {
 
             <div className="flex flex-col gap-3 sm:flex-row">
               <Button type="button" onClick={() => setStep('options')} disabled={isSubmitting} className="h-12 flex-1 rounded-full border border-[#BFD8E2] bg-[#EAF5F9] text-base font-black text-[#173847] hover:bg-[#DCEFF6]">
-                Rever opcoes
+                Rever opções
               </Button>
               <Button type="button" onClick={() => void handleConfirmRefund()} disabled={isSubmitting} className="h-12 flex-1 rounded-full bg-[#C70F45] text-base font-black text-white hover:bg-[#AE0D3C]">
                 {isSubmitting ? 'Enviando...' : 'Confirmar reembolso'}
@@ -170,7 +170,7 @@ export function StudentPaymentsPage() {
             setPayments(nextPayments);
         }
         catch (loadError) {
-            const message = loadError instanceof Error ? loadError.message : "N?o foi possvel carregar o hist?rico.";
+            const message = loadError instanceof Error ? loadError.message : 'Não foi possível carregar o histórico.';
             setError(message);
         }
         finally {
@@ -207,7 +207,7 @@ export function StudentPaymentsPage() {
             Pagamentos
           </div>
           <div>
-            <h2 className="text-4xl font-black tracking-tight text-slate-900 sm:text-5xl">Hist?rico de Pagamentos</h2>
+            <h2 className="text-4xl font-black tracking-tight text-slate-900 sm:text-5xl">Histórico de Pagamentos</h2>
             <p className="mt-3 max-w-3xl text-base leading-relaxed text-slate-600">
               Confira seus pedidos, faturas e o status mais recente de cada pagamento realizado na plataforma.
             </p>
@@ -231,7 +231,7 @@ export function StudentPaymentsPage() {
           <div className="flex items-start gap-3">
             <AlertCircle className="mt-0.5 h-5 w-5"/>
             <div className="space-y-3">
-              <p className="text-base font-black">N?o foi possvel carregar seus pagamentos.</p>
+              <p className="text-base font-black">Não foi possível carregar seus pagamentos.</p>
               <p className="text-sm font-medium">{error}</p>
               <Button type="button" variant="outline" onClick={() => void loadHistory()} className="rounded-xl border-red-200 bg-white text-red-700">
                 Tentar novamente
@@ -246,10 +246,10 @@ export function StudentPaymentsPage() {
                 <thead>
                   <tr className="border-b border-slate-200 bg-slate-50/80">
                     <th className="px-4 py-3 text-left text-xs font-black uppercase tracking-[0.18em] text-slate-500">Data</th>
-                    <th className="px-4 py-3 text-left text-xs font-black uppercase tracking-[0.18em] text-slate-500">Descri??o</th>
+                    <th className="px-4 py-3 text-left text-xs font-black uppercase tracking-[0.18em] text-slate-500">Descrição</th>
                     <th className="px-4 py-3 text-left text-xs font-black uppercase tracking-[0.18em] text-slate-500">Valor</th>
                     <th className="px-4 py-3 text-left text-xs font-black uppercase tracking-[0.18em] text-slate-500">Status</th>
-                    <th className="px-4 py-3 text-right text-xs font-black uppercase tracking-[0.18em] text-slate-500">Acoes</th>
+                    <th className="px-4 py-3 text-right text-xs font-black uppercase tracking-[0.18em] text-slate-500">Ações</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -259,9 +259,9 @@ export function StudentPaymentsPage() {
             </div>) : (<div className="p-8">
               <div className="flex min-h-[220px] flex-col items-center justify-center rounded-[24px] border border-dashed border-slate-300 bg-slate-50 text-center">
                 <FileText className="h-10 w-10 text-slate-300"/>
-                <p className="mt-4 text-base font-bold text-slate-700">Nenhum hist?rico de pagamento encontrado.</p>
+                <p className="mt-4 text-base font-bold text-slate-700">Nenhum histórico de pagamento encontrado.</p>
                 <p className="mt-2 text-sm font-medium text-slate-500">
-                  Assim que um pedido for criado, ele sera listado aqui para acompanhamento.
+                  Assim que um pedido for criado, ele será listado aqui para acompanhamento.
                 </p>
               </div>
             </div>)}
