@@ -1,5 +1,5 @@
 import { spawnSync } from 'node:child_process'
-import { existsSync, mkdtempSync, cpSync, rmSync, readFileSync } from 'node:fs'
+import { existsSync, mkdtempSync, cpSync, rmSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { tmpdir } from 'node:os'
 const npxCommand = process.platform === 'win32' ? 'npx.cmd' : 'npx'
@@ -28,6 +28,30 @@ function loadEnvFile(filePath) {
       process.env[key] = value
     }
   }
+}
+
+function ensureSpaFallbackRoute() {
+  const configPath = join(process.cwd(), '.vercel', 'output', 'config.json')
+
+  if (!existsSync(configPath)) {
+    return
+  }
+
+  const config = JSON.parse(readFileSync(configPath, 'utf8'))
+
+  if (Array.isArray(config.routes) && config.routes.length > 0) {
+    return
+  }
+
+  config.routes = [
+    {
+      src: '/((?!api/|assets/|.*\\.[^/]+$).*)',
+      dest: '/index.html',
+      check: true,
+    },
+  ]
+
+  writeFileSync(configPath, `${JSON.stringify(config, null, 2)}\n`)
 }
 
 loadEnvFile(join(process.cwd(), '.env'))
@@ -229,6 +253,8 @@ async function main() {
       NPM_CONFIG_INCLUDE: 'dev',
     },
   })
+
+  ensureSpaFallbackRoute()
 
   process.stdout.write(`Publicando output prebuilt em producao na Vercel pelo projeto canonico (${vercelScope})...\n`)
   const tempWorkspace = mkdtempSync(join(tmpdir(), 'genflix-vercel-'))
