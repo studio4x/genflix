@@ -468,7 +468,7 @@ export function StudentAccountPage() {
             </p>
 
             <div className="mt-6 flex flex-wrap gap-3">
-              <Link to="/aluno/dashboard" style={{ color: '#1d4ed8' }} className="inline-flex h-11 items-center justify-center rounded-2xl bg-white px-4 text-sm font-black transition-colors hover:bg-slate-100 hover:text-blue-800">
+              <Link to="/aluno/dashboard" style={{ color: '#0f172a' }} className="inline-flex h-11 items-center justify-center rounded-2xl bg-white px-4 text-sm font-black !text-slate-900 transition-colors hover:bg-slate-100 hover:!text-blue-800">
                 Ir para dashboard
               </Link>
               <Link to="/aluno/cursos" className="inline-flex h-11 items-center justify-center rounded-2xl border border-white/20 bg-white/10 px-4 text-sm font-black text-white transition-colors hover:bg-white/15">
