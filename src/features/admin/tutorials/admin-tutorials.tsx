@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { sanitizeRichTextHtml } from '@/features/admin/content/content-blocks';
 
 export type AdminTutorialStep = {
   title: string;
@@ -31,11 +32,11 @@ const defaultAdminTutorials: AdminTutorial[] = [
     steps: [
       {
         title: 'Abra a área de cursos',
-        description: 'No menu lateral do admin, entre em `Catálogo de Cursos` para ver a lista atual e iniciar um novo cadastro.',
+        description: 'No menu lateral do admin, entre em <strong>Catálogo de Cursos</strong> para ver a lista atual e iniciar um novo cadastro.',
       },
       {
         title: 'Crie o curso',
-        description: 'Clique em `Criar Curso Agora` e preencha nome, descrição, imagem de capa, preço e status inicial.',
+        description: 'Clique em <strong>Criar Curso Agora</strong> e preencha nome, descrição, imagem de capa, preço e status inicial.',
       },
       {
         title: 'Salve para abrir o builder',
@@ -68,11 +69,11 @@ const defaultAdminTutorials: AdminTutorial[] = [
     steps: [
       {
         title: 'Acesse o blog',
-        description: 'No menu do admin, abra a área de `Blog` para ver os artigos já cadastrados e começar um novo conteúdo.',
+        description: 'No menu do admin, abra a área de <strong>Blog</strong> para ver os artigos já cadastrados e começar um novo conteúdo.',
       },
       {
         title: 'Crie um novo artigo',
-        description: 'Clique em `Novo artigo` para abrir o formulário de criação e preparar o conteúdo do post.',
+        description: 'Clique em <strong>Novo artigo</strong> para abrir o formulário de criação e preparar o conteúdo do post.',
       },
       {
         title: 'Preencha os dados principais',
@@ -94,6 +95,44 @@ const defaultAdminTutorials: AdminTutorial[] = [
   },
 ];
 
+function normalizeStepDescription(description: string) {
+  const sanitized = sanitizeRichTextHtml(description.trim() || '<p></p>');
+  return sanitized || '<p></p>';
+}
+
+function normalizeTutorialStep(step: Partial<AdminTutorialStep>, index: number): AdminTutorialStep {
+  return {
+    title: typeof step.title === 'string' && step.title.trim() ? step.title.trim() : `Passo ${index + 1}`,
+    description: normalizeStepDescription(typeof step.description === 'string' ? step.description : ''),
+  };
+}
+
+function normalizeTutorial(tutorial: Partial<AdminTutorial>, fallbackIndex = 0): AdminTutorial | null {
+  if (!tutorial || typeof tutorial.id !== 'string' || typeof tutorial.title !== 'string' || typeof tutorial.summary !== 'string' || typeof tutorial.category !== 'string') {
+    return null;
+  }
+
+  const normalizedSteps = Array.isArray(tutorial.steps)
+    ? tutorial.steps.map((step, index) => normalizeTutorialStep(step ?? {}, index))
+    : [];
+
+  const normalizedNotes = Array.isArray(tutorial.notes)
+    ? tutorial.notes
+        .map((note) => (typeof note === 'string' ? note.trim() : ''))
+        .filter(Boolean)
+    : [];
+
+  return {
+    id: tutorial.id.trim() || `tutorial-${fallbackIndex + 1}`,
+    title: tutorial.title.trim(),
+    summary: tutorial.summary.trim(),
+    estimatedMinutes: Number.isFinite(tutorial.estimatedMinutes) ? Number(tutorial.estimatedMinutes) : 3,
+    category: tutorial.category.trim() || 'Geral',
+    steps: normalizedSteps.length > 0 ? normalizedSteps : [normalizeTutorialStep({ title: 'Passo 1', description: '<p>Adicione os passos do tutorial.</p>' }, 0)],
+    notes: normalizedNotes.length > 0 ? normalizedNotes : ['Adicione observações úteis para o admin.'],
+  };
+}
+
 function safeLoadTutorials(): AdminTutorial[] {
   if (typeof window === 'undefined') {
     return defaultAdminTutorials;
@@ -106,24 +145,15 @@ function safeLoadTutorials(): AdminTutorial[] {
       return defaultAdminTutorials;
     }
 
-    const parsed = JSON.parse(raw) as AdminTutorial[];
+    const parsed = JSON.parse(raw) as Partial<AdminTutorial>[];
 
     if (!Array.isArray(parsed) || parsed.length === 0) {
       return defaultAdminTutorials;
     }
 
-    const tutorials = parsed.filter((tutorial) => {
-      return Boolean(
-        tutorial &&
-          typeof tutorial.id === 'string' &&
-          typeof tutorial.title === 'string' &&
-          typeof tutorial.summary === 'string' &&
-          typeof tutorial.category === 'string' &&
-          typeof tutorial.estimatedMinutes === 'number' &&
-          Array.isArray(tutorial.steps) &&
-          Array.isArray(tutorial.notes),
-      );
-    });
+    const tutorials = parsed
+      .map((tutorial, index) => normalizeTutorial(tutorial, index))
+      .filter((tutorial): tutorial is AdminTutorial => Boolean(tutorial));
 
     return tutorials.length > 0 ? tutorials : defaultAdminTutorials;
   }
@@ -154,6 +184,19 @@ function buildUniqueTutorialId(title: string, tutorials: AdminTutorial[]) {
   return candidate;
 }
 
+function normalizeTutorialDraft(tutorial: AdminTutorialDraft, fallbackId: string, existingTutorials: AdminTutorial[]) {
+  const normalizedTutorial = normalizeTutorial(tutorial, existingTutorials.length);
+
+  if (!normalizedTutorial) {
+    throw new Error('Invalid tutorial draft');
+  }
+
+  return {
+    ...normalizedTutorial,
+    id: tutorial.id?.trim() || fallbackId,
+  };
+}
+
 type AdminTutorialsContextValue = {
   tutorials: AdminTutorial[];
   activeTutorialId: string;
@@ -166,6 +209,7 @@ type AdminTutorialsContextValue = {
   restoreDrawer: () => void;
   selectTutorial: (tutorialId: string) => void;
   addTutorial: (tutorial: AdminTutorialDraft) => AdminTutorial;
+  updateTutorial: (tutorialId: string, tutorial: AdminTutorialDraft) => AdminTutorial;
 };
 
 const AdminTutorialsContext = createContext<AdminTutorialsContextValue | null>(null);
@@ -181,7 +225,7 @@ export function AdminTutorialsProvider({ children }: { children: ReactNode }) {
   }, [tutorials]);
 
   const activeTutorial = useMemo(() => {
-    return tutorials.find((tutorial) => tutorial.id === activeTutorialId) ?? tutorials[0];
+    return tutorials.find((tutorial) => tutorial.id === activeTutorialId) ?? tutorials[0] ?? defaultAdminTutorials[0];
   }, [activeTutorialId, tutorials]);
 
   useEffect(() => {
@@ -190,7 +234,7 @@ export function AdminTutorialsProvider({ children }: { children: ReactNode }) {
     }
   }, [activeTutorial, tutorials]);
 
-  function openTutorial(tutorialId = tutorials[0]?.id ?? '') {
+  function openTutorial(tutorialId = tutorials[0]?.id ?? defaultAdminTutorials[0].id) {
     if (tutorialId) {
       setActiveTutorialId(tutorialId);
     }
@@ -220,32 +264,39 @@ export function AdminTutorialsProvider({ children }: { children: ReactNode }) {
   }
 
   function addTutorial(tutorial: AdminTutorialDraft) {
-    const normalizedTutorial: AdminTutorial = {
-      id: tutorial.id?.trim() || buildUniqueTutorialId(tutorial.title, tutorials),
-      title: tutorial.title.trim(),
-      summary: tutorial.summary.trim(),
-      estimatedMinutes: Number.isFinite(tutorial.estimatedMinutes) ? tutorial.estimatedMinutes : 3,
-      category: tutorial.category.trim() || 'Geral',
-      steps: tutorial.steps.length > 0 ? tutorial.steps : [{ title: 'Passo 1', description: 'Adicione os passos do tutorial.' }],
-      notes: tutorial.notes.length > 0 ? tutorial.notes : ['Adicione observações úteis para o admin.'],
-    };
+    const nextTutorial = normalizeTutorialDraft(tutorial, buildUniqueTutorialId(tutorial.title, tutorials), tutorials);
 
     setTutorials((current) => {
-      const nextTutorials = [...current, normalizedTutorial];
+      const nextTutorials = [...current, nextTutorial];
       window.localStorage.setItem(ADMIN_TUTORIALS_STORAGE_KEY, JSON.stringify(nextTutorials));
       return nextTutorials;
     });
-    setActiveTutorialId(normalizedTutorial.id);
+    setActiveTutorialId(nextTutorial.id);
     setIsDrawerOpen(true);
     setIsDrawerMinimized(false);
 
-    return normalizedTutorial;
+    return nextTutorial;
+  }
+
+  function updateTutorial(tutorialId: string, tutorial: AdminTutorialDraft) {
+    const nextTutorial = normalizeTutorialDraft(tutorial, tutorialId, tutorials);
+
+    setTutorials((current) => {
+      const nextTutorials = current.map((item) => (item.id === tutorialId ? nextTutorial : item));
+      window.localStorage.setItem(ADMIN_TUTORIALS_STORAGE_KEY, JSON.stringify(nextTutorials));
+      return nextTutorials;
+    });
+    setActiveTutorialId(nextTutorial.id);
+    setIsDrawerOpen(true);
+    setIsDrawerMinimized(false);
+
+    return nextTutorial;
   }
 
   const value: AdminTutorialsContextValue = {
     tutorials,
     activeTutorialId,
-    activeTutorial: activeTutorial ?? tutorials[0],
+    activeTutorial: activeTutorial ?? tutorials[0] ?? defaultAdminTutorials[0],
     isDrawerOpen,
     isDrawerMinimized,
     openTutorial,
@@ -254,6 +305,7 @@ export function AdminTutorialsProvider({ children }: { children: ReactNode }) {
     restoreDrawer,
     selectTutorial,
     addTutorial,
+    updateTutorial,
   };
 
   return <AdminTutorialsContext.Provider value={value}>{children}</AdminTutorialsContext.Provider>;

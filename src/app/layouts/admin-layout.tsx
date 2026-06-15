@@ -6,6 +6,7 @@ import { PlatformFooter } from '@/components/layout/platform-footer';
 import { GenflixLogo } from '@/components/public/genflix-logo';
 import { Button } from '@/components/ui/button';
 import { clearBrowserCache, clearServerCache } from '@/features/admin/cache/api';
+import { sanitizeRichTextHtml } from '@/features/admin/content/content-blocks';
 import { AdminTutorialsProvider, useAdminTutorials } from '@/features/admin/tutorials/admin-tutorials';
 import { NotificationCenter } from '@/features/notifications/notification-center';
 type AdminNavItem = {
@@ -333,7 +334,7 @@ function AdminTutorialsFloatingPanel() {
                         </div>
                         <div>
                           <h4 className="text-sm font-black tracking-tight text-[#15323b]">{step.title}</h4>
-                          <p className="mt-1 text-sm leading-6 text-[#5F7077]">{step.description}</p>
+                          <div className="mt-1 space-y-2 text-sm leading-6 text-[#5F7077] [&_a]:font-semibold [&_a]:text-[#1398B7] [&_a]:underline [&_p]:m-0" dangerouslySetInnerHTML={{ __html: sanitizeRichTextHtml(step.description) }} />
                         </div>
                       </div>
                     </div>
