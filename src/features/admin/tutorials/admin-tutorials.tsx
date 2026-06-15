@@ -210,6 +210,7 @@ type AdminTutorialsContextValue = {
   selectTutorial: (tutorialId: string) => void;
   addTutorial: (tutorial: AdminTutorialDraft) => AdminTutorial;
   updateTutorial: (tutorialId: string, tutorial: AdminTutorialDraft) => AdminTutorial;
+  deleteTutorial: (tutorialId: string) => boolean;
 };
 
 const AdminTutorialsContext = createContext<AdminTutorialsContextValue | null>(null);
@@ -293,6 +294,33 @@ export function AdminTutorialsProvider({ children }: { children: ReactNode }) {
     return nextTutorial;
   }
 
+  function deleteTutorial(tutorialId: string) {
+    let deleted = false;
+
+    setTutorials((current) => {
+      const nextTutorials = current.filter((item) => {
+        const shouldKeep = item.id !== tutorialId;
+
+        if (!shouldKeep) {
+          deleted = true;
+        }
+
+        return shouldKeep;
+      });
+
+      const safeTutorials = nextTutorials.length > 0 ? nextTutorials : defaultAdminTutorials;
+      window.localStorage.setItem(ADMIN_TUTORIALS_STORAGE_KEY, JSON.stringify(safeTutorials));
+
+      if (activeTutorialId === tutorialId) {
+        setActiveTutorialId(safeTutorials[0]?.id ?? defaultAdminTutorials[0].id);
+      }
+
+      return safeTutorials;
+    });
+
+    return deleted;
+  }
+
   const value: AdminTutorialsContextValue = {
     tutorials,
     activeTutorialId,
@@ -306,6 +334,7 @@ export function AdminTutorialsProvider({ children }: { children: ReactNode }) {
     selectTutorial,
     addTutorial,
     updateTutorial,
+    deleteTutorial,
   };
 
   return <AdminTutorialsContext.Provider value={value}>{children}</AdminTutorialsContext.Provider>;

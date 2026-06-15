@@ -694,13 +694,21 @@ function getHtmlUploadContentType(file: File) {
     return file.type || 'text/html';
 }
 
+function stripPreviewBlockingMetaTags(html: string) {
+    return html
+        .replace(/<meta[^>]+http-equiv=["']?content-security-policy["']?[^>]*>/gi, '')
+        .replace(/<meta[^>]+http-equiv=["']?x-frame-options["']?[^>]*>/gi, '');
+}
+
 function buildHtmlPreviewSrcDoc(html: string) {
     const trimmed = html.trim();
+    const sanitized = stripPreviewBlockingMetaTags(trimmed);
+
     if (!trimmed) {
         return '<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"></head><body><div style="font-family:sans-serif;padding:24px;color:#64748b;">Nenhum HTML foi informado.</div></body></html>';
     }
     if (/^<!doctype\s+html|^<html[\s>]/i.test(trimmed)) {
-        return trimmed;
+        return sanitized;
     }
     return `<!doctype html>
 <html lang="pt-BR">
@@ -713,7 +721,7 @@ function buildHtmlPreviewSrcDoc(html: string) {
     </style>
   </head>
   <body>
-    ${trimmed}
+    ${sanitized}
   </body>
 </html>`;
 }
@@ -731,8 +739,6 @@ export function LessonHtmlBlockEditor({ content, onChange, onError }: LessonHtml
     const [isUploading, setIsUploading] = useState(false);
     const [isDragActive, setIsDragActive] = useState(false);
     const [previewError, setPreviewError] = useState<string | null>(null);
-    const resolvedUploadUrl = useResolvedLessonAssetUrl(content.storage_path, content.signed_url);
-
     useEffect(() => {
         setInputMode(content.source_type);
     }, [content.source_type]);
@@ -861,7 +867,6 @@ export function LessonHtmlBlockEditor({ content, onChange, onError }: LessonHtml
         });
     }
 
-    const previewSrc = content.source_type === 'upload' ? resolvedUploadUrl : null;
     const previewSrcDoc = buildHtmlPreviewSrcDoc(content.html);
 
     return (
@@ -889,11 +894,7 @@ export function LessonHtmlBlockEditor({ content, onChange, onError }: LessonHtml
             </div>
 
             <div className="overflow-hidden rounded-[24px] border border-slate-200 bg-slate-50">
-                {previewSrc ? (
-                    <iframe title="Prévia do HTML" src={previewSrc} sandbox="allow-scripts allow-forms allow-popups allow-modals" referrerPolicy="no-referrer" className="h-[72vh] min-h-[560px] w-full border-0 bg-white" />
-                ) : (
-                    <iframe title="Prévia do HTML" srcDoc={previewSrcDoc} sandbox="allow-scripts allow-forms allow-popups allow-modals" referrerPolicy="no-referrer" className="h-[72vh] min-h-[560px] w-full border-0 bg-white" />
-                )}
+                <iframe title="Prévia do HTML" srcDoc={previewSrcDoc} sandbox="allow-scripts allow-forms allow-popups allow-modals" referrerPolicy="no-referrer" className="h-[72vh] min-h-[560px] w-full border-0 bg-white" />
             </div>
 
             {inputMode === 'paste' ? (
@@ -1003,17 +1004,11 @@ interface LessonHtmlBlockRendererProps {
 }
 
 export function LessonHtmlBlockRenderer({ content }: LessonHtmlBlockRendererProps) {
-    const resolvedUploadUrl = useResolvedLessonAssetUrl(content.storage_path, content.signed_url);
-    const previewSrc = content.source_type === 'upload' ? resolvedUploadUrl : null;
     const previewSrcDoc = buildHtmlPreviewSrcDoc(content.html);
 
     return (
         <figure className="my-8 overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm">
-            {previewSrc ? (
-                <iframe title={content.file_name || 'HTML da aula'} src={previewSrc} sandbox="allow-scripts allow-forms allow-popups allow-modals" referrerPolicy="no-referrer" className="h-[80vh] min-h-[640px] w-full border-0 bg-white" />
-            ) : (
-                <iframe title={content.file_name || 'HTML da aula'} srcDoc={previewSrcDoc} sandbox="allow-scripts allow-forms allow-popups allow-modals" referrerPolicy="no-referrer" className="h-[80vh] min-h-[640px] w-full border-0 bg-white" />
-            )}
+            <iframe title={content.file_name || 'HTML da aula'} srcDoc={previewSrcDoc} sandbox="allow-scripts allow-forms allow-popups allow-modals" referrerPolicy="no-referrer" className="h-[80vh] min-h-[640px] w-full border-0 bg-white" />
         </figure>
     );
 }

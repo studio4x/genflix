@@ -390,9 +390,8 @@ export function AdminTutorialsPage() {
       </section>
 
       {isModalOpen ? (
-        <div className="fixed inset-0 z-[120] bg-slate-950/35 backdrop-blur-sm" onClick={closeModal}>
-          <div className="fixed inset-y-0 right-0 flex w-full justify-end p-3 sm:p-4">
-            <div className="flex h-full w-full max-w-[min(96vw,1040px)] flex-col overflow-hidden rounded-[32px] border border-[#BEE3EA] bg-white shadow-[0_30px_100px_rgba(10,54,64,0.26)]" onClick={(event) => event.stopPropagation()}>
+        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-950/35 p-3 backdrop-blur-sm sm:p-4" onClick={closeModal}>
+          <div className="flex h-[min(92vh,920px)] w-full max-w-[min(96vw,1040px)] flex-col overflow-hidden rounded-[32px] border border-[#BEE3EA] bg-white shadow-[0_30px_100px_rgba(10,54,64,0.26)]" onClick={(event) => event.stopPropagation()}>
               <div className="flex items-start justify-between gap-4 border-b border-[#D8E6EB] bg-[linear-gradient(145deg,#0A3640_0%,#0E677C_55%,#1398B7_100%)] px-5 py-4 text-white">
                 <div className="min-w-0">
                   <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.24em] text-white/80">
@@ -581,7 +580,6 @@ export function AdminTutorialsPage() {
               </form>
             </div>
           </div>
-        </div>
       ) : null}
     </div>
   );
