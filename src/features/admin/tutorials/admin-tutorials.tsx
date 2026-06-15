@@ -211,6 +211,7 @@ type AdminTutorialsContextValue = {
   addTutorial: (tutorial: AdminTutorialDraft) => AdminTutorial;
   updateTutorial: (tutorialId: string, tutorial: AdminTutorialDraft) => AdminTutorial;
   deleteTutorial: (tutorialId: string) => boolean;
+  reorderTutorials: (tutorialIds: string[]) => void;
 };
 
 const AdminTutorialsContext = createContext<AdminTutorialsContextValue | null>(null);
@@ -321,6 +322,19 @@ export function AdminTutorialsProvider({ children }: { children: ReactNode }) {
     return deleted;
   }
 
+  function reorderTutorials(tutorialIds: string[]) {
+    const nextTutorials = tutorialIds
+      .map((tutorialId) => tutorials.find((tutorial) => tutorial.id === tutorialId))
+      .filter((tutorial): tutorial is AdminTutorial => Boolean(tutorial));
+
+    if (nextTutorials.length === 0) {
+      return;
+    }
+
+    setTutorials(nextTutorials);
+    window.localStorage.setItem(ADMIN_TUTORIALS_STORAGE_KEY, JSON.stringify(nextTutorials));
+  }
+
   const value: AdminTutorialsContextValue = {
     tutorials,
     activeTutorialId,
@@ -335,6 +349,7 @@ export function AdminTutorialsProvider({ children }: { children: ReactNode }) {
     addTutorial,
     updateTutorial,
     deleteTutorial,
+    reorderTutorials,
   };
 
   return <AdminTutorialsContext.Provider value={value}>{children}</AdminTutorialsContext.Provider>;

@@ -694,15 +694,68 @@ function getHtmlUploadContentType(file: File) {
     return file.type || 'text/html';
 }
 
+const HTML_PREVIEW_STYLES = `<style>
+  html, body {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+  }
+
+  *, *::before, *::after {
+    box-sizing: inherit;
+  }
+
+  img, video, canvas, svg, iframe {
+    display: block;
+    max-width: 100%;
+  }
+
+  img, video, canvas, svg {
+    height: auto;
+  }
+
+  table {
+    width: 100%;
+    max-width: 100%;
+    table-layout: fixed;
+    word-break: break-word;
+  }
+
+  pre, code, blockquote {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  body > * {
+    max-width: 100%;
+  }
+</style>`;
+
 function stripPreviewBlockingMetaTags(html: string) {
     return html
         .replace(/<meta[^>]+http-equiv=["']?content-security-policy["']?[^>]*>/gi, '')
         .replace(/<meta[^>]+http-equiv=["']?x-frame-options["']?[^>]*>/gi, '');
 }
 
+function injectResponsivePreviewStyles(html: string) {
+    if (/<head[\s>]/i.test(html)) {
+        return html.replace(/<head([^>]*)>/i, `<head$1>${HTML_PREVIEW_STYLES}`);
+    }
+
+    if (/<html[\s>]/i.test(html)) {
+        return html.replace(/<html([^>]*)>/i, `<html$1><head><meta charset="utf-8" />${HTML_PREVIEW_STYLES}</head>`);
+    }
+
+    return html;
+}
+
 function buildHtmlPreviewSrcDoc(html: string) {
     const trimmed = html.trim();
-    const sanitized = stripPreviewBlockingMetaTags(trimmed);
+    const sanitized = injectResponsivePreviewStyles(stripPreviewBlockingMetaTags(trimmed));
 
     if (!trimmed) {
         return '<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"></head><body><div style="font-family:sans-serif;padding:24px;color:#64748b;">Nenhum HTML foi informado.</div></body></html>';
@@ -715,6 +768,7 @@ function buildHtmlPreviewSrcDoc(html: string) {
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    ${HTML_PREVIEW_STYLES}
     <style>
       html, body { margin: 0; padding: 0; background: #fff; }
       body { min-height: 100vh; }
