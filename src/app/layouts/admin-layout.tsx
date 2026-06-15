@@ -283,19 +283,20 @@ function AdminTutorialsFloatingPanel() {
             </div>
           </div>
 
-          <div className="grid min-h-0 flex-1 grid-rows-[auto_minmax(0,1fr)]">
-            <div className="border-b border-[#D8E6EB] bg-[#F8FBFC] px-5 py-4">
-              <div className="flex items-center justify-between gap-3">
-                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#5F7077]">Tutoriais disponíveis</p>
-                <span className="rounded-full border border-[#D8E6EB] bg-white px-3 py-1 text-[11px] font-black uppercase tracking-[0.16em] text-[#5F7077]">
-                  {tutorials.length} itens
-                </span>
-              </div>
-            </div>
+          <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5">
+            <div className="space-y-5">
+              <section className="rounded-[28px] border border-[#D8E6EB] bg-[#F8FBFC] p-4">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#5F7077]">Tutoriais disponíveis</p>
+                    <h3 className="mt-1 text-sm font-black tracking-tight text-[#15323b]">Escolha um tutorial para ler</h3>
+                  </div>
+                  <span className="rounded-full border border-[#D8E6EB] bg-white px-3 py-1 text-[11px] font-black uppercase tracking-[0.16em] text-[#5F7077]">
+                    {tutorials.length} itens
+                  </span>
+                </div>
 
-            <div className="min-h-0 overflow-y-auto px-5 py-5">
-              <div className="grid gap-5 xl:grid-cols-[210px_minmax(0,1fr)]">
-                <div className="space-y-3">
+                <div className="mt-4 grid gap-3 xl:grid-cols-2">
                   {tutorials.map((tutorial) => {
                     const isActive = tutorial.id === activeTutorialId;
 
@@ -304,10 +305,10 @@ function AdminTutorialsFloatingPanel() {
                         key={tutorial.id}
                         type="button"
                         onClick={() => selectTutorial(tutorial.id)}
-                        className={`w-full rounded-[24px] border p-4 text-left transition-all ${isActive ? 'border-[#1398B7] bg-[#F2FBFD] shadow-[0_12px_30px_rgba(19,152,183,0.12)]' : 'border-[#D8E6EB] bg-white hover:border-[#BEE3EA] hover:bg-[#F8FBFC]'}`}
+                        className={`rounded-[24px] border p-4 text-left transition-all ${isActive ? 'border-[#1398B7] bg-white shadow-[0_12px_30px_rgba(19,152,183,0.12)]' : 'border-[#D8E6EB] bg-white hover:border-[#BEE3EA] hover:bg-[#F8FBFC]'}`}
                       >
                         <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#1398B7]">{tutorial.category}</p>
-                        <h3 className="mt-2 text-sm font-black tracking-tight text-[#15323b]">{tutorial.title}</h3>
+                        <h4 className="mt-2 text-sm font-black tracking-tight text-[#15323b]">{tutorial.title}</h4>
                         <p className="mt-2 text-xs leading-5 text-[#5F7077]">{tutorial.summary}</p>
                         <div className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-[#D8E6EB] bg-white px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-[#5F7077]">
                           <Clock3 className="h-3.5 w-3.5" />
@@ -317,43 +318,76 @@ function AdminTutorialsFloatingPanel() {
                     );
                   })}
                 </div>
+              </section>
 
-                <div className="min-w-0">
-                  <div className="rounded-[28px] border border-[#D8E6EB] bg-white p-5 shadow-sm">
-                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#5F7077]">Tutorial ativo</p>
-                    <h3 className="mt-2 font-readex text-xl font-semibold tracking-tight text-[#15323b]">{activeTutorial.title}</h3>
-                    <p className="mt-2 text-sm leading-6 text-[#5F7077]">{activeTutorial.summary}</p>
+              <section className="rounded-[28px] border border-[#D8E6EB] bg-white p-5 shadow-sm">
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#5F7077]">Tutorial ativo</p>
+                <h3 className="mt-2 font-readex text-xl font-semibold tracking-tight text-[#15323b]">{activeTutorial.title}</h3>
+                <p className="mt-2 text-sm leading-6 text-[#5F7077]">{activeTutorial.summary}</p>
 
-                    <div className="mt-5 space-y-4">
-                      {activeTutorial.steps.map((step, index) => (
-                        <div key={`${activeTutorial.id}-${step.title}`} className="rounded-[24px] border border-[#D8E6EB] bg-[#F8FBFC] p-4">
-                          <div className="flex items-start gap-3">
-                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#1398B7] text-xs font-black text-white">
-                              {index + 1}
-                            </div>
-                            <div>
-                              <h4 className="text-sm font-black tracking-tight text-[#15323b]">{step.title}</h4>
-                              <p className="mt-1 text-sm leading-6 text-[#5F7077]">{step.description}</p>
-                            </div>
-                          </div>
+                <div className="mt-5 space-y-4">
+                  {activeTutorial.steps.map((step, index) => (
+                    <div key={`${activeTutorial.id}-${step.title}`} className="rounded-[24px] border border-[#D8E6EB] bg-[#F8FBFC] p-4">
+                      <div className="flex items-start gap-3">
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#1398B7] text-xs font-black text-white">
+                          {index + 1}
                         </div>
-                      ))}
+                        <div>
+                          <h4 className="text-sm font-black tracking-tight text-[#15323b]">{step.title}</h4>
+                          <p className="mt-1 text-sm leading-6 text-[#5F7077]">{step.description}</p>
+                        </div>
+                      </div>
                     </div>
-
-                    <div className="mt-5 rounded-[24px] border border-[#BEE3EA] bg-[#F2FBFD] p-4">
-                      <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#0E677C]">Dicas rápidas</p>
-                      <ul className="mt-3 space-y-2 text-sm leading-6 text-[#155160]">
-                        {activeTutorial.notes.map((note) => (
-                          <li key={note} className="flex gap-2">
-                            <ArrowRight className="mt-1 h-4 w-4 shrink-0 text-[#1398B7]" />
-                            <span>{note}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  </div>
+                  ))}
                 </div>
-              </div>
+
+                <div className="mt-5 rounded-[24px] border border-[#BEE3EA] bg-[#F2FBFD] p-4">
+                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#0E677C]">Dicas rápidas</p>
+                  <ul className="mt-3 space-y-2 text-sm leading-6 text-[#155160]">
+                    {activeTutorial.notes.map((note) => (
+                      <li key={note} className="flex gap-2">
+                        <ArrowRight className="mt-1 h-4 w-4 shrink-0 text-[#1398B7]" />
+                        <span>{note}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </section>
+
+              <section className="rounded-[28px] border border-[#D8E6EB] bg-[#F8FBFC] p-4">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#5F7077]">Tutoriais disponíveis</p>
+                    <h3 className="mt-1 text-sm font-black tracking-tight text-[#15323b]">Troque de guia a qualquer momento</h3>
+                  </div>
+                  <span className="rounded-full border border-[#D8E6EB] bg-white px-3 py-1 text-[11px] font-black uppercase tracking-[0.16em] text-[#5F7077]">
+                    {tutorials.length} itens
+                  </span>
+                </div>
+
+                <div className="mt-4 grid gap-3 xl:grid-cols-2">
+                  {tutorials.map((tutorial) => {
+                    const isActive = tutorial.id === activeTutorialId;
+
+                    return (
+                      <button
+                        key={`${tutorial.id}-footer`}
+                        type="button"
+                        onClick={() => selectTutorial(tutorial.id)}
+                        className={`rounded-[24px] border p-4 text-left transition-all ${isActive ? 'border-[#1398B7] bg-white shadow-[0_12px_30px_rgba(19,152,183,0.12)]' : 'border-[#D8E6EB] bg-white hover:border-[#BEE3EA] hover:bg-[#F8FBFC]'}`}
+                      >
+                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#1398B7]">{tutorial.category}</p>
+                        <h4 className="mt-2 text-sm font-black tracking-tight text-[#15323b]">{tutorial.title}</h4>
+                        <p className="mt-2 text-xs leading-5 text-[#5F7077]">{tutorial.summary}</p>
+                        <div className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-[#D8E6EB] bg-white px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-[#5F7077]">
+                          <Clock3 className="h-3.5 w-3.5" />
+                          {tutorial.estimatedMinutes} min
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </section>
             </div>
           </div>
 
