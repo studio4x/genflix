@@ -635,6 +635,358 @@ const defaultAdminTutorials: AdminTutorial[] = [
       'Qualquer alteração visual deve ser validada em telas diferentes.',
     ],
   },
+  {
+    id: 'como-revisar-e-encerrar-tickets-de-suporte',
+    title: 'Como revisar e encerrar tickets de suporte',
+    summary: 'Fluxo prático para classificar, responder, encaminhar e encerrar chamados sem perder rastreabilidade.',
+    estimatedMinutes: 6,
+    category: 'Suporte',
+    steps: [
+      {
+        title: 'Abra a fila de tickets',
+        description: 'Entre em <strong>Suporte</strong> para ver os chamados abertos, o status atual e o que está em andamento.',
+      },
+      {
+        title: 'Classifique o tipo de demanda',
+        description: 'Separe problemas de acesso, cobrança, conteúdo, bugs e dúvidas operacionais para acelerar a resposta.',
+      },
+      {
+        title: 'Responda com orientação objetiva',
+        description: 'Explique o próximo passo de forma curta e clara, evitando respostas longas demais para o usuário.',
+      },
+      {
+        title: 'Encaminhe quando necessário',
+        description: 'Se o caso depender de outro setor, registre o motivo do encaminhamento e deixe o histórico visível.',
+      },
+      {
+        title: 'Feche o ticket depois da validação',
+        description: 'Só encerre quando a solução estiver confirmada ou o próximo passo estiver combinado com clareza.',
+      },
+    ],
+    notes: [
+      'A resposta deve orientar o usuário e reduzir retrabalho interno.',
+      'Fechar o ticket sem validação costuma gerar reabertura desnecessária.',
+    ],
+  },
+  {
+    id: 'como-tratar-pendencias-operacionais',
+    title: 'Como tratar pendências operacionais do admin',
+    summary: 'Entenda como priorizar e resolver os itens que aparecem na fila de pendências do painel.',
+    estimatedMinutes: 5,
+    category: 'Operação',
+    steps: [
+      {
+        title: 'Abra a área de pendências',
+        description: 'Acesse <strong>Pendências</strong> para identificar o que exige ação imediata e o que pode aguardar.',
+      },
+      {
+        title: 'Ordene por impacto',
+        description: 'Resolva primeiro o que bloqueia vendas, acesso de alunos, atendimento ou publicação de conteúdo.',
+      },
+      {
+        title: 'Valide a origem do problema',
+        description: 'Antes de agir, descubra se a pendência veio de um curso, usuário, pagamento, suporte ou ajuste de site.',
+      },
+      {
+        title: 'Registre a solução',
+        description: 'Anote o que foi feito para que a equipe consiga rastrear decisões e evitar retrabalho.',
+      },
+    ],
+    notes: [
+      'Pendências precisam de rotina diária para não acumular.',
+      'Resolver por impacto evita que o time se prenda ao item menos crítico.',
+    ],
+  },
+  {
+    id: 'como-revisar-relatorios-e-indicadores',
+    title: 'Como revisar relatórios e indicadores',
+    summary: 'Use a área de relatórios para acompanhar a saúde da operação e encontrar pontos de melhoria.',
+    estimatedMinutes: 6,
+    category: 'Dados',
+    steps: [
+      {
+        title: 'Abra os relatórios',
+        description: 'Entre em <strong>Relatórios</strong> para conferir os painéis já disponíveis e selecionar a visão mais útil.',
+      },
+      {
+        title: 'Olhe os números com contexto',
+        description: 'Compare período, tendência e variação antes de tomar qualquer decisão baseada em um único número.',
+      },
+      {
+        title: 'Cruze com operação e suporte',
+        description: 'Se um indicador piorou, verifique se houve mudança de campanha, problema técnico ou aumento de chamados.',
+      },
+      {
+        title: 'Registre insights acionáveis',
+        description: 'Anote o que precisa de ação, o que virou alerta e o que pode virar acompanhamento recorrente.',
+      },
+    ],
+    notes: [
+      'Relatórios só ajudam quando viram decisão prática.',
+      'A leitura por tendência costuma ser mais útil do que o valor isolado do dia.',
+    ],
+  },
+  {
+    id: 'como-publicar-e-validar-um-curso',
+    title: 'Como publicar e validar um curso antes de entrar no ar',
+    summary: 'Checklist final para evitar publicar cursos com falhas de conteúdo, layout ou acesso.',
+    estimatedMinutes: 6,
+    category: 'Cursos',
+    steps: [
+      {
+        title: 'Revise o conteúdo completo',
+        description: 'Confira módulos, aulas, materiais e avaliações antes de liberar o curso para o público.',
+      },
+      {
+        title: 'Valide a página pública',
+        description: 'Verifique se título, descrição, capa, CTA e preço estão coerentes com a oferta.',
+      },
+      {
+        title: 'Teste como aluno',
+        description: 'Abra a versão de estudante para conferir navegação, liberação e comportamento das aulas.',
+      },
+      {
+        title: 'Confirme a publicação',
+        description: 'Só marque o curso como pronto depois de passar por uma última checagem rápida da experiência completa.',
+      },
+    ],
+    notes: [
+      'Checklist de publicação evita correções emergenciais depois do lançamento.',
+      'Uma validação final reduz risco de retrabalho com suporte.',
+    ],
+  },
+  {
+    id: 'como-editar-um-curso-ja-publicado',
+    title: 'Como editar um curso já publicado sem quebrar a jornada',
+    summary: 'Boas práticas para alterar cursos em produção com o mínimo de impacto para os alunos.',
+    estimatedMinutes: 6,
+    category: 'Cursos',
+    steps: [
+      {
+        title: 'Identifique o que pode mudar',
+        description: 'Antes de editar, separe o que é ajuste visual, correção de texto, reorganização ou alteração estrutural.',
+      },
+      {
+        title: 'Evite mexer no que o aluno já concluiu',
+        description: 'Se o curso já está em andamento, mantenha a progressão estável para não gerar confusão.',
+      },
+      {
+        title: 'Faça a alteração com cuidado',
+        description: 'Atualize apenas os pontos necessários e teste o caminho do aluno depois da mudança.',
+      },
+      {
+        title: 'Valide impacto em relatórios e liberação',
+        description: 'Confirme se a edição não afetou métricas, acesso ou a ordem esperada das etapas.',
+      },
+    ],
+    notes: [
+      'Alterar curso publicado exige mais cautela do que criar um novo.',
+      'Mudanças pequenas e controladas reduzem o risco operacional.',
+    ],
+  },
+  {
+    id: 'como-configurar-e-validar-repasses-financeiros',
+    title: 'Como configurar e validar repasses financeiros',
+    summary: 'Fluxo para revisar repasses, checar valores e evitar divergências com criadores ou parceiros.',
+    estimatedMinutes: 6,
+    category: 'Financeiro',
+    steps: [
+      {
+        title: 'Abra a área de repasses',
+        description: 'Entre em <strong>Repasses</strong> para ver os registros, os valores previstos e os itens pendentes.',
+      },
+      {
+        title: 'Confira a base de cálculo',
+        description: 'Verifique se o valor considera vendas, comissões, taxas e a regra financeira esperada.',
+      },
+      {
+        title: 'Valide com o histórico',
+        description: 'Compare o repasse com a compra, o período e o destinatário correto antes de aprovar qualquer ajuste.',
+      },
+      {
+        title: 'Registre exceções',
+        description: 'Se houver divergência, documente o motivo e encaminhe para análise antes de seguir com o pagamento.',
+      },
+    ],
+    notes: [
+      'Financeiro exige rastreabilidade e conferência dupla.',
+      'Qualquer ajuste precisa ser fácil de auditar depois.',
+    ],
+  },
+  {
+    id: 'como-manter-faq-e-central-de-suporte',
+    title: 'Como manter a FAQ e a central de suporte',
+    summary: 'Atualize perguntas frequentes e reduza chamados repetidos com respostas mais claras e completas.',
+    estimatedMinutes: 5,
+    category: 'Suporte',
+    steps: [
+      {
+        title: 'Revise os chamados recorrentes',
+        description: 'Veja quais perguntas aparecem com frequência e transforme isso em conteúdo de FAQ.',
+      },
+      {
+        title: 'Escreva respostas reutilizáveis',
+        description: 'Prefira textos curtos, diretos e fáceis de adaptar para múltiplos casos parecidos.',
+      },
+      {
+        title: 'Atualize a página de FAQ',
+        description: 'Mantenha a central alinhada com mudanças de produto, pagamentos, acesso e conteúdo.',
+      },
+      {
+        title: 'Valide se o usuário encontra a resposta',
+        description: 'Teste a navegação da FAQ para confirmar que a informação está visível e fácil de localizar.',
+      },
+    ],
+    notes: [
+      'FAQ boa é a que diminui chamados e melhora autonomia do usuário.',
+      'Conteúdo desatualizado na FAQ pode gerar confusão e retrabalho.',
+    ],
+  },
+  {
+    id: 'como-segmentar-notificacoes-e-mensagens',
+    title: 'Como segmentar notificações e mensagens por público',
+    summary: 'Envie a mensagem certa para aluno, criador, admin ou outro grupo sem poluir a comunicação.',
+    estimatedMinutes: 5,
+    category: 'Comunicação',
+    steps: [
+      {
+        title: 'Defina o público-alvo',
+        description: 'Escolha para quem a mensagem será enviada antes de escrever o conteúdo final.',
+      },
+      {
+        title: 'Ajuste o tom da comunicação',
+        description: 'Mude o nível de detalhe e formalidade conforme o público que vai receber a mensagem.',
+      },
+      {
+        title: 'Evite envio em massa desnecessário',
+        description: 'Use segmentação para falar só com quem realmente precisa da informação.',
+      },
+      {
+        title: 'Teste a exibição correta',
+        description: 'Confirme se a notificação aparece apenas no contexto esperado e com o texto certo.',
+      },
+    ],
+    notes: [
+      'Segmentação reduz ruído e aumenta relevância.',
+      'Mensagens genéricas demais tendem a ser ignoradas.',
+    ],
+  },
+  {
+    id: 'como-usar-site-editor-para-paginas-institucionais',
+    title: 'Como usar o site editor para páginas institucionais',
+    summary: 'Ajuste páginas como Sobre, Contato, Ajuda, Termos e Privacidade com segurança e consistência.',
+    estimatedMinutes: 6,
+    category: 'Site',
+    steps: [
+      {
+        title: 'Abra o site editor',
+        description: 'Entre em <strong>Site Editor</strong> para localizar a página que precisa de revisão.',
+      },
+      {
+        title: 'Edite o conteúdo com cautela',
+        description: 'Atualize textos, chamadas e blocos sem quebrar a estrutura já aprovada da página.',
+      },
+      {
+        title: 'Revise links e SEO',
+        description: 'Confira se os links estão corretos e se a página continua coerente com a proposta institucional.',
+      },
+      {
+        title: 'Valide a publicação no site',
+        description: 'Abra a versão pública para garantir que a mudança entrou no ar como esperado.',
+      },
+    ],
+    notes: [
+      'Páginas institucionais pedem revisão de texto e de link com igual atenção.',
+      'Mudanças legais ou de suporte devem ser publicadas com checagem final.',
+    ],
+  },
+  {
+    id: 'como-revisar-permissoes-grupos-e-acessos',
+    title: 'Como revisar permissões, grupos e acessos',
+    summary: 'Fluxo para manter usuários, grupos e permissões sob controle e evitar acessos indevidos.',
+    estimatedMinutes: 5,
+    category: 'Usuários',
+    steps: [
+      {
+        title: 'Abra usuários e grupos',
+        description: 'Revise a distribuição atual de perfis e grupos para entender quem pode fazer o quê.',
+      },
+      {
+        title: 'Valide a necessidade do acesso',
+        description: 'Conceda apenas as permissões necessárias para cada função no sistema.',
+      },
+      {
+        title: 'Cheque impactos de mudança',
+        description: 'Antes de alterar um perfil, confirme se a pessoa depende daquele acesso para operar o dia a dia.',
+      },
+      {
+        title: 'Documente exceções',
+        description: 'Se houver acesso temporário ou especial, deixe registrado para revisão futura.',
+      },
+    ],
+    notes: [
+      'Menos acesso significa menos risco operacional.',
+      'Permissões devem ser revisadas com periodicidade.',
+    ],
+  },
+  {
+    id: 'como-organizar-a-biblioteca-de-recursos-e-videos',
+    title: 'Como organizar a biblioteca de recursos e vídeos',
+    summary: 'Mantenha materiais, vídeos e arquivos de apoio fáceis de localizar e sempre atualizados.',
+    estimatedMinutes: 5,
+    category: 'Recursos',
+    steps: [
+      {
+        title: 'Abra a área de recursos',
+        description: 'Entre em <strong>Recursos</strong> para verificar o que está publicado e o que precisa ser atualizado.',
+      },
+      {
+        title: 'Padronize títulos e categorias',
+        description: 'Use nomes consistentes para facilitar a busca e evitar duplicidade.',
+      },
+      {
+        title: 'Remova itens obsoletos',
+        description: 'Arquive materiais antigos que possam confundir o usuário ou a equipe.',
+      },
+      {
+        title: 'Confirme acesso e contexto',
+        description: 'Teste se o item está disponível para o público correto e no local esperado.',
+      },
+    ],
+    notes: [
+      'Organização de biblioteca poupa tempo em suporte e conteúdo.',
+      'Manter material antigo visível pode gerar erro operacional.',
+    ],
+  },
+  {
+    id: 'como-usar-seguranca-e-scans-preventivos',
+    title: 'Como usar segurança e scans preventivos',
+    summary: 'Rotina para observar alertas, riscos e sinais de comportamento suspeito antes que virem problema.',
+    estimatedMinutes: 5,
+    category: 'Segurança',
+    steps: [
+      {
+        title: 'Abra a área de segurança',
+        description: 'Entre em <strong>Segurança</strong> para visualizar alertas, verificações e eventuais pontos de atenção.',
+      },
+      {
+        title: 'Observe o que foge do padrão',
+        description: 'Cheque logins incomuns, falhas repetidas e qualquer evento que mereça análise mais cuidadosa.',
+      },
+      {
+        title: 'Ajuste acessos quando necessário',
+        description: 'Revise permissões e reduza exposição se notar comportamento suspeito.',
+      },
+      {
+        title: 'Registre a ação tomada',
+        description: 'Deixe claro o que foi verificado, o que foi alterado e por que a decisão foi tomada.',
+      },
+    ],
+    notes: [
+      'Segurança preventiva reduz incidentes antes que eles afetem usuários.',
+      'Toda ação de segurança precisa ser rastreável.',
+    ],
+  },
 ];
 
 function normalizeStepDescription(description: string) {
