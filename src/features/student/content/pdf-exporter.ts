@@ -1,6 +1,6 @@
 import genflixWordmarkUrl from '@/assets/genflix-wordmark.svg';
 import { getSignedLessonContentAssetUrl } from '@/features/admin/content/api';
-import { parseLessonImageHotspotsBlockElement } from '@/features/admin/content/content-blocks';
+import { parseLessonHtmlBlockElement, parseLessonImageHotspotsBlockElement } from '@/features/admin/content/content-blocks';
 import { fetchPdfWatermarkSettings } from '@/features/branding/api';
 import { supabase } from '@/services/supabase/client';
 import { PDFDocument, StandardFonts, degrees, rgb } from 'pdf-lib';
@@ -221,12 +221,30 @@ function buildPdfImageHotspotsFallbackHtml(imageUrl: string | null, imageAlt: st
     </section>
   `;
 }
+function buildPdfHtmlBlockFallbackHtml(fileName: string | null) {
+    const label = fileName?.trim() ? `Arquivo HTML: ${escapeHtml(fileName.trim())}` : 'Apresentação HTML';
+    return `
+    <section class="pdf-html-block">
+      <div class="pdf-html-block-eyebrow">${label}</div>
+      <p class="pdf-html-block-copy">Este conteúdo é renderizado de forma interativa na aula online. No PDF, mostramos apenas este aviso para preservar a exportação.</p>
+    </section>
+  `;
+}
 async function hydrateInteractiveLessonContent(textContent: string | null) {
     const source = textContent || DEFAULT_LESSON_CONTENT;
     const parser = new DOMParser();
     const doc = parser.parseFromString(source, 'text/html');
+    const htmlBlocks = Array.from(doc.querySelectorAll('[data-hcm-block="html"]'));
+    if (htmlBlocks.length > 0) {
+        htmlBlocks.forEach((block) => {
+            const parsed = parseLessonHtmlBlockElement(block);
+            const wrapper = doc.createElement('div');
+            wrapper.innerHTML = buildPdfHtmlBlockFallbackHtml(parsed?.file_name ?? null);
+            block.replaceWith(...Array.from(wrapper.childNodes));
+        });
+    }
     const hotspotBlocks = Array.from(doc.querySelectorAll('[data-hcm-block="image-hotspots"]'));
-    if (hotspotBlocks.length === 0) {
+    if (hotspotBlocks.length === 0 && htmlBlocks.length === 0) {
         return source;
     }
     await Promise.all(hotspotBlocks.map(async (block) => {

@@ -7,6 +7,7 @@ import { deleteLessonContentAsset, getSignedLessonContentAssetUrl, uploadLessonC
 import { LessonImageHotspotsBlockEditor, LessonImageHotspotsBlockRenderer } from '@/features/admin/content/lesson-image-hotspots-block';
 import {
     createEmptyColumnsBlockContent,
+    createEmptyLessonHtmlBlockContent,
     createEmptyLessonImageBlockContent,
     createEmptyLessonImageHotspotsBlockContent,
     createEmptyLessonVideoBlockContent,
@@ -15,6 +16,7 @@ import {
     sanitizeRichTextHtml,
     sanitizeTableHtml,
     type LessonImageBlockCaptionAlignment,
+    type LessonHtmlBlockContent,
     type LessonContentBlock,
     type LessonColumnsBlockContent,
     type LessonImageBlockContent,
@@ -212,6 +214,12 @@ function createDefaultBlock(type: Exclude<LessonContentBlock['type'], 'columns'>
             content: createEmptyLessonVideoBlockContent(),
         };
     }
+    if (type === 'html') {
+        return {
+            type,
+            content: createEmptyLessonHtmlBlockContent(),
+        };
+    }
     if (type === 'columns') {
         return {
             type,
@@ -232,6 +240,9 @@ function collectDeletableAssetPaths(block: LessonContentBlock): string[] {
         return [block.content.storage_path];
     }
     if (block.type === 'video' && block.content.source_type === 'upload' && block.content.storage_path) {
+        return [block.content.storage_path];
+    }
+    if (block.type === 'html' && block.content.source_type === 'upload' && block.content.storage_path) {
         return [block.content.storage_path];
     }
     if (block.type === 'columns') {
@@ -255,6 +266,9 @@ function getBlockLabel(block: LessonContentBlock) {
     }
     if (block.type === 'video') {
         return 'Bloco de Vídeo';
+    }
+    if (block.type === 'html') {
+        return 'Bloco HTML';
     }
     return 'Bloco de Texto Rico';
 }
@@ -665,6 +679,215 @@ export function LessonVideoBlockEditor({ content, onChange, onError }: LessonVid
     );
 }
 
+function isHtmlFile(file: File) {
+    const lowerName = file.name.toLowerCase();
+    return lowerName.endsWith('.html')
+        || lowerName.endsWith('.htm')
+        || file.type === 'text/html'
+        || file.type === 'application/xhtml+xml';
+}
+
+function buildHtmlPreviewSrcDoc(html: string) {
+    const trimmed = html.trim();
+    if (!trimmed) {
+        return '<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"></head><body><div style="font-family:sans-serif;padding:24px;color:#64748b;">Nenhum HTML foi informado.</div></body></html>';
+    }
+    if (/^<!doctype\s+html|^<html[\s>]/i.test(trimmed)) {
+        return trimmed;
+    }
+    return `<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      html, body { margin: 0; padding: 0; background: #fff; }
+      body { min-height: 100vh; }
+    </style>
+  </head>
+  <body>
+    ${trimmed}
+  </body>
+</html>`;
+}
+
+interface LessonHtmlBlockEditorProps {
+    content: LessonHtmlBlockContent;
+    onChange: (content: LessonHtmlBlockContent) => void;
+    onError?: (message: string | null) => void;
+}
+
+export function LessonHtmlBlockEditor({ content, onChange, onError }: LessonHtmlBlockEditorProps) {
+    const fileInputRef = useRef<HTMLInputElement | null>(null);
+    const [inputMode, setInputMode] = useState<'paste' | 'upload'>(content.source_type);
+    const [isUploading, setIsUploading] = useState(false);
+    const [previewError, setPreviewError] = useState<string | null>(null);
+    const resolvedUploadUrl = useResolvedLessonAssetUrl(content.storage_path, content.signed_url);
+
+    useEffect(() => {
+        setInputMode(content.source_type);
+    }, [content.source_type]);
+
+    async function handleFileSelected(event: ChangeEvent<HTMLInputElement>) {
+        const file = event.target.files?.[0];
+        if (!file) {
+            return;
+        }
+        if (!isHtmlFile(file)) {
+            const message = 'Selecione um arquivo .html ou .htm.';
+            setPreviewError(message);
+            onError?.(message);
+            event.target.value = '';
+            return;
+        }
+        setIsUploading(true);
+        setPreviewError(null);
+        onError?.(null);
+        try {
+            const html = await file.text();
+            const previousStoragePath = content.source_type === 'upload' ? content.storage_path.trim() : '';
+            const uploadResult = await uploadLessonContentAsset(file);
+            onChange({
+                ...content,
+                source_type: 'upload',
+                html,
+                storage_path: uploadResult.storage_path,
+                signed_url: uploadResult.signed_url,
+                file_name: file.name,
+                mime_type: file.type || 'text/html',
+            });
+            if (previousStoragePath && previousStoragePath !== uploadResult.storage_path) {
+                void deleteLessonContentAsset(previousStoragePath).catch(() => null);
+            }
+        }
+        catch (error) {
+            const message = error instanceof Error ? error.message : 'Falha ao enviar o arquivo HTML.';
+            setPreviewError(message);
+            onError?.(message);
+        }
+        finally {
+            setIsUploading(false);
+            if (event.target) {
+                event.target.value = '';
+            }
+        }
+    }
+
+    async function switchToPasteMode() {
+        const previousStoragePath = content.source_type === 'upload' ? content.storage_path.trim() : '';
+        if (previousStoragePath) {
+            try {
+                await deleteLessonContentAsset(previousStoragePath);
+            }
+            catch {
+                // Mantém a troca mesmo se a remoção falhar.
+            }
+        }
+        setInputMode('paste');
+        setPreviewError(null);
+        onError?.(null);
+        onChange({
+            ...content,
+            source_type: 'paste',
+            storage_path: '',
+            signed_url: null,
+            file_name: '',
+            mime_type: null,
+        });
+    }
+
+    function switchToUploadMode() {
+        setInputMode('upload');
+        setPreviewError(null);
+        onError?.(null);
+        onChange({
+            ...content,
+            source_type: 'upload',
+        });
+    }
+
+    const previewSrc = content.source_type === 'upload' ? resolvedUploadUrl : null;
+    const previewSrcDoc = buildHtmlPreviewSrcDoc(content.html);
+
+    return (
+        <div className="space-y-4 rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="flex flex-wrap items-start justify-between gap-4 border-b border-slate-100 pb-4">
+                <div>
+                    <p className="text-[10px] font-black uppercase tracking-[0.28em] text-sky-700">HTML Complexo</p>
+                    <p className="mt-2 text-sm font-semibold text-slate-600">Cole o HTML ou envie um arquivo .html para renderização isolada na aula.</p>
+                </div>
+            </div>
+
+            <div className="grid gap-3 md:grid-cols-2">
+                <button type="button" onClick={() => void switchToPasteMode()} className={cn('rounded-2xl border px-4 py-4 text-left transition', inputMode === 'paste'
+                    ? 'border-slate-950 bg-slate-950 text-white'
+                    : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50')}>
+                    <p className="text-xs font-black uppercase tracking-[0.18em]">Colar HTML</p>
+                    <p className={cn('mt-1 text-sm', inputMode === 'paste' ? 'text-slate-200' : 'text-slate-500')}>Edite ou cole o documento HTML completo diretamente no bloco.</p>
+                </button>
+                <button type="button" onClick={() => void switchToUploadMode()} className={cn('rounded-2xl border px-4 py-4 text-left transition', inputMode === 'upload'
+                    ? 'border-slate-950 bg-slate-950 text-white'
+                    : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50')}>
+                    <p className="text-xs font-black uppercase tracking-[0.18em]">Subir arquivo</p>
+                    <p className={cn('mt-1 text-sm', inputMode === 'upload' ? 'text-slate-200' : 'text-slate-500')}>Envie um arquivo .html com apresentação, animações ou interações.</p>
+                </button>
+            </div>
+
+            <div className="overflow-hidden rounded-[24px] border border-slate-200 bg-slate-50">
+                {previewSrc ? (
+                    <iframe title="Prévia do HTML" src={previewSrc} sandbox="allow-scripts allow-forms allow-popups allow-modals" referrerPolicy="no-referrer" className="h-[72vh] min-h-[560px] w-full border-0 bg-white" />
+                ) : (
+                    <iframe title="Prévia do HTML" srcDoc={previewSrcDoc} sandbox="allow-scripts allow-forms allow-popups allow-modals" referrerPolicy="no-referrer" className="h-[72vh] min-h-[560px] w-full border-0 bg-white" />
+                )}
+            </div>
+
+            {inputMode === 'paste' ? (
+                <label className="block space-y-2">
+                    <span className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Código HTML</span>
+                    <textarea value={content.html} onChange={(event) => {
+                        setPreviewError(null);
+                        onError?.(null);
+                        onChange({
+                            ...content,
+                            source_type: 'paste',
+                            html: event.target.value,
+                        });
+                    }} className="min-h-[280px] w-full rounded-2xl border border-slate-200 bg-slate-950 px-4 py-3 font-mono text-[13px] leading-6 text-emerald-300 outline-none transition focus:border-sky-300 focus:ring-4 focus:ring-sky-100" placeholder="<!doctype html>..." />
+                </label>
+            ) : (
+                <div className="space-y-3">
+                    <input ref={fileInputRef} type="file" accept=".html,.htm,text/html,application/xhtml+xml" className="hidden" onChange={(event) => void handleFileSelected(event)} />
+                    <div className="flex flex-wrap gap-3">
+                        <Button type="button" variant="outline" className="rounded-2xl border-slate-200 bg-white" onClick={() => fileInputRef.current?.click()} disabled={isUploading}>
+                            {content.storage_path ? 'Trocar arquivo' : 'Enviar arquivo HTML'}
+                        </Button>
+                        <Button type="button" variant="ghost" className="px-0 text-xs font-bold text-slate-500 hover:text-slate-800" onClick={() => void switchToPasteMode()}>
+                            Voltar para colagem
+                        </Button>
+                    </div>
+                    {content.file_name ? (
+                        <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+                            {content.file_name}
+                        </div>
+                    ) : (
+                        <p className="text-sm text-slate-500">Arquivo HTML ainda não enviado.</p>
+                    )}
+                </div>
+            )}
+
+            <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                Arquivos HTML com scripts funcionam melhor quando são autossuficientes. Recursos relativos precisam estar embutidos ou apontar para URLs públicas.
+            </div>
+
+            {previewError ? (
+                <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">
+                    {previewError}
+                </div>
+            ) : null}
+        </div>
+    );
+}
+
 interface LessonImageBlockRendererProps {
     content: LessonImageBlockContent;
 }
@@ -691,6 +914,26 @@ export function LessonImageBlockRenderer({ content }: LessonImageBlockRendererPr
                     {content.caption}
                 </figcaption>
             ) : null}
+        </figure>
+    );
+}
+
+interface LessonHtmlBlockRendererProps {
+    content: LessonHtmlBlockContent;
+}
+
+export function LessonHtmlBlockRenderer({ content }: LessonHtmlBlockRendererProps) {
+    const resolvedUploadUrl = useResolvedLessonAssetUrl(content.storage_path, content.signed_url);
+    const previewSrc = content.source_type === 'upload' ? resolvedUploadUrl : null;
+    const previewSrcDoc = buildHtmlPreviewSrcDoc(content.html);
+
+    return (
+        <figure className="my-8 overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm">
+            {previewSrc ? (
+                <iframe title={content.file_name || 'HTML da aula'} src={previewSrc} sandbox="allow-scripts allow-forms allow-popups allow-modals" referrerPolicy="no-referrer" className="h-[80vh] min-h-[640px] w-full border-0 bg-white" />
+            ) : (
+                <iframe title={content.file_name || 'HTML da aula'} srcDoc={previewSrcDoc} sandbox="allow-scripts allow-forms allow-popups allow-modals" referrerPolicy="no-referrer" className="h-[80vh] min-h-[640px] w-full border-0 bg-white" />
+            )}
         </figure>
     );
 }
@@ -838,6 +1081,8 @@ export function LessonContentBlocksEditor({ blocks, onChange, onError, level = 0
                         <LessonImageHotspotsBlockEditor content={block.content} onChange={(nextContent) => updateBlock(index, { ...block, content: nextContent })} onError={onError} />
                     ) : block.type === 'image' ? (
                         <LessonImageBlockEditor content={block.content} onChange={(nextContent) => updateBlock(index, { ...block, content: nextContent })} onError={onError} />
+                    ) : block.type === 'html' ? (
+                        <LessonHtmlBlockEditor content={block.content} onChange={(nextContent) => updateBlock(index, { ...block, content: nextContent })} onError={onError} />
                     ) : block.type === 'video' ? (
                         <LessonVideoBlockEditor content={block.content} onChange={(nextContent) => updateBlock(index, { ...block, content: nextContent })} onError={onError} />
                     ) : block.type === 'columns' ? (
@@ -953,6 +1198,9 @@ export function LessonContentBlocksEditor({ blocks, onChange, onError, level = 0
                 <Button type="button" variant="outline" size="sm" onClick={() => addBlock('image')} className="border-slate-200 bg-white hover:bg-sky-50 hover:text-sky-700">
                     + Imagem
                 </Button>
+                <Button type="button" variant="outline" size="sm" onClick={() => addBlock('html')} className="border-slate-200 bg-white hover:bg-slate-900 hover:text-white">
+                    + HTML
+                </Button>
                 <Button type="button" variant="outline" size="sm" onClick={() => addBlock('video')} className="border-slate-200 bg-white hover:bg-rose-50 hover:text-rose-700">
                     + Vídeo
                 </Button>
@@ -1024,6 +1272,9 @@ export function LessonContentBlocksRenderer({ blocks, className }: LessonContent
                 if (block.type === 'image') {
                     return <LessonImageBlockRenderer key={`image-${index}`} content={block.content} />;
                 }
+                if (block.type === 'html') {
+                    return <LessonHtmlBlockRenderer key={`html-${index}`} content={block.content} />;
+                }
                 if (block.type === 'video') {
                     return <LessonVideoBlockRenderer key={`video-${index}`} content={block.content} />;
                 }
@@ -1032,4 +1283,3 @@ export function LessonContentBlocksRenderer({ blocks, className }: LessonContent
         </div>
     );
 }
-

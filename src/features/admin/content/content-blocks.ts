@@ -26,6 +26,14 @@ export interface LessonVideoBlockContent {
     size: LessonVideoBlockSize;
     caption_alignment: LessonVideoBlockCaptionAlignment;
 }
+export interface LessonHtmlBlockContent {
+    source_type: 'paste' | 'upload';
+    html: string;
+    storage_path: string;
+    signed_url?: string | null;
+    file_name: string;
+    mime_type: string | null;
+}
 export interface LessonColumnBlockContent {
     width: number;
     blocks: LessonContentBlock[];
@@ -49,11 +57,15 @@ export type LessonContentBlock = {
 } | {
     type: 'image-hotspots';
     content: LessonImageHotspotsBlockContent;
+} | {
+    type: 'html';
+    content: LessonHtmlBlockContent;
 };
 const TABLE_PLACEHOLDER_PREFIX = '__TABLE_BLOCK__';
 const IMAGE_PLACEHOLDER_PREFIX = '__IMAGE_BLOCK__';
 const VIDEO_PLACEHOLDER_PREFIX = '__VIDEO_BLOCK__';
 const HOTSPOTS_PLACEHOLDER_PREFIX = '__HOTSPOTS_BLOCK__';
+const HTML_PLACEHOLDER_PREFIX = '__HTML_BLOCK__';
 const COLUMNS_PLACEHOLDER_PREFIX = '__COLUMNS_BLOCK__';
 const LESSON_IMAGE_HOTSPOTS_BLOCK_ATTR = 'data-hcm-block';
 const LESSON_IMAGE_HOTSPOTS_BLOCK_PAYLOAD_ATTR = 'data-hcm-payload';
@@ -63,6 +75,7 @@ const LESSON_COLUMNS_BLOCK_WIDTHS_ATTR = 'data-hcm-column-widths';
 const LESSON_COLUMNS_BLOCK_TYPE = 'columns';
 const LESSON_IMAGE_BLOCK_TYPE = 'image';
 const LESSON_VIDEO_BLOCK_TYPE = 'video';
+const LESSON_HTML_BLOCK_TYPE = 'html';
 const COLUMN_WIDTH_STEP = 5;
 const LESSON_VIDEO_MAX_WIDTH_STYLE: Record<LessonVideoBlockSize, string> = {
     sm: 'max-width: 28rem;',
@@ -462,6 +475,110 @@ export function createEmptyLessonVideoBlockContent(): LessonVideoBlockContent {
         size: 'md',
         caption_alignment: 'left',
     });
+}
+function normalizeLessonHtmlBlockContent(content: LessonHtmlBlockContent): LessonHtmlBlockContent {
+    return {
+        source_type: content.source_type === 'upload' ? 'upload' : 'paste',
+        html: normalizeHtml(content.html || ''),
+        storage_path: content.source_type === 'upload' ? content.storage_path?.trim() || '' : '',
+        signed_url: content.source_type === 'upload' ? content.signed_url?.trim() || null : null,
+        file_name: content.source_type === 'upload' ? content.file_name?.trim() || '' : '',
+        mime_type: content.source_type === 'upload' ? content.mime_type?.trim() || null : null,
+    };
+}
+export function createEmptyLessonHtmlBlockContent(): LessonHtmlBlockContent {
+    return normalizeLessonHtmlBlockContent({
+        source_type: 'paste',
+        html: '<!doctype html>\n<html lang="pt-BR">\n  <head>\n    <meta charset="utf-8" />\n    <meta name="viewport" content="width=device-width, initial-scale=1" />\n    <title>Apresentação</title>\n  </head>\n  <body>\n    <div style="font-family: sans-serif; padding: 48px;">Sua apresentação HTML entra aqui.</div>\n  </body>\n</html>',
+        storage_path: '',
+        signed_url: null,
+        file_name: '',
+        mime_type: null,
+    });
+}
+function parseLessonHtmlBlockContent(payload: unknown): LessonHtmlBlockContent | null {
+    if (!payload || typeof payload !== 'object') {
+        return null;
+    }
+    const candidate = payload as Partial<LessonHtmlBlockContent>;
+    const sourceType = candidate.source_type === 'upload' ? 'upload' : candidate.source_type === 'paste' ? 'paste' : null;
+    if (!sourceType) {
+        return null;
+    }
+    return normalizeLessonHtmlBlockContent({
+        source_type: sourceType,
+        html: typeof candidate.html === 'string' ? candidate.html : '',
+        storage_path: typeof candidate.storage_path === 'string' ? candidate.storage_path : '',
+        signed_url: typeof candidate.signed_url === 'string' ? candidate.signed_url : null,
+        file_name: typeof candidate.file_name === 'string' ? candidate.file_name : '',
+        mime_type: typeof candidate.mime_type === 'string' ? candidate.mime_type : null,
+    });
+}
+function encodeHtmlPayload(content: LessonHtmlBlockContent): string {
+    return encodeURIComponent(JSON.stringify({
+        source_type: content.source_type,
+        html: content.html,
+        storage_path: content.storage_path,
+        signed_url: content.signed_url,
+        file_name: content.file_name,
+        mime_type: content.mime_type,
+    }));
+}
+function decodeHtmlPayload(encodedPayload: string): LessonHtmlBlockContent | null {
+    try {
+        const decoded = decodeURIComponent(encodedPayload);
+        return parseLessonHtmlBlockContent(JSON.parse(decoded));
+    }
+    catch {
+        return null;
+    }
+}
+function buildHtmlFallbackHtml(content: LessonHtmlBlockContent): string {
+    const label = content.source_type === 'upload'
+        ? `Arquivo HTML${content.file_name ? `: ${escapeHtml(content.file_name)}` : ''}`
+        : 'HTML colado';
+    return `
+    <div class="hcm-html-block-fallback">
+      <p><strong>${label}.</strong></p>
+      <p>A prévia interativa é renderizada no player da aula.</p>
+    </div>
+  `;
+}
+export function serializeLessonHtmlBlock(content: LessonHtmlBlockContent): string {
+    const normalized = normalizeLessonHtmlBlockContent(content);
+    const payload = encodeHtmlPayload(normalized);
+    return `
+    <div
+      ${LESSON_IMAGE_HOTSPOTS_BLOCK_ATTR}="${LESSON_HTML_BLOCK_TYPE}"
+      ${LESSON_IMAGE_HOTSPOTS_BLOCK_PAYLOAD_ATTR}="${payload}"
+    >
+      ${buildHtmlFallbackHtml(normalized)}
+    </div>
+  `;
+}
+function extractLessonHtmlBlock(element: Element): LessonContentBlock | null {
+    const payload = element.getAttribute(LESSON_IMAGE_HOTSPOTS_BLOCK_PAYLOAD_ATTR);
+    if (!payload) {
+        return null;
+    }
+    const content = decodeHtmlPayload(payload);
+    if (!content) {
+        return null;
+    }
+    return {
+        type: 'html',
+        content,
+    };
+}
+export function parseLessonHtmlBlockElement(element: Element): LessonHtmlBlockContent | null {
+    if (element.getAttribute(LESSON_IMAGE_HOTSPOTS_BLOCK_ATTR) !== LESSON_HTML_BLOCK_TYPE) {
+        return null;
+    }
+    const payload = element.getAttribute(LESSON_IMAGE_HOTSPOTS_BLOCK_PAYLOAD_ATTR);
+    if (!payload) {
+        return null;
+    }
+    return decodeHtmlPayload(payload);
 }
 export function createEmptyColumnsBlockContent(columnsCount = 2): LessonColumnsBlockContent {
     const safeCount = clamp(columnsCount, 1, 4);
@@ -967,6 +1084,20 @@ export function splitContent(html: string): LessonContentBlock[] {
         const marker = doc.createTextNode(placeholder);
         element.replaceWith(marker);
     });
+    Array.from(doc.querySelectorAll(`[${LESSON_IMAGE_HOTSPOTS_BLOCK_ATTR}="${LESSON_HTML_BLOCK_TYPE}"]`))
+        .forEach((element, index) => {
+        if (!element.isConnected) {
+            return;
+        }
+        const placeholder = `${HTML_PLACEHOLDER_PREFIX}_${index}__`;
+        const parsedBlock = extractLessonHtmlBlock(element);
+        blockMap.set(placeholder, parsedBlock ?? {
+            type: 'rich-text',
+            content: normalizeHtml((element as HTMLElement).innerHTML),
+        });
+        const marker = doc.createTextNode(placeholder);
+        element.replaceWith(marker);
+    });
     const tableMap = new Map<string, string>();
     Array.from(doc.querySelectorAll('table')).forEach((table, index) => {
         const placeholder = `${TABLE_PLACEHOLDER_PREFIX}_${index}__`;
@@ -980,7 +1111,7 @@ export function splitContent(html: string): LessonContentBlock[] {
         return [];
     }
     const blocks: LessonContentBlock[] = [];
-    const placeholderRegex = new RegExp(`(${TABLE_PLACEHOLDER_PREFIX}_\\d+__|${HOTSPOTS_PLACEHOLDER_PREFIX}_\\d+__|${COLUMNS_PLACEHOLDER_PREFIX}_\\d+__|${IMAGE_PLACEHOLDER_PREFIX}_\\d+__|${VIDEO_PLACEHOLDER_PREFIX}_\\d+__)`, 'g');
+    const placeholderRegex = new RegExp(`(${TABLE_PLACEHOLDER_PREFIX}_\\d+__|${HOTSPOTS_PLACEHOLDER_PREFIX}_\\d+__|${HTML_PLACEHOLDER_PREFIX}_\\d+__|${COLUMNS_PLACEHOLDER_PREFIX}_\\d+__|${IMAGE_PLACEHOLDER_PREFIX}_\\d+__|${VIDEO_PLACEHOLDER_PREFIX}_\\d+__)`, 'g');
     const parts = rawHtml.split(placeholderRegex);
     for (const part of parts) {
         if (!part)
@@ -1036,6 +1167,9 @@ export function mergeContent(blocks: LessonContentBlock[]): string {
         }
         if (block.type === 'video') {
             return normalizeHtml(serializeLessonVideoBlock(block.content));
+        }
+        if (block.type === 'html') {
+            return normalizeHtml(serializeLessonHtmlBlock(block.content));
         }
         if (block.type === 'columns') {
             return normalizeHtml(serializeLessonColumnsBlock(block.content));

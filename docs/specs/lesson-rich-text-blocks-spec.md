@@ -19,6 +19,7 @@ O contedo de aula textual/hibrida e tratado como uma lista ordenada de blocos (u
 export type LessonContentBlock =
   | { type: 'rich-text'; content: string }
   | { type: 'table'; content: string }
+  | { type: 'html'; content: LessonHtmlBlockContent }
   | { type: 'image-hotspots'; content: LessonImageHotspotsBlockContent }
 ```
 
@@ -75,6 +76,40 @@ Comportamento adicional:
 - Encapsulada em card com `overflow-x-auto`.
 - HTML sanitizado inserido via `dangerouslySetInnerHTML`.
 - Estilos globais de tabela e placeholder em `src/index.css`.
+
+## Bloco `html`
+### Descri??o
+Bloco para apresentar HTML complexo em uma aula, com duas origens possiveis:
+- colagem direta do codigo HTML;
+- upload de um arquivo `.html` ou `.htm`.
+
+### Tipo de dados
+`LessonHtmlBlockContent`:
+
+```ts
+{
+  source_type: 'paste' | 'upload'
+  html: string
+  storage_path: string
+  signed_url: string | null
+  file_name: string
+  mime_type: string | null
+}
+```
+
+### Persistencia
+- O HTML e guardado no payload do bloco e serializado dentro de `lessons.text_content`.
+- Quando a origem e upload, o arquivo e salvo em `lesson-content-assets`.
+
+### Renderizacao aluno
+- O bloco e exibido em `iframe` com `sandbox` para isolar o conteudo.
+- Quando existe `signed_url`, o arquivo enviado e aberto diretamente.
+- Quando o HTML e colado, o bloco usa `srcDoc` com o HTML persistido.
+
+### Editor admin
+- Alternancia entre `Colar HTML` e `Subir arquivo`.
+- Modo de colagem com `textarea` monoespaco.
+- Modo de upload com seletor de arquivo HTML e preview interno.
 
 ## Bloco `image-hotspots`
 ### Descri??o
@@ -190,6 +225,7 @@ Para `video`, o contedo textual n?o e foco da tela de aula.
 O sistema usa `dangerouslySetInnerHTML` para renderizacao, por isso a seguran?a depende da sanitizacao por tipo de bloco:
 - Tabela: whitelist fechada de tags/atributos
 - Hotspot body: whitelist fechada de tags/atributos e validacao de URL de links
+- HTML: renderizacao em iframe sandboxed, sem injeção direta no DOM principal
 - Rich-text comum: segue o HTML produzido pelo Quill no fluxo normal
 
 ## Exemplo de estrutura logica de blocos
