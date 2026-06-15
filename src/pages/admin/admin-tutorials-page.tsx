@@ -1,5 +1,6 @@
-import { ArrowRight, BookOpen, Clock3, Eye, PencilLine, PlusCircle, Search, Sparkles, Trash2, X } from 'lucide-react';
+import { ArrowRight, BookOpen, Clock3, Eye, GripVertical, PencilLine, PlusCircle, Search, Sparkles, Trash2, X } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
+import { DragDropContext, Draggable, Droppable, type DropResult } from '@hello-pangea/dnd';
 import { RichTextEditor } from '@/components/ui/RichTextEditor';
 import { Button } from '@/components/ui/button';
 import { sanitizeRichTextHtml } from '@/features/admin/content/content-blocks';
@@ -75,7 +76,7 @@ function normalizeStep(step: TutorialStepForm, index: number): AdminTutorialStep
 }
 
 export function AdminTutorialsPage() {
-  const { tutorials, activeTutorial, openTutorial, addTutorial, updateTutorial } = useAdminTutorials();
+  const { tutorials, activeTutorial, openTutorial, addTutorial, updateTutorial, deleteTutorial, reorderTutorials } = useAdminTutorials();
   const [search, setSearch] = useState('');
   const [selectedTutorialId, setSelectedTutorialId] = useState<string>(tutorials[0]?.id ?? '');
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -110,6 +111,24 @@ export function AdminTutorialsPage() {
   const selectedTutorial = useMemo(() => {
     return tutorials.find((tutorial) => tutorial.id === selectedTutorialId) ?? tutorials[0] ?? activeTutorial;
   }, [activeTutorial, selectedTutorialId, tutorials]);
+
+  const canReorderTutorials = search.trim().length === 0;
+
+  function handleTutorialDragEnd(result: DropResult) {
+    if (!result.destination || result.destination.index === result.source.index) {
+      return;
+    }
+
+    const nextTutorials = [...tutorials];
+    const [movedTutorial] = nextTutorials.splice(result.source.index, 1);
+
+    if (!movedTutorial) {
+      return;
+    }
+
+    nextTutorials.splice(result.destination.index, 0, movedTutorial);
+    reorderTutorials(nextTutorials.map((tutorial) => tutorial.id));
+  }
 
   function openCreateModal() {
     setEditingTutorialId(null);
@@ -253,11 +272,12 @@ export function AdminTutorialsPage() {
         </div>
 
         <div className="mt-6 overflow-hidden rounded-[28px] border border-[#D8E6EB]">
-          <div className="hidden grid-cols-[minmax(0,2fr)_minmax(180px,0.8fr)_minmax(150px,0.7fr)_minmax(0,1.2fr)] gap-4 border-b border-[#D8E6EB] bg-[#F8FBFC] px-5 py-3 text-[10px] font-black uppercase tracking-[0.22em] text-[#5F7077] lg:grid">
+          <div className="hidden grid-cols-[36px_minmax(0,2fr)_minmax(180px,0.8fr)_minmax(150px,0.7fr)_minmax(0,1.2fr)] gap-4 border-b border-[#D8E6EB] bg-[#F8FBFC] px-5 py-3 text-[10px] font-black uppercase tracking-[0.22em] text-[#5F7077] lg:grid">
+            <span className="sr-only">Ordenar</span>
             <span>Tutorial</span>
             <span>Categoria / tempo</span>
             <span>Passos</span>
-            <span className="text-right">Ações</span>
+            <span className="text-right">A??es</span>
           </div>
 
           <div className="divide-y divide-[#E6EEF1]">
@@ -267,72 +287,199 @@ export function AdminTutorialsPage() {
               </div>
             ) : null}
 
-            {filteredTutorials.map((tutorial) => {
-              const isSelected = tutorial.id === selectedTutorialId;
+            {canReorderTutorials ? (
+              <DragDropContext onDragEnd={handleTutorialDragEnd}>
+                <Droppable droppableId="tutorials-display-order">
+                  {(provided) => (
+                    <div ref={provided.innerRef} {...provided.droppableProps}>
+                      {filteredTutorials.map((tutorial, index) => {
+                        const isSelected = tutorial.id === selectedTutorialId;
 
-              return (
-                <article key={tutorial.id} className={`bg-white px-5 py-4 transition-colors ${isSelected ? 'bg-[#F8FBFC]' : ''}`}>
-                  <div className="grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(180px,0.8fr)_minmax(150px,0.7fr)_minmax(0,1.2fr)] lg:items-center">
-                    <div className="min-w-0">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#1398B7]">{tutorial.category}</p>
-                        {isSelected ? (
-                          <span className="inline-flex items-center rounded-full border border-[#BEE3EA] bg-[#DFF5FA] px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-[#0E677C]">
-                            Em exibição
-                          </span>
-                        ) : null}
+                        return (
+                          <Draggable key={tutorial.id} draggableId={tutorial.id} index={index}>
+                            {(draggableProvided, snapshot) => (
+                              <article
+                                ref={draggableProvided.innerRef}
+                                {...draggableProvided.draggableProps}
+                                className={"bg-white px-5 py-4 transition-colors " + (snapshot.isDragging ? 'border-[#BEE3EA] bg-[#F2FBFD] shadow-lg' : isSelected ? 'bg-[#F8FBFC]' : '')}
+                              >
+                                <div className="grid gap-4 lg:grid-cols-[36px_minmax(0,2fr)_minmax(180px,0.8fr)_minmax(150px,0.7fr)_minmax(0,1.2fr)] lg:items-center">
+                                  <button
+                                    type="button"
+                                    aria-label={"Mover tutorial " + tutorial.title}
+                                    className="inline-flex h-9 w-9 items-center justify-center rounded-2xl border border-[#D8E6EB] bg-white text-[#5F7077] transition hover:border-[#1398B7]/40 hover:text-[#1398B7]"
+                                    {...draggableProvided.dragHandleProps}
+                                  >
+                                    <GripVertical className="h-4 w-4" />
+                                  </button>
+
+                                  <div className="min-w-0">
+                                    <div className="flex flex-wrap items-center gap-2">
+                                      <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#1398B7]">{tutorial.category}</p>
+                                      {isSelected ? (
+                                        <span className="inline-flex items-center rounded-full border border-[#BEE3EA] bg-[#DFF5FA] px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-[#0E677C]">
+                                          Em exibi??o
+                                        </span>
+                                      ) : null}
+                                    </div>
+                                    <h3 className="mt-2 text-base font-black tracking-tight text-[#15323b]">{tutorial.title}</h3>
+                                    <p className="mt-2 max-w-3xl text-sm leading-6 text-[#5F7077]">{tutorial.summary}</p>
+                                  </div>
+
+                                  <div className="flex flex-wrap items-center gap-2 text-[10px] font-black uppercase tracking-[0.16em] text-[#5F7077]">
+                                    <span className="inline-flex items-center gap-1.5 rounded-full border border-[#D8E6EB] bg-[#F8FBFC] px-2.5 py-1.5">
+                                      <Clock3 className="h-3.5 w-3.5" />
+                                      {tutorial.estimatedMinutes} min
+                                    </span>
+                                    <span className="inline-flex items-center gap-1.5 rounded-full border border-[#D8E6EB] bg-[#F8FBFC] px-2.5 py-1.5">
+                                      <BookOpen className="h-3.5 w-3.5" />
+                                      {tutorial.category}
+                                    </span>
+                                  </div>
+
+                                  <div className="text-sm font-semibold text-[#5F7077]">
+                                    {tutorial.steps.length} passos
+                                  </div>
+
+                                  <div className="flex flex-wrap items-center gap-2 lg:justify-end">
+                                    <Button
+                                      type="button"
+                                      variant="outline"
+                                      className="h-10 rounded-2xl border-[#D8E6EB] bg-white px-3.5 font-black text-[#163138] hover:border-[#1398B7]/40 hover:bg-[#F2FBFD]"
+                                      onClick={() => openSelectedInPage(tutorial.id)}
+                                    >
+                                      <Eye className="h-4 w-4" />
+                                      Na p?gina
+                                    </Button>
+                                    <Button
+                                      type="button"
+                                      variant="outline"
+                                      className="h-10 rounded-2xl border-[#D8E6EB] bg-white px-3.5 font-black text-[#163138] hover:border-[#1398B7]/40 hover:bg-[#F2FBFD]"
+                                      onClick={() => openTutorial(tutorial.id)}
+                                    >
+                                      <BookOpen className="h-4 w-4" />
+                                      Widget
+                                    </Button>
+                                    <Button
+                                      type="button"
+                                      className="h-10 rounded-2xl bg-[#1398B7] px-3.5 font-black text-white hover:bg-[#1089A5]"
+                                      onClick={() => openEditModal(tutorial)}
+                                    >
+                                      <PencilLine className="h-4 w-4" />
+                                      Editar
+                                    </Button>
+                                    <Button
+                                      type="button"
+                                      variant="outline"
+                                      className="h-10 rounded-2xl border-rose-200 bg-white px-3.5 font-black text-rose-600 hover:border-rose-300 hover:bg-rose-50 hover:text-rose-700"
+                                      onClick={() => {
+                                        if (window.confirm('Excluir o tutorial "' + tutorial.title + '"?')) {
+                                          deleteTutorial(tutorial.id);
+                                          if (selectedTutorialId === tutorial.id) {
+                                            setSelectedTutorialId(tutorials.find((item) => item.id !== tutorial.id)?.id ?? '');
+                                          }
+                                        }
+                                      }}
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                      Excluir
+                                    </Button>
+                                  </div>
+                                </div>
+                              </article>
+                            )}
+                          </Draggable>
+                        );
+                      })}
+                      {provided.placeholder}
+                    </div>
+                  )}
+                </Droppable>
+              </DragDropContext>
+            ) : (
+              filteredTutorials.map((tutorial) => {
+                const isSelected = tutorial.id === selectedTutorialId;
+
+                return (
+                  <article key={tutorial.id} className={"bg-white px-5 py-4 transition-colors " + (isSelected ? 'bg-[#F8FBFC]' : '')}>
+                    <div className="grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(180px,0.8fr)_minmax(150px,0.7fr)_minmax(0,1.2fr)] lg:items-center">
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#1398B7]">{tutorial.category}</p>
+                          {isSelected ? (
+                            <span className="inline-flex items-center rounded-full border border-[#BEE3EA] bg-[#DFF5FA] px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-[#0E677C]">
+                              Em exibi??o
+                            </span>
+                          ) : null}
+                        </div>
+                        <h3 className="mt-2 text-base font-black tracking-tight text-[#15323b]">{tutorial.title}</h3>
+                        <p className="mt-2 max-w-3xl text-sm leading-6 text-[#5F7077]">{tutorial.summary}</p>
                       </div>
-                      <h3 className="mt-2 text-base font-black tracking-tight text-[#15323b]">{tutorial.title}</h3>
-                      <p className="mt-2 max-w-3xl text-sm leading-6 text-[#5F7077]">{tutorial.summary}</p>
-                    </div>
 
-                    <div className="flex flex-wrap items-center gap-2 text-[10px] font-black uppercase tracking-[0.16em] text-[#5F7077]">
-                      <span className="inline-flex items-center gap-1.5 rounded-full border border-[#D8E6EB] bg-[#F8FBFC] px-2.5 py-1.5">
-                        <Clock3 className="h-3.5 w-3.5" />
-                        {tutorial.estimatedMinutes} min
-                      </span>
-                      <span className="inline-flex items-center gap-1.5 rounded-full border border-[#D8E6EB] bg-[#F8FBFC] px-2.5 py-1.5">
-                        <BookOpen className="h-3.5 w-3.5" />
-                        {tutorial.category}
-                      </span>
-                    </div>
+                      <div className="flex flex-wrap items-center gap-2 text-[10px] font-black uppercase tracking-[0.16em] text-[#5F7077]">
+                        <span className="inline-flex items-center gap-1.5 rounded-full border border-[#D8E6EB] bg-[#F8FBFC] px-2.5 py-1.5">
+                          <Clock3 className="h-3.5 w-3.5" />
+                          {tutorial.estimatedMinutes} min
+                        </span>
+                        <span className="inline-flex items-center gap-1.5 rounded-full border border-[#D8E6EB] bg-[#F8FBFC] px-2.5 py-1.5">
+                          <BookOpen className="h-3.5 w-3.5" />
+                          {tutorial.category}
+                        </span>
+                      </div>
 
-                    <div className="text-sm font-semibold text-[#5F7077]">
-                      {tutorial.steps.length} passos
-                    </div>
+                      <div className="text-sm font-semibold text-[#5F7077]">
+                        {tutorial.steps.length} passos
+                      </div>
 
-                    <div className="flex flex-wrap items-center gap-2 lg:justify-end">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className="h-10 rounded-2xl border-[#D8E6EB] bg-white px-3.5 font-black text-[#163138] hover:border-[#1398B7]/40 hover:bg-[#F2FBFD]"
-                        onClick={() => openSelectedInPage(tutorial.id)}
-                      >
-                        <Eye className="h-4 w-4" />
-                        Na página
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className="h-10 rounded-2xl border-[#D8E6EB] bg-white px-3.5 font-black text-[#163138] hover:border-[#1398B7]/40 hover:bg-[#F2FBFD]"
-                        onClick={() => openTutorial(tutorial.id)}
-                      >
-                        <BookOpen className="h-4 w-4" />
-                        Widget
-                      </Button>
-                      <Button
-                        type="button"
-                        className="h-10 rounded-2xl bg-[#1398B7] px-3.5 font-black text-white hover:bg-[#1089A5]"
-                        onClick={() => openEditModal(tutorial)}
-                      >
-                        <PencilLine className="h-4 w-4" />
-                        Editar
-                      </Button>
+                      <div className="flex flex-wrap items-center gap-2 lg:justify-end">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="h-10 rounded-2xl border-[#D8E6EB] bg-white px-3.5 font-black text-[#163138] hover:border-[#1398B7]/40 hover:bg-[#F2FBFD]"
+                          onClick={() => openSelectedInPage(tutorial.id)}
+                        >
+                          <Eye className="h-4 w-4" />
+                          Na p?gina
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="h-10 rounded-2xl border-[#D8E6EB] bg-white px-3.5 font-black text-[#163138] hover:border-[#1398B7]/40 hover:bg-[#F2FBFD]"
+                          onClick={() => openTutorial(tutorial.id)}
+                        >
+                          <BookOpen className="h-4 w-4" />
+                          Widget
+                        </Button>
+                        <Button
+                          type="button"
+                          className="h-10 rounded-2xl bg-[#1398B7] px-3.5 font-black text-white hover:bg-[#1089A5]"
+                          onClick={() => openEditModal(tutorial)}
+                        >
+                          <PencilLine className="h-4 w-4" />
+                          Editar
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="h-10 rounded-2xl border-rose-200 bg-white px-3.5 font-black text-rose-600 hover:border-rose-300 hover:bg-rose-50 hover:text-rose-700"
+                          onClick={() => {
+                            if (window.confirm('Excluir o tutorial "' + tutorial.title + '"?')) {
+                              deleteTutorial(tutorial.id);
+                              if (selectedTutorialId === tutorial.id) {
+                                setSelectedTutorialId(tutorials.find((item) => item.id !== tutorial.id)?.id ?? '');
+                              }
+                            }
+                          }}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                          Excluir
+                        </Button>
+                      </div>
                     </div>
-                  </div>
-                </article>
-              );
-            })}
+                  </article>
+                );
+              })
+            )}
           </div>
         </div>
       </section>
