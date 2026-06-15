@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ChevronDown, ChevronRight, RefreshCcw, Trash2 } from 'lucide-react';
+import { ArrowRight, BookOpen, ChevronDown, ChevronRight, Maximize2, Minimize2, RefreshCcw, Sparkles, Trash2, X } from 'lucide-react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '@/app/providers/auth-provider';
 import { PlatformFooter } from '@/components/layout/platform-footer';
 import { GenflixLogo } from '@/components/public/genflix-logo';
 import { Button } from '@/components/ui/button';
 import { clearBrowserCache, clearServerCache } from '@/features/admin/cache/api';
+import { AdminTutorialsProvider, useAdminTutorials } from '@/features/admin/tutorials/admin-tutorials';
 import { NotificationCenter } from '@/features/notifications/notification-center';
 type AdminNavItem = {
     to: string;
@@ -74,6 +75,7 @@ const adminNavGroups: AdminNavGroup[] = [
         description: "Configurações de apoio e administração da conta.",
         links: [
             { to: '/admin/minha-conta', label: 'Minha Conta' },
+            { to: '/admin/tutoriais', label: 'Tutoriais' },
             { to: '/admin/configuracoes-site', label: "Configurações do Site" },
         ],
     },
@@ -136,7 +138,8 @@ export function AdminLayout() {
             setIsClearingBrowserCache(false);
         }
     }
-    return (<main className="min-h-screen bg-[#F2F7F9] font-manrope text-[#163138]">
+    return (<AdminTutorialsProvider>
+      <main className="min-h-screen bg-[#F2F7F9] font-manrope text-[#163138]">
       <header className="sticky top-0 z-40 border-b border-[#D8E6EB] bg-[#F2F7F9]/95 backdrop-blur-md">
         <div className="flex w-full items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
           <div className="flex items-center gap-3">
@@ -230,5 +233,155 @@ export function AdminLayout() {
           <PlatformFooter className="rounded-[28px] border border-[#D8E6EB] bg-white px-5 py-5 shadow-sm" linksClassName="text-[#5F7077]" versionClassName="text-[#5F7077]" compact/>
         </div>
       </div>
-    </main>);
+      <AdminTutorialsFloatingPanel />
+    </main>
+    </AdminTutorialsProvider>);
+}
+
+function AdminTutorialsFloatingPanel() {
+  const {
+    tutorials,
+    activeTutorial,
+    activeTutorialId,
+    isDrawerOpen,
+    isDrawerMinimized,
+    openTutorial,
+    closeDrawer,
+    minimizeDrawer,
+    restoreDrawer,
+    selectTutorial,
+  } = useAdminTutorials();
+
+  const showDrawer = isDrawerOpen && !isDrawerMinimized;
+  const showMinimized = isDrawerMinimized;
+
+  return (
+    <>
+      {showDrawer ? (
+        <div className="fixed inset-0 z-[90] bg-slate-950/20 backdrop-blur-[1px]" onClick={closeDrawer} aria-hidden="true" />
+      ) : null}
+
+      {showDrawer ? (
+        <aside className="fixed right-4 top-4 z-[100] flex h-[calc(100vh-2rem)] w-[min(92vw,460px)] flex-col overflow-hidden rounded-[32px] border border-[#BEE3EA] bg-white shadow-[0_30px_90px_rgba(10,54,64,0.24)]">
+          <div className="flex items-start justify-between gap-4 border-b border-[#D8E6EB] bg-[linear-gradient(145deg,#0A3640_0%,#0E677C_55%,#1398B7_100%)] px-5 py-4 text-white">
+            <div className="min-w-0">
+              <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.24em] text-white/80">
+                <BookOpen className="h-3.5 w-3.5" />
+                Tutorial admin
+              </div>
+              <h2 className="mt-3 font-readex text-xl font-semibold tracking-tight">{activeTutorial.title}</h2>
+              <p className="mt-2 text-sm leading-6 text-white/82">{activeTutorial.summary}</p>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button type="button" onClick={() => minimizeDrawer()} className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-white/10 text-white transition hover:bg-white/20" aria-label="Minimizar tutorial">
+                <Minimize2 className="h-4 w-4" />
+              </button>
+              <button type="button" onClick={closeDrawer} className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-white/10 text-white transition hover:bg-white/20" aria-label="Fechar tutorial">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+
+          <div className="grid min-h-0 flex-1 grid-rows-[auto_minmax(0,1fr)]">
+            <div className="border-b border-[#D8E6EB] bg-[#F8FBFC] px-5 py-4">
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#5F7077]">Tutoriais disponíveis</p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {tutorials.map((tutorial) => {
+                  const isActive = tutorial.id === activeTutorialId;
+
+                  return (
+                    <button
+                      key={tutorial.id}
+                      type="button"
+                      onClick={() => selectTutorial(tutorial.id)}
+                      className={`rounded-full border px-3 py-1.5 text-[11px] font-black uppercase tracking-[0.16em] transition-colors ${isActive ? 'border-[#1398B7] bg-[#1398B7] text-white' : 'border-[#D8E6EB] bg-white text-[#5F7077] hover:border-[#BEE3EA] hover:bg-[#F2FBFD]'}`}
+                    >
+                      {tutorial.title}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="min-h-0 overflow-y-auto px-5 py-5">
+              <div className="space-y-4">
+                {activeTutorial.steps.map((step, index) => (
+                  <div key={`${activeTutorial.id}-${step.title}`} className="rounded-[24px] border border-[#D8E6EB] bg-white p-4 shadow-sm">
+                    <div className="flex items-start gap-3">
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#1398B7] text-xs font-black text-white">
+                        {index + 1}
+                      </div>
+                      <div>
+                        <h3 className="text-sm font-black tracking-tight text-[#15323b]">{step.title}</h3>
+                        <p className="mt-1 text-sm leading-6 text-[#5F7077]">{step.description}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-5 rounded-[24px] border border-[#BEE3EA] bg-[#F2FBFD] p-4">
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#0E677C]">Dicas rápidas</p>
+                <ul className="mt-3 space-y-2 text-sm leading-6 text-[#155160]">
+                  {activeTutorial.notes.map((note) => (
+                    <li key={note} className="flex gap-2">
+                      <ArrowRight className="mt-1 h-4 w-4 shrink-0 text-[#1398B7]" />
+                      <span>{note}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <div className="border-t border-[#D8E6EB] bg-white px-5 py-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <Link to="/admin/tutoriais" onClick={closeDrawer} className="inline-flex items-center gap-2 text-sm font-black text-[#1398B7] transition-colors hover:text-[#0E677C]">
+                <Sparkles className="h-4 w-4" />
+                Abrir página completa
+              </Link>
+              <Button type="button" onClick={() => minimizeDrawer()} className="h-10 rounded-2xl bg-[#1398B7] px-4 font-black text-white hover:bg-[#1089A5]">
+                Minimizar painel
+              </Button>
+            </div>
+          </div>
+        </aside>
+      ) : null}
+
+      {showMinimized ? (
+        <button
+          type="button"
+          onClick={restoreDrawer}
+          className="fixed bottom-5 right-5 z-[100] inline-flex items-center gap-3 rounded-full border border-[#BEE3EA] bg-white px-4 py-3 text-left shadow-[0_20px_60px_rgba(10,54,64,0.2)] transition hover:-translate-y-0.5 hover:shadow-[0_24px_70px_rgba(10,54,64,0.24)]"
+        >
+          <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[linear-gradient(145deg,#0A3640_0%,#1398B7_100%)] text-white">
+            <BookOpen className="h-5 w-5" />
+          </span>
+          <span className="pr-2">
+            <span className="block text-[10px] font-black uppercase tracking-[0.24em] text-[#5F7077]">Tutoriais</span>
+            <span className="block text-sm font-black text-[#15323b]">{activeTutorial.title}</span>
+          </span>
+          <Maximize2 className="h-4 w-4 text-[#1398B7]" />
+        </button>
+      ) : null}
+
+      {!showDrawer && !showMinimized ? (
+        <button
+          type="button"
+          onClick={() => openTutorial(activeTutorial.id)}
+          className="fixed bottom-5 right-5 z-[100] inline-flex items-center gap-3 rounded-full border border-[#1398B7]/20 bg-[linear-gradient(145deg,#0A3640_0%,#0E677C_55%,#1398B7_100%)] px-4 py-3 text-left text-white shadow-[0_20px_60px_rgba(10,54,64,0.24)] transition hover:-translate-y-0.5 hover:shadow-[0_24px_70px_rgba(10,54,64,0.28)]"
+          aria-label="Abrir tutoriais do admin"
+        >
+          <span className="flex h-10 w-10 items-center justify-center rounded-full bg-white/12">
+            <BookOpen className="h-5 w-5" />
+          </span>
+          <span className="pr-2">
+            <span className="block text-[10px] font-black uppercase tracking-[0.24em] text-white/75">Ajuda rápida</span>
+            <span className="block text-sm font-black">{activeTutorial.title}</span>
+          </span>
+        </button>
+      ) : null}
+    </>
+  );
 }

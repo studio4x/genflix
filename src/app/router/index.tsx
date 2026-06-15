@@ -59,6 +59,7 @@ const AdminMaterialsPage = lazy(async () => ({ default: (await import('@/pages/a
 const AdminGroupsPage = lazy(async () => ({ default: (await import('@/pages/admin/admin-groups-page')).AdminGroupsPage }));
 const AdminUsersPage = lazy(async () => ({ default: (await import('@/pages/admin/admin-users-page')).AdminUsersPage }));
 const AdminAccountPage = lazy(async () => ({ default: (await import('@/pages/admin/admin-account-page')).AdminAccountPage }));
+const AdminTutorialsPage = lazy(async () => ({ default: (await import('@/pages/admin/admin-tutorials-page')).AdminTutorialsPage }));
 const AdminButtonTemplatesPage = lazy(async () => ({ default: (await import('@/pages/admin/admin-button-templates-page')).AdminButtonTemplatesPage }));
 const AdminReportsPage = lazy(async () => ({ default: (await import('@/pages/admin/admin-reports-page')).AdminReportsPage }));
 const AdminPublicFormsPage = lazy(async () => ({ default: (await import('@/pages/admin/admin-public-forms-page')).AdminPublicFormsPage }));
@@ -500,6 +501,10 @@ const appRoutes = [
                     {
                         path: '/admin/minha-conta',
                         element: withRouteSuspense(<AdminAccountPage />),
+                    },
+                    {
+                        path: '/admin/tutoriais',
+                        element: withRouteSuspense(<AdminTutorialsPage />),
                     },
                     {
                         path: '/admin/botoes-aula',
