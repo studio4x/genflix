@@ -1,4 +1,4 @@
-import { ArrowRight, BookOpen, Clock3, Eye, GripVertical, PencilLine, PlusCircle, Search, Sparkles, Trash2, X } from 'lucide-react';
+import { ArrowRight, BookOpen, Clock3, Eye, GripVertical, PencilLine, PlusCircle, Search, SlidersHorizontal, Sparkles, Trash2, X } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { DragDropContext, Draggable, Droppable, type DropResult } from '@hello-pangea/dnd';
 import { RichTextEditor } from '@/components/ui/RichTextEditor';
@@ -78,6 +78,7 @@ function normalizeStep(step: TutorialStepForm, index: number): AdminTutorialStep
 export function AdminTutorialsPage() {
   const { tutorials, activeTutorial, openTutorial, addTutorial, updateTutorial, deleteTutorial, reorderTutorials } = useAdminTutorials();
   const [search, setSearch] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedTutorialId, setSelectedTutorialId] = useState<string>(tutorials[0]?.id ?? '');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTutorialId, setEditingTutorialId] = useState<string | null>(null);
@@ -99,20 +100,31 @@ export function AdminTutorialsPage() {
   const filteredTutorials = useMemo(() => {
     const term = search.trim().toLowerCase();
 
-    if (!term) {
-      return tutorials;
-    }
-
     return tutorials.filter((tutorial) => {
-      return [tutorial.title, tutorial.summary, tutorial.category].some((field) => field.toLowerCase().includes(term));
+      const matchesSearch = !term || [tutorial.title, tutorial.summary, tutorial.category].some((field) => field.toLowerCase().includes(term));
+      const matchesCategory = selectedCategory === 'all' || tutorial.category === selectedCategory;
+
+      return matchesSearch && matchesCategory;
     });
-  }, [search, tutorials]);
+  }, [search, selectedCategory, tutorials]);
+
+  const tutorialCategories = useMemo(() => {
+    return Array.from(new Set(tutorials.map((tutorial) => tutorial.category).filter(Boolean))).sort((left, right) =>
+      left.localeCompare(right, 'pt-BR'),
+    );
+  }, [tutorials]);
 
   const selectedTutorial = useMemo(() => {
-    return tutorials.find((tutorial) => tutorial.id === selectedTutorialId) ?? tutorials[0] ?? activeTutorial;
-  }, [activeTutorial, selectedTutorialId, tutorials]);
+    const visibleSelectedTutorial = filteredTutorials.find((tutorial) => tutorial.id === selectedTutorialId);
 
-  const canReorderTutorials = search.trim().length === 0;
+    if (visibleSelectedTutorial) {
+      return visibleSelectedTutorial;
+    }
+
+    return filteredTutorials[0] ?? tutorials.find((tutorial) => tutorial.id === selectedTutorialId) ?? tutorials[0] ?? activeTutorial;
+  }, [activeTutorial, filteredTutorials, selectedTutorialId, tutorials]);
+
+  const canReorderTutorials = search.trim().length === 0 && selectedCategory === 'all';
 
   function handleTutorialDragEnd(result: DropResult) {
     if (!result.destination || result.destination.index === result.source.index) {
@@ -215,6 +227,7 @@ export function AdminTutorialsPage() {
   }
 
   const tutorialCount = tutorials.length;
+  const filteredTutorialCount = filteredTutorials.length;
 
   return (
     <div className="space-y-6">
@@ -271,6 +284,71 @@ export function AdminTutorialsPage() {
           </label>
         </div>
 
+        <div className="mt-4 flex flex-col gap-3 rounded-[28px] border border-[#D8E6EB] bg-[#F8FBFC] p-4 shadow-sm lg:flex-row lg:items-start lg:justify-between">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <SlidersHorizontal className="h-4 w-4 shrink-0 text-[#1398B7]" />
+              <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#5F7077]">Filtrar por categoria</p>
+            </div>
+
+            <div className="mt-3 flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => setSelectedCategory('all')}
+                className={
+                  'inline-flex h-10 items-center rounded-full border px-4 text-xs font-black uppercase tracking-[0.16em] transition ' +
+                  (selectedCategory === 'all'
+                    ? 'border-[#1398B7] bg-[#1398B7] text-white shadow-sm'
+                    : 'border-[#D8E6EB] bg-white text-[#5F7077] hover:border-[#1398B7]/40 hover:text-[#1398B7]')
+                }
+              >
+                Todas
+              </button>
+
+              {tutorialCategories.map((category) => {
+                const isActive = selectedCategory === category;
+
+                return (
+                  <button
+                    key={category}
+                    type="button"
+                    onClick={() => setSelectedCategory(category)}
+                    className={
+                      'inline-flex h-10 items-center rounded-full border px-4 text-xs font-black uppercase tracking-[0.16em] transition ' +
+                      (isActive
+                        ? 'border-[#1398B7] bg-[#DFF5FA] text-[#0E677C] shadow-sm'
+                        : 'border-[#D8E6EB] bg-white text-[#5F7077] hover:border-[#1398B7]/40 hover:text-[#1398B7]')
+                    }
+                  >
+                    {category}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="inline-flex h-10 items-center rounded-full border border-[#D8E6EB] bg-white px-4 text-xs font-black uppercase tracking-[0.16em] text-[#5F7077]">
+              {filteredTutorialCount} de {tutorialCount} tutoriais
+            </span>
+
+            {(selectedCategory !== 'all' || search.trim().length > 0) ? (
+              <Button
+                type="button"
+                variant="outline"
+                className="h-10 rounded-full border-[#D8E6EB] bg-white px-4 font-black text-[#163138] hover:border-[#1398B7]/40 hover:bg-[#F2FBFD]"
+                onClick={() => {
+                  setSearch('');
+                  setSelectedCategory('all');
+                }}
+              >
+                <X className="h-4 w-4" />
+                Limpar filtros
+              </Button>
+            ) : null}
+          </div>
+        </div>
+
         <div className="mt-6 overflow-hidden rounded-[28px] border border-[#D8E6EB]">
           <div className="hidden grid-cols-[36px_minmax(0,2.35fr)_minmax(210px,1fr)_minmax(120px,0.7fr)_minmax(0,1.15fr)] gap-x-6 border-b border-[#D8E6EB] bg-[#F8FBFC] px-5 py-3 text-[10px] font-black uppercase tracking-[0.22em] text-[#5F7077] lg:grid">
             <span className="sr-only">Ordenar</span>
@@ -283,7 +361,7 @@ export function AdminTutorialsPage() {
           <div className="divide-y divide-[#E6EEF1]">
             {filteredTutorials.length === 0 ? (
               <div className="bg-white px-5 py-6 text-sm text-[#5F7077]">
-                Nenhum tutorial encontrado para a busca atual.
+                Nenhum tutorial encontrado para a combinacao atual de busca e categoria.
               </div>
             ) : null}
 
