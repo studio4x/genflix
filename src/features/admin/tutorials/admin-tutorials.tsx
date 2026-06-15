@@ -987,6 +987,238 @@ const defaultAdminTutorials: AdminTutorial[] = [
       'Toda ação de segurança precisa ser rastreável.',
     ],
   },
+  {
+    id: 'como-acompanhar-conversao-e-checkout',
+    title: 'Como acompanhar conversão e checkout',
+    summary: 'Monitore o fluxo comercial para identificar abandono, atrito e oportunidades de melhoria no funil.',
+    estimatedMinutes: 6,
+    category: 'Comercial',
+    steps: [
+      {
+        title: 'Abra a visão de vendas',
+        description: 'Use relatórios e pagamentos para identificar quais páginas ou ofertas estão convertendo melhor.',
+      },
+      {
+        title: 'Observe o funil',
+        description: 'Compare visitas, intenção de compra, início de checkout e conclusão para localizar o ponto de abandono.',
+      },
+      {
+        title: 'Cheque o percurso do checkout',
+        description: 'Valide se preço, meios de pagamento, textos e chamadas estão claros para o usuário finalizar a compra.',
+      },
+      {
+        title: 'Registre hipóteses de melhoria',
+        description: 'Anote o que pode ser testado depois, como ajustes de CTA, oferta ou ordem das informações.',
+      },
+    ],
+    notes: [
+      'Conversão deve ser lida por tendência, não só por um dia isolado.',
+      'Qualquer queda no checkout merece validação imediata da jornada.',
+    ],
+  },
+  {
+    id: 'como-configurar-liberacoes-avancadas-de-curso',
+    title: 'Como configurar liberações avançadas de curso',
+    summary: 'Aplique regras mais sofisticadas para liberar conteúdo por data, progresso ou contexto operacional.',
+    estimatedMinutes: 6,
+    category: 'Cursos',
+    steps: [
+      {
+        title: 'Abra as liberações do curso',
+        description: 'Entre em <strong>Liberacoes</strong> para revisar o que já está publicado e o que pode ser ajustado.',
+      },
+      {
+        title: 'Escolha a regra principal',
+        description: 'Defina se a liberação será por data, por sequência, por progresso ou por exceção operacional.',
+      },
+      {
+        title: 'Aplique em nível adequado',
+        description: 'Quando necessário, configure regras diferentes por curso, módulo ou aula para manter a experiência previsível.',
+      },
+      {
+        title: 'Teste cenários alternativos',
+        description: 'Valide se o aluno vê o conteúdo correto em condições diferentes, como compra recente ou curso em andamento.',
+      },
+    ],
+    notes: [
+      'Regras avançadas precisam ser documentadas para evitar confusão futura.',
+      'Sempre teste com mais de um cenário antes de considerar a configuração pronta.',
+    ],
+  },
+  {
+    id: 'como-revisar-metricas-do-dashboard',
+    title: 'Como revisar métricas do dashboard',
+    summary: 'Transforme os indicadores da home do admin em rotina de acompanhamento e decisão.',
+    estimatedMinutes: 5,
+    category: 'Dados',
+    steps: [
+      {
+        title: 'Abra o dashboard',
+        description: 'Comece pela tela inicial do admin e veja os indicadores que mudaram desde a última revisão.',
+      },
+      {
+        title: 'Leia os sinais mais importantes',
+        description: 'Destaque volume de vendas, suporte, notificações e pendências que pedem ação rápida.',
+      },
+      {
+        title: 'Compare com o período anterior',
+        description: 'Use a comparação temporal para entender se houve melhora, queda ou estabilidade.',
+      },
+      {
+        title: 'Aponte a próxima ação',
+        description: 'Registre o que precisa ser acompanhado no dia, na semana ou no mês seguinte.',
+      },
+    ],
+    notes: [
+      'Dashboard é melhor quando vira rotina de decisão.',
+      'Métrica sem ação prática tende a perder valor rapidamente.',
+    ],
+  },
+  {
+    id: 'como-moderar-reviews-e-respostas-publicas',
+    title: 'Como moderar reviews e respostas públicas',
+    summary: 'Padronize a gestão de avaliações e respostas para manter a reputação pública em ordem.',
+    estimatedMinutes: 5,
+    category: 'Comunidade',
+    steps: [
+      {
+        title: 'Revise as avaliações recebidas',
+        description: 'Abra <strong>Reviews</strong> e identifique o que exige aprovação, resposta ou rejeição.',
+      },
+      {
+        title: 'Verifique o contexto antes de agir',
+        description: 'Leia o conteúdo completo para evitar aprovar algo fora de contexto ou responder de forma inadequada.',
+      },
+      {
+        title: 'Escreva respostas úteis',
+        description: 'Se for responder publicamente, mantenha o tom profissional e a resposta objetiva.',
+      },
+      {
+        title: 'Monitore recorrência',
+        description: 'Se um padrão voltar com frequência, crie ação interna ou tutorial de apoio para o time.',
+      },
+    ],
+    notes: [
+      'Respostas públicas pedem consistência de tom.',
+      'Avaliação moderada sem contexto pode gerar ruído para a marca.',
+    ],
+  },
+  {
+    id: 'como-operar-campanhas-e-banners-com-versao',
+    title: 'Como operar campanhas e banners com versão',
+    summary: 'Gerencie banners e destaques sem perder controle sobre histórico, revisão e troca de campanhas.',
+    estimatedMinutes: 5,
+    category: 'Marketing',
+    steps: [
+      {
+        title: 'Abra a área de banners',
+        description: 'Veja os itens ativos, duplicados e em revisão antes de iniciar uma nova campanha.',
+      },
+      {
+        title: 'Crie a versão da campanha',
+        description: 'Ajuste texto, imagem, CTA e destino da campanha para a nova fase de divulgação.',
+      },
+      {
+        title: 'Reordene e publique',
+        description: 'Defina qual banner aparece primeiro e confirme se o destaque principal é o correto.',
+      },
+      {
+        title: 'Arquive o material antigo',
+        description: 'Remova ou desative banners antigos para evitar conflito visual e mensagem concorrente.',
+      },
+    ],
+    notes: [
+      'Campanhas precisam de revisão antes e depois da publicação.',
+      'Guardar histórico ajuda a entender o que performou melhor.',
+    ],
+  },
+  {
+    id: 'como-fazer-auditoria-de-arquivos-no-storage-r2',
+    title: 'Como fazer auditoria de arquivos no storage R2',
+    summary: 'Organize, revise e limpe mídias e documentos para manter o storage confiável e fácil de navegar.',
+    estimatedMinutes: 5,
+    category: 'Infraestrutura',
+    steps: [
+      {
+        title: 'Abra o storage',
+        description: 'Entre em <strong>Storage R2</strong> e revise os arquivos que estão disponíveis para a operação.',
+      },
+      {
+        title: 'Identifique duplicidades',
+        description: 'Procure arquivos com nomes parecidos ou versões repetidas que possam confundir o time.',
+      },
+      {
+        title: 'Valide os itens críticos',
+        description: 'Confira os arquivos que afetam cursos, blog, banners e páginas públicas antes de remover qualquer coisa.',
+      },
+      {
+        title: 'Limpe com critério',
+        description: 'Arquive ou remova somente o que realmente não está mais em uso.',
+      },
+    ],
+    notes: [
+      'Auditoria de storage evita erro de mídia em áreas públicas.',
+      'Nomes consistentes simplificam manutenção futura.',
+    ],
+  },
+  {
+    id: 'como-tratar-excecoes-de-permissao',
+    title: 'Como tratar exceções de permissão e acesso',
+    summary: 'Fluxo seguro para conceder acesso temporário ou resolver exceções sem abrir brechas.',
+    estimatedMinutes: 5,
+    category: 'Usuários',
+    steps: [
+      {
+        title: 'Confirme a necessidade',
+        description: 'Antes de alterar acesso, valide se a exceção é realmente necessária para a operação.',
+      },
+      {
+        title: 'Escolha o menor acesso possível',
+        description: 'Conceda apenas o nível suficiente para executar a tarefa em questão.',
+      },
+      {
+        title: 'Defina prazo ou condição',
+        description: 'Se for temporário, deixe claro quando o acesso deve ser revisto ou removido.',
+      },
+      {
+        title: 'Registre a exceção',
+        description: 'Anote o motivo e o responsável pela aprovação para facilitar auditoria posterior.',
+      },
+    ],
+    notes: [
+      'Exceção sem prazo vira risco recorrente.',
+      'Menor privilégio é sempre a opção mais segura.',
+    ],
+  },
+  {
+    id: 'como-ligar-metricas-com-suporte-e-operacao',
+    title: 'Como ligar métricas com suporte e operação',
+    summary: 'Use o dashboard, tickets e pendências juntos para entender o que está afetando a operação.',
+    estimatedMinutes: 6,
+    category: 'Dados',
+    steps: [
+      {
+        title: 'Compare indicadores e chamados',
+        description: 'Veja se um aumento de tickets coincide com queda de conversão, falhas ou pendências.',
+      },
+      {
+        title: 'Procure padrões repetidos',
+        description: 'Identifique se o mesmo problema aparece em suporte, relatórios e notificações.',
+      },
+      {
+        title: 'Atribua causa provável',
+        description: 'Marque se o problema parece comercial, técnico, financeiro ou de conteúdo.',
+      },
+      {
+        title: 'Crie um plano de ação',
+        description: 'Registre o que será corrigido primeiro e o que precisa de acompanhamento adicional.',
+      },
+    ],
+    notes: [
+      'Métrica isolada costuma esconder a causa real.',
+      'Conectar dados com suporte acelera a resolução.',
+    ],
+  },
 ];
 
 function normalizeStepDescription(description: string) {
