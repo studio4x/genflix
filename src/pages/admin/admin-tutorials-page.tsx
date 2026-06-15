@@ -284,48 +284,29 @@ export function AdminTutorialsPage() {
           </label>
         </div>
 
-        <div className="mt-4 flex flex-col gap-3 rounded-[28px] border border-[#D8E6EB] bg-[#F8FBFC] p-4 shadow-sm lg:flex-row lg:items-start lg:justify-between">
-          <div className="min-w-0">
+        <div className="mt-4 flex flex-col gap-3 rounded-[28px] border border-[#D8E6EB] bg-[#F8FBFC] p-4 shadow-sm lg:flex-row lg:items-end lg:justify-between">
+          <label className="block w-full min-w-0 max-w-xl">
             <div className="flex items-center gap-2">
               <SlidersHorizontal className="h-4 w-4 shrink-0 text-[#1398B7]" />
               <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#5F7077]">Filtrar por categoria</p>
             </div>
 
-            <div className="mt-3 flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={() => setSelectedCategory('all')}
-                className={
-                  'inline-flex h-10 items-center rounded-full border px-4 text-xs font-black uppercase tracking-[0.16em] transition ' +
-                  (selectedCategory === 'all'
-                    ? 'border-[#1398B7] bg-[#1398B7] text-white shadow-sm'
-                    : 'border-[#D8E6EB] bg-white text-[#5F7077] hover:border-[#1398B7]/40 hover:text-[#1398B7]')
-                }
+            <div className="mt-3 rounded-2xl border border-[#D8E6EB] bg-white px-4 shadow-sm">
+              <select
+                value={selectedCategory}
+                onChange={(event) => setSelectedCategory(event.target.value)}
+                className="h-11 w-full bg-transparent text-sm font-semibold text-[#15323b] outline-none"
+                aria-label="Filtrar tutoriais por categoria"
               >
-                Todas
-              </button>
-
-              {tutorialCategories.map((category) => {
-                const isActive = selectedCategory === category;
-
-                return (
-                  <button
-                    key={category}
-                    type="button"
-                    onClick={() => setSelectedCategory(category)}
-                    className={
-                      'inline-flex h-10 items-center rounded-full border px-4 text-xs font-black uppercase tracking-[0.16em] transition ' +
-                      (isActive
-                        ? 'border-[#1398B7] bg-[#DFF5FA] text-[#0E677C] shadow-sm'
-                        : 'border-[#D8E6EB] bg-white text-[#5F7077] hover:border-[#1398B7]/40 hover:text-[#1398B7]')
-                    }
-                  >
+                <option value="all">Todas as categorias</option>
+                {tutorialCategories.map((category) => (
+                  <option key={category} value={category}>
                     {category}
-                  </button>
-                );
-              })}
+                  </option>
+                ))}
+              </select>
             </div>
-          </div>
+          </label>
 
           <div className="flex flex-wrap items-center gap-2">
             <span className="inline-flex h-10 items-center rounded-full border border-[#D8E6EB] bg-white px-4 text-xs font-black uppercase tracking-[0.16em] text-[#5F7077]">
