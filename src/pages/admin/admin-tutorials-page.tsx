@@ -1,4 +1,4 @@
-import { ArrowRight, BookOpen, Clock3, PlusCircle, Sparkles } from 'lucide-react';
+import { ArrowRight, BookOpen, Clock3, PlusCircle, Search, Sparkles } from 'lucide-react';
 import { useMemo, useState, type FormEvent } from 'react';
 import { Button } from '@/components/ui/button';
 import { type AdminTutorialDraft, type AdminTutorialStep, useAdminTutorials } from '@/features/admin/tutorials/admin-tutorials';
@@ -46,8 +46,21 @@ export function AdminTutorialsPage() {
   const { tutorials, activeTutorial, selectTutorial, openTutorial, addTutorial } = useAdminTutorials();
   const [form, setForm] = useState(initialFormState);
   const [feedback, setFeedback] = useState<string | null>(null);
+  const [search, setSearch] = useState('');
 
-  const tutorialCount = useMemo(() => tutorials.length, [tutorials.length]);
+  const filteredTutorials = useMemo(() => {
+    const term = search.trim().toLowerCase();
+
+    if (!term) {
+      return tutorials;
+    }
+
+    return tutorials.filter((tutorial) => {
+      return [tutorial.title, tutorial.summary, tutorial.category].some((field) => field.toLowerCase().includes(term));
+    });
+  }, [search, tutorials]);
+
+  const tutorialCount = tutorials.length;
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -104,7 +117,27 @@ export function AdminTutorialsPage() {
           </div>
 
           <div className="space-y-3">
-            {tutorials.map((tutorial) => {
+            <label className="block rounded-[24px] border border-[#D8E6EB] bg-white p-4 shadow-sm">
+              <span className="text-[10px] font-black uppercase tracking-[0.18em] text-[#5F7077]">Buscar tutorial</span>
+              <div className="mt-2 flex items-center gap-3 rounded-2xl border border-[#D8E6EB] bg-[#F8FBFC] px-4">
+                <Search className="h-4 w-4 shrink-0 text-[#1398B7]" />
+                <input
+                  value={search}
+                  onChange={(event) => setSearch(event.target.value)}
+                  className="h-11 w-full bg-transparent text-sm font-semibold text-[#15323b] outline-none"
+                  placeholder="Título, resumo ou categoria"
+                />
+              </div>
+            </label>
+
+            <div className="max-h-[440px] space-y-2 overflow-y-auto pr-1">
+              {filteredTutorials.length === 0 ? (
+                <div className="rounded-[24px] border border-dashed border-[#D8E6EB] bg-[#F8FBFC] p-4 text-sm text-[#5F7077]">
+                  Nenhum tutorial encontrado para a busca atual.
+                </div>
+              ) : null}
+
+              {filteredTutorials.map((tutorial) => {
               const isActive = tutorial.id === activeTutorial.id;
 
               return (
@@ -112,22 +145,21 @@ export function AdminTutorialsPage() {
                   key={tutorial.id}
                   type="button"
                   onClick={() => selectTutorial(tutorial.id)}
-                  className={`w-full rounded-[28px] border p-5 text-left transition-all ${isActive ? 'border-[#1398B7] bg-[#F2FBFD] shadow-[0_14px_40px_rgba(19,152,183,0.12)]' : 'border-[#D8E6EB] bg-white hover:border-[#BEE3EA] hover:bg-[#F8FBFC]'}`}
+                  className={`w-full rounded-[24px] border p-4 text-left transition-all ${isActive ? 'border-[#1398B7] bg-[#F2FBFD] shadow-[0_12px_30px_rgba(19,152,183,0.12)]' : 'border-[#D8E6EB] bg-white hover:border-[#BEE3EA] hover:bg-[#F8FBFC]'}`}
                 >
                   <div className="flex items-start justify-between gap-4">
-                    <div>
+                    <div className="min-w-0">
                       <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#1398B7]">{tutorial.category}</p>
-                      <h3 className="mt-2 text-lg font-black tracking-tight text-[#15323b]">{tutorial.title}</h3>
+                      <h3 className="mt-1 text-base font-black tracking-tight text-[#15323b]">{tutorial.title}</h3>
+                      <p className="mt-2 line-clamp-2 text-xs leading-5 text-[#5F7077]">{tutorial.summary}</p>
                     </div>
-                    <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-white text-[#1398B7] shadow-sm">
-                      <BookOpen className="h-5 w-5" />
+                    <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-white text-[#1398B7] shadow-sm">
+                      <BookOpen className="h-4.5 w-4.5" />
                     </span>
                   </div>
 
-                  <p className="mt-3 text-sm leading-6 text-[#5F7077]">{tutorial.summary}</p>
-
-                  <div className="mt-4 flex flex-wrap items-center gap-3 text-[11px] font-black uppercase tracking-[0.18em] text-[#5F7077]">
-                    <span className="inline-flex items-center gap-1.5 rounded-full border border-[#D8E6EB] bg-white px-3 py-1.5">
+                  <div className="mt-3 flex flex-wrap items-center gap-2 text-[10px] font-black uppercase tracking-[0.16em] text-[#5F7077]">
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-[#D8E6EB] bg-white px-2.5 py-1.5">
                       <Clock3 className="h-3.5 w-3.5" />
                       {tutorial.estimatedMinutes} min
                     </span>
@@ -140,6 +172,7 @@ export function AdminTutorialsPage() {
                 </button>
               );
             })}
+            </div>
           </div>
 
           <form onSubmit={handleSubmit} className="rounded-[28px] border border-[#D8E6EB] bg-white p-5 shadow-sm">

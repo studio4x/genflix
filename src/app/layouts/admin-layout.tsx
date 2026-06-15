@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ArrowRight, BookOpen, ChevronDown, ChevronRight, Clock3, Maximize2, Minimize2, RefreshCcw, Sparkles, Trash2, X } from 'lucide-react';
+import { ArrowRight, BookOpen, ChevronDown, ChevronRight, ChevronDownSquare, Maximize2, Minimize2, RefreshCcw, Sparkles, Trash2, X } from 'lucide-react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '@/app/providers/auth-provider';
 import { PlatformFooter } from '@/components/layout/platform-footer';
@@ -296,27 +296,26 @@ function AdminTutorialsFloatingPanel() {
                   </span>
                 </div>
 
-                <div className="mt-4 grid gap-3 xl:grid-cols-2">
-                  {tutorials.map((tutorial) => {
-                    const isActive = tutorial.id === activeTutorialId;
-
-                    return (
-                      <button
-                        key={tutorial.id}
-                        type="button"
-                        onClick={() => selectTutorial(tutorial.id)}
-                        className={`rounded-[24px] border p-4 text-left transition-all ${isActive ? 'border-[#1398B7] bg-white shadow-[0_12px_30px_rgba(19,152,183,0.12)]' : 'border-[#D8E6EB] bg-white hover:border-[#BEE3EA] hover:bg-[#F8FBFC]'}`}
+                <div className="mt-4 rounded-[22px] border border-[#D8E6EB] bg-white p-3 shadow-sm">
+                  <label className="flex items-center gap-3">
+                    <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#E8F6FA] text-[#1398B7]">
+                      <ChevronDownSquare className="h-5 w-5" />
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#5F7077]">Selecionar tutorial</p>
+                      <select
+                        value={activeTutorialId}
+                        onChange={(event) => selectTutorial(event.target.value)}
+                        className="mt-2 h-11 w-full rounded-2xl border border-[#D8E6EB] bg-[#F8FBFC] px-4 text-sm font-semibold text-[#15323b] outline-none transition focus:border-[#1398B7]"
                       >
-                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#1398B7]">{tutorial.category}</p>
-                        <h4 className="mt-2 text-sm font-black tracking-tight text-[#15323b]">{tutorial.title}</h4>
-                        <p className="mt-2 text-xs leading-5 text-[#5F7077]">{tutorial.summary}</p>
-                        <div className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-[#D8E6EB] bg-white px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-[#5F7077]">
-                          <Clock3 className="h-3.5 w-3.5" />
-                          {tutorial.estimatedMinutes} min
-                        </div>
-                      </button>
-                    );
-                  })}
+                        {tutorials.map((tutorial) => (
+                          <option key={tutorial.id} value={tutorial.id}>
+                            {tutorial.title}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </label>
                 </div>
               </section>
 
@@ -365,27 +364,26 @@ function AdminTutorialsFloatingPanel() {
                   </span>
                 </div>
 
-                <div className="mt-4 grid gap-3 xl:grid-cols-2">
-                  {tutorials.map((tutorial) => {
-                    const isActive = tutorial.id === activeTutorialId;
-
-                    return (
-                      <button
-                        key={`${tutorial.id}-footer`}
-                        type="button"
-                        onClick={() => selectTutorial(tutorial.id)}
-                        className={`rounded-[24px] border p-4 text-left transition-all ${isActive ? 'border-[#1398B7] bg-white shadow-[0_12px_30px_rgba(19,152,183,0.12)]' : 'border-[#D8E6EB] bg-white hover:border-[#BEE3EA] hover:bg-[#F8FBFC]'}`}
+                <div className="mt-4 rounded-[22px] border border-[#D8E6EB] bg-white p-3 shadow-sm">
+                  <label className="flex items-center gap-3">
+                    <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#E8F6FA] text-[#1398B7]">
+                      <ChevronDownSquare className="h-5 w-5" />
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#5F7077]">Selecionar tutorial</p>
+                      <select
+                        value={activeTutorialId}
+                        onChange={(event) => selectTutorial(event.target.value)}
+                        className="mt-2 h-11 w-full rounded-2xl border border-[#D8E6EB] bg-[#F8FBFC] px-4 text-sm font-semibold text-[#15323b] outline-none transition focus:border-[#1398B7]"
                       >
-                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#1398B7]">{tutorial.category}</p>
-                        <h4 className="mt-2 text-sm font-black tracking-tight text-[#15323b]">{tutorial.title}</h4>
-                        <p className="mt-2 text-xs leading-5 text-[#5F7077]">{tutorial.summary}</p>
-                        <div className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-[#D8E6EB] bg-white px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-[#5F7077]">
-                          <Clock3 className="h-3.5 w-3.5" />
-                          {tutorial.estimatedMinutes} min
-                        </div>
-                      </button>
-                    );
-                  })}
+                        {tutorials.map((tutorial) => (
+                          <option key={`${tutorial.id}-footer`} value={tutorial.id}>
+                            {tutorial.title}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </label>
                 </div>
               </section>
             </div>
