@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type CSSProperties, type ChangeEvent } from 'react';
+import { useEffect, useRef, useState, type CSSProperties, type ChangeEvent, type DragEvent } from 'react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import ReactQuill from '@/components/forms/react-quill';
 import { Button } from '@/components/ui/button';
@@ -687,6 +687,13 @@ function isHtmlFile(file: File) {
         || file.type === 'application/xhtml+xml';
 }
 
+function getHtmlUploadContentType(file: File) {
+    if (file.type === 'text/html' || file.type === 'application/xhtml+xml') {
+        return 'application/octet-stream';
+    }
+    return file.type || 'application/octet-stream';
+}
+
 function buildHtmlPreviewSrcDoc(html: string) {
     const trimmed = html.trim();
     if (!trimmed) {
@@ -719,8 +726,10 @@ interface LessonHtmlBlockEditorProps {
 
 export function LessonHtmlBlockEditor({ content, onChange, onError }: LessonHtmlBlockEditorProps) {
     const fileInputRef = useRef<HTMLInputElement | null>(null);
+    const dragDepthRef = useRef(0);
     const [inputMode, setInputMode] = useState<'paste' | 'upload'>(content.source_type);
     const [isUploading, setIsUploading] = useState(false);
+    const [isDragActive, setIsDragActive] = useState(false);
     const [previewError, setPreviewError] = useState<string | null>(null);
     const resolvedUploadUrl = useResolvedLessonAssetUrl(content.storage_path, content.signed_url);
 
@@ -728,25 +737,16 @@ export function LessonHtmlBlockEditor({ content, onChange, onError }: LessonHtml
         setInputMode(content.source_type);
     }, [content.source_type]);
 
-    async function handleFileSelected(event: ChangeEvent<HTMLInputElement>) {
-        const file = event.target.files?.[0];
-        if (!file) {
-            return;
-        }
-        if (!isHtmlFile(file)) {
-            const message = 'Selecione um arquivo .html ou .htm.';
-            setPreviewError(message);
-            onError?.(message);
-            event.target.value = '';
-            return;
-        }
+    async function ingestHtmlFile(file: File) {
         setIsUploading(true);
         setPreviewError(null);
         onError?.(null);
         try {
             const html = await file.text();
             const previousStoragePath = content.source_type === 'upload' ? content.storage_path.trim() : '';
-            const uploadResult = await uploadLessonContentAsset(file);
+            const uploadResult = await uploadLessonContentAsset(file, {
+                contentType: getHtmlUploadContentType(file),
+            });
             onChange({
                 ...content,
                 source_type: 'upload',
@@ -767,10 +767,65 @@ export function LessonHtmlBlockEditor({ content, onChange, onError }: LessonHtml
         }
         finally {
             setIsUploading(false);
-            if (event.target) {
-                event.target.value = '';
-            }
         }
+    }
+
+    async function handleFileSelected(event: ChangeEvent<HTMLInputElement>) {
+        const file = event.target.files?.[0];
+        if (!file) {
+            return;
+        }
+        if (!isHtmlFile(file)) {
+            const message = 'Selecione um arquivo .html ou .htm.';
+            setPreviewError(message);
+            onError?.(message);
+            event.target.value = '';
+            return;
+        }
+        await ingestHtmlFile(file);
+        event.target.value = '';
+    }
+
+    function resetDragState() {
+        dragDepthRef.current = 0;
+        setIsDragActive(false);
+    }
+
+    function handleUploadDragEnter(event: DragEvent<HTMLDivElement>) {
+        event.preventDefault();
+        event.stopPropagation();
+        dragDepthRef.current += 1;
+        setIsDragActive(true);
+    }
+
+    function handleUploadDragOver(event: DragEvent<HTMLDivElement>) {
+        event.preventDefault();
+        event.stopPropagation();
+        event.dataTransfer.dropEffect = 'copy';
+        setIsDragActive(true);
+    }
+
+    function handleUploadDragLeave(event: DragEvent<HTMLDivElement>) {
+        event.preventDefault();
+        event.stopPropagation();
+        dragDepthRef.current = Math.max(dragDepthRef.current - 1, 0);
+        if (dragDepthRef.current === 0) {
+            setIsDragActive(false);
+        }
+    }
+
+    async function handleUploadDrop(event: DragEvent<HTMLDivElement>) {
+        event.preventDefault();
+        event.stopPropagation();
+        resetDragState();
+        const file = Array.from(event.dataTransfer.files).find(isHtmlFile);
+        if (!file) {
+            const message = 'Solte um arquivo .html ou .htm.';
+            setPreviewError(message);
+            onError?.(message);
+            return;
+        }
+        await ingestHtmlFile(file);
     }
 
     async function switchToPasteMode() {
@@ -857,21 +912,38 @@ export function LessonHtmlBlockEditor({ content, onChange, onError }: LessonHtml
             ) : (
                 <div className="space-y-3">
                     <input ref={fileInputRef} type="file" accept=".html,.htm,text/html,application/xhtml+xml" className="hidden" onChange={(event) => void handleFileSelected(event)} />
-                    <div className="flex flex-wrap gap-3">
-                        <Button type="button" variant="outline" className="rounded-2xl border-slate-200 bg-white" onClick={() => fileInputRef.current?.click()} disabled={isUploading}>
-                            {content.storage_path ? 'Trocar arquivo' : 'Enviar arquivo HTML'}
-                        </Button>
-                        <Button type="button" variant="ghost" className="px-0 text-xs font-bold text-slate-500 hover:text-slate-800" onClick={() => void switchToPasteMode()}>
-                            Voltar para colagem
-                        </Button>
-                    </div>
-                    {content.file_name ? (
-                        <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
-                            {content.file_name}
+                    <div
+                        className={cn(
+                            'rounded-[24px] border-2 border-dashed px-4 py-5 transition',
+                            isDragActive ? 'border-sky-400 bg-sky-50' : 'border-slate-200 bg-white',
+                        )}
+                        onDragEnter={handleUploadDragEnter}
+                        onDragOver={handleUploadDragOver}
+                        onDragLeave={handleUploadDragLeave}
+                        onDrop={(event) => void handleUploadDrop(event)}
+                    >
+                        <div className="space-y-3">
+                            <div>
+                                <p className="text-sm font-semibold text-slate-700">Arraste e solte o arquivo HTML aqui</p>
+                                <p className="mt-1 text-sm text-slate-500">Também é possível clicar no botão abaixo para selecionar um arquivo.</p>
+                            </div>
+                            <div className="flex flex-wrap gap-3">
+                                <Button type="button" variant="outline" className="rounded-2xl border-slate-200 bg-white" onClick={() => fileInputRef.current?.click()} disabled={isUploading}>
+                                    {content.storage_path ? 'Trocar arquivo' : 'Enviar arquivo HTML'}
+                                </Button>
+                                <Button type="button" variant="ghost" className="px-0 text-xs font-bold text-slate-500 hover:text-slate-800" onClick={() => void switchToPasteMode()}>
+                                    Voltar para colagem
+                                </Button>
+                            </div>
+                            {content.file_name ? (
+                                <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+                                    {content.file_name}
+                                </div>
+                            ) : (
+                                <p className="text-sm text-slate-500">Arquivo HTML ainda não enviado.</p>
+                            )}
                         </div>
-                    ) : (
-                        <p className="text-sm text-slate-500">Arquivo HTML ainda não enviado.</p>
-                    )}
+                    </div>
                 </div>
             )}
 

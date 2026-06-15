@@ -880,14 +880,16 @@ export async function getSignedModulePdfUrl(storagePath: string) {
     }
     return result.data.signedUrl;
 }
-export async function uploadLessonContentAsset(file: File) {
+export async function uploadLessonContentAsset(file: File, options?: {
+    contentType?: string;
+}) {
     const objectPath = `${crypto.randomUUID()}-${sanitizeFileName(file.name)}`;
     const uploadResult = await supabase.storage
         .from(LESSON_CONTENT_ASSETS_BUCKET)
         .upload(objectPath, file, {
         cacheControl: '3600',
         upsert: false,
-        contentType: file.type || undefined,
+        contentType: (options?.contentType ?? file.type) || undefined,
     });
     if (uploadResult.error) {
         throw uploadResult.error;
@@ -1658,7 +1660,6 @@ export async function importFullCourse(data: ImportCourseFullData, userId: strin
     await importCourseContent(course.id, data, false);
     return withLegacyCourseSalesDefaults(course as Course);
 }
-
 
 
 
