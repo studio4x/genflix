@@ -272,12 +272,12 @@ export function AdminTutorialsPage() {
         </div>
 
         <div className="mt-6 overflow-hidden rounded-[28px] border border-[#D8E6EB]">
-          <div className="hidden grid-cols-[36px_minmax(0,2fr)_minmax(180px,0.8fr)_minmax(150px,0.7fr)_minmax(0,1.2fr)] gap-4 border-b border-[#D8E6EB] bg-[#F8FBFC] px-5 py-3 text-[10px] font-black uppercase tracking-[0.22em] text-[#5F7077] lg:grid">
+          <div className="hidden grid-cols-[36px_minmax(0,2.35fr)_minmax(210px,1fr)_minmax(120px,0.7fr)_minmax(0,1.15fr)] gap-x-6 border-b border-[#D8E6EB] bg-[#F8FBFC] px-5 py-3 text-[10px] font-black uppercase tracking-[0.22em] text-[#5F7077] lg:grid">
             <span className="sr-only">Ordenar</span>
-            <span>Tutorial</span>
-            <span>Categoria / tempo</span>
-            <span>Passos</span>
-            <span className="text-right">A??es</span>
+            <span className="pr-4">Tutorial</span>
+            <span className="pl-4">Categoria / tempo</span>
+            <span className="pl-4">Passos</span>
+            <span className="pl-4 text-right">Ações</span>
           </div>
 
           <div className="divide-y divide-[#E6EEF1]">
@@ -318,7 +318,7 @@ export function AdminTutorialsPage() {
                                       <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#1398B7]">{tutorial.category}</p>
                                       {isSelected ? (
                                         <span className="inline-flex items-center rounded-full border border-[#BEE3EA] bg-[#DFF5FA] px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-[#0E677C]">
-                                          Em exibi??o
+                                          Em exibição
                                         </span>
                                       ) : null}
                                     </div>
@@ -349,7 +349,7 @@ export function AdminTutorialsPage() {
                                       onClick={() => openSelectedInPage(tutorial.id)}
                                     >
                                       <Eye className="h-4 w-4" />
-                                      Na p?gina
+                                      Na página
                                     </Button>
                                     <Button
                                       type="button"
@@ -408,7 +408,7 @@ export function AdminTutorialsPage() {
                           <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#1398B7]">{tutorial.category}</p>
                           {isSelected ? (
                             <span className="inline-flex items-center rounded-full border border-[#BEE3EA] bg-[#DFF5FA] px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-[#0E677C]">
-                              Em exibi??o
+                              Em exibição
                             </span>
                           ) : null}
                         </div>
@@ -439,7 +439,7 @@ export function AdminTutorialsPage() {
                           onClick={() => openSelectedInPage(tutorial.id)}
                         >
                           <Eye className="h-4 w-4" />
-                          Na p?gina
+                          Na página
                         </Button>
                         <Button
                           type="button"
