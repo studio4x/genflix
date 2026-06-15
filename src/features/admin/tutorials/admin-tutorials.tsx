@@ -675,6 +675,19 @@ function normalizeTutorial(tutorial: Partial<AdminTutorial>, fallbackIndex = 0):
   };
 }
 
+function mergeDefaultTutorials(existingTutorials: AdminTutorial[]) {
+  const mergedTutorials = [...existingTutorials];
+  const existingIds = new Set(existingTutorials.map((tutorial) => tutorial.id));
+
+  defaultAdminTutorials.forEach((tutorial) => {
+    if (!existingIds.has(tutorial.id)) {
+      mergedTutorials.push(tutorial);
+    }
+  });
+
+  return mergedTutorials;
+}
+
 function safeLoadTutorials(): AdminTutorial[] {
   if (typeof window === 'undefined') {
     return defaultAdminTutorials;
@@ -697,9 +710,13 @@ function safeLoadTutorials(): AdminTutorial[] {
       .map((tutorial, index) => normalizeTutorial(tutorial, index))
       .filter((tutorial): tutorial is AdminTutorial => Boolean(tutorial));
 
-    return tutorials.length > 0 ? tutorials : defaultAdminTutorials;
+    const mergedTutorials = tutorials.length > 0 ? mergeDefaultTutorials(tutorials) : defaultAdminTutorials;
+    window.localStorage.setItem(ADMIN_TUTORIALS_STORAGE_KEY, JSON.stringify(mergedTutorials));
+
+    return mergedTutorials;
   }
   catch {
+    window.localStorage.setItem(ADMIN_TUTORIALS_STORAGE_KEY, JSON.stringify(defaultAdminTutorials));
     return defaultAdminTutorials;
   }
 }
