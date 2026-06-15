@@ -689,9 +689,9 @@ function isHtmlFile(file: File) {
 
 function getHtmlUploadContentType(file: File) {
     if (file.type === 'text/html' || file.type === 'application/xhtml+xml') {
-        return 'application/octet-stream';
+        return file.type;
     }
-    return file.type || 'application/octet-stream';
+    return file.type || 'text/html';
 }
 
 function buildHtmlPreviewSrcDoc(html: string) {
