@@ -909,13 +909,15 @@ export function LessonHtmlBlockEditor({ content, onChange, onError }: LessonHtml
                         });
                     }} className="min-h-[280px] w-full rounded-2xl border border-slate-200 bg-slate-950 px-4 py-3 font-mono text-[13px] leading-6 text-emerald-300 outline-none transition focus:border-sky-300 focus:ring-4 focus:ring-sky-100" placeholder="<!doctype html>..." />
                 </label>
-            ) : (
+    ) : (
                 <div className="space-y-3">
                     <input ref={fileInputRef} type="file" accept=".html,.htm,text/html,application/xhtml+xml" className="hidden" onChange={(event) => void handleFileSelected(event)} />
                     <div
                         className={cn(
-                            'rounded-[24px] border-2 border-dashed px-4 py-5 transition',
-                            isDragActive ? 'border-sky-400 bg-sky-50' : 'border-slate-200 bg-white',
+                            'rounded-[24px] border-2 border-dashed px-4 py-5 transition-all duration-200',
+                            isDragActive
+                                ? 'border-sky-500 bg-sky-50 shadow-[0_0_0_6px_rgba(14,165,233,0.12)]'
+                                : 'border-slate-200 bg-white',
                         )}
                         onDragEnter={handleUploadDragEnter}
                         onDragOver={handleUploadDragOver}
@@ -924,8 +926,12 @@ export function LessonHtmlBlockEditor({ content, onChange, onError }: LessonHtml
                     >
                         <div className="space-y-3">
                             <div>
-                                <p className="text-sm font-semibold text-slate-700">Arraste e solte o arquivo HTML aqui</p>
-                                <p className="mt-1 text-sm text-slate-500">Também é possível clicar no botão abaixo para selecionar um arquivo.</p>
+                                <p className={cn('text-sm font-semibold transition-colors', isDragActive ? 'text-sky-700' : 'text-slate-700')}>
+                                    {isDragActive ? 'Solte o arquivo HTML para enviar' : 'Arraste e solte o arquivo HTML aqui'}
+                                </p>
+                                <p className={cn('mt-1 text-sm transition-colors', isDragActive ? 'text-sky-600' : 'text-slate-500')}>
+                                    Também é possível clicar no botão abaixo para selecionar um arquivo.
+                                </p>
                             </div>
                             <div className="flex flex-wrap gap-3">
                                 <Button type="button" variant="outline" className="rounded-2xl border-slate-200 bg-white" onClick={() => fileInputRef.current?.click()} disabled={isUploading}>
@@ -940,7 +946,9 @@ export function LessonHtmlBlockEditor({ content, onChange, onError }: LessonHtml
                                     {content.file_name}
                                 </div>
                             ) : (
-                                <p className="text-sm text-slate-500">Arquivo HTML ainda não enviado.</p>
+                                <p className={cn('text-sm transition-colors', isDragActive ? 'text-sky-600' : 'text-slate-500')}>
+                                    {isDragActive ? 'Pronto para receber o arquivo.' : 'Arquivo HTML ainda não enviado.'}
+                                </p>
                             )}
                         </div>
                     </div>
