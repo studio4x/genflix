@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ArrowRight, BookOpen, ChevronDown, ChevronRight, ChevronDownSquare, Maximize2, Minimize2, RefreshCcw, Sparkles, Trash2, X } from 'lucide-react';
+import { ArrowRight, BookOpen, ChevronDown, ChevronRight, ChevronDownSquare, Home, Maximize2, Minimize2, RefreshCcw, Sparkles, Trash2, X } from 'lucide-react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '@/app/providers/auth-provider';
 import { PlatformFooter } from '@/components/layout/platform-footer';
@@ -153,6 +153,12 @@ export function AdminLayout() {
           </div>
 
           <div className="flex items-center gap-3">
+            <Button asChild variant="outline" size="sm" className="rounded-xl border-[#D8E6EB] bg-white font-bold text-[#5f7077] hover:border-[#1398B7]/40 hover:text-[#163138]">
+              <Link to="/" aria-label="Ir para a home pública">
+                <Home className="h-3.5 w-3.5" />
+                Home pública
+              </Link>
+            </Button>
             <div className="hidden items-center gap-2 xl:flex">
               <Button type="button" variant="outline" size="sm" onClick={() => void handleClearServerCache()} disabled={isClearingServerCache || isClearingBrowserCache} className="rounded-xl border-[#D8E6EB] bg-white font-bold text-[#5f7077] hover:border-[#1398B7]/40 hover:text-[#163138]" title="Limpar cache do servidor">
                 <RefreshCcw className="h-3.5 w-3.5"/>

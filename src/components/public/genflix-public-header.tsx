@@ -1,6 +1,6 @@
 import { useEffect, useState, type CSSProperties } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, Settings2, X } from 'lucide-react';
+import { GraduationCap, Menu, Settings2, X } from 'lucide-react';
 import { useAuth } from '@/app/providers/auth-provider';
 import { GenflixCtaButton } from '@/components/public/genflix-cta-button';
 import { GenflixCookieConsentBanner } from '@/components/public/genflix-cookie-consent-banner';
@@ -102,6 +102,7 @@ export function GenflixPublicHeader({ currentPage, navLinks, }: {
     const useHomeTheme = isHome && pageAppearanceRecord.scope !== 'global';
     const logoTheme = resolveLogoTheme(currentScopeAppearance.pageBackgroundColor, useHomeTheme);
     const ctaPath = user ? getDashboardPathForRoles(roles) : '/login';
+    const isAdminUser = user && roles.includes('admin');
     const ctaLabel = useEditableValue(user ? 'global.header.cta.authenticated.label' : 'global.header.cta.anonymous.label', user ? 'Acessar painel' : 'Entrar', { pageKey: 'global' });
     const editableNavLinks = useEditableValue('global.header.navLinks', navLinks.map((item) => ({
         id: item.pageKey ?? item.href,
@@ -208,6 +209,22 @@ export function GenflixPublicHeader({ currentPage, navLinks, }: {
               </nav>
 
               <div className="flex items-center gap-3">
+                {isAdminUser ? (
+                  <Link
+                    to="/aluno/dashboard"
+                    className={cn(
+                      'inline-flex h-11 w-11 items-center justify-center rounded-full border transition-colors backdrop-blur-sm',
+                      useHomeTheme
+                        ? 'border-white/18 bg-white/10 text-white hover:bg-white/16'
+                        : 'border-[#D8E6EB] bg-white text-[#15323B] hover:bg-[#EBF3F5]',
+                    )}
+                    aria-label="Acessar área do aluno"
+                    title="Área do aluno"
+                  >
+                    <GraduationCap className="h-5 w-5" />
+                  </Link>
+                ) : null}
+
                 <EditableButton entryKey={user ? 'global.header.cta.authenticated.label' : 'global.header.cta.anonymous.label'} fallback={{
             label: ctaLabel,
             href: ctaPath,
@@ -260,6 +277,21 @@ export function GenflixPublicHeader({ currentPage, navLinks, }: {
                 </nav>
 
                 <div className={cn('mt-4 border-t pt-4 sm:hidden', useHomeTheme ? 'border-white/10' : 'border-[#D8E6EB]')}>
+                  {isAdminUser ? (
+                    <Link
+                      to="/aluno/dashboard"
+                      className={cn(
+                        'mb-3 inline-flex h-11 w-full items-center justify-center gap-2 rounded-2xl border px-4 text-sm font-black transition-colors',
+                        useHomeTheme
+                          ? 'border-white/18 bg-white/10 text-white hover:bg-white/16'
+                          : 'border-[#D8E6EB] bg-white text-[#15323B] hover:bg-[#EBF3F5]',
+                      )}
+                    >
+                      <GraduationCap className="h-4 w-4" />
+                      Área do aluno
+                    </Link>
+                  ) : null}
+
                   <EditableButton entryKey={user ? 'global.header.cta.authenticated.label' : 'global.header.cta.anonymous.label'} fallback={{
                 label: ctaLabel,
                 href: ctaPath,
