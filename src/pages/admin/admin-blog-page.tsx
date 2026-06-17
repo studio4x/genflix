@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { DragDropContext, Draggable, Droppable, type DropResult } from '@hello-pangea/dnd';
 import { useAuth } from '@/app/providers/auth-provider';
 import { RichTextEditor } from '@/components/ui/RichTextEditor';
 import { Button } from '@/components/ui/button';
@@ -10,7 +11,7 @@ import { fetchSiteAssets, fetchSiteContent, saveSiteContentEntry, uploadSiteAsse
 import { SITE_TEXT_FONT_PRESETS } from '@/features/site-editor/font-presets';
 import type { SiteAsset } from '@/features/site-editor/types';
 import { supabase } from '@/services/supabase/client';
-import { ChevronDown, ChevronUp, Eye, Pencil, RotateCcw, Star, Trash2, X } from 'lucide-react';
+import { ChevronDown, ChevronUp, Eye, GripVertical, Pencil, RotateCcw, Star, Trash2, X } from 'lucide-react';
 type ArticleStatus = 'draft' | 'scheduled' | 'published';
 type SeoFields = {
     seo_title: string;
@@ -25,6 +26,7 @@ type BlogArticleRow = {
     id: string;
     title: string;
     slug: string;
+    display_order: number | null;
     content_html: string | null;
     cover_image_url: string | null;
     card_image_url: string | null;
@@ -84,6 +86,7 @@ type LegacyBlogPostRow = {
     id: string;
     slug: string;
     title: string;
+    display_order: number | null;
     category: string | null;
     excerpt: string | null;
     focus_keyword: string | null;
@@ -300,6 +303,11 @@ function sortBlogArticlesByFeatured(rows: BlogArticleRow[]) {
         if (rightFeatured !== leftFeatured) {
             return rightFeatured - leftFeatured;
         }
+        const leftOrder = left.display_order ?? Number.MAX_SAFE_INTEGER;
+        const rightOrder = right.display_order ?? Number.MAX_SAFE_INTEGER;
+        if (rightOrder !== leftOrder) {
+            return leftOrder - rightOrder;
+        }
         const leftPublished = left.published_at ? new Date(left.published_at).getTime() : 0;
         const rightPublished = right.published_at ? new Date(right.published_at).getTime() : 0;
         if (rightPublished !== leftPublished) {
@@ -380,6 +388,7 @@ function mapLegacyPostToArticle(post: LegacyBlogPostRow): BlogArticleRow {
         id: post.id,
         title: post.title,
         slug: post.slug,
+        display_order: post.display_order ?? null,
         content_html: contentHtml,
         cover_image_url: post.image_url ?? null,
         card_image_url: post.card_image_url ?? post.image_url ?? null,
@@ -660,6 +669,7 @@ export function AdminBlogPage() {
     const [articleTagRows, setArticleTagRows] = useState<BlogArticleTagRow[]>([]);
     const [articleRevisions, setArticleRevisions] = useState<BlogPostRevisionRow[]>([]);
     const [isLoadingArticleRevisions, setIsLoadingArticleRevisions] = useState(false);
+    const [isReorderingArticles, setIsReorderingArticles] = useState(false);
     const [selectedArticleId, setSelectedArticleId] = useState<string | null>(null);
     const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
     const [selectedTagId, setSelectedTagId] = useState<string | null>(null);
@@ -716,6 +726,7 @@ export function AdminBlogPage() {
             return acc;
         }, { total: 0, draft: 0, scheduled: 0, published: 0, featured: 0 } as Record<'total' | 'draft' | 'scheduled' | 'published' | 'featured', number>);
     }, [articles]);
+    const isArticleReorderLocked = articleSearch.trim().length > 0 || articleStatusFilter !== 'all';
     const filteredArticles = useMemo(() => {
         const normalized = articleSearch.trim().toLowerCase();
         return articles.filter((article) => {
@@ -1617,6 +1628,40 @@ export function AdminBlogPage() {
                 : 'O artigo deixou de ser destaque.',
             tone: 'success',
         });
+    }
+    async function handleArticleDragEnd(result: DropResult) {
+        if (!result.destination || result.destination.index === result.source.index || isArticleReorderLocked || isReorderingArticles) {
+            return;
+        }
+        const reorderedArticles = [...orderedArticles];
+        const [movedArticle] = reorderedArticles.splice(result.source.index, 1);
+        reorderedArticles.splice(result.destination.index, 0, movedArticle);
+        const normalizedArticles = reorderedArticles.map((article, index) => ({
+            ...article,
+            display_order: index + 1,
+        }));
+        setArticles(normalizedArticles);
+        setIsReorderingArticles(true);
+        setErrorMessage(null);
+        setSuccessMessage(null);
+        try {
+            const updateResults = await Promise.all(normalizedArticles.map((article) => supabase
+                .from('blog_posts')
+                .update({ display_order: article.display_order })
+                .eq('id', article.id)));
+            const reorderError = updateResults.find((result) => result.error)?.error;
+            if (reorderError) {
+                throw reorderError;
+            }
+            setArticleSuccessMessage('Ordem dos artigos atualizada com sucesso.');
+        }
+        catch (error) {
+            setErrorMessage(error instanceof Error ? error.message : 'Não foi possível atualizar a ordem dos artigos.');
+            await loadAllData();
+        }
+        finally {
+            setIsReorderingArticles(false);
+        }
     }
     async function handleDeleteArticle(articleToDelete?: BlogArticleRow) {
         const target = articleToDelete ?? articles.find((item) => item.id === selectedArticleId);
@@ -2522,8 +2567,15 @@ export function AdminBlogPage() {
                 </div>
               </div>
 
-              {isLoading ? (<p className="py-8 text-sm font-medium text-[#6d7f84]">Carregando artigos...</p>) : filteredArticles.length === 0 ? (<p className="py-8 text-sm font-medium text-[#6d7f84]">Nenhum artigo encontrado.</p>) : (<div className="mt-4 overflow-x-auto">
-                  <table className="min-w-full divide-y divide-[#D8E6EB] text-left text-sm">
+              {isLoading ? (<p className="py-8 text-sm font-medium text-[#6d7f84]">Carregando artigos...</p>) : orderedArticles.length === 0 ? (<p className="py-8 text-sm font-medium text-[#6d7f84]">Nenhum artigo encontrado.</p>) : (<div className="mt-4 overflow-x-auto">
+                  <div className="mb-3 flex items-center justify-between gap-3">
+                    <p className="text-xs font-semibold text-[#5F7077]">
+                      {isArticleReorderLocked ? 'Limpe a busca e o filtro de status para reordenar os artigos.' : 'Arraste os artigos pelo ícone de mover para ajustar a ordem de exibição.'}
+                    </p>
+                    {isReorderingArticles ? (<span className="rounded-full bg-[#E8F6FA] px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-[#1398B7]">Salvando ordem</span>) : null}
+                  </div>
+                  <DragDropContext onDragEnd={(result) => void handleArticleDragEnd(result)}>
+                    <table className="min-w-full divide-y divide-[#D8E6EB] text-left text-sm">
                     <thead className="bg-[#F2F7F9] text-[10px] font-black uppercase tracking-[0.2em] text-[#5F7077]">
                       <tr>
                         <th className="px-4 py-3">Título</th>
@@ -2534,56 +2586,69 @@ export function AdminBlogPage() {
                         <th className="px-4 py-3">Ações</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-[#D8E6EB]">
-                      {orderedArticles.map((article) => {
-                        const category = categories.find((item) => item.id === article.category_id);
-                        const categoryLabel = category ? getCategoryPath(category, categories) : 'Sem categoria';
-                        return (<tr key={article.id} className={`cursor-pointer transition-colors hover:bg-[#F8FBFC] ${selectedArticleId === article.id ? 'bg-[#E8F6FA]' : ''}`} onClick={() => populateArticleForm(article)}>
-                            <td className="px-4 py-3">
-                              <div className="flex items-center gap-2">
-                                <p className="font-black text-[#15323b]">{article.title}</p>
-                                {article.featured ? (<span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.14em] text-amber-800">
-                                    Destaque
-                                  </span>) : null}
-                              </div>
-                              <p className="mt-1 text-xs font-semibold text-[#6d7f84]">/{article.slug}</p>
-                            </td>
-                            <td className="px-4 py-3 font-semibold text-[#15323b]">{statusLabel(article.status)}</td>
-                            <td className="px-4 py-3 font-semibold text-[#5F7077]">{categoryLabel}</td>
-                            <td className="px-4 py-3 font-semibold text-[#5F7077]">{formatDateTime(article.published_at)}</td>
-                            <td className="px-4 py-3 font-semibold text-[#5F7077]">{article.reading_time_minutes ?? 1} min</td>
-                            <td className="px-4 py-3">
-                              <div className="flex items-center gap-1">
-                                <Button type="button" variant="outline" title="Visualizar artigo" aria-label="Visualizar artigo" className="h-8 w-8 rounded-lg p-0" onClick={(event) => {
+                      <Droppable droppableId="blog-articles-display-order" isDropDisabled={isArticleReorderLocked}>
+                        {(provided) => (<tbody ref={provided.innerRef} {...provided.droppableProps} className="divide-y divide-[#D8E6EB]">
+                            {orderedArticles.map((article, index) => {
+                      const category = categories.find((item) => item.id === article.category_id);
+                      const categoryLabel = category ? getCategoryPath(category, categories) : 'Sem categoria';
+                      return (<Draggable key={article.id} draggableId={article.id} index={index} isDragDisabled={isArticleReorderLocked}>
+                                  {(draggableProvided, snapshot) => (<tr ref={draggableProvided.innerRef} {...draggableProvided.draggableProps} className={`cursor-pointer transition-colors hover:bg-[#F8FBFC] ${selectedArticleId === article.id ? 'bg-[#E8F6FA]' : ''} ${snapshot.isDragging ? 'bg-[#EFF9FC] shadow-[0_12px_30px_rgba(19,152,183,0.14)]' : ''}`} onClick={() => populateArticleForm(article)}>
+                                      <td className="px-4 py-3">
+                                        <div className="flex items-center gap-2">
+                                          <button type="button" title="Arrastar para reordenar" aria-label={`Mover artigo ${article.title}`} className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[#D8E6EB] bg-white text-[#5F7077] transition-colors hover:border-[#1398B7] hover:text-[#1398B7] ${isArticleReorderLocked ? 'cursor-not-allowed opacity-40' : 'cursor-grab active:cursor-grabbing'}`} {...draggableProvided.dragHandleProps} onClick={(event) => event.stopPropagation()} disabled={isArticleReorderLocked}>
+                                            <GripVertical className="h-4 w-4"/>
+                                          </button>
+                                          <div>
+                                            <div className="flex items-center gap-2">
+                                              <p className="font-black text-[#15323b]">{article.title}</p>
+                                              {article.featured ? (<span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.14em] text-amber-800">
+                                                  Destaque
+                                                </span>) : null}
+                                            </div>
+                                            <p className="mt-1 text-xs font-semibold text-[#6d7f84]">/{article.slug}</p>
+                                          </div>
+                                        </div>
+                                      </td>
+                                      <td className="px-4 py-3 font-semibold text-[#15323b]">{statusLabel(article.status)}</td>
+                                      <td className="px-4 py-3 font-semibold text-[#5F7077]">{categoryLabel}</td>
+                                      <td className="px-4 py-3 font-semibold text-[#5F7077]">{formatDateTime(article.published_at)}</td>
+                                      <td className="px-4 py-3 font-semibold text-[#5F7077]">{article.reading_time_minutes ?? 1} min</td>
+                                      <td className="px-4 py-3">
+                                        <div className="flex items-center gap-1">
+                                          <Button type="button" variant="outline" title="Visualizar artigo" aria-label="Visualizar artigo" className="h-8 w-8 rounded-lg p-0" onClick={(event) => {
                                 event.stopPropagation();
                                 handleOpenArticleFromList(article.slug);
                             }}>
-                                  <Eye className="h-4 w-4"/>
-                                </Button>
-                                <Button type="button" variant="outline" title="Editar artigo" aria-label="Editar artigo" className="h-8 w-8 rounded-lg p-0" onClick={(event) => {
+                                            <Eye className="h-4 w-4"/>
+                                          </Button>
+                                          <Button type="button" variant="outline" title="Editar artigo" aria-label="Editar artigo" className="h-8 w-8 rounded-lg p-0" onClick={(event) => {
                                 event.stopPropagation();
                                 populateArticleForm(article);
                             }}>
-                                  <Pencil className="h-4 w-4"/>
-                                </Button>
-                                <Button type="button" variant="outline" title={article.featured ? 'Remover destaque' : 'Marcar como destaque'} aria-label={article.featured ? 'Remover destaque' : 'Marcar como destaque'} className="h-8 w-8 rounded-lg border-amber-200 p-0 text-amber-700 hover:bg-amber-50" onClick={(event) => {
+                                            <Pencil className="h-4 w-4"/>
+                                          </Button>
+                                          <Button type="button" variant="outline" title={article.featured ? 'Remover destaque' : 'Marcar como destaque'} aria-label={article.featured ? 'Remover destaque' : 'Marcar como destaque'} aria-pressed={Boolean(article.featured)} className={`h-8 w-8 rounded-lg border-amber-200 p-0 text-amber-700 hover:bg-amber-50 ${article.featured ? 'bg-amber-100' : ''}`} onClick={(event) => {
                                 event.stopPropagation();
                                 void handleToggleArticleFeatured(article);
                             }}>
-                                  <Star className={`h-4 w-4 ${article.featured ? 'fill-current' : ''}`}/>
-                                </Button>
-                                <Button type="button" variant="outline" title="Excluir artigo" aria-label="Excluir artigo" className="h-8 w-8 rounded-lg border-red-200 p-0 text-red-700 hover:bg-red-50" onClick={(event) => {
+                                            <Star className={`h-4 w-4 ${article.featured ? 'fill-current' : ''}`}/>
+                                          </Button>
+                                          <Button type="button" variant="outline" title="Excluir artigo" aria-label="Excluir artigo" className="h-8 w-8 rounded-lg border-red-200 p-0 text-red-700 hover:bg-red-50" onClick={(event) => {
                                 event.stopPropagation();
                                 void handleDeleteArticle(article);
                             }}>
-                                  <Trash2 className="h-4 w-4"/>
-                                </Button>
-                              </div>
-                            </td>
-                          </tr>);
+                                            <Trash2 className="h-4 w-4"/>
+                                          </Button>
+                                        </div>
+                                      </td>
+                                    </tr>)}
+                                </Draggable>);
                     })}
-                    </tbody>
-                  </table>
+                            {provided.placeholder}
+                          </tbody>)}
+                      </Droppable>
+                    </table>
+                  </DragDropContext>
                 </div>)}
               </article>) : null}
           </section>

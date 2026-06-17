@@ -11,6 +11,7 @@ interface PublicBlogPostRow {
     slug: string;
     title: string;
     category: string | null;
+    display_order?: number | null;
     seo_description: string | null;
     excerpt?: string | null;
     image_url: string | null;
@@ -43,8 +44,8 @@ interface PublicBlogCategoryRow {
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
 const publicCourseSelect = 'id, slug, title, description, category, categories, thumbnail_url, cover_image_url, marketing_description, mentor_name, mentor_role, mentor_bio, mentor_initials, price_label, secondary_price_label, price_cents, currency, public_page_content, display_order, launch_date, created_at';
-const publicBlogPostLegacySelect = 'slug, title, category, excerpt, image_url, card_image_url, read_time, author, published_at, content, content_html, featured, status';
-const publicBlogPostAllLegacySelect = 'slug, title, category, excerpt, image_url, card_image_url, read_time, author, published_at, content, content_html, featured, status, created_at';
+const publicBlogPostLegacySelect = 'slug, title, category, display_order, excerpt, image_url, card_image_url, read_time, author, published_at, content, content_html, featured, status';
+const publicBlogPostAllLegacySelect = 'slug, title, category, display_order, excerpt, image_url, card_image_url, read_time, author, published_at, content, content_html, featured, status, created_at';
 async function fetchPublicRows<T>(path: string, searchParams: URLSearchParams): Promise<T[]> {
     if (!supabaseUrl || !supabaseAnonKey) {
         throw new Error('Configuração pública do Supabase ausente.');
@@ -207,6 +208,11 @@ function sortPublicBlogRows(rows: PublicBlogPostRow[]) {
         const rightFeatured = right.featured ? 1 : 0;
         if (rightFeatured !== leftFeatured) {
             return rightFeatured - leftFeatured;
+        }
+        const leftOrder = left.display_order ?? Number.MAX_SAFE_INTEGER;
+        const rightOrder = right.display_order ?? Number.MAX_SAFE_INTEGER;
+        if (rightOrder !== leftOrder) {
+            return leftOrder - rightOrder;
         }
         const leftPublished = left.published_at ? new Date(left.published_at).getTime() : 0;
         const rightPublished = right.published_at ? new Date(right.published_at).getTime() : 0;
