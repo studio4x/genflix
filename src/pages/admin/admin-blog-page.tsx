@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { Fragment, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { DragDropContext, Draggable, Droppable, type DropResult } from '@hello-pangea/dnd';
 import { useAuth } from '@/app/providers/auth-provider';
@@ -757,6 +757,10 @@ export function AdminBlogPage() {
         });
     }, [articles, articleSearch, articleStatusFilter, categories]);
     const orderedArticles = useMemo(() => sortBlogArticlesByFeatured(filteredArticles), [filteredArticles]);
+    const featuredArticleCount = useMemo(() => {
+        const firstRegularIndex = orderedArticles.findIndex((article) => !article.featured);
+        return firstRegularIndex === -1 ? orderedArticles.length : firstRegularIndex;
+    }, [orderedArticles]);
     async function loadLegacyData() {
         const legacyResult = await supabase
             .from('blog_posts')
@@ -2591,58 +2595,72 @@ export function AdminBlogPage() {
                             {orderedArticles.map((article, index) => {
                       const category = categories.find((item) => item.id === article.category_id);
                       const categoryLabel = category ? getCategoryPath(category, categories) : 'Sem categoria';
-                      return (<Draggable key={article.id} draggableId={article.id} index={index} isDragDisabled={isArticleReorderLocked}>
-                                  {(draggableProvided, snapshot) => (<tr ref={draggableProvided.innerRef} {...draggableProvided.draggableProps} className={`cursor-pointer transition-colors hover:bg-[#F8FBFC] ${selectedArticleId === article.id ? 'bg-[#E8F6FA]' : ''} ${snapshot.isDragging ? 'bg-[#EFF9FC] shadow-[0_12px_30px_rgba(19,152,183,0.14)]' : ''}`} onClick={() => populateArticleForm(article)}>
-                                      <td className="px-4 py-3">
-                                        <div className="flex items-center gap-2">
-                                          <button type="button" title="Arrastar para reordenar" aria-label={`Mover artigo ${article.title}`} className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[#D8E6EB] bg-white text-[#5F7077] transition-colors hover:border-[#1398B7] hover:text-[#1398B7] ${isArticleReorderLocked ? 'cursor-not-allowed opacity-40' : 'cursor-grab active:cursor-grabbing'}`} {...draggableProvided.dragHandleProps} onClick={(event) => event.stopPropagation()} disabled={isArticleReorderLocked}>
-                                            <GripVertical className="h-4 w-4"/>
-                                          </button>
-                                          <div>
-                                            <div className="flex items-center gap-2">
-                                              <p className="font-black text-[#15323b]">{article.title}</p>
-                                              {article.featured ? (<span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.14em] text-amber-800">
-                                                  Destaque
-                                                </span>) : null}
+                      const showFeaturedSeparator = index === featuredArticleCount - 1 && featuredArticleCount > 0 && featuredArticleCount < orderedArticles.length;
+                      return (<Fragment key={article.id}>
+                                  <Draggable key={article.id} draggableId={article.id} index={index} isDragDisabled={isArticleReorderLocked}>
+                                    {(draggableProvided, snapshot) => (<tr ref={draggableProvided.innerRef} {...draggableProvided.draggableProps} className={`cursor-pointer transition-colors hover:bg-[#F8FBFC] ${selectedArticleId === article.id ? 'bg-[#E8F6FA]' : ''} ${snapshot.isDragging ? 'bg-[#EFF9FC] shadow-[0_12px_30px_rgba(19,152,183,0.14)]' : ''}`} onClick={() => populateArticleForm(article)}>
+                                        <td className="px-4 py-3">
+                                          <div className="flex items-center gap-2">
+                                            <button type="button" title="Arrastar para reordenar" aria-label={`Mover artigo ${article.title}`} className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[#D8E6EB] bg-white text-[#5F7077] transition-colors hover:border-[#1398B7] hover:text-[#1398B7] ${isArticleReorderLocked ? 'cursor-not-allowed opacity-40' : 'cursor-grab active:cursor-grabbing'}`} {...draggableProvided.dragHandleProps} onClick={(event) => event.stopPropagation()} disabled={isArticleReorderLocked}>
+                                              <GripVertical className="h-4 w-4"/>
+                                            </button>
+                                            <div>
+                                              <div className="flex items-center gap-2">
+                                                <p className="font-black text-[#15323b]">{article.title}</p>
+                                                {article.featured ? (<span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.14em] text-amber-800">
+                                                    Destaque
+                                                  </span>) : null}
+                                              </div>
+                                              <p className="mt-1 text-xs font-semibold text-[#6d7f84]">/{article.slug}</p>
                                             </div>
-                                            <p className="mt-1 text-xs font-semibold text-[#6d7f84]">/{article.slug}</p>
                                           </div>
-                                        </div>
-                                      </td>
-                                      <td className="px-4 py-3 font-semibold text-[#15323b]">{statusLabel(article.status)}</td>
-                                      <td className="px-4 py-3 font-semibold text-[#5F7077]">{categoryLabel}</td>
-                                      <td className="px-4 py-3 font-semibold text-[#5F7077]">{formatDateTime(article.published_at)}</td>
-                                      <td className="px-4 py-3 font-semibold text-[#5F7077]">{article.reading_time_minutes ?? 1} min</td>
-                                      <td className="px-4 py-3">
-                                        <div className="flex items-center gap-1">
-                                          <Button type="button" variant="outline" title="Visualizar artigo" aria-label="Visualizar artigo" className="h-8 w-8 rounded-lg p-0" onClick={(event) => {
+                                        </td>
+                                        <td className="px-4 py-3 font-semibold text-[#15323b]">{statusLabel(article.status)}</td>
+                                        <td className="px-4 py-3 font-semibold text-[#5F7077]">{categoryLabel}</td>
+                                        <td className="px-4 py-3 font-semibold text-[#5F7077]">{formatDateTime(article.published_at)}</td>
+                                        <td className="px-4 py-3 font-semibold text-[#5F7077]">{article.reading_time_minutes ?? 1} min</td>
+                                        <td className="px-4 py-3">
+                                          <div className="flex items-center gap-1">
+                                            <Button type="button" variant="outline" title="Visualizar artigo" aria-label="Visualizar artigo" className="h-8 w-8 rounded-lg p-0" onClick={(event) => {
                                 event.stopPropagation();
                                 handleOpenArticleFromList(article.slug);
                             }}>
-                                            <Eye className="h-4 w-4"/>
-                                          </Button>
-                                          <Button type="button" variant="outline" title="Editar artigo" aria-label="Editar artigo" className="h-8 w-8 rounded-lg p-0" onClick={(event) => {
+                                              <Eye className="h-4 w-4"/>
+                                            </Button>
+                                            <Button type="button" variant="outline" title="Editar artigo" aria-label="Editar artigo" className="h-8 w-8 rounded-lg p-0" onClick={(event) => {
                                 event.stopPropagation();
                                 populateArticleForm(article);
                             }}>
-                                            <Pencil className="h-4 w-4"/>
-                                          </Button>
-                                          <Button type="button" variant="outline" title={article.featured ? 'Remover destaque' : 'Marcar como destaque'} aria-label={article.featured ? 'Remover destaque' : 'Marcar como destaque'} aria-pressed={Boolean(article.featured)} className={`h-8 w-8 rounded-lg border-amber-200 p-0 text-amber-700 hover:bg-amber-50 ${article.featured ? 'bg-amber-100' : ''}`} onClick={(event) => {
+                                              <Pencil className="h-4 w-4"/>
+                                            </Button>
+                                            <Button type="button" variant="outline" title={article.featured ? 'Remover destaque' : 'Marcar como destaque'} aria-label={article.featured ? 'Remover destaque' : 'Marcar como destaque'} aria-pressed={Boolean(article.featured)} className={`h-8 w-8 rounded-lg border-amber-200 p-0 text-amber-700 hover:bg-amber-50 ${article.featured ? 'bg-amber-100' : ''}`} onClick={(event) => {
                                 event.stopPropagation();
                                 void handleToggleArticleFeatured(article);
                             }}>
-                                            <Star className={`h-4 w-4 ${article.featured ? 'fill-current' : ''}`}/>
-                                          </Button>
-                                          <Button type="button" variant="outline" title="Excluir artigo" aria-label="Excluir artigo" className="h-8 w-8 rounded-lg border-red-200 p-0 text-red-700 hover:bg-red-50" onClick={(event) => {
+                                              <Star className={`h-4 w-4 ${article.featured ? 'fill-current' : ''}`}/>
+                                            </Button>
+                                            <Button type="button" variant="outline" title="Excluir artigo" aria-label="Excluir artigo" className="h-8 w-8 rounded-lg border-red-200 p-0 text-red-700 hover:bg-red-50" onClick={(event) => {
                                 event.stopPropagation();
                                 void handleDeleteArticle(article);
                             }}>
-                                            <Trash2 className="h-4 w-4"/>
-                                          </Button>
+                                              <Trash2 className="h-4 w-4"/>
+                                            </Button>
+                                          </div>
+                                        </td>
+                                      </tr>)}
+                                  </Draggable>
+                                  {showFeaturedSeparator ? (<tr key="featured-separator" aria-hidden="true">
+                                      <td colSpan={6} className="px-4 py-2">
+                                        <div className="flex items-center gap-3">
+                                          <div className="h-px flex-1 bg-gradient-to-r from-amber-200 via-amber-300 to-transparent"/>
+                                          <span className="rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-amber-700">
+                                            Demais artigos
+                                          </span>
+                                          <div className="h-px flex-1 bg-gradient-to-l from-amber-200 via-amber-300 to-transparent"/>
                                         </div>
                                       </td>
-                                    </tr>)}
-                                </Draggable>);
+                                    </tr>) : null}
+                                </Fragment>);
                     })}
                             {provided.placeholder}
                           </tbody>)}
