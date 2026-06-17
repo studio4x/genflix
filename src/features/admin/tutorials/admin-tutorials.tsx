@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { sanitizeRichTextHtml } from '@/features/admin/content/content-blocks';
 
 export type AdminTutorialStep = {
@@ -1340,10 +1340,59 @@ function normalizeTutorialDraft(tutorial: AdminTutorialDraft, fallbackId: string
   };
 }
 
+function resolveRouteTutorialId(pathname: string) {
+  const normalizedPath = pathname.trim();
+
+  const routeMatchers: Array<{ test: RegExp; tutorialId: string }> = [
+    { test: /^\/admin\/cursos\/[^/]+\/builder$/, tutorialId: 'como-montar-modulos-aulas-e-materiais' },
+    { test: /^\/admin\/cursos\/[^/]+\/liberacoes$/, tutorialId: 'como-configurar-liberacao-de-conteudo' },
+    { test: /^\/admin\/modulos\/[^/]+\/aulas$/, tutorialId: 'como-montar-modulos-aulas-e-materiais' },
+    { test: /^\/admin\/aulas\/[^/]+\/materiais$/, tutorialId: 'como-montar-modulos-aulas-e-materiais' },
+    { test: /^\/admin\/blog(?:\/.*)?$/, tutorialId: 'como-criar-artigo-blog' },
+    { test: /^\/admin\/banners(?:\/.*)?$/, tutorialId: 'como-operar-campanhas-e-banners-com-versao' },
+    { test: /^\/admin\/botoes-aula(?:\/.*)?$/, tutorialId: 'como-usar-botoes-de-aula-e-templates' },
+    { test: /^\/admin\/configuracoes-site(?:\/.*)?$/, tutorialId: 'como-gerenciar-conta-e-branding-do-admin' },
+    { test: /^\/admin\/faq(?:\/.*)?$/, tutorialId: 'como-manter-faq-e-central-de-suporte' },
+    { test: /^\/admin\/formularios(?:\/.*)?$/, tutorialId: 'como-usar-formularios-publicos' },
+    { test: /^\/admin\/grupos(?:\/.*)?$/, tutorialId: 'como-organizar-usuarios-e-grupos' },
+    { test: /^\/admin\/mensagens(?:\/.*)?$/, tutorialId: 'como-configurar-notificacoes-e-mensagens' },
+    { test: /^\/admin\/minha-conta(?:\/.*)?$/, tutorialId: 'como-gerenciar-conta-e-branding-do-admin' },
+    { test: /^\/admin\/notificacoes(?:\/.*)?$/, tutorialId: 'como-configurar-notificacoes-e-mensagens' },
+    { test: /^\/admin\/pagamentos(?:\/.*)?$/, tutorialId: 'como-revisar-pagamentos-e-repasses' },
+    { test: /^\/admin\/pendencias(?:\/.*)?$/, tutorialId: 'como-tratar-pendencias-operacionais' },
+    { test: /^\/admin\/recursos(?:\/.*)?$/, tutorialId: 'como-organizar-a-biblioteca-de-recursos-e-videos' },
+    { test: /^\/admin\/relatorios(?:\/.*)?$/, tutorialId: 'como-revisar-relatorios-e-indicadores' },
+    { test: /^\/admin\/repasses(?:\/.*)?$/, tutorialId: 'como-configurar-e-validar-repasses-financeiros' },
+    { test: /^\/admin\/reviews(?:\/.*)?$/, tutorialId: 'como-moderar-reviews' },
+    { test: /^\/admin\/seguranca(?:\/.*)?$/, tutorialId: 'como-monitorar-seguranca-e-acessos' },
+    { test: /^\/admin\/site-editor(?:\/.*)?$/, tutorialId: 'como-usar-site-editor-para-paginas-institucionais' },
+    { test: /^\/admin\/storage-r2(?:\/.*)?$/, tutorialId: 'como-usar-storage-r2' },
+    { test: /^\/admin\/suporte(?:\/.*)?$/, tutorialId: 'como-atender-suporte-e-faq' },
+    { test: /^\/admin\/tipos-quiz(?:\/.*)?$/, tutorialId: 'como-usar-avaliacoes-e-quiz' },
+    { test: /^\/admin\/usuarios(?:\/.*)?$/, tutorialId: 'como-revisar-permissoes-grupos-e-acessos' },
+    { test: /^\/admin\/cursos(?:\/.*)?$/, tutorialId: 'como-criar-curso' },
+    { test: /^\/admin$/, tutorialId: 'visao-geral-painel-e-pendencias' },
+  ];
+
+  const matchedRoute = routeMatchers.find(({ test }) => test.test(normalizedPath));
+
+  if (!matchedRoute) {
+    return null;
+  }
+
+  if (normalizedPath === '/admin/tutoriais') {
+    return null;
+  }
+
+  return matchedRoute.tutorialId;
+}
+
 type AdminTutorialsContextValue = {
   tutorials: AdminTutorial[];
   activeTutorialId: string;
   activeTutorial: AdminTutorial;
+  routeTutorialId: string | null;
+  routeTutorial: AdminTutorial | null;
   isDrawerOpen: boolean;
   isDrawerMinimized: boolean;
   openTutorial: (tutorialId?: string) => void;
@@ -1351,6 +1400,7 @@ type AdminTutorialsContextValue = {
   minimizeDrawer: () => void;
   restoreDrawer: () => void;
   selectTutorial: (tutorialId: string) => void;
+  syncRouteTutorialHint: (pathname: string) => void;
   addTutorial: (tutorial: AdminTutorialDraft) => AdminTutorial;
   updateTutorial: (tutorialId: string, tutorial: AdminTutorialDraft) => AdminTutorial;
   deleteTutorial: (tutorialId: string) => boolean;
@@ -1362,6 +1412,7 @@ const AdminTutorialsContext = createContext<AdminTutorialsContextValue | null>(n
 export function AdminTutorialsProvider({ children }: { children: ReactNode }) {
   const [tutorials, setTutorials] = useState<AdminTutorial[]>(safeLoadTutorials);
   const [activeTutorialId, setActiveTutorialId] = useState(() => safeLoadTutorials()[0]?.id ?? '');
+  const [routeTutorialId, setRouteTutorialId] = useState<string | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isDrawerMinimized, setIsDrawerMinimized] = useState(false);
 
@@ -1373,13 +1424,21 @@ export function AdminTutorialsProvider({ children }: { children: ReactNode }) {
     return tutorials.find((tutorial) => tutorial.id === activeTutorialId) ?? tutorials[0] ?? defaultAdminTutorials[0];
   }, [activeTutorialId, tutorials]);
 
+  const routeTutorial = useMemo(() => {
+    return routeTutorialId ? tutorials.find((tutorial) => tutorial.id === routeTutorialId) ?? null : null;
+  }, [routeTutorialId, tutorials]);
+
   useEffect(() => {
     if (!activeTutorial && tutorials[0]) {
       setActiveTutorialId(tutorials[0].id);
     }
   }, [activeTutorial, tutorials]);
 
-  function openTutorial(tutorialId = tutorials[0]?.id ?? defaultAdminTutorials[0].id) {
+  const syncRouteTutorialHint = useCallback((pathname: string) => {
+    setRouteTutorialId(resolveRouteTutorialId(pathname));
+  }, []);
+
+  function openTutorial(tutorialId = routeTutorial?.id ?? tutorials[0]?.id ?? defaultAdminTutorials[0].id) {
     if (tutorialId) {
       setActiveTutorialId(tutorialId);
     }
@@ -1482,6 +1541,8 @@ export function AdminTutorialsProvider({ children }: { children: ReactNode }) {
     tutorials,
     activeTutorialId,
     activeTutorial: activeTutorial ?? tutorials[0] ?? defaultAdminTutorials[0],
+    routeTutorialId,
+    routeTutorial,
     isDrawerOpen,
     isDrawerMinimized,
     openTutorial,
@@ -1489,6 +1550,7 @@ export function AdminTutorialsProvider({ children }: { children: ReactNode }) {
     minimizeDrawer,
     restoreDrawer,
     selectTutorial,
+    syncRouteTutorialHint,
     addTutorial,
     updateTutorial,
     deleteTutorial,

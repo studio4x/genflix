@@ -140,6 +140,7 @@ export function AdminLayout() {
         }
     }
     return (<AdminTutorialsProvider>
+      <AdminTutorialRouteHintSync />
       <main className="min-h-screen bg-[#F2F7F9] font-manrope text-[#163138]">
       <header className="sticky top-0 z-40 border-b border-[#D8E6EB] bg-[#F2F7F9]/95 backdrop-blur-md">
         <div className="flex w-full items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
@@ -245,10 +246,22 @@ export function AdminLayout() {
     </AdminTutorialsProvider>);
 }
 
+function AdminTutorialRouteHintSync() {
+  const location = useLocation();
+  const { syncRouteTutorialHint } = useAdminTutorials();
+
+  useEffect(() => {
+    syncRouteTutorialHint(location.pathname);
+  }, [location.pathname, syncRouteTutorialHint]);
+
+  return null;
+}
+
 function AdminTutorialsFloatingPanel() {
   const {
     tutorials,
     activeTutorial,
+    routeTutorial,
     activeTutorialId,
     isDrawerOpen,
     isDrawerMinimized,
@@ -259,6 +272,7 @@ function AdminTutorialsFloatingPanel() {
     selectTutorial,
   } = useAdminTutorials();
 
+  const displayTutorial = routeTutorial ?? activeTutorial;
   const showDrawer = isDrawerOpen && !isDrawerMinimized;
   const showMinimized = isDrawerMinimized;
 
@@ -421,7 +435,7 @@ function AdminTutorialsFloatingPanel() {
           </span>
           <span className="pr-2">
             <span className="block text-[10px] font-black uppercase tracking-[0.24em] text-[#5F7077]">Tutoriais</span>
-            <span className="block text-sm font-black text-[#15323b]">{activeTutorial.title}</span>
+            <span className="block text-sm font-black text-[#15323b]">{displayTutorial.title}</span>
           </span>
           <Maximize2 className="h-4 w-4 text-[#1398B7]" />
         </button>
@@ -439,7 +453,7 @@ function AdminTutorialsFloatingPanel() {
           </span>
           <span className="pr-2">
             <span className="block text-[10px] font-black uppercase tracking-[0.24em] text-white/75">Ajuda rápida</span>
-            <span className="block text-sm font-black">{activeTutorial.title}</span>
+            <span className="block text-sm font-black">{displayTutorial.title}</span>
           </span>
         </button>
       ) : null}
