@@ -203,6 +203,11 @@ function isBlogPostPublic(row: PublicBlogPostRow) {
 }
 function sortPublicBlogRows(rows: PublicBlogPostRow[]) {
     return [...rows].sort((left, right) => {
+        const leftFeatured = left.featured ? 1 : 0;
+        const rightFeatured = right.featured ? 1 : 0;
+        if (rightFeatured !== leftFeatured) {
+            return rightFeatured - leftFeatured;
+        }
         const leftPublished = left.published_at ? new Date(left.published_at).getTime() : 0;
         const rightPublished = right.published_at ? new Date(right.published_at).getTime() : 0;
         if (rightPublished !== leftPublished) {

@@ -10,7 +10,7 @@ import { fetchSiteAssets, fetchSiteContent, saveSiteContentEntry, uploadSiteAsse
 import { SITE_TEXT_FONT_PRESETS } from '@/features/site-editor/font-presets';
 import type { SiteAsset } from '@/features/site-editor/types';
 import { supabase } from '@/services/supabase/client';
-import { ChevronDown, ChevronUp, Eye, Pencil, RotateCcw, Trash2, X } from 'lucide-react';
+import { ChevronDown, ChevronUp, Eye, Pencil, RotateCcw, Star, Trash2, X } from 'lucide-react';
 type ArticleStatus = 'draft' | 'scheduled' | 'published';
 type SeoFields = {
     seo_title: string;
@@ -292,6 +292,26 @@ function statusLabel(status: ArticleStatus | null) {
         return 'Publicado';
     }
     return 'Rascunho';
+}
+function sortBlogArticlesByFeatured(rows: BlogArticleRow[]) {
+    return [...rows].sort((left, right) => {
+        const leftFeatured = left.featured ? 1 : 0;
+        const rightFeatured = right.featured ? 1 : 0;
+        if (rightFeatured !== leftFeatured) {
+            return rightFeatured - leftFeatured;
+        }
+        const leftPublished = left.published_at ? new Date(left.published_at).getTime() : 0;
+        const rightPublished = right.published_at ? new Date(right.published_at).getTime() : 0;
+        if (rightPublished !== leftPublished) {
+            return rightPublished - leftPublished;
+        }
+        const leftCreated = left.created_at ? new Date(left.created_at).getTime() : 0;
+        const rightCreated = right.created_at ? new Date(right.created_at).getTime() : 0;
+        if (rightCreated !== leftCreated) {
+            return rightCreated - leftCreated;
+        }
+        return left.title.localeCompare(right.title, 'pt-BR');
+    });
 }
 function removeInternalH1(html: string) {
     if (!html.trim()) {
@@ -725,6 +745,7 @@ export function AdminBlogPage() {
             return matchesStatus && matchesSearch;
         });
     }, [articles, articleSearch, articleStatusFilter, categories]);
+    const orderedArticles = useMemo(() => sortBlogArticlesByFeatured(filteredArticles), [filteredArticles]);
     async function loadLegacyData() {
         const legacyResult = await supabase
             .from('blog_posts')
@@ -737,7 +758,7 @@ export function AdminBlogPage() {
             return;
         }
         const mapped = ((legacyResult.data ?? []) as LegacyBlogPostRow[]).map(mapLegacyPostToArticle);
-        setArticles(mapped);
+        setArticles(sortBlogArticlesByFeatured(mapped));
         setCategories([]);
         setTags([]);
         setArticleTagRows([]);
@@ -1561,6 +1582,41 @@ export function AdminBlogPage() {
             });
         }
         setIsSavingArticle(false);
+    }
+    async function handleToggleArticleFeatured(article: BlogArticleRow) {
+        setErrorMessage(null);
+        setSuccessMessage(null);
+        setArticleSuccessMessage(null);
+        const nextFeatured = !article.featured;
+        const updateResult = await supabase
+            .from('blog_posts')
+            .update({ featured: nextFeatured })
+            .eq('id', article.id)
+            .select('*');
+        if (updateResult.error) {
+            setErrorMessage(updateResult.error.message);
+            openArticleActionModal({
+                title: 'Nao foi possivel atualizar o destaque',
+                message: updateResult.error.message,
+                tone: 'error',
+            });
+            return;
+        }
+        await loadAllData();
+        if (selectedArticleId === article.id) {
+            setArticleForm((current) => ({
+                ...current,
+                featured: nextFeatured,
+            }));
+        }
+        setArticleSuccessMessage(nextFeatured ? 'Artigo marcado como destaque.' : 'Destaque removido do artigo.');
+        openArticleActionModal({
+            title: nextFeatured ? 'Artigo em destaque' : 'Destaque removido',
+            message: nextFeatured
+                ? 'O artigo foi marcado como destaque e vai aparecer nas primeiras posicoes do blog.'
+                : 'O artigo deixou de ser destaque.',
+            tone: 'success',
+        });
     }
     async function handleDeleteArticle(articleToDelete?: BlogArticleRow) {
         const target = articleToDelete ?? articles.find((item) => item.id === selectedArticleId);
@@ -2479,12 +2535,17 @@ export function AdminBlogPage() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-[#D8E6EB]">
-                      {filteredArticles.map((article) => {
+                      {orderedArticles.map((article) => {
                         const category = categories.find((item) => item.id === article.category_id);
                         const categoryLabel = category ? getCategoryPath(category, categories) : 'Sem categoria';
                         return (<tr key={article.id} className={`cursor-pointer transition-colors hover:bg-[#F8FBFC] ${selectedArticleId === article.id ? 'bg-[#E8F6FA]' : ''}`} onClick={() => populateArticleForm(article)}>
                             <td className="px-4 py-3">
-                              <p className="font-black text-[#15323b]">{article.title}</p>
+                              <div className="flex items-center gap-2">
+                                <p className="font-black text-[#15323b]">{article.title}</p>
+                                {article.featured ? (<span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.14em] text-amber-800">
+                                    Destaque
+                                  </span>) : null}
+                              </div>
                               <p className="mt-1 text-xs font-semibold text-[#6d7f84]">/{article.slug}</p>
                             </td>
                             <td className="px-4 py-3 font-semibold text-[#15323b]">{statusLabel(article.status)}</td>
@@ -2504,6 +2565,12 @@ export function AdminBlogPage() {
                                 populateArticleForm(article);
                             }}>
                                   <Pencil className="h-4 w-4"/>
+                                </Button>
+                                <Button type="button" variant="outline" title={article.featured ? 'Remover destaque' : 'Marcar como destaque'} aria-label={article.featured ? 'Remover destaque' : 'Marcar como destaque'} className="h-8 w-8 rounded-lg border-amber-200 p-0 text-amber-700 hover:bg-amber-50" onClick={(event) => {
+                                event.stopPropagation();
+                                void handleToggleArticleFeatured(article);
+                            }}>
+                                  <Star className={`h-4 w-4 ${article.featured ? 'fill-current' : ''}`}/>
                                 </Button>
                                 <Button type="button" variant="outline" title="Excluir artigo" aria-label="Excluir artigo" className="h-8 w-8 rounded-lg border-red-200 p-0 text-red-700 hover:bg-red-50" onClick={(event) => {
                                 event.stopPropagation();
