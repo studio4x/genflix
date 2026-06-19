@@ -13,7 +13,7 @@ import TableHeader from '@tiptap/extension-table-header';
 import TableCell from '@tiptap/extension-table-cell';
 import Gapcursor from '@tiptap/extension-gapcursor';
 import { TextStyle } from '@tiptap/extension-text-style';
-import { Bold, Code2, Eraser, Film, Image as ImageIcon, Italic, Link2, List, ListOrdered, Minus, Redo2, Quote, SlidersHorizontal, Strikethrough, Table2, Undo2, Underline as UnderlineIcon } from 'lucide-react';
+import { Bold, Code2, Eraser, Film, Image as ImageIcon, Italic, Link2, List, ListOrdered, Minus, Redo2, Quote, Strikethrough, Table2, Undo2, Underline as UnderlineIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 type ToolbarItem = string | Record<string, unknown> | Array<string | Record<string, unknown>>;
@@ -197,12 +197,6 @@ function createFilledParagraph(editor: any) {
   return editor.schema.nodes.paragraph.createAndFill() ?? editor.schema.nodes.paragraph.create();
 }
 
-type ToolbarGroupProps = {
-  label: string;
-  children: ReactNode;
-  className?: string;
-};
-
 type ToolbarButtonProps = {
   children: ReactNode;
   className?: string;
@@ -211,38 +205,6 @@ type ToolbarButtonProps = {
   title: string;
   onClick: () => void;
 };
-
-function ToolbarGroup({ label, children, className = '' }: ToolbarGroupProps) {
-  return (
-    <div className={cn('rounded-2xl border border-slate-200 bg-white/95 p-3 shadow-sm', className)}>
-      <div className="mb-2 flex items-center justify-between gap-2">
-        <span className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-500">{label}</span>
-      </div>
-      <div className="flex flex-wrap items-center gap-1.5">{children}</div>
-    </div>
-  );
-}
-
-function ToolbarSubtleButton({ children, className = '', title, active = false, onClick }: ToolbarButtonProps) {
-  return (
-    <button
-      type="button"
-      title={title}
-      aria-pressed={active}
-      onClick={onClick}
-      className={cn(
-        'inline-flex h-10 items-center gap-2 rounded-xl border px-3 text-sm font-semibold transition',
-        'focus:outline-none focus:ring-2 focus:ring-[#CBEAF3] focus:ring-offset-1',
-        active
-          ? 'border-[#0A3640] bg-[#0A3640] text-white shadow-sm'
-          : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50',
-        className,
-      )}
-    >
-      {children}
-    </button>
-  );
-}
 
 function ToolbarButton({ children, className = '', disabled = false, active = false, title, onClick }: ToolbarButtonProps) {
   return (
@@ -508,7 +470,6 @@ export default function ReactQuill({
   const [headingChoice, setHeadingChoice] = useState('');
   const [alignChoice, setAlignChoice] = useState('');
   const [columnsChoice, setColumnsChoice] = useState('');
-  const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
   const onChangeRef = useRef(onChange);
   const activeModeRef = useRef(activeMode);
 
@@ -528,7 +489,9 @@ export default function ReactQuill({
 
   useEffect(() => {
     if (activeMode !== 'visual') {
-      setIsAdvancedOpen(false);
+      setHeadingChoice('');
+      setAlignChoice('');
+      setColumnsChoice('');
     }
   }, [activeMode]);
 
@@ -759,206 +722,162 @@ export default function ReactQuill({
   }, [activeMode, editor, selectionTick, value]);
 
   const visualToolbar = (
-    <div className="border-b border-slate-200 bg-slate-50/80 px-4 py-4">
-      <div className="grid gap-3 [grid-template-columns:repeat(auto-fit,minmax(240px,1fr))]">
-        <ToolbarGroup label="Estrutura">
-          {toolbarButtons.header ? (
-            <label title="Escolher nível de título" className="inline-flex h-10 items-center rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-800 shadow-sm transition hover:border-slate-300 hover:bg-slate-50">
-              <select
-                value={headingChoice}
-                onChange={(event) => {
-                  const level = event.currentTarget.value;
-                  if (!level) {
-                    return;
-                  }
-                  setHeading(level === 'false' ? false : Number.parseInt(level, 10));
-                  setHeadingChoice('');
-                }}
-                className="min-w-0 border-0 bg-transparent p-0 text-sm font-semibold text-slate-800 outline-none focus:ring-0"
-              >
-                <option value="" disabled>
-                  Estrutura
-                </option>
-                <option value="1">H1</option>
-                <option value="2">H2</option>
-                <option value="3">H3</option>
-                <option value="4">H4</option>
-                <option value="5">H5</option>
-                <option value="6">H6</option>
-                <option value="false">Parágrafo</option>
-              </select>
-            </label>
-          ) : null}
-          {toolbarButtons.align ? (
-            <label title="Alinhamento do texto" className="inline-flex h-10 items-center rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-800 shadow-sm transition hover:border-slate-300 hover:bg-slate-50">
-              <select
-                value={alignChoice}
-                onChange={(event) => {
-                  const alignment = event.currentTarget.value;
-                  if (!alignment) {
-                    return;
-                  }
-                  handleSetAlign(alignment);
-                  setAlignChoice('');
-                }}
-                className="min-w-0 border-0 bg-transparent p-0 text-sm font-semibold text-slate-800 outline-none focus:ring-0"
-              >
-                <option value="" disabled>
-                  Alinhar
-                </option>
-                <option value="left">Esquerda</option>
-                <option value="center">Centro</option>
-                <option value="right">Direita</option>
-                <option value="justify">Justificar</option>
-              </select>
-            </label>
-          ) : null}
-        </ToolbarGroup>
-
-        <ToolbarGroup label="Texto">
-          {toolbarButtons.bold ? (
-            <ToolbarButton title="Negrito" active={editor?.isActive('bold') ?? false} onClick={() => editor?.chain().focus().toggleBold().run()} className="w-10 px-0">
-              <Bold className="h-4 w-4" />
-            </ToolbarButton>
-          ) : null}
-          {toolbarButtons.italic ? (
-            <ToolbarButton title="Itálico" active={editor?.isActive('italic') ?? false} onClick={() => editor?.chain().focus().toggleItalic().run()} className="w-10 px-0">
-              <Italic className="h-4 w-4" />
-            </ToolbarButton>
-          ) : null}
-          {toolbarButtons.underline ? (
-            <ToolbarButton title="Sublinhado" active={editor?.isActive('underline') ?? false} onClick={() => editor?.chain().focus().toggleUnderline().run()} className="w-10 px-0">
-              <UnderlineIcon className="h-4 w-4" />
-            </ToolbarButton>
-          ) : null}
-          {toolbarButtons.strike ? (
-            <ToolbarButton title="Tachado" active={editor?.isActive('strike') ?? false} onClick={() => editor?.chain().focus().toggleStrike().run()} className="w-10 px-0">
-              <Strikethrough className="h-4 w-4" />
-            </ToolbarButton>
-          ) : null}
-        </ToolbarGroup>
-
-        <ToolbarGroup label="Listas">
-          {toolbarButtons.ordered ? (
-            <ToolbarButton title="Lista numerada" active={editor?.isActive('orderedList') ?? false} onClick={() => editor?.chain().focus().toggleOrderedList().run()} className="w-10 px-0">
-              <ListOrdered className="h-4 w-4" />
-            </ToolbarButton>
-          ) : null}
-          {toolbarButtons.bullet ? (
-            <ToolbarButton title="Lista com marcadores" active={editor?.isActive('bulletList') ?? false} onClick={() => editor?.chain().focus().toggleBulletList().run()} className="w-10 px-0">
-              <List className="h-4 w-4" />
-            </ToolbarButton>
-          ) : null}
-        </ToolbarGroup>
-
-        <ToolbarGroup label="Inserir">
-          {toolbarButtons.link ? (
-            <ToolbarButton title="Inserir link" active={editor?.isActive('link') ?? false} onClick={handleInsertLink} className="w-10 px-0">
-              <Link2 className="h-4 w-4" />
-            </ToolbarButton>
-          ) : null}
-          {toolbarButtons.image ? (
-            <ToolbarButton title="Inserir imagem" onClick={() => void handleInsertImage()} className="w-10 px-0">
-              <ImageIcon className="h-4 w-4" />
-            </ToolbarButton>
-          ) : null}
-          {toolbarButtons.columns ? (
-            <label title="Inserir colunas" className="inline-flex h-10 items-center rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-800 shadow-sm transition hover:border-slate-300 hover:bg-slate-50">
-              <select
-                value={columnsChoice}
-                onChange={(event) => {
-                  handleInsertColumns(event);
-                  setColumnsChoice('');
-                }}
-                className="min-w-0 border-0 bg-transparent p-0 text-sm font-semibold text-slate-800 outline-none focus:ring-0"
-              >
-                <option value="" disabled>
-                  Colunas
-                </option>
-                <option value="1">1 coluna</option>
-                <option value="2">2 colunas</option>
-                <option value="3">3 colunas</option>
-                <option value="4">4 colunas</option>
-              </select>
-            </label>
-          ) : null}
-        </ToolbarGroup>
-
-        <ToolbarGroup label="Ações">
-          {toolbarButtons.clean ? (
-            <ToolbarButton title="Limpar formatação" onClick={handleCleanFormatting} className="w-10 px-0">
-              <Eraser className="h-4 w-4" />
-            </ToolbarButton>
-          ) : null}
-          <ToolbarButton
-            title={isAdvancedOpen ? 'Fechar avançado' : 'Abrir avançado'}
-            active={isAdvancedOpen}
-            onClick={() => setIsAdvancedOpen((current) => !current)}
-            className="w-10 px-0"
-          >
-            <SlidersHorizontal className="h-4 w-4" />
+    <div className="border-b border-slate-200 bg-slate-50/80 px-4 py-3">
+      <div className="flex flex-wrap items-center gap-1.5">
+        {toolbarButtons.header ? (
+          <label title="Escolher nível de título" className="inline-flex h-9 items-center rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-800 shadow-sm transition hover:border-slate-300 hover:bg-slate-50">
+            <select
+              value={headingChoice}
+              onChange={(event) => {
+                const level = event.currentTarget.value;
+                if (!level) {
+                  return;
+                }
+                setHeading(level === 'false' ? false : Number.parseInt(level, 10));
+                setHeadingChoice('');
+              }}
+              className="min-w-0 border-0 bg-transparent p-0 text-sm font-semibold text-slate-800 outline-none focus:ring-0"
+            >
+              <option value="" disabled>
+                Estrutura
+              </option>
+              <option value="1">H1</option>
+              <option value="2">H2</option>
+              <option value="3">H3</option>
+              <option value="4">H4</option>
+              <option value="5">H5</option>
+              <option value="6">H6</option>
+              <option value="false">Parágrafo</option>
+            </select>
+          </label>
+        ) : null}
+        {toolbarButtons.align ? (
+          <label title="Alinhamento do texto" className="inline-flex h-9 items-center rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-800 shadow-sm transition hover:border-slate-300 hover:bg-slate-50">
+            <select
+              value={alignChoice}
+              onChange={(event) => {
+                const alignment = event.currentTarget.value;
+                if (!alignment) {
+                  return;
+                }
+                handleSetAlign(alignment);
+                setAlignChoice('');
+              }}
+              className="min-w-0 border-0 bg-transparent p-0 text-sm font-semibold text-slate-800 outline-none focus:ring-0"
+            >
+              <option value="" disabled>
+                Alinhar
+              </option>
+              <option value="left">Esquerda</option>
+              <option value="center">Centro</option>
+              <option value="right">Direita</option>
+              <option value="justify">Justificar</option>
+            </select>
+          </label>
+        ) : null}
+        <div className="mx-1 hidden h-8 w-px bg-slate-200 sm:block" />
+        {toolbarButtons.bold ? (
+          <ToolbarButton title="Negrito" active={editor?.isActive('bold') ?? false} onClick={() => editor?.chain().focus().toggleBold().run()} className="w-9 px-0">
+            <Bold className="h-4 w-4" />
           </ToolbarButton>
-          {isAdvancedOpen ? (
-            <div className="mt-2 w-full rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
-              <div className="mb-3 flex items-center justify-between">
-                <span className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-500">Avançado</span>
-                <button type="button" onClick={() => setIsAdvancedOpen(false)} className="text-xs font-semibold text-slate-500 hover:text-slate-800">
-                  Fechar
-                </button>
-              </div>
-              <div className="grid gap-2 sm:grid-cols-2">
-                {toolbarButtons.blockquote ? (
-                  <ToolbarSubtleButton title="Citação" active={editor?.isActive('blockquote') ?? false} onClick={() => editor?.chain().focus().toggleBlockquote().run()}>
-                    <Quote className="h-4 w-4" />
-                    <span>Citação</span>
-                  </ToolbarSubtleButton>
-                ) : null}
-                {toolbarButtons.codeBlock ? (
-                  <ToolbarSubtleButton title="Bloco de código" active={editor?.isActive('codeBlock') ?? false} onClick={() => editor?.chain().focus().toggleCodeBlock().run()}>
-                    <Code2 className="h-4 w-4" />
-                    <span>Código</span>
-                  </ToolbarSubtleButton>
-                ) : null}
-                {toolbarButtons.video ? (
-                  <ToolbarSubtleButton title="Inserir vídeo" onClick={handleInsertVideo}>
-                    <Film className="h-4 w-4" />
-                    <span>Vídeo</span>
-                  </ToolbarSubtleButton>
-                ) : null}
-                {toolbarButtons.table ? (
-                  <ToolbarSubtleButton title="Inserir tabela" onClick={handleInsertTable}>
-                    <Table2 className="h-4 w-4" />
-                    <span>Tabela</span>
-                  </ToolbarSubtleButton>
-                ) : null}
-                {toolbarButtons.horizontalRule ? (
-                  <ToolbarSubtleButton title="Linha divisória" onClick={() => editor?.chain().focus().setHorizontalRule().run()}>
-                    <Minus className="h-4 w-4" />
-                    <span>Linha</span>
-                  </ToolbarSubtleButton>
-                ) : null}
-                {toolbarButtons.link ? (
-                  <ToolbarSubtleButton title="Remover link" onClick={() => editor?.chain().focus().extendMarkRange('link').unsetLink().run()}>
-                    <Link2 className="h-4 w-4 rotate-45" />
-                    <span>Remover link</span>
-                  </ToolbarSubtleButton>
-                ) : null}
-                {toolbarButtons.undo ? (
-                  <ToolbarSubtleButton title="Desfazer" onClick={() => editor?.chain().focus().undo().run()}>
-                    <Undo2 className="h-4 w-4" />
-                    <span>Desfazer</span>
-                  </ToolbarSubtleButton>
-                ) : null}
-                {toolbarButtons.redo ? (
-                  <ToolbarSubtleButton title="Refazer" onClick={() => editor?.chain().focus().redo().run()}>
-                    <Redo2 className="h-4 w-4" />
-                    <span>Refazer</span>
-                  </ToolbarSubtleButton>
-                ) : null}
-              </div>
-            </div>
-          ) : null}
-        </ToolbarGroup>
+        ) : null}
+        {toolbarButtons.italic ? (
+          <ToolbarButton title="Itálico" active={editor?.isActive('italic') ?? false} onClick={() => editor?.chain().focus().toggleItalic().run()} className="w-9 px-0">
+            <Italic className="h-4 w-4" />
+          </ToolbarButton>
+        ) : null}
+        {toolbarButtons.underline ? (
+          <ToolbarButton title="Sublinhado" active={editor?.isActive('underline') ?? false} onClick={() => editor?.chain().focus().toggleUnderline().run()} className="w-9 px-0">
+            <UnderlineIcon className="h-4 w-4" />
+          </ToolbarButton>
+        ) : null}
+        {toolbarButtons.strike ? (
+          <ToolbarButton title="Tachado" active={editor?.isActive('strike') ?? false} onClick={() => editor?.chain().focus().toggleStrike().run()} className="w-9 px-0">
+            <Strikethrough className="h-4 w-4" />
+          </ToolbarButton>
+        ) : null}
+        <div className="mx-1 hidden h-8 w-px bg-slate-200 sm:block" />
+        {toolbarButtons.ordered ? (
+          <ToolbarButton title="Lista numerada" active={editor?.isActive('orderedList') ?? false} onClick={() => editor?.chain().focus().toggleOrderedList().run()} className="w-9 px-0">
+            <ListOrdered className="h-4 w-4" />
+          </ToolbarButton>
+        ) : null}
+        {toolbarButtons.bullet ? (
+          <ToolbarButton title="Lista com marcadores" active={editor?.isActive('bulletList') ?? false} onClick={() => editor?.chain().focus().toggleBulletList().run()} className="w-9 px-0">
+            <List className="h-4 w-4" />
+          </ToolbarButton>
+        ) : null}
+        {toolbarButtons.blockquote ? (
+          <ToolbarButton title="Citação" active={editor?.isActive('blockquote') ?? false} onClick={() => editor?.chain().focus().toggleBlockquote().run()} className="w-9 px-0">
+            <Quote className="h-4 w-4" />
+          </ToolbarButton>
+        ) : null}
+        {toolbarButtons.codeBlock ? (
+          <ToolbarButton title="Bloco de código" active={editor?.isActive('codeBlock') ?? false} onClick={() => editor?.chain().focus().toggleCodeBlock().run()} className="w-9 px-0">
+            <Code2 className="h-4 w-4" />
+          </ToolbarButton>
+        ) : null}
+        <div className="mx-1 hidden h-8 w-px bg-slate-200 sm:block" />
+        {toolbarButtons.link ? (
+          <ToolbarButton title="Inserir link" active={editor?.isActive('link') ?? false} onClick={handleInsertLink} className="w-9 px-0">
+            <Link2 className="h-4 w-4" />
+          </ToolbarButton>
+        ) : null}
+        {toolbarButtons.image ? (
+          <ToolbarButton title="Inserir imagem" onClick={() => void handleInsertImage()} className="w-9 px-0">
+            <ImageIcon className="h-4 w-4" />
+          </ToolbarButton>
+        ) : null}
+        {toolbarButtons.video ? (
+          <ToolbarButton title="Inserir vídeo" onClick={handleInsertVideo} className="w-9 px-0">
+            <Film className="h-4 w-4" />
+          </ToolbarButton>
+        ) : null}
+        {toolbarButtons.table ? (
+          <ToolbarButton title="Inserir tabela" onClick={handleInsertTable} className="w-9 px-0">
+            <Table2 className="h-4 w-4" />
+          </ToolbarButton>
+        ) : null}
+        {toolbarButtons.columns ? (
+          <label title="Inserir colunas" className="inline-flex h-9 items-center rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-800 shadow-sm transition hover:border-slate-300 hover:bg-slate-50">
+            <select
+              value={columnsChoice}
+              onChange={(event) => {
+                handleInsertColumns(event);
+                setColumnsChoice('');
+              }}
+              className="min-w-0 border-0 bg-transparent p-0 text-sm font-semibold text-slate-800 outline-none focus:ring-0"
+            >
+              <option value="" disabled>
+                Colunas
+              </option>
+              <option value="1">1 coluna</option>
+              <option value="2">2 colunas</option>
+              <option value="3">3 colunas</option>
+              <option value="4">4 colunas</option>
+            </select>
+          </label>
+        ) : null}
+        {toolbarButtons.horizontalRule ? (
+          <ToolbarButton title="Linha divisória" onClick={() => editor?.chain().focus().setHorizontalRule().run()} className="w-9 px-0">
+            <Minus className="h-4 w-4" />
+          </ToolbarButton>
+        ) : null}
+        {toolbarButtons.clean ? (
+          <ToolbarButton title="Limpar formatação" onClick={handleCleanFormatting} className="w-9 px-0">
+            <Eraser className="h-4 w-4" />
+          </ToolbarButton>
+        ) : null}
+        {toolbarButtons.undo ? (
+          <ToolbarButton title="Desfazer" onClick={() => editor?.chain().focus().undo().run()} className="w-9 px-0">
+            <Undo2 className="h-4 w-4" />
+          </ToolbarButton>
+        ) : null}
+        {toolbarButtons.redo ? (
+          <ToolbarButton title="Refazer" onClick={() => editor?.chain().focus().redo().run()} className="w-9 px-0">
+            <Redo2 className="h-4 w-4" />
+          </ToolbarButton>
+        ) : null}
       </div>
     </div>
   );
@@ -978,7 +897,7 @@ export default function ReactQuill({
                 </span>
               </div>
               <span className="block text-sm font-medium text-slate-700">
-                Altere entre visual e HTML quando precisar. A barra abaixo reúne as ações mais usadas por grupo.
+                Altere entre visual e HTML quando precisar. A barra abaixo reúne as ações mais usadas em uma linha única.
               </span>
             </div>
             <div className="inline-flex rounded-full border border-slate-200 bg-white p-1 shadow-sm">
@@ -1025,7 +944,7 @@ export default function ReactQuill({
       )}
 
       <div className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-200 bg-slate-50 px-4 py-3 text-[11px] font-semibold text-slate-700">
-        <span>{activeMode === 'visual' ? 'Modo visual ativo. Use os grupos abaixo para estruturar e inserir conteúdo.' : 'Modo HTML ativo. Aqui você pode ajustar a marcação manualmente.'}</span>
+        <span>{activeMode === 'visual' ? 'Modo visual ativo. Use a barra abaixo para estruturar e inserir conteúdo.' : 'Modo HTML ativo. Aqui você pode ajustar a marcação manualmente.'}</span>
         <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-slate-600">
           HTML como fonte
         </span>
