@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type CSSProperties, type ChangeEvent, type DragEvent } from 'react';
+import { useEffect, useRef, useState, type CSSProperties, type ChangeEvent, type DragEvent, type IframeHTMLAttributes } from 'react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import ReactQuill from '@/components/forms/react-quill';
 import { Button } from '@/components/ui/button';
@@ -153,6 +153,63 @@ function getVideoEmbedUrl(url: string): string | null {
         return null;
     }
     return null;
+}
+
+interface StandaloneIframeEmbed {
+    src: string;
+    title: string;
+    allow: string | null;
+    loading: 'eager' | 'lazy' | null;
+    referrerPolicy: IframeHTMLAttributes<HTMLIFrameElement>['referrerPolicy'];
+    allowFullScreen: boolean;
+}
+
+function isSafeIframeSrc(src: string) {
+    return /^(https?:)?\/\//i.test(src) || /^https?:\/\//i.test(src);
+}
+
+function parseStandaloneIframeEmbed(html: string): StandaloneIframeEmbed | null {
+    const trimmed = html.trim();
+    if (!trimmed || typeof DOMParser === 'undefined') {
+        return null;
+    }
+
+    const doc = new DOMParser().parseFromString(trimmed, 'text/html');
+    const iframe = doc.body.querySelector('iframe');
+    if (!iframe || doc.body.querySelectorAll('iframe').length !== 1) {
+        return null;
+    }
+
+    const hasOtherElements = Array.from(doc.body.children).some((child) => child !== iframe);
+    if (hasOtherElements) {
+        return null;
+    }
+
+    const hasMeaningfulText = Array.from(doc.body.childNodes).some((node) => (
+        node.nodeType === Node.TEXT_NODE
+        && (node.textContent ?? '').trim() !== ''
+    ));
+    if (hasMeaningfulText) {
+        return null;
+    }
+
+    const src = iframe.getAttribute('src')?.trim() ?? '';
+    if (!src || !isSafeIframeSrc(src)) {
+        return null;
+    }
+
+    const allow = iframe.getAttribute('allow')?.trim() || null;
+    const loadingAttr = iframe.getAttribute('loading')?.trim().toLowerCase();
+    const loading = loadingAttr === 'lazy' || loadingAttr === 'eager' ? loadingAttr : null;
+
+    return {
+        src,
+        title: iframe.getAttribute('title')?.trim() || 'Conteúdo incorporado',
+        allow,
+        loading,
+        referrerPolicy: iframe.getAttribute('referrerpolicy')?.trim() as StandaloneIframeEmbed['referrerPolicy'],
+        allowFullScreen: iframe.hasAttribute('allowfullscreen'),
+    };
 }
 
 function useResolvedLessonAssetUrl(storagePath: string, signedUrl?: string | null) {
@@ -921,7 +978,7 @@ export function LessonHtmlBlockEditor({ content, onChange, onError }: LessonHtml
         });
     }
 
-    const previewSrcDoc = buildHtmlPreviewSrcDoc(content.html);
+    const standaloneIframe = parseStandaloneIframeEmbed(content.html);
 
     return (
         <div className="space-y-4 rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm">
@@ -948,7 +1005,19 @@ export function LessonHtmlBlockEditor({ content, onChange, onError }: LessonHtml
             </div>
 
             <div className="overflow-hidden rounded-[24px] border border-slate-200 bg-slate-50">
-                <iframe title="Prévia do HTML" srcDoc={previewSrcDoc} sandbox="allow-scripts allow-forms allow-popups allow-modals" referrerPolicy="no-referrer" className="h-[72vh] min-h-[560px] w-full border-0 bg-white" />
+                {standaloneIframe ? (
+                    <iframe
+                        title={standaloneIframe.title || 'Prévia do HTML'}
+                        src={standaloneIframe.src}
+                        allow={standaloneIframe.allow ?? undefined}
+                        allowFullScreen={standaloneIframe.allowFullScreen}
+                        loading={standaloneIframe.loading ?? undefined}
+                        referrerPolicy={standaloneIframe.referrerPolicy ?? 'no-referrer'}
+                        className="h-[72vh] min-h-[560px] w-full border-0 bg-white"
+                    />
+                ) : (
+                    <iframe title="Prévia do HTML" srcDoc={buildHtmlPreviewSrcDoc(content.html)} sandbox="allow-scripts allow-forms allow-popups allow-modals" referrerPolicy="no-referrer" className="h-[72vh] min-h-[560px] w-full border-0 bg-white" />
+                )}
             </div>
 
             {inputMode === 'paste' ? (
@@ -1058,11 +1127,23 @@ interface LessonHtmlBlockRendererProps {
 }
 
 export function LessonHtmlBlockRenderer({ content }: LessonHtmlBlockRendererProps) {
-    const previewSrcDoc = buildHtmlPreviewSrcDoc(content.html);
+    const standaloneIframe = parseStandaloneIframeEmbed(content.html);
 
     return (
         <figure className="my-8 overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm">
-            <iframe title={content.file_name || 'HTML da aula'} srcDoc={previewSrcDoc} sandbox="allow-scripts allow-forms allow-popups allow-modals" referrerPolicy="no-referrer" className="h-[80vh] min-h-[640px] w-full border-0 bg-white" />
+            {standaloneIframe ? (
+                <iframe
+                    title={standaloneIframe.title || content.file_name || 'HTML da aula'}
+                    src={standaloneIframe.src}
+                    allow={standaloneIframe.allow ?? undefined}
+                    allowFullScreen={standaloneIframe.allowFullScreen}
+                    loading={standaloneIframe.loading ?? undefined}
+                    referrerPolicy={standaloneIframe.referrerPolicy ?? 'no-referrer'}
+                    className="h-[80vh] min-h-[640px] w-full border-0 bg-white"
+                />
+            ) : (
+                <iframe title={content.file_name || 'HTML da aula'} srcDoc={buildHtmlPreviewSrcDoc(content.html)} sandbox="allow-scripts allow-forms allow-popups allow-modals" referrerPolicy="no-referrer" className="h-[80vh] min-h-[640px] w-full border-0 bg-white" />
+            )}
         </figure>
     );
 }
