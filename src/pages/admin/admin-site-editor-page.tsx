@@ -129,7 +129,7 @@ const siteTypographyGroupLabels: Record<SiteTypographyGroupKey, string> = {
     h2: 'Títulos H2',
     h3: 'Títulos H3',
     body: 'Corpo de texto',
-    list: 'Topicos de lista',
+    list: 'Tópicos de lista',
     link: 'Links',
 };
 export function AdminSiteEditorPage() {
@@ -369,7 +369,7 @@ export function AdminSiteEditorPage() {
             setMessage('Overrides da página desativados. A página voltou ao conteúdo original.');
         }
         catch (error) {
-            setMessage(error instanceof Error ? error.message : "N\u00E3o foi poss\u00EDvel rest?urar a p\u00E1gina.");
+            setMessage(error instanceof Error ? error.message : 'Não foi possível restaurar a página.');
         }
         finally {
             setIsSaving(false);
@@ -437,10 +437,10 @@ export function AdminSiteEditorPage() {
         try {
             await deleteSiteAsset({ id: asset.id, storage_path: asset.storage_path });
             setIconLibraryAssets((currentAssets) => currentAssets.filter((currentAsset) => currentAsset.id !== asset.id));
-            setMessage(`Icone "${iconName}" removido da biblioteca.`);
+            setMessage(`Ícone "${iconName}" removido da biblioteca.`);
         }
         catch (error) {
-            setMessage(error instanceof Error ? error.message : "N?o foi possvel remover o icone da biblioteca.");
+            setMessage(error instanceof Error ? error.message : 'Não foi possível remover o ícone da biblioteca.');
         }
         finally {
             setIsDeletingIconId(null);
@@ -448,10 +448,10 @@ export function AdminSiteEditorPage() {
     }
     async function handleDeleteAllUploadedIcons() {
         if (iconLibraryAssets.length === 0) {
-            setMessage("N?o ha icones enviados para excluir.");
+            setMessage('Não há ícones enviados para excluir.');
             return;
         }
-        const confirmed = window.confirm(`Excluir todos os ${iconLibraryAssets.length} icones enviados`);
+        const confirmed = window.confirm(`Excluir todos os ${iconLibraryAssets.length} ícones enviados`);
         if (!confirmed) {
             return;
         }
@@ -471,10 +471,10 @@ export function AdminSiteEditorPage() {
             }
             await loadIconLibrary();
             const failedSummary = failedCount > 0 ? ` ${failedCount} falharam.` : '';
-            setMessage(`Exclusao massiva concluida: ${deletedCount} icone(s) removido(s).${failedSummary}`);
+            setMessage(`Exclusão massiva concluída: ${deletedCount} ícone(s) removido(s).${failedSummary}`);
         }
         catch (error) {
-            setMessage(error instanceof Error ? error.message : "N?o foi possvel concluir a exclusao massiva dos icones.");
+            setMessage(error instanceof Error ? error.message : 'Não foi possível concluir a exclusão massiva dos ícones.');
         }
         finally {
             setIsDeletingAllIcons(false);
@@ -512,8 +512,8 @@ export function AdminSiteEditorPage() {
         }
         if (filesToUpload.length === 0) {
             const ignoredSummary = ignoredMetadataCount > 0 || ignoredInvalidSvgCount > 0
-                ? ` Ignorados: ${ignoredMetadataCount} metadado(s), ${ignoredInvalidSvgCount} SVG(s) inv?lido(s).` : '';
-            setMessage(`Selecione SVGs v?lidos ou um arquivo ZIP contendo SVGs v?lidos.${ignoredSummary}`);
+                ? ` Ignorados: ${ignoredMetadataCount} metadado(s), ${ignoredInvalidSvgCount} SVG(s) inválido(s).` : '';
+            setMessage(`Selecione SVGs válidos ou um arquivo ZIP contendo SVGs válidos.${ignoredSummary}`);
             return;
         }
         const reservedIconNames = new Set<string>();
@@ -550,8 +550,8 @@ export function AdminSiteEditorPage() {
                 ? ` ${duplicateNames.length} arquivo(s) ignorado(s) por nome duplicado: ${summarizeDuplicateNames(duplicateNames)}.`
                 : '';
             const ignoredSummary = ignoredMetadataCount > 0 || ignoredInvalidSvgCount > 0
-                ? ` ${ignoredMetadataCount} metadado(s) e ${ignoredInvalidSvgCount} SVG(s) inv?lido(s) ignorado(s).` : '';
-            setMessage(`${uploadedCount} icone(s) SVG enviado(s) para a biblioteca${zipSummary}.${duplicateSummary}${ignoredSummary}`);
+                ? ` ${ignoredMetadataCount} metadado(s) e ${ignoredInvalidSvgCount} SVG(s) inválido(s) ignorado(s).` : '';
+            setMessage(`${uploadedCount} ícone(s) SVG enviado(s) para a biblioteca${zipSummary}.${duplicateSummary}${ignoredSummary}`);
         }
         catch (error) {
             setMessage(error instanceof Error ? error.message : 'Não foi possível enviar os ícones para a biblioteca.');
@@ -595,7 +595,7 @@ export function AdminSiteEditorPage() {
             setMessage('Padrões de tipografia global atualizados com sucesso.');
         }
         catch (error) {
-            setMessage(error instanceof Error ? error.message : "N?o foi possvel salvar os padroes de tipografia.");
+            setMessage(error instanceof Error ? error.message : 'Não foi possível salvar os padrões de tipografia.');
         }
         finally {
             setIsSaving(false);
@@ -610,10 +610,10 @@ export function AdminSiteEditorPage() {
             if (selectedEntryId) {
                 setVersions(await fetchSiteContentVersions(selectedEntryId));
             }
-            setMessage("Vers\u00E3o anterior rest?urada e publicada.");
+            setMessage('Versão anterior restaurada e publicada.');
         }
         catch (error) {
-            setMessage(error instanceof Error ? error.message : "N\u00E3o foi poss\u00EDvel rest?urar a vers\u00E3o.");
+            setMessage(error instanceof Error ? error.message : 'Não foi possível restaurar a versão.');
         }
         finally {
             setIsSaving(false);
@@ -751,7 +751,7 @@ export function AdminSiteEditorPage() {
               <div>
                 <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#1398B7]">Biblioteca</p>
                 <h2 className="mt-1 font-readex text-xl font-semibold text-[#15323b]">Ícones do site</h2>
-                <p className="mt-2 text-sm font-semibold leading-6 text-[#5F7077]">Use est? biblioteca para localizar e copiar as chaves de ícone usadas em cards, seções e elementos editáveis.
+                <p className="mt-2 text-sm font-semibold leading-6 text-[#5F7077]">Use esta biblioteca para localizar e copiar as chaves de ícone usadas em cards, seções e elementos editáveis.
                 </p>
               </div>
               <div className="rounded-[18px] border border-[#D8E6EB] bg-[#F8FBFC] px-4 py-3 text-right">
@@ -827,7 +827,7 @@ export function AdminSiteEditorPage() {
                       </div>
                     </article>);
             })}
-                {filteredUploadedIconAssets.length === 0 ? (<div className="rounded-[14px] border border-dashed border-[#D8E6EB] bg-white px-4 py-6 text-xs font-semibold text-[#5F7077] sm:col-span-2">Nenhum SVG enviado nest? biblioteca.
+                {filteredUploadedIconAssets.length === 0 ? (<div className="rounded-[14px] border border-dashed border-[#D8E6EB] bg-white px-4 py-6 text-xs font-semibold text-[#5F7077] sm:col-span-2">Nenhum SVG enviado nesta biblioteca.
                   </div>) : null}
               </div>
             </div>
@@ -839,7 +839,7 @@ export function AdminSiteEditorPage() {
               <div>
                 <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#1398B7]">Tipografia</p>
                 <h2 className="mt-1 font-readex text-xl font-semibold text-[#15323b]">Padrão global de textos</h2>
-                <p className="mt-2 max-w-3xl text-sm font-semibold leading-6 text-[#5F7077]">Defina fonte, tamanho e peso para H1, H2, H3, corpo, topicos e links em todo o site pblico.
+                <p className="mt-2 max-w-3xl text-sm font-semibold leading-6 text-[#5F7077]">Defina fonte, tamanho e peso para H1, H2, H3, corpo, tópicos e links em todo o site público.
                 </p>
               </div>
               <div className="flex flex-wrap gap-2">
@@ -855,7 +855,7 @@ export function AdminSiteEditorPage() {
             </div>
 
             <div className="mt-4 rounded-[16px] border border-[#D8E6EB] bg-[#F8FBFC] p-3">
-              <p className="text-[10px] font-black uppercase tracking-[0.16em] text-[#5F7077]">Aplicar fonte rapida em todos os grupos</p>
+              <p className="text-[10px] font-black uppercase tracking-[0.16em] text-[#5F7077]">Aplicar fonte rápida em todos os grupos</p>
               <div className="mt-2 flex flex-wrap gap-2">
                 {SITE_TEXT_FONT_PRESETS.map((fontPreset) => (<button key={fontPreset.family} type="button" onClick={() => setTypographyDraft((current) => ({
                     h1: { ...current.h1, fontFamily: fontPreset.family },
@@ -903,7 +903,7 @@ export function AdminSiteEditorPage() {
                       </label>
                     </div>
                     <label className="grid gap-1">
-                      <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Transformacao</span>
+                      <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Transformação</span>
                       <select value={typographyDraft[groupKey].textTransform || 'none'} onChange={(event) => handleTypographyGroupChange(groupKey, 'textTransform', event.target.value)} className="h-11 rounded-[12px] border border-[#D8E6EB] bg-white px-3 text-sm font-semibold text-[#15323b] outline-none focus:border-[#1398B7]">
                         <option value="none">none</option>
                         <option value="uppercase">uppercase</option>
@@ -968,9 +968,9 @@ export function AdminSiteEditorPage() {
               {selectedPage ? (<Link to={selectedPage.path} className="inline-flex items-center gap-2 border border-[#D8E6EB] bg-white px-4 py-2 text-xs font-black uppercase tracking-[0.14em] text-[#0A3640] hover:bg-[#F2F7F9]">
                   <ExternalLink className="h-3.5 w-3.5"/>Abrir página
                 </Link>) : null}
-              <Button type="button" variant="outline" disabled={isSaving} onClick={() => void handleClearPage()} className="rounded-none border-[#D8E6EB]">Rest?urar conteúdo original dest? página
+              <Button type="button" variant="outline" disabled={isSaving} onClick={() => void handleClearPage()} className="rounded-none border-[#D8E6EB]">Restaurar conteúdo original desta página
               </Button>
-              <Button type="button" variant="outline" disabled={isSaving} onClick={() => void handleCreatePageVersion()} className="rounded-none border-[#D8E6EB]">Salvar versão dest? página
+              <Button type="button" variant="outline" disabled={isSaving} onClick={() => void handleCreatePageVersion()} className="rounded-none border-[#D8E6EB]">Salvar versão desta página
               </Button>
             </div>
           </div>
@@ -981,12 +981,12 @@ export function AdminSiteEditorPage() {
               <span className="text-xs font-black uppercase tracking-[0.14em] text-[#5F7077]">{pageVersions.length} versão(ões)</span>
             </div>
             <div className="mt-3 grid gap-2">
-              {pageVersions.length === 0 ? (<p className="text-xs font-semibold text-[#5F7077]">Nenhuma versão registrada ainda para est? página.</p>) : pageVersions.map((version) => (<div key={version.id} className="flex flex-wrap items-center justify-between gap-2 rounded-[14px] border border-[#D8E6EB] bg-white px-3 py-2">
+              {pageVersions.length === 0 ? (<p className="text-xs font-semibold text-[#5F7077]">Nenhuma versão registrada ainda para esta página.</p>) : pageVersions.map((version) => (<div key={version.id} className="flex flex-wrap items-center justify-between gap-2 rounded-[14px] border border-[#D8E6EB] bg-white px-3 py-2">
                   <div className="min-w-0">
                     <p className="text-xs font-black text-[#15323b]">{new Date(version.created_at).toLocaleString('pt-BR')}</p>
-                    <p className="text-[11px] font-semibold text-[#5F7077]">{version.change_reason ?? 'alteracao'}</p>
+                    <p className="text-[11px] font-semibold text-[#5F7077]">{version.change_reason ?? 'alteração'}</p>
                   </div>
-                  <button type="button" disabled={isSaving} onClick={() => void handleRestorePageVersion(version)} className="border border-[#D8E6EB] px-3 py-1.5 text-xs font-black text-[#0A3640] hover:bg-[#F2F7F9] disabled:opacity-60">Rest?urar página
+                  <button type="button" disabled={isSaving} onClick={() => void handleRestorePageVersion(version)} className="border border-[#D8E6EB] px-3 py-1.5 text-xs font-black text-[#0A3640] hover:bg-[#F2F7F9] disabled:opacity-60">Restaurar página
                   </button>
                 </div>))}
             </div>
@@ -997,7 +997,7 @@ export function AdminSiteEditorPage() {
               <span className="text-[10px] font-black uppercase tracking-[0.18em] text-[#5F7077]">Buscar campo</span>
               <div className="flex h-11 items-center gap-2 rounded-[14px] border border-[#D8E6EB] bg-white px-3">
                 <Search className="h-4 w-4 text-[#7C8B90]"/>
-                <input value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} placeholder="Ex.: t?tulo, footer, newsletter, CTA..." className="w-full border-0 bg-transparent text-sm font-semibold text-[#15323b] outline-none"/>
+                <input value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} placeholder="Ex.: título, footer, newsletter, CTA..." className="w-full border-0 bg-transparent text-sm font-semibold text-[#15323b] outline-none"/>
               </div>
             </label>
 
@@ -1022,10 +1022,10 @@ export function AdminSiteEditorPage() {
               <span className="text-[10px] font-black uppercase tracking-[0.18em] text-[#5F7077]">Modo</span>
               <div className="inline-flex h-11 overflow-hidden rounded-[14px] border border-[#D8E6EB] bg-white">
                 <button type="button" onClick={() => setEditorMode('basic')} className={`px-4 text-xs font-black uppercase tracking-[0.14em] ${editorMode === 'basic' ? 'bg-[#0A3640] text-white' : 'text-[#5F7077]'}`}>
-                  Basico
+                  Básico
                 </button>
                 <button type="button" onClick={() => setEditorMode('advanced')} className={`px-4 text-xs font-black uppercase tracking-[0.14em] ${editorMode === 'advanced' ? 'bg-[#1398B7] text-white' : 'text-[#5F7077]'}`}>
-                  Avancado
+                  Avançado
                 </button>
               </div>
             </div>
@@ -1045,7 +1045,7 @@ export function AdminSiteEditorPage() {
             </div>
           </div>
 
-          {isLoading ? (<p className="p-5 text-sm font-semibold text-[#5F7077]">Carregando...</p>) : pageEntries.length === 0 ? (<p className="p-5 text-sm font-semibold text-[#5F7077]">Nenhum override salvo para est? página. O site está usando exatamente o conteúdo original do código.
+          {isLoading ? (<p className="p-5 text-sm font-semibold text-[#5F7077]">Carregando...</p>) : pageEntries.length === 0 ? (<p className="p-5 text-sm font-semibold text-[#5F7077]">Nenhum override salvo para esta página. O site está usando exatamente o conteúdo original do código.
             </p>) : (<div className="mt-5 overflow-x-auto">
               <table className="min-w-full divide-y divide-[#D8E6EB] text-left text-sm">
                 <thead className="bg-[#F2F7F9] text-[10px] font-black uppercase tracking-[0.18em] text-[#5F7077]">
@@ -1056,7 +1056,7 @@ export function AdminSiteEditorPage() {
                     <th className="px-4 py-3">Status</th>
                     <th className="px-4 py-3">Workflow</th>
                     <th className="px-4 py-3">Atualizado</th>
-                    {editorMode === 'advanced' ? <th className="px-4 py-3">P?gina tecnica</th> : null}
+                    {editorMode === 'advanced' ? <th className="px-4 py-3">Página técnica</th> : null}
                     <th className="px-4 py-3">Ações</th>
                   </tr>
                 </thead>
@@ -1109,7 +1109,7 @@ export function AdminSiteEditorPage() {
                       <p className="text-xs font-black uppercase tracking-[0.16em] text-[#5F7077]">
                         {new Date(version.created_at).toLocaleString('pt-BR')} - {version.change_reason ?? 'alteração'}
                       </p>
-                      <button type="button" disabled={isSaving} onClick={() => void handleRestoreVersion(version)} className="border border-[#D8E6EB] px-3 py-1.5 text-xs font-black text-[#0A3640] hover:bg-[#F2F7F9]">Rest?urar versão anterior
+                      <button type="button" disabled={isSaving} onClick={() => void handleRestoreVersion(version)} className="border border-[#D8E6EB] px-3 py-1.5 text-xs font-black text-[#0A3640] hover:bg-[#F2F7F9]">Restaurar versão anterior
                       </button>
                     </div>
                     <pre className="mt-2 max-h-36 overflow-auto bg-[#F2F7F9] p-3 text-xs text-[#15323b]">
