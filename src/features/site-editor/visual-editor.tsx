@@ -1472,6 +1472,9 @@ function EditorModal({ editor, onClose, onSaved, }: {
     const draftAvailable = typeof workspaceRecord.draftRawValue === 'string' && workspaceRecord.draftRawValue.trim() !== '';
     const displayEntryTypeLabel = isContainerStyleEditor ? 'section' : (isRichTextListEditor ? 'content' : editor.entryType);
     const displayStructureLabel = isContainerStyleEditor ? 'container visual' : (isRichTextListEditor ? 'blocos de conteúdo' : describeValueShape(parsedPreview.value));
+    const richTextPreview = usesRichTextToolbar ? (<div className="rounded-[18px] border border-[#D8E6EB] bg-white p-4">
+        <div className="break-words text-sm leading-7 text-[#15323b] [&_img]:h-auto [&_img]:max-w-full [&_table]:my-6 [&_table]:w-full [&_table]:border-collapse [&_td]:border [&_td]:border-[#D8E6EB] [&_td]:px-3 [&_td]:py-2 [&_th]:border [&_th]:border-[#D8E6EB] [&_th]:bg-[#F8FCFD] [&_th]:px-3 [&_th]:py-2 [&_iframe]:min-h-[320px] [&_iframe]:w-full" style={previewTextStyle} dangerouslySetInnerHTML={{ __html: sanitizeRichText(rawValue) }}/>
+      </div>) : null;
     const updateAppearanceDraft = useCallback((nextAppearance: NormalizedSiteAppearance) => {
         setRawValue(JSON.stringify(buildSiteAppearanceValue(nextAppearance), null, 2));
     }, []);
@@ -2504,11 +2507,92 @@ function EditorModal({ editor, onClose, onSaved, }: {
                 </div>) : null}
               </div>) : null}
 
-            {editor.styleEntryKey ? (<div className="rounded-[22px] border border-[#D8E6EB] bg-white p-4">
-                <div className="flex items-center gap-2">
+
+            <div className="space-y-0">
+              <div className="flex flex-wrap gap-2 border-b border-[#D8E6EB] px-4 py-3">
+                <div className="flex flex-wrap gap-2">
+                  <button type="button" onClick={() => {
+            const lastSnapshot = history[history.length - 1];
+            if (!lastSnapshot)
+                return;
+            setHistory((current) => current.slice(0, -1));
+            setFuture((current) => [...current, { rawValue, textStyle }]);
+            applySnapshot(lastSnapshot);
+        }} disabled={history.length === 0} className="inline-flex items-center gap-2 rounded-full border border-[#D8E6EB] px-3 py-2 text-xs font-black uppercase tracking-[0.14em] text-[#0A3640] hover:bg-[#F2F7F9] disabled:opacity-60">
+                    <Undo2 className="h-3.5 w-3.5"/>
+                    Desfazer
+                  </button>
+                  <button type="button" onClick={() => {
+            const nextSnapshot = future[future.length - 1];
+            if (!nextSnapshot)
+                return;
+            setFuture((current) => current.slice(0, -1));
+            setHistory((current) => [...current, { rawValue, textStyle }].slice(-40));
+            applySnapshot(nextSnapshot);
+        }} disabled={future.length === 0} className="inline-flex items-center gap-2 rounded-full border border-[#D8E6EB] px-3 py-2 text-xs font-black uppercase tracking-[0.14em] text-[#0A3640] hover:bg-[#F2F7F9] disabled:opacity-60">
+                    <Redo2 className="h-3.5 w-3.5"/>
+                    Refazer
+                  </button>
+                  {usesJsonEditor ? (<button type="button" onClick={() => setRawValue(valueToString(parsedPreview.value as EditableValue))} disabled={!!parsedPreview.error} className="inline-flex items-center gap-2 rounded-full border border-[#D8E6EB] px-3 py-2 text-xs font-black uppercase tracking-[0.14em] text-[#0A3640] hover:bg-[#F2F7F9] disabled:opacity-60">
+                      <Wand2 className="h-3.5 w-3.5"/>
+                      Formatar JSON
+                    </button>) : null}
+                  <button type="button" onClick={() => {
+            setRawValue(initialRawValue);
+            setTextStyle(normalizeTextStyle(editor.styleFallback));
+        }} disabled={!isDirty} className="inline-flex items-center gap-2 rounded-full border border-[#D8E6EB] px-3 py-2 text-xs font-black uppercase tracking-[0.14em] text-[#0A3640] hover:bg-[#F2F7F9] disabled:opacity-60">
+                    <RotateCcw className="h-3.5 w-3.5"/>Rest?urar
+                  </button>
+                  <button type="button" onClick={() => {
+            void navigator.clipboard.writeText(`${editor.pageKey}/${editor.entryKey}`);
+            setMessage('Chave copiada para a área de transferência.');
+        }} className="inline-flex items-center gap-2 rounded-full border border-[#D8E6EB] px-3 py-2 text-xs font-black uppercase tracking-[0.14em] text-[#0A3640] hover:bg-[#F2F7F9]">
+                    <Copy className="h-3.5 w-3.5"/>
+                    Copiar chave
+                  </button>
+                </div>
+              </div>
+
+              {isRichTextListEditor ? (<div className="grid gap-2 p-4">
+                  <div className="rounded-[18px] border border-[#D8E6EB] bg-[#F8FCFD] px-4 py-4 text-sm leading-6 text-[#5F7077]">
+                    Cada bloco de texto é editado individualmente no editor rico abaixo. A estrutura da lista continua interna, mas não é mais exposta como JSON neste fluxo.
+                  </div>
+                  {message ? (<div className="rounded-[16px] border border-[#D8E6EB] bg-[#F2F7F9] p-3 text-sm font-bold text-[#15323b]">
+                      {message}
+                    </div>) : null}
+                </div>) : isSiteAppearanceEditor ? (<div className="grid gap-2 p-4">
+                  {message ? (<div className="rounded-[16px] border border-[#D8E6EB] bg-[#F2F7F9] p-3 text-sm font-bold text-[#15323b]">
+                      {message}
+                    </div>) : null}
+                </div>) : usesRichTextToolbar ? (<div className="grid gap-2 p-4">
+                  <div className="overflow-hidden rounded-[18px] border border-[#D8E6EB] bg-white">
+                    <ReactQuill value={rawValue} onChange={setRawValue} onRequestImage={requestRichTextImage} placeholder="Escreva o conteúdo aqui..." modules={richTextToolbarModules} enableHtmlMode minHeightClassName="min-h-[360px]" className="[&_.react-quill-local]:rounded-none [&_.react-quill-local]:border-0 [&_.react-quill-local_.ql-container]:border-0"/>
+                  </div>
+                  {message ? (<div className="rounded-[16px] border border-[#D8E6EB] bg-[#F2F7F9] p-3 text-sm font-bold text-[#15323b]">
+                      {message}
+                    </div>) : null}
+                </div>) : (<div className="grid gap-2 p-4">
+                  {parsedPreview.error ? (<div className="rounded-[16px] border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-bold text-rose-700">
+                      JSON inválido: {parsedPreview.error}
+                    </div>) : null}
+                  <div className="overflow-hidden rounded-[18px] border border-[#D8E6EB] bg-white">
+                    <textarea value={rawValue} onChange={(event) => setRawValue(event.target.value)} rows={14} className="w-full resize-y border-0 bg-white px-4 py-3 text-sm font-semibold leading-6 text-[#15323b] outline-none" placeholder="Edite o conteúdo avançado deste bloco (texto ou JSON, conforme o tipo)."/>
+                  </div>
+                  <div className="rounded-[16px] border border-[#D8E6EB] bg-[#F8FCFD] px-4 py-3 text-sm font-semibold text-[#5F7077]">
+                    Edição avançada habilitada para este bloco. Você pode usar os controles estruturados e também ajustar o conteúdo bruto.
+                  </div>
+                  {message ? (<div className="rounded-[16px] border border-[#D8E6EB] bg-[#F2F7F9] p-3 text-sm font-bold text-[#15323b]">
+                      {message}
+                    </div>) : null}
+                </div>)}
+            </div>
+            {richTextPreview}
+
+            {editor.styleEntryKey ? (<details className="rounded-[22px] border border-[#D8E6EB] bg-white p-4">
+                <summary className="flex cursor-pointer list-none items-center gap-2 outline-none">
                   <Sparkles className="h-4 w-4 text-[#1398B7]"/>
                   <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#1398B7]">Estilo do elemento</p>
-                </div>
+                </summary>
                 <div className="mt-4 grid gap-3 md:grid-cols-2">
                   <label className="grid gap-1.5 md:col-span-2">
                     <span className="text-[10px] font-black uppercase tracking-[0.14em] text-[#5F7077]">Cor de fundo</span>
@@ -2702,90 +2786,12 @@ function EditorModal({ editor, onClose, onSaved, }: {
                   </label>
                     </>) : null}
                 </div>
-              </div>) : null}
+              </details>) : null}
 
-            <div className="space-y-0">
-              <div className="flex flex-wrap gap-2 border-b border-[#D8E6EB] px-4 py-3">
-                <div className="flex flex-wrap gap-2">
-                  <button type="button" onClick={() => {
-            const lastSnapshot = history[history.length - 1];
-            if (!lastSnapshot)
-                return;
-            setHistory((current) => current.slice(0, -1));
-            setFuture((current) => [...current, { rawValue, textStyle }]);
-            applySnapshot(lastSnapshot);
-        }} disabled={history.length === 0} className="inline-flex items-center gap-2 rounded-full border border-[#D8E6EB] px-3 py-2 text-xs font-black uppercase tracking-[0.14em] text-[#0A3640] hover:bg-[#F2F7F9] disabled:opacity-60">
-                    <Undo2 className="h-3.5 w-3.5"/>
-                    Desfazer
-                  </button>
-                  <button type="button" onClick={() => {
-            const nextSnapshot = future[future.length - 1];
-            if (!nextSnapshot)
-                return;
-            setFuture((current) => current.slice(0, -1));
-            setHistory((current) => [...current, { rawValue, textStyle }].slice(-40));
-            applySnapshot(nextSnapshot);
-        }} disabled={future.length === 0} className="inline-flex items-center gap-2 rounded-full border border-[#D8E6EB] px-3 py-2 text-xs font-black uppercase tracking-[0.14em] text-[#0A3640] hover:bg-[#F2F7F9] disabled:opacity-60">
-                    <Redo2 className="h-3.5 w-3.5"/>
-                    Refazer
-                  </button>
-                  {usesJsonEditor ? (<button type="button" onClick={() => setRawValue(valueToString(parsedPreview.value as EditableValue))} disabled={!!parsedPreview.error} className="inline-flex items-center gap-2 rounded-full border border-[#D8E6EB] px-3 py-2 text-xs font-black uppercase tracking-[0.14em] text-[#0A3640] hover:bg-[#F2F7F9] disabled:opacity-60">
-                      <Wand2 className="h-3.5 w-3.5"/>
-                      Formatar JSON
-                    </button>) : null}
-                  <button type="button" onClick={() => {
-            setRawValue(initialRawValue);
-            setTextStyle(normalizeTextStyle(editor.styleFallback));
-        }} disabled={!isDirty} className="inline-flex items-center gap-2 rounded-full border border-[#D8E6EB] px-3 py-2 text-xs font-black uppercase tracking-[0.14em] text-[#0A3640] hover:bg-[#F2F7F9] disabled:opacity-60">
-                    <RotateCcw className="h-3.5 w-3.5"/>Rest?urar
-                  </button>
-                  <button type="button" onClick={() => {
-            void navigator.clipboard.writeText(`${editor.pageKey}/${editor.entryKey}`);
-            setMessage('Chave copiada para a área de transferência.');
-        }} className="inline-flex items-center gap-2 rounded-full border border-[#D8E6EB] px-3 py-2 text-xs font-black uppercase tracking-[0.14em] text-[#0A3640] hover:bg-[#F2F7F9]">
-                    <Copy className="h-3.5 w-3.5"/>
-                    Copiar chave
-                  </button>
-                </div>
-              </div>
-
-              {isRichTextListEditor ? (<div className="grid gap-2 p-4">
-                  <div className="rounded-[18px] border border-[#D8E6EB] bg-[#F8FCFD] px-4 py-4 text-sm leading-6 text-[#5F7077]">
-                    Cada bloco de texto é editado individualmente no editor rico abaixo. A estrutura da lista continua interna, mas não é mais exposta como JSON neste fluxo.
-                  </div>
-                  {message ? (<div className="rounded-[16px] border border-[#D8E6EB] bg-[#F2F7F9] p-3 text-sm font-bold text-[#15323b]">
-                      {message}
-                    </div>) : null}
-                </div>) : isSiteAppearanceEditor ? (<div className="grid gap-2 p-4">
-                  {message ? (<div className="rounded-[16px] border border-[#D8E6EB] bg-[#F2F7F9] p-3 text-sm font-bold text-[#15323b]">
-                      {message}
-                    </div>) : null}
-                </div>) : usesRichTextToolbar ? (<div className="grid gap-2 p-4">
-                  <div className="overflow-hidden rounded-[18px] border border-[#D8E6EB] bg-white">
-                    <ReactQuill value={rawValue} onChange={setRawValue} onRequestImage={requestRichTextImage} placeholder="Escreva o conteúdo aqui..." modules={richTextToolbarModules} enableHtmlMode minHeightClassName="min-h-[360px]" className="[&_.react-quill-local]:rounded-none [&_.react-quill-local]:border-0 [&_.react-quill-local_.ql-container]:border-0"/>
-                  </div>
-                  {message ? (<div className="rounded-[16px] border border-[#D8E6EB] bg-[#F2F7F9] p-3 text-sm font-bold text-[#15323b]">
-                      {message}
-                    </div>) : null}
-                </div>) : (<div className="grid gap-2 p-4">
-                  {parsedPreview.error ? (<div className="rounded-[16px] border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-bold text-rose-700">
-                      JSON inválido: {parsedPreview.error}
-                    </div>) : null}
-                  <div className="overflow-hidden rounded-[18px] border border-[#D8E6EB] bg-white">
-                    <textarea value={rawValue} onChange={(event) => setRawValue(event.target.value)} rows={14} className="w-full resize-y border-0 bg-white px-4 py-3 text-sm font-semibold leading-6 text-[#15323b] outline-none" placeholder="Edite o conteúdo avançado deste bloco (texto ou JSON, conforme o tipo)."/>
-                  </div>
-                  <div className="rounded-[16px] border border-[#D8E6EB] bg-[#F8FCFD] px-4 py-3 text-sm font-semibold text-[#5F7077]">
-                    Edição avançada habilitada para este bloco. Você pode usar os controles estruturados e também ajustar o conteúdo bruto.
-                  </div>
-                  {message ? (<div className="rounded-[16px] border border-[#D8E6EB] bg-[#F2F7F9] p-3 text-sm font-bold text-[#15323b]">
-                      {message}
-                    </div>) : null}
-                </div>)}
-            </div>
           </div>
 
           <aside className="min-w-0 grid gap-4">
-            {!isSiteAppearanceEditor ? (<div className="rounded-[22px] border border-[#D8E6EB] bg-[#F8FCFD] p-4">
+            {!isSiteAppearanceEditor && !usesRichTextToolbar ? (<div className="rounded-[22px] border border-[#D8E6EB] bg-[#F8FCFD] p-4">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="flex items-center gap-2">
                   <Sparkles className="h-4 w-4 text-[#1398B7]"/>
