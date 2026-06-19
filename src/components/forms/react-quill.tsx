@@ -13,7 +13,7 @@ import TableHeader from '@tiptap/extension-table-header';
 import TableCell from '@tiptap/extension-table-cell';
 import Gapcursor from '@tiptap/extension-gapcursor';
 import { TextStyle } from '@tiptap/extension-text-style';
-import { Bold, Code2, Eraser, Image as ImageIcon, Italic, Link2, List, ListOrdered, Minus, Redo2, Quote, Strikethrough, Table2, Undo2, Underline as UnderlineIcon, Film } from 'lucide-react';
+import { Bold, Code2, Eraser, Film, Image as ImageIcon, Italic, Link2, List, ListOrdered, Minus, Redo2, Quote, SlidersHorizontal, Strikethrough, Table2, Undo2, Underline as UnderlineIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 type ToolbarItem = string | Record<string, unknown> | Array<string | Record<string, unknown>>;
@@ -216,10 +216,31 @@ function ToolbarGroup({ label, children, className = '' }: ToolbarGroupProps) {
   return (
     <div className={cn('rounded-2xl border border-slate-200 bg-white/95 p-3 shadow-sm', className)}>
       <div className="mb-2 flex items-center justify-between gap-2">
-        <span className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">{label}</span>
+        <span className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-500">{label}</span>
       </div>
       <div className="flex flex-wrap items-center gap-1.5">{children}</div>
     </div>
+  );
+}
+
+function ToolbarSubtleButton({ children, className = '', title, active = false, onClick }: ToolbarButtonProps) {
+  return (
+    <button
+      type="button"
+      title={title}
+      aria-pressed={active}
+      onClick={onClick}
+      className={cn(
+        'inline-flex h-10 items-center gap-2 rounded-xl border px-3 text-sm font-semibold transition',
+        'focus:outline-none focus:ring-2 focus:ring-[#CBEAF3] focus:ring-offset-1',
+        active
+          ? 'border-[#0A3640] bg-[#0A3640] text-white shadow-sm'
+          : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50',
+        className,
+      )}
+    >
+      {children}
+    </button>
   );
 }
 
@@ -487,6 +508,7 @@ export default function ReactQuill({
   const [headingChoice, setHeadingChoice] = useState('');
   const [alignChoice, setAlignChoice] = useState('');
   const [columnsChoice, setColumnsChoice] = useState('');
+  const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
   const onChangeRef = useRef(onChange);
   const activeModeRef = useRef(activeMode);
 
@@ -503,6 +525,12 @@ export default function ReactQuill({
       setActiveMode('visual');
     }
   }, [activeMode, enableHtmlMode]);
+
+  useEffect(() => {
+    if (activeMode !== 'visual') {
+      setIsAdvancedOpen(false);
+    }
+  }, [activeMode]);
 
   const toolbarItems = useMemo(() => flattenToolbarItems(modules?.toolbar ?? defaultToolbar), [modules]);
   const toolbarButtons = useMemo<SupportedToolbarFlags>(() => ({
@@ -735,7 +763,7 @@ export default function ReactQuill({
       <div className="grid gap-3 [grid-template-columns:repeat(auto-fit,minmax(240px,1fr))]">
         <ToolbarGroup label="Estrutura">
           {toolbarButtons.header ? (
-            <label title="Escolher nível de título" className="inline-flex h-10 items-center rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50">
+            <label title="Escolher nível de título" className="inline-flex h-10 items-center rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-800 shadow-sm transition hover:border-slate-300 hover:bg-slate-50">
               <select
                 value={headingChoice}
                 onChange={(event) => {
@@ -746,7 +774,7 @@ export default function ReactQuill({
                   setHeading(level === 'false' ? false : Number.parseInt(level, 10));
                   setHeadingChoice('');
                 }}
-                className="min-w-0 border-0 bg-transparent p-0 text-sm font-semibold text-slate-700 outline-none focus:ring-0"
+                className="min-w-0 border-0 bg-transparent p-0 text-sm font-semibold text-slate-800 outline-none focus:ring-0"
               >
                 <option value="" disabled>
                   Estrutura
@@ -762,7 +790,7 @@ export default function ReactQuill({
             </label>
           ) : null}
           {toolbarButtons.align ? (
-            <label title="Alinhamento do texto" className="inline-flex h-10 items-center rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50">
+            <label title="Alinhamento do texto" className="inline-flex h-10 items-center rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-800 shadow-sm transition hover:border-slate-300 hover:bg-slate-50">
               <select
                 value={alignChoice}
                 onChange={(event) => {
@@ -773,7 +801,7 @@ export default function ReactQuill({
                   handleSetAlign(alignment);
                   setAlignChoice('');
                 }}
-                className="min-w-0 border-0 bg-transparent p-0 text-sm font-semibold text-slate-700 outline-none focus:ring-0"
+                className="min-w-0 border-0 bg-transparent p-0 text-sm font-semibold text-slate-800 outline-none focus:ring-0"
               >
                 <option value="" disabled>
                   Alinhar
@@ -810,7 +838,7 @@ export default function ReactQuill({
           ) : null}
         </ToolbarGroup>
 
-        <ToolbarGroup label="Listas e blocos">
+        <ToolbarGroup label="Listas">
           {toolbarButtons.ordered ? (
             <ToolbarButton title="Lista numerada" active={editor?.isActive('orderedList') ?? false} onClick={() => editor?.chain().focus().toggleOrderedList().run()} className="w-10 px-0">
               <ListOrdered className="h-4 w-4" />
@@ -821,58 +849,28 @@ export default function ReactQuill({
               <List className="h-4 w-4" />
             </ToolbarButton>
           ) : null}
-          {toolbarButtons.blockquote ? (
-            <ToolbarButton title="Citação" active={editor?.isActive('blockquote') ?? false} onClick={() => editor?.chain().focus().toggleBlockquote().run()} className="w-10 px-0">
-              <Quote className="h-4 w-4" />
-            </ToolbarButton>
-          ) : null}
-          {toolbarButtons.codeBlock ? (
-            <ToolbarButton title="Bloco de código" active={editor?.isActive('codeBlock') ?? false} onClick={() => editor?.chain().focus().toggleCodeBlock().run()} className="w-10 px-0">
-              <Code2 className="h-4 w-4" />
-            </ToolbarButton>
-          ) : null}
-          {toolbarButtons.horizontalRule ? (
-            <ToolbarButton title="Linha divisória" onClick={() => editor?.chain().focus().setHorizontalRule().run()} className="w-10 px-0">
-              <Minus className="h-4 w-4" />
-            </ToolbarButton>
-          ) : null}
         </ToolbarGroup>
 
         <ToolbarGroup label="Inserir">
           {toolbarButtons.link ? (
-            <>
-              <ToolbarButton title="Inserir link" active={editor?.isActive('link') ?? false} onClick={handleInsertLink} className="w-10 px-0">
-                <Link2 className="h-4 w-4" />
-              </ToolbarButton>
-              <ToolbarButton title="Remover link" onClick={() => editor?.chain().focus().extendMarkRange('link').unsetLink().run()} className="w-10 px-0">
-                <Link2 className="h-4 w-4 rotate-45" />
-              </ToolbarButton>
-            </>
+            <ToolbarButton title="Inserir link" active={editor?.isActive('link') ?? false} onClick={handleInsertLink} className="w-10 px-0">
+              <Link2 className="h-4 w-4" />
+            </ToolbarButton>
           ) : null}
           {toolbarButtons.image ? (
             <ToolbarButton title="Inserir imagem" onClick={() => void handleInsertImage()} className="w-10 px-0">
               <ImageIcon className="h-4 w-4" />
             </ToolbarButton>
           ) : null}
-          {toolbarButtons.video ? (
-            <ToolbarButton title="Inserir vídeo" onClick={handleInsertVideo} className="w-10 px-0">
-              <Film className="h-4 w-4" />
-            </ToolbarButton>
-          ) : null}
-          {toolbarButtons.table ? (
-            <ToolbarButton title="Inserir tabela" onClick={handleInsertTable} className="w-10 px-0">
-              <Table2 className="h-4 w-4" />
-            </ToolbarButton>
-          ) : null}
           {toolbarButtons.columns ? (
-            <label title="Inserir colunas" className="inline-flex h-10 items-center rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50">
+            <label title="Inserir colunas" className="inline-flex h-10 items-center rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-800 shadow-sm transition hover:border-slate-300 hover:bg-slate-50">
               <select
                 value={columnsChoice}
                 onChange={(event) => {
                   handleInsertColumns(event);
                   setColumnsChoice('');
                 }}
-                className="min-w-0 border-0 bg-transparent p-0 text-sm font-semibold text-slate-700 outline-none focus:ring-0"
+                className="min-w-0 border-0 bg-transparent p-0 text-sm font-semibold text-slate-800 outline-none focus:ring-0"
               >
                 <option value="" disabled>
                   Colunas
@@ -892,15 +890,73 @@ export default function ReactQuill({
               <Eraser className="h-4 w-4" />
             </ToolbarButton>
           ) : null}
-          {toolbarButtons.undo ? (
-            <ToolbarButton title="Desfazer" onClick={() => editor?.chain().focus().undo().run()} className="w-10 px-0">
-              <Undo2 className="h-4 w-4" />
-            </ToolbarButton>
-          ) : null}
-          {toolbarButtons.redo ? (
-            <ToolbarButton title="Refazer" onClick={() => editor?.chain().focus().redo().run()} className="w-10 px-0">
-              <Redo2 className="h-4 w-4" />
-            </ToolbarButton>
+          <ToolbarButton
+            title={isAdvancedOpen ? 'Fechar avançado' : 'Abrir avançado'}
+            active={isAdvancedOpen}
+            onClick={() => setIsAdvancedOpen((current) => !current)}
+            className="w-10 px-0"
+          >
+            <SlidersHorizontal className="h-4 w-4" />
+          </ToolbarButton>
+          {isAdvancedOpen ? (
+            <div className="mt-2 w-full rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
+              <div className="mb-3 flex items-center justify-between">
+                <span className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-500">Avançado</span>
+                <button type="button" onClick={() => setIsAdvancedOpen(false)} className="text-xs font-semibold text-slate-500 hover:text-slate-800">
+                  Fechar
+                </button>
+              </div>
+              <div className="grid gap-2 sm:grid-cols-2">
+                {toolbarButtons.blockquote ? (
+                  <ToolbarSubtleButton title="Citação" active={editor?.isActive('blockquote') ?? false} onClick={() => editor?.chain().focus().toggleBlockquote().run()}>
+                    <Quote className="h-4 w-4" />
+                    <span>Citação</span>
+                  </ToolbarSubtleButton>
+                ) : null}
+                {toolbarButtons.codeBlock ? (
+                  <ToolbarSubtleButton title="Bloco de código" active={editor?.isActive('codeBlock') ?? false} onClick={() => editor?.chain().focus().toggleCodeBlock().run()}>
+                    <Code2 className="h-4 w-4" />
+                    <span>Código</span>
+                  </ToolbarSubtleButton>
+                ) : null}
+                {toolbarButtons.video ? (
+                  <ToolbarSubtleButton title="Inserir vídeo" onClick={handleInsertVideo}>
+                    <Film className="h-4 w-4" />
+                    <span>Vídeo</span>
+                  </ToolbarSubtleButton>
+                ) : null}
+                {toolbarButtons.table ? (
+                  <ToolbarSubtleButton title="Inserir tabela" onClick={handleInsertTable}>
+                    <Table2 className="h-4 w-4" />
+                    <span>Tabela</span>
+                  </ToolbarSubtleButton>
+                ) : null}
+                {toolbarButtons.horizontalRule ? (
+                  <ToolbarSubtleButton title="Linha divisória" onClick={() => editor?.chain().focus().setHorizontalRule().run()}>
+                    <Minus className="h-4 w-4" />
+                    <span>Linha</span>
+                  </ToolbarSubtleButton>
+                ) : null}
+                {toolbarButtons.link ? (
+                  <ToolbarSubtleButton title="Remover link" onClick={() => editor?.chain().focus().extendMarkRange('link').unsetLink().run()}>
+                    <Link2 className="h-4 w-4 rotate-45" />
+                    <span>Remover link</span>
+                  </ToolbarSubtleButton>
+                ) : null}
+                {toolbarButtons.undo ? (
+                  <ToolbarSubtleButton title="Desfazer" onClick={() => editor?.chain().focus().undo().run()}>
+                    <Undo2 className="h-4 w-4" />
+                    <span>Desfazer</span>
+                  </ToolbarSubtleButton>
+                ) : null}
+                {toolbarButtons.redo ? (
+                  <ToolbarSubtleButton title="Refazer" onClick={() => editor?.chain().focus().redo().run()}>
+                    <Redo2 className="h-4 w-4" />
+                    <span>Refazer</span>
+                  </ToolbarSubtleButton>
+                ) : null}
+              </div>
+            </div>
           ) : null}
         </ToolbarGroup>
       </div>
@@ -910,18 +966,18 @@ export default function ReactQuill({
   return (
     <div className={cn('react-quill-local flex flex-col overflow-hidden', className)}>
       {enableHtmlMode ? (
-        <div className="border-b border-slate-200 bg-gradient-to-r from-slate-50 via-white to-slate-50 px-4 py-3">
+        <div className="border-b border-slate-200 bg-gradient-to-r from-slate-50 via-white to-slate-50 px-4 py-3 text-slate-900">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <div className="space-y-1">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="inline-flex rounded-full bg-[#E8F6FA] px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-[#0A3640]">
+                <span className="inline-flex rounded-full bg-[#0A3640] px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-white shadow-sm">
                   Editor rico
                 </span>
-                <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-[11px] font-semibold text-slate-500">
+                <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-[11px] font-semibold text-slate-700">
                   {textStats.words} palavras · {textStats.characters} caracteres
                 </span>
               </div>
-              <span className="block text-sm font-medium text-slate-500">
+              <span className="block text-sm font-medium text-slate-700">
                 Altere entre visual e HTML quando precisar. A barra abaixo reúne as ações mais usadas por grupo.
               </span>
             </div>
@@ -929,14 +985,14 @@ export default function ReactQuill({
             <button
               type="button"
               onClick={() => setActiveMode('visual')}
-              className={cn('rounded-full px-3 py-1.5 text-xs font-black uppercase tracking-[0.12em]', activeMode === 'visual' ? 'bg-[#0A3640] text-white' : 'text-slate-500 hover:bg-slate-100')}
+              className={cn('rounded-full px-3 py-1.5 text-xs font-black uppercase tracking-[0.12em]', activeMode === 'visual' ? 'bg-[#0A3640] text-white' : 'text-slate-600 hover:bg-slate-100')}
             >
               {visualTabLabel}
             </button>
             <button
               type="button"
               onClick={() => setActiveMode('html')}
-              className={cn('rounded-full px-3 py-1.5 text-xs font-black uppercase tracking-[0.12em]', activeMode === 'html' ? 'bg-[#0A3640] text-white' : 'text-slate-500 hover:bg-slate-100')}
+              className={cn('rounded-full px-3 py-1.5 text-xs font-black uppercase tracking-[0.12em]', activeMode === 'html' ? 'bg-[#0A3640] text-white' : 'text-slate-600 hover:bg-slate-100')}
             >
               {htmlTabLabel}
             </button>
@@ -968,14 +1024,18 @@ export default function ReactQuill({
         />
       )}
 
-      <div className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-200 bg-slate-50 px-4 py-3 text-[11px] font-semibold text-slate-500">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-200 bg-slate-50 px-4 py-3 text-[11px] font-semibold text-slate-700">
         <span>{activeMode === 'visual' ? 'Modo visual ativo. Use os grupos abaixo para estruturar e inserir conteúdo.' : 'Modo HTML ativo. Aqui você pode ajustar a marcação manualmente.'}</span>
-        <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">
+        <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-slate-600">
           HTML como fonte
         </span>
       </div>
 
       <style>{`
+        .react-quill-local .tiptap-editor {
+          color: #0f172a;
+        }
+
         .react-quill-local .tiptap-editor p.is-editor-empty:first-child::before {
           color: #94a3b8;
           content: attr(data-placeholder);
