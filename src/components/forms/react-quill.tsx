@@ -1,5 +1,5 @@
 ﻿import { useEffect, useMemo, useRef, useState, type ChangeEvent, type ReactNode } from 'react';
-import { EditorContent, useEditor } from '@tiptap/react';
+import { EditorContent, NodeViewWrapper, ReactNodeViewRenderer, useEditor, type ReactNodeViewProps } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { mergeAttributes, Node } from '@tiptap/core';
 import Link from '@tiptap/extension-link';
@@ -13,7 +13,7 @@ import TableHeader from '@tiptap/extension-table-header';
 import TableCell from '@tiptap/extension-table-cell';
 import Gapcursor from '@tiptap/extension-gapcursor';
 import { TextStyle } from '@tiptap/extension-text-style';
-import { Bold, Code2, Eraser, Film, Image as ImageIcon, Italic, Link2, List, ListOrdered, Minus, Redo2, Quote, Strikethrough, Table2, Undo2, Underline as UnderlineIcon } from 'lucide-react';
+import { AlignCenterHorizontal, Bold, Code2, Eraser, Film, Image as ImageIcon, Italic, Link2, List, ListOrdered, Minus, MoveDiagonal2, Redo2, Quote, Strikethrough, Table2, Undo2, Underline as UnderlineIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 type ToolbarItem = string | Record<string, unknown> | Array<string | Record<string, unknown>>;
@@ -47,6 +47,10 @@ type RichTextImageSelection = {
   src: string;
   alt?: string;
 };
+
+type RichTextImageAlign = 'left' | 'center' | 'right';
+
+type RichTextImageNodeViewProps = ReactNodeViewProps<HTMLDivElement>;
 
 type SupportedToolbarFlags = {
   header: boolean;
@@ -195,6 +199,266 @@ function buildEqualColumnWidths(columns: number) {
 
 function createFilledParagraph(editor: any) {
   return editor.schema.nodes.paragraph.createAndFill() ?? editor.schema.nodes.paragraph.create();
+}
+
+function normalizeRichTextImageAlign(value: unknown): RichTextImageAlign {
+  return value === 'left' || value === 'right' ? value : 'center';
+}
+
+function sanitizeImageDimension(value: number) {
+  return Number.isFinite(value) && value > 0 ? Math.round(value) : null;
+}
+
+function RichTextImageNodeView({ node, selected, updateAttributes, ref }: RichTextImageNodeViewProps) {
+  const imageRef = useRef<HTMLImageElement | null>(null);
+  const wrapperRef = useRef<HTMLDivElement | null>(null);
+  const resizeStateRef = useRef<{
+    pointerId: number;
+    startX: number;
+    startWidth: number;
+    startHeight: number;
+    aspectRatio: number;
+  } | null>(null);
+  const resizePreviewRef = useRef<{
+    width: number;
+    height: number;
+  } | null>(null);
+  const [isHovered, setIsHovered] = useState(false);
+  const [isResizing, setIsResizing] = useState(false);
+  const [alignMenuOpen, setAlignMenuOpen] = useState(false);
+  const [draftWidth, setDraftWidth] = useState<number | null>(null);
+  const [draftHeight, setDraftHeight] = useState<number | null>(null);
+
+  const align = normalizeRichTextImageAlign(node.attrs.align);
+  const baseWidth = sanitizeImageDimension(Number(node.attrs.width) || 0);
+  const baseHeight = sanitizeImageDimension(Number(node.attrs.height) || 0);
+  const width = draftWidth ?? baseWidth;
+  const height = draftHeight ?? baseHeight;
+  const showControls = selected || isHovered || isResizing || alignMenuOpen;
+
+  useEffect(() => {
+    if (!selected) {
+      setAlignMenuOpen(false);
+    }
+  }, [selected]);
+
+  useEffect(() => {
+    if (!isResizing) {
+      setDraftWidth(null);
+      setDraftHeight(null);
+    }
+  }, [isResizing, node.attrs.height, node.attrs.width]);
+
+  useEffect(() => {
+    if (!alignMenuOpen) {
+      return;
+    }
+
+    const handlePointerDown = (event: PointerEvent) => {
+      const target = event.target as globalThis.Node | null;
+      if (wrapperRef.current?.contains(target)) {
+        return;
+      }
+      setAlignMenuOpen(false);
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setAlignMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('pointerdown', handlePointerDown, true);
+    document.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.removeEventListener('pointerdown', handlePointerDown, true);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [alignMenuOpen]);
+
+  function handleSetAlign(nextAlign: RichTextImageAlign) {
+    updateAttributes({ align: nextAlign });
+    setAlignMenuOpen(false);
+  }
+
+  function handleResizePointerDown(event: React.PointerEvent<HTMLButtonElement>) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    const imageElement = imageRef.current;
+    if (!imageElement) {
+      return;
+    }
+
+    const currentRect = imageElement.getBoundingClientRect();
+    const naturalWidth = imageElement.naturalWidth || currentRect.width || baseWidth || 320;
+    const naturalHeight = imageElement.naturalHeight || currentRect.height || baseHeight || 180;
+    const startWidth = width ?? Math.max(1, Math.round(currentRect.width || naturalWidth));
+    const startHeight = height ?? Math.max(1, Math.round(currentRect.height || naturalHeight));
+    const aspectRatio = startWidth / startHeight || naturalWidth / naturalHeight || 1;
+
+    resizeStateRef.current = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startWidth,
+      startHeight,
+      aspectRatio,
+    };
+    resizePreviewRef.current = {
+      width: startWidth,
+      height: startHeight,
+    };
+    setIsResizing(true);
+    setAlignMenuOpen(false);
+    setDraftWidth(startWidth);
+    setDraftHeight(startHeight);
+
+    const handlePointerMove = (moveEvent: PointerEvent) => {
+      const session = resizeStateRef.current;
+      if (!session || moveEvent.pointerId !== session.pointerId) {
+        return;
+      }
+
+      const deltaX = moveEvent.clientX - session.startX;
+      const nextWidth = Math.max(48, Math.round(session.startWidth + deltaX));
+      const nextHeight = Math.max(48, Math.round(nextWidth / session.aspectRatio));
+      resizePreviewRef.current = {
+        width: nextWidth,
+        height: nextHeight,
+      };
+      setDraftWidth(nextWidth);
+      setDraftHeight(nextHeight);
+    };
+
+    const finishResize = (finishEvent: PointerEvent) => {
+      const session = resizeStateRef.current;
+      if (!session || finishEvent.pointerId !== session.pointerId) {
+        return;
+      }
+
+      resizeStateRef.current = null;
+      setIsResizing(false);
+
+      const previewSize = resizePreviewRef.current ?? { width: session.startWidth, height: session.startHeight };
+      const nextWidth = Math.max(48, Math.round(previewSize.width));
+      const nextHeight = Math.max(48, Math.round(previewSize.height));
+      resizePreviewRef.current = null;
+      setDraftWidth(null);
+      setDraftHeight(null);
+      updateAttributes({
+        width: nextWidth,
+        height: nextHeight,
+      });
+
+      window.removeEventListener('pointermove', handlePointerMove);
+      window.removeEventListener('pointerup', finishResize);
+      window.removeEventListener('pointercancel', finishResize);
+    };
+
+    window.addEventListener('pointermove', handlePointerMove);
+    window.addEventListener('pointerup', finishResize);
+    window.addEventListener('pointercancel', finishResize);
+  }
+
+  return (
+    <NodeViewWrapper
+      ref={ref}
+      as="div"
+      className={cn(
+        'genflix-rich-text-image-node my-5 block max-w-full outline-none',
+        selected ? 'z-20' : 'z-0',
+      )}
+      data-align={align}
+      style={{
+        marginLeft: align === 'center' || align === 'right' ? 'auto' : '0',
+        marginRight: align === 'center' || align === 'left' ? 'auto' : '0',
+      }}
+      contentEditable={false}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      <div
+        ref={wrapperRef}
+        className={cn(
+          'relative inline-block max-w-full rounded-2xl transition',
+          showControls ? 'ring-2 ring-sky-400/80 ring-offset-2 ring-offset-white' : 'ring-0',
+        )}
+        style={{
+          width: width ? `${width}px` : 'fit-content',
+        }}
+      >
+        <img
+          ref={imageRef}
+          src={node.attrs.src as string}
+          alt={(node.attrs.alt as string) || ''}
+          title={(node.attrs.title as string) || ''}
+          draggable={false}
+          className="block max-w-full select-none rounded-2xl"
+          style={{
+            display: 'block',
+            width: width ? '100%' : 'auto',
+            height: 'auto',
+            maxWidth: '100%',
+          }}
+        />
+
+        <div className={cn('absolute right-2 top-2 z-20 transition-opacity', showControls ? 'opacity-100' : 'pointer-events-none opacity-0')}>
+          <div className="relative">
+            <button
+              type="button"
+              title="Alinhar imagem"
+              aria-label="Alinhar imagem"
+              onMouseDown={(event) => event.preventDefault()}
+              onClick={() => setAlignMenuOpen((value) => !value)}
+              className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-sky-200 bg-white text-sky-700 shadow-[0_6px_16px_rgba(21,50,59,0.16)] transition hover:border-sky-300 hover:bg-sky-50"
+            >
+              <AlignCenterHorizontal className="h-4 w-4" />
+            </button>
+
+            {alignMenuOpen ? (
+              <div className="absolute right-0 top-full z-30 mt-2 w-36 rounded-2xl border border-slate-200 bg-white p-1 shadow-[0_16px_32px_rgba(15,23,42,0.18)]">
+                {[
+                  { value: 'left', label: 'Esquerda' },
+                  { value: 'center', label: 'Centro' },
+                  { value: 'right', label: 'Direita' },
+                ].map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onMouseDown={(event) => event.preventDefault()}
+                    onClick={() => handleSetAlign(option.value as RichTextImageAlign)}
+                    className={cn(
+                      'flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm font-semibold transition',
+                      align === option.value
+                        ? 'bg-sky-50 text-sky-800'
+                        : 'text-slate-700 hover:bg-slate-50',
+                    )}
+                  >
+                    <span className="flex-1">{option.label}</span>
+                  </button>
+                ))}
+              </div>
+            ) : null}
+          </div>
+        </div>
+
+        <button
+          type="button"
+          title="Redimensionar imagem"
+          aria-label="Redimensionar imagem"
+          onMouseDown={(event) => event.preventDefault()}
+          onPointerDown={handleResizePointerDown}
+          className={cn(
+            'absolute bottom-2 right-2 z-20 inline-flex h-8 w-8 items-center justify-center rounded-full border border-sky-200 bg-white text-sky-700 shadow-[0_6px_16px_rgba(21,50,59,0.16)] transition hover:border-sky-300 hover:bg-sky-50',
+            showControls ? 'opacity-100' : 'pointer-events-none opacity-0',
+          )}
+        >
+          <MoveDiagonal2 className="h-4 w-4" />
+        </button>
+      </div>
+    </NodeViewWrapper>
+  );
 }
 
 type ToolbarButtonProps = {
@@ -421,13 +685,35 @@ function createEditorExtensions(placeholder: string | undefined) {
         target: '_blank',
       },
     }),
-    Image.configure({
+    Image.extend({
+      addAttributes() {
+        return {
+          ...this.parent?.(),
+          align: {
+            default: 'center',
+            parseHTML: (element) => {
+              if (!(element instanceof HTMLElement)) {
+                return 'center';
+              }
+              return normalizeRichTextImageAlign(element.getAttribute('data-align'));
+            },
+            renderHTML: (attributes) => ({
+              'data-align': normalizeRichTextImageAlign(attributes.align),
+            }),
+          },
+        };
+      },
+
+      addNodeView() {
+        return ReactNodeViewRenderer(RichTextImageNodeView, {
+          as: 'div',
+          className: 'genflix-rich-text-image-node-view',
+        });
+      },
+    }).configure({
       inline: false,
       allowBase64: false,
-      HTMLAttributes: {
-        class: 'genflix-editor-image',
-        loading: 'lazy',
-      },
+      HTMLAttributes: {},
     }),
     TextAlign.configure({
       types: ['heading', 'paragraph'],
@@ -535,7 +821,7 @@ export default function ReactQuill({
           '[&_h4]:my-3 [&_h4]:text-lg [&_h4]:font-bold [&_h4]:leading-tight',
           '[&_h5]:my-2 [&_h5]:text-base [&_h5]:font-bold',
           '[&_h6]:my-2 [&_h6]:text-sm [&_h6]:font-bold',
-          '[&_img]:h-auto [&_img]:max-w-full',
+          '[&_img]:block [&_img]:h-auto [&_img]:max-w-full [&_img[data-align=left]]:ml-0 [&_img[data-align=left]]:mr-auto [&_img[data-align=center]]:mx-auto [&_img[data-align=right]]:ml-auto [&_img[data-align=right]]:mr-0',
           '[&_li]:my-1 [&_ol]:my-4 [&_ol]:list-decimal [&_ol]:pl-6',
           '[&_p]:my-3 [&_pre]:overflow-x-auto [&_pre]:rounded-xl [&_pre]:bg-slate-950 [&_pre]:p-4 [&_pre]:font-mono [&_pre]:text-slate-100',
           '[&_strong]:font-bold',

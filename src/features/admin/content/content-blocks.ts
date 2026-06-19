@@ -143,6 +143,7 @@ const ALLOWED_RICH_TEXT_TAGS = new Set([
     'ol',
     'p',
     'pre',
+    'img',
     's',
     'span',
     'strong',
@@ -150,6 +151,7 @@ const ALLOWED_RICH_TEXT_TAGS = new Set([
     'ul',
 ]);
 const ALLOWED_RICH_TEXT_ATTRS = new Set(['href', 'target', 'rel']);
+const ALLOWED_RICH_TEXT_IMG_ATTRS = new Set(['src', 'alt', 'title', 'width', 'height', 'data-align']);
 function isBrowser(): boolean {
     return typeof window !== 'undefined' && typeof DOMParser !== 'undefined';
 }
@@ -259,9 +261,10 @@ function sanitizeRichTextNode(element: Element): void {
         return;
     }
     ;
+    const allowedAttrs = tag === 'img' ? ALLOWED_RICH_TEXT_IMG_ATTRS : ALLOWED_RICH_TEXT_ATTRS;
     [...element.attributes].forEach((attribute) => {
         const name = attribute.name.toLowerCase();
-        if (name === 'style' || name.startsWith('on') || !ALLOWED_RICH_TEXT_ATTRS.has(name)) {
+        if (name === 'style' || name.startsWith('on') || !allowedAttrs.has(name)) {
             element.removeAttribute(attribute.name);
             return;
         }
@@ -272,7 +275,37 @@ function sanitizeRichTextNode(element: Element): void {
         if (name === 'target' && attribute.value !== '_blank') {
             element.setAttribute('target', '_blank');
         }
+        if (tag === 'img') {
+            if (name === 'src') {
+              const src = attribute.value.trim();
+              if (!src) {
+                  element.removeAttribute(attribute.name);
+              }
+              return;
+            }
+            if (name === 'width' || name === 'height') {
+                const parsed = Number.parseInt(attribute.value, 10);
+                if (!Number.isFinite(parsed) || parsed <= 0) {
+                    element.removeAttribute(attribute.name);
+                    return;
+                }
+                element.setAttribute(attribute.name, String(parsed));
+                return;
+            }
+            if (name === 'data-align') {
+                const nextAlign = attribute.value.toLowerCase();
+                if (nextAlign !== 'left' && nextAlign !== 'center' && nextAlign !== 'right') {
+                    element.setAttribute(attribute.name, 'center');
+                    return;
+                }
+                element.setAttribute(attribute.name, nextAlign);
+            }
+        }
     });
+    if (tag === 'img' && !(element.getAttribute('src')?.trim())) {
+        element.remove();
+        return;
+    }
     if (tag === 'a') {
         const href = element.getAttribute('href');
         if (href) {

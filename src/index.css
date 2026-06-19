@@ -652,6 +652,36 @@ tr:nth-child(even) {
   border-radius: 1rem;
 }
 
+.lesson-content-html .lesson-rich-text img,
+.blog-article-html img,
+.rich-text-content img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 1.25rem 0;
+}
+
+.lesson-content-html .lesson-rich-text img[data-align="left"],
+.blog-article-html img[data-align="left"],
+.rich-text-content img[data-align="left"] {
+  margin-left: 0;
+  margin-right: auto;
+}
+
+.lesson-content-html .lesson-rich-text img[data-align="center"],
+.blog-article-html img[data-align="center"],
+.rich-text-content img[data-align="center"] {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.lesson-content-html .lesson-rich-text img[data-align="right"],
+.blog-article-html img[data-align="right"],
+.rich-text-content img[data-align="right"] {
+  margin-left: auto;
+  margin-right: 0;
+}
+
 .blog-article-html table {
   width: 100%;
   border-collapse: collapse;
