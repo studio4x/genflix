@@ -14,7 +14,7 @@ import TableCell from '@tiptap/extension-table-cell';
 import Gapcursor from '@tiptap/extension-gapcursor';
 import { NodeSelection } from '@tiptap/pm/state';
 import { TextStyle } from '@tiptap/extension-text-style';
-import { AlignCenterHorizontal, Bold, Code2, Eraser, Film, Image as ImageIcon, Italic, Link2, List, ListOrdered, Minus, MoveDiagonal2, Redo2, Quote, Strikethrough, Table2, Undo2, Underline as UnderlineIcon, X } from 'lucide-react';
+import { AlignCenterHorizontal, Bold, Code2, Eraser, Film, Image as ImageIcon, Italic, Link2, List, ListOrdered, Minus, MoveDiagonal2, Redo2, Quote, Replace, Strikethrough, Table2, Undo2, Underline as UnderlineIcon, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 type ToolbarItem = string | Record<string, unknown> | Array<string | Record<string, unknown>>;
@@ -49,9 +49,13 @@ type RichTextImageSelection = {
   alt?: string;
 };
 
+type RichTextImageRequest = () => Promise<RichTextImageSelection | null> | RichTextImageSelection | null;
+
 type RichTextImageAlign = 'left' | 'center' | 'right';
 
-type RichTextImageNodeViewProps = ReactNodeViewProps<HTMLDivElement>;
+type RichTextImageNodeViewProps = ReactNodeViewProps<HTMLElement> & {
+  requestImage?: RichTextImageRequest;
+};
 
 type SupportedToolbarFlags = {
   header: boolean;
@@ -210,7 +214,7 @@ function sanitizeImageDimension(value: number) {
   return Number.isFinite(value) && value > 0 ? Math.round(value) : null;
 }
 
-function RichTextImageNodeView({ node, selected, updateAttributes, deleteNode, ref }: RichTextImageNodeViewProps) {
+function RichTextImageNodeView({ node, selected, updateAttributes, deleteNode, requestImage, ref }: RichTextImageNodeViewProps) {
   const imageRef = useRef<HTMLImageElement | null>(null);
   const wrapperRef = useRef<HTMLDivElement | null>(null);
   const resizeStateRef = useRef<{
@@ -236,7 +240,6 @@ function RichTextImageNodeView({ node, selected, updateAttributes, deleteNode, r
   const width = draftWidth ?? baseWidth;
   const height = draftHeight ?? baseHeight;
   const showControls = selected || isHovered || isResizing || alignMenuOpen;
-
   useEffect(() => {
     if (!selected) {
       setAlignMenuOpen(false);
@@ -280,6 +283,33 @@ function RichTextImageNodeView({ node, selected, updateAttributes, deleteNode, r
 
   function handleSetAlign(nextAlign: RichTextImageAlign) {
     updateAttributes({ align: nextAlign });
+    setAlignMenuOpen(false);
+  }
+
+  async function handleReplaceImage() {
+    let selectedImage: RichTextImageSelection | null | undefined;
+    if (requestImage) {
+      selectedImage = await requestImage();
+    }
+    else {
+      const src = window.prompt('Digite a URL da imagem');
+      if (!src) {
+        return;
+      }
+      const alt = window.prompt('Texto alternativo da imagem') ?? '';
+      selectedImage = { src, alt };
+    }
+
+    if (!selectedImage?.src?.trim()) {
+      return;
+    }
+
+    updateAttributes({
+      src: selectedImage.src.trim(),
+      alt: selectedImage.alt?.trim() || '',
+      width: null,
+      height: null,
+    });
     setAlignMenuOpen(false);
   }
 
@@ -405,7 +435,56 @@ function RichTextImageNodeView({ node, selected, updateAttributes, deleteNode, r
         />
 
         <div className={cn('absolute right-2 top-2 z-20 transition-opacity', showControls ? 'opacity-100' : 'pointer-events-none opacity-0')}>
-          <div className="relative flex items-center gap-2">
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              title="Substituir imagem"
+              aria-label="Substituir imagem"
+              onMouseDown={(event) => event.preventDefault()}
+              onClick={() => void handleReplaceImage()}
+              className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-sky-200 bg-white text-sky-700 shadow-[0_6px_16px_rgba(21,50,59,0.16)] transition hover:border-sky-300 hover:bg-sky-50"
+            >
+              <Replace className="h-4 w-4" />
+            </button>
+
+            <div className="relative">
+              <button
+                type="button"
+                title="Alinhar imagem"
+                aria-label="Alinhar imagem"
+                onMouseDown={(event) => event.preventDefault()}
+                onClick={() => setAlignMenuOpen((value) => !value)}
+                className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-sky-200 bg-white text-sky-700 shadow-[0_6px_16px_rgba(21,50,59,0.16)] transition hover:border-sky-300 hover:bg-sky-50"
+              >
+                <AlignCenterHorizontal className="h-4 w-4" />
+              </button>
+
+              {alignMenuOpen ? (
+                <div className="absolute right-0 top-full z-30 mt-2 w-36 rounded-2xl border border-slate-200 bg-white p-1 shadow-[0_16px_32px_rgba(15,23,42,0.18)]">
+                  {[
+                    { value: 'left', label: 'Esquerda' },
+                    { value: 'center', label: 'Centro' },
+                    { value: 'right', label: 'Direita' },
+                  ].map((option) => (
+                    <button
+                      key={option.value}
+                      type="button"
+                      onMouseDown={(event) => event.preventDefault()}
+                      onClick={() => handleSetAlign(option.value as RichTextImageAlign)}
+                      className={cn(
+                        'flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm font-semibold transition',
+                        align === option.value
+                          ? 'bg-sky-50 text-sky-800'
+                          : 'text-slate-700 hover:bg-slate-50',
+                      )}
+                    >
+                      <span className="flex-1">{option.label}</span>
+                    </button>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+
             <button
               type="button"
               title="Excluir imagem"
@@ -416,42 +495,6 @@ function RichTextImageNodeView({ node, selected, updateAttributes, deleteNode, r
             >
               <X className="h-4 w-4" />
             </button>
-
-            <button
-              type="button"
-              title="Alinhar imagem"
-              aria-label="Alinhar imagem"
-              onMouseDown={(event) => event.preventDefault()}
-              onClick={() => setAlignMenuOpen((value) => !value)}
-              className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-sky-200 bg-white text-sky-700 shadow-[0_6px_16px_rgba(21,50,59,0.16)] transition hover:border-sky-300 hover:bg-sky-50"
-            >
-              <AlignCenterHorizontal className="h-4 w-4" />
-            </button>
-
-            {alignMenuOpen ? (
-              <div className="absolute right-0 top-full z-30 mt-2 w-36 rounded-2xl border border-slate-200 bg-white p-1 shadow-[0_16px_32px_rgba(15,23,42,0.18)]">
-                {[
-                  { value: 'left', label: 'Esquerda' },
-                  { value: 'center', label: 'Centro' },
-                  { value: 'right', label: 'Direita' },
-                ].map((option) => (
-                  <button
-                    key={option.value}
-                    type="button"
-                    onMouseDown={(event) => event.preventDefault()}
-                    onClick={() => handleSetAlign(option.value as RichTextImageAlign)}
-                    className={cn(
-                      'flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm font-semibold transition',
-                      align === option.value
-                        ? 'bg-sky-50 text-sky-800'
-                        : 'text-slate-700 hover:bg-slate-50',
-                    )}
-                  >
-                    <span className="flex-1">{option.label}</span>
-                  </button>
-                ))}
-              </div>
-            ) : null}
           </div>
         </div>
 
@@ -679,7 +722,7 @@ const EmbeddedVideoNode = Node.create({
   },
 });
 
-function createEditorExtensions(placeholder: string | undefined) {
+function createEditorExtensions(placeholder: string | undefined, onRequestImage?: ReactQuillProps['onRequestImage']) {
   return [
     StarterKit.configure({
       heading: {
@@ -717,7 +760,12 @@ function createEditorExtensions(placeholder: string | undefined) {
       },
 
       addNodeView() {
-        return ReactNodeViewRenderer(RichTextImageNodeView, {
+        return ReactNodeViewRenderer((props) => (
+          <RichTextImageNodeView
+            {...props}
+            requestImage={onRequestImage}
+          />
+        ), {
           as: 'div',
           className: 'genflix-rich-text-image-node-view',
         });
@@ -817,7 +865,7 @@ export default function ReactQuill({
   }), [toolbarItems]);
 
   const editor = useEditor({
-    extensions: createEditorExtensions(placeholder),
+    extensions: createEditorExtensions(placeholder, onRequestImage),
     content: normalizeHtmlInput(value),
     editorProps: {
       attributes: {
@@ -1034,7 +1082,7 @@ export default function ReactQuill({
   }, [activeMode, editor, selectionTick, value]);
 
   const visualToolbar = (
-    <div className="border-b border-slate-200 bg-slate-50/80 px-4 py-3">
+    <div className="sticky top-0 z-30 border-b border-slate-200 bg-slate-50/95 px-4 py-3 shadow-[0_8px_18px_rgba(15,23,42,0.06)] backdrop-blur">
       <div className="flex flex-wrap items-center gap-1.5">
         {toolbarButtons.header ? (
           <label title="Escolher nível de título" className="inline-flex h-9 items-center rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-800 shadow-sm transition hover:border-slate-300 hover:bg-slate-50">
@@ -1195,7 +1243,7 @@ export default function ReactQuill({
   );
 
   return (
-    <div className={cn('react-quill-local flex flex-col overflow-hidden', className)}>
+    <div className={cn('react-quill-local flex flex-col overflow-visible', className)}>
       {enableHtmlMode ? (
         <div className="border-b border-slate-200 bg-gradient-to-r from-slate-50 via-white to-slate-50 px-4 py-3 text-slate-900">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
