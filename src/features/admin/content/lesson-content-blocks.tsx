@@ -1004,22 +1004,6 @@ export function LessonHtmlBlockEditor({ content, onChange, onError }: LessonHtml
                 </button>
             </div>
 
-            <div className="overflow-hidden rounded-[24px] border border-slate-200 bg-slate-50">
-                {standaloneIframe ? (
-                    <iframe
-                        title={standaloneIframe.title || 'Prévia do HTML'}
-                        src={standaloneIframe.src}
-                        allow={standaloneIframe.allow ?? undefined}
-                        allowFullScreen={standaloneIframe.allowFullScreen}
-                        loading={standaloneIframe.loading ?? undefined}
-                        referrerPolicy={standaloneIframe.referrerPolicy ?? 'no-referrer'}
-                        className="h-[72vh] min-h-[560px] w-full border-0 bg-white"
-                    />
-                ) : (
-                    <iframe title="Prévia do HTML" srcDoc={buildHtmlPreviewSrcDoc(content.html)} sandbox="allow-scripts allow-forms allow-popups allow-modals" referrerPolicy="no-referrer" className="h-[72vh] min-h-[560px] w-full border-0 bg-white" />
-                )}
-            </div>
-
             {inputMode === 'paste' ? (
                 <label className="block space-y-2">
                     <span className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Código HTML</span>
@@ -1078,6 +1062,22 @@ export function LessonHtmlBlockEditor({ content, onChange, onError }: LessonHtml
                     </div>
                 </div>
             )}
+
+            <div className="overflow-hidden rounded-[24px] border border-slate-200 bg-slate-50">
+                {standaloneIframe ? (
+                    <iframe
+                        title={standaloneIframe.title || 'Prévia do HTML'}
+                        src={standaloneIframe.src}
+                        allow={standaloneIframe.allow ?? undefined}
+                        allowFullScreen={standaloneIframe.allowFullScreen}
+                        loading={standaloneIframe.loading ?? undefined}
+                        referrerPolicy={standaloneIframe.referrerPolicy ?? 'no-referrer'}
+                        className="h-[72vh] min-h-[560px] w-full border-0 bg-white"
+                    />
+                ) : (
+                    <iframe title="Prévia do HTML" srcDoc={buildHtmlPreviewSrcDoc(content.html)} sandbox="allow-scripts allow-forms allow-popups allow-modals" referrerPolicy="no-referrer" className="h-[72vh] min-h-[560px] w-full border-0 bg-white" />
+                )}
+            </div>
 
             <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
                 Arquivos HTML com scripts funcionam melhor quando são autossuficientes. Recursos relativos precisam estar embutidos ou apontar para URLs públicas.
