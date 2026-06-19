@@ -955,6 +955,59 @@ export default function ReactQuill({
           color: #0f172a;
         }
 
+        .react-quill-local .tiptap-editor ::selection,
+        .react-quill-local textarea::selection {
+          background: rgba(191, 219, 254, 0.95);
+          color: #1d4ed8;
+        }
+
+        .react-quill-local .tiptap-editor ::-moz-selection,
+        .react-quill-local textarea::-moz-selection {
+          background: rgba(191, 219, 254, 0.95);
+          color: #1d4ed8;
+        }
+
+        .react-quill-local .tiptap-editor pre::selection,
+        .react-quill-local .tiptap-editor pre *::selection,
+        .react-quill-local .tiptap-editor .embedded-video::selection,
+        .react-quill-local .tiptap-editor .embedded-video *::selection,
+        .react-quill-local .tiptap-editor [class*="bg-[#1398B7]"]::selection,
+        .react-quill-local .tiptap-editor [class*="bg-[#0A3640]"]::selection,
+        .react-quill-local .tiptap-editor [class*="bg-[#0f4a54]"]::selection,
+        .react-quill-local .tiptap-editor [class*="bg-[#075a67]"]::selection,
+        .react-quill-local .tiptap-editor [class*="bg-blue-"]::selection,
+        .react-quill-local .tiptap-editor [class*="bg-cyan-"]::selection,
+        .react-quill-local .tiptap-editor [class*="bg-sky-"]::selection,
+        .react-quill-local .tiptap-editor [class*="bg-teal-"]::selection,
+        .react-quill-local .tiptap-editor [class*="bg-indigo-"]::selection,
+        .react-quill-local .tiptap-editor [style*="background-color: #1398B7" i]::selection,
+        .react-quill-local .tiptap-editor [style*="background-color:#1398B7" i]::selection,
+        .react-quill-local .tiptap-editor [style*="background-color: #0A3640" i]::selection,
+        .react-quill-local .tiptap-editor [style*="background-color:#0A3640" i]::selection,
+        .react-quill-local .tiptap-editor [style*="background-color: #0f4a54" i]::selection,
+        .react-quill-local .tiptap-editor [style*="background-color:#0f4a54" i]::selection,
+        .react-quill-local .tiptap-editor [style*="background-color: #075a67" i]::selection,
+        .react-quill-local .tiptap-editor [style*="background-color:#075a67" i]::selection,
+        .react-quill-local .tiptap-editor [style*="background-color: rgb(19, 152, 183)" i]::selection,
+        .react-quill-local .tiptap-editor [style*="background-color: rgb(10, 54, 64)" i]::selection,
+        .react-quill-local .tiptap-editor [style*="background: rgb(19, 152, 183)" i]::selection,
+        .react-quill-local .tiptap-editor [style*="background: rgb(10, 54, 64)" i]::selection,
+        .react-quill-local .tiptap-editor [style*="background-color: #1398B7" i]::-moz-selection,
+        .react-quill-local .tiptap-editor [style*="background-color:#1398B7" i]::-moz-selection,
+        .react-quill-local .tiptap-editor [style*="background-color: #0A3640" i]::-moz-selection,
+        .react-quill-local .tiptap-editor [style*="background-color:#0A3640" i]::-moz-selection,
+        .react-quill-local .tiptap-editor [style*="background-color: #0f4a54" i]::-moz-selection,
+        .react-quill-local .tiptap-editor [style*="background-color:#0f4a54" i]::-moz-selection,
+        .react-quill-local .tiptap-editor [style*="background-color: #075a67" i]::-moz-selection,
+        .react-quill-local .tiptap-editor [style*="background-color:#075a67" i]::-moz-selection,
+        .react-quill-local .tiptap-editor [style*="background-color: rgb(19, 152, 183)" i]::-moz-selection,
+        .react-quill-local .tiptap-editor [style*="background-color: rgb(10, 54, 64)" i]::-moz-selection,
+        .react-quill-local .tiptap-editor [style*="background: rgb(19, 152, 183)" i]::-moz-selection,
+        .react-quill-local .tiptap-editor [style*="background: rgb(10, 54, 64)" i]::-moz-selection {
+          background: rgba(10, 54, 64, 0.9);
+          color: #fff;
+        }
+
         .react-quill-local .tiptap-editor p.is-editor-empty:first-child::before {
           color: #94a3b8;
           content: attr(data-placeholder);
