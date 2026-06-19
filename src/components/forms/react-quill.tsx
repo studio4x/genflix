@@ -12,8 +12,9 @@ import TableRow from '@tiptap/extension-table-row';
 import TableHeader from '@tiptap/extension-table-header';
 import TableCell from '@tiptap/extension-table-cell';
 import Gapcursor from '@tiptap/extension-gapcursor';
+import { NodeSelection } from '@tiptap/pm/state';
 import { TextStyle } from '@tiptap/extension-text-style';
-import { AlignCenterHorizontal, Bold, Code2, Eraser, Film, Image as ImageIcon, Italic, Link2, List, ListOrdered, Minus, MoveDiagonal2, Redo2, Quote, Strikethrough, Table2, Undo2, Underline as UnderlineIcon } from 'lucide-react';
+import { AlignCenterHorizontal, Bold, Code2, Eraser, Film, Image as ImageIcon, Italic, Link2, List, ListOrdered, Minus, MoveDiagonal2, Redo2, Quote, Strikethrough, Table2, Undo2, Underline as UnderlineIcon, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 type ToolbarItem = string | Record<string, unknown> | Array<string | Record<string, unknown>>;
@@ -209,7 +210,7 @@ function sanitizeImageDimension(value: number) {
   return Number.isFinite(value) && value > 0 ? Math.round(value) : null;
 }
 
-function RichTextImageNodeView({ node, selected, updateAttributes, ref }: RichTextImageNodeViewProps) {
+function RichTextImageNodeView({ node, selected, updateAttributes, deleteNode, ref }: RichTextImageNodeViewProps) {
   const imageRef = useRef<HTMLImageElement | null>(null);
   const wrapperRef = useRef<HTMLDivElement | null>(null);
   const resizeStateRef = useRef<{
@@ -404,7 +405,18 @@ function RichTextImageNodeView({ node, selected, updateAttributes, ref }: RichTe
         />
 
         <div className={cn('absolute right-2 top-2 z-20 transition-opacity', showControls ? 'opacity-100' : 'pointer-events-none opacity-0')}>
-          <div className="relative">
+          <div className="relative flex items-center gap-2">
+            <button
+              type="button"
+              title="Excluir imagem"
+              aria-label="Excluir imagem"
+              onMouseDown={(event) => event.preventDefault()}
+              onClick={() => deleteNode()}
+              className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-rose-200 bg-white text-rose-700 shadow-[0_6px_16px_rgba(21,50,59,0.16)] transition hover:border-rose-300 hover:bg-rose-50"
+            >
+              <X className="h-4 w-4" />
+            </button>
+
             <button
               type="button"
               title="Alinhar imagem"
@@ -882,6 +894,9 @@ export default function ReactQuill({
     if (!editor) {
       return;
     }
+    const selectionBeforeRequest = editor.state.selection;
+    const shouldReplaceCurrentImage = selectionBeforeRequest instanceof NodeSelection && selectionBeforeRequest.node.type.name === 'image';
+    const previousImageAlt = shouldReplaceCurrentImage ? (selectionBeforeRequest.node.attrs.alt as string | null | undefined) : null;
     let selectedImage: RichTextImageSelection | null | undefined;
     if (onRequestImage) {
       selectedImage = await onRequestImage();
@@ -897,9 +912,20 @@ export default function ReactQuill({
     if (!selectedImage?.src?.trim()) {
       return;
     }
+    const nextSrc = selectedImage.src.trim();
+    const nextAlt = selectedImage.alt?.trim();
+    if (shouldReplaceCurrentImage) {
+      editor.chain().focus().updateAttributes('image', {
+        src: nextSrc,
+        alt: nextAlt ?? previousImageAlt ?? '',
+        width: null,
+        height: null,
+      }).run();
+      return;
+    }
     editor.chain().focus().setImage({
-      src: selectedImage.src.trim(),
-      alt: selectedImage.alt?.trim() || '',
+      src: nextSrc,
+      alt: nextAlt || '',
     }).run();
   }
 
@@ -1110,7 +1136,7 @@ export default function ReactQuill({
           </ToolbarButton>
         ) : null}
         {toolbarButtons.image ? (
-          <ToolbarButton title="Inserir imagem" onClick={() => void handleInsertImage()} className="w-9 px-0">
+          <ToolbarButton title={editor?.state.selection instanceof NodeSelection && editor.state.selection.node.type.name === 'image' ? 'Substituir imagem' : 'Inserir imagem'} onClick={() => void handleInsertImage()} className="w-9 px-0">
             <ImageIcon className="h-4 w-4" />
           </ToolbarButton>
         ) : null}
