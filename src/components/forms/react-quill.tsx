@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react';
+﻿import { useEffect, useMemo, useRef, useState, type ChangeEvent, type ReactNode } from 'react';
 import { EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { mergeAttributes, Node } from '@tiptap/core';
@@ -13,6 +13,7 @@ import TableHeader from '@tiptap/extension-table-header';
 import TableCell from '@tiptap/extension-table-cell';
 import Gapcursor from '@tiptap/extension-gapcursor';
 import { TextStyle } from '@tiptap/extension-text-style';
+import { Bold, Code2, Eraser, Image as ImageIcon, Italic, Link2, List, ListOrdered, Minus, Redo2, Quote, Strikethrough, Table2, Undo2, Underline as UnderlineIcon, Film } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 type ToolbarItem = string | Record<string, unknown> | Array<string | Record<string, unknown>>;
@@ -194,6 +195,56 @@ function buildEqualColumnWidths(columns: number) {
 
 function createFilledParagraph(editor: any) {
   return editor.schema.nodes.paragraph.createAndFill() ?? editor.schema.nodes.paragraph.create();
+}
+
+type ToolbarGroupProps = {
+  label: string;
+  children: ReactNode;
+  className?: string;
+};
+
+type ToolbarButtonProps = {
+  children: ReactNode;
+  className?: string;
+  disabled?: boolean;
+  active?: boolean;
+  title: string;
+  onClick: () => void;
+};
+
+function ToolbarGroup({ label, children, className = '' }: ToolbarGroupProps) {
+  return (
+    <div className={cn('rounded-2xl border border-slate-200 bg-white/95 p-3 shadow-sm', className)}>
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <span className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">{label}</span>
+      </div>
+      <div className="flex flex-wrap items-center gap-1.5">{children}</div>
+    </div>
+  );
+}
+
+function ToolbarButton({ children, className = '', disabled = false, active = false, title, onClick }: ToolbarButtonProps) {
+  return (
+    <button
+      type="button"
+      title={title}
+      aria-pressed={active}
+      disabled={disabled}
+      onClick={onClick}
+      className={cn(
+        'inline-flex h-10 items-center justify-center rounded-xl border px-3 text-sm font-semibold transition',
+        'focus:outline-none focus:ring-2 focus:ring-[#CBEAF3] focus:ring-offset-1',
+        disabled
+          ? 'cursor-not-allowed border-slate-200 bg-slate-100 text-slate-300'
+          : active
+            ? 'border-[#0A3640] bg-[#0A3640] text-white shadow-sm'
+            : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50',
+        className,
+      )}
+    >
+      {children}
+    </button>
+  );
 }
 
 const ColumnNode = Node.create({
@@ -433,6 +484,9 @@ export default function ReactQuill({
 }: ReactQuillProps) {
   const [activeMode, setActiveMode] = useState<'visual' | 'html'>('visual');
   const [selectionTick, setSelectionTick] = useState(0);
+  const [headingChoice, setHeadingChoice] = useState('');
+  const [alignChoice, setAlignChoice] = useState('');
+  const [columnsChoice, setColumnsChoice] = useState('');
   const onChangeRef = useRef(onChange);
   const activeModeRef = useRef(activeMode);
 
@@ -677,170 +731,201 @@ export default function ReactQuill({
   }, [activeMode, editor, selectionTick, value]);
 
   const visualToolbar = (
-    <div className="flex flex-wrap gap-2 border-b border-slate-200 bg-slate-50 px-4 py-3">
-      {toolbarButtons.header ? (
-        <select
-          className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm"
-          onChange={(event) => {
-            const level = event.currentTarget.value;
-            if (!level) {
-              return;
-            }
-            setHeading(level === 'false' ? false : Number.parseInt(level, 10));
-            event.currentTarget.value = '';
-          }}
-          defaultValue=""
-        >
-          <option value="" disabled>
-            Estrutura
-          </option>
-          <option value="1">H1</option>
-          <option value="2">H2</option>
-          <option value="3">H3</option>
-          <option value="4">H4</option>
-          <option value="5">H5</option>
-          <option value="6">H6</option>
-          <option value="false">Parágrafo</option>
-        </select>
-      ) : null}
-      {toolbarButtons.bold ? (
-        <button type="button" className={cn('rounded-lg border px-3 py-1.5 font-black', editor?.isActive('bold') ? 'border-[#1398B7] bg-[#E8F6FA] text-[#0A3640]' : 'border-slate-200 bg-white hover:bg-slate-100')} onClick={() => editor?.chain().focus().toggleBold().run()}>
-          B
-        </button>
-      ) : null}
-      {toolbarButtons.italic ? (
-        <button type="button" className={cn('rounded-lg border px-3 py-1.5 italic', editor?.isActive('italic') ? 'border-[#1398B7] bg-[#E8F6FA] text-[#0A3640]' : 'border-slate-200 bg-white hover:bg-slate-100')} onClick={() => editor?.chain().focus().toggleItalic().run()}>
-          I
-        </button>
-      ) : null}
-      {toolbarButtons.underline ? (
-        <button type="button" className={cn('rounded-lg border px-3 py-1.5 underline', editor?.isActive('underline') ? 'border-[#1398B7] bg-[#E8F6FA] text-[#0A3640]' : 'border-slate-200 bg-white hover:bg-slate-100')} onClick={() => editor?.chain().focus().toggleUnderline().run()}>
-          U
-        </button>
-      ) : null}
-      {toolbarButtons.strike ? (
-        <button type="button" className={cn('rounded-lg border px-3 py-1.5 line-through', editor?.isActive('strike') ? 'border-[#1398B7] bg-[#E8F6FA] text-[#0A3640]' : 'border-slate-200 bg-white hover:bg-slate-100')} onClick={() => editor?.chain().focus().toggleStrike().run()}>
-          S
-        </button>
-      ) : null}
-      {toolbarButtons.align ? (
-        <select
-          className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm"
-          onChange={(event) => {
-            const alignment = event.currentTarget.value;
-            if (!alignment) {
-              return;
-            }
-            handleSetAlign(alignment);
-            event.currentTarget.value = '';
-          }}
-          defaultValue=""
-        >
-          <option value="" disabled>
-            Alinhar
-          </option>
-          <option value="left">Esquerda</option>
-          <option value="center">Centro</option>
-          <option value="right">Direita</option>
-          <option value="justify">Justificar</option>
-        </select>
-      ) : null}
-      {toolbarButtons.ordered ? (
-        <button type="button" className={cn('rounded-lg border px-3 py-1.5', editor?.isActive('orderedList') ? 'border-[#1398B7] bg-[#E8F6FA] text-[#0A3640]' : 'border-slate-200 bg-white hover:bg-slate-100')} onClick={() => editor?.chain().focus().toggleOrderedList().run()}>
-          Lista 1.
-        </button>
-      ) : null}
-      {toolbarButtons.bullet ? (
-        <button type="button" className={cn('rounded-lg border px-3 py-1.5', editor?.isActive('bulletList') ? 'border-[#1398B7] bg-[#E8F6FA] text-[#0A3640]' : 'border-slate-200 bg-white hover:bg-slate-100')} onClick={() => editor?.chain().focus().toggleBulletList().run()}>
-          Lista
-        </button>
-      ) : null}
-      {toolbarButtons.blockquote ? (
-        <button type="button" className={cn('rounded-lg border px-3 py-1.5', editor?.isActive('blockquote') ? 'border-[#1398B7] bg-[#E8F6FA] text-[#0A3640]' : 'border-slate-200 bg-white hover:bg-slate-100')} onClick={() => editor?.chain().focus().toggleBlockquote().run()}>
-          Citação
-        </button>
-      ) : null}
-      {toolbarButtons.codeBlock ? (
-        <button type="button" className={cn('rounded-lg border px-3 py-1.5', editor?.isActive('codeBlock') ? 'border-[#1398B7] bg-[#E8F6FA] text-[#0A3640]' : 'border-slate-200 bg-white hover:bg-slate-100')} onClick={() => editor?.chain().focus().toggleCodeBlock().run()}>
-          Código
-        </button>
-      ) : null}
-      {toolbarButtons.link ? (
-        <>
-          <button type="button" className={cn('rounded-lg border px-3 py-1.5', editor?.isActive('link') ? 'border-[#1398B7] bg-[#E8F6FA] text-[#0A3640]' : 'border-slate-200 bg-white hover:bg-slate-100')} onClick={handleInsertLink}>
-            Link
-          </button>
-          <button type="button" className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 hover:bg-slate-100" onClick={() => editor?.chain().focus().extendMarkRange('link').unsetLink().run()}>
-            Remover link
-          </button>
-        </>
-      ) : null}
-      {toolbarButtons.image ? (
-        <button type="button" className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 hover:bg-slate-100" onClick={() => void handleInsertImage()}>
-          Imagem
-        </button>
-      ) : null}
-      {toolbarButtons.video ? (
-        <button type="button" className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 hover:bg-slate-100" onClick={handleInsertVideo}>
-          Vídeo
-        </button>
-      ) : null}
-      {toolbarButtons.table ? (
-        <button type="button" className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 hover:bg-slate-100" onClick={handleInsertTable}>
-          Tabela
-        </button>
-      ) : null}
-      {toolbarButtons.columns ? (
-        <select
-          className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm"
-          onChange={handleInsertColumns}
-          defaultValue=""
-        >
-          <option value="" disabled>
-            Colunas
-          </option>
-          <option value="1">1 coluna</option>
-          <option value="2">2 colunas</option>
-          <option value="3">3 colunas</option>
-          <option value="4">4 colunas</option>
-        </select>
-      ) : null}
-      {toolbarButtons.horizontalRule ? (
-        <button type="button" className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 hover:bg-slate-100" onClick={() => editor?.chain().focus().setHorizontalRule().run()}>
-          Linha
-        </button>
-      ) : null}
-      {toolbarButtons.clean ? (
-        <button type="button" className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 hover:bg-slate-100" onClick={handleCleanFormatting}>
-          Limpar
-        </button>
-      ) : null}
-      {toolbarButtons.undo ? (
-        <button type="button" className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 hover:bg-slate-100" onClick={() => editor?.chain().focus().undo().run()}>
-          Desfazer
-        </button>
-      ) : null}
-      {toolbarButtons.redo ? (
-        <button type="button" className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 hover:bg-slate-100" onClick={() => editor?.chain().focus().redo().run()}>
-          Refazer
-        </button>
-      ) : null}
+    <div className="border-b border-slate-200 bg-slate-50/80 px-4 py-4">
+      <div className="grid gap-3 [grid-template-columns:repeat(auto-fit,minmax(240px,1fr))]">
+        <ToolbarGroup label="Estrutura">
+          {toolbarButtons.header ? (
+            <label title="Escolher nível de título" className="inline-flex h-10 items-center rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50">
+              <select
+                value={headingChoice}
+                onChange={(event) => {
+                  const level = event.currentTarget.value;
+                  if (!level) {
+                    return;
+                  }
+                  setHeading(level === 'false' ? false : Number.parseInt(level, 10));
+                  setHeadingChoice('');
+                }}
+                className="min-w-0 border-0 bg-transparent p-0 text-sm font-semibold text-slate-700 outline-none focus:ring-0"
+              >
+                <option value="" disabled>
+                  Estrutura
+                </option>
+                <option value="1">H1</option>
+                <option value="2">H2</option>
+                <option value="3">H3</option>
+                <option value="4">H4</option>
+                <option value="5">H5</option>
+                <option value="6">H6</option>
+                <option value="false">Parágrafo</option>
+              </select>
+            </label>
+          ) : null}
+          {toolbarButtons.align ? (
+            <label title="Alinhamento do texto" className="inline-flex h-10 items-center rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50">
+              <select
+                value={alignChoice}
+                onChange={(event) => {
+                  const alignment = event.currentTarget.value;
+                  if (!alignment) {
+                    return;
+                  }
+                  handleSetAlign(alignment);
+                  setAlignChoice('');
+                }}
+                className="min-w-0 border-0 bg-transparent p-0 text-sm font-semibold text-slate-700 outline-none focus:ring-0"
+              >
+                <option value="" disabled>
+                  Alinhar
+                </option>
+                <option value="left">Esquerda</option>
+                <option value="center">Centro</option>
+                <option value="right">Direita</option>
+                <option value="justify">Justificar</option>
+              </select>
+            </label>
+          ) : null}
+        </ToolbarGroup>
+
+        <ToolbarGroup label="Texto">
+          {toolbarButtons.bold ? (
+            <ToolbarButton title="Negrito" active={editor?.isActive('bold') ?? false} onClick={() => editor?.chain().focus().toggleBold().run()} className="w-10 px-0">
+              <Bold className="h-4 w-4" />
+            </ToolbarButton>
+          ) : null}
+          {toolbarButtons.italic ? (
+            <ToolbarButton title="Itálico" active={editor?.isActive('italic') ?? false} onClick={() => editor?.chain().focus().toggleItalic().run()} className="w-10 px-0">
+              <Italic className="h-4 w-4" />
+            </ToolbarButton>
+          ) : null}
+          {toolbarButtons.underline ? (
+            <ToolbarButton title="Sublinhado" active={editor?.isActive('underline') ?? false} onClick={() => editor?.chain().focus().toggleUnderline().run()} className="w-10 px-0">
+              <UnderlineIcon className="h-4 w-4" />
+            </ToolbarButton>
+          ) : null}
+          {toolbarButtons.strike ? (
+            <ToolbarButton title="Tachado" active={editor?.isActive('strike') ?? false} onClick={() => editor?.chain().focus().toggleStrike().run()} className="w-10 px-0">
+              <Strikethrough className="h-4 w-4" />
+            </ToolbarButton>
+          ) : null}
+        </ToolbarGroup>
+
+        <ToolbarGroup label="Listas e blocos">
+          {toolbarButtons.ordered ? (
+            <ToolbarButton title="Lista numerada" active={editor?.isActive('orderedList') ?? false} onClick={() => editor?.chain().focus().toggleOrderedList().run()} className="w-10 px-0">
+              <ListOrdered className="h-4 w-4" />
+            </ToolbarButton>
+          ) : null}
+          {toolbarButtons.bullet ? (
+            <ToolbarButton title="Lista com marcadores" active={editor?.isActive('bulletList') ?? false} onClick={() => editor?.chain().focus().toggleBulletList().run()} className="w-10 px-0">
+              <List className="h-4 w-4" />
+            </ToolbarButton>
+          ) : null}
+          {toolbarButtons.blockquote ? (
+            <ToolbarButton title="Citação" active={editor?.isActive('blockquote') ?? false} onClick={() => editor?.chain().focus().toggleBlockquote().run()} className="w-10 px-0">
+              <Quote className="h-4 w-4" />
+            </ToolbarButton>
+          ) : null}
+          {toolbarButtons.codeBlock ? (
+            <ToolbarButton title="Bloco de código" active={editor?.isActive('codeBlock') ?? false} onClick={() => editor?.chain().focus().toggleCodeBlock().run()} className="w-10 px-0">
+              <Code2 className="h-4 w-4" />
+            </ToolbarButton>
+          ) : null}
+          {toolbarButtons.horizontalRule ? (
+            <ToolbarButton title="Linha divisória" onClick={() => editor?.chain().focus().setHorizontalRule().run()} className="w-10 px-0">
+              <Minus className="h-4 w-4" />
+            </ToolbarButton>
+          ) : null}
+        </ToolbarGroup>
+
+        <ToolbarGroup label="Inserir">
+          {toolbarButtons.link ? (
+            <>
+              <ToolbarButton title="Inserir link" active={editor?.isActive('link') ?? false} onClick={handleInsertLink} className="w-10 px-0">
+                <Link2 className="h-4 w-4" />
+              </ToolbarButton>
+              <ToolbarButton title="Remover link" onClick={() => editor?.chain().focus().extendMarkRange('link').unsetLink().run()} className="w-10 px-0">
+                <Link2 className="h-4 w-4 rotate-45" />
+              </ToolbarButton>
+            </>
+          ) : null}
+          {toolbarButtons.image ? (
+            <ToolbarButton title="Inserir imagem" onClick={() => void handleInsertImage()} className="w-10 px-0">
+              <ImageIcon className="h-4 w-4" />
+            </ToolbarButton>
+          ) : null}
+          {toolbarButtons.video ? (
+            <ToolbarButton title="Inserir vídeo" onClick={handleInsertVideo} className="w-10 px-0">
+              <Film className="h-4 w-4" />
+            </ToolbarButton>
+          ) : null}
+          {toolbarButtons.table ? (
+            <ToolbarButton title="Inserir tabela" onClick={handleInsertTable} className="w-10 px-0">
+              <Table2 className="h-4 w-4" />
+            </ToolbarButton>
+          ) : null}
+          {toolbarButtons.columns ? (
+            <label title="Inserir colunas" className="inline-flex h-10 items-center rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50">
+              <select
+                value={columnsChoice}
+                onChange={(event) => {
+                  handleInsertColumns(event);
+                  setColumnsChoice('');
+                }}
+                className="min-w-0 border-0 bg-transparent p-0 text-sm font-semibold text-slate-700 outline-none focus:ring-0"
+              >
+                <option value="" disabled>
+                  Colunas
+                </option>
+                <option value="1">1 coluna</option>
+                <option value="2">2 colunas</option>
+                <option value="3">3 colunas</option>
+                <option value="4">4 colunas</option>
+              </select>
+            </label>
+          ) : null}
+        </ToolbarGroup>
+
+        <ToolbarGroup label="Ações">
+          {toolbarButtons.clean ? (
+            <ToolbarButton title="Limpar formatação" onClick={handleCleanFormatting} className="w-10 px-0">
+              <Eraser className="h-4 w-4" />
+            </ToolbarButton>
+          ) : null}
+          {toolbarButtons.undo ? (
+            <ToolbarButton title="Desfazer" onClick={() => editor?.chain().focus().undo().run()} className="w-10 px-0">
+              <Undo2 className="h-4 w-4" />
+            </ToolbarButton>
+          ) : null}
+          {toolbarButtons.redo ? (
+            <ToolbarButton title="Refazer" onClick={() => editor?.chain().focus().redo().run()} className="w-10 px-0">
+              <Redo2 className="h-4 w-4" />
+            </ToolbarButton>
+          ) : null}
+        </ToolbarGroup>
+      </div>
     </div>
   );
 
   return (
     <div className={cn('react-quill-local flex flex-col overflow-hidden', className)}>
       {enableHtmlMode ? (
-        <div className="flex items-center justify-between gap-3 border-b border-slate-200 bg-slate-50 px-4 py-3">
-          <div className="flex items-center gap-2">
-            <span className="inline-flex rounded-full bg-[#E8F6FA] px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-[#0A3640]">
-              Editor rico
-            </span>
-            <span className="text-xs font-semibold text-slate-500">
-              Altere entre visual e HTML quando precisar.
-            </span>
-          </div>
-          <div className="inline-flex rounded-full border border-slate-200 bg-white p-1">
+        <div className="border-b border-slate-200 bg-gradient-to-r from-slate-50 via-white to-slate-50 px-4 py-3">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+            <div className="space-y-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="inline-flex rounded-full bg-[#E8F6FA] px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-[#0A3640]">
+                  Editor rico
+                </span>
+                <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-[11px] font-semibold text-slate-500">
+                  {textStats.words} palavras · {textStats.characters} caracteres
+                </span>
+              </div>
+              <span className="block text-sm font-medium text-slate-500">
+                Altere entre visual e HTML quando precisar. A barra abaixo reúne as ações mais usadas por grupo.
+              </span>
+            </div>
+            <div className="inline-flex rounded-full border border-slate-200 bg-white p-1 shadow-sm">
             <button
               type="button"
               onClick={() => setActiveMode('visual')}
@@ -855,6 +940,7 @@ export default function ReactQuill({
             >
               {htmlTabLabel}
             </button>
+            </div>
           </div>
         </div>
       ) : null}
@@ -883,8 +969,10 @@ export default function ReactQuill({
       )}
 
       <div className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-200 bg-slate-50 px-4 py-3 text-[11px] font-semibold text-slate-500">
-        <span>{activeMode === 'visual' ? 'Edite visualmente e alterne para HTML quando precisar.' : 'Modo HTML liberado para colar ou ajustar marcação manualmente.'}</span>
-        <span>{textStats.words} palavras • {textStats.characters} caracteres</span>
+        <span>{activeMode === 'visual' ? 'Modo visual ativo. Use os grupos abaixo para estruturar e inserir conteúdo.' : 'Modo HTML ativo. Aqui você pode ajustar a marcação manualmente.'}</span>
+        <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">
+          HTML como fonte
+        </span>
       </div>
 
       <style>{`
@@ -941,3 +1029,5 @@ export default function ReactQuill({
     </div>
   );
 }
+
+
