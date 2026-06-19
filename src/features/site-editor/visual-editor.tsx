@@ -672,6 +672,9 @@ function parseEditorValue(entryType: SiteContentEntryType, rawValue: string) {
     }
     return sanitizeRichText(rawValue);
 }
+function getEditorInstanceKey(editor: EditorInput) {
+    return [editor.pageKey, editor.entryKey, editor.entryType, editor.styleEntryKey ?? ''].join(':');
+}
 function workflowStatusClasses(status: SiteEditorWorkflowStatus) {
     switch (status) {
         case 'draft':
@@ -1418,6 +1421,7 @@ function EditorModal({ editor, onClose, onSaved, }: {
         textStyle: TextStyleValue;
     }>>([]);
     const skipHistoryRef = useRef(true);
+    const editorInstanceKey = getEditorInstanceKey(editor);
     const previousSnapshotRef = useRef<{
         rawValue: string;
         textStyle: TextStyleValue;
@@ -1596,6 +1600,29 @@ function EditorModal({ editor, onClose, onSaved, }: {
         }
         onClose();
     }, [isDirty, onClose]);
+    useEffect(() => {
+        richTextImageResolverRef.current?.(null);
+        richTextImageResolverRef.current = null;
+        skipHistoryRef.current = true;
+        previousSnapshotRef.current = {
+            rawValue: initialRawValue,
+            textStyle: initialTextStyle,
+        };
+        setRawValue(initialRawValue);
+        setTextStyle(initialTextStyle);
+        setHistory([]);
+        setFuture([]);
+        setUploadAlt('');
+        setRichTextImageAlt('');
+        setMessage(null);
+        setPreviewViewport('desktop');
+        setAssetLibrary([]);
+        setIsRichTextImagePickerOpen(false);
+        setDraftComment('');
+        setWorkspaceState({});
+        setRevisionHistory([]);
+        setRestoringVersionId(null);
+    }, [editorInstanceKey, initialRawValue, initialTextStyle]);
     useEffect(() => {
         let isMounted = true;
         setIsLoadingWorkspace(true);
@@ -3120,7 +3147,7 @@ export function VisualEditorProvider({ children }: {
             {isTrayExpanded ? <X className="h-5 w-5"/> : <PanelBottomOpen className="h-5 w-5"/>}
           </button>
         </div>) : null}
-      {editor ? (<EditorModal editor={editor} onClose={() => setEditor(null)} onSaved={() => {
+      {editor ? (<EditorModal key={getEditorInstanceKey(editor)} editor={editor} onClose={() => setEditor(null)} onSaved={() => {
                 setEditor(null);
                 void loadSettings();
             }}/>) : null}
