@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { BadgeCheck, ChevronDown, CirclePlay, Sparkles } from 'lucide-react';
+import { BadgeCheck, ChevronDown, CirclePlay } from 'lucide-react';
 import { Link, Navigate, useParams } from 'react-router-dom';
 import { CourseCoverMedia } from '@/components/public/course-cover-media';
 import { GenflixCtaButton } from '@/components/public/genflix-cta-button';
@@ -7,13 +7,17 @@ import { GenflixPublicFooter } from '@/components/public/genflix-public-footer';
 import { GenflixPublicHeader } from '@/components/public/genflix-public-header';
 import { BannerPlacementSlot } from '@/features/banners/banner-placement-slot';
 import { genflixNavLinks, type GenflixCourseDetail, } from '@/features/public/genflix-site-content';
-import { genflixStudyFeatureCardsFallback, genflixStudyFeatureCardsSchema, resolveStudyFeatureIconKey, } from '@/features/public/genflix-study-feature-editor';
+import { genflixStudyFeatureCardsFallback, genflixStudyFeatureCardsSchema, } from '@/features/public/genflix-study-feature-editor';
 import { fetchPublicCourseDetailFromSupabase } from '@/features/public/genflix-public-content-api';
 import { CourseReviewsSection } from '@/features/reviews/course-reviews-section';
 import { cn } from '@/lib/utils';
 import { EditableList, isEditableItemVisible } from '@/features/site-editor/visual-editor';
 import { renderSiteIconVisual } from '@/features/site-editor/site-icons';
 import { dispatchSiteViewItemEvent } from '@/features/site-editor/site-tracking';
+import { fetchSiteContent } from '@/features/site-editor/api';
+import { normalizeResourcesItems } from '@/features/public/genflix-resource-items-editor';
+import type { EditableListItem } from '@/features/site-editor/types';
+import { resolveStudyFeatureIconKey } from '@/features/public/genflix-study-feature-editor';
 function parsePriceLabelToNumber(priceLabel: string) {
     const normalized = priceLabel.replace(/\s+/g, '').replace(/[R$]/gi, '').replace(/\./g, '').replace(',', '.');
     const value = Number.parseFloat(normalized);
@@ -24,6 +28,7 @@ export function PublicCourseDetailsPage() {
     const [detail, setDetail] = useState<GenflixCourseDetail | null>(null);
     const [isLoadingDetail, setIsLoadingDetail] = useState(true);
     const [openModule, setOpenModule] = useState(0);
+    const [resourceCatalog, setResourceCatalog] = useState<EditableListItem[]>([]);
     const trackedCourseRef = useRef<string | null>(null);
     useEffect(() => {
         let isMounted = true;
@@ -52,6 +57,27 @@ export function PublicCourseDetailsPage() {
         };
     }, [slug]);
     useEffect(() => {
+        let isMounted = true;
+        async function loadResources() {
+            try {
+                const entries = await fetchSiteContent('resources');
+                const resourcesEntry = entries.find((entry) => entry.entry_key === 'resources.items');
+                if (isMounted) {
+                    setResourceCatalog(normalizeResourcesItems(resourcesEntry?.value));
+                }
+            }
+            catch {
+                if (isMounted) {
+                    setResourceCatalog([]);
+                }
+            }
+        }
+        void loadResources();
+        return () => {
+            isMounted = false;
+        };
+    }, []);
+    useEffect(() => {
         if (!detail) {
             return;
         }
@@ -67,6 +93,9 @@ export function PublicCourseDetailsPage() {
             value: parsePriceLabelToNumber(detail.priceLabel),
         });
     }, [detail]);
+    const selectedResourceItems = detail?.resourceItemIds?.length
+        ? resourceCatalog.filter((item) => detail.resourceItemIds?.includes(item.id))
+        : [];
     if (!isLoadingDetail && !detail) {
         return <Navigate to="/cursos" replace/>;
     }
@@ -86,6 +115,7 @@ export function PublicCourseDetailsPage() {
               <p className="text-[11px] font-bold uppercase tracking-[0.26em] text-[#1398B7]">
                 {detail.categoryLine}
               </p>
+              {detail.logoUrl ? (<img src={detail.logoUrl} alt={`Logo do curso ${detail.title}`} className="mt-4 h-14 max-w-[180px] object-contain"/>) : null}
               <h1 className="mt-3 max-w-[640px] text-[2.5rem] font-extrabold leading-[0.94] tracking-[-0.05em] text-[#183139] sm:text-[3rem]">
                 {detail.title}
               </h1>
@@ -100,19 +130,6 @@ export function PublicCourseDetailsPage() {
                     {detail.aboutParagraphs.map((paragraph) => (<p key={paragraph} className="max-w-[760px] text-[15px] leading-7 text-[#5f7178]">
                         {paragraph}
                       </p>))}
-                  </div>
-                </section>
-
-                <section>
-                  <h2 className="text-[1.45rem] font-bold tracking-[-0.03em] text-[#183139]">O que você vai aprender</h2>
-                  <div className="mt-5 grid gap-4 md:grid-cols-2">
-                    {detail.outcomes.map((outcome) => (<article key={outcome.title} className="rounded-[22px] border border-[#D8E6EB] bg-[#F2F7F9] px-5 py-5 shadow-[0_14px_32px_rgba(21,50,59,0.04)]">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#E8F6FA] text-[#1398B7]">
-                          <Sparkles className="h-4 w-4"/>
-                        </div>
-                        <h3 className="mt-4 text-base font-bold text-[#183139]">{outcome.title}</h3>
-                        <p className="mt-2 text-sm leading-7 text-[#67797f]">{outcome.description}</p>
-                      </article>))}
                   </div>
                 </section>
 
@@ -155,7 +172,7 @@ export function PublicCourseDetailsPage() {
             <aside className="lg:sticky lg:top-24">
               <div className="overflow-hidden rounded-[26px] border border-[#D8E6EB] bg-white shadow-[0_24px_60px_rgba(21,50,59,0.08)]">
                 <div className="relative aspect-[4/3] overflow-hidden bg-[#173039]">
-                  <CourseCoverMedia src={detail.coverImage} alt={detail.title} title={detail.title} category={detail.categoryLine} initials={detail.mentor.initials} placeholderClassName="p-6"/>
+                  <CourseCoverMedia src={detail.coverImage} videoSrc={detail.heroVideoUrl} alt={detail.title} title={detail.title} category={detail.categoryLine} initials={detail.mentor.initials} placeholderClassName="p-6"/>
                 </div>
 
                 <div className="space-y-6 p-6">
@@ -178,6 +195,10 @@ export function PublicCourseDetailsPage() {
                   </div>
 
                   <GenflixCtaButton asChild className="w-full px-5 py-3">
+                    <Link to={`/cursos/${slug}/preview`}>Acessar gratuitamente uma aula</Link>
+                  </GenflixCtaButton>
+
+                  <GenflixCtaButton asChild className="w-full px-5 py-3">
                     <Link to={`/checkout/pagamento/${slug}`}>Comprar agora</Link>
                   </GenflixCtaButton>
 
@@ -188,6 +209,16 @@ export function PublicCourseDetailsPage() {
                           <p className="text-sm font-semibold text-[#183139]">{detail.bonusSection.title}</p>
                           <p className="mt-1 text-sm leading-6 text-[#6a7b81]">{detail.bonusSection.description}</p>
                         </div>
+                      </div>
+                    </div>) : null}
+
+                  {selectedResourceItems.length ? (<div className="rounded-[20px] border border-[#D8E6EB] bg-[#F2F7F9] px-4 py-4">
+                      <p className="text-sm font-semibold text-[#183139]">Recursos do curso</p>
+                      <div className="mt-3 space-y-3">
+                        {selectedResourceItems.map((item) => (<div key={item.id} className="rounded-2xl border border-[#D8E6EB] bg-white px-4 py-3">
+                            <p className="text-sm font-bold text-[#183139]">{item.title ?? item.label ?? 'Recurso'}</p>
+                            {item.description ? (<p className="mt-1 text-xs leading-6 text-[#6a7b81]">{item.description}</p>) : null}
+                          </div>))}
                       </div>
                     </div>) : null}
 
@@ -205,7 +236,7 @@ export function PublicCourseDetailsPage() {
         </div>
       </section>
 
-      <CourseReviewsSection courseId={detail.id} courseTitle={detail.title}/>
+      {detail.showReviews !== false ? <CourseReviewsSection courseId={detail.id} courseTitle={detail.title}/> : null}
 
       <section className="bg-[#F2F7F9] py-16">
         <div className="public-site-container">

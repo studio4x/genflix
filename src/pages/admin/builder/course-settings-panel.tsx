@@ -6,23 +6,30 @@ import { useCourseBuilder } from '@/app/layouts/admin-course-builder-layout';
 import { fetchCourseAiReviewStandards, upsertCourseAiReviewStandards, } from '@/features/admin/ai-review/api';
 import { resetCourseProgress, updateCourse, uploadCourseThumbnail, toErrorMessage, type ResetCourseProgressResult, } from '@/features/admin/content/api';
 import { courseFormSchema } from '@/features/admin/content/schemas';
+import { fetchSiteContent } from '@/features/site-editor/api';
+import { normalizeResourcesItems } from '@/features/public/genflix-resource-items-editor';
 import { formatCurrencyInputFromCents, parseCurrencyInputToCents } from '@/lib/currency';
 import { publishBuilderNotice } from '@/lib/builder-notice';
 import { canCourseUseCaseStudies, COURSE_QUIZ_TYPE_OPTIONS, DEFAULT_COURSE_QUIZ_TYPE_SETTINGS, getVisibleCourseQuizTypeOptions, normalizeCourseQuizTypeSettings, } from '@/features/assessments/course-quiz-type-settings';
 import { fetchGlobalQuizTypeSettings } from '@/features/admin/quiz-types/api';
 import { fetchAdminUsers, type AdminUserListItem } from '@/features/admin/users/api';
 import type { Course, CourseQuizTypeSettings } from '@/types/content';
+import type { EditableListItem } from '@/features/site-editor/types';
 type CourseSettingsFormState = {
     title: string;
     description: string;
     status: Course['status'];
     thumbnail_url: string;
+    hero_video_url: string;
+    logo_url: string;
     student_hero_image_url: string;
     slug: string;
     launch_date: string;
     price_cents: number;
     currency: Course['currency'];
     is_public: boolean;
+    show_reviews: boolean;
+    resource_item_ids: string[];
     creator_id: string;
     creator_commission_percent: number;
     has_linear_progression: boolean;
@@ -36,12 +43,16 @@ export function CourseSettingsPanel() {
         description: '',
         status: 'draft',
         thumbnail_url: '',
+        hero_video_url: '',
+        logo_url: '',
         student_hero_image_url: '',
         slug: '',
         launch_date: '',
         price_cents: 0,
         currency: 'BRL',
         is_public: true,
+        show_reviews: true,
+        resource_item_ids: [],
         creator_id: '',
         creator_commission_percent: 0,
         has_linear_progression: true,
@@ -58,6 +69,8 @@ export function CourseSettingsPanel() {
     const [resetProgressSuccess, setResetProgressSuccess] = useState<ResetCourseProgressResult | null>(null);
     const [globalQuizTypeSettings, setGlobalQuizTypeSettings] = useState({ ...DEFAULT_COURSE_QUIZ_TYPE_SETTINGS });
     const [creatorUsers, setCreatorUsers] = useState<AdminUserListItem[]>([]);
+    const [resourceCatalog, setResourceCatalog] = useState<EditableListItem[]>([]);
+    const [isLoadingResources, setIsLoadingResources] = useState(false);
     const [aiStandards, setAiStandards] = useState({
         ideal_course_structure: '',
         required_elements: '',
@@ -72,12 +85,16 @@ export function CourseSettingsPanel() {
                 description: courseTree.course.description ?? '',
                 status: courseTree.course.status || 'draft',
                 thumbnail_url: courseTree.course.thumbnail_url ?? '',
+                hero_video_url: courseTree.course.hero_video_url ?? '',
+                logo_url: courseTree.course.logo_url ?? '',
                 student_hero_image_url: courseTree.course.student_hero_image_url ?? '',
                 slug: courseTree.course.slug ?? '',
                 launch_date: courseTree.course.launch_date ?? '',
                 price_cents: courseTree.course.price_cents ?? 0,
                 currency: (courseTree.course.currency as CourseSettingsFormState['currency']) ?? 'BRL',
                 is_public: courseTree.course.is_public ?? true,
+                show_reviews: courseTree.course.show_reviews ?? true,
+                resource_item_ids: Array.isArray(courseTree.course.resource_item_ids) ? courseTree.course.resource_item_ids : [],
                 creator_id: courseTree.course.creator_id ?? '',
                 creator_commission_percent: courseTree.course.creator_commission_percent ?? 0,
                 has_linear_progression: courseTree.course.has_linear_progression ?? true,
@@ -130,6 +147,33 @@ export function CourseSettingsPanel() {
             isMounted = false;
         };
     }, [session]);
+    useEffect(() => {
+        let isMounted = true;
+        async function loadResources() {
+            setIsLoadingResources(true);
+            try {
+                const entries = await fetchSiteContent('resources');
+                const resourcesEntry = entries.find((entry) => entry.entry_key === 'resources.items');
+                if (isMounted) {
+                    setResourceCatalog(normalizeResourcesItems(resourcesEntry?.value));
+                }
+            }
+            catch {
+                if (isMounted) {
+                    setResourceCatalog([]);
+                }
+            }
+            finally {
+                if (isMounted) {
+                    setIsLoadingResources(false);
+                }
+            }
+        }
+        void loadResources();
+        return () => {
+            isMounted = false;
+        };
+    }, []);
     async function handleThumbnailUpload(event: React.ChangeEvent<HTMLInputElement>) {
         const file = event.target.files?.[0];
         if (!file)
@@ -162,6 +206,19 @@ export function CourseSettingsPanel() {
         }
         finally {
             setIsUploadingStudentHero(false);
+        }
+    }
+    async function handleLogoUpload(event: React.ChangeEvent<HTMLInputElement>) {
+        const file = event.target.files?.[0];
+        if (!file)
+            return;
+        setError(null);
+        try {
+            const url = await uploadCourseThumbnail(file);
+            setForm((current) => ({ ...current, logo_url: url }));
+        }
+        catch {
+            setError('Falha ao subir imagem. Tente novamente.');
         }
     }
     async function handleSubmit(e: React.FormEvent) {
@@ -389,6 +446,51 @@ export function CourseSettingsPanel() {
             </section>
 
             <section className="rounded-[32px] border border-slate-200 bg-white p-5 md:p-6">
+               <div className="max-w-3xl space-y-3">
+                  <p className="text-[11px] font-black uppercase tracking-[0.26em] text-[#0F5AA3]">Hero e identidade</p>
+                  <h3 className="text-[2rem] font-black tracking-tight text-slate-900">Video do curso e logotipo</h3>
+                  <p className="max-w-[860px] text-base leading-8 text-slate-600">Quando existir um video de hero, ele substitui a capa na pagina publica do curso. O logo aparece no topo do hero para reforcar a identidade visual.</p>
+               </div>
+
+               <div className="mt-6 grid gap-5 xl:grid-cols-2">
+                  <label className="space-y-2">
+                     <span className="text-xs font-black uppercase tracking-widest text-slate-400">URL do video do hero</span>
+                     <input className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-5 py-3 text-sm font-semibold outline-none focus:border-cyan-400 focus:bg-white" value={form.hero_video_url} onChange={(event) => setForm((current) => ({ ...current, hero_video_url: event.target.value }))} placeholder="https://..." />
+                     <p className="text-xs font-medium leading-6 text-slate-500">Aceita URL de video direto, YouTube ou outra origem publica suportada pelo visualizador.</p>
+                  </label>
+
+                  <div className="rounded-[28px] border border-slate-200 bg-slate-50 px-5 py-5">
+                     <div className="space-y-2">
+                        <p className="text-sm font-black text-slate-900">Logo do curso</p>
+                        <p className="text-xs font-medium text-slate-500">Use uma imagem horizontal ou quadrada para exibir no hero da pagina publica.</p>
+                     </div>
+
+                     <div className="mt-4 flex flex-wrap items-center gap-4">
+                        <label className="inline-flex cursor-pointer items-center gap-3">
+                           <span className="inline-flex h-11 items-center rounded-xl border border-slate-300 bg-white px-4 text-sm font-bold text-slate-800 transition-colors hover:border-[#1398B7]/40 hover:bg-slate-50">
+                              Escolher imagem
+                           </span>
+                           <input type="file" accept="image/*" onChange={handleLogoUpload} className="sr-only" title="Selecionar logo do curso"/>
+                        </label>
+                        <span className="text-sm font-medium text-slate-500">{form.logo_url ? 'Logo configurado' : 'Nenhuma imagem escolhida'}</span>
+                     </div>
+
+                     <label className="mt-4 block space-y-2">
+                        <span className="text-xs font-black uppercase tracking-widest text-slate-400">URL do logo</span>
+                        <input className="w-full rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold outline-none focus:border-cyan-400 focus:bg-white" value={form.logo_url} onChange={(event) => setForm((current) => ({ ...current, logo_url: event.target.value }))} placeholder="https://..." />
+                     </label>
+
+                     {form.logo_url ? (<div className="mt-4 flex items-center gap-3">
+                           <img src={form.logo_url} alt="Preview do logo do curso" className="h-12 max-w-[160px] rounded-lg bg-white object-contain p-2"/>
+                           <Button type="button" variant="outline" size="sm" onClick={() => setForm((current) => ({ ...current, logo_url: '' }))} className="rounded-xl border-slate-200 bg-white font-bold text-slate-600 hover:text-slate-900">
+                              Remover logo
+                           </Button>
+                        </div>) : null}
+                  </div>
+               </div>
+            </section>
+
+            <section className="rounded-[32px] border border-slate-200 bg-white p-5 md:p-6">
                <div className="flex flex-wrap items-end justify-between gap-4">
                   <div className="max-w-3xl space-y-2">
                      <p className="text-[11px] font-black uppercase tracking-[0.26em] text-[#0F5AA3]">Prévia dos banners</p>
@@ -520,6 +622,49 @@ export function CourseSettingsPanel() {
                         <p className="text-xs font-medium text-slate-500">Se desativado, o curso continua no admin mas não aparece para o público.</p>
                      </div>
                   </label>
+
+                  <label className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-5 py-4">
+                     <input type="checkbox" checked={form.show_reviews} onChange={(event) => setForm((current) => ({ ...current, show_reviews: event.target.checked }))}/>
+                     <div>
+                        <p className="text-sm font-black text-slate-800">Exibir avaliacoes na pagina publica</p>
+                        <p className="text-xs font-medium text-slate-500">Quando desativado, a secao de reviews nao aparece no curso.</p>
+                     </div>
+                  </label>
+               </section>
+
+               <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
+                  <div className="flex flex-wrap items-end justify-between gap-4">
+                     <div className="max-w-3xl space-y-2">
+                        <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#0F5AA3]">Recursos do curso</p>
+                        <h3 className="text-xl font-black tracking-tight text-slate-900">Selecione os recursos que aparecem na pagina publica</h3>
+                        <p className="text-sm leading-7 text-slate-600">A lista abaixo vem do catalogo oficial em /admin/recursos. Marque apenas o que este curso deve exibir na lateral da pagina publica.</p>
+                     </div>
+                     <div className="rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-xs font-black uppercase tracking-[0.24em] text-slate-500">
+                        {isLoadingResources ? 'Carregando...' : `${form.resource_item_ids.length} selecionados`}
+                     </div>
+                  </div>
+
+                  <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                     {resourceCatalog.length ? resourceCatalog.map((resource) => {
+            const itemId = resource.id;
+            const itemTitle = resource.title || resource.label || itemId;
+            const isSelected = form.resource_item_ids.includes(itemId);
+            return (<label key={itemId} className={`flex cursor-pointer flex-col gap-3 rounded-[22px] border p-4 transition ${isSelected ? 'border-cyan-200 bg-cyan-50/60' : 'border-slate-200 bg-slate-50/60 hover:border-cyan-200'}`}>
+                           <div className="flex items-start justify-between gap-3">
+                              <div>
+                                 <p className="text-sm font-black text-slate-900">{itemTitle}</p>
+                                 {resource.description ? (<p className="mt-1 text-xs leading-6 text-slate-500">{resource.description}</p>) : null}
+                              </div>
+                              <input type="checkbox" checked={isSelected} onChange={(event) => {
+                    const nextSelected = event.target.checked
+                        ? [...form.resource_item_ids, itemId]
+                        : form.resource_item_ids.filter((currentId) => currentId !== itemId);
+                    setForm((current) => ({ ...current, resource_item_ids: nextSelected }));
+                }} />
+                           </div>
+                        </label>);
+        }) : (<div className="rounded-[22px] border border-dashed border-slate-200 bg-slate-50 px-5 py-8 text-sm font-medium text-slate-500">Nenhum recurso encontrado no catalogo oficial.</div>)}
+                  </div>
                </section>
 
                <div className="block space-y-2">

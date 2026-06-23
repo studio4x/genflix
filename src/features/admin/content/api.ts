@@ -4,6 +4,7 @@ import { exportAssessmentContent, importAssessmentContentStructured, type Import
 import { normalizeCourseQuizTypeSettings } from '@/features/assessments/course-quiz-type-settings';
 import { getCourseCategories, normalizeCoursePrimaryCategory, } from '@/features/courses/course-categories';
 import { isLegacyCourseSalesSchemaError, stripLegacyCourseSalesFields, withLegacyCourseSalesDefaults, } from '@/features/courses/schema-compat';
+import { normalizeCoursePublicPageContent } from '@/features/public/course-public-page-content';
 import type { ButtonTemplate, Course, CourseCategory, CourseQuizTypeSettings, CourseModule, FooterActionScope, Lesson, LessonFooterAction, LessonMaterial, ModulePdfAsset, Assessment, } from '@/types/content';
 import type { ButtonTemplateFormInput, CourseFormInput, CoursePublicPageContentInput, CoursePublicPageFormInput, LessonFormInput, LessonFooterActionFormInput, ModuleFormInput, } from './schemas';
 import type { Session } from '@supabase/supabase-js';
@@ -362,7 +363,11 @@ export async function createCourse(input: CourseFormInput, userId: string) {
         display_order: nextDisplayOrder,
         thumbnail_url: input.thumbnail_url?.trim() || null,
         cover_image_url: input.thumbnail_url?.trim() || null,
+        hero_video_url: input.hero_video_url?.trim() || null,
+        logo_url: input.logo_url?.trim() || null,
         student_hero_image_url: input.student_hero_image_url?.trim() || null,
+        show_reviews: input.show_reviews ?? true,
+        resource_item_ids: input.resource_item_ids ?? [],
         slug: input.slug?.trim() || slugify(input.title),
         launch_date: input.launch_date?.trim() || null,
         price_cents: input.price_cents ?? 0,
@@ -414,7 +419,11 @@ export async function updateCourse(courseId: string, input: CourseFormInput) {
         status: input.status,
         thumbnail_url: input.thumbnail_url?.trim() || null,
         cover_image_url: input.thumbnail_url?.trim() || null,
+        hero_video_url: input.hero_video_url?.trim() || null,
+        logo_url: input.logo_url?.trim() || null,
         student_hero_image_url: input.student_hero_image_url?.trim() || null,
+        show_reviews: input.show_reviews ?? true,
+        resource_item_ids: input.resource_item_ids ?? [],
         slug: input.slug?.trim() || slugify(input.title),
         launch_date: input.launch_date?.trim() || null,
         price_cents: input.price_cents ?? 0,
@@ -447,7 +456,7 @@ export async function updateCourse(courseId: string, input: CourseFormInput) {
 export async function updateCoursePublicPage(courseId: string, input: CoursePublicPageFormInput) {
     const currentResult = await supabase
         .from('courses')
-        .select('category,categories')
+        .select('category,categories,public_page_content')
         .eq('id', courseId)
         .maybeSingle();
     if (currentResult.error) {
@@ -457,6 +466,7 @@ export async function updateCoursePublicPage(courseId: string, input: CoursePubl
         category: currentResult.data?.category ?? null,
         categories: currentResult.data?.categories ?? undefined,
     });
+    const existingPublicPageContent = normalizeCoursePublicPageContent(currentResult.data?.public_page_content);
     const nextPrimaryCategory = normalizeCoursePrimaryCategory(input.category);
     const categories = nextPrimaryCategory
         ? [nextPrimaryCategory, ...existingCategories.filter((category) => category.toLocaleLowerCase('pt-BR') !== nextPrimaryCategory.toLocaleLowerCase('pt-BR'))]
@@ -464,7 +474,7 @@ export async function updateCoursePublicPage(courseId: string, input: CoursePubl
     const publicPageContent: CoursePublicPageContentInput = {
         categoryLine: input.categoryLine?.trim() || null,
         aboutParagraphs: input.aboutParagraphs,
-        outcomes: input.outcomes,
+        outcomes: existingPublicPageContent.outcomes,
         includedItems: input.includedItems,
         bonusSection: {
             enabled: input.bonus_enabled,
@@ -668,6 +678,7 @@ export async function createLesson(moduleId: string, input: LessonFormInput) {
         title: input.title,
         description: input.description?.trim() || null,
         is_required: input.is_required,
+        is_free_preview: input.is_free_preview ?? false,
         lesson_type: input.lesson_type,
         youtube_url: input.youtube_url?.trim() || null,
         text_content: input.text_content?.trim() || null,
@@ -690,6 +701,7 @@ export async function updateLesson(lessonId: string, input: LessonFormInput) {
         title: input.title,
         description: input.description?.trim() || null,
         is_required: input.is_required,
+        is_free_preview: input.is_free_preview ?? false,
         lesson_type: input.lesson_type,
         youtube_url: input.youtube_url?.trim() || null,
         text_content: input.text_content?.trim() || null,
@@ -1298,6 +1310,7 @@ export interface ImportModuleData {
         text_content?: string;
         blocks?: LessonContentBlock[];
         estimated_minutes?: number;
+        is_free_preview?: boolean;
     }[];
     assessments?: {
         title: string;
@@ -1321,6 +1334,7 @@ export interface ExportModuleData {
         text_content?: string;
         blocks?: LessonContentBlock[];
         estimated_minutes?: number;
+        is_free_preview?: boolean;
     }[];
     assessments?: (ImportAssessmentData & {
         assessment_type: 'module';
@@ -1332,7 +1346,11 @@ export interface ExportCourseFullData {
     workload_minutes?: number;
     thumbnail_url?: string;
     cover_image_url?: string;
+    hero_video_url?: string;
+    logo_url?: string;
     student_hero_image_url?: string;
+    show_reviews?: boolean;
+    resource_item_ids?: string[];
     status?: 'draft' | 'published' | 'archived';
     quiz_type_settings?: CourseQuizTypeSettings;
     modules: ExportModuleData[];
@@ -1384,6 +1402,7 @@ export async function exportModuleContent(moduleId: string): Promise<ExportModul
             // Inclui a estrutura dos blocos para preservar a edição rica no JSON exportado.
             blocks: splitContent(lesson.text_content ?? ''),
             estimated_minutes: lesson.estimated_minutes,
+            is_free_preview: lesson.is_free_preview,
         })),
         assessments: exportedAssessments,
     };
@@ -1412,7 +1431,11 @@ export async function exportFullCourseContent(courseId: string): Promise<ExportC
         workload_minutes: course.workload_minutes,
         thumbnail_url: course.thumbnail_url ?? '',
         cover_image_url: course.cover_image_url ?? course.thumbnail_url ?? '',
+        hero_video_url: course.hero_video_url ?? '',
+        logo_url: course.logo_url ?? '',
         student_hero_image_url: course.student_hero_image_url ?? '',
+        show_reviews: course.show_reviews,
+        resource_item_ids: course.resource_item_ids ?? [],
         status: course.status,
         quiz_type_settings: normalizeCourseQuizTypeSettings(course.quiz_type_settings),
         modules: exportedModules,
@@ -1457,6 +1480,7 @@ async function createModuleLessons(moduleId: string, lessons: ImportModuleData['
         youtube_url: lesson.youtube_url || null,
         text_content: resolveLessonTextContent(lesson),
         estimated_minutes: lesson.estimated_minutes || 10,
+        is_free_preview: lesson.is_free_preview ?? false,
         position: index + 1,
     }));
     const { error } = await supabase.from('lessons').insert(lessonsToInsert);
@@ -1539,7 +1563,13 @@ export async function importCourseContent(courseId: string, input: ImportCourseF
             title: fullCourseInput.title,
             description: fullCourseInput.description || null,
             workload_minutes: fullCourseInput.workload_minutes || 0,
+            thumbnail_url: fullCourseInput.thumbnail_url || null,
+            cover_image_url: fullCourseInput.cover_image_url || fullCourseInput.thumbnail_url || null,
+            hero_video_url: fullCourseInput.hero_video_url || null,
+            logo_url: fullCourseInput.logo_url || null,
             student_hero_image_url: fullCourseInput.student_hero_image_url || null,
+            show_reviews: fullCourseInput.show_reviews ?? true,
+            resource_item_ids: fullCourseInput.resource_item_ids ?? [],
             quiz_type_settings: normalizeCourseQuizTypeSettings(fullCourseInput.quiz_type_settings),
         })
             .eq('id', courseId);
@@ -1622,7 +1652,12 @@ export interface ImportCourseFullData {
     description?: string;
     workload_minutes?: number;
     thumbnail_url?: string;
+    cover_image_url?: string;
+    hero_video_url?: string;
+    logo_url?: string;
     student_hero_image_url?: string;
+    show_reviews?: boolean;
+    resource_item_ids?: string[];
     status?: 'draft' | 'published';
     quiz_type_settings?: CourseQuizTypeSettings;
     modules: ImportModuleData[];
@@ -1647,8 +1682,12 @@ export async function importFullCourse(data: ImportCourseFullData, userId: strin
         categories: [],
         workload_minutes: data.workload_minutes || 0,
         thumbnail_url: data.thumbnail_url || null,
-        cover_image_url: data.thumbnail_url || null,
+        cover_image_url: data.cover_image_url || data.thumbnail_url || null,
+        hero_video_url: data.hero_video_url || null,
+        logo_url: data.logo_url || null,
         student_hero_image_url: data.student_hero_image_url || null,
+        show_reviews: data.show_reviews ?? true,
+        resource_item_ids: data.resource_item_ids ?? [],
         quiz_type_settings: normalizeCourseQuizTypeSettings(data.quiz_type_settings),
         created_by: userId
     })
@@ -1660,6 +1699,3 @@ export async function importFullCourse(data: ImportCourseFullData, userId: strin
     await importCourseContent(course.id, data, false);
     return withLegacyCourseSalesDefaults(course as Course);
 }
-
-
-

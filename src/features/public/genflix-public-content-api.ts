@@ -43,7 +43,7 @@ interface PublicBlogCategoryRow {
 }
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
-const publicCourseSelect = 'id, slug, title, description, category, categories, thumbnail_url, cover_image_url, marketing_description, mentor_name, mentor_role, mentor_bio, mentor_initials, price_label, secondary_price_label, price_cents, currency, public_page_content, display_order, launch_date, created_at';
+const publicCourseSelect = 'id, slug, title, description, category, categories, thumbnail_url, cover_image_url, hero_video_url, logo_url, show_reviews, resource_item_ids, marketing_description, mentor_name, mentor_role, mentor_bio, mentor_initials, price_label, secondary_price_label, price_cents, currency, public_page_content, display_order, launch_date, created_at';
 const publicBlogPostLegacySelect = 'slug, title, category, display_order, excerpt, image_url, card_image_url, read_time, author, published_at, content, content_html, featured, status';
 const publicBlogPostAllLegacySelect = 'slug, title, category, display_order, excerpt, image_url, card_image_url, read_time, author, published_at, content, content_html, featured, status, created_at';
 async function fetchPublicRows<T>(path: string, searchParams: URLSearchParams): Promise<T[]> {
@@ -292,6 +292,126 @@ export async function fetchPublicCourseDetailFromSupabase(slug: string) {
     });
     const [row] = await fetchPublicRows<PublicCourseRow>('courses', params);
     return row ? await toCourseDetail(row) : null;
+}
+export interface PublicCourseFreePreviewLesson {
+    id: string;
+    moduleId: string;
+    title: string;
+    description: string | null;
+    lessonType: 'video' | 'text' | 'hybrid' | 'file';
+    youtubeUrl: string | null;
+    textContent: string | null;
+    estimatedMinutes: number;
+    position: number;
+}
+export interface PublicCourseFreePreviewModule {
+    id: string;
+    title: string;
+    description: string | null;
+    position: number;
+    lessons: PublicCourseFreePreviewLesson[];
+}
+export interface PublicCourseFreePreview {
+    courseId: string;
+    courseSlug: string;
+    firstFreeLessonId: string | null;
+    modules: PublicCourseFreePreviewModule[];
+}
+function trimPreviewText(value: unknown) {
+    return typeof value === 'string' ? value.trim() : '';
+}
+function normalizePreviewLesson(value: unknown): PublicCourseFreePreviewLesson | null {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) {
+        return null;
+    }
+    const record = value as Record<string, unknown>;
+    const id = trimPreviewText(record.id);
+    const moduleId = trimPreviewText(record.module_id);
+    const title = trimPreviewText(record.title);
+    if (!id || !moduleId || !title) {
+        return null;
+    }
+    const lessonType = record.lesson_type === 'text' || record.lesson_type === 'hybrid' || record.lesson_type === 'file'
+        ? record.lesson_type
+        : 'video';
+    return {
+        id,
+        moduleId,
+        title,
+        description: typeof record.description === 'string' ? record.description.trim() || null : null,
+        lessonType,
+        youtubeUrl: typeof record.youtube_url === 'string' ? record.youtube_url.trim() || null : null,
+        textContent: typeof record.text_content === 'string' ? record.text_content : null,
+        estimatedMinutes: typeof record.estimated_minutes === 'number' && Number.isFinite(record.estimated_minutes)
+            ? Math.max(0, Math.round(record.estimated_minutes))
+            : 0,
+        position: typeof record.position === 'number' && Number.isFinite(record.position)
+            ? Math.max(0, Math.round(record.position))
+            : 0,
+    };
+}
+function normalizePreviewModule(value: unknown): PublicCourseFreePreviewModule | null {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) {
+        return null;
+    }
+    const record = value as Record<string, unknown>;
+    const id = trimPreviewText(record.id);
+    const title = trimPreviewText(record.title);
+    if (!id || !title) {
+        return null;
+    }
+    const lessons = Array.isArray(record.lessons)
+        ? record.lessons.map(normalizePreviewLesson).filter((item): item is PublicCourseFreePreviewLesson => Boolean(item))
+        : [];
+    return {
+        id,
+        title,
+        description: typeof record.description === 'string' ? record.description.trim() || null : null,
+        position: typeof record.position === 'number' && Number.isFinite(record.position)
+            ? Math.max(0, Math.round(record.position))
+            : 0,
+        lessons,
+    };
+}
+export async function fetchPublicCourseFreePreviewFromSupabase(slug: string): Promise<PublicCourseFreePreview | null> {
+    if (!supabaseUrl || !supabaseAnonKey) {
+        throw new Error('Configuração pública do Supabase ausente.');
+    }
+    const response = await fetch(`${supabaseUrl}/rest/v1/rpc/get_public_course_free_preview`, {
+        method: 'POST',
+        cache: 'no-store',
+        headers: {
+            'Content-Type': 'application/json',
+            apikey: supabaseAnonKey,
+            'cache-control': 'no-store, max-age=0',
+            pragma: 'no-cache',
+        },
+        body: JSON.stringify({ _slug: slug }),
+    });
+    if (!response.ok) {
+        const message = await response.text();
+        throw new Error(message || 'Não foi possível carregar a prévia gratuita do curso.');
+    }
+    const payload = (await response.json()) as unknown;
+    if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
+        return null;
+    }
+    const record = payload as Record<string, unknown>;
+    const courseId = trimPreviewText(record.course_id);
+    const courseSlug = trimPreviewText(record.course_slug);
+    const firstFreeLessonId = trimPreviewText(record.first_free_lesson_id) || null;
+    const modules = Array.isArray(record.modules)
+        ? record.modules.map(normalizePreviewModule).filter((item): item is PublicCourseFreePreviewModule => Boolean(item))
+        : [];
+    if (!courseId || !courseSlug) {
+        return null;
+    }
+    return {
+        courseId,
+        courseSlug,
+        firstFreeLessonId,
+        modules,
+    };
 }
 export async function fetchPublicBlogPostsFromSupabase() {
     const rows = await fetchAllBlogRowsForPublic();

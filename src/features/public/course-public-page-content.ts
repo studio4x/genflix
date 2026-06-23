@@ -33,6 +33,10 @@ export interface CoursePublicPageRowLike {
   categories?: string[] | null
   thumbnail_url: string | null
   cover_image_url: string | null
+  hero_video_url?: string | null
+  logo_url?: string | null
+  show_reviews?: boolean | null
+  resource_item_ids?: string[] | null
   marketing_description: string | null
   mentor_name: string | null
   mentor_role: string | null
@@ -288,6 +292,12 @@ export function buildCoursePublicDetail(
       `${(primaryCategory ?? item.category).toUpperCase()} - ONLINE`,
     title: trimString(row.title) || item.title,
     coverImage: item.image,
+    heroVideoUrl: trimString(row.hero_video_url) || null,
+    logoUrl: trimString(row.logo_url) || null,
+    showReviews: row.show_reviews !== false,
+    resourceItemIds: Array.isArray(row.resource_item_ids)
+      ? row.resource_item_ids.map((itemId) => trimString(itemId)).filter(Boolean)
+      : [],
     description: fallbackDescription,
     aboutParagraphs: content.aboutParagraphs.length
       ? content.aboutParagraphs

@@ -18,6 +18,7 @@ const initialForm: LessonFormInput = {
     title: '',
     description: '',
     is_required: true,
+    is_free_preview: false,
     lesson_type: 'video',
     youtube_url: '',
     text_content: '',
@@ -126,6 +127,7 @@ export function LessonEditorPanel() {
                     title: found.title,
                     description: found.description ?? '',
                     is_required: found.is_required,
+                    is_free_preview: found.is_free_preview,
                     lesson_type: found.lesson_type,
                     youtube_url: found.youtube_url ?? '',
                     text_content: textContent,
@@ -518,6 +520,11 @@ Esta ação exclui o arquivo do storage privado.`);
                <label className="block space-y-2">
                  <span className="text-sm font-bold text-slate-800">Descrição Curta (Opcional)</span>
                  <textarea className="min-h-[80px] w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-3 text-sm shadow-inner transition-all focus:border-blue-500 focus:ring-2 focus:ring-blue-100 focus:bg-white resize-y placeholder:text-slate-400" placeholder="Uma breve introdução sobre o que será abordado." value={form.description} onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))}/>
+               </label>
+
+               <label className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50/50 px-4 py-4 text-sm font-bold text-slate-800">
+                 <input type="checkbox" checked={form.is_free_preview} onChange={(event) => setForm((prev) => ({ ...prev, is_free_preview: event.target.checked }))} className="h-5 w-5 rounded border-slate-300 text-blue-600 focus:ring-blue-600"/>
+                 Marcar esta aula como gratuita para o preview publico
                </label>
              </fieldset>
 

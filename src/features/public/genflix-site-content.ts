@@ -106,6 +106,10 @@ export interface GenflixCourseDetail {
   categoryLine: string
   title: string
   coverImage: string
+  heroVideoUrl?: string | null
+  logoUrl?: string | null
+  showReviews?: boolean
+  resourceItemIds?: string[]
   description: string
   aboutParagraphs: string[]
   outcomes: GenflixCourseOutcome[]

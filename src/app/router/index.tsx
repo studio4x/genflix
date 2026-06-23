@@ -14,6 +14,7 @@ const ROUTE_CHUNK_RELOAD_FLAG = 'genflix:route-chunk-reload-attempted';
 const PublicHomePage = lazy(async () => ({ default: (await import('@/pages/public/public-home-page')).PublicHomePage }));
 const PublicCoursesPage = lazy(async () => ({ default: (await import('@/pages/public/public-courses-page')).PublicCoursesPage }));
 const PublicCourseDetailsPage = lazy(async () => ({ default: (await import('@/pages/public/public-course-details-page')).PublicCourseDetailsPage }));
+const PublicCoursePreviewPage = lazy(async () => ({ default: (await import('@/pages/public/public-course-preview-page')).PublicCoursePreviewPage }));
 const PublicAboutPage = lazy(async () => ({ default: (await import('@/pages/public/public-about-page')).PublicAboutPage }));
 const PublicBlogPage = lazy(async () => ({ default: (await import('@/pages/public/public-blog-page')).PublicBlogPage }));
 const PublicBlogPostPage = lazy(async () => ({ default: (await import('@/pages/public/public-blog-post-page')).PublicBlogPostPage }));
@@ -203,6 +204,14 @@ const appRoutes = [
     {
         path: '/cursos/:slug',
         element: <PublicEditableRoute pageKey="course-detail" seo={{ entryKey: "course-detail.seo", fallback: { title: 'GenFlix | Detalhes do curso', description: 'Conheça a estrutura, os benefícios e os diferenciais do curso selecionado na GenFlix.', slug: '/cursos', image: '' } }}><PublicCourseDetailsPage /></PublicEditableRoute>,
+    },
+    {
+        path: '/cursos/:slug/preview',
+        element: withRouteSuspense(<PublicCoursePreviewPage />),
+    },
+    {
+        path: '/cursos/:slug/preview/aulas/:lessonId',
+        element: withRouteSuspense(<PublicCoursePreviewPage />),
     },
     {
         path: '/sobre',

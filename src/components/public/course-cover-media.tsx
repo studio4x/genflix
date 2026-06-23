@@ -1,7 +1,30 @@
 import { useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
+function getVideoSource(url: string): {
+    type: 'youtube';
+    value: string;
+} | {
+    type: 'direct';
+    value: string;
+} | null {
+    const trimmed = url.trim();
+    if (!trimmed) {
+        return null;
+    }
+    const regExp = /^.*(youtu\.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+    const match = trimmed.match(regExp);
+    if (match && match[2].length === 11) {
+        return { type: 'youtube', value: match[2] };
+    }
+    const isDirectVideo = /^https?:\/\/[^\s]+\.(mp4|webm|ogg|ogv|m4v|mov)(\?.*)?(#.*)?$/i.test(trimmed);
+    if (isDirectVideo) {
+        return { type: 'direct', value: trimmed };
+    }
+    return null;
+}
 interface CourseCoverMediaProps {
     src?: string | null;
+    videoSrc?: string | null;
     alt: string;
     title: string;
     category?: string;
@@ -10,15 +33,21 @@ interface CourseCoverMediaProps {
     imageClassName?: string;
     placeholderClassName?: string;
 }
-export function CourseCoverMedia({ src, alt, title, category, initials, className, imageClassName, placeholderClassName, }: CourseCoverMediaProps) {
+export function CourseCoverMedia({ src, videoSrc, alt, title, category, initials, className, imageClassName, placeholderClassName, }: CourseCoverMediaProps) {
     const normalizedSrc = typeof src === 'string' && src.trim() !== '' ? src.trim() : null;
+    const normalizedVideoSrc = typeof videoSrc === 'string' && videoSrc.trim() !== '' ? videoSrc.trim() : null;
+    const resolvedVideoSource = normalizedVideoSrc ? getVideoSource(normalizedVideoSrc) : null;
     const [hasError, setHasError] = useState(!normalizedSrc);
+    const [hasVideoError, setHasVideoError] = useState(!normalizedVideoSrc);
     useEffect(() => {
         setHasError(!normalizedSrc);
-    }, [normalizedSrc]);
-    const showPlaceholder = !normalizedSrc || hasError;
+        setHasVideoError(!normalizedVideoSrc);
+    }, [normalizedSrc, normalizedVideoSrc]);
+    const showVideo = Boolean(resolvedVideoSource && !hasVideoError);
+    const showPlaceholder = !showVideo && (!normalizedSrc || hasError);
     return (<div className={cn('relative h-full w-full overflow-hidden bg-[#173039]', className)}>
-      {!showPlaceholder ? (<img src={normalizedSrc} alt={alt} loading="lazy" onError={() => setHasError(true)} className={cn('h-full w-full object-cover', imageClassName)}/>) : null}
+      {showVideo ? (resolvedVideoSource && resolvedVideoSource.type === 'youtube' ? (<iframe src={`https://www.youtube.com/embed/${resolvedVideoSource.value}`} title={alt} allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowFullScreen className={cn('h-full w-full object-cover', imageClassName)}/>) : resolvedVideoSource ? (<video src={resolvedVideoSource.value} controls playsInline muted autoPlay loop preload="metadata" onError={() => setHasVideoError(true)} className={cn('h-full w-full object-cover', imageClassName)}/>) : null) : null}
+      {!showVideo && !showPlaceholder ? (<img src={normalizedSrc ?? undefined} alt={alt} loading="lazy" onError={() => setHasError(true)} className={cn('h-full w-full object-cover', imageClassName)}/>) : null}
 
       {showPlaceholder ? (<div className={cn('absolute inset-0 flex h-full w-full flex-col justify-between bg-[radial-gradient(circle_at_top_left,#1ba8c5_0%,#1398B7_28%,#0A3640_100%)] p-5 text-white', placeholderClassName)}>
           <div className="flex items-start justify-between gap-3">

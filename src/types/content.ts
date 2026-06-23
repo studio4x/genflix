@@ -188,7 +188,11 @@ export interface Course {
     categories: string[];
     thumbnail_url: string | null;
     cover_image_url: string | null;
+    hero_video_url: string | null;
+    logo_url: string | null;
     student_hero_image_url: string | null;
+    show_reviews: boolean;
+    resource_item_ids: string[];
     marketing_description: string | null;
     mentor_name: string | null;
     mentor_role: string | null;
@@ -244,6 +248,7 @@ export interface Lesson {
     description: string | null;
     position: number;
     is_required: boolean;
+    is_free_preview: boolean;
     lesson_type: 'video' | 'text' | 'hybrid' | 'file';
     youtube_url: string | null;
     text_content: string | null;

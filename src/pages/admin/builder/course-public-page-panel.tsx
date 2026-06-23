@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
-import { BookOpen, Layers3, Plus, Sparkles, Trash2 } from 'lucide-react';
+import { BookOpen, Layers3, Plus, Trash2 } from 'lucide-react';
 import { useCourseBuilder } from '@/app/layouts/admin-course-builder-layout';
 import { Button } from '@/components/ui/button';
 import { updateCoursePublicPage, toErrorMessage, } from '@/features/admin/content/api';
 import { coursePublicPageFormSchema } from '@/features/admin/content/schemas';
 import { buildCoursePublicDetail, normalizeCoursePublicPageContent, } from '@/features/public/course-public-page-content';
 import { publishBuilderNotice } from '@/lib/builder-notice';
-import type { GenflixCourseModule, GenflixCourseOutcome, } from '@/features/public/genflix-site-content';
+import type { GenflixCourseModule, } from '@/features/public/genflix-site-content';
 type CoursePublicPageFormState = {
     category: string;
     categoryLine: string;
@@ -20,17 +20,10 @@ type CoursePublicPageFormState = {
     price_label: string;
     secondary_price_label: string;
     aboutParagraphs: string[];
-    outcomes: GenflixCourseOutcome[];
     includedItems: string[];
     contentSource: 'real' | 'custom';
     customSyllabus: GenflixCourseModule[];
 };
-function createEmptyOutcome(): GenflixCourseOutcome {
-    return {
-        title: '',
-        description: '',
-    };
-}
 function createEmptyModule(): GenflixCourseModule {
     return {
         title: '',
@@ -91,7 +84,6 @@ export function CoursePublicPagePanel() {
         price_label: '',
         secondary_price_label: '',
         aboutParagraphs: [''],
-        outcomes: [createEmptyOutcome()],
         includedItems: [''],
         contentSource: 'custom',
         customSyllabus: [createEmptyModule()],
@@ -129,7 +121,6 @@ export function CoursePublicPagePanel() {
             price_label: courseTree.course.price_label ?? resolvedDetail.priceLabel,
             secondary_price_label: courseTree.course.secondary_price_label ?? resolvedDetail.secondaryPriceLabel,
             aboutParagraphs: content.aboutParagraphs.length ? content.aboutParagraphs : resolvedDetail.aboutParagraphs,
-            outcomes: content.outcomes.length ? content.outcomes : resolvedDetail.outcomes,
             includedItems: content.includedItems.length ? content.includedItems : resolvedDetail.includedItems,
             contentSource: content.contentSource,
             customSyllabus: content.customSyllabus.length ? content.customSyllabus : resolvedDetail.syllabus,
@@ -153,9 +144,6 @@ export function CoursePublicPagePanel() {
     function updateIncludedItem(index: number, value: string) {
         updateField('includedItems', form.includedItems.map((item, itemIndex) => itemIndex === index ? value : item));
     }
-    function updateOutcome(index: number, patch: Partial<GenflixCourseOutcome>) {
-        updateField('outcomes', form.outcomes.map((outcome, outcomeIndex) => outcomeIndex === index ? { ...outcome, ...patch } : outcome));
-    }
     function updateCustomModule(index: number, patch: Partial<GenflixCourseModule>) {
         updateField('customSyllabus', form.customSyllabus.map((module, moduleIndex) => moduleIndex === index ? { ...module, ...patch } : module));
     }
@@ -175,9 +163,6 @@ export function CoursePublicPagePanel() {
                 bonus_title: form.bonus_title.trim(),
                 aboutParagraphs: form.aboutParagraphs.map((item) => item.trim()).filter(Boolean),
                 includedItems: form.includedItems.map((item) => item.trim()).filter(Boolean),
-                outcomes: form.outcomes
-                    .map((item) => ({ title: item.title.trim(), description: item.description.trim() }))
-                    .filter((item) => item.title && item.description),
                 customSyllabus: form.customSyllabus
                     .map((module) => ({
                     title: module.title.trim(),
@@ -351,7 +336,7 @@ export function CoursePublicPagePanel() {
         </section>
 
         <section className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm md:p-10">
-          <SectionHeading eyebrow="Corpo" title="Sobre o curso e destaques" description="Esses blocos alimentam as seções de texto corrido e os cards de O que voc vai aprender."/>
+          <SectionHeading eyebrow="Corpo" title="Sobre o curso e destaques" description="Esses blocos alimentam as seções de texto corrido e a estrutura editorial da página pública."/>
 
           <div className="mt-8 space-y-8">
             <div className="space-y-3">
@@ -374,34 +359,8 @@ export function CoursePublicPagePanel() {
                 </div>))}
             </div>
 
-            <div className="space-y-3">
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <p className="text-sm font-black text-slate-900">O que você vai aprender</p>
-                  <p className="text-xs font-medium text-slate-500">Cards de destaque exibidos em duas colunas na página publica.</p>
-                </div>
-                <Button type="button" variant="outline" className="rounded-2xl" onClick={() => updateField('outcomes', [...form.outcomes, createEmptyOutcome()])}>
-                  <Plus className="mr-2 h-4 w-4"/>Adicionar destaque
-                </Button>
-              </div>
-
-              <div className="grid gap-4 lg:grid-cols-2">
-                {form.outcomes.map((outcome, index) => (<article key={`outcome-${index}`} className="rounded-[24px] border border-slate-200 bg-slate-50 p-5">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-cyan-100 text-cyan-700">
-                        <Sparkles className="h-5 w-5"/>
-                      </div>
-                      <Button type="button" variant="outline" size="icon" className="h-10 w-10 rounded-2xl bg-white" onClick={() => updateField('outcomes', form.outcomes.filter((_, outcomeIndex) => outcomeIndex !== index))} disabled={form.outcomes.length === 1}>
-                        <Trash2 className="h-4 w-4"/>
-                      </Button>
-                    </div>
-
-                    <div className="mt-4 space-y-3">
-                      <input className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold outline-none focus:border-cyan-400" value={outcome.title} onChange={(event) => updateOutcome(index, { title: event.target.value })} placeholder="Título do card"/>
-                      <textarea className="min-h-[110px] w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium leading-6 text-slate-700 outline-none focus:border-cyan-400" value={outcome.description} onChange={(event) => updateOutcome(index, { description: event.target.value })} placeholder="Descrição do card"/>
-                    </div>
-                  </article>))}
-              </div>
+            <div className="rounded-[24px] border border-slate-200 bg-slate-50 px-5 py-5 text-sm leading-7 text-slate-600">
+              A seção <span className="font-black text-slate-900">O que você vai aprender</span> foi removida da interface pública, mas os dados antigos continuam preservados no banco por compatibilidade.
             </div>
           </div>
         </section>
