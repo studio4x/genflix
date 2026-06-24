@@ -653,7 +653,6 @@ export function CourseSettingsPanel() {
                            <div className="flex items-start justify-between gap-3">
                               <div>
                                  <p className="text-sm font-black text-slate-900">{itemTitle}</p>
-                                 {resource.description ? (<p className="mt-1 text-xs leading-6 text-slate-500">{resource.description}</p>) : null}
                               </div>
                               <input type="checkbox" checked={isSelected} onChange={(event) => {
                     const nextSelected = event.target.checked

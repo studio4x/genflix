@@ -217,7 +217,6 @@ export function PublicCourseDetailsPage() {
                       <div className="mt-3 space-y-3">
                         {selectedResourceItems.map((item) => (<div key={item.id} className="rounded-2xl border border-[#D8E6EB] bg-white px-4 py-3">
                             <p className="text-sm font-bold text-[#183139]">{item.title ?? item.label ?? 'Recurso'}</p>
-                            {item.description ? (<p className="mt-1 text-xs leading-6 text-[#6a7b81]">{item.description}</p>) : null}
                           </div>))}
                       </div>
                     </div>) : null}

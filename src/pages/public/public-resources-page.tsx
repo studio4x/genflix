@@ -149,25 +149,6 @@ function sanitizeResourceRichText(rawValue: string) {
 function hasHtmlMarkup(value: string) {
     return /<[^>]+>/.test(value);
 }
-function getResourceDescriptionExcerpt(value: string) {
-    const trimmedValue = value.trim();
-    if (!trimmedValue) {
-        return '';
-    }
-    const withoutMarkup = trimmedValue
-        .replace(/<br\s*\/?>/gi, ' ')
-        .replace(/<\/(p|div|li|h[1-6])>/gi, ' ')
-        .replace(/<[^>]+>/g, ' ')
-        .replace(/&nbsp;/gi, ' ')
-        .replace(/&amp;/gi, '&')
-        .replace(/&lt;/gi, '<')
-        .replace(/&gt;/gi, '>')
-        .replace(/&quot;/gi, '"')
-        .replace(/&#39;/gi, "'")
-        .replace(/\s+/g, ' ')
-        .trim();
-    return withoutMarkup;
-}
 function renderResourceTextContent(value: string, className: string) {
     const trimmedValue = value.trim();
     if (!trimmedValue) {
@@ -339,7 +320,6 @@ function ResourcesCatalogSection({ cardStyle, uploadedIcons, onOpenVideo, onOpen
                 const metadataIconColor = typeof metadata.iconColor === 'string' ? metadata.iconColor : '';
                 const iconSize = normalizeResourceIconSize(metadata.iconSize, cardStyle.iconSize) ?? cardStyle.iconSize;
                 const iconBadgeSize = iconSize + 20;
-                const descriptionExcerpt = getResourceDescriptionExcerpt(item.description ?? '');
                 const itemColor = typeof metadata.itemColor === 'string' && metadata.itemColor.trim() !== ''
                     ? metadata.itemColor
                     : (metadataIconColor.trim() !== '' ? metadataIconColor : cardStyle.iconColor);
@@ -369,16 +349,16 @@ function ResourcesCatalogSection({ cardStyle, uploadedIcons, onOpenVideo, onOpen
                     }}>
                       {item.label}
                     </h2>
-                    {descriptionExcerpt ? (<p className="mt-3 overflow-hidden" style={{
-                            color: cardStyle.descriptionColor,
-                            fontSize: `${cardStyle.descriptionFontSize}px`,
-                            lineHeight: `${cardStyle.descriptionLineHeight}px`,
-                            display: '-webkit-box',
-                            WebkitBoxOrient: 'vertical',
-                            WebkitLineClamp: 5,
+                    {item.href ? (<div className="mt-4 flex flex-wrap gap-2">
+                        <a href={item.href} target="_blank" rel="noreferrer" className="inline-flex items-center rounded-full border border-[#15323B]/20 bg-white px-3 py-1.5 text-xs font-black uppercase tracking-[0.12em] text-[#15323B] hover:bg-[#EAF2F5]" style={{
+                            backgroundColor: cardStyle.buttonBackgroundColor,
+                            color: cardStyle.buttonTextColor,
+                            borderColor: cardStyle.buttonBorderColor,
+                            borderRadius: `${cardStyle.buttonRadius}px`,
                         }}>
-                        {descriptionExcerpt}
-                      </p>) : null}
+                          Acessar recurso
+                        </a>
+                      </div>) : null}
                     {videoUrl || readMoreContent ? (<div className="mt-4 flex flex-wrap gap-2">
                         {videoUrl ? (<button type="button" onClick={(event) => {
                                 event.stopPropagation();
