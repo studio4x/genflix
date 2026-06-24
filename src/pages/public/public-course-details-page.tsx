@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { BadgeCheck, ChevronDown, CirclePlay } from 'lucide-react';
+import { ArrowUpRight, BadgeCheck, ChevronDown, CirclePlay } from 'lucide-react';
 import { Link, Navigate, useParams } from 'react-router-dom';
 import { CourseCoverMedia } from '@/components/public/course-cover-media';
 import { GenflixCtaButton } from '@/components/public/genflix-cta-button';
@@ -22,6 +22,32 @@ function parsePriceLabelToNumber(priceLabel: string) {
     const normalized = priceLabel.replace(/\s+/g, '').replace(/[R$]/gi, '').replace(/\./g, '').replace(',', '.');
     const value = Number.parseFloat(normalized);
     return Number.isFinite(value) && value > 0 ? value : undefined;
+}
+function isExternalHref(href: string) {
+    return /^https?:\/\//i.test(href);
+}
+function renderResourceLink(href: string, label: string, className: string) {
+    const normalizedHref = href.trim() || '/recursos';
+    const content = (
+      <>
+        <span>{label}</span>
+        <ArrowUpRight className="h-3.5 w-3.5" />
+      </>
+    );
+
+    if (isExternalHref(normalizedHref)) {
+        return (
+          <a href={normalizedHref} target="_blank" rel="noreferrer" className={className}>
+            {content}
+          </a>
+        );
+    }
+
+    return (
+      <Link to={normalizedHref} className={className}>
+        {content}
+      </Link>
+    );
 }
 export function PublicCourseDetailsPage() {
     const { slug = '' } = useParams();
@@ -212,12 +238,33 @@ export function PublicCourseDetailsPage() {
                       </div>
                     </div>) : null}
 
-                  {selectedResourceItems.length ? (<div className="rounded-[20px] border border-[#D8E6EB] bg-[#F2F7F9] px-4 py-4">
-                      <p className="text-sm font-semibold text-[#183139]">Recursos do curso</p>
-                      <div className="mt-3 space-y-3">
-                        {selectedResourceItems.map((item) => (<div key={item.id} className="rounded-2xl border border-[#D8E6EB] bg-white px-4 py-3">
-                            <p className="text-sm font-bold text-[#183139]">{item.title ?? item.label ?? 'Recurso'}</p>
-                          </div>))}
+                  {selectedResourceItems.length ? (<div className="rounded-[24px] border border-[#D8E6EB] bg-[#F2F7F9] p-4">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="text-sm font-semibold text-[#183139]">Recursos do curso</p>
+                          <p className="mt-1 text-xs leading-5 text-[#6a7b81]">Acesse a página de recursos e materiais disponíveis para este curso.</p>
+                        </div>
+                        {renderResourceLink('/recursos', 'Página de recursos', 'inline-flex items-center gap-1 rounded-full border border-[#D8E6EB] bg-white px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.14em] text-[#183139] transition hover:border-[#1398B7] hover:text-[#0F7E99]')}
+                      </div>
+                      <div className="mt-4 grid gap-3">
+                        {selectedResourceItems.map((item) => {
+                        const resourceHref = typeof item.href === 'string' && item.href.trim() !== '' ? item.href.trim() : '/recursos';
+                        return (
+                          <div key={item.id} className="rounded-[22px] border border-[#D8E6EB] bg-white px-4 py-4 shadow-[0_10px_24px_rgba(21,50,59,0.04)]">
+                            <div className="flex items-start gap-3">
+                              <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#E8F6FA] text-[#1398B7]">
+                                <BadgeCheck className="h-5 w-5" />
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <p className="text-sm font-bold leading-6 text-[#183139]">{item.title ?? item.label ?? 'Recurso'}</p>
+                                <div className="mt-3">
+                                  {renderResourceLink(resourceHref, resourceHref === '/recursos' ? 'Ver página de recursos' : 'Abrir recurso', 'inline-flex items-center gap-1 rounded-full border border-[#15323B]/10 bg-[#F8FCFD] px-3 py-2 text-[10px] font-black uppercase tracking-[0.14em] text-[#15323B] transition hover:border-[#1398B7] hover:bg-[#E8F6FA] hover:text-[#0F7E99]')}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
                       </div>
                     </div>) : null}
 
