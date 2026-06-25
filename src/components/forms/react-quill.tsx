@@ -842,6 +842,10 @@ export default function ReactQuill({
   }, [activeMode]);
 
   const toolbarItems = useMemo(() => flattenToolbarItems(modules?.toolbar ?? defaultToolbar), [modules]);
+  const editorExtensions = useMemo(
+    () => createEditorExtensions(placeholder, onRequestImage),
+    [placeholder, onRequestImage],
+  );
   const toolbarButtons = useMemo<SupportedToolbarFlags>(() => ({
     header: toolbarHasObjectKey(toolbarItems, 'header'),
     bold: toolbarHasString(toolbarItems, 'bold'),
@@ -865,7 +869,7 @@ export default function ReactQuill({
   }), [toolbarItems]);
 
   const editor = useEditor({
-    extensions: createEditorExtensions(placeholder, onRequestImage),
+    extensions: editorExtensions,
     content: normalizeHtmlInput(value),
     editorProps: {
       attributes: {
