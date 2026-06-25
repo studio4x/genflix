@@ -263,7 +263,13 @@ export function CoursePublicPagePanel() {
 
               <label className="block space-y-2">
                 <span className="text-xs font-black uppercase tracking-widest text-slate-400">Descrição principal</span>
-                <textarea className="min-h-[132px] w-full rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4 text-sm font-medium leading-7 text-slate-700 outline-none focus:border-cyan-400 focus:bg-white" value={form.marketing_description} onChange={(event) => updateField('marketing_description', event.target.value)} placeholder="Resumo principal do curso para a dobra inicial." required/>
+                <RichTextEditor
+                  value={form.marketing_description}
+                  onChange={(value) => updateField('marketing_description', value)}
+                  placeholder="Resumo principal do curso para a dobra inicial."
+                  minHeightClassName="min-h-[220px]"
+                  enableHtmlMode
+                />
               </label>
 
               <div className="grid gap-5 md:grid-cols-2">
