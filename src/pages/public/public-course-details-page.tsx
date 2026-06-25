@@ -11,6 +11,7 @@ import { fetchPublicCourseDetailFromSupabase } from '@/features/public/genflix-p
 import { genflixNavLinks, type GenflixCourseDetail } from '@/features/public/genflix-site-content';
 import { genflixStudyFeatureCardsFallback, genflixStudyFeatureCardsSchema } from '@/features/public/genflix-study-feature-editor';
 import { CourseReviewsSection } from '@/features/reviews/course-reviews-section';
+import { fetchGlobalReviewsEnabled } from '@/features/reviews/review-settings';
 import { EditableList, isEditableItemVisible } from '@/features/site-editor/visual-editor';
 import { normalizeResourcesItems } from '@/features/public/genflix-resource-items-editor';
 import type { EditableListItem } from '@/features/site-editor/types';
@@ -59,6 +60,7 @@ export function PublicCourseDetailsPage() {
   const [isLoadingDetail, setIsLoadingDetail] = useState(true);
   const [openModule, setOpenModule] = useState(0);
   const [resourceCatalog, setResourceCatalog] = useState<EditableListItem[]>([]);
+  const [globalReviewsEnabled, setGlobalReviewsEnabled] = useState(true);
   const trackedCourseRef = useRef<string | null>(null);
 
   useEffect(() => {
@@ -88,6 +90,29 @@ export function PublicCourseDetailsPage() {
       isMounted = false;
     };
   }, [slug]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadGlobalReviewsSetting() {
+      try {
+        const enabled = await fetchGlobalReviewsEnabled();
+        if (isMounted) {
+          setGlobalReviewsEnabled(enabled);
+        }
+      } catch {
+        if (isMounted) {
+          setGlobalReviewsEnabled(true);
+        }
+      }
+    }
+
+    void loadGlobalReviewsSetting();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (!detail) {
@@ -358,7 +383,7 @@ export function PublicCourseDetailsPage() {
         </div>
       </section>
 
-      {detail.showReviews !== false ? <CourseReviewsSection courseId={detail.id} courseTitle={detail.title} /> : null}
+      {detail.showReviews !== false && globalReviewsEnabled ? <CourseReviewsSection courseId={detail.id} courseTitle={detail.title} /> : null}
 
       <section className="bg-[#F2F7F9] py-16">
         <div className="public-site-container">

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { CheckCircle2, RefreshCw, Search, Star, XCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { fetchAdminCourseReviews, moderateCourseReview, type AdminCourseReview, type ReviewModerationStatus, } from '@/features/reviews/api';
+import { fetchGlobalReviewsSettings, saveGlobalReviewsSettings } from '@/features/reviews/review-settings';
 import { cn } from '@/lib/utils';
 const statusLabels: Record<ReviewModerationStatus | 'all', string> = {
     all: 'Todos',
@@ -30,6 +31,9 @@ export function AdminReviewsPage() {
     const [status, setStatus] = useState<ReviewModerationStatus | 'all'>('pending');
     const [rating, setRating] = useState<number | null>(null);
     const [query, setQuery] = useState('');
+    const [globalReviewsEnabled, setGlobalReviewsEnabled] = useState(true);
+    const [isLoadingGlobalReviews, setIsLoadingGlobalReviews] = useState(true);
+    const [isSavingGlobalReviews, setIsSavingGlobalReviews] = useState(false);
     const [moderationReason, setModerationReason] = useState('');
     const [activeReviewId, setActiveReviewId] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -49,6 +53,50 @@ export function AdminReviewsPage() {
             setIsLoading(false);
         }
     }, [query, rating, status]);
+    useEffect(() => {
+        let isMounted = true;
+        async function loadGlobalReviewsSettings() {
+            setIsLoadingGlobalReviews(true);
+            try {
+                const settings = await fetchGlobalReviewsSettings();
+                if (isMounted) {
+                    setGlobalReviewsEnabled(settings.enabled);
+                }
+            }
+            catch {
+                if (isMounted) {
+                    setGlobalReviewsEnabled(true);
+                }
+            }
+            finally {
+                if (isMounted) {
+                    setIsLoadingGlobalReviews(false);
+                }
+            }
+        }
+        void loadGlobalReviewsSettings();
+        return () => {
+            isMounted = false;
+        };
+    }, []);
+    async function handleGlobalReviewsToggle(nextEnabled: boolean) {
+        setIsSavingGlobalReviews(true);
+        setErrorMessage(null);
+        setSuccessMessage(null);
+        try {
+            const settings = await saveGlobalReviewsSettings(nextEnabled);
+            setGlobalReviewsEnabled(settings.enabled);
+            setSuccessMessage(settings.enabled
+                ? 'Avaliações globais reativadas.'
+                : 'Avaliações globais desativadas para todos os cursos.');
+        }
+        catch (error) {
+            setErrorMessage(error instanceof Error ? error.message : 'Não foi possível salvar a configuração global de avaliações.');
+        }
+        finally {
+            setIsSavingGlobalReviews(false);
+        }
+    }
     useEffect(() => {
         const timer = window.setTimeout(() => {
             void loadReviews();
@@ -113,6 +161,36 @@ export function AdminReviewsPage() {
             <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#8BA0A7]">{label}</p>
             <p className="mt-2 font-readex text-3xl font-semibold text-[#15323b]">{value}</p>
           </div>))}
+      </section>
+
+      <section className="border border-[#D8E6EB] bg-white p-5 shadow-[0_12px_28px_rgba(10,54,64,0.04)]">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#8BA0A7]">Configuração global</p>
+            <h2 className="mt-2 font-readex text-2xl font-semibold tracking-tight text-[#15323b]">Avaliações em todos os cursos</h2>
+            <p className="mt-2 max-w-2xl text-sm font-medium leading-6 text-[#6d7f84]">
+              Quando desativado, a seção pública de avaliações fica oculta em todos os cursos, mesmo que o toggle individual do curso esteja ligado.
+            </p>
+          </div>
+
+          <label className="flex items-center gap-3 rounded-2xl border border-[#D8E6EB] bg-[#F8FBFC] px-4 py-3">
+            <input
+              type="checkbox"
+              checked={globalReviewsEnabled}
+              disabled={isLoadingGlobalReviews || isSavingGlobalReviews}
+              onChange={(event) => void handleGlobalReviewsToggle(event.target.checked)}
+              className="h-5 w-5 rounded border-[#C7D8DE] text-[#1398B7] focus:ring-[#1398B7]"
+            />
+            <div>
+              <p className="text-sm font-black text-[#15323b]">
+                {globalReviewsEnabled ? 'Avaliações ativadas' : 'Avaliações desativadas'}
+              </p>
+              <p className="text-xs font-medium text-[#6d7f84]">
+                {isSavingGlobalReviews ? 'Salvando...' : isLoadingGlobalReviews ? 'Carregando configuração...' : 'Controle global para a página pública.'}
+              </p>
+            </div>
+          </label>
+        </div>
       </section>
 
       <section className="border border-[#D8E6EB] bg-[#F8FBFC] p-4">
