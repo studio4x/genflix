@@ -261,7 +261,7 @@ export function CoursePublicPagePanel() {
                 </div>
               </div>
 
-              <label className="block space-y-2">
+              <div className="block space-y-2">
                 <span className="text-xs font-black uppercase tracking-widest text-slate-400">Descrição principal</span>
                 <RichTextEditor
                   value={form.marketing_description}
@@ -270,7 +270,7 @@ export function CoursePublicPagePanel() {
                   minHeightClassName="min-h-[220px]"
                   enableHtmlMode
                 />
-              </label>
+              </div>
 
               <div className="grid gap-5 md:grid-cols-2">
                 <label className="block space-y-2">

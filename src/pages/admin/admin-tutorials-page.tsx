@@ -722,7 +722,7 @@ export function AdminTutorialsPage() {
                                   />
                                 </label>
 
-                                <label className="block space-y-2">
+                                <div className="block space-y-2">
                                   <span className="text-xs font-black uppercase tracking-[0.18em] text-[#5F7077]">Descrição rica</span>
                                   <RichTextEditor
                                     value={step.description}
@@ -732,7 +732,7 @@ export function AdminTutorialsPage() {
                                     minHeightClassName="min-h-[220px]"
                                     placeholder="Escreva o passo a passo com formatação, links ou listas."
                                   />
-                                </label>
+                                </div>
                               </div>
                             </div>
                           ))}
