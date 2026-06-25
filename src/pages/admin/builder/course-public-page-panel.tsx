@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { BookOpen, Layers3, Plus, Trash2 } from 'lucide-react';
 import { useCourseBuilder } from '@/app/layouts/admin-course-builder-layout';
 import { Button } from '@/components/ui/button';
+import { RichTextEditor } from '@/components/ui/RichTextEditor';
 import { updateCoursePublicPage, toErrorMessage, } from '@/features/admin/content/api';
 import { coursePublicPageFormSchema } from '@/features/admin/content/schemas';
 import { buildCoursePublicDetail, normalizeCoursePublicPageContent, } from '@/features/public/course-public-page-content';
@@ -340,24 +341,32 @@ export function CoursePublicPagePanel() {
 
           <div className="mt-8 space-y-8">
             <div className="space-y-3">
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <p className="text-sm font-black text-slate-900">Sobre o curso</p>
-                  <p className="text-xs font-medium text-slate-500">Cada campo abaixo representa um paragrafo exibido na seção.</p>
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-black text-slate-900">Sobre o curso</p>
+                    <p className="text-xs font-medium text-slate-500">Cada bloco abaixo aceita formatação HTML e pode ser alternado entre visual e código.</p>
+                  </div>
+                  <Button type="button" variant="outline" className="rounded-2xl" onClick={() => updateField('aboutParagraphs', [...form.aboutParagraphs, ''])}>
+                    <Plus className="mr-2 h-4 w-4"/>
+                    Adicionar paragrafo
+                  </Button>
                 </div>
-                <Button type="button" variant="outline" className="rounded-2xl" onClick={() => updateField('aboutParagraphs', [...form.aboutParagraphs, ''])}>
-                  <Plus className="mr-2 h-4 w-4"/>
-                  Adicionar paragrafo
-                </Button>
-              </div>
 
               {form.aboutParagraphs.map((paragraph, index) => (<div key={`about-${index}`} className="flex items-start gap-3">
-                  <textarea className="min-h-[110px] flex-1 rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4 text-sm font-medium leading-7 text-slate-700 outline-none focus:border-cyan-400 focus:bg-white" value={paragraph} onChange={(event) => updateParagraph(index, event.target.value)} placeholder="Parágrafo da seção Sobre o Curso"/>
+                  <div className="min-w-0 flex-1">
+                    <RichTextEditor
+                      value={paragraph}
+                      onChange={(value) => updateParagraph(index, value)}
+                      placeholder="Parágrafo da seção Sobre o curso"
+                      minHeightClassName="min-h-[220px]"
+                      enableHtmlMode
+                    />
+                  </div>
                   <Button type="button" variant="outline" size="icon" className="mt-1 h-12 w-12 rounded-2xl" onClick={() => updateField('aboutParagraphs', form.aboutParagraphs.filter((_, paragraphIndex) => paragraphIndex !== index))} disabled={form.aboutParagraphs.length === 1}>
                     <Trash2 className="h-4 w-4"/>
                   </Button>
                 </div>))}
-            </div>
+              </div>
 
             <div className="rounded-[24px] border border-slate-200 bg-slate-50 px-5 py-5 text-sm leading-7 text-slate-600">
               A seção <span className="font-black text-slate-900">O que você vai aprender</span> foi removida da interface pública, mas os dados antigos continuam preservados no banco por compatibilidade.

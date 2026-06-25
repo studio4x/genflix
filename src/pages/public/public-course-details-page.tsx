@@ -14,6 +14,7 @@ import { CourseReviewsSection } from '@/features/reviews/course-reviews-section'
 import { fetchGlobalReviewsEnabled } from '@/features/reviews/review-settings';
 import { EditableList, isEditableItemVisible } from '@/features/site-editor/visual-editor';
 import { normalizeResourcesItems } from '@/features/public/genflix-resource-items-editor';
+import { sanitizeRichTextHtml } from '@/features/admin/content/content-blocks';
 import type { EditableListItem } from '@/features/site-editor/types';
 import { dispatchSiteViewItemEvent } from '@/features/site-editor/site-tracking';
 import { renderSiteIconVisual } from '@/features/site-editor/site-icons';
@@ -52,6 +53,26 @@ function ResourceSaibaMaisLink({ href, className }: { href: string; className: s
       {content}
     </Link>
   );
+}
+
+function escapeHtml(value: string) {
+  return value
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;');
+}
+
+function renderAboutParagraphHtml(value: string) {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return null;
+  }
+
+  const normalizedHtml = /<\/?[a-z][\s\S]*>/i.test(trimmed) ? trimmed : `<p>${escapeHtml(trimmed)}</p>`;
+
+  return sanitizeRichTextHtml(normalizedHtml);
 }
 
 export function PublicCourseDetailsPage() {
@@ -235,10 +256,12 @@ export function PublicCourseDetailsPage() {
               <section>
                 <h2 className="text-[1.45rem] font-bold tracking-[-0.03em] text-[#183139]">Sobre o curso</h2>
                 <div className="mt-4 space-y-4">
-                  {detail.aboutParagraphs.map((paragraph) => (
-                    <p key={paragraph} className="max-w-[760px] text-[15px] leading-7 text-[#5f7178]">
-                      {paragraph}
-                    </p>
+                  {detail.aboutParagraphs.map((paragraph, index) => (
+                    <div
+                      key={`${detail.slug}-about-${index}`}
+                      className="rich-text-content max-w-[760px] text-[15px] leading-7 text-[#5f7178] [&_p]:mb-4 [&_p:last-child]:mb-0 [&_ul]:my-4 [&_ol]:my-4 [&_li]:mb-2 [&_a]:text-[#1398B7] [&_a]:underline"
+                      dangerouslySetInnerHTML={{ __html: renderAboutParagraphHtml(paragraph) ?? '' }}
+                    />
                   ))}
                 </div>
               </section>
