@@ -156,24 +156,26 @@ export function PublicCourseDetailsPage() {
       <section className="relative overflow-hidden bg-[linear-gradient(180deg,#0D728E_0%,#0B667F_100%)] text-white">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.12),transparent_42%),radial-gradient(circle_at_bottom_left,rgba(255,255,255,0.08),transparent_36%)]" />
         <div className="public-site-container relative py-10 lg:py-14">
-          <div className="grid items-center gap-8 lg:grid-cols-[180px_minmax(0,1fr)_minmax(380px,0.92fr)] lg:gap-10">
+          <div className="grid items-center gap-8 lg:grid-cols-[170px_minmax(0,1.35fr)_420px] lg:gap-12 xl:grid-cols-[180px_minmax(0,1.45fr)_440px]">
             <div className="flex justify-center lg:justify-start">
               {detail.logoUrl ? (
-                <div className="flex h-32 w-32 items-center justify-center rounded-[28px] border border-white/18 bg-white/10 p-5 shadow-[0_16px_32px_rgba(5,24,32,0.18)] backdrop-blur-sm sm:h-36 sm:w-36">
-                  <img src={detail.logoUrl} alt={`Logo do curso ${detail.title}`} className="h-full w-full object-contain" />
-                </div>
+                <img
+                  src={detail.logoUrl}
+                  alt={`Logo do curso ${detail.title}`}
+                  className="h-32 w-32 object-contain sm:h-36 sm:w-36 lg:h-40 lg:w-40"
+                />
               ) : (
-                <div className="flex h-32 w-32 items-center justify-center rounded-[28px] border border-white/18 bg-white/10 text-[1.9rem] font-black uppercase tracking-[0.12em] text-white shadow-[0_16px_32px_rgba(5,24,32,0.18)] backdrop-blur-sm sm:h-36 sm:w-36">
+                <div className="flex h-32 w-32 items-center justify-center rounded-[28px] bg-white/10 text-[1.9rem] font-black uppercase tracking-[0.12em] text-white shadow-[0_16px_32px_rgba(5,24,32,0.18)] backdrop-blur-sm sm:h-36 sm:w-36 lg:h-40 lg:w-40">
                   {detail.mentor.initials}
                 </div>
               )}
             </div>
 
-            <div className="max-w-[720px]">
+            <div className="min-w-0 max-w-none">
               <p className="inline-flex rounded-full border border-white/18 bg-white/10 px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.24em] text-white/82">
                 {detail.categoryLine || 'Curso'}
               </p>
-              <h1 className="mt-4 text-[2.6rem] font-extrabold leading-[0.94] tracking-[-0.05em] text-white sm:text-[3.1rem]">
+              <h1 className="mt-4 max-w-none text-[2.6rem] font-extrabold leading-[0.94] tracking-[-0.05em] text-white sm:text-[3.1rem] lg:whitespace-nowrap lg:text-[3.4rem] xl:text-[3.7rem]">
                 {detail.title}
               </h1>
               <GenflixCtaButton asChild tone="surface" className="mt-8 h-12 px-6 text-[15px] font-bold shadow-none">
@@ -182,8 +184,8 @@ export function PublicCourseDetailsPage() {
             </div>
 
             <div className="lg:justify-self-end">
-              <div className="overflow-hidden rounded-[26px] border border-white/16 bg-[#173039] shadow-[0_28px_60px_rgba(5,24,32,0.28)]">
-                <div className="aspect-video">
+              <div className="overflow-hidden rounded-[26px] border border-white/16 bg-[#173039] shadow-[0_28px_60px_rgba(5,24,32,0.28)] lg:w-[420px] xl:w-[440px]">
+                <div className="aspect-[16/9]">
                   <CourseCoverMedia
                     src={detail.coverImage}
                     videoSrc={detail.heroVideoUrl}
@@ -203,7 +205,7 @@ export function PublicCourseDetailsPage() {
 
       <section className="bg-white pb-20 pt-4">
         <div className="public-site-container">
-          <div className="grid gap-12 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start">
+          <div className="grid gap-12 lg:grid-cols-[minmax(0,1fr)_420px] lg:items-start xl:grid-cols-[minmax(0,1fr)_440px]">
             <div className="max-w-[820px] space-y-10">
               <section>
                 <h2 className="text-[1.45rem] font-bold tracking-[-0.03em] text-[#183139]">Sobre o curso</h2>
