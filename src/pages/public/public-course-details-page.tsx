@@ -349,7 +349,7 @@ export function PublicCourseDetailsPage() {
                   </div>
 
                   <GenflixCtaButton asChild className="w-full px-5 py-3">
-                    <Link to={`/cursos/${slug}/preview`}>Acessar gratuitamente uma aula</Link>
+                    <Link to={`/cursos/${slug}/preview`}>Abrir visualizacao do curso</Link>
                   </GenflixCtaButton>
 
                   <GenflixCtaButton asChild className="w-full px-5 py-3">

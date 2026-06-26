@@ -317,6 +317,39 @@ export interface PublicCourseFreePreview {
     firstFreeLessonId: string | null;
     modules: PublicCourseFreePreviewModule[];
 }
+export interface PublicCoursePlayerLesson {
+    id: string;
+    moduleId: string;
+    title: string;
+    description: string | null;
+    lessonType: 'video' | 'text' | 'hybrid' | 'file';
+    youtubeUrl: string | null;
+    textContent: string | null;
+    estimatedMinutes: number;
+    position: number;
+    startsAt: string | null;
+    endsAt: string | null;
+    isFreePreview: boolean;
+    isUnlocked: boolean;
+}
+export interface PublicCoursePlayerModule {
+    id: string;
+    title: string;
+    description: string | null;
+    position: number;
+    isRequired: boolean;
+    isUnlocked: boolean;
+    startsAt: string | null;
+    endsAt: string | null;
+    lessons: PublicCoursePlayerLesson[];
+}
+export interface PublicCoursePlayerView {
+    courseId: string;
+    courseSlug: string;
+    firstLessonId: string | null;
+    firstAccessibleLessonId: string | null;
+    modules: PublicCoursePlayerModule[];
+}
 function trimPreviewText(value: unknown) {
     return typeof value === 'string' ? value.trim() : '';
 }
@@ -373,6 +406,67 @@ function normalizePreviewModule(value: unknown): PublicCourseFreePreviewModule |
         lessons,
     };
 }
+function normalizePlayerLesson(value: unknown): PublicCoursePlayerLesson | null {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) {
+        return null;
+    }
+    const record = value as Record<string, unknown>;
+    const id = trimPreviewText(record.id);
+    const moduleId = trimPreviewText(record.module_id);
+    const title = trimPreviewText(record.title);
+    if (!id || !moduleId || !title) {
+        return null;
+    }
+    const lessonType = record.lesson_type === 'text' || record.lesson_type === 'hybrid' || record.lesson_type === 'file'
+        ? record.lesson_type
+        : 'video';
+    return {
+        id,
+        moduleId,
+        title,
+        description: typeof record.description === 'string' ? record.description.trim() || null : null,
+        lessonType,
+        youtubeUrl: typeof record.youtube_url === 'string' ? record.youtube_url.trim() || null : null,
+        textContent: typeof record.text_content === 'string' ? record.text_content : null,
+        estimatedMinutes: typeof record.estimated_minutes === 'number' && Number.isFinite(record.estimated_minutes)
+            ? Math.max(0, Math.round(record.estimated_minutes))
+            : 0,
+        position: typeof record.position === 'number' && Number.isFinite(record.position)
+            ? Math.max(0, Math.round(record.position))
+            : 0,
+        startsAt: typeof record.starts_at === 'string' ? record.starts_at : null,
+        endsAt: typeof record.ends_at === 'string' ? record.ends_at : null,
+        isFreePreview: record.is_free_preview === true,
+        isUnlocked: record.is_unlocked === true,
+    };
+}
+function normalizePlayerModule(value: unknown): PublicCoursePlayerModule | null {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) {
+        return null;
+    }
+    const record = value as Record<string, unknown>;
+    const id = trimPreviewText(record.id);
+    const title = trimPreviewText(record.title);
+    if (!id || !title) {
+        return null;
+    }
+    const lessons = Array.isArray(record.lessons)
+        ? record.lessons.map(normalizePlayerLesson).filter((item): item is PublicCoursePlayerLesson => Boolean(item))
+        : [];
+    return {
+        id,
+        title,
+        description: typeof record.description === 'string' ? record.description.trim() || null : null,
+        position: typeof record.position === 'number' && Number.isFinite(record.position)
+            ? Math.max(0, Math.round(record.position))
+            : 0,
+        isRequired: record.is_required === true,
+        isUnlocked: record.is_unlocked === true,
+        startsAt: typeof record.starts_at === 'string' ? record.starts_at : null,
+        endsAt: typeof record.ends_at === 'string' ? record.ends_at : null,
+        lessons,
+    };
+}
 export async function fetchPublicCourseFreePreviewFromSupabase(slug: string): Promise<PublicCourseFreePreview | null> {
     if (!supabaseUrl || !supabaseAnonKey) {
         throw new Error('Configuração pública do Supabase ausente.');
@@ -410,6 +504,48 @@ export async function fetchPublicCourseFreePreviewFromSupabase(slug: string): Pr
         courseId,
         courseSlug,
         firstFreeLessonId,
+        modules,
+    };
+}
+export async function fetchPublicCoursePlayerViewFromSupabase(slug: string): Promise<PublicCoursePlayerView | null> {
+    if (!supabaseUrl || !supabaseAnonKey) {
+        throw new Error('Configuração pública do Supabase ausente.');
+    }
+    const response = await fetch(`${supabaseUrl}/rest/v1/rpc/get_public_course_player_view`, {
+        method: 'POST',
+        cache: 'no-store',
+        headers: {
+            'Content-Type': 'application/json',
+            apikey: supabaseAnonKey,
+            'cache-control': 'no-store, max-age=0',
+            pragma: 'no-cache',
+        },
+        body: JSON.stringify({ _slug: slug }),
+    });
+    if (!response.ok) {
+        const message = await response.text();
+        throw new Error(message || 'Não foi possível carregar a visualização pública do curso.');
+    }
+    const payload = (await response.json()) as unknown;
+    if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
+        return null;
+    }
+    const record = payload as Record<string, unknown>;
+    const courseId = trimPreviewText(record.course_id);
+    const courseSlug = trimPreviewText(record.course_slug);
+    const firstLessonId = trimPreviewText(record.first_lesson_id) || null;
+    const firstAccessibleLessonId = trimPreviewText(record.first_accessible_lesson_id) || null;
+    const modules = Array.isArray(record.modules)
+        ? record.modules.map(normalizePlayerModule).filter((item): item is PublicCoursePlayerModule => Boolean(item))
+        : [];
+    if (!courseId || !courseSlug) {
+        return null;
+    }
+    return {
+        courseId,
+        courseSlug,
+        firstLessonId,
+        firstAccessibleLessonId,
         modules,
     };
 }
