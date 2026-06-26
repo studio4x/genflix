@@ -229,6 +229,7 @@ export function PublicCourseDetailsPage() {
     iconBackgroundColor: 'rgba(255, 255, 255, 0.18)',
     iconTextColor: '#ffffff',
   };
+  const courseBenefitsCardTitle = 'O que você recebe';
 
   return (
     <main className="min-h-screen bg-[#F2F7F9] font-manrope text-[#163138]">
@@ -433,13 +434,19 @@ export function PublicCourseDetailsPage() {
                     </div>
                   ) : null}
 
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    {detail.includedItems.map((item) => (
-                      <div key={item} className="flex items-center gap-2 rounded-2xl border border-[#D8E6EB] bg-[#F2F7F9] px-3 py-3 text-sm text-[#5f7178]">
-                        <BadgeCheck className="h-4 w-4 shrink-0 text-[#1398B7]" />
-                        <span>{item}</span>
-                      </div>
-                    ))}
+                  <div className="rounded-[22px] border border-[#D8E6EB] bg-white p-4 shadow-[0_12px_28px_rgba(21,50,59,0.04)]">
+                    <div>
+                      <p className="text-sm font-semibold text-[#183139]">{courseBenefitsCardTitle}</p>
+                      <p className="mt-1 text-xs leading-5 text-[#6a7b81]">Tudo o que já está incluído na sua jornada neste curso.</p>
+                    </div>
+                    <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                      {detail.includedItems.map((item) => (
+                        <div key={item} className="flex items-center gap-2 rounded-2xl border border-[#D8E6EB] bg-[#F2F7F9] px-3 py-3 text-sm text-[#5f7178]">
+                          <BadgeCheck className="h-4 w-4 shrink-0 text-[#1398B7]" />
+                          <span>{item}</span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
               </div>
