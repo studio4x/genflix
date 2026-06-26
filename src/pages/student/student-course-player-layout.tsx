@@ -138,6 +138,18 @@ export function StudentCoursePlayerLayout() {
     const totalModules = modules.length;
     const courseProgressPercent = totalModules === 0 ? 0 : Math.round((totalCompleted / totalModules) * 100);
     const finalAssessment = assessments.find((assessment) => assessment.assessment_type === 'final');
+    const firstLessonId = useMemo(() => {
+        for (const module of modules) {
+            if (module.state === 'blocked' || module.state === 'blocked_by_schedule') {
+                continue;
+            }
+            const firstLesson = module.lessons[0];
+            if (firstLesson) {
+                return firstLesson.id;
+            }
+        }
+        return modules.flatMap((module) => module.lessons)[0]?.id ?? null;
+    }, [modules]);
     const normalizedSidebarQuery = sidebarQuery.trim().toLowerCase();
     const filteredSidebarModules = useMemo(() => {
         return modules
@@ -170,6 +182,12 @@ export function StudentCoursePlayerLayout() {
             moduleQuizzes: StudentCourseAssessmentSummary[];
         } => entry !== null);
     }, [assessments, modules, normalizedSidebarQuery]);
+    useEffect(() => {
+        if (!courseId || lessonId || assessmentId || !firstLessonId) {
+            return;
+        }
+        navigate(`/aluno/cursos/${courseId}/player/aulas/${firstLessonId}`, { replace: true });
+    }, [assessmentId, courseId, firstLessonId, lessonId, navigate]);
     if (isLoading) {
         return (<div className="flex min-h-screen flex-col items-center justify-center space-y-4 bg-slate-50">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent"/>

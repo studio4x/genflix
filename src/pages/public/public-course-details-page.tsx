@@ -7,7 +7,7 @@ import { GenflixPublicFooter } from '@/components/public/genflix-public-footer';
 import { GenflixPublicHeader } from '@/components/public/genflix-public-header';
 import { BannerPlacementSlot } from '@/features/banners/banner-placement-slot';
 import { fetchSiteContent } from '@/features/site-editor/api';
-import { fetchPublicCourseDetailFromSupabase } from '@/features/public/genflix-public-content-api';
+import { fetchPublicCourseDetailFromSupabase, fetchPublicCoursePlayerViewFromSupabase, type PublicCoursePlayerView } from '@/features/public/genflix-public-content-api';
 import { genflixNavLinks, type GenflixCourseDetail } from '@/features/public/genflix-site-content';
 import { genflixStudyFeatureCardsFallback, genflixStudyFeatureCardsSchema } from '@/features/public/genflix-study-feature-editor';
 import { CourseReviewsSection } from '@/features/reviews/course-reviews-section';
@@ -78,6 +78,7 @@ function renderAboutParagraphHtml(value: string) {
 export function PublicCourseDetailsPage() {
   const { slug = '' } = useParams();
   const [detail, setDetail] = useState<GenflixCourseDetail | null>(null);
+  const [playerView, setPlayerView] = useState<PublicCoursePlayerView | null>(null);
   const [isLoadingDetail, setIsLoadingDetail] = useState(true);
   const [openModule, setOpenModule] = useState(0);
   const [resourceCatalog, setResourceCatalog] = useState<EditableListItem[]>([]);
@@ -106,6 +107,29 @@ export function PublicCourseDetailsPage() {
     }
 
     void loadDetail();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [slug]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadPlayerView() {
+      try {
+        const publicPlayerView = await fetchPublicCoursePlayerViewFromSupabase(slug);
+        if (isMounted) {
+          setPlayerView(publicPlayerView);
+        }
+      } catch {
+        if (isMounted) {
+          setPlayerView(null);
+        }
+      }
+    }
+
+    void loadPlayerView();
 
     return () => {
       isMounted = false;
@@ -193,6 +217,12 @@ export function PublicCourseDetailsPage() {
       </main>
     );
   }
+
+  const playerEntryHref = detail.id
+    ? playerView?.firstAccessibleLessonId
+      ? `/aluno/cursos/${detail.id}/player/aulas/${playerView.firstAccessibleLessonId}`
+      : `/aluno/cursos/${detail.id}/player`
+    : null;
 
   return (
     <main className="min-h-screen bg-[#F2F7F9] font-manrope text-[#163138]">
@@ -348,9 +378,15 @@ export function PublicCourseDetailsPage() {
                     <p className="mt-2 text-sm text-[#6a7b81]">{detail.secondaryPriceLabel}</p>
                   </div>
 
-                  <GenflixCtaButton asChild className="w-full px-5 py-3">
-                    <Link to={`/cursos/${slug}/preview`}>Abrir visualizacao do curso</Link>
-                  </GenflixCtaButton>
+                  {playerEntryHref ? (
+                    <GenflixCtaButton asChild className="w-full px-5 py-3">
+                      <Link to={playerEntryHref}>Abrir player do curso</Link>
+                    </GenflixCtaButton>
+                  ) : (
+                    <GenflixCtaButton className="w-full px-5 py-3" disabled>
+                      Abrir player do curso
+                    </GenflixCtaButton>
+                  )}
 
                   <GenflixCtaButton asChild className="w-full px-5 py-3">
                     <Link to={`/checkout/pagamento/${slug}`}>Comprar agora</Link>
