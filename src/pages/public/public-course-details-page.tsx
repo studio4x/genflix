@@ -230,6 +230,7 @@ export function PublicCourseDetailsPage() {
     iconTextColor: '#ffffff',
   };
   const courseBenefitsCardTitle = 'O que você recebe';
+  const courseInvestmentCardTitle = 'Seu investimento';
 
   return (
     <main className="min-h-screen bg-[#F2F7F9] font-manrope text-[#163138]">
@@ -447,6 +448,26 @@ export function PublicCourseDetailsPage() {
                         </div>
                       ))}
                     </div>
+                  </div>
+
+                  <div className="rounded-[22px] border border-[#D8E6EB] bg-white p-4 shadow-[0_12px_28px_rgba(21,50,59,0.04)]">
+                    <div>
+                      <p className="text-sm font-semibold text-[#183139]">{courseInvestmentCardTitle}</p>
+                      <p className="mt-1 text-xs leading-5 text-[#6a7b81]">Garanta seu acesso agora e comece a estudar sem esperar.</p>
+                    </div>
+                    <div className="mt-4 rounded-[18px] border border-[#D8E6EB] bg-[#F8FCFD] px-4 py-4">
+                      <p className="text-[2rem] font-extrabold leading-none tracking-[-0.05em] text-[#1398B7]">
+                        {detail.priceLabel}
+                      </p>
+                      <p className="mt-2 text-xs font-semibold uppercase tracking-[0.08em] text-[#5f7178]">
+                        em até 12x no cartão de crédito
+                      </p>
+                      <p className="mt-2 text-sm text-[#6a7b81]">{detail.secondaryPriceLabel}</p>
+                    </div>
+
+                    <GenflixCtaButton asChild className="mt-4 w-full px-5 py-3">
+                      <Link to={`/checkout/pagamento/${slug}`}>Comprar agora</Link>
+                    </GenflixCtaButton>
                   </div>
                 </div>
               </div>
