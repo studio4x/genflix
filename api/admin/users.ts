@@ -69,10 +69,6 @@ const createUserSchema = z.object({
         .optional(),
     roleCode: z.enum(assignableRoleCodes),
 });
-const updateRoleSchema = z.object({
-    userId: z.string().uuid('Usuário inválido.'),
-    roleCode: z.enum(assignableRoleCodes),
-});
 const updateUserSchema = z.object({
     userId: z.string().uuid('Usuário inválido.'),
     email: z.string().email('E-mail inválido.').optional(),
