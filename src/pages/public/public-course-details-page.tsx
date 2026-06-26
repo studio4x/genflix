@@ -223,6 +223,12 @@ export function PublicCourseDetailsPage() {
       ? `/aluno/cursos/${detail.id}/player/aulas/${playerView.firstAccessibleLessonId}`
       : `/aluno/cursos/${detail.id}/player`
     : null;
+  const freeLessonCtaColors = {
+    buttonBackgroundColor: '#f78902',
+    buttonTextColor: '#ffffff',
+    iconBackgroundColor: 'rgba(255, 255, 255, 0.18)',
+    iconTextColor: '#ffffff',
+  };
 
   return (
     <main className="min-h-screen bg-[#F2F7F9] font-manrope text-[#163138]">
@@ -379,12 +385,12 @@ export function PublicCourseDetailsPage() {
                   </div>
 
                   {playerEntryHref ? (
-                    <GenflixCtaButton asChild className="w-full px-5 py-3">
-                      <Link to={playerEntryHref}>Abrir player do curso</Link>
+                    <GenflixCtaButton asChild className="w-full px-5 py-3" customColors={freeLessonCtaColors}>
+                      <Link to={playerEntryHref}>Assista a uma aula Gratuita</Link>
                     </GenflixCtaButton>
                   ) : (
-                    <GenflixCtaButton className="w-full px-5 py-3" disabled>
-                      Abrir player do curso
+                    <GenflixCtaButton className="w-full px-5 py-3" disabled customColors={freeLessonCtaColors}>
+                      Assista a uma aula Gratuita
                     </GenflixCtaButton>
                   )}
 
