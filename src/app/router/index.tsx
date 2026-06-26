@@ -306,6 +306,20 @@ const appRoutes = [
         element: <PublicEditableRoute pageKey="terms" seo={{ entryKey: "terms.seo", fallback: { title: 'GenFlix | Termos de uso', description: 'Leia os termos de uso aplicáveis à plataforma GenFlix.', slug: '/termos-de-uso', image: '' } }}><TermsOfUsePage /></PublicEditableRoute>,
     },
     {
+        path: '/aluno/cursos/:courseId/player',
+        element: withRouteSuspense(<StudentCoursePlayerLayout />),
+        children: [
+            {
+                path: 'aulas/:lessonId',
+                element: withRouteSuspense(<StudentLessonPage />),
+            },
+            {
+                path: 'avaliacoes/:assessmentId',
+                element: withRouteSuspense(<StudentAssessmentExecutionPage />),
+            },
+        ],
+    },
+    {
         element: <ProtectedRoute allowedRoles={['student', 'aluno', 'admin']}/>,
         children: [
             {
@@ -355,20 +369,6 @@ const appRoutes = [
                     {
                         path: '/aluno/preferencias-notificacoes',
                         element: withRouteSuspense(<StudentNotificationsPage initialTab="preferencias" />),
-                    },
-                ],
-            },
-            {
-                path: '/aluno/cursos/:courseId/player',
-                element: withRouteSuspense(<StudentCoursePlayerLayout />),
-                children: [
-                    {
-                        path: 'aulas/:lessonId',
-                        element: withRouteSuspense(<StudentLessonPage />),
-                    },
-                    {
-                        path: 'avaliacoes/:assessmentId',
-                        element: withRouteSuspense(<StudentAssessmentExecutionPage />),
                     },
                 ],
             },

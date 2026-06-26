@@ -458,6 +458,7 @@ export interface StudentLessonWithProgress {
     completed_at: string | null;
     starts_at: string | null;
     ends_at: string | null;
+    is_unlocked?: boolean;
 }
 export interface StudentCourseModuleProgress {
     id: string;

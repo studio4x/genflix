@@ -3,6 +3,7 @@ import { Link, Outlet, useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '@/app/providers/auth-provider';
 import { Button } from '@/components/ui/button';
 import { fetchAdminCourseTree, type AdminCourseTree } from '@/features/admin/content/api';
+import { fetchPublicCoursePlayerViewFromSupabase, type PublicCoursePlayerView } from '@/features/public/genflix-public-content-api';
 import { fetchReleasedCourseById, fetchStudentCourseContentWithProgress, toErrorMessage, } from '@/features/student/courses/api';
 import { fetchStudentCourseAssessments, type StudentCourseAssessmentSummary, } from '@/features/student/assessments/api';
 import type { Course, StudentCourseModuleProgress } from '@/types/content';
@@ -13,7 +14,7 @@ export function StudentCoursePlayerLayout() {
         assessmentId?: string;
     }>();
     const navigate = useNavigate();
-    const { roles } = useAuth();
+    const { user, roles } = useAuth();
     const isAdmin = roles.includes('admin');
     const [course, setCourse] = useState<Course | null>(null);
     const [modules, setModules] = useState<StudentCourseModuleProgress[]>([]);
@@ -109,6 +110,21 @@ export function StudentCoursePlayerLayout() {
                         ]);
                     }
                 }
+                else if (!user) {
+                    const courseResult = await fetchReleasedCourseById(courseId);
+                    if (!courseResult?.slug) {
+                        throw new Error('Curso não encontrado.');
+                    }
+                    const playerView = await fetchPublicCoursePlayerViewFromSupabase(courseResult.slug);
+                    if (!playerView) {
+                        throw new Error('Não foi possível carregar a visualização do curso.');
+                    }
+                    if (isMounted) {
+                        setCourse(courseResult);
+                        setModules(mapPublicPlayerModules(playerView));
+                        setAssessments([]);
+                    }
+                }
                 else {
                     const [courseResult, modulesResult, assessmentsResult] = await Promise.all([
                         fetchReleasedCourseById(courseId),
@@ -133,7 +149,7 @@ export function StudentCoursePlayerLayout() {
         }
         void loadData();
         return () => { isMounted = false; };
-    }, [courseId, roles]);
+    }, [courseId, isAdmin, user]);
     const totalCompleted = modules.filter(m => m.state === 'completed').length;
     const totalModules = modules.length;
     const courseProgressPercent = totalModules === 0 ? 0 : Math.round((totalCompleted / totalModules) * 100);
@@ -143,7 +159,7 @@ export function StudentCoursePlayerLayout() {
             if (module.state === 'blocked' || module.state === 'blocked_by_schedule') {
                 continue;
             }
-            const firstLesson = module.lessons[0];
+            const firstLesson = module.lessons.find((lesson) => lesson.is_unlocked !== false) ?? module.lessons[0];
             if (firstLesson) {
                 return firstLesson.id;
             }
@@ -182,6 +198,8 @@ export function StudentCoursePlayerLayout() {
             moduleQuizzes: StudentCourseAssessmentSummary[];
         } => entry !== null);
     }, [assessments, modules, normalizedSidebarQuery]);
+    const courseListHref = user ? '/aluno/cursos' : '/cursos';
+    const courseBackHref = user ? `/aluno/cursos/${courseId}` : course?.slug ? `/cursos/${course.slug}` : '/cursos';
     useEffect(() => {
         if (!courseId || lessonId || assessmentId || !firstLessonId) {
             return;
@@ -199,14 +217,14 @@ export function StudentCoursePlayerLayout() {
         <div className="max-w-md space-y-4 text-center">
           <h2 className="text-xl font-bold text-slate-900">Oops! Algo deu errado.</h2>
           <p className="text-sm font-medium text-slate-500">{error || 'Curso não encontrado.'}</p>
-          <Button onClick={() => navigate('/aluno/cursos')}>Voltar aos meus cursos</Button>
+          <Button onClick={() => navigate(courseListHref)}>Voltar aos cursos</Button>
         </div>
       </div>);
     }
     return (<div className="flex h-screen w-full overflow-hidden bg-slate-50 text-slate-900">
       <aside className={`shrink-0 flex flex-col border-r border-slate-200 bg-white transition-all duration-300 ${isSidebarOpen ? 'w-80' : 'w-0 overflow-hidden'}`}>
         <div className="flex min-h-[64px] items-center justify-between border-b border-slate-100 p-4">
-          <Link to={`/aluno/cursos/${courseId}`} className="flex items-center gap-2 truncate text-sm font-bold text-slate-700 hover:text-blue-600">
+          <Link to={courseBackHref} className="flex items-center gap-2 truncate text-sm font-bold text-slate-700 hover:text-blue-600">
             <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
             <span className="truncate">{course.title}</span>
           </Link>
@@ -240,7 +258,7 @@ export function StudentCoursePlayerLayout() {
               <div className="mt-1 space-y-0.5 px-2">
                 {lessons.map((l) => {
                 const isActive = l.id === lessonId;
-                const isBlocked = m.state === 'blocked';
+                const isBlocked = m.state === 'blocked' || l.is_unlocked === false;
                 return (<Link key={l.id} to={isBlocked ? '#' : `/aluno/cursos/${courseId}/player/aulas/${l.id}`} className={`group flex items-start gap-3 rounded-lg p-2.5 text-sm transition-all ${isBlocked ? 'cursor-not-allowed grayscale opacity-50' : 'cursor-pointer hover:bg-slate-100/80'} ${isActive ? 'bg-blue-50 hover:bg-blue-50' : ''}`} onClick={(e) => {
                         if (isBlocked)
                             e.preventDefault();
@@ -380,7 +398,7 @@ export function StudentCoursePlayerLayout() {
               </div>
               <div className="h-8 w-px bg-slate-100"/>
             </div>
-            <Link to={`/aluno/cursos/${courseId}`} className="text-xs font-black uppercase tracking-widest text-slate-400 transition-colors hover:text-blue-600">
+            <Link to={courseBackHref} className="text-xs font-black uppercase tracking-widest text-slate-400 transition-colors hover:text-blue-600">
               Sair do Player
             </Link>
           </div>
@@ -391,4 +409,48 @@ export function StudentCoursePlayerLayout() {
         </div>
       </main>
     </div>);
+}
+
+function mapPublicPlayerModules(playerView: PublicCoursePlayerView): StudentCourseModuleProgress[] {
+    return playerView.modules.map((module) => {
+        const totalLessons = module.lessons.length;
+        const unlockedLessons = module.lessons.filter((lesson) => lesson.isUnlocked);
+        return {
+            id: module.id,
+            course_id: playerView.courseId,
+            position: module.position,
+            title: module.title,
+            description: module.description,
+            is_required: module.isRequired,
+            state: module.isUnlocked ? 'in_progress' : 'blocked',
+            is_unlocked: module.isUnlocked,
+            is_completed: false,
+            required_lessons_total: totalLessons,
+            required_lessons_completed: unlockedLessons.length,
+            has_required_assessment: false,
+            required_assessment_approved: false,
+            progress_percent: totalLessons === 0 ? 0 : Math.round((unlockedLessons.length / totalLessons) * 100),
+            starts_at: module.startsAt,
+            ends_at: module.endsAt,
+            module_pdf_file_name: null,
+            module_pdf_storage_path: null,
+            lessons: module.lessons.map((lesson) => ({
+                id: lesson.id,
+                module_id: module.id,
+                position: lesson.position,
+                title: lesson.title,
+                description: lesson.description,
+                is_required: true,
+                lesson_type: lesson.lessonType,
+                youtube_url: lesson.youtubeUrl,
+                text_content: lesson.textContent,
+                estimated_minutes: lesson.estimatedMinutes,
+                is_completed: false,
+                completed_at: null,
+                starts_at: lesson.startsAt,
+                ends_at: lesson.endsAt,
+                is_unlocked: lesson.isUnlocked,
+            })),
+        };
+    });
 }

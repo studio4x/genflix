@@ -48,6 +48,7 @@ export function StudentLessonPage() {
     const { course, modules, assessments, setModules } = useOutletContext<{
         course: {
             title: string;
+            slug?: string | null;
         };
         modules: StudentCourseModuleProgress[];
         assessments: StudentCourseAssessmentSummary[];
@@ -60,7 +61,14 @@ export function StudentLessonPage() {
     const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
     const [protectedVideoPlaybackUrl, setProtectedVideoPlaybackUrl] = useState<string | null>(null);
     const [isLoadingProtectedVideo, setIsLoadingProtectedVideo] = useState(false);
+    const canUsePrivateLessonData = Boolean(user);
+    const courseBackHref = user ? `/aluno/cursos/${courseId}` : course.slug ? `/cursos/${course.slug}` : '/cursos';
     useEffect(() => {
+        if (!canUsePrivateLessonData) {
+            setActiveLessonDetails(null);
+            setFooterActions([]);
+            return;
+        }
         async function loadActiveLesson() {
             if (!lessonId)
                 return;
@@ -84,7 +92,7 @@ export function StudentLessonPage() {
         }
         void loadActiveLesson();
         window.scrollTo(0, 0);
-    }, [lessonId]);
+    }, [canUsePrivateLessonData, lessonId]);
     let currentLesson: StudentLessonWithProgress | null = null;
     const timeline: {
         moduleId: string;
@@ -101,7 +109,7 @@ export function StudentLessonPage() {
                 moduleId: module.id,
                 lessonId: lesson.id,
                 type: 'lesson',
-                isBlocked: module.state === 'blocked' || module.state === 'blocked_by_schedule',
+                isBlocked: module.state === 'blocked' || module.state === 'blocked_by_schedule' || lesson.is_unlocked === false,
                 title: lesson.title,
                 is_completed: lesson.is_completed,
             });
@@ -116,6 +124,7 @@ export function StudentLessonPage() {
     const currentModule = currentLesson
         ? modules.find((module) => module.id === currentLesson.module_id) ?? null
         : null;
+    const isCurrentLessonBlocked = currentLesson?.is_unlocked === false;
     const isLastLessonOfModule = Boolean(currentModule &&
         currentModule.lessons[currentModule.lessons.length - 1]?.id === currentLesson?.id);
     const nextModuleQuiz = currentModule
@@ -135,25 +144,16 @@ export function StudentLessonPage() {
             disabled: !nextItem || nextItem.isBlocked,
             onClick: () => navigate(`/aluno/cursos/${courseId}/player/aulas/${nextItem!.lessonId}`),
         };
-    if (!currentLesson) {
-        return (<div className="flex flex-col items-center justify-center p-20 text-center">
-        <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-[32px] bg-slate-100 text-slate-400">
-          <svg className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-          </svg>
-        </div>
-        <h2 className="text-xl font-black text-slate-900">Aula não encontrada</h2>
-        <p className="mt-2 text-slate-500">O conteúdo solicitado pode ter sido movido, expirado ou ainda não foi liberado.</p>
-        <Button onClick={() => navigate(`/aluno/cursos/${courseId}`)} className="mt-8 rounded-2xl">
-          Voltar ao curso
-        </Button>
-      </div>);
-    }
-    const videoUrl = activeLessonDetails?.youtube_url || currentLesson.youtube_url;
-    const textContent = activeLessonDetails?.text_content || currentLesson.text_content;
-    const lessonType = activeLessonDetails?.lesson_type || currentLesson.lesson_type;
+    const videoUrl = activeLessonDetails?.youtube_url || currentLesson?.youtube_url || null;
+    const textContent = activeLessonDetails?.text_content || currentLesson?.text_content || null;
+    const lessonType = activeLessonDetails?.lesson_type || currentLesson?.lesson_type || null;
     const videoSource = getLessonVideoSource(videoUrl);
     useEffect(() => {
+        if (!canUsePrivateLessonData) {
+            setProtectedVideoPlaybackUrl(null);
+            setIsLoadingProtectedVideo(false);
+            return;
+        }
         async function resolveProtectedVideoUrl() {
             if (!lessonId || videoSource?.type !== 'asset') {
                 setProtectedVideoPlaybackUrl(null);
@@ -187,7 +187,35 @@ export function StudentLessonPage() {
             }
         }
         void resolveProtectedVideoUrl();
-    }, [lessonId, videoSource?.type, videoUrl]);
+    }, [canUsePrivateLessonData, lessonId, videoSource?.type, videoUrl]);
+    if (!currentLesson) {
+        return (<div className="flex flex-col items-center justify-center p-20 text-center">
+        <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-[32px] bg-slate-100 text-slate-400">
+          <svg className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+        </div>
+        <h2 className="text-xl font-black text-slate-900">Aula não encontrada</h2>
+        <p className="mt-2 text-slate-500">O conteúdo solicitado pode ter sido movido, expirado ou ainda não foi liberado.</p>
+        <Button onClick={() => navigate(courseBackHref)} className="mt-8 rounded-2xl">
+          Voltar ao curso
+        </Button>
+      </div>);
+    }
+    if (isCurrentLessonBlocked) {
+        return (<div className="flex flex-col items-center justify-center p-20 text-center">
+        <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-[32px] bg-amber-50 text-amber-500">
+          <svg className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 11c.6 0 1-.4 1-1V7a1 1 0 10-2 0v3c0 .6.4 1 1 1zm0 2a1 1 0 00-1 1v1a1 1 0 102 0v-1a1 1 0 00-1-1zm0-9a7 7 0 017 7v4a7 7 0 11-14 0v-4a7 7 0 017-7z"/>
+          </svg>
+        </div>
+        <h2 className="text-xl font-black text-slate-900">Aula bloqueada</h2>
+        <p className="mt-2 text-slate-500">Essa aula ainda não está liberada para acesso.</p>
+        <Button onClick={() => navigate(courseBackHref)} className="mt-8 rounded-2xl">
+          Voltar ao curso
+        </Button>
+      </div>);
+    }
     async function handleToggleCompletion() {
         if (!user || !currentLesson)
             return;
@@ -209,6 +237,9 @@ export function StudentLessonPage() {
         }
     }
     async function handleOpenFooterAction(action: LessonFooterAction) {
+        if (!canUsePrivateLessonData) {
+            return;
+        }
         setIsLoadingFooterActions(true);
         try {
             const openTarget = action.open_target ?? (action.open_in_new_tab ? 'new-tab' : 'same-tab');
@@ -245,7 +276,7 @@ export function StudentLessonPage() {
         }
     }
     async function handleDownloadModulePdf() {
-        if (!currentModule)
+        if (!canUsePrivateLessonData || !currentModule)
             return;
         setIsGeneratingPdf(true);
         try {
@@ -275,7 +306,7 @@ export function StudentLessonPage() {
               </span>)}
           </div>
 
-          {currentModule ? (<Button type="button" variant="outline" disabled={isGeneratingPdf} onClick={() => void handleDownloadModulePdf()} className="rounded-xl border-slate-200 bg-white font-bold text-slate-600 hover:text-slate-900">
+          {currentModule && canUsePrivateLessonData ? (<Button type="button" variant="outline" disabled={isGeneratingPdf} onClick={() => void handleDownloadModulePdf()} className="rounded-xl border-slate-200 bg-white font-bold text-slate-600 hover:text-slate-900">
               {isGeneratingPdf ? 'Gerando PDF...' : 'Baixar PDF do Módulo'}
             </Button>) : null}
         </div>
@@ -298,16 +329,16 @@ export function StudentLessonPage() {
           </video>
         </div>)}
 
-      {(lessonType === 'video' || lessonType === 'hybrid') && videoSource?.type === 'asset' && isLoadingProtectedVideo && (<div className="rounded-[28px] border border-slate-200 bg-white p-6 text-slate-700">
+      {(lessonType === 'video' || lessonType === 'hybrid') && videoSource?.type === 'asset' && canUsePrivateLessonData && isLoadingProtectedVideo && (<div className="rounded-[28px] border border-slate-200 bg-white p-6 text-slate-700">
           <p className="text-sm font-semibold">Carregando video protegido...</p>
         </div>)}
 
-      {(lessonType === 'video' || lessonType === 'hybrid') && videoSource?.type === 'asset' && !isLoadingProtectedVideo && protectedVideoPlaybackUrl && (<div className="mx-auto aspect-video w-[70%] animate-in zoom-in-95 overflow-hidden rounded-[32px] bg-black shadow-2xl ring-1 ring-slate-900/10 duration-500">
+      {(lessonType === 'video' || lessonType === 'hybrid') && videoSource?.type === 'asset' && canUsePrivateLessonData && !isLoadingProtectedVideo && protectedVideoPlaybackUrl && (<div className="mx-auto aspect-video w-[70%] animate-in zoom-in-95 overflow-hidden rounded-[32px] bg-black shadow-2xl ring-1 ring-slate-900/10 duration-500">
           <video className="h-full w-full" controls preload="metadata" src={protectedVideoPlaybackUrl}>Seu navegador não suporta reprodução de vídeo.
           </video>
         </div>)}
 
-      {(lessonType === 'video' || lessonType === 'hybrid') && videoSource?.type === 'asset' && !isLoadingProtectedVideo && !protectedVideoPlaybackUrl && (<div className="rounded-[28px] border border-amber-200 bg-amber-50 p-6 text-amber-900">
+      {(lessonType === 'video' || lessonType === 'hybrid') && videoSource?.type === 'asset' && canUsePrivateLessonData && !isLoadingProtectedVideo && !protectedVideoPlaybackUrl && (<div className="rounded-[28px] border border-amber-200 bg-amber-50 p-6 text-amber-900">
           <p className="text-sm font-semibold">Não foi possível carregar o vídeo protegido desta aula. Tente novamente em instantes.
           </p>
         </div>)}
@@ -376,7 +407,7 @@ export function StudentLessonPage() {
       <div className="sticky bottom-4 z-20 mt-12 flex flex-col gap-4 rounded-[32px] border-t border-slate-200 bg-white/80 p-6 pt-8 shadow-xl shadow-slate-200/50 backdrop-blur-md">
         <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
           <div className="flex flex-wrap items-center gap-3">
-            <button disabled={isTogglingCompletion} onClick={handleToggleCompletion} className={`flex items-center gap-2 rounded-xl px-6 py-3 font-bold transition-all ${currentLesson.is_completed
+            {user ? (<button disabled={isTogglingCompletion} onClick={handleToggleCompletion} className={`flex items-center gap-2 rounded-xl px-6 py-3 font-bold transition-all ${currentLesson.is_completed
             ? 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200 hover:bg-emerald-100'
             : 'bg-emerald-600 text-white shadow-lg shadow-emerald-100 hover:bg-emerald-700'}`}>
               {isTogglingCompletion ? (<svg className="h-5 w-5 animate-spin" viewBox="0 0 24 24">
@@ -388,7 +419,7 @@ export function StudentLessonPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
                 </svg>)}
               {currentLesson.is_completed ? 'Aula Concluída' : 'Marcar como Concluída'}
-            </button>
+            </button>) : null}
 
           </div>
 
