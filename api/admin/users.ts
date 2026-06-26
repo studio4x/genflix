@@ -412,7 +412,7 @@ async function handleCreateUser(req: ApiRequest, res: ApiResponse) {
     const roleMap = createRoleMap(roleRows);
     const createdUserResult = await adminClient.auth.admin.createUser({
         email: payload.email,
-        password: passwordToUse,
+        password: passwordToUse ?? createTemporaryPassword(),
         email_confirm: true,
         user_metadata: payload.fullName ? { full_name: payload.fullName } : undefined,
     });
@@ -589,57 +589,6 @@ async function handleUpdateUser(req: ApiRequest, res: ApiResponse) {
         email: refreshedUserResult.data.email,
         role_code: payload.roleCode ?? null,
         message: 'Usuário atualizado com sucesso.',
-    });
-}
-async function handleUpdateUserRole(req: ApiRequest, res: ApiResponse) {
-    const context = await createAdminClient(req, res);
-    if (!context) {
-        return;
-    }
-    const { adminClient } = context;
-    const parsedBody = parseBody(req.body);
-    if (!parsedBody) {
-        jsonResponse(res, 400, { error: 'Body inválido.' });
-        return;
-    }
-    const validationResult = updateRoleSchema.safeParse({
-        userId: typeof parsedBody.userId === 'string' ? parsedBody.userId.trim() : undefined,
-        roleCode: parsedBody.roleCode,
-    });
-    if (!validationResult.success) {
-        jsonResponse(res, 400, { error: validationResult.error.issues[0]?.message ?? 'Dados inválidos.' });
-        return;
-    }
-    const roleRows = await loadRoleRows(adminClient);
-    const roleMap = createRoleMap(roleRows);
-    const { userId, roleCode } = validationResult.data;
-    const userResult = await adminClient
-        .from('profiles')
-        .select('id, email, full_name, created_at, updated_at')
-        .eq('id', userId)
-        .maybeSingle();
-    if (userResult.error) {
-        jsonResponse(res, 500, { error: 'Não foi possível localizar o usuário.' });
-        return;
-    }
-    if (!userResult.data) {
-        jsonResponse(res, 404, { error: 'Usuário não encontrado.' });
-        return;
-    }
-    try {
-        await ensureRoleAssignment(adminClient, roleMap, userId, roleCode);
-    }
-    catch (assignmentError) {
-        jsonResponse(res, 500, {
-            error: assignmentError instanceof Error ? assignmentError.message : 'Não foi possível atualizar a regra do usuário.',
-        });
-        return;
-    }
-    jsonResponse(res, 200, {
-        user_id: userId,
-        email: userResult.data.email,
-        role_code: roleCode,
-        message: 'Regra atualizada com sucesso.',
     });
 }
 async function handleResetUserPassword(req: ApiRequest, res: ApiResponse) {
