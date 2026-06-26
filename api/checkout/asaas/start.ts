@@ -234,24 +234,6 @@ function readAsaasError(payload: CheckoutErrorPayload | null, fallback: string) 
     );
 }
 
-async function fetchGatewayConfiguration(adminClient: SupabaseClient) {
-    const result = await adminClient
-        .from('payment_gateway_settings')
-        .select('environment, gateway_code, is_active')
-        .eq('id', 1)
-        .maybeSingle();
-
-    if (result.error) {
-        throw result.error;
-    }
-
-    return (result.data as PaymentGatewayConfig | null) || {
-        environment: 'sandbox' as const,
-        gateway_code: 'asaas',
-        is_active: true,
-    };
-}
-
 async function queueUserNotification(
     adminClient: SupabaseClient,
     input: {
