@@ -10,7 +10,7 @@
     "build:dev": "npm run check:encoding && node scripts/bump-build-version.mjs && tsc -p tsconfig.app.json && vite build --mode development --configLoader native",
     "deploy:vercel": "node scripts/deploy-vercel-production.mjs",
     "spin-off:create": "node scripts/create-spin-off.mjs",
-    "typecheck": "tsc -b --pretty false",
+    "typecheck": "tsc -p tsconfig.app.json --pretty false",
     "lint": "eslint .",
     "preview": "vite preview"
   },

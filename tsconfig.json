@@ -24,8 +24,5 @@
   },
   "include": ["src", "vite.config.ts"],
   "exclude": ["api", "supabase", "dist", "node_modules"],
-  "references": [
-    { "path": "./tsconfig.app.json" },
-    { "path": "./tsconfig.node.json" }
-  ]
+  "references": []
 }

@@ -80,12 +80,6 @@ function getFirstQueryValue(value: string | string[] | undefined) {
     return Array.isArray(value) ? value[0] : value;
 }
 
-function calculateNextRetry(attemptCount: number) {
-    const retryDelaysMinutes = [5, 15, 60, 240];
-    const delay = retryDelaysMinutes[Math.min(Math.max(attemptCount - 1, 0), retryDelaysMinutes.length - 1)];
-    return new Date(Date.now() + delay * 60 * 1000).toISOString();
-}
-
 function toRelative(filePath: string) {
     return path.relative(process.cwd(), filePath).replace(/\\/g, '/');
 }
