@@ -1,17 +1,26 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { BookOpen, Layers3, Plus, Trash2 } from 'lucide-react';
+import { useAuth } from '@/app/providers/auth-provider';
 import { useCourseBuilder } from '@/app/layouts/admin-course-builder-layout';
 import { Button } from '@/components/ui/button';
 import { RichTextEditor } from '@/components/ui/RichTextEditor';
 import { updateCoursePublicPage, toErrorMessage, } from '@/features/admin/content/api';
 import { coursePublicPageFormSchema } from '@/features/admin/content/schemas';
+import { fetchAdminUsers, type AdminUserListItem } from '@/features/admin/users/api';
 import { buildCoursePublicDetail, normalizeCoursePublicPageContent, } from '@/features/public/course-public-page-content';
 import { publishBuilderNotice } from '@/lib/builder-notice';
 import type { GenflixCourseModule, } from '@/features/public/genflix-site-content';
+type CourseAuthorAssignmentForm = {
+    author_id: string;
+    commission_percent: number;
+    display_order: number;
+};
 type CoursePublicPageFormState = {
     category: string;
     categoryLine: string;
     marketing_description: string;
+    hero_video_url: string;
+    logo_url: string;
     mentor_name: string;
     mentor_role: string;
     mentor_bio: string;
@@ -20,6 +29,7 @@ type CoursePublicPageFormState = {
     mentor_initials: string;
     price_label: string;
     secondary_price_label: string;
+    authors: CourseAuthorAssignmentForm[];
     aboutParagraphs: string[];
     includedItems: string[];
     contentSource: 'real' | 'custom';
@@ -33,6 +43,35 @@ function createEmptyModule(): GenflixCourseModule {
         items: [],
         lessonLabel: 'aulas',
     };
+}
+function createEmptyAuthorAssignment(index = 0): CourseAuthorAssignmentForm {
+    return {
+        author_id: '',
+        commission_percent: index === 0 ? 100 : 0,
+        display_order: index + 1,
+    };
+}
+function normalizeAuthorAssignments(value: unknown): CourseAuthorAssignmentForm[] {
+    if (!Array.isArray(value)) {
+        return [];
+    }
+    return value.flatMap((entry, index) => {
+        if (!entry || typeof entry !== 'object' || Array.isArray(entry)) {
+            return [];
+        }
+        const record = entry as Record<string, unknown>;
+        const author_id = typeof record.author_id === 'string' ? record.author_id.trim() : '';
+        if (!author_id) {
+            return [];
+        }
+        const commissionPercent = Number(record.commission_percent ?? 0);
+        const displayOrder = Number(record.display_order ?? index + 1);
+        return [{
+                author_id,
+                commission_percent: Number.isFinite(commissionPercent) ? commissionPercent : 0,
+                display_order: Number.isFinite(displayOrder) && displayOrder > 0 ? Math.trunc(displayOrder) : index + 1,
+            }];
+    });
 }
 function buildRealContentModules(courseTree: NonNullable<ReturnType<typeof useCourseBuilder>['courseTree']>): GenflixCourseModule[] {
     const modules = courseTree.modules.map((module) => {
@@ -72,10 +111,13 @@ function SectionHeading({ eyebrow, title, description, }: {
 }
 export function CoursePublicPagePanel() {
     const { courseTree, refreshTree } = useCourseBuilder();
+    const { session } = useAuth();
     const [form, setForm] = useState<CoursePublicPageFormState>({
         category: '',
         categoryLine: '',
         marketing_description: '',
+        hero_video_url: '',
+        logo_url: '',
         mentor_name: '',
         mentor_role: '',
         mentor_bio: '',
@@ -84,6 +126,7 @@ export function CoursePublicPagePanel() {
         mentor_initials: '',
         price_label: '',
         secondary_price_label: '',
+        authors: [createEmptyAuthorAssignment()],
         aboutParagraphs: [''],
         includedItems: [''],
         contentSource: 'custom',
@@ -98,6 +141,7 @@ export function CoursePublicPagePanel() {
         }
         return buildCoursePublicDetail(courseTree.course);
     }, [courseTree]);
+    const [creatorUsers, setCreatorUsers] = useState<AdminUserListItem[]>([]);
     const realContentModules = useMemo(() => {
         if (!courseTree) {
             return [];
@@ -105,14 +149,44 @@ export function CoursePublicPagePanel() {
         return buildRealContentModules(courseTree);
     }, [courseTree]);
     useEffect(() => {
+        let isMounted = true;
+        async function loadCreatorUsers() {
+            if (!courseTree) {
+                return;
+            }
+            try {
+                if (!session) {
+                    return;
+                }
+                const users = await fetchAdminUsers(session);
+                if (!isMounted) {
+                    return;
+                }
+                setCreatorUsers(users.filter((candidate) => candidate.roles.some((role) => role.code === 'criador' || role.code === 'professor')));
+            }
+            catch {
+                if (isMounted) {
+                    setCreatorUsers([]);
+                }
+            }
+        }
+        void loadCreatorUsers();
+        return () => {
+            isMounted = false;
+        };
+    }, [courseTree, session]);
+    useEffect(() => {
         if (!courseTree || !resolvedDetail) {
             return;
         }
         const content = normalizeCoursePublicPageContent(courseTree.course.public_page_content);
+        const existingAuthors = normalizeAuthorAssignments(courseTree.courseAuthors);
         setForm({
             category: courseTree.course.category ?? '',
             categoryLine: content.categoryLine ?? resolvedDetail.categoryLine,
             marketing_description: courseTree.course.marketing_description ?? resolvedDetail.description,
+            hero_video_url: courseTree.course.hero_video_url ?? '',
+            logo_url: courseTree.course.logo_url ?? '',
             mentor_name: courseTree.course.mentor_name ?? resolvedDetail.mentor.name,
             mentor_role: courseTree.course.mentor_role ?? resolvedDetail.mentor.role,
             mentor_bio: content.bonusSection?.description ?? courseTree.course.mentor_bio ?? resolvedDetail.bonusSection.description,
@@ -121,6 +195,7 @@ export function CoursePublicPagePanel() {
             mentor_initials: courseTree.course.mentor_initials ?? resolvedDetail.mentor.initials,
             price_label: courseTree.course.price_label ?? resolvedDetail.priceLabel,
             secondary_price_label: courseTree.course.secondary_price_label ?? resolvedDetail.secondaryPriceLabel,
+            authors: existingAuthors.length ? existingAuthors : [createEmptyAuthorAssignment()],
             aboutParagraphs: content.aboutParagraphs.length ? content.aboutParagraphs : resolvedDetail.aboutParagraphs,
             includedItems: content.includedItems.length ? content.includedItems : resolvedDetail.includedItems,
             contentSource: content.contentSource,
@@ -148,9 +223,25 @@ export function CoursePublicPagePanel() {
     function updateCustomModule(index: number, patch: Partial<GenflixCourseModule>) {
         updateField('customSyllabus', form.customSyllabus.map((module, moduleIndex) => moduleIndex === index ? { ...module, ...patch } : module));
     }
+    function updateAuthor(index: number, patch: Partial<CourseAuthorAssignmentForm>) {
+        updateField('authors', form.authors.map((author, authorIndex) => authorIndex === index ? { ...author, ...patch } : author));
+    }
+    function addAuthor() {
+        updateField('authors', [...form.authors, createEmptyAuthorAssignment(form.authors.length)]);
+    }
+    function removeAuthor(index: number) {
+        const nextAuthors = form.authors.filter((_, authorIndex) => authorIndex !== index);
+        updateField('authors', nextAuthors.length ? nextAuthors : [createEmptyAuthorAssignment()]);
+    }
+    const selectedAuthorIds = new Set(form.authors.map((author) => author.author_id).filter(Boolean));
+    const authorCommissionTotal = form.authors.reduce((total, author) => total + Number(author.commission_percent || 0), 0);
     async function handleSubmit(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
         if (!courseTree) {
+            return;
+        }
+        if (Math.round(authorCommissionTotal * 100) / 100 !== 100) {
+            setError('A soma das comissões dos autores precisa fechar em 100%.');
             return;
         }
         setError(null);
@@ -160,10 +251,17 @@ export function CoursePublicPagePanel() {
             const parsed = coursePublicPageFormSchema.safeParse({
                 ...form,
                 category: courseTree.course.category ?? form.category,
+                hero_video_url: form.hero_video_url.trim(),
+                logo_url: form.logo_url.trim(),
                 mentor_bio: form.mentor_bio.trim(),
                 bonus_title: form.bonus_title.trim(),
                 aboutParagraphs: form.aboutParagraphs.map((item) => item.trim()).filter(Boolean),
                 includedItems: form.includedItems.map((item) => item.trim()).filter(Boolean),
+                authors: form.authors.map((author, index) => ({
+                    author_id: author.author_id,
+                    commission_percent: Number(author.commission_percent || 0),
+                    display_order: Number(author.display_order || index + 1),
+                })).filter((author) => author.author_id),
                 customSyllabus: form.customSyllabus
                     .map((module) => ({
                     title: module.title.trim(),
@@ -211,7 +309,7 @@ export function CoursePublicPagePanel() {
           </div>) : null}
 
         <section className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm md:p-10">
-          <SectionHeading eyebrow="Hero" title="Cabeçalho principal do curso" description="Esses campos controlam a primeira dobra da página do curso, incluindo título, descrição e o bloco lateral de checkout. A imagem do hero continua sendo definida nas configurações do curso."/>
+          <SectionHeading eyebrow="Hero" title="Cabeçalho principal do curso" description="Esses campos controlam a primeira dobra da página do curso, incluindo título, hero em vídeo, logo e o bloco lateral de checkout."/>
 
           <div className="mt-8 space-y-5">
               <div className="rounded-2xl border border-cyan-100 bg-cyan-50/40 px-5 py-4">
@@ -261,15 +359,16 @@ export function CoursePublicPagePanel() {
                 </div>
               </div>
 
-              <div className="block space-y-2">
-                <span className="text-xs font-black uppercase tracking-widest text-slate-400">Descrição principal</span>
-                <RichTextEditor
-                  value={form.marketing_description}
-                  onChange={(value) => updateField('marketing_description', value)}
-                  placeholder="Resumo principal do curso para a dobra inicial."
-                  minHeightClassName="min-h-[220px]"
-                  enableHtmlMode
-                />
+              <div className="grid gap-5 md:grid-cols-2">
+                <label className="block space-y-2">
+                  <span className="text-xs font-black uppercase tracking-widest text-slate-400">URL do vídeo do hero</span>
+                  <input className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-5 py-3 text-sm font-semibold outline-none focus:border-cyan-400 focus:bg-white" value={form.hero_video_url} onChange={(event) => updateField('hero_video_url', event.target.value)} placeholder="https://..."/>
+                </label>
+
+                <label className="block space-y-2">
+                  <span className="text-xs font-black uppercase tracking-widest text-slate-400">URL do logo</span>
+                  <input className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-5 py-3 text-sm font-semibold outline-none focus:border-cyan-400 focus:bg-white" value={form.logo_url} onChange={(event) => updateField('logo_url', event.target.value)} placeholder="https://..."/>
+                </label>
               </div>
 
               <div className="grid gap-5 md:grid-cols-2">
@@ -287,37 +386,84 @@ export function CoursePublicPagePanel() {
         </section>
 
         <section className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm md:p-10">
-          <SectionHeading eyebrow="Sidebar" title="Mentor e itens inclusos" description="Os campos abaixo abastecem o card lateral: mentor, seção bonus exibida abaixo do botão comprar e lista de beneficios do curso."/>
+          <SectionHeading eyebrow="Autores" title="Autores do curso e itens inclusos" description="Vincule um ou mais autores ao curso, ajuste os percentuais de comissão e mantenha os campos de bônus e benefícios da página pública."/>
 
-          <div className="mt-8 grid gap-5 md:grid-cols-2">
-            <label className="block space-y-2">
-              <span className="text-xs font-black uppercase tracking-widest text-slate-400">Nome do mentor</span>
-              <input className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-5 py-3 text-sm font-semibold outline-none focus:border-cyan-400 focus:bg-white" value={form.mentor_name} onChange={(event) => updateField('mentor_name', event.target.value)} required/>
-            </label>
+          <div className="mt-8 space-y-6">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm font-black text-slate-900">Autores do curso</p>
+                  <p className="text-xs font-medium text-slate-500">Cada autor precisa ter uma comissão configurada. A soma deve fechar em 100%.</p>
+                </div>
+                <Button type="button" variant="outline" className="rounded-2xl" onClick={addAuthor}>
+                  <Plus className="mr-2 h-4 w-4"/>
+                  Adicionar autor
+                </Button>
+              </div>
 
-            <label className="block space-y-2">
-              <span className="text-xs font-black uppercase tracking-widest text-slate-400">Cargo / função</span>
-              <input className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-5 py-3 text-sm font-semibold outline-none focus:border-cyan-400 focus:bg-white" value={form.mentor_role} onChange={(event) => updateField('mentor_role', event.target.value)} required/>
-            </label>
+              <div className="space-y-4">
+                {form.authors.map((author, index) => {
+                  const selectedUser = creatorUsers.find((candidate) => candidate.id === author.author_id);
+                  return (
+                    <article key={`author-${index}`} className="rounded-[24px] border border-slate-200 bg-slate-50 p-5">
+                      <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_160px_120px]">
+                        <label className="block space-y-2">
+                          <span className="text-xs font-black uppercase tracking-widest text-slate-400">Autor</span>
+                          <select className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold outline-none focus:border-cyan-400" value={author.author_id} onChange={(event) => updateAuthor(index, { author_id: event.target.value })}>
+                            <option value="">Selecione um autor</option>
+                            {creatorUsers.map((candidate) => (
+                              <option key={candidate.id} value={candidate.id} disabled={selectedAuthorIds.has(candidate.id) && candidate.id !== author.author_id}>
+                                {candidate.full_name || candidate.email}
+                              </option>
+                            ))}
+                          </select>
+                          <p className="text-xs font-medium text-slate-500">
+                            {selectedUser ? selectedUser.email : 'Escolha um usuário com regra de autor/professor.'}
+                          </p>
+                        </label>
+
+                        <label className="block space-y-2">
+                          <span className="text-xs font-black uppercase tracking-widest text-slate-400">Comissão (%)</span>
+                          <input type="number" min={0} max={100} step={0.01} className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold outline-none focus:border-cyan-400" value={author.commission_percent} onChange={(event) => updateAuthor(index, { commission_percent: Number(event.target.value || 0) })}/>
+                        </label>
+
+                        <label className="block space-y-2">
+                          <span className="text-xs font-black uppercase tracking-widest text-slate-400">Ordem</span>
+                          <input type="number" min={1} step={1} className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold outline-none focus:border-cyan-400" value={author.display_order} onChange={(event) => updateAuthor(index, { display_order: Number(event.target.value || 1) })}/>
+                        </label>
+                      </div>
+
+                      <div className="mt-4 flex items-center justify-between gap-3">
+                        <p className="text-xs font-semibold text-slate-500">Use a ordem para controlar a exibição pública da lista de autores.</p>
+                        <Button type="button" variant="outline" size="sm" className="rounded-2xl" onClick={() => removeAuthor(index)} disabled={form.authors.length === 1}>
+                          Remover
+                        </Button>
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
+
+              <div className={`rounded-[20px] border px-4 py-3 text-sm font-semibold ${Math.round(authorCommissionTotal * 100) / 100 === 100 ? 'border-emerald-100 bg-emerald-50 text-emerald-800' : 'border-amber-100 bg-amber-50 text-amber-800'}`}>
+                {Math.round(authorCommissionTotal * 100) / 100 === 100
+                  ? 'A soma das comissões está fechando em 100%.'
+                  : `A soma atual das comissões é ${authorCommissionTotal.toFixed(2)}%. Ajuste até fechar em 100%.`}
+              </div>
+            </div>
 
             <label className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-700 md:col-span-2">
               <input type="checkbox" checked={form.bonus_enabled} onChange={(event) => updateField('bonus_enabled', event.target.checked)}/>
-              Exibir seção bonus abaixo do botão comprar
+              Exibir seção bônus abaixo do botão comprar
             </label>
 
             <label className="block space-y-2 md:col-span-2">
-              <span className="text-xs font-black uppercase tracking-widest text-slate-400">Título da seção bonus</span>
+              <span className="text-xs font-black uppercase tracking-widest text-slate-400">Título da seção bônus</span>
               <input className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-5 py-3 text-sm font-semibold outline-none focus:border-cyan-400 focus:bg-white" value={form.bonus_title} onChange={(event) => updateField('bonus_title', event.target.value)} placeholder="Ex: Prévia de conteúdo" disabled={!form.bonus_enabled}/>
             </label>
 
             <label className="block space-y-2 md:col-span-2">
-              <span className="text-xs font-black uppercase tracking-widest text-slate-400">Descrição da seção bonus</span>
+              <span className="text-xs font-black uppercase tracking-widest text-slate-400">Descrição da seção bônus</span>
               <textarea className="min-h-[120px] w-full rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4 text-sm font-medium leading-7 text-slate-700 outline-none focus:border-cyan-400 focus:bg-white" value={form.mentor_bio} onChange={(event) => updateField('mentor_bio', event.target.value)} placeholder="Ex: Tenha acesso a uma prévia completa dos principais tópicos do curso." disabled={!form.bonus_enabled}/>
-            </label>
-
-            <label className="block space-y-2">
-              <span className="text-xs font-black uppercase tracking-widest text-slate-400">Iniciais do mentor</span>
-              <input className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-5 py-3 text-sm font-semibold uppercase outline-none focus:border-cyan-400 focus:bg-white" value={form.mentor_initials} onChange={(event) => updateField('mentor_initials', event.target.value.toUpperCase())} maxLength={4}/>
             </label>
           </div>
 

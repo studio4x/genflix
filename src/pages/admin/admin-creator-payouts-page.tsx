@@ -47,7 +47,7 @@ function isCommissionEligible(commission: AdminCreatorCommission, paidAt: string
 }
 function getCreatorLabel(dashboard: AdminCreatorPayoutDashboard | null, creatorId: string) {
     const profile = dashboard?.profiles.find((item) => item.id === creatorId);
-    return profile?.full_name || profile?.email || 'Criador';
+    return profile?.full_name || profile?.email || 'Autor';
 }
 function getCourseTitle(dashboard: AdminCreatorPayoutDashboard | null, courseId: string) {
     return dashboard?.courses.find((course) => course.id === courseId)?.title ?? 'Curso';
@@ -227,7 +227,7 @@ export function AdminCreatorPayoutsPage() {
     }
     async function handleRegisterExternalPayout() {
         if (!canRegisterExternal) {
-            setErrorMessage('Selecione comissões elegíveis de um único criador com total maior que zero.');
+            setErrorMessage('Selecione comissões elegíveis de um único autor com total maior que zero.');
             return;
         }
         setIsRegisteringExternal(true);
@@ -253,10 +253,10 @@ export function AdminCreatorPayoutsPage() {
     }
     async function handleSendPixPayout() {
         if (!canSendPix) {
-            setErrorMessage('Para pagar via Asaas, selecione comissões elegíveis de um único criador e um único curso com PIX habilitado.');
+            setErrorMessage('Para pagar via Asaas, selecione comissões elegíveis de um único autor e um único curso com PIX habilitado.');
             return;
         }
-        const confirmed = window.confirm("Confirmar envio do PIX via Asaas para o criador selecionado");
+        const confirmed = window.confirm("Confirmar envio do PIX via Asaas para o autor selecionado");
         if (!confirmed) {
             return;
         }
@@ -283,7 +283,7 @@ export function AdminCreatorPayoutsPage() {
     return (<div className="animate-in space-y-7 fade-in duration-500">
       <header className="flex flex-col gap-4 border-b border-[#D8E6EB] pb-6 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <p className="text-[10px] font-black uppercase tracking-[0.28em] text-[#1398B7]">Criadores</p>
+          <p className="text-[10px] font-black uppercase tracking-[0.28em] text-[#1398B7]">Autores</p>
           <h2 className="mt-2 font-readex text-3xl font-semibold tracking-tight text-[#15323b]">Comissões e repasses PIX</h2>
           <p className="mt-2 max-w-3xl text-sm font-medium leading-6 text-[#5F7077]">
             Configure o ciclo de repasses, envie PIX pelo Asaas ou registre pagamentos externos quando a operação exigir.
@@ -309,7 +309,7 @@ export function AdminCreatorPayoutsPage() {
           <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#5F7077]">Configuração global</p>
           <h3 className="mt-2 font-readex text-xl font-semibold text-[#15323b]">Automação dos repasses</h3>
           <p className="mt-1 text-sm font-medium leading-6 text-[#5F7077]">
-            Esta configuração aparece para os criadores e controla o ciclo automático de PIX via Asaas.
+            Esta configuração aparece para os autores e controla o ciclo automático de PIX via Asaas.
           </p>
 
           <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
@@ -376,12 +376,12 @@ export function AdminCreatorPayoutsPage() {
           <article className="border border-[#D8E6EB] bg-white p-5 shadow-sm">
             <div className="grid gap-3 md:grid-cols-3">
               <label className="block">
-                <span className="text-[10px] font-black uppercase tracking-[0.22em] text-[#5F7077]">Criador</span>
+                <span className="text-[10px] font-black uppercase tracking-[0.22em] text-[#5F7077]">Autor</span>
                 <select value={selectedCreatorId} onChange={(event) => {
             setSelectedCreatorId(event.target.value);
             setSelectedCommissionIds([]);
         }} className="mt-2 h-12 w-full border border-[#D8E6EB] bg-white px-4 text-sm font-bold text-[#15323b] outline-none focus:border-[#1398B7]">
-                  <option value="">Todos os criadores</option>
+                  <option value="">Todos os autores</option>
                   {creators.map((creator) => (<option key={creator.id} value={creator.id}>{creator.label}</option>))}
                 </select>
               </label>
@@ -413,7 +413,7 @@ export function AdminCreatorPayoutsPage() {
             <div className="border-b border-[#D8E6EB] px-5 py-4">
               <h3 className="font-readex text-xl font-semibold text-[#15323b]">Comissões</h3>
               <p className="mt-1 text-sm font-medium text-[#5F7077]">
-                Para PIX via Asaas, selecione comissões de um único criador e de um único curso.
+                Para PIX via Asaas, selecione comissões de um único autor e de um único curso.
               </p>
             </div>
 
@@ -427,7 +427,7 @@ export function AdminCreatorPayoutsPage() {
                   <thead className="bg-[#F2F7F9] text-[10px] font-black uppercase tracking-[0.18em] text-[#5F7077]">
                     <tr>
                       <th className="px-5 py-3">Selecionar</th>
-                      <th className="px-5 py-3">Criador</th>
+                      <th className="px-5 py-3">Autor</th>
                       <th className="px-5 py-3">Curso</th>
                       <th className="px-5 py-3">Comissão</th>
                       <th className="px-5 py-3">Elegível em</th>
@@ -485,9 +485,9 @@ export function AdminCreatorPayoutsPage() {
                 <span className="font-black text-[#15323b]">{formatMoneyFromCents(selectedAmount)}</span>
               </div>
               <div className="flex items-center justify-between border-b border-[#D8E6EB] pb-3">
-                <span className="font-semibold text-[#5F7077]">Criador</span>
+                <span className="font-semibold text-[#5F7077]">Autor</span>
                 <span className="max-w-[180px] truncate font-black text-[#15323b]">
-                  {selectedCreatorIds.length === 1 ? getCreatorLabel(dashboard, selectedCreatorIds[0]) : 'Selecione um criador'}
+                  {selectedCreatorIds.length === 1 ? getCreatorLabel(dashboard, selectedCreatorIds[0]) : 'Selecione um autor'}
                 </span>
               </div>
               <div className="flex items-center justify-between border-b border-[#D8E6EB] pb-3">
@@ -506,7 +506,7 @@ export function AdminCreatorPayoutsPage() {
                   <p className="break-all">Chave: {selectedCreatorProfile.pix_key ?? 'Não informada'}</p>
                   <p>Repasse habilitado: {selectedCreatorProfile.is_payout_enabled ? 'Sim' : 'Não'}</p>
                 </div>) : (<p className="mt-3 text-sm font-semibold text-[#5F7077]">
-                  Selecione comissões de um único criador para conferir os dados PIX.
+                  Selecione comissões de um único autor para conferir os dados PIX.
                 </p>)}
             </div>
 

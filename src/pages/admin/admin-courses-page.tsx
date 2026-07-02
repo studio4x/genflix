@@ -852,7 +852,7 @@ Essa a\u00E7\u00E3o \u00E9 irrevers\u00EDvel.`);
                       </div>
 
                        <div className="block space-y-2">
-                          <span className="text-xs font-black text-slate-400 uppercase tracking-widest pl-1">Descrição Detalhada</span>
+                          <span className="text-xs font-black text-slate-400 uppercase tracking-widest pl-1">Descrição do Card do Curso</span>
                           <div className="rich-editor-container mini">
                              <ReactQuill theme="snow" value={form.description ?? ''} onChange={(val: string) => setDraft((p) => ({ ...p, form: { ...p.form, description: val } }))} modules={{
                 toolbar: [

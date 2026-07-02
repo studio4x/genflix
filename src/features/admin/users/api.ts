@@ -82,6 +82,12 @@ export interface DeleteAdminUserResponse {
     email: string;
     message: string;
 }
+export interface LoginAsAdminUserResponse {
+    user_id: string;
+    email: string;
+    action_link: string;
+    message: string;
+}
 export function toErrorMessage(error: unknown): string {
     if (error instanceof Error) {
         return error.message;
@@ -180,4 +186,21 @@ export async function deleteAdminUser(userId: string, session: Session) {
         throw new Error((data as ErrorResponse | null)?.error ?? 'Não foi possível excluir o usuário.');
     }
     return data as DeleteAdminUserResponse;
+}
+export async function loginAsAdminUser(userId: string, session: Session) {
+    const response = await fetch('/api/admin/users/impersonate', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ userId }),
+    });
+    const data = (await response
+        .json()
+        .catch(() => null)) as ErrorResponse | LoginAsAdminUserResponse | null;
+    if (!response.ok) {
+        throw new Error((data as ErrorResponse | null)?.error ?? 'Não foi possível logar como o usuário.');
+    }
+    return data as LoginAsAdminUserResponse;
 }

@@ -28,10 +28,10 @@ function sanitizeDescription(description: string | null) {
 
 function getLearningActionLabel(journeyStatus: StudentCourseJourneyStatus, hasStartedCourse: boolean) {
   if (journeyStatus === 'completed') {
-    return 'Revisar Aprendizado'
+    return 'Revisar aprendizado'
   }
 
-  return hasStartedCourse ? 'Continuar Aprendizado' : 'Iniciar Aprendizado'
+  return hasStartedCourse ? 'Continuar aprendizado' : 'Iniciar aprendizado'
 }
 
 export function StudentDashboardPage() {

@@ -42,7 +42,7 @@ const timezoneOptions = [
 ]
 
 interface NotificationPreferencesPageProps {
-  contextLabel: 'Admin' | 'Aluno' | 'Criador'
+  contextLabel: 'Admin' | 'Aluno' | 'Autor'
 }
 
 function SwitchField({

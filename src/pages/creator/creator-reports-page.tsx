@@ -207,7 +207,7 @@ export function CreatorReportsPage() {
             <p className="text-[10px] font-black uppercase tracking-[0.28em] text-[#1398B7]">Relatórios</p>
             <h1 className="mt-2 font-readex text-3xl font-semibold tracking-tight text-[#15323b]">Notificações</h1>
             <p className="mt-2 max-w-3xl text-sm font-medium leading-6 text-[#6d7f84]">
-              Acompanhe comunicados enviados pela plataforma e avisos transacionais sem sair do painel do criador.
+              Acompanhe comunicados enviados pela plataforma e avisos transacionais sem sair do painel do autor.
             </p>
             <div className="hidden">
               {renderTabButton('relatorios', 'Relatórios')}
@@ -226,7 +226,7 @@ export function CreatorReportsPage() {
           <div>
             <p className="text-[10px] font-black uppercase tracking-[0.28em] text-[#1398B7]">Relatórios</p>
             <h1 className="mt-2 font-readex text-3xl font-semibold tracking-tight text-[#15323b]">Preferências</h1>
-            <p className="mt-2 max-w-3xl text-sm font-medium leading-6 text-[#6d7f84]">Ajuste os canais e horários de notificação do criador diretamente nesta área.
+            <p className="mt-2 max-w-3xl text-sm font-medium leading-6 text-[#6d7f84]">Ajuste os canais e horários de notificação do autor diretamente nesta área.
             </p>
             <div className="hidden">
               {renderTabButton('relatorios', 'Relatórios')}
@@ -236,14 +236,14 @@ export function CreatorReportsPage() {
           </div>
         </header>
 
-        <NotificationPreferencesPage contextLabel="Criador"/>
+        <NotificationPreferencesPage contextLabel="Autor"/>
       </div>);
     }
     return (<div className="space-y-6">
       <header className="flex flex-col gap-4 border-b border-[#D8E6EB] pb-5 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <p className="text-[10px] font-black uppercase tracking-[0.28em] text-[#1398B7]">Relatórios</p>
-          <h1 className="mt-2 font-readex text-3xl font-semibold tracking-tight text-[#15323b]">Painel do criador</h1>
+          <h1 className="mt-2 font-readex text-3xl font-semibold tracking-tight text-[#15323b]">Painel do autor</h1>
           <p className="mt-2 max-w-3xl text-sm font-medium leading-6 text-[#6d7f84]">Acompanhe os cursos vinculados a você, vendas por ciclos de seis meses, cancelamentos e comissões previstas
             para repasse PIX.
           </p>

@@ -24,9 +24,9 @@ function sanitizeCourseCardDescription(description: string | null) {
 }
 function getLearningActionLabel(journeyStatus: ReturnType<typeof getStudentCourseJourneyStatus>, hasStartedCourse: boolean) {
     if (journeyStatus === 'completed') {
-        return 'Revisar Aprendizado';
+        return 'Revisar aprendizado';
     }
-    return hasStartedCourse ? 'Continuar Aprendizado' : 'Iniciar Aprendizado';
+    return hasStartedCourse ? 'Continuar aprendizado' : 'Iniciar aprendizado';
 }
 export function StudentCoursesPage() {
     const [courses, setCourses] = useState<Course[]>([]);

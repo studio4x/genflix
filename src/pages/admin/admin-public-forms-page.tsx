@@ -69,7 +69,7 @@ const formDefinitions: SiteFormDefinition[] = [
     {
         id: 'teach',
         label: 'Ensine na GenFlix',
-        description: 'Formulario para professores e criadores.',
+        description: 'Formulario para professores e autores.',
         route: '/ensine-na-genflix',
         pageKey: 'global',
         editableFields: [

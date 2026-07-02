@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { KeyRound, Trash2, X } from 'lucide-react';
 import { useAuth } from '@/app/providers/auth-provider';
 import { Button } from '@/components/ui/button';
-import { deleteAdminUser, createAdminUser, fetchAdminUsers, resetAdminUserPassword, toErrorMessage, updateAdminUser, type AdminAssignableRoleCode, type AdminUserListItem, type AdminUserRole, type CreateAdminUserResponse, type UpdateAdminUserInput, } from '@/features/admin/users/api';
+import { deleteAdminUser, createAdminUser, fetchAdminUsers, loginAsAdminUser, resetAdminUserPassword, toErrorMessage, updateAdminUser, type AdminAssignableRoleCode, type AdminUserListItem, type AdminUserRole, type CreateAdminUserResponse, type UpdateAdminUserInput, } from '@/features/admin/users/api';
 import { createAdminUserFormSchema } from '@/features/admin/users/schemas';
 import { AdminUserEditModal } from '@/features/admin/users/admin-user-edit-modal';
 type RoleFilter = 'all' | AdminAssignableRoleCode | 'without-role';
@@ -33,7 +33,7 @@ const roleOptions: Array<{
     },
     {
         code: 'criador',
-        title: 'Criador',
+        title: 'Autor',
         description: 'Acompanha relatórios dos cursos vinculados e edita o próprio perfil.',
     },
     {
@@ -49,7 +49,7 @@ const roleFilters: Array<{
     { value: 'all', label: 'Todos' },
     { value: 'admin', label: 'Admins' },
     { value: 'aluno', label: 'Alunos' },
-    { value: 'criador', label: 'Criadores' },
+    { value: 'criador', label: 'Autores' },
     { value: 'without-role', label: 'Sem regra' },
 ];
 function formatDateTime(value: string | null) {
@@ -102,7 +102,7 @@ function getRoleLabel(role: AdminUserRole) {
         return 'Aluno legado';
     }
     if (role.code === 'professor') {
-        return 'Criador legado';
+        return 'Autor legado';
     }
     return role.name || role.code;
 }
@@ -276,6 +276,27 @@ export function AdminUsersPage() {
             setResettingUserId(null);
         }
     }
+    async function handleLoginAsUser(user: AdminUserListItem) {
+        if (!session) {
+            setError('Sessão expirada. Faça login novamente.');
+            return;
+        }
+        if (!user.email) {
+            setError('Este usuário não possui e-mail cadastrado para logar como.');
+            return;
+        }
+        const confirmed = window.confirm(`Abrir sessão como ${user.full_name?.trim() || user.email}? Essa ação gera um link de acesso temporário.`)
+        if (!confirmed) {
+            return;
+        }
+        try {
+            const result = await loginAsAdminUser(user.id, session);
+            window.open(result.action_link, '_blank', 'noopener,noreferrer');
+        }
+        catch (loginError) {
+            setError(toErrorMessage(loginError));
+        }
+    }
     async function handleDeleteUser(user: AdminUserListItem) {
         if (!session) {
             setError('Sessão expirada. Faça login novamente.');
@@ -360,7 +381,7 @@ Essa a\u00E7\u00E3o remove o acesso e os dados vinculados de forma permanente.`)
             Usuários e Regras
           </h2>
           <p className="mt-2 max-w-3xl text-sm font-medium text-[#6d7a80]">
-            Cadastre usuários como aluno, criador ou admin e acompanhe as regras atribuídas em um único lugar.
+            Cadastre usuários como aluno, autor ou admin e acompanhe as regras atribuídas em um único lugar.
           </p>
         </div>
 
@@ -395,7 +416,7 @@ Essa a\u00E7\u00E3o remove o acesso e os dados vinculados de forma permanente.`)
           <p className="mt-3 text-3xl font-black text-emerald-800">{summary.alunos}</p>
         </article>
         <article className="rounded-[26px] border border-blue-100 bg-blue-50 p-5">
-          <p className="text-[10px] font-black uppercase tracking-[0.22em] text-blue-600">Criadores</p>
+          <p className="text-[10px] font-black uppercase tracking-[0.22em] text-blue-600">Autores</p>
           <p className="mt-3 text-3xl font-black text-blue-800">{summary.criadores}</p>
         </article>
         <article className="rounded-[26px] border border-slate-200 bg-slate-50 p-5">
@@ -643,6 +664,9 @@ Essa a\u00E7\u00E3o remove o acesso e os dados vinculados de forma permanente.`)
                           <Button type="button" variant="outline" size="sm" onClick={() => void handleResetUserPassword(user)} disabled={resettingUserId === user.id} className="h-9 rounded-full border border-[#D8E6EB] bg-white/90 px-4 text-xs text-[#15323b] hover:bg-[#F2F7F9] hover:text-[#15323b]">
                             <KeyRound className="size-4"/>
                             {resettingUserId === user.id ? 'Redefinindo...' : 'Senha'}
+                          </Button>
+                          <Button type="button" variant="outline" size="sm" onClick={() => void handleLoginAsUser(user)} className="h-9 rounded-full border border-[#D8E6EB] bg-white/90 px-4 text-xs text-[#15323b] hover:bg-[#F2F7F9] hover:text-[#15323b]">
+                            Logar como
                           </Button>
                           <Button type="button" variant="destructive" size="sm" onClick={() => void handleDeleteUser(user)} disabled={deletingUserId === user.id} className="h-9 rounded-full px-4 text-xs">
                             <Trash2 className="size-4"/>

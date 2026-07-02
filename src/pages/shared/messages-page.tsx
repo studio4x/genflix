@@ -40,7 +40,7 @@ const reportReasonLabels: Record<MessageReportReason, string> = {
 function getConversationTitle(conversation: ConversationSummary) {
     if (conversation.metadata?.kind === 'creator_channel') {
         if (conversation.metadata.course_title?.trim()) {
-            return `Criador do curso - ${conversation.metadata.course_title.trim()}`;
+            return `Autor do curso - ${conversation.metadata.course_title.trim()}`;
         }
         const otherParticipant = conversation.participants.find((participant) => !participant.is_current_user);
         if (otherParticipant) {
@@ -77,7 +77,7 @@ function getConversationBadgeLabel(conversation: ConversationSummary) {
         return 'Curso';
     }
     if (conversation.metadata?.kind === 'creator_channel') {
-        return 'Criador';
+        return 'Autor';
     }
     return conversation.conversation_type === 'group' ? 'Grupo' : 'Direta';
 }
@@ -90,17 +90,17 @@ function getConversationPriority(conversation: ConversationSummary) {
     }
     return 2;
 }
-function getSupportRoute(contextLabel: 'Admin' | 'Aluno' | 'Criador') {
+function getSupportRoute(contextLabel: 'Admin' | 'Aluno' | 'Autor') {
     if (contextLabel === 'Admin') {
         return '/admin/suporte';
     }
-    if (contextLabel === 'Criador') {
+    if (contextLabel === 'Autor') {
         return '/criador/suporte';
     }
     return '/aluno/suporte';
 }
 export function MessagesPage({ contextLabel }: {
-    contextLabel: 'Admin' | 'Aluno' | 'Criador';
+    contextLabel: 'Admin' | 'Aluno' | 'Autor';
 }) {
     const { user } = useAuth();
     const [searchParams, setSearchParams] = useSearchParams();
@@ -126,7 +126,7 @@ export function MessagesPage({ contextLabel }: {
     const messagesEndRef = useRef<HTMLDivElement | null>(null);
     const adminSection = contextLabel === 'Admin' && searchParams.get('section') === 'reports' ? 'reports' : 'messages';
     const selectedConversation = useMemo(() => conversations.find((conversation) => conversation.conversation_id === selectedConversationId) ?? null, [conversations, selectedConversationId]);
-    const isCreatorMonitoringCourseRoom = useMemo(() => (contextLabel === 'Criador'
+    const isCreatorMonitoringCourseRoom = useMemo(() => (contextLabel === 'Autor'
         && selectedConversation?.metadata?.kind === 'course_room'
         && !selectedConversation.participants.some((participant) => participant.is_current_user)), [contextLabel, selectedConversation]);
     const supportRoute = useMemo(() => getSupportRoute(contextLabel), [contextLabel]);
@@ -331,7 +331,7 @@ export function MessagesPage({ contextLabel }: {
             await loadConversations();
         }
         catch (error) {
-            setErrorMessage(error instanceof Error ? error.message : "N?o foi possvel abrir o canal com o criador.");
+        setErrorMessage(error instanceof Error ? error.message : "Não foi possível abrir o canal com o autor.");
         }
     }
     async function handleSendMessage(event: FormEvent<HTMLFormElement>) {
@@ -394,7 +394,7 @@ export function MessagesPage({ contextLabel }: {
           <p className="text-[10px] font-black uppercase tracking-[0.28em] text-[#1398B7]">{contextLabel} / Mensagens</p>
           <h1 className="mt-2 font-readex text-3xl font-semibold tracking-tight text-[#15323b]">Mensagens</h1>
           <p className="mt-2 max-w-2xl text-sm font-medium leading-6 text-[#6d7f84]">
-            Converse com alunos e criadores em tempo real dentro da GenFlix. Para falar com administradores, use o canal de{' '}
+            Converse com alunos e autores em tempo real dentro da GenFlix. Para falar com administradores, use o canal de{' '}
             <Link to={supportRoute} className="font-black text-[#1398B7] underline underline-offset-2 hover:text-[#0A3640]">
               suporte
             </Link>
@@ -561,16 +561,16 @@ export function MessagesPage({ contextLabel }: {
                         </h2>
                         <p className="truncate text-xs font-semibold text-[#6d7f84]">
                           {selectedConversation.metadata?.kind === 'course_room'
-                    ? `${selectedConversation.participants.length} aluno(s) com acesso ativo${isCreatorMonitoringCourseRoom ? ' • acompanhamento do criador' : ''}`
+                    ? `${selectedConversation.participants.length} aluno(s) com acesso ativo${isCreatorMonitoringCourseRoom ? ' • acompanhamento do autor' : ''}`
                     : selectedConversation.metadata?.kind === 'creator_channel'
-                        ? 'Canal privado entre aluno e criador'
+                        ? 'Canal privado entre aluno e autor'
                         : `${selectedConversation.participants.length} participante(s)`}
                         </p>
                       </div>
                     </div>
 
                     {contextLabel === 'Aluno' && selectedConversation.metadata?.kind === 'course_room' && selectedConversation.metadata.course_id ? (<Button type="button" variant="outline" onClick={() => void handleOpenCourseCreatorChannel(selectedConversation.metadata.course_id!)} className="shrink-0 rounded-2xl border-[#D8E6EB] bg-white font-black text-[#0A3640] hover:border-[#1398B7]">
-                        Falar com o criador
+                        Falar com o autor
                       </Button>) : null}
                   </div>
                 </div>
@@ -613,7 +613,7 @@ export function MessagesPage({ contextLabel }: {
               </div>
 
               {isCreatorMonitoringCourseRoom ? (<div className="border-t border-[#D8E6EB] bg-[#F2F7F9] px-4 py-4">
-                  <p className="text-sm font-semibold text-[#5F7077]">Este canal est em modo de acompanhamento para o criador. Os alunos seguem conversando entre si na sala do curso, e o contato direto com o criador continua no canal privado do curso.
+                  <p className="text-sm font-semibold text-[#5F7077]">Este canal está em modo de acompanhamento para o autor. Os alunos seguem conversando entre si na sala do curso, e o contato direto com o autor continua no canal privado do curso.
                   </p>
                 </div>) : (<form onSubmit={(event) => void handleSendMessage(event)} className="border-t border-[#D8E6EB] bg-[#F2F7F9] p-4">
                   <div className="flex gap-3">

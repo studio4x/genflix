@@ -1,4 +1,5 @@
 import { buildCoursePublicCatalogItem, buildCoursePublicDetail, normalizeCoursePublicPageContent, type CoursePublicPageRowLike, } from '@/features/public/course-public-page-content';
+import { publicSupabase } from '@/services/supabase/public-client';
 import type { GenflixBlogPost, GenflixCourseDetail, GenflixCourseItem, GenflixCourseModule, } from '@/features/public/genflix-site-content';
 import { slugifyCourseCategoryValue } from '@/features/courses/course-categories';
 import { fixMojibakeText } from '@/lib/text-encoding';
@@ -6,6 +7,28 @@ interface PublicCourseRow extends CoursePublicPageRowLike {
     display_order: number;
     launch_date: string | null;
     created_at: string;
+}
+interface PublicCourseDetailRow extends CoursePublicPageRowLike {
+    authors?: unknown;
+}
+interface PublicAuthorProfileRow {
+    user_id: string;
+    public_slug: string | null;
+    public_title: string | null;
+    public_short_bio: string | null;
+    public_long_bio: string | null;
+    public_areas: string[] | null;
+    public_education: string | null;
+    public_experience: string | null;
+    public_photo_url: string | null;
+    public_website_url: string | null;
+    public_instagram_url: string | null;
+    public_linkedin_url: string | null;
+    public_youtube_url: string | null;
+    payout_name: string | null;
+    full_name: string | null;
+    avatar_url: string | null;
+    courses: unknown;
 }
 interface PublicBlogPostRow {
     slug: string;
@@ -139,7 +162,17 @@ async function fetchPublicCourseOutline(courseId: string): Promise<GenflixCourse
         ? payload.map(normalizeOutlineModule).filter((item): item is GenflixCourseModule => Boolean(item))
         : [];
 }
-async function toCourseDetail(row: PublicCourseRow): Promise<GenflixCourseDetail> {
+async function fetchPublicRpc<T>(functionName: string, payload: Record<string, unknown>): Promise<T | null> {
+    const { data, error } = await publicSupabase.rpc(functionName, payload);
+    if (error) {
+        throw error;
+    }
+    if (Array.isArray(data)) {
+        return (data[0] as T | undefined) ?? null;
+    }
+    return (data as T | null) ?? null;
+}
+async function toCourseDetail(row: PublicCourseDetailRow): Promise<GenflixCourseDetail> {
     const content = normalizeCoursePublicPageContent(row.public_page_content);
     const realSyllabus = content.contentSource === 'real'
         ? await fetchPublicCourseOutline(row.id).catch(() => [])
@@ -283,15 +316,100 @@ export async function fetchLatestPublicCoursesFromSupabase(limit = 6) {
         .map(toCourseItem);
 }
 export async function fetchPublicCourseDetailFromSupabase(slug: string) {
-    const params = new URLSearchParams({
-        select: publicCourseSelect,
-        status: 'eq.published',
-        is_public: 'eq.true',
-        slug: `eq.${slug}`,
-        limit: '1',
-    });
-    const [row] = await fetchPublicRows<PublicCourseRow>('courses', params);
+    const row = await fetchPublicRpc<PublicCourseDetailRow>('get_public_course_detail', { _slug: slug });
     return row ? await toCourseDetail(row) : null;
+}
+export interface PublicAuthorCourseItem {
+    id: string;
+    slug: string;
+    title: string;
+    category: string | null;
+    categories: string[] | null;
+    thumbnail_url: string | null;
+    cover_image_url: string | null;
+    hero_video_url: string | null;
+    price_label: string | null;
+    secondary_price_label: string | null;
+    price_cents: number | null;
+    currency: string | null;
+    display_order: number;
+    launch_date: string | null;
+    commission_percent: number;
+}
+export interface PublicAuthorProfile {
+    userId: string;
+    publicSlug: string;
+    publicTitle: string;
+    publicShortBio: string;
+    publicLongBio: string;
+    publicAreas: string[];
+    publicEducation: string;
+    publicExperience: string;
+    publicPhotoUrl: string | null;
+    publicWebsiteUrl: string;
+    publicInstagramUrl: string;
+    publicLinkedinUrl: string;
+    publicYoutubeUrl: string;
+    payoutName: string;
+    fullName: string;
+    avatarUrl: string | null;
+    courses: PublicAuthorCourseItem[];
+}
+export async function fetchPublicAuthorProfileFromSupabase(slug: string): Promise<PublicAuthorProfile | null> {
+    const row = await fetchPublicRpc<PublicAuthorProfileRow>('get_public_author_profile', { _slug: slug });
+    if (!row) {
+        return null;
+    }
+    const courses = Array.isArray(row.courses)
+        ? row.courses.flatMap((item) => {
+            if (!item || typeof item !== 'object' || Array.isArray(item)) {
+                return [];
+            }
+            const record = item as Record<string, unknown>;
+            const id = typeof record.id === 'string' ? record.id : '';
+            const courseSlug = typeof record.slug === 'string' ? record.slug : '';
+            const title = typeof record.title === 'string' ? record.title : '';
+            if (!id || !courseSlug || !title) {
+                return [];
+            }
+            return [{
+                    id,
+                    slug: courseSlug,
+                    title,
+                    category: typeof record.category === 'string' ? record.category : null,
+                    categories: Array.isArray(record.categories) ? record.categories.filter((item): item is string => typeof item === 'string') : null,
+                    thumbnail_url: typeof record.thumbnail_url === 'string' ? record.thumbnail_url : null,
+                    cover_image_url: typeof record.cover_image_url === 'string' ? record.cover_image_url : null,
+                    hero_video_url: typeof record.hero_video_url === 'string' ? record.hero_video_url : null,
+                    price_label: typeof record.price_label === 'string' ? record.price_label : null,
+                    secondary_price_label: typeof record.secondary_price_label === 'string' ? record.secondary_price_label : null,
+                    price_cents: typeof record.price_cents === 'number' ? record.price_cents : null,
+                    currency: typeof record.currency === 'string' ? record.currency : null,
+                    display_order: typeof record.display_order === 'number' ? record.display_order : 0,
+                    launch_date: typeof record.launch_date === 'string' ? record.launch_date : null,
+                    commission_percent: typeof record.commission_percent === 'number' ? record.commission_percent : 0,
+                }];
+        })
+        : [];
+    return {
+        userId: row.user_id,
+        publicSlug: row.public_slug ?? '',
+        publicTitle: row.public_title ?? row.payout_name ?? row.full_name ?? 'Autor GenFlix',
+        publicShortBio: row.public_short_bio ?? '',
+        publicLongBio: row.public_long_bio ?? row.public_short_bio ?? '',
+        publicAreas: row.public_areas ?? [],
+        publicEducation: row.public_education ?? '',
+        publicExperience: row.public_experience ?? '',
+        publicPhotoUrl: row.public_photo_url ?? row.avatar_url ?? null,
+        publicWebsiteUrl: row.public_website_url ?? '',
+        publicInstagramUrl: row.public_instagram_url ?? '',
+        publicLinkedinUrl: row.public_linkedin_url ?? '',
+        publicYoutubeUrl: row.public_youtube_url ?? '',
+        payoutName: row.payout_name ?? '',
+        fullName: row.full_name ?? '',
+        avatarUrl: row.avatar_url ?? null,
+        courses,
+    };
 }
 export interface PublicCourseFreePreviewLesson {
     id: string;

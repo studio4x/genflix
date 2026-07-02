@@ -705,7 +705,7 @@ export function AdminSiteEditorPage() {
               <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#1398B7]">Permissões por perfil</p>
               <div className="mt-3 grid gap-2 text-sm font-semibold text-[#15323b]">
                 <p><span className="font-black">Admin:</span> rascunho, comentários, aprovação e publicação.</p>
-                <p><span className="font-black">Criador/Professor:</span> rascunho, comentários e solicitação de revisão.</p>
+                <p><span className="font-black">Autor/Professor:</span> rascunho, comentários e solicitação de revisão.</p>
                 <p><span className="font-black">Demais perfis:</span> sem acesso ao fluxo de edição.</p>
               </div>
             </div>

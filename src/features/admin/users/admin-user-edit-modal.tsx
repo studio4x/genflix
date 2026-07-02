@@ -18,7 +18,7 @@ const roleOptions: Array<{
   },
   {
     code: 'criador',
-    title: 'Criador',
+    title: 'Autor',
     description: 'Acompanha relatórios e edita informações vinculadas ao perfil.',
   },
   {

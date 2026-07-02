@@ -100,6 +100,25 @@ export interface GenflixCourseModule {
   lessonLabel?: string
 }
 
+export interface GenflixCourseAuthor {
+  authorId: string
+  slug: string
+  name: string
+  title: string
+  shortBio: string
+  longBio: string
+  areas: string[]
+  education: string
+  experience: string
+  photoUrl: string | null
+  websiteUrl: string
+  instagramUrl: string
+  linkedinUrl: string
+  youtubeUrl: string
+  commissionPercent: number
+  displayOrder: number
+}
+
 export interface GenflixCourseDetail {
   id?: string
   slug: string
@@ -114,6 +133,7 @@ export interface GenflixCourseDetail {
   aboutParagraphs: string[]
   outcomes: GenflixCourseOutcome[]
   syllabus: GenflixCourseModule[]
+  authors: GenflixCourseAuthor[]
   mentor: {
     name: string
     role: string
@@ -535,6 +555,24 @@ function buildCourseDetail(course: GenflixCourseItem, overrides: Partial<Genflix
     aboutParagraphs,
     outcomes,
     syllabus: buildCourseModules(course),
+    authors: [{
+      authorId: course.slug,
+      slug: course.slug,
+      name: course.mentor,
+      title: course.role,
+      shortBio: `Curadoria acadêmica e acompanhamento pedagógico conduzidos por ${course.mentor}, com experiência aplicada em ${course.category.toLowerCase()}.`,
+      longBio: `Curadoria acadêmica e acompanhamento pedagógico conduzidos por ${course.mentor}, com experiência aplicada em ${course.category.toLowerCase()}.`,
+      areas: [course.category],
+      education: '',
+      experience: '',
+      photoUrl: null,
+      websiteUrl: '',
+      instagramUrl: '',
+      linkedinUrl: '',
+      youtubeUrl: '',
+      commissionPercent: 100,
+      displayOrder: 1,
+    }],
     mentor: {
       name: course.mentor,
       role: course.role,

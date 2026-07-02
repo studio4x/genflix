@@ -432,7 +432,7 @@ export function AdminPaymentSettingsPage() {
                   URL para cadastrar no Asaas
                 </h3>
                 <p className="mt-3 text-sm leading-7 text-[#5F7077]">Cadastre est? URL na area de webhooks do Asaas. Ela recebe confirmacoes, cancelamentos, expiracoes,
-                  estornos e chargebacks para atualizar o acesso do aluno e a comissao do criador.
+                  estornos e chargebacks para atualizar o acesso do aluno e a comissao do autor.
                 </p>
 
                 <div className="mt-5 border border-[#D8E6EB] bg-[#F2F7F9] p-4">

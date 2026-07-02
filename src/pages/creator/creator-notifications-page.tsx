@@ -28,7 +28,7 @@ export function CreatorNotificationsPage() {
     return (<div className="space-y-6">
       <header className="flex flex-col gap-4 border-b border-[#D8E6EB] pb-5 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <p className="text-[10px] font-black uppercase tracking-[0.28em] text-[#1398B7]">Criador / Relacionamento</p>
+          <p className="text-[10px] font-black uppercase tracking-[0.28em] text-[#1398B7]">Autor / Relacionamento</p>
           <h1 className="mt-2 font-readex text-3xl font-semibold tracking-tight text-[#15323b]">
             {activeTab === 'preferencias' ? 'Preferências' : 'Notificações'}
           </h1>
@@ -43,6 +43,6 @@ export function CreatorNotificationsPage() {
         </div>
       </header>
 
-      {activeTab === 'preferencias' ? (<NotificationPreferencesPage contextLabel="Criador"/>) : (<NotificationsOverviewPanel />)}
+      {activeTab === 'preferencias' ? (<NotificationPreferencesPage contextLabel="Autor"/>) : (<NotificationsOverviewPanel />)}
     </div>);
 }

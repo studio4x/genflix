@@ -73,18 +73,26 @@ export const coursePublicPageContentSchema = z.object({
     contentSource: z.enum(['real', 'custom']).default('custom'),
     customSyllabus: z.array(publicCourseModuleSchema).default([]),
 });
+export const courseAuthorAssignmentSchema = z.object({
+    author_id: z.string().uuid('Autor inválido.'),
+    commission_percent: z.number().min(0).max(100).default(0),
+    display_order: z.number().int().min(1).default(1),
+});
 export const coursePublicPageFormSchema = z.object({
     category: z.string().trim().optional().or(z.literal('')),
     categoryLine: z.string().trim().optional().or(z.literal('')),
-    marketing_description: z.string().trim().min(10, "Informe a descrição principal do curso."),
-    mentor_name: z.string().trim().min(2, 'Informe o nome do mentor.'),
-    mentor_role: z.string().trim().min(2, 'Informe o cargo ou funcao do mentor.'),
+    marketing_description: z.string().trim().optional().or(z.literal('')),
+    hero_video_url: z.string().trim().optional().or(z.literal('')),
+    logo_url: z.string().trim().optional().or(z.literal('')),
+    mentor_name: z.string().trim().optional().or(z.literal('')),
+    mentor_role: z.string().trim().optional().or(z.literal('')),
     mentor_bio: z.string().trim().optional().or(z.literal('')),
     bonus_enabled: z.boolean().default(true),
     bonus_title: z.string().trim().optional().or(z.literal('')),
     mentor_initials: z.string().trim().max(4).optional().or(z.literal('')),
     price_label: z.string().trim().min(1, 'Informe o preço exibido na página pública.'),
     secondary_price_label: z.string().trim().min(1, "Informe o subtítulo do checkout."),
+    authors: z.array(courseAuthorAssignmentSchema).default([]),
     aboutParagraphs: z.array(z.string().trim().min(1)).min(1, 'Adicione pelo menos um paragrafo em Sobre o Curso.'),
     includedItems: z.array(z.string().trim().min(1)).min(1, "Adicione pelo menos um item do que está incluído."),
     contentSource: z.enum(['real', 'custom']).default('custom'),
@@ -104,7 +112,7 @@ export const coursePublicPageFormSchema = z.object({
         ctx.addIssue({
             code: z.ZodIssueCode.custom,
             path: ['mentor_bio'],
-            message: "Informe o texto da seção bônus.",
+            message: "Informe a descrição da seção bônus.",
         });
     }
 });

@@ -111,7 +111,7 @@ function resolveUploadedIconForResource(item: EditableListItem, uploadedIcons: S
     }
     return null;
 }
-function renderResourceIcon(item: ResourcePopupItem, className: string, forcedColor?: string | null, uploadedIcons: SiteAsset[] = [], fallbackIconSize?: number | null) {
+function renderResourceIcon(item: ResourcePopupItem, className: string, forcedColor?: string | null, uploadedIcons: SiteAsset[] = [], fallbackIconSize?: number | null, isIconsLoaded = true) {
     const metadata = getItemMetadata(item);
     const iconKey = typeof metadata.iconKey === 'string' ? metadata.iconKey : null;
     const explicitIconImageUrl = typeof metadata.iconImageUrl === 'string' ? metadata.iconImageUrl : null;
@@ -134,6 +134,9 @@ function renderResourceIcon(item: ResourcePopupItem, className: string, forcedCo
             iconSize,
             className,
         });
+    }
+    if (!isIconsLoaded) {
+        return <span className={`${className} inline-block rounded-full bg-slate-200/80 animate-pulse`} aria-hidden="true" />;
     }
     const FallbackIcon = item.fallbackIcon;
     return <FallbackIcon className={className} style={iconColor ? { color: iconColor } : undefined}/>;
@@ -287,9 +290,10 @@ function ResourceReadMoreModal({ state, onClose, }: {
       </div>
     </div>);
 }
-function ResourcesCatalogSection({ cardStyle, uploadedIcons, onOpenVideo, onOpenReadMore, }: {
+function ResourcesCatalogSection({ cardStyle, uploadedIcons, isIconsLoaded, onOpenVideo, onOpenReadMore, }: {
     cardStyle: ResourceCardStyleSettings;
     uploadedIcons: SiteAsset[];
+    isIconsLoaded: boolean;
     onOpenVideo: (state: ResourceVideoModalState) => void;
     onOpenReadMore: (state: ResourceReadMoreModalState) => void;
 }) {
@@ -338,7 +342,7 @@ function ResourcesCatalogSection({ cardStyle, uploadedIcons, onOpenVideo, onOpen
                         backgroundColor: cardStyle.iconBackgroundColor,
                         color: itemColor || cardStyle.iconColor,
                     }}>
-                        {renderResourceIcon(popupItem, 'h-full w-full', itemColor, uploadedIcons, cardStyle.iconSize)}
+                        {renderResourceIcon(popupItem, 'h-full w-full', itemColor, uploadedIcons, cardStyle.iconSize, isIconsLoaded)}
                       </div>
                     </div>
 
@@ -421,6 +425,7 @@ export function PublicResourcesPage() {
     const rawCardStyle = useEditableValue('resources.cardStyle', defaultCardStyle);
     const cardStyle = useMemo(() => parseCardStyle(rawCardStyle), [rawCardStyle]);
     const [uploadedIcons, setUploadedIcons] = useState<SiteAsset[]>([]);
+    const [isIconsLoaded, setIsIconsLoaded] = useState(false);
     useEffect(() => {
         let mounted = true;
         async function loadUploadedIcons() {
@@ -441,6 +446,11 @@ export function PublicResourcesPage() {
             catch {
                 if (mounted) {
                     setUploadedIcons([]);
+                }
+            }
+            finally {
+                if (mounted) {
+                    setIsIconsLoaded(true);
                 }
             }
         }
@@ -474,7 +484,7 @@ export function PublicResourcesPage() {
     return (<main className="min-h-screen bg-[#F2F7F9] font-manrope text-[#163138]">
       <GenflixPublicHeader currentPage="resources" navLinks={genflixNavLinks}/>
       <BannerPlacementSlot pageKey="resources" placementKey="hero"/>
-      <ResourcesCatalogSection cardStyle={cardStyle} uploadedIcons={uploadedIcons} onOpenVideo={setActiveVideo} onOpenReadMore={setActiveReadMore}/>
+      <ResourcesCatalogSection cardStyle={cardStyle} uploadedIcons={uploadedIcons} isIconsLoaded={isIconsLoaded} onOpenVideo={setActiveVideo} onOpenReadMore={setActiveReadMore}/>
       <GenflixNewsletterSection />
       <GenflixPublicFooter />
       {activeVideo ? (<ResourceVideoModal state={activeVideo} onClose={() => setActiveVideo(null)}/>) : null}

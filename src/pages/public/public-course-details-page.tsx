@@ -75,6 +75,11 @@ function renderAboutParagraphHtml(value: string) {
   return sanitizeRichTextHtml(normalizedHtml);
 }
 
+function getAuthorPublicHref(authorSlug: string, authorId: string) {
+  const normalizedSlug = authorSlug.trim();
+  return `/autores/${encodeURIComponent(normalizedSlug || authorId)}`;
+}
+
 export function PublicCourseDetailsPage() {
   const { slug = '' } = useParams();
   const [detail, setDetail] = useState<GenflixCourseDetail | null>(null);
@@ -363,21 +368,64 @@ export function PublicCourseDetailsPage() {
                   })}
                 </div>
               </section>
+
+              <section>
+                <h2 className="text-[1.45rem] font-bold tracking-[-0.03em] text-[#183139]">AUTOR(ES) DO CURSO</h2>
+                <div className="mt-5 grid gap-4 md:grid-cols-2">
+                  {detail.authors.map((author) => (
+                    <article
+                      key={author.authorId}
+                      className="rounded-[22px] border border-[#D8E6EB] bg-[#F8FCFD] p-5 shadow-[0_12px_24px_rgba(21,50,59,0.04)]"
+                    >
+                      <div className="flex items-start gap-4">
+                        <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-[#D9F0F5] text-sm font-extrabold text-[#0A3640]">
+                          {author.photoUrl ? (
+                            <img src={author.photoUrl} alt={author.name} className="h-full w-full object-cover" />
+                          ) : (
+                            <span>{author.name.slice(0, 2).toUpperCase()}</span>
+                          )}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-semibold text-[#183139]">{author.name}</p>
+                          <p className="mt-1 text-xs leading-5 text-[#6a7b81]">{author.title}</p>
+                          <p className="mt-2 text-xs font-semibold uppercase tracking-[0.12em] text-[#1398B7]">
+                            {author.commissionPercent.toFixed(2).replace('.', ',')}% de comissão
+                          </p>
+                        </div>
+                      </div>
+
+                      {author.shortBio ? (
+                        <p className="mt-4 text-sm leading-6 text-[#5f7178]">{author.shortBio}</p>
+                      ) : null}
+
+                      {author.areas.length ? (
+                        <div className="mt-4 flex flex-wrap gap-2">
+                          {author.areas.map((area) => (
+                            <span key={`${author.authorId}-${area}`} className="rounded-full bg-white px-3 py-1 text-[11px] font-bold uppercase tracking-[0.12em] text-[#0F7E99]">
+                              {area}
+                            </span>
+                          ))}
+                        </div>
+                      ) : null}
+
+                      <div className="mt-5 flex items-center justify-between gap-3">
+                        <Link
+                          to={getAuthorPublicHref(author.slug, author.authorId)}
+                          className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#1398B7] transition hover:text-[#0F7E99]"
+                        >
+                          <span>Saiba mais</span>
+                          <ArrowRight className="h-3.5 w-3.5" />
+                        </Link>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              </section>
             </div>
 
             <aside className="lg:sticky lg:top-24">
               <div className="overflow-hidden rounded-[26px] border border-[#D8E6EB] bg-white shadow-[0_24px_60px_rgba(21,50,59,0.08)]">
                 <div className="space-y-6 p-6">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#D9F0F5] text-sm font-extrabold text-[#0A3640]">
-                      {detail.mentor.initials}
-                    </div>
-                    <div>
-                      <p className="text-sm font-semibold text-[#183139]">{detail.mentor.name}</p>
-                      <p className="text-xs leading-5 text-[#6a7b81]">{detail.mentor.role}</p>
-                    </div>
-                  </div>
-
                   <div>
                     <p className="text-[2rem] font-extrabold leading-none tracking-[-0.05em] text-[#1398B7]">
                       {detail.priceLabel}
@@ -415,7 +463,7 @@ export function PublicCourseDetailsPage() {
                   {selectedResourceItems.length ? (
                     <div className="rounded-[22px] border border-[#D8E6EB] bg-white p-4 shadow-[0_12px_28px_rgba(21,50,59,0.04)]">
                       <div>
-                        <p className="text-sm font-semibold text-[#183139]">Recursos do curso</p>
+                        <p className="text-sm font-semibold text-[#183139]">Recursos disponíveis</p>
                         <p className="mt-1 text-xs leading-5 text-[#6a7b81]">Acesse os materiais e recursos que acompanham este curso.</p>
                       </div>
                       <div className="mt-4 space-y-2.5">

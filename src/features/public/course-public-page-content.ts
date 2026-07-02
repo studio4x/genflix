@@ -1,5 +1,6 @@
 import {
   type GenflixCourseDetail,
+  type GenflixCourseAuthor,
   type GenflixCourseItem,
   type GenflixCourseModule,
   type GenflixCourseOutcome,
@@ -47,6 +48,8 @@ export interface CoursePublicPageRowLike {
   price_cents: number | null
   currency: string | null
   public_page_content: unknown
+  authors?: unknown
+  creator_commission_percent?: number | null
 }
 
 const defaultCourseImage = '/images/genflix/home/featured-1.jpg'
@@ -126,6 +129,51 @@ function normalizeModule(value: unknown): GenflixCourseModule | null {
     items,
     lessonLabel: trimString(value.lessonLabel) || undefined,
   }
+}
+
+function normalizeAuthors(value: unknown): GenflixCourseAuthor[] {
+  if (!Array.isArray(value)) {
+    return []
+  }
+
+  return value.flatMap((entry, index) => {
+    if (!entry || typeof entry !== 'object' || Array.isArray(entry)) {
+      return []
+    }
+
+    const record = entry as Record<string, unknown>
+    const authorId = trimString(record.author_id ?? record.user_id)
+    const slug = trimString(record.public_slug)
+    const name = trimString(record.public_title) || trimString(record.full_name) || trimString(record.payout_name) || 'Autor'
+    if (!authorId || !name) {
+      return []
+    }
+
+    return [{
+      authorId,
+      slug: slug || `autor-${authorId.slice(0, 8)}`,
+      name,
+      title: trimString(record.public_title) || name,
+      shortBio: trimString(record.public_short_bio),
+      longBio: trimString(record.public_long_bio),
+      areas: Array.isArray(record.public_areas)
+        ? record.public_areas.map((item) => trimString(item)).filter(Boolean)
+        : [],
+      education: trimString(record.public_education),
+      experience: trimString(record.public_experience),
+      photoUrl: trimString(record.public_photo_url) || null,
+      websiteUrl: trimString(record.public_website_url),
+      instagramUrl: trimString(record.public_instagram_url),
+      linkedinUrl: trimString(record.public_linkedin_url),
+      youtubeUrl: trimString(record.public_youtube_url),
+      commissionPercent: typeof record.commission_percent === 'number' && Number.isFinite(record.commission_percent)
+        ? Number(record.commission_percent)
+        : 0,
+      displayOrder: typeof record.display_order === 'number' && Number.isFinite(record.display_order)
+        ? Number(record.display_order)
+        : index + 1,
+    }]
+  })
 }
 
 function normalizeBonusSection(value: unknown): CoursePublicBonusSection | null {
@@ -240,6 +288,7 @@ export function buildCoursePublicDetail(
 ): GenflixCourseDetail {
   const item = buildCoursePublicCatalogItem(row)
   const content = normalizeCoursePublicPageContent(row.public_page_content)
+  const authors = normalizeAuthors(row.authors)
   const primaryCategory = getCoursePrimaryCategory({
     category: row.category,
     categories: row.categories ?? undefined,
@@ -309,12 +358,32 @@ export function buildCoursePublicDetail(
       ? content.outcomes
       : defaultOutcomeFallbacks,
     syllabus,
+    authors: authors.length
+      ? authors
+      : [{
+        authorId: row.id,
+        slug: item.slug,
+        name: trimString(row.mentor_name) || item.mentor,
+        title: trimString(row.mentor_role) || item.role,
+        shortBio: trimString(row.mentor_bio),
+        longBio: trimString(row.mentor_bio),
+        areas: [],
+        education: '',
+        experience: '',
+        photoUrl: null,
+        websiteUrl: '',
+        instagramUrl: '',
+        linkedinUrl: '',
+        youtubeUrl: '',
+        commissionPercent: Number(row.creator_commission_percent ?? 0),
+        displayOrder: 1,
+      }],
     mentor: {
       name: trimString(row.mentor_name) || item.mentor,
       role: trimString(row.mentor_role) || item.role,
       bio:
         trimString(row.mentor_bio) ||
-        'Criador responsável pela experiência de aprendizagem deste curso.',
+        'Autor responsável pela experiência de aprendizagem deste curso.',
       initials: item.initials,
     },
     priceLabel: formatPrice(row),

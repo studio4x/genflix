@@ -331,7 +331,7 @@ export function StudentCourseDetailsPage() {
 
          <div className="relative z-20 space-y-6 max-w-4xl">
             <div className="space-y-4">
-               <h1 className="text-4xl md:text-6xl font-black text-white leading-tight tracking-tighter">
+               <h1 className="font-manrope text-[55px] font-bold leading-[0.95] tracking-[0px] text-white max-w-4xl break-words">
                   {course.title}
                </h1>
                <div className="flex flex-wrap items-center gap-6">
@@ -357,10 +357,10 @@ export function StudentCourseDetailsPage() {
                <Button className="bg-white text-slate-900 hover:bg-slate-100 h-16 px-10 rounded-2xl font-black text-lg shadow-xl" asChild>
                   <Link to={modules[0]?.lessons[0] ? `/aluno/cursos/${courseId}/player/aulas/${modules[0].lessons[0].id}` : '#'}>
                      {courseJourneyStatus === 'completed'
-            ? 'Revisar Aprendizado'
+            ? 'Revisar aprendizado'
             : hasStartedCourse
-                ? 'Continuar Aprendizado'
-                : 'Iniciar Aprendizado'}
+                ? 'Continuar aprendizado'
+                : 'Iniciar aprendizado'}
                   </Link>
                </Button>
             </div>

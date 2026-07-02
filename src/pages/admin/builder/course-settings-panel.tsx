@@ -3,7 +3,6 @@ import ReactQuill from '@/components/forms/react-quill';
 import { useAuth } from '@/app/providers/auth-provider';
 import { Button } from '@/components/ui/button';
 import { useCourseBuilder } from '@/app/layouts/admin-course-builder-layout';
-import { fetchCourseAiReviewStandards, upsertCourseAiReviewStandards, } from '@/features/admin/ai-review/api';
 import { resetCourseProgress, updateCourse, uploadCourseThumbnail, toErrorMessage, type ResetCourseProgressResult, } from '@/features/admin/content/api';
 import { courseFormSchema } from '@/features/admin/content/schemas';
 import { fetchSiteContent } from '@/features/site-editor/api';
@@ -12,7 +11,6 @@ import { formatCurrencyInputFromCents, parseCurrencyInputToCents } from '@/lib/c
 import { publishBuilderNotice } from '@/lib/builder-notice';
 import { canCourseUseCaseStudies, COURSE_QUIZ_TYPE_OPTIONS, DEFAULT_COURSE_QUIZ_TYPE_SETTINGS, getVisibleCourseQuizTypeOptions, normalizeCourseQuizTypeSettings, } from '@/features/assessments/course-quiz-type-settings';
 import { fetchGlobalQuizTypeSettings } from '@/features/admin/quiz-types/api';
-import { fetchAdminUsers, type AdminUserListItem } from '@/features/admin/users/api';
 import type { Course, CourseQuizTypeSettings } from '@/types/content';
 import type { EditableListItem } from '@/features/site-editor/types';
 type CourseSettingsFormState = {
@@ -37,7 +35,7 @@ type CourseSettingsFormState = {
 };
 export function CourseSettingsPanel() {
     const { courseTree, refreshTree } = useCourseBuilder();
-    const { user, session } = useAuth();
+    const { session } = useAuth();
     const [form, setForm] = useState<CourseSettingsFormState>({
         title: '',
         description: '',
@@ -61,23 +59,13 @@ export function CourseSettingsPanel() {
     const [isUploadingThumbnail, setIsUploadingThumbnail] = useState(false);
     const [isUploadingStudentHero, setIsUploadingStudentHero] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [isSavingAiStandards, setIsSavingAiStandards] = useState(false);
     const [isResettingProgress, setIsResettingProgress] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState(false);
-    const [aiStandardsSuccess, setAiStandardsSuccess] = useState(false);
     const [resetProgressSuccess, setResetProgressSuccess] = useState<ResetCourseProgressResult | null>(null);
     const [globalQuizTypeSettings, setGlobalQuizTypeSettings] = useState({ ...DEFAULT_COURSE_QUIZ_TYPE_SETTINGS });
-    const [creatorUsers, setCreatorUsers] = useState<AdminUserListItem[]>([]);
     const [resourceCatalog, setResourceCatalog] = useState<EditableListItem[]>([]);
     const [isLoadingResources, setIsLoadingResources] = useState(false);
-    const [aiStandards, setAiStandards] = useState({
-        ideal_course_structure: '',
-        required_elements: '',
-        bibliography_rules: '',
-        table_formatting_rules: '',
-        additional_review_rules: '',
-    });
     useEffect(() => {
         if (courseTree) {
             setForm({
@@ -104,36 +92,12 @@ export function CourseSettingsPanel() {
         }
     }, [courseTree]);
     useEffect(() => {
-        async function loadAiStandards() {
-            if (!courseTree)
-                return;
-            try {
-                const standards = await fetchCourseAiReviewStandards(courseTree.course.id);
-                setAiStandards({
-                    ideal_course_structure: standards?.ideal_course_structure ?? '',
-                    required_elements: standards?.required_elements ?? '',
-                    bibliography_rules: standards?.bibliography_rules ?? '',
-                    table_formatting_rules: standards?.table_formatting_rules ?? '',
-                    additional_review_rules: standards?.additional_review_rules ?? '',
-                });
-            }
-            catch (err) {
-                setError(toErrorMessage(err));
-            }
-        }
-        void loadAiStandards();
-    }, [courseTree]);
-    useEffect(() => {
         let isMounted = true;
         async function loadSettings() {
             try {
-                const [loadedSettings, users] = await Promise.all([
-                    fetchGlobalQuizTypeSettings(),
-                    session ? fetchAdminUsers(session) : Promise.resolve([]),
-                ]);
+                const loadedSettings = await fetchGlobalQuizTypeSettings();
                 if (isMounted) {
                     setGlobalQuizTypeSettings(loadedSettings);
-                    setCreatorUsers(users.filter((candidate) => candidate.roles.some((role) => role.code === 'criador' || role.code === 'professor')));
                 }
             }
             catch {
@@ -208,19 +172,6 @@ export function CourseSettingsPanel() {
             setIsUploadingStudentHero(false);
         }
     }
-    async function handleLogoUpload(event: React.ChangeEvent<HTMLInputElement>) {
-        const file = event.target.files?.[0];
-        if (!file)
-            return;
-        setError(null);
-        try {
-            const url = await uploadCourseThumbnail(file);
-            setForm((current) => ({ ...current, logo_url: url }));
-        }
-        catch {
-            setError('Falha ao subir imagem. Tente novamente.');
-        }
-    }
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
         if (!courseTree)
@@ -248,30 +199,6 @@ export function CourseSettingsPanel() {
         }
         finally {
             setIsSubmitting(false);
-        }
-    }
-    async function handleSaveAiStandards(e: React.FormEvent) {
-        e.preventDefault();
-        if (!courseTree || !user)
-            return;
-        setError(null);
-        setAiStandardsSuccess(false);
-        setIsSavingAiStandards(true);
-        try {
-            await upsertCourseAiReviewStandards(courseTree.course.id, aiStandards, user.id);
-            setAiStandardsSuccess(true);
-            publishBuilderNotice({
-                type: 'success',
-                title: 'Padr\u00f5es da IA salvos',
-                message: "Os padr\u00f5es de revis\u00e3o com IA foram atualizados com sucesso.",
-            });
-            setTimeout(() => setAiStandardsSuccess(false), 3000);
-        }
-        catch (err) {
-            setError(toErrorMessage(err));
-        }
-        finally {
-            setIsSavingAiStandards(false);
         }
     }
     async function handleResetCourseProgress() {
@@ -446,51 +373,6 @@ export function CourseSettingsPanel() {
             </section>
 
             <section className="rounded-[32px] border border-slate-200 bg-white p-5 md:p-6">
-               <div className="max-w-3xl space-y-3">
-                  <p className="text-[11px] font-black uppercase tracking-[0.26em] text-[#0F5AA3]">Hero e identidade</p>
-                  <h3 className="text-[2rem] font-black tracking-tight text-slate-900">Video do curso e logotipo</h3>
-                  <p className="max-w-[860px] text-base leading-8 text-slate-600">Quando existir um video de hero, ele substitui a capa na pagina publica do curso. O logo aparece no topo do hero para reforcar a identidade visual.</p>
-               </div>
-
-               <div className="mt-6 grid gap-5 xl:grid-cols-2">
-                  <label className="space-y-2">
-                     <span className="text-xs font-black uppercase tracking-widest text-slate-400">URL do video do hero</span>
-                     <input className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-5 py-3 text-sm font-semibold outline-none focus:border-cyan-400 focus:bg-white" value={form.hero_video_url} onChange={(event) => setForm((current) => ({ ...current, hero_video_url: event.target.value }))} placeholder="https://..." />
-                     <p className="text-xs font-medium leading-6 text-slate-500">Aceita URL de video direto, YouTube ou outra origem publica suportada pelo visualizador.</p>
-                  </label>
-
-                  <div className="rounded-[28px] border border-slate-200 bg-slate-50 px-5 py-5">
-                     <div className="space-y-2">
-                        <p className="text-sm font-black text-slate-900">Logo do curso</p>
-                        <p className="text-xs font-medium text-slate-500">Use uma imagem horizontal ou quadrada para exibir no hero da pagina publica.</p>
-                     </div>
-
-                     <div className="mt-4 flex flex-wrap items-center gap-4">
-                        <label className="inline-flex cursor-pointer items-center gap-3">
-                           <span className="inline-flex h-11 items-center rounded-xl border border-slate-300 bg-white px-4 text-sm font-bold text-slate-800 transition-colors hover:border-[#1398B7]/40 hover:bg-slate-50">
-                              Escolher imagem
-                           </span>
-                           <input type="file" accept="image/*" onChange={handleLogoUpload} className="sr-only" title="Selecionar logo do curso"/>
-                        </label>
-                        <span className="text-sm font-medium text-slate-500">{form.logo_url ? 'Logo configurado' : 'Nenhuma imagem escolhida'}</span>
-                     </div>
-
-                     <label className="mt-4 block space-y-2">
-                        <span className="text-xs font-black uppercase tracking-widest text-slate-400">URL do logo</span>
-                        <input className="w-full rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold outline-none focus:border-cyan-400 focus:bg-white" value={form.logo_url} onChange={(event) => setForm((current) => ({ ...current, logo_url: event.target.value }))} placeholder="https://..." />
-                     </label>
-
-                     {form.logo_url ? (<div className="mt-4 flex items-center gap-3">
-                           <img src={form.logo_url} alt="Preview do logo do curso" className="h-12 max-w-[160px] rounded-lg bg-white object-contain p-2"/>
-                           <Button type="button" variant="outline" size="sm" onClick={() => setForm((current) => ({ ...current, logo_url: '' }))} className="rounded-xl border-slate-200 bg-white font-bold text-slate-600 hover:text-slate-900">
-                              Remover logo
-                           </Button>
-                        </div>) : null}
-                  </div>
-               </div>
-            </section>
-
-            <section className="rounded-[32px] border border-slate-200 bg-white p-5 md:p-6">
                <div className="flex flex-wrap items-end justify-between gap-4">
                   <div className="max-w-3xl space-y-2">
                      <p className="text-[11px] font-black uppercase tracking-[0.26em] text-[#0F5AA3]">Prévia dos banners</p>
@@ -590,29 +472,6 @@ export function CourseSettingsPanel() {
                         </select>
                      </label>
 
-                     <label className="space-y-2">
-                        <span className="text-xs font-black uppercase tracking-widest text-slate-400">Criador vinculado</span>
-                        <select className="w-full rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold focus:ring-4 focus:ring-cyan-100" value={form.creator_id} onChange={(event) => setForm((current) => ({ ...current, creator_id: event.target.value }))}>
-                           <option value="">Sem criador vinculado</option>
-                           {creatorUsers.map((creator) => (<option key={creator.id} value={creator.id}>
-                               {creator.full_name || creator.email}
-                             </option>))}
-                        </select>
-                        <p className="text-xs font-medium text-slate-500">
-                           O criador verá relatórios e comissões deste curso quando a venda for confirmada.
-                        </p>
-                     </label>
-
-                     <label className="space-y-2">
-                        <span className="text-xs font-black uppercase tracking-widest text-slate-400">Comissão do criador (%)</span>
-                        <input type="number" min={0} max={100} step={0.01} className="w-full rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold focus:ring-4 focus:ring-cyan-100" value={form.creator_commission_percent} onChange={(event) => setForm((current) => ({
-            ...current,
-            creator_commission_percent: Number(event.target.value || 0),
-        }))}/>
-                        <p className="text-xs font-medium text-slate-500">
-                           A comissão fica pendente e se torna elegível para repasse em até 30 dias após a venda.
-                        </p>
-                     </label>
                   </div>
 
                   <label className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-5 py-4">
@@ -635,7 +494,7 @@ export function CourseSettingsPanel() {
                <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
                   <div className="flex flex-wrap items-end justify-between gap-4">
                      <div className="max-w-3xl space-y-2">
-                        <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#0F5AA3]">Recursos do curso</p>
+                        <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#0F5AA3]">Recursos disponíveis</p>
                         <h3 className="text-xl font-black tracking-tight text-slate-900">Selecione os recursos que aparecem na pagina publica</h3>
                         <p className="text-sm leading-7 text-slate-600">A lista abaixo vem do catalogo oficial em /admin/recursos. Marque apenas o que este curso deve exibir na lateral da pagina publica.</p>
                      </div>
@@ -667,7 +526,7 @@ export function CourseSettingsPanel() {
                </section>
 
                <div className="block space-y-2">
-                  <span className="text-xs font-black text-slate-400 uppercase tracking-widest pl-1">Descrição Detalhada</span>
+                  <span className="text-xs font-black text-slate-400 uppercase tracking-widest pl-1">Descrição do Card do Curso</span>
                   <div className="rich-editor-container">
                      <ReactQuill theme="snow" value={form.description} onChange={(val: string) => setForm(f => ({ ...f, description: val }))} modules={quillModules} placeholder="Fale sobre os objetivos e o público-alvo do curso..." className="bg-slate-100/50 rounded-[24px] overflow-hidden border border-slate-200 focus-within:ring-4 focus-within:ring-blue-100 focus-within:bg-white transition-all"/>
                   </div>
@@ -759,52 +618,6 @@ export function CourseSettingsPanel() {
                     </>) : 'Salvar Alterações'}
                </Button>
             </div>
-      </form>
-
-      <form onSubmit={handleSaveAiStandards} className="space-y-8">
-        {aiStandardsSuccess && (<div className="rounded-2xl border border-emerald-100 bg-emerald-50 p-4 text-sm font-bold tracking-tight text-emerald-600 animate-in slide-in-from-top-2 duration-300">
-            {'Padrões da revisão com IA salvos com sucesso!'}
-          </div>)}
-
-        <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm md:p-10 space-y-8">
-          <div className="border-b border-slate-100 pb-5">
-            <h3 className="text-2xl font-black text-slate-900 tracking-tight">{'Padrões do Curso Perfeito'}</h3>
-            <p className="mt-1 text-sm text-slate-500">
-              {'Defina aqui os critérios que a IA deve usar ao revisar cada módulo individualmente.'}
-            </p>
-          </div>
-
-          <label className="block space-y-2">
-            <span className="text-xs font-black uppercase tracking-widest text-slate-400 pl-1">Estrutura ideal do curso</span>
-            <textarea className="min-h-[120px] w-full rounded-[20px] border border-slate-200 bg-slate-100/50 px-6 py-4 text-sm font-medium text-slate-700 transition-all focus:bg-white focus:ring-4 focus:ring-blue-100" placeholder="Descreva como deve ser a sequência ideal de aulas, profundidade, carga, ritmo e coerência pedagógica." value={aiStandards.ideal_course_structure} onChange={(e) => setAiStandards((prev) => ({ ...prev, ideal_course_structure: e.target.value }))}/>
-          </label>
-
-          <label className="block space-y-2">
-            <span className="text-xs font-black uppercase tracking-widest text-slate-400 pl-1">Elementos obrigatórios por módulo</span>
-            <textarea className="min-h-[120px] w-full rounded-[20px] border border-slate-200 bg-slate-100/50 px-6 py-4 text-sm font-medium text-slate-700 transition-all focus:bg-white focus:ring-4 focus:ring-blue-100" placeholder="Ex: objetivo claro, exemplos práticos, quiz coerente, conclusão, linguagem profissional." value={aiStandards.required_elements} onChange={(e) => setAiStandards((prev) => ({ ...prev, required_elements: e.target.value }))}/>
-          </label>
-
-          <label className="block space-y-2">
-            <span className="text-xs font-black uppercase tracking-widest text-slate-400 pl-1">Regras de bibliografia e referências</span>
-            <textarea className="min-h-[120px] w-full rounded-[20px] border border-slate-200 bg-slate-100/50 px-6 py-4 text-sm font-medium text-slate-700 transition-all focus:bg-white focus:ring-4 focus:ring-blue-100" placeholder="Defina quando a aula deve conter referências, como citar e que tipo de fonte é aceitável." value={aiStandards.bibliography_rules} onChange={(e) => setAiStandards((prev) => ({ ...prev, bibliography_rules: e.target.value }))}/>
-          </label>
-
-          <label className="block space-y-2">
-            <span className="text-xs font-black uppercase tracking-widest text-slate-400 pl-1">Regras de tabelas e formatação</span>
-            <textarea className="min-h-[120px] w-full rounded-[20px] border border-slate-200 bg-slate-100/50 px-6 py-4 text-sm font-medium text-slate-700 transition-all focus:bg-white focus:ring-4 focus:ring-blue-100" placeholder="Ex: não deixar colunas vazias, cabeçalhos claros, consistência entre linhas, HTML válido." value={aiStandards.table_formatting_rules} onChange={(e) => setAiStandards((prev) => ({ ...prev, table_formatting_rules: e.target.value }))}/>
-          </label>
-
-          <label className="block space-y-2">
-            <span className="text-xs font-black uppercase tracking-widest text-slate-400 pl-1">Regras adicionais de revisão</span>
-            <textarea className="min-h-[120px] w-full rounded-[20px] border border-slate-200 bg-slate-100/50 px-6 py-4 text-sm font-medium text-slate-700 transition-all focus:bg-white focus:ring-4 focus:ring-blue-100" placeholder="Inclua qualquer outra orientação para a IA validar e corrigir o módulo." value={aiStandards.additional_review_rules} onChange={(e) => setAiStandards((prev) => ({ ...prev, additional_review_rules: e.target.value }))}/>
-          </label>
-
-          <div className="flex justify-end border-t border-slate-100 pt-8">
-            <Button type="submit" disabled={isSavingAiStandards} className="h-14 rounded-2xl bg-slate-900 px-10 font-black shadow-xl shadow-slate-100 hover:bg-slate-800">
-              {isSavingAiStandards ? 'Salvando Padrões...' : 'Salvar Padrões da IA'}
-            </Button>
-          </div>
-        </div>
       </form>
 
       <section className="space-y-6 rounded-[32px] border border-rose-200 bg-white p-6 shadow-sm md:p-10">

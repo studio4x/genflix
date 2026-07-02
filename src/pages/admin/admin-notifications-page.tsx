@@ -6,7 +6,7 @@ import { fetchNotificationAdminSettings, fetchNotificationStats, fetchRecentQueu
 import { cn } from '@/lib/utils';
 const roleOptions = [
     { value: 'admin', label: 'Admins' },
-    { value: 'criador', label: 'Criadores' },
+    { value: 'criador', label: 'Autores' },
     { value: 'student', label: 'Alunos' },
     { value: 'aluno', label: 'Alunos legado' },
 ];

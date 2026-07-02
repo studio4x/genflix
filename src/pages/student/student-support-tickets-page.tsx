@@ -9,7 +9,7 @@ import { fetchMySupportTickets, fetchSupportSettings } from '@/features/support/
 import { formatSupportDate, getOrderedSupportCategories } from '@/lib/support-sla';
 import type { SupportModalStep, SupportTicketSummary } from '@/features/support/types';
 interface SupportTicketsPageProps {
-    contextLabel?: 'Aluno' | 'Criador';
+    contextLabel?: 'Aluno' | 'Autor';
     supportBasePath?: string;
 }
 export function StudentSupportTicketsPage({ contextLabel = 'Aluno', supportBasePath = '/aluno/suporte', }: SupportTicketsPageProps) {

@@ -5,7 +5,7 @@ import { normalizeCourseQuizTypeSettings } from '@/features/assessments/course-q
 import { getCourseCategories, normalizeCoursePrimaryCategory, } from '@/features/courses/course-categories';
 import { isLegacyCourseSalesSchemaError, stripLegacyCourseSalesFields, withLegacyCourseSalesDefaults, } from '@/features/courses/schema-compat';
 import { normalizeCoursePublicPageContent } from '@/features/public/course-public-page-content';
-import type { ButtonTemplate, Course, CourseCategory, CourseQuizTypeSettings, CourseModule, FooterActionScope, Lesson, LessonFooterAction, LessonMaterial, ModulePdfAsset, Assessment, } from '@/types/content';
+import type { ButtonTemplate, Course, CourseAuthor, CourseCategory, CourseQuizTypeSettings, CourseModule, FooterActionScope, Lesson, LessonFooterAction, LessonMaterial, ModulePdfAsset, Assessment, } from '@/types/content';
 import type { ButtonTemplateFormInput, CourseFormInput, CoursePublicPageContentInput, CoursePublicPageFormInput, LessonFormInput, LessonFooterActionFormInput, ModuleFormInput, } from './schemas';
 import type { Session } from '@supabase/supabase-js';
 const MATERIALS_BUCKET = 'materials';
@@ -456,7 +456,7 @@ export async function updateCourse(courseId: string, input: CourseFormInput) {
 export async function updateCoursePublicPage(courseId: string, input: CoursePublicPageFormInput) {
     const currentResult = await supabase
         .from('courses')
-        .select('category,categories,public_page_content')
+        .select('category,categories,public_page_content,creator_id,creator_commission_percent,marketing_description')
         .eq('id', courseId)
         .maybeSingle();
     if (currentResult.error) {
@@ -467,6 +467,8 @@ export async function updateCoursePublicPage(courseId: string, input: CoursePubl
         categories: currentResult.data?.categories ?? undefined,
     });
     const existingPublicPageContent = normalizeCoursePublicPageContent(currentResult.data?.public_page_content);
+    const existingPrimaryCreatorId = currentResult.data?.creator_id ?? null;
+    const existingPrimaryCommissionPercent = currentResult.data?.creator_commission_percent ?? 0;
     const nextPrimaryCategory = normalizeCoursePrimaryCategory(input.category);
     const categories = nextPrimaryCategory
         ? [nextPrimaryCategory, ...existingCategories.filter((category) => category.toLocaleLowerCase('pt-BR') !== nextPrimaryCategory.toLocaleLowerCase('pt-BR'))]
@@ -484,25 +486,84 @@ export async function updateCoursePublicPage(courseId: string, input: CoursePubl
         contentSource: input.contentSource,
         customSyllabus: input.customSyllabus,
     };
+    const normalizedAuthors = Array.isArray(input.authors)
+        ? input.authors
+            .map((author, index) => ({
+            author_id: author.author_id,
+            commission_percent: Number(author.commission_percent ?? 0),
+            display_order: Number.isFinite(Number(author.display_order)) && Number(author.display_order) > 0
+                ? Math.max(1, Math.trunc(Number(author.display_order)))
+                : index + 1,
+            }))
+            .filter((author) => Boolean(author.author_id))
+        : [];
+    const fallbackAuthors = existingPrimaryCreatorId
+        ? [{
+                author_id: existingPrimaryCreatorId,
+                commission_percent: 100,
+                display_order: 1,
+            }]
+        : [];
+    const desiredAuthors = normalizedAuthors.length > 0 ? normalizedAuthors : fallbackAuthors;
+    const authorTotal = desiredAuthors.reduce((total, author) => total + author.commission_percent, 0);
+    if (desiredAuthors.length > 0 && Math.round(authorTotal * 100) / 100 !== 100) {
+        throw new Error('A soma das comissões dos autores precisa fechar em 100%.');
+    }
     const result = await supabase
         .from('courses')
         .update({
         category: categories[0] ?? null,
         categories,
-        marketing_description: input.marketing_description.trim(),
-        mentor_name: input.mentor_name.trim(),
-        mentor_role: input.mentor_role.trim(),
+        hero_video_url: input.hero_video_url?.trim() || null,
+        logo_url: input.logo_url?.trim() || null,
+        mentor_name: input.mentor_name?.trim() || null,
+        mentor_role: input.mentor_role?.trim() || null,
         mentor_bio: input.mentor_bio?.trim() || null,
         mentor_initials: input.mentor_initials?.trim() || null,
         price_label: input.price_label.trim(),
         secondary_price_label: input.secondary_price_label.trim(),
         public_page_content: publicPageContent,
+        creator_id: desiredAuthors[0]?.author_id ?? existingPrimaryCreatorId,
+        creator_commission_percent: desiredAuthors[0]?.commission_percent ?? existingPrimaryCommissionPercent,
     })
         .eq('id', courseId)
         .select('*')
         .single();
     if (result.error) {
         throw result.error;
+    }
+    const existingAuthorsResult = await supabase
+        .from('course_authors')
+        .select('id, author_id')
+        .eq('course_id', courseId);
+    if (existingAuthorsResult.error) {
+        throw existingAuthorsResult.error;
+    }
+    const existingAuthorIds = new Set((existingAuthorsResult.data ?? []).map((row) => row.author_id as string));
+    const desiredAuthorIds = new Set(desiredAuthors.map((author) => author.author_id));
+    const authorsToRemove = Array.from(existingAuthorIds).filter((authorId) => !desiredAuthorIds.has(authorId));
+    if (authorsToRemove.length > 0) {
+        const deleteResult = await supabase
+            .from('course_authors')
+            .delete()
+            .eq('course_id', courseId)
+            .in('author_id', authorsToRemove);
+        if (deleteResult.error) {
+            throw deleteResult.error;
+        }
+    }
+    for (const author of desiredAuthors) {
+        const upsertResult = await supabase
+            .from('course_authors')
+            .upsert({
+            course_id: courseId,
+            author_id: author.author_id,
+            commission_percent: author.commission_percent,
+            display_order: author.display_order,
+        }, { onConflict: 'course_id,author_id' });
+        if (upsertResult.error) {
+            throw upsertResult.error;
+        }
     }
     return result.data as Course;
 }
@@ -1241,6 +1302,7 @@ export async function getSignedLessonFooterActionUrl(storagePath: string) {
 }
 export type AdminCourseTree = {
     course: Course;
+    courseAuthors: CourseAuthor[];
     modules: (CourseModule & {
         lessons: Lesson[];
         assessments: Assessment[];
@@ -1248,14 +1310,17 @@ export type AdminCourseTree = {
     courseAssessments: Assessment[];
 };
 export async function fetchAdminCourseTree(courseId: string): Promise<AdminCourseTree> {
-    const [courseResult, modulesResult, lessonsResult, assessmentsResult] = await Promise.all([
+    const [courseResult, courseAuthorsResult, modulesResult, lessonsResult, assessmentsResult] = await Promise.all([
         supabase.from('courses').select('*').eq('id', courseId).single(),
+        supabase.from('course_authors').select('*').eq('course_id', courseId).order('display_order', { ascending: true }),
         supabase.from('course_modules').select('*').eq('course_id', courseId).order('position', { ascending: true }),
         supabase.from('lessons').select('*, course_modules!inner(course_id)').eq('course_modules.course_id', courseId).order('position', { ascending: true }),
         supabase.from('assessments').select('*').eq('course_id', courseId).order('created_at', { ascending: true })
     ]);
     if (courseResult.error)
         throw courseResult.error;
+    if (courseAuthorsResult.error)
+        throw courseAuthorsResult.error;
     if (modulesResult.error)
         throw modulesResult.error;
     if (lessonsResult.error)
@@ -1263,6 +1328,7 @@ export async function fetchAdminCourseTree(courseId: string): Promise<AdminCours
     if (assessmentsResult.error)
         throw assessmentsResult.error;
     const course = courseResult.data as Course;
+    const courseAuthors = (courseAuthorsResult.data as CourseAuthor[]) ?? [];
     const modules = (modulesResult.data as CourseModule[]) ?? [];
     const lessons = (lessonsResult.data as Lesson[]) ?? [];
     const assessments = (assessmentsResult.data as Assessment[]) ?? [];
@@ -1275,7 +1341,7 @@ export async function fetchAdminCourseTree(courseId: string): Promise<AdminCours
     });
     // Course-level assessments (no module_id or course final assessment)
     const courseAssessments = assessments.filter(a => !a.module_id);
-    return { course: withLegacyCourseSalesDefaults(course), modules: treeModules, courseAssessments };
+    return { course: withLegacyCourseSalesDefaults(course), courseAuthors, modules: treeModules, courseAssessments };
 }
 export function toErrorMessage(error: unknown): string {
     const normalizedError = normalizeSupabaseError(error);

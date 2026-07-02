@@ -215,6 +215,30 @@ export interface Course {
     created_at: string;
     updated_at: string;
 }
+export interface CourseAuthor {
+    id: string;
+    course_id: string;
+    author_id: string;
+    commission_percent: number;
+    display_order: number;
+    created_at: string;
+    updated_at: string;
+}
+export interface PublicAuthorProfile {
+    user_id: string;
+    public_slug: string | null;
+    public_title: string | null;
+    public_short_bio: string | null;
+    public_long_bio: string | null;
+    public_areas: string[];
+    public_education: string | null;
+    public_experience: string | null;
+    public_photo_url: string | null;
+    public_website_url: string | null;
+    public_instagram_url: string | null;
+    public_linkedin_url: string | null;
+    public_youtube_url: string | null;
+}
 export interface CourseCategory {
     id: string;
     name: string;
