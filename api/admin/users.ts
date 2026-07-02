@@ -5,6 +5,7 @@ import { getPublicAppUrl } from '../_shared/app-url.js';
 import { sendPasswordResetEmail } from '../_shared/email.js';
 type ApiRequest = {
     method?: string;
+    url?: string;
     headers: Record<string, string | string[] | undefined>;
     body?: unknown;
 };
@@ -100,6 +101,9 @@ const resetPasswordSchema = z.object({
     userId: z.string().uuid('Usuário inválido.'),
 });
 const deleteUserSchema = z.object({
+    userId: z.string().uuid('Usuário inválido.'),
+});
+const impersonateUserSchema = z.object({
     userId: z.string().uuid('Usuário inválido.'),
 });
 function getHeaderValue(value: string | string[] | undefined) {
@@ -749,12 +753,72 @@ async function handleDeleteUser(req: ApiRequest, res: ApiResponse) {
         message: 'Usuário excluído com sucesso.',
     });
 }
+async function handleImpersonateUser(req: ApiRequest, res: ApiResponse) {
+    const context = await createAdminClient(req, res);
+    if (!context) {
+        return;
+    }
+    const { adminClient } = context;
+    const parsedBody = parseBody(req.body);
+    if (!parsedBody) {
+        jsonResponse(res, 400, { error: 'Body inválido.' });
+        return;
+    }
+    const validationResult = impersonateUserSchema.safeParse({
+        userId: typeof parsedBody.userId === 'string' ? parsedBody.userId.trim() : undefined,
+    });
+    if (!validationResult.success) {
+        jsonResponse(res, 400, { error: validationResult.error.issues[0]?.message ?? 'Dados inválidos.' });
+        return;
+    }
+    const { userId } = validationResult.data;
+    const userResult = await adminClient
+        .from('profiles')
+        .select('id, email')
+        .eq('id', userId)
+        .maybeSingle();
+    if (userResult.error) {
+        jsonResponse(res, 500, { error: 'Não foi possível localizar o usuário.' });
+        return;
+    }
+    if (!userResult.data?.email) {
+        jsonResponse(res, 404, { error: 'Usuário não encontrado ou sem e-mail cadastrado.' });
+        return;
+    }
+    const linkResult = await adminClient.auth.admin.generateLink({
+        type: 'magiclink',
+        email: userResult.data.email,
+        options: {
+            redirectTo: `${getPublicAppUrl()}/auth/callback?next=/aluno`,
+        },
+    });
+    if (linkResult.error) {
+        jsonResponse(res, 400, { error: linkResult.error.message ?? 'Não foi possível gerar o link de acesso.' });
+        return;
+    }
+    const actionLink = linkResult.data.properties?.action_link;
+    if (!actionLink) {
+        jsonResponse(res, 500, { error: 'O Supabase não retornou um link válido.' });
+        return;
+    }
+    jsonResponse(res, 200, {
+        user_id: userId,
+        email: userResult.data.email,
+        action_link: actionLink,
+        message: 'Link de acesso gerado com sucesso.',
+    });
+}
 export default async function handler(req: ApiRequest, res: ApiResponse) {
     if (req.method === 'GET') {
         await handleListUsers(req, res);
         return;
     }
     if (req.method === 'POST') {
+        const requestUrl = req.url ? new URL(req.url, getRequestOrigin()) : null;
+        if (requestUrl?.searchParams.get('task') === 'impersonate') {
+            await handleImpersonateUser(req, res);
+            return;
+        }
         await handleCreateUser(req, res);
         return;
     }

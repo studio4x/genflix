@@ -188,7 +188,7 @@ export async function deleteAdminUser(userId: string, session: Session) {
     return data as DeleteAdminUserResponse;
 }
 export async function loginAsAdminUser(userId: string, session: Session) {
-    const response = await fetch('/api/admin/users/impersonate', {
+    const response = await fetch('/api/admin/users?task=impersonate', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
