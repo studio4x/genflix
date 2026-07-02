@@ -393,7 +393,58 @@ export async function createCourse(input: CourseFormInput, userId: string) {
     if (result.error) {
         throw result.error;
     }
+    await syncLegacyCourseAuthors(result.data.id, {
+        creator_id: input.creator_id,
+        creator_commission_percent: input.creator_commission_percent,
+    });
     return withLegacyCourseSalesDefaults(result.data as Course);
+}
+async function syncLegacyCourseAuthors(courseId: string, input: Pick<CourseFormInput, 'creator_id' | 'creator_commission_percent'>) {
+    const existingAuthorsResult = await supabase
+        .from('course_authors')
+        .select('id, author_id, commission_percent, display_order')
+        .eq('course_id', courseId)
+        .order('display_order', { ascending: true });
+    if (existingAuthorsResult.error) {
+        throw existingAuthorsResult.error;
+    }
+    const existingAuthors = (existingAuthorsResult.data as Pick<CourseAuthor, 'id' | 'author_id' | 'commission_percent' | 'display_order'>[] | null) ?? [];
+    if (existingAuthors.length > 1) {
+        return;
+    }
+    const nextCreatorId = input.creator_id?.trim() || '';
+    if (!nextCreatorId) {
+        if (existingAuthors.length > 0) {
+            const deleteResult = await supabase
+                .from('course_authors')
+                .delete()
+                .eq('course_id', courseId);
+            if (deleteResult.error) {
+                throw deleteResult.error;
+            }
+        }
+        return;
+    }
+    if (existingAuthors.length > 0) {
+        const deleteResult = await supabase
+            .from('course_authors')
+            .delete()
+            .eq('course_id', courseId);
+        if (deleteResult.error) {
+            throw deleteResult.error;
+        }
+    }
+    const upsertResult = await supabase
+        .from('course_authors')
+        .upsert({
+        course_id: courseId,
+        author_id: nextCreatorId,
+        commission_percent: input.creator_commission_percent ?? 0,
+        display_order: 1,
+    }, { onConflict: 'course_id,author_id' });
+    if (upsertResult.error) {
+        throw upsertResult.error;
+    }
 }
 export async function updateCoursesDisplayOrder(courses: Pick<Course, 'id' | 'display_order'>[]) {
     for (const course of courses) {
@@ -451,6 +502,10 @@ export async function updateCourse(courseId: string, input: CourseFormInput) {
     if (result.error) {
         throw result.error;
     }
+    await syncLegacyCourseAuthors(courseId, {
+        creator_id: input.creator_id,
+        creator_commission_percent: input.creator_commission_percent,
+    });
     return withLegacyCourseSalesDefaults(result.data as Course);
 }
 export async function updateCoursePublicPage(courseId: string, input: CoursePublicPageFormInput) {
