@@ -29,7 +29,6 @@ export function CreatorProfilePage() {
     const [publicAreas, setPublicAreas] = useState('');
     const [publicEducation, setPublicEducation] = useState('');
     const [publicExperience, setPublicExperience] = useState('');
-    const [publicPhotoUrl, setPublicPhotoUrl] = useState('');
     const [publicWebsiteUrl, setPublicWebsiteUrl] = useState('');
     const [publicInstagramUrl, setPublicInstagramUrl] = useState('');
     const [publicLinkedinUrl, setPublicLinkedinUrl] = useState('');
@@ -73,7 +72,6 @@ export function CreatorProfilePage() {
                 setPublicAreas((publicProfile?.public_areas ?? []).join(', '));
                 setPublicEducation(publicProfile?.public_education ?? '');
                 setPublicExperience(publicProfile?.public_experience ?? '');
-                setPublicPhotoUrl(publicProfile?.public_photo_url ?? profile?.avatar_url ?? '');
                 setPublicWebsiteUrl(publicProfile?.public_website_url ?? '');
                 setPublicInstagramUrl(publicProfile?.public_instagram_url ?? '');
                 setPublicLinkedinUrl(publicProfile?.public_linkedin_url ?? '');
@@ -168,7 +166,6 @@ export function CreatorProfilePage() {
                 publicAreas: areas,
                 publicEducation,
                 publicExperience,
-                publicPhotoUrl,
                 publicWebsiteUrl,
                 publicInstagramUrl,
                 publicLinkedinUrl,
@@ -244,27 +241,6 @@ export function CreatorProfilePage() {
         </form>
 
         <div className="space-y-5">
-          <article className="rounded-[28px] border border-[#D8E6EB] bg-[#F2F7F9] p-5">
-            <h2 className="font-readex text-xl font-semibold text-[#15323b]">Avatar</h2>
-            <div className="mt-5 flex flex-col gap-5 sm:flex-row sm:items-start">
-              {profile?.avatar_url ? (<img src={profile.avatar_url} alt="Avatar atual do autor" className="h-24 w-24 rounded-[28px] border border-[#D8E6EB] object-cover shadow-sm"/>) : (<div className="flex h-24 w-24 items-center justify-center rounded-[28px] bg-gradient-to-br from-[#1398B7] to-[#0A3640] text-xl font-black text-white shadow-sm">
-                  {(fullName || profile?.email || 'CR').slice(0, 2).toUpperCase()}
-                </div>)}
-
-              <div className="flex-1 space-y-3">
-                <p className="text-sm font-medium leading-6 text-[#6d7f84]">
-                  Envie uma imagem para aparecer no seu dashboard de autor e nas areas da conta.
-                </p>
-                <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" onChange={(event) => void handleAvatarChange(event)} className="block w-full cursor-pointer rounded-2xl border border-[#D8E6EB] bg-white px-4 py-3 text-sm font-semibold text-[#15323b] file:mr-4 file:rounded-xl file:border-0 file:bg-[#1398B7] file:px-4 file:py-2 file:font-black file:text-white hover:file:bg-[#0A3640]" disabled={isUploadingAvatar}/>
-                <p className="text-xs font-semibold text-[#6d7f84]">
-                  Formatos recomendados: JPG, PNG, WEBP ou GIF.
-                </p>
-                {avatarMessage ? <p className="text-sm font-semibold text-[#5f7077]">{avatarMessage}</p> : null}
-                {avatarError ? <p className="text-sm font-semibold text-red-600">{avatarError}</p> : null}
-              </div>
-            </div>
-          </article>
-
           <form onSubmit={(event) => void handlePasswordSubmit(event)} className="rounded-[28px] border border-[#D8E6EB] bg-[#F2F7F9] p-5">
             <h2 className="font-readex text-xl font-semibold text-[#15323b]">Seguranca</h2>
             <div className="mt-5 space-y-4">
@@ -338,6 +314,27 @@ export function CreatorProfilePage() {
           </div>
         </div>
 
+        <article className="mt-5 rounded-[28px] border border-[#D8E6EB] bg-white p-5">
+          <h3 className="font-readex text-lg font-semibold text-[#15323b]">Foto Pública</h3>
+          <div className="mt-5 flex flex-col gap-5 sm:flex-row sm:items-start">
+            {profile?.avatar_url ? (<img src={profile.avatar_url} alt="Foto pública atual do autor" className="h-24 w-24 rounded-[28px] border border-[#D8E6EB] object-cover shadow-sm"/>) : (<div className="flex h-24 w-24 items-center justify-center rounded-[28px] bg-gradient-to-br from-[#1398B7] to-[#0A3640] text-xl font-black text-white shadow-sm">
+                {(fullName || profile?.email || 'CR').slice(0, 2).toUpperCase()}
+              </div>)}
+
+            <div className="flex-1 space-y-3">
+              <p className="text-sm font-medium leading-6 text-[#6d7f84]">
+                Envie uma imagem para aparecer na sua pagina publica de autor e nas areas da conta.
+              </p>
+              <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" onChange={(event) => void handleAvatarChange(event)} className="block w-full cursor-pointer rounded-2xl border border-[#D8E6EB] bg-white px-4 py-3 text-sm font-semibold text-[#15323b] file:mr-4 file:rounded-xl file:border-0 file:bg-[#1398B7] file:px-4 file:py-2 file:font-black file:text-white hover:file:bg-[#0A3640]" disabled={isUploadingAvatar}/>
+              <p className="text-xs font-semibold text-[#6d7f84]">
+                Formatos recomendados: JPG, PNG, WEBP ou GIF.
+              </p>
+              {avatarMessage ? <p className="text-sm font-semibold text-[#5f7077]">{avatarMessage}</p> : null}
+              {avatarError ? <p className="text-sm font-semibold text-red-600">{avatarError}</p> : null}
+            </div>
+          </div>
+        </article>
+
         <div className="mt-5 grid gap-4 md:grid-cols-2">
           <label className="block">
             <span className="text-xs font-black uppercase tracking-[0.2em] text-[#5F7077]">Nome p?blico</span>
@@ -375,11 +372,6 @@ export function CreatorProfilePage() {
           <label className="block md:col-span-2">
             <span className="text-xs font-black uppercase tracking-[0.2em] text-[#5F7077]">Experi?ncia</span>
             <textarea value={publicExperience} onChange={(event) => setPublicExperience(event.target.value)} className="mt-2 min-h-24 w-full rounded-2xl border border-[#D8E6EB] bg-white px-4 py-3 text-sm font-semibold outline-none focus:border-[#1398B7]" placeholder="Resumo da trajet?ria profissional"/>
-          </label>
-
-          <label className="block md:col-span-2">
-            <span className="text-xs font-black uppercase tracking-[0.2em] text-[#5F7077]">Foto p?blica</span>
-            <input value={publicPhotoUrl} onChange={(event) => setPublicPhotoUrl(event.target.value)} className="mt-2 h-12 w-full rounded-2xl border border-[#D8E6EB] bg-white px-4 text-sm font-semibold outline-none focus:border-[#1398B7]" placeholder="https://..."/>
           </label>
 
           <label className="block">

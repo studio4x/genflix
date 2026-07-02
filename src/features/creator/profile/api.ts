@@ -51,7 +51,7 @@ export interface CreatorPublicProfileInput {
     publicAreas: string[];
     publicEducation: string;
     publicExperience: string;
-    publicPhotoUrl: string;
+    publicPhotoUrl?: string;
     publicWebsiteUrl: string;
     publicInstagramUrl: string;
     publicLinkedinUrl: string;
@@ -121,7 +121,9 @@ export async function upsertCreatorPublicProfile(input: CreatorPublicProfileInpu
         public_areas: input.publicAreas.map((area) => area.trim()).filter(Boolean),
         public_education: input.publicEducation.trim() || null,
         public_experience: input.publicExperience.trim() || null,
-        public_photo_url: input.publicPhotoUrl.trim() || null,
+        ...(typeof input.publicPhotoUrl === 'string'
+            ? { public_photo_url: input.publicPhotoUrl.trim() || null }
+            : {}),
         public_website_url: input.publicWebsiteUrl.trim() || null,
         public_instagram_url: input.publicInstagramUrl.trim() || null,
         public_linkedin_url: input.publicLinkedinUrl.trim() || null,
