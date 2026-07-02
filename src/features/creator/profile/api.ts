@@ -39,7 +39,7 @@ export interface CreatorPayoutProfileInput {
     document: string;
     pixKeyType: PixKeyType | '';
     pixKey: string;
-    defaultCommissionPercent: number;
+    defaultCommissionPercent?: number;
 }
 
 export interface CreatorPublicProfileInput {
@@ -95,7 +95,9 @@ export async function upsertCreatorPayoutProfile(input: CreatorPayoutProfileInpu
         document: input.document.trim() || null,
         pix_key_type: input.pixKeyType || null,
         pix_key: input.pixKey.trim() || null,
-        default_commission_percent: input.defaultCommissionPercent,
+        ...(typeof input.defaultCommissionPercent === 'number'
+            ? { default_commission_percent: input.defaultCommissionPercent }
+            : {}),
         payout_hold_days: 30,
         is_payout_enabled: isPayoutEnabled,
     }, { onConflict: 'user_id' })

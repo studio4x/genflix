@@ -14,7 +14,6 @@ export function CreatorProfilePage() {
     const [document, setDocument] = useState('');
     const [pixKeyType, setPixKeyType] = useState<PixKeyType | ''>('');
     const [pixKey, setPixKey] = useState('');
-    const [defaultCommissionPercent, setDefaultCommissionPercent] = useState(0);
     const [publicSlug, setPublicSlug] = useState('');
     const [publicTitle, setPublicTitle] = useState('');
     const [publicShortBio, setPublicShortBio] = useState('');
@@ -59,7 +58,6 @@ export function CreatorProfilePage() {
                     setDocument(payoutProfile.document ?? '');
                     setPixKeyType(payoutProfile.pix_key_type ?? '');
                     setPixKey(payoutProfile.pix_key ?? '');
-                    setDefaultCommissionPercent(payoutProfile.default_commission_percent ?? 0);
                 }
                 setPublicSlug(publicProfile?.public_slug ?? '');
                 setPublicTitle(publicProfile?.public_title ?? profile?.full_name ?? '');
@@ -133,7 +131,6 @@ export function CreatorProfilePage() {
                 document,
                 pixKeyType,
                 pixKey,
-                defaultCommissionPercent,
             });
             setPayoutMessage('Dados de repasse PIX atualizados com sucesso.');
         }
@@ -313,11 +310,6 @@ export function CreatorProfilePage() {
           <label className="block">
             <span className="text-xs font-black uppercase tracking-[0.2em] text-[#5F7077]">Chave PIX</span>
             <input value={pixKey} onChange={(event) => setPixKey(event.target.value)} className="mt-2 h-12 w-full rounded-2xl border border-[#D8E6EB] bg-white px-4 text-sm font-semibold outline-none focus:border-[#1398B7]" placeholder="Digite a chave PIX"/>
-          </label>
-
-          <label className="block">
-            <span className="text-xs font-black uppercase tracking-[0.2em] text-[#5F7077]">Comissão padrão (%)</span>
-            <input type="number" min={0} max={100} step={0.01} value={defaultCommissionPercent} onChange={(event) => setDefaultCommissionPercent(Number(event.target.value || 0))} className="mt-2 h-12 w-full rounded-2xl border border-[#D8E6EB] bg-white px-4 text-sm font-semibold outline-none focus:border-[#1398B7]"/>
           </label>
         </div>
 
