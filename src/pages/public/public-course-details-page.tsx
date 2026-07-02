@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+﻿import { useEffect, useRef, useState } from 'react';
 import { ArrowRight, BadgeCheck, ChevronDown, CirclePlay, X } from 'lucide-react';
 import { Link, Navigate, useParams } from 'react-router-dom';
 import { CourseCoverMedia } from '@/components/public/course-cover-media';
@@ -146,7 +146,7 @@ function AuthorProfileModal({
         }
       }}
     >
-      <div className="relative flex max-h-[90vh] w-full max-w-5xl flex-col overflow-hidden rounded-[30px] border border-[#D8E6EB] bg-white shadow-[0_30px_90px_rgba(6,27,33,0.24)]">
+      <div className="relative flex max-h-[90vh] w-full max-w-6xl flex-col overflow-hidden rounded-[30px] border border-[#D8E6EB] bg-white shadow-[0_30px_90px_rgba(6,27,33,0.24)]">
         <div className="flex items-start justify-between gap-4 border-b border-[#D8E6EB] bg-[#F2F8FA] px-6 py-5 sm:px-8">
           <div className="min-w-0">
             <p className="text-[10px] font-black uppercase tracking-[0.28em] text-[#1398B7]">Perfil público do autor</p>
@@ -171,52 +171,8 @@ function AuthorProfileModal({
         </div>
 
         <div className="overflow-y-auto px-6 py-6 sm:px-8">
-          <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_360px]">
+          <div className="grid gap-8 lg:grid-cols-[minmax(0,1.08fr)_minmax(340px,0.92fr)]">
             <div className="space-y-8">
-              <section className="grid gap-6 md:grid-cols-[160px_minmax(0,1fr)] md:items-center">
-                <div className="flex justify-center md:justify-start">
-                  {displayProfile.publicPhotoUrl ? (
-                    <img
-                      src={displayProfile.publicPhotoUrl}
-                      alt={displayProfile.publicTitle}
-                      className="h-36 w-36 rounded-[30px] border border-[#D8E6EB] object-cover shadow-[0_16px_36px_rgba(21,50,59,0.08)]"
-                    />
-                  ) : (
-                    <div className="flex h-36 w-36 items-center justify-center rounded-[30px] bg-[#D9F0F5] text-[2rem] font-black uppercase tracking-[0.12em] text-[#0A3640]">
-                      {(displayProfile.publicTitle || displayProfile.fullName || 'A').slice(0, 2).toUpperCase()}
-                    </div>
-                  )}
-                </div>
-
-                <div className="min-w-0">
-                  <p className="inline-flex rounded-full border border-[#D8E6EB] bg-[#F8FCFD] px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.24em] text-[#1398B7]">
-                    Autor GenFlix
-                  </p>
-                  <h3 className="mt-4 break-words text-[2.2rem] font-extrabold leading-[0.95] tracking-[-0.05em] text-[#183139] sm:text-[2.7rem]">
-                    {displayProfile.publicTitle}
-                  </h3>
-                  {displayProfile.publicShortBio ? (
-                    <p className="mt-4 max-w-3xl text-base leading-8 text-[#5f7178]">{displayProfile.publicShortBio}</p>
-                  ) : (
-                    <p className="mt-4 max-w-3xl text-base leading-8 text-[#5f7178]">
-                      Perfil público em construção.
-                    </p>
-                  )}
-                  {displayProfile.publicAreas.length ? (
-                    <div className="mt-5 flex flex-wrap gap-2">
-                      {displayProfile.publicAreas.map((area) => (
-                        <span
-                          key={area}
-                          className="rounded-full border border-[#D8E6EB] bg-white px-3 py-1 text-[11px] font-bold uppercase tracking-[0.12em] text-[#0F7E99]"
-                        >
-                          {area}
-                        </span>
-                      ))}
-                    </div>
-                  ) : null}
-                </div>
-              </section>
-
               <article className="rounded-[28px] border border-[#D8E6EB] bg-white p-6 shadow-[0_16px_40px_rgba(21,50,59,0.05)]">
                 <h3 className="text-[1.35rem] font-bold tracking-[-0.03em] text-[#183139]">Sobre o autor</h3>
                 <div className="mt-4 space-y-4 text-[15px] leading-8 text-[#5f7178]">
@@ -273,6 +229,50 @@ function AuthorProfileModal({
             </div>
 
             <aside className="space-y-5">
+              <article className="rounded-[28px] border border-[#D8E6EB] bg-white p-6 shadow-[0_16px_40px_rgba(21,50,59,0.05)]">
+                <div className="grid gap-5 sm:grid-cols-[140px_minmax(0,1fr)] sm:items-center lg:grid-cols-1 lg:items-start">
+                  <div className="flex justify-center sm:justify-start lg:justify-center">
+                    {displayProfile.publicPhotoUrl ? (
+                      <img
+                        src={displayProfile.publicPhotoUrl}
+                        alt={displayProfile.publicTitle}
+                        className="h-32 w-32 rounded-[28px] border border-[#D8E6EB] object-cover shadow-[0_16px_36px_rgba(21,50,59,0.08)]"
+                      />
+                    ) : (
+                      <div className="flex h-32 w-32 items-center justify-center rounded-[28px] bg-[#D9F0F5] text-[2rem] font-black uppercase tracking-[0.12em] text-[#0A3640]">
+                        {(displayProfile.publicTitle || displayProfile.fullName || 'A').slice(0, 2).toUpperCase()}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="min-w-0">
+                    <p className="inline-flex rounded-full border border-[#D8E6EB] bg-[#F8FCFD] px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.24em] text-[#1398B7]">
+                      Autor GenFlix
+                    </p>
+                    <h3 className="mt-4 break-words text-[2rem] font-extrabold leading-[0.98] tracking-[-0.05em] text-[#183139]">
+                      {displayProfile.publicTitle}
+                    </h3>
+                    {displayProfile.publicShortBio ? (
+                      <p className="mt-4 text-base leading-8 text-[#5f7178]">{displayProfile.publicShortBio}</p>
+                    ) : (
+                      <p className="mt-4 text-base leading-8 text-[#5f7178]">Perfil público em construção.</p>
+                    )}
+                    {displayProfile.publicAreas.length ? (
+                      <div className="mt-5 flex flex-wrap gap-2">
+                        {displayProfile.publicAreas.map((area) => (
+                          <span
+                            key={area}
+                            className="rounded-full border border-[#D8E6EB] bg-white px-3 py-1 text-[11px] font-bold uppercase tracking-[0.12em] text-[#0F7E99]"
+                          >
+                            {area}
+                          </span>
+                        ))}
+                      </div>
+                    ) : null}
+                  </div>
+                </div>
+              </article>
+
               <article className="rounded-[28px] border border-[#D8E6EB] bg-white p-6 shadow-[0_16px_40px_rgba(21,50,59,0.05)]">
                 <h3 className="text-[1.35rem] font-bold tracking-[-0.03em] text-[#183139]">Contato e redes</h3>
                 <div className="mt-5 space-y-3">
