@@ -1,9 +1,18 @@
-import { useEffect, useState, type ChangeEvent, type FormEvent } from 'react';
+import { useEffect, useMemo, useState, type ChangeEvent, type FormEvent } from 'react';
 import { useAuth } from '@/app/providers/auth-provider';
 import { PasswordField } from '@/components/forms/password-field';
 import { Button } from '@/components/ui/button';
 import { uploadProfileAvatar } from '@/features/account/avatar-api';
 import { fetchCreatorPayoutProfile, fetchCreatorPublicProfile, upsertCreatorPayoutProfile, upsertCreatorPublicProfile, type PixKeyType, } from '@/features/creator/profile/api';
+function slugifyPublicTitle(value: string) {
+    return value
+        .trim()
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '');
+}
 export function CreatorProfilePage() {
     const { profile, user, updatePassword, updateProfile } = useAuth();
     const [fullName, setFullName] = useState('');
@@ -14,7 +23,6 @@ export function CreatorProfilePage() {
     const [document, setDocument] = useState('');
     const [pixKeyType, setPixKeyType] = useState<PixKeyType | ''>('');
     const [pixKey, setPixKey] = useState('');
-    const [publicSlug, setPublicSlug] = useState('');
     const [publicTitle, setPublicTitle] = useState('');
     const [publicShortBio, setPublicShortBio] = useState('');
     const [publicLongBio, setPublicLongBio] = useState('');
@@ -59,7 +67,6 @@ export function CreatorProfilePage() {
                     setPixKeyType(payoutProfile.pix_key_type ?? '');
                     setPixKey(payoutProfile.pix_key ?? '');
                 }
-                setPublicSlug(publicProfile?.public_slug ?? '');
                 setPublicTitle(publicProfile?.public_title ?? profile?.full_name ?? '');
                 setPublicShortBio(publicProfile?.public_short_bio ?? '');
                 setPublicLongBio(publicProfile?.public_long_bio ?? '');
@@ -83,6 +90,7 @@ export function CreatorProfilePage() {
             isMounted = false;
         };
     }, [user?.id, profile?.avatar_url, profile?.full_name]);
+    const publicSlug = useMemo(() => slugifyPublicTitle(publicTitle || profile?.full_name || ''), [profile?.full_name, publicTitle]);
     async function handleProfileSubmit(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
         setIsSavingProfile(true);
@@ -276,10 +284,10 @@ export function CreatorProfilePage() {
       <form onSubmit={(event) => void handlePayoutSubmit(event)} className="rounded-[28px] border border-[#D8E6EB] bg-[#F2F7F9] p-5">
         <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
           <div>
-            <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#1398B7]">Repasse de comissão</p>
+            <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#1398B7]">Repasse de comiss?o</p>
             <h2 className="mt-2 font-readex text-xl font-semibold text-[#15323b]">Dados PIX do autor</h2>
             <p className="mt-2 max-w-2xl text-sm font-medium leading-6 text-[#6d7f84]">
-              As comissões ficam disponíveis para repasse em até 30 dias após a venda. Se a compra for estornada, a comissão também será cancelada ou ajustada.
+              As comiss?es ficam dispon?veis para repasse em at? 30 dias ap?s a venda. Se a compra for estornada, a comiss?o tamb?m ser? cancelada ou ajustada.
             </p>
           </div>
         </div>
@@ -287,7 +295,7 @@ export function CreatorProfilePage() {
         <div className="mt-5 grid gap-4 md:grid-cols-2">
           <label className="block">
             <span className="text-xs font-black uppercase tracking-[0.2em] text-[#5F7077]">Nome do favorecido</span>
-            <input value={payoutName} onChange={(event) => setPayoutName(event.target.value)} className="mt-2 h-12 w-full rounded-2xl border border-[#D8E6EB] bg-white px-4 text-sm font-semibold outline-none focus:border-[#1398B7]" placeholder="Nome completo ou razão social"/>
+            <input value={payoutName} onChange={(event) => setPayoutName(event.target.value)} className="mt-2 h-12 w-full rounded-2xl border border-[#D8E6EB] bg-white px-4 text-sm font-semibold outline-none focus:border-[#1398B7]" placeholder="Nome completo ou raz?o social"/>
           </label>
 
           <label className="block">
@@ -303,7 +311,7 @@ export function CreatorProfilePage() {
               <option value="cnpj">CNPJ</option>
               <option value="email">E-mail</option>
               <option value="phone">Telefone</option>
-              <option value="random">Chave aleatória</option>
+              <option value="random">Chave aleat?ria</option>
             </select>
           </label>
 
@@ -322,23 +330,26 @@ export function CreatorProfilePage() {
       <form onSubmit={(event) => void handlePublicProfileSubmit(event)} className="rounded-[28px] border border-[#D8E6EB] bg-[#F2F7F9] p-5">
         <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
           <div>
-            <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#1398B7]">Perfil público</p>
+            <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#1398B7]">Perfil p?blico</p>
             <h2 className="mt-2 font-readex text-xl font-semibold text-[#15323b]">Dados do autor</h2>
             <p className="mt-2 max-w-2xl text-sm font-medium leading-6 text-[#6d7f84]">
-              Esses campos alimentam a página pública do autor em /autores/{publicSlug || 'slug'} e a relação de autores nos cursos.
+              Esses campos alimentam a p?gina p?blica do autor em /autores/{publicSlug || 'slug'} e a rela??o de autores nos cursos.
             </p>
           </div>
         </div>
 
         <div className="mt-5 grid gap-4 md:grid-cols-2">
           <label className="block">
-            <span className="text-xs font-black uppercase tracking-[0.2em] text-[#5F7077]">Slug público</span>
-            <input value={publicSlug} onChange={(event) => setPublicSlug(event.target.value)} className="mt-2 h-12 w-full rounded-2xl border border-[#D8E6EB] bg-white px-4 text-sm font-semibold outline-none focus:border-[#1398B7]" placeholder="autor-exemplo"/>
+            <span className="text-xs font-black uppercase tracking-[0.2em] text-[#5F7077]">Nome p?blico</span>
+            <input value={publicTitle} onChange={(event) => setPublicTitle(event.target.value)} className="mt-2 h-12 w-full rounded-2xl border border-[#D8E6EB] bg-white px-4 text-sm font-semibold outline-none focus:border-[#1398B7]" placeholder="Nome exibido na p?gina p?blica"/>
           </label>
 
           <label className="block">
-            <span className="text-xs font-black uppercase tracking-[0.2em] text-[#5F7077]">Nome público</span>
-            <input value={publicTitle} onChange={(event) => setPublicTitle(event.target.value)} className="mt-2 h-12 w-full rounded-2xl border border-[#D8E6EB] bg-white px-4 text-sm font-semibold outline-none focus:border-[#1398B7]" placeholder="Nome exibido na página pública"/>
+            <span className="text-xs font-black uppercase tracking-[0.2em] text-[#5F7077]">Slug p?blico</span>
+            <input value={publicSlug} readOnly disabled className="mt-2 h-12 w-full rounded-2xl border border-[#D8E6EB] bg-white/70 px-4 text-sm font-semibold text-[#5F7077] outline-none" placeholder="autor-exemplo"/>
+            <p className="mt-2 text-xs font-medium leading-5 text-[#6d7f84]">
+              O slug ? gerado automaticamente a partir do nome p?blico e n?o pode ser editado manualmente.
+            </p>
           </label>
 
           <label className="block md:col-span-2">
@@ -352,22 +363,22 @@ export function CreatorProfilePage() {
           </label>
 
           <label className="block md:col-span-2">
-            <span className="text-xs font-black uppercase tracking-[0.2em] text-[#5F7077]">Áreas de atuação</span>
-            <input value={publicAreas} onChange={(event) => setPublicAreas(event.target.value)} className="mt-2 h-12 w-full rounded-2xl border border-[#D8E6EB] bg-white px-4 text-sm font-semibold outline-none focus:border-[#1398B7]" placeholder="Ex: Direito, Docência, Pesquisa"/>
+            <span className="text-xs font-black uppercase tracking-[0.2em] text-[#5F7077]">?reas de atua??o</span>
+            <input value={publicAreas} onChange={(event) => setPublicAreas(event.target.value)} className="mt-2 h-12 w-full rounded-2xl border border-[#D8E6EB] bg-white px-4 text-sm font-semibold outline-none focus:border-[#1398B7]" placeholder="Ex: Direito, Doc?ncia, Pesquisa"/>
           </label>
 
           <label className="block md:col-span-2">
-            <span className="text-xs font-black uppercase tracking-[0.2em] text-[#5F7077]">Formação</span>
-            <textarea value={publicEducation} onChange={(event) => setPublicEducation(event.target.value)} className="mt-2 min-h-24 w-full rounded-2xl border border-[#D8E6EB] bg-white px-4 py-3 text-sm font-semibold outline-none focus:border-[#1398B7]" placeholder="Formações, cursos e certificações"/>
+            <span className="text-xs font-black uppercase tracking-[0.2em] text-[#5F7077]">Forma??o</span>
+            <textarea value={publicEducation} onChange={(event) => setPublicEducation(event.target.value)} className="mt-2 min-h-24 w-full rounded-2xl border border-[#D8E6EB] bg-white px-4 py-3 text-sm font-semibold outline-none focus:border-[#1398B7]" placeholder="Forma??es, cursos e certifica??es"/>
           </label>
 
           <label className="block md:col-span-2">
-            <span className="text-xs font-black uppercase tracking-[0.2em] text-[#5F7077]">Experiência</span>
-            <textarea value={publicExperience} onChange={(event) => setPublicExperience(event.target.value)} className="mt-2 min-h-24 w-full rounded-2xl border border-[#D8E6EB] bg-white px-4 py-3 text-sm font-semibold outline-none focus:border-[#1398B7]" placeholder="Resumo da trajetória profissional"/>
+            <span className="text-xs font-black uppercase tracking-[0.2em] text-[#5F7077]">Experi?ncia</span>
+            <textarea value={publicExperience} onChange={(event) => setPublicExperience(event.target.value)} className="mt-2 min-h-24 w-full rounded-2xl border border-[#D8E6EB] bg-white px-4 py-3 text-sm font-semibold outline-none focus:border-[#1398B7]" placeholder="Resumo da trajet?ria profissional"/>
           </label>
 
           <label className="block md:col-span-2">
-            <span className="text-xs font-black uppercase tracking-[0.2em] text-[#5F7077]">Foto pública</span>
+            <span className="text-xs font-black uppercase tracking-[0.2em] text-[#5F7077]">Foto p?blica</span>
             <input value={publicPhotoUrl} onChange={(event) => setPublicPhotoUrl(event.target.value)} className="mt-2 h-12 w-full rounded-2xl border border-[#D8E6EB] bg-white px-4 text-sm font-semibold outline-none focus:border-[#1398B7]" placeholder="https://..."/>
           </label>
 
@@ -393,7 +404,7 @@ export function CreatorProfilePage() {
         </div>
 
         <Button type="submit" className="mt-5 h-12 rounded-2xl bg-[#1398B7] px-6 font-black text-white hover:bg-[#0A3640]">
-          Salvar perfil público
+          Salvar perfil p?blico
         </Button>
       </form>
     </div>);
