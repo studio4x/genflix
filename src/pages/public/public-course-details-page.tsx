@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { ArrowRight, BadgeCheck, ChevronDown, CirclePlay } from 'lucide-react';
+import { ArrowRight, BadgeCheck, ChevronDown, CirclePlay, X } from 'lucide-react';
 import { Link, Navigate, useParams } from 'react-router-dom';
 import { CourseCoverMedia } from '@/components/public/course-cover-media';
 import { GenflixCtaButton } from '@/components/public/genflix-cta-button';
@@ -7,8 +7,8 @@ import { GenflixPublicFooter } from '@/components/public/genflix-public-footer';
 import { GenflixPublicHeader } from '@/components/public/genflix-public-header';
 import { BannerPlacementSlot } from '@/features/banners/banner-placement-slot';
 import { fetchSiteContent } from '@/features/site-editor/api';
-import { fetchPublicCourseDetailFromSupabase, fetchPublicCoursePlayerViewFromSupabase, type PublicCoursePlayerView } from '@/features/public/genflix-public-content-api';
-import { genflixNavLinks, type GenflixCourseDetail } from '@/features/public/genflix-site-content';
+import { fetchPublicAuthorProfileFromSupabase, fetchPublicCourseDetailFromSupabase, fetchPublicCoursePlayerViewFromSupabase, type PublicAuthorProfile, type PublicCoursePlayerView } from '@/features/public/genflix-public-content-api';
+import { genflixNavLinks, type GenflixCourseAuthor, type GenflixCourseDetail } from '@/features/public/genflix-site-content';
 import { genflixStudyFeatureCardsFallback, genflixStudyFeatureCardsSchema } from '@/features/public/genflix-study-feature-editor';
 import { CourseReviewsSection } from '@/features/reviews/course-reviews-section';
 import { fetchGlobalReviewsEnabled } from '@/features/reviews/review-settings';
@@ -75,9 +75,265 @@ function renderAboutParagraphHtml(value: string) {
   return sanitizeRichTextHtml(normalizedHtml);
 }
 
-function getAuthorPublicHref(authorSlug: string, authorId: string) {
-  const normalizedSlug = authorSlug.trim();
-  return `/autores/${encodeURIComponent(normalizedSlug || authorId)}`;
+function buildFallbackAuthorProfile(author: GenflixCourseAuthor): PublicAuthorProfile {
+  return {
+    userId: author.authorId,
+    publicSlug: author.slug,
+    publicTitle: author.title || author.name,
+    publicShortBio: author.shortBio,
+    publicLongBio: author.longBio || author.shortBio,
+    publicAreas: author.areas,
+    publicEducation: author.education,
+    publicExperience: author.experience,
+    publicPhotoUrl: author.photoUrl,
+    publicWebsiteUrl: author.websiteUrl,
+    publicInstagramUrl: author.instagramUrl,
+    publicLinkedinUrl: author.linkedinUrl,
+    publicYoutubeUrl: author.youtubeUrl,
+    payoutName: author.name,
+    fullName: author.name,
+    avatarUrl: author.photoUrl,
+    courses: [],
+  };
+}
+
+function AuthorProfileModal({
+  author,
+  profile,
+  isLoading,
+  onClose,
+}: {
+  author: GenflixCourseAuthor;
+  profile: PublicAuthorProfile | null;
+  isLoading: boolean;
+  onClose: () => void;
+}) {
+  const displayProfile = profile ?? buildFallbackAuthorProfile(author);
+  const hasSocialLinks = Boolean(
+    displayProfile.publicWebsiteUrl ||
+      displayProfile.publicInstagramUrl ||
+      displayProfile.publicLinkedinUrl ||
+      displayProfile.publicYoutubeUrl,
+  );
+
+  useEffect(() => {
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        onClose();
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [onClose]);
+
+  return (
+    <div
+      className="fixed inset-0 z-[140] flex items-center justify-center bg-[#061b21]/72 p-4 backdrop-blur-sm"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="author-profile-modal-title"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) {
+          onClose();
+        }
+      }}
+    >
+      <div className="relative flex max-h-[90vh] w-full max-w-5xl flex-col overflow-hidden rounded-[30px] border border-[#D8E6EB] bg-white shadow-[0_30px_90px_rgba(6,27,33,0.24)]">
+        <div className="flex items-start justify-between gap-4 border-b border-[#D8E6EB] bg-[#F2F8FA] px-6 py-5 sm:px-8">
+          <div className="min-w-0">
+            <p className="text-[10px] font-black uppercase tracking-[0.28em] text-[#1398B7]">Perfil público do autor</p>
+            <h2 id="author-profile-modal-title" className="mt-2 font-readex text-2xl font-semibold tracking-tight text-[#15323b]">
+              {displayProfile.publicTitle}
+            </h2>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-[#5F7077]">
+              {isLoading
+                ? 'Carregando dados públicos do perfil...'
+                : 'Os dados abaixo são os campos públicos configurados para este autor.'}
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#D8E6EB] text-[#5F7077] transition-colors hover:bg-white"
+            aria-label="Fechar modal"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div className="overflow-y-auto px-6 py-6 sm:px-8">
+          <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_360px]">
+            <div className="space-y-8">
+              <section className="grid gap-6 md:grid-cols-[160px_minmax(0,1fr)] md:items-center">
+                <div className="flex justify-center md:justify-start">
+                  {displayProfile.publicPhotoUrl ? (
+                    <img
+                      src={displayProfile.publicPhotoUrl}
+                      alt={displayProfile.publicTitle}
+                      className="h-36 w-36 rounded-[30px] border border-[#D8E6EB] object-cover shadow-[0_16px_36px_rgba(21,50,59,0.08)]"
+                    />
+                  ) : (
+                    <div className="flex h-36 w-36 items-center justify-center rounded-[30px] bg-[#D9F0F5] text-[2rem] font-black uppercase tracking-[0.12em] text-[#0A3640]">
+                      {(displayProfile.publicTitle || displayProfile.fullName || 'A').slice(0, 2).toUpperCase()}
+                    </div>
+                  )}
+                </div>
+
+                <div className="min-w-0">
+                  <p className="inline-flex rounded-full border border-[#D8E6EB] bg-[#F8FCFD] px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.24em] text-[#1398B7]">
+                    Autor GenFlix
+                  </p>
+                  <h3 className="mt-4 break-words text-[2.2rem] font-extrabold leading-[0.95] tracking-[-0.05em] text-[#183139] sm:text-[2.7rem]">
+                    {displayProfile.publicTitle}
+                  </h3>
+                  {displayProfile.publicShortBio ? (
+                    <p className="mt-4 max-w-3xl text-base leading-8 text-[#5f7178]">{displayProfile.publicShortBio}</p>
+                  ) : (
+                    <p className="mt-4 max-w-3xl text-base leading-8 text-[#5f7178]">
+                      Perfil público em construção.
+                    </p>
+                  )}
+                  {displayProfile.publicAreas.length ? (
+                    <div className="mt-5 flex flex-wrap gap-2">
+                      {displayProfile.publicAreas.map((area) => (
+                        <span
+                          key={area}
+                          className="rounded-full border border-[#D8E6EB] bg-white px-3 py-1 text-[11px] font-bold uppercase tracking-[0.12em] text-[#0F7E99]"
+                        >
+                          {area}
+                        </span>
+                      ))}
+                    </div>
+                  ) : null}
+                </div>
+              </section>
+
+              <article className="rounded-[28px] border border-[#D8E6EB] bg-white p-6 shadow-[0_16px_40px_rgba(21,50,59,0.05)]">
+                <h3 className="text-[1.35rem] font-bold tracking-[-0.03em] text-[#183139]">Sobre o autor</h3>
+                <div className="mt-4 space-y-4 text-[15px] leading-8 text-[#5f7178]">
+                  {displayProfile.publicLongBio ? (
+                    <p>{displayProfile.publicLongBio}</p>
+                  ) : displayProfile.publicShortBio ? (
+                    <p>{displayProfile.publicShortBio}</p>
+                  ) : (
+                    <p>Perfil público em construção.</p>
+                  )}
+                </div>
+              </article>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                {displayProfile.publicEducation ? (
+                  <article className="rounded-[24px] border border-[#D8E6EB] bg-[#F8FCFD] p-5">
+                    <p className="text-[11px] font-black uppercase tracking-[0.24em] text-[#1398B7]">Formação</p>
+                    <p className="mt-3 text-sm leading-7 text-[#5f7178]">{displayProfile.publicEducation}</p>
+                  </article>
+                ) : null}
+                {displayProfile.publicExperience ? (
+                  <article className="rounded-[24px] border border-[#D8E6EB] bg-[#F8FCFD] p-5">
+                    <p className="text-[11px] font-black uppercase tracking-[0.24em] text-[#1398B7]">Experiência</p>
+                    <p className="mt-3 text-sm leading-7 text-[#5f7178]">{displayProfile.publicExperience}</p>
+                  </article>
+                ) : null}
+              </div>
+
+              {displayProfile.courses.length ? (
+                <article className="rounded-[28px] border border-[#D8E6EB] bg-white p-6 shadow-[0_16px_40px_rgba(21,50,59,0.05)]">
+                  <div>
+                    <h3 className="text-[1.35rem] font-bold tracking-[-0.03em] text-[#183139]">Cursos vinculados</h3>
+                    <p className="mt-1 text-sm leading-6 text-[#6a7b81]">
+                      Cursos em que este autor participa como coautor de conteúdo.
+                    </p>
+                  </div>
+                  <div className="mt-5 grid gap-4 md:grid-cols-2">
+                    {displayProfile.courses.map((course) => (
+                      <article key={course.id} className="rounded-[22px] border border-[#D8E6EB] bg-[#F8FCFD] p-4">
+                        <p className="text-sm font-semibold text-[#183139]">{course.title}</p>
+                        <p className="mt-1 text-xs leading-5 text-[#6a7b81]">{course.category ?? 'Curso'}</p>
+                        <Link
+                          to={`/cursos/${course.slug}`}
+                          className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-[#1398B7] transition hover:text-[#0F7E99]"
+                        >
+                          <span>Abrir curso</span>
+                          <ArrowRight className="h-3.5 w-3.5" />
+                        </Link>
+                      </article>
+                    ))}
+                  </div>
+                </article>
+              ) : null}
+            </div>
+
+            <aside className="space-y-5">
+              <article className="rounded-[28px] border border-[#D8E6EB] bg-white p-6 shadow-[0_16px_40px_rgba(21,50,59,0.05)]">
+                <h3 className="text-[1.35rem] font-bold tracking-[-0.03em] text-[#183139]">Contato e redes</h3>
+                <div className="mt-5 space-y-3">
+                  {displayProfile.publicWebsiteUrl ? (
+                    <a
+                      href={displayProfile.publicWebsiteUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-2 rounded-full border border-[#D8E6EB] bg-white px-4 py-2 text-sm font-semibold text-[#183139] transition hover:border-[#1398B7]/40 hover:text-[#0F7E99]"
+                    >
+                      Website
+                    </a>
+                  ) : null}
+                  {displayProfile.publicInstagramUrl ? (
+                    <a
+                      href={displayProfile.publicInstagramUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-2 rounded-full border border-[#D8E6EB] bg-white px-4 py-2 text-sm font-semibold text-[#183139] transition hover:border-[#1398B7]/40 hover:text-[#0F7E99]"
+                    >
+                      Instagram
+                    </a>
+                  ) : null}
+                  {displayProfile.publicLinkedinUrl ? (
+                    <a
+                      href={displayProfile.publicLinkedinUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-2 rounded-full border border-[#D8E6EB] bg-white px-4 py-2 text-sm font-semibold text-[#183139] transition hover:border-[#1398B7]/40 hover:text-[#0F7E99]"
+                    >
+                      LinkedIn
+                    </a>
+                  ) : null}
+                  {displayProfile.publicYoutubeUrl ? (
+                    <a
+                      href={displayProfile.publicYoutubeUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-2 rounded-full border border-[#D8E6EB] bg-white px-4 py-2 text-sm font-semibold text-[#183139] transition hover:border-[#1398B7]/40 hover:text-[#0F7E99]"
+                    >
+                      YouTube
+                    </a>
+                  ) : null}
+                  {!hasSocialLinks ? <p className="text-sm leading-7 text-[#6a7b81]">Nenhuma rede social foi informada ainda.</p> : null}
+                </div>
+              </article>
+
+              {isLoading ? (
+                <article className="rounded-[28px] border border-[#D8E6EB] bg-[#F8FCFD] p-5">
+                  <p className="text-sm font-semibold text-[#183139]">Atualizando perfil público</p>
+                  <p className="mt-2 text-sm leading-7 text-[#6a7b81]">
+                    Estamos carregando os campos configurados no cadastro público do autor.
+                  </p>
+                </article>
+              ) : null}
+            </aside>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export function PublicCourseDetailsPage() {
@@ -88,6 +344,9 @@ export function PublicCourseDetailsPage() {
   const [openModule, setOpenModule] = useState(0);
   const [resourceCatalog, setResourceCatalog] = useState<EditableListItem[]>([]);
   const [globalReviewsEnabled, setGlobalReviewsEnabled] = useState(true);
+  const [activeAuthor, setActiveAuthor] = useState<GenflixCourseAuthor | null>(null);
+  const [activeAuthorProfile, setActiveAuthorProfile] = useState<PublicAuthorProfile | null>(null);
+  const [isAuthorProfileLoading, setIsAuthorProfileLoading] = useState(false);
   const trackedCourseRef = useRef<string | null>(null);
 
   useEffect(() => {
@@ -206,6 +465,41 @@ export function PublicCourseDetailsPage() {
       isMounted = false;
     };
   }, []);
+
+  useEffect(() => {
+    if (!activeAuthor) {
+      setActiveAuthorProfile(null);
+      setIsAuthorProfileLoading(false);
+      return;
+    }
+
+    let isMounted = true;
+    const authorSlug = activeAuthor.slug;
+
+    async function loadAuthorProfile() {
+      setIsAuthorProfileLoading(true);
+      try {
+        const publicProfile = await fetchPublicAuthorProfileFromSupabase(authorSlug);
+        if (isMounted) {
+          setActiveAuthorProfile(publicProfile);
+        }
+      } catch {
+        if (isMounted) {
+          setActiveAuthorProfile(null);
+        }
+      } finally {
+        if (isMounted) {
+          setIsAuthorProfileLoading(false);
+        }
+      }
+    }
+
+    void loadAuthorProfile();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [activeAuthor]);
 
   const selectedResourceItems = detail?.resourceItemIds?.length
     ? resourceCatalog.filter((item) => detail.resourceItemIds?.includes(item.id))
@@ -388,9 +682,6 @@ export function PublicCourseDetailsPage() {
                         <div className="min-w-0 flex-1">
                           <p className="text-sm font-semibold text-[#183139]">{author.name}</p>
                           <p className="mt-1 text-xs leading-5 text-[#6a7b81]">{author.title}</p>
-                          <p className="mt-2 text-xs font-semibold uppercase tracking-[0.12em] text-[#1398B7]">
-                            {author.commissionPercent.toFixed(2).replace('.', ',')}% de comissão
-                          </p>
                         </div>
                       </div>
 
@@ -409,13 +700,14 @@ export function PublicCourseDetailsPage() {
                       ) : null}
 
                       <div className="mt-5 flex items-center justify-between gap-3">
-                        <Link
-                          to={getAuthorPublicHref(author.slug, author.authorId)}
+                        <button
+                          type="button"
+                          onClick={() => setActiveAuthor(author)}
                           className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#1398B7] transition hover:text-[#0F7E99]"
                         >
                           <span>Saiba mais</span>
                           <ArrowRight className="h-3.5 w-3.5" />
-                        </Link>
+                        </button>
                       </div>
                     </article>
                   ))}
@@ -574,6 +866,15 @@ export function PublicCourseDetailsPage() {
           </div>
         </div>
       </section>
+
+      {activeAuthor ? (
+        <AuthorProfileModal
+          author={activeAuthor}
+          profile={activeAuthorProfile}
+          isLoading={isAuthorProfileLoading}
+          onClose={() => setActiveAuthor(null)}
+        />
+      ) : null}
 
       <GenflixPublicFooter />
     </main>
