@@ -3,7 +3,7 @@ import ReactQuill from '@/components/forms/react-quill';
 import { useAuth } from '@/app/providers/auth-provider';
 import { Button } from '@/components/ui/button';
 import { useCourseBuilder } from '@/app/layouts/admin-course-builder-layout';
-import { resetCourseProgress, updateCourse, uploadCourseThumbnail, toErrorMessage, type ResetCourseProgressResult, } from '@/features/admin/content/api';
+import { resetCourseProgress, updateCourse, uploadCourseLogo, uploadCourseThumbnail, toErrorMessage, type ResetCourseProgressResult, } from '@/features/admin/content/api';
 import { courseFormSchema } from '@/features/admin/content/schemas';
 import { fetchSiteContent } from '@/features/site-editor/api';
 import { normalizeResourcesItems } from '@/features/public/genflix-resource-items-editor';
@@ -57,6 +57,7 @@ export function CourseSettingsPanel() {
         quiz_type_settings: { ...DEFAULT_COURSE_QUIZ_TYPE_SETTINGS },
     });
     const [isUploadingThumbnail, setIsUploadingThumbnail] = useState(false);
+    const [isUploadingLogo, setIsUploadingLogo] = useState(false);
     const [isUploadingStudentHero, setIsUploadingStudentHero] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isResettingProgress, setIsResettingProgress] = useState(false);
@@ -170,6 +171,24 @@ export function CourseSettingsPanel() {
         }
         finally {
             setIsUploadingStudentHero(false);
+        }
+    }
+    async function handleLogoUpload(event: React.ChangeEvent<HTMLInputElement>) {
+        const file = event.target.files?.[0];
+        if (!file)
+            return;
+        setError(null);
+        setIsUploadingLogo(true);
+        try {
+            const url = await uploadCourseLogo(file);
+            setForm((current) => ({ ...current, logo_url: url }));
+        }
+        catch {
+            setError('Falha ao subir o logotipo. Tente novamente.');
+        }
+        finally {
+            setIsUploadingLogo(false);
+            event.target.value = '';
         }
     }
     async function handleSubmit(e: React.FormEvent) {
@@ -313,6 +332,63 @@ export function CourseSettingsPanel() {
                   </div>
                </div>
            </section>
+
+            <section className="rounded-[32px] border border-slate-200 bg-slate-50/40 p-5 md:p-6">
+               <div className="max-w-3xl space-y-3">
+                  <p className="text-[11px] font-black uppercase tracking-[0.26em] text-[#0F5AA3]">Logotipo do Curso</p>
+                  <h3 className="text-[2rem] font-black tracking-tight text-slate-900">Upload do logo</h3>
+                  <p className="max-w-[860px] text-base leading-8 text-slate-600">Envie o arquivo do logotipo do curso para uso na página pública e em outras superfícies do catálogo. O arquivo será salvo no storage e a URL pública ficará disponível no campo abaixo.</p>
+               </div>
+
+               <div className="mt-6 grid gap-4 xl:grid-cols-[260px_minmax(0,1fr)]">
+                  <div className={`relative flex min-h-[194px] items-center justify-center overflow-hidden rounded-[28px] border border-[#0B5D8D]/20 bg-[radial-gradient(circle_at_top,_rgba(36,188,224,0.24),_transparent_55%),linear-gradient(145deg,#1AA0C7_0%,#104E6B_100%)] shadow-[0_24px_44px_rgba(16,78,107,0.18)] ${isUploadingLogo ? 'animate-pulse' : ''}`}>
+                     {form.logo_url ? (<img src={form.logo_url} alt="Logotipo do curso" className="absolute inset-0 h-full w-full object-contain p-8"/>) : (<div className="rounded-[20px] border border-white/50 bg-white/92 px-5 py-4 text-center text-[#0F5AA3] shadow-lg shadow-black/10">
+                           <p className="text-[10px] font-black uppercase tracking-[0.28em] text-[#0F5AA3]/70">Sem logo definido</p>
+                           <p className="mt-2 text-sm font-semibold text-[#0F5AA3]">Escolha um arquivo para gerar a URL pública do logotipo.</p>
+                        </div>)}
+                  </div>
+
+                  <div className="rounded-[28px] border border-slate-200 bg-white px-5 py-5 md:px-6 md:py-6">
+                     <div className="space-y-2">
+                        <p className="text-xl font-black tracking-tight text-slate-900">Enviar novo logotipo</p>
+                        <p className="text-base leading-7 text-slate-600">PNG e WEBP com fundo transparente costumam funcionar melhor no topo do curso. Depois do upload, confirme em guardar configurações.</p>
+                        <p className="text-sm font-semibold text-slate-500">O arquivo será publicado no storage e a URL pública será preenchida automaticamente.</p>
+                     </div>
+
+                     <div className="mt-5 flex flex-wrap items-center gap-4">
+                        <label className="inline-flex cursor-pointer items-center gap-3">
+                           <span className="inline-flex h-11 items-center rounded-xl border border-slate-300 bg-slate-50 px-4 text-sm font-bold text-slate-800 transition-colors hover:border-[#1398B7]/40 hover:bg-white">
+                              {isUploadingLogo ? 'Enviando...' : 'Escolher arquivo'}
+                           </span>
+                           <input type="file" accept="image/*" disabled={isUploadingLogo} onChange={handleLogoUpload} className="sr-only" title="Selecionar logotipo do curso"/>
+                        </label>
+                        <span className="text-sm font-medium text-slate-500">
+                           {isUploadingLogo
+            ? 'Enviando logotipo...'
+            : form.logo_url
+                ? 'Logo atual carregado. Escolha outro arquivo para substituir.'
+                : 'Nenhum arquivo escolhido'}
+                        </span>
+                     </div>
+
+                     {form.logo_url ? (<div className="mt-5 flex flex-wrap items-center gap-3">
+                           <a href={form.logo_url} target="_blank" rel="noreferrer" className="text-sm font-bold text-[#1398B7] transition-colors hover:text-[#0F5AA3]">
+                              Abrir logo atual
+                           </a>
+                           <Button type="button" variant="outline" size="sm" onClick={() => setForm((current) => ({ ...current, logo_url: '' }))} className="rounded-xl border-slate-200 bg-white font-bold text-slate-600 hover:text-slate-900">
+                              Remover logotipo
+                           </Button>
+                        </div>) : null}
+
+                     <div className="mt-5">
+                        <label className="block space-y-2">
+                           <span className="text-xs font-black uppercase tracking-widest text-slate-400">URL do logo</span>
+                           <input className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-5 py-3 text-sm font-semibold outline-none focus:border-cyan-400 focus:bg-white" value={form.logo_url} onChange={(event) => setForm((current) => ({ ...current, logo_url: event.target.value }))} placeholder="https://..."/>
+                        </label>
+                     </div>
+                  </div>
+               </div>
+            </section>
 
             <section className="rounded-[32px] border border-slate-200 bg-slate-50/40 p-5 md:p-6">
                <div className="max-w-3xl space-y-3">

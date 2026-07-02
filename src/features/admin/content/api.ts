@@ -1361,6 +1361,20 @@ export async function uploadCourseThumbnail(file: File): Promise<string> {
         .getPublicUrl(filePath);
     return data.publicUrl;
 }
+export async function uploadCourseLogo(file: File): Promise<string> {
+    const fileExt = file.name.split('.').pop() || 'png';
+    const filePath = `course-logos/${crypto.randomUUID()}.${fileExt}`;
+    const { error: uploadError } = await supabase.storage
+        .from('thumbnails')
+        .upload(filePath, file);
+    if (uploadError) {
+        throw uploadError;
+    }
+    const { data } = supabase.storage
+        .from('thumbnails')
+        .getPublicUrl(filePath);
+    return data.publicUrl;
+}
 /**
  * IMPORTAÇÃO EM MASSA (IA)
  * Permite subir uma estrutura completa de módulos, aulas e quizzes via JSON.
