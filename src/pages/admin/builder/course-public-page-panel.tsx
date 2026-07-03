@@ -569,9 +569,6 @@ export function CoursePublicPagePanel() {
                 </div>))}
               </div>
 
-            <div className="rounded-[24px] border border-slate-200 bg-slate-50 px-5 py-5 text-sm leading-7 text-slate-600">
-              A seção <span className="font-black text-slate-900">O que você vai aprender</span> foi removida da interface pública, mas os dados antigos continuam preservados no banco por compatibilidade.
-            </div>
           </div>
         </section>
 
