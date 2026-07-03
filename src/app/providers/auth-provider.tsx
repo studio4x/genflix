@@ -370,6 +370,11 @@ export function AuthProvider({ children }: {
 
         clearImpersonationSessionState();
         setImpersonation(null);
+        // Force the admin landing route after restoring the original session.
+        // This avoids protected student/creator pages redirecting to unauthorized mid-transition.
+        if (typeof window !== 'undefined') {
+            window.location.replace('/admin');
+        }
     }, [impersonation]);
     const activeImpersonation = useMemo(() => {
         if (!impersonation || !user) {
