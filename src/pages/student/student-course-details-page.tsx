@@ -331,7 +331,15 @@ export function StudentCourseDetailsPage() {
 
          <div className="relative z-20 space-y-6 max-w-4xl">
             <div className="space-y-4">
-               <h1 className="font-manrope text-[55px] font-bold leading-[0.95] tracking-[0px] text-white max-w-4xl break-words">
+               <h1
+                  className="font-manrope text-[55px] font-bold leading-[0.95] tracking-[0px] text-white max-w-4xl break-words"
+                  style={{
+                     fontFamily: 'Manrope, sans-serif',
+                     fontSize: '55px',
+                     fontWeight: 700,
+                     letterSpacing: '0px',
+                  }}
+               >
                   {course.title}
                </h1>
                <div className="flex flex-wrap items-center gap-6">
