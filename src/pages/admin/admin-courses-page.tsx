@@ -9,7 +9,7 @@ import { useLocalStorageState } from '@/hooks/use-local-storage-state';
 import { createCourseCategory, createCourse, deleteCourseCategory, deleteCourse, exportFullCourseContent, fetchCourseCategories, fetchCourses, updateCoursesDisplayOrder, updateCourseCategory, updateCourse, uploadCourseThumbnail, toErrorMessage, importFullCourse, } from '@/features/admin/content/api';
 import { downloadJsonFile } from '@/lib/download';
 import { formatCurrencyInputFromCents, parseCurrencyInputToCents } from '@/lib/currency';
-import { DEFAULT_COURSE_QUIZ_TYPE_SETTINGS, normalizeCourseQuizTypeSettings, } from '@/features/assessments/course-quiz-type-settings';
+import { DEFAULT_COURSE_QUIZ_TYPE_SETTINGS, } from '@/features/assessments/course-quiz-type-settings';
 import { normalizeCourseCategoryList } from '@/features/courses/course-categories';
 import { courseFormSchema, type CourseFormInput, } from '@/features/admin/content/schemas';
 import type { Course, CourseCategory, CourseStatus } from '@/types/content';
@@ -178,37 +178,6 @@ export function AdminCoursesPage() {
         finally {
             setIsSubmitting(false);
         }
-    }
-    function handleEdit(course: Course) {
-        const categories = normalizeCourseCategoryList(course.categories.length > 0 ? course.categories : course.category ? [course.category] : []);
-        setDraft((p) => ({
-            ...p,
-            isFormOpen: true,
-            editingCourseId: course.id,
-            form: {
-                title: course.title,
-                category: course.category ?? '',
-                categories,
-                description: course.description ?? '',
-                status: course.status,
-                thumbnail_url: course.thumbnail_url ?? '',
-                hero_video_url: course.hero_video_url ?? '',
-                logo_url: course.logo_url ?? '',
-                student_hero_image_url: course.student_hero_image_url ?? '',
-                slug: course.slug ?? '',
-                launch_date: course.launch_date ?? '',
-                price_cents: course.price_cents ?? 0,
-                currency: (course.currency ?? 'BRL') as 'BRL',
-                is_public: course.is_public ?? true,
-                show_reviews: course.show_reviews ?? true,
-                resource_item_ids: course.resource_item_ids ?? [],
-                creator_id: course.creator_id ?? '',
-                creator_commission_percent: course.creator_commission_percent ?? 0,
-                has_linear_progression: course.has_linear_progression ?? true,
-                quiz_type_settings: normalizeCourseQuizTypeSettings(course.quiz_type_settings),
-            },
-        }));
-        setError(null);
     }
     function resetCategoryForm() {
         setCategoryName('');
@@ -594,8 +563,10 @@ Essa a\u00E7\u00E3o \u00E9 irrevers\u00EDvel.`);
                           <Button onClick={() => void handleExportCourse(course)} variant="ghost" className="w-10 h-10 p-0 rounded-xl text-slate-300 hover:text-blue-600 hover:bg-blue-50" title="Exportar curso completo (JSON)" disabled={exportingCourseId === course.id}>
                              {exportingCourseId === course.id ? (<span className="h-4 w-4 rounded-full border-2 border-blue-200 border-t-blue-600 animate-spin"/>) : (<svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>)}
                           </Button>
-                          <Button onClick={() => handleEdit(course)} variant="ghost" className="w-10 h-10 p-0 rounded-xl text-slate-300 hover:text-amber-600 hover:bg-amber-50">
-                             <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+                          <Button asChild variant="ghost" className="w-10 h-10 p-0 rounded-xl text-slate-300 hover:text-amber-600 hover:bg-amber-50" title="Abrir configurações do curso">
+                             <Link to={`/admin/cursos/${course.id}/builder/settings`}>
+                                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+                             </Link>
                           </Button>
                           <Button onClick={() => void handleDelete(course)} variant="ghost" className="w-10 h-10 p-0 rounded-xl text-slate-300 hover:text-rose-600 hover:bg-rose-50">
                              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v2"/></svg>

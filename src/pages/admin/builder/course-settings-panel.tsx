@@ -3,15 +3,16 @@ import ReactQuill from '@/components/forms/react-quill';
 import { useAuth } from '@/app/providers/auth-provider';
 import { Button } from '@/components/ui/button';
 import { useCourseBuilder } from '@/app/layouts/admin-course-builder-layout';
-import { resetCourseProgress, updateCourse, uploadCourseLogo, uploadCourseThumbnail, toErrorMessage, type ResetCourseProgressResult, } from '@/features/admin/content/api';
+import { fetchCourseCategories, resetCourseProgress, updateCourse, uploadCourseLogo, uploadCourseThumbnail, toErrorMessage, type ResetCourseProgressResult, } from '@/features/admin/content/api';
 import { courseFormSchema } from '@/features/admin/content/schemas';
 import { fetchSiteContent } from '@/features/site-editor/api';
+import { normalizeCourseCategoryList } from '@/features/courses/course-categories';
 import { normalizeResourcesItems } from '@/features/public/genflix-resource-items-editor';
 import { formatCurrencyInputFromCents, parseCurrencyInputToCents } from '@/lib/currency';
 import { publishBuilderNotice } from '@/lib/builder-notice';
 import { canCourseUseCaseStudies, COURSE_QUIZ_TYPE_OPTIONS, DEFAULT_COURSE_QUIZ_TYPE_SETTINGS, getVisibleCourseQuizTypeOptions, normalizeCourseQuizTypeSettings, } from '@/features/assessments/course-quiz-type-settings';
 import { fetchGlobalQuizTypeSettings } from '@/features/admin/quiz-types/api';
-import type { Course, CourseQuizTypeSettings } from '@/types/content';
+import type { Course, CourseCategory, CourseQuizTypeSettings } from '@/types/content';
 import type { EditableListItem } from '@/features/site-editor/types';
 type CourseSettingsFormState = {
     title: string;
@@ -27,6 +28,7 @@ type CourseSettingsFormState = {
     currency: Course['currency'];
     is_public: boolean;
     show_reviews: boolean;
+    categories: string[];
     resource_item_ids: string[];
     creator_id: string;
     creator_commission_percent: number;
@@ -50,6 +52,7 @@ export function CourseSettingsPanel() {
         currency: 'BRL',
         is_public: true,
         show_reviews: true,
+        categories: [],
         resource_item_ids: [],
         creator_id: '',
         creator_commission_percent: 0,
@@ -64,6 +67,7 @@ export function CourseSettingsPanel() {
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState(false);
     const [resetProgressSuccess, setResetProgressSuccess] = useState<ResetCourseProgressResult | null>(null);
+    const [availableCategories, setAvailableCategories] = useState<CourseCategory[]>([]);
     const [globalQuizTypeSettings, setGlobalQuizTypeSettings] = useState({ ...DEFAULT_COURSE_QUIZ_TYPE_SETTINGS });
     const [resourceCatalog, setResourceCatalog] = useState<EditableListItem[]>([]);
     const [isLoadingResources, setIsLoadingResources] = useState(false);
@@ -83,6 +87,11 @@ export function CourseSettingsPanel() {
                 currency: (courseTree.course.currency as CourseSettingsFormState['currency']) ?? 'BRL',
                 is_public: courseTree.course.is_public ?? true,
                 show_reviews: courseTree.course.show_reviews ?? true,
+                categories: normalizeCourseCategoryList(courseTree.course.categories.length > 0
+                    ? courseTree.course.categories
+                    : courseTree.course.category
+                        ? [courseTree.course.category]
+                        : []),
                 resource_item_ids: Array.isArray(courseTree.course.resource_item_ids) ? courseTree.course.resource_item_ids : [],
                 creator_id: courseTree.course.creator_id ?? '',
                 creator_commission_percent: courseTree.course.creator_commission_percent ?? 0,
@@ -92,6 +101,26 @@ export function CourseSettingsPanel() {
             setResetProgressSuccess(null);
         }
     }, [courseTree]);
+    useEffect(() => {
+        let isMounted = true;
+        async function loadCategories() {
+            try {
+                const categories = await fetchCourseCategories(true);
+                if (isMounted) {
+                    setAvailableCategories(categories);
+                }
+            }
+            catch {
+                if (isMounted) {
+                    setAvailableCategories([]);
+                }
+            }
+        }
+        void loadCategories();
+        return () => {
+            isMounted = false;
+        };
+    }, []);
     useEffect(() => {
         let isMounted = true;
         async function loadSettings() {
@@ -515,6 +544,70 @@ export function CourseSettingsPanel() {
                   <p className="mt-2 text-lg font-black tracking-tight text-slate-900">{courseTree?.course.title ?? form.title}</p>
                   <p className="mt-1 text-xs font-medium text-slate-500">Esse nome e definido no cadastro principal do curso e e usado tambem na pagina publica.</p>
                </div>
+
+               <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
+                  <div className="flex flex-wrap items-start justify-between gap-4">
+                     <div>
+                        <p className="text-[10px] font-black uppercase tracking-[0.24em] text-cyan-700">Categorias</p>
+                        <h3 className="mt-2 text-xl font-black tracking-tight text-slate-900">Categorias do curso</h3>
+                        <p className="mt-2 text-sm font-medium text-slate-600">Selecione as mesmas categorias usadas no catálogo. A primeira marcada vira a categoria principal.</p>
+                     </div>
+                     <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-right">
+                        <p className="text-[10px] font-black uppercase tracking-[0.24em] text-slate-400">Selecionadas</p>
+                        <p className="mt-1 text-2xl font-black text-slate-900">{form.categories.length}</p>
+                     </div>
+                  </div>
+
+                  <div className="mt-6">
+                     {availableCategories.length ? (
+                       <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                          {availableCategories.map((category) => {
+                            const isSelected = form.categories.includes(category.name);
+                            const isSelectable = category.is_active || isSelected;
+                            return (
+                              <label
+                                key={category.id}
+                                className={`flex cursor-pointer items-start gap-3 rounded-[22px] border p-4 transition ${isSelected ? 'border-cyan-200 bg-cyan-50/60' : 'border-slate-200 bg-slate-50/60 hover:border-cyan-200'}`}
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={isSelected}
+                                  disabled={!isSelectable}
+                                  onChange={(event) => {
+                                    const currentCategories = normalizeCourseCategoryList(form.categories);
+                                    const nextCategories = event.target.checked
+                                      ? normalizeCourseCategoryList([...currentCategories, category.name])
+                                      : currentCategories.filter((item) => item !== category.name);
+                                    setForm((current) => ({
+                                      ...current,
+                                      categories: nextCategories,
+                                    }));
+                                  }}
+                                  className="mt-1 h-4 w-4 rounded border-slate-300 text-cyan-600 focus:ring-cyan-500"
+                                />
+                                <span className="min-w-0">
+                                  <span className="block text-sm font-black text-slate-900">{category.name}</span>
+                                  <span className="mt-1 block text-xs font-medium text-slate-500">
+                                    {category.slug ? `/${category.slug}` : 'Sem slug'}
+                                    {!category.is_active ? ' · Inativa' : ''}
+                                  </span>
+                                </span>
+                              </label>
+                            );
+                          })}
+                       </div>
+                     ) : (
+                       <p className="rounded-[22px] border border-dashed border-slate-200 bg-slate-50 px-5 py-6 text-sm font-medium text-slate-500">
+                         Nenhuma categoria cadastrada. Use a aba de categorias em Catálogo de Cursos e volte aqui.
+                       </p>
+                     )}
+                  </div>
+
+                  <div className="mt-6 rounded-[22px] border border-slate-200 bg-slate-50 px-5 py-4 text-sm font-medium text-slate-600">
+                     <p className="font-black text-slate-900">Categoria principal</p>
+                     <p className="mt-1">{form.categories[0] ?? 'Nenhuma categoria selecionada'}</p>
+                  </div>
+               </section>
 
                <section className="rounded-[28px] border border-cyan-100 bg-cyan-50/60 p-6 space-y-5">
                   <div>
