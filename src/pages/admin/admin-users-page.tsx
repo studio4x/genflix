@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { KeyRound, Trash2, X } from 'lucide-react';
 import { useAuth } from '@/app/providers/auth-provider';
+import { clearImpersonationSessionState, createImpersonationSessionState, writeImpersonationSessionState } from '@/features/auth/impersonation-state';
 import { Button } from '@/components/ui/button';
 import { deleteAdminUser, createAdminUser, fetchAdminUsers, loginAsAdminUser, resetAdminUserPassword, toErrorMessage, updateAdminUser, type AdminAssignableRoleCode, type AdminUserListItem, type AdminUserRole, type CreateAdminUserResponse, type UpdateAdminUserInput, } from '@/features/admin/users/api';
 import { createAdminUserFormSchema } from '@/features/admin/users/schemas';
@@ -290,10 +291,16 @@ export function AdminUsersPage() {
             return;
         }
         try {
+            writeImpersonationSessionState(createImpersonationSessionState(session, {
+                id: user.id,
+                email: user.email,
+                fullName: user.full_name ?? null,
+            }));
             const result = await loginAsAdminUser(user.id, session);
-            window.open(result.action_link, '_blank', 'noopener,noreferrer');
+            window.location.assign(result.action_link);
         }
         catch (loginError) {
+            clearImpersonationSessionState();
             setError(toErrorMessage(loginError));
         }
     }

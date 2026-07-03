@@ -1,5 +1,6 @@
 import { Link, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '@/app/providers/auth-provider';
+import { ImpersonationBanner } from '@/components/auth/impersonation-banner';
 import { PlatformFooter } from '@/components/layout/platform-footer';
 import { GenflixLogo } from '@/components/public/genflix-logo';
 import { Button } from '@/components/ui/button';
@@ -43,6 +44,7 @@ export function CreatorLayout() {
         .join('')
         .toUpperCase();
     return (<main className="min-h-screen bg-[#F2F7F9] font-manrope text-[#163138]">
+      <ImpersonationBanner />
       <header className="sticky top-0 z-40 border-b border-[#D8E6EB] bg-[#F2F7F9]/95 backdrop-blur-md">
         <div className="flex w-full items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
           <div className="flex items-center gap-3">

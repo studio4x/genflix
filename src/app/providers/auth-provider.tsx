@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import type { AuthChangeEvent, Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/services/supabase/client';
 import { clearPasswordRecoveryState, hasPasswordRecoveryUrl, markPasswordRecoveryState, readPasswordRecoveryState, } from '@/features/auth/password-recovery-state';
+import { clearImpersonationSessionState, readImpersonationSessionState, type ImpersonationSessionState } from '@/features/auth/impersonation-state';
 import { toTranslatedAuthError } from '@/features/auth/auth-error-messages';
 import type { Profile, RoleCode, UpdateProfileInput } from '@/types/auth';
 interface AuthContextValue {
@@ -10,6 +11,8 @@ interface AuthContextValue {
     session: Session | null;
     profile: Profile | null;
     roles: RoleCode[];
+    impersonation: ImpersonationSessionState | null;
+    isImpersonating: boolean;
     signIn: (email: string, password: string) => Promise<void>;
     signInWithMagicLink: (email: string) => Promise<void>;
     signUp: (fullName: string, email: string, password: string) => Promise<{
@@ -24,6 +27,7 @@ interface AuthContextValue {
     isPasswordRecoverySession: boolean;
     refreshProfile: () => Promise<void>;
     updateProfile: (payload: UpdateProfileInput) => Promise<Profile>;
+    restoreAdminSession: () => Promise<void>;
 }
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 type RoleRow = {
@@ -119,6 +123,7 @@ export function AuthProvider({ children }: {
     const [profile, setProfile] = useState<Profile | null>(null);
     const [roles, setRoles] = useState<RoleCode[]>([]);
     const [isPasswordRecoverySession, setIsPasswordRecoverySession] = useState(() => readPasswordRecoveryState());
+    const [impersonation, setImpersonation] = useState<ImpersonationSessionState | null>(() => readImpersonationSessionState());
     const syncVersionRef = useRef(0);
     const currentUserIdRef = useRef<string | null>(null);
     const hasResolvedContextRef = useRef(false);
@@ -246,6 +251,8 @@ export function AuthProvider({ children }: {
         if (result.error) {
             throw toTranslatedAuthError(result.error, 'Não foi possível sair da conta.');
         }
+        clearImpersonationSessionState();
+        setImpersonation(null);
     }, []);
     const requestPasswordReset = useCallback(async (email: string) => {
         const response = await fetch('/api/auth/password-reset', {
@@ -345,12 +352,40 @@ export function AuthProvider({ children }: {
         setProfile(nextProfile);
         return nextProfile;
     }, []);
+    const restoreAdminSession = useCallback(async () => {
+        const storedImpersonation = readImpersonationSessionState() ?? impersonation;
+
+        if (!storedImpersonation) {
+            throw new Error('Não há sessão de admin para restaurar.');
+        }
+
+        const result = await supabase.auth.setSession({
+            access_token: storedImpersonation.adminSession.accessToken,
+            refresh_token: storedImpersonation.adminSession.refreshToken,
+        });
+
+        if (result.error) {
+            throw toTranslatedAuthError(result.error, 'Não foi possível voltar para o usuário admin.');
+        }
+
+        clearImpersonationSessionState();
+        setImpersonation(null);
+    }, [impersonation]);
+    const activeImpersonation = useMemo(() => {
+        if (!impersonation || !user) {
+            return null;
+        }
+
+        return user.id === impersonation.impersonatedUserId ? impersonation : null;
+    }, [impersonation, user]);
     const value = useMemo<AuthContextValue>(() => ({
         isLoading,
         user,
         session,
         profile,
         roles,
+        impersonation: activeImpersonation,
+        isImpersonating: activeImpersonation !== null,
         signIn,
         signInWithMagicLink,
         signUp,
@@ -361,8 +396,10 @@ export function AuthProvider({ children }: {
         isPasswordRecoverySession,
         refreshProfile,
         updateProfile,
+        restoreAdminSession,
     }), [
         isLoading,
+        activeImpersonation,
         profile,
         refreshProfile,
         requestPasswordReset,
@@ -374,6 +411,7 @@ export function AuthProvider({ children }: {
         signUp,
         completePasswordRecovery,
         isPasswordRecoverySession,
+        restoreAdminSession,
         updatePassword,
         updateProfile,
         user,

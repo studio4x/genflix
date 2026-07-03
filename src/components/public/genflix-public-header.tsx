@@ -2,6 +2,7 @@ import { useEffect, useState, type CSSProperties } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { GraduationCap, Menu, Settings2, X } from 'lucide-react';
 import { useAuth } from '@/app/providers/auth-provider';
+import { ImpersonationBanner } from '@/components/auth/impersonation-banner';
 import { GenflixCtaButton } from '@/components/public/genflix-cta-button';
 import { GenflixCookieConsentBanner } from '@/components/public/genflix-cookie-consent-banner';
 import { GenflixLogo } from '@/components/public/genflix-logo';
@@ -180,6 +181,7 @@ export function GenflixPublicHeader({ currentPage, navLinks, }: {
     };
     return (<>
       {typographyCss ? <style>{typographyCss}</style> : null}
+      <ImpersonationBanner />
       <section className={cn('border-b', useHomeTheme
             ? 'border-white/10 bg-[linear-gradient(90deg,#1C7082_0%,#0F5562_100%)] text-white'
             : 'border-[#D8E6EB] text-[#183139]')} style={headerSectionStyle}>
