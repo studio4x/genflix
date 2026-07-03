@@ -202,6 +202,11 @@ function RemoteSvgIcon({ iconImageUrl, iconAlt, iconColor, className, sizeStyle,
         };
     }, [cacheKey, svgMarkup]);
     if (!svgMarkup) {
+        if (iconColor) {
+            return (<span aria-hidden="true" className={cn('flex h-full w-full items-center justify-center', className)} style={sizeStyle}>
+                <span className="block h-[72%] w-[72%] rounded-full bg-current opacity-15" style={{ color: iconColor }}/>
+            </span>);
+        }
         return (<img src={iconImageUrl} alt={iconAlt} className={cn('block h-full w-full object-contain', className)} style={sizeStyle}/>);
     }
     return (<span aria-label={iconAlt} role="img" data-genflix-svg-key={cacheKey} className={cn('flex h-full w-full items-center justify-center overflow-hidden', className)} style={{
