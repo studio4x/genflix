@@ -28,6 +28,17 @@ type SectionStats = {
   failed: number
 }
 
+type SectionRunOptions = {
+  batchOffset: number
+  batchLimit: number | null
+}
+
+type SectionRunResult = {
+  hasMore: boolean
+  nextOffset: number | null
+  processedCount: number
+}
+
 const allowedSections = new Set<SectionName>([
   'lesson_materials',
   'module_pdfs',
@@ -59,8 +70,11 @@ Deno.serve(async (request) => {
   try {
     const requestBody = await request.json().catch(() => ({}))
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')?.trim() ?? ''
+    const maintenanceToken = Deno.env.get('ADMIN_BACKFILL_TOKEN')?.trim() ?? ''
     const accessToken = getAccessToken(request, requestBody)
-    if (!serviceRoleKey || accessToken !== serviceRoleKey) {
+    const isAuthorizedWithServiceRole = Boolean(serviceRoleKey) && accessToken === serviceRoleKey
+    const isAuthorizedWithMaintenanceToken = Boolean(maintenanceToken) && accessToken === maintenanceToken
+    if (!isAuthorizedWithServiceRole && !isAuthorizedWithMaintenanceToken) {
       return jsonResponse(request, { error: 'Nao autorizado.' }, 401)
     }
 
@@ -77,14 +91,22 @@ Deno.serve(async (request) => {
     const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey)
     const stats: SectionStats = { migrated: 0, updated: 0, skipped: 0, failed: 0 }
     const failures: string[] = []
+    const batchOffset = Number.isInteger(requestBody?.batch_offset) ? Math.max(0, Number(requestBody.batch_offset)) : 0
+    const batchLimit = Number.isInteger(requestBody?.batch_limit) ? Math.max(1, Number(requestBody.batch_limit)) : null
 
-    await runSection(section, supabaseAdmin, stats, failures)
+    const result = await runSection(section, supabaseAdmin, stats, failures, {
+      batchOffset,
+      batchLimit,
+    })
 
     return jsonResponse(request, {
       ok: true,
       section,
       stats,
       failures,
+      has_more: result.hasMore,
+      next_offset: result.nextOffset,
+      processed_count: result.processedCount,
       checked_at: new Date().toISOString(),
     })
   }
@@ -99,54 +121,54 @@ async function runSection(
   supabaseAdmin: ReturnType<typeof createClient>,
   stats: SectionStats,
   failures: string[],
-) {
+  options: SectionRunOptions,
+): Promise<SectionRunResult> {
   switch (section) {
     case 'lesson_materials':
       await migrateLessonMaterials(supabaseAdmin, stats, failures)
-      return
+      return { hasMore: false, nextOffset: null, processedCount: 0 }
     case 'module_pdfs':
       await migrateModulePdfs(supabaseAdmin, stats, failures)
-      return
+      return { hasMore: false, nextOffset: null, processedCount: 0 }
     case 'site_assets':
-      await migrateSiteAssets(supabaseAdmin, stats, failures)
-      return
+      return await migrateSiteAssets(supabaseAdmin, stats, failures, options)
     case 'assessment_assets':
       await migrateAssessmentAssets(supabaseAdmin, stats, failures)
-      return
+      return { hasMore: false, nextOffset: null, processedCount: 0 }
     case 'lesson_content_assets':
       await migrateLessonContentAssets(supabaseAdmin, stats, failures)
-      return
+      return { hasMore: false, nextOffset: null, processedCount: 0 }
     case 'lesson_footer_assets':
       await migrateFooterActionAssets(supabaseAdmin, stats, failures)
-      return
+      return { hasMore: false, nextOffset: null, processedCount: 0 }
     case 'profiles_avatar_url':
       await migrateUrlFieldRows(supabaseAdmin, stats, failures, {
         table: 'profiles',
         select: 'id, avatar_url',
         fields: ['avatar_url'],
       })
-      return
+      return { hasMore: false, nextOffset: null, processedCount: 0 }
     case 'courses_media_urls':
       await migrateUrlFieldRows(supabaseAdmin, stats, failures, {
         table: 'courses',
         select: 'id, thumbnail_url, cover_image_url, logo_url, student_hero_image_url',
         fields: ['thumbnail_url', 'cover_image_url', 'logo_url', 'student_hero_image_url'],
       })
-      return
+      return { hasMore: false, nextOffset: null, processedCount: 0 }
     case 'support_ticket_attachments':
       await migrateUrlFieldRows(supabaseAdmin, stats, failures, {
         table: 'support_tickets',
         select: 'id, attachment_url',
         fields: ['attachment_url'],
       })
-      return
+      return { hasMore: false, nextOffset: null, processedCount: 0 }
     case 'support_message_attachments':
       await migrateUrlFieldRows(supabaseAdmin, stats, failures, {
         table: 'support_messages',
         select: 'id, attachment_url',
         fields: ['attachment_url'],
       })
-      return
+      return { hasMore: false, nextOffset: null, processedCount: 0 }
   }
 }
 
@@ -226,16 +248,21 @@ async function migrateSiteAssets(
   supabaseAdmin: ReturnType<typeof createClient>,
   stats: SectionStats,
   failures: string[],
+  options: SectionRunOptions,
 ) {
+  const batchLimit = options.batchLimit ?? 50
   const result = await supabaseAdmin
     .from('site_assets')
     .select('id, storage_path, public_url')
     .not('storage_path', 'is', null)
+    .order('id', { ascending: true })
+    .range(options.batchOffset, options.batchOffset + batchLimit - 1)
   if (result.error) {
     throw result.error
   }
 
-  for (const row of result.data ?? []) {
+  const rows = result.data ?? []
+  for (const row of rows) {
     await handleRow(stats, failures, `site_assets:${row.id}`, async () => {
       const storagePath = row.storage_path?.trim()
       if (!storagePath) {
@@ -255,6 +282,12 @@ async function migrateSiteAssets(
       }
       stats.migrated += 1
     })
+  }
+
+  return {
+    hasMore: rows.length === batchLimit,
+    nextOffset: rows.length === batchLimit ? options.batchOffset + rows.length : null,
+    processedCount: rows.length,
   }
 }
 
@@ -459,35 +492,44 @@ async function uploadObjectToR2(
   bytes: Uint8Array,
   mimeType: string,
 ) {
-  const ticket = await createSignedPutUrl({
-    provider: 'r2',
-    bucket,
-    objectPath,
-    mimeType: mimeType || 'application/octet-stream',
-    supabaseAdmin,
-  })
-  if (!ticket.upload_url) {
-    throw new Error(`URL assinada ausente para ${bucket}/${objectPath}.`)
-  }
-  const headers: Record<string, string> = {
-    'Content-Type': mimeType || 'application/octet-stream',
-  }
-  for (const [key, value] of Object.entries(ticket.upload_headers ?? {})) {
-    const lowerKey = key.toLowerCase()
-    if (lowerKey === 'host' || lowerKey === 'content-length' || lowerKey === 'content-type') {
-      continue
+  let lastError: Error | null = null
+  for (let attempt = 1; attempt <= 3; attempt += 1) {
+    const ticket = await createSignedPutUrl({
+      provider: 'r2',
+      bucket,
+      objectPath,
+      mimeType: mimeType || 'application/octet-stream',
+      supabaseAdmin,
+    })
+    if (!ticket.upload_url) {
+      throw new Error(`URL assinada ausente para ${bucket}/${objectPath}.`)
     }
-    headers[key] = value
-  }
-  const response = await fetch(ticket.upload_url, {
-    method: 'PUT',
-    headers,
-    body: bytes,
-  })
-  if (!response.ok) {
+    const headers: Record<string, string> = {
+      'Content-Type': mimeType || 'application/octet-stream',
+    }
+    for (const [key, value] of Object.entries(ticket.upload_headers ?? {})) {
+      const lowerKey = key.toLowerCase()
+      if (lowerKey === 'host' || lowerKey === 'content-length' || lowerKey === 'content-type') {
+        continue
+      }
+      headers[key] = value
+    }
+    const response = await fetch(ticket.upload_url, {
+      method: 'PUT',
+      headers,
+      body: bytes,
+    })
+    if (response.ok) {
+      return
+    }
     const errorBody = await response.text().catch(() => '')
-    throw new Error(`Falha ao enviar ${bucket}/${objectPath} para R2 (${response.status}): ${errorBody}`)
+    lastError = new Error(`Falha ao enviar ${bucket}/${objectPath} para R2 (${response.status}): ${errorBody}`)
+    if (response.status < 500 || attempt === 3) {
+      throw lastError
+    }
+    await new Promise((resolve) => setTimeout(resolve, attempt * 1000))
   }
+  throw lastError ?? new Error(`Falha ao enviar ${bucket}/${objectPath} para R2.`)
 }
 
 async function migrateLessonContentPayloads(
@@ -630,8 +672,9 @@ async function handleRow(
 function getAccessToken(request: Request, body: Record<string, unknown>) {
   const authHeader = request.headers.get('Authorization')
   const fromHeader = authHeader?.replace(/^Bearer\s+/i, '').trim() ?? ''
+  const fromMaintenanceBody = typeof body?.maintenance_token === 'string' ? body.maintenance_token.trim() : ''
   const fromBody = typeof body?.service_role_key === 'string' ? body.service_role_key.trim() : ''
-  return fromBody || fromHeader
+  return fromMaintenanceBody || fromBody || fromHeader
 }
 
 function jsonResponse(request: Request, payload: unknown, status = 200) {

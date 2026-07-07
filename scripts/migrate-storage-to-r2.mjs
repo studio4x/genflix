@@ -65,16 +65,16 @@ const r2SecretAccessKey = process.env.R2_SECRET_ACCESS_KEY?.trim() ?? ''
 const r2Region = (process.env.R2_REGION ?? 'auto').trim() || 'auto'
 const dryRun = process.argv.includes('--dry-run')
 const remoteSections = [
-  'lesson_materials',
-  'module_pdfs',
-  'site_assets',
-  'assessment_assets',
-  'lesson_content_assets',
-  'lesson_footer_assets',
-  'profiles_avatar_url',
-  'courses_media_urls',
-  'support_ticket_attachments',
-  'support_message_attachments',
+  { name: 'lesson_materials' },
+  { name: 'module_pdfs' },
+  { name: 'site_assets', batchSize: 40 },
+  { name: 'assessment_assets' },
+  { name: 'lesson_content_assets' },
+  { name: 'lesson_footer_assets' },
+  { name: 'profiles_avatar_url' },
+  { name: 'courses_media_urls' },
+  { name: 'support_ticket_attachments' },
+  { name: 'support_message_attachments' },
 ]
 
 const supabaseAdmin = createClient(supabaseUrl, supabaseServiceRoleKey, {
@@ -744,24 +744,47 @@ await main()
 async function runRemoteBackfill() {
   process.stdout.write('Credenciais locais de escrita no R2 ausentes. Usando edge function operacional com os secrets do Supabase.\n')
   const anonKey = process.env.VITE_SUPABASE_ANON_KEY?.trim() || ''
-  for (const section of remoteSections) {
-    process.stdout.write(`\n[${section}] iniciando via edge function...\n`)
-    const response = await fetch(`${supabaseUrl}/functions/v1/admin-backfill-storage-r2`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(anonKey ? { apikey: anonKey } : {}),
-        Authorization: `Bearer ${supabaseServiceRoleKey}`,
-      },
-      body: JSON.stringify({
-        service_role_key: supabaseServiceRoleKey,
-        section,
-      }),
-    })
-    const payload = await response.json().catch(() => null)
-    if (!response.ok || !payload?.ok) {
-      throw new Error(payload?.error ?? `Falha ao executar backfill remoto da seção ${section}.`)
-    }
-    process.stdout.write(`${JSON.stringify(payload, null, 2)}\n`)
+  const maintenanceToken = process.env.BACKFILL_ADMIN_TOKEN?.trim() || process.env.SUPABASE_ACCESS_TOKEN?.trim() || ''
+  for (const sectionConfig of remoteSections) {
+    const section = sectionConfig.name
+    let batchOffset = 0
+    let batchNumber = 1
+
+    do {
+      const label = sectionConfig.batchSize
+        ? `${section} lote ${batchNumber} (offset ${batchOffset})`
+        : section
+      process.stdout.write(`\n[${label}] iniciando via edge function...\n`)
+
+      const response = await fetch(`${supabaseUrl}/functions/v1/admin-backfill-storage-r2`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(anonKey ? { apikey: anonKey } : {}),
+          Authorization: `Bearer ${supabaseServiceRoleKey}`,
+        },
+        body: JSON.stringify({
+          maintenance_token: maintenanceToken,
+          service_role_key: supabaseServiceRoleKey,
+          section,
+          ...(sectionConfig.batchSize ? {
+            batch_offset: batchOffset,
+            batch_limit: sectionConfig.batchSize,
+          } : {}),
+        }),
+      })
+      const payload = await response.json().catch(() => null)
+      if (!response.ok || !payload?.ok) {
+        throw new Error(payload?.error ?? `Falha ao executar backfill remoto da seção ${section}.`)
+      }
+      process.stdout.write(`${JSON.stringify(payload, null, 2)}\n`)
+
+      if (!sectionConfig.batchSize || !payload?.has_more) {
+        break
+      }
+
+      batchOffset = Number.isInteger(payload?.next_offset) ? Number(payload.next_offset) : batchOffset + sectionConfig.batchSize
+      batchNumber += 1
+    } while (true)
   }
 }

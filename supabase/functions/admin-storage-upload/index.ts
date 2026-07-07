@@ -79,7 +79,7 @@ async function handlePrepareUpload(request: Request, requestBody: Record<string,
     }
     const provider = resolveUploadProvider(requestBody?.provider);
     const bucket = resolveBucket(uploadKind);
-    const objectPath = buildObjectPath(entityId, fileName);
+    const objectPath = buildObjectPath(resolveObjectPrefix(uploadKind, entityId), fileName);
     const ticket = await createSignedPutUrl({
         provider,
         bucket,
@@ -114,6 +114,14 @@ async function handleDeleteObject(request: Request, requestBody: Record<string, 
         supabaseAdmin,
     });
     return jsonResponse(request, { ok: true });
+}
+
+function resolveObjectPrefix(uploadKind: UploadKind, entityId: string) {
+    const bucketPrefix = resolveBucket(uploadKind);
+    if (entityId === bucketPrefix || entityId.startsWith(`${bucketPrefix}/`)) {
+        return entityId;
+    }
+    return `${bucketPrefix}/${entityId}`;
 }
 
 function resolveBucket(uploadKind: UploadKind) {

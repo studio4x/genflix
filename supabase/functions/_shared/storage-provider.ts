@@ -29,6 +29,10 @@ export function sanitizeFileName(fileName: string) {
 export function buildObjectPath(prefix: string, fileName: string) {
     return `${prefix}/${crypto.randomUUID()}-${sanitizeFileName(fileName)}`;
 }
+function resolveR2BucketName(bucket: string) {
+    const configuredBucket = (Deno.env.get('R2_PRIVATE_BUCKET') ?? '').trim();
+    return configuredBucket || bucket;
+}
 export function getSignedGetTtlSeconds(defaultSeconds = 300) {
     const raw = Number.parseInt(Deno.env.get('R2_SIGNED_GET_EXPIRES_SECONDS') ?? '', 10);
     if (Number.isFinite(raw) && raw > 0) {
@@ -56,8 +60,9 @@ export function buildR2ObjectUrl(bucket: string, objectPath: string) {
         throw new Error('R2_S3_ENDPOINT no configurado.');
     }
     const normalizedEndpoint = endpoint.replace(/\/+$/, '');
+    const normalizedBucket = resolveR2BucketName(bucket);
     const normalizedPath = objectPath.replace(/^\/+/, '');
-    return `${normalizedEndpoint}/${bucket}/${normalizedPath}`;
+    return `${normalizedEndpoint}/${normalizedBucket}/${normalizedPath}`;
 }
 export async function createSignedPutUrl(input: {
     provider: StorageProvider;
@@ -84,7 +89,7 @@ export async function createSignedPutUrl(input: {
     }
     const signedRequest = await signR2Request({
         method: 'PUT',
-        bucket: input.bucket,
+        bucket: resolveR2BucketName(input.bucket),
         objectPath: input.objectPath,
         expiresInSeconds: getSignedPutTtlSeconds(600),
         headers: {
@@ -118,7 +123,7 @@ export async function createSignedGetUrl(input: {
     }
     const signedRequest = await signR2Request({
         method: 'GET',
-        bucket: input.bucket,
+        bucket: resolveR2BucketName(input.bucket),
         objectPath: input.objectPath,
         expiresInSeconds: input.expiresInSeconds,
     });
@@ -141,7 +146,7 @@ export async function deleteObject(input: {
     }
     const signedRequest = await signR2Request({
         method: 'DELETE',
-        bucket: input.bucket,
+        bucket: resolveR2BucketName(input.bucket),
         objectPath: input.objectPath,
         expiresInSeconds: 120,
     });
