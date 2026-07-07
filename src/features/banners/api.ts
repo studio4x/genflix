@@ -508,6 +508,14 @@ export async function createSiteBanner(locationKey: SiteBannerLocationKey = HOME
     await insertBannerVersion(banner, 'create', userId);
     return banner;
 }
+export async function createSiteBannerFromPrevious(locationKey: SiteBannerLocationKey = HOME_HERO_BANNER_LOCATION) {
+    const existing = await fetchSiteBanners(locationKey);
+    const previousBanner = existing.at(-1);
+    if (!previousBanner) {
+        return createSiteBanner(locationKey);
+    }
+    return duplicateSiteBanner(previousBanner);
+}
 export async function updateSiteBanner(input: UpdateSiteBannerInput) {
     const userId = await currentUserId();
     const payload: Record<string, unknown> = {

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowDown, ArrowUp, ChevronDown, Copy, Eye, EyeOff, Grip, History, ImagePlus, Layers, Maximize2, Monitor, Plus, Save, Smartphone, Trash2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { createSiteBanner, deleteSiteBannerCarouselTarget, deleteSiteBanner, duplicateSiteBanner, fetchSiteBannerLocations, fetchSiteBannerCarouselTargets, fetchSiteBanners, fetchSiteBannerVersions, reorderSiteBanners, restoreSiteBannerVersion, toggleSiteBannerActive, upsertSiteBannerCarouselTarget, updateSiteBanner, } from '@/features/banners/api';
+import { createSiteBanner, createSiteBannerFromPrevious, deleteSiteBannerCarouselTarget, deleteSiteBanner, duplicateSiteBanner, fetchSiteBannerLocations, fetchSiteBannerCarouselTargets, fetchSiteBanners, fetchSiteBannerVersions, reorderSiteBanners, restoreSiteBannerVersion, toggleSiteBannerActive, upsertSiteBannerCarouselTarget, updateSiteBanner, } from '@/features/banners/api';
 import { bannerThemeStyles } from '@/features/banners/presets';
 import { DESKTOP_BANNER_DESIGN_WIDTH, bannerElementLabels, bannerThemePresetOptions, bannerTonePresetOptions, cloneBannerElementStyles, cloneBannerLayout, type SiteBanner, type SiteBannerCarouselTarget, type SiteBannerPlacementKey, type SiteBannerCta, type SiteBannerColorKey, type SiteBannerElementStyle, type SiteBannerLayoutItem, type SiteBannerLayoutKey, type SiteBannerBackgroundPosition, type SiteBannerBackgroundRepeat, type SiteBannerBackgroundSize, type SiteBannerVersion, } from '@/features/banners/types';
 import { GenflixCtaButton } from '@/components/public/genflix-cta-button';
@@ -730,6 +730,22 @@ export function AdminBannersPage() {
             setSaving(false);
         }
     }
+    async function handleCreateBannerFromPrevious() {
+        setSaving(true);
+        setMessage(null);
+        setError(null);
+        try {
+            const created = await createSiteBannerFromPrevious(selectedLocationKey);
+            await loadBanners(created.id);
+            setMessage('Novo banner criado a partir do anterior. Troque a imagem e ajuste o que precisar.');
+        }
+        catch (createError) {
+            setError(createError instanceof Error ? createError.message : "N?o foi possvel criar o banner.");
+        }
+        finally {
+            setSaving(false);
+        }
+    }
     async function handleDuplicateBanner() {
         if (!selectedBanner) {
             return;
@@ -1327,6 +1343,8 @@ export function AdminBannersPage() {
                   {locationKeys.map((key) => (<option key={key} value={key}>{key}</option>))}
                 </select>
                 <Button type="button" variant="outline" onClick={() => void handleCreateCarousel()} className="h-9 rounded-xl border-[#D8E6EB] px-3 text-[10px] font-black uppercase tracking-[0.12em]">Novo carrossel
+                </Button>
+                <Button type="button" variant="outline" onClick={() => void handleCreateBannerFromPrevious()} disabled={saving} className="h-9 rounded-xl border-[#D8E6EB] px-3 text-[10px] font-black uppercase tracking-[0.12em]">Copiar anterior
                 </Button>
                 <Button type="button" onClick={() => void handleCreateBanner()} disabled={saving} className="h-9 rounded-xl bg-[#1398B7] px-3 text-[10px] font-black uppercase tracking-[0.12em] text-white hover:bg-[#1089A5]">Novo banner
                 </Button>
