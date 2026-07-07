@@ -6,6 +6,9 @@ const DEFAULT_DEV_ORIGINS = new Set([
     'http://127.0.0.1:4173',
     'http://127.0.0.1:5173',
 ]);
+const DEFAULT_PRODUCTION_ORIGINS = new Set([
+    'https://genflix-omega.vercel.app',
+]);
 const CORS_ALLOWED_HEADERS = 'authorization, x-client-info, apikey, content-type, cache-control, pragma, x-requested-with';
 function parseOriginsFromEnv(value: string | undefined) {
     return (value ?? '')
@@ -17,7 +20,10 @@ function stripTrailingSlash(value: string) {
     return value.endsWith('/') ? value.slice(0, -1) : value;
 }
 function buildAllowedOrigins() {
-    const allowed = new Set<string>(DEFAULT_DEV_ORIGINS);
+    const allowed = new Set<string>([
+        ...DEFAULT_DEV_ORIGINS,
+        ...DEFAULT_PRODUCTION_ORIGINS,
+    ]);
     const appPublicUrl = stripTrailingSlash((Deno.env.get('APP_PUBLIC_URL') ?? '').trim());
     if (appPublicUrl) {
         allowed.add(appPublicUrl);
