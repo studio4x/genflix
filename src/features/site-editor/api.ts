@@ -3,6 +3,31 @@ import { deleteStorageObject, prepareStorageUpload, uploadFileWithTicket } from 
 import { defaultSiteEditorSettings, type SiteAsset, type SiteContentEntry, type SiteContentEntryType, type SitePageVersion, type SitePageVersionEntrySnapshot, type SiteContentVersion, type SiteEditorSettings, type SitePageKey, } from '@/features/site-editor/types';
 import { createSiteEditorWorkspaceKey, getDefaultWorkspaceRecord, sortWorkspaceComments, type SiteEditorWorkflowStatus, type SiteEditorWorkspaceComment, type SiteEditorWorkspaceMap, type SiteEditorWorkspaceRecord, } from '@/features/site-editor/collaboration';
 const SITE_ASSETS_BUCKET = 'site-assets';
+
+export function buildSiteAssetPublicUrl(storagePath: string) {
+    const normalizedStoragePath = storagePath.trim();
+    const supabaseUrl = (import.meta.env.VITE_SUPABASE_URL as string | undefined)?.trim() ?? '';
+    if (!normalizedStoragePath || !supabaseUrl) {
+        return '';
+    }
+    return `${supabaseUrl}/functions/v1/public-site-asset?storage_path=${encodeURIComponent(normalizedStoragePath)}`;
+}
+
+export function resolveSiteAssetPublicUrl(asset: Pick<SiteAsset, 'storage_path' | 'public_url'>) {
+    const proxiedUrl = buildSiteAssetPublicUrl(asset.storage_path);
+    if (proxiedUrl) {
+        return proxiedUrl;
+    }
+    return typeof asset.public_url === 'string' ? asset.public_url.trim() || null : null;
+}
+
+export function normalizeSiteAssetRecord(asset: SiteAsset): SiteAsset {
+    return {
+        ...asset,
+        public_url: resolveSiteAssetPublicUrl(asset),
+    };
+}
+
 type WorkspaceRecordRow = {
     id: string;
     page_key: SitePageKey;
@@ -316,11 +341,12 @@ export async function uploadSiteAsset(file: File, metadata: {
     });
     await uploadFileWithTicket(ticket, file);
     const { data: sessionData } = await supabase.auth.getSession();
+    const persistedPublicUrl = buildSiteAssetPublicUrl(ticket.upload_path) || ticket.public_url;
     const { data, error } = await supabase
         .from('site_assets')
         .insert({
         storage_path: ticket.upload_path,
-        public_url: ticket.public_url,
+        public_url: persistedPublicUrl,
         alt: metadata.alt ?? file.name,
         mime_type: file.type || null,
         file_size: file.size,
@@ -341,7 +367,7 @@ export async function uploadSiteAsset(file: File, metadata: {
         });
         throw error;
     }
-    return data as SiteAsset;
+    return normalizeSiteAssetRecord(data as SiteAsset);
 }
 export async function fetchSiteAssets(limit = 24) {
     const { data, error } = await supabase
@@ -352,7 +378,7 @@ export async function fetchSiteAssets(limit = 24) {
     if (error) {
         throw error;
     }
-    return (data ?? []) as SiteAsset[];
+    return ((data ?? []) as SiteAsset[]).map(normalizeSiteAssetRecord);
 }
 export async function deleteSiteAsset(input: Pick<SiteAsset, 'id' | 'storage_path'>) {
     await deleteStorageObject({

@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { AlertTriangle, Copy, Eye, EyeOff, ExternalLink, Filter, History, Loader2, MessageSquare, RotateCcw, Save, Search, ShieldCheck, Trash2, Type, Upload } from 'lucide-react';
 import JSZip from 'jszip';
 import { Button } from '@/components/ui/button';
-import { clearPageOverrides, clearSiteContentEntryOverride, createSitePageVersion, deleteSiteAsset, disableSiteEditorOverrides, fetchSitePageVersions, fetchSiteEditorWorkspace, fetchSiteContentVersions, fetchSiteEditorSettings, restoreSitePageVersion, restoreSiteContentVersion, saveSiteContentEntry, uploadSiteAsset, updateSiteEditorSettings, } from '@/features/site-editor/api';
+import { clearPageOverrides, clearSiteContentEntryOverride, createSitePageVersion, deleteSiteAsset, disableSiteEditorOverrides, fetchSitePageVersions, fetchSiteEditorWorkspace, fetchSiteContentVersions, fetchSiteEditorSettings, normalizeSiteAssetRecord, restoreSitePageVersion, restoreSiteContentVersion, saveSiteContentEntry, uploadSiteAsset, updateSiteEditorSettings, } from '@/features/site-editor/api';
 import type { SiteAsset, SiteContentEntry, SiteContentVersion, SiteEditorSettings, SitePageKey, SitePageVersion } from '@/features/site-editor/types';
 import { defaultSiteEditorSettings } from '@/features/site-editor/types';
 import { createSiteEditorWorkspaceKey, formatWorkflowStatus, type SiteEditorWorkspaceMap, } from '@/features/site-editor/collaboration';
@@ -283,7 +283,7 @@ export function AdminSiteEditorPage() {
                 .limit(240);
             if (error)
                 throw error;
-            setIconLibraryAssets((data ?? []) as SiteAsset[]);
+            setIconLibraryAssets(((data ?? []) as SiteAsset[]).map(normalizeSiteAssetRecord));
         }
         catch {
             setIconLibraryAssets([]);

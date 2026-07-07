@@ -1,4 +1,5 @@
 import { supabase } from '@/services/supabase/client';
+import { resolveSiteAssetPublicUrl } from '@/features/site-editor/api';
 import { brandingEntryKeys, defaultSiteBranding, isBrandingAssetValue, pdfWatermarkSettingsDefaults, type BrandingAssetValue, type BrandingSlotKey, type PdfWatermarkSettings, type PdfWatermarkSettingsView, type SiteBranding, } from '@/features/branding/types';
 const brandingKeyByEntry = Object.entries(brandingEntryKeys).reduce<Record<string, BrandingSlotKey>>((accumulator, [slotKey, entryKey]) => {
     accumulator[entryKey] = slotKey as BrandingSlotKey;
@@ -59,17 +60,21 @@ async function resolvePdfWatermarkLogo(logoAssetId: string | null): Promise<Bran
     }
     const { data, error } = await supabase
         .from('site_assets')
-        .select('id, public_url, alt, mime_type')
+        .select('id, storage_path, public_url, alt, mime_type')
         .eq('id', logoAssetId)
         .maybeSingle();
     if (error || !data) {
         return null;
     }
-    if (!data.public_url) {
+    const resolvedPublicUrl = resolveSiteAssetPublicUrl({
+        storage_path: typeof (data as { storage_path?: string | null }).storage_path === 'string' ? (data as { storage_path?: string }).storage_path ?? '' : '',
+        public_url: data.public_url,
+    });
+    if (!resolvedPublicUrl) {
         return null;
     }
     return createBrandingAssetValue({
-        src: data.public_url,
+        src: resolvedPublicUrl,
         alt: data.alt ?? null,
         assetId: data.id,
         mimeType: data.mime_type,
