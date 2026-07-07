@@ -6,6 +6,10 @@
   "installCommand": "npm install",
   "rewrites": [
     {
+      "source": "/api/public/site-asset",
+      "destination": "https://axhlkilkqolvfecyhhxx.supabase.co/functions/v1/public-site-asset"
+    },
+    {
       "source": "/((?!api/).*)",
       "destination": "/index.html"
     }
