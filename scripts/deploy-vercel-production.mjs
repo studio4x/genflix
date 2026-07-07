@@ -23,15 +23,27 @@ function loadEnvFile(filePath) {
       continue
     }
     const key = trimmed.slice(0, separatorIndex).trim()
-    const value = trimmed.slice(separatorIndex + 1)
+    const value = parseEnvValue(trimmed.slice(separatorIndex + 1))
     if (!process.env[key]) {
       process.env[key] = value
     }
   }
 }
 
-function ensureSpaFallbackRoute() {
-  const configPath = join(process.cwd(), '.vercel', 'output', 'config.json')
+function parseEnvValue(value) {
+  const trimmed = value.trim()
+  if (trimmed.length >= 2) {
+    const first = trimmed[0]
+    const last = trimmed[trimmed.length - 1]
+    if ((first === '"' && last === '"') || (first === "'" && last === "'")) {
+      return trimmed.slice(1, -1)
+    }
+  }
+  return trimmed
+}
+
+function ensureSpaFallbackRoute(workspace = process.cwd()) {
+  const configPath = join(workspace, '.vercel', 'output', 'config.json')
 
   if (!existsSync(configPath)) {
     return
@@ -52,6 +64,41 @@ function ensureSpaFallbackRoute() {
   ]
 
   writeFileSync(configPath, `${JSON.stringify(config, null, 2)}\n`)
+}
+
+function shouldCopyBuildWorkspace(relativePath) {
+  const normalized = relativePath.replace(/\\/g, '/')
+  if (!normalized) {
+    return true
+  }
+  if (normalized === '.git' || normalized.startsWith('.git/')) {
+    return false
+  }
+  if (normalized === 'node_modules' || normalized.startsWith('node_modules/')) {
+    return false
+  }
+  if (normalized === 'dist' || normalized.startsWith('dist/')) {
+    return false
+  }
+  if (normalized === 'supabase' || normalized.startsWith('supabase/')) {
+    return false
+  }
+  if (normalized === '.vercel/output' || normalized.startsWith('.vercel/output/')) {
+    return false
+  }
+  return true
+}
+
+function createBuildWorkspace() {
+  const tempWorkspace = mkdtempSync(join(tmpdir(), 'genflix-vercel-build-'))
+  cpSync(process.cwd(), tempWorkspace, {
+    recursive: true,
+    filter: (_source, destination) => {
+      const relativeDestination = destination.slice(tempWorkspace.length).replace(/^[/\\]+/, '')
+      return shouldCopyBuildWorkspace(relativeDestination)
+    },
+  })
+  return tempWorkspace
 }
 
 loadEnvFile(join(process.cwd(), '.env'))
@@ -242,77 +289,83 @@ async function main() {
 
   const headSha = getGitHeadSha()
   const canonicalDomain = canonicalProductionUrl.replace(/^https?:\/\//, '').replace(/\/+$/, '')
-
-  process.stdout.write('Gerando output prebuilt da Vercel sem bump adicional de build...\n')
-  run(npxCommand, withVercelAuthArgs([vercelCliPackage, 'build', '--prod']), {
-    env: {
-      CI: 'true',
-      VERCEL_DEPLOY_PREBUILT: '1',
-      NODE_ENV: 'development',
-      NPM_CONFIG_PRODUCTION: 'false',
-      NPM_CONFIG_INCLUDE: 'dev',
-    },
-  })
-
-  ensureSpaFallbackRoute()
-
-  process.stdout.write(`Publicando output prebuilt em producao na Vercel pelo projeto canonico (${vercelScope})...\n`)
-  const tempWorkspace = mkdtempSync(join(tmpdir(), 'genflix-vercel-'))
+  const buildWorkspace = createBuildWorkspace()
 
   try {
-    const tempOutputDir = join(tempWorkspace, '.vercel', 'output')
-    cpSync(join(process.cwd(), '.vercel', 'output'), tempOutputDir, { recursive: true })
-
-    const deployResult = run(npxCommand, withVercelAuthArgs([
-      vercelCliPackage,
-      'deploy',
-      '--prebuilt',
-      '--prod',
-      '--yes',
-      '--archive=tgz',
-      '--meta',
-      `githubCommitSha=${headSha}`,
-      '--meta',
-      `gitCommitSha=${headSha}`,
-    ]), {
-      captureOutput: true,
-      cwd: tempWorkspace,
+    process.stdout.write('Gerando output prebuilt da Vercel sem bump adicional de build...\n')
+    run(npxCommand, withVercelAuthArgs([vercelCliPackage, 'build', '--prod']), {
+      cwd: buildWorkspace,
+      env: {
+        CI: 'true',
+        VERCEL_DEPLOY_PREBUILT: '1',
+        NODE_ENV: 'development',
+        NPM_CONFIG_PRODUCTION: 'false',
+        NPM_CONFIG_INCLUDE: 'dev',
+      },
     })
 
-    if (deployResult.status !== 0) {
+    ensureSpaFallbackRoute(buildWorkspace)
+
+    process.stdout.write(`Publicando output prebuilt em producao na Vercel pelo projeto canonico (${vercelScope})...\n`)
+    const tempWorkspace = mkdtempSync(join(tmpdir(), 'genflix-vercel-'))
+
+    try {
+      const tempOutputDir = join(tempWorkspace, '.vercel', 'output')
+      cpSync(join(buildWorkspace, '.vercel', 'output'), tempOutputDir, { recursive: true })
+
+      const deployResult = run(npxCommand, withVercelAuthArgs([
+        vercelCliPackage,
+        'deploy',
+        '--prebuilt',
+        '--prod',
+        '--yes',
+        '--archive=tgz',
+        '--meta',
+        `githubCommitSha=${headSha}`,
+        '--meta',
+        `gitCommitSha=${headSha}`,
+      ]), {
+        captureOutput: true,
+        cwd: tempWorkspace,
+      })
+
+      if (deployResult.status !== 0) {
+        process.stdout.write(deployResult.stdout ?? '')
+        process.stderr.write(deployResult.stderr ?? '')
+        process.exit(deployResult.status ?? 1)
+      }
+
       process.stdout.write(deployResult.stdout ?? '')
       process.stderr.write(deployResult.stderr ?? '')
-      process.exit(deployResult.status ?? 1)
+
+      const deploymentHost = extractDeploymentHost(deployResult.stdout ?? '')
+      const deployment = deploymentHost
+        ? await waitForDeploymentReadyByHost(deploymentHost)
+        : await waitForDeploymentBySha(headSha)
+      const deploymentUrl = `https://${deployment.url}`
+
+      if (!canonicalDomain) {
+        throw new Error('APP_PUBLIC_URL nao configurado; nao foi possivel validar alias canonico.')
+      }
+
+      process.stdout.write(`Atualizando alias canonico ${canonicalDomain} -> ${deploymentUrl}\n`)
+      run(npxCommand, withVercelAuthArgs([vercelCliPackage, 'alias', 'set', deploymentUrl, canonicalDomain]), {
+        cwd: tempWorkspace,
+      })
+
+      await ensureAliasPointsTo(deploymentUrl, canonicalDomain)
+
+      const currentDeployment = await getLatestProductionDeployment()
+      if (!currentDeployment || currentDeployment.meta?.githubCommitSha !== headSha || currentDeployment.readyState !== 'READY') {
+        throw new Error(`Falha ao validar deployment atual. Esperado SHA ${headSha}, encontrado ${currentDeployment?.meta?.githubCommitSha ?? 'desconhecido'}.`)
+      }
+
+      process.stdout.write(`Deploy confirmado para ${deploymentUrl} com alias ${canonicalDomain}\n`)
+    } finally {
+      rmSync(tempWorkspace, { recursive: true, force: true })
     }
-
-    process.stdout.write(deployResult.stdout ?? '')
-    process.stderr.write(deployResult.stderr ?? '')
-
-    const deploymentHost = extractDeploymentHost(deployResult.stdout ?? '')
-    const deployment = deploymentHost
-      ? await waitForDeploymentReadyByHost(deploymentHost)
-      : await waitForDeploymentBySha(headSha)
-    const deploymentUrl = `https://${deployment.url}`
-
-    if (!canonicalDomain) {
-      throw new Error('APP_PUBLIC_URL nao configurado; nao foi possivel validar alias canonico.')
-    }
-
-    process.stdout.write(`Atualizando alias canonico ${canonicalDomain} -> ${deploymentUrl}\n`)
-    run(npxCommand, withVercelAuthArgs([vercelCliPackage, 'alias', 'set', deploymentUrl, canonicalDomain]), {
-      cwd: tempWorkspace,
-    })
-
-    await ensureAliasPointsTo(deploymentUrl, canonicalDomain)
-
-    const currentDeployment = await getLatestProductionDeployment()
-    if (!currentDeployment || currentDeployment.meta?.githubCommitSha !== headSha || currentDeployment.readyState !== 'READY') {
-      throw new Error(`Falha ao validar deployment atual. Esperado SHA ${headSha}, encontrado ${currentDeployment?.meta?.githubCommitSha ?? 'desconhecido'}.`)
-    }
-
-    process.stdout.write(`Deploy confirmado para ${deploymentUrl} com alias ${canonicalDomain}\n`)
   } finally {
-    rmSync(tempWorkspace, { recursive: true, force: true })
+    rmSync(buildWorkspace, { recursive: true, force: true })
   }
 }
 

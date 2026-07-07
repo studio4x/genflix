@@ -19,11 +19,23 @@ function loadEnvFile(filePath) {
       continue
     }
     const key = trimmed.slice(0, separatorIndex).trim()
-    const value = trimmed.slice(separatorIndex + 1)
+    const value = parseEnvValue(trimmed.slice(separatorIndex + 1))
     if (!process.env[key]) {
       process.env[key] = value
     }
   }
+}
+
+function parseEnvValue(value) {
+  const trimmed = value.trim()
+  if (trimmed.length >= 2) {
+    const first = trimmed[0]
+    const last = trimmed[trimmed.length - 1]
+    if ((first === '"' && last === '"') || (first === "'" && last === "'")) {
+      return trimmed.slice(1, -1)
+    }
+  }
+  return trimmed
 }
 
 loadEnvFile(join(process.cwd(), '.env'))
