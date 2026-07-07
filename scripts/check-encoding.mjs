@@ -18,7 +18,21 @@ const TEXT_FILE_EXTENSIONS = new Set([
 ])
 
 function listChangedFiles() {
-  const output = execSync('git status --porcelain', { encoding: 'utf8' })
+  if (process.env.HCM_SKIP_GIT_CHANGED_FILES === '1') {
+    return []
+  }
+
+  let output = ''
+  try {
+    output = execSync('git status --porcelain', { encoding: 'utf8' })
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error)
+    if (message.includes('not a git repository')) {
+      return []
+    }
+    throw error
+  }
+
   return output
     .split(/\r?\n/)
     .map((line) => line.trimEnd())
