@@ -66,8 +66,47 @@ function formatUsd(value: number) {
         maximumFractionDigits: 2,
     }).format(value);
 }
+function resolveFileExtension(key: string) {
+    const normalizedKey = key.toLowerCase().split('?')[0] ?? '';
+    const fileName = normalizedKey.split('/').pop() ?? normalizedKey;
+    const extension = fileName.includes('.') ? fileName.split('.').pop() ?? '' : '';
+    return extension.trim();
+}
 function isImageObjectKey(key: string) {
     return /\.(png|jpe?g|gif|webp|avif|bmp|svg)$/i.test(key);
+}
+type FileTypeFilter = 'all' | 'image' | 'video' | 'audio' | 'document' | 'archive' | 'other';
+const FILE_TYPE_FILTERS: Array<{
+    value: FileTypeFilter;
+    label: string;
+}> = [
+    { value: 'all', label: 'Todos' },
+    { value: 'image', label: 'Imagens' },
+    { value: 'video', label: 'Videos' },
+    { value: 'audio', label: 'Audios' },
+    { value: 'document', label: 'Documentos' },
+    { value: 'archive', label: 'Compactados' },
+    { value: 'other', label: 'Outros' },
+];
+const FILES_PER_PAGE_OPTIONS = [12, 24, 50, 100] as const;
+function resolveFileType(key: string): Exclude<FileTypeFilter, 'all'> {
+    const extension = resolveFileExtension(key);
+    if (['png', 'jpg', 'jpeg', 'gif', 'webp', 'avif', 'bmp', 'svg'].includes(extension)) {
+        return 'image';
+    }
+    if (['mp4', 'webm', 'mov', 'avi', 'mkv', 'm4v'].includes(extension)) {
+        return 'video';
+    }
+    if (['mp3', 'wav', 'ogg', 'm4a', 'aac', 'flac'].includes(extension)) {
+        return 'audio';
+    }
+    if (['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'txt', 'csv', 'json', 'xml', 'md'].includes(extension)) {
+        return 'document';
+    }
+    if (['zip', 'rar', '7z', 'tar', 'gz'].includes(extension)) {
+        return 'archive';
+    }
+    return 'other';
 }
 export function AdminR2StoragePage() {
     const [activeTab, setActiveTab] = useState<ActiveTab>('overview');
@@ -84,6 +123,9 @@ export function AdminR2StoragePage() {
     const [objectsError, setObjectsError] = useState<string | null>(null);
     const [nextToken, setNextToken] = useState<string | null>(null);
     const [deletingKey, setDeletingKey] = useState<string | null>(null);
+    const [fileTypeFilter, setFileTypeFilter] = useState<FileTypeFilter>('all');
+    const [currentFilesPage, setCurrentFilesPage] = useState(1);
+    const [filesPerPage, setFilesPerPage] = useState<number>(24);
     async function loadData(mode: 'initial' | 'refresh' = 'initial') {
         if (mode === 'initial') {
             setLoading(true);
@@ -161,6 +203,32 @@ export function AdminR2StoragePage() {
             subtotalKnown,
         };
     }, [overview]);
+    const fileTypeCounts = useMemo(() => {
+        const counts: Record<FileTypeFilter, number> = {
+            all: objects.length,
+            image: 0,
+            video: 0,
+            audio: 0,
+            document: 0,
+            archive: 0,
+            other: 0,
+        };
+        for (const objectRow of objects) {
+            counts[resolveFileType(objectRow.key)] += 1;
+        }
+        return counts;
+    }, [objects]);
+    const filteredObjects = useMemo(() => {
+        if (fileTypeFilter === 'all') {
+            return objects;
+        }
+        return objects.filter((objectRow) => resolveFileType(objectRow.key) === fileTypeFilter);
+    }, [fileTypeFilter, objects]);
+    const totalFilesPages = Math.max(1, Math.ceil(filteredObjects.length / filesPerPage));
+    const paginatedObjects = useMemo(() => {
+        const startIndex = (currentFilesPage - 1) * filesPerPage;
+        return filteredObjects.slice(startIndex, startIndex + filesPerPage);
+    }, [currentFilesPage, filesPerPage, filteredObjects]);
     async function loadObjects(options?: {
         append?: boolean;
         continuationToken?: string | null;
@@ -199,6 +267,15 @@ export function AdminR2StoragePage() {
             }
         }
     }
+    useEffect(() => {
+        setCurrentFilesPage(1);
+    }, [selectedBucket, appliedPrefix, fileTypeFilter, filesPerPage]);
+    useEffect(() => {
+        if (currentFilesPage <= totalFilesPages) {
+            return;
+        }
+        setCurrentFilesPage(totalFilesPages);
+    }, [currentFilesPage, totalFilesPages]);
     useEffect(() => {
         if (activeTab !== 'files' || !selectedBucket) {
             return;
@@ -469,23 +546,50 @@ ${objectKey}`);
             </Button>
           </div>
 
+          <div className="flex flex-col gap-3 rounded-[20px] border border-[#D8E6EB] bg-[#F8FBFC] p-4">
+            <div className="flex flex-wrap gap-2">
+              {FILE_TYPE_FILTERS.map((filterOption) => (<button key={filterOption.value} type="button" onClick={() => setFileTypeFilter(filterOption.value)} className={`rounded-full px-3 py-2 text-xs font-black uppercase tracking-[0.12em] transition ${fileTypeFilter === filterOption.value
+                        ? 'bg-[#15323B] text-white'
+                        : 'bg-white text-[#15323B] hover:bg-[#EDF5F7]'}`}>
+                  {filterOption.label} ({formatNumber(fileTypeCounts[filterOption.value])})
+                </button>))}
+            </div>
+
+            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+              <div className="text-sm font-semibold text-[#5F7077]">
+                {filteredObjects.length === 0 ? 'Nenhum arquivo carregado para este tipo.' : `Exibindo ${formatNumber(paginatedObjects.length)} de ${formatNumber(filteredObjects.length)} arquivos carregados.`}
+                {nextToken ? ' Ainda existem mais arquivos no bucket para carregar.' : ''}
+              </div>
+
+              <label className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.12em] text-[#5F7077]">
+                <span>Itens por pagina</span>
+                <select value={String(filesPerPage)} onChange={(event) => setFilesPerPage(Number(event.target.value))} className="h-10 rounded-xl border border-[#D8E6EB] bg-white px-3 text-sm font-semibold text-[#15323B]">
+                  {FILES_PER_PAGE_OPTIONS.map((option) => (<option key={option} value={option}>
+                      {option}
+                    </option>))}
+                </select>
+              </label>
+            </div>
+          </div>
+
           {objectsError ? (<div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">
               {objectsError}
             </div>) : null}
 
-          {objectsLoading ? (<p className="text-sm font-semibold text-[#5F7077]">Carregando arquivos...</p>) : objects.length === 0 ? (<p className="text-sm font-semibold text-[#5F7077]">Nenhum arquivo encontrado para este filtro.</p>) : (<div className="overflow-x-auto">
+          {objectsLoading ? (<p className="text-sm font-semibold text-[#5F7077]">Carregando arquivos...</p>) : filteredObjects.length === 0 ? (<p className="text-sm font-semibold text-[#5F7077]">Nenhum arquivo encontrado para este filtro.</p>) : (<div className="overflow-x-auto">
               <table className="min-w-full border-separate border-spacing-y-2">
                 <thead>
                   <tr className="text-left text-[11px] font-black uppercase tracking-[0.14em] text-[#5F7077]">
                     <th className="px-3 py-2">Prévia</th>
                     <th className="px-3 py-2">Arquivo</th>
+                    <th className="px-3 py-2">Tipo</th>
                     <th className="px-3 py-2">Tamanho</th>
                     <th className="px-3 py-2">Ultima alteracao</th>
                     <th className="px-3 py-2 text-right">Acao</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {objects.map((objectRow) => (<tr key={objectRow.key} className="rounded-2xl bg-[#F8FBFC] text-sm font-semibold text-[#163138]">
+                  {paginatedObjects.map((objectRow) => (<tr key={objectRow.key} className="rounded-2xl bg-[#F8FBFC] text-sm font-semibold text-[#163138]">
                       <td className="rounded-l-2xl px-3 py-3">
                         {isImageObjectKey(objectRow.key) && objectRow.preview_url ? (<a href={objectRow.preview_url} target="_blank" rel="noreferrer" className="block">
                             <img src={objectRow.preview_url} alt={objectRow.key} className="h-14 w-14 rounded-xl border border-[#D8E6EB] object-cover"/>
@@ -495,6 +599,11 @@ ${objectKey}`);
                       </td>
                       <td className="px-3 py-3">
                         <p className="font-black text-[#15323B] break-all">{objectRow.key}</p>
+                      </td>
+                      <td className="px-3 py-3">
+                        <span className="inline-flex rounded-full bg-white px-3 py-1 text-[11px] font-black uppercase tracking-[0.12em] text-[#15323B]">
+                          {FILE_TYPE_FILTERS.find((filterOption) => filterOption.value === resolveFileType(objectRow.key))?.label ?? 'Outros'}
+                        </span>
                       </td>
                       <td className="px-3 py-3">{formatBytes(objectRow.size_bytes)}</td>
                       <td className="px-3 py-3">{formatDate(objectRow.last_modified ?? '')}</td>
@@ -509,9 +618,21 @@ ${objectKey}`);
               </table>
             </div>)}
 
-          {nextToken ? (<div className="pt-2">
-              <Button type="button" variant="outline" className="h-10 rounded-xl border-[#BEE3EA] bg-white px-4 font-black text-[#15323B] hover:bg-[#F2F7F9]" disabled={objectsLoadingMore} onClick={() => void loadObjects({ append: true, continuationToken: nextToken })}>
-                {objectsLoadingMore ? 'Carregando...' : 'Carregar mais'}
+          {(filteredObjects.length > 0 || nextToken) ? (<div className="flex flex-col gap-3 pt-2 md:flex-row md:items-center md:justify-between">
+              <div className="flex items-center gap-2">
+                <Button type="button" variant="outline" className="h-10 rounded-xl border-[#BEE3EA] bg-white px-4 font-black text-[#15323B] hover:bg-[#F2F7F9]" disabled={currentFilesPage <= 1} onClick={() => setCurrentFilesPage((previous) => Math.max(1, previous - 1))}>
+                  Anterior
+                </Button>
+                <div className="rounded-xl border border-[#D8E6EB] bg-[#F8FBFC] px-4 py-2 text-sm font-black text-[#15323B]">
+                  Pagina {formatNumber(currentFilesPage)} de {formatNumber(totalFilesPages)}
+                </div>
+                <Button type="button" variant="outline" className="h-10 rounded-xl border-[#BEE3EA] bg-white px-4 font-black text-[#15323B] hover:bg-[#F2F7F9]" disabled={currentFilesPage >= totalFilesPages} onClick={() => setCurrentFilesPage((previous) => Math.min(totalFilesPages, previous + 1))}>
+                  Proxima
+                </Button>
+              </div>
+
+              <Button type="button" variant="outline" className="h-10 rounded-xl border-[#BEE3EA] bg-white px-4 font-black text-[#15323B] hover:bg-[#F2F7F9]" disabled={!nextToken || objectsLoadingMore} onClick={() => void loadObjects({ append: true, continuationToken: nextToken })}>
+                {objectsLoadingMore ? 'Carregando...' : nextToken ? 'Carregar mais do bucket' : 'Todos os arquivos carregados'}
               </Button>
             </div>) : null}
         </section>)}
