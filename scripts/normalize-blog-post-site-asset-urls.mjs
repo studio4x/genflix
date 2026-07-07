@@ -69,7 +69,7 @@ function normalizeSiteAssetStoragePath(value) {
   if (!normalized.includes('/')) {
     return ''
   }
-  return `${SITE_ASSET_BUCKET}/${normalized}`
+  return normalized
 }
 
 function extractSiteAssetStoragePathFromProxyUrl(parsedUrl, supabaseUrl) {
@@ -212,13 +212,61 @@ const report = {
   failures: [],
 }
 
+const siteAssetPathCache = new Map()
+
 function toComparableValue(value) {
   return trimToNull(value)
 }
 
-function maybeAssignNormalizedUrl(target, field, rawValue) {
+async function resolveCanonicalSiteAssetPath(rawValue) {
   const currentValue = toComparableValue(rawValue)
-  const normalizedValue = normalizeSiteAssetPublicUrl(currentValue, publicAppUrl)
+  if (!currentValue) {
+    return null
+  }
+  const extractedPath = extractSiteAssetStoragePathFromUrl(currentValue, supabaseUrl)
+  if (!extractedPath) {
+    return null
+  }
+  const cacheKey = extractedPath
+  if (siteAssetPathCache.has(cacheKey)) {
+    return siteAssetPathCache.get(cacheKey)
+  }
+
+  const candidates = Array.from(new Set([
+    extractedPath,
+    extractedPath.startsWith(`${SITE_ASSET_BUCKET}/`) ? extractedPath.slice(SITE_ASSET_BUCKET.length + 1) : `${SITE_ASSET_BUCKET}/${extractedPath}`,
+  ].filter(Boolean)))
+
+  const result = await supabaseAdmin
+    .from('site_assets')
+    .select('storage_path')
+    .in('storage_path', candidates)
+    .limit(candidates.length)
+
+  if (result.error) {
+    throw result.error
+  }
+
+  const rows = result.data ?? []
+  let canonicalPath = extractedPath
+  for (const candidate of candidates) {
+    const match = rows.find((row) => row.storage_path === candidate)
+    if (match?.storage_path) {
+      canonicalPath = match.storage_path
+      break
+    }
+  }
+
+  siteAssetPathCache.set(cacheKey, canonicalPath)
+  return canonicalPath
+}
+
+async function maybeAssignNormalizedUrl(target, field, rawValue) {
+  const currentValue = toComparableValue(rawValue)
+  const canonicalPath = await resolveCanonicalSiteAssetPath(currentValue)
+  const normalizedValue = canonicalPath
+    ? buildSiteAssetPublicUrl(canonicalPath, publicAppUrl)
+    : normalizeSiteAssetPublicUrl(currentValue, publicAppUrl)
   if (normalizedValue !== currentValue) {
     target[field] = normalizedValue
     return true
@@ -242,9 +290,9 @@ async function updateBlogPostsPage(from, to) {
     report.blogPostsScanned += 1
     const updates = {}
     const changed = [
-      maybeAssignNormalizedUrl(updates, 'image_url', row.image_url),
-      maybeAssignNormalizedUrl(updates, 'card_image_url', row.card_image_url),
-      maybeAssignNormalizedUrl(updates, 'seo_og_image_url', row.seo_og_image_url),
+      await maybeAssignNormalizedUrl(updates, 'image_url', row.image_url),
+      await maybeAssignNormalizedUrl(updates, 'card_image_url', row.card_image_url),
+      await maybeAssignNormalizedUrl(updates, 'seo_og_image_url', row.seo_og_image_url),
     ].some(Boolean)
 
     if (!changed) {
@@ -293,9 +341,9 @@ async function updateRevisionSnapshotsPage(from, to) {
     }
 
     let changed = false
-    changed = maybeAssignNormalizedUrl(snapshot, 'cover_image_url', snapshot.cover_image_url) || changed
-    changed = maybeAssignNormalizedUrl(snapshot, 'card_image_url', snapshot.card_image_url) || changed
-    changed = maybeAssignNormalizedUrl(snapshot, 'seo_og_image_url', snapshot.seo_og_image_url) || changed
+    changed = await maybeAssignNormalizedUrl(snapshot, 'cover_image_url', snapshot.cover_image_url) || changed
+    changed = await maybeAssignNormalizedUrl(snapshot, 'card_image_url', snapshot.card_image_url) || changed
+    changed = await maybeAssignNormalizedUrl(snapshot, 'seo_og_image_url', snapshot.seo_og_image_url) || changed
 
     if (!changed) {
       continue

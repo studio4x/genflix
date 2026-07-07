@@ -42,16 +42,19 @@ Deno.serve(async (request) => {
 
         const supabaseAdmin = createClient(supabaseUrl, supabaseServiceRoleKey);
         const asset = await findSiteAsset(supabaseAdmin, { storagePath, assetId });
+        const resolvedStoragePath = asset?.storage_path ?? resolveFallbackStoragePath(storagePath);
 
-        if (!asset) {
+        if (!resolvedStoragePath) {
             return jsonResponse({ error: 'Asset nao encontrado.' }, 404);
         }
 
-        const provider = inferSiteAssetProvider(asset.public_url);
+        const provider = asset
+            ? inferSiteAssetProvider(asset.public_url)
+            : resolveStorageProvider('r2');
         const signedUrl = await createSignedGetUrl({
             provider,
             bucket: SITE_ASSETS_BUCKET,
-            objectPath: asset.storage_path,
+            objectPath: resolvedStoragePath,
             expiresInSeconds: getSignedGetTtlSeconds(300),
             supabaseAdmin,
         });
@@ -75,22 +78,66 @@ async function findSiteAsset(supabaseAdmin: ReturnType<typeof createClient>, inp
     storagePath: string;
     assetId: string;
 }) {
-    let query = supabaseAdmin
+    if (input.assetId) {
+        const result = await supabaseAdmin
+            .from('site_assets')
+            .select('id, storage_path, public_url')
+            .eq('id', input.assetId)
+            .limit(1)
+            .maybeSingle();
+        if (result.error) {
+            throw new Error(result.error.message);
+        }
+        return (result.data as SiteAssetRow | null) ?? null;
+    }
+
+    const candidates = buildStoragePathCandidates(input.storagePath);
+    if (candidates.length === 0) {
+        return null;
+    }
+
+    const result = await supabaseAdmin
         .from('site_assets')
         .select('id, storage_path, public_url')
-        .limit(1);
-
-    query = input.assetId
-        ? query.eq('id', input.assetId)
-        : query.eq('storage_path', input.storagePath);
-
-    const result = await query.maybeSingle();
+        .in('storage_path', candidates)
+        .limit(candidates.length);
 
     if (result.error) {
         throw new Error(result.error.message);
     }
 
-    return (result.data as SiteAssetRow | null) ?? null;
+    const rows = (result.data as SiteAssetRow[] | null) ?? [];
+    if (rows.length === 0) {
+        return null;
+    }
+
+    for (const candidate of candidates) {
+        const match = rows.find((row) => row.storage_path === candidate);
+        if (match) {
+            return match;
+        }
+    }
+
+    return rows[0] ?? null;
+}
+
+function buildStoragePathCandidates(storagePath: string) {
+    const normalized = storagePath.trim().replace(/^\/+/, '');
+    if (!normalized) {
+        return [];
+    }
+    const candidates = new Set<string>([normalized]);
+    if (normalized.startsWith(`${SITE_ASSETS_BUCKET}/`)) {
+        candidates.add(normalized.slice(SITE_ASSETS_BUCKET.length + 1));
+    } else {
+        candidates.add(`${SITE_ASSETS_BUCKET}/${normalized}`);
+    }
+    return Array.from(candidates).filter(Boolean);
+}
+
+function resolveFallbackStoragePath(storagePath: string) {
+    const candidates = buildStoragePathCandidates(storagePath);
+    return candidates[0] ?? '';
 }
 
 function inferSiteAssetProvider(publicUrl: string | null): StorageProvider {

@@ -45,7 +45,7 @@ function normalizeSiteAssetStoragePath(value: string | null | undefined) {
     if (!normalized.includes('/')) {
         return '';
     }
-    return `${SITE_ASSET_BUCKET}/${normalized}`;
+    return normalized;
 }
 
 function extractSiteAssetStoragePathFromSupabaseUrl(parsedUrl: URL, supabaseUrl: string) {
