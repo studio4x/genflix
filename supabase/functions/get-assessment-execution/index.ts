@@ -1,4 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { createSignedGetUrl, resolveStorageProvider } from '../_shared/storage-provider.ts';
 const corsHeaders = {
     'Access-Control-Allow-Origin': Deno.env.get('APP_PUBLIC_URL')?.trim() || 'https://genflix-omega.vercel.app',
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -234,17 +235,25 @@ async function withSignedAssetUrl(supabaseAdmin: ReturnType<typeof createClient>
     if (!storagePath) {
         return interaction;
     }
-    const signedUrlResult = await supabaseAdmin.storage
-        .from(ASSESSMENT_ASSETS_BUCKET)
-        .createSignedUrl(storagePath, 60 * 60);
-    if (signedUrlResult.error) {
-        console.error("Falha ao assinar asset da avalia??o:", signedUrlResult.error);
+    const storageProvider = resolveStorageProvider(asset?.storage_provider);
+    try {
+        const signedUrl = await createSignedGetUrl({
+            provider: storageProvider,
+            bucket: ASSESSMENT_ASSETS_BUCKET,
+            objectPath: storagePath,
+            expiresInSeconds: 60 * 60,
+            supabaseAdmin,
+        });
+        content.asset = {
+            ...asset,
+            storage_provider: storageProvider,
+            signed_url: signedUrl,
+        };
+    }
+    catch (error) {
+        console.error('Falha ao assinar asset da avaliacao:', error);
         return interaction;
     }
-    content.asset = {
-        ...asset,
-        signed_url: signedUrlResult.data.signedUrl,
-    };
     return {
         ...interaction,
         content,

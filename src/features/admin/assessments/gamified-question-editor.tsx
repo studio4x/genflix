@@ -751,6 +751,7 @@ export function GamifiedQuestionEditor({ question, onDraftChange, onPersist, onE
         onError(null);
         try {
             const previousStoragePath = activeInteraction.asset.storage_path;
+            const previousStorageProvider = activeInteraction.asset.storage_provider ?? 'supabase';
             const uploaded = await uploadAssessmentAsset(file);
             let nextContent: AssessmentInteractionContent;
             if (activeInteraction.kind === 'coloring' && getColoringRenderMode(activeInteraction) === 'svg_regions') {
@@ -765,6 +766,7 @@ export function GamifiedQuestionEditor({ question, onDraftChange, onPersist, onE
                     regions: svgAsset.regions,
                     asset: {
                         storage_path: uploaded.storage_path,
+                        storage_provider: uploaded.storage_provider,
                         signed_url: uploaded.signed_url,
                         alt: activeInteraction.asset.alt || file.name,
                         width: svgAsset.width,
@@ -778,6 +780,7 @@ export function GamifiedQuestionEditor({ question, onDraftChange, onPersist, onE
                     ...(activeInteraction as CanvasInteractionContent),
                     asset: {
                         storage_path: uploaded.storage_path,
+                        storage_provider: uploaded.storage_provider,
                         signed_url: uploaded.signed_url,
                         alt: activeInteraction.asset.alt || file.name,
                         width: dimensions.width,
@@ -788,7 +791,7 @@ export function GamifiedQuestionEditor({ question, onDraftChange, onPersist, onE
             await commit(nextContent);
             setAssetError(null);
             if (previousStoragePath && previousStoragePath !== uploaded.storage_path) {
-                void deleteAssessmentAsset(previousStoragePath).catch(() => null);
+                void deleteAssessmentAsset(previousStoragePath, previousStorageProvider).catch(() => null);
             }
         }
         catch (error) {
@@ -853,6 +856,7 @@ export function GamifiedQuestionEditor({ question, onDraftChange, onPersist, onE
         onError(null);
         try {
             const previousStoragePath = activeInteraction.asset.storage_path;
+            const previousStorageProvider = activeInteraction.asset.storage_provider ?? 'supabase';
             const svgAsset = parseColoringSvgMarkup(rawMarkup);
             const svgFile = new File([svgAsset.svgMarkup], `quiz-colorir-${question.id}.svg`, { type: 'image/svg+xml' });
             const uploaded = await uploadAssessmentAsset(svgFile);
@@ -863,6 +867,7 @@ export function GamifiedQuestionEditor({ question, onDraftChange, onPersist, onE
                 regions: svgAsset.regions,
                 asset: {
                     storage_path: uploaded.storage_path,
+                    storage_provider: uploaded.storage_provider,
                     signed_url: uploaded.signed_url,
                     alt: activeInteraction.asset.alt || question.question_text || 'SVG do quiz de colorir',
                     width: svgAsset.width,
@@ -875,7 +880,7 @@ export function GamifiedQuestionEditor({ question, onDraftChange, onPersist, onE
             setSvgMarkupError(null);
             setAssetError(null);
             if (previousStoragePath && previousStoragePath !== uploaded.storage_path) {
-                void deleteAssessmentAsset(previousStoragePath).catch(() => null);
+                void deleteAssessmentAsset(previousStoragePath, previousStorageProvider).catch(() => null);
             }
         }
         catch (error) {

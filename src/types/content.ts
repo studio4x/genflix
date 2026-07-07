@@ -21,6 +21,7 @@ export interface ColoringPaletteColor extends AssessmentInteractionToken {
 export type ColoringRenderMode = 'legacy_rect' | 'svg_regions';
 export interface AssessmentInteractionAsset {
     storage_path: string;
+    storage_provider?: 'supabase' | 'r2';
     signed_url?: string | null;
     alt: string;
     width: number;
@@ -28,6 +29,7 @@ export interface AssessmentInteractionAsset {
 }
 export interface LessonImageHotspotsAsset {
     storage_path: string;
+    storage_provider?: 'supabase' | 'r2';
     signed_url?: string | null;
     alt: string;
     width: number;

@@ -66,6 +66,9 @@ function formatUsd(value: number) {
         maximumFractionDigits: 2,
     }).format(value);
 }
+function isImageObjectKey(key: string) {
+    return /\.(png|jpe?g|gif|webp|avif|bmp|svg)$/i.test(key);
+}
 export function AdminR2StoragePage() {
     const [activeTab, setActiveTab] = useState<ActiveTab>('overview');
     const [overview, setOverview] = useState<R2UsageOverview | null>(null);
@@ -474,6 +477,7 @@ ${objectKey}`);
               <table className="min-w-full border-separate border-spacing-y-2">
                 <thead>
                   <tr className="text-left text-[11px] font-black uppercase tracking-[0.14em] text-[#5F7077]">
+                    <th className="px-3 py-2">Prévia</th>
                     <th className="px-3 py-2">Arquivo</th>
                     <th className="px-3 py-2">Tamanho</th>
                     <th className="px-3 py-2">Ultima alteracao</th>
@@ -483,6 +487,13 @@ ${objectKey}`);
                 <tbody>
                   {objects.map((objectRow) => (<tr key={objectRow.key} className="rounded-2xl bg-[#F8FBFC] text-sm font-semibold text-[#163138]">
                       <td className="rounded-l-2xl px-3 py-3">
+                        {isImageObjectKey(objectRow.key) && objectRow.preview_url ? (<a href={objectRow.preview_url} target="_blank" rel="noreferrer" className="block">
+                            <img src={objectRow.preview_url} alt={objectRow.key} className="h-14 w-14 rounded-xl border border-[#D8E6EB] object-cover"/>
+                          </a>) : (<div className="flex h-14 w-14 items-center justify-center rounded-xl border border-dashed border-[#D8E6EB] bg-white text-[10px] font-black uppercase tracking-[0.12em] text-[#95A7AE]">
+                            Sem imagem
+                          </div>)}
+                      </td>
+                      <td className="px-3 py-3">
                         <p className="font-black text-[#15323B] break-all">{objectRow.key}</p>
                       </td>
                       <td className="px-3 py-3">{formatBytes(objectRow.size_bytes)}</td>

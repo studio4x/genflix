@@ -1,4 +1,5 @@
 import { supabase } from '@/services/supabase/client';
+import { prepareStorageUpload, uploadFileWithTicket } from '@/features/storage/r2-upload';
 import type { Assessment, AssessmentCaseStudy, AssessmentGradingMode, AssessmentInteractionContent, AssessmentOption, AssessmentQuestion, AssessmentQuestionAnswerKey, AssessmentQuestionAnswerKeyPayload, AssessmentQuestionInteraction, } from '@/types/content';
 import { isChoiceQuestionType, isEssayQuestionType, isGamifiedQuestionType, validateInteractionBundle, } from '@/features/assessments/gamified';
 import type { AssessmentCaseStudyFormInput, AssessmentFormInput, AssessmentOptionFormInput, AssessmentQuestionFormInput, } from './schemas';
@@ -76,7 +77,7 @@ async function hydrateInteractionAsset(interaction: AssessmentQuestionInteractio
         return interaction;
     }
     try {
-        const signedUrl = await getSignedAssessmentAssetUrl(storagePath);
+        const signedUrl = await getSignedAssessmentAssetUrl(storagePath, interaction.content.asset.storage_provider ?? 'supabase');
         return {
             ...interaction,
             content: {
@@ -533,38 +534,53 @@ export async function deleteAssessmentOption(optionId: string) {
     }
 }
 export async function uploadAssessmentAsset(file: File) {
-    const objectPath = `${crypto.randomUUID()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, '-')}`;
-    const uploadResult = await supabase.storage
-        .from(ASSESSMENT_ASSETS_BUCKET)
-        .upload(objectPath, file, {
-        cacheControl: '3600',
-        upsert: false,
-        contentType: file.type || undefined,
+    const ticket = await prepareStorageUpload({
+        uploadKind: 'assessment_asset',
+        entityId: 'assessment-assets',
+        file,
     });
-    if (uploadResult.error) {
-        throw uploadResult.error;
-    }
-    const signedUrl = await getSignedAssessmentAssetUrl(objectPath);
+    await uploadFileWithTicket(ticket, file);
+    const signedUrl = await getSignedAssessmentAssetUrl(ticket.upload_path, ticket.storage_provider);
     return {
-        storage_path: objectPath,
+        storage_path: ticket.upload_path,
+        storage_provider: ticket.storage_provider,
         signed_url: signedUrl,
     };
 }
-export async function getSignedAssessmentAssetUrl(storagePath: string) {
-    const result = await supabase.storage
-        .from(ASSESSMENT_ASSETS_BUCKET)
-        .createSignedUrl(storagePath, 60 * 60);
-    if (result.error) {
-        throw result.error;
+export async function getSignedAssessmentAssetUrl(storagePath: string, storageProvider: 'supabase' | 'r2' = 'r2') {
+    const response = await supabase.functions.invoke<{ signed_url: string }>('generate-asset-access', {
+        body: {
+            access_token: (await supabase.auth.getSession()).data.session?.access_token ?? '',
+            asset_kind: 'assessment_asset',
+            storage_bucket: ASSESSMENT_ASSETS_BUCKET,
+            storage_provider: storageProvider,
+            storage_path: storagePath,
+            expires_in_seconds: 60 * 60,
+        },
+    });
+    if (response.error || !response.data?.signed_url) {
+        throw new Error(response.error?.message ?? 'Não foi possível gerar URL assinada do asset.');
     }
-    return result.data.signedUrl;
+    return response.data.signed_url;
 }
-export async function deleteAssessmentAsset(storagePath: string) {
-    const result = await supabase.storage
-        .from(ASSESSMENT_ASSETS_BUCKET)
-        .remove([storagePath]);
-    if (result.error) {
-        throw result.error;
+export async function deleteAssessmentAsset(storagePath: string, storageProvider: 'supabase' | 'r2' = 'r2') {
+    const accessTokenResult = await supabase.auth.getSession();
+    const accessToken = accessTokenResult.data.session?.access_token ?? '';
+    if (!accessToken) {
+        throw new Error('Sessão expirada. Faça login novamente.');
+    }
+    const response = await supabase.functions.invoke<{ ok: boolean }>('admin-storage-upload', {
+        body: {
+            access_token: accessToken,
+            operation: 'delete_object',
+            upload_kind: 'assessment_asset',
+            storage_path: storagePath,
+            storage_bucket: ASSESSMENT_ASSETS_BUCKET,
+            provider: storageProvider,
+        },
+    });
+    if (response.error) {
+        throw response.error;
     }
 }
 function mapExportQuestion(question: AssessmentQuestionWithOptions): ImportAssessmentQuestionData {

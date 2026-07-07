@@ -212,7 +212,7 @@ function parseStandaloneIframeEmbed(html: string): StandaloneIframeEmbed | null 
     };
 }
 
-function useResolvedLessonAssetUrl(storagePath: string, signedUrl?: string | null) {
+function useResolvedLessonAssetUrl(storagePath: string, storageProvider?: 'supabase' | 'r2', signedUrl?: string | null) {
     const trimmedStoragePath = storagePath.trim();
     const [resolvedUrl, setResolvedUrl] = useState<string | null>(() => {
         if (trimmedStoragePath) {
@@ -228,7 +228,7 @@ function useResolvedLessonAssetUrl(storagePath: string, signedUrl?: string | nul
         }
         let isMounted = true;
         setResolvedUrl(null);
-        void getSignedLessonContentAssetUrl(nextStoragePath)
+        void getSignedLessonContentAssetUrl(nextStoragePath, storageProvider)
             .then((url) => {
             if (isMounted) {
                 setResolvedUrl(url);
@@ -242,7 +242,7 @@ function useResolvedLessonAssetUrl(storagePath: string, signedUrl?: string | nul
         return () => {
             isMounted = false;
         };
-    }, [signedUrl, storagePath]);
+    }, [signedUrl, storagePath, storageProvider]);
     return resolvedUrl;
 }
 
@@ -289,21 +289,38 @@ function createDefaultBlock(type: Exclude<LessonContentBlock['type'], 'columns'>
     };
 }
 
-function collectDeletableAssetPaths(block: LessonContentBlock): string[] {
+type DeletableLessonAsset = {
+    storagePath: string;
+    storageProvider?: 'supabase' | 'r2';
+};
+
+function collectDeletableAssets(block: LessonContentBlock): DeletableLessonAsset[] {
     if (block.type === 'image-hotspots' && block.content.asset.storage_path) {
-        return [block.content.asset.storage_path];
+        return [{
+            storagePath: block.content.asset.storage_path,
+            storageProvider: block.content.asset.storage_provider,
+        }];
     }
     if (block.type === 'image' && block.content.source_type === 'upload' && block.content.storage_path) {
-        return [block.content.storage_path];
+        return [{
+            storagePath: block.content.storage_path,
+            storageProvider: block.content.storage_provider,
+        }];
     }
     if (block.type === 'video' && block.content.source_type === 'upload' && block.content.storage_path) {
-        return [block.content.storage_path];
+        return [{
+            storagePath: block.content.storage_path,
+            storageProvider: block.content.storage_provider,
+        }];
     }
     if (block.type === 'html' && block.content.source_type === 'upload' && block.content.storage_path) {
-        return [block.content.storage_path];
+        return [{
+            storagePath: block.content.storage_path,
+            storageProvider: block.content.storage_provider,
+        }];
     }
     if (block.type === 'columns') {
-        return block.content.flatMap((column) => column.blocks.flatMap((columnBlock) => collectDeletableAssetPaths(columnBlock)));
+        return block.content.flatMap((column) => column.blocks.flatMap((columnBlock) => collectDeletableAssets(columnBlock)));
     }
     return [];
 }
@@ -341,7 +358,7 @@ export function LessonImageBlockEditor({ content, onChange, onError }: LessonIma
     const [inputMode, setInputMode] = useState<'url' | 'upload'>(content.source_type);
     const [isUploading, setIsUploading] = useState(false);
     const [previewError, setPreviewError] = useState<string | null>(null);
-    const resolvedUploadUrl = useResolvedLessonAssetUrl(content.storage_path, content.signed_url);
+    const resolvedUploadUrl = useResolvedLessonAssetUrl(content.storage_path, content.storage_provider, content.signed_url);
 
     useEffect(() => {
         setInputMode(content.source_type);
@@ -364,18 +381,20 @@ export function LessonImageBlockEditor({ content, onChange, onError }: LessonIma
         onError?.(null);
         try {
             const previousStoragePath = content.source_type === 'upload' ? content.storage_path.trim() : '';
+            const previousStorageProvider = content.source_type === 'upload' ? content.storage_provider ?? 'supabase' : 'supabase';
             const uploadResult = await uploadLessonContentAsset(file);
             onChange({
                 ...content,
                 source_type: 'upload',
                 image_url: content.image_url,
                 storage_path: uploadResult.storage_path,
+                storage_provider: uploadResult.storage_provider,
                 signed_url: uploadResult.signed_url,
                 file_name: file.name,
                 mime_type: file.type || null,
             });
             if (previousStoragePath && previousStoragePath !== uploadResult.storage_path) {
-                void deleteLessonContentAsset(previousStoragePath).catch(() => null);
+                void deleteLessonContentAsset(previousStoragePath, previousStorageProvider).catch(() => null);
             }
         }
         catch (error) {
@@ -393,9 +412,10 @@ export function LessonImageBlockEditor({ content, onChange, onError }: LessonIma
 
     async function switchToUrlMode() {
         const previousStoragePath = content.source_type === 'upload' ? content.storage_path.trim() : '';
+        const previousStorageProvider = content.source_type === 'upload' ? content.storage_provider ?? 'supabase' : 'supabase';
         if (previousStoragePath) {
             try {
-                await deleteLessonContentAsset(previousStoragePath);
+                await deleteLessonContentAsset(previousStoragePath, previousStorageProvider);
             }
             catch {
                 // Mant?m a troca mesmo se a remo??o falhar.
@@ -408,6 +428,7 @@ export function LessonImageBlockEditor({ content, onChange, onError }: LessonIma
             ...content,
             source_type: 'url',
             storage_path: '',
+            storage_provider: undefined,
             signed_url: null,
             file_name: '',
             mime_type: null,
@@ -541,7 +562,7 @@ export function LessonVideoBlockEditor({ content, onChange, onError }: LessonVid
     const [inputMode, setInputMode] = useState<'url' | 'upload'>(content.source_type);
     const [isUploading, setIsUploading] = useState(false);
     const [previewError, setPreviewError] = useState<string | null>(null);
-    const resolvedUploadUrl = useResolvedLessonAssetUrl(content.storage_path, content.signed_url);
+    const resolvedUploadUrl = useResolvedLessonAssetUrl(content.storage_path, content.storage_provider, content.signed_url);
 
     useEffect(() => {
         setInputMode(content.source_type);
@@ -569,6 +590,7 @@ export function LessonVideoBlockEditor({ content, onChange, onError }: LessonVid
         onError?.(null);
         try {
             const previousStoragePath = content.storage_path.trim();
+            const previousStorageProvider = content.storage_provider ?? 'supabase';
             if (content.url.trim()) {
                 lastUrlRef.current = content.url;
             }
@@ -577,6 +599,7 @@ export function LessonVideoBlockEditor({ content, onChange, onError }: LessonVid
                 source_type: 'upload',
                 url: '',
                 storage_path: uploadResult.storage_path,
+                storage_provider: uploadResult.storage_provider,
                 signed_url: uploadResult.signed_url,
                 file_name: file.name,
                 mime_type: file.type || null,
@@ -585,7 +608,7 @@ export function LessonVideoBlockEditor({ content, onChange, onError }: LessonVid
                 caption_alignment: content.caption_alignment,
             });
             if (previousStoragePath && previousStoragePath !== uploadResult.storage_path) {
-                void deleteLessonContentAsset(previousStoragePath).catch(() => null);
+                void deleteLessonContentAsset(previousStoragePath, previousStorageProvider).catch(() => null);
             }
         }
         catch (error) {
@@ -603,9 +626,10 @@ export function LessonVideoBlockEditor({ content, onChange, onError }: LessonVid
 
     async function switchToUrlMode() {
         const previousStoragePath = content.storage_path.trim();
+        const previousStorageProvider = content.storage_provider ?? 'supabase';
         if (previousStoragePath) {
             try {
-                await deleteLessonContentAsset(previousStoragePath);
+                await deleteLessonContentAsset(previousStoragePath, previousStorageProvider);
             }
             catch {
                 // Mantém a troca mesmo se a remoção falhar.
@@ -617,6 +641,7 @@ export function LessonVideoBlockEditor({ content, onChange, onError }: LessonVid
             source_type: 'url',
             url: lastUrlRef.current || content.url,
             storage_path: '',
+            storage_provider: undefined,
             signed_url: null,
             file_name: '',
             mime_type: null,
@@ -861,6 +886,7 @@ export function LessonHtmlBlockEditor({ content, onChange, onError }: LessonHtml
         try {
             const html = await file.text();
             const previousStoragePath = content.source_type === 'upload' ? content.storage_path.trim() : '';
+            const previousStorageProvider = content.source_type === 'upload' ? content.storage_provider ?? 'supabase' : 'supabase';
             const uploadResult = await uploadLessonContentAsset(file, {
                 contentType: getHtmlUploadContentType(file),
             });
@@ -869,12 +895,13 @@ export function LessonHtmlBlockEditor({ content, onChange, onError }: LessonHtml
                 source_type: 'upload',
                 html,
                 storage_path: uploadResult.storage_path,
+                storage_provider: uploadResult.storage_provider,
                 signed_url: uploadResult.signed_url,
                 file_name: file.name,
                 mime_type: file.type || 'text/html',
             });
             if (previousStoragePath && previousStoragePath !== uploadResult.storage_path) {
-                void deleteLessonContentAsset(previousStoragePath).catch(() => null);
+                void deleteLessonContentAsset(previousStoragePath, previousStorageProvider).catch(() => null);
             }
         }
         catch (error) {
@@ -947,9 +974,10 @@ export function LessonHtmlBlockEditor({ content, onChange, onError }: LessonHtml
 
     async function switchToPasteMode() {
         const previousStoragePath = content.source_type === 'upload' ? content.storage_path.trim() : '';
+        const previousStorageProvider = content.source_type === 'upload' ? content.storage_provider ?? 'supabase' : 'supabase';
         if (previousStoragePath) {
             try {
-                await deleteLessonContentAsset(previousStoragePath);
+                await deleteLessonContentAsset(previousStoragePath, previousStorageProvider);
             }
             catch {
                 // Mantém a troca mesmo se a remoção falhar.
@@ -962,6 +990,7 @@ export function LessonHtmlBlockEditor({ content, onChange, onError }: LessonHtml
             ...content,
             source_type: 'paste',
             storage_path: '',
+            storage_provider: undefined,
             signed_url: null,
             file_name: '',
             mime_type: null,
@@ -1099,7 +1128,7 @@ interface LessonImageBlockRendererProps {
 export function LessonImageBlockRenderer({ content }: LessonImageBlockRendererProps) {
     const sizeClasses = IMAGE_SIZE_CLASSES[content.size];
     const captionAlignmentClass = IMAGE_CAPTION_ALIGNMENT_CLASSES[content.caption_alignment];
-    const resolvedUploadUrl = useResolvedLessonAssetUrl(content.storage_path, content.signed_url);
+    const resolvedUploadUrl = useResolvedLessonAssetUrl(content.storage_path, content.storage_provider, content.signed_url);
     const previewUrl = content.source_type === 'upload'
         ? resolvedUploadUrl
         : content.image_url.trim();
@@ -1152,7 +1181,7 @@ interface LessonVideoBlockRendererProps {
 }
 
 export function LessonVideoBlockRenderer({ content }: LessonVideoBlockRendererProps) {
-    const resolvedUploadUrl = useResolvedLessonAssetUrl(content.storage_path, content.signed_url);
+    const resolvedUploadUrl = useResolvedLessonAssetUrl(content.storage_path, content.storage_provider, content.signed_url);
     const previewUrl = content.source_type === 'upload'
         ? resolvedUploadUrl
         : content.url.trim();
@@ -1212,10 +1241,12 @@ export function LessonContentBlocksEditor({ blocks, onChange, onError, level = 0
         if (!window.confirm('Excluir este bloco de conteúdo?')) {
             return;
         }
-        const assetPaths = blockToRemove ? Array.from(new Set(collectDeletableAssetPaths(blockToRemove))) : [];
-        for (const assetPath of assetPaths) {
+        const assetEntries = blockToRemove
+            ? collectDeletableAssets(blockToRemove).filter((entry, index, entries) => entries.findIndex((candidate) => candidate.storagePath === entry.storagePath) === index)
+            : [];
+        for (const assetEntry of assetEntries) {
             try {
-                await deleteLessonContentAsset(assetPath);
+                await deleteLessonContentAsset(assetEntry.storagePath, assetEntry.storageProvider ?? 'supabase');
             }
             catch (error) {
                 console.error('Erro ao remover asset do bloco:', error);
@@ -1311,10 +1342,12 @@ export function LessonContentBlocksEditor({ blocks, onChange, onError, level = 0
                                         }
                                         const safeCount = Math.min(4, Math.max(1, nextCount));
                                         const removedColumns = block.content.slice(safeCount);
-                                        const removedAssetPaths = Array.from(new Set(removedColumns.flatMap((column) => column.blocks.flatMap((columnBlock) => collectDeletableAssetPaths(columnBlock)))));
-                                        void Promise.all(removedAssetPaths.map(async (assetPath) => {
+                                        const removedAssets = removedColumns
+                                            .flatMap((column) => column.blocks.flatMap((columnBlock) => collectDeletableAssets(columnBlock)))
+                                            .filter((entry, entryIndex, entries) => entries.findIndex((candidate) => candidate.storagePath === entry.storagePath) === entryIndex);
+                                        void Promise.all(removedAssets.map(async (assetEntry) => {
                                             try {
-                                                await deleteLessonContentAsset(assetPath);
+                                                await deleteLessonContentAsset(assetEntry.storagePath, assetEntry.storageProvider ?? 'supabase');
                                             }
                                             catch (error) {
                                                 console.error('Erro ao remover asset da coluna:', error);

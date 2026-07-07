@@ -1,12 +1,11 @@
 import genflixWordmarkUrl from '@/assets/genflix-wordmark.svg';
-import { getSignedLessonContentAssetUrl } from '@/features/admin/content/api';
+import { getSignedLessonContentAssetUrl, getSignedMaterialUrl, getSignedModulePdfUrl } from '@/features/admin/content/api';
 import { parseLessonHtmlBlockElement, parseLessonImageHotspotsBlockElement } from '@/features/admin/content/content-blocks';
 import { fetchPdfWatermarkSettings } from '@/features/branding/api';
 import { supabase } from '@/services/supabase/client';
 import { PDFDocument, StandardFonts, degrees, rgb } from 'pdf-lib';
 import html2pdf from 'html2pdf.js';
 const PDF_FILENAME_PREFIX = 'Material';
-const MATERIALS_BUCKET = 'materials';
 const MATERIAL_URL_TTL_SECONDS = 60 * 60 * 24 * 30;
 const DEFAULT_LESSON_CONTENT = '<p>Conte\u00fado em v\u00eddeo ou material complementar.</p>';
 const FOOTER_NOTICE = 'Proibida a divulga\u00e7\u00e3o, reprodu\u00e7\u00e3o ou compartilhamento deste material com terceiros sem autoriza\u00e7\u00e3o expressa da GenFlix.';
@@ -255,7 +254,7 @@ async function hydrateInteractiveLessonContent(textContent: string | null) {
         let signedUrl: string | null = null;
         if (parsed.asset.storage_path) {
             try {
-                signedUrl = await getSignedLessonContentAssetUrl(parsed.asset.storage_path);
+                signedUrl = await getSignedLessonContentAssetUrl(parsed.asset.storage_path, parsed.asset.storage_provider ?? 'supabase');
             }
             catch {
                 signedUrl = null;
@@ -356,17 +355,12 @@ async function fetchLessonMaterialsMap(lessonIds: string[]) {
     }
     const materials = (materialsResult.data as LessonMaterialRow[]) ?? [];
     const signedMaterials = await Promise.all(materials.map(async (material) => {
-        const signedResult = await supabase.storage
-            .from(MATERIALS_BUCKET)
-            .createSignedUrl(material.storage_path, MATERIAL_URL_TTL_SECONDS);
-        if (signedResult.error) {
-            throw signedResult.error;
-        }
+        const signedUrl = await getSignedMaterialUrl(material.storage_path, MATERIAL_URL_TTL_SECONDS);
         return {
             lessonId: material.lesson_id,
             material: {
                 fileName: material.file_name,
-                signedUrl: signedResult.data.signedUrl,
+                signedUrl,
             },
         };
     }));
@@ -430,17 +424,10 @@ function downloadPdfBytes(fileName: string, bytes: Uint8Array) {
     link.click();
     URL.revokeObjectURL(url);
 }
-export async function exportLicensedModulePdf(moduleTitle: string, storagePath: string) {
+export async function exportLicensedModulePdf(moduleTitle: string, storagePath: string, storageProvider: 'supabase' | 'r2' = 'r2') {
     const [licenseContext, signedUrl] = await Promise.all([
         fetchLicenseContext(),
-        supabase.storage
-            .from('module-pdfs')
-            .createSignedUrl(storagePath, 60 * 10)
-            .then((result) => {
-            if (result.error)
-                throw result.error;
-            return result.data.signedUrl;
-        }),
+        getSignedModulePdfUrl(storagePath, storageProvider),
     ]);
     const response = await fetch(signedUrl);
     if (!response.ok) {

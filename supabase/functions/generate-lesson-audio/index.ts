@@ -1,4 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { ListObjectsV2Command, S3Client } from 'https://esm.sh/@aws-sdk/client-s3@3.916.0';
+import { createSignedGetUrl, createSignedPutUrl } from '../_shared/storage-provider.ts';
 const corsHeaders = {
     'Access-Control-Allow-Origin': Deno.env.get('APP_PUBLIC_URL')?.trim() || 'https://genflix-omega.vercel.app',
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -117,7 +119,7 @@ Deno.serve(async (request) => {
         const chunks = splitNarrationText(narrationText, MAX_CHARS_PER_CHUNK);
         const contentHash = await sha256(`${NARRATION_CACHE_VERSION}:${narrationText}`);
         const folderPath = `${lesson.id}/${contentHash}`;
-        const existingObjects = await listStoredParts(adminSupabase, folderPath);
+        const existingObjects = await listStoredParts(folderPath);
         const cachedPaths = existingObjects
             .map((item) => `${folderPath}/${item.name}`)
             .sort((pathA, pathB) => pathA.localeCompare(pathB));
@@ -139,15 +141,24 @@ Deno.serve(async (request) => {
                 providerUsed = audioResult.provider;
                 const objectPath = buildPartPath(folderPath, index, audioResult.extension);
                 generatedPaths.push(objectPath);
-                const uploadResult = await adminSupabase.storage
-                    .from(AUDIO_BUCKET)
-                    .upload(objectPath, audioResult.bytes, {
-                    contentType: audioResult.contentType,
-                    cacheControl: '3600',
-                    upsert: true,
+                const ticket = await createSignedPutUrl({
+                    provider: 'r2',
+                    bucket: AUDIO_BUCKET,
+                    objectPath,
+                    mimeType: audioResult.contentType,
+                    supabaseAdmin,
                 });
-                if (uploadResult.error) {
-                    return jsonResponse({ error: uploadResult.error.message }, 500);
+                const uploadResponse = await fetch(ticket.upload_url ?? '', {
+                    method: 'PUT',
+                    headers: {
+                        ...ticket.upload_headers,
+                        'Content-Type': audioResult.contentType,
+                    },
+                    body: audioResult.bytes,
+                });
+                if (!uploadResponse.ok) {
+                    const errorText = await uploadResponse.text().catch(() => '');
+                    return jsonResponse({ error: `Falha ao enviar audio para R2 (${uploadResponse.status}). ${errorText}` }, 500);
                 }
             }
         }
@@ -156,16 +167,17 @@ Deno.serve(async (request) => {
             providerUsed = 'gemini';
         }
         const signedParts = await Promise.all(finalPaths.map(async (path, index) => {
-            const signedUrlResult = await adminSupabase.storage
-                .from(AUDIO_BUCKET)
-                .createSignedUrl(path, SIGNED_URL_EXPIRES_IN);
-            if (signedUrlResult.error || !signedUrlResult.data?.signedUrl) {
-                throw new Error(signedUrlResult.error?.message ?? 'Falha ao gerar URL assinada do audio.');
-            }
+            const signedUrlResult = await createSignedGetUrl({
+                provider: 'r2',
+                bucket: AUDIO_BUCKET,
+                objectPath: path,
+                expiresInSeconds: SIGNED_URL_EXPIRES_IN,
+                supabaseAdmin,
+            });
             return {
                 index,
                 path,
-                url: signedUrlResult.data.signedUrl,
+                url: signedUrlResult,
             };
         }));
         return jsonResponse({
@@ -340,17 +352,32 @@ function splitLongSentence(sentence: string, maxChars: number) {
 function buildPartPath(folderPath: string, index: number, extension: 'mp3' | 'wav') {
     return `${folderPath}/part-${String(index + 1).padStart(3, '0')}.${extension}`;
 }
-async function listStoredParts(adminSupabase: ReturnType<typeof createClient>, folderPath: string) {
-    const listResult = await adminSupabase.storage
-        .from(AUDIO_BUCKET)
-        .list(folderPath, {
-        limit: 100,
-        sortBy: { column: 'name', order: 'asc' },
-    });
-    if (listResult.error) {
-        throw new Error(listResult.error.message);
+async function listStoredParts(folderPath: string) {
+    const client = createR2S3Client();
+    const listResult = await client.send(new ListObjectsV2Command({
+        Bucket: AUDIO_BUCKET,
+        Prefix: folderPath,
+        MaxKeys: 100,
+    }));
+    return (listResult.Contents ?? [])
+        .map((item) => ({
+        name: item.Key?.replace(`${folderPath}/`, '') ?? '',
+    }))
+        .filter((item) => item.name.endsWith('.mp3') || item.name.endsWith('.wav'));
+}
+function createR2S3Client() {
+    const endpoint = (Deno.env.get('R2_S3_ENDPOINT') ?? Deno.env.get('R2_ENDPOINT') ?? '').trim();
+    const accessKeyId = (Deno.env.get('R2_ACCESS_KEY_ID') ?? '').trim();
+    const secretAccessKey = (Deno.env.get('R2_SECRET_ACCESS_KEY') ?? '').trim();
+    if (!endpoint || !accessKeyId || !secretAccessKey) {
+        throw new Error('Secrets ausentes para R2 (R2_S3_ENDPOINT, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY).');
     }
-    return (listResult.data ?? []).filter((item) => item.name.endsWith('.mp3') || item.name.endsWith('.wav'));
+    return new S3Client({
+        region: 'auto',
+        endpoint,
+        credentials: { accessKeyId, secretAccessKey },
+        forcePathStyle: true,
+    });
 }
 async function sha256(value: string) {
     const encoded = new TextEncoder().encode(value);

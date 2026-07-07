@@ -1,5 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { DeleteObjectCommand, ListBucketsCommand, ListObjectsV2Command, S3Client } from 'https://esm.sh/@aws-sdk/client-s3@3.916.0';
+import { createSignedGetUrl } from '../_shared/storage-provider.ts';
 import { buildCorsHeaders, isAllowedOrigin } from '../_shared/cors.ts';
 type CloudflareApiEnvelope<T> = {
     success: boolean;
@@ -45,6 +46,17 @@ type R2UsageBucketRow = {
     infrequent_access_object_count: number;
     infrequent_access_upload_count: number;
 };
+type R2ObjectListingRow = {
+    key: string;
+    size_bytes: number;
+    last_modified: string | null;
+    etag: string | null;
+    preview_url: string | null;
+};
+
+function isPreviewableImageObjectKey(key: string) {
+    return /\.(png|jpe?g|gif|webp|avif|bmp|svg)$/i.test(key);
+}
 Deno.serve(async (request) => {
     const corsHeaders = buildCorsHeaders(request);
     if (request.method === 'OPTIONS') {
@@ -322,14 +334,30 @@ async function listR2ObjectsViaS3(input: {
         ContinuationToken: input.continuationToken,
         MaxKeys: 200,
     }));
-    const objects = (page.Contents ?? []).map((entry) => ({
-        key: entry.Key ?? '',
-        size_bytes: entry.Size ?? 0,
-        last_modified: entry.LastModified ? entry.LastModified.toISOString() : null,
-        etag: entry.ETag ?? null,
-    })).filter((entry) => entry.key);
+    const objects = await Promise.all((page.Contents ?? []).map(async (entry) => {
+        const key = entry.Key ?? '';
+        if (!key) {
+            return null;
+        }
+        const previewUrl = isPreviewableImageObjectKey(key)
+            ? await createSignedGetUrl({
+                provider: 'r2',
+                bucket: input.bucket,
+                objectPath: key,
+                expiresInSeconds: 60 * 10,
+                supabaseAdmin: undefined as unknown as ReturnType<typeof createClient>,
+            })
+            : null;
+        return {
+            key,
+            size_bytes: entry.Size ?? 0,
+            last_modified: entry.LastModified ? entry.LastModified.toISOString() : null,
+            etag: entry.ETag ?? null,
+            preview_url: previewUrl,
+        } satisfies R2ObjectListingRow;
+    }));
     return {
-        objects,
+        objects: objects.filter((entry): entry is R2ObjectListingRow => entry !== null),
         continuationToken: page.NextContinuationToken ?? null,
     };
 }

@@ -281,7 +281,7 @@ export function StudentLessonPage() {
         setIsGeneratingPdf(true);
         try {
             if (currentModule.module_pdf_storage_path) {
-                await exportLicensedModulePdf(currentModule.title, currentModule.module_pdf_storage_path);
+                await exportLicensedModulePdf(currentModule.title, currentModule.module_pdf_storage_path, currentModule.module_pdf_storage_provider ?? 'supabase');
             }
             else {
                 await exportModuleToPdf(course.title, currentModule.title, currentModule.id);

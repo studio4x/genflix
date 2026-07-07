@@ -7,6 +7,7 @@ export interface LessonImageBlockContent {
     source_type: 'url' | 'upload';
     image_url: string;
     storage_path: string;
+    storage_provider?: 'supabase' | 'r2';
     signed_url?: string | null;
     file_name: string;
     mime_type: string | null;
@@ -19,6 +20,7 @@ export interface LessonVideoBlockContent {
     source_type: 'url' | 'upload';
     url: string;
     storage_path: string;
+    storage_provider?: 'supabase' | 'r2';
     signed_url?: string | null;
     file_name: string;
     mime_type: string | null;
@@ -30,6 +32,7 @@ export interface LessonHtmlBlockContent {
     source_type: 'paste' | 'upload';
     html: string;
     storage_path: string;
+    storage_provider?: 'supabase' | 'r2';
     signed_url?: string | null;
     file_name: string;
     mime_type: string | null;
@@ -350,6 +353,7 @@ function normalizeHotspotItem(item: LessonImageHotspotItem, index: number): Less
 function normalizeHotspotsAsset(asset: LessonImageHotspotsAsset): LessonImageHotspotsAsset {
     return {
         storage_path: asset.storage_path?.trim() || '',
+        storage_provider: asset.storage_provider === 'supabase' || asset.storage_provider === 'r2' ? asset.storage_provider : undefined,
         signed_url: asset.signed_url?.trim() || null,
         alt: asset.alt?.trim() || 'Imagem interativa da aula',
         width: Math.max(1, Number(asset.width) || 1600),
@@ -372,6 +376,7 @@ function parseHotspotsAsset(value: unknown): LessonImageHotspotsAsset | null {
     }
     return normalizeHotspotsAsset({
         storage_path: candidate.storage_path,
+        storage_provider: candidate.storage_provider === 'supabase' || candidate.storage_provider === 'r2' ? candidate.storage_provider : undefined,
         signed_url: typeof candidate.signed_url === 'string' ? candidate.signed_url : null,
         alt: typeof candidate.alt === 'string' ? candidate.alt : 'Imagem interativa da aula',
         width: Number(candidate.width) || 1600,
@@ -422,6 +427,9 @@ function normalizeLessonImageBlockContent(content: LessonImageBlockContent): Les
         source_type: sourceType,
         image_url: sourceType === 'url' ? content.image_url?.trim() || '' : '',
         storage_path: sourceType === 'upload' ? content.storage_path?.trim() || '' : '',
+        storage_provider: sourceType === 'upload' && (content.storage_provider === 'supabase' || content.storage_provider === 'r2')
+            ? content.storage_provider
+            : undefined,
         signed_url: sourceType === 'upload' ? content.signed_url?.trim() || null : null,
         file_name: sourceType === 'upload' ? content.file_name?.trim() || '' : '',
         mime_type: sourceType === 'upload' ? content.mime_type?.trim() || null : null,
@@ -440,6 +448,7 @@ export function createEmptyLessonImageBlockContent(): LessonImageBlockContent {
         source_type: 'url',
         image_url: '',
         storage_path: '',
+        storage_provider: undefined,
         signed_url: null,
         file_name: '',
         mime_type: null,
@@ -466,6 +475,7 @@ function parseLessonImageBlockContent(payload: unknown): LessonImageBlockContent
         source_type: sourceType,
         image_url: typeof candidate.image_url === 'string' ? candidate.image_url : '',
         storage_path: typeof candidate.storage_path === 'string' ? candidate.storage_path : '',
+        storage_provider: candidate.storage_provider === 'supabase' || candidate.storage_provider === 'r2' ? candidate.storage_provider : undefined,
         signed_url: typeof candidate.signed_url === 'string' ? candidate.signed_url : null,
         file_name: typeof candidate.file_name === 'string' ? candidate.file_name : '',
         mime_type: typeof candidate.mime_type === 'string' ? candidate.mime_type : null,
@@ -484,6 +494,9 @@ function normalizeLessonVideoBlockContent(content: LessonVideoBlockContent): Les
         source_type: content.source_type === 'upload' ? 'upload' : 'url',
         url: content.url?.trim() || '',
         storage_path: content.storage_path?.trim() || '',
+        storage_provider: content.source_type === 'upload' && (content.storage_provider === 'supabase' || content.storage_provider === 'r2')
+            ? content.storage_provider
+            : undefined,
         signed_url: content.signed_url?.trim() || null,
         file_name: content.file_name?.trim() || '',
         mime_type: content.mime_type?.trim() || null,
@@ -501,6 +514,7 @@ export function createEmptyLessonVideoBlockContent(): LessonVideoBlockContent {
         source_type: 'url',
         url: '',
         storage_path: '',
+        storage_provider: undefined,
         signed_url: null,
         file_name: '',
         mime_type: null,
@@ -514,6 +528,9 @@ function normalizeLessonHtmlBlockContent(content: LessonHtmlBlockContent): Lesso
         source_type: content.source_type === 'upload' ? 'upload' : 'paste',
         html: normalizeHtml(content.html || ''),
         storage_path: content.source_type === 'upload' ? content.storage_path?.trim() || '' : '',
+        storage_provider: content.source_type === 'upload' && (content.storage_provider === 'supabase' || content.storage_provider === 'r2')
+            ? content.storage_provider
+            : undefined,
         signed_url: content.source_type === 'upload' ? content.signed_url?.trim() || null : null,
         file_name: content.source_type === 'upload' ? content.file_name?.trim() || '' : '',
         mime_type: content.source_type === 'upload' ? content.mime_type?.trim() || null : null,
@@ -524,6 +541,7 @@ export function createEmptyLessonHtmlBlockContent(): LessonHtmlBlockContent {
         source_type: 'paste',
         html: '<!doctype html>\n<html lang="pt-BR">\n  <head>\n    <meta charset="utf-8" />\n    <meta name="viewport" content="width=device-width, initial-scale=1" />\n    <title>Apresentação</title>\n  </head>\n  <body>\n    <div style="font-family: sans-serif; padding: 48px;">Sua apresentação HTML entra aqui.</div>\n  </body>\n</html>',
         storage_path: '',
+        storage_provider: undefined,
         signed_url: null,
         file_name: '',
         mime_type: null,
@@ -542,6 +560,7 @@ function parseLessonHtmlBlockContent(payload: unknown): LessonHtmlBlockContent |
         source_type: sourceType,
         html: typeof candidate.html === 'string' ? candidate.html : '',
         storage_path: typeof candidate.storage_path === 'string' ? candidate.storage_path : '',
+        storage_provider: candidate.storage_provider === 'supabase' || candidate.storage_provider === 'r2' ? candidate.storage_provider : undefined,
         signed_url: typeof candidate.signed_url === 'string' ? candidate.signed_url : null,
         file_name: typeof candidate.file_name === 'string' ? candidate.file_name : '',
         mime_type: typeof candidate.mime_type === 'string' ? candidate.mime_type : null,
@@ -552,6 +571,7 @@ function encodeHtmlPayload(content: LessonHtmlBlockContent): string {
         source_type: content.source_type,
         html: content.html,
         storage_path: content.storage_path,
+        storage_provider: content.storage_provider,
         signed_url: content.signed_url,
         file_name: content.file_name,
         mime_type: content.mime_type,
@@ -637,6 +657,7 @@ function parseLessonVideoBlockContent(payload: unknown): LessonVideoBlockContent
         source_type: sourceType,
         url: typeof candidate.url === 'string' ? candidate.url : '',
         storage_path: typeof candidate.storage_path === 'string' ? candidate.storage_path : '',
+        storage_provider: candidate.storage_provider === 'supabase' || candidate.storage_provider === 'r2' ? candidate.storage_provider : undefined,
         signed_url: typeof candidate.signed_url === 'string' ? candidate.signed_url : null,
         file_name: typeof candidate.file_name === 'string' ? candidate.file_name : '',
         mime_type: typeof candidate.mime_type === 'string' ? candidate.mime_type : null,
@@ -653,6 +674,7 @@ export function createEmptyLessonImageHotspotsBlockContent(): LessonImageHotspot
     return {
         asset: {
             storage_path: '',
+            storage_provider: undefined,
             signed_url: null,
             alt: 'Imagem interativa da aula',
             width: 1600,
@@ -665,6 +687,7 @@ function encodeHotspotsPayload(content: LessonImageHotspotsBlockContent): string
     return encodeURIComponent(JSON.stringify({
         asset: {
             storage_path: content.asset.storage_path,
+            storage_provider: content.asset.storage_provider,
             alt: content.asset.alt,
             width: content.asset.width,
             height: content.asset.height,
@@ -809,6 +832,7 @@ function encodeImagePayload(content: LessonImageBlockContent): string {
         source_type: content.source_type,
         image_url: content.image_url,
         storage_path: content.storage_path,
+        storage_provider: content.storage_provider,
         signed_url: content.signed_url,
         file_name: content.file_name,
         mime_type: content.mime_type,
@@ -885,6 +909,8 @@ function encodeVideoPayload(content: LessonVideoBlockContent): string {
         source_type: content.source_type,
         url: content.url,
         storage_path: content.storage_path,
+        storage_provider: content.storage_provider,
+        signed_url: content.signed_url,
         file_name: content.file_name,
         mime_type: content.mime_type,
         caption: content.caption,

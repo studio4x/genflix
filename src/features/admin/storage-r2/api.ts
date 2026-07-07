@@ -37,6 +37,7 @@ export type R2ObjectRow = {
     size_bytes: number;
     last_modified: string | null;
     etag: string | null;
+    preview_url: string | null;
 };
 export type R2ObjectsListResponse = {
     bucket: string;

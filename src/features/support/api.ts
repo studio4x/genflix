@@ -1,4 +1,5 @@
 import { supabase } from '@/services/supabase/client';
+import { prepareStorageUpload, uploadFileWithTicket } from '@/features/storage/r2-upload';
 import { defaultSupportBusinessHoursConfig, defaultSupportCrisisProtocolConfig, defaultSupportSlaConfig, } from '@/lib/support-sla';
 import type { SupportBusinessHoursConfig, SupportCrisisProtocolConfig, SupportFaqItem, SupportFaqSuggestionInput, SupportFaqSuggestionItem, SupportFaqEventType, SupportMessage, SupportMessageInput, SupportSlaConfig, SupportTicketDetail, SupportTicketInput, SupportTicketSummary, SupportTicketUserSummary, } from '@/features/support/types';
 type SupportTicketRow = {
@@ -107,19 +108,14 @@ function normalizeSupportMessage(row: SupportMessageRow): SupportMessage {
 }
 async function uploadSupportAttachment(file: File, userId: string) {
     const sanitized = sanitizeFileName(file.name);
-    const extension = sanitized.includes('.') ? sanitized.split('.').pop() : undefined;
-    const path = `support/${userId}/${crypto.randomUUID()}${extension ? `.${extension}` : ''}`;
-    const result = await supabase.storage.from('uploads').upload(path, file, {
-        cacheControl: '3600',
-        upsert: false,
-        contentType: file.type || undefined,
+    const ticket = await prepareStorageUpload({
+        uploadKind: 'support_attachment',
+        entityId: userId,
+        file,
     });
-    if (result.error) {
-        throw result.error;
-    }
-    const publicUrl = supabase.storage.from('uploads').getPublicUrl(path).data.publicUrl;
+    await uploadFileWithTicket(ticket, file);
     return {
-        url: publicUrl,
+        url: ticket.public_url ?? '',
         name: sanitized,
     };
 }

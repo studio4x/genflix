@@ -31,3 +31,5 @@ supabase/.temp
 
 .vercel
 .figma/
+
+.env*

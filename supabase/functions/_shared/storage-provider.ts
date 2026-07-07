@@ -20,7 +20,7 @@ export function resolveStorageProvider(input: unknown): StorageProvider {
     if (input === 'r2' || input === 'supabase') {
         return input;
     }
-    const fromEnv = (Deno.env.get('STORAGE_PROVIDER_DEFAULT') ?? 'supabase').trim().toLowerCase();
+    const fromEnv = (Deno.env.get('STORAGE_PROVIDER_DEFAULT') ?? 'r2').trim().toLowerCase();
     return fromEnv === 'r2' ? 'r2' : 'supabase';
 }
 export function sanitizeFileName(fileName: string) {
@@ -49,6 +49,15 @@ export function getMaxUploadSizeBytes(defaultBytes = 50 * 1024 * 1024) {
         return raw;
     }
     return defaultBytes;
+}
+export function buildR2ObjectUrl(bucket: string, objectPath: string) {
+    const endpoint = Deno.env.get('R2_S3_ENDPOINT')?.trim() ?? '';
+    if (!endpoint) {
+        throw new Error('R2_S3_ENDPOINT no configurado.');
+    }
+    const normalizedEndpoint = endpoint.replace(/\/+$/, '');
+    const normalizedPath = objectPath.replace(/^\/+/, '');
+    return `${normalizedEndpoint}/${bucket}/${normalizedPath}`;
 }
 export async function createSignedPutUrl(input: {
     provider: StorageProvider;
@@ -152,15 +161,12 @@ async function signR2Request(input: {
     expiresInSeconds: number;
     headers?: Record<string, string>;
 }) {
-    const endpoint = Deno.env.get('R2_S3_ENDPOINT')?.trim() ?? '';
     const accessKeyId = Deno.env.get('R2_ACCESS_KEY_ID')?.trim() ?? '';
     const secretAccessKey = Deno.env.get('R2_SECRET_ACCESS_KEY')?.trim() ?? '';
-    if (!endpoint || !accessKeyId || !secretAccessKey) {
+    const url = buildR2ObjectUrl(input.bucket, input.objectPath);
+    if (!accessKeyId || !secretAccessKey) {
         throw new Error('Credenciais R2 ausentes na Edge Function.');
     }
-    const normalizedEndpoint = endpoint.replace(/\/+$/, '');
-    const normalizedPath = input.objectPath.replace(/^\/+/, '');
-    const url = `${normalizedEndpoint}/${input.bucket}/${normalizedPath}`;
     const aws = new AwsClient({
         accessKeyId,
         secretAccessKey,

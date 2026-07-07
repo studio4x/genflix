@@ -8,35 +8,17 @@ import { normalizeCoursePublicPageContent } from '@/features/public/course-publi
 import type { ButtonTemplate, Course, CourseAuthor, CourseCategory, CourseQuizTypeSettings, CourseModule, FooterActionScope, Lesson, LessonFooterAction, LessonMaterial, ModulePdfAsset, Assessment, } from '@/types/content';
 import type { ButtonTemplateFormInput, CourseFormInput, CoursePublicPageContentInput, CoursePublicPageFormInput, LessonFormInput, LessonFooterActionFormInput, ModuleFormInput, } from './schemas';
 import type { Session } from '@supabase/supabase-js';
+import { deleteStorageObject, prepareStorageUpload, uploadFileWithTicket, type StorageUploadProgress } from '@/features/storage/r2-upload';
 const MATERIALS_BUCKET = 'materials';
 const MODULE_PDFS_BUCKET = 'module-pdfs';
 const LESSON_FOOTER_ASSETS_BUCKET = 'lesson-footer-assets';
 const LESSON_CONTENT_ASSETS_BUCKET = 'lesson-content-assets';
-type PrivateStorageProvider = 'supabase' | 'r2';
-type UploadPreparationResponse = {
-    provider: PrivateStorageProvider;
-    upload_method: 'supabase_signed_upload' | 'r2_signed_put';
-    upload_path: string;
-    upload_token: string | null;
-    upload_url: string | null;
-    upload_headers: Record<string, string> | null;
-    storage_bucket: string;
-    storage_provider: PrivateStorageProvider;
-};
-export type UploadProgressSnapshot = {
-    loadedBytes: number;
-    totalBytes: number;
-    percent: number;
-    etaSeconds: number | null;
-};
+export type UploadProgressSnapshot = StorageUploadProgress;
 function normalizeSupabaseError(error: unknown): Error {
     if (error instanceof Error) {
         return error;
     }
     return new Error('Erro inesperado.');
-}
-function sanitizeFileName(fileName: string): string {
-    return fileName.replace(/[^a-zA-Z0-9._-]/g, '-');
 }
 function slugify(value: string) {
     return value
@@ -88,187 +70,6 @@ async function getAccessTokenOrThrow() {
         throw new Error("Sesso expirada. Fa\u00E7a login novamente.");
     }
     return accessToken;
-}
-async function preparePrivateAssetUpload(input: {
-    uploadKind: 'lesson_material';
-    entityId: string;
-    file: File;
-}) {
-    const accessToken = await getAccessTokenOrThrow();
-    const response = await supabase.functions.invoke<UploadPreparationResponse>('admin-storage-upload', {
-        body: {
-            access_token: accessToken,
-            operation: 'prepare_upload',
-            upload_kind: input.uploadKind,
-            entity_id: input.entityId,
-            file_name: input.file.name,
-            mime_type: input.file.type || 'application/octet-stream',
-            file_size_bytes: input.file.size,
-        },
-    });
-    if (response.error || !response.data) {
-        throw new Error(response.error?.message ?? "Não foi possível preparar o upload protegido.");
-    }
-    return response.data;
-}
-async function uploadPrivateFile(ticket: UploadPreparationResponse, file: File, options?: {
-    onProgress?: (snapshot: UploadProgressSnapshot) => void;
-}) {
-    if (ticket.upload_method === 'supabase_signed_upload') {
-        options?.onProgress?.({
-            loadedBytes: 0,
-            totalBytes: file.size,
-            percent: 0,
-            etaSeconds: null,
-        });
-        if (!ticket.upload_token) {
-            throw new Error('Token de upload assinado ausente.');
-        }
-        const signedUploadResult = await supabase.storage
-            .from(ticket.storage_bucket)
-            .uploadToSignedUrl(ticket.upload_path, ticket.upload_token, file);
-        if (signedUploadResult.error) {
-            throw signedUploadResult.error;
-        }
-        options?.onProgress?.({
-            loadedBytes: file.size,
-            totalBytes: file.size,
-            percent: 100,
-            etaSeconds: 0,
-        });
-        return;
-    }
-    if (!ticket.upload_url) {
-        throw new Error('URL de upload assinada ausente.');
-    }
-    // Upload grande via fetch pode ser instavel em navegadores com extensoes que
-    // interceptam window.fetch; usamos XHR com retry para reduzir abortos de rede.
-    const uploadHeaders = buildR2UploadHeaders(file, ticket.upload_headers);
-    const maxAttempts = 3;
-    let lastError: Error | null = null;
-    for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
-        try {
-            await uploadToSignedR2UrlWithXhr(ticket.upload_url, uploadHeaders, file, options?.onProgress);
-            return;
-        }
-        catch (error) {
-            const normalized = error instanceof Error ? error : new Error('Falha no upload para R2.');
-            lastError = normalized;
-            if (!isRetryableR2UploadError(normalized) || attempt >= maxAttempts) {
-                break;
-            }
-            await delay(350 * attempt);
-        }
-    }
-    if (lastError) {
-        throw lastError;
-    }
-}
-function buildR2UploadHeaders(file: File, signedHeaders: Record<string, string> | null | undefined) {
-    const headers: Record<string, string> = {
-        'Content-Type': file.type || 'application/octet-stream',
-    };
-    for (const [rawKey, rawValue] of Object.entries(signedHeaders ?? {})) {
-        const key = rawKey.trim();
-        const value = String(rawValue ?? '').trim();
-        if (!key || !value) {
-            continue;
-        }
-        const lowerKey = key.toLowerCase();
-        if (lowerKey === 'host' || lowerKey === 'content-length' || lowerKey === 'content-type') {
-            continue;
-        }
-        headers[key] = value;
-    }
-    return headers;
-}
-async function uploadToSignedR2UrlWithXhr(url: string, headers: Record<string, string>, file: File, onProgress?: (snapshot: UploadProgressSnapshot) => void) {
-    await new Promise<void>((resolve, reject) => {
-        const xhr = new XMLHttpRequest();
-        const startTime = Date.now();
-        xhr.open('PUT', url, true);
-        for (const [key, value] of Object.entries(headers)) {
-            try {
-                xhr.setRequestHeader(key, value);
-            }
-            catch {
-                // Ignora headers nao permitidos pelo navegador (ex.: host).
-            }
-        }
-        xhr.onerror = () => {
-            reject(new Error('Falha de rede durante upload para R2 (status 0).'));
-        };
-        xhr.onabort = () => {
-            reject(new Error('Upload para R2 foi abortado (status 0).'));
-        };
-        xhr.upload.onprogress = (event) => {
-            const loadedBytes = Number.isFinite(event.loaded) ? event.loaded : 0;
-            const totalBytes = event.lengthComputable && Number.isFinite(event.total) && event.total > 0
-                ? event.total
-                : file.size;
-            const percent = totalBytes > 0 ? Math.min(100, Math.round((loadedBytes / totalBytes) * 100)) : 0;
-            const elapsedSeconds = Math.max((Date.now() - startTime) / 1000, 0.001);
-            const bytesPerSecond = loadedBytes / elapsedSeconds;
-            const remainingBytes = Math.max(totalBytes - loadedBytes, 0);
-            const etaSeconds = bytesPerSecond > 0 ? Math.ceil(remainingBytes / bytesPerSecond) : null;
-            onProgress?.({
-                loadedBytes,
-                totalBytes,
-                percent,
-                etaSeconds,
-            });
-        };
-        xhr.onload = () => {
-            if (xhr.status >= 200 && xhr.status < 300) {
-                onProgress?.({
-                    loadedBytes: file.size,
-                    totalBytes: file.size,
-                    percent: 100,
-                    etaSeconds: 0,
-                });
-                resolve();
-                return;
-            }
-            reject(new Error(`Falha no upload para R2 (${xhr.status}). ${xhr.responseText || ''}`.trim()));
-        };
-        xhr.send(file);
-    });
-}
-function isRetryableR2UploadError(error: Error) {
-    const message = error.message.toLowerCase();
-    const statusMatch = message.match(/\((\d{3})\)/);
-    const status = statusMatch ? Number(statusMatch[1]) : null;
-    return (message.includes('status 0') ||
-        message.includes('network') ||
-        message.includes('abort') ||
-        message.includes('timeout') ||
-        (status !== null && status >= 500));
-}
-function delay(ms: number) {
-    return new Promise<void>((resolve) => {
-        window.setTimeout(() => resolve(), ms);
-    });
-}
-async function deletePrivateObject(input: {
-    storagePath: string;
-    storageProvider: PrivateStorageProvider;
-    storageBucket: string;
-}) {
-    const accessToken = await getAccessTokenOrThrow();
-    const response = await supabase.functions.invoke<{
-        ok: boolean;
-    }>('admin-storage-upload', {
-        body: {
-            access_token: accessToken,
-            operation: 'delete_object',
-            provider: input.storageProvider,
-            storage_path: input.storagePath,
-            storage_bucket: input.storageBucket,
-        },
-    });
-    if (response.error) {
-        throw new Error(response.error.message);
-    }
 }
 export async function fetchCourseCategories(includeInactive = true): Promise<CourseCategory[]> {
     const query = supabase
@@ -877,12 +678,12 @@ export async function fetchMaterials(lessonId: string): Promise<LessonMaterial[]
 export async function uploadMaterial(lessonId: string, file: File, userId: string, options?: {
     onProgress?: (snapshot: UploadProgressSnapshot) => void;
 }) {
-    const uploadTicket = await preparePrivateAssetUpload({
+    const uploadTicket = await prepareStorageUpload({
         uploadKind: 'lesson_material',
         entityId: lessonId,
         file,
     });
-    await uploadPrivateFile(uploadTicket, file, {
+    await uploadFileWithTicket(uploadTicket, file, {
         onProgress: options?.onProgress,
     });
     const metadataResult = await supabase
@@ -899,9 +700,10 @@ export async function uploadMaterial(lessonId: string, file: File, userId: strin
         .select('*')
         .single();
     if (metadataResult.error) {
-        await deletePrivateObject({
+        await deleteStorageObject({
+            uploadKind: 'lesson_material',
             storagePath: uploadTicket.upload_path,
-            storageProvider: uploadTicket.storage_provider,
+            provider: uploadTicket.storage_provider,
             storageBucket: uploadTicket.storage_bucket,
         });
         throw metadataResult.error;
@@ -909,9 +711,10 @@ export async function uploadMaterial(lessonId: string, file: File, userId: strin
     return metadataResult.data as LessonMaterial;
 }
 export async function deleteMaterial(material: LessonMaterial) {
-    await deletePrivateObject({
+    await deleteStorageObject({
+        uploadKind: 'lesson_material',
         storagePath: material.storage_path,
-        storageProvider: material.storage_provider ?? 'supabase',
+        provider: material.storage_provider ?? 'supabase',
         storageBucket: MATERIALS_BUCKET,
     });
     const metadataDeleteResult = await supabase
@@ -939,22 +742,17 @@ export async function getSignedMaterialUrl(storagePath: string, expiresInSeconds
     return response.data.signed_url;
 }
 export async function uploadModulePdf(moduleId: string, file: File) {
-    const objectPath = `${moduleId}/${crypto.randomUUID()}-${sanitizeFileName(file.name)}`;
-    const uploadResult = await supabase.storage
-        .from(MODULE_PDFS_BUCKET)
-        .upload(objectPath, file, {
-        cacheControl: '3600',
-        upsert: false,
-        contentType: file.type || 'application/pdf',
+    const ticket = await prepareStorageUpload({
+        uploadKind: 'module_pdf',
+        entityId: moduleId,
+        file,
     });
-    if (uploadResult.error) {
-        throw uploadResult.error;
-    }
+    await uploadFileWithTicket(ticket, file);
     const metadataResult = await supabase
         .from('course_modules')
         .update({
-        module_pdf_storage_path: objectPath,
-        module_pdf_storage_provider: 'supabase',
+        module_pdf_storage_path: ticket.upload_path,
+        module_pdf_storage_provider: ticket.storage_provider,
         module_pdf_file_name: file.name,
         module_pdf_uploaded_at: new Date().toISOString(),
     })
@@ -962,7 +760,11 @@ export async function uploadModulePdf(moduleId: string, file: File) {
         .select('module_pdf_storage_path, module_pdf_storage_provider, module_pdf_file_name, module_pdf_uploaded_at')
         .single();
     if (metadataResult.error) {
-        await supabase.storage.from(MODULE_PDFS_BUCKET).remove([objectPath]);
+        await deleteStorageObject({
+            uploadKind: 'module_pdf',
+            storagePath: ticket.upload_path,
+            storageBucket: MODULE_PDFS_BUCKET,
+        });
         throw metadataResult.error;
     }
     const row = metadataResult.data as {
@@ -978,14 +780,14 @@ export async function uploadModulePdf(moduleId: string, file: File) {
         uploaded_at: row.module_pdf_uploaded_at,
     } satisfies ModulePdfAsset;
 }
-export async function deleteModulePdf(module: Pick<CourseModule, 'id' | 'module_pdf_storage_path'>) {
+export async function deleteModulePdf(module: Pick<CourseModule, 'id' | 'module_pdf_storage_path' | 'module_pdf_storage_provider'>) {
     if (module.module_pdf_storage_path) {
-        const removeResult = await supabase.storage
-            .from(MODULE_PDFS_BUCKET)
-            .remove([module.module_pdf_storage_path]);
-        if (removeResult.error) {
-            throw removeResult.error;
-        }
+        await deleteStorageObject({
+            uploadKind: 'module_pdf',
+            storagePath: module.module_pdf_storage_path,
+            storageBucket: MODULE_PDFS_BUCKET,
+            provider: module.module_pdf_storage_provider ?? 'supabase',
+        });
     }
     const result = await supabase
         .from('course_modules')
@@ -999,51 +801,62 @@ export async function deleteModulePdf(module: Pick<CourseModule, 'id' | 'module_
         throw result.error;
     }
 }
-export async function getSignedModulePdfUrl(storagePath: string) {
-    const result = await supabase.storage
-        .from(MODULE_PDFS_BUCKET)
-        .createSignedUrl(storagePath, 60 * 10);
-    if (result.error) {
-        throw result.error;
+export async function getSignedModulePdfUrl(storagePath: string, storageProvider: 'supabase' | 'r2' = 'r2') {
+    const response = await supabase.functions.invoke<{ signed_url: string }>('generate-asset-access', {
+        body: {
+        access_token: (await supabase.auth.getSession()).data.session?.access_token ?? '',
+        asset_kind: 'module_pdf',
+        storage_bucket: MODULE_PDFS_BUCKET,
+        storage_provider: storageProvider,
+        storage_path: storagePath,
+            expires_in_seconds: 60 * 10,
+        },
+    });
+    if (response.error || !response.data?.signed_url) {
+        throw new Error(response.error?.message ?? 'Não foi possível gerar URL assinada do PDF.');
     }
-    return result.data.signedUrl;
+    return response.data.signed_url;
 }
 export async function uploadLessonContentAsset(file: File, options?: {
     contentType?: string;
 }) {
-    const objectPath = `${crypto.randomUUID()}-${sanitizeFileName(file.name)}`;
-    const uploadResult = await supabase.storage
-        .from(LESSON_CONTENT_ASSETS_BUCKET)
-        .upload(objectPath, file, {
-        cacheControl: '3600',
-        upsert: false,
-        contentType: (options?.contentType ?? file.type) || undefined,
+    const ticket = await prepareStorageUpload({
+        uploadKind: 'lesson_content_asset',
+        entityId: 'lesson-content',
+        file,
+        mimeType: options?.contentType,
     });
-    if (uploadResult.error) {
-        throw uploadResult.error;
-    }
-    const signedUrl = await getSignedLessonContentAssetUrl(objectPath);
+    await uploadFileWithTicket(ticket, file);
+    const signedUrl = await getSignedLessonContentAssetUrl(ticket.upload_path, ticket.storage_provider);
     return {
-        storage_path: objectPath,
+        storage_path: ticket.upload_path,
+        storage_provider: ticket.storage_provider,
         signed_url: signedUrl,
     };
 }
-export async function deleteLessonContentAsset(storagePath: string) {
-    const result = await supabase.storage
-        .from(LESSON_CONTENT_ASSETS_BUCKET)
-        .remove([storagePath]);
-    if (result.error) {
-        throw result.error;
-    }
+export async function deleteLessonContentAsset(storagePath: string, storageProvider: 'supabase' | 'r2' = 'r2') {
+    await deleteStorageObject({
+        uploadKind: 'lesson_content_asset',
+        storagePath,
+        storageBucket: LESSON_CONTENT_ASSETS_BUCKET,
+        provider: storageProvider,
+    });
 }
-export async function getSignedLessonContentAssetUrl(storagePath: string) {
-    const result = await supabase.storage
-        .from(LESSON_CONTENT_ASSETS_BUCKET)
-        .createSignedUrl(storagePath, 60 * 60);
-    if (result.error) {
-        throw result.error;
+export async function getSignedLessonContentAssetUrl(storagePath: string, storageProvider: 'supabase' | 'r2' = 'r2') {
+    const response = await supabase.functions.invoke<{ signed_url: string }>('generate-asset-access', {
+        body: {
+        access_token: (await supabase.auth.getSession()).data.session?.access_token ?? '',
+        asset_kind: 'lesson_content_asset',
+        storage_bucket: LESSON_CONTENT_ASSETS_BUCKET,
+        storage_provider: storageProvider,
+        storage_path: storagePath,
+            expires_in_seconds: 60 * 60,
+        },
+    });
+    if (response.error || !response.data?.signed_url) {
+        throw new Error(response.error?.message ?? 'Não foi possível gerar URL assinada do asset.');
     }
-    return result.data.signedUrl;
+    return response.data.signed_url;
 }
 export async function fetchButtonTemplates() {
     const result = await supabase
@@ -1171,6 +984,30 @@ async function fetchFooterActionsByScope(context: FooterActionContext) {
     }
     return (result.data as LessonFooterAction[]) ?? [];
 }
+
+async function resolveFooterActionStorage(storagePath: string) {
+    const materialResult = await supabase
+        .from('lesson_materials')
+        .select('storage_provider')
+        .eq('storage_path', storagePath)
+        .limit(1)
+        .maybeSingle();
+    if (materialResult.error) {
+        throw materialResult.error;
+    }
+    if (materialResult.data) {
+        return {
+            bucket: MATERIALS_BUCKET,
+            provider: materialResult.data.storage_provider ?? 'supabase',
+            shouldDeleteObject: false,
+        } as const;
+    }
+    return {
+        bucket: LESSON_FOOTER_ASSETS_BUCKET,
+        provider: 'r2' as const,
+        shouldDeleteObject: true,
+    };
+}
 export async function fetchLessonFooterActions(lessonId: string) {
     const lessonResult = await supabase
         .from('lessons')
@@ -1216,17 +1053,14 @@ async function createFooterAction(context: FooterActionContext, input: LessonFoo
     }
     let storagePath: string | null = null;
     if (input.action_type === 'file' && file) {
-        storagePath = `${getFooterActionStoragePrefix(context)}/${crypto.randomUUID()}-${sanitizeFileName(file.name)}`;
-        const uploadResult = await supabase.storage
-            .from(LESSON_FOOTER_ASSETS_BUCKET)
-            .upload(storagePath, file, {
-            cacheControl: '3600',
-            upsert: false,
-            contentType: file.type || undefined,
+        const entityId = getFooterActionStoragePrefix(context);
+        const ticket = await prepareStorageUpload({
+            uploadKind: 'lesson_footer_asset',
+            entityId,
+            file,
         });
-        if (uploadResult.error) {
-            throw uploadResult.error;
-        }
+        await uploadFileWithTicket(ticket, file);
+        storagePath = ticket.upload_path;
     }
     const result = await supabase
         .from('lesson_footer_actions')
@@ -1235,7 +1069,11 @@ async function createFooterAction(context: FooterActionContext, input: LessonFoo
         .single();
     if (result.error) {
         if (storagePath) {
-            await supabase.storage.from(LESSON_FOOTER_ASSETS_BUCKET).remove([storagePath]);
+            await deleteStorageObject({
+                uploadKind: 'lesson_footer_asset',
+                storagePath,
+                storageBucket: LESSON_FOOTER_ASSETS_BUCKET,
+            });
         }
         throw result.error;
     }
@@ -1282,21 +1120,24 @@ export async function updateLessonFooterAction(actionId: string, input: LessonFo
         if (contextPrefix.includes('null')) {
             throw new Error('Não foi possível identificar o destino do arquivo do botão.');
         }
-        const nextStoragePath = `${contextPrefix}/${crypto.randomUUID()}-${sanitizeFileName(file.name)}`;
-        const uploadResult = await supabase.storage
-            .from(LESSON_FOOTER_ASSETS_BUCKET)
-            .upload(nextStoragePath, file, {
-            cacheControl: '3600',
-            upsert: false,
-            contentType: file.type || undefined,
+        const ticket = await prepareStorageUpload({
+            uploadKind: 'lesson_footer_asset',
+            entityId: contextPrefix,
+            file,
         });
-        if (uploadResult.error) {
-            throw uploadResult.error;
-        }
+        await uploadFileWithTicket(ticket, file);
         if (current.storage_path) {
-            await supabase.storage.from(LESSON_FOOTER_ASSETS_BUCKET).remove([current.storage_path]);
+            const currentStorage = await resolveFooterActionStorage(current.storage_path);
+            if (currentStorage.shouldDeleteObject) {
+                await deleteStorageObject({
+                    uploadKind: 'lesson_footer_asset',
+                    storagePath: current.storage_path,
+                    storageBucket: currentStorage.bucket,
+                    provider: currentStorage.provider,
+                });
+            }
         }
-        storagePath = nextStoragePath;
+        storagePath = ticket.upload_path;
         fileName = file.name;
         mimeType = file.type || null;
         fileSizeBytes = file.size;
@@ -1331,11 +1172,14 @@ export async function updateLessonFooterAction(actionId: string, input: LessonFo
 }
 export async function deleteLessonFooterAction(action: LessonFooterAction) {
     if (action.storage_path) {
-        const storageDeleteResult = await supabase.storage
-            .from(LESSON_FOOTER_ASSETS_BUCKET)
-            .remove([action.storage_path]);
-        if (storageDeleteResult.error) {
-            throw storageDeleteResult.error;
+        const storage = await resolveFooterActionStorage(action.storage_path);
+        if (storage.shouldDeleteObject) {
+            await deleteStorageObject({
+                uploadKind: 'lesson_footer_asset',
+                storagePath: action.storage_path,
+                storageBucket: storage.bucket,
+                provider: storage.provider,
+            });
         }
     }
     const result = await supabase
@@ -1347,13 +1191,21 @@ export async function deleteLessonFooterAction(action: LessonFooterAction) {
     }
 }
 export async function getSignedLessonFooterActionUrl(storagePath: string) {
-    const result = await supabase.storage
-        .from(LESSON_FOOTER_ASSETS_BUCKET)
-        .createSignedUrl(storagePath, 60 * 10);
-    if (result.error) {
-        throw result.error;
+    const storage = await resolveFooterActionStorage(storagePath);
+    const response = await supabase.functions.invoke<{ signed_url: string }>('generate-asset-access', {
+        body: {
+        access_token: (await supabase.auth.getSession()).data.session?.access_token ?? '',
+        asset_kind: 'lesson_footer_asset',
+        storage_bucket: storage.bucket,
+        storage_provider: storage.provider,
+        storage_path: storagePath,
+            expires_in_seconds: 60 * 10,
+        },
+    });
+    if (response.error || !response.data?.signed_url) {
+        throw new Error(response.error?.message ?? 'Não foi possível gerar URL assinada do arquivo.');
     }
-    return result.data.signedUrl;
+    return response.data.signed_url;
 }
 export type AdminCourseTree = {
     course: Course;
@@ -1403,32 +1255,22 @@ export function toErrorMessage(error: unknown): string {
     return normalizedError.message || 'Erro inesperado.';
 }
 export async function uploadCourseThumbnail(file: File): Promise<string> {
-    const fileExt = file.name.split('.').pop();
-    const filePath = `${crypto.randomUUID()}.${fileExt}`;
-    const { error: uploadError } = await supabase.storage
-        .from('thumbnails')
-        .upload(filePath, file);
-    if (uploadError) {
-        throw uploadError;
-    }
-    const { data } = supabase.storage
-        .from('thumbnails')
-        .getPublicUrl(filePath);
-    return data.publicUrl;
+    const ticket = await prepareStorageUpload({
+        uploadKind: 'course_media',
+        entityId: 'thumbnails',
+        file,
+    });
+    await uploadFileWithTicket(ticket, file);
+    return ticket.public_url ?? '';
 }
 export async function uploadCourseLogo(file: File): Promise<string> {
-    const fileExt = file.name.split('.').pop() || 'png';
-    const filePath = `course-logos/${crypto.randomUUID()}.${fileExt}`;
-    const { error: uploadError } = await supabase.storage
-        .from('thumbnails')
-        .upload(filePath, file);
-    if (uploadError) {
-        throw uploadError;
-    }
-    const { data } = supabase.storage
-        .from('thumbnails')
-        .getPublicUrl(filePath);
-    return data.publicUrl;
+    const ticket = await prepareStorageUpload({
+        uploadKind: 'course_media',
+        entityId: 'course-logos',
+        file,
+    });
+    await uploadFileWithTicket(ticket, file);
+    return ticket.public_url ?? '';
 }
 /**
  * IMPORTAÇÃO EM MASSA (IA)

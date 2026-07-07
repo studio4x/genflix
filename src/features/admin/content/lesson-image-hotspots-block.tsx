@@ -91,7 +91,7 @@ export function LessonImageHotspotsBlockEditor({ content, onChange, onError, }: 
         }
         let isMounted = true;
         setResolvedAssetUrl(null);
-        void getSignedLessonContentAssetUrl(storagePath)
+        void getSignedLessonContentAssetUrl(storagePath, content.asset.storage_provider)
             .then((url) => {
             if (isMounted) {
                 setResolvedAssetUrl(url);
@@ -105,7 +105,7 @@ export function LessonImageHotspotsBlockEditor({ content, onChange, onError, }: 
         return () => {
             isMounted = false;
         };
-    }, [content.asset.signed_url, content.asset.storage_path]);
+    }, [content.asset.signed_url, content.asset.storage_path, content.asset.storage_provider]);
     const assetUrl = resolvedAssetUrl;
     useEffect(() => {
         function handlePointerMove(event: PointerEvent) {
@@ -197,6 +197,7 @@ export function LessonImageHotspotsBlockEditor({ content, onChange, onError, }: 
         onError?.(null);
         try {
             const previousStoragePath = content.asset.storage_path;
+            const previousStorageProvider = content.asset.storage_provider ?? 'supabase';
             const [uploadResult, dimensions] = await Promise.all([
                 uploadLessonContentAsset(file),
                 readImageDimensions(file),
@@ -206,6 +207,7 @@ export function LessonImageHotspotsBlockEditor({ content, onChange, onError, }: 
                 ...content,
                 asset: {
                     storage_path: uploadResult.storage_path,
+                    storage_provider: uploadResult.storage_provider,
                     signed_url: uploadResult.signed_url,
                     alt: content.asset.alt || file.name,
                     width: dimensions.width,
@@ -213,7 +215,7 @@ export function LessonImageHotspotsBlockEditor({ content, onChange, onError, }: 
                 },
             });
             if (previousStoragePath && previousStoragePath !== uploadResult.storage_path) {
-                void deleteLessonContentAsset(previousStoragePath).catch(() => null);
+                void deleteLessonContentAsset(previousStoragePath, previousStorageProvider).catch(() => null);
             }
         }
         catch (error) {
@@ -436,7 +438,7 @@ export function LessonImageHotspotsBlockRenderer({ content, }: LessonImageHotspo
         }
         let isMounted = true;
         setResolvedAssetUrl(null);
-        void getSignedLessonContentAssetUrl(storagePath)
+        void getSignedLessonContentAssetUrl(storagePath, content.asset.storage_provider)
             .then((url) => {
             if (isMounted) {
                 setResolvedAssetUrl(url);
@@ -450,7 +452,7 @@ export function LessonImageHotspotsBlockRenderer({ content, }: LessonImageHotspo
         return () => {
             isMounted = false;
         };
-    }, [content.asset.signed_url, content.asset.storage_path]);
+    }, [content.asset.signed_url, content.asset.storage_path, content.asset.storage_provider]);
     const assetUrl = resolvedAssetUrl;
     const desktopPopupPlacement = activeHotspot
         ? activeHotspot.x > 50

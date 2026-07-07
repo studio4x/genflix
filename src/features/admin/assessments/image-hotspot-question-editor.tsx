@@ -158,6 +158,7 @@ export function ImageHotspotQuestionEditor({ content, onDraftChange, onPersist, 
         onError(null);
         try {
             const previousStoragePath = content.asset.storage_path;
+            const previousStorageProvider = content.asset.storage_provider ?? 'supabase';
             const [uploaded, dimensions] = await Promise.all([
                 uploadAssessmentAsset(file),
                 readImageDimensions(file),
@@ -166,6 +167,7 @@ export function ImageHotspotQuestionEditor({ content, onDraftChange, onPersist, 
                 ...content,
                 asset: {
                     storage_path: uploaded.storage_path,
+                    storage_provider: uploaded.storage_provider,
                     signed_url: uploaded.signed_url,
                     alt: content.asset.alt || file.name,
                     width: dimensions.width,
@@ -174,7 +176,7 @@ export function ImageHotspotQuestionEditor({ content, onDraftChange, onPersist, 
             };
             emit(nextContent, true);
             if (previousStoragePath && previousStoragePath !== uploaded.storage_path) {
-                void deleteAssessmentAsset(previousStoragePath).catch(() => null);
+                void deleteAssessmentAsset(previousStoragePath, previousStorageProvider).catch(() => null);
             }
         }
         catch (error) {
