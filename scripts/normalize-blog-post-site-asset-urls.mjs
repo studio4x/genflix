@@ -3,7 +3,8 @@ import { join } from 'node:path'
 import { createClient } from '@supabase/supabase-js'
 
 const SITE_ASSET_BUCKET = 'site-assets'
-const SITE_ASSET_PROXY_PATH = '/functions/v1/public-site-asset'
+const SITE_ASSET_PROXY_PATH = '/api/public/site-asset'
+const LEGACY_SUPABASE_SITE_ASSET_PROXY_PATH = '/functions/v1/public-site-asset'
 const R2_HOST_PATTERNS = [/\.r2\.cloudflarestorage\.com$/i, /\.r2\.dev$/i]
 const PAGE_SIZE = 200
 
@@ -73,7 +74,9 @@ function normalizeSiteAssetStoragePath(value) {
 
 function extractSiteAssetStoragePathFromProxyUrl(parsedUrl, supabaseUrl) {
   const normalizedPathname = parsedUrl.pathname.replace(/\/+$/, '')
-  if (!normalizedPathname.endsWith(SITE_ASSET_PROXY_PATH)) {
+  const isCurrentAppProxy = normalizedPathname.endsWith(SITE_ASSET_PROXY_PATH)
+  const isLegacySupabaseProxy = normalizedPathname.endsWith(LEGACY_SUPABASE_SITE_ASSET_PROXY_PATH)
+  if (!isCurrentAppProxy && !isLegacySupabaseProxy) {
     return null
   }
   const rawStoragePath = trimToNull(parsedUrl.searchParams.get('storage_path'))
@@ -183,7 +186,12 @@ for (const key of ['SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY']) {
   }
 }
 
+if (!process.env.APP_PUBLIC_URL?.trim()) {
+  throw new Error('Variável obrigatória ausente: APP_PUBLIC_URL')
+}
+
 const supabaseUrl = normalizeSupabaseUrl(process.env.SUPABASE_URL)
+const publicAppUrl = normalizeSupabaseUrl(process.env.APP_PUBLIC_URL)
 const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY.trim()
 const dryRun = process.argv.includes('--dry-run')
 
@@ -210,7 +218,7 @@ function toComparableValue(value) {
 
 function maybeAssignNormalizedUrl(target, field, rawValue) {
   const currentValue = toComparableValue(rawValue)
-  const normalizedValue = normalizeSiteAssetPublicUrl(currentValue, supabaseUrl)
+  const normalizedValue = normalizeSiteAssetPublicUrl(currentValue, publicAppUrl)
   if (normalizedValue !== currentValue) {
     target[field] = normalizedValue
     return true
