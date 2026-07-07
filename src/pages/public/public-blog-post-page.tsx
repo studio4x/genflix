@@ -9,6 +9,7 @@ import { fetchApprovedBlogComments, submitBlogComment, type BlogComment } from '
 import { genflixNavLinks, type GenflixBlogPost, } from '@/features/public/genflix-site-content';
 import { fetchPublicBlogPostFromSupabase } from '@/features/public/genflix-public-content-api';
 import { createDefaultBlogStyleSettings, normalizeBlogStyleSettings, type BlogStyleSettings } from '@/features/blog/blog-style-settings';
+import { normalizeSiteAssetPublicUrl } from '@/features/site-assets/public-url';
 import { fetchSiteContent } from '@/features/site-editor/api';
 import { supabase } from '@/services/supabase/client';
 type DraftBlogPostRow = {
@@ -107,7 +108,7 @@ function mapDraftRowToBlogPost(row: DraftBlogPostRow): GenflixBlogPost {
         title: row.title,
         category: row.category ?? 'GenFlix',
         seoDescription: row.seo_description ?? '',
-        image: row.image_url ?? '/images/genflix/home/featured-2.jpg',
+        image: normalizeSiteAssetPublicUrl(row.image_url) ?? '/images/genflix/home/featured-2.jpg',
         readTime: row.read_time ?? '5 min',
         author: row.author ?? 'Equipe GenFlix',
         publishedAt: row.published_at
@@ -128,7 +129,7 @@ function mapAdminPreviewToBlogPost(preview: AdminPreviewPayload): GenflixBlogPos
         title: preview.title || "Rascunho sem título",
         category: preview.category || 'Sem categoria',
         seoDescription: preview.seoDescription || '',
-        image: preview.image || '/images/genflix/home/featured-2.jpg',
+        image: normalizeSiteAssetPublicUrl(preview.image) ?? '/images/genflix/home/featured-2.jpg',
         readTime: preview.readTime || '1 min',
         author: preview.author || 'Admin GenFlix',
         publishedAt: preview.publishedAt

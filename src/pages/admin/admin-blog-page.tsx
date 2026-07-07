@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { AdminBlogCommentsPanel } from '@/features/blog/admin-blog-comments-panel';
 import { createDefaultBlogStyleSettings, normalizeBlogStyleSettings, type BlogStyleSettings, type BlogTagStyle } from '@/features/blog/blog-style-settings';
 import { fetchBlogSeoDraft, fetchBlogTagCreationSuggestions, fetchBlogTagSuggestions, type BlogAssistArticleInput, } from '@/features/admin/blog-ai/api';
+import { extractSiteAssetStoragePathFromUrl, normalizeSiteAssetPublicUrl } from '@/features/site-assets/public-url';
 import { fetchSiteAssets, fetchSiteContent, saveSiteContentEntry, uploadSiteAsset } from '@/features/site-editor/api';
 import { SITE_TEXT_FONT_PRESETS } from '@/features/site-editor/font-presets';
 import type { SiteAsset } from '@/features/site-editor/types';
@@ -381,17 +382,22 @@ function normalizeLegacyStatus(status: string | null, publishedAt: string | null
     }
     return 'draft';
 }
+function normalizeArticleAssetUrl(value: string | null | undefined) {
+    return normalizeSiteAssetPublicUrl(value) ?? null;
+}
 function mapLegacyPostToArticle(post: LegacyBlogPostRow): BlogArticleRow {
     const contentHtml = post.content_html?.trim() ? post.content_html : legacyContentToHtml(post.content);
     const readingTime = parseLegacyReadTime(post.read_time, contentHtml);
+    const coverImageUrl = normalizeArticleAssetUrl(post.image_url);
+    const cardImageUrl = normalizeArticleAssetUrl(post.card_image_url ?? post.image_url ?? null);
     return {
         id: post.id,
         title: post.title,
         slug: post.slug,
         display_order: post.display_order ?? null,
         content_html: contentHtml,
-        cover_image_url: post.image_url ?? null,
-        card_image_url: post.card_image_url ?? post.image_url ?? null,
+        cover_image_url: coverImageUrl,
+        card_image_url: cardImageUrl,
         status: normalizeLegacyStatus(post.status, post.published_at),
         featured: Boolean(post.featured),
         author_id: post.author ?? null,
@@ -406,7 +412,7 @@ function mapLegacyPostToArticle(post: LegacyBlogPostRow): BlogArticleRow {
         seo_robots: post.seo_robots ?? 'index,follow',
         seo_og_title: post.seo_og_title ?? null,
         seo_og_description: post.seo_og_description ?? null,
-        seo_og_image_url: post.seo_og_image_url ?? null,
+        seo_og_image_url: normalizeArticleAssetUrl(post.seo_og_image_url),
         created_at: post.created_at,
         updated_at: post.updated_at,
     };
@@ -1295,7 +1301,7 @@ export function AdminBlogPage() {
             title: articleForm.title.trim() || 'Rascunho sem título',
             category: 'Sem categoria',
             seoDescription: articleForm.seo_description.trim(),
-            image: articleForm.coverImageUrl.trim() || '/images/genflix/home/featured-2.jpg',
+            image: normalizeArticleAssetUrl(articleForm.coverImageUrl) ?? '/images/genflix/home/featured-2.jpg',
             readTime: `${Math.max(1, articleForm.readingTimeMinutes)} min`,
             author: user?.email ?? 'Admin GenFlix',
             publishedAt: articleForm.publishedAt || null,
@@ -1340,8 +1346,8 @@ export function AdminBlogPage() {
         setArticleForm({
             title: article.title,
             slug: article.slug,
-            coverImageUrl: article.cover_image_url ?? '',
-            cardImageUrl: article.card_image_url ?? article.cover_image_url ?? '',
+            coverImageUrl: normalizeArticleAssetUrl(article.cover_image_url) ?? '',
+            cardImageUrl: normalizeArticleAssetUrl(article.card_image_url ?? article.cover_image_url ?? null) ?? '',
             status: article.status ?? 'draft',
             publishedAt: toDateTimeLocal(article.published_at),
             scheduledPublishAt: toDateTimeLocal(article.scheduled_publish_at),
@@ -1357,7 +1363,7 @@ export function AdminBlogPage() {
             seo_robots: article.seo_robots ?? 'index,follow',
             seo_og_title: article.seo_og_title ?? '',
             seo_og_description: article.seo_og_description ?? '',
-            seo_og_image_url: article.seo_og_image_url ?? '',
+            seo_og_image_url: normalizeArticleAssetUrl(article.seo_og_image_url) ?? '',
         });
         setSuccessMessage(null);
         setErrorMessage(null);
@@ -1414,8 +1420,8 @@ export function AdminBlogPage() {
         setArticleForm({
             title: snapshot.title ?? '',
             slug: snapshot.slug ?? '',
-            coverImageUrl: snapshot.cover_image_url ?? '',
-            cardImageUrl: snapshot.card_image_url ?? snapshot.cover_image_url ?? '',
+            coverImageUrl: normalizeArticleAssetUrl(snapshot.cover_image_url) ?? '',
+            cardImageUrl: normalizeArticleAssetUrl(snapshot.card_image_url ?? snapshot.cover_image_url ?? null) ?? '',
             status: snapshot.status ?? 'draft',
             publishedAt: toDateTimeLocal(snapshot.published_at),
             scheduledPublishAt: toDateTimeLocal(snapshot.scheduled_publish_at),
@@ -1431,7 +1437,7 @@ export function AdminBlogPage() {
             seo_robots: snapshot.seo_robots ?? 'index,follow',
             seo_og_title: snapshot.seo_og_title ?? '',
             seo_og_description: snapshot.seo_og_description ?? '',
-            seo_og_image_url: snapshot.seo_og_image_url ?? '',
+            seo_og_image_url: normalizeArticleAssetUrl(snapshot.seo_og_image_url) ?? '',
         });
         setSuccessMessage(`Revisão #${revision.revision_number} carregada no editor. Revise e salve para aplicar a rest?ura\u00E7\u00E3o.`);
         setErrorMessage(null);
@@ -1452,6 +1458,9 @@ export function AdminBlogPage() {
         const plainText = stripHtml(cleanedHtml);
         const readingTime = calculateReadingTimeMinutes(cleanedHtml);
         const effectiveStatus = nextStatus ?? articleForm.status;
+        const normalizedCoverImageUrl = normalizeArticleAssetUrl(articleForm.coverImageUrl) ?? '';
+        const normalizedCardImageUrl = normalizeArticleAssetUrl(articleForm.cardImageUrl || articleForm.coverImageUrl) ?? '';
+        const normalizedSeoOgImageUrl = normalizeArticleAssetUrl(articleForm.seo_og_image_url) ?? articleForm.seo_og_image_url.trim();
         if (!title || !slug) {
             setErrorMessage('Informe título e slug do artigo.');
             return;
@@ -1472,13 +1481,13 @@ export function AdminBlogPage() {
             seo_robots: articleForm.seo_robots.trim() || 'index,follow',
             seo_og_title: articleForm.seo_og_title.trim() || null,
             seo_og_description: articleForm.seo_og_description.trim() || null,
-            seo_og_image_url: articleForm.seo_og_image_url.trim() || null,
+            seo_og_image_url: normalizedSeoOgImageUrl || null,
             scheduled_publish_at: articleForm.scheduledPublishAt
                 ? new Date(articleForm.scheduledPublishAt).toISOString()
                 : null,
             excerpt: buildLegacyExcerpt(articleForm.seo_description, plainText),
-            image_url: articleForm.coverImageUrl.trim() || null,
-            card_image_url: articleForm.cardImageUrl.trim() || articleForm.coverImageUrl.trim() || null,
+            image_url: normalizedCoverImageUrl || null,
+            card_image_url: normalizedCardImageUrl || null,
             read_time: `${readingTime} min`,
             author: user?.id ?? null,
             published_at: effectiveStatus === 'published'
@@ -1509,8 +1518,8 @@ export function AdminBlogPage() {
             title,
             slug,
             content_html: cleanedHtml,
-            cover_image_url: articleForm.coverImageUrl.trim() || null,
-            card_image_url: articleForm.cardImageUrl.trim() || articleForm.coverImageUrl.trim() || null,
+            cover_image_url: normalizedCoverImageUrl || null,
+            card_image_url: normalizedCardImageUrl || null,
             status: effectiveStatus,
             featured: articleForm.featured,
             category_id: articleForm.categoryId === '__none__' ? null : articleForm.categoryId,
@@ -1529,7 +1538,7 @@ export function AdminBlogPage() {
             seo_robots: articleForm.seo_robots.trim() || 'index,follow',
             seo_og_title: articleForm.seo_og_title.trim(),
             seo_og_description: articleForm.seo_og_description.trim(),
-            seo_og_image_url: articleForm.seo_og_image_url.trim(),
+            seo_og_image_url: normalizedSeoOgImageUrl,
             plain_text_length: plainText.length,
             word_count: plainText ? plainText.split(/\s+/).filter(Boolean).length : 0,
         };
@@ -1923,7 +1932,10 @@ export function AdminBlogPage() {
         const seoTitleHasFocus = !focus || value.seo_title.toLowerCase().includes(focus);
         const seoDescriptionHasFocus = !focus || value.seo_description.toLowerCase().includes(focus);
         const canonicalIsAbsolute = !value.seo_canonical_url.trim() || /^https?:\/\//i.test(value.seo_canonical_url.trim());
-        const ogImageLooksValid = !value.seo_og_image_url.trim() || /^https?:\/\/.+\.(jpg|jpeg|png|webp|gif)(\?.*)?$/i.test(value.seo_og_image_url.trim());
+        const ogImageUrl = value.seo_og_image_url.trim();
+        const ogImageLooksValid = !ogImageUrl
+            || /^https?:\/\/.+\.(jpg|jpeg|png|webp|gif)(\?.*)?$/i.test(ogImageUrl)
+            || Boolean(extractSiteAssetStoragePathFromUrl(ogImageUrl));
         const robotsLooksValid = /^(index|noindex),(follow|nofollow)$/i.test(value.seo_robots.trim());
         return (<div className="grid gap-3">
         <div className="grid gap-3 sm:grid-cols-2">

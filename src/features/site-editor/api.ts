@@ -1,32 +1,11 @@
 import { supabase } from '@/services/supabase/client';
 import { deleteStorageObject, prepareStorageUpload, uploadFileWithTicket } from '@/features/storage/r2-upload';
+import { buildSiteAssetPublicUrl, normalizeSiteAssetRecord } from '@/features/site-assets/public-url';
 import { defaultSiteEditorSettings, type SiteAsset, type SiteContentEntry, type SiteContentEntryType, type SitePageVersion, type SitePageVersionEntrySnapshot, type SiteContentVersion, type SiteEditorSettings, type SitePageKey, } from '@/features/site-editor/types';
 import { createSiteEditorWorkspaceKey, getDefaultWorkspaceRecord, sortWorkspaceComments, type SiteEditorWorkflowStatus, type SiteEditorWorkspaceComment, type SiteEditorWorkspaceMap, type SiteEditorWorkspaceRecord, } from '@/features/site-editor/collaboration';
 const SITE_ASSETS_BUCKET = 'site-assets';
 
-export function buildSiteAssetPublicUrl(storagePath: string) {
-    const normalizedStoragePath = storagePath.trim();
-    const supabaseUrl = (import.meta.env.VITE_SUPABASE_URL as string | undefined)?.trim() ?? '';
-    if (!normalizedStoragePath || !supabaseUrl) {
-        return '';
-    }
-    return `${supabaseUrl}/functions/v1/public-site-asset?storage_path=${encodeURIComponent(normalizedStoragePath)}`;
-}
-
-export function resolveSiteAssetPublicUrl(asset: Pick<SiteAsset, 'storage_path' | 'public_url'>) {
-    const proxiedUrl = buildSiteAssetPublicUrl(asset.storage_path);
-    if (proxiedUrl) {
-        return proxiedUrl;
-    }
-    return typeof asset.public_url === 'string' ? asset.public_url.trim() || null : null;
-}
-
-export function normalizeSiteAssetRecord(asset: SiteAsset): SiteAsset {
-    return {
-        ...asset,
-        public_url: resolveSiteAssetPublicUrl(asset),
-    };
-}
+export { buildSiteAssetPublicUrl, normalizeSiteAssetRecord, resolveSiteAssetPublicUrl } from '@/features/site-assets/public-url';
 
 type WorkspaceRecordRow = {
     id: string;
@@ -378,7 +357,7 @@ export async function fetchSiteAssets(limit = 24) {
     if (error) {
         throw error;
     }
-    return ((data ?? []) as SiteAsset[]).map(normalizeSiteAssetRecord);
+    return ((data ?? []) as SiteAsset[]).map((asset) => normalizeSiteAssetRecord(asset));
 }
 export async function deleteSiteAsset(input: Pick<SiteAsset, 'id' | 'storage_path'>) {
     await deleteStorageObject({

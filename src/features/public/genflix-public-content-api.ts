@@ -2,6 +2,7 @@ import { buildCoursePublicCatalogItem, buildCoursePublicDetail, normalizeCourseP
 import { publicSupabase } from '@/services/supabase/public-client';
 import type { GenflixBlogPost, GenflixCourseDetail, GenflixCourseItem, GenflixCourseModule, } from '@/features/public/genflix-site-content';
 import { slugifyCourseCategoryValue } from '@/features/courses/course-categories';
+import { normalizeSiteAssetPublicUrl } from '@/features/site-assets/public-url';
 import { fixMojibakeText } from '@/lib/text-encoding';
 interface PublicCourseRow extends CoursePublicPageRowLike {
     display_order: number;
@@ -195,12 +196,14 @@ function toBlogPost(row: PublicBlogPostRow): GenflixBlogPost {
         : [];
     const fallbackSeoDescription = content.join(' ').replace(/\s+/g, ' ').trim().slice(0, 160);
     const summary = row.seo_description?.trim() || row.excerpt?.trim() || fallbackSeoDescription;
+    const imageUrl = normalizeSiteAssetPublicUrl(row.image_url) ?? '/images/genflix/home/featured-2.jpg';
+    const cardImageUrl = normalizeSiteAssetPublicUrl(row.card_image_url ?? row.image_url ?? null) ?? '/images/genflix/home/featured-2.jpg';
     return Object.assign({
         slug: row.slug,
         title: fixMojibakeText(row.title),
         category: fixMojibakeText(row.category ?? 'GenFlix'),
         seoDescription: fixMojibakeText(summary),
-        image: row.image_url ?? '/images/genflix/home/featured-2.jpg',
+        image: imageUrl,
         readTime: row.read_time ?? '5 min',
         author: row.author ?? 'Equipe GenFlix',
         publishedAt: row.published_at
@@ -214,7 +217,7 @@ function toBlogPost(row: PublicBlogPostRow): GenflixBlogPost {
         contentHtml: row.content_html ?? '',
         featured: row.featured,
     }, {
-        cardImage: row.card_image_url ?? row.image_url ?? '/images/genflix/home/featured-2.jpg',
+        cardImage: cardImageUrl,
     }) as GenflixBlogPost;
 }
 function normalizeBlogStatus(value: string | null | undefined) {

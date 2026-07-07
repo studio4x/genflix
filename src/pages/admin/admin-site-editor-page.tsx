@@ -283,7 +283,7 @@ export function AdminSiteEditorPage() {
                 .limit(240);
             if (error)
                 throw error;
-            setIconLibraryAssets(((data ?? []) as SiteAsset[]).map(normalizeSiteAssetRecord));
+            setIconLibraryAssets(((data ?? []) as SiteAsset[]).map((asset) => normalizeSiteAssetRecord(asset)));
         }
         catch {
             setIconLibraryAssets([]);
