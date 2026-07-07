@@ -5,6 +5,7 @@ import { createSiteBanner, createSiteBannerFromPrevious, deleteSiteBannerCarouse
 import { bannerThemeStyles } from '@/features/banners/presets';
 import { DESKTOP_BANNER_DESIGN_WIDTH, bannerElementLabels, bannerThemePresetOptions, bannerTonePresetOptions, cloneBannerElementStyles, cloneBannerLayout, type SiteBanner, type SiteBannerCarouselTarget, type SiteBannerPlacementKey, type SiteBannerCta, type SiteBannerColorKey, type SiteBannerElementStyle, type SiteBannerLayoutItem, type SiteBannerLayoutKey, type SiteBannerBackgroundPosition, type SiteBannerBackgroundRepeat, type SiteBannerBackgroundSize, type SiteBannerVersion, } from '@/features/banners/types';
 import { GenflixCtaButton } from '@/components/public/genflix-cta-button';
+import { filterSiteAssetLibrary, resolveSiteAssetLibraryLabel, type SiteAssetLibraryFilter } from '@/features/site-assets/library-utils';
 import { fetchSiteAssets, uploadSiteAsset } from '@/features/site-editor/api';
 import type { SiteAsset, SitePageKey } from '@/features/site-editor/types';
 import { cn } from '@/lib/utils';
@@ -55,6 +56,14 @@ const BACKGROUND_REPEAT_OPTIONS: Array<{
     { value: 'repeat', label: 'Repetir' },
     { value: 'repeat-x', label: 'Repetir horizontal' },
     { value: 'repeat-y', label: 'Repetir vertical' },
+];
+const LIBRARY_FILTER_OPTIONS: Array<{ value: SiteAssetLibraryFilter; label: string; }> = [
+    { value: 'all', label: 'Todas' },
+    { value: 'raster', label: 'JPG / PNG / WEBP' },
+    { value: 'svg', label: 'SVG' },
+    { value: 'gif', label: 'GIF' },
+    { value: 'avif', label: 'AVIF' },
+    { value: 'other', label: 'Outras' },
 ];
 function cloneBanner(banner: SiteBanner): SiteBanner {
     return {
@@ -351,6 +360,8 @@ export function AdminBannersPage() {
     });
     const [isLibraryModalOpen, setIsLibraryModalOpen] = useState(false);
     const [libraryModalVariant, setLibraryModalVariant] = useState<BannerBackgroundVariant>('desktop');
+    const [librarySearch, setLibrarySearch] = useState('');
+    const [libraryFilter, setLibraryFilter] = useState<SiteAssetLibraryFilter>('all');
     const [saveConfirmationOpen, setSaveConfirmationOpen] = useState(false);
     const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
     const [isVersionsModalOpen, setIsVersionsModalOpen] = useState(false);
@@ -368,6 +379,8 @@ export function AdminBannersPage() {
     const [previewModalContentWidth, setPreviewModalContentWidth] = useState(0);
     const [heightDesktopInput, setHeightDesktopInput] = useState('760');
     const [heightMobileInput, setHeightMobileInput] = useState('560');
+    const filteredLibraryAssets = useMemo(() => filterSiteAssetLibrary(libraryAssets, librarySearch, libraryFilter), [libraryAssets, librarySearch, libraryFilter]);
+    const canApplyLibraryAsset = filteredLibraryAssets.some((asset) => asset.id === backgroundLibrarySelection[libraryModalVariant]);
     const [locationKeys, setLocationKeys] = useState<string[]>([]);
     const [selectedLocationKey, setSelectedLocationKey] = useState<string>('home-hero');
     const [carouselTargets, setCarouselTargets] = useState<SiteBannerCarouselTarget[]>([]);
@@ -1256,23 +1269,42 @@ export function AdminBannersPage() {
                   Escolher imagem para {libraryModalVariant === 'desktop' ? 'desktop' : 'mobile'}
                 </h2>
               </div>
-              <Button type="button" variant="outline" onClick={() => setIsLibraryModalOpen(false)} className="rounded-xl border-[#D8E6EB]">
+              <Button type="button" variant="outline" onClick={() => setIsLibraryModalOpen(false)} className="rounded-xl border-[#D8E6EB] bg-white text-[#15323b] hover:bg-[#F2F7F9] hover:text-[#15323b]">
                 Fechar
               </Button>
             </div>
 
             <div className="min-h-0 flex-1 overflow-y-auto p-5">
+              <div className="mb-4 grid gap-3 rounded-[20px] border border-[#D8E6EB] bg-[#F8FBFC] p-4 md:grid-cols-[minmax(0,1fr),220px]">
+                <label className="grid gap-1">
+                  <span className="text-[10px] font-black uppercase tracking-[0.18em] text-[#5F7077]">Buscar midia</span>
+                  <input value={librarySearch} onChange={(event) => setLibrarySearch(event.target.value)} className="h-11 rounded-xl border border-[#D8E6EB] bg-white px-3 text-sm font-semibold text-[#15323b] outline-none transition focus:border-[#1398B7]" placeholder="Buscar por nome, alt, caminho ou extensao"/>
+                </label>
+                <label className="grid gap-1">
+                  <span className="text-[10px] font-black uppercase tracking-[0.18em] text-[#5F7077]">Tipo de midia</span>
+                  <select value={libraryFilter} onChange={(event) => setLibraryFilter(event.target.value as SiteAssetLibraryFilter)} className="h-11 rounded-xl border border-[#D8E6EB] bg-white px-3 text-sm font-semibold text-[#15323b] outline-none transition focus:border-[#1398B7]">
+                    {LIBRARY_FILTER_OPTIONS.map((option) => (<option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>))}
+                  </select>
+                </label>
+                <p className="text-xs font-semibold text-[#5F7077] md:col-span-2">
+                  {filteredLibraryAssets.length} {filteredLibraryAssets.length === 1 ? 'resultado visivel' : 'resultados visiveis'} na biblioteca.
+                </p>
+              </div>
               {loadingLibraryAssets ? (<p className="text-sm font-semibold text-[#5F7077]">Carregando biblioteca...</p>) : libraryAssets.length === 0 ? (<div className="rounded-[18px] border border-dashed border-[#D8E6EB] bg-[#F8FBFC] px-4 py-6 text-sm font-semibold text-[#5F7077]">
                   Nenhuma imagem encontrada na biblioteca de mídia.
+                </div>) : filteredLibraryAssets.length === 0 ? (<div className="rounded-[18px] border border-dashed border-[#D8E6EB] bg-[#F8FBFC] px-4 py-6 text-sm font-semibold text-[#5F7077]">
+                  Nenhuma midia corresponde a essa busca ou filtro.
                 </div>) : (<div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                  {libraryAssets.map((asset) => {
+                  {filteredLibraryAssets.map((asset) => {
                     const isSelected = backgroundLibrarySelection[libraryModalVariant] === asset.id;
                     return (<button key={asset.id} type="button" onClick={() => setBackgroundLibrarySelection((current) => ({ ...current, [libraryModalVariant]: asset.id }))} className={cn('overflow-hidden rounded-[16px] border bg-white text-left transition-all', isSelected ? 'border-[#1398B7] ring-2 ring-[#1398B7]/20' : 'border-[#D8E6EB] hover:border-[#B8D8E1]')}>
                         <div className="aspect-[16/9] w-full bg-[#EAF2F5]">
                           {asset.public_url ? <img src={asset.public_url} alt={asset.alt ?? 'Imagem'} className="h-full w-full object-cover"/> : null}
                         </div>
                         <div className="space-y-1 px-3 py-2">
-                          <p className="truncate text-xs font-black text-[#15323b]">{asset.alt ?? 'Imagem sem nome'}</p>
+                          <p className="truncate text-xs font-black text-[#15323b]">{resolveSiteAssetLibraryLabel(asset)}</p>
                           <p className="text-[11px] font-semibold text-[#5F7077]">{new Date(asset.created_at).toLocaleString('pt-BR')}</p>
                         </div>
                       </button>);
@@ -1281,13 +1313,13 @@ export function AdminBannersPage() {
             </div>
 
             <div className="flex flex-col-reverse gap-2 border-t border-[#D8E6EB] px-5 py-4 sm:flex-row sm:items-center sm:justify-end">
-              <Button type="button" variant="outline" onClick={() => setIsLibraryModalOpen(false)} className="h-11 w-full rounded-xl border-[#D8E6EB] sm:w-auto">
+              <Button type="button" variant="outline" onClick={() => setIsLibraryModalOpen(false)} className="h-11 w-full rounded-xl border-[#D8E6EB] bg-white text-[#15323b] hover:bg-[#F2F7F9] hover:text-[#15323b] sm:w-auto">
                 Cancelar
               </Button>
               <Button type="button" onClick={() => {
                 handleBackgroundLibraryApply(libraryModalVariant);
                 setIsLibraryModalOpen(false);
-            }} disabled={!backgroundLibrarySelection[libraryModalVariant]} className="h-11 w-full rounded-xl bg-[#1398B7] px-4 text-center text-xs font-black uppercase tracking-[0.1em] text-white hover:bg-[#1089A5] sm:w-auto">
+            }} disabled={!backgroundLibrarySelection[libraryModalVariant] || !canApplyLibraryAsset} className="h-11 w-full rounded-xl bg-[#1398B7] px-4 text-center text-xs font-black uppercase tracking-[0.1em] text-white hover:bg-[#1089A5] sm:w-auto">
                 Usar imagem selecionada
               </Button>
             </div>

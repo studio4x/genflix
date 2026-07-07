@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { AdminBlogCommentsPanel } from '@/features/blog/admin-blog-comments-panel';
 import { createDefaultBlogStyleSettings, normalizeBlogStyleSettings, type BlogStyleSettings, type BlogTagStyle } from '@/features/blog/blog-style-settings';
 import { fetchBlogSeoDraft, fetchBlogTagCreationSuggestions, fetchBlogTagSuggestions, type BlogAssistArticleInput, } from '@/features/admin/blog-ai/api';
+import { filterSiteAssetLibrary, resolveSiteAssetLibraryLabel, type SiteAssetLibraryFilter } from '@/features/site-assets/library-utils';
 import { extractSiteAssetStoragePathFromUrl, normalizeSiteAssetPublicUrl } from '@/features/site-assets/public-url';
 import { fetchSiteAssets, fetchSiteContent, saveSiteContentEntry, uploadSiteAsset } from '@/features/site-editor/api';
 import { SITE_TEXT_FONT_PRESETS } from '@/features/site-editor/font-presets';
@@ -550,6 +551,14 @@ type FontFamilyOption = {
     label: string;
     value: string;
 };
+const MEDIA_LIBRARY_FILTER_OPTIONS: Array<{ value: SiteAssetLibraryFilter; label: string; }> = [
+    { value: 'all', label: 'Todas' },
+    { value: 'raster', label: 'JPG / PNG / WEBP' },
+    { value: 'svg', label: 'SVG' },
+    { value: 'gif', label: 'GIF' },
+    { value: 'avif', label: 'AVIF' },
+    { value: 'other', label: 'Outras' },
+];
 const FONT_SIZE_OPTIONS = ['12px', '14px', '16px', '18px', '20px', '24px', '28px', '32px', '36px', '40px'];
 const FONT_WEIGHT_OPTIONS = ['300', '400', '500', '600', '700', '800', '900'];
 const LINE_HEIGHT_OPTIONS = ['1', '1.1', '1.2', '1.3', '1.4', '1.5', '1.6', '1.8', '2'];
@@ -668,6 +677,8 @@ export function AdminBlogPage() {
     const [isMediaLibraryOpen, setIsMediaLibraryOpen] = useState(false);
     const [selectedMediaAssetId, setSelectedMediaAssetId] = useState('');
     const [mediaLibraryTarget, setMediaLibraryTarget] = useState<'cover' | 'card'>('cover');
+    const [mediaLibrarySearch, setMediaLibrarySearch] = useState('');
+    const [mediaLibraryFilter, setMediaLibraryFilter] = useState<SiteAssetLibraryFilter>('all');
     const [fontFamilyOptions, setFontFamilyOptions] = useState<FontFamilyOption[]>(SITE_TEXT_FONT_PRESETS.map((item) => ({ label: item.label, value: item.family })));
     const [articles, setArticles] = useState<BlogArticleRow[]>([]);
     const [categories, setCategories] = useState<BlogCategoryRow[]>([]);
@@ -954,6 +965,8 @@ export function AdminBlogPage() {
             isMounted = false;
         };
     }, []);
+    const filteredMediaLibraryAssets = useMemo(() => filterSiteAssetLibrary(mediaLibraryAssets, mediaLibrarySearch, mediaLibraryFilter), [mediaLibraryAssets, mediaLibrarySearch, mediaLibraryFilter]);
+    const canApplySelectedMediaAsset = filteredMediaLibraryAssets.some((asset) => asset.id === selectedMediaAssetId);
     async function loadBlogLayoutSettings() {
         try {
             const entries = await fetchSiteContent('blog');
@@ -2011,23 +2024,42 @@ export function AdminBlogPage() {
                   {mediaLibraryTarget === 'cover' ? 'Escolher imagem de capa' : 'Escolher imagem do card'}
                 </h2>
               </div>
-              <Button type="button" variant="outline" onClick={() => setIsMediaLibraryOpen(false)} className="rounded-xl border-[#D8E6EB]">
+              <Button type="button" variant="outline" onClick={() => setIsMediaLibraryOpen(false)} className="rounded-xl border-[#D8E6EB] bg-white text-[#15323b] hover:bg-[#F2F7F9] hover:text-[#15323b]">
                 Fechar
               </Button>
             </div>
 
             <div className="min-h-0 flex-1 overflow-y-auto p-5">
+              <div className="mb-4 grid gap-3 rounded-[20px] border border-[#D8E6EB] bg-[#F8FBFC] p-4 md:grid-cols-[minmax(0,1fr),220px]">
+                <label className="grid gap-1">
+                  <span className="text-[10px] font-black uppercase tracking-[0.18em] text-[#5F7077]">Buscar midia</span>
+                  <input value={mediaLibrarySearch} onChange={(event) => setMediaLibrarySearch(event.target.value)} className="h-11 rounded-xl border border-[#D8E6EB] bg-white px-3 text-sm font-semibold text-[#15323b] outline-none transition focus:border-[#1398B7]" placeholder="Buscar por nome, alt, caminho ou extensao"/>
+                </label>
+                <label className="grid gap-1">
+                  <span className="text-[10px] font-black uppercase tracking-[0.18em] text-[#5F7077]">Tipo de midia</span>
+                  <select value={mediaLibraryFilter} onChange={(event) => setMediaLibraryFilter(event.target.value as SiteAssetLibraryFilter)} className="h-11 rounded-xl border border-[#D8E6EB] bg-white px-3 text-sm font-semibold text-[#15323b] outline-none transition focus:border-[#1398B7]">
+                    {MEDIA_LIBRARY_FILTER_OPTIONS.map((option) => (<option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>))}
+                  </select>
+                </label>
+                <p className="text-xs font-semibold text-[#5F7077] md:col-span-2">
+                  {filteredMediaLibraryAssets.length} {filteredMediaLibraryAssets.length === 1 ? 'resultado visivel' : 'resultados visiveis'} na biblioteca.
+                </p>
+              </div>
               {isLoadingMediaLibrary ? (<p className="text-sm font-semibold text-[#5F7077]">Carregando biblioteca...</p>) : mediaLibraryAssets.length === 0 ? (<div className="rounded-[18px] border border-dashed border-[#D8E6EB] bg-[#F8FBFC] px-4 py-6 text-sm font-semibold text-[#5F7077]">
                   Nenhuma imagem encontrada na biblioteca de mídia.
+                </div>) : filteredMediaLibraryAssets.length === 0 ? (<div className="rounded-[18px] border border-dashed border-[#D8E6EB] bg-[#F8FBFC] px-4 py-6 text-sm font-semibold text-[#5F7077]">
+                  Nenhuma midia corresponde a essa busca ou filtro.
                 </div>) : (<div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                  {mediaLibraryAssets.map((asset) => {
+                  {filteredMediaLibraryAssets.map((asset) => {
                     const isSelected = selectedMediaAssetId === asset.id;
                     return (<button key={asset.id} type="button" onClick={() => setSelectedMediaAssetId(asset.id)} className={`overflow-hidden rounded-[16px] border bg-white text-left transition-all ${isSelected ? 'border-[#1398B7] ring-2 ring-[#1398B7]/20' : 'border-[#D8E6EB] hover:border-[#B8D8E1]'}`}>
                         <div className="aspect-[16/9] w-full bg-[#EAF2F5]">
                           {asset.public_url ? <img src={asset.public_url} alt={asset.alt ?? 'Imagem'} className="h-full w-full object-cover"/> : null}
                         </div>
                         <div className="space-y-1 px-3 py-2">
-                          <p className="truncate text-xs font-black text-[#15323b]">{asset.alt ?? 'Imagem sem nome'}</p>
+                          <p className="truncate text-xs font-black text-[#15323b]">{resolveSiteAssetLibraryLabel(asset)}</p>
                           <p className="text-[11px] font-semibold text-[#5F7077]">{new Date(asset.created_at).toLocaleString('pt-BR')}</p>
                         </div>
                       </button>);
@@ -2036,10 +2068,10 @@ export function AdminBlogPage() {
             </div>
 
             <div className="flex flex-col-reverse gap-2 border-t border-[#D8E6EB] px-5 py-4 sm:flex-row sm:items-center sm:justify-end">
-              <Button type="button" variant="outline" onClick={() => setIsMediaLibraryOpen(false)} className="h-11 w-full rounded-xl border-[#D8E6EB] sm:w-auto">
+              <Button type="button" variant="outline" onClick={() => setIsMediaLibraryOpen(false)} className="h-11 w-full rounded-xl border-[#D8E6EB] bg-white text-[#15323b] hover:bg-[#F2F7F9] hover:text-[#15323b] sm:w-auto">
                 Cancelar
               </Button>
-              <Button type="button" onClick={() => handleApplyImageFromLibrary(mediaLibraryTarget)} disabled={!selectedMediaAssetId} className="h-11 w-full rounded-xl bg-[#1398B7] px-4 text-center text-xs font-black uppercase tracking-[0.1em] text-white hover:bg-[#1089A5] sm:w-auto">
+              <Button type="button" onClick={() => handleApplyImageFromLibrary(mediaLibraryTarget)} disabled={!selectedMediaAssetId || !canApplySelectedMediaAsset} className="h-11 w-full rounded-xl bg-[#1398B7] px-4 text-center text-xs font-black uppercase tracking-[0.1em] text-white hover:bg-[#1089A5] sm:w-auto">
                 Usar imagem selecionada
               </Button>
             </div>
