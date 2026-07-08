@@ -1,4 +1,5 @@
 import { supabase } from '@/services/supabase/client';
+import { normalizeCourseMediaFields } from '@/features/course-media/public-url';
 import type { Course, ModuleLearningState, StudentCourseModuleProgress, StudentLessonWithProgress, } from '@/types/content';
 import { lessonCompletionInputSchema, type LessonCompletionInput, } from './schemas';
 interface StudentModuleProgressRpcRow {
@@ -55,6 +56,9 @@ function toError(error: unknown): Error {
 export function toErrorMessage(error: unknown): string {
     return toError(error).message;
 }
+function normalizeReleasedCourse<TCourse extends Course>(course: TCourse) {
+    return normalizeCourseMediaFields(course) as TCourse;
+}
 export async function fetchReleasedCourses(): Promise<Course[]> {
     const result = await supabase
         .from('courses')
@@ -65,7 +69,7 @@ export async function fetchReleasedCourses(): Promise<Course[]> {
     if (result.error) {
         throw result.error;
     }
-    return (result.data as Course[]) ?? [];
+    return ((result.data as Course[]) ?? []).map((course) => normalizeReleasedCourse(course));
 }
 export async function fetchReleasedCourseById(courseId: string): Promise<Course | null> {
     const result = await supabase
@@ -77,7 +81,7 @@ export async function fetchReleasedCourseById(courseId: string): Promise<Course 
     if (result.error) {
         throw result.error;
     }
-    return (result.data as Course | null) ?? null;
+    return result.data ? normalizeReleasedCourse(result.data as Course) : null;
 }
 export async function fetchStudentCourseContentWithProgress(courseId: string): Promise<StudentCourseModuleProgress[]> {
     const [modulesResult, lessonsResult] = await Promise.all([

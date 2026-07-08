@@ -8,6 +8,9 @@ const SITE_ASSETS_BUCKET = 'site-assets'
 const ASSESSMENT_ASSETS_BUCKET = 'assessment-assets'
 const LESSON_CONTENT_ASSETS_BUCKET = 'lesson-content-assets'
 const LESSON_FOOTER_ASSETS_BUCKET = 'lesson-footer-assets'
+const COURSE_MEDIA_BUCKET = 'thumbnails'
+const COURSE_MEDIA_PROXY_PATH = '/api/public/course-media'
+const R2_HOST_PATTERNS = [/\.r2\.cloudflarestorage\.com$/i, /\.r2\.dev$/i]
 
 type SectionName =
   | 'lesson_materials'
@@ -149,11 +152,7 @@ async function runSection(
       })
       return { hasMore: false, nextOffset: null, processedCount: 0 }
     case 'courses_media_urls':
-      await migrateUrlFieldRows(supabaseAdmin, stats, failures, {
-        table: 'courses',
-        select: 'id, thumbnail_url, cover_image_url, logo_url, student_hero_image_url',
-        fields: ['thumbnail_url', 'cover_image_url', 'logo_url', 'student_hero_image_url'],
-      })
+      await migrateCourseMediaUrls(supabaseAdmin, stats, failures)
       return { hasMore: false, nextOffset: null, processedCount: 0 }
     case 'support_ticket_attachments':
       await migrateUrlFieldRows(supabaseAdmin, stats, failures, {
@@ -443,6 +442,54 @@ async function migrateUrlFieldRows(
   }
 }
 
+async function migrateCourseMediaUrls(
+  supabaseAdmin: ReturnType<typeof createClient>,
+  stats: SectionStats,
+  failures: string[],
+) {
+  const result = await supabaseAdmin
+    .from('courses')
+    .select('id, thumbnail_url, cover_image_url, logo_url, student_hero_image_url')
+  if (result.error) {
+    throw result.error
+  }
+
+  for (const row of result.data ?? []) {
+    await handleRow(stats, failures, `courses:${row.id}`, async () => {
+      const updates: Record<string, string> = {}
+      let hasUpdate = false
+
+      for (const field of ['thumbnail_url', 'cover_image_url', 'logo_url', 'student_hero_image_url']) {
+        const currentUrl = row[field]
+        const parsed = parseCourseMediaUrl(currentUrl, Deno.env.get('SUPABASE_URL')?.trim() ?? '')
+        if (!parsed) {
+          continue
+        }
+        if (parsed.sourceProvider === 'supabase') {
+          await migrateObject(supabaseAdmin, COURSE_MEDIA_BUCKET, parsed.objectPath, 'supabase')
+        }
+        const canonicalUrl = buildCourseMediaPublicUrl(parsed.objectPath)
+        if (canonicalUrl && currentUrl !== canonicalUrl) {
+          updates[field] = canonicalUrl
+          hasUpdate = true
+        }
+        stats.migrated += 1
+      }
+
+      if (!hasUpdate) {
+        stats.skipped += 1
+        return
+      }
+
+      const updateResult = await supabaseAdmin.from('courses').update(updates).eq('id', row.id)
+      if (updateResult.error) {
+        throw updateResult.error
+      }
+      stats.updated += 1
+    })
+  }
+}
+
 async function migrateObject(
   supabaseAdmin: ReturnType<typeof createClient>,
   bucket: string,
@@ -652,6 +699,74 @@ function parseLegacySupabaseStorageUrl(url: unknown, supabaseUrl: string) {
   catch {
     return null
   }
+}
+
+function trimToNull(value: unknown) {
+  const normalized = typeof value === 'string' ? value.trim() : ''
+  return normalized || null
+}
+
+function normalizeCourseMediaStoragePath(value: unknown) {
+  const normalized = trimToNull(value)?.replace(/^\/+/, '') ?? ''
+  if (!normalized) {
+    return ''
+  }
+  if (/^[a-z]+:\/\//i.test(normalized)) {
+    return ''
+  }
+  if (normalized.startsWith(`${COURSE_MEDIA_BUCKET}/http://`) || normalized.startsWith(`${COURSE_MEDIA_BUCKET}/https://`)) {
+    return ''
+  }
+  return normalized
+}
+
+function buildCourseMediaPublicUrl(storagePath: string) {
+  const normalizedStoragePath = normalizeCourseMediaStoragePath(storagePath)
+  if (!normalizedStoragePath) {
+    return ''
+  }
+  const publicAppUrl = (Deno.env.get('APP_PUBLIC_URL')?.trim() || 'https://genflix-omega.vercel.app').replace(/\/+$/, '')
+  return `${publicAppUrl}${COURSE_MEDIA_PROXY_PATH}?storage_path=${encodeURIComponent(normalizedStoragePath)}`
+}
+
+function parseCourseMediaUrl(url: unknown, supabaseUrl: string) {
+  const normalizedUrl = trimToNull(url)
+  if (!normalizedUrl) {
+    return null
+  }
+
+  if (!/^https?:\/\//i.test(normalizedUrl)) {
+    const objectPath = normalizeCourseMediaStoragePath(normalizedUrl)
+    return objectPath ? { objectPath, sourceProvider: 'r2' as const } : null
+  }
+
+  try {
+    const parsed = new URL(normalizedUrl)
+    const normalizedPathname = parsed.pathname.replace(/\/+$/, '')
+    if (normalizedPathname.endsWith(COURSE_MEDIA_PROXY_PATH)) {
+      const objectPath = normalizeCourseMediaStoragePath(parsed.searchParams.get('storage_path'))
+      return objectPath ? { objectPath, sourceProvider: 'r2' as const } : null
+    }
+    if (supabaseUrl && parsed.origin === new URL(supabaseUrl).origin) {
+      const match = parsed.pathname.match(/^\/storage\/v1\/object\/(?:public|sign|authenticated)\/thumbnails\/(.+)$/i)
+      if (match) {
+        const objectPath = normalizeCourseMediaStoragePath(decodeURIComponent(match[1]))
+        return objectPath ? { objectPath, sourceProvider: 'supabase' as const } : null
+      }
+    }
+    if (R2_HOST_PATTERNS.some((pattern) => pattern.test(parsed.hostname))) {
+      const segments = decodeURIComponent(parsed.pathname).replace(/^\/+/, '').split('/').filter(Boolean)
+      if (segments.length >= 2) {
+        const objectPath = normalizeCourseMediaStoragePath(segments.slice(1).join('/'))
+        return objectPath ? { objectPath, sourceProvider: 'r2' as const } : null
+      }
+    }
+  }
+  catch {
+    return null
+  }
+
+  return null
 }
 
 async function handleRow(

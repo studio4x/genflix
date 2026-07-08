@@ -1,4 +1,5 @@
 import { buildCoursePublicCatalogItem, buildCoursePublicDetail, normalizeCoursePublicPageContent, type CoursePublicPageRowLike, } from '@/features/public/course-public-page-content';
+import { normalizeCourseMediaFields, normalizeCourseMediaPublicUrl } from '@/features/course-media/public-url';
 import { publicSupabase } from '@/services/supabase/public-client';
 import type { GenflixBlogPost, GenflixCourseDetail, GenflixCourseItem, GenflixCourseModule, } from '@/features/public/genflix-site-content';
 import { slugifyCourseCategoryValue } from '@/features/courses/course-categories';
@@ -90,7 +91,10 @@ async function fetchPublicRows<T>(path: string, searchParams: URLSearchParams): 
     return (await response.json()) as T[];
 }
 function toCourseItem(row: PublicCourseRow): GenflixCourseItem {
-    return buildCoursePublicCatalogItem(row);
+    return buildCoursePublicCatalogItem(normalizePublicCourseRow(row));
+}
+function normalizePublicCourseRow<TCourse extends object>(row: TCourse) {
+    return normalizeCourseMediaFields(row);
 }
 function toTimestamp(value: string | null | undefined) {
     if (!value) {
@@ -174,11 +178,12 @@ async function fetchPublicRpc<T>(functionName: string, payload: Record<string, u
     return (data as T | null) ?? null;
 }
 async function toCourseDetail(row: PublicCourseDetailRow): Promise<GenflixCourseDetail> {
-    const content = normalizeCoursePublicPageContent(row.public_page_content);
+    const normalizedRow = normalizePublicCourseRow(row);
+    const content = normalizeCoursePublicPageContent(normalizedRow.public_page_content);
     const realSyllabus = content.contentSource === 'real'
-        ? await fetchPublicCourseOutline(row.id).catch(() => [])
+        ? await fetchPublicCourseOutline(String(normalizedRow.id ?? '')).catch(() => [])
         : [];
-    return buildCoursePublicDetail(row, { realSyllabus });
+    return buildCoursePublicDetail(normalizedRow, { realSyllabus });
 }
 function toBlogPost(row: PublicBlogPostRow): GenflixBlogPost {
     const content = Array.isArray(row.content)
@@ -304,7 +309,7 @@ export async function fetchPublicCoursesFromSupabase() {
         order: 'display_order.asc',
     });
     const rows = await fetchPublicRows<PublicCourseRow>('courses', params);
-    return rows.map(toCourseItem);
+    return rows.map((row) => toCourseItem(normalizePublicCourseRow(row)));
 }
 export async function fetchLatestPublicCoursesFromSupabase(limit = 6) {
     const params = new URLSearchParams({
@@ -314,7 +319,7 @@ export async function fetchLatestPublicCoursesFromSupabase(limit = 6) {
         order: 'launch_date.desc,created_at.desc,display_order.asc',
     });
     const rows = await fetchPublicRows<PublicCourseRow>('courses', params);
-    return sortPublicCourseRowsByPublicationDate(rows)
+    return sortPublicCourseRowsByPublicationDate(rows.map((row) => normalizePublicCourseRow(row)))
         .slice(0, Math.max(0, Math.trunc(limit)))
         .map(toCourseItem);
 }
@@ -381,8 +386,8 @@ export async function fetchPublicAuthorProfileFromSupabase(slug: string): Promis
                     title,
                     category: typeof record.category === 'string' ? record.category : null,
                     categories: Array.isArray(record.categories) ? record.categories.filter((item): item is string => typeof item === 'string') : null,
-                    thumbnail_url: typeof record.thumbnail_url === 'string' ? record.thumbnail_url : null,
-                    cover_image_url: typeof record.cover_image_url === 'string' ? record.cover_image_url : null,
+                    thumbnail_url: normalizeCourseMediaPublicUrl(typeof record.thumbnail_url === 'string' ? record.thumbnail_url : null),
+                    cover_image_url: normalizeCourseMediaPublicUrl(typeof record.cover_image_url === 'string' ? record.cover_image_url : null),
                     hero_video_url: typeof record.hero_video_url === 'string' ? record.hero_video_url : null,
                     price_label: typeof record.price_label === 'string' ? record.price_label : null,
                     secondary_price_label: typeof record.secondary_price_label === 'string' ? record.secondary_price_label : null,

@@ -2,6 +2,7 @@
 import { mergeContent, splitContent, type LessonContentBlock, } from './content-blocks';
 import { exportAssessmentContent, importAssessmentContentStructured, type ImportAssessmentData, } from '@/features/admin/assessments/api';
 import { normalizeCourseQuizTypeSettings } from '@/features/assessments/course-quiz-type-settings';
+import { buildCourseMediaPublicUrl, normalizeCourseMediaFields, normalizeCourseMediaPublicUrl } from '@/features/course-media/public-url';
 import { getCourseCategories, normalizeCoursePrimaryCategory, } from '@/features/courses/course-categories';
 import { isLegacyCourseSalesSchemaError, stripLegacyCourseSalesFields, withLegacyCourseSalesDefaults, } from '@/features/courses/schema-compat';
 import { normalizeCoursePublicPageContent } from '@/features/public/course-public-page-content';
@@ -52,6 +53,12 @@ async function swapPositions(table: 'course_modules' | 'lessons', firstId: strin
         throw firstFinalUpdate.error;
     }
 }
+function normalizeCourseMediaValue(value: string | null | undefined) {
+    return normalizeCourseMediaPublicUrl(value)?.trim() || null;
+}
+function normalizeCourseRecord<TCourse extends Course>(course: TCourse) {
+    return withLegacyCourseSalesDefaults(normalizeCourseMediaFields(course) as TCourse);
+}
 export async function fetchCourses(): Promise<Course[]> {
     const result = await supabase
         .from('courses')
@@ -61,7 +68,7 @@ export async function fetchCourses(): Promise<Course[]> {
     if (result.error) {
         throw result.error;
     }
-    return ((result.data as Course[]) ?? []).map(withLegacyCourseSalesDefaults);
+    return ((result.data as Course[]) ?? []).map((course) => normalizeCourseRecord(course));
 }
 async function getAccessTokenOrThrow() {
     const sessionResult = await supabase.auth.getSession();
@@ -162,11 +169,11 @@ export async function createCourse(input: CourseFormInput, userId: string) {
         description: input.description?.trim() || null,
         status: input.status,
         display_order: nextDisplayOrder,
-        thumbnail_url: input.thumbnail_url?.trim() || null,
-        cover_image_url: input.thumbnail_url?.trim() || null,
+        thumbnail_url: normalizeCourseMediaValue(input.thumbnail_url),
+        cover_image_url: normalizeCourseMediaValue(input.thumbnail_url),
         hero_video_url: input.hero_video_url?.trim() || null,
-        logo_url: input.logo_url?.trim() || null,
-        student_hero_image_url: input.student_hero_image_url?.trim() || null,
+        logo_url: normalizeCourseMediaValue(input.logo_url),
+        student_hero_image_url: normalizeCourseMediaValue(input.student_hero_image_url),
         show_reviews: input.show_reviews ?? true,
         resource_item_ids: input.resource_item_ids ?? [],
         slug: input.slug?.trim() || slugify(input.title),
@@ -198,7 +205,7 @@ export async function createCourse(input: CourseFormInput, userId: string) {
         creator_id: input.creator_id,
         creator_commission_percent: input.creator_commission_percent,
     });
-    return withLegacyCourseSalesDefaults(result.data as Course);
+    return normalizeCourseRecord(result.data as Course);
 }
 async function syncLegacyCourseAuthors(courseId: string, input: Pick<CourseFormInput, 'creator_id' | 'creator_commission_percent'>) {
     const existingAuthorsResult = await supabase
@@ -269,11 +276,11 @@ export async function updateCourse(courseId: string, input: CourseFormInput) {
         categories,
         description: input.description?.trim() || null,
         status: input.status,
-        thumbnail_url: input.thumbnail_url?.trim() || null,
-        cover_image_url: input.thumbnail_url?.trim() || null,
+        thumbnail_url: normalizeCourseMediaValue(input.thumbnail_url),
+        cover_image_url: normalizeCourseMediaValue(input.thumbnail_url),
         hero_video_url: input.hero_video_url?.trim() || null,
-        logo_url: input.logo_url?.trim() || null,
-        student_hero_image_url: input.student_hero_image_url?.trim() || null,
+        logo_url: normalizeCourseMediaValue(input.logo_url),
+        student_hero_image_url: normalizeCourseMediaValue(input.student_hero_image_url),
         show_reviews: input.show_reviews ?? true,
         resource_item_ids: input.resource_item_ids ?? [],
         slug: input.slug?.trim() || slugify(input.title),
@@ -307,7 +314,7 @@ export async function updateCourse(courseId: string, input: CourseFormInput) {
         creator_id: input.creator_id,
         creator_commission_percent: input.creator_commission_percent,
     });
-    return withLegacyCourseSalesDefaults(result.data as Course);
+    return normalizeCourseRecord(result.data as Course);
 }
 export async function updateCoursePublicPage(courseId: string, input: CoursePublicPageFormInput) {
     const currentResult = await supabase
@@ -371,7 +378,7 @@ export async function updateCoursePublicPage(courseId: string, input: CoursePubl
         category: categories[0] ?? null,
         categories,
         hero_video_url: input.hero_video_url?.trim() || null,
-        logo_url: input.logo_url?.trim() || null,
+        logo_url: normalizeCourseMediaValue(input.logo_url),
         mentor_name: input.mentor_name?.trim() || null,
         mentor_role: input.mentor_role?.trim() || null,
         mentor_bio: input.mentor_bio?.trim() || null,
@@ -421,7 +428,7 @@ export async function updateCoursePublicPage(courseId: string, input: CoursePubl
             throw upsertResult.error;
         }
     }
-    return result.data as Course;
+    return normalizeCourseRecord(result.data as Course);
 }
 export interface ResetCourseProgressResult {
     course_id: string;
@@ -470,7 +477,7 @@ export async function fetchCourse(courseId: string): Promise<Course | null> {
     if (result.error) {
         throw result.error;
     }
-    return result.data ? withLegacyCourseSalesDefaults(result.data as Course) : null;
+    return result.data ? normalizeCourseRecord(result.data as Course) : null;
 }
 export async function fetchModules(courseId: string): Promise<CourseModule[]> {
     const result = await supabase
@@ -545,15 +552,14 @@ export async function deleteModule(moduleId: string) {
 export async function moveModule(module: CourseModule, targetModule: CourseModule) {
     await swapPositions('course_modules', module.id, module.position, targetModule.id, targetModule.position);
 }
-export async function reorderModules(_courseId: string, orderedModuleIds: string[]) {
-    const updates = orderedModuleIds.map((id, index) => supabase
-        .from('course_modules')
-        .update({ position: index + 1 })
-        .eq('id', id));
-    const results = await Promise.all(updates);
-    const firstError = results.find(r => r.error)?.error;
-    if (firstError)
-        throw firstError;
+export async function reorderModules(courseId: string, orderedModuleIds: string[]) {
+    const result = await supabase.rpc('reorder_course_modules', {
+        _course_id: courseId,
+        _ordered_module_ids: orderedModuleIds,
+    });
+    if (result.error) {
+        throw result.error;
+    }
 }
 export async function fetchModule(moduleId: string): Promise<CourseModule | null> {
     const result = await supabase
@@ -643,15 +649,14 @@ export async function deleteLesson(lessonId: string) {
 export async function moveLesson(lesson: Lesson, targetLesson: Lesson) {
     await swapPositions('lessons', lesson.id, lesson.position, targetLesson.id, targetLesson.position);
 }
-export async function reorderLessons(_moduleId: string, orderedLessonIds: string[]) {
-    const updates = orderedLessonIds.map((id, index) => supabase
-        .from('lessons')
-        .update({ position: index + 1 })
-        .eq('id', id));
-    const results = await Promise.all(updates);
-    const firstError = results.find(r => r.error)?.error;
-    if (firstError)
-        throw firstError;
+export async function reorderLessons(moduleId: string, orderedLessonIds: string[]) {
+    const result = await supabase.rpc('reorder_module_lessons', {
+        _module_id: moduleId,
+        _ordered_lesson_ids: orderedLessonIds,
+    });
+    if (result.error) {
+        throw result.error;
+    }
 }
 export async function fetchLesson(lessonId: string): Promise<Lesson | null> {
     const result = await supabase
@@ -1248,7 +1253,7 @@ export async function fetchAdminCourseTree(courseId: string): Promise<AdminCours
     });
     // Course-level assessments (no module_id or course final assessment)
     const courseAssessments = assessments.filter(a => !a.module_id);
-    return { course: withLegacyCourseSalesDefaults(course), courseAuthors, modules: treeModules, courseAssessments };
+    return { course: normalizeCourseRecord(course), courseAuthors, modules: treeModules, courseAssessments };
 }
 export function toErrorMessage(error: unknown): string {
     const normalizedError = normalizeSupabaseError(error);
@@ -1261,7 +1266,7 @@ export async function uploadCourseThumbnail(file: File): Promise<string> {
         file,
     });
     await uploadFileWithTicket(ticket, file);
-    return ticket.public_url ?? '';
+    return buildCourseMediaPublicUrl(ticket.upload_path) || normalizeCourseMediaPublicUrl(ticket.public_url) || '';
 }
 export async function uploadCourseLogo(file: File): Promise<string> {
     const ticket = await prepareStorageUpload({
@@ -1270,7 +1275,7 @@ export async function uploadCourseLogo(file: File): Promise<string> {
         file,
     });
     await uploadFileWithTicket(ticket, file);
-    return ticket.public_url ?? '';
+    return buildCourseMediaPublicUrl(ticket.upload_path) || normalizeCourseMediaPublicUrl(ticket.public_url) || '';
 }
 /**
  * IMPORTAÇÃO EM MASSA (IA)
@@ -1540,11 +1545,11 @@ export async function importCourseContent(courseId: string, input: ImportCourseF
             title: fullCourseInput.title,
             description: fullCourseInput.description || null,
             workload_minutes: fullCourseInput.workload_minutes || 0,
-            thumbnail_url: fullCourseInput.thumbnail_url || null,
-            cover_image_url: fullCourseInput.cover_image_url || fullCourseInput.thumbnail_url || null,
+            thumbnail_url: normalizeCourseMediaValue(fullCourseInput.thumbnail_url),
+            cover_image_url: normalizeCourseMediaValue(fullCourseInput.cover_image_url || fullCourseInput.thumbnail_url),
             hero_video_url: fullCourseInput.hero_video_url || null,
-            logo_url: fullCourseInput.logo_url || null,
-            student_hero_image_url: fullCourseInput.student_hero_image_url || null,
+            logo_url: normalizeCourseMediaValue(fullCourseInput.logo_url),
+            student_hero_image_url: normalizeCourseMediaValue(fullCourseInput.student_hero_image_url),
             show_reviews: fullCourseInput.show_reviews ?? true,
             resource_item_ids: fullCourseInput.resource_item_ids ?? [],
             quiz_type_settings: normalizeCourseQuizTypeSettings(fullCourseInput.quiz_type_settings),
@@ -1658,11 +1663,11 @@ export async function importFullCourse(data: ImportCourseFullData, userId: strin
         display_order: nextDisplayOrder,
         categories: [],
         workload_minutes: data.workload_minutes || 0,
-        thumbnail_url: data.thumbnail_url || null,
-        cover_image_url: data.cover_image_url || data.thumbnail_url || null,
+        thumbnail_url: normalizeCourseMediaValue(data.thumbnail_url),
+        cover_image_url: normalizeCourseMediaValue(data.cover_image_url || data.thumbnail_url),
         hero_video_url: data.hero_video_url || null,
-        logo_url: data.logo_url || null,
-        student_hero_image_url: data.student_hero_image_url || null,
+        logo_url: normalizeCourseMediaValue(data.logo_url),
+        student_hero_image_url: normalizeCourseMediaValue(data.student_hero_image_url),
         show_reviews: data.show_reviews ?? true,
         resource_item_ids: data.resource_item_ids ?? [],
         quiz_type_settings: normalizeCourseQuizTypeSettings(data.quiz_type_settings),
@@ -1674,5 +1679,5 @@ export async function importFullCourse(data: ImportCourseFullData, userId: strin
         throw cError;
     // 2. Importar Conteúdo (Módulos/Aulas/Quizzes ou Avaliação Direta)
     await importCourseContent(course.id, data, false);
-    return withLegacyCourseSalesDefaults(course as Course);
+    return normalizeCourseRecord(course as Course);
 }

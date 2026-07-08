@@ -54,6 +54,7 @@ for (const key of REQUIRED_ENV_KEYS) {
 
 const supabaseUrl = process.env.SUPABASE_URL.trim()
 const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY.trim()
+const appPublicUrl = (process.env.APP_PUBLIC_URL?.trim() || 'https://genflix-omega.vercel.app').replace(/\/+$/, '')
 const hasLocalR2Credentials = Boolean(
   process.env.R2_S3_ENDPOINT?.trim()
   && process.env.R2_ACCESS_KEY_ID?.trim()
@@ -64,6 +65,17 @@ const r2AccessKeyId = process.env.R2_ACCESS_KEY_ID?.trim() ?? ''
 const r2SecretAccessKey = process.env.R2_SECRET_ACCESS_KEY?.trim() ?? ''
 const r2Region = (process.env.R2_REGION ?? 'auto').trim() || 'auto'
 const dryRun = process.argv.includes('--dry-run')
+const selectedSections = new Set(
+  process.argv.flatMap((argument, index, allArgs) => {
+    if (argument === '--section') {
+      return [allArgs[index + 1] ?? '']
+    }
+    if (argument.startsWith('--section=')) {
+      return [argument.slice('--section='.length)]
+    }
+    return []
+  }).flatMap((value) => value.split(',')).map((value) => value.trim()).filter(Boolean),
+)
 const remoteSections = [
   { name: 'lesson_materials' },
   { name: 'module_pdfs' },
@@ -90,6 +102,9 @@ const SITE_ASSETS_BUCKET = 'site-assets'
 const ASSESSMENT_ASSETS_BUCKET = 'assessment-assets'
 const LESSON_CONTENT_ASSETS_BUCKET = 'lesson-content-assets'
 const LESSON_FOOTER_ASSETS_BUCKET = 'lesson-footer-assets'
+const COURSE_MEDIA_BUCKET = 'thumbnails'
+const COURSE_MEDIA_PROXY_PATH = '/api/public/course-media'
+const R2_HOST_PATTERNS = [/\.r2\.cloudflarestorage\.com$/i, /\.r2\.dev$/i]
 
 const migrationCache = new Map()
 const report = {
@@ -136,6 +151,15 @@ function buildR2ObjectUrl(bucket, objectPath) {
 
 function buildCanonicalUri(bucket, objectPath) {
   return `/${bucket}/${encodeR2ObjectPath(objectPath.replace(/^\/+/, ''))}`
+}
+
+function shouldRunSection(section) {
+  return selectedSections.size === 0 || selectedSections.has(section)
+}
+
+function trimToNull(value) {
+  const normalized = typeof value === 'string' ? value.trim() : ''
+  return normalized || null
 }
 
 function buildAwsDates(date = new Date()) {
@@ -358,6 +382,75 @@ function parseLegacySupabaseStorageUrl(url) {
     return {
       bucket: decodeURIComponent(authenticatedMatch[1]),
       objectPath: decodeURIComponent(authenticatedMatch[2]),
+    }
+  }
+
+  return null
+}
+
+function normalizeCourseMediaStoragePath(value) {
+  const normalized = trimToNull(value)?.replace(/^\/+/, '') ?? ''
+  if (!normalized) {
+    return ''
+  }
+  if (/^[a-z]+:\/\//i.test(normalized)) {
+    return ''
+  }
+  if (normalized.startsWith(`${COURSE_MEDIA_BUCKET}/http://`) || normalized.startsWith(`${COURSE_MEDIA_BUCKET}/https://`)) {
+    return ''
+  }
+  return normalized
+}
+
+function buildCourseMediaPublicUrl(storagePath) {
+  const normalizedStoragePath = normalizeCourseMediaStoragePath(storagePath)
+  if (!normalizedStoragePath) {
+    return ''
+  }
+  return `${appPublicUrl}${COURSE_MEDIA_PROXY_PATH}?storage_path=${encodeURIComponent(normalizedStoragePath)}`
+}
+
+function parseCourseMediaUrl(url) {
+  const normalizedUrl = trimToNull(url)
+  if (!normalizedUrl) {
+    return null
+  }
+
+  if (!/^https?:\/\//i.test(normalizedUrl)) {
+    const normalizedStoragePath = normalizeCourseMediaStoragePath(normalizedUrl)
+    return normalizedStoragePath
+      ? { objectPath: normalizedStoragePath, sourceProvider: 'r2' }
+      : null
+  }
+
+  let parsed
+  try {
+    parsed = new URL(normalizedUrl)
+  }
+  catch {
+    return null
+  }
+
+  const normalizedPathname = parsed.pathname.replace(/\/+$/, '')
+  if (normalizedPathname.endsWith(COURSE_MEDIA_PROXY_PATH)) {
+    const objectPath = normalizeCourseMediaStoragePath(parsed.searchParams.get('storage_path'))
+    return objectPath ? { objectPath, sourceProvider: 'r2' } : null
+  }
+
+  const supabaseOrigin = new URL(supabaseUrl).origin
+  if (parsed.origin === supabaseOrigin) {
+    const match = parsed.pathname.match(/^\/storage\/v1\/object\/(?:public|sign|authenticated)\/thumbnails\/(.+)$/i)
+    if (match) {
+      const objectPath = normalizeCourseMediaStoragePath(decodeURIComponent(match[1]))
+      return objectPath ? { objectPath, sourceProvider: 'supabase' } : null
+    }
+  }
+
+  if (R2_HOST_PATTERNS.some((pattern) => pattern.test(parsed.hostname))) {
+    const segments = decodeURIComponent(parsed.pathname).replace(/^\/+/, '').split('/').filter(Boolean)
+    if (segments.length >= 2) {
+      const objectPath = normalizeCourseMediaStoragePath(segments.slice(1).join('/'))
+      return objectPath ? { objectPath, sourceProvider: 'r2' } : null
     }
   }
 
@@ -684,39 +777,77 @@ async function migrateUrlFieldRows({ section, table, select, fields }) {
   }
 }
 
+async function migrateCourseMediaUrls() {
+  const result = await supabaseAdmin
+    .from('courses')
+    .select('id, thumbnail_url, cover_image_url, logo_url, student_hero_image_url')
+  if (result.error) {
+    throw result.error
+  }
+
+  for (const row of result.data ?? []) {
+    const updates = {}
+    let hasUpdate = false
+
+    for (const field of ['thumbnail_url', 'cover_image_url', 'logo_url', 'student_hero_image_url']) {
+      const currentUrl = row[field]
+      const parsed = parseCourseMediaUrl(currentUrl)
+      if (!parsed) {
+        continue
+      }
+      if (parsed.sourceProvider === 'supabase') {
+        await migrateObject(COURSE_MEDIA_BUCKET, parsed.objectPath)
+      }
+      const canonicalUrl = buildCourseMediaPublicUrl(parsed.objectPath)
+      if (canonicalUrl && currentUrl !== canonicalUrl) {
+        updates[field] = canonicalUrl
+        hasUpdate = true
+      }
+      incrementSection('courses_media_urls', 'migrated')
+    }
+
+    if (!hasUpdate) {
+      incrementSection('courses_media_urls', 'skipped')
+      continue
+    }
+
+    await updateRow('courses', { id: row.id }, updates)
+    report.updatedRows += 1
+    incrementSection('courses_media_urls', 'updated')
+  }
+}
+
 async function main() {
   process.stdout.write(`Modo: ${dryRun ? 'dry-run' : 'real'}\n`)
+  if (selectedSections.size > 0) {
+    process.stdout.write(`Seções filtradas: ${Array.from(selectedSections).join(', ')}\n`)
+  }
 
   if (!hasLocalR2Credentials) {
     await runRemoteBackfill()
     return
   }
 
-  await runSection('lesson_materials', migrateLessonMaterials)
-  await runSection('module_pdfs', migrateModulePdfs)
-  await runSection('site_assets', migrateSiteAssets)
-  await runSection('assessment_assets', migrateAssessmentAssets)
-  await runSection('lesson_content_assets', migrateLessonContentAssets)
-  await runSection('lesson_footer_assets', migrateFooterActionAssets)
-  await runSection('profiles_avatar_url', () => migrateUrlFieldRows({
+  if (shouldRunSection('lesson_materials')) await runSection('lesson_materials', migrateLessonMaterials)
+  if (shouldRunSection('module_pdfs')) await runSection('module_pdfs', migrateModulePdfs)
+  if (shouldRunSection('site_assets')) await runSection('site_assets', migrateSiteAssets)
+  if (shouldRunSection('assessment_assets')) await runSection('assessment_assets', migrateAssessmentAssets)
+  if (shouldRunSection('lesson_content_assets')) await runSection('lesson_content_assets', migrateLessonContentAssets)
+  if (shouldRunSection('lesson_footer_assets')) await runSection('lesson_footer_assets', migrateFooterActionAssets)
+  if (shouldRunSection('profiles_avatar_url')) await runSection('profiles_avatar_url', () => migrateUrlFieldRows({
     section: 'profiles_avatar_url',
     table: 'profiles',
     select: 'id, avatar_url',
     fields: ['avatar_url'],
   }))
-  await runSection('courses_media_urls', () => migrateUrlFieldRows({
-    section: 'courses_media_urls',
-    table: 'courses',
-    select: 'id, thumbnail_url, cover_image_url, logo_url, student_hero_image_url',
-    fields: ['thumbnail_url', 'cover_image_url', 'logo_url', 'student_hero_image_url'],
-  }))
-  await runSection('support_ticket_attachments', () => migrateUrlFieldRows({
+  if (shouldRunSection('courses_media_urls')) await runSection('courses_media_urls', migrateCourseMediaUrls)
+  if (shouldRunSection('support_ticket_attachments')) await runSection('support_ticket_attachments', () => migrateUrlFieldRows({
     section: 'support_ticket_attachments',
     table: 'support_tickets',
     select: 'id, attachment_url',
     fields: ['attachment_url'],
   }))
-  await runSection('support_message_attachments', () => migrateUrlFieldRows({
+  if (shouldRunSection('support_message_attachments')) await runSection('support_message_attachments', () => migrateUrlFieldRows({
     section: 'support_message_attachments',
     table: 'support_messages',
     select: 'id, attachment_url',
@@ -747,6 +878,9 @@ async function runRemoteBackfill() {
   const maintenanceToken = process.env.BACKFILL_ADMIN_TOKEN?.trim() || process.env.SUPABASE_ACCESS_TOKEN?.trim() || ''
   for (const sectionConfig of remoteSections) {
     const section = sectionConfig.name
+    if (!shouldRunSection(section)) {
+      continue
+    }
     let batchOffset = 0
     let batchNumber = 1
 
