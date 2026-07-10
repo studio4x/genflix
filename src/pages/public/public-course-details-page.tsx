@@ -555,7 +555,7 @@ export function PublicCourseDetailsPage() {
             </div>
 
             <div className="min-w-0 max-w-none">
-              <h1 className="mt-4 max-w-none break-words text-[2.6rem] font-extrabold leading-[0.94] tracking-[-0.05em] text-white sm:text-[3.1rem] lg:text-[3.4rem] xl:text-[3.7rem]">
+              <h1 className="mt-4 max-w-none break-words text-[2.6rem] font-extrabold leading-[0.94] tracking-[0px] text-white sm:text-[3.1rem] lg:text-[3.4rem] xl:text-[3.7rem]">
                 {detail.title}
               </h1>
               <GenflixCtaButton asChild tone="surface" className="mt-8 h-12 px-6 text-[15px] font-bold shadow-none">
