@@ -596,7 +596,7 @@ export function PublicCourseDetailsPage() {
                   {detail.aboutParagraphs.map((paragraph, index) => (
                     <div
                       key={`${detail.slug}-about-${index}`}
-                      className="rich-text-content max-w-[760px] text-[15px] leading-7 text-[#5f7178] [&_p]:mb-4 [&_p:last-child]:mb-0 [&_ul]:my-4 [&_ol]:my-4 [&_li]:mb-2 [&_a]:text-[#1398B7] [&_a]:underline"
+                      className="rich-text-content max-w-[760px] text-[15px] leading-7 text-[#000000] [&_p]:mb-4 [&_p:last-child]:mb-0 [&_ul]:my-4 [&_ol]:my-4 [&_li]:mb-2 [&_a]:text-[#000000] [&_a]:underline [&_a]:hover:text-[#000000]"
                       dangerouslySetInnerHTML={{ __html: renderAboutParagraphHtml(paragraph) ?? '' }}
                     />
                   ))}
