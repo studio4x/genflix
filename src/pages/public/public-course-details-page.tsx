@@ -618,9 +618,6 @@ export function PublicCourseDetailsPage() {
                         >
                           <div>
                             <p className="text-sm font-bold text-[#183139]">{module.title}</p>
-                            <p className="mt-1 text-xs uppercase tracking-[0.24em] text-[#5F7077]">
-                              Módulo {index + 1}
-                            </p>
                           </div>
 
                           <div className="flex items-center gap-3">
