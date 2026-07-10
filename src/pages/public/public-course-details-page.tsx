@@ -1,5 +1,5 @@
 ﻿import { useEffect, useRef, useState } from 'react';
-import { ArrowRight, BadgeCheck, ChevronDown, CirclePlay, X } from 'lucide-react';
+import { ArrowRight, BadgeCheck, ChevronDown, X } from 'lucide-react';
 import { Link, Navigate, useParams } from 'react-router-dom';
 import { CourseCoverMedia } from '@/components/public/course-cover-media';
 import { GenflixCtaButton } from '@/components/public/genflix-cta-button';
@@ -736,18 +736,6 @@ export function PublicCourseDetailsPage() {
                   <GenflixCtaButton asChild className="w-full px-5 py-3">
                     <Link to={`/checkout/pagamento/${slug}`}>Comprar agora</Link>
                   </GenflixCtaButton>
-
-                  {detail.bonusSection.enabled && detail.bonusSection.description.trim().length > 0 ? (
-                    <div className="rounded-[20px] border border-[#D8E6EB] bg-[#F2F7F9] px-4 py-4">
-                      <div className="flex items-start gap-3">
-                        <CirclePlay className="mt-0.5 h-5 w-5 text-[#1398B7]" />
-                        <div>
-                          <p className="text-sm font-semibold text-[#183139]">{detail.bonusSection.title}</p>
-                          <p className="mt-1 text-sm leading-6 text-[#6a7b81]">{detail.bonusSection.description}</p>
-                        </div>
-                      </div>
-                    </div>
-                  ) : null}
 
                   {selectedResourceItems.length ? (
                     <div className="rounded-[22px] border border-[#D8E6EB] bg-white p-4 shadow-[0_12px_28px_rgba(21,50,59,0.04)]">
