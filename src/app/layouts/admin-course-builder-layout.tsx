@@ -1,8 +1,9 @@
-import { createContext, useCallback, useContext, useEffect, useState } from 'react';
-import type { ChangeEvent } from 'react';
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
+import type { ChangeEvent, PointerEvent as ReactPointerEvent } from 'react';
 import { Link, Outlet, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { AppVersion } from '@/components/layout/AppVersion';
 import { Button } from '@/components/ui/button';
+import { useLocalStorageState } from '@/hooks/use-local-storage-state';
 import { fetchAdminCourseTree, toErrorMessage, importCourseContent, exportFullCourseContent, exportModuleContent } from '@/features/admin/content/api';
 import type { AdminCourseTree } from '@/features/admin/content/api';
 import { CourseTreeDnd } from '@/features/admin/content/components/course-tree-dnd';
@@ -93,6 +94,22 @@ function detectImportJsonFormat(input: unknown): { kind: ImportJsonFormatKind; l
     };
 }
 const BuilderContext = createContext<BuilderContextData | undefined>(undefined);
+const SIDEBAR_MIN_WIDTH = 220;
+const SIDEBAR_DEFAULT_WIDTH = 252;
+const SIDEBAR_MAX_WIDTH = 460;
+const SIDEBAR_STORAGE_KEY = 'admin-course-builder-sidebar-width';
+
+function clampSidebarWidth(width: number, maxWidth: number) {
+    return Math.min(Math.max(width, SIDEBAR_MIN_WIDTH), maxWidth);
+}
+
+function getSidebarMaxWidth() {
+    if (typeof window === 'undefined') {
+        return SIDEBAR_MAX_WIDTH;
+    }
+    return Math.min(SIDEBAR_MAX_WIDTH, Math.max(SIDEBAR_MIN_WIDTH, window.innerWidth - 360));
+}
+
 export function useCourseBuilder() {
     const context = useContext(BuilderContext);
     if (!context) {
@@ -111,6 +128,13 @@ export function AdminCourseBuilderLayout() {
     const [error, setError] = useState<string | null>(null);
     // local toggle for sidebar (so users can collapse it if needed)
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+    const { state: sidebarWidth, setState: setSidebarWidth } = useLocalStorageState<number>(SIDEBAR_STORAGE_KEY, SIDEBAR_DEFAULT_WIDTH);
+    const [isResizingSidebar, setIsResizingSidebar] = useState(false);
+    const sidebarResizeRef = useRef<{
+        startX: number;
+        startWidth: number;
+        pointerId: number;
+    } | null>(null);
     // AI Import State
     const [isImportModalOpen, setIsImportModalOpen] = useState(false);
     const [importJson, setImportJson] = useState('');
@@ -165,6 +189,40 @@ export function AdminCourseBuilderLayout() {
         window.addEventListener(BUILDER_NOTICE_EVENT, syncNotice as EventListener);
         return () => window.removeEventListener(BUILDER_NOTICE_EVENT, syncNotice as EventListener);
     }, []);
+    useEffect(() => {
+        if (!isSidebarOpen) {
+            setIsResizingSidebar(false);
+            sidebarResizeRef.current = null;
+            return;
+        }
+        setSidebarWidth((current) => clampSidebarWidth(current, getSidebarMaxWidth()));
+    }, [isSidebarOpen, setSidebarWidth]);
+    useEffect(() => {
+        if (!isSidebarOpen || typeof window === 'undefined') {
+            return;
+        }
+        const handleWindowResize = () => {
+            setSidebarWidth((current) => clampSidebarWidth(current, getSidebarMaxWidth()));
+        };
+        window.addEventListener('resize', handleWindowResize);
+        return () => window.removeEventListener('resize', handleWindowResize);
+    }, [isSidebarOpen, setSidebarWidth]);
+    useEffect(() => {
+        if (!isResizingSidebar) {
+            return;
+        }
+        if (typeof document === 'undefined') {
+            return;
+        }
+        const previousUserSelect = document.body.style.userSelect;
+        const previousCursor = document.body.style.cursor;
+        document.body.style.userSelect = 'none';
+        document.body.style.cursor = 'col-resize';
+        return () => {
+            document.body.style.userSelect = previousUserSelect;
+            document.body.style.cursor = previousCursor;
+        };
+    }, [isResizingSidebar]);
     async function handleImportFileChange(event: ChangeEvent<HTMLInputElement>) {
         const file = event.target.files?.[0];
         if (!file) {
@@ -280,6 +338,32 @@ export function AdminCourseBuilderLayout() {
             setIsExportingFinal(false);
         }
     }
+    function handleSidebarResizePointerDown(event: ReactPointerEvent<HTMLButtonElement>) {
+        if (!isSidebarOpen) {
+            return;
+        }
+        event.preventDefault();
+        event.currentTarget.setPointerCapture(event.pointerId);
+        sidebarResizeRef.current = {
+            startX: event.clientX,
+            startWidth: sidebarWidth,
+            pointerId: event.pointerId,
+        };
+        setIsResizingSidebar(true);
+    }
+    function handleSidebarResizePointerMove(event: ReactPointerEvent<HTMLButtonElement>) {
+        if (!isSidebarOpen || !isResizingSidebar || !sidebarResizeRef.current) {
+            return;
+        }
+        const maxWidth = getSidebarMaxWidth();
+        const delta = event.clientX - sidebarResizeRef.current.startX;
+        const nextWidth = clampSidebarWidth(sidebarResizeRef.current.startWidth + delta, maxWidth);
+        setSidebarWidth(nextWidth);
+    }
+    function stopSidebarResize() {
+        setIsResizingSidebar(false);
+        sidebarResizeRef.current = null;
+    }
     if (isLoading && !courseTree) {
         return (<div className="flex h-screen w-full items-center justify-center bg-slate-50">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent"/>
@@ -304,7 +388,7 @@ export function AdminCourseBuilderLayout() {
     // Nav paths
     // const coursePath = `/admin/cursos/${courseId}/builder`
     return (<BuilderContext.Provider value={{ courseTree, refreshTree, isLoading }}>
-      <div className="relative flex h-screen w-full flex-col overflow-hidden bg-slate-50 font-sans text-slate-900">
+      <div className={`relative flex h-screen w-full flex-col overflow-hidden bg-slate-50 font-sans text-slate-900 ${isResizingSidebar ? 'select-none' : ''}`} style={isResizingSidebar ? { cursor: 'col-resize' } : undefined}>
         
         {/* TOPBAR */}
          <header className="shrink-0 h-14 border-b border-slate-200 bg-white shadow-sm z-20 flex items-center justify-between px-4">
@@ -337,7 +421,11 @@ export function AdminCourseBuilderLayout() {
         <div className="flex flex-1 overflow-hidden">
           
           {/* SIDEBAR - COURSE TREE */}
-          <aside className={`shrink-0 flex flex-col bg-white border-r border-slate-200 transition-all duration-300 ${isSidebarOpen ? 'w-[252px]' : 'w-0 overflow-hidden'}`}>
+          <aside
+            className={`shrink-0 flex flex-col overflow-hidden bg-white border-r border-slate-200 ${isSidebarOpen ? (isResizingSidebar ? 'transition-none' : 'transition-[width] duration-300') : 'transition-[width] duration-300'}`}
+            style={isSidebarOpen ? { width: `${sidebarWidth}px`, minWidth: `${sidebarWidth}px` } : { width: 0, minWidth: 0 }}
+            aria-hidden={!isSidebarOpen}
+          >
             {/* Componente de Árvore com Drag and Drop */}
             <CourseTreeDnd tree={courseTree} onRefresh={refreshTree}/>
             
@@ -373,6 +461,21 @@ export function AdminCourseBuilderLayout() {
                </div>
             </div>
           </aside>
+
+          {isSidebarOpen ? (<button
+              type="button"
+              aria-label="Redimensionar menu lateral"
+              title="Arraste para redimensionar o menu lateral"
+              className={`hidden shrink-0 items-stretch justify-center border-r border-slate-200 bg-slate-50/70 transition-colors lg:flex ${isResizingSidebar ? 'cursor-col-resize bg-cyan-50' : 'cursor-col-resize hover:bg-cyan-50/80'}`}
+              onPointerDown={handleSidebarResizePointerDown}
+              onPointerMove={handleSidebarResizePointerMove}
+              onPointerUp={stopSidebarResize}
+              onPointerCancel={stopSidebarResize}
+              onLostPointerCapture={stopSidebarResize}
+              style={{ touchAction: 'none' }}
+            >
+              <span className={`my-4 w-px rounded-full transition-colors ${isResizingSidebar ? 'bg-cyan-500' : 'bg-slate-300'}`} />
+            </button>) : null}
 
           {/* IMPORT MODAL */}
           {isImportModalOpen && (<div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
@@ -510,7 +613,7 @@ export function AdminCourseBuilderLayout() {
             </div>)}
 
           {/* MAIN CANVAS */}
-          <main className="flex-1 h-full bg-slate-50/50 relative overflow-y-auto w-full border-t border-slate-100 shadow-inner">
+          <main className="flex-1 min-w-0 h-full bg-slate-50/50 relative overflow-y-auto w-full border-t border-slate-100 shadow-inner">
              <div className="absolute inset-0 p-4 sm:px-6 sm:py-6 lg:px-8 lg:py-7">
                <Outlet />
              </div>
