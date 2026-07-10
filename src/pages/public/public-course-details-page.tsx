@@ -539,16 +539,16 @@ export function PublicCourseDetailsPage() {
       <section className="relative overflow-hidden bg-[linear-gradient(180deg,#0D728E_0%,#0B667F_100%)] text-white">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.12),transparent_42%),radial-gradient(circle_at_bottom_left,rgba(255,255,255,0.08),transparent_36%)]" />
         <div className="public-site-container relative py-10 lg:py-14">
-          <div className="grid items-center gap-8 lg:grid-cols-[170px_minmax(0,1.35fr)_420px] lg:gap-12 xl:grid-cols-[180px_minmax(0,1.45fr)_440px]">
+          <div className="grid items-center gap-8 lg:grid-cols-[255px_minmax(0,1.2fr)_420px] lg:gap-12 xl:grid-cols-[270px_minmax(0,1.3fr)_440px]">
             <div className="flex justify-center lg:justify-start">
               {detail.logoUrl ? (
                 <img
                   src={detail.logoUrl}
                   alt={`Logo do curso ${detail.title}`}
-                  className="h-32 w-32 object-contain sm:h-36 sm:w-36 lg:h-40 lg:w-40"
+                  className="h-48 w-48 object-contain sm:h-[13.5rem] sm:w-[13.5rem] lg:h-[15rem] lg:w-[15rem]"
                 />
               ) : (
-                <div className="flex h-32 w-32 items-center justify-center rounded-[28px] bg-white/10 text-[1.9rem] font-black uppercase tracking-[0.12em] text-white shadow-[0_16px_32px_rgba(5,24,32,0.18)] backdrop-blur-sm sm:h-36 sm:w-36 lg:h-40 lg:w-40">
+                <div className="flex h-48 w-48 items-center justify-center rounded-[28px] bg-white/10 text-[1.9rem] font-black uppercase tracking-[0.12em] text-white shadow-[0_16px_32px_rgba(5,24,32,0.18)] backdrop-blur-sm sm:h-[13.5rem] sm:w-[13.5rem] lg:h-[15rem] lg:w-[15rem]">
                   {detail.mentor.initials}
                 </div>
               )}
