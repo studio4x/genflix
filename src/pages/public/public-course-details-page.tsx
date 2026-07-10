@@ -555,9 +555,6 @@ export function PublicCourseDetailsPage() {
             </div>
 
             <div className="min-w-0 max-w-none">
-              <p className="inline-flex rounded-full border border-white/18 bg-white/10 px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.24em] text-white/82">
-                {detail.categoryLine || 'Curso'}
-              </p>
               <h1 className="mt-4 max-w-none break-words text-[2.6rem] font-extrabold leading-[0.94] tracking-[-0.05em] text-white sm:text-[3.1rem] lg:text-[3.4rem] xl:text-[3.7rem]">
                 {detail.title}
               </h1>
