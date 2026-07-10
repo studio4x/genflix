@@ -661,7 +661,7 @@ export function PublicCourseDetailsPage() {
               </section>
 
               <section>
-                <h2 className="text-[1.45rem] font-bold tracking-[-0.03em] text-[#183139]">AUTOR(ES) DO CURSO</h2>
+                <h2 className="text-[1.45rem] font-bold tracking-[-0.03em] text-[#183139]">Autoria</h2>
                 <div className="mt-5 grid gap-4 md:grid-cols-2">
                   {detail.authors.map((author) => (
                     <article
