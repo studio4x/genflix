@@ -588,6 +588,57 @@ export function PublicCourseDetailsPage() {
           <div className="grid gap-12 lg:grid-cols-[minmax(0,1fr)_420px] lg:items-start xl:grid-cols-[minmax(0,1fr)_440px]">
             <div className="max-w-[820px] space-y-10">
               <section>
+                <h2 className="text-[1.45rem] font-bold tracking-[-0.03em] text-[#183139]">Autoria</h2>
+                <div className="mt-5 grid gap-4 md:grid-cols-2">
+                  {detail.authors.map((author) => (
+                    <article
+                      key={author.authorId}
+                      className="rounded-[22px] border border-[#D8E6EB] bg-[#F8FCFD] p-5 shadow-[0_12px_24px_rgba(21,50,59,0.04)]"
+                    >
+                      <div className="flex items-start gap-4">
+                        <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-[#D9F0F5] text-sm font-extrabold text-[#0A3640]">
+                          {author.photoUrl ? (
+                            <img src={author.photoUrl} alt={author.name} className="h-full w-full object-cover" />
+                          ) : (
+                            <span>{author.name.slice(0, 2).toUpperCase()}</span>
+                          )}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-semibold text-[#183139]">{author.name}</p>
+                          <p className="mt-1 text-xs leading-5 text-[#6a7b81]">{author.title}</p>
+                        </div>
+                      </div>
+
+                      {author.shortBio ? (
+                        <p className="mt-4 text-sm leading-6 text-[#5f7178]">{author.shortBio}</p>
+                      ) : null}
+
+                      {author.areas.length ? (
+                        <div className="mt-4 flex flex-wrap gap-2">
+                          {author.areas.map((area) => (
+                            <span key={`${author.authorId}-${area}`} className="rounded-full bg-white px-3 py-1 text-[11px] font-bold uppercase tracking-[0.12em] text-[#0F7E99]">
+                              {area}
+                            </span>
+                          ))}
+                        </div>
+                      ) : null}
+
+                      <div className="mt-5 flex items-center justify-between gap-3">
+                        <button
+                          type="button"
+                          onClick={() => setActiveAuthor(author)}
+                          className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#1398B7] transition hover:text-[#0F7E99]"
+                        >
+                          <span>Saiba mais</span>
+                          <ArrowRight className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              </section>
+
+              <section>
                 <h2 className="text-[1.45rem] font-bold tracking-[-0.03em] text-[#183139]">Sobre o curso</h2>
                 <div className="mt-4 space-y-4">
                   {detail.aboutParagraphs.map((paragraph, index) => (
@@ -654,57 +705,6 @@ export function PublicCourseDetailsPage() {
                       </article>
                     );
                   })}
-                </div>
-              </section>
-
-              <section>
-                <h2 className="text-[1.45rem] font-bold tracking-[-0.03em] text-[#183139]">Autoria</h2>
-                <div className="mt-5 grid gap-4 md:grid-cols-2">
-                  {detail.authors.map((author) => (
-                    <article
-                      key={author.authorId}
-                      className="rounded-[22px] border border-[#D8E6EB] bg-[#F8FCFD] p-5 shadow-[0_12px_24px_rgba(21,50,59,0.04)]"
-                    >
-                      <div className="flex items-start gap-4">
-                        <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-[#D9F0F5] text-sm font-extrabold text-[#0A3640]">
-                          {author.photoUrl ? (
-                            <img src={author.photoUrl} alt={author.name} className="h-full w-full object-cover" />
-                          ) : (
-                            <span>{author.name.slice(0, 2).toUpperCase()}</span>
-                          )}
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="text-sm font-semibold text-[#183139]">{author.name}</p>
-                          <p className="mt-1 text-xs leading-5 text-[#6a7b81]">{author.title}</p>
-                        </div>
-                      </div>
-
-                      {author.shortBio ? (
-                        <p className="mt-4 text-sm leading-6 text-[#5f7178]">{author.shortBio}</p>
-                      ) : null}
-
-                      {author.areas.length ? (
-                        <div className="mt-4 flex flex-wrap gap-2">
-                          {author.areas.map((area) => (
-                            <span key={`${author.authorId}-${area}`} className="rounded-full bg-white px-3 py-1 text-[11px] font-bold uppercase tracking-[0.12em] text-[#0F7E99]">
-                              {area}
-                            </span>
-                          ))}
-                        </div>
-                      ) : null}
-
-                      <div className="mt-5 flex items-center justify-between gap-3">
-                        <button
-                          type="button"
-                          onClick={() => setActiveAuthor(author)}
-                          className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#1398B7] transition hover:text-[#0F7E99]"
-                        >
-                          <span>Saiba mais</span>
-                          <ArrowRight className="h-3.5 w-3.5" />
-                        </button>
-                      </div>
-                    </article>
-                  ))}
                 </div>
               </section>
             </div>
