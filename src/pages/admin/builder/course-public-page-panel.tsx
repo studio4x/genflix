@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
-import { BookOpen, Layers3, Plus, Trash2, UserRound, X } from 'lucide-react';
+import { DragDropContext, Draggable, Droppable, type DropResult } from '@hello-pangea/dnd';
+import { BookOpen, GripVertical, Layers3, Plus, Trash2, UserRound, X } from 'lucide-react';
 import { useAuth } from '@/app/providers/auth-provider';
 import { useCourseBuilder } from '@/app/layouts/admin-course-builder-layout';
 import { Button } from '@/components/ui/button';
@@ -11,6 +12,7 @@ import { buildCoursePublicDetail, normalizeCoursePublicPageContent, } from '@/fe
 import { publishBuilderNotice } from '@/lib/builder-notice';
 import type { GenflixCourseModule, } from '@/features/public/genflix-site-content';
 type CourseAuthorAssignmentForm = {
+    client_id: string;
     author_id: string;
     commission_percent: number;
     display_order: number;
@@ -61,11 +63,34 @@ function createEmptyModule(): GenflixCourseModule {
 }
 function createEmptyAuthorAssignment(index = 0): CourseAuthorAssignmentForm {
     return {
+        client_id: typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function' ? crypto.randomUUID() : `author-${Date.now()}-${Math.random().toString(36).slice(2)}`,
         author_id: '',
         commission_percent: index === 0 ? 100 : 0,
         display_order: index + 1,
         manual_profile: null,
     };
+}
+function ensureAuthorClientIds<T extends object>(authors: T[]) {
+    return authors.map((author) => ({
+        ...author,
+        client_id: (author as T & { client_id?: string }).client_id || (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function' ? crypto.randomUUID() : `author-${Date.now()}-${Math.random().toString(36).slice(2)}`),
+    }));
+}
+function normalizeAuthorAssignmentsOrder(authors: CourseAuthorAssignmentForm[]) {
+    return authors.map((author, index) => ({
+        ...author,
+        display_order: index + 1,
+    }));
+}
+function reorderAuthorAssignments(authors: CourseAuthorAssignmentForm[], sourceIndex: number, destinationIndex: number) {
+    const nextAuthors = [...authors];
+    const [movedAuthor] = nextAuthors.splice(sourceIndex, 1);
+    nextAuthors.splice(destinationIndex, 0, movedAuthor);
+    return normalizeAuthorAssignmentsOrder(nextAuthors);
+}
+function moveAuthorToDisplayOrder(authors: CourseAuthorAssignmentForm[], sourceIndex: number, nextDisplayOrder: number) {
+    const safeDisplayOrder = Math.min(Math.max(Math.trunc(nextDisplayOrder) || 1, 1), authors.length);
+    return reorderAuthorAssignments(authors, sourceIndex, safeDisplayOrder - 1);
 }
 function createEmptyManualAuthor(): ManualCourseAuthorForm {
     return {
@@ -90,7 +115,7 @@ function normalizeAuthorAssignments(value: unknown): CourseAuthorAssignmentForm[
     if (!Array.isArray(value)) {
         return [];
     }
-    return value.flatMap((entry, index) => {
+    const authors = value.flatMap((entry, index) => {
         if (!entry || typeof entry !== 'object' || Array.isArray(entry)) {
             return [];
         }
@@ -122,6 +147,7 @@ function normalizeAuthorAssignments(value: unknown): CourseAuthorAssignmentForm[
                 },
             }];
     });
+    return ensureAuthorClientIds(authors) as CourseAuthorAssignmentForm[];
 }
 function buildRealContentModules(courseTree: NonNullable<ReturnType<typeof useCourseBuilder>['courseTree']>): GenflixCourseModule[] {
     const modules = courseTree.modules.map((module) => {
@@ -406,7 +432,18 @@ export function CoursePublicPagePanel() {
         updateField('customSyllabus', form.customSyllabus.map((module, moduleIndex) => moduleIndex === index ? { ...module, ...patch } : module));
     }
     function updateAuthor(index: number, patch: Partial<CourseAuthorAssignmentForm>) {
+        if (Object.prototype.hasOwnProperty.call(patch, 'display_order') && typeof patch.display_order === 'number') {
+            updateField('authors', moveAuthorToDisplayOrder(form.authors, index, patch.display_order));
+            return;
+        }
         updateField('authors', form.authors.map((author, authorIndex) => authorIndex === index ? { ...author, ...patch } : author));
+    }
+    function handleAuthorDragEnd(result: DropResult) {
+        const { destination, source } = result;
+        if (!destination || destination.index === source.index) {
+            return;
+        }
+        updateField('authors', reorderAuthorAssignments(form.authors, source.index, destination.index));
     }
     async function handleLogoUpload(event: React.ChangeEvent<HTMLInputElement>) {
         const file = event.target.files?.[0];
@@ -428,7 +465,7 @@ export function CoursePublicPagePanel() {
         }
     }
     function addAuthor() {
-        updateField('authors', [...form.authors, createEmptyAuthorAssignment(form.authors.length)]);
+        updateField('authors', normalizeAuthorAssignmentsOrder([...form.authors, createEmptyAuthorAssignment(form.authors.length)]));
     }
     function openManualAuthorModal(index: number | null = null) {
         if (index !== null && form.authors[index]?.manual_profile) {
@@ -460,18 +497,18 @@ export function CoursePublicPagePanel() {
         }
         else {
             const hasAssignedAuthor = form.authors.some((author) => Boolean(author.author_id || author.manual_profile));
-            updateField('authors', [...form.authors, {
+            updateField('authors', normalizeAuthorAssignmentsOrder([...form.authors, {
                 ...createEmptyAuthorAssignment(form.authors.length),
                 commission_percent: hasAssignedAuthor ? 0 : 100,
                 manual_profile: manualProfile,
-            }]);
+            }]));
         }
         setError(null);
         closeManualAuthorModal();
     }
     function removeAuthor(index: number) {
         const nextAuthors = form.authors.filter((_, authorIndex) => authorIndex !== index);
-        updateField('authors', nextAuthors.length ? nextAuthors : [createEmptyAuthorAssignment()]);
+        updateField('authors', nextAuthors.length ? normalizeAuthorAssignmentsOrder(nextAuthors) : [createEmptyAuthorAssignment()]);
     }
     const selectedAuthorIds = new Set(form.authors.map((author) => author.author_id).filter(Boolean));
     const authorCommissionTotal = form.authors.reduce((total, author) => total + Number(author.commission_percent || 0), 0);
@@ -497,7 +534,7 @@ export function CoursePublicPagePanel() {
                 bonus_title: form.bonus_title.trim(),
                 aboutParagraphs: form.aboutParagraphs.map((item) => item.trim()).filter(Boolean),
                 includedItems: form.includedItems.map((item) => item.trim()).filter(Boolean),
-                authors: form.authors.map((author, index) => ({
+                authors: normalizeAuthorAssignmentsOrder(form.authors).map((author, index) => ({
                     author_id: author.author_id,
                     commission_percent: Number(author.commission_percent || 0),
                     display_order: Number(author.display_order || index + 1),
@@ -691,63 +728,101 @@ export function CoursePublicPagePanel() {
               </div>
 
               <div className="space-y-4">
-                {form.authors.map((author, index) => {
-                  const selectedUser = creatorUsers.find((candidate) => candidate.id === author.author_id);
-                  const isManualAuthor = Boolean(author.manual_profile);
-                  return (
-                    <article key={`author-${index}`} className="rounded-[24px] border border-slate-200 bg-slate-50 p-5">
-                      <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_160px_120px]">
-                        {isManualAuthor ? (
-                          <div className="space-y-2">
-                            <span className="text-xs font-black uppercase tracking-widest text-slate-400">Autor manual</span>
-                            <div className="flex min-h-[50px] items-center justify-between gap-3 rounded-2xl border border-cyan-200 bg-cyan-50 px-4 py-3">
-                              <div className="flex min-w-0 items-center gap-3">
-                                <UserRound className="h-5 w-5 shrink-0 text-cyan-700" />
-                                <div className="min-w-0">
-                                  <p className="truncate text-sm font-black text-slate-900">{author.manual_profile?.public_title}</p>
-                                  <p className="text-xs font-medium text-slate-500">Perfil sem cadastro na plataforma</p>
-                                </div>
-                              </div>
-                              <Button type="button" variant="outline" size="sm" className="shrink-0 rounded-xl" onClick={() => openManualAuthorModal(index)}>Editar perfil</Button>
-                            </div>
-                          </div>
-                        ) : (
-                          <label className="block space-y-2">
-                            <span className="text-xs font-black uppercase tracking-widest text-slate-400">Autor cadastrado</span>
-                            <select className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold outline-none focus:border-cyan-400" value={author.author_id} onChange={(event) => updateAuthor(index, { author_id: event.target.value })}>
-                              <option value="">Selecione um autor</option>
-                              {creatorUsers.map((candidate) => (
-                                <option key={candidate.id} value={candidate.id} disabled={selectedAuthorIds.has(candidate.id) && candidate.id !== author.author_id}>
-                                  {candidate.full_name || candidate.email}
-                                </option>
-                              ))}
-                            </select>
-                            <p className="text-xs font-medium text-slate-500">
-                              {selectedUser ? selectedUser.email : 'Escolha um usuário com regra de autor/professor.'}
-                            </p>
-                          </label>
-                        )}
+                <p className="text-xs font-medium text-slate-500">Arraste os cards para reordenar os autores. O campo de ordem abaixo acompanha a posição atual da lista.</p>
+                <DragDropContext onDragEnd={handleAuthorDragEnd}>
+                  <Droppable droppableId="course-authors">
+                    {(provided) => (
+                      <div ref={provided.innerRef} {...provided.droppableProps} className="space-y-4">
+                        {form.authors.map((author, index) => {
+                          const selectedUser = creatorUsers.find((candidate) => candidate.id === author.author_id);
+                          const isManualAuthor = Boolean(author.manual_profile);
+                          return (
+                            <Draggable key={author.client_id} draggableId={author.client_id} index={index}>
+                              {(draggableProvided, snapshot) => (
+                                <article
+                                  ref={draggableProvided.innerRef}
+                                  {...draggableProvided.draggableProps}
+                                  className={`rounded-[24px] border p-5 transition-all ${snapshot.isDragging ? 'border-cyan-200 bg-white shadow-xl ring-2 ring-cyan-100' : 'border-slate-200 bg-slate-50'}`}
+                                >
+                                  <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_160px_120px]">
+                                    {isManualAuthor ? (
+                                      <div className="space-y-2">
+                                        <span className="text-xs font-black uppercase tracking-widest text-slate-400">Autor manual</span>
+                                        <div className="flex min-h-[50px] items-center gap-3 rounded-2xl border border-cyan-200 bg-cyan-50 px-4 py-3">
+                                          <button
+                                            type="button"
+                                            aria-label={`Mover autor ${author.manual_profile?.public_title ?? index + 1}`}
+                                            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-cyan-200 bg-white text-cyan-700 cursor-grab active:cursor-grabbing"
+                                            {...draggableProvided.dragHandleProps}
+                                          >
+                                            <GripVertical className="h-4 w-4" />
+                                          </button>
+                                          <div className="flex min-w-0 flex-1 items-center gap-3">
+                                            <UserRound className="h-5 w-5 shrink-0 text-cyan-700" />
+                                            <div className="min-w-0">
+                                              <p className="truncate text-sm font-black text-slate-900">{author.manual_profile?.public_title}</p>
+                                              <p className="text-xs font-medium text-slate-500">Perfil sem cadastro na plataforma</p>
+                                            </div>
+                                          </div>
+                                          <Button type="button" variant="outline" size="sm" className="shrink-0 rounded-xl" onClick={() => openManualAuthorModal(index)}>Editar perfil</Button>
+                                        </div>
+                                      </div>
+                                    ) : (
+                                      <label className="block space-y-2">
+                                        <span className="text-xs font-black uppercase tracking-widest text-slate-400">Autor cadastrado</span>
+                                        <div className="flex gap-3">
+                                          <button
+                                            type="button"
+                                            aria-label={`Mover autor ${index + 1}`}
+                                            className="mt-0.5 flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-400 transition hover:text-slate-700 cursor-grab active:cursor-grabbing"
+                                            {...draggableProvided.dragHandleProps}
+                                          >
+                                            <GripVertical className="h-4 w-4" />
+                                          </button>
+                                          <div className="min-w-0 flex-1">
+                                            <select className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold outline-none focus:border-cyan-400" value={author.author_id} onChange={(event) => updateAuthor(index, { author_id: event.target.value })}>
+                                              <option value="">Selecione um autor</option>
+                                              {creatorUsers.map((candidate) => (
+                                                <option key={candidate.id} value={candidate.id} disabled={selectedAuthorIds.has(candidate.id) && candidate.id !== author.author_id}>
+                                                  {candidate.full_name || candidate.email}
+                                                </option>
+                                              ))}
+                                            </select>
+                                          </div>
+                                        </div>
+                                        <p className="text-xs font-medium text-slate-500">
+                                          {selectedUser ? selectedUser.email : 'Escolha um usuário com regra de autor/professor.'}
+                                        </p>
+                                      </label>
+                                    )}
 
-                        <label className="block space-y-2">
-                          <span className="text-xs font-black uppercase tracking-widest text-slate-400">Comissão (%)</span>
-                          <input type="number" min={0} max={100} step={0.01} className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold outline-none focus:border-cyan-400" value={author.commission_percent} onChange={(event) => updateAuthor(index, { commission_percent: Number(event.target.value || 0) })}/>
-                        </label>
+                                    <label className="block space-y-2">
+                                      <span className="text-xs font-black uppercase tracking-widest text-slate-400">Comissão (%)</span>
+                                      <input type="number" min={0} max={100} step={0.01} className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold outline-none focus:border-cyan-400" value={author.commission_percent} onChange={(event) => updateAuthor(index, { commission_percent: Number(event.target.value || 0) })}/>
+                                    </label>
 
-                        <label className="block space-y-2">
-                          <span className="text-xs font-black uppercase tracking-widest text-slate-400">Ordem</span>
-                          <input type="number" min={1} step={1} className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold outline-none focus:border-cyan-400" value={author.display_order} onChange={(event) => updateAuthor(index, { display_order: Number(event.target.value || 1) })}/>
-                        </label>
+                                    <label className="block space-y-2">
+                                      <span className="text-xs font-black uppercase tracking-widest text-slate-400">Ordem</span>
+                                      <input type="number" min={1} max={form.authors.length} step={1} className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold outline-none focus:border-cyan-400" value={author.display_order} onChange={(event) => updateAuthor(index, { display_order: Number(event.target.value || 1) })}/>
+                                    </label>
+                                  </div>
+
+                                  <div className="mt-4 flex items-center justify-between gap-3">
+                                    <p className="text-xs font-semibold text-slate-500">Use o handle ou o campo de ordem para ajustar a sequência pública.</p>
+                                    <Button type="button" variant="outline" size="sm" className="rounded-2xl" onClick={() => removeAuthor(index)} disabled={form.authors.length === 1}>
+                                      Remover
+                                    </Button>
+                                  </div>
+                                </article>
+                              )}
+                            </Draggable>
+                          );
+                        })}
+                        {provided.placeholder}
                       </div>
-
-                      <div className="mt-4 flex items-center justify-between gap-3">
-                        <p className="text-xs font-semibold text-slate-500">Use a ordem para controlar a exibição pública da lista de autores.</p>
-                        <Button type="button" variant="outline" size="sm" className="rounded-2xl" onClick={() => removeAuthor(index)} disabled={form.authors.length === 1}>
-                          Remover
-                        </Button>
-                      </div>
-                    </article>
-                  );
-                })}
+                    )}
+                  </Droppable>
+                </DragDropContext>
               </div>
 
               <div className={`rounded-[20px] border px-4 py-3 text-sm font-semibold ${Math.round(authorCommissionTotal * 100) / 100 === 100 ? 'border-emerald-100 bg-emerald-50 text-emerald-800' : 'border-amber-100 bg-amber-50 text-amber-800'}`}>
