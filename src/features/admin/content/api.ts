@@ -217,6 +217,9 @@ async function syncLegacyCourseAuthors(courseId: string, input: Pick<CourseFormI
         throw existingAuthorsResult.error;
     }
     const existingAuthors = (existingAuthorsResult.data as Pick<CourseAuthor, 'id' | 'author_id' | 'commission_percent' | 'display_order'>[] | null) ?? [];
+    if (existingAuthors.some((author) => !author.author_id)) {
+        return;
+    }
     if (existingAuthors.length > 1) {
         return;
     }
@@ -352,19 +355,36 @@ export async function updateCoursePublicPage(courseId: string, input: CoursePubl
     const normalizedAuthors = Array.isArray(input.authors)
         ? input.authors
             .map((author, index) => ({
-            author_id: author.author_id,
+            author_id: author.author_id?.trim() || null,
             commission_percent: Number(author.commission_percent ?? 0),
             display_order: Number.isFinite(Number(author.display_order)) && Number(author.display_order) > 0
                 ? Math.max(1, Math.trunc(Number(author.display_order)))
                 : index + 1,
+            manual_profile: author.manual_profile
+                ? {
+                    public_slug: author.manual_profile.public_slug?.trim() || null,
+                    public_title: author.manual_profile.public_title.trim(),
+                    public_short_bio: author.manual_profile.public_short_bio?.trim() || null,
+                    public_long_bio: author.manual_profile.public_long_bio?.trim() || null,
+                    public_areas: author.manual_profile.public_areas.map((area) => area.trim()).filter(Boolean),
+                    public_education: author.manual_profile.public_education?.trim() || null,
+                    public_experience: author.manual_profile.public_experience?.trim() || null,
+                    public_photo_url: author.manual_profile.public_photo_url?.trim() || null,
+                    public_website_url: author.manual_profile.public_website_url?.trim() || null,
+                    public_instagram_url: author.manual_profile.public_instagram_url?.trim() || null,
+                    public_linkedin_url: author.manual_profile.public_linkedin_url?.trim() || null,
+                    public_youtube_url: author.manual_profile.public_youtube_url?.trim() || null,
+                }
+                : null,
             }))
-            .filter((author) => Boolean(author.author_id))
+            .filter((author) => Boolean(author.author_id || author.manual_profile?.public_title))
         : [];
     const fallbackAuthors = existingPrimaryCreatorId
         ? [{
                 author_id: existingPrimaryCreatorId,
                 commission_percent: 100,
                 display_order: 1,
+                manual_profile: null,
             }]
         : [];
     const desiredAuthors = normalizedAuthors.length > 0 ? normalizedAuthors : fallbackAuthors;
@@ -386,7 +406,7 @@ export async function updateCoursePublicPage(courseId: string, input: CoursePubl
         price_label: input.price_label.trim(),
         secondary_price_label: input.secondary_price_label.trim(),
         public_page_content: publicPageContent,
-        creator_id: desiredAuthors[0]?.author_id ?? existingPrimaryCreatorId,
+        creator_id: desiredAuthors.length ? desiredAuthors[0]?.author_id ?? null : existingPrimaryCreatorId,
         creator_commission_percent: desiredAuthors[0]?.commission_percent ?? existingPrimaryCommissionPercent,
     })
         .eq('id', courseId)
@@ -397,35 +417,43 @@ export async function updateCoursePublicPage(courseId: string, input: CoursePubl
     }
     const existingAuthorsResult = await supabase
         .from('course_authors')
-        .select('id, author_id')
+        .select('id')
         .eq('course_id', courseId);
     if (existingAuthorsResult.error) {
         throw existingAuthorsResult.error;
     }
-    const existingAuthorIds = new Set((existingAuthorsResult.data ?? []).map((row) => row.author_id as string));
-    const desiredAuthorIds = new Set(desiredAuthors.map((author) => author.author_id));
-    const authorsToRemove = Array.from(existingAuthorIds).filter((authorId) => !desiredAuthorIds.has(authorId));
-    if (authorsToRemove.length > 0) {
+    if (existingAuthorsResult.data?.length) {
         const deleteResult = await supabase
             .from('course_authors')
             .delete()
-            .eq('course_id', courseId)
-            .in('author_id', authorsToRemove);
+            .eq('course_id', courseId);
         if (deleteResult.error) {
             throw deleteResult.error;
         }
     }
     for (const author of desiredAuthors) {
-        const upsertResult = await supabase
+        const insertResult = await supabase
             .from('course_authors')
-            .upsert({
-            course_id: courseId,
-            author_id: author.author_id,
-            commission_percent: author.commission_percent,
-            display_order: author.display_order,
-        }, { onConflict: 'course_id,author_id' });
-        if (upsertResult.error) {
-            throw upsertResult.error;
+            .insert({
+                course_id: courseId,
+                author_id: author.author_id,
+                commission_percent: author.commission_percent,
+                display_order: author.display_order,
+                manual_public_slug: author.manual_profile?.public_slug,
+                manual_public_title: author.manual_profile?.public_title,
+                manual_public_short_bio: author.manual_profile?.public_short_bio,
+                manual_public_long_bio: author.manual_profile?.public_long_bio,
+                manual_public_areas: author.manual_profile?.public_areas ?? [],
+                manual_public_education: author.manual_profile?.public_education,
+                manual_public_experience: author.manual_profile?.public_experience,
+                manual_public_photo_url: author.manual_profile?.public_photo_url,
+                manual_public_website_url: author.manual_profile?.public_website_url,
+                manual_public_instagram_url: author.manual_profile?.public_instagram_url,
+                manual_public_linkedin_url: author.manual_profile?.public_linkedin_url,
+                manual_public_youtube_url: author.manual_profile?.public_youtube_url,
+            });
+        if (insertResult.error) {
+            throw insertResult.error;
         }
     }
     return normalizeCourseRecord(result.data as Course);
@@ -1276,6 +1304,15 @@ export async function uploadCourseLogo(file: File): Promise<string> {
     });
     await uploadFileWithTicket(ticket, file);
     return buildCourseMediaPublicUrl(ticket.upload_path) || normalizeCourseMediaPublicUrl(ticket.public_url) || '';
+}
+export async function uploadManualAuthorPhoto(file: File, courseId: string): Promise<string> {
+    const ticket = await prepareStorageUpload({
+        uploadKind: 'site_asset',
+        entityId: `course-authors/${courseId}`,
+        file,
+    });
+    await uploadFileWithTicket(ticket, file);
+    return ticket.public_url ?? '';
 }
 /**
  * IMPORTAÇÃO EM MASSA (IA)

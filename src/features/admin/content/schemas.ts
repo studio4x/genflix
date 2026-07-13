@@ -73,10 +73,33 @@ export const coursePublicPageContentSchema = z.object({
     contentSource: z.enum(['real', 'custom']).default('custom'),
     customSyllabus: z.array(publicCourseModuleSchema).default([]),
 });
+export const manualCourseAuthorSchema = z.object({
+    public_slug: z.string().trim().optional().or(z.literal('')),
+    public_title: z.string().trim().min(1, 'Informe o nome público do autor manual.'),
+    public_short_bio: z.string().trim().optional().or(z.literal('')),
+    public_long_bio: z.string().trim().optional().or(z.literal('')),
+    public_areas: z.array(z.string().trim().min(1)).default([]),
+    public_education: z.string().trim().optional().or(z.literal('')),
+    public_experience: z.string().trim().optional().or(z.literal('')),
+    public_photo_url: z.string().trim().optional().or(z.literal('')),
+    public_website_url: z.string().trim().optional().or(z.literal('')),
+    public_instagram_url: z.string().trim().optional().or(z.literal('')),
+    public_linkedin_url: z.string().trim().optional().or(z.literal('')),
+    public_youtube_url: z.string().trim().optional().or(z.literal('')),
+});
 export const courseAuthorAssignmentSchema = z.object({
-    author_id: z.string().uuid('Autor inválido.'),
+    author_id: z.string().uuid('Autor inválido.').optional().or(z.literal('')),
     commission_percent: z.number().min(0).max(100).default(0),
     display_order: z.number().int().min(1).default(1),
+    manual_profile: manualCourseAuthorSchema.nullable().optional(),
+}).superRefine((value, ctx) => {
+    if (!value.author_id && !value.manual_profile) {
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ['author_id'],
+            message: 'Selecione um autor cadastrado ou preencha o perfil do autor manual.',
+        });
+    }
 });
 export const coursePublicPageFormSchema = z.object({
     category: z.string().trim().optional().or(z.literal('')),

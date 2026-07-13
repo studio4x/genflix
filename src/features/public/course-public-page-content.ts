@@ -142,7 +142,7 @@ function normalizeAuthors(value: unknown): GenflixCourseAuthor[] {
     }
 
     const record = entry as Record<string, unknown>
-    const authorId = trimString(record.author_id ?? record.user_id)
+    const authorId = trimString(record.author_id ?? record.user_id ?? record.manual_author_id)
     const slug = trimString(record.public_slug)
     const name = trimString(record.public_title) || trimString(record.full_name) || trimString(record.payout_name) || 'Autor'
     if (!authorId || !name) {

@@ -220,9 +220,21 @@ export interface Course {
 export interface CourseAuthor {
     id: string;
     course_id: string;
-    author_id: string;
+    author_id: string | null;
     commission_percent: number;
     display_order: number;
+    manual_public_slug: string | null;
+    manual_public_title: string | null;
+    manual_public_short_bio: string | null;
+    manual_public_long_bio: string | null;
+    manual_public_areas: string[];
+    manual_public_education: string | null;
+    manual_public_experience: string | null;
+    manual_public_photo_url: string | null;
+    manual_public_website_url: string | null;
+    manual_public_instagram_url: string | null;
+    manual_public_linkedin_url: string | null;
+    manual_public_youtube_url: string | null;
     created_at: string;
     updated_at: string;
 }
