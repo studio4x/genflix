@@ -10,7 +10,7 @@ import { normalizeCourseCategoryList } from '@/features/courses/course-categorie
 import { normalizeResourcesItems } from '@/features/public/genflix-resource-items-editor';
 import { formatCurrencyInputFromCents, parseCurrencyInputToCents } from '@/lib/currency';
 import { publishBuilderNotice } from '@/lib/builder-notice';
-import { canCourseUseCaseStudies, COURSE_QUIZ_TYPE_OPTIONS, DEFAULT_COURSE_QUIZ_TYPE_SETTINGS, getVisibleCourseQuizTypeOptions, normalizeCourseQuizTypeSettings, } from '@/features/assessments/course-quiz-type-settings';
+import { COURSE_QUIZ_TYPE_OPTIONS, DEFAULT_COURSE_QUIZ_TYPE_SETTINGS, getVisibleCourseQuizTypeOptions, normalizeCourseQuizTypeSettings, } from '@/features/assessments/course-quiz-type-settings';
 import { fetchGlobalQuizTypeSettings } from '@/features/admin/quiz-types/api';
 import type { Course, CourseCategory, CourseQuizTypeSettings } from '@/types/content';
 import type { EditableListItem } from '@/features/site-editor/types';
@@ -283,7 +283,6 @@ export function CourseSettingsPanel() {
     const visibleQuizTypeOptions = getVisibleCourseQuizTypeOptions(globalQuizTypeSettings);
     const enabledQuizTypeCount = visibleQuizTypeOptions.filter((option) => form.quiz_type_settings[option.key]).length;
     const hiddenQuizTypeCount = COURSE_QUIZ_TYPE_OPTIONS.length - visibleQuizTypeOptions.length;
-    const canUseCaseStudies = canCourseUseCaseStudies(form.quiz_type_settings, globalQuizTypeSettings);
     return (<div className="w-full space-y-6 animate-in fade-in duration-500 pb-24">
       <div className="border-b border-slate-200 pb-5">
         <h2 className="text-2xl font-black text-slate-900 tracking-tight">Detalhes Principais</h2>
@@ -299,9 +298,50 @@ export function CourseSettingsPanel() {
                Configurações salvas com sucesso!
             </div>)}
 
-         <div className="bg-white rounded-[32px] border border-slate-200 shadow-sm p-6 md:p-10 space-y-10">
+         <div className="bg-white rounded-[32px] border border-slate-200 shadow-sm p-6 md:p-10 flex flex-col gap-10">
+            <section className="order-1 rounded-[32px] border border-cyan-100 bg-cyan-50/40 p-5 md:p-6">
+               <div className="max-w-3xl space-y-3">
+                  <p className="text-[11px] font-black uppercase tracking-[0.26em] text-cyan-700">Nome do curso</p>
+                  <h3 className="text-[2rem] font-black tracking-tight text-slate-900">Identificação e publicação</h3>
+                  <p className="max-w-[860px] text-base leading-8 text-slate-600">Defina como o curso será identificado e quais informações aparecerão para os alunos no catálogo.</p>
+               </div>
+
+               <div className="mt-6 space-y-6">
+                  <label className="block space-y-2">
+                     <span className="text-xs font-black uppercase tracking-widest text-slate-400">Nome do curso</span>
+                     <input className="w-full rounded-[20px] border border-slate-200 bg-white px-6 py-4 text-lg font-bold outline-none transition-all focus:border-cyan-400 focus:ring-4 focus:ring-cyan-100" value={form.title} onChange={(event) => setForm((current) => ({ ...current, title: event.target.value }))} placeholder="Informe o nome do curso" />
+                  </label>
+
+                  <div className="block space-y-2">
+                     <span className="text-xs font-black uppercase tracking-widest text-slate-400">Descrição do Card do Curso</span>
+                     <div className="rich-editor-container">
+                        <ReactQuill theme="snow" value={form.description} onChange={(val: string) => setForm((current) => ({ ...current, description: val }))} modules={quillModules} placeholder="Fale sobre os objetivos e o público-alvo do curso..." className="overflow-hidden rounded-[24px] border border-slate-200 bg-white transition-all focus-within:ring-4 focus-within:ring-blue-100" />
+                     </div>
+                  </div>
+
+                  <label className="block space-y-2">
+                     <span className="text-xs font-black uppercase tracking-widest text-slate-400">Status de Publicação</span>
+                     <select className="w-full cursor-pointer appearance-none rounded-[20px] border border-slate-200 bg-white px-6 py-4 font-bold transition-all focus:ring-4 focus:ring-blue-100" value={form.status} onChange={(event) => setForm((current) => ({ ...current, status: event.target.value as Course['status'] }))}>
+                        <option value="draft">Rascunho (Privado)</option>
+                        <option value="published">Publicado (Visível para Alunos)</option>
+                        <option value="archived">Arquivado (Desativado)</option>
+                     </select>
+                  </label>
+
+                  <label className="flex cursor-pointer items-start gap-4 rounded-2xl border border-blue-100 bg-blue-50/20 p-5 shadow-sm transition-colors hover:bg-blue-50/40">
+                     <div className="flex h-6 items-center">
+                        <input type="checkbox" checked={form.has_linear_progression} onChange={(event) => setForm((current) => ({ ...current, has_linear_progression: event.target.checked }))} className="h-5 w-5 rounded border-blue-300 text-blue-600 shadow-sm transition-all focus:ring-blue-600" />
+                     </div>
+                     <div className="space-y-1">
+                        <span className="block text-sm font-bold text-slate-900">Ativar Progressão Linear Obrigatória</span>
+                        <span className="block max-w-lg text-[11px] leading-relaxed text-slate-500">Se ativado, o aluno deve concluir obrigatoriamente a aula atual para liberar a próxima. Módulos bloqueados só serão liberados ao concluir o módulo anterior (incluindo provas).</span>
+                     </div>
+                  </label>
+               </div>
+            </section>
+
             {/* THUMBNAIL UPLOAD AREA */}
-            <section className="rounded-[32px] border border-slate-200 bg-slate-50/40 p-5 md:p-6">
+            <section className="order-4 rounded-[32px] border border-slate-200 bg-slate-50/40 p-5 md:p-6">
                <div className="max-w-3xl space-y-3">
                   <p className="text-[11px] font-black uppercase tracking-[0.26em] text-[#0F5AA3]">Capa do Curso</p>
                   <h3 className="text-[2rem] font-black tracking-tight text-slate-900">Upload de imagem</h3>
@@ -362,7 +402,7 @@ export function CourseSettingsPanel() {
                </div>
            </section>
 
-            <section className="rounded-[32px] border border-slate-200 bg-slate-50/40 p-5 md:p-6">
+             <section className="order-5 rounded-[32px] border border-slate-200 bg-slate-50/40 p-5 md:p-6">
                <div className="max-w-3xl space-y-3">
                   <p className="text-[11px] font-black uppercase tracking-[0.26em] text-[#0F5AA3]">Logotipo do Curso</p>
                   <h3 className="text-[2rem] font-black tracking-tight text-slate-900">Upload do logo</h3>
@@ -419,7 +459,7 @@ export function CourseSettingsPanel() {
                </div>
             </section>
 
-            <section className="rounded-[32px] border border-slate-200 bg-slate-50/40 p-5 md:p-6">
+             <section className="order-6 rounded-[32px] border border-slate-200 bg-slate-50/40 p-5 md:p-6">
                <div className="max-w-3xl space-y-3">
                   <p className="text-[11px] font-black uppercase tracking-[0.26em] text-[#0F5AA3]">Banner da Área do Aluno</p>
                   <h3 className="text-[2rem] font-black tracking-tight text-slate-900">Imagem do cabeçalho do curso</h3>
@@ -477,7 +517,7 @@ export function CourseSettingsPanel() {
                </div>
             </section>
 
-            <section className="rounded-[32px] border border-slate-200 bg-white p-5 md:p-6">
+             <section className="order-7 rounded-[32px] border border-slate-200 bg-white p-5 md:p-6">
                <div className="flex flex-wrap items-end justify-between gap-4">
                   <div className="max-w-3xl space-y-2">
                      <p className="text-[11px] font-black uppercase tracking-[0.26em] text-[#0F5AA3]">Prévia dos banners</p>
@@ -538,14 +578,9 @@ export function CourseSettingsPanel() {
                </div>
             </section>
 
-            <div className="grid gap-8">
-               <div className="rounded-2xl border border-cyan-100 bg-cyan-50/40 px-5 py-4">
-                  <span className="text-xs font-black uppercase tracking-widest text-cyan-700">Nome do curso</span>
-                  <p className="mt-2 text-lg font-black tracking-tight text-slate-900">{courseTree?.course.title ?? form.title}</p>
-                  <p className="mt-1 text-xs font-medium text-slate-500">Esse nome e definido no cadastro principal do curso e e usado tambem na pagina publica.</p>
-               </div>
+             <div className="contents">
 
-               <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
+                <section className="order-2 rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
                   <div className="flex flex-wrap items-start justify-between gap-4">
                      <div>
                         <p className="text-[10px] font-black uppercase tracking-[0.24em] text-cyan-700">Categorias</p>
@@ -609,7 +644,7 @@ export function CourseSettingsPanel() {
                   </div>
                </section>
 
-               <section className="rounded-[28px] border border-cyan-100 bg-cyan-50/60 p-6 space-y-5">
+                <section className="order-3 space-y-5 rounded-[28px] border border-cyan-100 bg-cyan-50/60 p-6">
                   <div>
                      <p className="text-[10px] font-black uppercase tracking-[0.24em] text-cyan-700">Vendas e acesso</p>
                      <h3 className="mt-2 text-xl font-black tracking-tight text-slate-900">Configure o checkout do curso</h3>
@@ -660,7 +695,7 @@ export function CourseSettingsPanel() {
                   </label>
                </section>
 
-               <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
+               <section className="order-8 rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
                   <div className="flex flex-wrap items-end justify-between gap-4">
                      <div className="max-w-3xl space-y-2">
                         <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#0F5AA3]">Recursos disponíveis</p>
@@ -694,37 +729,9 @@ export function CourseSettingsPanel() {
                   </div>
                </section>
 
-               <div className="block space-y-2">
-                  <span className="text-xs font-black text-slate-400 uppercase tracking-widest pl-1">Descrição do Card do Curso</span>
-                  <div className="rich-editor-container">
-                     <ReactQuill theme="snow" value={form.description} onChange={(val: string) => setForm(f => ({ ...f, description: val }))} modules={quillModules} placeholder="Fale sobre os objetivos e o público-alvo do curso..." className="bg-slate-100/50 rounded-[24px] overflow-hidden border border-slate-200 focus-within:ring-4 focus-within:ring-blue-100 focus-within:bg-white transition-all"/>
-                  </div>
-               </div>
+                </div>
 
-                  <label className="block space-y-2">
-                     <span className="text-xs font-black text-slate-400 uppercase tracking-widest pl-1">Status de Publicação</span>
-                     <select className="w-full font-bold rounded-[20px] border border-slate-200 bg-slate-100/50 px-6 py-4 focus:bg-white focus:ring-4 focus:ring-blue-100 transition-all appearance-none cursor-pointer" value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value as 'draft' | 'published' | 'archived' }))}>
-                        <option value="draft">Rascunho (Privado)</option>
-                        <option value="published">Publicado (Visível para Alunos)</option>
-                        <option value="archived">Arquivado (Desativado)</option>
-                     </select>
-                  </label>
-               </div>
-
-               <div className="pt-6 border-t border-slate-100">
-                  <label className="flex items-start gap-4 p-5 rounded-2xl border border-blue-100 bg-blue-50/20 cursor-pointer hover:bg-blue-50/40 transition-colors shadow-sm">
-                     <div className="flex items-center h-6">
-                        <input type="checkbox" checked={form.has_linear_progression} onChange={e => setForm(f => ({ ...f, has_linear_progression: e.target.checked }))} className="h-5 w-5 rounded border-blue-300 text-blue-600 focus:ring-blue-600 shadow-sm transition-all"/>
-                     </div>
-                     <div className="space-y-1">
-                        <span className="text-sm font-bold text-slate-900 block">{'Ativar Progressão Linear Obrigatória'}</span>
-                        <span className="text-[11px] text-slate-500 block leading-relaxed max-w-lg">{'Se ativado, o aluno deve concluir obrigatoriamente a aula atual para liberar a próxima. Módulos bloqueados só serão liberados ao concluir o módulo anterior (incluindo provas).'}
-                        </span>
-                     </div>
-                  </label>
-               </div>
-
-               <div className="pt-6 border-t border-slate-100 space-y-5">
+                <div className="order-9 space-y-5 border-t border-slate-100 pt-6">
                   <div className="flex flex-wrap items-start justify-between gap-4">
                      <div>
                         <span className="text-xs font-black text-slate-400 uppercase tracking-widest pl-1">{'Tipos de Quiz Disponíveis'}</span>
@@ -772,11 +779,7 @@ export function CourseSettingsPanel() {
                        </div>)}
                   </div>
 
-                  <div className={`rounded-[24px] border px-5 py-4 text-sm font-semibold ${canUseCaseStudies ? 'border-violet-100 bg-violet-50/70 text-violet-800' : 'border-amber-100 bg-amber-50/80 text-amber-800'}`}>
-                     {canUseCaseStudies
-            ? "Estudo de caso está pronto para uso no builder, porque pelo menos um tipo de pergunta interna está ativo." : 'Estudo de caso exige Múltipla Escolha ou Discursiva com IA ativas para aparecer como opção no builder.'}
-                  </div>
-               </div>
+                </div>
             </div>
 
             <div className="pt-8 border-t border-slate-100 flex justify-end">
