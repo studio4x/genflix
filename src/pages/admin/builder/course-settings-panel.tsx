@@ -14,6 +14,15 @@ import { COURSE_QUIZ_TYPE_OPTIONS, DEFAULT_COURSE_QUIZ_TYPE_SETTINGS, getVisible
 import { fetchGlobalQuizTypeSettings } from '@/features/admin/quiz-types/api';
 import type { Course, CourseCategory, CourseQuizTypeSettings } from '@/types/content';
 import type { EditableListItem } from '@/features/site-editor/types';
+function slugifyCourseTitle(value: string) {
+    return value
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .trim()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '');
+}
 type CourseSettingsFormState = {
     title: string;
     description: string;
@@ -38,6 +47,7 @@ type CourseSettingsFormState = {
 export function CourseSettingsPanel() {
     const { courseTree, refreshTree } = useCourseBuilder();
     const { session } = useAuth();
+    const [isSlugManuallyEdited, setIsSlugManuallyEdited] = useState(false);
     const [form, setForm] = useState<CourseSettingsFormState>({
         title: '',
         description: '',
@@ -73,15 +83,18 @@ export function CourseSettingsPanel() {
     const [isLoadingResources, setIsLoadingResources] = useState(false);
     useEffect(() => {
         if (courseTree) {
+            const courseTitle = courseTree.course.title || '';
+            const savedSlug = courseTree.course.slug?.trim() || '';
+            const generatedSlug = slugifyCourseTitle(courseTitle);
             setForm({
-                title: courseTree.course.title || '',
+                title: courseTitle,
                 description: courseTree.course.description ?? '',
                 status: courseTree.course.status || 'draft',
                 thumbnail_url: courseTree.course.thumbnail_url ?? '',
                 hero_video_url: courseTree.course.hero_video_url ?? '',
                 logo_url: courseTree.course.logo_url ?? '',
                 student_hero_image_url: courseTree.course.student_hero_image_url ?? '',
-                slug: courseTree.course.slug ?? '',
+                slug: savedSlug || generatedSlug,
                 launch_date: courseTree.course.launch_date ?? '',
                 price_cents: courseTree.course.price_cents ?? 0,
                 currency: (courseTree.course.currency as CourseSettingsFormState['currency']) ?? 'BRL',
@@ -98,6 +111,7 @@ export function CourseSettingsPanel() {
                 has_linear_progression: courseTree.course.has_linear_progression ?? true,
                 quiz_type_settings: normalizeCourseQuizTypeSettings(courseTree.course.quiz_type_settings),
             });
+            setIsSlugManuallyEdited(Boolean(savedSlug && savedSlug !== generatedSlug));
             setResetProgressSuccess(null);
         }
     }, [courseTree]);
@@ -309,7 +323,16 @@ export function CourseSettingsPanel() {
                <div className="mt-6 space-y-6">
                   <label className="block space-y-2">
                      <span className="text-xs font-black uppercase tracking-widest text-slate-400">Nome do curso</span>
-                     <input className="w-full rounded-[20px] border border-slate-200 bg-white px-6 py-4 text-lg font-bold outline-none transition-all focus:border-cyan-400 focus:ring-4 focus:ring-cyan-100" value={form.title} onChange={(event) => setForm((current) => ({ ...current, title: event.target.value }))} placeholder="Informe o nome do curso" />
+                     <input className="w-full rounded-[20px] border border-slate-200 bg-white px-6 py-4 text-lg font-bold outline-none transition-all focus:border-cyan-400 focus:ring-4 focus:ring-cyan-100" value={form.title} onChange={(event) => setForm((current) => ({ ...current, title: event.target.value, slug: isSlugManuallyEdited ? current.slug : slugifyCourseTitle(event.target.value) }))} placeholder="Informe o nome do curso" />
+                  </label>
+
+                  <label className="block space-y-2">
+                     <span className="text-xs font-black uppercase tracking-widest text-slate-400">Slug público</span>
+                     <input className="w-full rounded-[20px] border border-slate-200 bg-white px-6 py-4 text-sm font-semibold outline-none transition-all focus:border-cyan-400 focus:ring-4 focus:ring-cyan-100" placeholder="ex: curso-residencia-medica" value={form.slug} onChange={(event) => {
+                        setIsSlugManuallyEdited(true);
+                        setForm((current) => ({ ...current, slug: slugifyCourseTitle(event.target.value) }));
+                     }} />
+                     <span className="block text-xs font-medium text-slate-500">Preenchido automaticamente pelo nome do curso. Edite para personalizar o endereço público.</span>
                   </label>
 
                   <div className="block space-y-2">
@@ -653,13 +676,8 @@ export function CourseSettingsPanel() {
                      </p>
                   </div>
 
-                  <div className="grid gap-4 md:grid-cols-2">
-                     <label className="space-y-2">
-                        <span className="text-xs font-black uppercase tracking-widest text-slate-400">Slug público</span>
-                        <input className="w-full rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold focus:ring-4 focus:ring-cyan-100" placeholder="ex: curso-residencia-medica" value={form.slug} onChange={(event) => setForm((current) => ({ ...current, slug: event.target.value }))}/>
-                     </label>
-
-                     <label className="space-y-2">
+                   <div className="grid gap-4 md:grid-cols-2">
+                      <label className="space-y-2">
                         <span className="text-xs font-black uppercase tracking-widest text-slate-400">Data de lançamento</span>
                         <input type="date" className="w-full rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold focus:ring-4 focus:ring-cyan-100" value={form.launch_date} onChange={(event) => setForm((current) => ({ ...current, launch_date: event.target.value }))}/>
                      </label>
