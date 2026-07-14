@@ -36,6 +36,9 @@ type CourseSettingsFormState = {
     price_cents: number;
     currency: Course['currency'];
     is_public: boolean;
+    access_expiration_mode: Course['access_expiration_mode'];
+    access_expiration_date: string;
+    access_expiration_days: number | null;
     show_reviews: boolean;
     categories: string[];
     resource_item_ids: string[];
@@ -61,6 +64,9 @@ export function CourseSettingsPanel() {
         price_cents: 0,
         currency: 'BRL',
         is_public: true,
+        access_expiration_mode: 'lifetime',
+        access_expiration_date: '',
+        access_expiration_days: null,
         show_reviews: true,
         categories: [],
         resource_item_ids: [],
@@ -99,6 +105,9 @@ export function CourseSettingsPanel() {
                 price_cents: courseTree.course.price_cents ?? 0,
                 currency: (courseTree.course.currency as CourseSettingsFormState['currency']) ?? 'BRL',
                 is_public: courseTree.course.is_public ?? true,
+                access_expiration_mode: courseTree.course.access_expiration_mode ?? 'lifetime',
+                access_expiration_date: courseTree.course.access_expiration_date ?? '',
+                access_expiration_days: courseTree.course.access_expiration_days ?? null,
                 show_reviews: courseTree.course.show_reviews ?? true,
                 categories: normalizeCourseCategoryList(courseTree.course.categories.length > 0
                     ? courseTree.course.categories
@@ -710,7 +719,44 @@ export function CourseSettingsPanel() {
                         </select>
                      </label>
 
-                  </div>
+                   </div>
+
+                   <div className="space-y-4 rounded-2xl border border-cyan-100 bg-white p-5">
+                      <div>
+                         <p className="text-xs font-black uppercase tracking-widest text-slate-400">Término do acesso ao curso</p>
+                         <p className="mt-2 text-xs font-medium leading-5 text-slate-500">Defina por quanto tempo o aluno poderá acessar o conteúdo depois que a inscrição for liberada.</p>
+                      </div>
+
+                      <select className="w-full rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold focus:border-cyan-400 focus:ring-4 focus:ring-cyan-100" value={form.access_expiration_mode} onChange={(event) => {
+                         const mode = event.target.value as CourseSettingsFormState['access_expiration_mode'];
+                         setForm((current) => ({
+                            ...current,
+                            access_expiration_mode: mode,
+                            access_expiration_date: mode === 'specific_date' ? current.access_expiration_date : '',
+                            access_expiration_days: mode === 'days_after_course_open' || mode === 'days_after_enrollment' ? current.access_expiration_days : null,
+                         }));
+                      }}>
+                         <option value="specific_date">Término em uma data específica</option>
+                         <option value="days_after_course_open">Término após X dias da abertura das inscrições</option>
+                         <option value="days_after_enrollment">Término após X dias da inscrição do aluno</option>
+                         <option value="lifetime">Sem período máximo de acesso (vitalício)</option>
+                      </select>
+
+                      {form.access_expiration_mode === 'specific_date' ? (
+                         <label className="block space-y-2">
+                            <span className="text-xs font-black uppercase tracking-widest text-slate-400">Data final de acesso</span>
+                            <input type="date" className="w-full rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold focus:border-cyan-400 focus:ring-4 focus:ring-cyan-100" value={form.access_expiration_date} onChange={(event) => setForm((current) => ({ ...current, access_expiration_date: event.target.value }))}/>
+                         </label>
+                      ) : null}
+
+                      {form.access_expiration_mode === 'days_after_course_open' || form.access_expiration_mode === 'days_after_enrollment' ? (
+                         <label className="block space-y-2">
+                            <span className="text-xs font-black uppercase tracking-widest text-slate-400">Quantidade de dias</span>
+                            <input type="number" min={1} step={1} className="w-full rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold focus:border-cyan-400 focus:ring-4 focus:ring-cyan-100" value={form.access_expiration_days ?? ''} onChange={(event) => setForm((current) => ({ ...current, access_expiration_days: event.target.value ? Number(event.target.value) : null }))} placeholder="Ex.: 365"/>
+                            <span className="block text-xs font-medium text-slate-500">{form.access_expiration_mode === 'days_after_course_open' ? 'A contagem começa na data de lançamento do curso. Se ela não estiver definida, usa a criação do curso.' : 'A contagem começa quando o acesso individual do aluno é liberado.'}</span>
+                         </label>
+                      ) : null}
+                   </div>
 
                </section>
 

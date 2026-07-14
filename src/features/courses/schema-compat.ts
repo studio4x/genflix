@@ -1,5 +1,5 @@
 import type { Course } from '@/types/content';
-const LEGACY_COURSE_SALES_COLUMNS = ['slug', 'launch_date', 'price_cents', 'currency', 'is_public'] as const;
+const LEGACY_COURSE_SALES_COLUMNS = ['slug', 'launch_date', 'price_cents', 'currency', 'is_public', 'access_expiration_mode', 'access_expiration_date', 'access_expiration_days'] as const;
 function getErrorMessage(error: unknown) {
     if (typeof error === 'string') {
         return error;
@@ -39,10 +39,13 @@ export function withLegacyCourseSalesDefaults<T extends Partial<Course>>(course:
         price_cents: course.price_cents ?? 0,
         currency: course.currency ?? 'BRL',
         is_public: course.is_public ?? true,
+        access_expiration_mode: course.access_expiration_mode ?? 'lifetime',
+        access_expiration_date: course.access_expiration_date ?? null,
+        access_expiration_days: course.access_expiration_days ?? null,
     } as T & Pick<Course, 'slug' | 'category' | 'categories' | 'launch_date' | 'price_cents' | 'currency' | 'is_public'>;
 }
 export function stripLegacyCourseSalesFields<T extends Record<string, unknown>>(payload: T) {
-    const { slug, category, categories, launch_date, price_cents, currency, is_public, ...legacySafePayload } = payload;
+    const { slug, category, categories, launch_date, price_cents, currency, is_public, access_expiration_mode, access_expiration_date, access_expiration_days, ...legacySafePayload } = payload;
     void slug;
     void category;
     void categories;
@@ -50,5 +53,8 @@ export function stripLegacyCourseSalesFields<T extends Record<string, unknown>>(
     void price_cents;
     void currency;
     void is_public;
+    void access_expiration_mode;
+    void access_expiration_date;
+    void access_expiration_days;
     return legacySafePayload;
 }

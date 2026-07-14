@@ -207,6 +207,9 @@ export interface Course {
     price_cents: number | null;
     currency: string;
     is_public: boolean;
+    access_expiration_mode: 'specific_date' | 'days_after_course_open' | 'days_after_enrollment' | 'lifetime';
+    access_expiration_date: string | null;
+    access_expiration_days: number | null;
     public_page_content: unknown;
     creator_id: string | null;
     creator_commission_percent: number;

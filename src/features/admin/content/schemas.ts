@@ -42,12 +42,30 @@ export const courseFormSchema = z.object({
     price_cents: z.number().int().min(0).default(0),
     currency: z.enum(['BRL']).default('BRL'),
     is_public: z.boolean().default(true),
+    access_expiration_mode: z.enum(['specific_date', 'days_after_course_open', 'days_after_enrollment', 'lifetime']).default('lifetime'),
+    access_expiration_date: z.string().optional().or(z.literal('')),
+    access_expiration_days: z.number().int().min(1).nullable().optional(),
     show_reviews: z.boolean().default(true),
     resource_item_ids: z.array(z.string().trim().min(1)).default([]),
     creator_id: z.string().uuid().optional().nullable().or(z.literal('')),
     creator_commission_percent: z.number().min(0).max(100).default(0),
     has_linear_progression: z.boolean().default(true),
     quiz_type_settings: courseQuizTypeSettingsSchema.default({ ...DEFAULT_COURSE_QUIZ_TYPE_SETTINGS }),
+}).superRefine((value, ctx) => {
+    if (value.access_expiration_mode === 'specific_date' && !value.access_expiration_date) {
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ['access_expiration_date'],
+            message: 'Informe a data final de acesso ao curso.',
+        });
+    }
+    if ((value.access_expiration_mode === 'days_after_course_open' || value.access_expiration_mode === 'days_after_enrollment') && !value.access_expiration_days) {
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ['access_expiration_days'],
+            message: 'Informe a quantidade de dias do acesso.',
+        });
+    }
 });
 export const publicCourseOutcomeSchema = z.object({
     title: z.string().trim().min(1, "Informe o título do destaque."),
