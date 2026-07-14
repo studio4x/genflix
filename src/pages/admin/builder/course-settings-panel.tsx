@@ -351,15 +351,31 @@ export function CourseSettingsPanel() {
                      </select>
                   </label>
 
-                  <label className="flex cursor-pointer items-start gap-4 rounded-2xl border border-blue-100 bg-blue-50/20 p-5 shadow-sm transition-colors hover:bg-blue-50/40">
+                   <label className="flex cursor-pointer items-start gap-4 rounded-2xl border border-blue-100 bg-blue-50/20 p-5 shadow-sm transition-colors hover:bg-blue-50/40">
                      <div className="flex h-6 items-center">
                         <input type="checkbox" checked={form.has_linear_progression} onChange={(event) => setForm((current) => ({ ...current, has_linear_progression: event.target.checked }))} className="h-5 w-5 rounded border-blue-300 text-blue-600 shadow-sm transition-all focus:ring-blue-600" />
                      </div>
                      <div className="space-y-1">
                         <span className="block text-sm font-bold text-slate-900">Ativar Progressão Linear Obrigatória</span>
                         <span className="block max-w-lg text-[11px] leading-relaxed text-slate-500">Se ativado, o aluno deve concluir obrigatoriamente a aula atual para liberar a próxima. Módulos bloqueados só serão liberados ao concluir o módulo anterior (incluindo provas).</span>
-                     </div>
-                  </label>
+                      </div>
+                   </label>
+
+                   <label className="flex cursor-pointer items-center gap-3 rounded-2xl border border-slate-200 bg-white p-5 transition-colors hover:border-cyan-200">
+                      <input type="checkbox" checked={form.is_public} onChange={(event) => setForm((current) => ({ ...current, is_public: event.target.checked }))}/>
+                      <div>
+                         <p className="text-sm font-black text-slate-800">Exibir curso no catálogo público</p>
+                         <p className="text-xs font-medium text-slate-500">Se desativado, o curso continua no admin mas não aparece para o público.</p>
+                      </div>
+                   </label>
+
+                   <label className="flex cursor-pointer items-center gap-3 rounded-2xl border border-slate-200 bg-white p-5 transition-colors hover:border-cyan-200">
+                      <input type="checkbox" checked={form.show_reviews} onChange={(event) => setForm((current) => ({ ...current, show_reviews: event.target.checked }))}/>
+                      <div>
+                         <p className="text-sm font-black text-slate-800">Exibir avaliacoes na pagina publica</p>
+                         <p className="text-xs font-medium text-slate-500">Quando desativado, a secao de reviews nao aparece no curso.</p>
+                      </div>
+                   </label>
                </div>
             </section>
 
@@ -696,21 +712,6 @@ export function CourseSettingsPanel() {
 
                   </div>
 
-                  <label className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-5 py-4">
-                     <input type="checkbox" checked={form.is_public} onChange={(event) => setForm((current) => ({ ...current, is_public: event.target.checked }))}/>
-                     <div>
-                        <p className="text-sm font-black text-slate-800">Exibir curso no catálogo público</p>
-                        <p className="text-xs font-medium text-slate-500">Se desativado, o curso continua no admin mas não aparece para o público.</p>
-                     </div>
-                  </label>
-
-                  <label className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-5 py-4">
-                     <input type="checkbox" checked={form.show_reviews} onChange={(event) => setForm((current) => ({ ...current, show_reviews: event.target.checked }))}/>
-                     <div>
-                        <p className="text-sm font-black text-slate-800">Exibir avaliacoes na pagina publica</p>
-                        <p className="text-xs font-medium text-slate-500">Quando desativado, a secao de reviews nao aparece no curso.</p>
-                     </div>
-                  </label>
                </section>
 
                <section className="order-8 rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
