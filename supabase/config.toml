@@ -380,6 +380,9 @@ verify_jwt = false
 [functions.generate-lesson-audio]
 verify_jwt = false
 
+[functions.public-profile-avatar]
+verify_jwt = false
+
 # [edge_runtime.secrets]
 # secret_key = "env(SECRET_VALUE)"
 

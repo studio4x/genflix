@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode, } from 'react';
 import type { AuthChangeEvent, Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/services/supabase/client';
+import { resolveProfileAvatarUrl } from '@/features/account/avatar-api';
 import { clearPasswordRecoveryState, hasPasswordRecoveryUrl, markPasswordRecoveryState, readPasswordRecoveryState, } from '@/features/auth/password-recovery-state';
 import { clearImpersonationSessionState, readImpersonationSessionState, type ImpersonationSessionState } from '@/features/auth/impersonation-state';
 import { toTranslatedAuthError } from '@/features/auth/auth-error-messages';
@@ -81,7 +82,10 @@ async function loadProfileAndRoles(userId: string) {
     if (rolesResult.error) {
         throw rolesResult.error;
     }
-    const profile = profileResult.data as Profile | null;
+    const profile = profileResult.data ? {
+        ...(profileResult.data as Profile),
+        avatar_url: resolveProfileAvatarUrl((profileResult.data as Profile).avatar_url),
+    } : null;
     const roles = extractRoles((rolesResult.data as RoleRelationRow[]) ?? []);
     return { profile, roles };
 }
@@ -94,7 +98,10 @@ async function loadProfile(userId: string) {
     if (profileResult.error) {
         throw profileResult.error;
     }
-    return profileResult.data as Profile | null;
+    return profileResult.data ? {
+        ...(profileResult.data as Profile),
+        avatar_url: resolveProfileAvatarUrl((profileResult.data as Profile).avatar_url),
+    } : null;
 }
 async function syncProfileNameFromMetadata(userId: string, profile: Profile | null, user: User) {
     const metadataName = typeof user.user_metadata?.full_name === 'string'
@@ -112,7 +119,10 @@ async function syncProfileNameFromMetadata(userId: string, profile: Profile | nu
     if (updateResult.error) {
         return profile;
     }
-    return updateResult.data as Profile;
+    return updateResult.data ? {
+        ...(updateResult.data as Profile),
+        avatar_url: resolveProfileAvatarUrl((updateResult.data as Profile).avatar_url),
+    } : profile;
 }
 export function AuthProvider({ children }: {
     children: ReactNode;
@@ -348,7 +358,10 @@ export function AuthProvider({ children }: {
         if (result.error) {
             throw toProfileUpdateError(result.error);
         }
-        const nextProfile = result.data as Profile;
+        const nextProfile = {
+            ...(result.data as Profile),
+            avatar_url: resolveProfileAvatarUrl((result.data as Profile).avatar_url),
+        };
         setProfile(nextProfile);
         return nextProfile;
     }, []);
