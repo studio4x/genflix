@@ -1,4 +1,4 @@
-import { useEffect, useState, type ChangeEvent, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type ChangeEvent, type FormEvent, type PointerEvent as ReactPointerEvent } from 'react';
 import { useAuth } from '@/app/providers/auth-provider';
 import { PasswordField } from '@/components/forms/password-field';
 import { Button } from '@/components/ui/button';
@@ -12,6 +12,20 @@ function slugifyPublicTitle(value: string) {
         .replace(/[\u0300-\u036f]/g, '')
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/^-+|-+$/g, '');
+}
+const AVATAR_CROP_SIZE = 320;
+type AvatarCropDraft = {
+    file: File;
+    sourceUrl: string;
+    naturalWidth: number;
+    naturalHeight: number;
+    zoom: number;
+    offsetX: number;
+    offsetY: number;
+};
+function clampAvatarOffset(value: number, displayedSize: number) {
+    const maxOffset = Math.max(0, (displayedSize - AVATAR_CROP_SIZE) / 2);
+    return Math.min(Math.max(value, -maxOffset), maxOffset);
 }
 export function CreatorProfilePage() {
     const { profile, user, updatePassword, updateProfile } = useAuth();
@@ -34,6 +48,8 @@ export function CreatorProfilePage() {
     const [avatarMessage, setAvatarMessage] = useState<string | null>(null);
     const [avatarError, setAvatarError] = useState<string | null>(null);
     const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+    const [avatarCropDraft, setAvatarCropDraft] = useState<AvatarCropDraft | null>(null);
+    const cropDragRef = useRef<{ startX: number; startY: number; offsetX: number; offsetY: number } | null>(null);
     useEffect(() => {
         setFullName(profile?.full_name ?? '');
         setTimezone(profile?.timezone ?? 'America/Sao_Paulo');
@@ -157,11 +173,16 @@ export function CreatorProfilePage() {
             setPayoutMessage(error instanceof Error ? error.message : 'Não foi possível atualizar o perfil público.');
         }
     }
-    async function handleAvatarChange(event: ChangeEvent<HTMLInputElement>) {
+    function closeAvatarCrop() {
+        if (avatarCropDraft) {
+            URL.revokeObjectURL(avatarCropDraft.sourceUrl);
+        }
+        cropDragRef.current = null;
+        setAvatarCropDraft(null);
+    }
+    function handleAvatarChange(event: ChangeEvent<HTMLInputElement>) {
         const file = event.target.files?.[0];
         event.target.value = '';
-        setAvatarMessage(null);
-        setAvatarError(null);
         if (!file || !user?.id) {
             return;
         }
@@ -169,11 +190,110 @@ export function CreatorProfilePage() {
             setAvatarError('Selecione uma imagem válida para o avatar.');
             return;
         }
+        setAvatarMessage(null);
+        setAvatarError(null);
+        closeAvatarCrop();
+        setAvatarCropDraft({
+            file,
+            sourceUrl: URL.createObjectURL(file),
+            naturalWidth: 0,
+            naturalHeight: 0,
+            zoom: 1,
+            offsetX: 0,
+            offsetY: 0,
+        });
+    }
+    function handleAvatarImageLoad(event: React.SyntheticEvent<HTMLImageElement>) {
+        const image = event.currentTarget;
+        setAvatarCropDraft((current) => current ? {
+            ...current,
+            naturalWidth: image.naturalWidth,
+            naturalHeight: image.naturalHeight,
+        } : current);
+    }
+    function handleCropPointerDown(event: ReactPointerEvent<HTMLDivElement>) {
+        if (!avatarCropDraft?.naturalWidth || isUploadingAvatar) {
+            return;
+        }
+        event.currentTarget.setPointerCapture(event.pointerId);
+        cropDragRef.current = {
+            startX: event.clientX,
+            startY: event.clientY,
+            offsetX: avatarCropDraft.offsetX,
+            offsetY: avatarCropDraft.offsetY,
+        };
+    }
+    function handleCropPointerMove(event: ReactPointerEvent<HTMLDivElement>) {
+        const drag = cropDragRef.current;
+        if (!drag || !avatarCropDraft?.naturalWidth) {
+            return;
+        }
+        const baseScale = Math.max(AVATAR_CROP_SIZE / avatarCropDraft.naturalWidth, AVATAR_CROP_SIZE / avatarCropDraft.naturalHeight);
+        const displayedWidth = avatarCropDraft.naturalWidth * baseScale * avatarCropDraft.zoom;
+        const displayedHeight = avatarCropDraft.naturalHeight * baseScale * avatarCropDraft.zoom;
+        setAvatarCropDraft((current) => current ? {
+            ...current,
+            offsetX: clampAvatarOffset(drag.offsetX + event.clientX - drag.startX, displayedWidth),
+            offsetY: clampAvatarOffset(drag.offsetY + event.clientY - drag.startY, displayedHeight),
+        } : current);
+    }
+    function handleCropPointerUp(event: ReactPointerEvent<HTMLDivElement>) {
+        if (cropDragRef.current) {
+            cropDragRef.current = null;
+            if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+                event.currentTarget.releasePointerCapture(event.pointerId);
+            }
+        }
+    }
+    function handleAvatarZoomChange(value: number) {
+        setAvatarCropDraft((current) => {
+            if (!current?.naturalWidth) {
+                return current;
+            }
+            const nextZoom = Math.min(Math.max(value, 1), 3);
+            const baseScale = Math.max(AVATAR_CROP_SIZE / current.naturalWidth, AVATAR_CROP_SIZE / current.naturalHeight);
+            return {
+                ...current,
+                zoom: nextZoom,
+                offsetX: clampAvatarOffset(current.offsetX, current.naturalWidth * baseScale * nextZoom),
+                offsetY: clampAvatarOffset(current.offsetY, current.naturalHeight * baseScale * nextZoom),
+            };
+        });
+    }
+    async function handleAvatarCropSubmit() {
+        if (!avatarCropDraft?.naturalWidth || !user?.id) {
+            return;
+        }
         setIsUploadingAvatar(true);
+        setAvatarError(null);
         try {
-            const asset = await uploadProfileAvatar(file, user.id);
+            const image = new Image();
+            image.src = avatarCropDraft.sourceUrl;
+            await image.decode();
+            const baseScale = Math.max(AVATAR_CROP_SIZE / image.naturalWidth, AVATAR_CROP_SIZE / image.naturalHeight);
+            const scaledImage = baseScale * avatarCropDraft.zoom;
+            const cropSourceSize = AVATAR_CROP_SIZE / scaledImage;
+            const cropCenterX = image.naturalWidth / 2 - avatarCropDraft.offsetX / scaledImage;
+            const cropCenterY = image.naturalHeight / 2 - avatarCropDraft.offsetY / scaledImage;
+            const sourceX = Math.min(Math.max(cropCenterX - cropSourceSize / 2, 0), image.naturalWidth - cropSourceSize);
+            const sourceY = Math.min(Math.max(cropCenterY - cropSourceSize / 2, 0), image.naturalHeight - cropSourceSize);
+            const canvas = globalThis.document.createElement('canvas');
+            canvas.width = AVATAR_CROP_SIZE;
+            canvas.height = AVATAR_CROP_SIZE;
+            const context = canvas.getContext('2d');
+            if (!context) {
+                throw new Error('Não foi possível preparar o recorte do avatar.');
+            }
+            context.drawImage(image, sourceX, sourceY, cropSourceSize, cropSourceSize, 0, 0, AVATAR_CROP_SIZE, AVATAR_CROP_SIZE);
+            const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/png'));
+            if (!blob) {
+                throw new Error('Não foi possível gerar a imagem recortada.');
+            }
+            const croppedFile = new File([blob], `${avatarCropDraft.file.name.replace(/\.[^.]+$/, '')}-avatar.png`, { type: 'image/png' });
+            const asset = await uploadProfileAvatar(croppedFile, user.id);
             await updateProfile({ avatar_url: asset.publicUrl });
             setAvatarMessage('Avatar atualizado com sucesso.');
+            closeAvatarCrop();
         }
         catch (error) {
             setAvatarError(error instanceof Error ? error.message : 'Não foi possível atualizar o avatar.');
@@ -182,6 +302,15 @@ export function CreatorProfilePage() {
             setIsUploadingAvatar(false);
         }
     }
+    const avatarCropLayout = avatarCropDraft?.naturalWidth
+        ? (() => {
+            const baseScale = Math.max(AVATAR_CROP_SIZE / avatarCropDraft.naturalWidth, AVATAR_CROP_SIZE / avatarCropDraft.naturalHeight);
+            return {
+                width: avatarCropDraft.naturalWidth * baseScale * avatarCropDraft.zoom,
+                height: avatarCropDraft.naturalHeight * baseScale * avatarCropDraft.zoom,
+            };
+        })()
+        : null;
     return (<div className="space-y-6">
       <header className="border-b border-[#D8E6EB] pb-5">
         <p className="text-[10px] font-black uppercase tracking-[0.28em] text-[#1398B7]">Minha conta</p>
@@ -329,5 +458,61 @@ export function CreatorProfilePage() {
           Salvar perfil público
         </Button>
       </form>
+
+      {avatarCropDraft ? (
+        <div className="fixed inset-0 z-[160] flex items-center justify-center bg-[#061b21]/75 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="avatar-crop-title">
+          <div className="w-full max-w-lg rounded-[28px] border border-[#D8E6EB] bg-white p-5 shadow-[0_30px_90px_rgba(6,27,33,0.24)] sm:p-6">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#1398B7]">Avatar do autor</p>
+                <h2 id="avatar-crop-title" className="mt-2 font-readex text-xl font-semibold text-[#15323b]">Recorte e enquadramento</h2>
+                <p className="mt-2 text-sm leading-6 text-[#6d7f84]">Arraste a imagem para posicionar e use o zoom para ajustar o enquadramento quadrado.</p>
+              </div>
+              <button type="button" onClick={closeAvatarCrop} disabled={isUploadingAvatar} className="rounded-full border border-[#D8E6EB] px-3 py-1 text-sm font-bold text-[#5F7077] hover:bg-[#F2F7F9] disabled:cursor-not-allowed disabled:opacity-50">Fechar</button>
+            </div>
+
+            <div
+              className="relative mx-auto mt-5 h-80 w-80 max-w-full touch-none overflow-hidden rounded-[28px] bg-[#10242b] ring-4 ring-[#D9F0F5] select-none"
+              onPointerDown={handleCropPointerDown}
+              onPointerMove={handleCropPointerMove}
+              onPointerUp={handleCropPointerUp}
+              onPointerCancel={handleCropPointerUp}
+              aria-label="Área de recorte do avatar"
+            >
+              <img
+                src={avatarCropDraft.sourceUrl}
+                alt="Prévia do recorte do avatar"
+                onLoad={handleAvatarImageLoad}
+                draggable={false}
+                className="pointer-events-none absolute max-w-none select-none"
+                style={avatarCropLayout ? {
+                    width: avatarCropLayout.width,
+                    height: avatarCropLayout.height,
+                    left: '50%',
+                    top: '50%',
+                    transform: `translate(-50%, -50%) translate(${avatarCropDraft.offsetX}px, ${avatarCropDraft.offsetY}px)`,
+                } : { visibility: 'hidden' }}
+              />
+              {!avatarCropLayout ? <div className="absolute inset-0 flex items-center justify-center text-sm font-semibold text-white/80">Carregando imagem...</div> : null}
+              <div className="pointer-events-none absolute inset-0 rounded-[28px] border-2 border-white/90 shadow-[0_0_0_9999px_rgba(6,27,33,0.28)]" />
+            </div>
+
+            <label className="mt-6 block">
+              <div className="flex items-center justify-between gap-3 text-xs font-black uppercase tracking-[0.2em] text-[#5F7077]">
+                <span>Zoom</span>
+                <span>{avatarCropDraft.zoom.toFixed(1)}x</span>
+              </div>
+              <input type="range" min="1" max="3" step="0.05" value={avatarCropDraft.zoom} onChange={(event) => handleAvatarZoomChange(Number(event.target.value))} disabled={!avatarCropLayout || isUploadingAvatar} className="mt-3 w-full accent-[#1398B7]" />
+            </label>
+
+            <div className="mt-6 flex justify-end gap-3">
+              <Button type="button" variant="outline" className="rounded-2xl" onClick={closeAvatarCrop} disabled={isUploadingAvatar}>Cancelar</Button>
+              <Button type="button" className="rounded-2xl bg-[#1398B7] font-black text-white hover:bg-[#0A3640]" onClick={() => void handleAvatarCropSubmit()} disabled={!avatarCropLayout || isUploadingAvatar}>
+                {isUploadingAvatar ? 'Enviando...' : 'Usar este recorte'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>);
 }
