@@ -367,7 +367,7 @@ export function PublicCourseDetailsPage() {
                   {selectedResourceItems.length ? (
                     <div className="rounded-[22px] border border-[#D8E6EB] bg-white p-4 shadow-[0_12px_28px_rgba(21,50,59,0.04)]">
                       <div>
-                        <p className="text-[2rem] font-extrabold leading-none tracking-[-0.05em] text-[#183139]">Recursos disponíveis</p>
+                        <h2 className="text-[1.45rem] font-bold leading-none tracking-[0px] text-[#183139]">Recursos disponíveis</h2>
                         <Link to="/recursos" className="mt-2 inline-block text-xs font-semibold text-[#1398B7] underline underline-offset-2 transition hover:text-[#0F7E99]">Saiba mais sobre esses recursos</Link>
                       </div>
                       <div className="mt-4 space-y-1">
