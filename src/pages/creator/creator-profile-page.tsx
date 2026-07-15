@@ -1,7 +1,8 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useState, type ChangeEvent, type FormEvent } from 'react';
 import { useAuth } from '@/app/providers/auth-provider';
 import { PasswordField } from '@/components/forms/password-field';
 import { Button } from '@/components/ui/button';
+import { uploadProfileAvatar } from '@/features/account/avatar-api';
 import { fetchCreatorPayoutProfile, fetchCreatorPublicProfile, upsertCreatorPayoutProfile, upsertCreatorPublicProfile, type PixKeyType, } from '@/features/creator/profile/api';
 function slugifyPublicTitle(value: string) {
     return value
@@ -30,6 +31,9 @@ export function CreatorProfilePage() {
     const [isSavingProfile, setIsSavingProfile] = useState(false);
     const [isSavingPassword, setIsSavingPassword] = useState(false);
     const [isSavingPayout, setIsSavingPayout] = useState(false);
+    const [avatarMessage, setAvatarMessage] = useState<string | null>(null);
+    const [avatarError, setAvatarError] = useState<string | null>(null);
+    const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
     useEffect(() => {
         setFullName(profile?.full_name ?? '');
         setTimezone(profile?.timezone ?? 'America/Sao_Paulo');
@@ -153,6 +157,31 @@ export function CreatorProfilePage() {
             setPayoutMessage(error instanceof Error ? error.message : 'Não foi possível atualizar o perfil público.');
         }
     }
+    async function handleAvatarChange(event: ChangeEvent<HTMLInputElement>) {
+        const file = event.target.files?.[0];
+        event.target.value = '';
+        setAvatarMessage(null);
+        setAvatarError(null);
+        if (!file || !user?.id) {
+            return;
+        }
+        if (!file.type.startsWith('image/')) {
+            setAvatarError('Selecione uma imagem válida para o avatar.');
+            return;
+        }
+        setIsUploadingAvatar(true);
+        try {
+            const asset = await uploadProfileAvatar(file, user.id);
+            await updateProfile({ avatar_url: asset.publicUrl });
+            setAvatarMessage('Avatar atualizado com sucesso.');
+        }
+        catch (error) {
+            setAvatarError(error instanceof Error ? error.message : 'Não foi possível atualizar o avatar.');
+        }
+        finally {
+            setIsUploadingAvatar(false);
+        }
+    }
     return (<div className="space-y-6">
       <header className="border-b border-[#D8E6EB] pb-5">
         <p className="text-[10px] font-black uppercase tracking-[0.28em] text-[#1398B7]">Minha conta</p>
@@ -264,6 +293,26 @@ export function CreatorProfilePage() {
             </p>
           </div>
         </div>
+
+        <article className="mt-5 rounded-[24px] border border-[#D8E6EB] bg-white p-5">
+          <h3 className="font-readex text-lg font-semibold text-[#15323b]">Avatar do autor</h3>
+          <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-center">
+            {profile?.avatar_url ? (
+              <img src={profile.avatar_url} alt="Avatar atual do autor" className="h-24 w-24 rounded-[24px] border border-[#D8E6EB] object-cover shadow-sm" />
+            ) : (
+              <div className="flex h-24 w-24 shrink-0 items-center justify-center rounded-[24px] bg-gradient-to-br from-[#1398B7] to-[#0A3640] text-xl font-black text-white">
+                {(fullName || profile?.email || 'CR').slice(0, 2).toUpperCase()}
+              </div>
+            )}
+            <div className="min-w-0 flex-1 space-y-2">
+              <p className="text-sm font-medium leading-6 text-[#6d7f84]">Essa imagem será usada como avatar do autor.</p>
+              <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" onChange={(event) => void handleAvatarChange(event)} disabled={isUploadingAvatar} className="block w-full cursor-pointer rounded-2xl border border-[#D8E6EB] bg-white px-4 py-3 text-sm font-semibold text-[#15323b] file:mr-4 file:rounded-xl file:border-0 file:bg-[#1398B7] file:px-4 file:py-2 file:font-black file:text-white hover:file:bg-[#0A3640]" />
+              {isUploadingAvatar ? <p className="text-sm font-semibold text-[#5f7077]">Enviando avatar...</p> : null}
+              {avatarMessage ? <p className="text-sm font-semibold text-[#5f7077]">{avatarMessage}</p> : null}
+              {avatarError ? <p className="text-sm font-semibold text-red-600">{avatarError}</p> : null}
+            </div>
+          </div>
+        </article>
 
         <div className="mt-5 grid gap-4">
           <label className="block">
