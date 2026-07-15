@@ -42,9 +42,11 @@ export function CreatorProfilePage() {
     const [profileMessage, setProfileMessage] = useState<string | null>(null);
     const [passwordMessage, setPasswordMessage] = useState<string | null>(null);
     const [payoutMessage, setPayoutMessage] = useState<string | null>(null);
+    const [publicProfileMessage, setPublicProfileMessage] = useState<string | null>(null);
     const [isSavingProfile, setIsSavingProfile] = useState(false);
     const [isSavingPassword, setIsSavingPassword] = useState(false);
     const [isSavingPayout, setIsSavingPayout] = useState(false);
+    const [isSavingPublicProfile, setIsSavingPublicProfile] = useState(false);
     const [avatarMessage, setAvatarMessage] = useState<string | null>(null);
     const [avatarError, setAvatarError] = useState<string | null>(null);
     const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
@@ -151,7 +153,8 @@ export function CreatorProfilePage() {
         event.preventDefault();
         if (!user?.id)
             return;
-        setPayoutMessage(null);
+        setIsSavingPublicProfile(true);
+        setPublicProfileMessage(null);
         try {
             await upsertCreatorPublicProfile({
                 userId: user.id,
@@ -167,10 +170,13 @@ export function CreatorProfilePage() {
                 publicLinkedinUrl: '',
                 publicYoutubeUrl: '',
             });
-            setPayoutMessage('Perfil público atualizado com sucesso.');
+            setPublicProfileMessage('Perfil público atualizado com sucesso.');
         }
         catch (error) {
-            setPayoutMessage(error instanceof Error ? error.message : 'Não foi possível atualizar o perfil público.');
+            setPublicProfileMessage(error instanceof Error ? error.message : 'Não foi possível atualizar o perfil público.');
+        }
+        finally {
+            setIsSavingPublicProfile(false);
         }
     }
     function closeAvatarCrop() {
@@ -463,8 +469,9 @@ export function CreatorProfilePage() {
           </label>
         </div>
 
-        <Button type="submit" className="mt-5 h-12 rounded-2xl bg-[#1398B7] px-6 font-black text-white hover:bg-[#0A3640]">
-          Salvar perfil público
+        {publicProfileMessage ? <p className="mt-4 text-sm font-semibold text-[#5f7077]">{publicProfileMessage}</p> : null}
+        <Button type="submit" disabled={isSavingPublicProfile} className="mt-5 h-12 rounded-2xl bg-[#1398B7] px-6 font-black text-white hover:bg-[#0A3640] disabled:cursor-not-allowed disabled:opacity-60">
+          {isSavingPublicProfile ? 'Salvando...' : 'Salvar perfil público'}
         </Button>
       </form>
 
