@@ -174,7 +174,7 @@ export function CreatorProfilePage() {
         }
     }
     function closeAvatarCrop() {
-        if (avatarCropDraft) {
+        if (avatarCropDraft?.sourceUrl.startsWith('blob:')) {
             URL.revokeObjectURL(avatarCropDraft.sourceUrl);
         }
         cropDragRef.current = null;
@@ -193,15 +193,24 @@ export function CreatorProfilePage() {
         setAvatarMessage(null);
         setAvatarError(null);
         closeAvatarCrop();
-        setAvatarCropDraft({
-            file,
-            sourceUrl: URL.createObjectURL(file),
-            naturalWidth: 0,
-            naturalHeight: 0,
-            zoom: 1,
-            offsetX: 0,
-            offsetY: 0,
-        });
+        const reader = new FileReader();
+        reader.onload = () => {
+            if (typeof reader.result !== 'string') {
+                setAvatarError('Não foi possível carregar a imagem selecionada.');
+                return;
+            }
+            setAvatarCropDraft({
+                file,
+                sourceUrl: reader.result,
+                naturalWidth: 0,
+                naturalHeight: 0,
+                zoom: 1,
+                offsetX: 0,
+                offsetY: 0,
+            });
+        };
+        reader.onerror = () => setAvatarError('Não foi possível ler a imagem selecionada.');
+        reader.readAsDataURL(file);
     }
     function handleAvatarImageLoad(event: React.SyntheticEvent<HTMLImageElement>) {
         const image = event.currentTarget;
