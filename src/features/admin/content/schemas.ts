@@ -80,6 +80,7 @@ export const publicCourseModuleSchema = z.object({
 });
 export const coursePublicPageContentSchema = z.object({
     categoryLine: z.string().trim().optional().nullable(),
+    authorContent: z.string().trim().default(''),
     aboutParagraphs: z.array(z.string().trim().min(1)).default([]),
     outcomes: z.array(publicCourseOutcomeSchema).default([]),
     includedItems: z.array(z.string().trim().min(1)).default([]),
@@ -131,11 +132,10 @@ export const coursePublicPageFormSchema = z.object({
     bonus_enabled: z.boolean().default(true),
     bonus_title: z.string().trim().optional().or(z.literal('')),
     mentor_initials: z.string().trim().max(4).optional().or(z.literal('')),
-    price_label: z.string().trim().min(1, 'Informe o preço exibido na página pública.'),
     secondary_price_label: z.string().trim().min(1, "Informe o subtítulo do checkout."),
     authors: z.array(courseAuthorAssignmentSchema).default([]),
+    authorContent: z.string().trim().default(''),
     aboutParagraphs: z.array(z.string().trim().min(1)).min(1, 'Adicione pelo menos um paragrafo em Sobre o Curso.'),
-    includedItems: z.array(z.string().trim().min(1)).min(1, "Adicione pelo menos um item do que está incluído."),
     contentSource: z.enum(['real', 'custom']).default('custom'),
     customSyllabus: z.array(publicCourseModuleSchema).default([]),
 }).superRefine((value, ctx) => {

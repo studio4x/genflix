@@ -71,6 +71,7 @@ export interface GenflixCourseDetail {
     resourceItemIds?: string[];
     description: string;
     aboutParagraphs: string[];
+    authorContent: string;
     outcomes: GenflixCourseOutcome[];
     syllabus: GenflixCourseModule[];
     mentor: {
@@ -80,8 +81,8 @@ export interface GenflixCourseDetail {
         initials: string;
     };
     priceLabel: string;
+    priceCents: number | null;
     secondaryPriceLabel: string;
-    includedItems: string[];
 }
 export interface GenflixBlogPost {
     slug: string;

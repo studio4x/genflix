@@ -11,7 +11,6 @@ interface PublicCourseRow extends CoursePublicPageRowLike {
     created_at: string;
 }
 interface PublicCourseDetailRow extends CoursePublicPageRowLike {
-    authors?: unknown;
 }
 interface PublicAuthorProfileRow {
     user_id: string;

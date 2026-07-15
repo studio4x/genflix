@@ -23,6 +23,7 @@ import { brazilStateOptions, useBrazilCities } from '@/features/address/brazil-a
 import { resolveBrazilCepAddress, useBrazilCepLookup } from '@/features/address/brazil-cep'
 import { formatCpf, isValidCpf, normalizeCpfDigits } from '@/features/document/cpf'
 import { fetchPublicCourseDetailFromSupabase } from '@/features/public/genflix-public-content-api'
+import { formatCourseInstallmentLabel } from '@/features/public/course-public-page-content'
 import { genflixNavLinks, type GenflixCourseDetail } from '@/features/public/genflix-site-content'
 import { startCourseCheckout } from '@/features/public/courses/api'
 import type { LegalDocumentKey } from '@/features/public/legal-documents'
@@ -687,7 +688,7 @@ export function PublicCheckoutPage() {
                       <span>Valor do curso</span>
                       <span>{formatPriceLabel(detail.priceLabel)}</span>
                     </div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[#5f7077]">em até 12x no cartão de crédito</p>
+                    <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[#5f7077]">{formatCourseInstallmentLabel(detail.priceCents)}</p>
                   </div>
                 </div>
 

@@ -1,5 +1,5 @@
 ﻿import { useEffect, useRef, useState } from 'react';
-import { ArrowRight, BadgeCheck, ChevronDown } from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
 import { Link, Navigate, useParams } from 'react-router-dom';
 import { CourseCoverMedia } from '@/components/public/course-cover-media';
 import { GenflixCtaButton } from '@/components/public/genflix-cta-button';
@@ -15,6 +15,7 @@ import { fetchGlobalReviewsEnabled } from '@/features/reviews/review-settings';
 import { EditableList, isEditableItemVisible } from '@/features/site-editor/visual-editor';
 import { normalizeResourcesItems } from '@/features/public/genflix-resource-items-editor';
 import { sanitizeRichTextHtml } from '@/features/admin/content/content-blocks';
+import { formatCourseInstallmentLabel } from '@/features/public/course-public-page-content';
 import type { EditableListItem } from '@/features/site-editor/types';
 import { dispatchSiteViewItemEvent } from '@/features/site-editor/site-tracking';
 import { renderSiteIconVisual } from '@/features/site-editor/site-icons';
@@ -25,34 +26,6 @@ function parsePriceLabelToNumber(priceLabel: string) {
   const normalized = priceLabel.replace(/\s+/g, '').replace(/[R$]/gi, '').replace(/\./g, '').replace(',', '.');
   const value = Number.parseFloat(normalized);
   return Number.isFinite(value) && value > 0 ? value : undefined;
-}
-
-function isExternalHref(href: string) {
-  return /^https?:\/\//i.test(href);
-}
-
-function ResourceSaibaMaisLink({ href, className }: { href: string; className: string; }) {
-  const normalizedHref = href.trim() || '/recursos';
-  const content = (
-    <>
-      <span>Saiba mais</span>
-      <ArrowRight className="h-3.5 w-3.5" />
-    </>
-  );
-
-  if (isExternalHref(normalizedHref)) {
-    return (
-      <a href={normalizedHref} target="_blank" rel="noreferrer" className={className}>
-        {content}
-      </a>
-    );
-  }
-
-  return (
-    <Link to={normalizedHref} className={className}>
-      {content}
-    </Link>
-  );
 }
 
 function escapeHtml(value: string) {
@@ -229,9 +202,6 @@ export function PublicCourseDetailsPage() {
     iconBackgroundColor: 'rgba(255, 255, 255, 0.18)',
     iconTextColor: '#ffffff',
   };
-  const courseBenefitsCardTitle = 'O que você recebe';
-  const courseInvestmentCardTitle = 'Seu investimento';
-
   return (
     <main className="min-h-screen bg-[#F2F7F9] font-manrope text-[#163138]">
       <GenflixPublicHeader currentPage="courses" navLinks={genflixNavLinks} />
@@ -290,19 +260,12 @@ export function PublicCourseDetailsPage() {
             <div className="max-w-[820px] space-y-10">
               <section>
                 <h2 className="text-[1.45rem] font-bold tracking-[-0.03em] text-[#183139]">Autoria</h2>
-                <div className="mt-4 space-y-4">
-                  {detail.authors.map((author) => (
-                    <article
-                      key={author.authorId}
-                      className="max-w-[760px] text-[15px] leading-7 text-[#000000]"
-                    >
-                      <p className="font-bold text-[#000000]">{author.name}</p>
-                      {(author.longBio || author.shortBio) ? (
-                        <p className="mt-1 whitespace-pre-line italic text-[#000000]">{author.longBio || author.shortBio}</p>
-                      ) : null}
-                    </article>
-                  ))}
-                </div>
+                {detail.authorContent ? (
+                  <div
+                    className="rich-text-content mt-4 max-w-[760px] text-[15px] leading-7 text-[#000000] [&_p]:mb-4 [&_p:last-child]:mb-0 [&_h1]:my-5 [&_h1]:text-2xl [&_h1]:font-bold [&_h2]:my-4 [&_h2]:text-xl [&_h2]:font-bold [&_h3]:my-3 [&_h3]:text-lg [&_h3]:font-bold [&_ul]:my-4 [&_ul]:list-disc [&_ul]:pl-6 [&_ol]:my-4 [&_ol]:list-decimal [&_ol]:pl-6 [&_li]:mb-2 [&_a]:text-[#1398B7] [&_a]:underline [&_strong]:font-bold [&_em]:italic [&_u]:underline"
+                    dangerouslySetInnerHTML={{ __html: renderAboutParagraphHtml(detail.authorContent) ?? '' }}
+                  />
+                ) : null}
               </section>
 
               <section>
@@ -383,7 +346,7 @@ export function PublicCourseDetailsPage() {
                     <p className="text-[2rem] font-extrabold leading-none tracking-[-0.05em] text-[#1398B7]">
                       {detail.priceLabel}
                     </p>
-                    <p className="mt-1 text-xs font-semibold uppercase tracking-[0.08em] text-[#5f7178]">em até 12x no cartão de crédito</p>
+                    <p className="mt-1 text-xs font-semibold uppercase tracking-[0.08em] text-[#5f7178]">{formatCourseInstallmentLabel(detail.priceCents)}</p>
                     <p className="mt-2 text-sm text-[#6a7b81]">{detail.secondaryPriceLabel}</p>
                   </div>
 
@@ -404,60 +367,18 @@ export function PublicCourseDetailsPage() {
                   {selectedResourceItems.length ? (
                     <div className="rounded-[22px] border border-[#D8E6EB] bg-white p-4 shadow-[0_12px_28px_rgba(21,50,59,0.04)]">
                       <div>
-                        <p className="text-sm font-semibold text-[#183139]">Recursos disponíveis</p>
-                        <p className="mt-1 text-xs leading-5 text-[#6a7b81]">Acesse os materiais e recursos que acompanham este curso.</p>
+                        <p className="text-[2rem] font-extrabold leading-none tracking-[-0.05em] text-[#183139]">Recursos disponíveis</p>
+                        <Link to="/recursos" className="mt-2 inline-block text-xs font-semibold text-[#1398B7] underline underline-offset-2 transition hover:text-[#0F7E99]">Saiba mais sobre esses recursos</Link>
                       </div>
-                      <div className="mt-4 space-y-2.5">
+                      <div className="mt-4 space-y-1">
                         {selectedResourceItems.map((item) => {
-                          const resourceHref = typeof item.href === 'string' && item.href.trim() !== '' ? item.href.trim() : '/recursos';
-
                           return (
-                            <div key={item.id} className="rounded-[18px] border border-[#D8E6EB] bg-[#F8FCFD] px-4 py-3">
-                              <div className="flex items-start justify-between gap-3">
-                                <p className="min-w-0 flex-1 text-sm font-bold leading-6 text-[#183139]">{item.title ?? item.label ?? 'Recurso'}</p>
-                                <ResourceSaibaMaisLink href={resourceHref} className="inline-flex items-center gap-1 whitespace-nowrap pt-0.5 text-xs font-semibold text-[#1398B7] transition hover:text-[#0F7E99]" />
-                              </div>
-                            </div>
+                            <p key={item.id} className="border-b border-[#E7F0F3] py-2 text-sm font-bold leading-5 text-[#183139] last:border-b-0">{item.title ?? item.label ?? 'Recurso'}</p>
                           );
                         })}
                       </div>
                     </div>
                   ) : null}
-
-                  <div className="rounded-[22px] border border-[#D8E6EB] bg-white p-4 shadow-[0_12px_28px_rgba(21,50,59,0.04)]">
-                    <div>
-                      <p className="text-sm font-semibold text-[#183139]">{courseBenefitsCardTitle}</p>
-                      <p className="mt-1 text-xs leading-5 text-[#6a7b81]">Tudo o que já está incluído na sua jornada neste curso.</p>
-                    </div>
-                    <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                      {detail.includedItems.map((item) => (
-                        <div key={item} className="flex items-center gap-2 rounded-2xl border border-[#D8E6EB] bg-[#F2F7F9] px-3 py-3 text-sm text-[#5f7178]">
-                          <BadgeCheck className="h-4 w-4 shrink-0 text-[#1398B7]" />
-                          <span>{item}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="rounded-[22px] border border-[#D8E6EB] bg-white p-4 shadow-[0_12px_28px_rgba(21,50,59,0.04)]">
-                    <div>
-                      <p className="text-sm font-semibold text-[#183139]">{courseInvestmentCardTitle}</p>
-                      <p className="mt-1 text-xs leading-5 text-[#6a7b81]">Garanta seu acesso agora e comece a estudar sem esperar.</p>
-                    </div>
-                    <div className="mt-4 rounded-[18px] border border-[#D8E6EB] bg-[#F8FCFD] px-4 py-4">
-                      <p className="text-[2rem] font-extrabold leading-none tracking-[-0.05em] text-[#1398B7]">
-                        {detail.priceLabel}
-                      </p>
-                      <p className="mt-2 text-xs font-semibold uppercase tracking-[0.08em] text-[#5f7178]">
-                        em até 12x no cartão de crédito
-                      </p>
-                      <p className="mt-2 text-sm text-[#6a7b81]">{detail.secondaryPriceLabel}</p>
-                    </div>
-
-                    <GenflixCtaButton asChild className="mt-4 w-full px-5 py-3">
-                      <Link to={`/checkout/pagamento/${slug}`}>Comprar agora</Link>
-                    </GenflixCtaButton>
-                  </div>
                 </div>
               </div>
             </aside>

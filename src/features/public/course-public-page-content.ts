@@ -1,6 +1,5 @@
 import {
   type GenflixCourseDetail,
-  type GenflixCourseAuthor,
   type GenflixCourseItem,
   type GenflixCourseModule,
   type GenflixCourseOutcome,
@@ -17,6 +16,7 @@ export interface CoursePublicBonusSection {
 
 export interface CoursePublicPageContent {
   categoryLine: string | null
+  authorContent: string
   aboutParagraphs: string[]
   outcomes: GenflixCourseOutcome[]
   includedItems: string[]
@@ -48,7 +48,6 @@ export interface CoursePublicPageRowLike {
   price_cents: number | null
   currency: string | null
   public_page_content: unknown
-  authors?: unknown
   creator_commission_percent?: number | null
 }
 
@@ -70,15 +69,6 @@ const defaultOutcomeFallbacks: GenflixCourseOutcome[] = [
     title: 'Receber acesso imediato',
     description: 'A matrícula é liberada automaticamente após confirmação do pagamento.',
   },
-]
-
-const defaultIncludedItems = [
-  'Acesso ao curso',
-  'Aulas e materiais publicados',
-  'Player com progresso',
-  'Certificado quando previsto',
-  'Suporte da plataforma',
-  'Atualizacoes do curso',
 ]
 
 function trimString(value: unknown) {
@@ -131,51 +121,6 @@ function normalizeModule(value: unknown): GenflixCourseModule | null {
   }
 }
 
-function normalizeAuthors(value: unknown): GenflixCourseAuthor[] {
-  if (!Array.isArray(value)) {
-    return []
-  }
-
-  return value.flatMap((entry, index) => {
-    if (!entry || typeof entry !== 'object' || Array.isArray(entry)) {
-      return []
-    }
-
-    const record = entry as Record<string, unknown>
-    const authorId = trimString(record.author_id ?? record.user_id ?? record.manual_author_id)
-    const slug = trimString(record.public_slug)
-    const name = trimString(record.public_title) || trimString(record.full_name) || trimString(record.payout_name) || 'Autor'
-    if (!authorId || !name) {
-      return []
-    }
-
-    return [{
-      authorId,
-      slug: slug || `autor-${authorId.slice(0, 8)}`,
-      name,
-      title: trimString(record.public_title) || name,
-      shortBio: trimString(record.public_short_bio),
-      longBio: trimString(record.public_long_bio),
-      areas: Array.isArray(record.public_areas)
-        ? record.public_areas.map((item) => trimString(item)).filter(Boolean)
-        : [],
-      education: trimString(record.public_education),
-      experience: trimString(record.public_experience),
-      photoUrl: trimString(record.public_photo_url) || null,
-      websiteUrl: trimString(record.public_website_url),
-      instagramUrl: trimString(record.public_instagram_url),
-      linkedinUrl: trimString(record.public_linkedin_url),
-      youtubeUrl: trimString(record.public_youtube_url),
-      commissionPercent: typeof record.commission_percent === 'number' && Number.isFinite(record.commission_percent)
-        ? Number(record.commission_percent)
-        : 0,
-      displayOrder: typeof record.display_order === 'number' && Number.isFinite(record.display_order)
-        ? Number(record.display_order)
-        : index + 1,
-    }]
-  })
-}
-
 function normalizeBonusSection(value: unknown): CoursePublicBonusSection | null {
   if (!isRecord(value)) {
     return null
@@ -200,6 +145,7 @@ export function normalizeCoursePublicPageContent(value: unknown): CoursePublicPa
   if (!isRecord(value)) {
     return {
       categoryLine: null,
+      authorContent: '',
       aboutParagraphs: [],
       outcomes: [],
       includedItems: [],
@@ -211,6 +157,7 @@ export function normalizeCoursePublicPageContent(value: unknown): CoursePublicPa
 
   return {
     categoryLine: trimString(value.categoryLine) || null,
+    authorContent: trimString(value.authorContent),
     aboutParagraphs: Array.isArray(value.aboutParagraphs)
       ? value.aboutParagraphs.map((item) => trimString(item)).filter(Boolean)
       : [],
@@ -229,19 +176,30 @@ export function normalizeCoursePublicPageContent(value: unknown): CoursePublicPa
 }
 
 function formatPrice(row: CoursePublicPageRowLike) {
-  const explicitPrice = trimString(row.price_label)
-  if (explicitPrice) {
-    return explicitPrice
+  if (typeof row.price_cents === 'number' && Number.isFinite(row.price_cents) && row.price_cents >= 0) {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: row.currency || 'BRL',
+    }).format(row.price_cents / 100)
   }
 
-  if (!row.price_cents) {
-    return 'Consulte valores'
+  return trimString(row.price_label) || 'Consulte valores'
+}
+
+export function getCourseInstallmentCount(priceCents: number | null | undefined) {
+  const normalizedPriceCents = Number(priceCents ?? 0)
+  if (!Number.isFinite(normalizedPriceCents) || normalizedPriceCents < 10000) {
+    return null
   }
 
-  return new Intl.NumberFormat('pt-BR', {
-    style: 'currency',
-    currency: row.currency || 'BRL',
-  }).format(row.price_cents / 100)
+  return Math.min(12, Math.floor(normalizedPriceCents / 5000))
+}
+
+export function formatCourseInstallmentLabel(priceCents: number | null | undefined) {
+  const installmentCount = getCourseInstallmentCount(priceCents)
+  return installmentCount
+    ? `em até ${installmentCount}x no cartão de crédito`
+    : 'à vista no cartão de crédito'
 }
 
 function getInitials(row: CoursePublicPageRowLike) {
@@ -288,7 +246,6 @@ export function buildCoursePublicDetail(
 ): GenflixCourseDetail {
   const item = buildCoursePublicCatalogItem(row)
   const content = normalizeCoursePublicPageContent(row.public_page_content)
-  const authors = normalizeAuthors(row.authors)
   const primaryCategory = getCoursePrimaryCategory({
     category: row.category,
     categories: row.categories ?? undefined,
@@ -358,26 +315,7 @@ export function buildCoursePublicDetail(
       ? content.outcomes
       : defaultOutcomeFallbacks,
     syllabus,
-    authors: authors.length
-      ? authors
-      : [{
-        authorId: row.id,
-        slug: item.slug,
-        name: trimString(row.mentor_name) || item.mentor,
-        title: trimString(row.mentor_role) || item.role,
-        shortBio: trimString(row.mentor_bio),
-        longBio: trimString(row.mentor_bio),
-        areas: [],
-        education: '',
-        experience: '',
-        photoUrl: null,
-        websiteUrl: '',
-        instagramUrl: '',
-        linkedinUrl: '',
-        youtubeUrl: '',
-        commissionPercent: Number(row.creator_commission_percent ?? 0),
-        displayOrder: 1,
-      }],
+    authors: [],
     mentor: {
       name: trimString(row.mentor_name) || item.mentor,
       role: trimString(row.mentor_role) || item.role,
@@ -387,12 +325,11 @@ export function buildCoursePublicDetail(
       initials: item.initials,
     },
     priceLabel: formatPrice(row),
+    priceCents: typeof row.price_cents === 'number' && Number.isFinite(row.price_cents) ? row.price_cents : null,
+    authorContent: content.authorContent,
     secondaryPriceLabel:
       trimString(row.secondary_price_label) ||
       'Checkout seguro e acesso liberado após pagamento',
-    includedItems: content.includedItems.length
-      ? content.includedItems
-      : defaultIncludedItems,
     bonusSection,
   }
 }

@@ -131,6 +131,7 @@ export interface GenflixCourseDetail {
   resourceItemIds?: string[]
   description: string
   aboutParagraphs: string[]
+  authorContent: string
   outcomes: GenflixCourseOutcome[]
   syllabus: GenflixCourseModule[]
   authors: GenflixCourseAuthor[]
@@ -141,8 +142,8 @@ export interface GenflixCourseDetail {
     initials: string
   }
   priceLabel: string
+  priceCents: number | null
   secondaryPriceLabel: string
-  includedItems: string[]
   bonusSection: {
     enabled: boolean
     title: string
@@ -433,15 +434,6 @@ export const genflixStudyFeatures: GenflixFeatureItem[] = [
   },
 ]
 
-const defaultIncludedItems = [
-  'Mentorias exclusivas',
-  'Certificado de conclusão',
-  'Videoaulas HD ilimitadas',
-  'Ferramentas de estudo',
-  'Plantões de dúvidas',
-  'Atualizações contínuas',
-]
-
 const categoryCoursePrefixes: Record<string, string> = {
   Saúde: 'SAÚDE - ONLINE',
   Direito: 'DIREITO - ONLINE',
@@ -553,6 +545,7 @@ function buildCourseDetail(course: GenflixCourseItem, overrides: Partial<Genflix
     coverImage: course.image,
     description: `${course.title} reúne uma trilha prática com aulas objetivas, revisão guiada e ferramentas de estudo para quem quer avançar com consistência.`,
     aboutParagraphs,
+    authorContent: '',
     outcomes,
     syllabus: buildCourseModules(course),
     authors: [{
@@ -580,8 +573,8 @@ function buildCourseDetail(course: GenflixCourseItem, overrides: Partial<Genflix
       initials: course.initials,
     },
     priceLabel: 'R$ 294,90',
+    priceCents: 29490,
     secondaryPriceLabel: 'Acesso imediato + materiais inclusos',
-    includedItems: defaultIncludedItems,
     bonusSection: {
       enabled: true,
       title: 'Prévia de conteúdo',

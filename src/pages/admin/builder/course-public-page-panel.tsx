@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { DragDropContext, Draggable, Droppable, type DropResult } from '@hello-pangea/dnd';
-import { BookOpen, GripVertical, Layers3, Plus, Trash2, UserRound } from 'lucide-react';
+import { BookOpen, GripVertical, Layers3, Plus, Trash2 } from 'lucide-react';
 import { useAuth } from '@/app/providers/auth-provider';
 import { useCourseBuilder } from '@/app/layouts/admin-course-builder-layout';
 import { Button } from '@/components/ui/button';
@@ -16,11 +16,6 @@ type CourseAuthorAssignmentForm = {
     author_id: string;
     commission_percent: number;
     display_order: number;
-    manual_profile: ManualCourseAuthorForm | null;
-};
-type ManualCourseAuthorForm = {
-    public_title: string;
-    public_long_bio: string;
 };
 type CoursePublicPageFormState = {
     category: string;
@@ -34,11 +29,10 @@ type CoursePublicPageFormState = {
     bonus_enabled: boolean;
     bonus_title: string;
     mentor_initials: string;
-    price_label: string;
     secondary_price_label: string;
     authors: CourseAuthorAssignmentForm[];
+    authorContent: string;
     aboutParagraphs: string[];
-    includedItems: string[];
     contentSource: 'real' | 'custom';
     customSyllabus: GenflixCourseModule[];
 };
@@ -57,7 +51,6 @@ function createEmptyAuthorAssignment(index = 0): CourseAuthorAssignmentForm {
         author_id: '',
         commission_percent: index === 0 ? 100 : 0,
         display_order: index + 1,
-        manual_profile: null,
     };
 }
 function ensureAuthorClientIds<T extends object>(authors: T[]) {
@@ -82,15 +75,6 @@ function moveAuthorToDisplayOrder(authors: CourseAuthorAssignmentForm[], sourceI
     const safeDisplayOrder = Math.min(Math.max(Math.trunc(nextDisplayOrder) || 1, 1), authors.length);
     return reorderAuthorAssignments(authors, sourceIndex, safeDisplayOrder - 1);
 }
-function createEmptyManualAuthor(): ManualCourseAuthorForm {
-    return {
-        public_title: '',
-        public_long_bio: '',
-    };
-}
-function slugifyPublicTitle(value: string) {
-    return value.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
-}
 function normalizeAuthorAssignments(value: unknown): CourseAuthorAssignmentForm[] {
     if (!Array.isArray(value)) {
         return [];
@@ -101,8 +85,7 @@ function normalizeAuthorAssignments(value: unknown): CourseAuthorAssignmentForm[
         }
         const record = entry as Record<string, unknown>;
         const author_id = typeof record.author_id === 'string' ? record.author_id.trim() : '';
-        const manualTitle = typeof record.manual_public_title === 'string' ? record.manual_public_title.trim() : '';
-        if (!author_id && !manualTitle) {
+        if (!author_id) {
             return [];
         }
         const commissionPercent = Number(record.commission_percent ?? 0);
@@ -111,12 +94,6 @@ function normalizeAuthorAssignments(value: unknown): CourseAuthorAssignmentForm[
                 author_id,
                 commission_percent: Number.isFinite(commissionPercent) ? commissionPercent : 0,
                 display_order: Number.isFinite(displayOrder) && displayOrder > 0 ? Math.trunc(displayOrder) : index + 1,
-                manual_profile: author_id ? null : {
-                    public_title: manualTitle,
-                    public_long_bio: typeof record.manual_public_long_bio === 'string'
-                        ? record.manual_public_long_bio
-                        : typeof record.manual_public_short_bio === 'string' ? record.manual_public_short_bio : '',
-                },
             }];
     });
     return ensureAuthorClientIds(authors) as CourseAuthorAssignmentForm[];
@@ -172,11 +149,10 @@ export function CoursePublicPagePanel() {
         bonus_enabled: true,
         bonus_title: 'Prévia de conteúdo',
         mentor_initials: '',
-        price_label: '',
         secondary_price_label: '',
         authors: [createEmptyAuthorAssignment()],
+        authorContent: '',
         aboutParagraphs: [''],
-        includedItems: [''],
         contentSource: 'custom',
         customSyllabus: [createEmptyModule()],
     });
@@ -242,11 +218,10 @@ export function CoursePublicPagePanel() {
             bonus_enabled: content.bonusSection?.enabled ?? resolvedDetail.bonusSection.enabled,
             bonus_title: content.bonusSection?.title ?? resolvedDetail.bonusSection.title,
             mentor_initials: courseTree.course.mentor_initials ?? resolvedDetail.mentor.initials,
-            price_label: courseTree.course.price_label ?? resolvedDetail.priceLabel,
             secondary_price_label: courseTree.course.secondary_price_label ?? resolvedDetail.secondaryPriceLabel,
             authors: existingAuthors.length ? existingAuthors : [createEmptyAuthorAssignment()],
+            authorContent: content.authorContent,
             aboutParagraphs: content.aboutParagraphs.length ? content.aboutParagraphs : resolvedDetail.aboutParagraphs,
-            includedItems: content.includedItems.length ? content.includedItems : resolvedDetail.includedItems,
             contentSource: content.contentSource,
             customSyllabus: content.customSyllabus.length ? content.customSyllabus : resolvedDetail.syllabus,
         });
@@ -265,9 +240,6 @@ export function CoursePublicPagePanel() {
     }
     function updateParagraph(index: number, value: string) {
         updateField('aboutParagraphs', form.aboutParagraphs.map((paragraph, paragraphIndex) => paragraphIndex === index ? value : paragraph));
-    }
-    function updateIncludedItem(index: number, value: string) {
-        updateField('includedItems', form.includedItems.map((item, itemIndex) => itemIndex === index ? value : item));
     }
     function updateCustomModule(index: number, patch: Partial<GenflixCourseModule>) {
         updateField('customSyllabus', form.customSyllabus.map((module, moduleIndex) => moduleIndex === index ? { ...module, ...patch } : module));
@@ -308,20 +280,6 @@ export function CoursePublicPagePanel() {
     function addAuthor() {
         updateField('authors', normalizeAuthorAssignmentsOrder([...form.authors, createEmptyAuthorAssignment(form.authors.length)]));
     }
-    function addManualAuthor() {
-        const shouldUseEmptyRow = form.authors.length === 1 && !form.authors[0].author_id && !form.authors[0].manual_profile;
-        const manualProfile = createEmptyManualAuthor();
-        if (shouldUseEmptyRow) {
-            updateAuthor(0, { author_id: '', manual_profile: manualProfile });
-            return;
-        }
-        const hasAssignedAuthor = form.authors.some((author) => Boolean(author.author_id || author.manual_profile));
-        updateField('authors', normalizeAuthorAssignmentsOrder([...form.authors, {
-            ...createEmptyAuthorAssignment(form.authors.length),
-            commission_percent: hasAssignedAuthor ? 0 : 100,
-            manual_profile: manualProfile,
-        }]));
-    }
     function removeAuthor(index: number) {
         const nextAuthors = form.authors.filter((_, authorIndex) => authorIndex !== index);
         updateField('authors', nextAuthors.length ? normalizeAuthorAssignmentsOrder(nextAuthors) : [createEmptyAuthorAssignment()]);
@@ -333,7 +291,8 @@ export function CoursePublicPagePanel() {
         if (!courseTree) {
             return;
         }
-        if (Math.round(authorCommissionTotal * 100) / 100 !== 100) {
+        const hasAssignedAuthors = form.authors.some((author) => Boolean(author.author_id));
+        if (hasAssignedAuthors && Math.round(authorCommissionTotal * 100) / 100 !== 100) {
             setError('A soma das comissões dos autores precisa fechar em 100%.');
             return;
         }
@@ -348,27 +307,13 @@ export function CoursePublicPagePanel() {
                 logo_url: form.logo_url.trim(),
                 mentor_bio: form.mentor_bio.trim(),
                 bonus_title: form.bonus_title.trim(),
+                authorContent: form.authorContent.trim(),
                 aboutParagraphs: form.aboutParagraphs.map((item) => item.trim()).filter(Boolean),
-                includedItems: form.includedItems.map((item) => item.trim()).filter(Boolean),
                 authors: normalizeAuthorAssignmentsOrder(form.authors).map((author, index) => ({
                     author_id: author.author_id,
                     commission_percent: Number(author.commission_percent || 0),
                     display_order: Number(author.display_order || index + 1),
-                    manual_profile: author.manual_profile ? {
-                        public_slug: slugifyPublicTitle(author.manual_profile.public_title),
-                        public_title: author.manual_profile.public_title.trim(),
-                        public_short_bio: '',
-                        public_long_bio: author.manual_profile.public_long_bio.trim(),
-                        public_areas: [],
-                        public_education: '',
-                        public_experience: '',
-                        public_photo_url: '',
-                        public_website_url: '',
-                        public_instagram_url: '',
-                        public_linkedin_url: '',
-                        public_youtube_url: '',
-                    } : undefined,
-                })).filter((author) => author.author_id || author.manual_profile?.public_title),
+                })).filter((author) => author.author_id),
                 customSyllabus: form.customSyllabus
                     .map((module) => ({
                     title: module.title.trim(),
@@ -507,12 +452,7 @@ export function CoursePublicPagePanel() {
                 </div>
               </div>
 
-              <div className="grid gap-5 md:grid-cols-2">
-                <label className="block space-y-2">
-                  <span className="text-xs font-black uppercase tracking-widest text-slate-400">Preço exibido</span>
-                  <input className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-5 py-3 text-sm font-semibold outline-none focus:border-cyan-400 focus:bg-white" value={form.price_label} onChange={(event) => updateField('price_label', event.target.value)} placeholder="Ex: R$ 294,90" required/>
-                </label>
-
+              <div className="grid gap-5">
                 <label className="block space-y-2">
                   <span className="text-xs font-black uppercase tracking-widest text-slate-400">Subtítulo do checkout</span>
                   <input className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-5 py-3 text-sm font-semibold outline-none focus:border-cyan-400 focus:bg-white" value={form.secondary_price_label} onChange={(event) => updateField('secondary_price_label', event.target.value)} placeholder="Ex: Acesso imediato + materiais inclusos" required/>
@@ -522,7 +462,7 @@ export function CoursePublicPagePanel() {
         </section>
 
         <section className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm md:p-10">
-          <SectionHeading eyebrow="Autores" title="Autores do curso e itens inclusos" description="Vincule um ou mais autores ao curso, ajuste os percentuais de comissão e mantenha os campos de bônus e benefícios da página pública."/>
+          <SectionHeading eyebrow="Autores" title="Autores e divisão de direitos" description="Vincule os autores responsáveis pela divisão de direitos e ajuste os percentuais de comissão. Esses cadastros não alimentam o texto público do curso."/>
 
           <div className="mt-8 space-y-6">
             <div className="space-y-3">
@@ -536,10 +476,6 @@ export function CoursePublicPagePanel() {
                     <Plus className="mr-2 h-4 w-4"/>
                     Adicionar autor
                   </Button>
-                  <Button type="button" variant="outline" className="rounded-2xl" onClick={addManualAuthor}>
-                    <UserRound className="mr-2 h-4 w-4"/>
-                    Autor manual
-                  </Button>
                 </div>
               </div>
 
@@ -551,7 +487,6 @@ export function CoursePublicPagePanel() {
                       <div ref={provided.innerRef} {...provided.droppableProps} className="space-y-4">
                         {form.authors.map((author, index) => {
                           const selectedUser = creatorUsers.find((candidate) => candidate.id === author.author_id);
-                          const isManualAuthor = Boolean(author.manual_profile);
                           return (
                             <Draggable key={author.client_id} draggableId={author.client_id} index={index}>
                               {(draggableProvided, snapshot) => (
@@ -561,69 +496,32 @@ export function CoursePublicPagePanel() {
                                   className={`rounded-[24px] border p-5 transition-all ${snapshot.isDragging ? 'border-cyan-200 bg-white shadow-xl ring-2 ring-cyan-100' : 'border-slate-200 bg-slate-50'}`}
                                 >
                                   <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_160px_120px]">
-                                    {isManualAuthor ? (
-                                      <div className="space-y-4">
-                                        <div className="flex items-center gap-3">
-                                          <button
-                                            type="button"
-                                            aria-label={`Mover autor ${author.manual_profile?.public_title || index + 1}`}
-                                            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-cyan-200 bg-white text-cyan-700 cursor-grab active:cursor-grabbing"
-                                            {...draggableProvided.dragHandleProps}
-                                          >
-                                            <GripVertical className="h-4 w-4" />
-                                          </button>
-                                          <div>
-                                            <span className="text-xs font-black uppercase tracking-widest text-cyan-700">Autor manual</span>
-                                            <p className="mt-1 text-xs font-medium text-slate-500">Perfil sem cadastro na plataforma</p>
-                                          </div>
+                                    <label className="block space-y-2">
+                                      <span className="text-xs font-black uppercase tracking-widest text-slate-400">Autor cadastrado</span>
+                                      <div className="flex gap-3">
+                                        <button
+                                          type="button"
+                                          aria-label={`Mover autor ${index + 1}`}
+                                          className="mt-0.5 flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-400 transition hover:text-slate-700 cursor-grab active:cursor-grabbing"
+                                          {...draggableProvided.dragHandleProps}
+                                        >
+                                          <GripVertical className="h-4 w-4" />
+                                        </button>
+                                        <div className="min-w-0 flex-1">
+                                          <select className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold outline-none focus:border-cyan-400" value={author.author_id} onChange={(event) => updateAuthor(index, { author_id: event.target.value })}>
+                                            <option value="">Selecione um autor</option>
+                                            {creatorUsers.map((candidate) => (
+                                              <option key={candidate.id} value={candidate.id} disabled={selectedAuthorIds.has(candidate.id) && candidate.id !== author.author_id}>
+                                                {candidate.full_name || candidate.email}
+                                              </option>
+                                            ))}
+                                          </select>
                                         </div>
-                                        <label className="block space-y-2">
-                                          <span className="text-xs font-black uppercase tracking-widest text-slate-400">Nome do autor</span>
-                                          <input
-                                            value={author.manual_profile?.public_title ?? ''}
-                                            onChange={(event) => updateAuthor(index, { manual_profile: { ...createEmptyManualAuthor(), ...author.manual_profile, public_title: event.target.value } })}
-                                            className="w-full rounded-2xl border border-cyan-200 bg-white px-4 py-3 text-sm font-semibold outline-none focus:border-cyan-400"
-                                            placeholder="Nome exibido no curso"
-                                          />
-                                        </label>
-                                        <label className="block space-y-2">
-                                          <span className="text-xs font-black uppercase tracking-widest text-slate-400">Sobre o autor</span>
-                                          <textarea
-                                            value={author.manual_profile?.public_long_bio ?? ''}
-                                            onChange={(event) => updateAuthor(index, { manual_profile: { ...createEmptyManualAuthor(), ...author.manual_profile, public_long_bio: event.target.value } })}
-                                            className="min-h-28 w-full rounded-2xl border border-cyan-200 bg-white px-4 py-3 text-sm font-medium leading-6 outline-none focus:border-cyan-400"
-                                            placeholder="Escreva uma apresentação do autor"
-                                          />
-                                        </label>
                                       </div>
-                                    ) : (
-                                      <label className="block space-y-2">
-                                        <span className="text-xs font-black uppercase tracking-widest text-slate-400">Autor cadastrado</span>
-                                        <div className="flex gap-3">
-                                          <button
-                                            type="button"
-                                            aria-label={`Mover autor ${index + 1}`}
-                                            className="mt-0.5 flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-400 transition hover:text-slate-700 cursor-grab active:cursor-grabbing"
-                                            {...draggableProvided.dragHandleProps}
-                                          >
-                                            <GripVertical className="h-4 w-4" />
-                                          </button>
-                                          <div className="min-w-0 flex-1">
-                                            <select className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold outline-none focus:border-cyan-400" value={author.author_id} onChange={(event) => updateAuthor(index, { author_id: event.target.value })}>
-                                              <option value="">Selecione um autor</option>
-                                              {creatorUsers.map((candidate) => (
-                                                <option key={candidate.id} value={candidate.id} disabled={selectedAuthorIds.has(candidate.id) && candidate.id !== author.author_id}>
-                                                  {candidate.full_name || candidate.email}
-                                                </option>
-                                              ))}
-                                            </select>
-                                          </div>
-                                        </div>
-                                        <p className="text-xs font-medium text-slate-500">
-                                          {selectedUser ? selectedUser.email : 'Escolha um usuário com regra de autor/professor.'}
-                                        </p>
-                                      </label>
-                                    )}
+                                      <p className="text-xs font-medium text-slate-500">
+                                        {selectedUser ? selectedUser.email : 'Escolha um usuário com regra de autor/professor.'}
+                                      </p>
+                                    </label>
 
                                     <label className="block space-y-2">
                                       <span className="text-xs font-black uppercase tracking-widest text-slate-400">Comissão (%)</span>
@@ -677,31 +575,26 @@ export function CoursePublicPagePanel() {
             </label>
           </div>
 
-          <div className="mt-8 space-y-3">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <p className="text-sm font-black text-slate-900">O que está incluído</p>
-                <p className="text-xs font-medium text-slate-500">Lista dos chips exibidos abaixo do formulário de compra.</p>
-              </div>
-              <Button type="button" variant="outline" className="rounded-2xl" onClick={() => updateField('includedItems', [...form.includedItems, ''])}>
-                <Plus className="mr-2 h-4 w-4"/>
-                Adicionar item
-              </Button>
-            </div>
-
-            {form.includedItems.map((item, index) => (<div key={`included-item-${index}`} className="flex items-center gap-3">
-                <input className="h-12 flex-1 rounded-2xl border border-slate-200 bg-slate-50 px-5 text-sm font-semibold outline-none focus:border-cyan-400 focus:bg-white" value={item} onChange={(event) => updateIncludedItem(index, event.target.value)} placeholder="Ex: Acesso imediato ao curso"/>
-                <Button type="button" variant="outline" size="icon" className="h-12 w-12 rounded-2xl" onClick={() => updateField('includedItems', form.includedItems.filter((_, itemIndex) => itemIndex !== index))} disabled={form.includedItems.length === 1}>
-                  <Trash2 className="h-4 w-4"/>
-                </Button>
-              </div>))}
-          </div>
         </section>
 
         <section className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm md:p-10">
           <SectionHeading eyebrow="Corpo" title="Sobre o curso e destaques" description="Esses blocos alimentam as seções de texto corrido e a estrutura editorial da página pública."/>
 
           <div className="mt-8 space-y-8">
+            <div className="space-y-3">
+              <div>
+                <p className="text-sm font-black text-slate-900">Autoria</p>
+                <p className="text-xs font-medium text-slate-500">Texto livre da autoria do curso. Use a formatação para destacar nomes, títulos e trechos importantes.</p>
+              </div>
+              <RichTextEditor
+                value={form.authorContent}
+                onChange={(value) => updateField('authorContent', value)}
+                placeholder="Escreva a autoria do curso"
+                minHeightClassName="min-h-[220px]"
+                enableHtmlMode
+              />
+            </div>
+
             <div className="space-y-3">
                 <div className="flex items-center justify-between gap-3">
                   <div>
