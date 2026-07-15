@@ -1,8 +1,7 @@
-import { useEffect, useMemo, useState, type ChangeEvent, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { useAuth } from '@/app/providers/auth-provider';
 import { PasswordField } from '@/components/forms/password-field';
 import { Button } from '@/components/ui/button';
-import { uploadProfileAvatar } from '@/features/account/avatar-api';
 import { fetchCreatorPayoutProfile, fetchCreatorPublicProfile, upsertCreatorPayoutProfile, upsertCreatorPublicProfile, type PixKeyType, } from '@/features/creator/profile/api';
 function slugifyPublicTitle(value: string) {
     return value
@@ -24,24 +23,13 @@ export function CreatorProfilePage() {
     const [pixKeyType, setPixKeyType] = useState<PixKeyType | ''>('');
     const [pixKey, setPixKey] = useState('');
     const [publicTitle, setPublicTitle] = useState('');
-    const [publicShortBio, setPublicShortBio] = useState('');
     const [publicLongBio, setPublicLongBio] = useState('');
-    const [publicAreas, setPublicAreas] = useState('');
-    const [publicEducation, setPublicEducation] = useState('');
-    const [publicExperience, setPublicExperience] = useState('');
-    const [publicWebsiteUrl, setPublicWebsiteUrl] = useState('');
-    const [publicInstagramUrl, setPublicInstagramUrl] = useState('');
-    const [publicLinkedinUrl, setPublicLinkedinUrl] = useState('');
-    const [publicYoutubeUrl, setPublicYoutubeUrl] = useState('');
     const [profileMessage, setProfileMessage] = useState<string | null>(null);
     const [passwordMessage, setPasswordMessage] = useState<string | null>(null);
     const [payoutMessage, setPayoutMessage] = useState<string | null>(null);
-    const [avatarMessage, setAvatarMessage] = useState<string | null>(null);
-    const [avatarError, setAvatarError] = useState<string | null>(null);
     const [isSavingProfile, setIsSavingProfile] = useState(false);
     const [isSavingPassword, setIsSavingPassword] = useState(false);
     const [isSavingPayout, setIsSavingPayout] = useState(false);
-    const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
     useEffect(() => {
         setFullName(profile?.full_name ?? '');
         setTimezone(profile?.timezone ?? 'America/Sao_Paulo');
@@ -67,15 +55,7 @@ export function CreatorProfilePage() {
                     setPixKey(payoutProfile.pix_key ?? '');
                 }
                 setPublicTitle(publicProfile?.public_title ?? profile?.full_name ?? '');
-                setPublicShortBio(publicProfile?.public_short_bio ?? '');
-                setPublicLongBio(publicProfile?.public_long_bio ?? '');
-                setPublicAreas((publicProfile?.public_areas ?? []).join(', '));
-                setPublicEducation(publicProfile?.public_education ?? '');
-                setPublicExperience(publicProfile?.public_experience ?? '');
-                setPublicWebsiteUrl(publicProfile?.public_website_url ?? '');
-                setPublicInstagramUrl(publicProfile?.public_instagram_url ?? '');
-                setPublicLinkedinUrl(publicProfile?.public_linkedin_url ?? '');
-                setPublicYoutubeUrl(publicProfile?.public_youtube_url ?? '');
+                setPublicLongBio(publicProfile?.public_long_bio ?? publicProfile?.public_short_bio ?? '');
             }
             catch (error) {
                 if (isMounted) {
@@ -88,7 +68,7 @@ export function CreatorProfilePage() {
             isMounted = false;
         };
     }, [user?.id, profile?.avatar_url, profile?.full_name]);
-    const publicSlug = useMemo(() => slugifyPublicTitle(publicTitle || profile?.full_name || ''), [profile?.full_name, publicTitle]);
+    const publicSlug = slugifyPublicTitle(publicTitle || profile?.full_name || '');
     async function handleProfileSubmit(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
         setIsSavingProfile(true);
@@ -153,53 +133,24 @@ export function CreatorProfilePage() {
             return;
         setPayoutMessage(null);
         try {
-            const areas = publicAreas
-                .split(',')
-                .map((area) => area.trim())
-                .filter(Boolean);
             await upsertCreatorPublicProfile({
                 userId: user.id,
                 publicSlug,
                 publicTitle,
-                publicShortBio,
+                publicShortBio: '',
                 publicLongBio,
-                publicAreas: areas,
-                publicEducation,
-                publicExperience,
-                publicWebsiteUrl,
-                publicInstagramUrl,
-                publicLinkedinUrl,
-                publicYoutubeUrl,
+                publicAreas: [],
+                publicEducation: '',
+                publicExperience: '',
+                publicWebsiteUrl: '',
+                publicInstagramUrl: '',
+                publicLinkedinUrl: '',
+                publicYoutubeUrl: '',
             });
             setPayoutMessage('Perfil público atualizado com sucesso.');
         }
         catch (error) {
             setPayoutMessage(error instanceof Error ? error.message : 'Não foi possível atualizar o perfil público.');
-        }
-    }
-    async function handleAvatarChange(event: ChangeEvent<HTMLInputElement>) {
-        const file = event.target.files?.[0];
-        event.target.value = '';
-        setAvatarMessage(null);
-        setAvatarError(null);
-        if (!file || !user?.id) {
-            return;
-        }
-        if (!file.type.startsWith('image/')) {
-            setAvatarError('Selecione uma imagem valida para o avatar.');
-            return;
-        }
-        setIsUploadingAvatar(true);
-        try {
-            const asset = await uploadProfileAvatar(file, user.id);
-            await updateProfile({ avatar_url: asset.publicUrl });
-            setAvatarMessage('Avatar atualizado com sucesso.');
-        }
-        catch (error) {
-            setAvatarError(error instanceof Error ? error.message : 'Não foi possível atualizar o avatar.');
-        }
-        finally {
-            setIsUploadingAvatar(false);
         }
     }
     return (<div className="space-y-6">
@@ -309,89 +260,19 @@ export function CreatorProfilePage() {
             <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#1398B7]">Perfil público</p>
             <h2 className="mt-2 font-readex text-xl font-semibold text-[#15323b]">Dados do autor</h2>
             <p className="mt-2 max-w-2xl text-sm font-medium leading-6 text-[#6d7f84]">
-              Esses campos alimentam a página pública do autor em /autores/{publicSlug || 'slug'} e a relação de autores nos cursos.
+              Esses dois campos alimentam a apresentação pública do autor e a relação de autores nos cursos.
             </p>
           </div>
         </div>
 
-        <article className="mt-5 rounded-[28px] border border-[#D8E6EB] bg-white p-5">
-          <h3 className="font-readex text-lg font-semibold text-[#15323b]">Foto Pública</h3>
-          <div className="mt-5 flex flex-col gap-5 sm:flex-row sm:items-start">
-            {profile?.avatar_url ? (<img src={profile.avatar_url} alt="Foto pública atual do autor" className="h-24 w-24 rounded-[28px] border border-[#D8E6EB] object-cover shadow-sm"/>) : (<div className="flex h-24 w-24 items-center justify-center rounded-[28px] bg-gradient-to-br from-[#1398B7] to-[#0A3640] text-xl font-black text-white shadow-sm">
-                {(fullName || profile?.email || 'CR').slice(0, 2).toUpperCase()}
-              </div>)}
-
-            <div className="flex-1 space-y-3">
-              <p className="text-sm font-medium leading-6 text-[#6d7f84]">
-                Envie uma imagem para aparecer na sua pagina publica de autor e nas areas da conta.
-              </p>
-              <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" onChange={(event) => void handleAvatarChange(event)} className="block w-full cursor-pointer rounded-2xl border border-[#D8E6EB] bg-white px-4 py-3 text-sm font-semibold text-[#15323b] file:mr-4 file:rounded-xl file:border-0 file:bg-[#1398B7] file:px-4 file:py-2 file:font-black file:text-white hover:file:bg-[#0A3640]" disabled={isUploadingAvatar}/>
-              <p className="text-xs font-semibold text-[#6d7f84]">
-                Formatos recomendados: JPG, PNG, WEBP ou GIF.
-              </p>
-              {avatarMessage ? <p className="text-sm font-semibold text-[#5f7077]">{avatarMessage}</p> : null}
-              {avatarError ? <p className="text-sm font-semibold text-red-600">{avatarError}</p> : null}
-            </div>
-          </div>
-        </article>
-
-        <div className="mt-5 grid gap-4 md:grid-cols-2">
+        <div className="mt-5 grid gap-4">
           <label className="block">
             <span className="text-xs font-black uppercase tracking-[0.2em] text-[#5F7077]">Nome público</span>
             <input value={publicTitle} onChange={(event) => setPublicTitle(event.target.value)} className="mt-2 h-12 w-full rounded-2xl border border-[#D8E6EB] bg-white px-4 text-sm font-semibold outline-none focus:border-[#1398B7]" placeholder="Nome exibido na página pública"/>
           </label>
-
           <label className="block">
-            <span className="text-xs font-black uppercase tracking-[0.2em] text-[#5F7077]">Slug público</span>
-            <input value={publicSlug} readOnly disabled className="mt-2 h-12 w-full rounded-2xl border border-[#D8E6EB] bg-white/70 px-4 text-sm font-semibold text-[#5F7077] outline-none" placeholder="autor-exemplo"/>
-            <p className="mt-2 text-xs font-medium leading-5 text-[#6d7f84]">
-              O slug é gerado automaticamente a partir do nome público e não pode ser editado manualmente.
-            </p>
-          </label>
-
-          <label className="block md:col-span-2">
-            <span className="text-xs font-black uppercase tracking-[0.2em] text-[#5F7077]">Bio curta</span>
-            <input value={publicShortBio} onChange={(event) => setPublicShortBio(event.target.value)} className="mt-2 h-12 w-full rounded-2xl border border-[#D8E6EB] bg-white px-4 text-sm font-semibold outline-none focus:border-[#1398B7]" placeholder="Resumo curto do perfil"/>
-          </label>
-
-          <label className="block md:col-span-2">
-            <span className="text-xs font-black uppercase tracking-[0.2em] text-[#5F7077]">Bio longa</span>
+            <span className="text-xs font-black uppercase tracking-[0.2em] text-[#5F7077]">Sobre o autor</span>
             <textarea value={publicLongBio} onChange={(event) => setPublicLongBio(event.target.value)} className="mt-2 min-h-28 w-full rounded-2xl border border-[#D8E6EB] bg-white px-4 py-3 text-sm font-semibold outline-none focus:border-[#1398B7]" placeholder="Biografia detalhada do autor"/>
-          </label>
-
-          <label className="block md:col-span-2">
-            <span className="text-xs font-black uppercase tracking-[0.2em] text-[#5F7077]">Áreas de atuação</span>
-            <input value={publicAreas} onChange={(event) => setPublicAreas(event.target.value)} className="mt-2 h-12 w-full rounded-2xl border border-[#D8E6EB] bg-white px-4 text-sm font-semibold outline-none focus:border-[#1398B7]" placeholder="Ex: Direito, Docência, Pesquisa"/>
-          </label>
-
-          <label className="block md:col-span-2">
-            <span className="text-xs font-black uppercase tracking-[0.2em] text-[#5F7077]">Formação</span>
-            <textarea value={publicEducation} onChange={(event) => setPublicEducation(event.target.value)} className="mt-2 min-h-24 w-full rounded-2xl border border-[#D8E6EB] bg-white px-4 py-3 text-sm font-semibold outline-none focus:border-[#1398B7]" placeholder="Formações, cursos e certificações"/>
-          </label>
-
-          <label className="block md:col-span-2">
-            <span className="text-xs font-black uppercase tracking-[0.2em] text-[#5F7077]">Experiência</span>
-            <textarea value={publicExperience} onChange={(event) => setPublicExperience(event.target.value)} className="mt-2 min-h-24 w-full rounded-2xl border border-[#D8E6EB] bg-white px-4 py-3 text-sm font-semibold outline-none focus:border-[#1398B7]" placeholder="Resumo da trajetória profissional"/>
-          </label>
-
-          <label className="block">
-            <span className="text-xs font-black uppercase tracking-[0.2em] text-[#5F7077]">Website</span>
-            <input value={publicWebsiteUrl} onChange={(event) => setPublicWebsiteUrl(event.target.value)} className="mt-2 h-12 w-full rounded-2xl border border-[#D8E6EB] bg-white px-4 text-sm font-semibold outline-none focus:border-[#1398B7]" placeholder="https://..."/>
-          </label>
-
-          <label className="block">
-            <span className="text-xs font-black uppercase tracking-[0.2em] text-[#5F7077]">Instagram</span>
-            <input value={publicInstagramUrl} onChange={(event) => setPublicInstagramUrl(event.target.value)} className="mt-2 h-12 w-full rounded-2xl border border-[#D8E6EB] bg-white px-4 text-sm font-semibold outline-none focus:border-[#1398B7]" placeholder="https://instagram.com/..."/>
-          </label>
-
-          <label className="block">
-            <span className="text-xs font-black uppercase tracking-[0.2em] text-[#5F7077]">LinkedIn</span>
-            <input value={publicLinkedinUrl} onChange={(event) => setPublicLinkedinUrl(event.target.value)} className="mt-2 h-12 w-full rounded-2xl border border-[#D8E6EB] bg-white px-4 text-sm font-semibold outline-none focus:border-[#1398B7]" placeholder="https://linkedin.com/in/..."/>
-          </label>
-
-          <label className="block">
-            <span className="text-xs font-black uppercase tracking-[0.2em] text-[#5F7077]">YouTube</span>
-            <input value={publicYoutubeUrl} onChange={(event) => setPublicYoutubeUrl(event.target.value)} className="mt-2 h-12 w-full rounded-2xl border border-[#D8E6EB] bg-white px-4 text-sm font-semibold outline-none focus:border-[#1398B7]" placeholder="https://youtube.com/..."/>
           </label>
         </div>
 

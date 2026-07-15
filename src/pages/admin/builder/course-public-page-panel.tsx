@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { DragDropContext, Draggable, Droppable, type DropResult } from '@hello-pangea/dnd';
-import { BookOpen, GripVertical, Layers3, Plus, Trash2, UserRound, X } from 'lucide-react';
+import { BookOpen, GripVertical, Layers3, Plus, Trash2, UserRound } from 'lucide-react';
 import { useAuth } from '@/app/providers/auth-provider';
 import { useCourseBuilder } from '@/app/layouts/admin-course-builder-layout';
 import { Button } from '@/components/ui/button';
 import { RichTextEditor } from '@/components/ui/RichTextEditor';
-import { updateCoursePublicPage, uploadCourseLogo, uploadManualAuthorPhoto, toErrorMessage, } from '@/features/admin/content/api';
+import { updateCoursePublicPage, uploadCourseLogo, toErrorMessage, } from '@/features/admin/content/api';
 import { coursePublicPageFormSchema } from '@/features/admin/content/schemas';
 import { fetchAdminUsers, type AdminUserListItem } from '@/features/admin/users/api';
 import { buildCoursePublicDetail, normalizeCoursePublicPageContent, } from '@/features/public/course-public-page-content';
@@ -19,18 +19,8 @@ type CourseAuthorAssignmentForm = {
     manual_profile: ManualCourseAuthorForm | null;
 };
 type ManualCourseAuthorForm = {
-    public_slug: string;
     public_title: string;
-    public_short_bio: string;
     public_long_bio: string;
-    public_areas: string;
-    public_education: string;
-    public_experience: string;
-    public_photo_url: string;
-    public_website_url: string;
-    public_instagram_url: string;
-    public_linkedin_url: string;
-    public_youtube_url: string;
 };
 type CoursePublicPageFormState = {
     category: string;
@@ -94,18 +84,8 @@ function moveAuthorToDisplayOrder(authors: CourseAuthorAssignmentForm[], sourceI
 }
 function createEmptyManualAuthor(): ManualCourseAuthorForm {
     return {
-        public_slug: '',
         public_title: '',
-        public_short_bio: '',
         public_long_bio: '',
-        public_areas: '',
-        public_education: '',
-        public_experience: '',
-        public_photo_url: '',
-        public_website_url: '',
-        public_instagram_url: '',
-        public_linkedin_url: '',
-        public_youtube_url: '',
     };
 }
 function slugifyPublicTitle(value: string) {
@@ -132,18 +112,10 @@ function normalizeAuthorAssignments(value: unknown): CourseAuthorAssignmentForm[
                 commission_percent: Number.isFinite(commissionPercent) ? commissionPercent : 0,
                 display_order: Number.isFinite(displayOrder) && displayOrder > 0 ? Math.trunc(displayOrder) : index + 1,
                 manual_profile: author_id ? null : {
-                    public_slug: typeof record.manual_public_slug === 'string' ? record.manual_public_slug : '',
                     public_title: manualTitle,
-                    public_short_bio: typeof record.manual_public_short_bio === 'string' ? record.manual_public_short_bio : '',
-                    public_long_bio: typeof record.manual_public_long_bio === 'string' ? record.manual_public_long_bio : '',
-                    public_areas: Array.isArray(record.manual_public_areas) ? record.manual_public_areas.filter((item): item is string => typeof item === 'string').join(', ') : '',
-                    public_education: typeof record.manual_public_education === 'string' ? record.manual_public_education : '',
-                    public_experience: typeof record.manual_public_experience === 'string' ? record.manual_public_experience : '',
-                    public_photo_url: typeof record.manual_public_photo_url === 'string' ? record.manual_public_photo_url : '',
-                    public_website_url: typeof record.manual_public_website_url === 'string' ? record.manual_public_website_url : '',
-                    public_instagram_url: typeof record.manual_public_instagram_url === 'string' ? record.manual_public_instagram_url : '',
-                    public_linkedin_url: typeof record.manual_public_linkedin_url === 'string' ? record.manual_public_linkedin_url : '',
-                    public_youtube_url: typeof record.manual_public_youtube_url === 'string' ? record.manual_public_youtube_url : '',
+                    public_long_bio: typeof record.manual_public_long_bio === 'string'
+                        ? record.manual_public_long_bio
+                        : typeof record.manual_public_short_bio === 'string' ? record.manual_public_short_bio : '',
                 },
             }];
     });
@@ -185,135 +157,6 @@ function SectionHeading({ eyebrow, title, description, }: {
       <p className="mt-2 text-sm font-medium leading-6 text-slate-600">{description}</p>
     </div>);
 }
-function ManualAuthorModal({
-    draft,
-    courseId,
-    isSaving,
-    onChange,
-    onClose,
-    onSave,
-}: {
-    draft: ManualCourseAuthorForm;
-    courseId: string;
-    isSaving: boolean;
-    onChange: (patch: Partial<ManualCourseAuthorForm>) => void;
-    onClose: () => void;
-    onSave: () => void;
-}) {
-    const [uploadError, setUploadError] = useState<string | null>(null);
-    const [isUploading, setIsUploading] = useState(false);
-    const generatedSlug = slugifyPublicTitle(draft.public_title);
-    async function handlePhotoUpload(event: React.ChangeEvent<HTMLInputElement>) {
-        const file = event.target.files?.[0];
-        event.target.value = '';
-        if (!file) {
-            return;
-        }
-        if (!file.type.startsWith('image/')) {
-            setUploadError('Selecione uma imagem válida.');
-            return;
-        }
-        setUploadError(null);
-        setIsUploading(true);
-        try {
-            const publicUrl = await uploadManualAuthorPhoto(file, courseId);
-            onChange({ public_photo_url: publicUrl });
-        }
-        catch (error) {
-            setUploadError(toErrorMessage(error));
-        }
-        finally {
-            setIsUploading(false);
-        }
-    }
-    function field(key: keyof ManualCourseAuthorForm, value: string) {
-        onChange({ [key]: value });
-    }
-    return (<div className="fixed inset-0 z-[160] flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="manual-author-modal-title">
-      <div className="flex max-h-[92vh] w-full max-w-4xl flex-col overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-2xl">
-        <div className="flex items-start justify-between gap-4 border-b border-slate-200 bg-slate-50 px-6 py-5">
-          <div>
-            <p className="text-[10px] font-black uppercase tracking-[0.24em] text-cyan-700">Autor manual</p>
-            <h3 id="manual-author-modal-title" className="mt-2 text-xl font-black tracking-tight text-slate-900">Perfil público do autor</h3>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">Preencha os mesmos campos públicos disponíveis para autores cadastrados. Este perfil será exibido apenas nos cursos em que for vinculado.</p>
-          </div>
-          <button type="button" onClick={onClose} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 text-slate-500 hover:bg-white" aria-label="Fechar modal">
-            <X className="h-4 w-4" />
-          </button>
-        </div>
-
-        <div className="overflow-y-auto px-6 py-6">
-          <div className="grid gap-4 md:grid-cols-2">
-            <label className="block space-y-2">
-              <span className="text-xs font-black uppercase tracking-widest text-slate-400">Nome público</span>
-              <input autoFocus value={draft.public_title} onChange={(event) => field('public_title', event.target.value)} className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold outline-none focus:border-cyan-400" placeholder="Nome exibido no curso" />
-            </label>
-            <label className="block space-y-2">
-              <span className="text-xs font-black uppercase tracking-widest text-slate-400">Slug público</span>
-              <input value={generatedSlug} readOnly disabled className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-500 outline-none" placeholder="autor-exemplo" />
-            </label>
-
-            <label className="block space-y-2 md:col-span-2">
-              <span className="text-xs font-black uppercase tracking-widest text-slate-400">Resumo público</span>
-              <textarea value={draft.public_short_bio} onChange={(event) => field('public_short_bio', event.target.value)} className="min-h-24 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium leading-6 outline-none focus:border-cyan-400" placeholder="Uma apresentação curta do autor" />
-            </label>
-            <label className="block space-y-2 md:col-span-2">
-              <span className="text-xs font-black uppercase tracking-widest text-slate-400">Biografia detalhada</span>
-              <textarea value={draft.public_long_bio} onChange={(event) => field('public_long_bio', event.target.value)} className="min-h-32 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium leading-6 outline-none focus:border-cyan-400" placeholder="Conte a trajetória e experiência do autor" />
-            </label>
-
-            <label className="block space-y-2">
-              <span className="text-xs font-black uppercase tracking-widest text-slate-400">Áreas de atuação</span>
-              <input value={draft.public_areas} onChange={(event) => field('public_areas', event.target.value)} className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold outline-none focus:border-cyan-400" placeholder="Separe por vírgulas" />
-            </label>
-            <label className="block space-y-2">
-              <span className="text-xs font-black uppercase tracking-widest text-slate-400">Formação</span>
-              <input value={draft.public_education} onChange={(event) => field('public_education', event.target.value)} className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold outline-none focus:border-cyan-400" placeholder="Formação acadêmica ou profissional" />
-            </label>
-            <label className="block space-y-2 md:col-span-2">
-              <span className="text-xs font-black uppercase tracking-widest text-slate-400">Experiência</span>
-              <textarea value={draft.public_experience} onChange={(event) => field('public_experience', event.target.value)} className="min-h-24 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium leading-6 outline-none focus:border-cyan-400" placeholder="Experiência profissional relevante" />
-            </label>
-
-            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 md:col-span-2">
-              <p className="text-xs font-black uppercase tracking-widest text-slate-400">Foto pública</p>
-              <div className="mt-3 flex flex-col gap-4 sm:flex-row sm:items-center">
-                {draft.public_photo_url ? <img src={draft.public_photo_url} alt="Prévia da foto do autor manual" className="h-20 w-20 rounded-2xl object-cover" /> : <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-cyan-100 text-cyan-800"><UserRound className="h-7 w-7" /></div>}
-                <div className="min-w-0 flex-1 space-y-2">
-                  <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" onChange={(event) => void handlePhotoUpload(event)} disabled={isUploading} className="block w-full cursor-pointer rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 file:mr-3 file:rounded-xl file:border-0 file:bg-cyan-600 file:px-3 file:py-2 file:font-black file:text-white" />
-                  <input value={draft.public_photo_url} onChange={(event) => field('public_photo_url', event.target.value)} className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold outline-none focus:border-cyan-400" placeholder="Ou informe a URL da foto" />
-                  {isUploading ? <p className="text-xs font-semibold text-slate-500">Enviando foto...</p> : null}
-                  {uploadError ? <p className="text-xs font-semibold text-rose-600">{uploadError}</p> : null}
-                </div>
-              </div>
-            </div>
-
-            <label className="block space-y-2">
-              <span className="text-xs font-black uppercase tracking-widest text-slate-400">Website</span>
-              <input value={draft.public_website_url} onChange={(event) => field('public_website_url', event.target.value)} className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold outline-none focus:border-cyan-400" placeholder="https://..." />
-            </label>
-            <label className="block space-y-2">
-              <span className="text-xs font-black uppercase tracking-widest text-slate-400">Instagram</span>
-              <input value={draft.public_instagram_url} onChange={(event) => field('public_instagram_url', event.target.value)} className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold outline-none focus:border-cyan-400" placeholder="https://instagram.com/..." />
-            </label>
-            <label className="block space-y-2">
-              <span className="text-xs font-black uppercase tracking-widest text-slate-400">LinkedIn</span>
-              <input value={draft.public_linkedin_url} onChange={(event) => field('public_linkedin_url', event.target.value)} className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold outline-none focus:border-cyan-400" placeholder="https://linkedin.com/in/..." />
-            </label>
-            <label className="block space-y-2">
-              <span className="text-xs font-black uppercase tracking-widest text-slate-400">YouTube</span>
-              <input value={draft.public_youtube_url} onChange={(event) => field('public_youtube_url', event.target.value)} className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold outline-none focus:border-cyan-400" placeholder="https://youtube.com/..." />
-            </label>
-          </div>
-        </div>
-
-        <div className="flex justify-end gap-3 border-t border-slate-200 bg-slate-50 px-6 py-4">
-          <Button type="button" variant="outline" className="rounded-2xl" onClick={onClose}>Cancelar</Button>
-          <Button type="button" className="rounded-2xl" disabled={isSaving || isUploading || !draft.public_title.trim()} onClick={onSave}>{isSaving ? 'Aplicando...' : 'Aplicar perfil manual'}</Button>
-        </div>
-      </div>
-    </div>);
-}
 export function CoursePublicPagePanel() {
     const { courseTree, refreshTree } = useCourseBuilder();
     const { session } = useAuth();
@@ -341,8 +184,6 @@ export function CoursePublicPagePanel() {
     const [success, setSuccess] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isUploadingLogo, setIsUploadingLogo] = useState(false);
-    const [manualAuthorDraft, setManualAuthorDraft] = useState<ManualCourseAuthorForm | null>(null);
-    const [editingManualAuthorIndex, setEditingManualAuthorIndex] = useState<number | null>(null);
     const resolvedDetail = useMemo(() => {
         if (!courseTree) {
             return null;
@@ -467,44 +308,19 @@ export function CoursePublicPagePanel() {
     function addAuthor() {
         updateField('authors', normalizeAuthorAssignmentsOrder([...form.authors, createEmptyAuthorAssignment(form.authors.length)]));
     }
-    function openManualAuthorModal(index: number | null = null) {
-        if (index !== null && form.authors[index]?.manual_profile) {
-            setManualAuthorDraft(form.authors[index].manual_profile);
-            setEditingManualAuthorIndex(index);
-        }
-        else {
-            const shouldUseEmptyRow = form.authors.length === 1 && !form.authors[0].author_id && !form.authors[0].manual_profile;
-            setManualAuthorDraft(createEmptyManualAuthor());
-            setEditingManualAuthorIndex(shouldUseEmptyRow ? 0 : null);
-        }
-    }
-    function closeManualAuthorModal() {
-        setManualAuthorDraft(null);
-        setEditingManualAuthorIndex(null);
-    }
-    function saveManualAuthor() {
-        if (!manualAuthorDraft?.public_title.trim()) {
-            setError('Informe o nome público do autor manual.');
+    function addManualAuthor() {
+        const shouldUseEmptyRow = form.authors.length === 1 && !form.authors[0].author_id && !form.authors[0].manual_profile;
+        const manualProfile = createEmptyManualAuthor();
+        if (shouldUseEmptyRow) {
+            updateAuthor(0, { author_id: '', manual_profile: manualProfile });
             return;
         }
-        const manualProfile = {
-            ...manualAuthorDraft,
-            public_slug: slugifyPublicTitle(manualAuthorDraft.public_title),
-            public_areas: manualAuthorDraft.public_areas.split(',').map((area) => area.trim()).filter(Boolean).join(', '),
-        };
-        if (editingManualAuthorIndex !== null) {
-            updateAuthor(editingManualAuthorIndex, { author_id: '', manual_profile: manualProfile });
-        }
-        else {
-            const hasAssignedAuthor = form.authors.some((author) => Boolean(author.author_id || author.manual_profile));
-            updateField('authors', normalizeAuthorAssignmentsOrder([...form.authors, {
-                ...createEmptyAuthorAssignment(form.authors.length),
-                commission_percent: hasAssignedAuthor ? 0 : 100,
-                manual_profile: manualProfile,
-            }]));
-        }
-        setError(null);
-        closeManualAuthorModal();
+        const hasAssignedAuthor = form.authors.some((author) => Boolean(author.author_id || author.manual_profile));
+        updateField('authors', normalizeAuthorAssignmentsOrder([...form.authors, {
+            ...createEmptyAuthorAssignment(form.authors.length),
+            commission_percent: hasAssignedAuthor ? 0 : 100,
+            manual_profile: manualProfile,
+        }]));
     }
     function removeAuthor(index: number) {
         const nextAuthors = form.authors.filter((_, authorIndex) => authorIndex !== index);
@@ -541,16 +357,16 @@ export function CoursePublicPagePanel() {
                     manual_profile: author.manual_profile ? {
                         public_slug: slugifyPublicTitle(author.manual_profile.public_title),
                         public_title: author.manual_profile.public_title.trim(),
-                        public_short_bio: author.manual_profile.public_short_bio.trim(),
+                        public_short_bio: '',
                         public_long_bio: author.manual_profile.public_long_bio.trim(),
-                        public_areas: author.manual_profile.public_areas.split(',').map((area) => area.trim()).filter(Boolean),
-                        public_education: author.manual_profile.public_education.trim(),
-                        public_experience: author.manual_profile.public_experience.trim(),
-                        public_photo_url: author.manual_profile.public_photo_url.trim(),
-                        public_website_url: author.manual_profile.public_website_url.trim(),
-                        public_instagram_url: author.manual_profile.public_instagram_url.trim(),
-                        public_linkedin_url: author.manual_profile.public_linkedin_url.trim(),
-                        public_youtube_url: author.manual_profile.public_youtube_url.trim(),
+                        public_areas: [],
+                        public_education: '',
+                        public_experience: '',
+                        public_photo_url: '',
+                        public_website_url: '',
+                        public_instagram_url: '',
+                        public_linkedin_url: '',
+                        public_youtube_url: '',
                     } : undefined,
                 })).filter((author) => author.author_id || author.manual_profile?.public_title),
                 customSyllabus: form.customSyllabus
@@ -720,7 +536,7 @@ export function CoursePublicPagePanel() {
                     <Plus className="mr-2 h-4 w-4"/>
                     Adicionar autor
                   </Button>
-                  <Button type="button" variant="outline" className="rounded-2xl" onClick={() => openManualAuthorModal()}>
+                  <Button type="button" variant="outline" className="rounded-2xl" onClick={addManualAuthor}>
                     <UserRound className="mr-2 h-4 w-4"/>
                     Autor manual
                   </Button>
@@ -746,26 +562,39 @@ export function CoursePublicPagePanel() {
                                 >
                                   <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_160px_120px]">
                                     {isManualAuthor ? (
-                                      <div className="space-y-2">
-                                        <span className="text-xs font-black uppercase tracking-widest text-slate-400">Autor manual</span>
-                                        <div className="flex min-h-[50px] items-center gap-3 rounded-2xl border border-cyan-200 bg-cyan-50 px-4 py-3">
+                                      <div className="space-y-4">
+                                        <div className="flex items-center gap-3">
                                           <button
                                             type="button"
-                                            aria-label={`Mover autor ${author.manual_profile?.public_title ?? index + 1}`}
-                                            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-cyan-200 bg-white text-cyan-700 cursor-grab active:cursor-grabbing"
+                                            aria-label={`Mover autor ${author.manual_profile?.public_title || index + 1}`}
+                                            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-cyan-200 bg-white text-cyan-700 cursor-grab active:cursor-grabbing"
                                             {...draggableProvided.dragHandleProps}
                                           >
                                             <GripVertical className="h-4 w-4" />
                                           </button>
-                                          <div className="flex min-w-0 flex-1 items-center gap-3">
-                                            <UserRound className="h-5 w-5 shrink-0 text-cyan-700" />
-                                            <div className="min-w-0">
-                                              <p className="truncate text-sm font-black text-slate-900">{author.manual_profile?.public_title}</p>
-                                              <p className="text-xs font-medium text-slate-500">Perfil sem cadastro na plataforma</p>
-                                            </div>
+                                          <div>
+                                            <span className="text-xs font-black uppercase tracking-widest text-cyan-700">Autor manual</span>
+                                            <p className="mt-1 text-xs font-medium text-slate-500">Perfil sem cadastro na plataforma</p>
                                           </div>
-                                          <Button type="button" variant="outline" size="sm" className="shrink-0 rounded-xl" onClick={() => openManualAuthorModal(index)}>Editar perfil</Button>
                                         </div>
+                                        <label className="block space-y-2">
+                                          <span className="text-xs font-black uppercase tracking-widest text-slate-400">Nome do autor</span>
+                                          <input
+                                            value={author.manual_profile?.public_title ?? ''}
+                                            onChange={(event) => updateAuthor(index, { manual_profile: { ...createEmptyManualAuthor(), ...author.manual_profile, public_title: event.target.value } })}
+                                            className="w-full rounded-2xl border border-cyan-200 bg-white px-4 py-3 text-sm font-semibold outline-none focus:border-cyan-400"
+                                            placeholder="Nome exibido no curso"
+                                          />
+                                        </label>
+                                        <label className="block space-y-2">
+                                          <span className="text-xs font-black uppercase tracking-widest text-slate-400">Sobre o autor</span>
+                                          <textarea
+                                            value={author.manual_profile?.public_long_bio ?? ''}
+                                            onChange={(event) => updateAuthor(index, { manual_profile: { ...createEmptyManualAuthor(), ...author.manual_profile, public_long_bio: event.target.value } })}
+                                            className="min-h-28 w-full rounded-2xl border border-cyan-200 bg-white px-4 py-3 text-sm font-medium leading-6 outline-none focus:border-cyan-400"
+                                            placeholder="Escreva uma apresentação do autor"
+                                          />
+                                        </label>
                                       </div>
                                     ) : (
                                       <label className="block space-y-2">
@@ -1005,15 +834,5 @@ export function CoursePublicPagePanel() {
           </Button>
         </div>
       </form>
-      {manualAuthorDraft ? (
-        <ManualAuthorModal
-          draft={manualAuthorDraft}
-          courseId={courseTree.course.id}
-          isSaving={isSubmitting}
-          onChange={(patch) => setManualAuthorDraft((current) => current ? { ...current, ...patch } : current)}
-          onClose={closeManualAuthorModal}
-          onSave={saveManualAuthor}
-        />
-      ) : null}
     </div>);
 }
