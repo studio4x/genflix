@@ -594,6 +594,10 @@ const appRoutes = [
                     },
                     {
                         path: '/admin/configuracoes-site',
+                        element: <Navigate to="/admin/configuracoes-site/branding" replace/>,
+                    },
+                    {
+                        path: '/admin/configuracoes-site/:tabSlug',
                         element: withRouteSuspense(<AdminBrandingSettingsPage />),
                     },
                     {

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Copy, Download } from 'lucide-react';
+import { Link, Navigate, useParams } from 'react-router-dom';
 import { useBranding } from '@/app/providers/branding-provider';
 import { Button } from '@/components/ui/button';
 import { GenflixLogo } from '@/components/public/genflix-logo';
@@ -11,6 +12,54 @@ import { saveSiteContentEntry, uploadSiteAsset } from '@/features/site-editor/ap
 import { AdminPdfWatermarkPanel } from '@/pages/admin/admin-pdf-watermark-panel';
 import { AdminNarrationCredentialsPanel } from '@/pages/admin/admin-narration-credentials-panel';
 import { AdminSiteTrackingPanel } from '@/pages/admin/admin-site-tracking-panel';
+type AdminBrandingSettingsTabSlug = 'branding' | 'marca-dagua-pdf' | 'rastreamento-e-scripts' | 'ia-da-plataforma' | 'modelos-json';
+type AdminBrandingSettingsTab = {
+    slug: AdminBrandingSettingsTabSlug;
+    label: string;
+    title: string;
+    description: string;
+};
+const ADMIN_BRANDING_SETTINGS_TABS: AdminBrandingSettingsTab[] = [
+    {
+        slug: 'branding',
+        label: 'Branding',
+        title: 'Branding e logotipos',
+        description: 'Envie aqui os arquivos oficiais da marca. O sistema escolhe automaticamente o logotipo light ou dark de acordo com o fundo em cada area da plataforma.',
+    },
+    {
+        slug: 'marca-dagua-pdf',
+        label: 'Marca d\'agua PDF',
+        title: 'Marca d\'agua PDF',
+        description: 'Configure a marca d\'agua aplicada aos PDFs exportados pela plataforma.',
+    },
+    {
+        slug: 'rastreamento-e-scripts',
+        label: 'Rastreamento',
+        title: 'Rastreamento e scripts',
+        description: 'Centralize scripts de analitica, pixels e outras integrações globais do site.',
+    },
+    {
+        slug: 'ia-da-plataforma',
+        label: 'IA da plataforma',
+        title: 'IA da plataforma',
+        description: 'Gerencie as credenciais e parâmetros usados pelos recursos de IA da plataforma.',
+    },
+    {
+        slug: 'modelos-json',
+        label: 'Modelos JSON',
+        title: 'Modelos JSON',
+        description: 'Use estes modelos como base para gerar ou revisar conteúdos importáveis.',
+    },
+];
+const DEFAULT_ADMIN_BRANDING_SETTINGS_TAB = ADMIN_BRANDING_SETTINGS_TABS[0];
+function getAdminBrandingSettingsPath(tabSlug: AdminBrandingSettingsTabSlug) {
+    return `/admin/configuracoes-site/${tabSlug}`;
+}
+function getAdminBrandingSettingsTabClassName(isActive: boolean) {
+    return `inline-flex h-11 items-center justify-center rounded-full border px-5 text-xs font-black uppercase tracking-[0.16em] transition-colors ${isActive
+        ? 'border-[#1398B7] bg-[#1398B7] text-white'
+        : 'border-[#D8E6EB] bg-white text-[#5F7077] hover:bg-[#F2F7F9]'}`;
+}
 const brandingCards: Array<{
     slot: BrandingSlotKey;
     badge: string;
@@ -46,11 +95,12 @@ const brandingCards: Array<{
 ];
 export function AdminBrandingSettingsPage() {
     const { branding, setBrandingAsset } = useBranding();
-    const [activeTab, setActiveTab] = useState<'branding' | 'watermark' | 'tracking' | 'narration' | 'json-models'>('branding');
+    const { tabSlug } = useParams<{ tabSlug?: string }>();
     const [uploadingSlot, setUploadingSlot] = useState<BrandingSlotKey | null>(null);
     const [copiedModelId, setCopiedModelId] = useState<string | null>(null);
     const [message, setMessage] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
+    const activeTab = ADMIN_BRANDING_SETTINGS_TABS.find((tab) => tab.slug === tabSlug) ?? DEFAULT_ADMIN_BRANDING_SETTINGS_TAB;
     const summary = useMemo(() => ({
         logoLight: Boolean(branding.logoLight?.src),
         logoDark: Boolean(branding.logoDark?.src),
@@ -63,6 +113,9 @@ export function AdminBrandingSettingsPage() {
         const timeoutId = window.setTimeout(() => setCopiedModelId(null), 2000);
         return () => window.clearTimeout(timeoutId);
     }, [copiedModelId]);
+    if (tabSlug && !ADMIN_BRANDING_SETTINGS_TABS.some((tab) => tab.slug === tabSlug)) {
+        return <Navigate to={getAdminBrandingSettingsPath(DEFAULT_ADMIN_BRANDING_SETTINGS_TAB.slug)} replace/>;
+    }
     async function handleUpload(slot: BrandingSlotKey, file: File | null) {
         if (!file) {
             return;
@@ -128,36 +181,17 @@ export function AdminBrandingSettingsPage() {
         <div className="inline-flex border border-[#D8E6EB] bg-[#E8F6FA] px-4 py-2 text-[10px] font-black uppercase tracking-[0.28em] text-[#1398B7]">
           Configuracoes do site
         </div>
-        <h2 className="font-readex text-3xl font-semibold tracking-tight text-[#15323b]">Branding e logotipos</h2>
-        <p className="max-w-3xl text-sm font-medium leading-6 text-[#5F7077]">Envie aqui os arquivos oficiais da marca. O sistema escolhe automticamente o logotipo light ou dark de
-          acordo com o fundo em cada area da plataforma.
+        <h2 className="font-readex text-3xl font-semibold tracking-tight text-[#15323b]">{activeTab.title}</h2>
+        <p className="max-w-3xl text-sm font-medium leading-6 text-[#5F7077]">
+          {activeTab.description}
         </p>
         <div className="flex flex-wrap gap-2 pt-2">
-          <button type="button" onClick={() => setActiveTab('branding')} className={`inline-flex h-11 items-center justify-center rounded-full border px-5 text-xs font-black uppercase tracking-[0.16em] ${activeTab === 'branding'
-            ? 'border-[#1398B7] bg-[#1398B7] text-white'
-            : 'border-[#D8E6EB] bg-white text-[#5F7077] hover:bg-[#F2F7F9]'}`}>
-            Branding
-          </button>
-          <button type="button" onClick={() => setActiveTab('watermark')} className={`inline-flex h-11 items-center justify-center rounded-full border px-5 text-xs font-black uppercase tracking-[0.16em] ${activeTab === 'watermark'
-            ? 'border-[#1398B7] bg-[#1398B7] text-white'
-            : 'border-[#D8E6EB] bg-white text-[#5F7077] hover:bg-[#F2F7F9]'}`}>
-            Marca dagua PDF
-          </button>
-          <button type="button" onClick={() => setActiveTab('tracking')} className={`inline-flex h-11 items-center justify-center rounded-full border px-5 text-xs font-black uppercase tracking-[0.16em] ${activeTab === 'tracking'
-            ? 'border-[#1398B7] bg-[#1398B7] text-white'
-            : 'border-[#D8E6EB] bg-white text-[#5F7077] hover:bg-[#F2F7F9]'}`}>
-            Rastreamento e scripts
-          </button>
-          <button type="button" onClick={() => setActiveTab('narration')} className={`inline-flex h-11 items-center justify-center rounded-full border px-5 text-xs font-black uppercase tracking-[0.16em] ${activeTab === 'narration'
-            ? 'border-[#1398B7] bg-[#1398B7] text-white'
-            : 'border-[#D8E6EB] bg-white text-[#5F7077] hover:bg-[#F2F7F9]'}`}>
-            IA da plataforma
-          </button>
-          <button type="button" onClick={() => setActiveTab('json-models')} className={`inline-flex h-11 items-center justify-center rounded-full border px-5 text-xs font-black uppercase tracking-[0.16em] ${activeTab === 'json-models'
-            ? 'border-[#1398B7] bg-[#1398B7] text-white'
-            : 'border-[#D8E6EB] bg-white text-[#5F7077] hover:bg-[#F2F7F9]'}`}>
-            Modelos JSON
-          </button>
+          {ADMIN_BRANDING_SETTINGS_TABS.map((tab) => {
+            const isActive = activeTab.slug === tab.slug;
+            return (<Link key={tab.slug} to={getAdminBrandingSettingsPath(tab.slug)} aria-current={isActive ? 'page' : undefined} className={getAdminBrandingSettingsTabClassName(isActive)}>
+                {tab.label}
+              </Link>);
+          })}
         </div>
       </header>
 
@@ -169,7 +203,7 @@ export function AdminBrandingSettingsPage() {
           {message}
         </div>) : null}
 
-      {activeTab === 'branding' ? (<>
+      {activeTab.slug === 'branding' ? (<>
           <section className="grid gap-4 md:grid-cols-3">
         <article className="border border-[#D8E6EB] bg-white p-5 shadow-sm">
           <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#5F7077]">Status</p>
@@ -242,13 +276,13 @@ export function AdminBrandingSettingsPage() {
           </section>
         </>) : null}
 
-      {activeTab === 'watermark' ? (<AdminPdfWatermarkPanel />) : null}
+      {activeTab.slug === 'marca-dagua-pdf' ? (<AdminPdfWatermarkPanel />) : null}
 
-      {activeTab === 'tracking' ? (<AdminSiteTrackingPanel />) : null}
+      {activeTab.slug === 'rastreamento-e-scripts' ? (<AdminSiteTrackingPanel />) : null}
 
-      {activeTab === 'narration' ? (<AdminNarrationCredentialsPanel />) : null}
+      {activeTab.slug === 'ia-da-plataforma' ? (<AdminNarrationCredentialsPanel />) : null}
 
-      {activeTab === 'json-models' ? (<section className="space-y-5">
+      {activeTab.slug === 'modelos-json' ? (<section className="space-y-5">
           <div className="border border-[#D8E6EB] bg-white p-5 shadow-sm">
             <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#1398B7]">Modelos de importação</p>
             <h2 className="mt-1 font-readex text-xl font-semibold text-[#15323b]">JSON prontos para copiar ou baixar</h2>
