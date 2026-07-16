@@ -1,10 +1,11 @@
 import { ArrowRight, BookOpen, Clock3, Eye, GripVertical, PencilLine, PlusCircle, Search, SlidersHorizontal, Sparkles, Trash2, X } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { DragDropContext, Draggable, Droppable, type DropResult } from '@hello-pangea/dnd';
+import { useNavigate, useParams } from 'react-router-dom';
 import { RichTextEditor } from '@/components/ui/RichTextEditor';
 import { Button } from '@/components/ui/button';
 import { sanitizeRichTextHtml } from '@/features/admin/content/content-blocks';
-import { type AdminTutorial, type AdminTutorialDraft, type AdminTutorialStep, useAdminTutorials } from '@/features/admin/tutorials/admin-tutorials';
+import { getAdminTutorialPath, type AdminTutorial, type AdminTutorialDraft, type AdminTutorialStep, useAdminTutorials } from '@/features/admin/tutorials/admin-tutorials';
 
 type TutorialStepForm = {
   title: string;
@@ -77,25 +78,34 @@ function normalizeStep(step: TutorialStepForm, index: number): AdminTutorialStep
 
 export function AdminTutorialsPage() {
   const { tutorials, activeTutorial, openTutorial, addTutorial, updateTutorial, deleteTutorial, reorderTutorials } = useAdminTutorials();
+  const navigate = useNavigate();
+  const { tutorialSlug } = useParams<{ tutorialSlug?: string }>();
   const [search, setSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
-  const [selectedTutorialId, setSelectedTutorialId] = useState<string>(tutorials[0]?.id ?? '');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTutorialId, setEditingTutorialId] = useState<string | null>(null);
   const [form, setForm] = useState<TutorialFormState>(createEmptyForm);
   const [feedback, setFeedback] = useState<string | null>(null);
   const previewRef = useRef<HTMLDivElement | null>(null);
 
+  const firstAvailableTutorial = tutorials[0] ?? activeTutorial;
+  const selectedTutorialId = useMemo(() => {
+    if (tutorialSlug && tutorials.some((tutorial) => tutorial.id === tutorialSlug)) {
+      return tutorialSlug;
+    }
+
+    return firstAvailableTutorial.id;
+  }, [firstAvailableTutorial.id, tutorialSlug, tutorials]);
+
   useEffect(() => {
     if (tutorials.length === 0) {
-      setSelectedTutorialId('');
       return;
     }
 
-    if (!tutorials.some((tutorial) => tutorial.id === selectedTutorialId)) {
-      setSelectedTutorialId(tutorials[0].id);
+    if (!tutorialSlug || !tutorials.some((tutorial) => tutorial.id === tutorialSlug)) {
+      navigate(getAdminTutorialPath(firstAvailableTutorial.id), { replace: true });
     }
-  }, [selectedTutorialId, tutorials]);
+  }, [firstAvailableTutorial.id, navigate, tutorialSlug, tutorials]);
 
   const filteredTutorials = useMemo(() => {
     const term = search.trim().toLowerCase();
@@ -115,14 +125,8 @@ export function AdminTutorialsPage() {
   }, [tutorials]);
 
   const selectedTutorial = useMemo(() => {
-    const visibleSelectedTutorial = filteredTutorials.find((tutorial) => tutorial.id === selectedTutorialId);
-
-    if (visibleSelectedTutorial) {
-      return visibleSelectedTutorial;
-    }
-
-    return filteredTutorials[0] ?? tutorials.find((tutorial) => tutorial.id === selectedTutorialId) ?? tutorials[0] ?? activeTutorial;
-  }, [activeTutorial, filteredTutorials, selectedTutorialId, tutorials]);
+    return tutorials.find((tutorial) => tutorial.id === selectedTutorialId) ?? firstAvailableTutorial;
+  }, [firstAvailableTutorial, selectedTutorialId, tutorials]);
 
   const canReorderTutorials = search.trim().length === 0 && selectedCategory === 'all';
 
@@ -189,7 +193,10 @@ export function AdminTutorialsPage() {
 
     const savedTutorial = editingTutorialId ? updateTutorial(editingTutorialId, draft) : addTutorial(draft);
 
-    setSelectedTutorialId(savedTutorial.id);
+    navigate(getAdminTutorialPath(savedTutorial.id), { replace: true });
+    window.requestAnimationFrame(() => {
+      previewRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
     setFeedback(`Tutorial "${savedTutorial.title}" salvo com sucesso.`);
     setIsModalOpen(false);
     setEditingTutorialId(null);
@@ -197,7 +204,7 @@ export function AdminTutorialsPage() {
   }
 
   function openSelectedInPage(tutorialId: string) {
-    setSelectedTutorialId(tutorialId);
+    navigate(getAdminTutorialPath(tutorialId));
     window.requestAnimationFrame(() => {
       previewRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
@@ -434,9 +441,6 @@ export function AdminTutorialsPage() {
                                       onClick={() => {
                                         if (window.confirm('Excluir o tutorial "' + tutorial.title + '"?')) {
                                           deleteTutorial(tutorial.id);
-                                          if (selectedTutorialId === tutorial.id) {
-                                            setSelectedTutorialId(tutorials.find((item) => item.id !== tutorial.id)?.id ?? '');
-                                          }
                                         }
                                       }}
                                     >
@@ -524,9 +528,6 @@ export function AdminTutorialsPage() {
                           onClick={() => {
                             if (window.confirm('Excluir o tutorial "' + tutorial.title + '"?')) {
                               deleteTutorial(tutorial.id);
-                              if (selectedTutorialId === tutorial.id) {
-                                setSelectedTutorialId(tutorials.find((item) => item.id !== tutorial.id)?.id ?? '');
-                              }
                             }
                           }}
                         >

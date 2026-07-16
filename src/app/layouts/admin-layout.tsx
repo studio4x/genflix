@@ -8,7 +8,7 @@ import { GenflixLogo } from '@/components/public/genflix-logo';
 import { Button } from '@/components/ui/button';
 import { clearBrowserCache, clearServerCache } from '@/features/admin/cache/api';
 import { sanitizeRichTextHtml } from '@/features/admin/content/content-blocks';
-import { AdminTutorialsProvider, useAdminTutorials } from '@/features/admin/tutorials/admin-tutorials';
+import { AdminTutorialsProvider, getAdminTutorialPath, useAdminTutorials } from '@/features/admin/tutorials/admin-tutorials';
 import { NotificationCenter } from '@/features/notifications/notification-center';
 type AdminNavItem = {
     to: string;
@@ -414,7 +414,7 @@ function AdminTutorialsFloatingPanel() {
 
           <div className="border-t border-[#D8E6EB] bg-white px-5 py-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <Link to="/admin/tutoriais" onClick={closeDrawer} className="inline-flex items-center gap-2 text-sm font-black text-[#1398B7] transition-colors hover:text-[#0E677C]">
+              <Link to={getAdminTutorialPath(displayTutorial.id)} onClick={closeDrawer} className="inline-flex items-center gap-2 text-sm font-black text-[#1398B7] transition-colors hover:text-[#0E677C]">
                 <Sparkles className="h-4 w-4" />
                 Abrir página completa
               </Link>

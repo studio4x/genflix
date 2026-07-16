@@ -1406,6 +1406,10 @@ function buildUniqueTutorialId(title: string, tutorials: AdminTutorial[]) {
   return candidate;
 }
 
+export function getAdminTutorialPath(tutorialId: string) {
+  return `/admin/tutoriais/${tutorialId}`;
+}
+
 function normalizeTutorialDraft(tutorial: AdminTutorialDraft, fallbackId: string, existingTutorials: AdminTutorial[]) {
   const normalizedTutorial = normalizeTutorial(tutorial, existingTutorials.length);
 
@@ -1421,6 +1425,11 @@ function normalizeTutorialDraft(tutorial: AdminTutorialDraft, fallbackId: string
 
 function resolveRouteTutorialId(pathname: string) {
   const normalizedPath = pathname.trim();
+
+  const tutorialPathMatch = normalizedPath.match(/^\/admin\/tutoriais(?:\/([^/]+))?\/?$/);
+  if (tutorialPathMatch) {
+    return tutorialPathMatch[1] ?? null;
+  }
 
   const routeMatchers: Array<{ test: RegExp; tutorialId: string }> = [
     { test: /^\/admin\/cursos\/[^/]+\/builder(?:\/.*)?$/, tutorialId: 'como-criar-e-importar-curso-ou-modulos-via-json' },
@@ -1457,10 +1466,6 @@ function resolveRouteTutorialId(pathname: string) {
   const matchedRoute = routeMatchers.find(({ test }) => test.test(normalizedPath));
 
   if (!matchedRoute) {
-    return null;
-  }
-
-  if (normalizedPath === '/admin/tutoriais') {
     return null;
   }
 

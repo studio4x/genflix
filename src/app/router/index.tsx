@@ -517,7 +517,7 @@ const appRoutes = [
                         element: withRouteSuspense(<AdminAccountPage />),
                     },
                     {
-                        path: '/admin/tutoriais',
+                        path: '/admin/tutoriais/:tutorialSlug?',
                         element: withRouteSuspense(<AdminTutorialsPage />),
                     },
                     {
