@@ -354,9 +354,9 @@ function AdminTutorialsFloatingPanel() {
                         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#1398B7] text-xs font-black text-white">
                           {index + 1}
                         </div>
-                        <div>
+                        <div className="min-w-0">
                           <h4 className="text-sm font-black tracking-tight text-[#15323b]">{step.title}</h4>
-                          <div className="mt-1 space-y-2 text-sm leading-6 text-[#5F7077] [&_a]:font-semibold [&_a]:text-[#1398B7] [&_a]:underline [&_p]:m-0" dangerouslySetInnerHTML={{ __html: sanitizeRichTextHtml(step.description) }} />
+                          <div className="mt-1 min-w-0 space-y-2 text-sm leading-6 text-[#5F7077] [&_a]:font-semibold [&_a]:text-[#1398B7] [&_a]:underline [&_code]:font-mono [&_li]:ml-4 [&_li]:list-disc [&_p]:m-0 [&_pre]:mt-3 [&_pre]:max-w-full [&_pre]:overflow-x-auto [&_pre]:rounded-xl [&_pre]:bg-slate-900 [&_pre]:p-3 [&_pre]:font-mono [&_pre]:text-[11px] [&_pre]:leading-5 [&_pre]:text-emerald-300 [&_ul]:space-y-1" dangerouslySetInnerHTML={{ __html: sanitizeRichTextHtml(step.description) }} />
                         </div>
                       </div>
                     </div>
@@ -446,7 +446,7 @@ function AdminTutorialsFloatingPanel() {
       {!showDrawer && !showMinimized ? (
         <button
           type="button"
-          onClick={() => openTutorial(activeTutorial.id)}
+          onClick={() => openTutorial(displayTutorial.id)}
           className="fixed bottom-5 right-5 z-[100] inline-flex items-center gap-3 rounded-full border border-[#1398B7]/20 bg-[linear-gradient(145deg,#0A3640_0%,#0E677C_55%,#1398B7_100%)] px-4 py-3 text-left text-white shadow-[0_20px_60px_rgba(10,54,64,0.24)] transition hover:-translate-y-0.5 hover:shadow-[0_24px_70px_rgba(10,54,64,0.28)]"
           aria-label="Abrir tutoriais do admin"
         >

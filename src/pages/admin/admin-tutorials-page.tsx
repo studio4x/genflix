@@ -573,7 +573,7 @@ export function AdminTutorialsPage() {
                 <div className="min-w-0">
                   <h3 className="text-base font-black tracking-tight text-[#15323b]">{step.title}</h3>
                   <div
-                    className="mt-2 space-y-3 text-sm leading-6 text-[#5F7077] [&_a]:font-semibold [&_a]:text-[#1398B7] [&_a]:underline [&_p]:m-0"
+                    className="mt-2 min-w-0 space-y-3 text-sm leading-6 text-[#5F7077] [&_a]:font-semibold [&_a]:text-[#1398B7] [&_a]:underline [&_code]:font-mono [&_li]:ml-5 [&_li]:list-disc [&_p]:m-0 [&_pre]:mt-3 [&_pre]:max-w-full [&_pre]:overflow-x-auto [&_pre]:rounded-2xl [&_pre]:bg-slate-900 [&_pre]:p-4 [&_pre]:font-mono [&_pre]:text-xs [&_pre]:leading-5 [&_pre]:text-emerald-300 [&_ul]:space-y-1"
                     dangerouslySetInnerHTML={{ __html: sanitizeRichTextHtml(step.description) }}
                   />
                 </div>

@@ -90,6 +90,85 @@ const defaultAdminTutorials: AdminTutorial[] = [
     ],
   },
   {
+    id: 'como-criar-e-importar-curso-ou-modulos-via-json',
+    title: 'Como criar e importar um curso ou módulos via JSON',
+    summary: 'Use os modelos JSON do admin para criar um curso completo, adicionar módulos em um curso existente ou substituir conteúdo com segurança.',
+    estimatedMinutes: 8,
+    category: 'Builder de curso',
+    steps: [
+      {
+        title: 'Escolha o tipo de importação',
+        description: '<p>Antes de começar, defina o resultado esperado:</p><ul><li><strong>Criar um curso novo:</strong> use um JSON de curso completo no Catálogo de Cursos.</li><li><strong>Adicionar conteúdo:</strong> importe um módulo, uma lista de módulos ou um curso completo dentro do builder de um curso existente.</li><li><strong>Substituir conteúdo:</strong> selecione um módulo específico ou limpe toda a estrutura atual antes de importar.</li></ul>',
+      },
+      {
+        title: 'Baixe um modelo JSON',
+        description: '<p>Acesse <strong>Admin / Configurações do Site / Modelos JSON</strong>. Escolha <strong>Curso completo</strong>, <strong>1º módulo do curso</strong> ou <strong>Módulo avulso</strong> e clique em <strong>Copiar JSON</strong> ou <strong>Baixar JSON modelo</strong>.</p><p>Edite a cópia e mantenha os nomes das propriedades em inglês. Os textos podem ser escritos normalmente em português.</p>',
+      },
+      {
+        title: 'Monte o JSON de um curso completo',
+        description: `<p>O curso completo deve ser um objeto com <strong>title</strong> e uma lista <strong>modules</strong>. Cada módulo pode conter <strong>lessons</strong> e <strong>assessments</strong>.</p><pre><code>{
+  "title": "Curso de exemplo",
+  "description": "Resumo do curso",
+  "status": "draft",
+  "workload_minutes": 120,
+  "modules": [
+    {
+      "title": "Módulo 1 - Fundamentos",
+      "description": "Introdução ao tema",
+      "lessons": [
+        {
+          "title": "Aula 1 - Boas-vindas",
+          "lesson_type": "text",
+          "text_content": "&lt;p&gt;Conteúdo da aula.&lt;/p&gt;",
+          "estimated_minutes": 10
+        }
+      ],
+      "assessments": []
+    }
+  ]
+}</code></pre><p>Use <strong>draft</strong> durante a preparação. Imagens com endereço de exemplo devem ser removidas ou trocadas por URLs válidas.</p>`,
+      },
+      {
+        title: 'Monte o JSON de um ou vários módulos',
+        description: `<p>Para um módulo avulso, não inclua a propriedade <strong>modules</strong>: envie diretamente o objeto do módulo.</p><pre><code>{
+  "title": "Módulo avulso",
+  "description": "Descrição do módulo",
+  "lessons": [
+    {
+      "title": "Aula 1",
+      "lesson_type": "text",
+      "text_content": "&lt;p&gt;Conteúdo da aula.&lt;/p&gt;",
+      "estimated_minutes": 10
+    }
+  ],
+  "assessments": []
+}</code></pre><p>Para importar vários módulos de uma vez, coloque objetos como esse dentro de uma lista: <strong>[ módulo 1, módulo 2 ]</strong>. Em cada aula, use um tipo aceito: <strong>video</strong>, <strong>text</strong>, <strong>hybrid</strong> ou <strong>file</strong>.</p>`,
+      },
+      {
+        title: 'Crie um curso novo pelo Catálogo',
+        description: '<p>Abra <strong>Admin / Catálogo de Cursos</strong> e clique em <strong>Importar de IA</strong>. Cole o objeto de curso completo no campo e selecione <strong>Importar e Criar Curso</strong>.</p><p>Esse fluxo cria um novo curso. Depois, abra o builder para revisar a estrutura e completar as configurações comerciais.</p>',
+      },
+      {
+        title: 'Importe módulos em um curso existente',
+        description: '<p>Abra o curso de destino e, no menu lateral do builder, clique em <strong>Importar Conteúdo (IA)</strong>. Cole o JSON ou anexe um arquivo <strong>.json</strong>. Confira o selo <strong>Formato detectado</strong> antes de continuar.</p><ul><li><strong>Adicionar novos módulos:</strong> inclui o conteúdo no final da estrutura atual.</li><li><strong>Substituir Módulo Existente:</strong> apaga aulas e quizzes do módulo escolhido e usa o primeiro módulo do JSON no lugar.</li><li><strong>Limpar TODO o curso primeiro:</strong> remove todos os módulos atuais e recomeça a estrutura.</li></ul>',
+      },
+      {
+        title: 'Faça backup antes de substituir',
+        description: '<p>No builder, clique em <strong>Exportar Conteúdo</strong> e baixe o <strong>Curso completo</strong> ou o módulo que será alterado. Guarde esse arquivo antes de usar as opções de substituição ou limpeza.</p><p>A substituição remove o conteúdo atual do módulo selecionado. A limpeza remove todos os módulos do curso.</p>',
+      },
+      {
+        title: 'Revise o curso depois da importação',
+        description: '<p>Confira a ordem dos módulos, os títulos, o conteúdo das aulas, os quizzes e a carga horária. Depois revise capa, preço, categorias, autor, página pública, liberações e atribuições.</p><p>Materiais anexos, regras comerciais e liberações não fazem parte do modelo básico de conteúdo e devem ser configurados no admin após a importação.</p>',
+      },
+    ],
+    notes: [
+      'JSON válido usa aspas duplas, não aceita vírgula depois do último item e precisa fechar todas as chaves e listas.',
+      'O importador também aceita JSON copiado de um bloco Markdown com ```json, mas o conteúdo puro é mais fácil de revisar.',
+      'Mantenha o curso como rascunho até testar a experiência completa na visão do aluno.',
+      'Nunca use “Limpar TODO o curso primeiro” sem exportar um backup atualizado.',
+    ],
+  },
+  {
     id: 'como-montar-modulos-aulas-e-materiais',
     title: 'Como montar módulos, aulas e materiais',
     summary: 'Organize a estrutura pedagógica do curso com módulos, aulas e anexos para liberar conteúdo com consistência.',
@@ -1344,7 +1423,8 @@ function resolveRouteTutorialId(pathname: string) {
   const normalizedPath = pathname.trim();
 
   const routeMatchers: Array<{ test: RegExp; tutorialId: string }> = [
-    { test: /^\/admin\/cursos\/[^/]+\/builder$/, tutorialId: 'como-montar-modulos-aulas-e-materiais' },
+    { test: /^\/admin\/cursos\/[^/]+\/builder(?:\/.*)?$/, tutorialId: 'como-criar-e-importar-curso-ou-modulos-via-json' },
+    { test: /^\/admin\/cursos$/, tutorialId: 'como-criar-e-importar-curso-ou-modulos-via-json' },
     { test: /^\/admin\/cursos\/[^/]+\/liberacoes$/, tutorialId: 'como-configurar-liberacao-de-conteudo' },
     { test: /^\/admin\/modulos\/[^/]+\/aulas$/, tutorialId: 'como-montar-modulos-aulas-e-materiais' },
     { test: /^\/admin\/aulas\/[^/]+\/materiais$/, tutorialId: 'como-montar-modulos-aulas-e-materiais' },
