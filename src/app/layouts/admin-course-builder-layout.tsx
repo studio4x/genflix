@@ -110,6 +110,27 @@ function getSidebarMaxWidth() {
     return Math.min(SIDEBAR_MAX_WIDTH, Math.max(SIDEBAR_MIN_WIDTH, window.innerWidth - 360));
 }
 
+function triggerCurrentBuilderSave() {
+    const main = document.querySelector('main');
+    if (!main) {
+        return;
+    }
+
+    const form = main.querySelector('form');
+    if (form instanceof HTMLFormElement) {
+        form.requestSubmit();
+        return;
+    }
+
+    const saveButton = Array.from(main.querySelectorAll('button')).find((button) => {
+        const label = button.textContent?.trim().toLocaleLowerCase('pt-BR') ?? '';
+        return label.includes('salvar') && !button.disabled;
+    });
+    if (saveButton instanceof HTMLButtonElement) {
+        saveButton.click();
+    }
+}
+
 export function useCourseBuilder() {
     const context = useContext(BuilderContext);
     if (!context) {
@@ -691,6 +712,17 @@ export function AdminCourseBuilderLayout() {
         <div className="pointer-events-none absolute bottom-4 right-6">
           <AppVersion className="text-[10px] font-black uppercase tracking-widest text-slate-400"/>
         </div>
+        <button
+          type="button"
+          onClick={triggerCurrentBuilderSave}
+          className="absolute bottom-14 right-5 z-30 inline-flex h-12 items-center gap-2 rounded-full bg-blue-600 px-5 text-sm font-black text-white shadow-xl shadow-blue-200 transition-all hover:-translate-y-0.5 hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-200 active:translate-y-0 sm:right-8"
+          aria-label="Salvar alterações da página atual"
+        >
+          <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+          </svg>
+          <span>Salvar alterações</span>
+        </button>
       </div>
     </BuilderContext.Provider>);
 }
