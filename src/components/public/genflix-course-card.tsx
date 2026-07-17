@@ -6,6 +6,8 @@ export function GenflixCourseCard({ course, }: {
     course: GenflixCourseItem;
 }) {
     const courseHref = `/cursos/${course.slug}`;
+    const cardAuthorName = course.cardAuthorName || course.mentor;
+    const cardAuthorDescription = course.cardAuthorDescription || course.role;
     const categoryCount = course.categories?.length ?? 0;
     const primaryCategory = course.categories?.[0] ?? course.category;
     const displayCategory = primaryCategory || 'Curso';
@@ -38,8 +40,8 @@ export function GenflixCourseCard({ course, }: {
               </div>)}
 
             <div className="min-w-0">
-              <p className="truncate text-[13px] font-semibold leading-5 text-[#15323B]">{course.mentor}</p>
-              <p className="text-[11px] leading-[1.45] text-[#60737A]">{course.role}</p>
+              <p className="truncate text-[13px] font-bold leading-5 text-[#15323B]">{cardAuthorName}</p>
+              <p className="line-clamp-3 text-[11px] leading-[1.45] text-[#60737A]">{cardAuthorDescription}</p>
             </div>
           </div>
         </div>

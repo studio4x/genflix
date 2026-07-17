@@ -12,6 +12,7 @@ import { formatCurrencyInputFromCents, parseCurrencyInputToCents } from '@/lib/c
 import { publishBuilderNotice } from '@/lib/builder-notice';
 import { COURSE_QUIZ_TYPE_OPTIONS, DEFAULT_COURSE_QUIZ_TYPE_SETTINGS, getVisibleCourseQuizTypeOptions, normalizeCourseQuizTypeSettings, } from '@/features/assessments/course-quiz-type-settings';
 import { fetchGlobalQuizTypeSettings } from '@/features/admin/quiz-types/api';
+import { normalizeCoursePublicPageContent } from '@/features/public/course-public-page-content';
 import type { Course, CourseCategory, CourseQuizTypeSettings } from '@/types/content';
 import type { EditableListItem } from '@/features/site-editor/types';
 function slugifyCourseTitle(value: string) {
@@ -23,9 +24,18 @@ function slugifyCourseTitle(value: string) {
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/^-+|-+$/g, '');
 }
+function limitCardAuthorDescription(value: string) {
+    return value
+        .split(/\r?\n/)
+        .slice(0, 3)
+        .join('\n')
+        .slice(0, 240);
+}
 type CourseSettingsFormState = {
     title: string;
     description: string;
+    card_author_name: string;
+    card_author_description: string;
     status: Course['status'];
     thumbnail_url: string;
     hero_video_url: string;
@@ -54,6 +64,8 @@ export function CourseSettingsPanel() {
     const [form, setForm] = useState<CourseSettingsFormState>({
         title: '',
         description: '',
+        card_author_name: '',
+        card_author_description: '',
         status: 'draft',
         thumbnail_url: '',
         hero_video_url: '',
@@ -95,6 +107,8 @@ export function CourseSettingsPanel() {
             setForm({
                 title: courseTitle,
                 description: courseTree.course.description ?? '',
+                card_author_name: normalizeCoursePublicPageContent(courseTree.course.public_page_content).cardAuthorName,
+                card_author_description: normalizeCoursePublicPageContent(courseTree.course.public_page_content).cardAuthorDescription,
                 status: courseTree.course.status || 'draft',
                 thumbnail_url: courseTree.course.thumbnail_url ?? '',
                 hero_video_url: courseTree.course.hero_video_url ?? '',
@@ -350,6 +364,28 @@ export function CourseSettingsPanel() {
                         <ReactQuill theme="snow" value={form.description} onChange={(val: string) => setForm((current) => ({ ...current, description: val }))} modules={quillModules} placeholder="Fale sobre os objetivos e o público-alvo do curso..." className="overflow-hidden rounded-[24px] border border-slate-200 bg-white transition-all focus-within:ring-4 focus-within:ring-blue-100" />
                      </div>
                   </div>
+
+                  <section className="rounded-[24px] border border-cyan-100 bg-white p-5 shadow-sm md:p-6">
+                     <div className="space-y-2">
+                        <p className="text-[11px] font-black uppercase tracking-[0.24em] text-cyan-700">Conteúdo do card</p>
+                        <h4 className="text-xl font-black tracking-tight text-slate-900">Autoria exibida no catálogo</h4>
+                        <p className="text-sm font-medium leading-6 text-slate-600">Esses campos controlam apenas a faixa inferior do card do curso. Eles são independentes da configuração de autores, comissões e perfis.</p>
+                     </div>
+
+                     <div className="mt-5 grid gap-5 md:grid-cols-2">
+                        <label className="block space-y-2">
+                           <span className="text-xs font-black uppercase tracking-widest text-slate-400">Nome do autor</span>
+                           <input maxLength={120} className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-5 py-3 text-sm font-bold outline-none transition-all focus:border-cyan-400 focus:bg-white" value={form.card_author_name} onChange={(event) => setForm((current) => ({ ...current, card_author_name: event.target.value }))} placeholder="Ex: Beatriz Aarestrup" />
+                           <span className="block text-xs font-medium text-slate-500">Aparece em negrito na parte inferior do card.</span>
+                        </label>
+
+                        <label className="block space-y-2">
+                           <span className="text-xs font-black uppercase tracking-widest text-slate-400">Texto do autor</span>
+                           <textarea rows={3} maxLength={240} className="min-h-[104px] w-full resize-none rounded-2xl border border-slate-200 bg-slate-50 px-5 py-3 text-sm font-medium leading-6 text-slate-700 outline-none transition-all focus:border-cyan-400 focus:bg-white" value={form.card_author_description} onChange={(event) => setForm((current) => ({ ...current, card_author_description: limitCardAuthorDescription(event.target.value) }))} placeholder="Ex: Universidade Federal de Juiz de Fora" />
+                           <span className="block text-xs font-medium text-slate-500">Use no máximo 3 linhas no card ({form.card_author_description.length}/240).</span>
+                        </label>
+                     </div>
+                  </section>
 
                   <label className="block space-y-2">
                      <span className="text-xs font-black uppercase tracking-widest text-slate-400">Status de Publicação</span>

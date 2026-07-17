@@ -167,6 +167,10 @@ export async function createCourse(input: CourseFormInput, userId: string) {
         category: categories[0] ?? null,
         categories,
         description: input.description?.trim() || null,
+        public_page_content: {
+            cardAuthorName: input.card_author_name?.trim() || '',
+            cardAuthorDescription: input.card_author_description?.trim() || '',
+        },
         status: input.status,
         display_order: nextDisplayOrder,
         thumbnail_url: normalizeCourseMediaValue(input.thumbnail_url),
@@ -276,11 +280,26 @@ export async function updateCourse(courseId: string, input: CourseFormInput) {
         category: input.category,
         categories: input.categories,
     });
+    const currentContentResult = await supabase
+        .from('courses')
+        .select('public_page_content')
+        .eq('id', courseId)
+        .single();
+    if (currentContentResult.error) {
+        throw currentContentResult.error;
+    }
+    const currentPublicPageContent = currentContentResult.data?.public_page_content;
+    const nextPublicPageContent = currentPublicPageContent && typeof currentPublicPageContent === 'object' && !Array.isArray(currentPublicPageContent)
+        ? { ...(currentPublicPageContent as Record<string, unknown>) }
+        : {};
+    nextPublicPageContent.cardAuthorName = input.card_author_name?.trim() || '';
+    nextPublicPageContent.cardAuthorDescription = input.card_author_description?.trim() || '';
     const payload = {
         title: input.title,
         category: categories[0] ?? null,
         categories,
         description: input.description?.trim() || null,
+        public_page_content: nextPublicPageContent,
         status: input.status,
         thumbnail_url: normalizeCourseMediaValue(input.thumbnail_url),
         cover_image_url: normalizeCourseMediaValue(input.thumbnail_url),
@@ -345,6 +364,8 @@ export async function updateCoursePublicPage(courseId: string, input: CoursePubl
     const publicPageContent: CoursePublicPageContentInput = {
         categoryLine: input.categoryLine?.trim() || null,
         authorContent: sanitizeRichTextHtml(input.authorContent?.trim() || ''),
+        cardAuthorName: existingPublicPageContent.cardAuthorName,
+        cardAuthorDescription: existingPublicPageContent.cardAuthorDescription,
         aboutParagraphs: input.aboutParagraphs.map((paragraph) => sanitizeRichTextHtml(paragraph.trim())),
         outcomes: existingPublicPageContent.outcomes,
         includedItems: existingPublicPageContent.includedItems,

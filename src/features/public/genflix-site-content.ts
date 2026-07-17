@@ -53,6 +53,8 @@ export interface GenflixCourseItem {
   categories?: string[]
   mentor: string
   role: string
+  cardAuthorName?: string
+  cardAuthorDescription?: string
   image: string
   mentorImage?: string
   initials: string

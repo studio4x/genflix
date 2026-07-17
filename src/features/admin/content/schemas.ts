@@ -32,6 +32,8 @@ export const courseFormSchema = z.object({
     category: z.string().trim().optional().or(z.literal('')),
     categories: z.array(z.string().trim().min(1)).default([]),
     description: z.string().trim().max(2000).optional(),
+    card_author_name: z.string().trim().max(120, 'O nome do autor pode ter no máximo 120 caracteres.').optional().or(z.literal('')),
+    card_author_description: z.string().trim().max(240, 'O texto do autor pode ter no máximo 240 caracteres.').optional().or(z.literal('')),
     status: z.enum(['draft', 'published', 'archived']),
     thumbnail_url: z.string().optional().or(z.literal('')),
     hero_video_url: z.string().optional().or(z.literal('')),
@@ -81,6 +83,8 @@ export const publicCourseModuleSchema = z.object({
 export const coursePublicPageContentSchema = z.object({
     categoryLine: z.string().trim().optional().nullable(),
     authorContent: z.string().trim().default(''),
+    cardAuthorName: z.string().trim().max(120).default(''),
+    cardAuthorDescription: z.string().trim().max(240).default(''),
     aboutParagraphs: z.array(z.string().trim().min(1)).default([]),
     outcomes: z.array(publicCourseOutcomeSchema).default([]),
     includedItems: z.array(z.string().trim().min(1)).default([]),

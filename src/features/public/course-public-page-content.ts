@@ -17,6 +17,8 @@ export interface CoursePublicBonusSection {
 export interface CoursePublicPageContent {
   categoryLine: string | null
   authorContent: string
+  cardAuthorName: string
+  cardAuthorDescription: string
   aboutParagraphs: string[]
   outcomes: GenflixCourseOutcome[]
   includedItems: string[]
@@ -146,6 +148,8 @@ export function normalizeCoursePublicPageContent(value: unknown): CoursePublicPa
     return {
       categoryLine: null,
       authorContent: '',
+      cardAuthorName: '',
+      cardAuthorDescription: '',
       aboutParagraphs: [],
       outcomes: [],
       includedItems: [],
@@ -158,6 +162,8 @@ export function normalizeCoursePublicPageContent(value: unknown): CoursePublicPa
   return {
     categoryLine: trimString(value.categoryLine) || null,
     authorContent: trimString(value.authorContent),
+    cardAuthorName: trimString(value.cardAuthorName),
+    cardAuthorDescription: trimString(value.cardAuthorDescription),
     aboutParagraphs: Array.isArray(value.aboutParagraphs)
       ? value.aboutParagraphs.map((item) => trimString(item)).filter(Boolean)
       : [],
@@ -208,7 +214,10 @@ function getInitials(row: CoursePublicPageRowLike) {
     return explicitInitials.slice(0, 4).toUpperCase()
   }
 
-  const source = trimString(row.mentor_name) || row.title
+  return getInitialsFromName(trimString(row.mentor_name) || row.title)
+}
+
+function getInitialsFromName(source: string) {
   return source
     .split(' ')
     .filter(Boolean)
@@ -219,11 +228,17 @@ function getInitials(row: CoursePublicPageRowLike) {
 }
 
 export function buildCoursePublicCatalogItem(row: CoursePublicPageRowLike): GenflixCourseItem {
+  const content = normalizeCoursePublicPageContent(row.public_page_content)
   const slug = row.slug ?? row.id
   const categories = getCourseCategories({
     category: row.category,
     categories: row.categories ?? undefined,
   })
+
+  const mentor = trimString(row.mentor_name) || 'Equipe GenFlix'
+  const role = trimString(row.mentor_role) || 'Curadoria de conteúdo'
+  const cardAuthorName = content.cardAuthorName || mentor
+  const cardAuthorDescription = content.cardAuthorDescription || role
 
   return {
     id: row.id,
@@ -231,10 +246,12 @@ export function buildCoursePublicCatalogItem(row: CoursePublicPageRowLike): Genf
     title: trimString(row.title) || 'Curso GenFlix',
     category: categories[0] ?? 'Curso',
     categories,
-    mentor: trimString(row.mentor_name) || 'Equipe GenFlix',
-    role: trimString(row.mentor_role) || 'Curadoria de conteúdo',
+    mentor,
+    role,
+    cardAuthorName,
+    cardAuthorDescription,
     image: trimString(row.thumbnail_url) || trimString(row.cover_image_url) || defaultCourseImage,
-    initials: getInitials(row),
+    initials: content.cardAuthorName ? getInitialsFromName(cardAuthorName) : getInitials(row),
   }
 }
 
