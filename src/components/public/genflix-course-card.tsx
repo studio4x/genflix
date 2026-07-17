@@ -34,15 +34,9 @@ export function GenflixCourseCard({ course, }: {
         </div>
 
         <div className="mt-5 border-t border-[#D8E6EB] pt-4">
-          <div className="flex items-center gap-3">
-            {course.mentorImage ? (<img src={course.mentorImage} alt={course.mentor} loading="lazy" className="h-[46px] w-[46px] rounded-full object-cover ring-1 ring-[#D8E6EB]"/>) : (<div className="flex h-[46px] w-[46px] items-center justify-center rounded-full bg-[#D9F0F5] text-sm font-extrabold text-[#0A3640]">
-                {course.initials}
-              </div>)}
-
-            <div className="min-w-0">
+          <div className="min-w-0">
               <p className="truncate text-[13px] font-bold leading-5 text-[#15323B]">{cardAuthorName}</p>
               <p className="line-clamp-3 text-[11px] leading-[1.45] text-[#60737A]">{cardAuthorDescription}</p>
-            </div>
           </div>
         </div>
       </div>
