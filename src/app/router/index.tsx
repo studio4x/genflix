@@ -10,7 +10,7 @@ import { MessagesRedirectPage } from '@/pages/shared/messages-redirect-page';
 import { EditablePageSeo } from '@/features/site-editor/editable-page-seo';
 import { EditableControlsHintPanel, SiteContentScope, VisualEditorProvider } from '@/features/site-editor/visual-editor';
 import type { SitePageKey } from '@/features/site-editor/types';
-const ROUTE_CHUNK_RELOAD_FLAG = 'genflix:route-chunk-reload-attempted';
+import { getErrorMessage, isChunkLoadError, recoverFromChunkLoadError } from '@/app/chunk-recovery';
 const PublicHomePage = lazy(async () => ({ default: (await import('@/pages/public/public-home-page')).PublicHomePage }));
 const PublicCoursesPage = lazy(async () => ({ default: (await import('@/pages/public/public-courses-page')).PublicCoursesPage }));
 const PublicCourseDetailsPage = lazy(async () => ({ default: (await import('@/pages/public/public-course-details-page')).PublicCourseDetailsPage }));
@@ -89,52 +89,19 @@ const CoursePublicPagePanel = lazy(async () => ({ default: (await import('@/page
 const CourseSettingsPanel = lazy(async () => ({ default: (await import('@/pages/admin/builder/course-settings-panel')).CourseSettingsPanel }));
 const CourseAssessmentsPanel = lazy(async () => ({ default: (await import('@/pages/admin/builder/course-assessments-panel')).CourseAssessmentsPanel }));
 const SupportTicketDetailPage = lazy(async () => ({ default: (await import('@/pages/shared/support-ticket-detail-page')).SupportTicketDetailPage }));
-function getRouteChunkErrorMessage(error: unknown) {
-    if (!error) {
-        return '';
-    }
-    if (typeof error === 'string') {
-        return error;
-    }
-    if (error instanceof Error) {
-        return error.message;
-    }
-    if (typeof error === 'object') {
-        const candidate = error as {
-            message?: unknown;
-            reason?: unknown;
-        };
-        if (typeof candidate.message === 'string') {
-            return candidate.message;
-        }
-        if (typeof candidate.reason === 'string') {
-            return candidate.reason;
-        }
-        if (candidate.reason instanceof Error) {
-            return candidate.reason.message;
-        }
-    }
-    return '';
-}
-function isRouteChunkLoadError(error: unknown) {
-    const message = getRouteChunkErrorMessage(error).toLowerCase();
-    return message.includes('failed to fetch dynamically imported module')
-        || message.includes('error loading dynamically imported module')
-        || message.includes('loading chunk')
-        || message.includes('chunkloaderror')
-        || message.includes('importing a module script failed');
-}
 function AppRouteErrorBoundary() {
     const error = useRouteError();
-    const isChunkError = isRouteChunkLoadError(error);
+    const isChunkError = isChunkLoadError(error);
     useEffect(() => {
-        if (!isChunkError || sessionStorage.getItem(ROUTE_CHUNK_RELOAD_FLAG)) {
+        if (!isChunkError) {
             return;
         }
-        sessionStorage.setItem(ROUTE_CHUNK_RELOAD_FLAG, '1');
-        window.location.reload();
+        recoverFromChunkLoadError();
     }, [isChunkError]);
-    const errorMessage = getRouteChunkErrorMessage(error);
+    if (isChunkError) {
+        return <div className="min-h-screen bg-[#F2F7F9]" aria-busy="true" />;
+    }
+    const errorMessage = getErrorMessage(error);
     const routeErrorText = isRouteErrorResponse(error)
         ? `${error.status} ${error.statusText}`
         : errorMessage || 'Nao foi possivel carregar a pagina.';
