@@ -571,7 +571,14 @@ export function CoursePublicPagePanel() {
 
             <label className="block space-y-2 md:col-span-2">
               <span className="text-xs font-black uppercase tracking-widest text-slate-400">Descrição da seção bônus</span>
-              <textarea className="min-h-[120px] w-full rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4 text-sm font-medium leading-7 text-slate-700 outline-none focus:border-cyan-400 focus:bg-white" value={form.mentor_bio} onChange={(event) => updateField('mentor_bio', event.target.value)} placeholder="Ex: Tenha acesso a uma prévia completa dos principais tópicos do curso." disabled={!form.bonus_enabled}/>
+              <RichTextEditor
+                value={form.mentor_bio}
+                onChange={(value) => updateField('mentor_bio', value)}
+                placeholder="Ex: Tenha acesso a uma prévia completa dos principais tópicos do curso."
+                minHeightClassName="min-h-[220px]"
+                enableHtmlMode
+                className={!form.bonus_enabled ? 'pointer-events-none opacity-60' : ''}
+              />
             </label>
           </div>
 

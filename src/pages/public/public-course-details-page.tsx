@@ -1,5 +1,5 @@
 ﻿import { useEffect, useRef, useState } from 'react';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, X } from 'lucide-react';
 import { Link, Navigate, useParams } from 'react-router-dom';
 import { CourseCoverMedia } from '@/components/public/course-cover-media';
 import { GenflixCtaButton } from '@/components/public/genflix-cta-button';
@@ -56,7 +56,28 @@ export function PublicCourseDetailsPage() {
   const [openModule, setOpenModule] = useState(0);
   const [resourceCatalog, setResourceCatalog] = useState<EditableListItem[]>([]);
   const [globalReviewsEnabled, setGlobalReviewsEnabled] = useState(true);
+  const [isBonusModalOpen, setIsBonusModalOpen] = useState(false);
   const trackedCourseRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!isBonusModalOpen) {
+      return;
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setIsBonusModalOpen(false);
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    document.body.style.overflow = 'hidden';
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = '';
+    };
+  }, [isBonusModalOpen]);
 
   useEffect(() => {
     let isMounted = true;
@@ -358,6 +379,12 @@ export function PublicCourseDetailsPage() {
                     <Link to={`/checkout/pagamento/${slug}`}>Comprar agora</Link>
                   </GenflixCtaButton>
 
+                  {detail.bonusSection.enabled ? (
+                    <GenflixCtaButton type="button" className="w-full px-5 py-3" onClick={() => setIsBonusModalOpen(true)}>
+                      Bônus do Curso
+                    </GenflixCtaButton>
+                  ) : null}
+
                   {selectedResourceItems.length ? (
                     <div className="rounded-[22px] border border-[#D8E6EB] bg-white p-4 shadow-[0_12px_28px_rgba(21,50,59,0.04)]">
                       <div>
@@ -430,6 +457,38 @@ export function PublicCourseDetailsPage() {
           </div>
         </div>
       </section>
+
+      {isBonusModalOpen ? (
+        <div
+          className="fixed inset-0 z-[150] flex items-center justify-center bg-[#061b21]/65 p-4 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="course-bonus-modal-title"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) {
+              setIsBonusModalOpen(false);
+            }
+          }}
+        >
+          <div className="max-h-[min(720px,calc(100vh-2rem))] w-full max-w-2xl overflow-y-auto rounded-[28px] border border-[#D8E6EB] bg-white p-6 shadow-[0_24px_70px_rgba(6,38,45,0.28)] sm:p-8">
+            <div className="flex items-start justify-between gap-5">
+              <div>
+                <p className="text-[11px] font-black uppercase tracking-[0.24em] text-[#1398B7]">Bônus do curso</p>
+                <h2 id="course-bonus-modal-title" className="mt-2 text-2xl font-black tracking-tight text-[#183139] sm:text-3xl">
+                  {detail.bonusSection.title}
+                </h2>
+              </div>
+              <button type="button" onClick={() => setIsBonusModalOpen(false)} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#D8E6EB] text-[#5F7077] transition hover:border-[#1398B7] hover:bg-[#F2F7F9] hover:text-[#0F7E99]" aria-label="Fechar bônus do curso">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div
+              className="rich-text-content mt-6 text-[15px] leading-7 text-[#4F636A] [&_p]:mb-4 [&_p:last-child]:mb-0 [&_h1]:my-5 [&_h1]:text-2xl [&_h1]:font-bold [&_h2]:my-4 [&_h2]:text-xl [&_h2]:font-bold [&_h3]:my-3 [&_h3]:text-lg [&_h3]:font-bold [&_ul]:my-4 [&_ul]:list-disc [&_ul]:pl-6 [&_ol]:my-4 [&_ol]:list-decimal [&_ol]:pl-6 [&_li]:mb-2 [&_a]:text-[#1398B7] [&_a]:underline [&_strong]:font-bold [&_em]:italic [&_u]:underline"
+              dangerouslySetInnerHTML={{ __html: renderAboutParagraphHtml(detail.bonusSection.description) ?? '' }}
+            />
+          </div>
+        </div>
+      ) : null}
 
       <GenflixPublicFooter />
     </main>

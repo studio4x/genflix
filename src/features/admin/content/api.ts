@@ -372,7 +372,7 @@ export async function updateCoursePublicPage(courseId: string, input: CoursePubl
         bonusSection: {
             enabled: input.bonus_enabled,
             title: input.bonus_title?.trim() || 'Prévia de conteúdo',
-            description: input.mentor_bio?.trim() || '',
+            description: sanitizeRichTextHtml(input.mentor_bio?.trim() || ''),
         },
         contentSource: input.contentSource,
         customSyllabus: input.customSyllabus,
@@ -409,7 +409,7 @@ export async function updateCoursePublicPage(courseId: string, input: CoursePubl
         logo_url: normalizeCourseMediaValue(input.logo_url),
         mentor_name: input.mentor_name?.trim() || null,
         mentor_role: input.mentor_role?.trim() || null,
-        mentor_bio: input.mentor_bio?.trim() || null,
+        mentor_bio: sanitizeRichTextHtml(input.mentor_bio?.trim() || '') || null,
         mentor_initials: input.mentor_initials?.trim() || null,
         secondary_price_label: input.secondary_price_label.trim(),
         public_page_content: publicPageContent,
