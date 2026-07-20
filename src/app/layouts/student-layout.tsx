@@ -97,7 +97,7 @@ export function StudentLayout() {
         <div className="px-4 py-3 sm:px-6 lg:px-8">
           <div className="relative flex min-h-[68px] items-center justify-between gap-4">
             <Link to="/aluno/dashboard" className="flex min-w-0 items-center gap-4">
-              <GenflixLogo theme="light" />
+              <GenflixLogo theme="light" imageClassName="h-[56px] w-[105px]" />
               <p className="hidden rounded-full border border-[#D8E6EB] bg-white px-3 py-1 text-[10px] font-extrabold uppercase tracking-[0.22em] text-[#1398B7] sm:block">
                 Área do aluno
               </p>

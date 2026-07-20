@@ -123,7 +123,7 @@ export function GenflixPublicFooter({ id = 'footer', }: {
           <div className="space-y-8 border-b border-white/18 pb-8">
             <div className="flex items-center">
               <Link to="/" aria-label="Ir para a home da GenFlix">
-                <GenflixLogo theme="light"/>
+                <GenflixLogo theme="light" imageClassName="h-[56px] w-[105px]"/>
               </Link>
             </div>
 

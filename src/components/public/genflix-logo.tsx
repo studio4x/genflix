@@ -3,10 +3,11 @@ import { useBranding } from '@/app/providers/branding-provider';
 import { cn } from '@/lib/utils';
 interface GenflixLogoProps {
     className?: string;
+    imageClassName?: string;
     theme?: 'light' | 'dark';
     style?: CSSProperties;
 }
-export function GenflixLogo({ className, theme = 'dark', style }: GenflixLogoProps) {
+export function GenflixLogo({ className, imageClassName, theme = 'dark', style }: GenflixLogoProps) {
     const { branding } = useBranding();
     const isLight = theme === 'light';
     const selectedLogo = isLight
@@ -14,7 +15,7 @@ export function GenflixLogo({ className, theme = 'dark', style }: GenflixLogoPro
         : branding.logoDark ?? branding.logoLight;
     if (selectedLogo?.src) {
         return (<span className={cn('inline-flex items-center origin-left', className)} style={style}>
-        <img src={selectedLogo.src} alt={selectedLogo.alt || 'GenFlix'} className="h-10 w-auto max-w-none object-contain"/>
+        <img src={selectedLogo.src} alt={selectedLogo.alt || 'GenFlix'} className={cn('h-10 w-auto max-w-none object-contain', imageClassName)}/>
       </span>);
     }
     return (<div className={cn('inline-flex items-center gap-3 origin-left', className)} style={style}>

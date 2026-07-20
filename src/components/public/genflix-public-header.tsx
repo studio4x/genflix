@@ -162,7 +162,7 @@ export function GenflixPublicHeader({ currentPage, navLinks, }: {
           <header className="relative">
             <div className="flex items-center justify-between gap-4" style={headerChromeStyle}>
               <Link to="/" aria-label="Ir para a home da GenFlix" className="shrink-0">
-                <GenflixLogo theme={logoTheme} className="origin-left" style={logoStyle}/>
+                <GenflixLogo theme={logoTheme} className="origin-left" imageClassName="h-[56px] w-[105px]" style={logoStyle}/>
               </Link>
 
               <nav className="hidden items-center gap-8 xl:flex">
