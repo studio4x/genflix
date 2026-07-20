@@ -345,11 +345,11 @@ export function PublicCourseDetailsPage() {
                   </div>
 
                   {playerEntryHref ? (
-                    <GenflixCtaButton asChild tone="surface" className="w-full border-[#1151B1] bg-white px-5 py-3 text-[#1151B1] shadow-[0_5px_0_#1151B1,0_10px_18px_rgba(17,81,177,0.2)] hover:border-[#1151B1] hover:bg-white hover:shadow-[0_6px_0_#1151B1,0_12px_22px_rgba(17,81,177,0.24)] [&>span:last-child]:bg-white [&>span:last-child]:text-[#1151B1]">
+                    <GenflixCtaButton asChild tone="surface" className="w-full border-[#1151B1] bg-[#f78902] px-5 py-3 text-white shadow-[0_5px_0_#1151B1,0_10px_18px_rgba(17,81,177,0.2)] hover:border-[#1151B1] hover:bg-[#f78902] hover:shadow-[0_6px_0_#1151B1,0_12px_22px_rgba(17,81,177,0.24)] [&>span:last-child]:bg-white [&>span:last-child]:text-[#1151B1]">
                       <Link to={playerEntryHref}>Assista a uma aula gratuita</Link>
                     </GenflixCtaButton>
                   ) : (
-                    <GenflixCtaButton tone="surface" className="w-full border-[#1151B1] bg-white px-5 py-3 text-[#1151B1] shadow-[0_5px_0_#1151B1,0_10px_18px_rgba(17,81,177,0.2)] hover:border-[#1151B1] hover:bg-white hover:shadow-[0_6px_0_#1151B1,0_12px_22px_rgba(17,81,177,0.24)] [&>span:last-child]:bg-white [&>span:last-child]:text-[#1151B1]" disabled>
+                    <GenflixCtaButton tone="surface" className="w-full border-[#1151B1] bg-[#f78902] px-5 py-3 text-white shadow-[0_5px_0_#1151B1,0_10px_18px_rgba(17,81,177,0.2)] hover:border-[#1151B1] hover:bg-[#f78902] hover:shadow-[0_6px_0_#1151B1,0_12px_22px_rgba(17,81,177,0.24)] [&>span:last-child]:bg-white [&>span:last-child]:text-[#1151B1]" disabled>
                       Assista a uma aula gratuita
                     </GenflixCtaButton>
                   )}
