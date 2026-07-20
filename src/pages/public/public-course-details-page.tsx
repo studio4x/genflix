@@ -380,7 +380,7 @@ export function PublicCourseDetailsPage() {
                   </GenflixCtaButton>
 
                   {detail.bonusSection.enabled ? (
-                    <GenflixCtaButton type="button" className="w-full px-5 py-3" onClick={() => setIsBonusModalOpen(true)}>
+                    <GenflixCtaButton type="button" tone="surface" className="w-full border-[#28b531] bg-[#28b531] px-5 py-3 text-white shadow-[0px_4px_4px_rgba(0,0,0,0.25)] hover:border-[#28b531] hover:bg-[#218f28] hover:shadow-[0px_6px_10px_rgba(0,0,0,0.28)] [&>span:last-child]:bg-white [&>span:last-child]:text-[#218f28]" onClick={() => setIsBonusModalOpen(true)}>
                       Bônus do Curso
                     </GenflixCtaButton>
                   ) : null}
