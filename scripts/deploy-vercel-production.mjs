@@ -66,6 +66,38 @@ function ensureSpaFallbackRoute(workspace = process.cwd()) {
   writeFileSync(configPath, `${JSON.stringify(config, null, 2)}\n`)
 }
 
+function ensurePublicAssetProxyRoutes(workspace = process.cwd()) {
+  const configPath = join(workspace, '.vercel', 'output', 'config.json')
+
+  if (!existsSync(configPath)) {
+    return
+  }
+
+  const config = JSON.parse(readFileSync(configPath, 'utf8'))
+  const routes = Array.isArray(config.routes) ? config.routes : []
+  const requiredRoutes = [
+    {
+      src: '^/api/public/site-asset(?:/)?$',
+      dest: 'https://axhlkilkqolvfecyhhxx.supabase.co/functions/v1/public-site-asset',
+    },
+    {
+      src: '^/api/public/course-media(?:/)?$',
+      dest: 'https://axhlkilkqolvfecyhhxx.supabase.co/functions/v1/public-course-media',
+    },
+  ]
+
+  const missingRoutes = requiredRoutes.filter((requiredRoute) => (
+    !routes.some((route) => route?.src === requiredRoute.src || route?.dest === requiredRoute.dest)
+  ))
+
+  if (missingRoutes.length === 0) {
+    return
+  }
+
+  config.routes = [...missingRoutes, ...routes]
+  writeFileSync(configPath, `${JSON.stringify(config, null, 2)}\n`)
+}
+
 function shouldCopyBuildWorkspace(relativePath) {
   const normalized = relativePath.replace(/\\/g, '/')
   if (!normalized) {
@@ -305,6 +337,7 @@ async function main() {
     })
 
     ensureSpaFallbackRoute(buildWorkspace)
+    ensurePublicAssetProxyRoutes(buildWorkspace)
 
     process.stdout.write(`Publicando output prebuilt em producao na Vercel pelo projeto canonico (${vercelScope})...\n`)
     const tempWorkspace = mkdtempSync(join(tmpdir(), 'genflix-vercel-'))
