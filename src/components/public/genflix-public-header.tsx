@@ -76,7 +76,7 @@ export function GenflixPublicHeader({ currentPage, navLinks, }: {
         ? '#FFFFFF'
         : (currentScopeAppearance.pageBackgroundColor ?? '#F2F7F9');
     const useDarkHeader = true;
-    const logoTheme = 'dark' as const;
+    const logoTheme = 'light' as const;
     const ctaPath = user ? getDashboardPathForRoles(roles) : '/login';
     const isAdminUser = user && roles.includes('admin');
     const ctaLabel = useEditableValue(user ? 'global.header.cta.authenticated.label' : 'global.header.cta.anonymous.label', user ? 'Acessar painel' : 'Entrar', { pageKey: 'global' });
