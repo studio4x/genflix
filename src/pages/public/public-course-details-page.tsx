@@ -196,12 +196,6 @@ export function PublicCourseDetailsPage() {
       ? `/aluno/cursos/${detail.id}/player/aulas/${playerView.firstAccessibleLessonId}`
       : `/aluno/cursos/${detail.id}/player`
     : null;
-  const freeLessonCtaColors = {
-    buttonBackgroundColor: '#f78902',
-    buttonTextColor: '#ffffff',
-    iconBackgroundColor: 'rgba(255, 255, 255, 0.18)',
-    iconTextColor: '#ffffff',
-  };
   return (
     <main className="min-h-screen bg-[#F2F7F9] font-manrope text-[#163138]">
       <GenflixPublicHeader currentPage="courses" navLinks={genflixNavLinks} />
@@ -351,12 +345,12 @@ export function PublicCourseDetailsPage() {
                   </div>
 
                   {playerEntryHref ? (
-                    <GenflixCtaButton asChild className="w-full px-5 py-3" customColors={freeLessonCtaColors}>
-                      <Link to={playerEntryHref}>Assista a uma aula Gratuita</Link>
+                    <GenflixCtaButton asChild tone="surface" className="w-full border-[#1151B1] bg-white px-5 py-3 text-[#1151B1] shadow-[0_5px_0_#1151B1,0_10px_18px_rgba(17,81,177,0.2)] hover:border-[#1151B1] hover:bg-white hover:shadow-[0_6px_0_#1151B1,0_12px_22px_rgba(17,81,177,0.24)] [&>span:last-child]:bg-white [&>span:last-child]:text-[#1151B1]">
+                      <Link to={playerEntryHref}>Assista a uma aula gratuita</Link>
                     </GenflixCtaButton>
                   ) : (
-                    <GenflixCtaButton className="w-full px-5 py-3" disabled customColors={freeLessonCtaColors}>
-                      Assista a uma aula Gratuita
+                    <GenflixCtaButton tone="surface" className="w-full border-[#1151B1] bg-white px-5 py-3 text-[#1151B1] shadow-[0_5px_0_#1151B1,0_10px_18px_rgba(17,81,177,0.2)] hover:border-[#1151B1] hover:bg-white hover:shadow-[0_6px_0_#1151B1,0_12px_22px_rgba(17,81,177,0.24)] [&>span:last-child]:bg-white [&>span:last-child]:text-[#1151B1]" disabled>
+                      Assista a uma aula gratuita
                     </GenflixCtaButton>
                   )}
 
@@ -367,7 +361,7 @@ export function PublicCourseDetailsPage() {
                   {selectedResourceItems.length ? (
                     <div className="rounded-[22px] border border-[#D8E6EB] bg-white p-4 shadow-[0_12px_28px_rgba(21,50,59,0.04)]">
                       <div>
-                        <h2 className="text-[1.45rem] font-bold leading-none tracking-[0px] text-[#183139]">Recursos disponíveis</h2>
+                        <h2 className="text-[1.45rem] font-bold leading-none tracking-[0px] text-[#183139]">Recursos didáticos deste curso</h2>
                         <Link to="/recursos" className="mt-2 inline-block text-xs font-semibold text-[#1398B7] underline underline-offset-2 transition hover:text-[#0F7E99]">Saiba mais sobre esses recursos</Link>
                       </div>
                       <div className="mt-4 space-y-1">
