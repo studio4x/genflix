@@ -144,11 +144,11 @@ export function AdminLayout() {
       <AdminTutorialRouteHintSync />
       <main className="min-h-screen bg-[#F2F7F9] font-manrope text-[#163138]">
       <ImpersonationBanner />
-      <header className="sticky top-0 z-40 border-b border-[#D8E6EB] bg-[#F2F7F9]/95 backdrop-blur-md">
+      <header className="sticky top-0 z-40 border-b border-white/10 bg-[#0A3640] backdrop-blur-md">
         <div className="flex w-full items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
           <div className="flex items-center gap-3">
             <Link to="/" aria-label="Ir para a home da GenFlix">
-              <GenflixLogo />
+              <GenflixLogo theme="light" />
             </Link>
             <div>
               <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#1398B7]">Painel Admin</p>

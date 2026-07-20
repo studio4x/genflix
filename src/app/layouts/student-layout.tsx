@@ -93,18 +93,18 @@ export function StudentLayout() {
     const firstName = displayName.split(' ')[0] ?? displayName;
     return (<main className="min-h-screen bg-[#F2F7F9] font-manrope text-[#163138]">
       <ImpersonationBanner />
-      <header className="sticky top-0 z-40 border-b border-[#D8E6EB] bg-[#F2F7F9]/95 backdrop-blur-md">
+      <header className="sticky top-0 z-40 border-b border-white/10 bg-[#0A3640] backdrop-blur-md">
         <div className="px-4 py-3 sm:px-6 lg:px-8">
           <div className="relative flex min-h-[68px] items-center justify-between gap-4">
             <Link to="/aluno/dashboard" className="flex min-w-0 items-center gap-4">
-              <GenflixLogo />
+              <GenflixLogo theme="light" />
               <p className="hidden rounded-full border border-[#D8E6EB] bg-white px-3 py-1 text-[10px] font-extrabold uppercase tracking-[0.22em] text-[#1398B7] sm:block">
                 Área do aluno
               </p>
             </Link>
 
             <div className="pointer-events-none absolute left-1/2 top-1/2 hidden -translate-x-1/2 -translate-y-1/2 md:block">
-              <p className="whitespace-nowrap text-sm font-extrabold uppercase tracking-[0.28em] text-[#5F7077]">
+                <p className="whitespace-nowrap text-sm font-extrabold uppercase tracking-[0.28em] text-white/72">
                 Meu aprendizado
               </p>
             </div>

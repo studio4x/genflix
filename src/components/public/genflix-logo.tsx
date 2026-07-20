@@ -9,12 +9,11 @@ interface GenflixLogoProps {
 export function GenflixLogo({ className, theme = 'dark', style }: GenflixLogoProps) {
     const { branding } = useBranding();
     const isLight = theme === 'light';
-    const selectedLogo = isLight
-        ? branding.logoLight ?? branding.logoDark
-        : branding.logoDark ?? branding.logoLight;
+    const selectedLogo = branding.logoLight ?? branding.logoDark;
+    const usesLightAssetOnLightSurface = !isLight && Boolean(branding.logoLight?.src);
     if (selectedLogo?.src) {
         return (<span className={cn('inline-flex items-center origin-left', className)} style={style}>
-        <img src={selectedLogo.src} alt={selectedLogo.alt || 'GenFlix'} className="h-10 w-auto max-w-none object-contain"/>
+        <img src={selectedLogo.src} alt={selectedLogo.alt || 'GenFlix'} className={cn('h-10 w-auto max-w-none object-contain', usesLightAssetOnLightSurface ? 'brightness-0' : '')}/>
       </span>);
     }
     return (<div className={cn('inline-flex items-center gap-3 origin-left', className)} style={style}>

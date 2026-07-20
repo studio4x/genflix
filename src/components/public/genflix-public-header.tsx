@@ -51,31 +51,6 @@ function HeaderAppearanceControl({ label, onClick, }: {
       {label}
     </button>);
 }
-function resolveHexColorLuminance(color: string) {
-    const normalized = color.trim().replace('#', '');
-    const hex = normalized.length === 3
-        ? normalized.split('').map((char) => `${char}${char}`).join('')
-        : normalized;
-    if (!/^[0-9a-fA-F]{6}$/.test(hex)) {
-        return null;
-    }
-    const red = parseInt(hex.slice(0, 2), 16);
-    const green = parseInt(hex.slice(2, 4), 16);
-    const blue = parseInt(hex.slice(4, 6), 16);
-    return (0.299 * red + 0.587 * green + 0.114 * blue) / 255;
-}
-function resolveLogoTheme(backgroundColor?: string, useHomeTheme = false): 'light' | 'dark' {
-    if (useHomeTheme) {
-        return 'light';
-    }
-    if (typeof backgroundColor === 'string') {
-        const luminance = resolveHexColorLuminance(backgroundColor);
-        if (typeof luminance === 'number') {
-            return luminance < 0.55 ? 'light' : 'dark';
-        }
-    }
-    return 'dark';
-}
 export function GenflixPublicHeader({ currentPage, navLinks, }: {
     currentPage?: GenflixPageKey;
     navLinks: GenflixNavLink[];
@@ -100,8 +75,8 @@ export function GenflixPublicHeader({ currentPage, navLinks, }: {
     const resolvedShellBackground = isBlogScope
         ? '#FFFFFF'
         : (currentScopeAppearance.pageBackgroundColor ?? '#F2F7F9');
-    const useHomeTheme = isHome && pageAppearanceRecord.scope !== 'global';
-    const logoTheme = resolveLogoTheme(currentScopeAppearance.pageBackgroundColor, useHomeTheme);
+    const useDarkHeader = true;
+    const logoTheme = 'light' as const;
     const ctaPath = user ? getDashboardPathForRoles(roles) : '/login';
     const isAdminUser = user && roles.includes('admin');
     const ctaLabel = useEditableValue(user ? 'global.header.cta.authenticated.label' : 'global.header.cta.anonymous.label', user ? 'Acessar painel' : 'Entrar', { pageKey: 'global' });
@@ -173,18 +148,16 @@ export function GenflixPublicHeader({ currentPage, navLinks, }: {
         height: currentScopeAppearance.headerHeight ?? '72px',
     };
     const logoStyle = {
-        transform: `scale(${currentScopeAppearance.logoScale ?? 1})`,
+        transform: 'scale(1)',
         transformOrigin: 'left center',
     };
     const headerSectionStyle = {
-        backgroundColor: currentScopeAppearance.pageBackgroundColor ?? (useHomeTheme ? undefined : '#F2F8FA'),
+        backgroundColor: '#0A3640',
     };
     return (<>
       {typographyCss ? <style>{typographyCss}</style> : null}
       <ImpersonationBanner />
-      <section className={cn('border-b', useHomeTheme
-            ? 'border-white/10 bg-[linear-gradient(90deg,#1C7082_0%,#0F5562_100%)] text-white'
-            : 'border-[#D8E6EB] text-[#183139]')} style={headerSectionStyle}>
+      <section className="border-b border-white/10 bg-[#0A3640] text-white" style={headerSectionStyle}>
         <div className="public-site-container">
           <header className="relative">
             <div className="flex items-center justify-between gap-4" style={headerChromeStyle}>
@@ -205,7 +178,7 @@ export function GenflixPublicHeader({ currentPage, navLinks, }: {
             if (navItem.requiresAuth && !user) {
                 return null;
             }
-            return (<HeaderNavLink key={`${navItem.label}-${navItem.href}`} item={navItem} isActive={navItem.pageKey === currentPage} variant={useHomeTheme ? 'home' : 'light'} appearance={currentScopeAppearance}/>);
+            return (<HeaderNavLink key={`${navItem.label}-${navItem.href}`} item={navItem} isActive={navItem.pageKey === currentPage} variant="home" appearance={{ ...currentScopeAppearance, menuColor: '#FFFFFF', menuActiveColor: '#FFFFFF', menuHoverColor: '#D9F0F5' }}/>);
         })}
                 </EditableList>
               </nav>
@@ -216,7 +189,7 @@ export function GenflixPublicHeader({ currentPage, navLinks, }: {
                     to="/aluno/dashboard"
                     className={cn(
                       'inline-flex h-11 w-11 items-center justify-center rounded-full border transition-colors backdrop-blur-sm',
-                      useHomeTheme
+                      useDarkHeader
                         ? 'border-white/18 bg-white/10 text-white hover:bg-white/16'
                         : 'border-[#D8E6EB] bg-white text-[#15323B] hover:bg-[#EBF3F5]',
                     )}
@@ -249,7 +222,7 @@ export function GenflixPublicHeader({ currentPage, navLinks, }: {
                       </button>) : null}
                   </div>) : null}
 
-                <button type="button" onClick={() => setIsMenuOpen((open) => !open)} className={cn('inline-flex h-11 w-11 items-center justify-center rounded-full border transition-colors backdrop-blur-sm xl:hidden', useHomeTheme
+                <button type="button" onClick={() => setIsMenuOpen((open) => !open)} className={cn('inline-flex h-11 w-11 items-center justify-center rounded-full border transition-colors backdrop-blur-sm xl:hidden', useDarkHeader
             ? 'border-white/18 bg-white/10 text-white hover:bg-white/16'
             : 'border-[#D8E6EB] bg-white text-[#15323B] hover:bg-[#EBF3F5]')} aria-expanded={isMenuOpen} aria-label={isMenuOpen ? 'Fechar menu' : 'Abrir menu'}>
                   {isMenuOpen ? <X className="h-5 w-5"/> : <Menu className="h-5 w-5"/>}
@@ -257,7 +230,7 @@ export function GenflixPublicHeader({ currentPage, navLinks, }: {
               </div>
             </div>
 
-            {isMenuOpen ? (<div className={cn('absolute inset-x-0 top-full z-30 mt-2 overflow-hidden rounded-[20px] p-4 backdrop-blur-xl xl:hidden', useHomeTheme
+            {isMenuOpen ? (<div className={cn('absolute inset-x-0 top-full z-30 mt-2 overflow-hidden rounded-[20px] p-4 backdrop-blur-xl xl:hidden', useDarkHeader
                 ? 'border border-white/12 bg-[#0D4651]/96 shadow-[0_28px_56px_rgba(6,27,33,0.26)]'
                 : 'border border-[#D8E6EB] bg-[#F2F8FA]/98 shadow-[0_28px_56px_rgba(21,50,59,0.12)]')}>
                 <nav className="flex flex-col gap-1">
@@ -273,18 +246,18 @@ export function GenflixPublicHeader({ currentPage, navLinks, }: {
                 if (navItem.requiresAuth && !user) {
                     return null;
                 }
-                return (<HeaderNavLink key={`mobile-${navItem.label}-${navItem.href}`} item={navItem} isActive={navItem.pageKey === currentPage} variant={useHomeTheme ? 'home' : 'light'} appearance={currentScopeAppearance} className="rounded-[14px] px-3 py-3 text-[15px]"/>);
+                return (<HeaderNavLink key={`mobile-${navItem.label}-${navItem.href}`} item={navItem} isActive={navItem.pageKey === currentPage} variant="home" appearance={{ ...currentScopeAppearance, menuColor: '#FFFFFF', menuActiveColor: '#FFFFFF', menuHoverColor: '#D9F0F5' }} className="rounded-[14px] px-3 py-3 text-[15px]"/>);
             })}
                   </EditableList>
                 </nav>
 
-                <div className={cn('mt-4 border-t pt-4 sm:hidden', useHomeTheme ? 'border-white/10' : 'border-[#D8E6EB]')}>
+                <div className={cn('mt-4 border-t pt-4 sm:hidden', useDarkHeader ? 'border-white/10' : 'border-[#D8E6EB]')}>
                   {isAdminUser ? (
                     <Link
                       to="/aluno/dashboard"
                       className={cn(
                         'mb-3 inline-flex h-11 w-full items-center justify-center gap-2 rounded-2xl border px-4 text-sm font-black transition-colors',
-                        useHomeTheme
+                        useDarkHeader
                           ? 'border-white/18 bg-white/10 text-white hover:bg-white/16'
                           : 'border-[#D8E6EB] bg-white text-[#15323B] hover:bg-[#EBF3F5]',
                       )}
