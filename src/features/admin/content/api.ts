@@ -418,7 +418,6 @@ export async function updateCoursePublicPage(courseId: string, input: CoursePubl
         category: categories[0] ?? null,
         categories,
         hero_video_url: input.hero_video_url?.trim() || null,
-        logo_url: normalizeCourseMediaValue(input.logo_url),
         mentor_name: input.mentor_name?.trim() || null,
         mentor_role: input.mentor_role?.trim() || null,
         mentor_bio: sanitizeRichTextHtml(input.mentor_bio?.trim() || '') || null,

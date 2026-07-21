@@ -5,7 +5,7 @@ import { useAuth } from '@/app/providers/auth-provider';
 import { useCourseBuilder } from '@/app/layouts/admin-course-builder-layout';
 import { Button } from '@/components/ui/button';
 import { RichTextEditor } from '@/components/ui/RichTextEditor';
-import { updateCoursePublicPage, uploadCourseLogo, toErrorMessage, } from '@/features/admin/content/api';
+import { updateCoursePublicPage, toErrorMessage, } from '@/features/admin/content/api';
 import { coursePublicPageFormSchema } from '@/features/admin/content/schemas';
 import { fetchAdminUsers, type AdminUserListItem } from '@/features/admin/users/api';
 import { buildCoursePublicDetail, normalizeCoursePublicPageContent, } from '@/features/public/course-public-page-content';
@@ -22,7 +22,6 @@ type CoursePublicPageFormState = {
     categoryLine: string;
     marketing_description: string;
     hero_video_url: string;
-    logo_url: string;
     mentor_name: string;
     mentor_role: string;
     mentor_bio: string;
@@ -142,7 +141,6 @@ export function CoursePublicPagePanel() {
         categoryLine: '',
         marketing_description: '',
         hero_video_url: '',
-        logo_url: '',
         mentor_name: '',
         mentor_role: '',
         mentor_bio: '',
@@ -159,7 +157,6 @@ export function CoursePublicPagePanel() {
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [isUploadingLogo, setIsUploadingLogo] = useState(false);
     const resolvedDetail = useMemo(() => {
         if (!courseTree) {
             return null;
@@ -211,7 +208,6 @@ export function CoursePublicPagePanel() {
             categoryLine: content.categoryLine ?? resolvedDetail.categoryLine,
             marketing_description: courseTree.course.marketing_description ?? resolvedDetail.description,
             hero_video_url: courseTree.course.hero_video_url ?? '',
-            logo_url: courseTree.course.logo_url ?? '',
             mentor_name: courseTree.course.mentor_name ?? resolvedDetail.mentor.name,
             mentor_role: courseTree.course.mentor_role ?? resolvedDetail.mentor.role,
             mentor_bio: content.bonusSection?.description ?? courseTree.course.mentor_bio ?? resolvedDetail.bonusSection.description,
@@ -258,25 +254,6 @@ export function CoursePublicPagePanel() {
         }
         updateField('authors', reorderAuthorAssignments(form.authors, source.index, destination.index));
     }
-    async function handleLogoUpload(event: React.ChangeEvent<HTMLInputElement>) {
-        const file = event.target.files?.[0];
-        if (!file) {
-            return;
-        }
-        setError(null);
-        setIsUploadingLogo(true);
-        try {
-            const url = await uploadCourseLogo(file);
-            updateField('logo_url', url);
-        }
-        catch (uploadError) {
-            setError(toErrorMessage(uploadError));
-        }
-        finally {
-            setIsUploadingLogo(false);
-            event.target.value = '';
-        }
-    }
     function addAuthor() {
         updateField('authors', normalizeAuthorAssignmentsOrder([...form.authors, createEmptyAuthorAssignment(form.authors.length)]));
     }
@@ -304,7 +281,6 @@ export function CoursePublicPagePanel() {
                 ...form,
                 category: courseTree.course.category ?? form.category,
                 hero_video_url: form.hero_video_url.trim(),
-                logo_url: form.logo_url.trim(),
                 mentor_bio: form.mentor_bio.trim(),
                 bonus_title: form.bonus_title.trim(),
                 authorContent: form.authorContent.trim(),
@@ -417,39 +393,6 @@ export function CoursePublicPagePanel() {
                   <input className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-5 py-3 text-sm font-semibold outline-none focus:border-cyan-400 focus:bg-white" value={form.hero_video_url} onChange={(event) => updateField('hero_video_url', event.target.value)} placeholder="https://..."/>
                 </label>
 
-                <div className="space-y-2">
-                  <span className="text-xs font-black uppercase tracking-widest text-slate-400">Logotipo do curso</span>
-                  <div className={`rounded-2xl border px-5 py-5 ${isUploadingLogo ? 'border-cyan-200 bg-cyan-50/40' : 'border-slate-200 bg-slate-50'}`}>
-                    <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-                      <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-slate-200 bg-white">
-                        {form.logo_url ? (
-                          <img src={form.logo_url} alt="Logotipo do curso" className="h-full w-full object-contain p-2" />
-                        ) : (
-                          <span className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Logo</span>
-                        )}
-                      </div>
-
-                      <div className="min-w-0 flex-1 space-y-1">
-                        <p className="text-sm font-black text-slate-900">Enviar novo logotipo</p>
-                        <p className="text-xs leading-5 text-slate-500">O arquivo será salvo no storage e a URL pública será preenchida automaticamente.</p>
-                        <div className="flex flex-wrap gap-3 pt-2">
-                          <label className="inline-flex cursor-pointer items-center gap-3">
-                            <span className="inline-flex h-10 items-center rounded-xl border border-slate-300 bg-white px-4 text-sm font-bold text-slate-800 transition-colors hover:border-[#1398B7]/40 hover:bg-slate-50">
-                              {isUploadingLogo ? 'Enviando...' : 'Escolher arquivo'}
-                            </span>
-                            <input type="file" accept="image/*" disabled={isUploadingLogo} onChange={handleLogoUpload} className="sr-only" title="Selecionar logotipo do curso"/>
-                          </label>
-                          {form.logo_url ? (
-                            <Button type="button" variant="outline" size="sm" onClick={() => updateField('logo_url', '')} className="rounded-xl border-slate-200 bg-white font-bold text-slate-600 hover:text-slate-900">
-                              Remover logotipo
-                            </Button>
-                          ) : null}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  <input className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-5 py-3 text-sm font-semibold outline-none focus:border-cyan-400 focus:bg-white" value={form.logo_url} onChange={(event) => updateField('logo_url', event.target.value)} placeholder="https://..."/>
-                </div>
               </div>
 
               <div className="grid gap-5">
