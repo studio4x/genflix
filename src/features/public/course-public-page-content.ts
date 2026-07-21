@@ -144,6 +144,14 @@ function normalizeBonusSection(value: unknown): CoursePublicBonusSection | null 
 }
 
 export function normalizeCoursePublicPageContent(value: unknown): CoursePublicPageContent {
+  if (typeof value === 'string') {
+    try {
+      return normalizeCoursePublicPageContent(JSON.parse(value))
+    } catch {
+      // Keep the same empty-content fallback for malformed legacy values.
+    }
+  }
+
   if (!isRecord(value)) {
     return {
       categoryLine: null,

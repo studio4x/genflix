@@ -211,7 +211,7 @@ export function CoursePublicPagePanel() {
             hero_video_url: courseTree.course.hero_video_url ?? '',
             mentor_name: courseTree.course.mentor_name ?? resolvedDetail.mentor.name,
             mentor_role: courseTree.course.mentor_role ?? resolvedDetail.mentor.role,
-            mentor_bio: content.bonusSection?.description ?? courseTree.course.mentor_bio ?? resolvedDetail.bonusSection.description,
+            mentor_bio: content.bonusSection?.description?.trim() || courseTree.course.mentor_bio?.trim() || resolvedDetail.bonusSection.description,
             bonus_enabled: content.bonusSection?.enabled ?? resolvedDetail.bonusSection.enabled,
             bonus_title: content.bonusSection?.title ?? resolvedDetail.bonusSection.title,
             mentor_initials: courseTree.course.mentor_initials ?? resolvedDetail.mentor.initials,

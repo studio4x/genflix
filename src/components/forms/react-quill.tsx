@@ -728,6 +728,11 @@ function createEditorExtensions(placeholder: string | undefined, onRequestImage?
       heading: {
         levels: [1, 2, 3, 4, 5, 6],
       },
+      // These extensions are configured below with the editor-specific behavior.
+      // Disable the StarterKit copies to avoid duplicate names and unstable editor instances.
+      gapcursor: false,
+      link: false,
+      underline: false,
     }),
     Underline,
     TextStyle,
