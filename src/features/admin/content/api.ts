@@ -417,6 +417,7 @@ export async function updateCoursePublicPage(courseId: string, input: CoursePubl
         .update({
         category: categories[0] ?? null,
         categories,
+        marketing_description: input.marketing_description?.trim() || null,
         hero_video_url: input.hero_video_url?.trim() || null,
         mentor_name: input.mentor_name?.trim() || null,
         mentor_role: input.mentor_role?.trim() || null,

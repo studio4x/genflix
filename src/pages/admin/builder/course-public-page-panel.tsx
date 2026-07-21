@@ -236,10 +236,18 @@ export function CoursePublicPagePanel() {
         setSuccess(false);
     }
     function updateParagraph(index: number, value: string) {
-        updateField('aboutParagraphs', form.aboutParagraphs.map((paragraph, paragraphIndex) => paragraphIndex === index ? value : paragraph));
+        setForm((current) => ({
+            ...current,
+            aboutParagraphs: current.aboutParagraphs.map((paragraph, paragraphIndex) => paragraphIndex === index ? value : paragraph),
+        }));
+        setSuccess(false);
     }
     function updateCustomModule(index: number, patch: Partial<GenflixCourseModule>) {
-        updateField('customSyllabus', form.customSyllabus.map((module, moduleIndex) => moduleIndex === index ? { ...module, ...patch } : module));
+        setForm((current) => ({
+            ...current,
+            customSyllabus: current.customSyllabus.map((module, moduleIndex) => moduleIndex === index ? { ...module, ...patch } : module),
+        }));
+        setSuccess(false);
     }
     function updateAuthor(index: number, patch: Partial<CourseAuthorAssignmentForm>) {
         if (Object.prototype.hasOwnProperty.call(patch, 'display_order') && typeof patch.display_order === 'number') {
