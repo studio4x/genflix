@@ -512,17 +512,16 @@ export function CoursePublicPagePanel() {
               <input className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-5 py-3 text-sm font-semibold outline-none focus:border-cyan-400 focus:bg-white" value={form.bonus_title} onChange={(event) => updateField('bonus_title', event.target.value)} placeholder="Ex: Prévia de conteúdo" disabled={!form.bonus_enabled}/>
             </label>
 
-            <label className="block space-y-2 md:col-span-2">
-              <span className="text-xs font-black uppercase tracking-widest text-slate-400">Descrição da seção bônus</span>
+            <div className="block space-y-2 md:col-span-2">
+              <p className="text-xs font-black uppercase tracking-widest text-slate-400">Descrição da seção bônus</p>
               <RichTextEditor
                 value={form.mentor_bio}
                 onChange={(value) => updateField('mentor_bio', value)}
                 placeholder="Ex: Tenha acesso a uma prévia completa dos principais tópicos do curso."
                 minHeightClassName="min-h-[220px]"
                 enableHtmlMode
-                className={!form.bonus_enabled ? 'pointer-events-none opacity-60' : ''}
               />
-            </label>
+            </div>
           </div>
 
         </section>
