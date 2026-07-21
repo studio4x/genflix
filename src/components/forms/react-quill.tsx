@@ -919,6 +919,7 @@ export default function ReactQuill({
         activeModeRef.current !== 'visual'
         || isApplyingExternalValueRef.current
         || syncedEditorRef.current !== nextEditor
+        || !nextEditor.isFocused
       ) {
         return;
       }
