@@ -823,10 +823,17 @@ export default function ReactQuill({
   const [columnsChoice, setColumnsChoice] = useState('');
   const onChangeRef = useRef(onChange);
   const activeModeRef = useRef(activeMode);
+  const valueRef = useRef(value);
+  const syncedEditorRef = useRef<ReturnType<typeof useEditor>>(null);
+  const isApplyingExternalValueRef = useRef(false);
 
   useEffect(() => {
     onChangeRef.current = onChange;
   }, [onChange]);
+
+  useEffect(() => {
+    valueRef.current = value;
+  }, [value]);
 
   useEffect(() => {
     activeModeRef.current = activeMode;
@@ -908,10 +915,18 @@ export default function ReactQuill({
     },
     immediatelyRender: false,
     onUpdate: ({ editor: nextEditor }) => {
-      if (activeModeRef.current !== 'visual') {
+      if (
+        activeModeRef.current !== 'visual'
+        || isApplyingExternalValueRef.current
+        || syncedEditorRef.current !== nextEditor
+      ) {
         return;
       }
-      onChangeRef.current(normalizeHtmlOutput(nextEditor.getHTML()));
+      const nextHtml = normalizeHtmlOutput(nextEditor.getHTML());
+      if (nextHtml === normalizeHtmlOutput(valueRef.current)) {
+        return;
+      }
+      onChangeRef.current(nextHtml);
     },
     onSelectionUpdate: () => {
       setSelectionTick((value) => value + 1);
@@ -924,8 +939,15 @@ export default function ReactQuill({
     }
     const nextHtml = normalizeHtmlOutput(value);
     const currentHtml = normalizeHtmlOutput(editor.getHTML());
-    if (nextHtml !== currentHtml) {
-      editor.commands.setContent(nextHtml, { emitUpdate: false });
+
+    isApplyingExternalValueRef.current = true;
+    try {
+      if (nextHtml !== currentHtml) {
+        editor.commands.setContent(nextHtml, { emitUpdate: false });
+      }
+      syncedEditorRef.current = editor;
+    } finally {
+      isApplyingExternalValueRef.current = false;
     }
   }, [activeMode, editor, value]);
 
