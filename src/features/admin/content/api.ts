@@ -355,18 +355,30 @@ export async function updateCoursePublicPage(courseId: string, input: CoursePubl
         categories: currentResult.data?.categories ?? undefined,
     });
     const existingPublicPageContent = normalizeCoursePublicPageContent(currentResult.data?.public_page_content);
+    const existingPublicPageContentRecord = currentResult.data?.public_page_content
+        && typeof currentResult.data.public_page_content === 'object'
+        && !Array.isArray(currentResult.data.public_page_content)
+        ? currentResult.data.public_page_content as Record<string, unknown>
+        : {};
     const existingPrimaryCreatorId = currentResult.data?.creator_id ?? null;
     const existingPrimaryCommissionPercent = currentResult.data?.creator_commission_percent ?? 0;
     const nextPrimaryCategory = normalizeCoursePrimaryCategory(input.category);
     const categories = nextPrimaryCategory
         ? [nextPrimaryCategory, ...existingCategories.filter((category) => category.toLocaleLowerCase('pt-BR') !== nextPrimaryCategory.toLocaleLowerCase('pt-BR'))]
         : existingCategories;
+    const normalizedAuthorContent = sanitizeRichTextHtml(input.authorContent?.trim() || '');
+    const normalizedAboutParagraphs = input.aboutParagraphs
+        .map((paragraph) => sanitizeRichTextHtml(paragraph.trim()))
+        .filter(Boolean);
     const publicPageContent: CoursePublicPageContentInput = {
+        ...existingPublicPageContentRecord,
         categoryLine: input.categoryLine?.trim() || null,
-        authorContent: sanitizeRichTextHtml(input.authorContent?.trim() || ''),
+        authorContent: normalizedAuthorContent || existingPublicPageContent.authorContent,
         cardAuthorName: existingPublicPageContent.cardAuthorName,
         cardAuthorDescription: existingPublicPageContent.cardAuthorDescription,
-        aboutParagraphs: input.aboutParagraphs.map((paragraph) => sanitizeRichTextHtml(paragraph.trim())),
+        aboutParagraphs: normalizedAboutParagraphs.length
+            ? normalizedAboutParagraphs
+            : existingPublicPageContent.aboutParagraphs,
         outcomes: existingPublicPageContent.outcomes,
         includedItems: existingPublicPageContent.includedItems,
         bonusSection: {
