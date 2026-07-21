@@ -5,6 +5,7 @@ import { useAuth } from '@/app/providers/auth-provider';
 import { useCourseBuilder } from '@/app/layouts/admin-course-builder-layout';
 import { Button } from '@/components/ui/button';
 import { RichTextEditor } from '@/components/ui/RichTextEditor';
+import { CourseCoverMedia } from '@/components/public/course-cover-media';
 import { updateCoursePublicPage, toErrorMessage, } from '@/features/admin/content/api';
 import { coursePublicPageFormSchema } from '@/features/admin/content/schemas';
 import { fetchAdminUsers, type AdminUserListItem } from '@/features/admin/users/api';
@@ -392,6 +393,30 @@ export function CoursePublicPagePanel() {
                   <span className="text-xs font-black uppercase tracking-widest text-slate-400">URL do vídeo do hero</span>
                   <input className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-5 py-3 text-sm font-semibold outline-none focus:border-cyan-400 focus:bg-white" value={form.hero_video_url} onChange={(event) => updateField('hero_video_url', event.target.value)} placeholder="https://..."/>
                 </label>
+
+                <div className="space-y-2 md:col-span-2">
+                  <div className="flex items-center justify-between gap-3 px-1">
+                    <span className="text-xs font-black uppercase tracking-widest text-slate-400">Prévia do vídeo do hero</span>
+                    <span className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">16:9</span>
+                  </div>
+                  <div className="w-full overflow-hidden rounded-[28px] border border-slate-200 bg-slate-950">
+                    {form.hero_video_url.trim() ? (
+                      <div className="aspect-video w-full">
+                        <CourseCoverMedia
+                          videoSrc={form.hero_video_url}
+                          alt={`Prévia do vídeo de ${resolvedDetail.title}`}
+                          title={resolvedDetail.title}
+                          className="h-full w-full"
+                          placeholderClassName="items-center justify-center text-center"
+                        />
+                      </div>
+                    ) : (
+                      <div className="flex aspect-video w-full items-center justify-center px-6 text-center text-sm font-semibold text-slate-400">
+                        Insira uma URL do YouTube ou de um arquivo de vídeo para visualizar a prévia.
+                      </div>
+                    )}
+                  </div>
+                </div>
 
               </div>
 
