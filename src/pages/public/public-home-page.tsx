@@ -297,10 +297,10 @@ function HomeFeaturedSection({ entryPrefix, sectionId, pageKey = 'home', }: {
               {featuredCourses.map((course) => (<GenflixCourseCard key={course.slug} course={course}/>))}
             </div>) : (<div className="mt-10 rounded-[4px] border border-dashed border-[#D8E6EB] bg-[#F2F8FA] px-6 py-12 text-center">
               <p className="text-lg font-bold text-[#15323B]">Nenhum curso publicado ainda.</p>
-              <p className="mt-3 text-sm text-[#5F7077]">
+                <p className="mt-3 text-sm text-[#5F7077]">
                 {coursesError
                     ? 'Não foi possível carregar os cursos agora.'
-                    : 'Assim que houver publicações, elas aparecerão aqui em ordem da mais recente para a mais antiga.'}
+                    : 'Marque os cursos como novidades no catálogo para exibi-los aqui na ordem configurada em /admin/cursos.'}
               </p>
             </div>)}
         </EditableContainer>
