@@ -4,6 +4,7 @@ import { Plus, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { deleteLessonContentAsset, getSignedLessonContentAssetUrl, uploadLessonContentAsset, } from '@/features/admin/content/api';
 import { cn } from '@/lib/utils';
+import { readImageDimensions } from '@/lib/image-dimensions';
 import type { LessonImageHotspotsBlockContent, LessonImageHotspotItem, } from '@/types/content';
 import { normalizeLessonImageHotspotsBlockContent } from './content-blocks';
 const HOTSPOT_BODY_QUILL_MODULES = {
@@ -28,27 +29,6 @@ function clamp(value: number, min: number, max: number) {
 }
 function roundPercent(value: number) {
     return Math.round(value * 100) / 100;
-}
-function readImageDimensions(file: File) {
-    return new Promise<{
-        width: number;
-        height: number;
-    }>((resolve, reject) => {
-        const objectUrl = URL.createObjectURL(file);
-        const image = new Image();
-        image.onload = () => {
-            resolve({
-                width: image.naturalWidth || image.width,
-                height: image.naturalHeight || image.height,
-            });
-            URL.revokeObjectURL(objectUrl);
-        };
-        image.onerror = () => {
-            URL.revokeObjectURL(objectUrl);
-            reject(new Error('Não foi possível ler a imagem selecionada.'));
-        };
-        image.src = objectUrl;
-    });
 }
 interface LessonImageHotspotsBlockEditorProps {
     content: LessonImageHotspotsBlockContent;
@@ -154,7 +134,7 @@ export function LessonImageHotspotsBlockEditor({ content, onChange, onError, }: 
         });
     }
     function handleStageClick(event: ReactPointerEvent<HTMLDivElement>) {
-        if (!content.asset.storage_path || !stageRef.current) {
+        if ((!content.asset.storage_path?.trim() && !assetUrl) || !stageRef.current) {
             const message = 'Envie a imagem base antes de criar hotspots.';
             setAssetError(message);
             onError?.(message);

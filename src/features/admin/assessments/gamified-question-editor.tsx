@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type ChangeEvent, type MouseEvent, type PointerEvent as ReactPointerEvent } from 'react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { readImageDimensions } from '@/lib/image-dimensions';
 import type { AssessmentQuestionAnswerKey, AssessmentQuestionAnswerKeyPayload, AssessmentQuestionInteraction, AssessmentInteractionContent, AssessmentQuestionType, ColoringInteractionContent, DragDropLabelingInteractionContent, FillInTheBlanksInteractionContent, LegacyColoringInteractionContent, } from '@/types/content';
 import { createAnswerKeyFromInteraction, createDefaultInteractionContent, getColoringRenderMode, getColoringSlotIds, getInteractionSlotIds, validateInteractionBundle, } from '@/features/assessments/gamified';
 import { applyColoringSvgRuntimeState, getColoringSvgRegionIdFromEventTarget, isSvgFile, parseColoringSvgFile, parseColoringSvgMarkup, } from '@/features/assessments/coloring-svg';
@@ -224,27 +225,6 @@ function normalizeInteractionContent(content: AssessmentInteractionContent, curr
         ...content,
         tokens: normalizedTokens,
     };
-}
-function readImageDimensions(file: File) {
-    return new Promise<{
-        width: number;
-        height: number;
-    }>((resolve, reject) => {
-        const image = new Image();
-        const objectUrl = URL.createObjectURL(file);
-        image.onload = () => {
-            resolve({
-                width: image.naturalWidth || 1200,
-                height: image.naturalHeight || 800,
-            });
-            URL.revokeObjectURL(objectUrl);
-        };
-        image.onerror = () => {
-            URL.revokeObjectURL(objectUrl);
-            reject(new Error('Não foi possível ler a imagem selecionada.'));
-        };
-        image.src = objectUrl;
-    });
 }
 function getValidationMessage(questionType: AssessmentQuestionType, content: AssessmentInteractionContent | null, answerKey: AssessmentQuestionAnswerKeyPayload | null) {
     if (!content || !answerKey) {

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type ChangeEvent, type PointerEvent as ReactPointerEvent } from 'react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { readImageDimensions } from '@/lib/image-dimensions';
 import type { AssessmentInteractionContent, ImageHotspotInteractionContent, ImageHotspotTarget } from '@/types/content';
 import { deleteAssessmentAsset, uploadAssessmentAsset, } from './api';
 interface ImageHotspotQuestionEditorProps {
@@ -17,27 +18,6 @@ function clamp(value: number, min: number, max: number) {
 }
 function roundPercent(value: number) {
     return Math.round(value * 100) / 100;
-}
-function readImageDimensions(file: File) {
-    return new Promise<{
-        width: number;
-        height: number;
-    }>((resolve, reject) => {
-        const objectUrl = URL.createObjectURL(file);
-        const image = new Image();
-        image.onload = () => {
-            resolve({
-                width: image.naturalWidth || image.width,
-                height: image.naturalHeight || image.height,
-            });
-            URL.revokeObjectURL(objectUrl);
-        };
-        image.onerror = () => {
-            URL.revokeObjectURL(objectUrl);
-            reject(new Error("Não foi possvel ler a imagem selecionada."));
-        };
-        image.src = objectUrl;
-    });
 }
 export function ImageHotspotQuestionEditor({ content, onDraftChange, onPersist, onError, }: ImageHotspotQuestionEditorProps) {
     const fileInputRef = useRef<HTMLInputElement | null>(null);
