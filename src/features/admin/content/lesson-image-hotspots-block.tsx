@@ -322,7 +322,7 @@ export function LessonImageHotspotsBlockEditor({ content, onChange, onError, }: 
             <div>
               <p className="text-[10px] font-black uppercase tracking-[0.28em] text-slate-400">Hotspots</p>
               <p className="mt-2 text-sm font-semibold text-slate-600">
-                {content.hotspots.length}ponto(s) configurado(s) nest? imagem.
+                {content.hotspots.length} ponto(s) configurado(s) nesta imagem.
               </p>
             </div>
             <Button type="button" variant="outline" className="rounded-full" onClick={removeSelectedHotspot} disabled={!selectedHotspot}>
