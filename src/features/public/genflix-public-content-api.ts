@@ -67,7 +67,7 @@ interface PublicBlogCategoryRow {
 }
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
-const publicCourseSelect = 'id, slug, title, description, category, categories, thumbnail_url, cover_image_url, hero_video_url, logo_url, show_reviews, resource_item_ids, marketing_description, mentor_name, mentor_role, mentor_bio, mentor_initials, price_label, secondary_price_label, price_cents, currency, public_page_content, display_order, launch_date, created_at';
+const publicCourseSelect = 'id, slug, title, description, category, categories, thumbnail_url, cover_image_url, hero_video_url, logo_url, show_reviews, resource_item_ids, marketing_description, mentor_name, mentor_role, mentor_bio, mentor_initials, price_label, secondary_price_label, price_cents, currency, public_page_content, display_order, launch_date, created_at, show_in_home_news';
 const publicBlogPostLegacySelect = 'slug, title, category, display_order, excerpt, image_url, card_image_url, read_time, author, published_at, content, content_html, featured, status';
 const publicBlogPostAllLegacySelect = 'slug, title, category, display_order, excerpt, image_url, card_image_url, read_time, author, published_at, content, content_html, featured, status, created_at';
 async function fetchPublicRows<T>(path: string, searchParams: URLSearchParams): Promise<T[]> {
@@ -94,30 +94,6 @@ function toCourseItem(row: PublicCourseRow): GenflixCourseItem {
 }
 function normalizePublicCourseRow<TCourse extends object>(row: TCourse) {
     return normalizeCourseMediaFields(row);
-}
-function toTimestamp(value: string | null | undefined) {
-    if (!value) {
-        return null;
-    }
-    const timestamp = new Date(value).getTime();
-    return Number.isFinite(timestamp) ? timestamp : null;
-}
-function sortPublicCourseRowsByPublicationDate(rows: PublicCourseRow[]) {
-    return [...rows].sort((left, right) => {
-        const leftPublishedAt = toTimestamp(left.launch_date);
-        const rightPublishedAt = toTimestamp(right.launch_date);
-        const leftCreatedAt = toTimestamp(left.created_at) ?? 0;
-        const rightCreatedAt = toTimestamp(right.created_at) ?? 0;
-        const leftSortDate = leftPublishedAt ?? leftCreatedAt;
-        const rightSortDate = rightPublishedAt ?? rightCreatedAt;
-        if (rightSortDate !== leftSortDate) {
-            return rightSortDate - leftSortDate;
-        }
-        if ((rightPublishedAt ?? 0) !== (leftPublishedAt ?? 0)) {
-            return (rightPublishedAt ?? 0) - (leftPublishedAt ?? 0);
-        }
-        return rightCreatedAt - leftCreatedAt;
-    });
 }
 function normalizeOutlineModule(value: unknown): GenflixCourseModule | null {
     if (!value || typeof value !== 'object' || Array.isArray(value)) {
@@ -315,12 +291,13 @@ export async function fetchLatestPublicCoursesFromSupabase(limit = 6) {
         select: publicCourseSelect,
         status: 'eq.published',
         is_public: 'eq.true',
-        order: 'launch_date.desc,created_at.desc,display_order.asc',
+        show_in_home_news: 'eq.true',
+        order: 'display_order.asc,created_at.desc',
     });
     const rows = await fetchPublicRows<PublicCourseRow>('courses', params);
-    return sortPublicCourseRowsByPublicationDate(rows.map((row) => normalizePublicCourseRow(row)))
+    return rows
         .slice(0, Math.max(0, Math.trunc(limit)))
-        .map(toCourseItem);
+        .map((row) => toCourseItem(normalizePublicCourseRow(row)));
 }
 export async function fetchPublicCourseDetailFromSupabase(slug: string) {
     const row = await fetchPublicRpc<PublicCourseDetailRow>('get_public_course_detail', { _slug: slug });

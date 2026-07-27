@@ -6,7 +6,7 @@ import { DragDropContext, Draggable, Droppable, type DropResult } from '@hello-p
 import { useAuth } from '@/app/providers/auth-provider';
 import { Button } from '@/components/ui/button';
 import { useLocalStorageState } from '@/hooks/use-local-storage-state';
-import { createCourseCategory, createCourse, deleteCourseCategory, deleteCourse, exportFullCourseContent, fetchCourseCategories, fetchCourses, updateCoursesDisplayOrder, updateCourseCategory, updateCourse, uploadCourseThumbnail, toErrorMessage, importFullCourse, } from '@/features/admin/content/api';
+import { createCourseCategory, createCourse, deleteCourseCategory, deleteCourse, exportFullCourseContent, fetchCourseCategories, fetchCourses, updateCoursesDisplayOrder, updateCourseCategory, updateCourse, updateCourseHomeNewsVisibility, uploadCourseThumbnail, toErrorMessage, importFullCourse, } from '@/features/admin/content/api';
 import { downloadJsonFile } from '@/lib/download';
 import { formatCurrencyInputFromCents, parseCurrencyInputToCents } from '@/lib/currency';
 import { DEFAULT_COURSE_QUIZ_TYPE_SETTINGS, } from '@/features/assessments/course-quiz-type-settings';
@@ -92,6 +92,7 @@ export function AdminCoursesPage() {
     const [importError, setImportError] = useState<string | null>(null);
     const [exportingCourseId, setExportingCourseId] = useState<string | null>(null);
     const [isReordering, setIsReordering] = useState(false);
+    const [homeNewsUpdatingCourseId, setHomeNewsUpdatingCourseId] = useState<string | null>(null);
     const [isDisplayOrderPanelOpen, setIsDisplayOrderPanelOpen] = useState(false);
     async function loadCourses() {
         setIsLoading(true);
@@ -329,6 +330,25 @@ Essa a\u00E7\u00E3o \u00E9 irrevers\u00EDvel.`);
             setExportingCourseId(null);
         }
     }
+    async function handleToggleHomeNews(course: Course) {
+        const nextValue = !course.show_in_home_news;
+        setHomeNewsUpdatingCourseId(course.id);
+        setError(null);
+        setCourses((current) => current.map((item) => item.id === course.id
+            ? { ...item, show_in_home_news: nextValue }
+            : item));
+        try {
+            const updatedCourse = await updateCourseHomeNewsVisibility(course.id, nextValue);
+            setCourses((current) => current.map((item) => item.id === course.id ? updatedCourse : item));
+        }
+        catch (toggleError) {
+            setError(toErrorMessage(toggleError));
+            await loadCourses();
+        }
+        finally {
+            setHomeNewsUpdatingCourseId(null);
+        }
+    }
     const metrics = useMemo(() => {
         return {
             total: courses.length,
@@ -544,6 +564,18 @@ Essa a\u00E7\u00E3o \u00E9 irrevers\u00EDvel.`);
                        <p className="text-sm text-slate-500 line-clamp-2 leading-relaxed h-[40px]">
                           {course.description ? course.description.replace(/<[^>]*>?/gm, '') : 'Sem descrição definida para este curso.'}
                        </p>
+
+                       <label className={`flex items-center justify-between gap-3 rounded-2xl border px-3 py-3 transition-colors ${course.show_in_home_news
+                         ? 'border-cyan-200 bg-cyan-50/60'
+                         : 'border-slate-100 bg-slate-50/60'}`}>
+                          <span className="min-w-0">
+                            <span className="block text-[10px] font-black uppercase tracking-widest text-slate-500">Novidades na home</span>
+                            <span className="mt-1 block text-xs font-semibold text-slate-600">
+                              {course.show_in_home_news ? 'Exibido na home pública' : 'Oculto na home pública'} · ordem #{course.display_order}
+                            </span>
+                          </span>
+                          <input type="checkbox" checked={course.show_in_home_news} disabled={homeNewsUpdatingCourseId === course.id} onChange={() => void handleToggleHomeNews(course)} aria-label={`${course.show_in_home_news ? 'Ocultar' : 'Exibir'} ${course.title} nas novidades da home`} className="h-5 w-5 shrink-0 rounded border-slate-300 text-cyan-600 focus:ring-cyan-500"/>
+                       </label>
                        
                        <div className="flex items-center gap-2 pt-2 border-t border-slate-50">
                           <Button variant="ghost" className="flex-1 flex flex-col items-center gap-1 h-auto py-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-2xl group/sub" asChild>

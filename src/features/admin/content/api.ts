@@ -275,6 +275,18 @@ export async function updateCoursesDisplayOrder(courses: Pick<Course, 'id' | 'di
         }
     }
 }
+export async function updateCourseHomeNewsVisibility(courseId: string, showInHomeNews: boolean) {
+    const result = await supabase
+        .from('courses')
+        .update({ show_in_home_news: showInHomeNews })
+        .eq('id', courseId)
+        .select('*')
+        .single();
+    if (result.error) {
+        throw result.error;
+    }
+    return normalizeCourseRecord(result.data as Course);
+}
 export async function updateCourse(courseId: string, input: CourseFormInput) {
     const categories = getCourseCategories({
         category: input.category,
