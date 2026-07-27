@@ -294,6 +294,11 @@ export async function updateCourse(courseId: string, input: CourseFormInput) {
         : {};
     nextPublicPageContent.cardAuthorName = input.card_author_name?.trim() || '';
     nextPublicPageContent.cardAuthorDescription = input.card_author_description?.trim() || '';
+    nextPublicPageContent.resourceItemTitles = Object.fromEntries(
+        Object.entries(input.resource_item_titles ?? {})
+            .map(([resourceId, title]) => [resourceId.trim(), title.trim()] as const)
+            .filter(([resourceId, title]) => Boolean(resourceId && title)),
+    );
     const payload = {
         title: input.title,
         category: categories[0] ?? null,

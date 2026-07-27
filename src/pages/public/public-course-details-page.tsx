@@ -197,7 +197,16 @@ export function PublicCourseDetailsPage() {
   }, []);
 
   const selectedResourceItems = detail?.resourceItemIds?.length
-    ? resourceCatalog.filter((item) => detail.resourceItemIds?.includes(item.id))
+    ? detail.resourceItemIds
+      .map((resourceId) => {
+        const item = resourceCatalog.find((resource) => resource.id === resourceId);
+        if (!item) {
+          return null;
+        }
+        const courseTitle = detail.resourceItemTitles?.[resourceId]?.trim();
+        return courseTitle ? { ...item, title: courseTitle } : item;
+      })
+      .filter((item): item is EditableListItem => Boolean(item))
     : [];
 
   if (!isLoadingDetail && !detail) {

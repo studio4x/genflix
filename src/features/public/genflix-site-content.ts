@@ -131,6 +131,7 @@ export interface GenflixCourseDetail {
   logoUrl?: string | null
   showReviews?: boolean
   resourceItemIds?: string[]
+  resourceItemTitles?: Record<string, string>
   description: string
   aboutParagraphs: string[]
   authorContent: string

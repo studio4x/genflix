@@ -33,6 +33,7 @@ const initialForm: CourseFormInput = {
     access_expiration_days: null,
     show_reviews: true,
     resource_item_ids: [],
+    resource_item_titles: {},
     creator_id: '',
     creator_commission_percent: 0,
     has_linear_progression: true,

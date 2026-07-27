@@ -52,6 +52,7 @@ type CourseSettingsFormState = {
     show_reviews: boolean;
     categories: string[];
     resource_item_ids: string[];
+    resource_item_titles: Record<string, string>;
     creator_id: string;
     creator_commission_percent: number;
     has_linear_progression: boolean;
@@ -82,6 +83,7 @@ export function CourseSettingsPanel() {
         show_reviews: true,
         categories: [],
         resource_item_ids: [],
+        resource_item_titles: {},
         creator_id: '',
         creator_commission_percent: 0,
         has_linear_progression: true,
@@ -104,11 +106,12 @@ export function CourseSettingsPanel() {
             const courseTitle = courseTree.course.title || '';
             const savedSlug = courseTree.course.slug?.trim() || '';
             const generatedSlug = slugifyCourseTitle(courseTitle);
+            const publicPageContent = normalizeCoursePublicPageContent(courseTree.course.public_page_content);
             setForm({
                 title: courseTitle,
                 description: courseTree.course.description ?? '',
-                card_author_name: normalizeCoursePublicPageContent(courseTree.course.public_page_content).cardAuthorName,
-                card_author_description: normalizeCoursePublicPageContent(courseTree.course.public_page_content).cardAuthorDescription,
+                card_author_name: publicPageContent.cardAuthorName,
+                card_author_description: publicPageContent.cardAuthorDescription,
                 status: courseTree.course.status || 'draft',
                 thumbnail_url: courseTree.course.thumbnail_url ?? '',
                 hero_video_url: courseTree.course.hero_video_url ?? '',
@@ -129,6 +132,7 @@ export function CourseSettingsPanel() {
                         ? [courseTree.course.category]
                         : []),
                 resource_item_ids: Array.isArray(courseTree.course.resource_item_ids) ? courseTree.course.resource_item_ids : [],
+                resource_item_titles: publicPageContent.resourceItemTitles,
                 creator_id: courseTree.course.creator_id ?? '',
                 creator_commission_percent: courseTree.course.creator_commission_percent ?? 0,
                 has_linear_progression: courseTree.course.has_linear_progression ?? true,
@@ -285,6 +289,30 @@ export function CourseSettingsPanel() {
         finally {
             setIsSubmitting(false);
         }
+    }
+    function moveResource(resourceId: string, direction: -1 | 1) {
+        setForm((current) => {
+            const currentIndex = current.resource_item_ids.indexOf(resourceId);
+            const nextIndex = currentIndex + direction;
+            if (currentIndex < 0 || nextIndex < 0 || nextIndex >= current.resource_item_ids.length) {
+                return current;
+            }
+            const nextResourceIds = [...current.resource_item_ids];
+            [nextResourceIds[currentIndex], nextResourceIds[nextIndex]] = [nextResourceIds[nextIndex], nextResourceIds[currentIndex]];
+            return { ...current, resource_item_ids: nextResourceIds };
+        });
+    }
+    function updateResourceTitle(resourceId: string, title: string) {
+        setForm((current) => {
+            const nextTitles = { ...current.resource_item_titles };
+            if (title.trim()) {
+                nextTitles[resourceId] = title;
+            }
+            else {
+                delete nextTitles[resourceId];
+            }
+            return { ...current, resource_item_titles: nextTitles };
+        });
     }
     async function handleResetCourseProgress() {
         if (!courseTree || !session) {
@@ -801,7 +829,7 @@ export function CourseSettingsPanel() {
                      <div className="max-w-3xl space-y-2">
                         <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#0F5AA3]">Recursos disponíveis</p>
                         <h3 className="text-xl font-black tracking-tight text-slate-900">Selecione os recursos que aparecem na pagina publica</h3>
-                        <p className="text-sm leading-7 text-slate-600">A lista abaixo vem do catalogo oficial em /admin/recursos. Marque apenas o que este curso deve exibir na lateral da pagina publica.</p>
+                        <p className="text-sm leading-7 text-slate-600">A lista abaixo vem do catalogo oficial em /admin/recursos. Marque os recursos deste curso, personalize o nome exibido aqui e ajuste a ordem com as setas. Essas alterações valem somente para este curso.</p>
                      </div>
                      <div className="rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-xs font-black uppercase tracking-[0.24em] text-slate-500">
                         {isLoadingResources ? 'Carregando...' : `${form.resource_item_ids.length} selecionados`}
@@ -809,23 +837,41 @@ export function CourseSettingsPanel() {
                   </div>
 
                   <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                     {resourceCatalog.length ? resourceCatalog.map((resource) => {
+                     {resourceCatalog.length ? [
+            ...form.resource_item_ids.map((resourceId) => resourceCatalog.find((resource) => resource.id === resourceId)).filter((resource): resource is EditableListItem => Boolean(resource)),
+            ...resourceCatalog.filter((resource) => !form.resource_item_ids.includes(resource.id)),
+        ].map((resource) => {
             const itemId = resource.id;
-            const itemTitle = resource.title || resource.label || itemId;
-            const isSelected = form.resource_item_ids.includes(itemId);
-            return (<label key={itemId} className={`flex cursor-pointer flex-col gap-3 rounded-[22px] border p-4 transition ${isSelected ? 'border-cyan-200 bg-cyan-50/60' : 'border-slate-200 bg-slate-50/60 hover:border-cyan-200'}`}>
+            const catalogTitle = resource.title || resource.label || itemId;
+            const courseTitle = form.resource_item_titles[itemId] ?? '';
+            const displayTitle = courseTitle.trim() || catalogTitle;
+            const selectedIndex = form.resource_item_ids.indexOf(itemId);
+            const isSelected = selectedIndex >= 0;
+            return (<div key={itemId} className={`flex flex-col gap-4 rounded-[22px] border p-4 transition ${isSelected ? 'border-cyan-200 bg-cyan-50/60' : 'border-slate-200 bg-slate-50/60 hover:border-cyan-200'}`}>
                            <div className="flex items-start justify-between gap-3">
-                              <div>
-                                 <p className="text-sm font-black text-slate-900">{itemTitle}</p>
-                              </div>
-                              <input type="checkbox" checked={isSelected} onChange={(event) => {
+                              <label className="flex min-w-0 items-start gap-3">
+                                 <input type="checkbox" checked={isSelected} onChange={(event) => {
                     const nextSelected = event.target.checked
                         ? [...form.resource_item_ids, itemId]
                         : form.resource_item_ids.filter((currentId) => currentId !== itemId);
                     setForm((current) => ({ ...current, resource_item_ids: nextSelected }));
                 }} />
+                                 <span className="min-w-0 text-sm font-black text-slate-900">{displayTitle}</span>
+                              </label>
+                              {isSelected ? <span className="shrink-0 rounded-full bg-white px-2.5 py-1 text-[10px] font-black uppercase tracking-widest text-cyan-700">#{selectedIndex + 1}</span> : null}
                            </div>
-                        </label>);
+                           <label className="space-y-2">
+                              <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Nome neste curso</span>
+                              <input className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-800 outline-none transition focus:border-cyan-400 focus:ring-4 focus:ring-cyan-100" value={courseTitle} onChange={(event) => updateResourceTitle(itemId, event.target.value)} placeholder={catalogTitle} />
+                           </label>
+                           <div className="flex items-center justify-between gap-2">
+                              <span className="text-xs font-medium text-slate-500">{isSelected ? 'Ordem no curso' : 'Marque para exibir no curso'}</span>
+                              {isSelected ? <div className="flex gap-2">
+                                 <button type="button" aria-label={`Mover ${displayTitle} para cima`} disabled={selectedIndex === 0} onClick={() => moveResource(itemId, -1)} className="rounded-lg border border-slate-200 bg-white px-3 py-1 text-sm font-black text-slate-700 transition hover:border-cyan-300 hover:text-cyan-700 disabled:cursor-not-allowed disabled:opacity-40">↑</button>
+                                 <button type="button" aria-label={`Mover ${displayTitle} para baixo`} disabled={selectedIndex === form.resource_item_ids.length - 1} onClick={() => moveResource(itemId, 1)} className="rounded-lg border border-slate-200 bg-white px-3 py-1 text-sm font-black text-slate-700 transition hover:border-cyan-300 hover:text-cyan-700 disabled:cursor-not-allowed disabled:opacity-40">↓</button>
+                              </div> : null}
+                           </div>
+                        </div>);
         }) : (<div className="rounded-[22px] border border-dashed border-slate-200 bg-slate-50 px-5 py-8 text-sm font-medium text-slate-500">Nenhum recurso encontrado no catalogo oficial.</div>)}
                   </div>
                </section>

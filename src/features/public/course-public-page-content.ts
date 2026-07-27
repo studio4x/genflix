@@ -14,6 +14,8 @@ export interface CoursePublicBonusSection {
   description: string
 }
 
+export type CourseResourceTitleOverrides = Record<string, string>
+
 export interface CoursePublicPageContent {
   categoryLine: string | null
   authorContent: string
@@ -23,6 +25,7 @@ export interface CoursePublicPageContent {
   outcomes: GenflixCourseOutcome[]
   includedItems: string[]
   bonusSection: CoursePublicBonusSection | null
+  resourceItemTitles: CourseResourceTitleOverrides
   contentSource: CoursePublicContentSource
   customSyllabus: GenflixCourseModule[]
 }
@@ -75,6 +78,18 @@ const defaultOutcomeFallbacks: GenflixCourseOutcome[] = [
 
 function trimString(value: unknown) {
   return typeof value === 'string' ? value.trim() : ''
+}
+
+function normalizeResourceItemTitles(value: unknown): CourseResourceTitleOverrides {
+  if (!isRecord(value)) {
+    return {}
+  }
+
+  return Object.fromEntries(
+    Object.entries(value)
+      .map(([resourceId, title]) => [resourceId.trim(), trimString(title)] as const)
+      .filter(([resourceId, title]) => Boolean(resourceId && title)),
+  )
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -162,6 +177,7 @@ export function normalizeCoursePublicPageContent(value: unknown): CoursePublicPa
       outcomes: [],
       includedItems: [],
       bonusSection: null,
+      resourceItemTitles: {},
       contentSource: 'custom',
       customSyllabus: [],
     }
@@ -182,6 +198,7 @@ export function normalizeCoursePublicPageContent(value: unknown): CoursePublicPa
       ? value.includedItems.map((item) => trimString(item)).filter(Boolean)
       : [],
     bonusSection: normalizeBonusSection(value.bonusSection),
+    resourceItemTitles: normalizeResourceItemTitles(value.resourceItemTitles),
     contentSource: value.contentSource === 'real' ? 'real' : 'custom',
     customSyllabus: Array.isArray(value.customSyllabus)
       ? value.customSyllabus.map(normalizeModule).filter((item): item is GenflixCourseModule => Boolean(item))
@@ -329,6 +346,7 @@ export function buildCoursePublicDetail(
     resourceItemIds: Array.isArray(row.resource_item_ids)
       ? row.resource_item_ids.map((itemId) => trimString(itemId)).filter(Boolean)
       : [],
+    resourceItemTitles: content.resourceItemTitles,
     description: fallbackDescription,
     aboutParagraphs: content.aboutParagraphs.length
       ? content.aboutParagraphs

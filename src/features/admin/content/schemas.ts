@@ -49,6 +49,7 @@ export const courseFormSchema = z.object({
     access_expiration_days: z.number().int().min(1).nullable().optional(),
     show_reviews: z.boolean().default(true),
     resource_item_ids: z.array(z.string().trim().min(1)).default([]),
+    resource_item_titles: z.record(z.string(), z.string()).default({}),
     creator_id: z.string().uuid().optional().nullable().or(z.literal('')),
     creator_commission_percent: z.number().min(0).max(100).default(0),
     has_linear_progression: z.boolean().default(true),
