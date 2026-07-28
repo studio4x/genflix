@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { DragDropContext, Draggable, Droppable, type DropResult } from '@hello-pangea/dnd';
 import ReactQuill from '@/components/forms/react-quill';
 import { useAuth } from '@/app/providers/auth-provider';
 import { Button } from '@/components/ui/button';
@@ -314,6 +315,21 @@ export function CourseSettingsPanel() {
             return { ...current, resource_item_titles: nextTitles };
         });
     }
+    function handleResourceDragEnd(result: DropResult) {
+        const destination = result.destination;
+        if (!destination || destination.index === result.source.index) {
+            return;
+        }
+        setForm((current) => {
+            const nextResourceIds = [...current.resource_item_ids];
+            const [movedResourceId] = nextResourceIds.splice(result.source.index, 1);
+            if (!movedResourceId) {
+                return current;
+            }
+            nextResourceIds.splice(destination.index, 0, movedResourceId);
+            return { ...current, resource_item_ids: nextResourceIds };
+        });
+    }
     async function handleResetCourseProgress() {
         if (!courseTree || !session) {
             setError('Sessão expirada. Faça login novamente.');
@@ -348,6 +364,10 @@ export function CourseSettingsPanel() {
     const visibleQuizTypeOptions = getVisibleCourseQuizTypeOptions(globalQuizTypeSettings);
     const enabledQuizTypeCount = visibleQuizTypeOptions.filter((option) => form.quiz_type_settings[option.key]).length;
     const hiddenQuizTypeCount = COURSE_QUIZ_TYPE_OPTIONS.length - visibleQuizTypeOptions.length;
+    const selectedResources = form.resource_item_ids
+        .map((resourceId) => resourceCatalog.find((resource) => normalizeResourceItemId(resource.id) === resourceId))
+        .filter((resource): resource is EditableListItem => Boolean(resource));
+    const availableResources = resourceCatalog.filter((resource) => !form.resource_item_ids.includes(normalizeResourceItemId(resource.id)));
     return (<div className="w-full space-y-6 animate-in fade-in duration-500 pb-24">
       <div className="border-b border-slate-200 pb-5">
         <h2 className="text-2xl font-black text-slate-900 tracking-tight">Detalhes Principais</h2>
@@ -829,28 +849,87 @@ export function CourseSettingsPanel() {
                      <div className="max-w-3xl space-y-2">
                         <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#0F5AA3]">Recursos disponíveis</p>
                         <h3 className="text-xl font-black tracking-tight text-slate-900">Selecione os recursos que aparecem na pagina publica</h3>
-                        <p className="text-sm leading-7 text-slate-600">A lista abaixo vem do catalogo oficial em /admin/recursos. Marque os recursos deste curso, personalize o nome exibido aqui e ajuste a ordem com as setas. Essas alterações valem somente para este curso.</p>
+                        <p className="text-sm leading-7 text-slate-600">A lista abaixo vem do catalogo oficial em /admin/recursos. Marque os recursos deste curso, personalize o nome exibido aqui e ajuste a ordem com drag and drop ou com as setas. Essas alterações valem somente para este curso.</p>
                      </div>
                      <div className="rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-xs font-black uppercase tracking-[0.24em] text-slate-500">
                         {isLoadingResources ? 'Carregando...' : `${form.resource_item_ids.length} selecionados`}
                      </div>
                   </div>
 
-                  <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                     {resourceCatalog.length ? [
-            ...form.resource_item_ids.map((resourceId) => resourceCatalog.find((resource) => resource.id === resourceId)).filter((resource): resource is EditableListItem => Boolean(resource)),
-            ...resourceCatalog.filter((resource) => !form.resource_item_ids.includes(resource.id)),
-        ].map((resource) => {
+                  <div className="mt-6 space-y-6">
+                     <div className="space-y-3">
+                        <div className="flex flex-wrap items-center justify-between gap-3">
+                           <div>
+                              <p className="text-sm font-black text-slate-900">Ordem dos recursos selecionados</p>
+                              <p className="text-xs font-medium text-slate-500">Arraste os cards para definir a ordem em que eles aparecem no curso.</p>
+                           </div>
+                        </div>
+
+                        {selectedResources.length ? (<DragDropContext onDragEnd={handleResourceDragEnd}>
+                              <Droppable droppableId="course-selected-resources">
+                                 {(provided) => (<div ref={provided.innerRef} {...provided.droppableProps} className="space-y-3">
+                                       {selectedResources.map((resource, index) => {
+                    const itemId = normalizeResourceItemId(resource.id);
+                    const catalogTitle = resource.title || resource.label || itemId;
+                    const courseTitle = form.resource_item_titles[itemId] ?? '';
+                    const displayTitle = courseTitle.trim() || catalogTitle;
+                    return (<Draggable key={itemId} draggableId={itemId} index={index}>
+                                                {(draggableProvided, snapshot) => (<div ref={draggableProvided.innerRef} {...draggableProvided.draggableProps} className={`rounded-[22px] border p-4 transition-all ${snapshot.isDragging ? 'border-cyan-200 bg-white shadow-xl ring-2 ring-cyan-100' : 'border-cyan-200 bg-cyan-50/60'}`}>
+                                                      <div className="flex items-start gap-3">
+                                                         <button type="button" aria-label={`Arrastar ${displayTitle}`} className="mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-400 transition hover:text-slate-700 cursor-grab active:cursor-grabbing" {...draggableProvided.dragHandleProps}>
+                                                            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 9h.01M8 15h.01M12 9h.01M12 15h.01M16 9h.01M16 15h.01"/>
+                                                            </svg>
+                                                         </button>
+
+                                                         <div className="min-w-0 flex-1 space-y-4">
+                                                            <div className="flex items-start justify-between gap-3">
+                                                               <label className="flex min-w-0 items-start gap-3">
+                                                                  <input type="checkbox" checked={true} onChange={() => setForm((current) => ({ ...current, resource_item_ids: current.resource_item_ids.filter((currentId) => currentId !== itemId) }))} />
+                                                                  <span className="min-w-0 text-sm font-black text-slate-900">{displayTitle}</span>
+                                                               </label>
+                                                               <span className="shrink-0 rounded-full bg-white px-2.5 py-1 text-[10px] font-black uppercase tracking-widest text-cyan-700">#{index + 1}</span>
+                                                            </div>
+
+                                                            <label className="space-y-2">
+                                                               <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Nome neste curso</span>
+                                                               <input className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-800 outline-none transition focus:border-cyan-400 focus:ring-4 focus:ring-cyan-100" value={courseTitle} onChange={(event) => updateResourceTitle(itemId, event.target.value)} placeholder={catalogTitle} />
+                                                            </label>
+
+                                                            <div className="flex items-center justify-between gap-2">
+                                                               <span className="text-xs font-medium text-slate-500">Ordem no curso</span>
+                                                               <div className="flex gap-2">
+                                                                  <button type="button" aria-label={`Mover ${displayTitle} para cima`} disabled={index === 0} onClick={() => moveResource(itemId, -1)} className="rounded-lg border border-slate-200 bg-white px-3 py-1 text-sm font-black text-slate-700 transition hover:border-cyan-300 hover:text-cyan-700 disabled:cursor-not-allowed disabled:opacity-40">↑</button>
+                                                                  <button type="button" aria-label={`Mover ${displayTitle} para baixo`} disabled={index === form.resource_item_ids.length - 1} onClick={() => moveResource(itemId, 1)} className="rounded-lg border border-slate-200 bg-white px-3 py-1 text-sm font-black text-slate-700 transition hover:border-cyan-300 hover:text-cyan-700 disabled:cursor-not-allowed disabled:opacity-40">↓</button>
+                                                               </div>
+                                                            </div>
+                                                         </div>
+                                                      </div>
+                                                   </div>)}
+                                             </Draggable>);
+                })}
+                                       {provided.placeholder}
+                                    </div>)}
+                              </Droppable>
+                           </DragDropContext>) : (<div className="rounded-[22px] border border-dashed border-slate-200 bg-slate-50 px-5 py-6 text-sm font-medium text-slate-500">Nenhum recurso selecionado ainda. Marque itens no catalogo abaixo para montar a lista do curso.</div>)}
+                     </div>
+
+                     <div className="space-y-3">
+                        <div>
+                           <p className="text-sm font-black text-slate-900">Catalogo oficial</p>
+                           <p className="text-xs font-medium text-slate-500">Marque os recursos que devem aparecer neste curso.</p>
+                        </div>
+
+                        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                           {resourceCatalog.length ? availableResources.length ? availableResources.map((resource) => {
             const itemId = normalizeResourceItemId(resource.id);
             const catalogTitle = resource.title || resource.label || itemId;
             const courseTitle = form.resource_item_titles[itemId] ?? '';
             const displayTitle = courseTitle.trim() || catalogTitle;
-            const selectedIndex = form.resource_item_ids.indexOf(itemId);
-            const isSelected = selectedIndex >= 0;
-            return (<div key={itemId} className={`flex flex-col gap-4 rounded-[22px] border p-4 transition ${isSelected ? 'border-cyan-200 bg-cyan-50/60' : 'border-slate-200 bg-slate-50/60 hover:border-cyan-200'}`}>
+            return (<div key={itemId} className="flex flex-col gap-4 rounded-[22px] border border-slate-200 bg-slate-50/60 p-4 transition hover:border-cyan-200">
                            <div className="flex items-start justify-between gap-3">
                               <label className="flex min-w-0 items-start gap-3">
-                                 <input type="checkbox" checked={isSelected} onChange={(event) => {
+                                 <input type="checkbox" checked={false} onChange={(event) => {
                     setForm((current) => {
                         const nextSelected = event.target.checked
                             ? normalizeCourseResourceItemIds([...current.resource_item_ids, itemId])
@@ -860,21 +939,18 @@ export function CourseSettingsPanel() {
                 }} />
                                  <span className="min-w-0 text-sm font-black text-slate-900">{displayTitle}</span>
                               </label>
-                              {isSelected ? <span className="shrink-0 rounded-full bg-white px-2.5 py-1 text-[10px] font-black uppercase tracking-widest text-cyan-700">#{selectedIndex + 1}</span> : null}
                            </div>
                            <label className="space-y-2">
                               <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Nome neste curso</span>
                               <input className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-800 outline-none transition focus:border-cyan-400 focus:ring-4 focus:ring-cyan-100" value={courseTitle} onChange={(event) => updateResourceTitle(itemId, event.target.value)} placeholder={catalogTitle} />
                            </label>
                            <div className="flex items-center justify-between gap-2">
-                              <span className="text-xs font-medium text-slate-500">{isSelected ? 'Ordem no curso' : 'Marque para exibir no curso'}</span>
-                              {isSelected ? <div className="flex gap-2">
-                                 <button type="button" aria-label={`Mover ${displayTitle} para cima`} disabled={selectedIndex === 0} onClick={() => moveResource(itemId, -1)} className="rounded-lg border border-slate-200 bg-white px-3 py-1 text-sm font-black text-slate-700 transition hover:border-cyan-300 hover:text-cyan-700 disabled:cursor-not-allowed disabled:opacity-40">↑</button>
-                                 <button type="button" aria-label={`Mover ${displayTitle} para baixo`} disabled={selectedIndex === form.resource_item_ids.length - 1} onClick={() => moveResource(itemId, 1)} className="rounded-lg border border-slate-200 bg-white px-3 py-1 text-sm font-black text-slate-700 transition hover:border-cyan-300 hover:text-cyan-700 disabled:cursor-not-allowed disabled:opacity-40">↓</button>
-                              </div> : null}
+                              <span className="text-xs font-medium text-slate-500">Marque para exibir no curso</span>
                            </div>
                         </div>);
-        }) : (<div className="rounded-[22px] border border-dashed border-slate-200 bg-slate-50 px-5 py-8 text-sm font-medium text-slate-500">Nenhum recurso encontrado no catalogo oficial.</div>)}
+        }) : (<div className="rounded-[22px] border border-dashed border-slate-200 bg-slate-50 px-5 py-8 text-sm font-medium text-slate-500 md:col-span-2 xl:col-span-3">Todos os recursos do catalogo ja foram selecionados para este curso.</div>) : (<div className="rounded-[22px] border border-dashed border-slate-200 bg-slate-50 px-5 py-8 text-sm font-medium text-slate-500">Nenhum recurso encontrado no catalogo oficial.</div>)}
+                        </div>
+                     </div>
                   </div>
                </section>
 
