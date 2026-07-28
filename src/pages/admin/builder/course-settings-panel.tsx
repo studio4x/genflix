@@ -7,7 +7,7 @@ import { fetchCourseCategories, resetCourseProgress, updateCourse, uploadCourseL
 import { courseFormSchema } from '@/features/admin/content/schemas';
 import { fetchSiteContent } from '@/features/site-editor/api';
 import { normalizeCourseCategoryList } from '@/features/courses/course-categories';
-import { normalizeResourcesItems } from '@/features/public/genflix-resource-items-editor';
+import { normalizeCourseResourceItemIds, normalizeResourceItemId, normalizeResourcesItems } from '@/features/public/genflix-resource-items-editor';
 import { formatCurrencyInputFromCents, parseCurrencyInputToCents } from '@/lib/currency';
 import { publishBuilderNotice } from '@/lib/builder-notice';
 import { COURSE_QUIZ_TYPE_OPTIONS, DEFAULT_COURSE_QUIZ_TYPE_SETTINGS, getVisibleCourseQuizTypeOptions, normalizeCourseQuizTypeSettings, } from '@/features/assessments/course-quiz-type-settings';
@@ -131,7 +131,7 @@ export function CourseSettingsPanel() {
                     : courseTree.course.category
                         ? [courseTree.course.category]
                         : []),
-                resource_item_ids: Array.isArray(courseTree.course.resource_item_ids) ? courseTree.course.resource_item_ids : [],
+                resource_item_ids: normalizeCourseResourceItemIds(courseTree.course.resource_item_ids),
                 resource_item_titles: publicPageContent.resourceItemTitles,
                 creator_id: courseTree.course.creator_id ?? '',
                 creator_commission_percent: courseTree.course.creator_commission_percent ?? 0,
@@ -841,7 +841,7 @@ export function CourseSettingsPanel() {
             ...form.resource_item_ids.map((resourceId) => resourceCatalog.find((resource) => resource.id === resourceId)).filter((resource): resource is EditableListItem => Boolean(resource)),
             ...resourceCatalog.filter((resource) => !form.resource_item_ids.includes(resource.id)),
         ].map((resource) => {
-            const itemId = resource.id;
+            const itemId = normalizeResourceItemId(resource.id);
             const catalogTitle = resource.title || resource.label || itemId;
             const courseTitle = form.resource_item_titles[itemId] ?? '';
             const displayTitle = courseTitle.trim() || catalogTitle;
@@ -851,10 +851,12 @@ export function CourseSettingsPanel() {
                            <div className="flex items-start justify-between gap-3">
                               <label className="flex min-w-0 items-start gap-3">
                                  <input type="checkbox" checked={isSelected} onChange={(event) => {
-                    const nextSelected = event.target.checked
-                        ? [...form.resource_item_ids, itemId]
-                        : form.resource_item_ids.filter((currentId) => currentId !== itemId);
-                    setForm((current) => ({ ...current, resource_item_ids: nextSelected }));
+                    setForm((current) => {
+                        const nextSelected = event.target.checked
+                            ? normalizeCourseResourceItemIds([...current.resource_item_ids, itemId])
+                            : current.resource_item_ids.filter((currentId) => currentId !== itemId);
+                        return { ...current, resource_item_ids: nextSelected };
+                    });
                 }} />
                                  <span className="min-w-0 text-sm font-black text-slate-900">{displayTitle}</span>
                               </label>

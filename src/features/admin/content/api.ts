@@ -6,6 +6,7 @@ import { buildCourseMediaPublicUrl, normalizeCourseMediaFields, normalizeCourseM
 import { getCourseCategories, normalizeCoursePrimaryCategory, } from '@/features/courses/course-categories';
 import { isLegacyCourseSalesSchemaError, stripLegacyCourseSalesFields, withLegacyCourseSalesDefaults, } from '@/features/courses/schema-compat';
 import { normalizeCoursePublicPageContent } from '@/features/public/course-public-page-content';
+import { normalizeCourseResourceItemIds } from '@/features/public/genflix-resource-items-editor';
 import type { ButtonTemplate, Course, CourseAuthor, CourseCategory, CourseQuizTypeSettings, CourseModule, FooterActionScope, Lesson, LessonFooterAction, LessonMaterial, ModulePdfAsset, Assessment, } from '@/types/content';
 import type { ButtonTemplateFormInput, CourseFormInput, CoursePublicPageContentInput, CoursePublicPageFormInput, LessonFormInput, LessonFooterActionFormInput, ModuleFormInput, } from './schemas';
 import type { Session } from '@supabase/supabase-js';
@@ -57,7 +58,11 @@ function normalizeCourseMediaValue(value: string | null | undefined) {
     return normalizeCourseMediaPublicUrl(value)?.trim() || null;
 }
 function normalizeCourseRecord<TCourse extends Course>(course: TCourse) {
-    return withLegacyCourseSalesDefaults(normalizeCourseMediaFields(course) as TCourse);
+    const normalizedCourse = withLegacyCourseSalesDefaults(normalizeCourseMediaFields(course) as TCourse);
+    return {
+        ...normalizedCourse,
+        resource_item_ids: normalizeCourseResourceItemIds(normalizedCourse.resource_item_ids),
+    } as TCourse;
 }
 export async function fetchCourses(): Promise<Course[]> {
     const result = await supabase
@@ -292,6 +297,7 @@ export async function updateCourse(courseId: string, input: CourseFormInput) {
         category: input.category,
         categories: input.categories,
     });
+    const normalizedResourceItemIds = normalizeCourseResourceItemIds(input.resource_item_ids);
     const currentContentResult = await supabase
         .from('courses')
         .select('public_page_content')
@@ -324,7 +330,7 @@ export async function updateCourse(courseId: string, input: CourseFormInput) {
         logo_url: normalizeCourseMediaValue(input.logo_url),
         student_hero_image_url: normalizeCourseMediaValue(input.student_hero_image_url),
         show_reviews: input.show_reviews ?? true,
-        resource_item_ids: input.resource_item_ids ?? [],
+        resource_item_ids: normalizedResourceItemIds,
         slug: input.slug?.trim() || slugify(input.title),
         launch_date: input.launch_date?.trim() || null,
         price_cents: input.price_cents ?? 0,

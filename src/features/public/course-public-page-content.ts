@@ -4,6 +4,7 @@ import {
   type GenflixCourseModule,
   type GenflixCourseOutcome,
 } from '@/features/public/genflix-site-content'
+import { normalizeCourseResourceItemIds } from '@/features/public/genflix-resource-items-editor'
 import { getCourseCategories, getCoursePrimaryCategory } from '@/features/courses/course-categories'
 
 export type CoursePublicContentSource = 'real' | 'custom'
@@ -343,9 +344,7 @@ export function buildCoursePublicDetail(
     heroVideoUrl: trimString(row.hero_video_url) || null,
     logoUrl: trimString(row.logo_url) || null,
     showReviews: row.show_reviews !== false,
-    resourceItemIds: Array.isArray(row.resource_item_ids)
-      ? row.resource_item_ids.map((itemId) => trimString(itemId)).filter(Boolean)
-      : [],
+    resourceItemIds: normalizeCourseResourceItemIds(row.resource_item_ids),
     resourceItemTitles: content.resourceItemTitles,
     description: fallbackDescription,
     aboutParagraphs: content.aboutParagraphs.length

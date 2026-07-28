@@ -1,6 +1,26 @@
 import { genflixResourceItems, type GenflixResourceItem, } from '@/features/public/genflix-site-content';
 import type { EditableListItem } from '@/features/site-editor/types';
 type EditableMetadata = Record<string, unknown>;
+export function normalizeResourceItemId(value: unknown, fallbackId = '') {
+    const normalized = typeof value === 'string' ? value.trim() : '';
+    return normalized || fallbackId;
+}
+export function normalizeCourseResourceItemIds(value: unknown): string[] {
+    if (!Array.isArray(value)) {
+        return [];
+    }
+    const seen = new Set<string>();
+    const normalizedIds: string[] = [];
+    value.forEach((item) => {
+        const normalizedId = normalizeResourceItemId(item);
+        if (!normalizedId || seen.has(normalizedId)) {
+            return;
+        }
+        seen.add(normalizedId);
+        normalizedIds.push(normalizedId);
+    });
+    return normalizedIds;
+}
 function toMetadata(value: unknown): EditableMetadata {
     if (!value || typeof value !== 'object' || Array.isArray(value)) {
         return {};
@@ -14,8 +34,9 @@ function toEditableItem(rawItem: unknown, index: number): EditableListItem {
     const record = rawItem as Record<string, unknown>;
     const baseMetadata = toMetadata(record.metadata);
     const extraMetadata = Object.fromEntries(Object.entries(record).filter(([key]) => !['id', 'label', 'title', 'description', 'href', 'image', 'metadata'].includes(key)));
+    const fallbackId = normalizeResourceItemId(record.label) || normalizeResourceItemId(record.title) || `resource-${index + 1}`;
     return {
-        id: typeof record.id === 'string' && record.id.trim() !== '' ? record.id : `resource-${index + 1}`,
+        id: normalizeResourceItemId(record.id, fallbackId),
         label: typeof record.label === 'string' ? record.label : '',
         title: typeof record.title === 'string' ? record.title : undefined,
         description: typeof record.description === 'string' ? record.description : '',
@@ -31,7 +52,7 @@ function toEditableItem(rawItem: unknown, index: number): EditableListItem {
 }
 export function createResourcesItemsFallback() {
     return genflixResourceItems.map((item, index) => ({
-        id: item.label || `resource-${index + 1}`,
+        id: normalizeResourceItemId(item.label, `resource-${index + 1}`),
         label: item.label,
         description: item.description,
     }));
