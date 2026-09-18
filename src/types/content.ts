@@ -50,6 +50,10 @@ export interface LessonFlashcardItem {
     id: string;
     question: string;
     answer: string;
+    image_url?: string;
+    image_alt?: string;
+    media_asset_id?: string;
+    allow_student_answer?: boolean;
 }
 export interface LessonFlashcardsBlockContent {
     title?: string;

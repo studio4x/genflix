@@ -1025,11 +1025,22 @@ export function parseLessonImageHotspotsBlockElement(element: Element): LessonIm
     }
     return decodeHotspotsPayload(payload);
 }
-function normalizeFlashcardItem(item: LessonFlashcardItem, index: number): LessonFlashcardItem {
+function normalizeFlashcardItem(item: Partial<LessonFlashcardItem> & { front?: unknown; back?: unknown }, index: number): LessonFlashcardItem {
+    const rawQuestion = typeof item.question === 'string' ? item.question : (typeof item.front === 'string' ? item.front : '');
+    const rawAnswer = typeof item.answer === 'string' ? item.answer : (typeof item.back === 'string' ? item.back : '');
+    const imageUrl = typeof item.image_url === 'string' ? item.image_url.trim() : undefined;
+    const imageAlt = typeof item.image_alt === 'string' ? item.image_alt.trim() : undefined;
+    const mediaAssetId = typeof item.media_asset_id === 'string' ? item.media_asset_id.trim() : undefined;
+    const allowStudentAnswer = Boolean(item.allow_student_answer);
+
     return {
         id: item.id?.trim() || (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `card-${index + 1}`),
-        question: typeof item.question === 'string' ? item.question.trim() : '',
-        answer: typeof item.answer === 'string' ? item.answer.trim() : '',
+        question: rawQuestion.trim(),
+        answer: rawAnswer.trim(),
+        image_url: imageUrl || undefined,
+        image_alt: imageAlt || undefined,
+        media_asset_id: mediaAssetId || undefined,
+        allow_student_answer: allowStudentAnswer,
     };
 }
 export function normalizeLessonFlashcardsBlockContent(content: LessonFlashcardsBlockContent): LessonFlashcardsBlockContent {
@@ -1059,11 +1070,7 @@ function parseFlashcardItem(value: unknown, index: number): LessonFlashcardItem 
         return null;
     }
     const candidate = value as Partial<LessonFlashcardItem>;
-    return normalizeFlashcardItem({
-        id: typeof candidate.id === 'string' ? candidate.id : '',
-        question: typeof candidate.question === 'string' ? candidate.question : '',
-        answer: typeof candidate.answer === 'string' ? candidate.answer : '',
-    }, index);
+    return normalizeFlashcardItem(candidate, index);
 }
 export function parseLessonFlashcardsBlockContent(payload: unknown): LessonFlashcardsBlockContent | null {
     if (!payload || typeof payload !== 'object') {
@@ -1089,6 +1096,10 @@ function encodeFlashcardsPayload(content: LessonFlashcardsBlockContent): string 
             id: card.id,
             question: card.question,
             answer: card.answer,
+            image_url: card.image_url,
+            image_alt: card.image_alt,
+            media_asset_id: card.media_asset_id,
+            allow_student_answer: card.allow_student_answer,
         })),
     }));
 }
@@ -1106,7 +1117,9 @@ function buildFlashcardsFallbackHtml(content: LessonFlashcardsBlockContent): str
     const items = content.cards
         .map((card, index) => `
           <div class="hcm-flashcard-fallback-item" style="margin-bottom: 1rem; padding: 1rem; border: 1px solid #e2e8f0; border-radius: 0.75rem;">
+            ${card.image_url ? `<div style="margin-bottom: 0.5rem;"><img src="${escapeHtml(card.image_url)}" alt="${escapeHtml(card.image_alt || '')}" style="max-width: 100%; max-height: 200px; object-fit: contain; border-radius: 0.5rem;" /></div>` : ''}
             <p><strong>Cartão ${index + 1} - Pergunta:</strong> ${escapeHtml(card.question)}</p>
+            ${card.allow_student_answer ? `<p style="color: #64748b; font-size: 0.875rem;"><em>[Resposta do aluno habilitada]</em></p>` : ''}
             <p><strong>Resposta:</strong> ${escapeHtml(card.answer)}</p>
           </div>
         `)

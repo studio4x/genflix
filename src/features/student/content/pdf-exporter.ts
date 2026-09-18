@@ -1,4 +1,5 @@
 import genflixWordmarkUrl from '@/assets/genflix-wordmark.svg';
+import type { LessonFlashcardItem } from '@/types/content';
 import { getSignedLessonContentAssetUrl, getSignedMaterialUrl, getSignedModulePdfUrl } from '@/features/admin/content/api';
 import { parseLessonFlashcardsBlockElement, parseLessonHtmlBlockElement, parseLessonImageHotspotsBlockElement } from '@/features/admin/content/content-blocks';
 import { fetchPdfWatermarkSettings } from '@/features/branding/api';
@@ -229,11 +230,12 @@ function buildPdfHtmlBlockFallbackHtml(fileName: string | null) {
     </section>
   `;
 }
-function buildPdfFlashcardsFallbackHtml(title: string, cards: { question: string; answer: string }[]) {
+function buildPdfFlashcardsFallbackHtml(title: string, cards: LessonFlashcardItem[]) {
     const cardsHtml = cards.length > 0
         ? cards.map((card, index) => `
             <article class="pdf-flashcard-item" style="margin-bottom: 12px; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; background: #ffffff;">
               <div style="font-size: 11px; font-weight: bold; color: #0d9488; text-transform: uppercase; margin-bottom: 4px;">Cartão ${index + 1}</div>
+              ${card.image_url ? `<div style="margin-bottom: 8px; text-align: center;"><img src="${escapeHtml(card.image_url)}" alt="${escapeHtml(card.image_alt || '')}" style="max-width: 100%; max-height: 180px; object-fit: contain; border-radius: 6px;" /></div>` : ''}
               <div style="font-size: 13px; font-weight: 600; color: #1e293b; margin-bottom: 6px;"><strong>Pergunta:</strong> ${escapeHtml(card.question)}</div>
               <div style="font-size: 12px; color: #334155;"><strong>Resposta:</strong> ${escapeHtml(card.answer)}</div>
             </article>
