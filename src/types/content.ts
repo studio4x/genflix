@@ -342,6 +342,62 @@ export interface ButtonTemplate {
     created_at: string;
     updated_at: string;
 }
+export type ButtonActionType = 'file' | 'url' | 'modal';
+export type ButtonOpenTarget = 'same-tab' | 'new-tab' | 'new-window';
+
+export interface GlobalButtonDefinition {
+    id: string;
+    name: string;
+    label: string;
+    template_id: string | null;
+    action_type: ButtonActionType;
+    url: string | null;
+    open_target: ButtonOpenTarget;
+    storage_path: string | null;
+    file_name: string | null;
+    mime_type: string | null;
+    file_size_bytes: number;
+    modal_title: string | null;
+    modal_blocks: unknown[];
+    is_active: boolean;
+    created_by: string | null;
+    created_at: string;
+    updated_at: string;
+    template?: ButtonTemplate | null;
+}
+
+export type LessonButtonBlockAlignment = 'left' | 'center' | 'right';
+export type LessonButtonBlockWidth = 'auto' | 'full';
+
+export interface LessonButtonBlockLocalConfig {
+    template_id: string | null;
+    template?: ButtonTemplate | null;
+    label: string;
+    variant: ButtonTemplate['variant'];
+    theme: ButtonTemplate['theme'];
+    icon: string;
+    action_type: ButtonActionType;
+    url?: string | null;
+    open_target?: ButtonOpenTarget;
+    storage_path?: string | null;
+    file_name?: string | null;
+    mime_type?: string | null;
+    file_size_bytes?: number;
+    modal?: {
+        title: string;
+        blocks: unknown[];
+    } | null;
+}
+
+export interface LessonButtonBlockContent {
+    source_type: 'local' | 'global';
+    alignment: LessonButtonBlockAlignment;
+    width: LessonButtonBlockWidth;
+    local_config?: LessonButtonBlockLocalConfig | null;
+    global_button_id?: string | null;
+    cached_action?: LessonButtonBlockLocalConfig | null;
+}
+
 export type FooterActionScope = 'lesson' | 'module' | 'course';
 export interface LessonFooterAction {
     id: string;
@@ -350,7 +406,8 @@ export interface LessonFooterAction {
     module_id: string | null;
     course_id: string | null;
     template_id: string | null;
-    action_type: 'file' | 'url';
+    global_button_id?: string | null;
+    action_type: ButtonActionType;
     label: string | null;
     url: string | null;
     storage_path: string | null;
@@ -358,13 +415,16 @@ export interface LessonFooterAction {
     mime_type: string | null;
     file_size_bytes: number;
     position: number;
-    open_target: 'same-tab' | 'new-tab' | 'new-window';
+    open_target: ButtonOpenTarget;
     open_in_new_tab: boolean;
+    modal_title?: string | null;
+    modal_blocks?: unknown[];
     is_active: boolean;
     created_by: string | null;
     created_at: string;
     updated_at: string;
     template?: ButtonTemplate | null;
+    global_button?: GlobalButtonDefinition | null;
 }
 export interface LessonNote {
     id: string;

@@ -1,13 +1,17 @@
-import { useEffect, useRef, useState, type CSSProperties, type ChangeEvent, type DragEvent, type IframeHTMLAttributes } from 'react';
-import { ChevronDown, ChevronUp } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type ChangeEvent, type DragEvent, type IframeHTMLAttributes } from 'react';
+import { ChevronDown, ChevronUp, Library } from 'lucide-react';
 import ReactQuill from '@/components/forms/react-quill';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { deleteLessonContentAsset, getSignedLessonContentAssetUrl, uploadLessonContentAsset } from '@/features/admin/content/api';
+import { deleteLessonContentAsset, getSignedLessonContentAssetUrl, uploadLessonContentAsset, fetchGlobalButtonsBatchAdmin } from '@/features/admin/content/api';
 import { LessonImageHotspotsBlockEditor, LessonImageHotspotsBlockRenderer } from '@/features/admin/content/lesson-image-hotspots-block';
 import { LessonFlashcardsBlockEditor, LessonFlashcardsBlockRenderer } from '@/features/admin/content/lesson-flashcards-block';
+import { MediaLibraryModal } from '@/features/site-assets/media-library-modal';
+import type { SiteAsset } from '@/features/site-editor/types';
+import { resolveSiteAssetPublicUrl } from '@/features/site-assets/public-url';
 import {
     createEmptyColumnsBlockContent,
+    createEmptyLessonButtonBlockContent,
     createEmptyLessonFlashcardsBlockContent,
     createEmptyLessonHtmlBlockContent,
     createEmptyLessonImageBlockContent,
@@ -27,6 +31,9 @@ import {
     type LessonVideoBlockCaptionAlignment,
     type LessonVideoBlockSize,
 } from '@/features/admin/content/content-blocks';
+import { LessonActionButton } from '@/features/admin/content/lesson-action-button';
+import { LessonButtonBlockModal } from '@/features/admin/content/lesson-button-block-modal';
+import type { GlobalButtonDefinition, LessonButtonBlockLocalConfig } from '@/types/content';
 
 const FULL_QUILL_MODULES = {
     toolbar: [
@@ -216,36 +223,35 @@ function parseStandaloneIframeEmbed(html: string): StandaloneIframeEmbed | null 
 
 function useResolvedLessonAssetUrl(storagePath: string, storageProvider?: 'supabase' | 'r2', signedUrl?: string | null) {
     const trimmedStoragePath = storagePath.trim();
-    const [resolvedUrl, setResolvedUrl] = useState<string | null>(() => {
-        if (trimmedStoragePath) {
-            return null;
-        }
-        return signedUrl?.trim() || null;
-    });
+    const fallbackUrl = signedUrl?.trim() || null;
+    const [remoteUrl, setRemoteUrl] = useState<string | null>(null);
+
     useEffect(() => {
         const nextStoragePath = storagePath.trim();
         if (!nextStoragePath) {
-            setResolvedUrl(signedUrl?.trim() || null);
             return;
         }
         let isMounted = true;
-        setResolvedUrl(null);
         void getSignedLessonContentAssetUrl(nextStoragePath, storageProvider)
             .then((url) => {
-            if (isMounted) {
-                setResolvedUrl(url);
-            }
-        })
+                if (isMounted) {
+                    setRemoteUrl(url);
+                }
+            })
             .catch(() => {
-            if (isMounted) {
-                setResolvedUrl(null);
-            }
-        });
+                if (isMounted) {
+                    setRemoteUrl(null);
+                }
+            });
         return () => {
             isMounted = false;
         };
-    }, [signedUrl, storagePath, storageProvider]);
-    return resolvedUrl;
+    }, [storagePath, storageProvider]);
+
+    if (!trimmedStoragePath) {
+        return fallbackUrl;
+    }
+    return remoteUrl ?? fallbackUrl;
 }
 
 function createDefaultBlock(type: Exclude<LessonContentBlock['type'], 'columns'> | 'columns', columnsCount = 2): LessonContentBlock {
@@ -285,6 +291,12 @@ function createDefaultBlock(type: Exclude<LessonContentBlock['type'], 'columns'>
             content: createEmptyLessonHtmlBlockContent(),
         };
     }
+    if (type === 'button') {
+        return {
+            type,
+            content: createEmptyLessonButtonBlockContent(),
+        };
+    }
     if (type === 'columns') {
         return {
             type,
@@ -303,6 +315,24 @@ type DeletableLessonAsset = {
 };
 
 function collectDeletableAssets(block: LessonContentBlock): DeletableLessonAsset[] {
+    if (block.type === 'button') {
+        if (block.content.source_type === 'local' && block.content.local_config) {
+            const assets: DeletableLessonAsset[] = [];
+            if (block.content.local_config.action_type === 'file' && block.content.local_config.storage_path) {
+                assets.push({
+                    storagePath: block.content.local_config.storage_path,
+                    storageProvider: 'supabase',
+                });
+            }
+            if (block.content.local_config.action_type === 'modal' && block.content.local_config.modal?.blocks) {
+                for (const subBlock of block.content.local_config.modal.blocks) {
+                    assets.push(...collectDeletableAssets(subBlock as LessonContentBlock));
+                }
+            }
+            return assets;
+        }
+        return [];
+    }
     if (block.type === 'image-hotspots' && block.content.asset.storage_path) {
         return [{
             storagePath: block.content.asset.storage_path,
@@ -355,6 +385,9 @@ function getBlockLabel(block: LessonContentBlock) {
     if (block.type === 'html') {
         return 'Bloco HTML';
     }
+    if (block.type === 'button') {
+        return 'Bloco de Botão';
+    }
     return 'Bloco de Texto Rico';
 }
 
@@ -362,18 +395,29 @@ interface LessonImageBlockEditorProps {
     content: LessonImageBlockContent;
     onChange: (content: LessonImageBlockContent) => void;
     onError?: (message: string | null) => void;
+    assetContext?: 'lesson' | 'global';
 }
 
-export function LessonImageBlockEditor({ content, onChange, onError }: LessonImageBlockEditorProps) {
+export function LessonImageBlockEditor({
+    content,
+    onChange,
+    onError,
+    assetContext = 'lesson',
+}: LessonImageBlockEditorProps) {
     const fileInputRef = useRef<HTMLInputElement | null>(null);
-    const [inputMode, setInputMode] = useState<'url' | 'upload'>(content.source_type);
+    const [inputMode, setInputMode] = useState<'url' | 'upload'>(assetContext === 'global' ? 'url' : content.source_type);
+    const [isMediaLibraryOpen, setIsMediaLibraryOpen] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
     const [previewError, setPreviewError] = useState<string | null>(null);
     const resolvedUploadUrl = useResolvedLessonAssetUrl(content.storage_path, content.storage_provider, content.signed_url);
 
     useEffect(() => {
-        setInputMode(content.source_type);
-    }, [content.source_type]);
+        if (assetContext === 'global') {
+            setInputMode('url');
+        } else {
+            setInputMode(content.source_type);
+        }
+    }, [content.source_type, assetContext]);
 
     const previewUrl = content.source_type === 'upload'
         ? resolvedUploadUrl
@@ -473,20 +517,39 @@ export function LessonImageBlockEditor({ content, onChange, onError }: LessonIma
                     <p className="mt-2 text-sm font-semibold text-slate-600">Adicione uma imagem com URL ou upload, legenda e ajuste de tamanho.</p>
                 </div>
             </div>
-            <div className="grid gap-3 md:grid-cols-2">
-                <button type="button" onClick={() => void switchToUrlMode()} className={cn('rounded-2xl border px-4 py-4 text-left transition', inputMode === 'url'
-                    ? 'border-slate-950 bg-slate-950 text-white'
-                    : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50')}>
-                    <p className="text-xs font-black uppercase tracking-[0.18em]">Imagem via URL</p>
-                    <p className={cn('mt-1 text-sm', inputMode === 'url' ? 'text-slate-200' : 'text-slate-500')}>Cole um link de imagem pública.</p>
-                </button>
-                <button type="button" onClick={() => void switchToUploadMode()} className={cn('rounded-2xl border px-4 py-4 text-left transition', inputMode === 'upload'
-                    ? 'border-slate-950 bg-slate-950 text-white'
-                    : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50')}>
-                    <p className="text-xs font-black uppercase tracking-[0.18em]">Imagem por upload</p>
-                    <p className={cn('mt-1 text-sm', inputMode === 'upload' ? 'text-slate-200' : 'text-slate-500')}>Envie um arquivo e use a imagem protegida.</p>
-                </button>
-            </div>
+            {assetContext === 'global' ? (
+                <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-sky-100 bg-sky-50/60 p-4">
+                    <div className="space-y-1">
+                        <p className="text-xs font-bold text-sky-900">Biblioteca de Mídia Genflix</p>
+                        <p className="text-xs text-sky-700">
+                            Em modais globais, selecione a imagem da Biblioteca de Mídia (site_assets) ou use uma URL pública.
+                        </p>
+                    </div>
+                    <Button
+                        type="button"
+                        onClick={() => setIsMediaLibraryOpen(true)}
+                        className="inline-flex items-center gap-2 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-bold px-4 py-2 text-xs shadow-sm"
+                    >
+                        <Library className="h-4 w-4" />
+                        {content.image_url ? 'Trocar da Biblioteca' : 'Escolher da Biblioteca'}
+                    </Button>
+                </div>
+            ) : (
+                <div className="grid gap-3 md:grid-cols-2">
+                    <button type="button" onClick={() => void switchToUrlMode()} className={cn('rounded-2xl border px-4 py-4 text-left transition', inputMode === 'url'
+                        ? 'border-slate-950 bg-slate-950 text-white'
+                        : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50')}>
+                        <p className="text-xs font-black uppercase tracking-[0.18em]">Imagem via URL</p>
+                        <p className={cn('mt-1 text-sm', inputMode === 'url' ? 'text-slate-200' : 'text-slate-500')}>Cole um link de imagem pública.</p>
+                    </button>
+                    <button type="button" onClick={() => void switchToUploadMode()} className={cn('rounded-2xl border px-4 py-4 text-left transition', inputMode === 'upload'
+                        ? 'border-slate-950 bg-slate-950 text-white'
+                        : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50')}>
+                        <p className="text-xs font-black uppercase tracking-[0.18em]">Imagem por upload</p>
+                        <p className={cn('mt-1 text-sm', inputMode === 'upload' ? 'text-slate-200' : 'text-slate-500')}>Envie um arquivo e use a imagem protegida.</p>
+                    </button>
+                </div>
+            )}
             <div className={cn('mx-auto overflow-hidden rounded-[24px] border border-dashed border-slate-200 bg-slate-50', sizeClasses)}>
                 {previewUrl ? (
                     <img src={previewUrl} alt={content.alt} onError={handlePreviewError} className="h-auto w-full rounded-[18px] object-contain" />
@@ -501,7 +564,53 @@ export function LessonImageBlockEditor({ content, onChange, onError }: LessonIma
                     </figcaption>
                 ) : null}
             </div>
-            {inputMode === 'url' ? (
+            {assetContext === 'global' ? (
+                <>
+                    <label className="block space-y-2">
+                        <span className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Ou informe uma URL pública da imagem</span>
+                        <input
+                            type="url"
+                            value={content.image_url}
+                            onChange={(event) => {
+                                setPreviewError(null);
+                                onError?.(null);
+                                onChange({
+                                    ...content,
+                                    source_type: 'url',
+                                    image_url: event.target.value,
+                                    media_asset_id: undefined,
+                                });
+                            }}
+                            className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-sky-300 focus:ring-4 focus:ring-sky-100"
+                            placeholder="https://..."
+                        />
+                    </label>
+
+                    <MediaLibraryModal
+                        isOpen={isMediaLibraryOpen}
+                        onClose={() => setIsMediaLibraryOpen(false)}
+                        selectedAssetId={content.media_asset_id}
+                        title="Escolher imagem para o Modal Global"
+                        onSelect={(asset: SiteAsset) => {
+                            const canonicalUrl = resolveSiteAssetPublicUrl(asset);
+                            setPreviewError(null);
+                            onError?.(null);
+                            onChange({
+                                ...content,
+                                source_type: 'url',
+                                image_url: canonicalUrl || '',
+                                storage_path: '',
+                                storage_provider: undefined,
+                                signed_url: null,
+                                file_name: asset.storage_path.split('/').pop() || '',
+                                alt: content.alt || asset.alt || '',
+                                media_asset_id: asset.id,
+                            });
+                            setIsMediaLibraryOpen(false);
+                        }}
+                    />
+                </>
+            ) : inputMode === 'url' ? (
                 <label className="block space-y-2">
                     <span className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">URL da imagem</span>
                     <input type="url" value={content.image_url} onChange={(event) => {
@@ -565,19 +674,29 @@ interface LessonVideoBlockEditorProps {
     content: LessonVideoBlockContent;
     onChange: (content: LessonVideoBlockContent) => void;
     onError?: (message: string | null) => void;
+    assetContext?: 'lesson' | 'global';
 }
 
-export function LessonVideoBlockEditor({ content, onChange, onError }: LessonVideoBlockEditorProps) {
+export function LessonVideoBlockEditor({
+    content,
+    onChange,
+    onError,
+    assetContext = 'lesson',
+}: LessonVideoBlockEditorProps) {
     const fileInputRef = useRef<HTMLInputElement | null>(null);
     const lastUrlRef = useRef(content.url);
-    const [inputMode, setInputMode] = useState<'url' | 'upload'>(content.source_type);
+    const [inputMode, setInputMode] = useState<'url' | 'upload'>(assetContext === 'global' ? 'url' : content.source_type);
     const [isUploading, setIsUploading] = useState(false);
     const [previewError, setPreviewError] = useState<string | null>(null);
     const resolvedUploadUrl = useResolvedLessonAssetUrl(content.storage_path, content.storage_provider, content.signed_url);
 
     useEffect(() => {
-        setInputMode(content.source_type);
-    }, [content.source_type]);
+        if (assetContext === 'global') {
+            setInputMode('url');
+        } else {
+            setInputMode(content.source_type);
+        }
+    }, [content.source_type, assetContext]);
 
     useEffect(() => {
         if (content.source_type === 'url' && content.url.trim()) {
@@ -673,28 +792,37 @@ export function LessonVideoBlockEditor({ content, onChange, onError }: LessonVid
                 </div>
             </div>
 
-            <div className="grid gap-3 md:grid-cols-2">
-                <button type="button" onClick={() => void activateUrlMode()} className={cn('rounded-2xl border px-4 py-4 text-left transition', inputMode === 'url'
-                    ? 'border-slate-950 bg-slate-950 text-white'
-                    : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50')}>
-                    <p className="text-xs font-black uppercase tracking-[0.18em]">Vídeo via URL</p>
-                    <p className={cn('mt-1 text-sm', inputMode === 'url' ? 'text-slate-200' : 'text-slate-500')}>Cole um link do YouTube, Vimeo ou um arquivo direto.</p>
-                </button>
-                <button type="button" onClick={() => {
-                    setInputMode('upload');
-                    onChange({
-                        ...content,
-                        source_type: 'upload',
-                    });
-                }} className={cn('rounded-2xl border px-4 py-4 text-left transition', inputMode === 'upload'
-                    ? 'border-slate-950 bg-slate-950 text-white'
-                    : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50')}>
-                    <p className="text-xs font-black uppercase tracking-[0.18em]">Vídeo por upload</p>
-                    <p className={cn('mt-1 text-sm', inputMode === 'upload' ? 'text-slate-200' : 'text-slate-500')}>Envie um arquivo e o bloco guarda o asset protegido.</p>
-                </button>
-            </div>
+            {assetContext === 'global' ? (
+                <div className="rounded-2xl border border-sky-100 bg-sky-50/60 p-4">
+                    <p className="text-xs font-bold text-sky-900">Vídeo Externo para Modal Global</p>
+                    <p className="mt-0.5 text-xs text-sky-700">
+                        Como este modal é reutilizável globalmente, utilize um link público (YouTube, Vimeo ou arquivo direto MP4). Uploads locais de aula estão desabilitados neste contexto.
+                    </p>
+                </div>
+            ) : (
+                <div className="grid gap-3 md:grid-cols-2">
+                    <button type="button" onClick={() => void activateUrlMode()} className={cn('rounded-2xl border px-4 py-4 text-left transition', inputMode === 'url'
+                        ? 'border-slate-950 bg-slate-950 text-white'
+                        : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50')}>
+                        <p className="text-xs font-black uppercase tracking-[0.18em]">Vídeo via URL</p>
+                        <p className={cn('mt-1 text-sm', inputMode === 'url' ? 'text-slate-200' : 'text-slate-500')}>Cole um link do YouTube, Vimeo ou um arquivo direto.</p>
+                    </button>
+                    <button type="button" onClick={() => {
+                        setInputMode('upload');
+                        onChange({
+                            ...content,
+                            source_type: 'upload',
+                        });
+                    }} className={cn('rounded-2xl border px-4 py-4 text-left transition', inputMode === 'upload'
+                        ? 'border-slate-950 bg-slate-950 text-white'
+                        : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50')}>
+                        <p className="text-xs font-black uppercase tracking-[0.18em]">Vídeo por upload</p>
+                        <p className={cn('mt-1 text-sm', inputMode === 'upload' ? 'text-slate-200' : 'text-slate-500')}>Envie um arquivo e o bloco guarda o asset protegido.</p>
+                    </button>
+                </div>
+            )}
 
-            {inputMode === 'url' ? (
+            {assetContext === 'global' || inputMode === 'url' ? (
                 <label className="block space-y-2">
                     <span className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">URL do vídeo</span>
                     <input type="url" value={content.url} onChange={(event) => {
@@ -1231,15 +1359,63 @@ export function LessonVideoBlockRenderer({ content }: LessonVideoBlockRendererPr
     );
 }
 
-interface LessonContentBlocksEditorProps {
+export interface LessonContentBlocksEditorProps {
     blocks: LessonContentBlock[];
     onChange: (blocks: LessonContentBlock[]) => void;
     onError?: (message: string | null) => void;
     level?: number;
     allowEmptyState?: boolean;
+    excludedBlockTypes?: Array<LessonContentBlock['type']>;
+    assetContext?: 'lesson' | 'global';
 }
 
-export function LessonContentBlocksEditor({ blocks, onChange, onError, level = 0, allowEmptyState = false }: LessonContentBlocksEditorProps) {
+export function LessonContentBlocksEditor({
+    blocks,
+    onChange,
+    onError,
+    level = 0,
+    allowEmptyState = false,
+    excludedBlockTypes,
+    assetContext = 'lesson',
+}: LessonContentBlocksEditorProps) {
+    const [editingButtonBlockIndex, setEditingButtonBlockIndex] = useState<number | null>(null);
+    const [globalButtonsMap, setGlobalButtonsMap] = useState<Record<string, GlobalButtonDefinition | null>>({});
+
+    const referencedGlobalIds = useMemo(() => {
+        const ids: string[] = [];
+        const scan = (items: LessonContentBlock[]) => {
+            for (const item of items) {
+                if (item.type === 'button' && item.content.source_type === 'global' && item.content.global_button_id) {
+                    ids.push(item.content.global_button_id);
+                } else if (item.type === 'columns') {
+                    for (const col of item.content) {
+                        scan(col.blocks);
+                    }
+                }
+            }
+        };
+        scan(blocks);
+        return Array.from(new Set(ids));
+    }, [blocks]);
+
+    useEffect(() => {
+        if (referencedGlobalIds.length === 0) return;
+        let isMounted = true;
+        void fetchGlobalButtonsBatchAdmin(referencedGlobalIds).then((items) => {
+            if (!isMounted) return;
+            const map: Record<string, GlobalButtonDefinition> = {};
+            for (const item of items) {
+                map[item.id] = item;
+            }
+            setGlobalButtonsMap(map);
+        }).catch((err) => {
+            console.error('Erro ao verificar botões globais no editor:', err);
+        });
+        return () => {
+            isMounted = false;
+        };
+    }, [referencedGlobalIds]);
+
     const updateBlock = (index: number, nextBlock: LessonContentBlock) => {
         onChange(blocks.map((block, blockIndex) => (blockIndex === index ? nextBlock : block)));
     };
@@ -1280,7 +1456,12 @@ export function LessonContentBlocksEditor({ blocks, onChange, onError, level = 0
     };
 
     const addBlock = (type: LessonContentBlock['type'], columnsCount = 2) => {
-        onChange([...blocks, createDefaultBlock(type, columnsCount)]);
+        const newBlock = createDefaultBlock(type, columnsCount);
+        const nextBlocks = [...blocks, newBlock];
+        onChange(nextBlocks);
+        if (type === 'button') {
+            setEditingButtonBlockIndex(nextBlocks.length - 1);
+        }
     };
 
     const addBarClassName = level === 0
@@ -1334,12 +1515,136 @@ export function LessonContentBlocksEditor({ blocks, onChange, onError, level = 0
                     ) : block.type === 'flashcards' ? (
                         <LessonFlashcardsBlockEditor content={block.content} onChange={(nextContent) => updateBlock(index, { ...block, content: nextContent })} onError={onError} />
                     ) : block.type === 'image' ? (
-                        <LessonImageBlockEditor content={block.content} onChange={(nextContent) => updateBlock(index, { ...block, content: nextContent })} onError={onError} />
+                        <LessonImageBlockEditor content={block.content} onChange={(nextContent) => updateBlock(index, { ...block, content: nextContent })} onError={onError} assetContext={assetContext} />
                     ) : block.type === 'html' ? (
                         <LessonHtmlBlockEditor content={block.content} onChange={(nextContent) => updateBlock(index, { ...block, content: nextContent })} onError={onError} />
                     ) : block.type === 'video' ? (
-                        <LessonVideoBlockEditor content={block.content} onChange={(nextContent) => updateBlock(index, { ...block, content: nextContent })} onError={onError} />
-                    ) : block.type === 'columns' ? (
+                        <LessonVideoBlockEditor content={block.content} onChange={(nextContent) => updateBlock(index, { ...block, content: nextContent })} onError={onError} assetContext={assetContext} />
+                    ) : block.type === 'button' ? (() => {
+                        const isGlobal = block.content.source_type === 'global';
+                        const globalId = block.content.global_button_id;
+                        const hasGlobalResolved = globalId ? globalButtonsMap[globalId] : undefined;
+                        const isGlobalNotFound = isGlobal && globalId && Object.keys(globalButtonsMap).length > 0 && !hasGlobalResolved;
+                        const isGlobalInactive = isGlobal && hasGlobalResolved && !hasGlobalResolved.is_active;
+
+                        const handleConvertToLocal = () => {
+                            const cached = block.content.cached_action;
+                            const convertedLocalConfig: LessonButtonBlockLocalConfig = cached ? {
+                                label: cached.label,
+                                template_id: cached.template_id,
+                                template: cached.template,
+                                variant: cached.variant,
+                                theme: cached.theme,
+                                icon: cached.icon,
+                                action_type: cached.action_type,
+                                url: cached.url,
+                                open_target: cached.open_target,
+                                storage_path: cached.storage_path,
+                                file_name: cached.file_name,
+                                file_size_bytes: cached.file_size_bytes,
+                                modal: cached.modal,
+                            } : {
+                                label: 'Botão Local',
+                                template_id: null,
+                                action_type: 'url',
+                                url: 'https://',
+                                open_target: 'new-tab',
+                                variant: 'outline',
+                                theme: 'blue',
+                                icon: 'link',
+                            };
+
+                            updateBlock(index, {
+                                ...block,
+                                content: {
+                                    source_type: 'local',
+                                    alignment: block.content.alignment ?? 'left',
+                                    width: block.content.width ?? 'auto',
+                                    local_config: convertedLocalConfig,
+                                    cached_action: null,
+                                    global_button_id: null,
+                                },
+                            });
+                        };
+
+                        return (
+                            <div className={cn(
+                                'flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-xl border p-4 transition-all',
+                                isGlobalNotFound
+                                    ? 'border-rose-300 bg-rose-50/60 shadow-xs'
+                                    : isGlobalInactive
+                                    ? 'border-amber-300 bg-amber-50/60 shadow-xs'
+                                    : 'border-amber-200 bg-amber-50/40'
+                            )}>
+                                <div className="space-y-1.5">
+                                    <div className="flex flex-wrap items-center gap-2">
+                                        <span className={cn(
+                                            'text-xs font-bold uppercase tracking-wider',
+                                            isGlobalNotFound ? 'text-rose-800' : isGlobalInactive ? 'text-amber-900' : 'text-amber-800'
+                                        )}>
+                                            {isGlobal ? 'Botão da Biblioteca Global' : 'Botão Customizado'}
+                                        </span>
+                                        {isGlobalNotFound ? (
+                                            <span className="text-[11px] rounded bg-rose-100 px-2 py-0.5 font-bold text-rose-700 border border-rose-300">
+                                                Não encontrado / Removido
+                                            </span>
+                                        ) : isGlobalInactive ? (
+                                            <span className="text-[11px] rounded bg-amber-100 px-2 py-0.5 font-bold text-amber-800 border border-amber-300">
+                                                Global Desativado
+                                            </span>
+                                        ) : (
+                                            <span className="text-[11px] rounded bg-white px-2 py-0.5 font-semibold text-slate-600 border border-slate-200">
+                                                {isGlobal
+                                                    ? 'Referência Dinâmica'
+                                                    : block.content.local_config?.action_type === 'modal'
+                                                    ? 'Ação: Modal'
+                                                    : block.content.local_config?.action_type === 'file'
+                                                    ? 'Ação: Arquivo'
+                                                    : 'Ação: Link'}
+                                            </span>
+                                        )}
+                                    </div>
+                                    <p className="text-sm font-semibold text-slate-800">
+                                        {isGlobal
+                                            ? (hasGlobalResolved?.label || block.content.cached_action?.label || 'Botão Global')
+                                            : (block.content.local_config?.label || 'Sem rótulo')}
+                                    </p>
+                                    {isGlobalNotFound && (
+                                        <p className="text-xs text-rose-600 font-medium">
+                                            O botão global referenciado não existe nesta base. O aluno não poderá executá-lo.
+                                        </p>
+                                    )}
+                                    {isGlobalInactive && (
+                                        <p className="text-xs text-amber-700 font-medium">
+                                            Este botão está desativado na biblioteca global e aparecerá desabilitado para os alunos.
+                                        </p>
+                                    )}
+                                </div>
+                                <div className="flex flex-wrap items-center gap-2">
+                                    {isGlobalNotFound && block.content.cached_action && (
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={handleConvertToLocal}
+                                            className="bg-white hover:bg-rose-100 hover:text-rose-900 border-rose-300 font-semibold text-xs"
+                                        >
+                                            Converter em Botão Local
+                                        </Button>
+                                    )}
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => setEditingButtonBlockIndex(index)}
+                                        className="bg-white hover:bg-amber-100 hover:text-amber-900 border-amber-300 font-semibold text-xs"
+                                    >
+                                        Configurar Botão
+                                    </Button>
+                                </div>
+                            </div>
+                        );
+                    })() : block.type === 'columns' ? (
                         <div className="space-y-4">
                             <div className="flex flex-col gap-2 rounded-xl border border-slate-200 bg-white p-4 md:flex-row md:items-center md:justify-between">
                                 <div>
@@ -1427,6 +1732,8 @@ export function LessonContentBlocksEditor({ blocks, onChange, onError, level = 0
                                             level={level + 1}
                                             allowEmptyState
                                             onError={onError}
+                                            excludedBlockTypes={excludedBlockTypes}
+                                            assetContext={assetContext}
                                             onChange={(nextBlocks) => {
                                                 const nextColumns: LessonColumnsBlockContent = [...block.content];
                                                 nextColumns[columnIndex] = {
@@ -1448,42 +1755,90 @@ export function LessonContentBlocksEditor({ blocks, onChange, onError, level = 0
 
             <div className={cn('flex flex-wrap items-center gap-3 p-4', addBarClassName)}>
                 <span className="mr-2 text-xs font-bold text-slate-500">Adicionar bloco:</span>
-                <Button type="button" variant="outline" size="sm" onClick={() => addBlock('rich-text')} className="border-slate-200 bg-white hover:bg-blue-50 hover:text-blue-600">
-                    + Texto
-                </Button>
-                <Button type="button" variant="outline" size="sm" onClick={() => addBlock('image')} className="border-slate-200 bg-white hover:bg-sky-50 hover:text-sky-700">
-                    + Imagem
-                </Button>
-                <Button type="button" variant="outline" size="sm" onClick={() => addBlock('html')} className="border-slate-200 bg-white hover:bg-slate-900 hover:text-white">
-                    + HTML
-                </Button>
-                <Button type="button" variant="outline" size="sm" onClick={() => addBlock('video')} className="border-slate-200 bg-white hover:bg-rose-50 hover:text-rose-700">
-                    + Vídeo
-                </Button>
-                <Button type="button" variant="outline" size="sm" onClick={() => addBlock('table')} className="border-slate-200 bg-white hover:bg-emerald-50 hover:text-emerald-600">
-                    + Tabela
-                </Button>
-                <Button type="button" variant="outline" size="sm" onClick={() => addBlock('image-hotspots')} className="border-slate-200 bg-white hover:bg-violet-50 hover:text-violet-600">
-                    + Hotspots
-                </Button>
-                <Button type="button" variant="outline" size="sm" onClick={() => addBlock('flashcards')} className="border-slate-200 bg-white hover:bg-teal-50 hover:text-teal-700">
-                    + Flashcards
-                </Button>
-                <div className="mx-1 h-6 w-px bg-slate-200" />
-                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Colunas:</span>
-                <Button type="button" variant="outline" size="sm" onClick={() => addBlock('columns', 1)} className="border-slate-200 bg-white hover:bg-cyan-50 hover:text-cyan-700">
-                    1
-                </Button>
-                <Button type="button" variant="outline" size="sm" onClick={() => addBlock('columns', 2)} className="border-slate-200 bg-white hover:bg-cyan-50 hover:text-cyan-700">
-                    2
-                </Button>
-                <Button type="button" variant="outline" size="sm" onClick={() => addBlock('columns', 3)} className="border-slate-200 bg-white hover:bg-cyan-50 hover:text-cyan-700">
-                    3
-                </Button>
-                <Button type="button" variant="outline" size="sm" onClick={() => addBlock('columns', 4)} className="border-slate-200 bg-white hover:bg-cyan-50 hover:text-cyan-700">
-                    4
-                </Button>
+                {!excludedBlockTypes?.includes('rich-text') && (
+                    <Button type="button" variant="outline" size="sm" onClick={() => addBlock('rich-text')} className="border-slate-200 bg-white hover:bg-blue-50 hover:text-blue-600">
+                        + Texto
+                    </Button>
+                )}
+                {!excludedBlockTypes?.includes('image') && (
+                    <Button type="button" variant="outline" size="sm" onClick={() => addBlock('image')} className="border-slate-200 bg-white hover:bg-sky-50 hover:text-sky-700">
+                        + Imagem
+                    </Button>
+                )}
+                {!excludedBlockTypes?.includes('html') && (
+                    <Button type="button" variant="outline" size="sm" onClick={() => addBlock('html')} className="border-slate-200 bg-white hover:bg-slate-900 hover:text-white">
+                        + HTML
+                    </Button>
+                )}
+                {!excludedBlockTypes?.includes('video') && (
+                    <Button type="button" variant="outline" size="sm" onClick={() => addBlock('video')} className="border-slate-200 bg-white hover:bg-rose-50 hover:text-rose-700">
+                        + Vídeo
+                    </Button>
+                )}
+                {!excludedBlockTypes?.includes('table') && (
+                    <Button type="button" variant="outline" size="sm" onClick={() => addBlock('table')} className="border-slate-200 bg-white hover:bg-emerald-50 hover:text-emerald-600">
+                        + Tabela
+                    </Button>
+                )}
+                {!excludedBlockTypes?.includes('image-hotspots') && (
+                    <Button type="button" variant="outline" size="sm" onClick={() => addBlock('image-hotspots')} className="border-slate-200 bg-white hover:bg-violet-50 hover:text-violet-600">
+                        + Hotspots
+                    </Button>
+                )}
+                {!excludedBlockTypes?.includes('flashcards') && (
+                    <Button type="button" variant="outline" size="sm" onClick={() => addBlock('flashcards')} className="border-slate-200 bg-white hover:bg-teal-50 hover:text-teal-700">
+                        + Flashcards
+                    </Button>
+                )}
+                {!excludedBlockTypes?.includes('button') && (
+                    <Button type="button" variant="outline" size="sm" onClick={() => addBlock('button')} className="border-slate-200 bg-white hover:bg-amber-50 hover:text-amber-700">
+                        + Botão
+                    </Button>
+                )}
+                {!excludedBlockTypes?.includes('columns') && (
+                    <>
+                        <div className="mx-1 h-6 w-px bg-slate-200" />
+                        <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Colunas:</span>
+                        <Button type="button" variant="outline" size="sm" onClick={() => addBlock('columns', 1)} className="border-slate-200 bg-white hover:bg-cyan-50 hover:text-cyan-700">
+                            1
+                        </Button>
+                        <Button type="button" variant="outline" size="sm" onClick={() => addBlock('columns', 2)} className="border-slate-200 bg-white hover:bg-cyan-50 hover:text-cyan-700">
+                            2
+                        </Button>
+                        <Button type="button" variant="outline" size="sm" onClick={() => addBlock('columns', 3)} className="border-slate-200 bg-white hover:bg-cyan-50 hover:text-cyan-700">
+                            3
+                        </Button>
+                        <Button type="button" variant="outline" size="sm" onClick={() => addBlock('columns', 4)} className="border-slate-200 bg-white hover:bg-cyan-50 hover:text-cyan-700">
+                            4
+                        </Button>
+                    </>
+                )}
             </div>
+
+            {editingButtonBlockIndex !== null && blocks[editingButtonBlockIndex]?.type === 'button' ? (
+                <LessonButtonBlockModal
+                    isOpen={true}
+                    onClose={() => setEditingButtonBlockIndex(null)}
+                    initialContent={(blocks[editingButtonBlockIndex] as LessonContentBlock & { type: 'button' }).content}
+                    onSave={(updatedContent) => {
+                        updateBlock(editingButtonBlockIndex, {
+                            type: 'button',
+                            content: updatedContent,
+                        });
+                        setEditingButtonBlockIndex(null);
+                    }}
+                    renderBlockEditor={({ blocks, onChange }) => (
+                        <LessonContentBlocksEditor
+                            blocks={blocks}
+                            onChange={onChange}
+                            level={1}
+                            allowEmptyState={false}
+                            excludedBlockTypes={['button', 'image-hotspots', 'flashcards']}
+                            assetContext={assetContext}
+                        />
+                    )}
+                />
+            ) : null}
         </div>
     );
 }
@@ -1491,9 +1846,10 @@ export function LessonContentBlocksEditor({ blocks, onChange, onError, level = 0
 interface LessonContentBlockRendererProps {
     blocks: LessonContentBlock[];
     className?: string;
+    resolvedGlobalButtons?: Record<string, GlobalButtonDefinition>;
 }
 
-export function LessonContentBlocksRenderer({ blocks, className }: LessonContentBlockRendererProps) {
+export function LessonContentBlocksRenderer({ blocks, className, resolvedGlobalButtons }: LessonContentBlockRendererProps) {
     return (
         <div className={className}>
             {blocks.map((block, index) => {
@@ -1512,7 +1868,7 @@ export function LessonContentBlocksRenderer({ blocks, className }: LessonContent
                         >
                             {block.content.map((column, columnIndex) => (
                                 <div key={`columns-${index}-${columnIndex}`} className="genflix-column">
-                                    <LessonContentBlocksRenderer blocks={column.blocks} />
+                                    <LessonContentBlocksRenderer blocks={column.blocks} resolvedGlobalButtons={resolvedGlobalButtons} />
                                 </div>
                             ))}
                         </div>
@@ -1539,6 +1895,25 @@ export function LessonContentBlocksRenderer({ blocks, className }: LessonContent
                 }
                 if (block.type === 'video') {
                     return <LessonVideoBlockRenderer key={`video-${index}`} content={block.content} />;
+                }
+                if (block.type === 'button') {
+                    const resolvedGlobal = block.content.source_type === 'global' && block.content.global_button_id
+                        ? resolvedGlobalButtons?.[block.content.global_button_id]
+                        : undefined;
+                    return (
+                        <div key={`button-${index}`} className="my-6 flex flex-wrap items-center">
+                            <LessonActionButton
+                                blockContent={block.content}
+                                resolvedGlobalButton={resolvedGlobal}
+                                renderModalBlocks={(modalBlocks) => (
+                                    <LessonContentBlocksRenderer
+                                        blocks={modalBlocks as LessonContentBlock[]}
+                                        resolvedGlobalButtons={resolvedGlobalButtons}
+                                    />
+                                )}
+                            />
+                        </div>
+                    );
                 }
                 return <div key={`rich-${index}`} className="lesson-rich-text" dangerouslySetInnerHTML={{ __html: sanitizeRichTextHtml(block.content) }} />;
             })}

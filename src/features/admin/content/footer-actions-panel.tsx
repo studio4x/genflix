@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { ChangeEvent } from 'react';
+import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/app/providers/auth-provider';
 import { publishBuilderNotice } from '@/lib/builder-notice';
@@ -10,20 +11,22 @@ import {
     createModuleFooterAction,
     deleteLessonFooterAction,
     fetchCourseFooterActions,
+    fetchGlobalButtons,
     fetchLessonFooterActions,
     fetchModuleFooterActions,
     fetchButtonTemplates,
-    getSignedLessonFooterActionUrl,
     toErrorMessage,
     updateLessonFooterAction,
 } from '@/features/admin/content/api';
 import {
-    getLessonFooterActionIconName,
     getLessonFooterActionScopeLabel,
     getLessonFooterButtonClassName,
     renderButtonTemplateIcon,
 } from '@/features/admin/content/button-template-icons';
-import type { ButtonTemplate, FooterActionScope, LessonFooterAction } from '@/types/content';
+import { LessonActionButton } from '@/features/admin/content/lesson-action-button';
+import { LessonContentBlocksEditor, LessonContentBlocksRenderer } from '@/features/admin/content/lesson-content-blocks';
+import type { LessonContentBlock } from '@/features/admin/content/content-blocks';
+import type { ButtonTemplate, FooterActionScope, GlobalButtonDefinition, LessonFooterAction } from '@/types/content';
 
 type LessonFooterActionOpenTarget = 'same-tab' | 'new-tab' | 'new-window';
 
@@ -39,24 +42,6 @@ const LESSON_FOOTER_OPEN_TARGET_OPTIONS: Array<{
 
 function getLessonFooterOpenTargetLabel(target: LessonFooterActionOpenTarget) {
     return LESSON_FOOTER_OPEN_TARGET_OPTIONS.find((option) => option.value === target)?.label ?? 'Nova aba';
-}
-
-function getLessonFooterOpenTargetFeatures(target: LessonFooterActionOpenTarget) {
-    if (target === 'new-window') {
-        return 'noopener,noreferrer,width=1280,height=800';
-    }
-    if (target === 'new-tab') {
-        return 'noopener,noreferrer';
-    }
-    return '';
-}
-
-function openLessonFooterActionUrl(url: string, target: LessonFooterActionOpenTarget) {
-    if (target === 'same-tab') {
-        window.location.assign(url);
-        return;
-    }
-    window.open(url, '_blank', getLessonFooterOpenTargetFeatures(target));
 }
 
 function formatBytes(value: number): string {
@@ -110,17 +95,36 @@ export function FooterActionsPanel({
 }) {
     const { user } = useAuth();
     const [templates, setTemplates] = useState<ButtonTemplate[]>([]);
+    const [globalButtons, setGlobalButtons] = useState<GlobalButtonDefinition[]>([]);
     const [actions, setActions] = useState<LessonFooterAction[]>([]);
+    const [activeCreationMode, setActiveCreationMode] = useState<'file' | 'url' | 'modal' | 'global'>('file');
+
+    // URL creation
     const [urlLabel, setUrlLabel] = useState('');
     const [urlValue, setUrlValue] = useState('');
     const [urlOpenTarget, setUrlOpenTarget] = useState<LessonFooterActionOpenTarget>('new-tab');
     const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
+
+    // Modal creation
+    const [modalTitle, setModalTitle] = useState('');
+    const [modalButtonLabel, setModalButtonLabel] = useState('');
+    const [modalBlocks, setModalBlocks] = useState<LessonContentBlock[]>([
+        { type: 'rich-text', content: '<p>Conteúdo da janela modal...</p>' },
+    ]);
+
+    // Global linking
+    const [selectedGlobalButtonId, setSelectedGlobalButtonId] = useState('');
+
+    // Editing state
     const [editingAction, setEditingAction] = useState<LessonFooterAction | null>(null);
     const [editingTemplateId, setEditingTemplateId] = useState<string>('');
     const [editingLabel, setEditingLabel] = useState('');
     const [editingUrl, setEditingUrl] = useState('');
     const [editingOpenTarget, setEditingOpenTarget] = useState<LessonFooterActionOpenTarget>('new-tab');
     const [editingFile, setEditingFile] = useState<File | null>(null);
+    const [editingModalTitle, setEditingModalTitle] = useState('');
+    const [editingModalBlocks, setEditingModalBlocks] = useState<LessonContentBlock[]>([]);
+
     const [isLoading, setIsLoading] = useState(true);
     const [isUploading, setIsUploading] = useState(false);
     const [isSavingEdit, setIsSavingEdit] = useState(false);
@@ -132,20 +136,30 @@ export function FooterActionsPanel({
     const nextPosition = useMemo(() => (actions.length ? Math.max(...actions.map((action) => action.position)) + 1 : 1), [actions]);
     const activeTemplates = useMemo(() => templates.filter((template) => template.is_active), [templates]);
 
+    const globalButtonsMap = useMemo(() => {
+        const map: Record<string, GlobalButtonDefinition> = {};
+        for (const gb of globalButtons) {
+            map[gb.id] = gb;
+        }
+        return map;
+    }, [globalButtons]);
+
     const loadData = useCallback(async () => {
         setIsLoading(true);
         setError(null);
         try {
-            const [loadedTemplates, loadedActions] = await Promise.all([
+            const [loadedTemplates, loadedActions, loadedGlobals] = await Promise.all([
                 fetchButtonTemplates(),
                 scope === 'course'
                     ? fetchCourseFooterActions(courseId)
                     : scope === 'module'
                         ? fetchModuleFooterActions(moduleId ?? '')
                         : fetchLessonFooterActions(lessonId ?? ''),
+                fetchGlobalButtons(),
             ]);
             setTemplates(loadedTemplates);
             setActions(loadedActions);
+            setGlobalButtons(loadedGlobals);
             setSelectedTemplateId((current) => current || loadedTemplates.find((template) => template.is_active)?.id || '');
         }
         catch (err) {
@@ -167,6 +181,12 @@ export function FooterActionsPanel({
         setEditingUrl(action.url ?? '');
         setEditingOpenTarget(action.open_target ?? (action.open_in_new_tab ? 'new-tab' : 'same-tab'));
         setEditingFile(null);
+        setEditingModalTitle(action.modal_title || '');
+        setEditingModalBlocks(
+            action.modal_blocks && action.modal_blocks.length > 0
+                ? (action.modal_blocks as LessonContentBlock[])
+                : [{ type: 'rich-text', content: '<p>Conteúdo da janela modal...</p>' }]
+        );
     }
 
     function cancelEditingAction() {
@@ -176,6 +196,8 @@ export function FooterActionsPanel({
         setEditingUrl('');
         setEditingOpenTarget('new-tab');
         setEditingFile(null);
+        setEditingModalTitle('');
+        setEditingModalBlocks([]);
     }
 
     async function handleUpload(event: ChangeEvent<HTMLInputElement>) {
@@ -267,6 +289,101 @@ export function FooterActionsPanel({
         }
     }
 
+    async function handleCreateModalAction() {
+        if (!user) {
+            return;
+        }
+        setError(null);
+        try {
+            const parsed = lessonFooterActionFormSchema.safeParse({
+                scope,
+                template_id: selectedTemplateId || null,
+                action_type: 'modal',
+                label: modalButtonLabel || 'Ver Conteúdo',
+                modal_title: modalTitle || 'Conteúdo Complementar',
+                modal_blocks: modalBlocks,
+                position: nextPosition,
+                open_target: 'same-tab',
+                is_active: true,
+            });
+            if (!parsed.success) {
+                throw new Error(parsed.error.issues[0]?.message ?? 'Dados inválidos.');
+            }
+            if (scope === 'course') {
+                await createCourseFooterAction(courseId, parsed.data, user.id);
+            }
+            else if (scope === 'module') {
+                await createModuleFooterAction(moduleId ?? '', parsed.data, user.id);
+            }
+            else {
+                await createLessonFooterAction(lessonId ?? '', parsed.data, user.id);
+            }
+            setModalTitle('');
+            setModalButtonLabel('');
+            setModalBlocks([{ type: 'rich-text', content: '<p>Conteúdo da janela modal...</p>' }]);
+            await loadData();
+            publishBuilderNotice({
+                type: 'success',
+                title: 'Botão de modal criado',
+                message: 'O botão de modal foi adicionado com sucesso.',
+            });
+        }
+        catch (err) {
+            setError(toErrorMessage(err));
+        }
+    }
+
+    async function handleLinkGlobalButton() {
+        if (!user || !selectedGlobalButtonId) {
+            return;
+        }
+        setError(null);
+        try {
+            const globalBtn = globalButtonsMap[selectedGlobalButtonId];
+            if (!globalBtn) {
+                return;
+            }
+            const parsed = lessonFooterActionFormSchema.safeParse({
+                scope,
+                global_button_id: globalBtn.id,
+                template_id: globalBtn.template_id || null,
+                action_type: globalBtn.action_type,
+                label: globalBtn.label,
+                url: globalBtn.url || '',
+                storage_path: globalBtn.storage_path,
+                file_name: globalBtn.file_name,
+                file_size_bytes: globalBtn.file_size_bytes,
+                modal_title: globalBtn.modal_title,
+                modal_blocks: globalBtn.modal_blocks,
+                position: nextPosition,
+                open_target: globalBtn.open_target || 'new-tab',
+                is_active: true,
+            });
+            if (!parsed.success) {
+                throw new Error(parsed.error.issues[0]?.message ?? 'Dados inválidos.');
+            }
+            if (scope === 'course') {
+                await createCourseFooterAction(courseId, parsed.data, user.id);
+            }
+            else if (scope === 'module') {
+                await createModuleFooterAction(moduleId ?? '', parsed.data, user.id);
+            }
+            else {
+                await createLessonFooterAction(lessonId ?? '', parsed.data, user.id);
+            }
+            setSelectedGlobalButtonId('');
+            await loadData();
+            publishBuilderNotice({
+                type: 'success',
+                title: 'Botão global vinculado',
+                message: `O botão global "${globalBtn.name}" foi vinculado ao rodapé.`,
+            });
+        }
+        catch (err) {
+            setError(toErrorMessage(err));
+        }
+    }
+
     async function handleDelete(action: LessonFooterAction) {
         if (!window.confirm(`Excluir a ação "${action.label ?? action.file_name ?? 'Sem título'}"`)) {
             return;
@@ -289,12 +406,15 @@ export function FooterActionsPanel({
         try {
             const parsed = lessonFooterActionFormSchema.safeParse({
                 scope: editingAction.scope,
+                global_button_id: editingAction.global_button_id || null,
                 template_id: editingTemplateId || null,
                 action_type: editingAction.action_type,
                 label: editingLabel,
                 url: editingAction.action_type === 'url' ? editingUrl : '',
                 position: editingAction.position,
                 open_target: editingOpenTarget,
+                modal_title: editingAction.action_type === 'modal' ? editingModalTitle : '',
+                modal_blocks: editingAction.action_type === 'modal' ? editingModalBlocks : [],
                 is_active: editingAction.is_active,
             });
             if (!parsed.success) {
@@ -317,23 +437,6 @@ export function FooterActionsPanel({
         }
     }
 
-    async function handleOpen(action: LessonFooterAction) {
-        try {
-            const openTarget = action.open_target ?? (action.open_in_new_tab ? 'new-tab' : 'same-tab');
-            if (action.action_type === 'url' && action.url) {
-                openLessonFooterActionUrl(action.url, openTarget);
-                return;
-            }
-            if (action.storage_path) {
-                const signedUrl = await getSignedLessonFooterActionUrl(action.storage_path);
-                openLessonFooterActionUrl(signedUrl, openTarget);
-            }
-        }
-        catch (err) {
-            setError(toErrorMessage(err));
-        }
-    }
-
     return (
         <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -341,69 +444,233 @@ export function FooterActionsPanel({
               <p className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">{scopeTitle}</p>
               <p className="mt-2 text-sm text-slate-500">{scopeDescription}</p>
             </div>
+            <Link to="/admin/botoes-aula" className="inline-flex items-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50 shadow-sm">
+              Gerenciar Padrões Globais
+            </Link>
           </div>
 
-          <div className="mt-6 grid gap-6 xl:grid-cols-[380px_minmax(0,1fr)]">
-            <section className="space-y-6 rounded-[28px] border border-slate-200 bg-slate-50/40 p-6">
+          <div className="mt-6 grid gap-6 xl:grid-cols-[400px_minmax(0,1fr)]">
+            <section className="space-y-5 rounded-[28px] border border-slate-200 bg-slate-50/40 p-6">
               <div>
                 <p className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">Novo botão</p>
-                <p className="mt-2 text-sm text-slate-500">{'Escolha o padrão visual e adicione um arquivo ou link.'}</p>
+                <p className="mt-1 text-sm text-slate-500">Escolha o tipo de botão para adicionar a este rodapé.</p>
               </div>
 
-              <label className="block space-y-2">
-                <span className="text-sm font-bold text-slate-800">Padrão visual</span>
-                <select className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm" value={selectedTemplateId} onChange={(event) => setSelectedTemplateId(event.target.value)}>
-                  <option value="">{'Sem padrão específico'}</option>
-                  {activeTemplates.map((template) => (<option key={template.id} value={template.id}>
-                      {template.name} • {template.default_label}
-                    </option>))}
-                </select>
-              </label>
+              {/* Mode Selector */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-1 p-1 bg-slate-200/70 rounded-2xl">
+                <button
+                  type="button"
+                  onClick={() => setActiveCreationMode('file')}
+                  className={`rounded-xl py-2 text-xs font-bold transition-all ${
+                    activeCreationMode === 'file' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  📁 Arquivo
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveCreationMode('url')}
+                  className={`rounded-xl py-2 text-xs font-bold transition-all ${
+                    activeCreationMode === 'url' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  🔗 Link
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveCreationMode('modal')}
+                  className={`rounded-xl py-2 text-xs font-bold transition-all ${
+                    activeCreationMode === 'modal' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  🪟 Modal
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveCreationMode('global')}
+                  className={`rounded-xl py-2 text-xs font-bold transition-all ${
+                    activeCreationMode === 'global' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  🌐 Global
+                </button>
+              </div>
 
-              <label className="block space-y-2">
-                <span className="text-sm font-bold text-slate-800">Abrir link em</span>
-                <select className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm" value={urlOpenTarget} onChange={(event) => setUrlOpenTarget(event.target.value as LessonFooterActionOpenTarget)}>
-                  {LESSON_FOOTER_OPEN_TARGET_OPTIONS.map((option) => (<option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>))}
-                </select>
-                <p className="text-xs text-slate-500">
-                  {LESSON_FOOTER_OPEN_TARGET_OPTIONS.find((option) => option.value === urlOpenTarget)?.description}
-                </p>
-              </label>
+              {/* Visual Template selection for non-global */}
+              {activeCreationMode !== 'global' ? (
+                <>
+                  <label className="block space-y-2">
+                    <span className="text-sm font-bold text-slate-800">Padrão visual</span>
+                    <select
+                      className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm"
+                      value={selectedTemplateId}
+                      onChange={(event) => setSelectedTemplateId(event.target.value)}
+                    >
+                      <option value="">Sem padrão específico</option>
+                      {activeTemplates.map((template) => (
+                        <option key={template.id} value={template.id}>
+                          {template.name} • {template.default_label}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
 
-              {selectedTemplateId ? (<div className="rounded-2xl border border-slate-200 bg-white p-4">
-                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Preview do botão</p>
-                  <div className="mt-3">
-                    {(() => {
-                    const selectedTemplate = activeTemplates.find((template) => template.id === selectedTemplateId) ?? null;
-                    if (!selectedTemplate)
-                        return null;
-                    return (<Button type="button" variant="outline" className={getLessonFooterButtonClassName(selectedTemplate)}>
-                          {renderButtonTemplateIcon(selectedTemplate.icon)}
-                          {selectedTemplate.default_label}
-                        </Button>);
-                })()}
+                  {selectedTemplateId ? (
+                    <div className="rounded-2xl border border-slate-200 bg-white p-4">
+                      <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Preview do botão</p>
+                      <div className="mt-3">
+                        {(() => {
+                          const selectedTemplate = activeTemplates.find((template) => template.id === selectedTemplateId) ?? null;
+                          if (!selectedTemplate) return null;
+                          return (
+                            <Button type="button" variant="outline" className={getLessonFooterButtonClassName(selectedTemplate)}>
+                              {renderButtonTemplateIcon(selectedTemplate.icon)}
+                              {selectedTemplate.default_label}
+                            </Button>
+                          );
+                        })()}
+                      </div>
+                    </div>
+                  ) : null}
+                </>
+              ) : null}
+
+              {/* Mode: FILE */}
+              {activeCreationMode === 'file' ? (
+                <>
+                  <label className="block space-y-2">
+                    <span className="text-sm font-bold text-slate-800">Abrir em</span>
+                    <select className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm" value={urlOpenTarget} onChange={(event) => setUrlOpenTarget(event.target.value as LessonFooterActionOpenTarget)}>
+                      {LESSON_FOOTER_OPEN_TARGET_OPTIONS.map((option) => (
+                        <option key={option.value} value={option.value}>{option.label}</option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <label className={`block rounded-2xl border-2 border-dashed border-slate-200 bg-white p-6 text-center ${isUploading ? 'opacity-70' : 'cursor-pointer'}`}>
+                    <input type="file" className="hidden" onChange={handleUpload} disabled={isUploading}/>
+                    <p className="text-sm font-black text-slate-900">Enviar arquivo para virar botão</p>
+                    <p className="mt-1 text-xs text-slate-500">PDF, ZIP, imagem, planilha e outros materiais de apoio.</p>
+                    <span className="mt-4 inline-flex rounded-xl bg-blue-600 px-5 py-2 text-sm font-bold text-white">
+                      {isUploading ? 'Enviando...' : 'Selecionar Arquivo'}
+                    </span>
+                  </label>
+                </>
+              ) : null}
+
+              {/* Mode: URL */}
+              {activeCreationMode === 'url' ? (
+                <>
+                  <label className="block space-y-2">
+                    <span className="text-sm font-bold text-slate-800">Abrir em</span>
+                    <select className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm" value={urlOpenTarget} onChange={(event) => setUrlOpenTarget(event.target.value as LessonFooterActionOpenTarget)}>
+                      {LESSON_FOOTER_OPEN_TARGET_OPTIONS.map((option) => (
+                        <option key={option.value} value={option.value}>{option.label}</option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <div className="rounded-2xl border border-slate-200 bg-white p-4 space-y-3">
+                    <p className="text-sm font-black text-slate-900">Criar botão de URL</p>
+                    <input className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm" placeholder="Rótulo personalizado opcional" value={urlLabel} onChange={(event) => setUrlLabel(event.target.value)}/>
+                    <input className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm" placeholder="https://..." value={urlValue} onChange={(event) => setUrlValue(event.target.value)}/>
+                    <Button className="w-full rounded-xl bg-slate-900 hover:bg-slate-800 font-bold" onClick={() => void handleCreateUrlAction()}>
+                      Adicionar Link
+                    </Button>
                   </div>
-                </div>) : null}
+                </>
+              ) : null}
 
-              <label className={`block rounded-2xl border-2 border-dashed border-slate-200 bg-white p-6 text-center ${isUploading ? 'opacity-70' : 'cursor-pointer'}`}>
-                <input type="file" className="hidden" onChange={handleUpload} disabled={isUploading}/>
-                <p className="text-sm font-black text-slate-900">Enviar arquivo para virar botão</p>
-                <p className="mt-1 text-xs text-slate-500">PDF, ZIP, imagem, planilha e outros materiais de apoio.</p>
-                <span className="mt-4 inline-flex rounded-xl bg-blue-600 px-5 py-2 text-sm font-bold text-white">
-                  {isUploading ? 'Enviando...' : 'Selecionar Arquivo'}
-                </span>
-              </label>
+              {/* Mode: MODAL */}
+              {activeCreationMode === 'modal' ? (
+                <div className="space-y-4 rounded-2xl border border-slate-200 bg-white p-4">
+                  <p className="text-sm font-black text-slate-900">Criar botão de Janela Modal</p>
+                  <label className="block space-y-1">
+                    <span className="text-xs font-bold text-slate-700">Rótulo do botão</span>
+                    <input
+                      className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-blue-100"
+                      placeholder="Ex: Instruções Complementares"
+                      value={modalButtonLabel}
+                      onChange={(e) => setModalButtonLabel(e.target.value)}
+                    />
+                  </label>
+                  <label className="block space-y-1">
+                    <span className="text-xs font-bold text-slate-700">Título da janela modal</span>
+                    <input
+                      className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-blue-100"
+                      placeholder="Ex: Guia Rápido de Estudos"
+                      value={modalTitle}
+                      onChange={(e) => setModalTitle(e.target.value)}
+                    />
+                  </label>
+                  <div className="space-y-1">
+                    <span className="text-xs font-bold text-slate-700">Conteúdo do modal</span>
+                    <div className="rounded-xl border border-slate-200 bg-slate-50/50 p-2 max-h-[300px] overflow-y-auto">
+                      <LessonContentBlocksEditor
+                        blocks={modalBlocks}
+                        onChange={setModalBlocks}
+                        level={1}
+                        allowEmptyState={false}
+                        excludedBlockTypes={['button', 'image-hotspots', 'flashcards']}
+                      />
+                    </div>
+                  </div>
+                  <Button className="w-full rounded-xl bg-slate-900 hover:bg-slate-800 font-bold" onClick={() => void handleCreateModalAction()}>
+                    Adicionar Botão de Modal
+                  </Button>
+                </div>
+              ) : null}
 
-              <div className="rounded-2xl border border-slate-200 bg-white p-4 space-y-3">
-                <p className="text-sm font-black text-slate-900">Criar botão de URL</p>
-                <input className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm" placeholder="Rótulo personalizado opcional" value={urlLabel} onChange={(event) => setUrlLabel(event.target.value)}/>
-                <input className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm" placeholder="https://..." value={urlValue} onChange={(event) => setUrlValue(event.target.value)}/>
-                <Button className="w-full rounded-xl bg-slate-900 hover:bg-slate-800" onClick={() => void handleCreateUrlAction()}>
-                  Adicionar Link
-                </Button>
-              </div>
+              {/* Mode: GLOBAL BUTTON */}
+              {activeCreationMode === 'global' ? (
+                <div className="space-y-4 rounded-2xl border border-slate-200 bg-white p-4">
+                  <p className="text-sm font-black text-slate-900">Vincular Botão da Biblioteca Global</p>
+                  <label className="block space-y-1">
+                    <span className="text-xs font-bold text-slate-700">Escolha o botão global</span>
+                    <select
+                      className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3 py-2 text-sm font-medium"
+                      value={selectedGlobalButtonId}
+                      onChange={(e) => setSelectedGlobalButtonId(e.target.value)}
+                    >
+                      <option value="">Selecione um botão global...</option>
+                      {globalButtons.filter((g) => g.is_active).map((g) => (
+                        <option key={g.id} value={g.id}>
+                          {g.name} • {g.label} ({g.action_type === 'modal' ? 'Modal' : g.action_type === 'file' ? 'Arquivo' : 'Link'})
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
+                  {selectedGlobalButtonId && globalButtonsMap[selectedGlobalButtonId] ? (
+                    <div className="rounded-xl border border-blue-100 bg-blue-50/30 p-3 space-y-2">
+                      <p className="text-[10px] font-black uppercase tracking-wider text-blue-700">Prévia do botão global</p>
+                      <LessonActionButton
+                        label={globalButtonsMap[selectedGlobalButtonId].label}
+                        template={globalButtonsMap[selectedGlobalButtonId].template}
+                        action_type={globalButtonsMap[selectedGlobalButtonId].action_type}
+                        url={globalButtonsMap[selectedGlobalButtonId].url}
+                        open_target={globalButtonsMap[selectedGlobalButtonId].open_target}
+                        storage_path={globalButtonsMap[selectedGlobalButtonId].storage_path}
+                        file_name={globalButtonsMap[selectedGlobalButtonId].file_name}
+                        modal_title={globalButtonsMap[selectedGlobalButtonId].modal_title}
+                        modal_blocks={globalButtonsMap[selectedGlobalButtonId].modal_blocks}
+                        previewMode
+                        renderModalBlocks={(blocks) => (
+                          <LessonContentBlocksRenderer blocks={blocks as LessonContentBlock[]} />
+                        )}
+                      />
+                    </div>
+                  ) : null}
+
+                  <Button
+                    className="w-full rounded-xl bg-blue-600 hover:bg-blue-700 font-bold"
+                    disabled={!selectedGlobalButtonId}
+                    onClick={() => void handleLinkGlobalButton()}
+                  >
+                    Vincular ao Rodapé
+                  </Button>
+                </div>
+              ) : null}
 
               {error ? (<div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</div>) : null}
             </section>
@@ -411,55 +678,81 @@ export function FooterActionsPanel({
             <section className="rounded-[28px] border border-slate-200 bg-slate-50/40 p-6">
               <p className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">{getScopeButtonLabel(scope)}</p>
 
-              {isLoading ? (<p className="mt-4 text-sm text-slate-500">{'Carregando botões...'}</p>) : actions.length === 0 ? (<div className="mt-4 rounded-2xl border border-dashed border-slate-200 bg-white px-5 py-10 text-center text-sm text-slate-500">{'Nenhum botão configurado ainda.'}
-                </div>) : (<div className="mt-4 grid gap-4">
-                  {actions.map((action) => (<article key={action.id} className="rounded-[24px] border border-slate-200 bg-white px-5 py-4">
-                      <div className="flex flex-wrap items-start justify-between gap-4">
-                        <div className="min-w-0">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <span className="rounded-full bg-slate-900 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-white">
-                              #{action.position}
-                            </span>
-                            <span className="rounded-full bg-slate-200 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-slate-600">
-                              {action.action_type === 'file' ? 'Arquivo' : 'URL'}
-                            </span>
-                            <span className="rounded-full bg-blue-100 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-blue-700">
-                              {getLessonFooterActionScopeLabel(action.scope)}
-                            </span>
-                            <span className="rounded-full bg-cyan-100 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-cyan-700">
-                              {getLessonFooterOpenTargetLabel(action.open_target ?? (action.open_in_new_tab ? 'new-tab' : 'same-tab'))}
-                            </span>
-                            {action.template?.name ? (<span className="rounded-full bg-blue-50 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-blue-700">
-                                {action.template.name}
-                              </span>) : null}
+              {isLoading ? (
+                <p className="mt-4 text-sm text-slate-500">{'Carregando botões...'}</p>
+              ) : actions.length === 0 ? (
+                <div className="mt-4 rounded-2xl border border-dashed border-slate-200 bg-white px-5 py-10 text-center text-sm text-slate-500">
+                  {'Nenhum botão configurado ainda.'}
+                </div>
+              ) : (
+                <div className="mt-4 grid gap-4">
+                  {actions.map((action) => {
+                    const resolvedGlobal = action.global_button_id ? globalButtonsMap[action.global_button_id] : undefined;
+                    return (
+                      <article key={action.id} className="rounded-[24px] border border-slate-200 bg-white px-5 py-4">
+                        <div className="flex flex-wrap items-start justify-between gap-4">
+                          <div className="min-w-0 space-y-3">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className="rounded-full bg-slate-900 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-white">
+                                #{action.position}
+                              </span>
+                              <span className="rounded-full bg-slate-200 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-slate-600">
+                                {action.action_type === 'modal' ? 'Modal' : action.action_type === 'file' ? 'Arquivo' : 'URL'}
+                              </span>
+                              <span className="rounded-full bg-blue-100 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-blue-700">
+                                {getLessonFooterActionScopeLabel(action.scope)}
+                              </span>
+                              {action.global_button_id ? (
+                                <span className="rounded-full bg-indigo-100 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-indigo-700">
+                                  Global: {resolvedGlobal?.name || 'Vinculado'}
+                                </span>
+                              ) : null}
+                              {action.action_type !== 'modal' ? (
+                                <span className="rounded-full bg-cyan-100 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-cyan-700">
+                                  {getLessonFooterOpenTargetLabel(action.open_target ?? (action.open_in_new_tab ? 'new-tab' : 'same-tab'))}
+                                </span>
+                              ) : null}
+                              {action.template?.name ? (
+                                <span className="rounded-full bg-blue-50 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-blue-700">
+                                  {action.template.name}
+                                </span>
+                              ) : null}
+                            </div>
+
+                            <div>
+                              <LessonActionButton
+                                footerAction={action}
+                                resolvedGlobalButton={resolvedGlobal}
+                                previewMode
+                                renderModalBlocks={(blocks) => (
+                                  <LessonContentBlocksRenderer blocks={blocks as LessonContentBlock[]} />
+                                )}
+                              />
+                            </div>
+
+                            <p className="text-xs text-slate-500 break-all">
+                              {action.action_type === 'url'
+                                ? action.url
+                                : action.action_type === 'file'
+                                ? `${action.file_name ?? 'Arquivo'} • ${formatBytes(action.file_size_bytes)}`
+                                : `Modal: ${action.modal_title || 'Sem título'}`}
+                            </p>
                           </div>
-                          <div className="mt-3">
-                            <Button type="button" variant="outline" className={getLessonFooterButtonClassName(action.template)}>
-                              {renderButtonTemplateIcon(getLessonFooterActionIconName(action))}
-                              {action.label ?? action.file_name ?? action.template?.default_label ?? 'Botão sem título'}
+
+                          <div className="flex gap-2">
+                            <Button variant="outline" className="rounded-xl border-blue-200 text-blue-700 hover:bg-blue-50" onClick={() => startEditingAction(action)}>
+                              Editar
+                            </Button>
+                            <Button variant="outline" className="rounded-xl border-rose-200 text-rose-600 hover:bg-rose-50" onClick={() => void handleDelete(action)}>
+                              Excluir
                             </Button>
                           </div>
-                          <p className="mt-2 text-sm text-slate-500 break-all">
-                            {action.action_type === 'url'
-                        ? action.url
-                        : `${action.file_name ?? 'Arquivo'} • ${formatBytes(action.file_size_bytes)}`}
-                          </p>
                         </div>
-
-                        <div className="flex gap-2">
-                          <Button variant="outline" className="rounded-xl" onClick={() => void handleOpen(action)}>
-                            Visualizar
-                          </Button>
-                          <Button variant="outline" className="rounded-xl border-blue-200 text-blue-700 hover:bg-blue-50" onClick={() => startEditingAction(action)}>
-                            Editar
-                          </Button>
-                          <Button variant="outline" className="rounded-xl border-rose-200 text-rose-600 hover:bg-rose-50" onClick={() => void handleDelete(action)}>
-                            Excluir
-                          </Button>
-                        </div>
-                      </div>
-                    </article>))}
-                </div>)}
+                      </article>
+                    );
+                  })}
+                </div>
+              )}
             </section>
           </div>
 
@@ -469,15 +762,19 @@ export function FooterActionsPanel({
               onClick={cancelEditingAction}
             >
               <div
-                className="w-full max-w-2xl rounded-[28px] border border-slate-200 bg-white p-6 shadow-2xl"
+                className="w-full max-w-2xl rounded-[28px] border border-slate-200 bg-white p-6 shadow-2xl max-h-[90vh] overflow-y-auto"
                 onClick={(event) => event.stopPropagation()}
               >
                 <div className="flex flex-wrap items-start justify-between gap-3 border-b border-slate-100 pb-4">
                   <div>
-                    <p className="text-sm font-black text-slate-900">Editar botão</p>
+                    <p className="text-sm font-black text-slate-900">Editar botão do rodapé</p>
                     <p className="text-xs text-slate-500">
-                      {editingAction.action_type === 'file'
+                      {editingAction.global_button_id
+                        ? 'Este botão está vinculado à biblioteca global. Você pode atualizar seu rótulo local ou padrão visual.'
+                        : editingAction.action_type === 'file'
                         ? 'Você pode trocar o arquivo e atualizar o rótulo.'
+                        : editingAction.action_type === 'modal'
+                        ? 'Você pode atualizar o título e o conteúdo dos blocos da janela modal.'
                         : 'Você pode alterar o rótulo, a URL e o destino.'}
                     </p>
                   </div>
@@ -504,7 +801,7 @@ export function FooterActionsPanel({
                   </label>
 
                   <label className="block space-y-2">
-                    <span className="text-sm font-bold text-slate-800">Rótulo</span>
+                    <span className="text-sm font-bold text-slate-800">Rótulo do botão</span>
                     <input
                       className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm"
                       placeholder="Rótulo personalizado opcional"
@@ -523,7 +820,7 @@ export function FooterActionsPanel({
                         onChange={(event) => setEditingUrl(event.target.value)}
                       />
                     </label>
-                  ) : (
+                  ) : editingAction.action_type === 'file' ? (
                     <label className="block space-y-2">
                       <span className="text-sm font-bold text-slate-800">Arquivo atual</span>
                       <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-600">
@@ -536,22 +833,48 @@ export function FooterActionsPanel({
                       />
                       <p className="text-xs text-slate-500">Se nenhum novo arquivo for escolhido, o arquivo atual será mantido.</p>
                     </label>
+                  ) : (
+                    <div className="space-y-3">
+                      <label className="block space-y-1">
+                        <span className="text-sm font-bold text-slate-800">Título da janela modal</span>
+                        <input
+                          className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm"
+                          placeholder="Ex: Instruções Adicionais"
+                          value={editingModalTitle}
+                          onChange={(e) => setEditingModalTitle(e.target.value)}
+                        />
+                      </label>
+                      <div className="space-y-1">
+                        <span className="text-sm font-bold text-slate-800">Conteúdo dos blocos</span>
+                        <div className="rounded-2xl border border-slate-200 bg-slate-50/50 p-3 max-h-[300px] overflow-y-auto">
+                          <LessonContentBlocksEditor
+                            blocks={editingModalBlocks}
+                            onChange={setEditingModalBlocks}
+                            level={1}
+                            allowEmptyState={false}
+                            excludedBlockTypes={['button', 'image-hotspots', 'flashcards']}
+                          />
+                        </div>
+                      </div>
+                    </div>
                   )}
 
-                  <label className="block space-y-2">
-                    <span className="text-sm font-bold text-slate-800">Abrir em</span>
-                    <select
-                      className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm"
-                      value={editingOpenTarget}
-                      onChange={(event) => setEditingOpenTarget(event.target.value as LessonFooterActionOpenTarget)}
-                    >
-                      {LESSON_FOOTER_OPEN_TARGET_OPTIONS.map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
+                  {editingAction.action_type !== 'modal' ? (
+                    <label className="block space-y-2">
+                      <span className="text-sm font-bold text-slate-800">Abrir em</span>
+                      <select
+                        className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm"
+                        value={editingOpenTarget}
+                        onChange={(event) => setEditingOpenTarget(event.target.value as LessonFooterActionOpenTarget)}
+                      >
+                        {LESSON_FOOTER_OPEN_TARGET_OPTIONS.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  ) : null}
                 </div>
 
                 <div className="mt-6 flex flex-wrap gap-3">

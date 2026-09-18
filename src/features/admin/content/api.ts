@@ -1,5 +1,5 @@
-﻿import { supabase } from '@/services/supabase/client';
-import { mergeContent, sanitizeRichTextHtml, splitContent, type LessonContentBlock, } from './content-blocks';
+import { supabase } from '@/services/supabase/client';
+import { mergeContent, sanitizeRichTextHtml, splitContent, collectGlobalButtonIds, materializeMissingGlobalButtonReferences, type LessonContentBlock, } from './content-blocks';
 import { exportAssessmentContent, importAssessmentContentStructured, type ImportAssessmentData, } from '@/features/admin/assessments/api';
 import { normalizeCourseQuizTypeSettings } from '@/features/assessments/course-quiz-type-settings';
 import { buildCourseMediaPublicUrl, normalizeCourseMediaFields, normalizeCourseMediaPublicUrl } from '@/features/course-media/public-url';
@@ -7,8 +7,8 @@ import { getCourseCategories, normalizeCoursePrimaryCategory, } from '@/features
 import { isLegacyCourseSalesSchemaError, stripLegacyCourseSalesFields, withLegacyCourseSalesDefaults, } from '@/features/courses/schema-compat';
 import { normalizeCoursePublicPageContent } from '@/features/public/course-public-page-content';
 import { normalizeCourseResourceItemIds } from '@/features/public/genflix-resource-items-editor';
-import type { ButtonTemplate, Course, CourseAuthor, CourseCategory, CourseQuizTypeSettings, CourseModule, FooterActionScope, Lesson, LessonFooterAction, LessonMaterial, ModulePdfAsset, Assessment, } from '@/types/content';
-import type { ButtonTemplateFormInput, CourseFormInput, CoursePublicPageContentInput, CoursePublicPageFormInput, LessonFormInput, LessonFooterActionFormInput, ModuleFormInput, } from './schemas';
+import type { ButtonTemplate, Course, CourseAuthor, CourseCategory, CourseQuizTypeSettings, CourseModule, FooterActionScope, Lesson, LessonFooterAction, LessonMaterial, ModulePdfAsset, Assessment, GlobalButtonDefinition, } from '@/types/content';
+import type { ButtonTemplateFormInput, CourseFormInput, CoursePublicPageContentInput, CoursePublicPageFormInput, LessonFormInput, LessonFooterActionFormInput, ModuleFormInput, GlobalButtonDefinitionFormInput, } from './schemas';
 import type { Session } from '@supabase/supabase-js';
 import { deleteStorageObject, prepareStorageUpload, uploadFileWithTicket, type StorageUploadProgress } from '@/features/storage/r2-upload';
 const MATERIALS_BUCKET = 'materials';
@@ -963,6 +963,225 @@ export async function deleteButtonTemplate(templateId: string) {
         throw result.error;
     }
 }
+
+export async function fetchGlobalButtons() {
+    const result = await supabase
+        .from('global_button_definitions')
+        .select('*, template:button_templates(*)')
+        .order('name', { ascending: true });
+    if (result.error) {
+        throw result.error;
+    }
+    return (result.data as GlobalButtonDefinition[]) ?? [];
+}
+
+/**
+ * Consulta de botões globais em lote para o PLAYER (aluno) e PDF exporter.
+ * Filtra OBRIGATORIAMENTE por is_active = true.
+ */
+export async function fetchGlobalButtonsBatch(ids: string[]): Promise<GlobalButtonDefinition[]> {
+    if (!ids || ids.length === 0) {
+        return [];
+    }
+    const uniqueIds = Array.from(new Set(ids.filter(Boolean)));
+    if (uniqueIds.length === 0) {
+        return [];
+    }
+    const result = await supabase
+        .from('global_button_definitions')
+        .select('*, template:button_templates(*)')
+        .in('id', uniqueIds)
+        .eq('is_active', true);
+    if (result.error) {
+        throw result.error;
+    }
+    return (result.data as GlobalButtonDefinition[]) ?? [];
+}
+
+/**
+ * Consulta de botões globais em lote para o ADMIN (editor de blocos e importador).
+ * Retorna registros ATIVOS e INATIVOS para permitir distinguir com precisão:
+ * ativo vs inativo vs inexistente, e evitar desvinculação indevida de botões inativos na importação.
+ */
+export async function fetchGlobalButtonsBatchAdmin(ids: string[]): Promise<GlobalButtonDefinition[]> {
+    if (!ids || ids.length === 0) {
+        return [];
+    }
+    const uniqueIds = Array.from(new Set(ids.filter(Boolean)));
+    if (uniqueIds.length === 0) {
+        return [];
+    }
+    const result = await supabase
+        .from('global_button_definitions')
+        .select('*, template:button_templates(*)')
+        .in('id', uniqueIds);
+    if (result.error) {
+        throw result.error;
+    }
+    return (result.data as GlobalButtonDefinition[]) ?? [];
+}
+
+export async function createGlobalButton(input: GlobalButtonDefinitionFormInput, userId: string, file?: File | null) {
+    if (input.action_type === 'file' && !file) {
+        throw new Error('Selecione um arquivo para o botão global.');
+    }
+    let storagePath: string | null = null;
+    let fileName: string | null = null;
+    let mimeType: string | null = null;
+    let fileSizeBytes = 0;
+    if (input.action_type === 'file' && file) {
+        const ticket = await prepareStorageUpload({
+            uploadKind: 'lesson_footer_asset',
+            entityId: 'global-buttons',
+            file,
+        });
+        await uploadFileWithTicket(ticket, file);
+        storagePath = ticket.upload_path;
+        fileName = file.name;
+        mimeType = file.type || null;
+        fileSizeBytes = file.size;
+    }
+    const payload = {
+        name: input.name.trim(),
+        label: input.label.trim(),
+        template_id: input.template_id || null,
+        action_type: input.action_type,
+        url: input.action_type === 'url' ? input.url?.trim() || null : null,
+        open_target: input.open_target,
+        storage_path: storagePath,
+        file_name: fileName,
+        mime_type: mimeType,
+        file_size_bytes: fileSizeBytes,
+        modal_title: input.action_type === 'modal' ? input.modal_title?.trim() || null : null,
+        modal_blocks: input.action_type === 'modal' ? (input.modal_blocks ?? []) : [],
+        is_active: input.is_active,
+        created_by: userId,
+    };
+    const result = await supabase
+        .from('global_button_definitions')
+        .insert(payload)
+        .select('*, template:button_templates(*)')
+        .single();
+    if (result.error) {
+        if (storagePath) {
+            await deleteStorageObject({
+                uploadKind: 'lesson_footer_asset',
+                storagePath,
+                storageBucket: LESSON_FOOTER_ASSETS_BUCKET,
+            });
+        }
+        throw result.error;
+    }
+    return result.data as GlobalButtonDefinition;
+}
+
+export async function updateGlobalButton(buttonId: string, input: GlobalButtonDefinitionFormInput, file?: File | null) {
+    const currentResult = await supabase
+        .from('global_button_definitions')
+        .select('*')
+        .eq('id', buttonId)
+        .single();
+    if (currentResult.error) {
+        throw currentResult.error;
+    }
+    const current = currentResult.data as GlobalButtonDefinition;
+    let storagePath = current.storage_path;
+    let fileName = current.file_name;
+    let mimeType = current.mime_type;
+    let fileSizeBytes = current.file_size_bytes;
+
+    if (input.action_type === 'file' && file) {
+        const ticket = await prepareStorageUpload({
+            uploadKind: 'lesson_footer_asset',
+            entityId: 'global-buttons',
+            file,
+        });
+        await uploadFileWithTicket(ticket, file);
+        if (current.storage_path && current.storage_path !== ticket.upload_path) {
+            await deleteStorageObject({
+                uploadKind: 'lesson_footer_asset',
+                storagePath: current.storage_path,
+                storageBucket: LESSON_FOOTER_ASSETS_BUCKET,
+            });
+        }
+        storagePath = ticket.upload_path;
+        fileName = file.name;
+        mimeType = file.type || null;
+        fileSizeBytes = file.size;
+    }
+
+    const payload = {
+        name: input.name.trim(),
+        label: input.label.trim(),
+        template_id: input.template_id || null,
+        action_type: input.action_type,
+        url: input.action_type === 'url' ? input.url?.trim() || null : null,
+        open_target: input.open_target,
+        storage_path: input.action_type === 'file' ? storagePath : null,
+        file_name: input.action_type === 'file' ? fileName : null,
+        mime_type: input.action_type === 'file' ? mimeType : null,
+        file_size_bytes: input.action_type === 'file' ? fileSizeBytes : 0,
+        modal_title: input.action_type === 'modal' ? input.modal_title?.trim() || null : null,
+        modal_blocks: input.action_type === 'modal' ? (input.modal_blocks ?? []) : [],
+        is_active: input.is_active,
+    };
+
+    const result = await supabase
+        .from('global_button_definitions')
+        .update(payload)
+        .eq('id', buttonId)
+        .select('*, template:button_templates(*)')
+        .single();
+    if (result.error) {
+        throw result.error;
+    }
+    return result.data as GlobalButtonDefinition;
+}
+
+export async function countGlobalButtonUsages(buttonId: string): Promise<{ footers: number; lessons: number; total: number }> {
+    const [footersResult, lessonsResult] = await Promise.all([
+        supabase
+            .from('lesson_footer_actions')
+            .select('id', { count: 'exact', head: true })
+            .eq('global_button_id', buttonId),
+        supabase
+            .from('lessons')
+            .select('id', { count: 'exact', head: true })
+            .or(`text_content.ilike.%"global_button_id":"${buttonId}"%,text_content.ilike.%22global_button_id%22%3A%22${buttonId}%22%`),
+    ]);
+    const footers = footersResult.count ?? 0;
+    const lessons = lessonsResult.count ?? 0;
+    return { footers, lessons, total: footers + lessons };
+}
+
+export async function deleteGlobalButton(buttonId: string) {
+    const usage = await countGlobalButtonUsages(buttonId);
+    if (usage.total > 0) {
+        throw new Error(
+            `Não é possível excluir este botão global pois ele está sendo utilizado em ${usage.total} local(is) (${usage.footers} no rodapé e ${usage.lessons} em blocos de aulas). Desvincule o botão antes de excluí-lo.`
+        );
+    }
+    const currentResult = await supabase
+        .from('global_button_definitions')
+        .select('storage_path')
+        .eq('id', buttonId)
+        .single();
+    if (currentResult.data?.storage_path) {
+        await deleteStorageObject({
+            uploadKind: 'lesson_footer_asset',
+            storagePath: currentResult.data.storage_path,
+            storageBucket: LESSON_FOOTER_ASSETS_BUCKET,
+        });
+    }
+    const result = await supabase
+        .from('global_button_definitions')
+        .delete()
+        .eq('id', buttonId);
+    if (result.error) {
+        throw result.error;
+    }
+}
+
 type FooterActionContext = {
     scope: FooterActionScope;
     lessonId?: string | null;
@@ -998,6 +1217,7 @@ function resolveFooterActionInsertPayload(context: FooterActionContext, input: L
     const payload: Record<string, unknown> = {
         scope: context.scope,
         template_id: input.template_id ?? null,
+        global_button_id: input.global_button_id ?? null,
         action_type: input.action_type,
         label: input.label?.trim() || null,
         url: input.action_type === 'url' ? input.url?.trim() || null : null,
@@ -1008,6 +1228,8 @@ function resolveFooterActionInsertPayload(context: FooterActionContext, input: L
         position: input.position,
         open_target: input.open_target,
         open_in_new_tab: input.open_target !== 'same-tab',
+        modal_title: input.action_type === 'modal' ? input.modal_title?.trim() || null : null,
+        modal_blocks: input.action_type === 'modal' ? (input.modal_blocks ?? []) : [],
         is_active: input.is_active,
         created_by: userId,
         lesson_id: context.scope === 'lesson' ? context.lessonId ?? null : null,
@@ -1033,7 +1255,7 @@ async function fetchFooterActionsByScope(context: FooterActionContext) {
     }
     const query = supabase
         .from('lesson_footer_actions')
-        .select('*, template:button_templates(*)')
+        .select('*, template:button_templates(*), global_button:global_button_definitions(*, template:button_templates(*))')
         .eq('scope', context.scope)
         .order('position', { ascending: true });
     const scopedQuery = context.scope === 'lesson'
@@ -1210,6 +1432,7 @@ export async function updateLessonFooterAction(actionId: string, input: LessonFo
         .update({
         scope: current.scope,
         template_id: input.template_id ?? null,
+        global_button_id: input.global_button_id ?? null,
         action_type: input.action_type,
         label: input.label?.trim() || null,
         url: input.action_type === 'url' ? input.url?.trim() || null : null,
@@ -1223,10 +1446,12 @@ export async function updateLessonFooterAction(actionId: string, input: LessonFo
         position: input.position,
         open_target: input.open_target,
         open_in_new_tab: input.open_target !== 'same-tab',
+        modal_title: input.action_type === 'modal' ? input.modal_title?.trim() || null : null,
+        modal_blocks: input.action_type === 'modal' ? (input.modal_blocks ?? []) : [],
         is_active: input.is_active,
     })
         .eq('id', actionId)
-        .select('*, template:button_templates(*)')
+        .select('*, template:button_templates(*), global_button:global_button_definitions(*, template:button_templates(*))')
         .single();
     if (result.error) {
         throw result.error;
@@ -1507,31 +1732,97 @@ export async function clearCourseContent(courseId: string) {
     if (mError)
         throw mError;
 }
+/**
+ * Normaliza blocos de conteúdo para persistência ou importação,
+ * resolvendo referências a botões globais contra a biblioteca real da base destino (ativos + inativos).
+ */
+export async function normalizeImportedLessonBlocks(
+    blocks: LessonContentBlock[]
+): Promise<{ blocks: LessonContentBlock[]; warnings: string[] }> {
+    const globalIds = collectGlobalButtonIds(blocks);
+    let existingGlobalIdsSet = new Set<string>();
+    if (globalIds.length > 0) {
+        try {
+            const existingGlobals = await fetchGlobalButtonsBatchAdmin(globalIds);
+            existingGlobalIdsSet = new Set(existingGlobals.map((g) => g.id));
+        } catch (err) {
+            console.warn('Erro ao verificar existência de botões globais para normalização:', err);
+        }
+    }
+    const result = materializeMissingGlobalButtonReferences(blocks, existingGlobalIdsSet);
+    return { blocks: result.blocks, warnings: result.warnings };
+}
+
 async function createModuleLessons(moduleId: string, lessons: ImportModuleData['lessons']) {
     if (!lessons || lessons.length === 0)
         return;
-    const resolveLessonTextContent = (lesson: NonNullable<ImportModuleData['lessons']>[number]) => {
+
+    // 1. Extrair e mapear blocos para cada aula
+    const parsedLessonsBlocks: Array<LessonContentBlock[] | null> = lessons.map((lesson) => {
         if (Array.isArray(lesson.blocks) && lesson.blocks.length > 0) {
+            return lesson.blocks;
+        }
+        if (lesson.text_content) {
             try {
-                return mergeContent(lesson.blocks);
-            }
-            catch (error) {
-                console.warn('Falha ao reconstruir blocks da aula; usando text_content como fallback.', error);
+                return splitContent(lesson.text_content);
+            } catch {
+                return null;
             }
         }
-        return lesson.text_content || null;
-    };
-    const lessonsToInsert = lessons.map((lesson, index) => ({
-        module_id: moduleId,
-        title: lesson.title,
-        description: lesson.description || null,
-        lesson_type: lesson.lesson_type,
-        youtube_url: lesson.youtube_url || null,
-        text_content: resolveLessonTextContent(lesson),
-        estimated_minutes: lesson.estimated_minutes || 10,
-        is_free_preview: lesson.is_free_preview ?? false,
-        position: index + 1,
-    }));
+        return null;
+    });
+
+    // 2. Coletar todos os IDs de botões globais referenciados em todas as aulas
+    const allReferencedGlobalIds: string[] = [];
+    for (const blocks of parsedLessonsBlocks) {
+        if (blocks) {
+            allReferencedGlobalIds.push(...collectGlobalButtonIds(blocks));
+        }
+    }
+
+    // 3. Checar quais existem REALMENTE no banco de destino (ativos + inativos)
+    let existingGlobalIdsSet = new Set<string>();
+    if (allReferencedGlobalIds.length > 0) {
+        try {
+            const existingGlobals = await fetchGlobalButtonsBatchAdmin(allReferencedGlobalIds);
+            existingGlobalIdsSet = new Set(existingGlobals.map((g) => g.id));
+        } catch (err) {
+            console.warn('Não foi possível validar botões globais durante a importação:', err);
+        }
+    }
+
+    // 4. Montar dados finais de inserção aplicando a normalização centralizada
+    const lessonsToInsert = lessons.map((lesson, index) => {
+        const blocks = parsedLessonsBlocks[index];
+        let finalContent = lesson.text_content || null;
+        if (blocks) {
+            const { blocks: sanitizedBlocks, warnings } = materializeMissingGlobalButtonReferences(
+                blocks,
+                existingGlobalIdsSet
+            );
+            if (warnings.length > 0) {
+                console.info(`[Importação Aula "${lesson.title}"]:`, warnings);
+            }
+            try {
+                finalContent = mergeContent(sanitizedBlocks);
+            } catch (err) {
+                console.warn('Falha ao serializar blocks sanitizados da aula importada:', err);
+            }
+        }
+
+        return {
+            module_id: moduleId,
+            title: lesson.title,
+            description: lesson.description || null,
+            lesson_type: lesson.lesson_type,
+            youtube_url: lesson.youtube_url || null,
+            text_content: finalContent,
+            estimated_minutes: lesson.estimated_minutes || 10,
+            is_free_preview: lesson.is_free_preview ?? false,
+            position: index + 1,
+        };
+    });
+
     const { error } = await supabase.from('lessons').insert(lessonsToInsert);
     if (error)
         throw error;

@@ -1,4 +1,4 @@
-﻿import { z } from 'zod';
+import { z } from 'zod';
 import { DEFAULT_COURSE_QUIZ_TYPE_SETTINGS } from '@/features/assessments/course-quiz-type-settings';
 const youtubeRegex = /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/[^\s]+$/i;
 const directVideoRegex = /^https?:\/\/[^\s]+\.(mp4|webm|ogg|ogv|m4v|mov)(\?.*)?(#.*)?$/i;
@@ -218,14 +218,77 @@ export const buttonTemplateFormSchema = z.object({
     icon: z.string().trim().min(2, "Ícone obrigatório."),
     is_active: z.boolean().default(true),
 });
-export const lessonFooterActionFormSchema = z.object({
-    scope: z.enum(['lesson', 'module', 'course']).default('lesson'),
+
+export const modalImageBlockContentSchema = z.object({
+    source_type: z.enum(['url', 'upload']),
+    image_url: z.string(),
+    storage_path: z.string(),
+    storage_provider: z.enum(['supabase', 'r2']).optional(),
+    signed_url: z.string().nullable().optional(),
+    file_name: z.string(),
+    mime_type: z.string().nullable(),
+    alt: z.string(),
+    size: z.enum(['sm', 'md', 'lg', 'full']),
+    caption: z.string(),
+    caption_alignment: z.enum(['left', 'center', 'right']),
+    media_asset_id: z.string().optional(),
+});
+
+export const modalVideoBlockContentSchema = z.object({
+    source_type: z.enum(['url', 'upload']),
+    url: z.string(),
+    storage_path: z.string(),
+    storage_provider: z.enum(['supabase', 'r2']).optional(),
+    signed_url: z.string().nullable().optional(),
+    file_name: z.string(),
+    mime_type: z.string().nullable(),
+    caption: z.string(),
+    size: z.enum(['sm', 'md', 'lg', 'full']),
+    caption_alignment: z.enum(['left', 'center', 'right']),
+});
+
+export const modalHtmlBlockContentSchema = z.object({
+    source_type: z.enum(['paste', 'upload']),
+    html: z.string(),
+    storage_path: z.string(),
+    storage_provider: z.enum(['supabase', 'r2']).optional(),
+    signed_url: z.string().nullable().optional(),
+    file_name: z.string(),
+    mime_type: z.string().nullable(),
+});
+
+export const modalAllowedBlockSchema = z.discriminatedUnion('type', [
+    z.object({
+        type: z.literal('rich-text'),
+        content: z.string(),
+    }),
+    z.object({
+        type: z.literal('table'),
+        content: z.string(),
+    }),
+    z.object({
+        type: z.literal('image'),
+        content: modalImageBlockContentSchema,
+    }),
+    z.object({
+        type: z.literal('video'),
+        content: modalVideoBlockContentSchema,
+    }),
+    z.object({
+        type: z.literal('html'),
+        content: modalHtmlBlockContentSchema,
+    }),
+]);
+
+export const globalButtonDefinitionFormSchema = z.object({
+    name: z.string().trim().min(2, 'Nome interno obrigatório (mínimo 2 caracteres).'),
+    label: z.string().trim().min(1, 'Rótulo do botão obrigatório.'),
     template_id: z.string().uuid().nullable().optional(),
-    action_type: z.enum(['file', 'url']),
-    label: z.string().trim().optional().or(z.literal('')),
+    action_type: z.enum(['file', 'url', 'modal']),
     url: z.string().trim().url('URL inválida').optional().or(z.literal('')),
-    position: z.number().int().min(1),
     open_target: z.enum(['same-tab', 'new-tab', 'new-window']).default('new-tab'),
+    modal_title: z.string().trim().optional().or(z.literal('')),
+    modal_blocks: z.array(modalAllowedBlockSchema).default([]),
     is_active: z.boolean().default(true),
 }).superRefine((value, ctx) => {
     if (value.action_type === 'url' && !value.url) {
@@ -235,12 +298,123 @@ export const lessonFooterActionFormSchema = z.object({
             message: 'Informe a URL do botão.',
         });
     }
+    if (value.action_type === 'modal' && !value.modal_title) {
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ['modal_title'],
+            message: 'Informe o título do modal.',
+        });
+    }
 });
+
+export const lessonFooterActionFormSchema = z.object({
+    scope: z.enum(['lesson', 'module', 'course']).default('lesson'),
+    template_id: z.string().uuid().nullable().optional(),
+    global_button_id: z.string().uuid().nullable().optional(),
+    action_type: z.enum(['file', 'url', 'modal']),
+    label: z.string().trim().optional().or(z.literal('')),
+    url: z.string().trim().url('URL inválida').optional().or(z.literal('')),
+    position: z.number().int().min(1),
+    open_target: z.enum(['same-tab', 'new-tab', 'new-window']).default('new-tab'),
+    modal_title: z.string().trim().optional().or(z.literal('')),
+    modal_blocks: z.array(modalAllowedBlockSchema).default([]),
+    is_active: z.boolean().default(true),
+}).superRefine((value, ctx) => {
+    if (value.global_button_id) {
+        return;
+    }
+    if (value.action_type === 'url' && !value.url) {
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ['url'],
+            message: 'Informe a URL do botão.',
+        });
+    }
+    if (value.action_type === 'modal' && !value.modal_title) {
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ['modal_title'],
+            message: 'Informe o título do modal.',
+        });
+    }
+});
+
+export const lessonButtonBlockLocalConfigSchema = z.object({
+    template_id: z.string().uuid().nullable().optional(),
+    label: z.string().trim().min(1, 'Rótulo do botão obrigatório.'),
+    variant: z.enum(['primary', 'secondary', 'outline', 'ghost', 'link']),
+    theme: z.enum(['blue', 'emerald', 'amber', 'rose', 'slate', 'violet']),
+    icon: z.string().trim().min(2, 'Ícone obrigatório.'),
+    action_type: z.enum(['file', 'url', 'modal']),
+    url: z.string().trim().url('URL inválida').or(z.literal('')).nullable().optional(),
+    open_target: z.enum(['same-tab', 'new-tab', 'new-window']).default('new-tab'),
+    storage_path: z.string().nullable().optional(),
+    file_name: z.string().nullable().optional(),
+    mime_type: z.string().nullable().optional(),
+    file_size_bytes: z.number().int().min(0).default(0),
+    modal: z.object({
+        title: z.string().trim().min(1, 'Título do modal obrigatório.'),
+        blocks: z.array(modalAllowedBlockSchema).default([]),
+    }).nullable().optional(),
+}).superRefine((value, ctx) => {
+    if (value.action_type === 'url') {
+        if (!value.url || value.url.trim().length === 0) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ['url'],
+                message: 'Informe uma URL válida para a ação de link.',
+            });
+        }
+    } else if (value.action_type === 'file') {
+        if (!value.storage_path || value.storage_path.trim().length === 0) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ['storage_path'],
+                message: 'Selecione ou envie um arquivo válido para a ação de arquivo.',
+            });
+        }
+    } else if (value.action_type === 'modal') {
+        if (!value.modal || !value.modal.title || value.modal.title.trim().length === 0) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ['modal', 'title'],
+                message: 'Informe o título do modal.',
+            });
+        }
+    }
+});
+
+export const lessonButtonBlockSchema = z.object({
+    source_type: z.enum(['local', 'global']),
+    alignment: z.enum(['left', 'center', 'right']).default('left'),
+    width: z.enum(['auto', 'full']).default('auto'),
+    local_config: lessonButtonBlockLocalConfigSchema.nullable().optional(),
+    global_button_id: z.string().uuid().nullable().optional(),
+    cached_action: lessonButtonBlockLocalConfigSchema.nullable().optional(),
+}).superRefine((value, ctx) => {
+    if (value.source_type === 'global' && !value.global_button_id) {
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ['global_button_id'],
+            message: 'Selecione um botão da biblioteca global.',
+        });
+    }
+    if (value.source_type === 'local' && !value.local_config) {
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ['local_config'],
+            message: 'Configuração local do botão é obrigatória.',
+        });
+    }
+});
+
 export type CourseFormInput = z.infer<typeof courseFormSchema>;
 export type CoursePublicPageContentInput = z.infer<typeof coursePublicPageContentSchema>;
 export type CoursePublicPageFormInput = z.infer<typeof coursePublicPageFormSchema>;
 export type ModuleFormInput = z.infer<typeof moduleFormSchema>;
 export type LessonFormInput = z.infer<typeof lessonFormSchema>;
 export type ButtonTemplateFormInput = z.infer<typeof buttonTemplateFormSchema>;
+export type GlobalButtonDefinitionFormInput = z.infer<typeof globalButtonDefinitionFormSchema>;
 export type LessonFooterActionFormInput = z.infer<typeof lessonFooterActionFormSchema>;
+export type LessonButtonBlockInput = z.infer<typeof lessonButtonBlockSchema>;
 

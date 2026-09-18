@@ -4,7 +4,17 @@ import type {
     LessonImageHotspotItem,
     LessonFlashcardItem,
     LessonFlashcardsBlockContent,
+    LessonButtonBlockContent,
+    LessonButtonBlockAlignment,
+    LessonButtonBlockWidth,
+    LessonButtonBlockLocalConfig,
 } from '@/types/content';
+export type {
+    LessonButtonBlockContent,
+    LessonButtonBlockAlignment,
+    LessonButtonBlockWidth,
+    LessonButtonBlockLocalConfig,
+};
 export type LessonImageBlockSize = 'sm' | 'md' | 'lg' | 'full';
 export type LessonImageBlockCaptionAlignment = 'left' | 'center' | 'right';
 export type LessonVideoBlockSize = 'sm' | 'md' | 'lg' | 'full';
@@ -21,6 +31,7 @@ export interface LessonImageBlockContent {
     size: LessonImageBlockSize;
     caption: string;
     caption_alignment: LessonImageBlockCaptionAlignment;
+    media_asset_id?: string;
 }
 export interface LessonVideoBlockContent {
     source_type: 'url' | 'upload';
@@ -72,6 +83,9 @@ export type LessonContentBlock = {
 } | {
     type: 'flashcards';
     content: LessonFlashcardsBlockContent;
+} | {
+    type: 'button';
+    content: LessonButtonBlockContent;
 };
 const TABLE_PLACEHOLDER_PREFIX = '__TABLE_BLOCK__';
 const IMAGE_PLACEHOLDER_PREFIX = '__IMAGE_BLOCK__';
@@ -80,6 +94,7 @@ const HOTSPOTS_PLACEHOLDER_PREFIX = '__HOTSPOTS_BLOCK__';
 const HTML_PLACEHOLDER_PREFIX = '__HTML_BLOCK__';
 const FLASHCARDS_PLACEHOLDER_PREFIX = '__FLASHCARDS_BLOCK__';
 const COLUMNS_PLACEHOLDER_PREFIX = '__COLUMNS_BLOCK__';
+const BUTTON_PLACEHOLDER_PREFIX = '__BUTTON_BLOCK__';
 const LESSON_IMAGE_HOTSPOTS_BLOCK_ATTR = 'data-hcm-block';
 const LESSON_IMAGE_HOTSPOTS_BLOCK_PAYLOAD_ATTR = 'data-hcm-payload';
 const LESSON_IMAGE_HOTSPOTS_BLOCK_TYPE = 'image-hotspots';
@@ -90,6 +105,7 @@ const LESSON_IMAGE_BLOCK_TYPE = 'image';
 const LESSON_VIDEO_BLOCK_TYPE = 'video';
 const LESSON_HTML_BLOCK_TYPE = 'html';
 const LESSON_FLASHCARDS_BLOCK_TYPE = 'flashcards';
+const LESSON_BUTTON_BLOCK_TYPE = 'button';
 const COLUMN_WIDTH_STEP = 5;
 const LESSON_VIDEO_MAX_WIDTH_STYLE: Record<LessonVideoBlockSize, string> = {
     sm: 'max-width: 28rem;',
@@ -452,6 +468,7 @@ function normalizeLessonImageBlockContent(content: LessonImageBlockContent): Les
         caption_alignment: content.caption_alignment === 'center' || content.caption_alignment === 'right'
             ? content.caption_alignment
             : 'left',
+        media_asset_id: content.media_asset_id?.trim() || undefined,
     };
 }
 export function createEmptyLessonImageBlockContent(): LessonImageBlockContent {
@@ -1167,6 +1184,90 @@ export function parseLessonFlashcardsBlockElement(element: Element): LessonFlash
     }
     return decodeFlashcardsPayload(payload);
 }
+
+export function createEmptyLessonButtonBlockContent(): LessonButtonBlockContent {
+    return {
+        source_type: 'local',
+        alignment: 'left',
+        width: 'auto',
+        local_config: {
+            template_id: null,
+            label: 'Clique aqui',
+            variant: 'outline',
+            theme: 'blue',
+            icon: 'link',
+            action_type: 'url',
+            url: 'https://',
+            open_target: 'new-tab',
+            storage_path: null,
+            file_name: null,
+            mime_type: null,
+            file_size_bytes: 0,
+            modal: null,
+        },
+        global_button_id: null,
+        cached_action: null,
+    };
+}
+function encodeButtonPayload(content: LessonButtonBlockContent): string {
+    return encodeURIComponent(JSON.stringify(content));
+}
+function decodeButtonPayload(payload: string): LessonButtonBlockContent | null {
+    try {
+        const parsed = JSON.parse(decodeURIComponent(payload)) as LessonButtonBlockContent;
+        if (!parsed || (parsed.source_type !== 'local' && parsed.source_type !== 'global')) {
+            return null;
+        }
+        return parsed;
+    }
+    catch {
+        return null;
+    }
+}
+function buildButtonFallbackHtml(content: LessonButtonBlockContent): string {
+    const label = content.local_config?.label || content.cached_action?.label || 'Botão';
+    const rawUrl = content.local_config?.url || content.cached_action?.url;
+    const url = rawUrl && isSafeAnchorHref(rawUrl) ? rawUrl : null;
+    if (url) {
+        return `<div class="genflix-button-block-fallback" style="margin: 1rem 0; text-align: ${content.alignment || 'left'};"><a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" style="display: inline-block; padding: 0.6rem 1.25rem; border-radius: 0.75rem; border: 1px solid #cbd5e1; background: #ffffff; color: #1e293b; font-weight: bold; text-decoration: none;">${escapeHtml(label)}</a></div>`;
+    }
+    return `<div class="genflix-button-block-fallback" style="margin: 1rem 0; text-align: ${content.alignment || 'left'};"><span style="display: inline-block; padding: 0.6rem 1.25rem; border-radius: 0.75rem; border: 1px solid #cbd5e1; background: #f8fafc; color: #64748b; font-weight: bold;">${escapeHtml(label)}</span></div>`;
+}
+export function serializeLessonButtonBlock(content: LessonButtonBlockContent): string {
+    const payload = encodeButtonPayload(content);
+    return `
+    <div
+      ${LESSON_IMAGE_HOTSPOTS_BLOCK_ATTR}="${LESSON_BUTTON_BLOCK_TYPE}"
+      ${LESSON_IMAGE_HOTSPOTS_BLOCK_PAYLOAD_ATTR}="${payload}"
+    >
+      ${buildButtonFallbackHtml(content)}
+    </div>
+  `;
+}
+function extractLessonButtonBlock(element: Element): LessonContentBlock | null {
+    const payload = element.getAttribute(LESSON_IMAGE_HOTSPOTS_BLOCK_PAYLOAD_ATTR);
+    if (!payload) {
+        return null;
+    }
+    const content = decodeButtonPayload(payload);
+    if (!content) {
+        return null;
+    }
+    return {
+        type: 'button',
+        content,
+    };
+}
+export function parseLessonButtonBlockElement(element: Element): LessonButtonBlockContent | null {
+    if (element.getAttribute(LESSON_IMAGE_HOTSPOTS_BLOCK_ATTR) !== LESSON_BUTTON_BLOCK_TYPE) {
+        return null;
+    }
+    const payload = element.getAttribute(LESSON_IMAGE_HOTSPOTS_BLOCK_PAYLOAD_ATTR);
+    if (!payload) {
+        return null;
+    }
+    return decodeButtonPayload(payload);
+}
 /**
  * Sanitiza uma tabela preservando apenas estrutura segura e atributos mínimos.
  * Remove qualquer tag fora da whitelist em vez de "desembrulhar" de forma agressiva.
@@ -1324,6 +1425,20 @@ export function splitContent(html: string): LessonContentBlock[] {
         const marker = doc.createTextNode(placeholder);
         element.replaceWith(marker);
     });
+    Array.from(doc.querySelectorAll(`[${LESSON_IMAGE_HOTSPOTS_BLOCK_ATTR}="${LESSON_BUTTON_BLOCK_TYPE}"]`))
+        .forEach((element, index) => {
+        if (!element.isConnected) {
+            return;
+        }
+        const placeholder = `${BUTTON_PLACEHOLDER_PREFIX}_${index}__`;
+        const parsedBlock = extractLessonButtonBlock(element);
+        blockMap.set(placeholder, parsedBlock ?? {
+            type: 'rich-text',
+            content: normalizeHtml((element as HTMLElement).innerHTML),
+        });
+        const marker = doc.createTextNode(placeholder);
+        element.replaceWith(marker);
+    });
     const tableMap = new Map<string, string>();
     Array.from(doc.querySelectorAll('table')).forEach((table, index) => {
         const placeholder = `${TABLE_PLACEHOLDER_PREFIX}_${index}__`;
@@ -1337,7 +1452,7 @@ export function splitContent(html: string): LessonContentBlock[] {
         return [];
     }
     const blocks: LessonContentBlock[] = [];
-    const placeholderRegex = new RegExp(`(${TABLE_PLACEHOLDER_PREFIX}_\\d+__|${HOTSPOTS_PLACEHOLDER_PREFIX}_\\d+__|${FLASHCARDS_PLACEHOLDER_PREFIX}_\\d+__|${HTML_PLACEHOLDER_PREFIX}_\\d+__|${COLUMNS_PLACEHOLDER_PREFIX}_\\d+__|${IMAGE_PLACEHOLDER_PREFIX}_\\d+__|${VIDEO_PLACEHOLDER_PREFIX}_\\d+__)`, 'g');
+    const placeholderRegex = new RegExp(`(${TABLE_PLACEHOLDER_PREFIX}_\\d+__|${HOTSPOTS_PLACEHOLDER_PREFIX}_\\d+__|${FLASHCARDS_PLACEHOLDER_PREFIX}_\\d+__|${HTML_PLACEHOLDER_PREFIX}_\\d+__|${COLUMNS_PLACEHOLDER_PREFIX}_\\d+__|${IMAGE_PLACEHOLDER_PREFIX}_\\d+__|${VIDEO_PLACEHOLDER_PREFIX}_\\d+__|${BUTTON_PLACEHOLDER_PREFIX}_\\d+__)`, 'g');
     const parts = rawHtml.split(placeholderRegex);
     for (const part of parts) {
         if (!part)
@@ -1403,8 +1518,156 @@ export function mergeContent(blocks: LessonContentBlock[]): string {
         if (block.type === 'columns') {
             return normalizeHtml(serializeLessonColumnsBlock(block.content));
         }
+        if (block.type === 'button') {
+            return normalizeHtml(serializeLessonButtonBlock(block.content));
+        }
         return normalizeHtml(sanitizeRichTextHtml(block.content));
     })
         .filter(Boolean)
         .join('');
 }
+
+/**
+ * Coleta todos os IDs de botões globais referenciados em uma lista de blocos (incluindo colunas recursivas).
+ */
+export function collectGlobalButtonIds(blocks: LessonContentBlock[]): string[] {
+    const ids: string[] = [];
+    for (const block of blocks) {
+        if (block.type === 'button' && block.content.source_type === 'global' && block.content.global_button_id) {
+            ids.push(block.content.global_button_id);
+        }
+        else if (block.type === 'columns') {
+            for (const col of block.content) {
+                ids.push(...collectGlobalButtonIds(col.blocks));
+            }
+        }
+    }
+    return ids;
+}
+
+export interface MaterializeGlobalButtonsResult {
+    blocks: LessonContentBlock[];
+    warnings: string[];
+    convertedCount: number;
+    preservedCount: number;
+    removedCount: number;
+}
+
+/**
+ * Normaliza referências a botões globais em uma árvore de blocos de aula:
+ * 1. Para botões globais que EXISTEM no banco de destino (ativos OU inativos):
+ *    - Mantém a referência global (source_type = 'global', global_button_id = ID).
+ *    - NÃO converte para local, preservando a autoridade da biblioteca global do ambiente.
+ * 2. Para botões globais que NÃO EXISTEM no banco de destino (inexistentes/órfãos):
+ *    - Se possuir snapshot cached_action válido:
+ *      Converte para botão local com os dados preservados em cache, desvinculando global_button_id.
+ *    - Se NÃO possuir cached_action ou se ele estiver incompleto/inválido:
+ *      Remove o bloco inválido da aula importada para evitar URLs artificiais ou blocos disfuncionais,
+ *      registrando warning estruturado detalhado.
+ */
+export function materializeMissingGlobalButtonReferences(
+    blocks: LessonContentBlock[],
+    existingGlobalIds: Set<string>
+): MaterializeGlobalButtonsResult {
+    const warnings: string[] = [];
+    let convertedCount = 0;
+    let preservedCount = 0;
+    let removedCount = 0;
+
+    const processBlocks = (list: LessonContentBlock[]): LessonContentBlock[] => {
+        const result: LessonContentBlock[] = [];
+
+        for (const block of list) {
+            if (block.type === 'button' && block.content.source_type === 'global') {
+                const globalId = block.content.global_button_id;
+
+                // Se existe no banco de destino (seja ativo ou inativo), preserva a referência global!
+                if (globalId && existingGlobalIds.has(globalId)) {
+                    preservedCount++;
+                    result.push(block);
+                    continue;
+                }
+
+                // Não existe no destino: verificar se possui cache de ação válido
+                const cached = block.content.cached_action;
+                const isCachedValid = Boolean(
+                    cached &&
+                    cached.label?.trim() &&
+                    cached.action_type &&
+                    (
+                        (cached.action_type === 'url' && cached.url?.trim()) ||
+                        (cached.action_type === 'file' && cached.storage_path?.trim()) ||
+                        (cached.action_type === 'modal' && cached.modal?.title?.trim())
+                    )
+                );
+
+                if (isCachedValid && cached) {
+                    convertedCount++;
+                    const convertedLocalConfig: LessonButtonBlockLocalConfig = {
+                        label: cached.label.trim(),
+                        template_id: cached.template_id ?? null,
+                        template: cached.template ?? null,
+                        variant: cached.variant ?? 'outline',
+                        theme: cached.theme ?? 'blue',
+                        icon: cached.icon ?? 'link',
+                        action_type: cached.action_type,
+                        url: cached.url ?? null,
+                        open_target: cached.open_target ?? 'new-tab',
+                        storage_path: cached.storage_path ?? null,
+                        file_name: cached.file_name ?? null,
+                        file_size_bytes: cached.file_size_bytes ?? 0,
+                        modal: cached.modal ?? null,
+                    };
+                    warnings.push(
+                        `Botão global '${globalId || 'desconhecido'}' não encontrado na base de destino. Convertido para botão local a partir do snapshot em cache.`
+                    );
+                    result.push({
+                        ...block,
+                        content: {
+                            source_type: 'local',
+                            alignment: block.content.alignment ?? 'left',
+                            width: block.content.width ?? 'auto',
+                            local_config: convertedLocalConfig,
+                            cached_action: null,
+                            global_button_id: null,
+                        },
+                    });
+                } else {
+                    // Sem cache válido: remover o bloco inválido/órfão e registrar warning estruturado (Opção B)
+                    removedCount++;
+                    warnings.push(
+                        `Botão global '${globalId || 'desconhecido'}' não encontrado na base de destino e sem snapshot em cache válido. O bloco foi removido da aula por segurança estrutural.`
+                    );
+                    // Não inclui o bloco no array result
+                }
+                continue;
+            }
+
+            if (block.type === 'columns') {
+                result.push({
+                    ...block,
+                    content: block.content.map((col) => ({
+                        ...col,
+                        blocks: processBlocks(col.blocks),
+                    })),
+                });
+                continue;
+            }
+
+            result.push(block);
+        }
+
+        return result;
+    };
+
+    const sanitized = processBlocks(blocks);
+    return {
+        blocks: sanitized,
+        warnings,
+        convertedCount,
+        preservedCount,
+        removedCount,
+    };
+}
+
+

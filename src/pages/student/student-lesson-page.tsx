@@ -1,18 +1,36 @@
-﻿import { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, useOutletContext, useParams } from 'react-router-dom';
 import { useAuth } from '@/app/providers/auth-provider';
 import { Button } from '@/components/ui/button';
-import { splitContent } from '@/features/admin/content/content-blocks';
+import { splitContent, collectGlobalButtonIds, type LessonContentBlock } from '@/features/admin/content/content-blocks';
 import { ContentBlocksRenderer } from '@/features/admin/content/content-blocks-renderer';
-import { getLessonFooterActionIconName, getLessonFooterButtonClassName, renderButtonTemplateIcon, } from '@/features/admin/content/button-template-icons';
-import { fetchMaterials, fetchLessonFooterActions, getSignedMaterialUrl, getSignedLessonFooterActionUrl, } from '@/features/admin/content/api';
+import { LessonActionButton } from '@/features/admin/content/lesson-action-button';
+import {
+    fetchGlobalButtonsBatch,
+    fetchMaterials,
+    fetchLessonFooterActions,
+    getSignedMaterialUrl,
+} from '@/features/admin/content/api';
 import type { StudentCourseAssessmentSummary } from '@/features/student/assessments/api';
-import { exportLicensedModulePdf, exportModuleToPdf, } from '@/features/student/content/pdf-exporter';
+import {
+    exportLicensedModulePdf,
+    exportModuleToPdf,
+} from '@/features/student/content/pdf-exporter';
 import { LessonAudioPlayer } from '@/features/student/lesson-audio/lesson-audio-player';
 import { LessonNotesPanel } from '@/features/student/notes/lesson-notes-panel';
-import { fetchStudentCourseContentWithProgress, setLessonCompletion, toErrorMessage, } from '@/features/student/courses/api';
+import {
+    fetchStudentCourseContentWithProgress,
+    setLessonCompletion,
+    toErrorMessage,
+} from '@/features/student/courses/api';
 import { supabase } from '@/services/supabase/client';
-import type { Lesson, LessonFooterAction, StudentCourseModuleProgress, StudentLessonWithProgress, } from '@/types/content';
+import type {
+    GlobalButtonDefinition,
+    Lesson,
+    LessonFooterAction,
+    StudentCourseModuleProgress,
+    StudentLessonWithProgress,
+} from '@/types/content';
 function getLessonVideoSource(url: string | null): {
     type: 'youtube';
     value: string;
@@ -57,7 +75,7 @@ export function StudentLessonPage() {
     const [isTogglingCompletion, setIsTogglingCompletion] = useState(false);
     const [activeLessonDetails, setActiveLessonDetails] = useState<Lesson | null>(null);
     const [footerActions, setFooterActions] = useState<LessonFooterAction[]>([]);
-    const [isLoadingFooterActions, setIsLoadingFooterActions] = useState(false);
+    const [resolvedGlobalButtons, setResolvedGlobalButtons] = useState<Record<string, GlobalButtonDefinition>>({});
     const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
     const [protectedVideoPlaybackUrl, setProtectedVideoPlaybackUrl] = useState<string | null>(null);
     const [isLoadingProtectedVideo, setIsLoadingProtectedVideo] = useState(false);
@@ -67,6 +85,7 @@ export function StudentLessonPage() {
         if (!canUsePrivateLessonData) {
             setActiveLessonDetails(null);
             setFooterActions([]);
+            setResolvedGlobalButtons({});
             return;
         }
         async function loadActiveLesson() {
@@ -84,7 +103,29 @@ export function StudentLessonPage() {
                 if (!error && data) {
                     setActiveLessonDetails(data);
                 }
-                setFooterActions(footerActionsResult.filter((action) => action.is_active));
+                const activeFooters = footerActionsResult.filter((action) => action.is_active);
+                setFooterActions(activeFooters);
+
+                // Batch resolve any referenced global buttons without N+1 queries
+                const contentBlocks = data?.text_content ? splitContent(data.text_content) : [];
+                const blockGlobalIds = collectGlobalButtonIds(contentBlocks);
+                const footerGlobalIds = activeFooters
+                    .map((a) => a.global_button_id)
+                    .filter((id): id is string => Boolean(id));
+
+                const allGlobalIds = Array.from(new Set([...blockGlobalIds, ...footerGlobalIds]));
+                if (allGlobalIds.length > 0) {
+                    try {
+                        const batch = await fetchGlobalButtonsBatch(allGlobalIds);
+                        setResolvedGlobalButtons(Object.fromEntries(batch.map((b) => [b.id, b])));
+                    }
+                    catch (batchErr) {
+                        console.error('Erro ao resolver botões globais em lote:', batchErr);
+                    }
+                }
+                else {
+                    setResolvedGlobalButtons({});
+                }
             }
             catch (err) {
                 console.error('Erro ao buscar detalhes da aula:', err);
@@ -236,45 +277,6 @@ export function StudentLessonPage() {
             setIsTogglingCompletion(false);
         }
     }
-    async function handleOpenFooterAction(action: LessonFooterAction) {
-        if (!canUsePrivateLessonData) {
-            return;
-        }
-        setIsLoadingFooterActions(true);
-        try {
-            const openTarget = action.open_target ?? (action.open_in_new_tab ? 'new-tab' : 'same-tab');
-            if (action.action_type === 'url' && action.url) {
-                if (openTarget === 'same-tab') {
-                    window.location.assign(action.url);
-                }
-                else if (openTarget === 'new-window') {
-                    window.open(action.url, '_blank', 'noopener,noreferrer,width=1280,height=800');
-                }
-                else {
-                    window.open(action.url, '_blank', 'noopener,noreferrer');
-                }
-                return;
-            }
-            if (action.storage_path) {
-                const signedUrl = await getSignedLessonFooterActionUrl(action.storage_path);
-                if (openTarget === 'same-tab') {
-                    window.location.assign(signedUrl);
-                }
-                else if (openTarget === 'new-window') {
-                    window.open(signedUrl, '_blank', 'noopener,noreferrer,width=1280,height=800');
-                }
-                else {
-                    window.open(signedUrl, '_blank', 'noopener,noreferrer');
-                }
-            }
-        }
-        catch (err) {
-            alert(toErrorMessage(err));
-        }
-        finally {
-            setIsLoadingFooterActions(false);
-        }
-    }
     async function handleDownloadModulePdf() {
         if (!canUsePrivateLessonData || !currentModule)
             return;
@@ -348,7 +350,11 @@ export function StudentLessonPage() {
 
           <div className="w-full animate-in slide-in-from-bottom-4 overflow-hidden rounded-[40px] border border-slate-100 bg-white shadow-sm duration-700">
             <div className="p-8 sm:p-12 xl:p-16">
-              <ContentBlocksRenderer blocks={splitContent(textContent)} className="lesson-content-html min-h-[100px]"/>
+              <ContentBlocksRenderer
+                blocks={splitContent(textContent)}
+                className="lesson-content-html min-h-[100px]"
+                resolvedGlobalButtons={resolvedGlobalButtons}
+              />
             </div>
           </div>
         </div>)}
@@ -385,17 +391,17 @@ export function StudentLessonPage() {
           ) : (
             <div className="flex flex-wrap items-center gap-3">
               {footerActions.map((action) => (
-                <Button
+                <LessonActionButton
                   key={action.id}
-                  type="button"
-                  variant="outline"
-                  disabled={isLoadingFooterActions}
-                  onClick={() => void handleOpenFooterAction(action)}
-                  className={getLessonFooterButtonClassName(action.template)}
-                >
-                  {renderButtonTemplateIcon(getLessonFooterActionIconName(action))}
-                  {action.label ?? action.file_name ?? action.template?.default_label ?? 'Recurso'}
-                </Button>
+                  footerAction={action}
+                  resolvedGlobalButton={action.global_button_id ? resolvedGlobalButtons[action.global_button_id] : undefined}
+                  renderModalBlocks={(modalBlocks) => (
+                    <ContentBlocksRenderer
+                      blocks={modalBlocks as LessonContentBlock[]}
+                      resolvedGlobalButtons={resolvedGlobalButtons}
+                    />
+                  )}
+                />
               ))}
             </div>
           )}

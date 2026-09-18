@@ -1,7 +1,7 @@
 import genflixWordmarkUrl from '@/assets/genflix-wordmark.svg';
-import type { LessonFlashcardItem } from '@/types/content';
-import { getSignedLessonContentAssetUrl, getSignedMaterialUrl, getSignedModulePdfUrl } from '@/features/admin/content/api';
-import { parseLessonFlashcardsBlockElement, parseLessonHtmlBlockElement, parseLessonImageHotspotsBlockElement } from '@/features/admin/content/content-blocks';
+import type { GlobalButtonDefinition, LessonFlashcardItem } from '@/types/content';
+import { fetchGlobalButtonsBatch, getSignedLessonContentAssetUrl, getSignedMaterialUrl, getSignedModulePdfUrl } from '@/features/admin/content/api';
+import { mergeContent, parseLessonButtonBlockElement, parseLessonFlashcardsBlockElement, parseLessonHtmlBlockElement, parseLessonImageHotspotsBlockElement, type LessonContentBlock } from '@/features/admin/content/content-blocks';
 import { fetchPdfWatermarkSettings } from '@/features/branding/api';
 import { supabase } from '@/services/supabase/client';
 import { PDFDocument, StandardFonts, degrees, rgb } from 'pdf-lib';
@@ -252,10 +252,130 @@ function buildPdfFlashcardsFallbackHtml(title: string, cards: LessonFlashcardIte
     </section>
   `;
 }
+
+function buildPdfButtonFallbackHtml(
+    label: string,
+    actionType: 'url' | 'file' | 'modal',
+    details: {
+        url?: string;
+        fileName?: string | null;
+        modalTitle?: string;
+        modalBlocksHtml?: string;
+    }
+) {
+    if (actionType === 'url') {
+        const url = details.url || '#';
+        return `
+        <div class="pdf-button-block" style="margin: 14px 0;">
+          <a href="${escapeHtml(url)}" style="display: inline-block; padding: 8px 16px; border-radius: 10px; background: #2563eb; color: #ffffff; text-decoration: none; font-weight: bold; font-size: 12px;">
+            ${escapeHtml(label || 'Acessar Link')} ↗
+          </a>
+        </div>
+        `;
+    }
+    if (actionType === 'file') {
+        return `
+        <div class="pdf-button-block" style="margin: 14px 0;">
+          <div style="display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; border-radius: 10px; border: 1px solid #cbd5e1; background: #f8fafc; color: #1e293b; font-weight: bold; font-size: 12px;">
+            📎 ${escapeHtml(label || 'Material de Apoio')} ${details.fileName ? `(${escapeHtml(details.fileName)})` : ''}
+          </div>
+        </div>
+        `;
+    }
+    return `
+    <section class="pdf-modal-callout" style="margin: 18px 0; padding: 16px; border: 1px solid #93c5fd; border-radius: 12px; background: #eff6ff;">
+      <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; color: #1e40af; margin-bottom: 8px;">
+        🪟 ${escapeHtml(details.modalTitle || label || 'Janela de Conteúdo Complementar')}
+      </div>
+      <div class="pdf-modal-content" style="color: #334155; font-size: 12px; line-height: 1.6;">
+        ${details.modalBlocksHtml || '<p>Sem conteúdo complementar.</p>'}
+      </div>
+    </section>
+    `;
+}
+
 async function hydrateInteractiveLessonContent(textContent: string | null) {
     const source = textContent || DEFAULT_LESSON_CONTENT;
     const parser = new DOMParser();
     const doc = parser.parseFromString(source, 'text/html');
+
+    const buttonBlocks = Array.from(doc.querySelectorAll('[data-hcm-block="button"]'));
+    if (buttonBlocks.length > 0) {
+        const parsedButtons = buttonBlocks.map((block) => ({
+            block,
+            content: parseLessonButtonBlockElement(block),
+        }));
+
+        const globalIdsToFetch = parsedButtons
+            .map((p) => (p.content?.source_type === 'global' ? p.content.global_button_id : null))
+            .filter((id): id is string => Boolean(id));
+
+        let globalDefMap: Record<string, GlobalButtonDefinition> = {};
+        if (globalIdsToFetch.length > 0) {
+            try {
+                const list = await fetchGlobalButtonsBatch(Array.from(new Set(globalIdsToFetch)));
+                globalDefMap = Object.fromEntries(list.map((b) => [b.id, b]));
+            }
+            catch {
+                globalDefMap = {};
+            }
+        }
+
+        for (const { block, content } of parsedButtons) {
+            if (!content) {
+                block.remove();
+                continue;
+            }
+
+            let actionType: 'url' | 'file' | 'modal' = 'url';
+            let label = 'Botão';
+            let url = '';
+            let fileName: string | null = null;
+            let modalTitle = '';
+            let modalBlocksHtml = '';
+
+            if (content.source_type === 'global') {
+                const globalDef = content.global_button_id ? globalDefMap[content.global_button_id] : null;
+                if (globalDef && globalDef.is_active) {
+                    actionType = globalDef.action_type;
+                    label = globalDef.label;
+                    url = globalDef.url || '';
+                    fileName = globalDef.file_name;
+                    modalTitle = globalDef.modal_title || '';
+                    modalBlocksHtml = globalDef.modal_blocks && globalDef.modal_blocks.length > 0
+                        ? mergeContent(globalDef.modal_blocks as LessonContentBlock[])
+                        : '';
+                }
+                else {
+                    label = 'Botão indisponível';
+                    url = '';
+                    fileName = null;
+                    modalTitle = '';
+                    modalBlocksHtml = '';
+                }
+            }
+            else if (content.local_config) {
+                actionType = content.local_config.action_type;
+                label = content.local_config.label;
+                url = content.local_config.url || '';
+                fileName = content.local_config.file_name || null;
+                modalTitle = content.local_config.modal?.title || '';
+                modalBlocksHtml = content.local_config.modal?.blocks && content.local_config.modal.blocks.length > 0
+                    ? mergeContent(content.local_config.modal.blocks as LessonContentBlock[])
+                    : '';
+            }
+
+            const wrapper = doc.createElement('div');
+            wrapper.innerHTML = buildPdfButtonFallbackHtml(label, actionType, {
+                url,
+                fileName,
+                modalTitle,
+                modalBlocksHtml,
+            });
+            block.replaceWith(...Array.from(wrapper.childNodes));
+        }
+    }
+
     const htmlBlocks = Array.from(doc.querySelectorAll('[data-hcm-block="html"]'));
     if (htmlBlocks.length > 0) {
         htmlBlocks.forEach((block) => {
@@ -278,7 +398,7 @@ async function hydrateInteractiveLessonContent(textContent: string | null) {
         });
     }
     const hotspotBlocks = Array.from(doc.querySelectorAll('[data-hcm-block="image-hotspots"]'));
-    if (hotspotBlocks.length === 0 && htmlBlocks.length === 0 && flashcardBlocks.length === 0) {
+    if (hotspotBlocks.length === 0 && htmlBlocks.length === 0 && flashcardBlocks.length === 0 && buttonBlocks.length === 0) {
         return source;
     }
     await Promise.all(hotspotBlocks.map(async (block) => {

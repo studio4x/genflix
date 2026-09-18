@@ -4,6 +4,8 @@ import { BUTTON_ICON_OPTIONS, getLessonFooterButtonClassName, renderButtonTempla
 import { createButtonTemplate, deleteButtonTemplate, fetchButtonTemplates, toErrorMessage, updateButtonTemplate, } from '@/features/admin/content/api';
 import { buttonTemplateFormSchema, type ButtonTemplateFormInput, } from '@/features/admin/content/schemas';
 import type { ButtonTemplate } from '@/types/content';
+import { GlobalButtonsTab } from '@/features/admin/content/global-buttons-tab';
+
 const INITIAL_FORM: ButtonTemplateFormInput = {
     name: '',
     default_label: '',
@@ -14,13 +16,16 @@ const INITIAL_FORM: ButtonTemplateFormInput = {
 };
 const VARIANTS: ButtonTemplateFormInput['variant'][] = ['primary', 'secondary', 'outline', 'ghost', 'link'];
 const THEMES: ButtonTemplateFormInput['theme'][] = ['blue', 'emerald', 'amber', 'rose', 'slate', 'violet'];
+
 export function AdminButtonTemplatesPage() {
+    const [activeTab, setActiveTab] = useState<'templates' | 'globals'>('templates');
     const [templates, setTemplates] = useState<ButtonTemplate[]>([]);
     const [form, setForm] = useState<ButtonTemplateFormInput>(INITIAL_FORM);
     const [editingId, setEditingId] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
+
     useEffect(() => {
         async function load() {
             setIsLoading(true);
@@ -36,6 +41,7 @@ export function AdminButtonTemplatesPage() {
         }
         void load();
     }, []);
+
     function startEdit(template: ButtonTemplate) {
         setEditingId(template.id);
         setForm({
@@ -47,15 +53,17 @@ export function AdminButtonTemplatesPage() {
             is_active: template.is_active,
         });
     }
+
     function resetForm() {
         setEditingId(null);
         setForm(INITIAL_FORM);
     }
+
     async function handleSubmit() {
         setError(null);
         const parsed = buttonTemplateFormSchema.safeParse(form);
         if (!parsed.success) {
-            setError(parsed.error.issues[0]?.message ?? "Dados inv?lidos.");
+            setError(parsed.error.issues[0]?.message ?? 'Dados inválidos.');
             return;
         }
         setIsSaving(true);
@@ -78,6 +86,7 @@ export function AdminButtonTemplatesPage() {
             setIsSaving(false);
         }
     }
+
     async function handleDelete(template: ButtonTemplate) {
         if (!window.confirm(`Excluir o padrão "${template.name}"`))
             return;
@@ -92,13 +101,48 @@ export function AdminButtonTemplatesPage() {
             setError(toErrorMessage(err));
         }
     }
-    return (<div className="space-y-8">
-      <div className="border-b border-slate-200 pb-5">
-        <h2 className="text-2xl font-extrabold tracking-tight text-slate-900">Padrões de Botões das Aulas</h2>
-        <p className="mt-1 text-sm text-slate-500">
-          Defina o visual, o rótulo padrão e o ícone que poderão ser usados no rodapé de cada aula.
-        </p>
-      </div>
+
+    return (
+        <div className="space-y-8">
+            <div className="border-b border-slate-200 pb-5">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <div>
+                        <h2 className="text-2xl font-extrabold tracking-tight text-slate-900">Gerenciador de Botões das Aulas</h2>
+                        <p className="mt-1 text-sm text-slate-500">
+                            Configure padrões visuais reutilizáveis ou gerencie a biblioteca de botões globais da plataforma.
+                        </p>
+                    </div>
+                </div>
+
+                <div className="flex items-center gap-2 mt-6">
+                    <button
+                        type="button"
+                        onClick={() => setActiveTab('templates')}
+                        className={`rounded-xl px-4 py-2 text-sm font-bold transition-all ${
+                            activeTab === 'templates'
+                                ? 'bg-slate-900 text-white shadow-sm'
+                                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                        }`}
+                    >
+                        🎨 Padrões Visuais (Templates)
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => setActiveTab('globals')}
+                        className={`rounded-xl px-4 py-2 text-sm font-bold transition-all ${
+                            activeTab === 'globals'
+                                ? 'bg-blue-600 text-white shadow-sm'
+                                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                        }`}
+                    >
+                        🌐 Biblioteca de Botões Globais
+                    </button>
+                </div>
+            </div>
+
+            {activeTab === 'globals' ? (
+                <GlobalButtonsTab />
+            ) : (
 
       <div className="grid gap-6 xl:grid-cols-[380px_minmax(0,1fr)]">
         <section className="rounded-[28px] border border-slate-200 bg-slate-50/60 p-6">
@@ -218,5 +262,7 @@ export function AdminButtonTemplatesPage() {
             </div>)}
         </section>
       </div>
-    </div>);
+      )}
+    </div>
+  );
 }
