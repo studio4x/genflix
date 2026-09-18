@@ -497,40 +497,27 @@ function FlashcardsSession({ content, className }: LessonFlashcardsBlockRenderer
                         </div>
 
                         {/* Barra de Navegação no Rodapé: Anterior | Cartão X/N | Próximo */}
-                        <div className="flex items-center justify-between gap-3 pt-2">
+                        <div className="flex items-center justify-between gap-2 sm:gap-3 pt-2">
                             <Button
                                 type="button"
                                 variant="outline"
                                 onClick={handlePrev}
                                 disabled={currentIndex === 0}
                                 className={cn(
-                                    'rounded-xl border-slate-200 px-4 py-2 font-bold text-xs transition',
+                                    'shrink-0 rounded-xl border-slate-200 px-3 sm:px-4 py-2 font-bold text-xs transition',
                                     currentIndex === 0
                                         ? 'opacity-40 cursor-not-allowed bg-slate-50'
                                         : 'bg-white hover:bg-slate-50 text-slate-700'
                                 )}
                             >
-                                <ChevronLeft className="mr-1 h-4 w-4" />
+                                <ChevronLeft className="mr-1 h-4 w-4 shrink-0" />
                                 Anterior
                             </Button>
 
-                            <div className="flex flex-col items-center">
-                                <span className="text-sm font-black tracking-tight text-slate-800">
+                            <div className="flex items-center justify-center px-1 sm:px-2 text-center">
+                                <span className="text-xs sm:text-sm font-black tracking-tight text-slate-800 whitespace-nowrap">
                                     Cartão {currentIndex + 1}/{totalCards}
                                 </span>
-                                <div className="mt-1 flex items-center gap-1">
-                                    {shuffledCards.map((_, i) => (
-                                        <span
-                                            key={i}
-                                            className={cn(
-                                                'h-1.5 rounded-full transition-all duration-300',
-                                                i === currentIndex
-                                                    ? 'w-5 bg-teal-600'
-                                                    : 'w-1.5 bg-slate-200'
-                                            )}
-                                        />
-                                    ))}
-                                </div>
                             </div>
 
                             <Button
@@ -539,14 +526,14 @@ function FlashcardsSession({ content, className }: LessonFlashcardsBlockRenderer
                                 onClick={handleNext}
                                 disabled={currentIndex === totalCards - 1}
                                 className={cn(
-                                    'rounded-xl border-slate-200 px-4 py-2 font-bold text-xs transition',
+                                    'shrink-0 rounded-xl border-slate-200 px-3 sm:px-4 py-2 font-bold text-xs transition',
                                     currentIndex === totalCards - 1
                                         ? 'opacity-40 cursor-not-allowed bg-slate-50'
                                         : 'bg-teal-600 hover:bg-teal-700 text-white border-transparent'
                                 )}
                             >
                                 Próximo
-                                <ChevronRight className="ml-1 h-4 w-4" />
+                                <ChevronRight className="ml-1 h-4 w-4 shrink-0" />
                             </Button>
                         </div>
                     </div>
