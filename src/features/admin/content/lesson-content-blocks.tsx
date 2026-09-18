@@ -1400,6 +1400,7 @@ export interface LessonContentBlocksEditorProps {
     allowEmptyState?: boolean;
     excludedBlockTypes?: Array<LessonContentBlock['type']>;
     assetContext?: 'lesson' | 'global';
+    columnCount?: number;
 }
 
 export function LessonContentBlocksEditor({
@@ -1410,7 +1411,9 @@ export function LessonContentBlocksEditor({
     allowEmptyState = false,
     excludedBlockTypes,
     assetContext = 'lesson',
+    columnCount,
 }: LessonContentBlocksEditorProps) {
+    const isCompactMode = (columnCount ?? 0) >= 3;
     const [editingButtonBlockIndex, setEditingButtonBlockIndex] = useState<number | null>(null);
     const [globalButtonsMap, setGlobalButtonsMap] = useState<Record<string, GlobalButtonDefinition | null>>({});
 
@@ -1509,8 +1512,8 @@ export function LessonContentBlocksEditor({
                 </div>
             ) : null}
             {blocks.map((block, index) => (
-                <div key={`${block.type}-${index}`} className={cn('group relative rounded-2xl border border-slate-200 bg-slate-50/50 p-5 transition-all hover:bg-white hover:shadow-md', level > 0 && 'bg-white')}>
-                    <div className="mb-4 flex items-center justify-between border-b border-slate-100 pb-3">
+                <div key={`${block.type}-${index}`} className={cn('group relative rounded-2xl border border-slate-200 bg-slate-50/50 transition-all hover:bg-white hover:shadow-md min-w-0 max-w-full', isCompactMode ? 'p-3' : 'p-5', level > 0 && 'bg-white')}>
+                    <div className={cn('flex items-center justify-between border-b border-slate-100 min-w-0 max-w-full', isCompactMode ? 'mb-2 pb-2 gap-1 flex-wrap' : 'mb-4 pb-3')}>
                         <div className="flex items-center gap-2">
                             <span className="flex h-6 w-6 items-center justify-center rounded bg-blue-100 text-[10px] font-black text-blue-700">
                                 {index + 1}
@@ -1678,15 +1681,15 @@ export function LessonContentBlocksEditor({
                             </div>
                         );
                     })() : block.type === 'columns' ? (
-                        <div className="space-y-4">
-                            <div className="flex flex-col gap-2 rounded-xl border border-slate-200 bg-white p-4 md:flex-row md:items-center md:justify-between">
+                        <div className="space-y-4 rounded-xl border border-slate-200 bg-slate-50/70 p-3 sm:p-4 min-w-0 max-w-full">
+                            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200/80 pb-3 min-w-0 max-w-full">
                                 <div>
                                     <p className="text-xs font-black uppercase tracking-[0.16em] text-slate-500">Layout em colunas</p>
                                     <p className="text-xs text-slate-500">Cada coluna pode receber qualquer tipo de bloco disponível.</p>
                                 </div>
-                                <label className="inline-flex items-center gap-2 text-xs font-semibold text-slate-600">
+                                <label className="inline-flex items-center gap-2 text-xs font-semibold text-slate-600 min-w-0 max-w-full truncate">
                                     Quantidade:
-                                    <select className="rounded-md border border-slate-200 bg-white px-2 py-1 text-xs font-semibold" value={block.content.length} onChange={(event) => {
+                                    <select className="rounded-md border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-700 shadow-xs min-w-0 max-w-full truncate" value={block.content.length} onChange={(event) => {
                                         const nextCount = Number.parseInt(event.target.value, 10);
                                         if (!Number.isFinite(nextCount)) {
                                             return;
@@ -1724,17 +1727,17 @@ export function LessonContentBlocksEditor({
                                 </label>
                             </div>
 
-                            <div className={`grid grid-cols-1 gap-4 ${block.content.length === 1 ? 'md:grid-cols-1' : block.content.length === 2 ? 'md:grid-cols-2' : block.content.length === 3 ? 'md:grid-cols-3' : 'md:grid-cols-4'}`}>
+                            <div className={`grid grid-cols-1 gap-3 min-w-0 max-w-full ${block.content.length === 1 ? 'md:grid-cols-1' : block.content.length === 2 ? 'md:grid-cols-2' : block.content.length === 3 ? 'sm:grid-cols-2 lg:grid-cols-3' : 'sm:grid-cols-2 lg:grid-cols-4'}`}>
                                 {block.content.map((column, columnIndex) => (
-                                    <div key={`column-editor-${index}-${columnIndex}`} className="rounded-xl border border-slate-200 bg-white p-3">
-                                        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-                                            <p className="text-[11px] font-black uppercase tracking-widest text-slate-500">
+                                    <div key={`column-editor-${index}-${columnIndex}`} className="rounded-xl border border-slate-200 bg-white p-2.5 sm:p-3 min-w-0 max-w-full">
+                                        <div className="mb-2.5 flex flex-wrap items-center justify-between gap-2 min-w-0 max-w-full">
+                                            <p className="text-[11px] font-black uppercase tracking-widest text-slate-500 truncate">
                                                 Coluna {columnIndex + 1}
                                             </p>
-                                            <label className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">
+                                            <label className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400 min-w-0 max-w-full truncate">
                                                 Largura
                                                 <select
-                                                    className="rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] font-semibold text-slate-600"
+                                                    className="rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] font-semibold text-slate-600 min-w-0 max-w-full truncate"
                                                     value={column.width}
                                                     onChange={(event) => {
                                                         const nextWidth = Number.parseInt(event.target.value, 10);
@@ -1763,6 +1766,7 @@ export function LessonContentBlocksEditor({
                                         <LessonContentBlocksEditor
                                             blocks={column.blocks}
                                             level={level + 1}
+                                            columnCount={block.content.length}
                                             allowEmptyState
                                             onError={onError}
                                             excludedBlockTypes={excludedBlockTypes}
@@ -1781,12 +1785,12 @@ export function LessonContentBlocksEditor({
                             </div>
                         </div>
                     ) : (
-                        <ReactQuill theme="snow" value={block.content} onChange={(value: string) => updateBlock(index, { ...block, content: value })} modules={FULL_QUILL_MODULES} formats={FULL_QUILL_FORMATS} enableHtmlMode placeholder="Escreva aqui o texto da aula..." />
+                        <ReactQuill theme="snow" value={block.content} onChange={(value: string) => updateBlock(index, { ...block, content: value })} modules={FULL_QUILL_MODULES} formats={FULL_QUILL_FORMATS} enableHtmlMode compact={isCompactMode} placeholder="Escreva aqui o texto da aula..." />
                     )}
                 </div>
             ))}
 
-            <div className={cn('flex flex-wrap items-center gap-3 p-4', addBarClassName)}>
+            <div className={cn('flex flex-wrap items-center gap-2 p-3 min-w-0 max-w-full', addBarClassName)}>
                 <span className="mr-2 text-xs font-bold text-slate-500">Adicionar bloco:</span>
                 {!excludedBlockTypes?.includes('rich-text') && (
                     <Button type="button" variant="outline" size="sm" onClick={() => addBlock('rich-text')} className="border-slate-200 bg-white hover:bg-blue-50 hover:text-blue-600">
