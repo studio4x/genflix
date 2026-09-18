@@ -525,7 +525,7 @@ function FlashcardsSession({ content, className }: LessonFlashcardsBlockRenderer
     const currentTypedAnswer = currentCard ? (studentAnswers[currentCard.id] || '') : '';
 
     return (
-        <div className={cn('my-8 overflow-hidden rounded-[32px] border border-slate-200/90 bg-white shadow-sm', className)}>
+        <div className={cn('hcm-flashcard-container my-8 overflow-hidden rounded-[32px] border border-slate-200/90 bg-white shadow-sm', className)}>
             {/* Header com branding Genflix */}
             <div className="border-b border-slate-100 bg-gradient-to-r from-slate-50 to-white px-6 py-4 flex flex-wrap items-center justify-between gap-3">
                 <div className="flex items-center gap-2.5">
@@ -607,7 +607,7 @@ function FlashcardsSession({ content, className }: LessonFlashcardsBlockRenderer
                             onClick={allowStudentAnswer ? undefined : handleToggleReveal}
                             onKeyDown={allowStudentAnswer ? undefined : handleCardKeyDown}
                             className={cn(
-                                'group relative rounded-[26px] border-2 p-6 sm:p-8 transition-all duration-300 outline-none',
+                                'hcm-flashcard-card group relative rounded-[26px] border-2 p-6 sm:p-8 transition-all duration-300 outline-none',
                                 allowStudentAnswer ? 'cursor-default' : 'cursor-pointer select-none',
                                 !allowStudentAnswer && 'focus-visible:ring-4 focus-visible:ring-teal-200 focus-visible:border-teal-500',
                                 isRevealed

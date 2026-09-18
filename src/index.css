@@ -193,7 +193,7 @@
     color: #fff !important;
   }
 
-  :where([class*="text-[#1398B7]"], [class*="text-[#0A3640]"], [class*="text-blue-"], [class*="text-cyan-"], [class*="text-sky-"], [class*="text-teal-"], [class*="text-indigo-"]) {
+  :where([class*="text-[#1398B7]"], [class*="text-[#0A3640]"], [class*="text-blue-"], [class*="text-cyan-"], [class*="text-sky-"], [class*="text-teal-"], [class*="text-indigo-"]):not(.hcm-flashcard-container *):not(.hcm-flashcard-card *) {
     color: var(--genflix-accent) !important;
   }
 
@@ -248,11 +248,12 @@
     [class*="from-[#1398B7]"],
     [class*="from-[#075a67]"],
     [class*="from-[#0A3640]"],
-    [class*="from-blue-"],
-    [class*="from-cyan-"],
-    [class*="from-sky-"],
-    [class*="from-teal-"]
-  ) :where([class*="text-[#15323b]"], [class*="text-[#0A3640]"], [class*="text-[#183139]"], [class*="text-slate-"], [class*="text-blue-"], [class*="text-cyan-"], [class*="text-sky-"], [class*="text-teal-"], [class*="text-indigo-"]) {
+    [class*="from-blue-600"],
+    [class*="from-blue-700"],
+    [class*="from-cyan-600"],
+    [class*="from-sky-600"],
+    [class*="from-teal-600"]
+  ):not(.hcm-flashcard-container):not(.hcm-flashcard-card) :where([class*="text-[#15323b]"], [class*="text-[#0A3640]"], [class*="text-[#183139]"], [class*="text-slate-"], [class*="text-blue-"], [class*="text-cyan-"], [class*="text-sky-"], [class*="text-teal-"], [class*="text-indigo-"]):not(.hcm-flashcard-container *):not(.hcm-flashcard-card *) {
     color: #fff !important;
   }
 
