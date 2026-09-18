@@ -480,11 +480,13 @@ function FlashcardsSession({ content, className }: LessonFlashcardsBlockRenderer
     }
 
     function handleToggleReveal() {
-        setIsRevealed((prev) => !prev);
+        if (!isRevealed) {
+            setIsRevealed(true);
+        }
     }
 
     function handleCardKeyDown(event: KeyboardEvent<HTMLDivElement>) {
-        if (currentCard?.allow_student_answer) {
+        if (currentCard?.allow_student_answer || isRevealed) {
             return;
         }
         if (event.key === 'Enter' || event.key === ' ') {
@@ -593,208 +595,205 @@ function FlashcardsSession({ content, className }: LessonFlashcardsBlockRenderer
                     /* ESTADOS B & C: PERGUNTA / RESPOSTA */
                     <div className="mx-auto max-w-3xl space-y-6">
                         {/* Cartão Interativo */}
-                        <div
-                            role={allowStudentAnswer ? 'region' : 'button'}
-                            tabIndex={allowStudentAnswer ? undefined : 0}
-                            aria-expanded={allowStudentAnswer ? undefined : isRevealed}
-                            aria-label={
-                                allowStudentAnswer
-                                    ? `Cartão ${currentIndex + 1} de ${totalCards}`
-                                    : isRevealed
-                                        ? `Pergunta: ${currentCard?.question}. Resposta: ${currentCard?.answer}. Clique para ocultar a resposta.`
-                                        : `Pergunta: ${currentCard?.question}. Clique para ver a resposta.`
-                            }
-                            onClick={allowStudentAnswer ? undefined : handleToggleReveal}
-                            onKeyDown={allowStudentAnswer ? undefined : handleCardKeyDown}
-                            className={cn(
-                                'hcm-flashcard-card group relative rounded-[26px] border-2 p-6 sm:p-8 transition-all duration-300 outline-none',
-                                allowStudentAnswer ? 'cursor-default' : 'cursor-pointer select-none',
-                                !allowStudentAnswer && 'focus-visible:ring-4 focus-visible:ring-teal-200 focus-visible:border-teal-500',
-                                isRevealed
-                                    ? 'border-teal-500/80 bg-gradient-to-br from-teal-50/30 via-white to-emerald-50/20 shadow-md'
-                                    : 'border-slate-200 bg-white hover:border-teal-300 hover:shadow-lg'
-                            )}
-                        >
-                            {/* IMAGEM OPCIONAL (Sempre posicionada acima da pergunta se existir) */}
-                            {hasImage && resolvedImageUrl && (
-                                <div className="mb-6 flex items-center justify-center rounded-2xl bg-slate-900/5 p-3 border border-slate-100 max-h-[280px] overflow-hidden">
-                                    <img
-                                        src={resolvedImageUrl}
-                                        alt={currentCard?.image_alt || 'Imagem da pergunta'}
-                                        onError={() => {
-                                            if (cardId) {
-                                                setFailedImageIds((prev) => ({ ...prev, [cardId]: true }));
-                                            }
-                                        }}
-                                        className="max-h-[250px] w-auto max-w-full object-contain rounded-xl shadow-xs"
-                                    />
-                                </div>
-                            )}
-
-                            {!isRevealed ? (
-                                /* ESTADO B: SOMENTE PERGUNTA (E CAMPO DO ALUNO SE HABILITADO) */
-                                <div className="space-y-6 animate-in fade-in duration-200 motion-reduce:transition-none">
-                                    <div className="flex items-center justify-between">
-                                        <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-3 py-1 text-xs font-black uppercase tracking-wider text-blue-700">
-                                            <span className="h-1.5 w-1.5 rounded-full bg-blue-600" />
-                                            Pergunta
-                                        </span>
-                                        <span className="text-[11px] font-bold text-slate-400">
-                                            Cartão {currentIndex + 1} de {totalCards}
-                                        </span>
-                                    </div>
-
-                                    <div className="min-h-[100px] flex items-center justify-center text-center px-2 py-2">
-                                        <p className="text-lg sm:text-xl font-extrabold text-slate-800 leading-snug whitespace-pre-wrap">
-                                            {currentCard?.question}
-                                        </p>
-                                    </div>
-
-                                    {/* Campo Opcional para o aluno digitar sua resposta */}
-                                    {allowStudentAnswer ? (
-                                        <div
-                                            className="space-y-3 pt-4 border-t border-slate-100"
-                                            onClick={(e) => e.stopPropagation()}
-                                        >
-                                            <label className="block space-y-1.5 text-left">
-                                                <span className="text-xs font-bold text-slate-700 block">
-                                                    Sua resposta (opcional):
-                                                </span>
-                                                <textarea
-                                                    rows={3}
-                                                    value={currentTypedAnswer}
-                                                    onChange={(e) => {
-                                                        const val = e.target.value;
-                                                        if (currentCard) {
-                                                            setStudentAnswers((prev) => ({
-                                                                ...prev,
-                                                                [currentCard.id]: val,
-                                                            }));
-                                                        }
-                                                    }}
-                                                    onClick={(e) => e.stopPropagation()}
-                                                    onKeyDown={(e) => {
-                                                        e.stopPropagation();
-                                                        if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-                                                            e.preventDefault();
-                                                            setIsRevealed(true);
-                                                        }
-                                                    }}
-                                                    placeholder="Digite sua resposta antes de conferir..."
-                                                    className="w-full rounded-xl border border-slate-200 bg-white p-3.5 text-sm text-slate-800 placeholder:text-slate-400 outline-none transition focus:border-teal-500 focus:ring-2 focus:ring-teal-100 resize-y"
-                                                />
-                                            </label>
-
-                                            <div className="flex items-center justify-end pt-1">
-                                                <Button
-                                                    type="button"
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        setIsRevealed(true);
-                                                    }}
-                                                    className="w-full sm:w-auto rounded-xl bg-teal-600 hover:bg-teal-700 px-6 py-2.5 text-xs font-black text-white shadow-sm transition"
-                                                >
-                                                    Conferir resposta
-                                                </Button>
-                                            </div>
-                                        </div>
-                                    ) : (
-                                        <div className="pt-2 text-center border-t border-slate-100">
-                                            <p className="text-xs font-bold text-teal-700/90 group-hover:text-teal-800 transition-colors">
-                                                💡 Clique no cartão para ver a resposta
-                                            </p>
+                        {(() => {
+                            const isClickable = !allowStudentAnswer && !isRevealed;
+                            return (
+                                <div
+                                    role={isClickable ? 'button' : 'region'}
+                                    tabIndex={isClickable ? 0 : undefined}
+                                    aria-expanded={isClickable ? isRevealed : undefined}
+                                    aria-label={
+                                        allowStudentAnswer
+                                            ? `Cartão ${currentIndex + 1} de ${totalCards}`
+                                            : isRevealed
+                                                ? `Pergunta: ${currentCard?.question}. Resposta: ${currentCard?.answer}.`
+                                                : `Pergunta: ${currentCard?.question}. Clique para ver a resposta.`
+                                    }
+                                    onClick={isClickable ? handleToggleReveal : undefined}
+                                    onKeyDown={isClickable ? handleCardKeyDown : undefined}
+                                    className={cn(
+                                        'hcm-flashcard-card group relative rounded-[26px] border-2 p-6 sm:p-8 transition-all duration-300 outline-none',
+                                        isClickable ? 'cursor-pointer select-none' : 'cursor-default',
+                                        isClickable && 'focus-visible:ring-4 focus-visible:ring-teal-200 focus-visible:border-teal-500',
+                                        isRevealed
+                                            ? 'border-teal-500/80 bg-gradient-to-br from-teal-50/30 via-white to-emerald-50/20 shadow-md'
+                                            : 'border-slate-200 bg-white hover:border-teal-300 hover:shadow-lg'
+                                    )}
+                                >
+                                    {/* IMAGEM OPCIONAL (Sempre posicionada acima da pergunta se existir) */}
+                                    {hasImage && resolvedImageUrl && (
+                                        <div className="mb-6 flex items-center justify-center rounded-2xl bg-slate-900/5 p-3 border border-slate-100 max-h-[280px] overflow-hidden">
+                                            <img
+                                                src={resolvedImageUrl}
+                                                alt={currentCard?.image_alt || 'Imagem da pergunta'}
+                                                onError={() => {
+                                                    if (cardId) {
+                                                        setFailedImageIds((prev) => ({ ...prev, [cardId]: true }));
+                                                    }
+                                                }}
+                                                className="max-h-[250px] w-auto max-w-full object-contain rounded-xl shadow-xs"
+                                            />
                                         </div>
                                     )}
-                                </div>
-                            ) : (
-                                /* ESTADO C: RESPOSTA REVELADA */
-                                <div className="animate-in fade-in duration-300 motion-reduce:transition-none space-y-6">
-                                    <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                                        <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-3 py-1 text-xs font-black uppercase tracking-wider text-emerald-900">
-                                            <span className="h-1.5 w-1.5 rounded-full bg-emerald-600" />
-                                            Resposta Revelada
-                                        </span>
-                                        <span className="text-[11px] font-extrabold text-slate-600">
-                                            Cartão {currentIndex + 1} de {totalCards}
-                                        </span>
-                                    </div>
 
-                                    {/* Exibição quando O ALUNO DIGITOU RESPOSTA */}
-                                    {allowStudentAnswer ? (
-                                        <div className="space-y-4">
-                                            {/* Pergunta */}
-                                            <div className="rounded-2xl bg-slate-50 p-4 border border-slate-200">
-                                                <span className="text-[10px] font-black uppercase tracking-wider text-slate-600 block mb-1">
+                                    {!isRevealed ? (
+                                        /* ESTADO B: SOMENTE PERGUNTA (E CAMPO DO ALUNO SE HABILITADO) */
+                                        <div className="space-y-6 animate-in fade-in duration-200 motion-reduce:transition-none">
+                                            <div className="flex items-center justify-between">
+                                                <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-3 py-1 text-xs font-black uppercase tracking-wider text-blue-700">
+                                                    <span className="h-1.5 w-1.5 rounded-full bg-blue-600" />
                                                     Pergunta
                                                 </span>
-                                                <p className="text-sm sm:text-base font-extrabold text-slate-900 leading-relaxed whitespace-pre-wrap">
+                                                <span className="text-[11px] font-bold text-slate-400">
+                                                    Cartão {currentIndex + 1} de {totalCards}
+                                                </span>
+                                            </div>
+
+                                            <div className="min-h-[100px] flex items-center justify-center text-center px-2 py-2">
+                                                <p className="text-base sm:text-lg font-bold text-slate-900 leading-snug whitespace-pre-wrap">
                                                     {currentCard?.question}
                                                 </p>
                                             </div>
 
-                                            {/* Sua Resposta */}
-                                            <div className="rounded-2xl bg-slate-100/90 p-4 border border-slate-200">
-                                                <span className="text-[10px] font-black uppercase tracking-wider text-slate-700 block mb-1">
-                                                    Sua resposta
-                                                </span>
-                                                <p className="text-sm sm:text-base font-bold text-slate-950 leading-relaxed whitespace-pre-wrap">
-                                                    {currentTypedAnswer.trim() ? (
-                                                        currentTypedAnswer
-                                                    ) : (
-                                                        <span className="italic text-slate-500 font-medium">Nenhuma resposta digitada.</span>
-                                                    )}
-                                                </p>
-                                            </div>
+                                            {/* Campo Opcional para o aluno digitar sua resposta */}
+                                            {allowStudentAnswer ? (
+                                                <div
+                                                    className="space-y-3 pt-4 border-t border-slate-100"
+                                                    onClick={(e) => e.stopPropagation()}
+                                                >
+                                                    <label className="block space-y-1.5 text-left">
+                                                        <span className="text-xs font-bold text-slate-700 block">
+                                                            Sua resposta (opcional):
+                                                        </span>
+                                                        <textarea
+                                                            rows={3}
+                                                            value={currentTypedAnswer}
+                                                            onChange={(e) => {
+                                                                const val = e.target.value;
+                                                                if (currentCard) {
+                                                                    setStudentAnswers((prev) => ({
+                                                                        ...prev,
+                                                                        [currentCard.id]: val,
+                                                                    }));
+                                                                }
+                                                            }}
+                                                            onClick={(e) => e.stopPropagation()}
+                                                            onKeyDown={(e) => {
+                                                                e.stopPropagation();
+                                                                if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                                                                    e.preventDefault();
+                                                                    setIsRevealed(true);
+                                                                }
+                                                            }}
+                                                            placeholder="Digite sua resposta antes de conferir..."
+                                                            className="w-full rounded-xl border border-slate-200 bg-white p-3.5 text-sm text-slate-800 placeholder:text-slate-400 outline-none transition focus:border-teal-500 focus:ring-2 focus:ring-teal-100 resize-y"
+                                                        />
+                                                    </label>
 
-                                            {/* Resposta Oficial */}
-                                            <div className="rounded-2xl bg-teal-50 p-5 border border-teal-200">
-                                                <span className="text-[10px] font-black uppercase tracking-wider text-teal-900 block mb-1">
-                                                    Resposta Oficial do Professor
-                                                </span>
-                                                <p className="text-base sm:text-lg font-black text-teal-950 leading-relaxed whitespace-pre-wrap">
-                                                    {currentCard?.answer}
-                                                </p>
-                                            </div>
+                                                    <div className="flex items-center justify-end pt-1">
+                                                        <Button
+                                                            type="button"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setIsRevealed(true);
+                                                            }}
+                                                            className="w-full sm:w-auto rounded-xl bg-teal-600 hover:bg-teal-700 px-6 py-2.5 text-xs font-black text-white shadow-sm transition"
+                                                        >
+                                                            Conferir resposta
+                                                        </Button>
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <div className="pt-2 text-center border-t border-slate-100">
+                                                    <p className="text-xs font-bold text-teal-700/90 group-hover:text-teal-800 transition-colors">
+                                                        💡 Clique no cartão para ver a resposta
+                                                    </p>
+                                                </div>
+                                            )}
                                         </div>
                                     ) : (
-                                        /* Exibição padrão sem campo de resposta (Duas colunas em desktop, empilhado em mobile) */
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 min-h-[150px] items-stretch">
-                                            {/* Pergunta */}
-                                            <div className="rounded-2xl bg-slate-50 p-5 border border-slate-200 flex flex-col justify-between">
-                                                <div>
-                                                    <span className="text-[10px] font-black uppercase tracking-wider text-slate-600 block mb-2">
-                                                        Pergunta
-                                                    </span>
-                                                    <p className="text-base sm:text-lg font-extrabold text-slate-900 leading-relaxed whitespace-pre-wrap">
-                                                        {currentCard?.question}
-                                                    </p>
-                                                </div>
+                                        /* ESTADO C: RESPOSTA REVELADA */
+                                        <div className="animate-in fade-in duration-300 motion-reduce:transition-none space-y-6">
+                                            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                                                <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-3 py-1 text-xs font-black uppercase tracking-wider text-emerald-900">
+                                                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-600" />
+                                                    Resposta Revelada
+                                                </span>
+                                                <span className="text-[11px] font-extrabold text-slate-600">
+                                                    Cartão {currentIndex + 1} de {totalCards}
+                                                </span>
                                             </div>
 
-                                            {/* Resposta */}
-                                            <div className="rounded-2xl bg-teal-50 p-5 border border-teal-200 flex flex-col justify-between">
-                                                <div>
-                                                    <span className="text-[10px] font-black uppercase tracking-wider text-teal-900 block mb-2">
-                                                        Resposta
-                                                    </span>
-                                                    <p className="text-base sm:text-lg font-black text-teal-950 leading-relaxed whitespace-pre-wrap">
-                                                        {currentCard?.answer}
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    )}
+                                            {/* Exibição quando O ALUNO DIGITOU RESPOSTA */}
+                                            {allowStudentAnswer ? (
+                                                <div className="space-y-4">
+                                                    {/* Pergunta */}
+                                                    <div className="rounded-2xl bg-slate-50 p-4 border border-slate-200">
+                                                        <span className="text-[10px] font-black uppercase tracking-wider text-slate-600 block mb-1">
+                                                            Pergunta
+                                                        </span>
+                                                        <p className="text-xs sm:text-sm font-bold text-slate-900 leading-relaxed whitespace-pre-wrap">
+                                                            {currentCard?.question}
+                                                        </p>
+                                                    </div>
 
-                                    {!allowStudentAnswer && (
-                                        <div className="pt-2 text-center border-t border-slate-100">
-                                            <p className="text-xs font-bold text-slate-600">
-                                                Clique no cartão para ocultar a resposta
-                                            </p>
+                                                    {/* Sua Resposta */}
+                                                    <div className="rounded-2xl bg-slate-100/90 p-4 border border-slate-200">
+                                                        <span className="text-[10px] font-black uppercase tracking-wider text-slate-700 block mb-1">
+                                                            Sua resposta
+                                                        </span>
+                                                        <p className="text-xs sm:text-sm font-normal text-slate-950 leading-relaxed whitespace-pre-wrap">
+                                                            {currentTypedAnswer.trim() ? (
+                                                                currentTypedAnswer
+                                                            ) : (
+                                                                <span className="italic text-slate-500 font-medium">Nenhuma resposta digitada.</span>
+                                                            )}
+                                                        </p>
+                                                    </div>
+
+                                                    {/* Resposta Oficial */}
+                                                    <div className="rounded-2xl bg-teal-50 p-5 border border-teal-200">
+                                                        <span className="text-[10px] font-black uppercase tracking-wider text-teal-900 block mb-1">
+                                                            Resposta Oficial do Professor
+                                                        </span>
+                                                        <p className="text-sm sm:text-base font-normal text-teal-950 leading-relaxed whitespace-pre-wrap">
+                                                            {currentCard?.answer}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                /* Exibição padrão sem campo de resposta (Duas colunas em desktop, empilhado em mobile) */
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 min-h-[150px] items-stretch">
+                                                    {/* Pergunta */}
+                                                    <div className="rounded-2xl bg-slate-50 p-5 border border-slate-200 flex flex-col justify-between">
+                                                        <div>
+                                                            <span className="text-[10px] font-black uppercase tracking-wider text-slate-600 block mb-2">
+                                                                Pergunta
+                                                            </span>
+                                                            <p className="text-sm sm:text-base font-bold text-slate-900 leading-relaxed whitespace-pre-wrap">
+                                                                {currentCard?.question}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Resposta */}
+                                                    <div className="rounded-2xl bg-teal-50 p-5 border border-teal-200 flex flex-col justify-between">
+                                                        <div>
+                                                            <span className="text-[10px] font-black uppercase tracking-wider text-teal-900 block mb-2">
+                                                                Resposta
+                                                            </span>
+                                                            <p className="text-sm sm:text-base font-normal text-teal-950 leading-relaxed whitespace-pre-wrap">
+                                                                {currentCard?.answer}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
                                         </div>
                                     )}
                                 </div>
-                            )}
-                        </div>
+                            );
+                        })()}
 
                         {/* Barra de Navegação no Rodapé: Anterior | Cartão X/N | Próximo */}
                         <div className="flex items-center justify-between gap-2 sm:gap-3 pt-2">
