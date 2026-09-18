@@ -1,4 +1,10 @@
-import type { LessonImageHotspotsAsset, LessonImageHotspotsBlockContent, LessonImageHotspotItem, } from '@/types/content';
+import type {
+    LessonImageHotspotsAsset,
+    LessonImageHotspotsBlockContent,
+    LessonImageHotspotItem,
+    LessonFlashcardItem,
+    LessonFlashcardsBlockContent,
+} from '@/types/content';
 export type LessonImageBlockSize = 'sm' | 'md' | 'lg' | 'full';
 export type LessonImageBlockCaptionAlignment = 'left' | 'center' | 'right';
 export type LessonVideoBlockSize = 'sm' | 'md' | 'lg' | 'full';
@@ -63,12 +69,16 @@ export type LessonContentBlock = {
 } | {
     type: 'html';
     content: LessonHtmlBlockContent;
+} | {
+    type: 'flashcards';
+    content: LessonFlashcardsBlockContent;
 };
 const TABLE_PLACEHOLDER_PREFIX = '__TABLE_BLOCK__';
 const IMAGE_PLACEHOLDER_PREFIX = '__IMAGE_BLOCK__';
 const VIDEO_PLACEHOLDER_PREFIX = '__VIDEO_BLOCK__';
 const HOTSPOTS_PLACEHOLDER_PREFIX = '__HOTSPOTS_BLOCK__';
 const HTML_PLACEHOLDER_PREFIX = '__HTML_BLOCK__';
+const FLASHCARDS_PLACEHOLDER_PREFIX = '__FLASHCARDS_BLOCK__';
 const COLUMNS_PLACEHOLDER_PREFIX = '__COLUMNS_BLOCK__';
 const LESSON_IMAGE_HOTSPOTS_BLOCK_ATTR = 'data-hcm-block';
 const LESSON_IMAGE_HOTSPOTS_BLOCK_PAYLOAD_ATTR = 'data-hcm-payload';
@@ -79,6 +89,7 @@ const LESSON_COLUMNS_BLOCK_TYPE = 'columns';
 const LESSON_IMAGE_BLOCK_TYPE = 'image';
 const LESSON_VIDEO_BLOCK_TYPE = 'video';
 const LESSON_HTML_BLOCK_TYPE = 'html';
+const LESSON_FLASHCARDS_BLOCK_TYPE = 'flashcards';
 const COLUMN_WIDTH_STEP = 5;
 const LESSON_VIDEO_MAX_WIDTH_STYLE: Record<LessonVideoBlockSize, string> = {
     sm: 'max-width: 28rem;',
@@ -1014,6 +1025,135 @@ export function parseLessonImageHotspotsBlockElement(element: Element): LessonIm
     }
     return decodeHotspotsPayload(payload);
 }
+function normalizeFlashcardItem(item: LessonFlashcardItem, index: number): LessonFlashcardItem {
+    return {
+        id: item.id?.trim() || (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `card-${index + 1}`),
+        question: typeof item.question === 'string' ? item.question.trim() : '',
+        answer: typeof item.answer === 'string' ? item.answer.trim() : '',
+    };
+}
+export function normalizeLessonFlashcardsBlockContent(content: LessonFlashcardsBlockContent): LessonFlashcardsBlockContent {
+    return {
+        title: content.title?.trim() || 'Flashcards de Memorização',
+        description: content.description?.trim() || '',
+        cards: Array.isArray(content.cards)
+            ? content.cards.map((card, index) => normalizeFlashcardItem(card, index))
+            : [],
+    };
+}
+export function createEmptyLessonFlashcardsBlockContent(): LessonFlashcardsBlockContent {
+    return {
+        title: 'Flashcards de Memorização',
+        description: 'Teste sua memória com os cartões a seguir. Leia a pergunta, pense na resposta e clique no cartão para conferir.',
+        cards: [
+            {
+                id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : 'card-1',
+                question: '',
+                answer: '',
+            },
+        ],
+    };
+}
+function parseFlashcardItem(value: unknown, index: number): LessonFlashcardItem | null {
+    if (!value || typeof value !== 'object') {
+        return null;
+    }
+    const candidate = value as Partial<LessonFlashcardItem>;
+    return normalizeFlashcardItem({
+        id: typeof candidate.id === 'string' ? candidate.id : '',
+        question: typeof candidate.question === 'string' ? candidate.question : '',
+        answer: typeof candidate.answer === 'string' ? candidate.answer : '',
+    }, index);
+}
+export function parseLessonFlashcardsBlockContent(payload: unknown): LessonFlashcardsBlockContent | null {
+    if (!payload || typeof payload !== 'object') {
+        return null;
+    }
+    const candidate = payload as Partial<LessonFlashcardsBlockContent>;
+    const cards = Array.isArray(candidate.cards)
+        ? candidate.cards
+            .map((item, index) => parseFlashcardItem(item, index))
+            .filter((item): item is LessonFlashcardItem => item !== null)
+        : [];
+    return normalizeLessonFlashcardsBlockContent({
+        title: typeof candidate.title === 'string' ? candidate.title : undefined,
+        description: typeof candidate.description === 'string' ? candidate.description : undefined,
+        cards,
+    });
+}
+function encodeFlashcardsPayload(content: LessonFlashcardsBlockContent): string {
+    return encodeURIComponent(JSON.stringify({
+        title: content.title,
+        description: content.description,
+        cards: content.cards.map((card) => ({
+            id: card.id,
+            question: card.question,
+            answer: card.answer,
+        })),
+    }));
+}
+function decodeFlashcardsPayload(encodedPayload: string): LessonFlashcardsBlockContent | null {
+    try {
+        const decoded = decodeURIComponent(encodedPayload);
+        return parseLessonFlashcardsBlockContent(JSON.parse(decoded));
+    }
+    catch {
+        return null;
+    }
+}
+function buildFlashcardsFallbackHtml(content: LessonFlashcardsBlockContent): string {
+    const title = escapeHtml(content.title || 'Flashcards de Memorização');
+    const items = content.cards
+        .map((card, index) => `
+          <div class="hcm-flashcard-fallback-item" style="margin-bottom: 1rem; padding: 1rem; border: 1px solid #e2e8f0; border-radius: 0.75rem;">
+            <p><strong>Cartão ${index + 1} - Pergunta:</strong> ${escapeHtml(card.question)}</p>
+            <p><strong>Resposta:</strong> ${escapeHtml(card.answer)}</p>
+          </div>
+        `)
+        .join('');
+    return `
+    <div class="hcm-flashcards-block-fallback" style="margin: 2rem 0; padding: 1.5rem; border: 1px solid #e2e8f0; border-radius: 1rem; background: #f8fafc;">
+      <p style="font-size: 1.125rem; font-weight: bold; margin-bottom: 1rem;"><strong>${title}</strong></p>
+      ${items || '<p>Nenhum cartão configurado.</p>'}
+    </div>
+  `;
+}
+export function serializeLessonFlashcardsBlock(content: LessonFlashcardsBlockContent): string {
+    const normalized = normalizeLessonFlashcardsBlockContent(content);
+    const payload = encodeFlashcardsPayload(normalized);
+    return `
+    <div
+      ${LESSON_IMAGE_HOTSPOTS_BLOCK_ATTR}="${LESSON_FLASHCARDS_BLOCK_TYPE}"
+      ${LESSON_IMAGE_HOTSPOTS_BLOCK_PAYLOAD_ATTR}="${payload}"
+    >
+      ${buildFlashcardsFallbackHtml(normalized)}
+    </div>
+  `;
+}
+function extractLessonFlashcardsBlock(element: Element): LessonContentBlock | null {
+    const payload = element.getAttribute(LESSON_IMAGE_HOTSPOTS_BLOCK_PAYLOAD_ATTR);
+    if (!payload) {
+        return null;
+    }
+    const content = decodeFlashcardsPayload(payload);
+    if (!content) {
+        return null;
+    }
+    return {
+        type: 'flashcards',
+        content,
+    };
+}
+export function parseLessonFlashcardsBlockElement(element: Element): LessonFlashcardsBlockContent | null {
+    if (element.getAttribute(LESSON_IMAGE_HOTSPOTS_BLOCK_ATTR) !== LESSON_FLASHCARDS_BLOCK_TYPE) {
+        return null;
+    }
+    const payload = element.getAttribute(LESSON_IMAGE_HOTSPOTS_BLOCK_PAYLOAD_ATTR);
+    if (!payload) {
+        return null;
+    }
+    return decodeFlashcardsPayload(payload);
+}
 /**
  * Sanitiza uma tabela preservando apenas estrutura segura e atributos mínimos.
  * Remove qualquer tag fora da whitelist em vez de "desembrulhar" de forma agressiva.
@@ -1157,6 +1297,20 @@ export function splitContent(html: string): LessonContentBlock[] {
         const marker = doc.createTextNode(placeholder);
         element.replaceWith(marker);
     });
+    Array.from(doc.querySelectorAll(`[${LESSON_IMAGE_HOTSPOTS_BLOCK_ATTR}="${LESSON_FLASHCARDS_BLOCK_TYPE}"]`))
+        .forEach((element, index) => {
+        if (!element.isConnected) {
+            return;
+        }
+        const placeholder = `${FLASHCARDS_PLACEHOLDER_PREFIX}_${index}__`;
+        const parsedBlock = extractLessonFlashcardsBlock(element);
+        blockMap.set(placeholder, parsedBlock ?? {
+            type: 'rich-text',
+            content: normalizeHtml((element as HTMLElement).innerHTML),
+        });
+        const marker = doc.createTextNode(placeholder);
+        element.replaceWith(marker);
+    });
     const tableMap = new Map<string, string>();
     Array.from(doc.querySelectorAll('table')).forEach((table, index) => {
         const placeholder = `${TABLE_PLACEHOLDER_PREFIX}_${index}__`;
@@ -1170,7 +1324,7 @@ export function splitContent(html: string): LessonContentBlock[] {
         return [];
     }
     const blocks: LessonContentBlock[] = [];
-    const placeholderRegex = new RegExp(`(${TABLE_PLACEHOLDER_PREFIX}_\\d+__|${HOTSPOTS_PLACEHOLDER_PREFIX}_\\d+__|${HTML_PLACEHOLDER_PREFIX}_\\d+__|${COLUMNS_PLACEHOLDER_PREFIX}_\\d+__|${IMAGE_PLACEHOLDER_PREFIX}_\\d+__|${VIDEO_PLACEHOLDER_PREFIX}_\\d+__)`, 'g');
+    const placeholderRegex = new RegExp(`(${TABLE_PLACEHOLDER_PREFIX}_\\d+__|${HOTSPOTS_PLACEHOLDER_PREFIX}_\\d+__|${FLASHCARDS_PLACEHOLDER_PREFIX}_\\d+__|${HTML_PLACEHOLDER_PREFIX}_\\d+__|${COLUMNS_PLACEHOLDER_PREFIX}_\\d+__|${IMAGE_PLACEHOLDER_PREFIX}_\\d+__|${VIDEO_PLACEHOLDER_PREFIX}_\\d+__)`, 'g');
     const parts = rawHtml.split(placeholderRegex);
     for (const part of parts) {
         if (!part)
@@ -1220,6 +1374,9 @@ export function mergeContent(blocks: LessonContentBlock[]): string {
         }
         if (block.type === 'image-hotspots') {
             return normalizeHtml(serializeLessonImageHotspotsBlock(block.content));
+        }
+        if (block.type === 'flashcards') {
+            return normalizeHtml(serializeLessonFlashcardsBlock(block.content));
         }
         if (block.type === 'image') {
             return normalizeHtml(serializeLessonImageBlock(block.content));

@@ -5,8 +5,10 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { deleteLessonContentAsset, getSignedLessonContentAssetUrl, uploadLessonContentAsset } from '@/features/admin/content/api';
 import { LessonImageHotspotsBlockEditor, LessonImageHotspotsBlockRenderer } from '@/features/admin/content/lesson-image-hotspots-block';
+import { LessonFlashcardsBlockEditor, LessonFlashcardsBlockRenderer } from '@/features/admin/content/lesson-flashcards-block';
 import {
     createEmptyColumnsBlockContent,
+    createEmptyLessonFlashcardsBlockContent,
     createEmptyLessonHtmlBlockContent,
     createEmptyLessonImageBlockContent,
     createEmptyLessonImageHotspotsBlockContent,
@@ -259,6 +261,12 @@ function createDefaultBlock(type: Exclude<LessonContentBlock['type'], 'columns'>
             content: createEmptyLessonImageHotspotsBlockContent(),
         };
     }
+    if (type === 'flashcards') {
+        return {
+            type,
+            content: createEmptyLessonFlashcardsBlockContent(),
+        };
+    }
     if (type === 'image') {
         return {
             type,
@@ -334,6 +342,9 @@ function getBlockLabel(block: LessonContentBlock) {
     }
     if (block.type === 'image-hotspots') {
         return 'Bloco de Hotspots';
+    }
+    if (block.type === 'flashcards') {
+        return 'Bloco de Flashcards';
     }
     if (block.type === 'image') {
         return 'Bloco de Imagem';
@@ -1320,6 +1331,8 @@ export function LessonContentBlocksEditor({ blocks, onChange, onError, level = 0
                         </div>
                     ) : block.type === 'image-hotspots' ? (
                         <LessonImageHotspotsBlockEditor content={block.content} onChange={(nextContent) => updateBlock(index, { ...block, content: nextContent })} onError={onError} />
+                    ) : block.type === 'flashcards' ? (
+                        <LessonFlashcardsBlockEditor content={block.content} onChange={(nextContent) => updateBlock(index, { ...block, content: nextContent })} onError={onError} />
                     ) : block.type === 'image' ? (
                         <LessonImageBlockEditor content={block.content} onChange={(nextContent) => updateBlock(index, { ...block, content: nextContent })} onError={onError} />
                     ) : block.type === 'html' ? (
@@ -1453,6 +1466,9 @@ export function LessonContentBlocksEditor({ blocks, onChange, onError, level = 0
                 <Button type="button" variant="outline" size="sm" onClick={() => addBlock('image-hotspots')} className="border-slate-200 bg-white hover:bg-violet-50 hover:text-violet-600">
                     + Hotspots
                 </Button>
+                <Button type="button" variant="outline" size="sm" onClick={() => addBlock('flashcards')} className="border-slate-200 bg-white hover:bg-teal-50 hover:text-teal-700">
+                    + Flashcards
+                </Button>
                 <div className="mx-1 h-6 w-px bg-slate-200" />
                 <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Colunas:</span>
                 <Button type="button" variant="outline" size="sm" onClick={() => addBlock('columns', 1)} className="border-slate-200 bg-white hover:bg-cyan-50 hover:text-cyan-700">
@@ -1511,6 +1527,9 @@ export function LessonContentBlocksRenderer({ blocks, className }: LessonContent
                 }
                 if (block.type === 'image-hotspots') {
                     return <LessonImageHotspotsBlockRenderer key={`image-hotspots-${index}`} content={block.content} />;
+                }
+                if (block.type === 'flashcards') {
+                    return <LessonFlashcardsBlockRenderer key={`flashcards-${index}`} content={block.content} />;
                 }
                 if (block.type === 'image') {
                     return <LessonImageBlockRenderer key={`image-${index}`} content={block.content} />;

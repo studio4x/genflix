@@ -46,6 +46,16 @@ export interface LessonImageHotspotsBlockContent {
     asset: LessonImageHotspotsAsset;
     hotspots: LessonImageHotspotItem[];
 }
+export interface LessonFlashcardItem {
+    id: string;
+    question: string;
+    answer: string;
+}
+export interface LessonFlashcardsBlockContent {
+    title?: string;
+    description?: string;
+    cards: LessonFlashcardItem[];
+}
 export interface DragDropLabelingTarget {
     id: string;
     x: number;

@@ -5,6 +5,7 @@ import { useAuth } from '@/app/providers/auth-provider';
 import { Button } from '@/components/ui/button';
 import { createFinalAssessment, createModuleAssessment, deleteAssessment, exportFinalAssessmentContent, fetchFinalAssessment, importAssessmentContent, toErrorMessage, } from '@/features/admin/assessments/api';
 import { downloadJsonFile } from '@/lib/download';
+import { analyzeImportedJson, JsonImportAnalysisPanel } from '@/features/admin/content/json-import-analysis';
 export function CourseAssessmentsPanel() {
     const { courseId } = useParams<{
         courseId: string;
@@ -13,6 +14,7 @@ export function CourseAssessmentsPanel() {
     const { user } = useAuth();
     const [isImportModalOpen, setIsImportModalOpen] = useState(false);
     const [importJson, setImportJson] = useState('');
+    const importAnalysis = analyzeImportedJson(importJson, { target: 'assessment' });
     const [isImporting, setIsImporting] = useState(false);
     const [importError, setImportError] = useState<string | null>(null);
     const [isExportingFinal, setIsExportingFinal] = useState(false);
@@ -23,6 +25,10 @@ export function CourseAssessmentsPanel() {
     async function handleImportJson() {
         if (!user?.id || !courseId)
             return;
+        if (!importAnalysis.canImport) {
+            setImportError(importAnalysis.errors[0] || 'Revise a análise do JSON antes de continuar.');
+            return;
+        }
         setIsImporting(true);
         setImportError(null);
         try {
@@ -268,6 +274,7 @@ export function CourseAssessmentsPanel() {
               <div className="space-y-2">
                 <span className="pl-1 text-xs font-black uppercase tracking-widest text-slate-400">Código JSON Estruturado</span>
                 <textarea className="no-scrollbar h-80 w-full rounded-2xl border border-slate-800 bg-slate-900 p-6 font-mono text-xs text-emerald-400 transition-all focus:ring-4 focus:ring-blue-100" placeholder='{ "title": "...", "passing_score": 75, "questions": [...] }' value={importJson} onChange={(event) => setImportJson(event.target.value)}/>
+                <JsonImportAnalysisPanel analysis={importAnalysis}/>
               </div>
 
               {importError && (<div className="animate-in rounded-xl border border-rose-100 bg-rose-50 p-4 text-xs font-bold text-rose-600 slide-in-from-left-2 transition-all">
@@ -279,7 +286,7 @@ export function CourseAssessmentsPanel() {
               <Button variant="ghost" onClick={() => setIsImportModalOpen(false)} className="h-14 flex-1 rounded-2xl font-bold text-slate-500">
                 Cancelar
               </Button>
-              <Button onClick={() => void handleImportJson()} disabled={isImporting || !importJson.trim()} className="h-14 flex-[2] rounded-2xl bg-blue-600 font-black shadow-xl shadow-blue-100">
+              <Button onClick={() => void handleImportJson()} disabled={isImporting || !importJson.trim() || !importAnalysis.canImport} className="h-14 flex-[2] rounded-2xl bg-blue-600 font-black shadow-xl shadow-blue-100">
                 {isImporting ? (<span className="flex items-center gap-2">
                     <svg className="h-5 w-5 animate-spin text-white" viewBox="0 0 24 24">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/>

@@ -1,6 +1,6 @@
 import genflixWordmarkUrl from '@/assets/genflix-wordmark.svg';
 import { getSignedLessonContentAssetUrl, getSignedMaterialUrl, getSignedModulePdfUrl } from '@/features/admin/content/api';
-import { parseLessonHtmlBlockElement, parseLessonImageHotspotsBlockElement } from '@/features/admin/content/content-blocks';
+import { parseLessonFlashcardsBlockElement, parseLessonHtmlBlockElement, parseLessonImageHotspotsBlockElement } from '@/features/admin/content/content-blocks';
 import { fetchPdfWatermarkSettings } from '@/features/branding/api';
 import { supabase } from '@/services/supabase/client';
 import { PDFDocument, StandardFonts, degrees, rgb } from 'pdf-lib';
@@ -229,6 +229,27 @@ function buildPdfHtmlBlockFallbackHtml(fileName: string | null) {
     </section>
   `;
 }
+function buildPdfFlashcardsFallbackHtml(title: string, cards: { question: string; answer: string }[]) {
+    const cardsHtml = cards.length > 0
+        ? cards.map((card, index) => `
+            <article class="pdf-flashcard-item" style="margin-bottom: 12px; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; background: #ffffff;">
+              <div style="font-size: 11px; font-weight: bold; color: #0d9488; text-transform: uppercase; margin-bottom: 4px;">Cartão ${index + 1}</div>
+              <div style="font-size: 13px; font-weight: 600; color: #1e293b; margin-bottom: 6px;"><strong>Pergunta:</strong> ${escapeHtml(card.question)}</div>
+              <div style="font-size: 12px; color: #334155;"><strong>Resposta:</strong> ${escapeHtml(card.answer)}</div>
+            </article>
+          `).join('')
+        : '<p class="pdf-flashcards-empty">Nenhum cartão configurado nesta atividade.</p>';
+    return `
+    <section class="pdf-flashcards-block" style="margin: 18px 0; padding: 16px; border: 1px solid #cbd5e1; border-radius: 12px; background: #f8fafc;">
+      <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; color: #0f766e; margin-bottom: 10px;">
+        ${escapeHtml(title || 'Flashcards de Memorização')}
+      </div>
+      <div class="pdf-flashcards-items">
+        ${cardsHtml}
+      </div>
+    </section>
+  `;
+}
 async function hydrateInteractiveLessonContent(textContent: string | null) {
     const source = textContent || DEFAULT_LESSON_CONTENT;
     const parser = new DOMParser();
@@ -242,8 +263,20 @@ async function hydrateInteractiveLessonContent(textContent: string | null) {
             block.replaceWith(...Array.from(wrapper.childNodes));
         });
     }
+    const flashcardBlocks = Array.from(doc.querySelectorAll('[data-hcm-block="flashcards"]'));
+    if (flashcardBlocks.length > 0) {
+        flashcardBlocks.forEach((block) => {
+            const parsed = parseLessonFlashcardsBlockElement(block);
+            const wrapper = doc.createElement('div');
+            wrapper.innerHTML = buildPdfFlashcardsFallbackHtml(
+                parsed?.title || 'Flashcards de Memorização',
+                parsed?.cards ?? []
+            );
+            block.replaceWith(...Array.from(wrapper.childNodes));
+        });
+    }
     const hotspotBlocks = Array.from(doc.querySelectorAll('[data-hcm-block="image-hotspots"]'));
-    if (hotspotBlocks.length === 0 && htmlBlocks.length === 0) {
+    if (hotspotBlocks.length === 0 && htmlBlocks.length === 0 && flashcardBlocks.length === 0) {
         return source;
     }
     await Promise.all(hotspotBlocks.map(async (block) => {

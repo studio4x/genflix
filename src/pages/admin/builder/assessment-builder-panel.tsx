@@ -12,6 +12,7 @@ import { canCourseUseCaseStudies, isCourseQuestionTypeEnabled, normalizeCourseQu
 import { fetchGlobalQuizTypeSettings } from '@/features/admin/quiz-types/api';
 import { fetchModule } from '@/features/admin/content/api';
 import type { Assessment, AssessmentGradingMode, AssessmentQuestionType, CourseModule, ImageHotspotMode, } from '@/types/content';
+import { analyzeImportedJson, JsonImportAnalysisPanel } from '@/features/admin/content/json-import-analysis';
 function sortQuestionsByPosition(items: AssessmentQuestionWithOptions[]) {
     return [...items].sort((questionA, questionB) => questionA.position - questionB.position);
 }
@@ -156,6 +157,7 @@ export function AssessmentBuilderPanel() {
     const [error, setError] = useState<string | null>(null);
     const [isImportModalOpen, setIsImportModalOpen] = useState(false);
     const [importJson, setImportJson] = useState('');
+    const importAnalysis = analyzeImportedJson(importJson, { target: 'assessment' });
     const [isImporting, setIsImporting] = useState(false);
     const [isDeletingAssessment, setIsDeletingAssessment] = useState(false);
     const [importError, setImportError] = useState<string | null>(null);
@@ -823,6 +825,10 @@ export function AssessmentBuilderPanel() {
     async function handleImportJson() {
         if (!user?.id)
             return;
+        if (!importAnalysis.canImport) {
+            setImportError(importAnalysis.errors[0] || 'Revise a análise do JSON antes de continuar.');
+            return;
+        }
         setIsImporting(true);
         setImportError(null);
         try {
@@ -1371,6 +1377,7 @@ Todas as quest\u00F5es, estudos de caso e tentativas vinculadas ser\u00E3o remov
               <div className="space-y-2 text-left">
                 <span className="block pl-1 text-xs font-black uppercase tracking-widest text-slate-400">Codigo JSON Estruturado</span>
                 <textarea className="h-80 w-full rounded-2xl border border-slate-800 bg-slate-900 p-6 font-mono text-xs text-emerald-400 transition-all no-scrollbar focus:ring-4 focus:ring-blue-100" placeholder='{ "title": "...", "questions": [...], "case_studies": [...] }' value={importJson} onChange={(event) => setImportJson(event.target.value)}/>
+                <JsonImportAnalysisPanel analysis={importAnalysis}/>
               </div>
 
               {importError ? (<div className="animate-in rounded-xl border border-rose-100 bg-rose-50 p-4 text-xs font-bold text-rose-600 slide-in-from-left-2 transition-all">
@@ -1382,7 +1389,7 @@ Todas as quest\u00F5es, estudos de caso e tentativas vinculadas ser\u00E3o remov
               <Button variant="ghost" onClick={() => setIsImportModalOpen(false)} className="h-14 flex-1 rounded-2xl font-bold text-slate-500">
                 Cancelar
               </Button>
-              <Button onClick={() => void handleImportJson()} disabled={isImporting || !importJson.trim()} className="h-14 flex-[2] rounded-2xl bg-blue-600 font-black text-white shadow-xl shadow-blue-100">
+              <Button onClick={() => void handleImportJson()} disabled={isImporting || !importJson.trim() || !importAnalysis.canImport} className="h-14 flex-[2] rounded-2xl bg-blue-600 font-black text-white shadow-xl shadow-blue-100">
                 {isImporting ? (<span className="flex items-center gap-2">
                     <svg className="h-5 w-5 animate-spin text-white" viewBox="0 0 24 24">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/>
