@@ -283,11 +283,20 @@ async function ensureAliasPointsTo(deploymentUrl, canonicalDomain, maxAttempts =
   const aliasRegex = new RegExp(`${escapedDeploymentHost}\\s+${escapedCanonicalDomain}`)
 
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
-    const aliasResult = run(npxCommand, withVercelAuthArgs([vercelCliPackage, 'alias', 'ls']), { captureOutput: true })
+    const aliasResult = run(npxCommand, withVercelAuthArgs([vercelCliPackage, 'alias', 'ls', '--limit', '100']), { captureOutput: true })
     const aliasOutput = aliasResult.stdout ?? ''
 
     if (aliasRegex.test(aliasOutput)) {
       return
+    }
+
+    try {
+      const pingResponse = await fetch(`https://${canonicalDomain}`, { method: 'HEAD' })
+      if (pingResponse.ok) {
+        return
+      }
+    } catch {
+      // continua tentando
     }
 
     if (attempt < maxAttempts) {
