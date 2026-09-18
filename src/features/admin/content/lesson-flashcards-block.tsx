@@ -710,11 +710,11 @@ function FlashcardsSession({ content, className }: LessonFlashcardsBlockRenderer
                                 /* ESTADO C: RESPOSTA REVELADA */
                                 <div className="animate-in fade-in duration-300 motion-reduce:transition-none space-y-6">
                                     <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                                        <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-black uppercase tracking-wider text-emerald-700">
+                                        <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-3 py-1 text-xs font-black uppercase tracking-wider text-emerald-900">
                                             <span className="h-1.5 w-1.5 rounded-full bg-emerald-600" />
                                             Resposta Revelada
                                         </span>
-                                        <span className="text-[11px] font-bold text-slate-400">
+                                        <span className="text-[11px] font-extrabold text-slate-600">
                                             Cartão {currentIndex + 1} de {totalCards}
                                         </span>
                                     </div>
@@ -723,35 +723,35 @@ function FlashcardsSession({ content, className }: LessonFlashcardsBlockRenderer
                                     {allowStudentAnswer ? (
                                         <div className="space-y-4">
                                             {/* Pergunta */}
-                                            <div className="rounded-2xl bg-slate-50 p-4 border border-slate-100">
-                                                <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block mb-1">
+                                            <div className="rounded-2xl bg-slate-50 p-4 border border-slate-200">
+                                                <span className="text-[10px] font-black uppercase tracking-wider text-slate-600 block mb-1">
                                                     Pergunta
                                                 </span>
-                                                <p className="text-sm font-bold text-slate-700 leading-relaxed whitespace-pre-wrap">
+                                                <p className="text-sm sm:text-base font-extrabold text-slate-900 leading-relaxed whitespace-pre-wrap">
                                                     {currentCard?.question}
                                                 </p>
                                             </div>
 
                                             {/* Sua Resposta */}
-                                            <div className="rounded-2xl bg-slate-100/80 p-4 border border-slate-200">
-                                                <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 block mb-1">
+                                            <div className="rounded-2xl bg-slate-100/90 p-4 border border-slate-200">
+                                                <span className="text-[10px] font-black uppercase tracking-wider text-slate-700 block mb-1">
                                                     Sua resposta
                                                 </span>
-                                                <p className="text-sm sm:text-base font-semibold text-slate-800 leading-relaxed whitespace-pre-wrap">
+                                                <p className="text-sm sm:text-base font-bold text-slate-950 leading-relaxed whitespace-pre-wrap">
                                                     {currentTypedAnswer.trim() ? (
                                                         currentTypedAnswer
                                                     ) : (
-                                                        <span className="italic text-slate-400">Nenhuma resposta digitada.</span>
+                                                        <span className="italic text-slate-500 font-medium">Nenhuma resposta digitada.</span>
                                                     )}
                                                 </p>
                                             </div>
 
                                             {/* Resposta Oficial */}
                                             <div className="rounded-2xl bg-teal-50 p-5 border border-teal-200">
-                                                <span className="text-[10px] font-black uppercase tracking-wider text-teal-700 block mb-1">
+                                                <span className="text-[10px] font-black uppercase tracking-wider text-teal-900 block mb-1">
                                                     Resposta Oficial do Professor
                                                 </span>
-                                                <p className="text-base sm:text-lg font-extrabold text-teal-950 leading-relaxed whitespace-pre-wrap">
+                                                <p className="text-base sm:text-lg font-black text-teal-950 leading-relaxed whitespace-pre-wrap">
                                                     {currentCard?.answer}
                                                 </p>
                                             </div>
@@ -760,24 +760,24 @@ function FlashcardsSession({ content, className }: LessonFlashcardsBlockRenderer
                                         /* Exibição padrão sem campo de resposta (Duas colunas em desktop, empilhado em mobile) */
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 min-h-[150px] items-stretch">
                                             {/* Pergunta */}
-                                            <div className="rounded-2xl bg-slate-50/80 p-5 border border-slate-100 flex flex-col justify-between">
+                                            <div className="rounded-2xl bg-slate-50 p-5 border border-slate-200 flex flex-col justify-between">
                                                 <div>
-                                                    <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block mb-2">
+                                                    <span className="text-[10px] font-black uppercase tracking-wider text-slate-600 block mb-2">
                                                         Pergunta
                                                     </span>
-                                                    <p className="text-base font-bold text-slate-700 leading-relaxed whitespace-pre-wrap">
+                                                    <p className="text-base sm:text-lg font-extrabold text-slate-900 leading-relaxed whitespace-pre-wrap">
                                                         {currentCard?.question}
                                                     </p>
                                                 </div>
                                             </div>
 
                                             {/* Resposta */}
-                                            <div className="rounded-2xl bg-teal-50/70 p-5 border border-teal-100 flex flex-col justify-between">
+                                            <div className="rounded-2xl bg-teal-50 p-5 border border-teal-200 flex flex-col justify-between">
                                                 <div>
-                                                    <span className="text-[10px] font-black uppercase tracking-wider text-teal-700 block mb-2">
+                                                    <span className="text-[10px] font-black uppercase tracking-wider text-teal-900 block mb-2">
                                                         Resposta
                                                     </span>
-                                                    <p className="text-base sm:text-lg font-extrabold text-teal-950 leading-relaxed whitespace-pre-wrap">
+                                                    <p className="text-base sm:text-lg font-black text-teal-950 leading-relaxed whitespace-pre-wrap">
                                                         {currentCard?.answer}
                                                     </p>
                                                 </div>
@@ -787,7 +787,7 @@ function FlashcardsSession({ content, className }: LessonFlashcardsBlockRenderer
 
                                     {!allowStudentAnswer && (
                                         <div className="pt-2 text-center border-t border-slate-100">
-                                            <p className="text-xs font-semibold text-slate-400">
+                                            <p className="text-xs font-bold text-slate-600">
                                                 Clique no cartão para ocultar a resposta
                                             </p>
                                         </div>
