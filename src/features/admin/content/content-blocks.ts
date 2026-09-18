@@ -15,6 +15,18 @@ export type {
     LessonButtonBlockWidth,
     LessonButtonBlockLocalConfig,
 };
+
+export const DEFAULT_MODAL_TITLE = 'Material Complementar';
+export const DEFAULT_MODAL_SUBTITLE = 'Conteúdo complementar da aula.';
+
+export function resolveModalSubtitle(subtitle?: string | null): string | undefined {
+    if (subtitle === undefined || subtitle === null) {
+        return DEFAULT_MODAL_SUBTITLE;
+    }
+    const trimmed = subtitle.trim();
+    return trimmed !== '' ? trimmed : undefined;
+}
+
 export type LessonImageBlockSize = 'sm' | 'md' | 'lg' | 'full';
 export type LessonImageBlockCaptionAlignment = 'left' | 'center' | 'right';
 export type LessonVideoBlockSize = 'sm' | 'md' | 'lg' | 'full';

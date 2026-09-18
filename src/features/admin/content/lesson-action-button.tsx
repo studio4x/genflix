@@ -13,6 +13,7 @@ import {
     getLessonFooterActionIconName,
 } from '@/features/admin/content/button-template-icons';
 import { getSignedLessonFooterActionUrl, toErrorMessage } from '@/features/admin/content/api';
+import { DEFAULT_MODAL_TITLE, resolveModalSubtitle } from '@/features/admin/content/content-blocks';
 import { cn } from '@/lib/utils';
 import type {
     ButtonActionType,
@@ -35,6 +36,7 @@ export interface LessonActionButtonProps {
     storage_path?: string | null;
     file_name?: string | null;
     modal_title?: string | null;
+    modal_subtitle?: string | null;
     modal_blocks?: unknown[] | null;
 
     // Modo 2: Passar objeto LessonFooterAction completo
@@ -78,6 +80,7 @@ export function LessonActionButton({
     storage_path: propStoragePath,
     file_name: propFileName,
     modal_title: propModalTitle,
+    modal_subtitle: propModalSubtitle,
     modal_blocks: propModalBlocks,
     footerAction,
     blockContent,
@@ -102,6 +105,7 @@ export function LessonActionButton({
     let effectiveStoragePath = propStoragePath ?? null;
     let effectiveFileName = propFileName ?? null;
     let effectiveModalTitle = propModalTitle ?? '';
+    let effectiveModalSubtitleRaw: string | null | undefined = propModalSubtitle;
     let effectiveModalBlocks: unknown[] = (propModalBlocks as unknown[]) ?? [];
     let effectiveAlignment: LessonButtonBlockAlignment = propAlignment ?? 'left';
     let effectiveWidth: LessonButtonBlockWidth = propWidth ?? 'auto';
@@ -122,6 +126,7 @@ export function LessonActionButton({
                     effectiveStoragePath = globalRef.storage_path;
                     effectiveFileName = globalRef.file_name;
                     effectiveModalTitle = globalRef.modal_title || '';
+                    effectiveModalSubtitleRaw = globalRef.modal_subtitle;
                     effectiveModalBlocks = (globalRef.modal_blocks as unknown[]) || [];
                 } else {
                     isGlobalInactive = true;
@@ -142,6 +147,7 @@ export function LessonActionButton({
             effectiveStoragePath = footerAction.storage_path ?? null;
             effectiveFileName = footerAction.file_name ?? null;
             effectiveModalTitle = footerAction.modal_title ?? '';
+            effectiveModalSubtitleRaw = footerAction.modal_subtitle;
             effectiveModalBlocks = (footerAction.modal_blocks as unknown[]) || [];
         }
         effectiveIcon = getLessonFooterActionIconName(footerAction);
@@ -160,6 +166,7 @@ export function LessonActionButton({
                     effectiveStoragePath = resolvedGlobalButton.storage_path;
                     effectiveFileName = resolvedGlobalButton.file_name;
                     effectiveModalTitle = resolvedGlobalButton.modal_title || '';
+                    effectiveModalSubtitleRaw = resolvedGlobalButton.modal_subtitle;
                     effectiveModalBlocks = (resolvedGlobalButton.modal_blocks as unknown[]) || [];
                     effectiveIcon = resolvedGlobalButton.template?.icon || null;
                 } else {
@@ -174,6 +181,9 @@ export function LessonActionButton({
                 effectiveLabel = 'Botão indisponível';
                 effectiveTemplate = blockContent.cached_action?.template || null;
                 effectiveIcon = blockContent.cached_action?.icon || 'link';
+                effectiveModalTitle = blockContent.cached_action?.modal?.title || '';
+                effectiveModalSubtitleRaw = blockContent.cached_action?.modal?.subtitle;
+                effectiveModalBlocks = (blockContent.cached_action?.modal?.blocks as unknown[]) || [];
             }
         } else if (blockContent.local_config) {
             const local = blockContent.local_config;
@@ -185,10 +195,13 @@ export function LessonActionButton({
             effectiveStoragePath = local.storage_path || null;
             effectiveFileName = local.file_name || null;
             effectiveModalTitle = local.modal?.title || '';
+            effectiveModalSubtitleRaw = local.modal?.subtitle;
             effectiveModalBlocks = (local.modal?.blocks as unknown[]) || [];
             effectiveIcon = local.icon || null;
         }
     }
+
+    const effectiveModalSubtitle = resolveModalSubtitle(effectiveModalSubtitleRaw);
 
     if (!effectiveLabel && effectiveFileName) {
         effectiveLabel = effectiveFileName;
@@ -243,30 +256,41 @@ export function LessonActionButton({
         }
     }
 
-    const alignmentClasses: Record<LessonButtonBlockAlignment, string> = {
-        left: 'text-left justify-start',
-        center: 'text-center justify-center',
-        right: 'text-right justify-end',
-    };
+    const buttonStyleClass = effectiveTemplate
+        ? getLessonFooterButtonClassName(effectiveTemplate)
+        : 'border border-slate-200 bg-white text-slate-800 hover:bg-slate-50';
+
+    const widthClass = effectiveWidth === 'full' ? 'w-full' : '';
+    const alignmentClass =
+        effectiveAlignment === 'center'
+            ? 'mx-auto'
+            : effectiveAlignment === 'right'
+            ? 'ml-auto'
+            : '';
 
     return (
-        <div className={cn('my-3 flex w-full', alignmentClasses[effectiveAlignment])}>
+        <div className={cn('inline-block max-w-full', widthClass, alignmentClass)}>
             <Button
                 type="button"
-                variant="outline"
-                disabled={isEffectivelyDisabled}
+                disabled={disabled || isLoadingFile || isGlobalUnavailable || isGlobalInactive}
                 onClick={() => void handleExecuteAction()}
+                title={
+                    isGlobalInactive
+                        ? 'Este botão global foi desativado temporariamente.'
+                        : isGlobalUnavailable
+                        ? 'Este botão não está disponível no momento.'
+                        : undefined
+                }
                 className={cn(
-                    getLessonFooterButtonClassName(effectiveTemplate),
-                    (isGlobalInactive || isGlobalUnavailable) && 'opacity-60 cursor-not-allowed filter grayscale hover:opacity-60',
-                    effectiveWidth === 'full' && 'w-full justify-center',
-                    'inline-flex items-center gap-2',
-                    (isGlobalInactive || isGlobalUnavailable) ? 'cursor-not-allowed' : 'cursor-pointer',
+                    'transition-all duration-200 shadow-sm hover:shadow font-bold',
+                    buttonStyleClass,
+                    (isGlobalUnavailable || isGlobalInactive) && 'opacity-60 cursor-not-allowed hover:shadow-none',
+                    widthClass,
                     className
                 )}
             >
                 {isLoadingFile ? (
-                    <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24">
+                    <svg className="animate-spin h-4 w-4 mr-2" viewBox="0 0 24 24">
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                     </svg>
@@ -277,20 +301,25 @@ export function LessonActionButton({
             </Button>
 
             {errorMessage ? (
-                <div className="mt-1 text-xs text-rose-600">{errorMessage}</div>
+                <div className="mt-1 text-xs text-rose-600 font-medium">{errorMessage}</div>
             ) : null}
 
             {/* Modal Dialog Acessível */}
             {effectiveActionType === 'modal' && (
                 <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-                    <DialogContent className="max-w-4xl max-h-[88vh] overflow-hidden flex flex-col p-0 rounded-[28px] border border-slate-200 bg-white shadow-2xl">
+                    <DialogContent
+                        className="max-w-4xl max-h-[88vh] overflow-hidden flex flex-col p-0 rounded-[28px] border border-slate-200 bg-white shadow-2xl"
+                        {...(!effectiveModalSubtitle ? { 'aria-describedby': undefined } : {})}
+                    >
                         <DialogHeader className="p-6 pb-4 border-b border-slate-100 bg-slate-50/60 flex-shrink-0">
                             <DialogTitle className="text-xl font-black text-slate-900">
-                                {effectiveModalTitle || 'Material Complementar'}
+                                {effectiveModalTitle || DEFAULT_MODAL_TITLE}
                             </DialogTitle>
-                            <DialogDescription className="text-xs text-slate-500">
-                                Conteúdo complementar da aula.
-                            </DialogDescription>
+                            {effectiveModalSubtitle ? (
+                                <DialogDescription className="mt-1 text-xs text-slate-500 font-medium">
+                                    {effectiveModalSubtitle}
+                                </DialogDescription>
+                            ) : null}
                         </DialogHeader>
 
                         <div className="flex-1 overflow-y-auto p-6 md:p-8 space-y-6">
@@ -319,7 +348,7 @@ export function LessonActionButton({
                                     </div>
                                 )
                             ) : (
-                                <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-8 text-center text-sm text-slate-500">
+                                <div className="py-12 text-center text-sm text-slate-500 font-medium">
                                     Nenhum conteúdo configurado para este modal.
                                 </div>
                             )}

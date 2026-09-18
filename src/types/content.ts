@@ -358,6 +358,7 @@ export interface GlobalButtonDefinition {
     mime_type: string | null;
     file_size_bytes: number;
     modal_title: string | null;
+    modal_subtitle?: string | null;
     modal_blocks: unknown[];
     is_active: boolean;
     created_by: string | null;
@@ -385,6 +386,7 @@ export interface LessonButtonBlockLocalConfig {
     file_size_bytes?: number;
     modal?: {
         title: string;
+        subtitle?: string | null;
         blocks: unknown[];
     } | null;
 }
@@ -418,6 +420,7 @@ export interface LessonFooterAction {
     open_target: ButtonOpenTarget;
     open_in_new_tab: boolean;
     modal_title?: string | null;
+    modal_subtitle?: string | null;
     modal_blocks?: unknown[];
     is_active: boolean;
     created_by: string | null;

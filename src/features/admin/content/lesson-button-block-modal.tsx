@@ -18,7 +18,7 @@ import {
     toErrorMessage,
 } from '@/features/admin/content/api';
 import { LessonActionButton } from '@/features/admin/content/lesson-action-button';
-import type { LessonContentBlock } from '@/features/admin/content/content-blocks';
+import { DEFAULT_MODAL_TITLE, DEFAULT_MODAL_SUBTITLE, type LessonContentBlock } from '@/features/admin/content/content-blocks';
 import { cn } from '@/lib/utils';
 import type {
     ButtonActionType,
@@ -79,7 +79,8 @@ export function LessonButtonBlockModal({
     const [actionType, setActionType] = useState<ButtonActionType>('url');
     const [url, setUrl] = useState('https://');
     const [openTarget, setOpenTarget] = useState<ButtonOpenTarget>('new-tab');
-    const [modalTitle, setModalTitle] = useState('Material Complementar');
+    const [modalTitle, setModalTitle] = useState(DEFAULT_MODAL_TITLE);
+    const [modalSubtitle, setModalSubtitle] = useState<string>(DEFAULT_MODAL_SUBTITLE);
     const [modalBlocks, setModalBlocks] = useState<LessonContentBlock[]>([
         { type: 'rich-text', content: '<p>Insira aqui o texto complementar deste modal...</p>' },
     ]);
@@ -117,6 +118,8 @@ export function LessonButtonBlockModal({
             setUrl('https://');
             setOpenTarget('new-tab');
             setActionType('url');
+            setModalTitle(DEFAULT_MODAL_TITLE);
+            setModalSubtitle(DEFAULT_MODAL_SUBTITLE);
             return;
         }
 
@@ -138,7 +141,8 @@ export function LessonButtonBlockModal({
                 setUrl(c.url ?? 'https://');
                 setOpenTarget(c.open_target ?? 'new-tab');
                 if (c.modal) {
-                    setModalTitle(c.modal.title ?? 'Material Complementar');
+                    setModalTitle(c.modal.title ?? DEFAULT_MODAL_TITLE);
+                    setModalSubtitle(c.modal.subtitle ?? DEFAULT_MODAL_SUBTITLE);
                     setModalBlocks((c.modal.blocks as LessonContentBlock[]) ?? []);
                 }
             }
@@ -154,7 +158,8 @@ export function LessonButtonBlockModal({
             setUrl(loc.url ?? 'https://');
             setOpenTarget(loc.open_target ?? 'new-tab');
             if (loc.modal) {
-                setModalTitle(loc.modal.title ?? 'Material Complementar');
+                setModalTitle(loc.modal.title ?? DEFAULT_MODAL_TITLE);
+                setModalSubtitle(loc.modal.subtitle ?? DEFAULT_MODAL_SUBTITLE);
                 setModalBlocks((loc.modal.blocks as LessonContentBlock[]) ?? []);
             }
         }
@@ -170,7 +175,7 @@ export function LessonButtonBlockModal({
         setLabel(tmpl.default_label || label);
         setVariant(tmpl.variant);
         setTheme(tmpl.theme);
-        setIcon(tmpl.icon);
+        setIcon(tmpl.icon || 'link');
         setTab('local');
         setSourceType('local');
     }
@@ -178,14 +183,14 @@ export function LessonButtonBlockModal({
     function handleSave() {
         if (sourceType === 'global') {
             if (!selectedGlobalButtonId) {
-                setError('Selecione um botão global da biblioteca.');
+                setError('Selecione um botão global.');
                 return;
             }
             const found = globalButtons.find((g) => g.id === selectedGlobalButtonId);
             const cached: LessonButtonBlockLocalConfig | null = found
                 ? {
                       template_id: found.template_id,
-                      template: found.template,
+                      template: found.template ?? null,
                       label: found.label,
                       variant: found.template?.variant ?? 'outline',
                       theme: found.template?.theme ?? 'blue',
@@ -197,7 +202,7 @@ export function LessonButtonBlockModal({
                       file_name: found.file_name,
                       mime_type: found.mime_type,
                       file_size_bytes: found.file_size_bytes,
-                      modal: found.action_type === 'modal' ? { title: found.modal_title || '', blocks: found.modal_blocks } : null,
+                      modal: found.action_type === 'modal' ? { title: found.modal_title || DEFAULT_MODAL_TITLE, subtitle: found.modal_subtitle ?? DEFAULT_MODAL_SUBTITLE, blocks: found.modal_blocks } : null,
                   }
                 : null;
 
@@ -237,7 +242,7 @@ export function LessonButtonBlockModal({
                     action_type: actionType,
                     url: actionType === 'url' ? url.trim() : null,
                     open_target: openTarget,
-                    modal: actionType === 'modal' ? { title: modalTitle.trim(), blocks: modalBlocks } : null,
+                    modal: actionType === 'modal' ? { title: modalTitle.trim(), subtitle: modalSubtitle, blocks: modalBlocks } : null,
                 },
             });
         }
@@ -570,14 +575,28 @@ export function LessonButtonBlockModal({
                                 {actionType === 'modal' && (
                                     <div className="space-y-3 pt-2">
                                         <label className="block space-y-1">
-                                            <span className="text-xs font-bold text-slate-700">Título da Janela Modal</span>
+                                            <span className="text-xs font-bold text-slate-700">Título do Modal</span>
                                             <input
                                                 type="text"
                                                 className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-semibold"
                                                 value={modalTitle}
                                                 onChange={(e) => setModalTitle(e.target.value)}
-                                                placeholder="Ex: Material de Aprofundamento"
+                                                placeholder="Ex: Material Complementar"
                                             />
+                                        </label>
+
+                                        <label className="block space-y-1">
+                                            <span className="text-xs font-bold text-slate-700">Subtítulo do Modal</span>
+                                            <input
+                                                type="text"
+                                                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-normal"
+                                                value={modalSubtitle}
+                                                onChange={(e) => setModalSubtitle(e.target.value)}
+                                                placeholder="Ex: Conteúdo complementar da aula."
+                                            />
+                                            <p className="text-[11px] text-slate-500">
+                                                Opcional. Se mantido em branco, o modal será exibido sem a linha de subtítulo.
+                                            </p>
                                         </label>
 
                                         <div className="rounded-xl border border-slate-200 bg-white p-4 flex items-center justify-between">

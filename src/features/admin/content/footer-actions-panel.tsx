@@ -25,7 +25,7 @@ import {
 } from '@/features/admin/content/button-template-icons';
 import { LessonActionButton } from '@/features/admin/content/lesson-action-button';
 import { LessonContentBlocksEditor, LessonContentBlocksRenderer } from '@/features/admin/content/lesson-content-blocks';
-import type { LessonContentBlock } from '@/features/admin/content/content-blocks';
+import { DEFAULT_MODAL_TITLE, DEFAULT_MODAL_SUBTITLE, type LessonContentBlock } from '@/features/admin/content/content-blocks';
 import type { ButtonTemplate, FooterActionScope, GlobalButtonDefinition, LessonFooterAction } from '@/types/content';
 
 type LessonFooterActionOpenTarget = 'same-tab' | 'new-tab' | 'new-window';
@@ -106,7 +106,8 @@ export function FooterActionsPanel({
     const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
 
     // Modal creation
-    const [modalTitle, setModalTitle] = useState('');
+    const [modalTitle, setModalTitle] = useState(DEFAULT_MODAL_TITLE);
+    const [modalSubtitle, setModalSubtitle] = useState(DEFAULT_MODAL_SUBTITLE);
     const [modalButtonLabel, setModalButtonLabel] = useState('');
     const [modalBlocks, setModalBlocks] = useState<LessonContentBlock[]>([
         { type: 'rich-text', content: '<p>Conteúdo da janela modal...</p>' },
@@ -123,6 +124,7 @@ export function FooterActionsPanel({
     const [editingOpenTarget, setEditingOpenTarget] = useState<LessonFooterActionOpenTarget>('new-tab');
     const [editingFile, setEditingFile] = useState<File | null>(null);
     const [editingModalTitle, setEditingModalTitle] = useState('');
+    const [editingModalSubtitle, setEditingModalSubtitle] = useState('');
     const [editingModalBlocks, setEditingModalBlocks] = useState<LessonContentBlock[]>([]);
 
     const [isLoading, setIsLoading] = useState(true);
@@ -182,6 +184,7 @@ export function FooterActionsPanel({
         setEditingOpenTarget(action.open_target ?? (action.open_in_new_tab ? 'new-tab' : 'same-tab'));
         setEditingFile(null);
         setEditingModalTitle(action.modal_title || '');
+        setEditingModalSubtitle(action.modal_subtitle ?? DEFAULT_MODAL_SUBTITLE);
         setEditingModalBlocks(
             action.modal_blocks && action.modal_blocks.length > 0
                 ? (action.modal_blocks as LessonContentBlock[])
@@ -197,6 +200,7 @@ export function FooterActionsPanel({
         setEditingOpenTarget('new-tab');
         setEditingFile(null);
         setEditingModalTitle('');
+        setEditingModalSubtitle('');
         setEditingModalBlocks([]);
     }
 
@@ -300,7 +304,8 @@ export function FooterActionsPanel({
                 template_id: selectedTemplateId || null,
                 action_type: 'modal',
                 label: modalButtonLabel || 'Ver Conteúdo',
-                modal_title: modalTitle || 'Conteúdo Complementar',
+                modal_title: modalTitle || DEFAULT_MODAL_TITLE,
+                modal_subtitle: modalSubtitle,
                 modal_blocks: modalBlocks,
                 position: nextPosition,
                 open_target: 'same-tab',
@@ -354,6 +359,7 @@ export function FooterActionsPanel({
                 file_name: globalBtn.file_name,
                 file_size_bytes: globalBtn.file_size_bytes,
                 modal_title: globalBtn.modal_title,
+                modal_subtitle: globalBtn.modal_subtitle,
                 modal_blocks: globalBtn.modal_blocks,
                 position: nextPosition,
                 open_target: globalBtn.open_target || 'new-tab',
@@ -414,6 +420,7 @@ export function FooterActionsPanel({
                 position: editingAction.position,
                 open_target: editingOpenTarget,
                 modal_title: editingAction.action_type === 'modal' ? editingModalTitle : '',
+                modal_subtitle: editingAction.action_type === 'modal' ? editingModalSubtitle : '',
                 modal_blocks: editingAction.action_type === 'modal' ? editingModalBlocks : [],
                 is_active: editingAction.is_active,
             });
@@ -595,12 +602,21 @@ export function FooterActionsPanel({
                     />
                   </label>
                   <label className="block space-y-1">
-                    <span className="text-xs font-bold text-slate-700">Título da janela modal</span>
+                    <span className="text-xs font-bold text-slate-700">Título do Modal</span>
                     <input
-                      className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-blue-100"
-                      placeholder="Ex: Guia Rápido de Estudos"
+                      className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-blue-100 font-semibold"
+                      placeholder="Ex: Material Complementar"
                       value={modalTitle}
                       onChange={(e) => setModalTitle(e.target.value)}
+                    />
+                  </label>
+                  <label className="block space-y-1">
+                    <span className="text-xs font-bold text-slate-700">Subtítulo do Modal</span>
+                    <input
+                      className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-blue-100 font-normal"
+                      placeholder="Ex: Conteúdo complementar da aula."
+                      value={modalSubtitle}
+                      onChange={(e) => setModalSubtitle(e.target.value)}
                     />
                   </label>
                   <div className="space-y-1">
@@ -842,6 +858,15 @@ export function FooterActionsPanel({
                           placeholder="Ex: Instruções Adicionais"
                           value={editingModalTitle}
                           onChange={(e) => setEditingModalTitle(e.target.value)}
+                        />
+                      </label>
+                      <label className="block space-y-1">
+                        <span className="text-sm font-bold text-slate-800">Subtítulo da janela modal</span>
+                        <input
+                          className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm"
+                          placeholder="Ex: Conteúdo complementar da aula."
+                          value={editingModalSubtitle}
+                          onChange={(e) => setEditingModalSubtitle(e.target.value)}
                         />
                       </label>
                       <div className="space-y-1">

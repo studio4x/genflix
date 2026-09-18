@@ -288,6 +288,7 @@ export const globalButtonDefinitionFormSchema = z.object({
     url: z.string().trim().url('URL inválida').optional().or(z.literal('')),
     open_target: z.enum(['same-tab', 'new-tab', 'new-window']).default('new-tab'),
     modal_title: z.string().trim().optional().or(z.literal('')),
+    modal_subtitle: z.string().trim().optional().or(z.literal('')).nullable(),
     modal_blocks: z.array(modalAllowedBlockSchema).default([]),
     is_active: z.boolean().default(true),
 }).superRefine((value, ctx) => {
@@ -317,6 +318,7 @@ export const lessonFooterActionFormSchema = z.object({
     position: z.number().int().min(1),
     open_target: z.enum(['same-tab', 'new-tab', 'new-window']).default('new-tab'),
     modal_title: z.string().trim().optional().or(z.literal('')),
+    modal_subtitle: z.string().trim().optional().or(z.literal('')).nullable(),
     modal_blocks: z.array(modalAllowedBlockSchema).default([]),
     is_active: z.boolean().default(true),
 }).superRefine((value, ctx) => {
@@ -354,6 +356,7 @@ export const lessonButtonBlockLocalConfigSchema = z.object({
     file_size_bytes: z.number().int().min(0).default(0),
     modal: z.object({
         title: z.string().trim().min(1, 'Título do modal obrigatório.'),
+        subtitle: z.string().trim().optional().or(z.literal('')).nullable(),
         blocks: z.array(modalAllowedBlockSchema).default([]),
     }).nullable().optional(),
 }).superRefine((value, ctx) => {

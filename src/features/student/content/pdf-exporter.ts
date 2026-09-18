@@ -1,7 +1,7 @@
 import genflixWordmarkUrl from '@/assets/genflix-wordmark.svg';
 import type { GlobalButtonDefinition, LessonFlashcardItem } from '@/types/content';
 import { fetchGlobalButtonsBatch, getSignedLessonContentAssetUrl, getSignedMaterialUrl, getSignedModulePdfUrl } from '@/features/admin/content/api';
-import { mergeContent, parseLessonButtonBlockElement, parseLessonFlashcardsBlockElement, parseLessonHtmlBlockElement, parseLessonImageHotspotsBlockElement, type LessonContentBlock } from '@/features/admin/content/content-blocks';
+import { mergeContent, parseLessonButtonBlockElement, parseLessonFlashcardsBlockElement, parseLessonHtmlBlockElement, parseLessonImageHotspotsBlockElement, resolveModalSubtitle, type LessonContentBlock } from '@/features/admin/content/content-blocks';
 import { fetchPdfWatermarkSettings } from '@/features/branding/api';
 import { supabase } from '@/services/supabase/client';
 import { PDFDocument, StandardFonts, degrees, rgb } from 'pdf-lib';
@@ -260,6 +260,7 @@ function buildPdfButtonFallbackHtml(
         url?: string;
         fileName?: string | null;
         modalTitle?: string;
+        modalSubtitle?: string | null;
         modalBlocksHtml?: string;
     }
 ) {
@@ -282,11 +283,13 @@ function buildPdfButtonFallbackHtml(
         </div>
         `;
     }
+    const resolvedSubtitle = resolveModalSubtitle(details.modalSubtitle);
     return `
     <section class="pdf-modal-callout" style="margin: 18px 0; padding: 16px; border: 1px solid #93c5fd; border-radius: 12px; background: #eff6ff;">
-      <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; color: #1e40af; margin-bottom: 8px;">
+      <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; color: #1e40af; margin-bottom: 4px;">
         🪟 ${escapeHtml(details.modalTitle || label || 'Janela de Conteúdo Complementar')}
       </div>
+      ${resolvedSubtitle ? `<div style="font-size: 11px; color: #64748b; margin-bottom: 8px;">${escapeHtml(resolvedSubtitle)}</div>` : ''}
       <div class="pdf-modal-content" style="color: #334155; font-size: 12px; line-height: 1.6;">
         ${details.modalBlocksHtml || '<p>Sem conteúdo complementar.</p>'}
       </div>
@@ -332,6 +335,7 @@ async function hydrateInteractiveLessonContent(textContent: string | null) {
             let url = '';
             let fileName: string | null = null;
             let modalTitle = '';
+            let modalSubtitle: string | null | undefined = undefined;
             let modalBlocksHtml = '';
 
             if (content.source_type === 'global') {
@@ -342,6 +346,7 @@ async function hydrateInteractiveLessonContent(textContent: string | null) {
                     url = globalDef.url || '';
                     fileName = globalDef.file_name;
                     modalTitle = globalDef.modal_title || '';
+                    modalSubtitle = globalDef.modal_subtitle;
                     modalBlocksHtml = globalDef.modal_blocks && globalDef.modal_blocks.length > 0
                         ? mergeContent(globalDef.modal_blocks as LessonContentBlock[])
                         : '';
@@ -351,6 +356,7 @@ async function hydrateInteractiveLessonContent(textContent: string | null) {
                     url = '';
                     fileName = null;
                     modalTitle = '';
+                    modalSubtitle = null;
                     modalBlocksHtml = '';
                 }
             }
@@ -360,6 +366,7 @@ async function hydrateInteractiveLessonContent(textContent: string | null) {
                 url = content.local_config.url || '';
                 fileName = content.local_config.file_name || null;
                 modalTitle = content.local_config.modal?.title || '';
+                modalSubtitle = content.local_config.modal?.subtitle;
                 modalBlocksHtml = content.local_config.modal?.blocks && content.local_config.modal.blocks.length > 0
                     ? mergeContent(content.local_config.modal.blocks as LessonContentBlock[])
                     : '';
@@ -370,6 +377,7 @@ async function hydrateInteractiveLessonContent(textContent: string | null) {
                 url,
                 fileName,
                 modalTitle,
+                modalSubtitle,
                 modalBlocksHtml,
             });
             block.replaceWith(...Array.from(wrapper.childNodes));

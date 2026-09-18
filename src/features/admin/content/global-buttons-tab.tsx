@@ -17,7 +17,7 @@ import {
 } from '@/features/admin/content/button-template-icons';
 import { LessonActionButton } from '@/features/admin/content/lesson-action-button';
 import { LessonContentBlocksEditor, LessonContentBlocksRenderer } from '@/features/admin/content/lesson-content-blocks';
-import type { LessonContentBlock } from '@/features/admin/content/content-blocks';
+import { DEFAULT_MODAL_TITLE, DEFAULT_MODAL_SUBTITLE, type LessonContentBlock } from '@/features/admin/content/content-blocks';
 import { globalButtonDefinitionFormSchema } from '@/features/admin/content/schemas';
 import type {
     ButtonActionType,
@@ -29,11 +29,10 @@ import type {
 const OPEN_TARGET_OPTIONS: Array<{
     label: string;
     value: ButtonOpenTarget;
-    description: string;
 }> = [
-    { label: 'Nova aba', value: 'new-tab', description: 'Abre em uma nova aba do navegador.' },
-    { label: 'Mesma página', value: 'same-tab', description: 'Abre substituindo a página atual.' },
-    { label: 'Nova janela', value: 'new-window', description: 'Abre em uma janela separada.' },
+    { label: 'Nova Aba (_blank)', value: 'new-tab' },
+    { label: 'Mesma Aba (_self)', value: 'same-tab' },
+    { label: 'Nova Janela Pop-up', value: 'new-window' },
 ];
 
 const VARIANTS = ['primary', 'secondary', 'outline', 'ghost', 'link'] as const;
@@ -43,8 +42,8 @@ interface FormState {
     name: string;
     label: string;
     template_id: string;
-    variant: 'primary' | 'secondary' | 'outline' | 'ghost' | 'link';
-    theme: 'blue' | 'emerald' | 'amber' | 'rose' | 'slate' | 'violet';
+    variant: ButtonTemplate['variant'];
+    theme: ButtonTemplate['theme'];
     icon: string;
     action_type: ButtonActionType;
     url: string;
@@ -53,6 +52,7 @@ interface FormState {
     file_name: string | null;
     file_size_bytes: number;
     modal_title: string;
+    modal_subtitle: string;
     modal_blocks: LessonContentBlock[];
     is_active: boolean;
 }
@@ -70,7 +70,8 @@ const DEFAULT_FORM: FormState = {
     file_path: null,
     file_name: null,
     file_size_bytes: 0,
-    modal_title: '',
+    modal_title: DEFAULT_MODAL_TITLE,
+    modal_subtitle: DEFAULT_MODAL_SUBTITLE,
     modal_blocks: [{ type: 'rich-text', content: '<p>Conteúdo da janela modal...</p>' }],
     is_active: true,
 };
@@ -177,7 +178,8 @@ export function GlobalButtonsTab() {
             file_path: button.storage_path,
             file_name: button.file_name,
             file_size_bytes: button.file_size_bytes,
-            modal_title: button.modal_title || '',
+            modal_title: button.modal_title ?? DEFAULT_MODAL_TITLE,
+            modal_subtitle: button.modal_subtitle ?? DEFAULT_MODAL_SUBTITLE,
             modal_blocks: button.modal_blocks && button.modal_blocks.length > 0
                 ? (button.modal_blocks as LessonContentBlock[])
                 : [{ type: 'rich-text', content: '<p>Conteúdo da janela modal...</p>' }],
@@ -202,6 +204,7 @@ export function GlobalButtonsTab() {
             url: form.action_type === 'url' ? form.url : '',
             open_target: form.open_target,
             modal_title: form.action_type === 'modal' ? form.modal_title : '',
+            modal_subtitle: form.action_type === 'modal' ? form.modal_subtitle : '',
             modal_blocks: form.action_type === 'modal' ? form.modal_blocks : [],
             is_active: form.is_active,
         });
@@ -449,13 +452,26 @@ export function GlobalButtonsTab() {
                         ) : (
                             <div className="space-y-3 pt-2">
                                 <label className="block space-y-1">
-                                    <span className="text-xs font-bold text-slate-700">Título da janela modal</span>
+                                    <span className="text-xs font-bold text-slate-700">Título do Modal</span>
                                     <input
-                                        className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-blue-100"
-                                        placeholder="Ex: Instruções Complementares"
+                                        className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-blue-100 font-semibold"
+                                        placeholder="Ex: Material Complementar"
                                         value={form.modal_title}
                                         onChange={(e) => setForm((prev) => ({ ...prev, modal_title: e.target.value }))}
                                     />
+                                </label>
+
+                                <label className="block space-y-1">
+                                    <span className="text-xs font-bold text-slate-700">Subtítulo do Modal</span>
+                                    <input
+                                        className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-blue-100 font-normal"
+                                        placeholder="Ex: Conteúdo complementar da aula."
+                                        value={form.modal_subtitle}
+                                        onChange={(e) => setForm((prev) => ({ ...prev, modal_subtitle: e.target.value }))}
+                                    />
+                                    <p className="text-[11px] text-slate-500">
+                                        Opcional. Se mantido em branco, o modal será exibido sem a linha de subtítulo.
+                                    </p>
                                 </label>
 
                                 <div className="space-y-2">
