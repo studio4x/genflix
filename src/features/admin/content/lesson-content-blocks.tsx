@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type ChangeEvent, type DragEvent, type IframeHTMLAttributes } from 'react';
-import { ChevronDown, ChevronUp, Library } from 'lucide-react';
+import { ChevronDown, ChevronUp, Library, Upload } from 'lucide-react';
 import ReactQuill from '@/components/forms/react-quill';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -339,7 +339,7 @@ function collectDeletableAssets(block: LessonContentBlock): DeletableLessonAsset
             storageProvider: block.content.asset.storage_provider,
         }];
     }
-    if (block.type === 'image' && block.content.source_type === 'upload' && block.content.storage_path) {
+    if (block.type === 'image' && block.content.source_type === 'upload' && block.content.storage_path && !block.content.media_asset_id) {
         return [{
             storagePath: block.content.storage_path,
             storageProvider: block.content.storage_provider,
@@ -420,11 +420,30 @@ export function LessonImageBlockEditor({
     }, [content.source_type, assetContext]);
 
     const previewUrl = content.source_type === 'upload'
-        ? resolvedUploadUrl
+        ? (resolvedUploadUrl || content.signed_url?.trim() || content.image_url.trim())
         : content.image_url.trim();
 
     const sizeClasses = IMAGE_SIZE_CLASSES[content.size];
     const captionAlignmentClass = IMAGE_CAPTION_ALIGNMENT_CLASSES[content.caption_alignment];
+
+    function handleMediaAssetSelected(asset: SiteAsset) {
+        const canonicalUrl = resolveSiteAssetPublicUrl(asset);
+        setPreviewError(null);
+        onError?.(null);
+        onChange({
+            ...content,
+            source_type: assetContext === 'global' ? 'url' : 'upload',
+            image_url: canonicalUrl || '',
+            storage_path: asset.storage_path || '',
+            storage_provider: 'supabase',
+            signed_url: canonicalUrl || null,
+            file_name: asset.storage_path.split('/').pop() || asset.alt || 'imagem-biblioteca',
+            mime_type: asset.mime_type || null,
+            alt: content.alt || asset.alt || '',
+            media_asset_id: asset.id,
+        });
+        setIsMediaLibraryOpen(false);
+    }
 
     async function handleFileSelected(event: ChangeEvent<HTMLInputElement>) {
         const file = event.target.files?.[0];
@@ -435,7 +454,7 @@ export function LessonImageBlockEditor({
         setPreviewError(null);
         onError?.(null);
         try {
-            const previousStoragePath = content.source_type === 'upload' ? content.storage_path.trim() : '';
+            const previousStoragePath = (content.source_type === 'upload' && !content.media_asset_id) ? content.storage_path.trim() : '';
             const previousStorageProvider = content.source_type === 'upload' ? content.storage_provider ?? 'supabase' : 'supabase';
             const uploadResult = await uploadLessonContentAsset(file);
             onChange({
@@ -447,6 +466,7 @@ export function LessonImageBlockEditor({
                 signed_url: uploadResult.signed_url,
                 file_name: file.name,
                 mime_type: file.type || null,
+                media_asset_id: undefined,
             });
             if (previousStoragePath && previousStoragePath !== uploadResult.storage_path) {
                 void deleteLessonContentAsset(previousStoragePath, previousStorageProvider).catch(() => null);
@@ -466,14 +486,14 @@ export function LessonImageBlockEditor({
     }
 
     async function switchToUrlMode() {
-        const previousStoragePath = content.source_type === 'upload' ? content.storage_path.trim() : '';
+        const previousStoragePath = (content.source_type === 'upload' && !content.media_asset_id) ? content.storage_path.trim() : '';
         const previousStorageProvider = content.source_type === 'upload' ? content.storage_provider ?? 'supabase' : 'supabase';
         if (previousStoragePath) {
             try {
                 await deleteLessonContentAsset(previousStoragePath, previousStorageProvider);
             }
             catch {
-                // Mant?m a troca mesmo se a remo??o falhar.
+                // Mantém a troca mesmo se a remoção falhar.
             }
         }
         setInputMode('url');
@@ -487,6 +507,7 @@ export function LessonImageBlockEditor({
             signed_url: null,
             file_name: '',
             mime_type: null,
+            media_asset_id: undefined,
         });
     }
 
@@ -498,6 +519,7 @@ export function LessonImageBlockEditor({
             ...content,
             source_type: 'upload',
         });
+        setIsMediaLibraryOpen(true);
     }
 
     function handlePreviewError() {
@@ -546,7 +568,7 @@ export function LessonImageBlockEditor({
                         ? 'border-slate-950 bg-slate-950 text-white'
                         : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50')}>
                         <p className="text-xs font-black uppercase tracking-[0.18em]">Imagem por upload</p>
-                        <p className={cn('mt-1 text-sm', inputMode === 'upload' ? 'text-slate-200' : 'text-slate-500')}>Envie um arquivo e use a imagem protegida.</p>
+                        <p className={cn('mt-1 text-sm', inputMode === 'upload' ? 'text-slate-200' : 'text-slate-500')}>Envie um arquivo ou selecione da Biblioteca de Mídia.</p>
                     </button>
                 </div>
             )}
@@ -565,51 +587,25 @@ export function LessonImageBlockEditor({
                 ) : null}
             </div>
             {assetContext === 'global' ? (
-                <>
-                    <label className="block space-y-2">
-                        <span className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Ou informe uma URL pública da imagem</span>
-                        <input
-                            type="url"
-                            value={content.image_url}
-                            onChange={(event) => {
-                                setPreviewError(null);
-                                onError?.(null);
-                                onChange({
-                                    ...content,
-                                    source_type: 'url',
-                                    image_url: event.target.value,
-                                    media_asset_id: undefined,
-                                });
-                            }}
-                            className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-sky-300 focus:ring-4 focus:ring-sky-100"
-                            placeholder="https://..."
-                        />
-                    </label>
-
-                    <MediaLibraryModal
-                        isOpen={isMediaLibraryOpen}
-                        onClose={() => setIsMediaLibraryOpen(false)}
-                        selectedAssetId={content.media_asset_id}
-                        title="Escolher imagem para o Modal Global"
-                        onSelect={(asset: SiteAsset) => {
-                            const canonicalUrl = resolveSiteAssetPublicUrl(asset);
+                <label className="block space-y-2">
+                    <span className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Ou informe uma URL pública da imagem</span>
+                    <input
+                        type="url"
+                        value={content.image_url}
+                        onChange={(event) => {
                             setPreviewError(null);
                             onError?.(null);
                             onChange({
                                 ...content,
                                 source_type: 'url',
-                                image_url: canonicalUrl || '',
-                                storage_path: '',
-                                storage_provider: undefined,
-                                signed_url: null,
-                                file_name: asset.storage_path.split('/').pop() || '',
-                                alt: content.alt || asset.alt || '',
-                                media_asset_id: asset.id,
+                                image_url: event.target.value,
+                                media_asset_id: undefined,
                             });
-                            setIsMediaLibraryOpen(false);
                         }}
+                        className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-sky-300 focus:ring-4 focus:ring-sky-100"
+                        placeholder="https://..."
                     />
-                </>
+                </label>
             ) : inputMode === 'url' ? (
                 <label className="block space-y-2">
                     <span className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">URL da imagem</span>
@@ -622,19 +618,56 @@ export function LessonImageBlockEditor({
             ) : (
                 <div className="space-y-3">
                     <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={(event) => void handleFileSelected(event)} />
-                    <Button type="button" variant="outline" className="rounded-2xl border-slate-200 bg-white" onClick={() => fileInputRef.current?.click()} disabled={isUploading}>
-                        {content.storage_path ? 'Trocar imagem' : 'Enviar imagem'}
-                    </Button>
-                    <Button type="button" variant="ghost" className="px-0 text-xs font-bold text-slate-500 hover:text-slate-800" onClick={() => void switchToUrlMode()}>
-                        Voltar para URL
-                    </Button>
+                    <div className="flex flex-wrap items-center gap-3">
+                        <Button
+                            type="button"
+                            onClick={() => setIsMediaLibraryOpen(true)}
+                            className="inline-flex items-center gap-2 rounded-2xl bg-sky-600 hover:bg-sky-700 text-white font-bold px-4 py-2.5 text-xs shadow-sm"
+                        >
+                            <Library className="h-4 w-4" />
+                            {content.media_asset_id ? 'Trocar da Biblioteca' : 'Escolher da Biblioteca'}
+                        </Button>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            className="inline-flex items-center gap-2 rounded-2xl border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-semibold px-4 py-2.5 text-xs"
+                            onClick={() => fileInputRef.current?.click()}
+                            disabled={isUploading}
+                        >
+                            <Upload className="h-4 w-4" />
+                            {isUploading ? 'Enviando arquivo...' : (content.storage_path && !content.media_asset_id ? 'Trocar arquivo local' : 'Enviar do dispositivo')}
+                        </Button>
+                        <Button
+                            type="button"
+                            variant="ghost"
+                            className="px-2 text-xs font-bold text-slate-500 hover:text-slate-800"
+                            onClick={() => void switchToUrlMode()}
+                        >
+                            Voltar para URL
+                        </Button>
+                    </div>
                     {content.file_name ? (
-                        <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
-                            {content.file_name}
+                        <div className="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+                            <div className="flex items-center gap-2 truncate">
+                                <span className={cn(
+                                    "rounded-md px-2 py-0.5 text-[10px] font-black uppercase tracking-wider",
+                                    content.media_asset_id ? "bg-sky-100 text-sky-800" : "bg-slate-200 text-slate-700"
+                                )}>
+                                    {content.media_asset_id ? 'Biblioteca de Mídia' : 'Upload Local'}
+                                </span>
+                                <span className="truncate font-medium">{content.file_name}</span>
+                            </div>
                         </div>
                     ) : null}
                 </div>
             )}
+            <MediaLibraryModal
+                isOpen={isMediaLibraryOpen}
+                onClose={() => setIsMediaLibraryOpen(false)}
+                selectedAssetId={content.media_asset_id}
+                title={assetContext === 'global' ? "Escolher imagem para o Modal Global" : "Escolher imagem da Biblioteca de Mídia"}
+                onSelect={handleMediaAssetSelected}
+            />
             <div className="grid gap-4 md:grid-cols-3">
                 <label className="block space-y-2">
                     <span className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Ajuste de tamanho</span>
@@ -1269,7 +1302,7 @@ export function LessonImageBlockRenderer({ content }: LessonImageBlockRendererPr
     const captionAlignmentClass = IMAGE_CAPTION_ALIGNMENT_CLASSES[content.caption_alignment];
     const resolvedUploadUrl = useResolvedLessonAssetUrl(content.storage_path, content.storage_provider, content.signed_url);
     const previewUrl = content.source_type === 'upload'
-        ? resolvedUploadUrl
+        ? (resolvedUploadUrl || content.signed_url?.trim() || content.image_url.trim())
         : content.image_url.trim();
 
     return (
