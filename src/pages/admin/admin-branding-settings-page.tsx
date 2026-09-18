@@ -6,8 +6,9 @@ import { Button } from '@/components/ui/button';
 import { GenflixLogo } from '@/components/public/genflix-logo';
 import { createBrandingAssetValue } from '@/features/branding/api';
 import { JSON_MODEL_TEMPLATES, stringifyJsonModel } from '@/features/admin/content/json-model-templates';
+import { GENFLIX_AI_JSON_PROMPT } from '@/features/admin/content/genflix-ai-json-prompt';
 import { brandingEntryKeys, type BrandingSlotKey } from '@/features/branding/types';
-import { downloadJsonFile } from '@/lib/download';
+import { downloadJsonFile, downloadTextFile } from '@/lib/download';
 import { saveSiteContentEntry, uploadSiteAsset } from '@/features/site-editor/api';
 import { AdminPdfWatermarkPanel } from '@/pages/admin/admin-pdf-watermark-panel';
 import { AdminNarrationCredentialsPanel } from '@/pages/admin/admin-narration-credentials-panel';
@@ -169,6 +170,20 @@ export function AdminBrandingSettingsPage() {
             setError('Não foi possível copiar o JSON para a área de transferência.');
         }
     }
+    async function copyAiJsonPrompt() {
+        try {
+            await navigator.clipboard.writeText(GENFLIX_AI_JSON_PROMPT);
+            setCopiedModelId('ai-json-prompt');
+            setMessage('Prompt copiado!');
+            setError(null);
+        }
+        catch {
+            setError('Não foi possível copiar o prompt para a área de transferência.');
+        }
+    }
+    function downloadAiJsonPrompt() {
+        downloadTextFile('prompt-gerador-json-genflix.txt', GENFLIX_AI_JSON_PROMPT);
+    }
     function downloadModelJson(templateId: string) {
         const template = JSON_MODEL_TEMPLATES.find((item) => item.id === templateId);
         if (!template) {
@@ -290,6 +305,43 @@ export function AdminBrandingSettingsPage() {
               Use estes modelos como base para gerar ou revisar conteúdos importáveis. Cada botão copia apenas o JSON, sem mostrar o código inteiro na página.
             </p>
           </div>
+
+          <article className="border border-[#D8E6EB] bg-white p-5 shadow-sm">
+            <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#1398B7]">Assistente de importação</p>
+                <h3 className="mt-2 font-readex text-xl font-semibold text-[#15323b]">Prompt para gerar JSON com IA</h3>
+                <p className="mt-2 max-w-3xl text-sm leading-6 text-[#5F7077]">
+                  Use este prompt no ChatGPT, Gemini ou outro agente de IA para transformar o conteúdo de um curso em um JSON compatível com os modelos da Genflix.
+                </p>
+              </div>
+              <div className="flex shrink-0 flex-col gap-3 sm:flex-row xl:pt-1">
+                <Button type="button" variant="outline" onClick={() => void copyAiJsonPrompt()} className="h-11 rounded-full border-[#D8E6EB] bg-white font-bold text-[#15323b] hover:border-[#1398B7]/40 hover:text-[#1398B7]">
+                  <Copy className="mr-2 h-4 w-4"/>
+                  {copiedModelId === 'ai-json-prompt' ? 'Prompt copiado' : 'Copiar prompt'}
+                </Button>
+                <Button type="button" onClick={downloadAiJsonPrompt} className="h-11 rounded-full bg-[#1398B7] font-black text-white hover:bg-[#0A7D97]">
+                  <Download className="mr-2 h-4 w-4"/>
+                  Baixar prompt
+                </Button>
+              </div>
+            </div>
+
+            <div className="mt-5 rounded-[22px] border border-[#D8E6EB] bg-[#F8FBFC] p-4 sm:p-5">
+              <h4 className="text-sm font-black uppercase tracking-[0.16em] text-[#15323b]">Como usar</h4>
+              <ol className="mt-3 list-decimal space-y-2 pl-5 text-sm font-medium leading-6 text-[#5F7077]">
+                <li>Clique em <strong>Copiar prompt</strong> ou <strong>Baixar prompt</strong>.</li>
+                <li>Abra uma nova conversa no ChatGPT, Gemini ou outro agente de IA.</li>
+                <li>Envie o prompt como primeira mensagem.</li>
+                <li>Depois envie o modelo JSON desejado da Genflix.</li>
+                <li>Em seguida, envie o conteúdo do curso, módulo ou avaliação que deseja converter.</li>
+                <li>A IA deverá gerar o JSON final mantendo a estrutura do modelo informado.</li>
+                <li>Revise o JSON gerado antes de importá-lo para a Genflix.</li>
+              </ol>
+            </div>
+
+            <pre aria-label="Prompt para gerar JSON com IA" className="mt-5 max-h-[420px] overflow-auto rounded-[22px] border border-[#D8E6EB] bg-[#102F38] p-4 text-xs leading-6 text-[#E8F6FA] whitespace-pre-wrap break-words [overflow-wrap:anywhere] sm:p-5"><code>{GENFLIX_AI_JSON_PROMPT}</code></pre>
+          </article>
 
           <div className="grid gap-5 xl:grid-cols-2">
             {JSON_MODEL_TEMPLATES.map((template) => {
