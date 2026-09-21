@@ -627,7 +627,7 @@ export function FooterActionsPanel({
                         onChange={setModalBlocks}
                         level={1}
                         allowEmptyState={false}
-                        excludedBlockTypes={['button', 'image-hotspots', 'flashcards']}
+                        excludedBlockTypes={['button', 'image-hotspots', 'flashcards', 'svg']}
                       />
                     </div>
                   </div>
@@ -877,7 +877,7 @@ export function FooterActionsPanel({
                             onChange={setEditingModalBlocks}
                             level={1}
                             allowEmptyState={false}
-                            excludedBlockTypes={['button', 'image-hotspots', 'flashcards']}
+                            excludedBlockTypes={['button', 'image-hotspots', 'flashcards', 'svg']}
                           />
                         </div>
                       </div>

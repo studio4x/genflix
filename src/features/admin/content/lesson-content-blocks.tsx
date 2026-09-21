@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 import { deleteLessonContentAsset, getSignedLessonContentAssetUrl, uploadLessonContentAsset, fetchGlobalButtonsBatchAdmin } from '@/features/admin/content/api';
 import { LessonImageHotspotsBlockEditor, LessonImageHotspotsBlockRenderer } from '@/features/admin/content/lesson-image-hotspots-block';
 import { LessonFlashcardsBlockEditor, LessonFlashcardsBlockRenderer } from '@/features/admin/content/lesson-flashcards-block';
+import { LessonSvgBlockEditor, LessonSvgBlockRenderer } from '@/features/admin/content/lesson-svg-block';
 import { MediaLibraryModal } from '@/features/site-assets/media-library-modal';
 import type { SiteAsset } from '@/features/site-editor/types';
 import { resolveSiteAssetPublicUrl } from '@/features/site-assets/public-url';
@@ -16,6 +17,7 @@ import {
     createEmptyLessonHtmlBlockContent,
     createEmptyLessonImageBlockContent,
     createEmptyLessonImageHotspotsBlockContent,
+    createEmptyLessonSvgBlockContent,
     createEmptyLessonVideoBlockContent,
     getColumnsTemplateValue,
     getColumnsWidthsAttributeValue,
@@ -291,6 +293,12 @@ function createDefaultBlock(type: Exclude<LessonContentBlock['type'], 'columns'>
             content: createEmptyLessonHtmlBlockContent(),
         };
     }
+    if (type === 'svg') {
+        return {
+            type,
+            content: createEmptyLessonSvgBlockContent(),
+        };
+    }
     if (type === 'button') {
         return {
             type,
@@ -357,6 +365,12 @@ function collectDeletableAssets(block: LessonContentBlock): DeletableLessonAsset
             storageProvider: block.content.storage_provider,
         }];
     }
+    if (block.type === 'svg' && block.content.source_type === 'upload' && block.content.storage_path) {
+        return [{
+            storagePath: block.content.storage_path,
+            storageProvider: block.content.storage_provider,
+        }];
+    }
     if (block.type === 'columns') {
         return block.content.flatMap((column) => column.blocks.flatMap((columnBlock) => collectDeletableAssets(columnBlock)));
     }
@@ -384,6 +398,9 @@ function getBlockLabel(block: LessonContentBlock) {
     }
     if (block.type === 'html') {
         return 'Bloco HTML';
+    }
+    if (block.type === 'svg') {
+        return 'Bloco SVG Interativo';
     }
     if (block.type === 'button') {
         return 'Bloco de Botão';
@@ -1554,6 +1571,8 @@ export function LessonContentBlocksEditor({
                         <LessonImageBlockEditor content={block.content} onChange={(nextContent) => updateBlock(index, { ...block, content: nextContent })} onError={onError} assetContext={assetContext} />
                     ) : block.type === 'html' ? (
                         <LessonHtmlBlockEditor content={block.content} onChange={(nextContent) => updateBlock(index, { ...block, content: nextContent })} onError={onError} />
+                    ) : block.type === 'svg' ? (
+                        <LessonSvgBlockEditor content={block.content} onChange={(nextContent) => updateBlock(index, { ...block, content: nextContent })} onError={onError} />
                     ) : block.type === 'video' ? (
                         <LessonVideoBlockEditor content={block.content} onChange={(nextContent) => updateBlock(index, { ...block, content: nextContent })} onError={onError} assetContext={assetContext} />
                     ) : block.type === 'button' ? (() => {
@@ -1807,6 +1826,11 @@ export function LessonContentBlocksEditor({
                         + HTML
                     </Button>
                 )}
+                {!excludedBlockTypes?.includes('svg') && (
+                    <Button type="button" variant="outline" size="sm" onClick={() => addBlock('svg')} className="border-slate-200 bg-white hover:bg-indigo-50 hover:text-indigo-700">
+                        + SVG interativo
+                    </Button>
+                )}
                 {!excludedBlockTypes?.includes('video') && (
                     <Button type="button" variant="outline" size="sm" onClick={() => addBlock('video')} className="border-slate-200 bg-white hover:bg-rose-50 hover:text-rose-700">
                         + Vídeo
@@ -1870,7 +1894,7 @@ export function LessonContentBlocksEditor({
                             onChange={onChange}
                             level={1}
                             allowEmptyState={false}
-                            excludedBlockTypes={['button', 'image-hotspots', 'flashcards']}
+                            excludedBlockTypes={['button', 'image-hotspots', 'flashcards', 'svg']}
                             assetContext={assetContext}
                         />
                     )}
@@ -1929,6 +1953,9 @@ export function LessonContentBlocksRenderer({ blocks, className, resolvedGlobalB
                 }
                 if (block.type === 'html') {
                     return <LessonHtmlBlockRenderer key={`html-${index}`} content={block.content} />;
+                }
+                if (block.type === 'svg') {
+                    return <LessonSvgBlockRenderer key={`svg-${index}`} content={block.content} />;
                 }
                 if (block.type === 'video') {
                     return <LessonVideoBlockRenderer key={`video-${index}`} content={block.content} />;

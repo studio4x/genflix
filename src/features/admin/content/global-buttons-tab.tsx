@@ -482,7 +482,7 @@ export function GlobalButtonsTab() {
                                             onChange={(nextBlocks) => setForm((prev) => ({ ...prev, modal_blocks: nextBlocks }))}
                                             level={1}
                                             allowEmptyState={false}
-                                            excludedBlockTypes={['button', 'image-hotspots', 'flashcards']}
+                                            excludedBlockTypes={['button', 'image-hotspots', 'flashcards', 'svg']}
                                             assetContext="global"
                                         />
                                     </div>

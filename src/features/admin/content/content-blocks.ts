@@ -66,6 +66,19 @@ export interface LessonHtmlBlockContent {
     file_name: string;
     mime_type: string | null;
 }
+export interface LessonSvgBlockContent {
+    source_type: 'url' | 'upload';
+    url: string;
+    storage_path: string;
+    storage_provider?: 'supabase' | 'r2';
+    signed_url?: string | null;
+    file_name: string;
+    mime_type: string | null;
+    alt: string;
+    size: LessonImageBlockSize;
+    caption: string;
+    caption_alignment: LessonImageBlockCaptionAlignment;
+}
 export interface LessonColumnBlockContent {
     width: number;
     blocks: LessonContentBlock[];
@@ -93,6 +106,9 @@ export type LessonContentBlock = {
     type: 'html';
     content: LessonHtmlBlockContent;
 } | {
+    type: 'svg';
+    content: LessonSvgBlockContent;
+} | {
     type: 'flashcards';
     content: LessonFlashcardsBlockContent;
 } | {
@@ -104,6 +120,7 @@ const IMAGE_PLACEHOLDER_PREFIX = '__IMAGE_BLOCK__';
 const VIDEO_PLACEHOLDER_PREFIX = '__VIDEO_BLOCK__';
 const HOTSPOTS_PLACEHOLDER_PREFIX = '__HOTSPOTS_BLOCK__';
 const HTML_PLACEHOLDER_PREFIX = '__HTML_BLOCK__';
+const SVG_PLACEHOLDER_PREFIX = '__SVG_BLOCK__';
 const FLASHCARDS_PLACEHOLDER_PREFIX = '__FLASHCARDS_BLOCK__';
 const COLUMNS_PLACEHOLDER_PREFIX = '__COLUMNS_BLOCK__';
 const BUTTON_PLACEHOLDER_PREFIX = '__BUTTON_BLOCK__';
@@ -116,6 +133,7 @@ const LESSON_COLUMNS_BLOCK_TYPE = 'columns';
 const LESSON_IMAGE_BLOCK_TYPE = 'image';
 const LESSON_VIDEO_BLOCK_TYPE = 'video';
 const LESSON_HTML_BLOCK_TYPE = 'html';
+const LESSON_SVG_BLOCK_TYPE = 'svg';
 const LESSON_FLASHCARDS_BLOCK_TYPE = 'flashcards';
 const LESSON_BUTTON_BLOCK_TYPE = 'button';
 const COLUMN_WIDTH_STEP = 5;
@@ -587,6 +605,42 @@ export function createEmptyLessonHtmlBlockContent(): LessonHtmlBlockContent {
         mime_type: null,
     });
 }
+function normalizeLessonSvgBlockContent(content: LessonSvgBlockContent): LessonSvgBlockContent {
+    return {
+        source_type: content.source_type === 'upload' ? 'upload' : 'url',
+        url: content.source_type === 'url' ? content.url?.trim() || '' : '',
+        storage_path: content.source_type === 'upload' ? content.storage_path?.trim() || '' : '',
+        storage_provider: content.source_type === 'upload' && (content.storage_provider === 'supabase' || content.storage_provider === 'r2')
+            ? content.storage_provider
+            : undefined,
+        signed_url: content.source_type === 'upload' ? content.signed_url?.trim() || null : null,
+        file_name: content.source_type === 'upload' ? content.file_name?.trim() || '' : '',
+        mime_type: content.source_type === 'upload' ? content.mime_type?.trim() || 'image/svg+xml' : null,
+        alt: content.alt?.trim() || 'GrÃ¡fico SVG da aula',
+        size: content.size === 'sm' || content.size === 'md' || content.size === 'lg' || content.size === 'full'
+            ? content.size
+            : 'full',
+        caption: content.caption?.trim() || '',
+        caption_alignment: content.caption_alignment === 'center' || content.caption_alignment === 'right'
+            ? content.caption_alignment
+            : 'left',
+    };
+}
+export function createEmptyLessonSvgBlockContent(): LessonSvgBlockContent {
+    return normalizeLessonSvgBlockContent({
+        source_type: 'upload',
+        url: '',
+        storage_path: '',
+        storage_provider: undefined,
+        signed_url: null,
+        file_name: '',
+        mime_type: 'image/svg+xml',
+        alt: 'GrÃ¡fico SVG da aula',
+        size: 'full',
+        caption: '',
+        caption_alignment: 'left',
+    });
+}
 function parseLessonHtmlBlockContent(payload: unknown): LessonHtmlBlockContent | null {
     if (!payload || typeof payload !== 'object') {
         return null;
@@ -604,6 +658,37 @@ function parseLessonHtmlBlockContent(payload: unknown): LessonHtmlBlockContent |
         signed_url: typeof candidate.signed_url === 'string' ? candidate.signed_url : null,
         file_name: typeof candidate.file_name === 'string' ? candidate.file_name : '',
         mime_type: typeof candidate.mime_type === 'string' ? candidate.mime_type : null,
+    });
+}
+function parseLessonSvgBlockContent(payload: unknown): LessonSvgBlockContent | null {
+    if (!payload || typeof payload !== 'object') {
+        return null;
+    }
+    const candidate = payload as Partial<LessonSvgBlockContent>;
+    const sourceType = candidate.source_type === 'upload' || candidate.source_type === 'url'
+        ? candidate.source_type
+        : typeof candidate.storage_path === 'string' && candidate.storage_path.trim()
+            ? 'upload'
+            : 'url';
+    if (sourceType === 'url' && typeof candidate.url !== 'string') {
+        return null;
+    }
+    return normalizeLessonSvgBlockContent({
+        source_type: sourceType,
+        url: typeof candidate.url === 'string' ? candidate.url : '',
+        storage_path: typeof candidate.storage_path === 'string' ? candidate.storage_path : '',
+        storage_provider: candidate.storage_provider === 'supabase' || candidate.storage_provider === 'r2' ? candidate.storage_provider : undefined,
+        signed_url: typeof candidate.signed_url === 'string' ? candidate.signed_url : null,
+        file_name: typeof candidate.file_name === 'string' ? candidate.file_name : '',
+        mime_type: typeof candidate.mime_type === 'string' ? candidate.mime_type : 'image/svg+xml',
+        alt: typeof candidate.alt === 'string' ? candidate.alt : 'GrÃ¡fico SVG da aula',
+        size: candidate.size === 'sm' || candidate.size === 'md' || candidate.size === 'lg' || candidate.size === 'full'
+            ? candidate.size
+            : 'full',
+        caption: typeof candidate.caption === 'string' ? candidate.caption : '',
+        caption_alignment: candidate.caption_alignment === 'center' || candidate.caption_alignment === 'right'
+            ? candidate.caption_alignment
+            : 'left',
     });
 }
 function encodeHtmlPayload(content: LessonHtmlBlockContent): string {
@@ -648,6 +733,74 @@ export function serializeLessonHtmlBlock(content: LessonHtmlBlockContent): strin
       ${buildHtmlFallbackHtml(normalized)}
     </div>
   `;
+}
+function encodeSvgPayload(content: LessonSvgBlockContent): string {
+    return encodeURIComponent(JSON.stringify({
+        source_type: content.source_type,
+        url: content.url,
+        storage_path: content.storage_path,
+        storage_provider: content.storage_provider,
+        signed_url: content.signed_url,
+        file_name: content.file_name,
+        mime_type: content.mime_type,
+        alt: content.alt,
+        size: content.size,
+        caption: content.caption,
+        caption_alignment: content.caption_alignment,
+    }));
+}
+function decodeSvgPayload(encodedPayload: string): LessonSvgBlockContent | null {
+    try {
+        const decoded = decodeURIComponent(encodedPayload);
+        return parseLessonSvgBlockContent(JSON.parse(decoded));
+    }
+    catch {
+        return null;
+    }
+}
+function buildSvgFallbackHtml(content: LessonSvgBlockContent): string {
+    const label = content.source_type === 'upload'
+        ? `Arquivo SVG${content.file_name ? `: ${escapeHtml(content.file_name)}` : ''}`
+        : 'SVG via URL';
+    return `
+    <div class="hcm-svg-block-fallback">
+      <p><strong>${label}.</strong></p>
+      <p>O visualizador interativo de SVG Ã© carregado no player da aula.</p>
+    </div>
+  `;
+}
+export function serializeLessonSvgBlock(content: LessonSvgBlockContent): string {
+    const normalized = normalizeLessonSvgBlockContent(content);
+    const payload = encodeSvgPayload(normalized);
+    return `
+    <div
+      ${LESSON_IMAGE_HOTSPOTS_BLOCK_ATTR}="${LESSON_SVG_BLOCK_TYPE}"
+      ${LESSON_IMAGE_HOTSPOTS_BLOCK_PAYLOAD_ATTR}="${payload}"
+    >
+      ${buildSvgFallbackHtml(normalized)}
+    </div>
+  `;
+}
+function extractLessonSvgBlock(element: Element): LessonContentBlock | null {
+    const payload = element.getAttribute(LESSON_IMAGE_HOTSPOTS_BLOCK_PAYLOAD_ATTR);
+    if (!payload) {
+        return null;
+    }
+    const content = decodeSvgPayload(payload);
+    if (!content) {
+        return null;
+    }
+    return {
+        type: 'svg',
+        content,
+    };
+}
+export function parseLessonSvgBlockElement(element: Element): LessonSvgBlockContent | null {
+    if (element.getAttribute(LESSON_IMAGE_HOTSPOTS_BLOCK_ATTR) !== LESSON_SVG_BLOCK_TYPE) {
+        return null;
+    }
+    const payload = element.getAttribute(LESSON_IMAGE_HOTSPOTS_BLOCK_PAYLOAD_ATTR);
+    return payload ? decodeSvgPayload(payload) : null;
 }
 function extractLessonHtmlBlock(element: Element): LessonContentBlock | null {
     const payload = element.getAttribute(LESSON_IMAGE_HOTSPOTS_BLOCK_PAYLOAD_ATTR);
@@ -1423,6 +1576,20 @@ export function splitContent(html: string): LessonContentBlock[] {
         const marker = doc.createTextNode(placeholder);
         element.replaceWith(marker);
     });
+    Array.from(doc.querySelectorAll(`[${LESSON_IMAGE_HOTSPOTS_BLOCK_ATTR}="${LESSON_SVG_BLOCK_TYPE}"]`))
+        .forEach((element, index) => {
+        if (!element.isConnected) {
+            return;
+        }
+        const placeholder = `${SVG_PLACEHOLDER_PREFIX}_${index}__`;
+        const parsedBlock = extractLessonSvgBlock(element);
+        blockMap.set(placeholder, parsedBlock ?? {
+            type: 'rich-text',
+            content: normalizeHtml((element as HTMLElement).innerHTML),
+        });
+        const marker = doc.createTextNode(placeholder);
+        element.replaceWith(marker);
+    });
     Array.from(doc.querySelectorAll(`[${LESSON_IMAGE_HOTSPOTS_BLOCK_ATTR}="${LESSON_FLASHCARDS_BLOCK_TYPE}"]`))
         .forEach((element, index) => {
         if (!element.isConnected) {
@@ -1464,7 +1631,7 @@ export function splitContent(html: string): LessonContentBlock[] {
         return [];
     }
     const blocks: LessonContentBlock[] = [];
-    const placeholderRegex = new RegExp(`(${TABLE_PLACEHOLDER_PREFIX}_\\d+__|${HOTSPOTS_PLACEHOLDER_PREFIX}_\\d+__|${FLASHCARDS_PLACEHOLDER_PREFIX}_\\d+__|${HTML_PLACEHOLDER_PREFIX}_\\d+__|${COLUMNS_PLACEHOLDER_PREFIX}_\\d+__|${IMAGE_PLACEHOLDER_PREFIX}_\\d+__|${VIDEO_PLACEHOLDER_PREFIX}_\\d+__|${BUTTON_PLACEHOLDER_PREFIX}_\\d+__)`, 'g');
+    const placeholderRegex = new RegExp(`(${TABLE_PLACEHOLDER_PREFIX}_\\d+__|${HOTSPOTS_PLACEHOLDER_PREFIX}_\\d+__|${FLASHCARDS_PLACEHOLDER_PREFIX}_\\d+__|${HTML_PLACEHOLDER_PREFIX}_\\d+__|${SVG_PLACEHOLDER_PREFIX}_\\d+__|${COLUMNS_PLACEHOLDER_PREFIX}_\\d+__|${IMAGE_PLACEHOLDER_PREFIX}_\\d+__|${VIDEO_PLACEHOLDER_PREFIX}_\\d+__|${BUTTON_PLACEHOLDER_PREFIX}_\\d+__)`, 'g');
     const parts = rawHtml.split(placeholderRegex);
     for (const part of parts) {
         if (!part)
@@ -1526,6 +1693,9 @@ export function mergeContent(blocks: LessonContentBlock[]): string {
         }
         if (block.type === 'html') {
             return normalizeHtml(serializeLessonHtmlBlock(block.content));
+        }
+        if (block.type === 'svg') {
+            return normalizeHtml(serializeLessonSvgBlock(block.content));
         }
         if (block.type === 'columns') {
             return normalizeHtml(serializeLessonColumnsBlock(block.content));
@@ -1681,5 +1851,3 @@ export function materializeMissingGlobalButtonReferences(
         removedCount,
     };
 }
-
-
