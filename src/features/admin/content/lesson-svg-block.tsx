@@ -102,6 +102,9 @@ export function LessonSvgBlockViewer({ content, emptyMessage = 'SVG nÃ£o confi
     };
 
     const handleWheel = (event: WheelEvent<HTMLDivElement>) => {
+        if (!isFullscreen) {
+            return;
+        }
         event.preventDefault();
         const nextZoom = zoomRef.current + (event.deltaY < 0 ? ZOOM_STEP : -ZOOM_STEP);
         setZoomLevel(nextZoom);
@@ -241,7 +244,7 @@ export function LessonSvgBlockViewer({ content, emptyMessage = 'SVG nÃ£o confi
                 )}
             </div>
             <div className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 bg-slate-50 px-4 py-2 text-[11px] text-slate-500">
-                <span>Roda do mouse: zoom · Setas: navegação · 0: redefinir</span>
+                <span>{isFullscreen ? 'Roda do mouse: zoom · Setas: navegação · 0: redefinir' : 'Roda do mouse: rolagem normal · Setas: navegação · 0: redefinir'}</span>
                 <span>Limite: 100%–400%</span>
             </div>
         </section>
