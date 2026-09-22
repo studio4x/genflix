@@ -449,9 +449,12 @@ export async function updateAssessmentQuestion(questionId: string, input: Assess
         .update(buildQuestionPayload(input))
         .eq('id', questionId)
         .select('*')
-        .single();
+        .maybeSingle();
     if (result.error) {
         throw result.error;
+    }
+    if (!result.data) {
+        throw new Error('A pergunta que estava sendo editada não existe mais. Atualize a página e tente novamente.');
     }
     const question = result.data as AssessmentQuestion;
     await syncQuestionInteractionData({

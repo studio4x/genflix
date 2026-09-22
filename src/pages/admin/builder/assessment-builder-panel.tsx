@@ -706,7 +706,6 @@ export function AssessmentBuilderPanel() {
             }
             catch (updateError) {
                 setError(toErrorMessage(updateError));
-                await loadData();
             }
         });
         questionPersistQueueRef.current[questionId] = next;
