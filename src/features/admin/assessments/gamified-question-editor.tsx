@@ -1658,7 +1658,7 @@ ${SVG_COLORING_EXAMPLE}`} className="min-h-[360px] w-full rounded-[28px] border 
 
             <div className="flex items-center gap-3">
               <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={(event) => void handleAssetSelected(event)}/>
-              <Button type="button" variant="outline" className="rounded-2xl border-slate-200 bg-white" onClick={() => setIsMediaLibraryOpen(true)} disabled={isUploadingAsset}>
+              <Button type="button" variant="outline" className="rounded-2xl border-slate-200 bg-white" onClick={() => activeInteraction.kind === 'drag_drop_labeling' ? setIsMediaLibraryOpen(true) : fileInputRef.current?.click()} disabled={isUploadingAsset}>
                 {isUploadingAsset ? 'Aplicando...' : resolvedAsset.url ? 'Trocar imagem' : 'Enviar imagem'}
               </Button>
             </div>
