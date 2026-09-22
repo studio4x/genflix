@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Check, RotateCcw, Star, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useResolvedAssessmentAssetUrl } from '@/features/assessments/asset-url';
 import type { ImageHotspotInteractionContent, ImageHotspotResponsePayload } from '@/types/content';
 interface ImageHotspotInteractionProps {
     content: ImageHotspotInteractionContent;
@@ -19,7 +20,8 @@ export function ImageHotspotInteraction({ content, value, onChange, readOnly = f
     const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
     const [feedbackTone, setFeedbackTone] = useState<FeedbackTone>('neutral');
     const [feedbackTargetId, setFeedbackTargetId] = useState<string | null>(null);
-    const stageUrl = content.asset.signed_url || content.asset.storage_path;
+    const resolvedAsset = useResolvedAssessmentAssetUrl(content.asset.storage_path, content.asset.storage_provider, content.asset.signed_url);
+    const stageUrl = resolvedAsset.url;
     const correctTargetIds = useMemo(() => content.targets.filter((target) => target.is_correct).map((target) => target.id), [content.targets]);
     const foundTargetIds = new Set(value.found_target_ids);
     const incorrectTargetIds = new Set(value.incorrect_target_ids);
@@ -182,7 +184,7 @@ export function ImageHotspotInteraction({ content, value, onChange, readOnly = f
 
         <div className="p-4 sm:p-6 lg:p-8">
           <div className="relative mx-auto overflow-hidden rounded-[32px] border border-slate-200 bg-white shadow-lg" style={{ aspectRatio: `${content.asset.width} / ${content.asset.height}` }} onClick={handleOutsideClick}>
-            {stageUrl ? (<img src={stageUrl} alt={content.asset.alt} className="h-full w-full object-contain" draggable={false}/>) : (<div className="flex h-full w-full items-center justify-center px-8 text-center text-sm font-semibold text-slate-500">A imagem dest? questão ainda não foi configurada.
+            {stageUrl ? (<img src={stageUrl} alt={content.asset.alt} className="h-full w-full object-contain" draggable={false} onError={resolvedAsset.refresh}/>) : (<div className="flex h-full w-full items-center justify-center px-8 text-center text-sm font-semibold text-slate-500">A imagem dest? questão ainda não foi configurada.
               </div>)}
 
             {content.targets.map((target) => {

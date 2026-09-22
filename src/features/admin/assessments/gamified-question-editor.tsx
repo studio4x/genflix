@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState, type ChangeEvent, type MouseEvent
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { readImageDimensions } from '@/lib/image-dimensions';
+import { useResolvedAssessmentAssetUrl } from '@/features/assessments/asset-url';
 import type { AssessmentQuestionAnswerKey, AssessmentQuestionAnswerKeyPayload, AssessmentQuestionInteraction, AssessmentInteractionContent, AssessmentQuestionType, ColoringInteractionContent, DragDropLabelingInteractionContent, FillInTheBlanksInteractionContent, LegacyColoringInteractionContent, } from '@/types/content';
 import { createAnswerKeyFromInteraction, createDefaultInteractionContent, getColoringRenderMode, getColoringSlotIds, getInteractionSlotIds, validateInteractionBundle, } from '@/features/assessments/gamified';
 import { applyColoringSvgRuntimeState, getColoringSvgRegionIdFromEventTarget, isSvgFile, parseColoringSvgFile, parseColoringSvgMarkup, } from '@/features/assessments/coloring-svg';
@@ -569,6 +570,8 @@ export function GamifiedQuestionEditor({ question, onDraftChange, onPersist, onE
     const activeColoringSvgInteraction = interactionContent?.kind === 'coloring' && 'regions' in interactionContent
         ? interactionContent
         : null;
+    const activeAsset = interactionContent && 'asset' in interactionContent ? interactionContent.asset : null;
+    const resolvedAsset = useResolvedAssessmentAssetUrl(activeAsset?.storage_path ?? '', activeAsset?.storage_provider, activeAsset?.signed_url);
     const isColoringSvgMode = Boolean(activeColoringSvgInteraction);
     latestInteractionRef.current = interactionContent;
     latestAnswerKeyRef.current = answerKeyPayload;
@@ -1396,7 +1399,7 @@ ${SVG_COLORING_EXAMPLE}`} className="min-h-[360px] w-full rounded-[28px] border 
             void commit(nextContent, nextAnswerKey);
         }
         function handleStageClick(event: MouseEvent<HTMLDivElement>) {
-            if (!content.asset.signed_url) {
+            if (!resolvedAsset.url) {
                 setAssetError(isColoringPointMode
                     ? 'Envie uma imagem primeiro para posicionar os pontos de cor.'
                     : 'Envie uma imagem primeiro para posicionar as áreas.');
@@ -1591,7 +1594,7 @@ ${SVG_COLORING_EXAMPLE}`} className="min-h-[360px] w-full rounded-[28px] border 
             <div className="flex items-center gap-3">
               <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={(event) => void handleAssetSelected(event)}/>
               <Button type="button" variant="outline" className="rounded-2xl border-slate-200 bg-white" onClick={() => fileInputRef.current?.click()} disabled={isUploadingAsset}>
-                {isUploadingAsset ? 'Enviando...' : content.asset.signed_url ? 'Trocar imagem' : 'Enviar imagem'}
+                {isUploadingAsset ? 'Enviando...' : resolvedAsset.url ? 'Trocar imagem' : 'Enviar imagem'}
               </Button>
             </div>
           </div>
@@ -1646,10 +1649,10 @@ ${SVG_COLORING_EXAMPLE}`} className="min-h-[360px] w-full rounded-[28px] border 
                 if (event.key === 'Enter' || event.key === ' ') {
                     event.preventDefault();
                 }
-            }} className={cn('relative overflow-hidden rounded-[28px] border border-slate-200 bg-[radial-gradient(circle_at_top_left,_rgba(6,182,212,0.18),_transparent_38%),linear-gradient(135deg,_#f8fafc,_#eef2ff)]', !content.asset.signed_url && 'flex min-h-[380px] items-center justify-center')} style={{
+            }} className={cn('relative overflow-hidden rounded-[28px] border border-slate-200 bg-[radial-gradient(circle_at_top_left,_rgba(6,182,212,0.18),_transparent_38%),linear-gradient(135deg,_#f8fafc,_#eef2ff)]', !resolvedAsset.url && 'flex min-h-[380px] items-center justify-center')} style={{
                 aspectRatio: `${content.asset.width || 1200} / ${content.asset.height || 800}`,
             }}>
-                      {content.asset.signed_url ? (<img src={content.asset.signed_url} alt={content.asset.alt} className="h-full w-full object-cover"/>) : (<div className="flex max-w-sm flex-col items-center gap-3 px-8 text-center text-slate-500">
+                      {resolvedAsset.url ? (<img src={resolvedAsset.url} alt={content.asset.alt} className="h-full w-full object-cover" onError={resolvedAsset.refresh}/>) : (<div className="flex max-w-sm flex-col items-center gap-3 px-8 text-center text-slate-500">
                           <div className="rounded-full border border-cyan-200 bg-white p-4 text-cyan-600 shadow-sm">
                             <svg className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.7} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2 1.586-1.586a2 2 0 012.828 0L20 14m-6-10h6a2 2 0 012 2v6M4 8V6a2 2 0 012-2h6"/>

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { applyColoringSvgRuntimeState, getColoringSvgRegionIdFromEventTarget, } from '@/features/assessments/coloring-svg';
 import { assessmentInteractionContentSchema, getColoringSlotIds, } from '@/features/assessments/gamified';
+import { useResolvedAssessmentAssetUrl } from '@/features/assessments/asset-url';
 import type { AssessmentInteractionToken, ColoringInteractionContent, DragDropLabelingInteractionContent, FillInTheBlanksInteractionContent, } from '@/types/content';
 import type { StudentAssessmentQuestionWithOptions } from './api';
 function getPointBadgeTextColor(hex?: string | null) {
@@ -51,7 +52,8 @@ function ColoringView({ content, value, onChange, readOnly, }: {
         : null);
     const svgPreviewRef = useRef<HTMLDivElement | null>(null);
     const colorById = useMemo(() => new Map(content.tokens.map((token) => [token.id, token])), [content.tokens]);
-    const stageUrl = content.asset.signed_url || content.asset.storage_path;
+    const resolvedAsset = useResolvedAssessmentAssetUrl(content.asset.storage_path, content.asset.storage_provider, content.asset.signed_url);
+    const stageUrl = resolvedAsset.url;
     const svgContent = 'regions' in content ? content : null;
     const isSvgMode = Boolean(svgContent);
     const effectiveSelectedRegionId = selectedRegionId && svgContent?.regions.some((region) => region.region_id === selectedRegionId)
@@ -203,7 +205,7 @@ function ColoringView({ content, value, onChange, readOnly, }: {
                 onChange(regionId, armedColorId);
             }}/>) : (<div className="flex h-full items-center justify-center bg-slate-100 text-sm font-bold text-slate-400">
                   SVG para colorir indisponível
-                </div>)) : stageUrl ? (<img src={stageUrl} alt={content.asset.alt} className="h-full w-full object-contain" draggable={false}/>) : (<div className="flex h-full items-center justify-center bg-slate-100 text-sm font-bold text-slate-400">
+                </div>)) : stageUrl ? (<img src={stageUrl} alt={content.asset.alt} className="h-full w-full object-contain" draggable={false} onError={resolvedAsset.refresh}/>) : (<div className="flex h-full items-center justify-center bg-slate-100 text-sm font-bold text-slate-400">
                 Imagem para colorir indisponível
               </div>)}
 
@@ -248,7 +250,8 @@ function DragDropLabelingView({ content, value, onChange, readOnly, }: {
     const tokenById = useMemo(() => new Map(content.tokens.map((token) => [token.id, token])), [content.tokens]);
     const assignedTokenIds = new Set(Object.values(value).filter((tokenId): tokenId is string => Boolean(tokenId)));
     const availableTokens = content.tokens.filter((token) => !assignedTokenIds.has(token.id));
-    const stageUrl = content.asset.signed_url || content.asset.storage_path;
+    const resolvedAsset = useResolvedAssessmentAssetUrl(content.asset.storage_path, content.asset.storage_provider, content.asset.signed_url);
+    const stageUrl = resolvedAsset.url;
     function handleSlotClick(slotId: string) {
         if (readOnly || !armedTokenId)
             return;
@@ -279,7 +282,7 @@ function DragDropLabelingView({ content, value, onChange, readOnly, }: {
 
         <div className="p-4 sm:p-6 lg:p-8">
           <div className="relative mx-auto overflow-hidden rounded-[32px] border border-slate-200 bg-white shadow-lg 2xl:mx-0" style={{ aspectRatio: `${content.asset.width} / ${content.asset.height}` }}>
-            {stageUrl ? (<img src={stageUrl} alt={content.asset.alt} className="h-full w-full object-contain" draggable={false}/>) : (<div className="flex h-full items-center justify-center bg-slate-100 text-sm font-bold text-slate-400">
+            {stageUrl ? (<img src={stageUrl} alt={content.asset.alt} className="h-full w-full object-contain" draggable={false} onError={resolvedAsset.refresh}/>) : (<div className="flex h-full items-center justify-center bg-slate-100 text-sm font-bold text-slate-400">
                 Imagem do exercício não disponível
               </div>)}
 
