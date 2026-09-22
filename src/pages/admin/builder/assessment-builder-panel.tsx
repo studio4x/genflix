@@ -13,6 +13,7 @@ import { fetchGlobalQuizTypeSettings } from '@/features/admin/quiz-types/api';
 import { fetchModule } from '@/features/admin/content/api';
 import type { Assessment, AssessmentGradingMode, AssessmentQuestionType, CourseModule, ImageHotspotMode, } from '@/types/content';
 import { analyzeImportedJson, JsonImportAnalysisPanel } from '@/features/admin/content/json-import-analysis';
+type AssessmentBuilderQuizType = AssessmentQuestionType | 'case_study';
 function sortQuestionsByPosition(items: AssessmentQuestionWithOptions[]) {
     return [...items].sort((questionA, questionB) => questionA.position - questionB.position);
 }
@@ -162,10 +163,13 @@ export function AssessmentBuilderPanel() {
     const [isDeletingAssessment, setIsDeletingAssessment] = useState(false);
     const [importError, setImportError] = useState<string | null>(null);
     const [isHotspotModeModalOpen, setIsHotspotModeModalOpen] = useState(false);
+    const [selectedQuizType, setSelectedQuizType] = useState<AssessmentBuilderQuizType | null>(null);
     const [globalQuizTypeSettings, setGlobalQuizTypeSettings] = useState(() => normalizeCourseQuizTypeSettings(null));
     const questionPersistQueueRef = useRef<Record<string, Promise<void>>>({});
     const questionsRef = useRef<AssessmentQuestionWithOptions[]>([]);
     const caseStudiesRef = useRef<AssessmentCaseStudyWithQuestions[]>([]);
+    const addingQuestionRef = useRef<AssessmentBuilderQuizType | null>(null);
+    const [addingQuestionType, setAddingQuestionType] = useState<AssessmentBuilderQuizType | null>(null);
     const isFinal = !moduleId;
     const isNewModuleAssessment = !isFinal && assessmentId === 'nova';
     const quizTypeSettings = normalizeCourseQuizTypeSettings(courseTree?.course.quiz_type_settings);
@@ -195,6 +199,7 @@ export function AssessmentBuilderPanel() {
                     setAssessment(null);
                     setQuestions([]);
                     setCaseStudies([]);
+                    setSelectedQuizType(null);
                     return;
                 }
                 if (!assessmentId) {
@@ -209,6 +214,7 @@ export function AssessmentBuilderPanel() {
                 const loadedCaseStudies = await fetchAssessmentCaseStudies(assess.id, loadedQuestions);
                 setQuestions(loadedQuestions);
                 setCaseStudies(loadedCaseStudies);
+                setSelectedQuizType(null);
                 return;
             }
             if (courseId) {
@@ -219,10 +225,12 @@ export function AssessmentBuilderPanel() {
                     const loadedCaseStudies = await fetchAssessmentCaseStudies(assess.id, loadedQuestions);
                     setQuestions(loadedQuestions);
                     setCaseStudies(loadedCaseStudies);
+                    setSelectedQuizType(null);
                 }
                 else {
                     setQuestions([]);
                     setCaseStudies([]);
+                    setSelectedQuizType(null);
                 }
             }
         }
@@ -450,6 +458,21 @@ export function AssessmentBuilderPanel() {
         })));
     }
     const standaloneQuestions = questions.filter((question) => !question.case_study_id);
+    const lockedQuizType: AssessmentBuilderQuizType | null = caseStudies.length > 0
+        ? 'case_study'
+        : standaloneQuestions[0]?.question_type ?? selectedQuizType;
+    const detectedQuizTypes = new Set<AssessmentBuilderQuizType>([
+        ...standaloneQuestions.map((question) => question.question_type),
+        ...(caseStudies.length > 0 ? ['case_study' as const] : []),
+    ]);
+    const hasMixedQuizTypes = detectedQuizTypes.size > 1;
+    const availableAddCards: Array<{
+        title: string;
+        description: string;
+        className: string;
+        iconClassName: string;
+        onClick: () => void;
+    }> = [];
     const scoredQuestions = [
         ...standaloneQuestions,
         ...caseStudies.flatMap((caseStudy) => caseStudy.questions),
@@ -459,56 +482,13 @@ export function AssessmentBuilderPanel() {
     const requiredPoints = assessmentDraft
         ? Math.round(((assessmentDraft.passing_score / 100) * totalPossiblePoints) * 100) / 100
         : 0;
-    const availableAddCards = [
-        {
-            title: 'Multipla Escolha',
-            description: 'Pergunta independente com alternativas tradicionais.',
-            className: 'border-slate-100 text-slate-400 hover:border-blue-100 hover:bg-blue-50/30 hover:text-blue-600',
-            iconClassName: 'border-slate-100 bg-slate-50',
-            onClick: () => void handleAddQuestion('single_choice'),
-            isVisible: isCourseQuestionTypeEnabled(quizTypeSettings, 'single_choice', globalQuizTypeSettings),
-        },
-        {
-            title: 'Arrastar e Soltar',
-            description: 'Imagem com hotspots e banco de rotulos avaliavel.',
-            className: 'border-cyan-100 text-cyan-700 hover:bg-cyan-50/70',
-            iconClassName: 'border-cyan-200 bg-cyan-50',
-            onClick: () => void handleAddQuestion('drag_drop_labeling'),
-            isVisible: isCourseQuestionTypeEnabled(quizTypeSettings, 'drag_drop_labeling', globalQuizTypeSettings),
-        },
-        {
-            title: 'Preencher Lacunas',
-            description: 'Texto com lacunas e banco de respostas arrastavel.',
-            className: 'border-teal-100 text-teal-700 hover:bg-teal-50/70',
-            iconClassName: 'border-teal-200 bg-teal-50',
-            onClick: () => void handleAddQuestion('fill_in_the_blanks'),
-            isVisible: isCourseQuestionTypeEnabled(quizTypeSettings, 'fill_in_the_blanks', globalQuizTypeSettings),
-        },
-        {
-            title: 'Quiz de Hotspot',
-            description: 'Imagem com hotspots corretos/incorretos e feedback imediato.',
-            className: 'border-sky-100 text-sky-700 hover:bg-sky-50/70',
-            iconClassName: 'border-sky-200 bg-sky-50',
-            onClick: () => setIsHotspotModeModalOpen(true),
-            isVisible: isCourseQuestionTypeEnabled(quizTypeSettings, 'image_hotspot', globalQuizTypeSettings),
-        },
-        {
-            title: 'Quiz de Colorir',
-            description: 'Imagem com areas pintaveis e checklist de cores por area.',
-            className: 'border-fuchsia-100 text-fuchsia-700 hover:bg-fuchsia-50/70',
-            iconClassName: 'border-fuchsia-200 bg-fuchsia-50',
-            onClick: () => void handleAddQuestion('coloring'),
-            isVisible: isCourseQuestionTypeEnabled(quizTypeSettings, 'coloring', globalQuizTypeSettings),
-        },
-        {
-            title: "Novo Estudo de Caso",
-            description: 'Bloco com contexto compartilhado e perguntas mistas.',
-            className: 'border-amber-100 text-amber-700 hover:bg-amber-50/60',
-            iconClassName: 'border-amber-200 bg-amber-50',
-            onClick: () => void handleAddCaseStudy(),
-            isVisible: canUseCaseStudies,
-        },
-    ].filter((card) => card.isVisible);
+    function ensureQuizType(questionType: AssessmentBuilderQuizType) {
+        if (!lockedQuizType || lockedQuizType === questionType) {
+            return true;
+        }
+        setError(`Este quiz já está definido como ${getQuestionTypeDisplayLabel(lockedQuizType)}. Crie outro quiz para usar outro formato.`);
+        return false;
+    }
     function buildQuestionPayload(questionId: string, updates: Partial<AssessmentQuestionWithOptions>) {
         const question = findQuestion(questionId);
         if (!question) {
@@ -546,6 +526,13 @@ export function AssessmentBuilderPanel() {
             return;
         if (!ensureQuestionTypeEnabled(questionType))
             return;
+        if (!ensureQuizType(questionType))
+            return;
+        if (addingQuestionRef.current) {
+            return;
+        }
+        addingQuestionRef.current = questionType;
+        setAddingQuestionType(questionType);
         try {
             const defaultGamified = isGamifiedQuestionType(questionType)
                 ? getDefaultGamifiedState('pending', questionType, options)
@@ -570,12 +557,38 @@ export function AssessmentBuilderPanel() {
         catch (createError) {
             setError(toErrorMessage(createError));
         }
+        finally {
+            addingQuestionRef.current = null;
+            setAddingQuestionType(null);
+        }
+    }
+    function handleAddQuizItem() {
+        const questionType = lockedQuizType ?? selectedQuizType;
+        if (!questionType) {
+            return;
+        }
+        if (questionType === 'case_study') {
+            void handleAddCaseStudy();
+            return;
+        }
+        if (questionType === 'image_hotspot') {
+            setIsHotspotModeModalOpen(true);
+            return;
+        }
+        void handleAddQuestion(questionType);
     }
     async function handleAddCaseStudy() {
         if (!assessment)
             return;
         if (!ensureQuestionTypeEnabled('case_study'))
             return;
+        if (!ensureQuizType('case_study'))
+            return;
+        if (addingQuestionRef.current) {
+            return;
+        }
+        addingQuestionRef.current = 'case_study';
+        setAddingQuestionType('case_study');
         try {
             const createdCaseStudy = await createAssessmentCaseStudy(assessment.id, {
                 title: "Novo Estudo de Caso",
@@ -588,6 +601,10 @@ export function AssessmentBuilderPanel() {
         }
         catch (createError) {
             setError(toErrorMessage(createError));
+        }
+        finally {
+            addingQuestionRef.current = null;
+            setAddingQuestionType(null);
         }
     }
     async function handleUpdateCaseStudy(caseStudyId: string, updates: {
@@ -636,8 +653,15 @@ export function AssessmentBuilderPanel() {
             return;
         if (!ensureQuestionTypeEnabled(questionType))
             return;
+        if (!ensureQuizType(questionType === 'case_study_ai' || questionType === 'case_study_single_choice' ? 'case_study' : questionType))
+            return;
+        if (addingQuestionRef.current) {
+            return;
+        }
         const caseStudy = findCaseStudy(caseStudyId);
         const nextCasePosition = (caseStudy?.questions.length ?? 0) + 1;
+        addingQuestionRef.current = 'case_study';
+        setAddingQuestionType('case_study');
         try {
             const createdQuestion = await createAssessmentQuestion(assessment.id, {
                 question_text: "Nova Pergunta do Caso...",
@@ -660,6 +684,10 @@ export function AssessmentBuilderPanel() {
         }
         catch (createError) {
             setError(toErrorMessage(createError));
+        }
+        finally {
+            addingQuestionRef.current = null;
+            setAddingQuestionType(null);
         }
     }
     function handleQuestionTextChange(questionId: string, questionText: string) {
@@ -689,6 +717,8 @@ export function AssessmentBuilderPanel() {
         if (!currentQuestion)
             return;
         if (!ensureQuestionTypeEnabled(questionType))
+            return;
+        if (!ensureQuizType(questionType))
             return;
         if (currentQuestion.case_study_id && isGamifiedQuestionType(questionType)) {
             setError("Questões gamificadas ficam apenas como perguntas independentes nesta v1.");
@@ -853,6 +883,17 @@ export function AssessmentBuilderPanel() {
             const data = parsedData as Record<string, unknown>;
             const importData = data as unknown as ImportAssessmentData;
             const importedTypes = collectImportedQuestionTypes(importData);
+            const importedQuizTypes = [...importedTypes] as AssessmentBuilderQuizType[];
+            if ((importData.case_studies?.length ?? 0) > 0) {
+                importedQuizTypes.push('case_study');
+            }
+            if (new Set(importedQuizTypes).size > 1) {
+                throw new Error('Um quiz deve usar um único tipo. Separe os formatos em quizzes diferentes antes de importar.');
+            }
+            const importedQuizType = importedQuizTypes[0] ?? null;
+            if (importedQuizType && !ensureQuizType(importedQuizType)) {
+                throw new Error(`Este quiz já está definido como ${getQuestionTypeDisplayLabel(lockedQuizType as AssessmentBuilderQuizType)}.`);
+            }
             const firstDisabledImportedType = importedTypes.find((questionType) => !isCourseQuestionTypeEnabled(quizTypeSettings, questionType, globalQuizTypeSettings));
             if (firstDisabledImportedType) {
                 throw new Error(`${getQuestionTypeDisplayLabel(firstDisabledImportedType)} está desativado nas configurações globais ou do curso.`);
@@ -1275,13 +1316,13 @@ Todas as quest\u00F5es, estudos de caso e tentativas vinculadas ser\u00E3o remov
               {caseStudy.questions.map((question, questionIndex) => renderQuestionCard(question, `${caseStudyIndex + 1}.${questionIndex + 1}`, 'case-study'))}
 
               <div className="grid gap-3 md:grid-cols-2">
-                {isCourseQuestionTypeEnabled(quizTypeSettings, 'case_study_single_choice', globalQuizTypeSettings) ? (<button onClick={() => void handleAddCaseQuestion(caseStudy.id, 'case_study_single_choice')} className="flex items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-slate-200 py-4 text-sm font-bold text-slate-500 transition-all hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700">
+                {isCourseQuestionTypeEnabled(quizTypeSettings, 'case_study_single_choice', globalQuizTypeSettings) ? (<button type="button" onClick={() => void handleAddCaseQuestion(caseStudy.id, 'case_study_single_choice')} disabled={Boolean(addingQuestionType)} className="flex items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-slate-200 py-4 text-sm font-bold text-slate-500 transition-all hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-60">
                     <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4"/>
                     </svg>
                     Adicionar Pergunta de Alternativa
                   </button>) : null}
-                {isCourseQuestionTypeEnabled(quizTypeSettings, 'case_study_ai', globalQuizTypeSettings) ? (<button onClick={() => void handleAddCaseQuestion(caseStudy.id, 'case_study_ai')} className="flex items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-amber-200 py-4 text-sm font-bold text-amber-700 transition-all hover:bg-amber-50">
+                {isCourseQuestionTypeEnabled(quizTypeSettings, 'case_study_ai', globalQuizTypeSettings) ? (<button type="button" onClick={() => void handleAddCaseQuestion(caseStudy.id, 'case_study_ai')} disabled={Boolean(addingQuestionType)} className="flex items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-amber-200 py-4 text-sm font-bold text-amber-700 transition-all hover:bg-amber-50 disabled:cursor-not-allowed disabled:opacity-60">
                     <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4"/>
                     </svg>
@@ -1295,7 +1336,37 @@ Todas as quest\u00F5es, estudos de caso e tentativas vinculadas ser\u00E3o remov
             </div>
           </section>))}
 
-        {availableAddCards.length === 0 ? (<div className="rounded-3xl border border-amber-100 bg-amber-50/70 px-6 py-8 text-center">
+        <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+          {lockedQuizType ? (<div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Tipo deste quiz</p>
+                <p className="mt-1 text-lg font-black text-slate-900">{getQuestionTypeDisplayLabel(lockedQuizType)}</p>
+                {hasMixedQuizTypes ? (<p className="mt-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-800">Este quiz antigo contém formatos misturados. Novas perguntas seguirão o primeiro tipo; crie outro quiz para o formato diferente.</p>) : <p className="mt-1 text-xs font-medium text-slate-500">Todas as perguntas deste quiz devem usar este mesmo formato.</p>}
+              </div>
+              {lockedQuizType !== 'case_study' ? (<Button type="button" onClick={handleAddQuizItem} disabled={Boolean(addingQuestionType)} className="rounded-2xl bg-blue-600 font-black text-white hover:bg-blue-700">
+                {addingQuestionType ? 'Adicionando...' : 'Adicionar pergunta'}
+              </Button>) : null}
+            </div>) : (<div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Comece definindo o tipo</p>
+                <p className="mt-1 text-lg font-black text-slate-900">Este quiz terá apenas um formato de pergunta.</p>
+                <p className="mt-1 text-xs font-medium text-slate-500">Para criar outro formato, adicione outro quiz ao módulo.</p>
+              </div>
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                <select aria-label="Tipo do quiz" value={selectedQuizType ?? ''} onChange={(event) => setSelectedQuizType((event.target.value || null) as AssessmentBuilderQuizType | null)} className="h-11 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-700 focus:border-blue-300 focus:ring-4 focus:ring-blue-100">
+                  <option value="">Selecione o tipo do quiz</option>
+                  {(['single_choice', 'essay_ai', 'drag_drop_labeling', 'fill_in_the_blanks', 'image_hotspot', 'coloring', 'case_study'] as AssessmentBuilderQuizType[]).filter((type) => type === 'case_study'
+                    ? canUseCaseStudies
+                    : isCourseQuestionTypeEnabled(quizTypeSettings, type, globalQuizTypeSettings)).map((type) => (<option key={type} value={type}>{getQuestionTypeDisplayLabel(type)}</option>))}
+                </select>
+                <Button type="button" onClick={handleAddQuizItem} disabled={!selectedQuizType || Boolean(addingQuestionType)} className="h-11 rounded-2xl bg-blue-600 font-black text-white hover:bg-blue-700">
+                  {addingQuestionType ? 'Adicionando...' : 'Adicionar pergunta'}
+                </Button>
+              </div>
+            </div>)}
+        </section>
+
+        {availableAddCards.length > 0 && ([].length === 0 ? (<div className="rounded-3xl border border-amber-100 bg-amber-50/70 px-6 py-8 text-center">
             <p className="text-sm font-black uppercase tracking-[0.24em] text-amber-700">Nenhum tipo de quiz ativo</p>
             <p className="mt-3 text-sm font-medium text-amber-900">
               Ative pelo menos um formato em Configurações do Curso para voltar a criar perguntas e estudos de caso.
@@ -1315,7 +1386,7 @@ Todas as quest\u00F5es, estudos de caso e tentativas vinculadas ser\u00E3o remov
                 <p className="text-xs font-medium">{card.description}</p>
               </div>
             </button>))}
-        </div>)}
+        </div>))}
       </div>
 
       {isHotspotModeModalOpen ? (<div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4">

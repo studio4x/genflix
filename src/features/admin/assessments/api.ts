@@ -52,10 +52,39 @@ function normalizeError(error: unknown): Error {
     if (error instanceof Error) {
         return error;
     }
+    if (error && typeof error === 'object') {
+        const candidate = error as {
+            message?: unknown;
+            details?: unknown;
+            hint?: unknown;
+        };
+        const message = [candidate.message, candidate.details, candidate.hint]
+            .filter((value): value is string => typeof value === 'string' && value.trim().length > 0)
+            .map((value) => value.trim())
+            .join(' ');
+        if (message) {
+            return new Error(message);
+        }
+    }
     return new Error('Erro inesperado.');
 }
 export function toErrorMessage(error: unknown): string {
     return normalizeError(error).message;
+}
+function isAssessmentQuestionPositionConflict(error: unknown) {
+    if (!error || typeof error !== 'object') {
+        return false;
+    }
+    const candidate = error as {
+        code?: unknown;
+        message?: unknown;
+        details?: unknown;
+    };
+    const searchableText = [candidate.message, candidate.details]
+        .filter((value): value is string => typeof value === 'string')
+        .join(' ')
+        .toLowerCase();
+    return candidate.code === '23505' && searchableText.includes('position');
 }
 function mapInteractionRow(row: RawInteractionRow): AssessmentQuestionInteraction {
     return {
@@ -370,31 +399,41 @@ export async function fetchAssessmentCaseStudies(assessmentId: string, questions
     return mapCaseStudiesWithQuestions(caseStudies, questions);
 }
 export async function createAssessmentQuestion(assessmentId: string, input: AssessmentQuestionFormInput) {
-    const nextPosition = input.case_study_id
-        ? await supabase
-            .from('assessment_case_studies')
-            .select('position')
-            .eq('id', input.case_study_id)
-            .single()
-            .then(({ data, error }) => {
-            if (error)
-                throw error;
-            return data.position as number;
+    const maxAttempts = input.case_study_id ? 1 : 3;
+    let question: AssessmentQuestion | null = null;
+    for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+        const nextPosition = input.case_study_id
+            ? await supabase
+                .from('assessment_case_studies')
+                .select('position')
+                .eq('id', input.case_study_id)
+                .single()
+                .then(({ data, error }) => {
+                if (error)
+                    throw error;
+                return data.position as number;
+            })
+            : await getNextAssessmentItemPosition(assessmentId);
+        const result = await supabase
+            .from('assessment_questions')
+            .insert({
+            assessment_id: assessmentId,
+            position: nextPosition,
+            ...buildQuestionPayload(input),
         })
-        : await getNextAssessmentItemPosition(assessmentId);
-    const result = await supabase
-        .from('assessment_questions')
-        .insert({
-        assessment_id: assessmentId,
-        position: nextPosition,
-        ...buildQuestionPayload(input),
-    })
-        .select('*')
-        .single();
-    if (result.error) {
-        throw result.error;
+            .select('*')
+            .single();
+        if (!result.error) {
+            question = result.data as AssessmentQuestion;
+            break;
+        }
+        if (!isAssessmentQuestionPositionConflict(result.error) || attempt === maxAttempts - 1) {
+            throw result.error;
+        }
     }
-    const question = result.data as AssessmentQuestion;
+    if (!question) {
+        throw new Error('Não foi possível reservar a próxima posição da pergunta. Tente novamente.');
+    }
     await syncQuestionInteractionData({
         questionId: question.id,
         questionType: input.question_type,
