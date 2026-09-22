@@ -7,6 +7,7 @@ export const assessmentInteractionTokenSchema = z.object({
 });
 export const assessmentInteractionAssetSchema = z.object({
     storage_path: z.string().trim(),
+    storage_provider: z.enum(['supabase', 'r2']).optional(),
     signed_url: z.string().trim().url().nullable().optional(),
     alt: z.string().trim().min(1, 'Texto alternativo obrigatório.'),
     width: z.number().positive('Largura inválida.'),

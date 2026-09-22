@@ -36,7 +36,7 @@ export function useResolvedAssessmentAssetUrl(storagePath: string, storageProvid
     }, [normalizedPath, storageProvider]);
 
     useEffect(() => {
-        if (!normalizedPath) {
+        if (!normalizedPath || (fallbackUrl && refreshToken === 0)) {
             return;
         }
         let isMounted = true;
@@ -62,8 +62,13 @@ export function useResolvedAssessmentAssetUrl(storagePath: string, storageProvid
         setRefreshToken((current) => current + 1);
     }, [normalizedPath]);
 
+    const url = fallbackUrl && refreshToken === 0
+        ? fallbackUrl
+        : resolvedAsset.key === assetKey
+            ? (resolvedAsset.url ?? fallbackUrl)
+            : fallbackUrl;
     return {
-        url: resolvedAsset.key === assetKey ? (resolvedAsset.url ?? fallbackUrl) : fallbackUrl,
+        url,
         refresh,
     };
 }

@@ -666,12 +666,14 @@ export function AssessmentBuilderPanel() {
         updateQuestionState(questionId, (question) => ({ ...question, question_text: questionText }));
     }
     async function handlePersistQuestion(questionId: string, updates: Partial<AssessmentQuestionWithOptions>) {
-        const payload = buildQuestionPayload(questionId, updates);
         const previous = questionPersistQueueRef.current[questionId] ?? Promise.resolve();
         const next = previous
             .catch(() => undefined)
             .then(async () => {
             try {
+                // Build the payload only when this queued write executes, so an older
+                // blur/autosave cannot overwrite a newer uploaded asset.
+                const payload = buildQuestionPayload(questionId, updates);
                 await updateAssessmentQuestion(questionId, payload);
             }
             catch (updateError) {
