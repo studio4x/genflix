@@ -3,6 +3,9 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { readImageDimensions } from '@/lib/image-dimensions';
 import { useResolvedAssessmentAssetUrl } from '@/features/assessments/asset-url';
+import { resolveSiteAssetPublicUrl } from '@/features/site-editor/api';
+import type { SiteAsset } from '@/features/site-editor/types';
+import { MediaLibraryModal } from '@/features/site-assets/media-library-modal';
 import type { AssessmentQuestionAnswerKey, AssessmentQuestionAnswerKeyPayload, AssessmentQuestionInteraction, AssessmentInteractionContent, AssessmentQuestionType, ColoringInteractionContent, DragDropLabelingInteractionContent, FillInTheBlanksInteractionContent, LegacyColoringInteractionContent, } from '@/types/content';
 import { createAnswerKeyFromInteraction, createDefaultInteractionContent, getColoringRenderMode, getColoringSlotIds, getInteractionSlotIds, validateInteractionBundle, } from '@/features/assessments/gamified';
 import { applyColoringSvgRuntimeState, getColoringSvgRegionIdFromEventTarget, isSvgFile, parseColoringSvgFile, parseColoringSvgMarkup, } from '@/features/assessments/coloring-svg';
@@ -16,6 +19,20 @@ interface GamifiedQuestionEditorProps {
 }
 type CanvasInteractionContent = DragDropLabelingInteractionContent | LegacyColoringInteractionContent;
 const COLORING_POINT_SIZE_PERCENT = 1.4;
+function readImageDimensionsFromUrl(url: string) {
+    return new Promise<{ width: number; height: number }>((resolve, reject) => {
+        const image = new Image();
+        image.onload = () => {
+            if (!image.naturalWidth || !image.naturalHeight) {
+                reject(new Error('A imagem selecionada não possui dimensões válidas.'));
+                return;
+            }
+            resolve({ width: image.naturalWidth, height: image.naturalHeight });
+        };
+        image.onerror = () => reject(new Error('Não foi possível carregar a imagem selecionada.'));
+        image.src = url;
+    });
+}
 const COLOR_NAME_SUGGESTIONS = [
     { label: 'Branco', hex: '#ffffff' },
     { label: 'Preto', hex: '#111827' },
@@ -530,6 +547,7 @@ export function GamifiedQuestionEditor({ question, onDraftChange, onPersist, onE
     const stageRef = useRef<HTMLDivElement | null>(null);
     const svgStageRef = useRef<HTMLDivElement | null>(null);
     const [isUploadingAsset, setIsUploadingAsset] = useState(false);
+    const [isMediaLibraryOpen, setIsMediaLibraryOpen] = useState(false);
     const [selectedTargetId, setSelectedTargetId] = useState<string | null>(null);
     const [draggingTargetId, setDraggingTargetId] = useState<string | null>(null);
     const [canvasScale, setCanvasScale] = useState(1);
@@ -773,7 +791,7 @@ export function GamifiedQuestionEditor({ question, onDraftChange, onPersist, onE
             }
             await commit(nextContent);
             setAssetError(null);
-            if (previousStoragePath && previousStoragePath !== uploaded.storage_path) {
+            if (previousStorageProvider === 'r2' && previousStoragePath && previousStoragePath !== uploaded.storage_path) {
                 void deleteAssessmentAsset(previousStoragePath, previousStorageProvider).catch(() => null);
             }
         }
@@ -789,6 +807,53 @@ export function GamifiedQuestionEditor({ question, onDraftChange, onPersist, onE
             if (event.target) {
                 event.target.value = '';
             }
+        }
+    }
+    async function handleMediaAssetSelected(asset: SiteAsset) {
+        if (activeInteraction.kind !== 'drag_drop_labeling') {
+            return;
+        }
+        const publicUrl = resolveSiteAssetPublicUrl(asset);
+        if (!publicUrl) {
+            const message = 'Não foi possível obter o endereço da imagem selecionada.';
+            setAssetError(message);
+            onError(message);
+            return;
+        }
+        setIsUploadingAsset(true);
+        setAssetError(null);
+        onError(null);
+        try {
+            const previousStoragePath = activeInteraction.asset.storage_path;
+            const previousStorageProvider = activeInteraction.asset.storage_provider ?? 'supabase';
+            const dimensions = asset.width && asset.height
+                ? { width: asset.width, height: asset.height }
+                : await readImageDimensionsFromUrl(publicUrl);
+            const nextContent: DragDropLabelingInteractionContent = {
+                ...activeInteraction,
+                asset: {
+                    storage_path: asset.storage_path,
+                    storage_provider: 'supabase',
+                    signed_url: publicUrl,
+                    alt: activeInteraction.asset.alt || asset.alt || 'Imagem do exercício',
+                    width: dimensions.width,
+                    height: dimensions.height,
+                },
+            };
+            await commit(nextContent);
+            setIsMediaLibraryOpen(false);
+            setAssetError(null);
+            if (previousStorageProvider === 'r2' && previousStoragePath && previousStoragePath !== asset.storage_path) {
+                void deleteAssessmentAsset(previousStoragePath, previousStorageProvider).catch(() => null);
+            }
+        }
+        catch (error) {
+            const message = error instanceof Error ? error.message : 'Falha ao aplicar a imagem selecionada.';
+            setAssetError(message);
+            onError(message);
+        }
+        finally {
+            setIsUploadingAsset(false);
         }
     }
     async function switchColoringMode(nextMode: 'svg_regions' | 'legacy_rect') {
@@ -862,7 +927,7 @@ export function GamifiedQuestionEditor({ question, onDraftChange, onPersist, onE
             setIsSvgMarkupModalOpen(false);
             setSvgMarkupError(null);
             setAssetError(null);
-            if (previousStoragePath && previousStoragePath !== uploaded.storage_path) {
+            if (previousStorageProvider === 'r2' && previousStoragePath && previousStoragePath !== uploaded.storage_path) {
                 void deleteAssessmentAsset(previousStoragePath, previousStorageProvider).catch(() => null);
             }
         }
@@ -1593,8 +1658,8 @@ ${SVG_COLORING_EXAMPLE}`} className="min-h-[360px] w-full rounded-[28px] border 
 
             <div className="flex items-center gap-3">
               <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={(event) => void handleAssetSelected(event)}/>
-              <Button type="button" variant="outline" className="rounded-2xl border-slate-200 bg-white" onClick={() => fileInputRef.current?.click()} disabled={isUploadingAsset}>
-                {isUploadingAsset ? 'Enviando...' : resolvedAsset.url ? 'Trocar imagem' : 'Enviar imagem'}
+              <Button type="button" variant="outline" className="rounded-2xl border-slate-200 bg-white" onClick={() => setIsMediaLibraryOpen(true)} disabled={isUploadingAsset}>
+                {isUploadingAsset ? 'Aplicando...' : resolvedAsset.url ? 'Trocar imagem' : 'Enviar imagem'}
               </Button>
             </div>
           </div>
@@ -2201,6 +2266,16 @@ ${SVG_COLORING_EXAMPLE}`} className="min-h-[360px] w-full rounded-[28px] border 
       {activeInteraction.kind === 'coloring' && isColoringSvgMode ? renderSvgMarkupModal() : null}
 
       {activeInteraction.kind === 'drag_drop_labeling' || activeInteraction.kind === 'coloring' ? renderTokenBank() : null}
+
+      {activeInteraction.kind === 'drag_drop_labeling' ? (
+        <MediaLibraryModal
+          isOpen={isMediaLibraryOpen}
+          onClose={() => setIsMediaLibraryOpen(false)}
+          onSelect={(asset) => void handleMediaAssetSelected(asset)}
+          title={resolvedAsset.url ? 'Trocar imagem do exercício' : 'Adicionar imagem ao exercício'}
+          acceptedAssetTypes={['image']}
+        />
+      ) : null}
 
       <div className={cn('rounded-[28px] border px-5 py-4 text-sm font-semibold', validationMessage
             ? 'border-amber-200 bg-amber-50 text-amber-900'
