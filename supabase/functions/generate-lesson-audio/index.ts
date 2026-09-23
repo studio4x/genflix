@@ -14,6 +14,10 @@ const GEMINI_AUDIO_VOICE = 'Kore';
 const MAX_CHARS_PER_CHUNK = 2800;
 const SIGNED_URL_EXPIRES_IN = 60 * 60;
 const NARRATION_CACHE_VERSION = 'v2';
+const NARRATION_CONTENT_MISSING_CODE = 'NARRATION_CONTENT_MISSING';
+const NARRATION_CONTENT_MISSING_MESSAGE = 'Esta aula ainda não possui conteúdo textual suficiente para gerar uma narração. Adicione o texto da aula e tente novamente.';
+const NARRATION_STORAGE_UNAVAILABLE_CODE = 'NARRATION_STORAGE_UNAVAILABLE';
+const NARRATION_STORAGE_UNAVAILABLE_MESSAGE = 'O armazenamento da narração está temporariamente indisponível. Tente novamente mais tarde.';
 interface LessonRow {
     id: string;
     title: string;
@@ -114,7 +118,10 @@ Deno.serve(async (request) => {
         }
         const narrationText = buildNarrationText(lesson);
         if (!narrationText) {
-            return jsonResponse({ error: "A aula no possui contedo textual suficiente para narracao." }, 400);
+            return jsonResponse({
+                code: NARRATION_CONTENT_MISSING_CODE,
+                error: NARRATION_CONTENT_MISSING_MESSAGE,
+            }, 422);
         }
         const chunks = splitNarrationText(narrationText, MAX_CHARS_PER_CHUNK);
         const contentHash = await sha256(`${NARRATION_CACHE_VERSION}:${narrationText}`);
@@ -192,6 +199,12 @@ Deno.serve(async (request) => {
     }
     catch (error) {
         const message = error instanceof Error ? error.message : 'Erro inesperado ao gerar audio da aula.';
+        if (isMissingStorageBucketError(message)) {
+            return jsonResponse({
+                code: NARRATION_STORAGE_UNAVAILABLE_CODE,
+                error: NARRATION_STORAGE_UNAVAILABLE_MESSAGE,
+            }, 503);
+        }
         return jsonResponse({ error: message }, 500);
     }
 });
@@ -211,14 +224,25 @@ function normalizeNarrationMode(value: unknown): NarrationMode {
     return 'generate';
 }
 function buildNarrationText(lesson: LessonRow) {
+    const description = normalizeWhitespace(lesson.description?.trim() ?? '');
+    const textContent = normalizeWhitespace(htmlToPlainText(lesson.text_content ?? ''));
+    if (!description && !textContent) {
+        return '';
+    }
     const parts = [
         lesson.title.trim(),
-        lesson.description?.trim() ?? '',
-        htmlToPlainText(lesson.text_content ?? ''),
+        description,
+        textContent,
     ]
         .map((part) => normalizeWhitespace(part))
         .filter(Boolean);
     return parts.join('\n\n');
+}
+function isMissingStorageBucketError(message: string) {
+    const normalizedMessage = message.toLowerCase();
+    return normalizedMessage.includes('specified bucket does not exist')
+        || normalizedMessage.includes('nosuchbucket')
+        || normalizedMessage.includes('no such bucket');
 }
 function htmlToPlainText(html: string) {
     return html

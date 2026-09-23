@@ -26,6 +26,18 @@ export interface LessonAudioModerationRequest {
     resolved_at: string | null;
     resolved_by: string | null;
 }
+export const LESSON_NARRATION_ERROR_CODES = {
+    CONTENT_MISSING: 'NARRATION_CONTENT_MISSING',
+    STORAGE_UNAVAILABLE: 'NARRATION_STORAGE_UNAVAILABLE',
+} as const;
+export class LessonNarrationError extends Error {
+    readonly code: string | null;
+    constructor(message: string, code: string | null = null) {
+        super(message);
+        this.name = 'LessonNarrationError';
+        this.code = code;
+    }
+}
 type PrepareNarrationMode = 'read' | 'generate' | 'regenerate';
 export async function prepareLessonNarration(lessonId: string, mode: PrepareNarrationMode = 'generate') {
     let sessionResult = await supabase.auth.getSession();
@@ -57,7 +69,8 @@ export async function prepareLessonNarration(lessonId: string, mode: PrepareNarr
         const message = typeof payload?.error === 'string'
             ? payload.error
             : 'Falha ao gerar a narracao da aula.';
-        throw new Error(message);
+        const code = typeof payload?.code === 'string' ? payload.code : null;
+        throw new LessonNarrationError(message, code);
     }
     return payload as LessonNarrationPayload;
 }

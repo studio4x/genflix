@@ -1,9 +1,23 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { fetchOwnLessonAudioModerationRequest, prepareLessonNarration, requestLessonAudioModeration, type LessonAudioModerationRequest, type LessonNarrationPayload, } from './api';
+import { fetchOwnLessonAudioModerationRequest, LESSON_NARRATION_ERROR_CODES, LessonNarrationError, prepareLessonNarration, requestLessonAudioModeration, type LessonAudioModerationRequest, type LessonNarrationPayload, } from './api';
 interface LessonAudioPlayerProps {
     lessonId: string;
     isAdmin?: boolean;
+}
+const MISSING_CONTENT_MESSAGE = 'Esta aula ainda não possui conteúdo textual suficiente para gerar uma narração. Adicione o texto da aula e tente novamente.';
+const STORAGE_UNAVAILABLE_MESSAGE = 'O armazenamento da narração está temporariamente indisponível. Tente novamente mais tarde.';
+function getNarrationError(error: unknown, fallback: string) {
+    const message = error instanceof Error ? error.message : '';
+    const code = error instanceof LessonNarrationError ? error.code : null;
+    const normalizedMessage = message.toLowerCase();
+    if (code === LESSON_NARRATION_ERROR_CODES.CONTENT_MISSING || normalizedMessage.includes('conteúdo textual') || normalizedMessage.includes('conteudo textual')) {
+        return { message: MISSING_CONTENT_MESSAGE, isTechnical: false };
+    }
+    if (code === LESSON_NARRATION_ERROR_CODES.STORAGE_UNAVAILABLE || normalizedMessage.includes('specified bucket') || normalizedMessage.includes('nosuchbucket')) {
+        return { message: STORAGE_UNAVAILABLE_MESSAGE, isTechnical: true };
+    }
+    return { message: fallback, isTechnical: true, detail: message };
 }
 export function LessonAudioPlayer({ lessonId, isAdmin = false }: LessonAudioPlayerProps) {
     const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -47,13 +61,16 @@ export function LessonAudioPlayer({ lessonId, isAdmin = false }: LessonAudioPlay
                 }
             }
             catch (loadError) {
-                const message = loadError instanceof Error ? loadError.message : 'Falha ao carregar a narração da aula.';
+                const narrationError = getNarrationError(loadError, 'Falha ao carregar a narracao da aula.');
                 if (isAdmin) {
-                    setError(message);
+                    setError(narrationError.isTechnical ? narrationError.detail || narrationError.message : narrationError.message);
+                }
+                else if (narrationError.isTechnical) {
+                    setError("N\u00E3o foi poss\u00EDvel carregar a narra\u00E7\u00E3o desta aula no momento.");
+                    setTechnicalErrorMessage(narrationError.detail || narrationError.message);
                 }
                 else {
-                    setError("N\u00E3o foi poss\u00EDvel carregar a narra\u00E7\u00E3o desta aula no momento.");
-                    setTechnicalErrorMessage(message);
+                    setError(narrationError.message);
                 }
             }
             finally {
@@ -81,13 +98,16 @@ export function LessonAudioPlayer({ lessonId, isAdmin = false }: LessonAudioPlay
             setTechnicalErrorMessage(null);
         }
         catch (prepareError) {
-            const message = prepareError instanceof Error ? prepareError.message : 'Falha ao preparar a narracao da aula.';
+            const narrationError = getNarrationError(prepareError, 'Falha ao preparar a narracao da aula.');
             if (isAdmin) {
-                setError(message);
+                setError(narrationError.isTechnical ? narrationError.detail || narrationError.message : narrationError.message);
+            }
+            else if (narrationError.isTechnical) {
+                setError("N\u00E3o foi poss\u00EDvel gerar o \u00E1udio desta aula no momento.");
+                setTechnicalErrorMessage(narrationError.detail || narrationError.message);
             }
             else {
-                setError("N\u00E3o foi poss\u00EDvel gerar o \u00E1udio desta aula no momento.");
-                setTechnicalErrorMessage(message);
+                setError(narrationError.message);
             }
         }
         finally {
