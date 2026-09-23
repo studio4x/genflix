@@ -1,5 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { createSignedGetUrl, getSignedGetTtlSeconds, resolveStorageProvider, } from '../_shared/storage-provider.ts';
+import { createSignedGetUrl, getSignedGetTtlSeconds, isMissingStorageBucketError, resolveStorageProvider, type StorageProvider, } from '../_shared/storage-provider.ts';
 const corsHeaders = {
     'Access-Control-Allow-Origin': Deno.env.get('APP_PUBLIC_URL')?.trim() || 'https://genflix-omega.vercel.app',
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, cache-control, pragma, x-requested-with',
@@ -93,18 +93,34 @@ Deno.serve(async (request) => {
         else if (!isPrivileged) {
             return jsonResponse({ error: 'Apenas administradores podem acessar este asset.' }, 403);
         }
-        const provider = resolveStorageProvider(target.storage_provider);
+        let provider: StorageProvider = resolveStorageProvider(target.storage_provider);
         const expiresInSecondsRaw = Number(requestBody?.expires_in_seconds ?? 0);
         const expiresInSeconds = Number.isFinite(expiresInSecondsRaw) && expiresInSecondsRaw > 0
             ? Math.min(Math.floor(expiresInSecondsRaw), 3600)
             : getSignedGetTtlSeconds(300);
-        const signedUrl = await createSignedGetUrl({
-            provider,
-            bucket: provider === 'r2' ? target.bucket : target.bucket,
-            objectPath: target.storage_path,
-            expiresInSeconds,
-            supabaseAdmin,
-        });
+        let signedUrl: string;
+        try {
+            signedUrl = await createSignedGetUrl({
+                provider,
+                bucket: target.bucket,
+                objectPath: target.storage_path,
+                expiresInSeconds,
+                supabaseAdmin,
+            });
+        }
+        catch (error) {
+            if (provider !== 'r2' || !isMissingStorageBucketError(error)) {
+                throw error;
+            }
+            provider = 'supabase';
+            signedUrl = await createSignedGetUrl({
+                provider,
+                bucket: target.bucket,
+                objectPath: target.storage_path,
+                expiresInSeconds,
+                supabaseAdmin,
+            });
+        }
         console.log(JSON.stringify({
             event: 'asset_access_signed_url_created',
             user_id: user.id,

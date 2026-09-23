@@ -1,6 +1,13 @@
 import { AwsClient } from 'https://esm.sh/aws4fetch@1.0.20';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 export type StorageProvider = 'supabase' | 'r2';
+export function isMissingStorageBucketError(error: unknown) {
+    const message = error instanceof Error ? error.message : String(error ?? '');
+    const normalizedMessage = message.toLowerCase();
+    return normalizedMessage.includes('specified bucket does not exist')
+        || normalizedMessage.includes('nosuchbucket')
+        || normalizedMessage.includes('no such bucket');
+}
 type SignedUploadTicket = {
     provider: 'supabase';
     upload_method: 'supabase_signed_upload';
