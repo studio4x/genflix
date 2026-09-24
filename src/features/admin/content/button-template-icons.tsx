@@ -74,6 +74,10 @@ export function getLessonFooterButtonClassName(template?: Pick<ButtonTemplate, '
     }
 }
 export function renderButtonTemplateIcon(iconName: string | null | undefined, className?: string) {
+    const normalizedIconName = iconName?.trim() ?? '';
+    if (/^(https?:)?\/\//i.test(normalizedIconName) || normalizedIconName.startsWith('/')) {
+        return <img src={normalizedIconName} alt="" aria-hidden="true" className={cn('h-4 w-4 object-contain', className)}/>;
+    }
     const Icon = ICON_MAP.get(iconName ?? '') ?? LinkIcon;
     return <Icon className={cn('h-4 w-4', className)}/>;
 }

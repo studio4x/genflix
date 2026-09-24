@@ -359,6 +359,18 @@ export async function fetchSiteAssets(limit = 24) {
     }
     return ((data ?? []) as SiteAsset[]).map((asset) => normalizeSiteAssetRecord(asset));
 }
+export async function fetchSiteIconLibrary(limit = 240) {
+    const { data, error } = await supabase
+        .from('site_assets')
+        .select('id, storage_path, public_url, alt, width, height, mime_type, file_size, metadata, uploaded_by, created_at')
+        .contains('metadata', { entry_key: 'icon-library' })
+        .order('created_at', { ascending: false })
+        .limit(limit);
+    if (error) {
+        throw error;
+    }
+    return ((data ?? []) as SiteAsset[]).map((asset) => normalizeSiteAssetRecord(asset));
+}
 export async function deleteSiteAsset(input: Pick<SiteAsset, 'id' | 'storage_path'>) {
     await deleteStorageObject({
         uploadKind: 'site_asset',

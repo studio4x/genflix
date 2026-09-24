@@ -1,10 +1,14 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { Loader2, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { BUTTON_ICON_OPTIONS, getLessonFooterButtonClassName, renderButtonTemplateIcon, } from '@/features/admin/content/button-template-icons';
 import { createButtonTemplate, deleteButtonTemplate, fetchButtonTemplates, toErrorMessage, updateButtonTemplate, } from '@/features/admin/content/api';
 import { buttonTemplateFormSchema, type ButtonTemplateFormInput, } from '@/features/admin/content/schemas';
 import type { ButtonTemplate } from '@/types/content';
 import { GlobalButtonsTab } from '@/features/admin/content/global-buttons-tab';
+import { fetchSiteIconLibrary } from '@/features/site-editor/api';
+import { resolveSiteAssetLibraryLabel } from '@/features/site-assets/library-utils';
+import type { SiteAsset } from '@/features/site-editor/types';
 
 const INITIAL_FORM: ButtonTemplateFormInput = {
     name: '',
@@ -25,6 +29,20 @@ export function AdminButtonTemplatesPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [iconLibraryAssets, setIconLibraryAssets] = useState<SiteAsset[]>([]);
+    const [iconSearchQuery, setIconSearchQuery] = useState('');
+    const [isLoadingIconLibrary, setIsLoadingIconLibrary] = useState(true);
+
+    const filteredIconLibraryAssets = useMemo(() => {
+        const normalizedQuery = iconSearchQuery.trim().toLowerCase();
+        return iconLibraryAssets.filter((asset) => {
+            const label = resolveSiteAssetLibraryLabel(asset).toLowerCase();
+            const originalName = typeof asset.metadata?.original_name === 'string'
+                ? asset.metadata.original_name.toLowerCase()
+                : '';
+            return normalizedQuery === '' || label.includes(normalizedQuery) || originalName.includes(normalizedQuery);
+        });
+    }, [iconLibraryAssets, iconSearchQuery]);
 
     useEffect(() => {
         async function load() {
@@ -40,6 +58,33 @@ export function AdminButtonTemplatesPage() {
             }
         }
         void load();
+    }, []);
+
+    useEffect(() => {
+        let isMounted = true;
+        async function loadIconLibrary() {
+            setIsLoadingIconLibrary(true);
+            try {
+                const assets = await fetchSiteIconLibrary();
+                if (isMounted) {
+                    setIconLibraryAssets(assets.filter((asset) => Boolean(asset.public_url)));
+                }
+            }
+            catch {
+                if (isMounted) {
+                    setIconLibraryAssets([]);
+                }
+            }
+            finally {
+                if (isMounted) {
+                    setIsLoadingIconLibrary(false);
+                }
+            }
+        }
+        void loadIconLibrary();
+        return () => {
+            isMounted = false;
+        };
     }, []);
 
     function startEdit(template: ButtonTemplate) {
@@ -161,20 +206,61 @@ export function AdminButtonTemplatesPage() {
               <input className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm" value={form.default_label} onChange={(event) => setForm((prev) => ({ ...prev, default_label: event.target.value }))}/>
             </label>
 
-            <label className="block space-y-2">
+            <div className="space-y-3">
               <span className="text-sm font-bold text-slate-700">Biblioteca de icones</span>
-              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-                {BUTTON_ICON_OPTIONS.map((iconOption) => {
-            const isSelected = form.icon === iconOption.value;
-            return (<button key={iconOption.value} type="button" onClick={() => setForm((prev) => ({ ...prev, icon: iconOption.value }))} className={`flex items-center gap-2 rounded-2xl border px-3 py-3 text-left text-xs font-bold transition-all ${isSelected
-                    ? 'border-blue-300 bg-blue-50 text-blue-700 shadow-sm'
-                    : 'border-slate-200 bg-white text-slate-600 hover:border-blue-200 hover:bg-blue-50/50'}`}>
-                      {renderButtonTemplateIcon(iconOption.value)}
-                      <span>{iconOption.label}</span>
-                    </button>);
-        })}
+              <div className="flex h-10 items-center gap-2 rounded-2xl border border-slate-200 bg-white px-3">
+                <Search className="h-4 w-4 shrink-0 text-slate-400"/>
+                <input
+                  value={iconSearchQuery}
+                  onChange={(event) => setIconSearchQuery(event.target.value)}
+                  placeholder="Buscar ícone..."
+                  className="w-full border-0 bg-transparent text-xs font-semibold text-slate-700 outline-none"
+                />
               </div>
-            </label>
+
+              <div className="rounded-2xl border border-slate-200 bg-white p-3">
+                <p className="mb-2 text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Ícones nativos</p>
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                  {BUTTON_ICON_OPTIONS.filter((iconOption) => {
+                      const normalizedQuery = iconSearchQuery.trim().toLowerCase();
+                      return normalizedQuery === '' || iconOption.label.toLowerCase().includes(normalizedQuery) || iconOption.value.includes(normalizedQuery);
+                  }).map((iconOption) => {
+                      const isSelected = form.icon === iconOption.value;
+                      return (<button key={iconOption.value} type="button" onClick={() => setForm((prev) => ({ ...prev, icon: iconOption.value }))} className={`flex items-center gap-2 rounded-2xl border px-3 py-3 text-left text-xs font-bold transition-all ${isSelected
+                          ? 'border-blue-300 bg-blue-50 text-blue-700 shadow-sm'
+                          : 'border-slate-200 bg-white text-slate-600 hover:border-blue-200 hover:bg-blue-50/50'}`}>
+                        {renderButtonTemplateIcon(iconOption.value)}
+                        <span className="truncate">{iconOption.label}</span>
+                      </button>);
+                  })}
+                </div>
+              </div>
+
+              <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-3">
+                <div className="mb-2 flex items-center justify-between gap-2">
+                  <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Ícones da biblioteca existente</p>
+                  {isLoadingIconLibrary ? <Loader2 className="h-4 w-4 animate-spin text-slate-400"/> : <span className="text-[10px] font-bold text-slate-400">{filteredIconLibraryAssets.length}</span>}
+                </div>
+                {isLoadingIconLibrary ? (
+                  <p className="text-xs font-semibold text-slate-500">Carregando biblioteca...</p>
+                ) : filteredIconLibraryAssets.length === 0 ? (
+                  <p className="text-xs font-semibold text-slate-500">Nenhum SVG encontrado.</p>
+                ) : (
+                  <div className="grid max-h-64 grid-cols-2 gap-2 overflow-y-auto sm:grid-cols-3">
+                    {filteredIconLibraryAssets.map((asset) => {
+                        const iconValue = asset.public_url ?? '';
+                        const isSelected = form.icon === iconValue;
+                        return (<button key={asset.id} type="button" onClick={() => setForm((prev) => ({ ...prev, icon: iconValue }))} className={`flex min-w-0 items-center gap-2 rounded-2xl border px-3 py-3 text-left text-xs font-bold transition-all ${isSelected
+                            ? 'border-blue-300 bg-blue-50 text-blue-700 shadow-sm'
+                            : 'border-slate-200 bg-white text-slate-600 hover:border-blue-200 hover:bg-blue-50/50'}`}>
+                          {renderButtonTemplateIcon(iconValue, 'h-5 w-5 shrink-0')}
+                          <span className="truncate">{resolveSiteAssetLibraryLabel(asset)}</span>
+                        </button>);
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
 
             <label className="block space-y-2">
               <span className="text-sm font-bold text-slate-700">Variante</span>
