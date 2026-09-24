@@ -695,7 +695,7 @@ export function FooterActionsPanel({
             </section>
 
             <section className="rounded-[28px] border border-slate-200 bg-slate-50/40 p-6">
-              <p className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">{getScopeButtonLabel(scope)}</p>
+              <p className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">{scopeTitle}</p>
 
               {isLoading ? (
                 <p className="mt-4 text-sm text-slate-500">{'Carregando botões...'}</p>
