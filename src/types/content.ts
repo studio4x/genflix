@@ -339,6 +339,7 @@ export interface ButtonTemplate {
     theme: 'blue' | 'emerald' | 'amber' | 'rose' | 'slate' | 'violet' | 'custom';
     custom_background_color?: string | null;
     custom_text_color?: string | null;
+    custom_icon_color?: string | null;
     icon: string;
     is_active: boolean;
     created_at: string;
@@ -380,6 +381,7 @@ export interface LessonButtonBlockLocalConfig {
     theme: ButtonTemplate['theme'];
     custom_background_color?: string | null;
     custom_text_color?: string | null;
+    custom_icon_color?: string | null;
     icon: string;
     action_type: ButtonActionType;
     url?: string | null;

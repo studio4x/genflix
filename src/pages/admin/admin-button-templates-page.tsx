@@ -17,6 +17,7 @@ const INITIAL_FORM: ButtonTemplateFormInput = {
     theme: 'blue',
     custom_background_color: null,
     custom_text_color: null,
+    custom_icon_color: null,
     icon: 'link',
     is_active: true,
 };
@@ -96,6 +97,7 @@ export function AdminButtonTemplatesPage() {
             theme: template.theme,
             custom_background_color: template.custom_background_color ?? null,
             custom_text_color: template.custom_text_color ?? null,
+            custom_icon_color: template.custom_icon_color ?? (template.theme === 'custom' ? '#FFFFFF' : null),
             icon: template.icon,
             is_active: template.is_active,
         });
@@ -275,7 +277,7 @@ export function AdminButtonTemplatesPage() {
               <select className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm" value={form.theme} onChange={(event) => setForm((prev) => {
                   const theme = event.target.value as ButtonTemplateFormInput['theme'];
                   return theme === 'custom'
-                      ? { ...prev, theme, custom_background_color: prev.custom_background_color ?? '#0A3640', custom_text_color: prev.custom_text_color ?? '#FFFFFF' }
+                      ? { ...prev, theme, custom_background_color: prev.custom_background_color ?? '#0A3640', custom_text_color: prev.custom_text_color ?? '#FFFFFF', custom_icon_color: prev.custom_icon_color ?? '#FFFFFF' }
                       : { ...prev, theme };
               })}>
                 {BUTTON_THEME_OPTIONS.map((theme) => (<option key={theme.value} value={theme.value}>{theme.label}</option>))}
@@ -283,7 +285,7 @@ export function AdminButtonTemplatesPage() {
             </label>
 
             {form.theme === 'custom' ? (
-              <div className="grid gap-3 sm:grid-cols-2">
+              <div className="grid gap-3 sm:grid-cols-3">
                 <label className="block space-y-2">
                   <span className="text-sm font-bold text-slate-700">Cor do fundo</span>
                   <div className="flex items-center gap-2">
@@ -296,6 +298,13 @@ export function AdminButtonTemplatesPage() {
                   <div className="flex items-center gap-2">
                     <input type="color" value={form.custom_text_color ?? '#FFFFFF'} onChange={(event) => setForm((prev) => ({ ...prev, custom_text_color: event.target.value.toUpperCase() }))} className="h-11 w-14 cursor-pointer rounded-xl border border-slate-200 bg-white p-1" aria-label="Selecionar cor do texto"/>
                     <input value={form.custom_text_color ?? ''} onChange={(event) => setForm((prev) => ({ ...prev, custom_text_color: event.target.value.toUpperCase() }))} placeholder="#FFFFFF" maxLength={7} className="min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm uppercase"/>
+                  </div>
+                </label>
+                <label className="block space-y-2">
+                  <span className="text-sm font-bold text-slate-700">Cor do ícone</span>
+                  <div className="flex items-center gap-2">
+                    <input type="color" value={form.custom_icon_color ?? '#FFFFFF'} onChange={(event) => setForm((prev) => ({ ...prev, custom_icon_color: event.target.value.toUpperCase() }))} className="h-11 w-14 cursor-pointer rounded-xl border border-slate-200 bg-white p-1" aria-label="Selecionar cor do ícone"/>
+                    <input value={form.custom_icon_color ?? ''} onChange={(event) => setForm((prev) => ({ ...prev, custom_icon_color: event.target.value.toUpperCase() }))} placeholder="#FFFFFF" maxLength={7} className="min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm uppercase"/>
                   </div>
                 </label>
               </div>
@@ -328,13 +337,15 @@ export function AdminButtonTemplatesPage() {
             theme: form.theme,
             custom_background_color: form.custom_background_color,
             custom_text_color: form.custom_text_color,
+            custom_icon_color: form.custom_icon_color,
         })} className={getLessonFooterButtonClassName({
             variant: form.variant,
             theme: form.theme,
             custom_background_color: form.custom_background_color,
             custom_text_color: form.custom_text_color,
+            custom_icon_color: form.custom_icon_color,
         })}>
-                {renderButtonTemplateIcon(form.icon)}
+                {renderButtonTemplateIcon(form.icon, undefined, form.custom_icon_color)}
                 {form.default_label || 'Nome do Botão'}
               </Button>
             </div>
@@ -358,7 +369,7 @@ export function AdminButtonTemplatesPage() {
                       </div>
                       <div className="mt-3">
                         <Button type="button" variant="outline" style={getLessonFooterButtonStyle(template)} className={getLessonFooterButtonClassName(template)}>
-                          {renderButtonTemplateIcon(template.icon)}
+                          {renderButtonTemplateIcon(template.icon, undefined, template.custom_icon_color)}
                           {template.default_label}
                         </Button>
                       </div>

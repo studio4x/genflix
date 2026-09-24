@@ -91,7 +91,7 @@ function resolveTemplateThemeClasses(theme: ButtonTemplate['theme'] | undefined)
             };
     }
 }
-export function getLessonFooterButtonClassName(template?: Pick<ButtonTemplate, 'variant' | 'theme' | 'custom_background_color' | 'custom_text_color'> | null) {
+export function getLessonFooterButtonClassName(template?: Pick<ButtonTemplate, 'variant' | 'theme' | 'custom_background_color' | 'custom_text_color' | 'custom_icon_color'> | null) {
     const themeClasses = resolveTemplateThemeClasses(template?.theme);
     switch (template?.variant) {
         case 'primary':
@@ -107,7 +107,7 @@ export function getLessonFooterButtonClassName(template?: Pick<ButtonTemplate, '
             return cn('rounded-xl border bg-white font-bold transition-colors', themeClasses.soft.replace(/bg-[^ ]+|hover:bg-[^ ]+/g, '').trim());
     }
 }
-export function getLessonFooterButtonStyle(template?: Pick<ButtonTemplate, 'variant' | 'theme' | 'custom_background_color' | 'custom_text_color'> | null): CSSProperties | undefined {
+export function getLessonFooterButtonStyle(template?: Pick<ButtonTemplate, 'variant' | 'theme' | 'custom_background_color' | 'custom_text_color' | 'custom_icon_color'> | null): CSSProperties | undefined {
     if (template?.theme !== 'custom' || !template.custom_background_color || !template.custom_text_color) {
         return undefined;
     }
@@ -118,13 +118,27 @@ export function getLessonFooterButtonStyle(template?: Pick<ButtonTemplate, 'vari
         borderColor: isTransparentVariant ? 'transparent' : template.custom_background_color,
     };
 }
-export function renderButtonTemplateIcon(iconName: string | null | undefined, className?: string) {
+export function renderButtonTemplateIcon(iconName: string | null | undefined, className?: string, color?: string | null) {
     const normalizedIconName = iconName?.trim() ?? '';
     if (/^(https?:)?\/\//i.test(normalizedIconName) || normalizedIconName.startsWith('/')) {
-        return <img src={normalizedIconName} alt="" aria-hidden="true" className={cn('h-4 w-4 object-contain', className)}/>;
+        if (color) {
+            const maskStyle: CSSProperties = {
+                backgroundColor: color,
+                maskImage: `url("${normalizedIconName}")`,
+                WebkitMaskImage: `url("${normalizedIconName}")`,
+                maskPosition: 'center',
+                WebkitMaskPosition: 'center',
+                maskRepeat: 'no-repeat',
+                WebkitMaskRepeat: 'no-repeat',
+                maskSize: 'contain',
+                WebkitMaskSize: 'contain',
+            };
+            return <span aria-hidden="true" className={cn('inline-block h-4 w-4 bg-current', className)} style={maskStyle}/>;
+        }
+        return <img src={normalizedIconName} alt="" aria-hidden="true" className={cn('h-4 w-4 object-contain', className)} style={color ? { color } : undefined}/>;
     }
     const Icon = ICON_MAP.get(iconName ?? '') ?? LinkIcon;
-    return <Icon className={cn('h-4 w-4', className)}/>;
+    return <Icon className={cn('h-4 w-4', className)} style={color ? { color } : undefined}/>;
 }
 export function getLessonFooterActionIconName(action: Pick<LessonFooterAction, 'action_type' | 'mime_type' | 'file_name' | 'template'>) {
     if (action.template?.icon)

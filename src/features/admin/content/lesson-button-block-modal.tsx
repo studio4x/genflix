@@ -82,6 +82,7 @@ export function LessonButtonBlockModal({
     const [theme, setTheme] = useState<ButtonTemplate['theme']>('blue');
     const [customBackgroundColor, setCustomBackgroundColor] = useState<string | null>(null);
     const [customTextColor, setCustomTextColor] = useState<string | null>(null);
+    const [customIconColor, setCustomIconColor] = useState<string | null>(null);
     const [icon, setIcon] = useState('link');
     const [actionType, setActionType] = useState<ButtonActionType>('url');
     const [url, setUrl] = useState('https://');
@@ -129,6 +130,7 @@ export function LessonButtonBlockModal({
             setTheme('blue');
             setCustomBackgroundColor(null);
             setCustomTextColor(null);
+            setCustomIconColor(null);
             setModalTitle(DEFAULT_MODAL_TITLE);
             setModalSubtitle(DEFAULT_MODAL_SUBTITLE);
             return;
@@ -149,6 +151,7 @@ export function LessonButtonBlockModal({
                 setTheme(c.theme ?? 'blue');
                 setCustomBackgroundColor(c.custom_background_color ?? c.template?.custom_background_color ?? null);
                 setCustomTextColor(c.custom_text_color ?? c.template?.custom_text_color ?? null);
+                setCustomIconColor(c.custom_icon_color ?? c.template?.custom_icon_color ?? null);
                 setIcon(c.icon ?? 'link');
                 setActionType(c.action_type ?? 'url');
                 setUrl(c.url ?? 'https://');
@@ -168,6 +171,7 @@ export function LessonButtonBlockModal({
             setTheme(loc.theme ?? 'blue');
             setCustomBackgroundColor(loc.custom_background_color ?? loc.template?.custom_background_color ?? null);
             setCustomTextColor(loc.custom_text_color ?? loc.template?.custom_text_color ?? null);
+            setCustomIconColor(loc.custom_icon_color ?? loc.template?.custom_icon_color ?? null);
             setIcon(loc.icon ?? 'link');
             setActionType(loc.action_type ?? 'url');
             setUrl(loc.url ?? 'https://');
@@ -192,6 +196,7 @@ export function LessonButtonBlockModal({
         setTheme(tmpl.theme);
         setCustomBackgroundColor(tmpl.custom_background_color ?? null);
         setCustomTextColor(tmpl.custom_text_color ?? null);
+        setCustomIconColor(tmpl.custom_icon_color ?? null);
         setIcon(tmpl.icon || 'link');
         setTab('local');
         setSourceType('local');
@@ -213,6 +218,7 @@ export function LessonButtonBlockModal({
                       theme: found.template?.theme ?? 'blue',
                       custom_background_color: found.template?.custom_background_color ?? null,
                       custom_text_color: found.template?.custom_text_color ?? null,
+                      custom_icon_color: found.template?.custom_icon_color ?? null,
                       icon: found.template?.icon ?? 'link',
                       action_type: found.action_type,
                       url: found.url,
@@ -259,6 +265,7 @@ export function LessonButtonBlockModal({
                     theme,
                     custom_background_color: customBackgroundColor,
                     custom_text_color: customTextColor,
+                    custom_icon_color: customIconColor,
                     icon,
                     action_type: actionType,
                     url: actionType === 'url' ? url.trim() : null,
@@ -433,7 +440,7 @@ export function LessonButtonBlockModal({
                                                 style={getLessonFooterButtonStyle(tmpl)}
                                                 className={getLessonFooterButtonClassName(tmpl)}
                                             >
-                                                {renderButtonTemplateIcon(tmpl.icon)}
+                                                {renderButtonTemplateIcon(tmpl.icon, undefined, tmpl.custom_icon_color)}
                                                 <span>{tmpl.default_label || tmpl.name}</span>
                                             </Button>
                                         </div>
@@ -470,6 +477,9 @@ export function LessonButtonBlockModal({
                                             if (found) {
                                                 setVariant(found.variant);
                                                 setTheme(found.theme);
+                                                setCustomBackgroundColor(found.custom_background_color ?? null);
+                                                setCustomTextColor(found.custom_text_color ?? null);
+                                                setCustomIconColor(found.custom_icon_color ?? null);
                                                 setIcon(found.icon);
                                             }
                                         }}
@@ -702,7 +712,7 @@ export function LessonButtonBlockModal({
                         </p>
                         <LessonActionButton
                             label={sourceType === 'global' ? currentSelectedGlobal?.label || 'Selecione um botão global' : label}
-                            template={sourceType === 'global' ? currentSelectedGlobal?.template : { id: '', name: '', default_label: '', variant, theme, custom_background_color: customBackgroundColor, custom_text_color: customTextColor, icon, is_active: true, created_at: '', updated_at: '' }}
+                            template={sourceType === 'global' ? currentSelectedGlobal?.template : { id: '', name: '', default_label: '', variant, theme, custom_background_color: customBackgroundColor, custom_text_color: customTextColor, custom_icon_color: customIconColor, icon, is_active: true, created_at: '', updated_at: '' }}
                             action_type={sourceType === 'global' ? currentSelectedGlobal?.action_type : actionType}
                             alignment={alignment}
                             width={width}

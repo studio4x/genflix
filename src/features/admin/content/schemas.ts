@@ -217,6 +217,7 @@ export const buttonTemplateFormSchema = z.object({
     theme: z.enum(['blue', 'emerald', 'amber', 'rose', 'slate', 'violet', 'custom']),
     custom_background_color: z.string().regex(/^#[0-9A-Fa-f]{6}$/, 'Informe uma cor HEX vÃ¡lida.').nullable().default(null),
     custom_text_color: z.string().regex(/^#[0-9A-Fa-f]{6}$/, 'Informe uma cor HEX vÃ¡lida.').nullable().default(null),
+    custom_icon_color: z.string().regex(/^#[0-9A-Fa-f]{6}$/, 'Informe uma cor HEX vÃ¡lida.').nullable().default(null),
     icon: z.string().trim().min(2, "Ícone obrigatório."),
     is_active: z.boolean().default(true),
 }).superRefine((value, ctx) => {
@@ -226,6 +227,9 @@ export const buttonTemplateFormSchema = z.object({
         }
         if (!value.custom_text_color) {
             ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['custom_text_color'], message: 'Informe a cor do texto do botÃ£o.' });
+        }
+        if (!value.custom_icon_color) {
+            ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['custom_icon_color'], message: 'Informe a cor do Ã­cone do botÃ£o.' });
         }
     }
 });
@@ -363,6 +367,7 @@ export const lessonButtonBlockLocalConfigSchema = z.object({
     theme: z.enum(['blue', 'emerald', 'amber', 'rose', 'slate', 'violet', 'custom']),
     custom_background_color: z.string().regex(/^#[0-9A-Fa-f]{6}$/, 'Informe uma cor HEX vÃ¡lida.').nullable().optional(),
     custom_text_color: z.string().regex(/^#[0-9A-Fa-f]{6}$/, 'Informe uma cor HEX vÃ¡lida.').nullable().optional(),
+    custom_icon_color: z.string().regex(/^#[0-9A-Fa-f]{6}$/, 'Informe uma cor HEX vÃ¡lida.').nullable().optional(),
     icon: z.string().trim().min(2, 'Ícone obrigatório.'),
     action_type: z.enum(['file', 'url', 'modal']),
     url: z.string().trim().url('URL inválida').or(z.literal('')).nullable().optional(),
