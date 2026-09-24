@@ -423,7 +423,7 @@ Todas as quest\u00f5es, estudos de caso e tentativas vinculadas serão removidos
       <FooterActionsPanel
         scope="course"
         courseId={course.id}
-        title="Botões globais do curso"
+        entityName={course.title}
         description="Configure arquivos e links disponíveis em todas as aulas deste curso."
       />
 

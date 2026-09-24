@@ -62,7 +62,7 @@ export function LessonMaterialsPanel() {
         courseId={courseId}
         moduleId={moduleId}
         lessonId={lessonId}
-        title="Botões do Rodapé da Aula"
+        entityName={lesson?.title}
         description={`Configure arquivos, links, janelas modais ou botões da biblioteca global para o rodapé desta aula${
           lesson?.title ? `: "${lesson.title}"` : '.'
         }`}

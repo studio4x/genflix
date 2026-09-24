@@ -463,7 +463,7 @@ export function ModuleEditorPanel() {
             scope="module"
             courseId={courseId}
             moduleId={moduleId}
-            title="Botões globais do módulo"
+            entityName={form.title || currentModule?.title}
             description="Configure arquivos e links disponíveis em todas as aulas deste módulo."
           />
         ) : null}

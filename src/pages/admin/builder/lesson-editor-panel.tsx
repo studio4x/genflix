@@ -1,7 +1,7 @@
 ﻿import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { createLesson, deleteMaterial, deleteLesson, fetchMaterials, fetchLessonFooterActions, getSignedMaterialUrl, uploadMaterial, updateLesson, toErrorMessage, type UploadProgressSnapshot, } from '@/features/admin/content/api';
+import { createLesson, deleteMaterial, deleteLesson, fetchMaterials, getSignedMaterialUrl, uploadMaterial, updateLesson, toErrorMessage, type UploadProgressSnapshot, } from '@/features/admin/content/api';
 import { lessonFormSchema, type LessonFormInput } from '@/features/admin/content/schemas';
 import { useCourseBuilder } from '@/app/layouts/admin-course-builder-layout';
 import { useAuth } from '@/app/providers/auth-provider';
@@ -9,11 +9,11 @@ import { fetchLessonAudioModerationRequests, resolveLessonAudioModerationRequest
 import { splitContent, mergeContent, } from '@/features/admin/content/content-blocks';
 import type { LessonContentBlock } from '@/features/admin/content/content-blocks';
 import { Button } from '@/components/ui/button';
-import { getLessonFooterActionIconName, getLessonFooterActionScopeLabel, getLessonFooterButtonClassName, renderButtonTemplateIcon, } from '@/features/admin/content/button-template-icons';
 import { LessonContentBlocksEditor } from '@/features/admin/content/lesson-content-blocks';
+import { FooterActionsPanel } from '@/features/admin/content/footer-actions-panel';
 import { LessonAudioPlayer } from '@/features/student/lesson-audio/lesson-audio-player';
 import { publishBuilderNotice } from '@/lib/builder-notice';
-import type { LessonFooterAction, LessonMaterial } from '@/types/content';
+import type { LessonMaterial } from '@/types/content';
 const initialForm: LessonFormInput = {
     title: '',
     description: '',
@@ -96,9 +96,7 @@ export function LessonEditorPanel() {
     const [protectedVideoPreviewUrl, setProtectedVideoPreviewUrl] = useState<string | null>(null);
     const [isLoadingProtectedVideoPreview, setIsLoadingProtectedVideoPreview] = useState(false);
     const [audioRequests, setAudioRequests] = useState<LessonAudioModerationRequestAdminItem[]>([]);
-    const [footerActions, setFooterActions] = useState<LessonFooterAction[]>([]);
     const [isLoadingAudioRequests, setIsLoadingAudioRequests] = useState(false);
-    const [isLoadingFooterActions, setIsLoadingFooterActions] = useState(false);
     const [resolvingRequestId, setResolvingRequestId] = useState<string | null>(null);
     const [audioResponseByRequest, setAudioResponseByRequest] = useState<Record<string, string>>({});
     useEffect(() => {
@@ -207,26 +205,6 @@ export function LessonEditorPanel() {
             }
         }
         void loadAudioRequests();
-    }, [isNew, lessonId]);
-    useEffect(() => {
-        async function loadFooterActions() {
-            if (isNew || !lessonId) {
-                setFooterActions([]);
-                return;
-            }
-            setIsLoadingFooterActions(true);
-            try {
-                const actions = await fetchLessonFooterActions(lessonId);
-                setFooterActions(actions);
-            }
-            catch (err) {
-                console.error('Erro ao buscar bot\u00f5es da aula:', err);
-            }
-            finally {
-                setIsLoadingFooterActions(false);
-            }
-        }
-        void loadFooterActions();
     }, [isNew, lessonId]);
     async function handleSubmit(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
@@ -760,44 +738,6 @@ Esta ação exclui o arquivo do storage privado.`);
                  </p>
                </div>
 
-               <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                 <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                   <div>
-                     <p className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">{'Bot\u00f5es no Rodap\u00e9 da Aula'}</p>
-                     <p className="mt-2 text-sm text-slate-500">
-                       {'Configure arquivos e links que aparecem como botões no rodapé do player do aluno.'}
-                     </p>
-                   </div>
-                   {!isNew ? (<Button type="button" variant="outline" className="border-slate-200 bg-white" onClick={() => navigate(`/admin/cursos/${courseId}/builder/modulos/${moduleId}/aulas/${lessonId}/materiais`)}>
-                       {'Gerenciar botões'}
-                     </Button>) : null}
-                 </div>
-
-                 {isNew ? (<p className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-                     {'Salve a aula primeiro para cadastrar botões, materiais e URLs do rodapé.'}
-                   </p>) : isLoadingFooterActions ? (<p className="mt-4 text-sm text-slate-500">{'Carregando botões configurados...'}</p>) : footerActions.length === 0 ? (<p className="mt-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">{'Nenhum botão configurado ainda para esta aula.'}
-                   </p>) : (<div className="mt-4 grid gap-3 lg:grid-cols-2 2xl:grid-cols-3">
-                    {footerActions.map((action) => (<div key={action.id} className="h-full rounded-xl border border-slate-200 bg-slate-50/70 px-4 py-3">
-                         <div className="flex flex-wrap items-center gap-2">
-                           <span className="rounded-full bg-blue-100 px-2.5 py-1 text-[10px] font-black uppercase tracking-widest text-blue-700">
-                             #{action.position}
-                           </span>
-                           <span className="rounded-full bg-cyan-100 px-2.5 py-1 text-[10px] font-black uppercase tracking-widest text-cyan-700">
-                             {getLessonFooterActionScopeLabel(action.scope)}
-                           </span>
-                           <span className="rounded-full bg-white px-2.5 py-1 text-[10px] font-black uppercase tracking-widest text-slate-500">
-                             {action.action_type === 'file' ? 'Arquivo' : 'URL'}
-                           </span>
-                         </div>
-                         <div className="mt-3">
-                           <Button type="button" variant="outline" className={`${getLessonFooterButtonClassName(action.template)} w-full justify-start`}>
-                             {renderButtonTemplateIcon(getLessonFooterActionIconName(action))}
-                             {action.label?.trim() || action.template?.default_label || action.file_name || 'Botão sem rótulo'}
-                           </Button>
-                         </div>
-                       </div>))}
-                   </div>)}
-               </div>
              </fieldset>
 
           </div>
@@ -817,6 +757,15 @@ Esta ação exclui o arquivo do storage privado.`);
               </Button>
             </div>
           </div>
-       </form>
+        </form>
+        {!isNew && courseId && moduleId && lessonId ? (
+          <FooterActionsPanel
+            scope="lesson"
+            courseId={courseId}
+            moduleId={moduleId}
+            lessonId={lessonId}
+            entityName={form.title}
+          />
+        ) : null}
     </div>);
 }

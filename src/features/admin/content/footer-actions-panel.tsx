@@ -54,15 +54,16 @@ function formatBytes(value: number): string {
     return `${normalized.toFixed(unitIndex === 0 ? 0 : 1)} ${units[unitIndex]}`;
 }
 
-function getScopeButtonLabel(scope: FooterActionScope) {
+function getScopeButtonLabel(scope: FooterActionScope, entityName?: string) {
+    const suffix = entityName?.trim() ? `: ${entityName.trim()}` : '';
     switch (scope) {
         case 'course':
-            return 'Botões globais do curso';
+            return `Botões globais do curso${suffix}`;
         case 'module':
-            return 'Botões globais do módulo';
+            return `Botões globais do módulo${suffix}`;
         case 'lesson':
         default:
-            return 'Botões da aula';
+            return `Botões no rodapé da aula${suffix}`;
     }
 }
 
@@ -83,6 +84,7 @@ export function FooterActionsPanel({
     courseId,
     moduleId,
     lessonId,
+    entityName,
     title,
     description,
 }: {
@@ -90,6 +92,7 @@ export function FooterActionsPanel({
     courseId: string;
     moduleId?: string;
     lessonId?: string;
+    entityName?: string;
     title?: string;
     description?: string;
 }) {
@@ -132,7 +135,7 @@ export function FooterActionsPanel({
     const [isSavingEdit, setIsSavingEdit] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    const scopeTitle = title ?? getScopeButtonLabel(scope);
+    const scopeTitle = title ?? getScopeButtonLabel(scope, entityName);
     const scopeDescription = description ?? getScopeDescription(scope);
 
     const nextPosition = useMemo(() => (actions.length ? Math.max(...actions.map((action) => action.position)) + 1 : 1), [actions]);
