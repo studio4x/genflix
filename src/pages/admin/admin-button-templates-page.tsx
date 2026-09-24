@@ -226,11 +226,10 @@ export function AdminButtonTemplatesPage() {
                       return normalizedQuery === '' || iconOption.label.toLowerCase().includes(normalizedQuery) || iconOption.value.includes(normalizedQuery);
                   }).map((iconOption) => {
                       const isSelected = form.icon === iconOption.value;
-                      return (<button key={iconOption.value} type="button" onClick={() => setForm((prev) => ({ ...prev, icon: iconOption.value }))} className={`flex items-center gap-2 rounded-2xl border px-3 py-3 text-left text-xs font-bold transition-all ${isSelected
+                      return (<button key={iconOption.value} type="button" title={iconOption.label} aria-label={iconOption.label} onClick={() => setForm((prev) => ({ ...prev, icon: iconOption.value }))} className={`flex h-10 w-full items-center justify-center rounded-2xl border p-0 text-xs font-bold transition-all ${isSelected
                           ? 'border-blue-300 bg-blue-50 text-blue-700 shadow-sm'
                           : 'border-slate-200 bg-white text-slate-600 hover:border-blue-200 hover:bg-blue-50/50'}`}>
                         {renderButtonTemplateIcon(iconOption.value)}
-                        <span className="truncate">{iconOption.label}</span>
                       </button>);
                   })}
                 </div>
@@ -250,11 +249,11 @@ export function AdminButtonTemplatesPage() {
                     {filteredIconLibraryAssets.map((asset) => {
                         const iconValue = asset.public_url ?? '';
                         const isSelected = form.icon === iconValue;
-                        return (<button key={asset.id} type="button" onClick={() => setForm((prev) => ({ ...prev, icon: iconValue }))} className={`flex min-w-0 items-center gap-2 rounded-2xl border px-3 py-3 text-left text-xs font-bold transition-all ${isSelected
+                        const iconLabel = resolveSiteAssetLibraryLabel(asset);
+                        return (<button key={asset.id} type="button" title={iconLabel} aria-label={iconLabel} onClick={() => setForm((prev) => ({ ...prev, icon: iconValue }))} className={`flex h-10 w-full min-w-0 items-center justify-center rounded-2xl border p-0 text-xs font-bold transition-all ${isSelected
                             ? 'border-blue-300 bg-blue-50 text-blue-700 shadow-sm'
                             : 'border-slate-200 bg-white text-slate-600 hover:border-blue-200 hover:bg-blue-50/50'}`}>
                           {renderButtonTemplateIcon(iconValue, 'h-5 w-5 shrink-0')}
-                          <span className="truncate">{resolveSiteAssetLibraryLabel(asset)}</span>
                         </button>);
                     })}
                   </div>
