@@ -1,4 +1,5 @@
 import type { LucideIcon } from 'lucide-react';
+import type { CSSProperties } from 'react';
 import { BookOpen, CirclePlay, Download, ExternalLink, FileArchive, FileImage, FileSpreadsheet, FileText, FolderOpen, GraduationCap, Headphones, Link as LinkIcon, MonitorPlay, } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { ButtonTemplate, FooterActionScope, LessonFooterAction } from '@/types/content';
@@ -21,6 +22,34 @@ export const BUTTON_ICON_OPTIONS: Array<{
     { value: 'file-image', label: 'Imagem', icon: FileImage },
     { value: 'file-archive', label: 'Arquivo Compactado', icon: FileArchive },
 ];
+export const BUTTON_VARIANT_OPTIONS: Array<{
+    value: ButtonTemplate['variant'];
+    label: string;
+}> = [
+    { value: 'primary', label: 'Principal' },
+    { value: 'secondary', label: 'Secundário' },
+    { value: 'outline', label: 'Contorno' },
+    { value: 'ghost', label: 'Discreto' },
+    { value: 'link', label: 'Link' },
+];
+export const BUTTON_THEME_OPTIONS: Array<{
+    value: ButtonTemplate['theme'];
+    label: string;
+}> = [
+    { value: 'blue', label: 'Azul' },
+    { value: 'emerald', label: 'Esmeralda' },
+    { value: 'amber', label: 'Âmbar' },
+    { value: 'rose', label: 'Rosa' },
+    { value: 'slate', label: 'Ardósia' },
+    { value: 'violet', label: 'Violeta' },
+    { value: 'custom', label: 'Personalizar' },
+];
+export function getButtonVariantLabel(value: ButtonTemplate['variant']) {
+    return BUTTON_VARIANT_OPTIONS.find((option) => option.value === value)?.label ?? value;
+}
+export function getButtonThemeLabel(value: ButtonTemplate['theme']) {
+    return BUTTON_THEME_OPTIONS.find((option) => option.value === value)?.label ?? value;
+}
 const ICON_MAP = new Map(BUTTON_ICON_OPTIONS.map((item) => [item.value, item.icon]));
 function resolveTemplateThemeClasses(theme: ButtonTemplate['theme'] | undefined) {
     switch (theme) {
@@ -49,6 +78,11 @@ function resolveTemplateThemeClasses(theme: ButtonTemplate['theme'] | undefined)
                 solid: 'border-violet-500 bg-violet-500 text-white hover:bg-violet-600 hover:border-violet-600',
                 soft: 'border-violet-200 bg-violet-50 text-violet-700 hover:bg-violet-100',
             };
+        case 'custom':
+            return {
+                solid: 'border font-bold shadow-sm transition-colors hover:opacity-90',
+                soft: 'border font-bold transition-colors hover:opacity-90',
+            };
         case 'blue':
         default:
             return {
@@ -57,7 +91,7 @@ function resolveTemplateThemeClasses(theme: ButtonTemplate['theme'] | undefined)
             };
     }
 }
-export function getLessonFooterButtonClassName(template?: Pick<ButtonTemplate, 'variant' | 'theme'> | null) {
+export function getLessonFooterButtonClassName(template?: Pick<ButtonTemplate, 'variant' | 'theme' | 'custom_background_color' | 'custom_text_color'> | null) {
     const themeClasses = resolveTemplateThemeClasses(template?.theme);
     switch (template?.variant) {
         case 'primary':
@@ -65,13 +99,24 @@ export function getLessonFooterButtonClassName(template?: Pick<ButtonTemplate, '
         case 'secondary':
             return cn('rounded-xl border font-bold transition-colors', themeClasses.soft);
         case 'ghost':
-            return cn('rounded-xl border border-transparent bg-transparent font-bold transition-colors', themeClasses.soft);
+            return cn('rounded-xl border border-transparent bg-transparent font-bold transition-colors', template?.theme === 'custom' ? 'hover:opacity-80' : themeClasses.soft.replace(/border-[^ ]+|bg-[^ ]+/g, '').trim());
         case 'link':
-            return cn('rounded-xl border border-transparent bg-transparent font-bold underline-offset-4 hover:underline', themeClasses.soft);
+            return cn('rounded-xl border border-transparent bg-transparent font-bold underline-offset-4 hover:underline', template?.theme === 'custom' ? 'hover:opacity-80' : themeClasses.soft.replace(/border-[^ ]+|bg-[^ ]+/g, '').trim());
         case 'outline':
         default:
-            return cn('rounded-xl border bg-white font-bold transition-colors', themeClasses.soft);
+            return cn('rounded-xl border bg-white font-bold transition-colors', themeClasses.soft.replace(/bg-[^ ]+|hover:bg-[^ ]+/g, '').trim());
     }
+}
+export function getLessonFooterButtonStyle(template?: Pick<ButtonTemplate, 'variant' | 'theme' | 'custom_background_color' | 'custom_text_color'> | null): CSSProperties | undefined {
+    if (template?.theme !== 'custom' || !template.custom_background_color || !template.custom_text_color) {
+        return undefined;
+    }
+    const isTransparentVariant = template.variant === 'ghost' || template.variant === 'link';
+    return {
+        color: template.custom_text_color,
+        backgroundColor: isTransparentVariant ? 'transparent' : template.custom_background_color,
+        borderColor: isTransparentVariant ? 'transparent' : template.custom_background_color,
+    };
 }
 export function renderButtonTemplateIcon(iconName: string | null | undefined, className?: string) {
     const normalizedIconName = iconName?.trim() ?? '';

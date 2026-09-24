@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Loader2, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { BUTTON_ICON_OPTIONS, getLessonFooterButtonClassName, renderButtonTemplateIcon, } from '@/features/admin/content/button-template-icons';
+import { BUTTON_ICON_OPTIONS, BUTTON_THEME_OPTIONS, BUTTON_VARIANT_OPTIONS, getButtonThemeLabel, getButtonVariantLabel, getLessonFooterButtonClassName, getLessonFooterButtonStyle, renderButtonTemplateIcon, } from '@/features/admin/content/button-template-icons';
 import { createButtonTemplate, deleteButtonTemplate, fetchButtonTemplates, toErrorMessage, updateButtonTemplate, } from '@/features/admin/content/api';
 import { buttonTemplateFormSchema, type ButtonTemplateFormInput, } from '@/features/admin/content/schemas';
 import type { ButtonTemplate } from '@/types/content';
@@ -15,11 +15,11 @@ const INITIAL_FORM: ButtonTemplateFormInput = {
     default_label: '',
     variant: 'outline',
     theme: 'blue',
+    custom_background_color: null,
+    custom_text_color: null,
     icon: 'link',
     is_active: true,
 };
-const VARIANTS: ButtonTemplateFormInput['variant'][] = ['primary', 'secondary', 'outline', 'ghost', 'link'];
-const THEMES: ButtonTemplateFormInput['theme'][] = ['blue', 'emerald', 'amber', 'rose', 'slate', 'violet'];
 
 export function AdminButtonTemplatesPage() {
     const [activeTab, setActiveTab] = useState<'templates' | 'globals'>('templates');
@@ -94,6 +94,8 @@ export function AdminButtonTemplatesPage() {
             default_label: template.default_label,
             variant: template.variant,
             theme: template.theme,
+            custom_background_color: template.custom_background_color ?? null,
+            custom_text_color: template.custom_text_color ?? null,
             icon: template.icon,
             is_active: template.is_active,
         });
@@ -264,16 +266,40 @@ export function AdminButtonTemplatesPage() {
             <label className="block space-y-2">
               <span className="text-sm font-bold text-slate-700">Variante</span>
               <select className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm" value={form.variant} onChange={(event) => setForm((prev) => ({ ...prev, variant: event.target.value as ButtonTemplateFormInput['variant'] }))}>
-                {VARIANTS.map((variant) => (<option key={variant} value={variant}>{variant}</option>))}
+                {BUTTON_VARIANT_OPTIONS.map((variant) => (<option key={variant.value} value={variant.value}>{variant.label}</option>))}
               </select>
             </label>
 
             <label className="block space-y-2">
               <span className="text-sm font-bold text-slate-700">Tema</span>
-              <select className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm" value={form.theme} onChange={(event) => setForm((prev) => ({ ...prev, theme: event.target.value as ButtonTemplateFormInput['theme'] }))}>
-                {THEMES.map((theme) => (<option key={theme} value={theme}>{theme}</option>))}
+              <select className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm" value={form.theme} onChange={(event) => setForm((prev) => {
+                  const theme = event.target.value as ButtonTemplateFormInput['theme'];
+                  return theme === 'custom'
+                      ? { ...prev, theme, custom_background_color: prev.custom_background_color ?? '#0A3640', custom_text_color: prev.custom_text_color ?? '#FFFFFF' }
+                      : { ...prev, theme };
+              })}>
+                {BUTTON_THEME_OPTIONS.map((theme) => (<option key={theme.value} value={theme.value}>{theme.label}</option>))}
               </select>
             </label>
+
+            {form.theme === 'custom' ? (
+              <div className="grid gap-3 sm:grid-cols-2">
+                <label className="block space-y-2">
+                  <span className="text-sm font-bold text-slate-700">Cor do fundo</span>
+                  <div className="flex items-center gap-2">
+                    <input type="color" value={form.custom_background_color ?? '#0A3640'} onChange={(event) => setForm((prev) => ({ ...prev, custom_background_color: event.target.value.toUpperCase() }))} className="h-11 w-14 cursor-pointer rounded-xl border border-slate-200 bg-white p-1" aria-label="Selecionar cor do fundo"/>
+                    <input value={form.custom_background_color ?? ''} onChange={(event) => setForm((prev) => ({ ...prev, custom_background_color: event.target.value.toUpperCase() }))} placeholder="#0A3640" maxLength={7} className="min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm uppercase"/>
+                  </div>
+                </label>
+                <label className="block space-y-2">
+                  <span className="text-sm font-bold text-slate-700">Cor do texto</span>
+                  <div className="flex items-center gap-2">
+                    <input type="color" value={form.custom_text_color ?? '#FFFFFF'} onChange={(event) => setForm((prev) => ({ ...prev, custom_text_color: event.target.value.toUpperCase() }))} className="h-11 w-14 cursor-pointer rounded-xl border border-slate-200 bg-white p-1" aria-label="Selecionar cor do texto"/>
+                    <input value={form.custom_text_color ?? ''} onChange={(event) => setForm((prev) => ({ ...prev, custom_text_color: event.target.value.toUpperCase() }))} placeholder="#FFFFFF" maxLength={7} className="min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm uppercase"/>
+                  </div>
+                </label>
+              </div>
+            ) : null}
 
             <label className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3">
               <input type="checkbox" checked={form.is_active} onChange={(event) => setForm((prev) => ({ ...prev, is_active: event.target.checked }))}/>
@@ -297,9 +323,16 @@ export function AdminButtonTemplatesPage() {
           <div className="mt-6 rounded-[24px] border border-slate-200 bg-white p-4">
             <p className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">Preview do botão</p>
             <div className="mt-4">
-              <Button type="button" variant="outline" className={getLessonFooterButtonClassName({
+              <Button type="button" variant="outline" style={getLessonFooterButtonStyle({
             variant: form.variant,
             theme: form.theme,
+            custom_background_color: form.custom_background_color,
+            custom_text_color: form.custom_text_color,
+        })} className={getLessonFooterButtonClassName({
+            variant: form.variant,
+            theme: form.theme,
+            custom_background_color: form.custom_background_color,
+            custom_text_color: form.custom_text_color,
         })}>
                 {renderButtonTemplateIcon(form.icon)}
                 {form.default_label || 'Nome do Botão'}
@@ -324,13 +357,13 @@ export function AdminButtonTemplatesPage() {
                         </span>
                       </div>
                       <div className="mt-3">
-                        <Button type="button" variant="outline" className={getLessonFooterButtonClassName(template)}>
+                        <Button type="button" variant="outline" style={getLessonFooterButtonStyle(template)} className={getLessonFooterButtonClassName(template)}>
                           {renderButtonTemplateIcon(template.icon)}
                           {template.default_label}
                         </Button>
                       </div>
                       <p className="mt-1 text-xs uppercase tracking-wider text-slate-400">
-                        {template.variant} • {template.theme} • {template.icon}
+                        {getButtonVariantLabel(template.variant)} • {getButtonThemeLabel(template.theme)} • {template.icon}
                       </p>
                     </div>
 

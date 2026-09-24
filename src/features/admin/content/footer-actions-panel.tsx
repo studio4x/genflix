@@ -21,6 +21,7 @@ import {
 import {
     getLessonFooterActionScopeLabel,
     getLessonFooterButtonClassName,
+    getLessonFooterButtonStyle,
     renderButtonTemplateIcon,
 } from '@/features/admin/content/button-template-icons';
 import { LessonActionButton } from '@/features/admin/content/lesson-action-button';
@@ -538,7 +539,7 @@ export function FooterActionsPanel({
                           const selectedTemplate = activeTemplates.find((template) => template.id === selectedTemplateId) ?? null;
                           if (!selectedTemplate) return null;
                           return (
-                            <Button type="button" variant="outline" className={getLessonFooterButtonClassName(selectedTemplate)}>
+                            <Button type="button" variant="outline" style={getLessonFooterButtonStyle(selectedTemplate)} className={getLessonFooterButtonClassName(selectedTemplate)}>
                               {renderButtonTemplateIcon(selectedTemplate.icon)}
                               {selectedTemplate.default_label}
                             </Button>

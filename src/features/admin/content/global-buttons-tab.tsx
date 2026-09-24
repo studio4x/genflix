@@ -14,6 +14,10 @@ import {
 } from '@/features/admin/content/api';
 import {
     BUTTON_ICON_OPTIONS,
+    BUTTON_THEME_OPTIONS,
+    BUTTON_VARIANT_OPTIONS,
+    getButtonThemeLabel,
+    getButtonVariantLabel,
 } from '@/features/admin/content/button-template-icons';
 import { LessonActionButton } from '@/features/admin/content/lesson-action-button';
 import { LessonContentBlocksEditor, LessonContentBlocksRenderer } from '@/features/admin/content/lesson-content-blocks';
@@ -35,8 +39,8 @@ const OPEN_TARGET_OPTIONS: Array<{
     { label: 'Nova Janela Pop-up', value: 'new-window' },
 ];
 
-const VARIANTS = ['primary', 'secondary', 'outline', 'ghost', 'link'] as const;
-const THEMES = ['blue', 'emerald', 'amber', 'rose', 'slate', 'violet'] as const;
+const VARIANTS = BUTTON_VARIANT_OPTIONS;
+const THEMES = BUTTON_THEME_OPTIONS;
 
 interface FormState {
     name: string;
@@ -318,7 +322,7 @@ export function GlobalButtonsTab() {
                             <option value="">Personalizado (Sem padrão específico)</option>
                             {templates.filter((t) => t.is_active).map((t) => (
                                 <option key={t.id} value={t.id}>
-                                    {t.name} • {t.default_label} ({t.variant}/{t.theme})
+                                    {t.name} • {t.default_label} ({getButtonVariantLabel(t.variant)}/{getButtonThemeLabel(t.theme)})
                                 </option>
                             ))}
                         </select>
@@ -344,7 +348,7 @@ export function GlobalButtonsTab() {
                                             onChange={(e) => setForm((prev) => ({ ...prev, variant: e.target.value as FormState['variant'] }))}
                                         >
                                             {VARIANTS.map((v) => (
-                                                <option key={v} value={v}>{v}</option>
+                                                <option key={v.value} value={v.value}>{v.label}</option>
                                             ))}
                                         </select>
                                     </label>
@@ -356,7 +360,7 @@ export function GlobalButtonsTab() {
                                             onChange={(e) => setForm((prev) => ({ ...prev, theme: e.target.value as FormState['theme'] }))}
                                         >
                                             {THEMES.map((t) => (
-                                                <option key={t} value={t}>{t}</option>
+                                                <option key={t.value} value={t.value}>{t.label}</option>
                                             ))}
                                         </select>
                                     </label>

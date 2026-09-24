@@ -9,6 +9,7 @@ import {
 } from '@/components/ui/dialog';
 import {
     getLessonFooterButtonClassName,
+    getLessonFooterButtonStyle,
     renderButtonTemplateIcon,
     getLessonFooterActionIconName,
 } from '@/features/admin/content/button-template-icons';
@@ -288,6 +289,7 @@ export function LessonActionButton({
                     widthClass,
                     className
                 )}
+                style={getLessonFooterButtonStyle(effectiveTemplate)}
             >
                 {isLoadingFile ? (
                     <svg className="animate-spin h-4 w-4 mr-2" viewBox="0 0 24 24">

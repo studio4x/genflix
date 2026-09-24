@@ -214,9 +214,20 @@ export const buttonTemplateFormSchema = z.object({
     name: z.string().trim().min(2, "Nome do padrão obrigatório."),
     default_label: z.string().trim().min(2, "Rótulo padrão obrigatório."),
     variant: z.enum(['primary', 'secondary', 'outline', 'ghost', 'link']),
-    theme: z.enum(['blue', 'emerald', 'amber', 'rose', 'slate', 'violet']),
+    theme: z.enum(['blue', 'emerald', 'amber', 'rose', 'slate', 'violet', 'custom']),
+    custom_background_color: z.string().regex(/^#[0-9A-Fa-f]{6}$/, 'Informe uma cor HEX vÃ¡lida.').nullable().default(null),
+    custom_text_color: z.string().regex(/^#[0-9A-Fa-f]{6}$/, 'Informe uma cor HEX vÃ¡lida.').nullable().default(null),
     icon: z.string().trim().min(2, "Ícone obrigatório."),
     is_active: z.boolean().default(true),
+}).superRefine((value, ctx) => {
+    if (value.theme === 'custom') {
+        if (!value.custom_background_color) {
+            ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['custom_background_color'], message: 'Informe a cor de fundo do botÃ£o.' });
+        }
+        if (!value.custom_text_color) {
+            ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['custom_text_color'], message: 'Informe a cor do texto do botÃ£o.' });
+        }
+    }
 });
 
 export const modalImageBlockContentSchema = z.object({
@@ -349,7 +360,9 @@ export const lessonButtonBlockLocalConfigSchema = z.object({
     template_id: z.string().uuid().nullable().optional(),
     label: z.string().trim().min(1, 'Rótulo do botão obrigatório.'),
     variant: z.enum(['primary', 'secondary', 'outline', 'ghost', 'link']),
-    theme: z.enum(['blue', 'emerald', 'amber', 'rose', 'slate', 'violet']),
+    theme: z.enum(['blue', 'emerald', 'amber', 'rose', 'slate', 'violet', 'custom']),
+    custom_background_color: z.string().regex(/^#[0-9A-Fa-f]{6}$/, 'Informe uma cor HEX vÃ¡lida.').nullable().optional(),
+    custom_text_color: z.string().regex(/^#[0-9A-Fa-f]{6}$/, 'Informe uma cor HEX vÃ¡lida.').nullable().optional(),
     icon: z.string().trim().min(2, 'Ícone obrigatório.'),
     action_type: z.enum(['file', 'url', 'modal']),
     url: z.string().trim().url('URL inválida').or(z.literal('')).nullable().optional(),
