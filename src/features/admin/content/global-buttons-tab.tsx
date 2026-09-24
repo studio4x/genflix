@@ -13,9 +13,6 @@ import {
     uploadLessonContentAsset,
 } from '@/features/admin/content/api';
 import {
-    BUTTON_ICON_OPTIONS,
-    BUTTON_THEME_OPTIONS,
-    BUTTON_VARIANT_OPTIONS,
     getButtonThemeLabel,
     getButtonVariantLabel,
 } from '@/features/admin/content/button-template-icons';
@@ -39,9 +36,6 @@ const OPEN_TARGET_OPTIONS: Array<{
     { label: 'Mesma Aba (_self)', value: 'same-tab' },
     { label: 'Nova Janela Pop-up', value: 'new-window' },
 ];
-
-const VARIANTS = BUTTON_VARIANT_OPTIONS;
-const THEMES = BUTTON_THEME_OPTIONS;
 
 interface FormState {
     name: string;
@@ -202,6 +196,10 @@ export function GlobalButtonsTab() {
 
     const handleSubmit = async () => {
         setError(null);
+        if (!form.template_id) {
+            setError('Selecione um padrão visual antes de criar o botão global. Para criar um visual personalizado, crie o padrão na aba "Padrões Visuais".');
+            return;
+        }
         const parsed = globalButtonDefinitionFormSchema.safeParse({
             name: form.name,
             label: form.label,
@@ -321,13 +319,16 @@ export function GlobalButtonsTab() {
                             value={form.template_id}
                             onChange={(e) => handleSelectTemplate(e.target.value)}
                         >
-                            <option value="">Personalizado (Sem padrão específico)</option>
+                            <option value="" disabled>Selecione um padrão visual</option>
                             {templates.filter((t) => t.is_active).map((t) => (
                                 <option key={t.id} value={t.id}>
                                     {t.name} • {t.default_label} ({getButtonVariantLabel(t.variant)}/{getButtonThemeLabel(t.theme)})
                                 </option>
                             ))}
                         </select>
+                        <p className="text-[11px] leading-relaxed text-slate-500">
+                            Botões globais usam padrões visuais cadastrados na aba <strong>Padrões Visuais</strong>. Para criar um visual personalizado, crie o padrão nessa aba e depois selecione-o aqui.
+                        </p>
 
                         <label className="block space-y-1 pt-1">
                             <span className="text-xs font-bold text-slate-700">Texto / Rótulo do botão</span>
@@ -340,47 +341,9 @@ export function GlobalButtonsTab() {
                         </label>
 
                         {!selectedTemplate ? (
-                            <div className="space-y-3 pt-2 border-t border-slate-100">
-                                <div className="grid grid-cols-2 gap-3">
-                                    <label className="block space-y-1">
-                                        <span className="text-xs font-bold text-slate-700">Variante</span>
-                                        <select
-                                            className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs"
-                                            value={form.variant}
-                                            onChange={(e) => setForm((prev) => ({ ...prev, variant: e.target.value as FormState['variant'] }))}
-                                        >
-                                            {VARIANTS.map((v) => (
-                                                <option key={v.value} value={v.value}>{v.label}</option>
-                                            ))}
-                                        </select>
-                                    </label>
-                                    <label className="block space-y-1">
-                                        <span className="text-xs font-bold text-slate-700">Tema de cor</span>
-                                        <select
-                                            className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs"
-                                            value={form.theme}
-                                            onChange={(e) => setForm((prev) => ({ ...prev, theme: e.target.value as FormState['theme'] }))}
-                                        >
-                                            {THEMES.map((t) => (
-                                                <option key={t.value} value={t.value}>{t.label}</option>
-                                            ))}
-                                        </select>
-                                    </label>
-                                </div>
-
-                                <label className="block space-y-1">
-                                    <span className="text-xs font-bold text-slate-700">Ícone</span>
-                                    <select
-                                        className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs"
-                                        value={form.icon}
-                                        onChange={(e) => setForm((prev) => ({ ...prev, icon: e.target.value }))}
-                                    >
-                                        {BUTTON_ICON_OPTIONS.map((opt) => (
-                                            <option key={opt.value} value={opt.value}>{opt.label}</option>
-                                        ))}
-                                    </select>
-                                </label>
-                            </div>
+                            <p className="border-t border-slate-100 pt-3 text-xs font-semibold text-amber-700">
+                                Se o padrão ainda não existe, abra a aba <strong>Padrões Visuais</strong> e crie-o antes de cadastrar este botão global.
+                            </p>
                         ) : null}
                     </div>
 
