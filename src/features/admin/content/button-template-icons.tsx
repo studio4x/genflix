@@ -124,16 +124,15 @@ export function renderButtonTemplateIcon(iconName: string | null | undefined, cl
         if (color) {
             const maskStyle: CSSProperties = {
                 backgroundColor: color,
-                maskImage: `url("${normalizedIconName}")`,
-                WebkitMaskImage: `url("${normalizedIconName}")`,
-                maskPosition: 'center',
-                WebkitMaskPosition: 'center',
-                maskRepeat: 'no-repeat',
-                WebkitMaskRepeat: 'no-repeat',
-                maskSize: 'contain',
-                WebkitMaskSize: 'contain',
+                mask: `url("${normalizedIconName}") center / contain no-repeat`,
+                WebkitMask: `url("${normalizedIconName}") center / contain no-repeat`,
             };
-            return <span aria-hidden="true" className={cn('inline-block h-4 w-4 bg-current', className)} style={maskStyle}/>;
+            return (
+                <span aria-hidden="true" className={cn('relative inline-block h-4 w-4 shrink-0', className)}>
+                    <img src={normalizedIconName} alt="" className="absolute inset-0 h-full w-full object-contain"/>
+                    <span className="absolute inset-0 bg-current" style={maskStyle}/>
+                </span>
+            );
         }
         return <img src={normalizedIconName} alt="" aria-hidden="true" className={cn('h-4 w-4 object-contain', className)} style={color ? { color } : undefined}/>;
     }

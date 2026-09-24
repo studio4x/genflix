@@ -440,7 +440,7 @@ export function LessonButtonBlockModal({
                                                 style={getLessonFooterButtonStyle(tmpl)}
                                                 className={getLessonFooterButtonClassName(tmpl)}
                                             >
-                                                {renderButtonTemplateIcon(tmpl.icon, undefined, tmpl.custom_icon_color)}
+                                                {renderButtonTemplateIcon(tmpl.icon, undefined, tmpl.theme === 'custom' ? tmpl.custom_icon_color : null)}
                                                 <span>{tmpl.default_label || tmpl.name}</span>
                                             </Button>
                                         </div>
@@ -516,7 +516,15 @@ export function LessonButtonBlockModal({
                                     <select
                                         className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm"
                                         value={theme}
-                                        onChange={(e) => setTheme(e.target.value as ButtonTemplate['theme'])}
+                                        onChange={(e) => {
+                                            const nextTheme = e.target.value as ButtonTemplate['theme'];
+                                            setTheme(nextTheme);
+                                            if (nextTheme !== 'custom') {
+                                                setCustomBackgroundColor(null);
+                                                setCustomTextColor(null);
+                                                setCustomIconColor(null);
+                                            }
+                                        }}
                                     >
                                         {THEMES.map((th) => (
                                             <option key={th.value} value={th.value}>

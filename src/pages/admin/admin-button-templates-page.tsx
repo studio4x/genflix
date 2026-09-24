@@ -278,7 +278,7 @@ export function AdminButtonTemplatesPage() {
                   const theme = event.target.value as ButtonTemplateFormInput['theme'];
                   return theme === 'custom'
                       ? { ...prev, theme, custom_background_color: prev.custom_background_color ?? '#0A3640', custom_text_color: prev.custom_text_color ?? '#FFFFFF', custom_icon_color: prev.custom_icon_color ?? '#FFFFFF' }
-                      : { ...prev, theme };
+                      : { ...prev, theme, custom_background_color: null, custom_text_color: null, custom_icon_color: null };
               })}>
                 {BUTTON_THEME_OPTIONS.map((theme) => (<option key={theme.value} value={theme.value}>{theme.label}</option>))}
               </select>
@@ -345,7 +345,7 @@ export function AdminButtonTemplatesPage() {
             custom_text_color: form.custom_text_color,
             custom_icon_color: form.custom_icon_color,
         })}>
-                {renderButtonTemplateIcon(form.icon, undefined, form.custom_icon_color)}
+                {renderButtonTemplateIcon(form.icon, undefined, form.theme === 'custom' ? form.custom_icon_color : null)}
                 {form.default_label || 'Nome do Botão'}
               </Button>
             </div>
@@ -369,7 +369,7 @@ export function AdminButtonTemplatesPage() {
                       </div>
                       <div className="mt-3">
                         <Button type="button" variant="outline" style={getLessonFooterButtonStyle(template)} className={getLessonFooterButtonClassName(template)}>
-                          {renderButtonTemplateIcon(template.icon, undefined, template.custom_icon_color)}
+                          {renderButtonTemplateIcon(template.icon, undefined, template.theme === 'custom' ? template.custom_icon_color : null)}
                           {template.default_label}
                         </Button>
                       </div>

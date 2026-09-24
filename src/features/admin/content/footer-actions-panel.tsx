@@ -540,7 +540,7 @@ export function FooterActionsPanel({
                           if (!selectedTemplate) return null;
                           return (
                             <Button type="button" variant="outline" style={getLessonFooterButtonStyle(selectedTemplate)} className={getLessonFooterButtonClassName(selectedTemplate)}>
-                              {renderButtonTemplateIcon(selectedTemplate.icon, undefined, selectedTemplate.custom_icon_color)}
+                              {renderButtonTemplateIcon(selectedTemplate.icon, undefined, selectedTemplate.theme === 'custom' ? selectedTemplate.custom_icon_color : null)}
                               {selectedTemplate.default_label}
                             </Button>
                           );
