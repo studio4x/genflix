@@ -222,7 +222,7 @@ export function AdminButtonTemplatesPage() {
 
               <div className="rounded-2xl border border-slate-200 bg-white p-3">
                 <p className="mb-2 text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Ícones nativos</p>
-                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                <div className="grid grid-cols-6 gap-2">
                   {BUTTON_ICON_OPTIONS.filter((iconOption) => {
                       const normalizedQuery = iconSearchQuery.trim().toLowerCase();
                       return normalizedQuery === '' || iconOption.label.toLowerCase().includes(normalizedQuery) || iconOption.value.includes(normalizedQuery);
@@ -247,7 +247,7 @@ export function AdminButtonTemplatesPage() {
                 ) : filteredIconLibraryAssets.length === 0 ? (
                   <p className="text-xs font-semibold text-slate-500">Nenhum SVG encontrado.</p>
                 ) : (
-                  <div className="grid max-h-64 grid-cols-2 gap-2 overflow-y-auto sm:grid-cols-3">
+                  <div className="grid max-h-64 grid-cols-6 gap-2 overflow-y-auto">
                     {filteredIconLibraryAssets.map((asset) => {
                         const iconValue = asset.public_url ?? '';
                         const isSelected = form.icon === iconValue;
