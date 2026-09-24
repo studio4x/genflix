@@ -22,6 +22,7 @@ import {
 import { LessonActionButton } from '@/features/admin/content/lesson-action-button';
 import { LessonContentBlocksEditor, LessonContentBlocksRenderer } from '@/features/admin/content/lesson-content-blocks';
 import { DEFAULT_MODAL_TITLE, DEFAULT_MODAL_SUBTITLE, type LessonContentBlock } from '@/features/admin/content/content-blocks';
+import { ModalButtonConfigDialog } from '@/features/admin/content/modal-button-config-dialog';
 import { globalButtonDefinitionFormSchema } from '@/features/admin/content/schemas';
 import type {
     ButtonActionType,
@@ -91,6 +92,7 @@ export function GlobalButtonsTab() {
     const [isUploadingFile, setIsUploadingFile] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
+    const [isModalConfigOpen, setIsModalConfigOpen] = useState(false);
 
     const loadData = async () => {
         setIsLoading(true);
@@ -454,42 +456,17 @@ export function GlobalButtonsTab() {
                                 </label>
                             </div>
                         ) : (
-                            <div className="space-y-3 pt-2">
-                                <label className="block space-y-1">
-                                    <span className="text-xs font-bold text-slate-700">Título do Modal</span>
-                                    <input
-                                        className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-blue-100 font-semibold"
-                                        placeholder="Ex: Material Complementar"
-                                        value={form.modal_title}
-                                        onChange={(e) => setForm((prev) => ({ ...prev, modal_title: e.target.value }))}
-                                    />
-                                </label>
-
-                                <label className="block space-y-1">
-                                    <span className="text-xs font-bold text-slate-700">Subtítulo do Modal</span>
-                                    <input
-                                        className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-blue-100 font-normal"
-                                        placeholder="Ex: Conteúdo complementar da aula."
-                                        value={form.modal_subtitle}
-                                        onChange={(e) => setForm((prev) => ({ ...prev, modal_subtitle: e.target.value }))}
-                                    />
-                                    <p className="text-[11px] text-slate-500">
-                                        Opcional. Se mantido em branco, o modal será exibido sem a linha de subtítulo.
-                                    </p>
-                                </label>
-
-                                <div className="space-y-2">
-                                    <span className="text-xs font-bold text-slate-700">Conteúdo do modal (blocos educacionais)</span>
-                                    <div className="rounded-xl border border-slate-200 bg-slate-50/50 p-3 max-h-[360px] overflow-y-auto">
-                                        <LessonContentBlocksEditor
-                                            blocks={form.modal_blocks}
-                                            onChange={(nextBlocks) => setForm((prev) => ({ ...prev, modal_blocks: nextBlocks }))}
-                                            level={1}
-                                            allowEmptyState={false}
-                                            excludedBlockTypes={['button', 'image-hotspots', 'flashcards', 'svg']}
-                                            assetContext="global"
-                                        />
+                            <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-4">
+                                <div className="flex flex-wrap items-center justify-between gap-3">
+                                    <div>
+                                        <p className="text-xs font-black text-slate-800">Configuração do modal</p>
+                                        <p className="mt-1 text-xs text-slate-500">
+                                            {form.modal_title || DEFAULT_MODAL_TITLE} · {form.modal_blocks.length} bloco{form.modal_blocks.length !== 1 ? 's' : ''}
+                                        </p>
                                     </div>
+                                    <Button type="button" variant="outline" className="rounded-xl font-bold" onClick={() => setIsModalConfigOpen(true)}>
+                                        Personalizar modal
+                                    </Button>
                                 </div>
                             </div>
                         )}
@@ -656,6 +633,28 @@ export function GlobalButtonsTab() {
                     )}
                 </section>
             </div>
+
+            <ModalButtonConfigDialog
+                open={isModalConfigOpen}
+                onOpenChange={setIsModalConfigOpen}
+                value={{ title: form.modal_title, subtitle: form.modal_subtitle, blocks: form.modal_blocks }}
+                onChange={(nextValue) => setForm((prev) => ({
+                    ...prev,
+                    modal_title: nextValue.title,
+                    modal_subtitle: nextValue.subtitle,
+                    modal_blocks: nextValue.blocks,
+                }))}
+                renderBlockEditor={({ blocks, onChange }) => (
+                    <LessonContentBlocksEditor
+                        blocks={blocks}
+                        onChange={onChange}
+                        level={1}
+                        allowEmptyState={false}
+                        excludedBlockTypes={['button', 'image-hotspots', 'flashcards', 'svg']}
+                        assetContext="global"
+                    />
+                )}
+            />
         </div>
     );
 }

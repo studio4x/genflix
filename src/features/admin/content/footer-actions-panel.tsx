@@ -27,6 +27,7 @@ import {
 import { LessonActionButton } from '@/features/admin/content/lesson-action-button';
 import { LessonContentBlocksEditor, LessonContentBlocksRenderer } from '@/features/admin/content/lesson-content-blocks';
 import { DEFAULT_MODAL_TITLE, DEFAULT_MODAL_SUBTITLE, type LessonContentBlock } from '@/features/admin/content/content-blocks';
+import { ModalButtonConfigDialog } from '@/features/admin/content/modal-button-config-dialog';
 import type { ButtonTemplate, FooterActionScope, GlobalButtonDefinition, LessonFooterAction } from '@/types/content';
 
 type LessonFooterActionOpenTarget = 'same-tab' | 'new-tab' | 'new-window';
@@ -116,6 +117,7 @@ export function FooterActionsPanel({
     const [modalBlocks, setModalBlocks] = useState<LessonContentBlock[]>([
         { type: 'rich-text', content: '<p>Conteúdo da janela modal...</p>' },
     ]);
+    const [isModalConfigOpen, setIsModalConfigOpen] = useState(false);
 
     // Global linking
     const [selectedGlobalButtonId, setSelectedGlobalButtonId] = useState('');
@@ -130,6 +132,7 @@ export function FooterActionsPanel({
     const [editingModalTitle, setEditingModalTitle] = useState('');
     const [editingModalSubtitle, setEditingModalSubtitle] = useState('');
     const [editingModalBlocks, setEditingModalBlocks] = useState<LessonContentBlock[]>([]);
+    const [isEditingModalConfigOpen, setIsEditingModalConfigOpen] = useState(false);
 
     const [isLoading, setIsLoading] = useState(true);
     const [isUploading, setIsUploading] = useState(false);
@@ -206,6 +209,7 @@ export function FooterActionsPanel({
         setEditingModalTitle('');
         setEditingModalSubtitle('');
         setEditingModalBlocks([]);
+        setIsEditingModalConfigOpen(false);
     }
 
     async function handleUpload(event: ChangeEvent<HTMLInputElement>) {
@@ -328,8 +332,10 @@ export function FooterActionsPanel({
                 await createLessonFooterAction(lessonId ?? '', parsed.data, user.id);
             }
             setModalTitle('');
+            setModalSubtitle(DEFAULT_MODAL_SUBTITLE);
             setModalButtonLabel('');
             setModalBlocks([{ type: 'rich-text', content: '<p>Conteúdo da janela modal...</p>' }]);
+            setIsModalConfigOpen(false);
             await loadData();
             publishBuilderNotice({
                 type: 'success',
@@ -610,34 +616,17 @@ export function FooterActionsPanel({
                       onChange={(e) => setModalButtonLabel(e.target.value)}
                     />
                   </label>
-                  <label className="block space-y-1">
-                    <span className="text-xs font-bold text-slate-700">Título do Modal</span>
-                    <input
-                      className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-blue-100 font-semibold"
-                      placeholder="Ex: Material Complementar"
-                      value={modalTitle}
-                      onChange={(e) => setModalTitle(e.target.value)}
-                    />
-                  </label>
-                  <label className="block space-y-1">
-                    <span className="text-xs font-bold text-slate-700">Subtítulo do Modal</span>
-                    <input
-                      className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-blue-100 font-normal"
-                      placeholder="Ex: Conteúdo complementar da aula."
-                      value={modalSubtitle}
-                      onChange={(e) => setModalSubtitle(e.target.value)}
-                    />
-                  </label>
-                  <div className="space-y-1">
-                    <span className="text-xs font-bold text-slate-700">Conteúdo do modal</span>
-                    <div className="rounded-xl border border-slate-200 bg-slate-50/50 p-2 max-h-[300px] overflow-y-auto">
-                      <LessonContentBlocksEditor
-                        blocks={modalBlocks}
-                        onChange={setModalBlocks}
-                        level={1}
-                        allowEmptyState={false}
-                        excludedBlockTypes={['button', 'image-hotspots', 'flashcards', 'svg']}
-                      />
+                  <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-4">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div>
+                        <p className="text-xs font-black text-slate-800">Configuração do modal</p>
+                        <p className="mt-1 text-xs text-slate-500">
+                          {modalTitle || DEFAULT_MODAL_TITLE} · {modalBlocks.length} bloco{modalBlocks.length !== 1 ? 's' : ''}
+                        </p>
+                      </div>
+                      <Button type="button" variant="outline" className="rounded-xl font-bold" onClick={() => setIsModalConfigOpen(true)}>
+                        Personalizar modal
+                      </Button>
                     </div>
                   </div>
                   <Button className="w-full rounded-xl bg-slate-900 hover:bg-slate-800 font-bold" onClick={() => void handleCreateModalAction()}>
@@ -859,36 +848,17 @@ export function FooterActionsPanel({
                       <p className="text-xs text-slate-500">Se nenhum novo arquivo for escolhido, o arquivo atual será mantido.</p>
                     </label>
                   ) : (
-                    <div className="space-y-3">
-                      <label className="block space-y-1">
-                        <span className="text-sm font-bold text-slate-800">Título da janela modal</span>
-                        <input
-                          className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm"
-                          placeholder="Ex: Instruções Adicionais"
-                          value={editingModalTitle}
-                          onChange={(e) => setEditingModalTitle(e.target.value)}
-                        />
-                      </label>
-                      <label className="block space-y-1">
-                        <span className="text-sm font-bold text-slate-800">Subtítulo da janela modal</span>
-                        <input
-                          className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm"
-                          placeholder="Ex: Conteúdo complementar da aula."
-                          value={editingModalSubtitle}
-                          onChange={(e) => setEditingModalSubtitle(e.target.value)}
-                        />
-                      </label>
-                      <div className="space-y-1">
-                        <span className="text-sm font-bold text-slate-800">Conteúdo dos blocos</span>
-                        <div className="rounded-2xl border border-slate-200 bg-slate-50/50 p-3 max-h-[300px] overflow-y-auto">
-                          <LessonContentBlocksEditor
-                            blocks={editingModalBlocks}
-                            onChange={setEditingModalBlocks}
-                            level={1}
-                            allowEmptyState={false}
-                            excludedBlockTypes={['button', 'image-hotspots', 'flashcards', 'svg']}
-                          />
+                    <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-4">
+                      <div className="flex flex-wrap items-center justify-between gap-3">
+                        <div>
+                          <p className="text-sm font-black text-slate-800">Configuração do modal</p>
+                          <p className="mt-1 text-xs text-slate-500">
+                            {editingModalTitle || DEFAULT_MODAL_TITLE} · {editingModalBlocks.length} bloco{editingModalBlocks.length !== 1 ? 's' : ''}
+                          </p>
                         </div>
+                        <Button type="button" variant="outline" className="rounded-xl font-bold" onClick={() => setIsEditingModalConfigOpen(true)}>
+                          Personalizar modal
+                        </Button>
                       </div>
                     </div>
                   )}
@@ -922,6 +892,46 @@ export function FooterActionsPanel({
               </div>
             </div>
           ) : null}
+
+          <ModalButtonConfigDialog
+            open={isModalConfigOpen}
+            onOpenChange={setIsModalConfigOpen}
+            value={{ title: modalTitle, subtitle: modalSubtitle, blocks: modalBlocks }}
+            onChange={(nextValue) => {
+              setModalTitle(nextValue.title);
+              setModalSubtitle(nextValue.subtitle);
+              setModalBlocks(nextValue.blocks);
+            }}
+            renderBlockEditor={({ blocks, onChange }) => (
+              <LessonContentBlocksEditor
+                blocks={blocks}
+                onChange={onChange}
+                level={1}
+                allowEmptyState={false}
+                excludedBlockTypes={['button', 'image-hotspots', 'flashcards', 'svg']}
+              />
+            )}
+          />
+
+          <ModalButtonConfigDialog
+            open={isEditingModalConfigOpen}
+            onOpenChange={setIsEditingModalConfigOpen}
+            value={{ title: editingModalTitle, subtitle: editingModalSubtitle, blocks: editingModalBlocks }}
+            onChange={(nextValue) => {
+              setEditingModalTitle(nextValue.title);
+              setEditingModalSubtitle(nextValue.subtitle);
+              setEditingModalBlocks(nextValue.blocks);
+            }}
+            renderBlockEditor={({ blocks, onChange }) => (
+              <LessonContentBlocksEditor
+                blocks={blocks}
+                onChange={onChange}
+                level={1}
+                allowEmptyState={false}
+                excludedBlockTypes={['button', 'image-hotspots', 'flashcards', 'svg']}
+              />
+            )}
+          />
         </section>
     );
 }

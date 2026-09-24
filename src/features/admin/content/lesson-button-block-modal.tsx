@@ -92,7 +92,7 @@ export function LessonButtonBlockModal({
     const [modalBlocks, setModalBlocks] = useState<LessonContentBlock[]>([
         { type: 'rich-text', content: '<p>Insira aqui o texto complementar deste modal...</p>' },
     ]);
-    const [isEditingModalBlocks, setIsEditingModalBlocks] = useState(false);
+    const [isModalConfigOpen, setIsModalConfigOpen] = useState(false);
 
     useEffect(() => {
         if (!isOpen) return;
@@ -613,48 +613,16 @@ export function LessonButtonBlockModal({
                                 )}
 
                                 {actionType === 'modal' && (
-                                    <div className="space-y-3 pt-2">
-                                        <label className="block space-y-1">
-                                            <span className="text-xs font-bold text-slate-700">Título do Modal</span>
-                                            <input
-                                                type="text"
-                                                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-semibold"
-                                                value={modalTitle}
-                                                onChange={(e) => setModalTitle(e.target.value)}
-                                                placeholder="Ex: Material Complementar"
-                                            />
-                                        </label>
-
-                                        <label className="block space-y-1">
-                                            <span className="text-xs font-bold text-slate-700">Subtítulo do Modal</span>
-                                            <input
-                                                type="text"
-                                                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-normal"
-                                                value={modalSubtitle}
-                                                onChange={(e) => setModalSubtitle(e.target.value)}
-                                                placeholder="Ex: Conteúdo complementar da aula."
-                                            />
-                                            <p className="text-[11px] text-slate-500">
-                                                Opcional. Se mantido em branco, o modal será exibido sem a linha de subtítulo.
-                                            </p>
-                                        </label>
-
-                                        <div className="rounded-xl border border-slate-200 bg-white p-4 flex items-center justify-between">
+                                    <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-4">
+                                        <div className="flex flex-wrap items-center justify-between gap-3">
                                             <div>
-                                                <p className="text-xs font-black text-slate-800">
-                                                    Conteúdo do Modal ({modalBlocks.length} bloco{modalBlocks.length !== 1 ? 's' : ''})
-                                                </p>
-                                                <p className="text-xs text-slate-500">
-                                                    Configure textos, imagens, vídeos ou tabelas internas.
+                                                <p className="text-xs font-black text-slate-800">Configuração do modal</p>
+                                                <p className="mt-1 text-xs text-slate-500">
+                                                    {modalTitle || DEFAULT_MODAL_TITLE} · {modalBlocks.length} bloco{modalBlocks.length !== 1 ? 's' : ''}
                                                 </p>
                                             </div>
-                                            <Button
-                                                type="button"
-                                                size="sm"
-                                                className="rounded-xl bg-slate-900 font-bold hover:bg-slate-800 text-white"
-                                                onClick={() => setIsEditingModalBlocks(true)}
-                                            >
-                                                Editar Conteúdo
+                                            <Button type="button" variant="outline" className="rounded-xl font-bold" onClick={() => setIsModalConfigOpen(true)}>
+                                                Personalizar modal
                                             </Button>
                                         </div>
                                     </div>
@@ -740,19 +708,42 @@ export function LessonButtonBlockModal({
             </DialogContent>
 
             {/* SUB-MODAL: CONSTRUTOR DE CONTEÚDO DO MODAL (Sem botões para evitar recursão) */}
-            {isEditingModalBlocks && (
-                <Dialog open={isEditingModalBlocks} onOpenChange={setIsEditingModalBlocks}>
+            {isModalConfigOpen && (
+                <Dialog open={isModalConfigOpen} onOpenChange={setIsModalConfigOpen}>
                     <DialogContent className="max-w-4xl max-h-[92vh] overflow-hidden flex flex-col p-0 rounded-[28px] border border-slate-200 bg-white shadow-2xl z-[150]">
                         <DialogHeader className="p-6 border-b border-slate-100 bg-slate-50/60">
                             <DialogTitle className="text-xl font-black text-slate-900">
-                                Conteúdo em Blocos do Modal
+                                Personalizar modal
                             </DialogTitle>
                             <DialogDescription className="text-xs text-slate-500">
-                                Adicione textos, imagens, vídeos, HTML ou tabelas que aparecerão quando o aluno clicar no botão.
+                                Configure o título, o subtítulo e o conteúdo exibido quando o aluno clicar no botão.
                             </DialogDescription>
                         </DialogHeader>
 
-                        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                        <div className="flex-1 space-y-5 overflow-y-auto p-6">
+                            <label className="block space-y-2">
+                                <span className="text-sm font-bold text-slate-800">Título do modal</span>
+                                <input
+                                    className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold"
+                                    placeholder="Ex: Material Complementar"
+                                    value={modalTitle}
+                                    onChange={(event) => setModalTitle(event.target.value)}
+                                />
+                            </label>
+
+                            <label className="block space-y-2">
+                                <span className="text-sm font-bold text-slate-800">Subtítulo do modal</span>
+                                <input
+                                    className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm"
+                                    placeholder="Ex: Conteúdo complementar da aula."
+                                    value={modalSubtitle}
+                                    onChange={(event) => setModalSubtitle(event.target.value)}
+                                />
+                                <p className="text-xs text-slate-500">Opcional. Deixe em branco para ocultar o subtítulo.</p>
+                            </label>
+
+                            <div>
+                                <p className="mb-2 text-sm font-bold text-slate-800">Conteúdo do modal</p>
                             {renderBlockEditor ? (
                                 renderBlockEditor({
                                     blocks: modalBlocks,
@@ -773,15 +764,16 @@ export function LessonButtonBlockModal({
                                     />
                                 </div>
                             )}
+                            </div>
                         </div>
 
                         <div className="flex items-center justify-end border-t border-slate-100 bg-slate-50/60 p-4">
                             <Button
                                 type="button"
                                 className="rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold px-6"
-                                onClick={() => setIsEditingModalBlocks(false)}
+                                onClick={() => setIsModalConfigOpen(false)}
                             >
-                                Concluir Edição do Modal
+                                Concluir configuração
                             </Button>
                         </div>
                     </DialogContent>
