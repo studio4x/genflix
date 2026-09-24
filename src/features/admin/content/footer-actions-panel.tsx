@@ -361,7 +361,9 @@ export function FooterActionsPanel({
                 storage_path: globalBtn.storage_path,
                 file_name: globalBtn.file_name,
                 file_size_bytes: globalBtn.file_size_bytes,
-                modal_title: globalBtn.modal_title,
+                // Botões globais de URL/arquivo não possuem título de modal no banco.
+                // O formulário local trabalha com string vazia quando o campo não se aplica.
+                modal_title: globalBtn.modal_title || '',
                 modal_subtitle: globalBtn.modal_subtitle,
                 // O conteúdo do modal continua vindo da definição global relacionada.
                 // Não revalidar/copiar esses blocos evita rejeitar formatos legados válidos
