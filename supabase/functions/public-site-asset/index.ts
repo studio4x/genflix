@@ -13,6 +13,7 @@ type SiteAssetRow = {
     id: string;
     storage_path: string;
     public_url: string | null;
+    mime_type: string | null;
 };
 
 Deno.serve(async (request) => {
@@ -35,6 +36,7 @@ Deno.serve(async (request) => {
         const url = new URL(request.url);
         const storagePath = url.searchParams.get('storage_path')?.trim() ?? '';
         const assetId = url.searchParams.get('asset_id')?.trim() ?? '';
+        const iconColor = normalizeHexColor(url.searchParams.get('color'));
 
         if (!storagePath && !assetId) {
             return jsonResponse({ error: 'storage_path ou asset_id obrigatorio.' }, 400);
@@ -59,6 +61,13 @@ Deno.serve(async (request) => {
             supabaseAdmin,
         });
 
+        if (iconColor && isSvgAsset(asset, resolvedStoragePath)) {
+            const coloredSvgResponse = await createColoredSvgResponse(signedUrl, iconColor);
+            if (coloredSvgResponse) {
+                return coloredSvgResponse;
+            }
+        }
+
         return new Response(null, {
             status: 302,
             headers: {
@@ -81,7 +90,7 @@ async function findSiteAsset(supabaseAdmin: ReturnType<typeof createClient>, inp
     if (input.assetId) {
         const result = await supabaseAdmin
             .from('site_assets')
-            .select('id, storage_path, public_url')
+            .select('id, storage_path, public_url, mime_type')
             .eq('id', input.assetId)
             .limit(1)
             .maybeSingle();
@@ -98,7 +107,7 @@ async function findSiteAsset(supabaseAdmin: ReturnType<typeof createClient>, inp
 
     const result = await supabaseAdmin
         .from('site_assets')
-        .select('id, storage_path, public_url')
+        .select('id, storage_path, public_url, mime_type')
         .in('storage_path', candidates)
         .limit(candidates.length);
 
@@ -119,6 +128,47 @@ async function findSiteAsset(supabaseAdmin: ReturnType<typeof createClient>, inp
     }
 
     return rows[0] ?? null;
+}
+
+function normalizeHexColor(value: string | null) {
+    const normalized = value?.trim() ?? '';
+    return /^#[0-9a-f]{6}$/i.test(normalized) ? normalized.toUpperCase() : null;
+}
+
+function isSvgAsset(asset: SiteAssetRow | null, storagePath: string) {
+    return asset?.mime_type?.toLowerCase() === 'image/svg+xml' || /\.svg$/i.test(storagePath);
+}
+
+async function createColoredSvgResponse(signedUrl: string, color: string) {
+    try {
+        const response = await fetch(signedUrl);
+        if (!response.ok) {
+            return null;
+        }
+
+        const svg = await response.text();
+        if (!/^\s*<svg(?:\s|>)/i.test(svg)) {
+            return null;
+        }
+
+        const coloredSvg = svg.replace(/\b(fill|stroke)=(['"])([^'"]*)\2/gi, (match, attribute: string, quote: string, value: string) => {
+            return value.trim().toLowerCase() === 'none'
+                ? match
+                : `${attribute}=${quote}${color}${quote}`;
+        });
+
+        return new Response(coloredSvg, {
+            status: 200,
+            headers: {
+                ...corsHeaders,
+                'Cache-Control': 'public, max-age=300, s-maxage=300',
+                'Content-Type': 'image/svg+xml; charset=utf-8',
+            },
+        });
+    }
+    catch {
+        return null;
+    }
 }
 
 function buildStoragePathCandidates(storagePath: string) {

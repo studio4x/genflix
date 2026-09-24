@@ -91,6 +91,26 @@ function resolveTemplateThemeClasses(theme: ButtonTemplate['theme'] | undefined)
             };
     }
 }
+
+function resolveColoredSiteAssetUrl(iconUrl: string, color: string | null | undefined) {
+    if (!color) {
+        return null;
+    }
+
+    try {
+        const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://genflix-omega.vercel.app';
+        const parsedUrl = new URL(iconUrl, baseUrl);
+        if (!/(?:\/api\/public\/site-asset|\/functions\/v1\/public-site-asset)$/i.test(parsedUrl.pathname)) {
+            return null;
+        }
+        parsedUrl.searchParams.set('color', color);
+        return parsedUrl.toString();
+    }
+    catch {
+        return null;
+    }
+}
+
 export function getLessonFooterButtonClassName(template?: Pick<ButtonTemplate, 'variant' | 'theme' | 'custom_background_color' | 'custom_text_color' | 'custom_icon_color'> | null) {
     const themeClasses = resolveTemplateThemeClasses(template?.theme);
     switch (template?.variant) {
@@ -121,6 +141,10 @@ export function getLessonFooterButtonStyle(template?: Pick<ButtonTemplate, 'vari
 export function renderButtonTemplateIcon(iconName: string | null | undefined, className?: string, color?: string | null) {
     const normalizedIconName = iconName?.trim() ?? '';
     if (/^(https?:)?\/\//i.test(normalizedIconName) || normalizedIconName.startsWith('/')) {
+        const coloredSiteAssetUrl = resolveColoredSiteAssetUrl(normalizedIconName, color);
+        if (coloredSiteAssetUrl) {
+            return <img src={coloredSiteAssetUrl} alt="" aria-hidden="true" className={cn('h-4 w-4 object-contain', className)}/>;
+        }
         if (color) {
             const maskStyle: CSSProperties = {
                 backgroundColor: color,
