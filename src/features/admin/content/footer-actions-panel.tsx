@@ -363,7 +363,10 @@ export function FooterActionsPanel({
                 file_size_bytes: globalBtn.file_size_bytes,
                 modal_title: globalBtn.modal_title,
                 modal_subtitle: globalBtn.modal_subtitle,
-                modal_blocks: globalBtn.modal_blocks,
+                // O conteúdo do modal continua vindo da definição global relacionada.
+                // Não revalidar/copiar esses blocos evita rejeitar formatos legados válidos
+                // na biblioteca global ao criar apenas o vínculo do rodapé.
+                modal_blocks: [],
                 position: nextPosition,
                 open_target: globalBtn.open_target || 'new-tab',
                 is_active: true,
