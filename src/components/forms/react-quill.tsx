@@ -14,8 +14,9 @@ import TableCell from '@tiptap/extension-table-cell';
 import Gapcursor from '@tiptap/extension-gapcursor';
 import { NodeSelection } from '@tiptap/pm/state';
 import { TextStyle } from '@tiptap/extension-text-style';
-import { AlignCenterHorizontal, Bold, Code2, Eraser, Film, Image as ImageIcon, Italic, Link2, List, ListOrdered, Minus, MoveDiagonal2, Redo2, Quote, Replace, Strikethrough, Table2, Undo2, Underline as UnderlineIcon, X } from 'lucide-react';
+import { AlignCenterHorizontal, Bold, Code2, Eraser, Film, Image as ImageIcon, Italic, Link2, List, ListOrdered, Minus, MoveDiagonal2, MousePointerClick, Redo2, Quote, Replace, Strikethrough, Table2, Undo2, Underline as UnderlineIcon, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import type { LessonButtonBlockContent } from '@/types/content';
 
 type ToolbarItem = string | Record<string, unknown> | Array<string | Record<string, unknown>>;
 
@@ -29,6 +30,7 @@ type ReactQuillProps = {
     src: string;
     alt?: string;
   } | null;
+  onRequestButton?: () => Promise<LessonButtonBlockContent | null> | LessonButtonBlockContent | null;
   placeholder?: string;
   className?: string;
   minHeightClassName?: string;
@@ -72,6 +74,7 @@ type SupportedToolbarFlags = {
   video: boolean;
   table: boolean;
   columns: boolean;
+  button: boolean;
   blockquote: boolean;
   codeBlock: boolean;
   clean: boolean;
@@ -714,6 +717,45 @@ const EmbeddedVideoNode = Node.create({
   },
 });
 
+const InlineButtonNode = Node.create({
+  name: 'inlineButton',
+  group: 'inline',
+  inline: true,
+  atom: true,
+  selectable: true,
+  draggable: true,
+
+  addAttributes() {
+    return {
+      payload: {
+        default: '',
+        parseHTML: (element) => element.getAttribute('data-hcm-button-payload') ?? '',
+      },
+      label: {
+        default: 'Botão',
+        parseHTML: (element) => element.textContent?.trim() || 'Botão',
+      },
+    };
+  },
+
+  parseHTML() {
+    return [{ tag: 'span[data-hcm-inline-button="true"]' }];
+  },
+
+  renderHTML({ node, HTMLAttributes }) {
+    return [
+      'span',
+      mergeAttributes(HTMLAttributes, {
+        class: 'genflix-inline-button',
+        'data-hcm-inline-button': 'true',
+        'data-hcm-button-payload': node.attrs.payload,
+        contenteditable: 'false',
+      }),
+      node.attrs.label || 'Botão',
+    ];
+  },
+});
+
 function createEditorExtensions(placeholder: string | undefined, onRequestImage?: ReactQuillProps['onRequestImage']) {
   return [
     StarterKit.configure({
@@ -793,6 +835,7 @@ function createEditorExtensions(placeholder: string | undefined, onRequestImage?
     ColumnNode,
     ColumnsNode,
     EmbeddedVideoNode,
+    InlineButtonNode,
   ];
 }
 
@@ -800,6 +843,7 @@ export default function ReactQuill({
   value,
   onChange,
   onRequestImage,
+  onRequestButton,
   placeholder,
   className = '',
   minHeightClassName = 'min-h-[180px]',
@@ -865,6 +909,7 @@ export default function ReactQuill({
     video: toolbarHasString(toolbarItems, 'video'),
     table: toolbarHasString(toolbarItems, 'table'),
     columns: toolbarHasObjectKey(toolbarItems, 'columns'),
+    button: toolbarHasString(toolbarItems, 'button'),
     blockquote: toolbarHasString(toolbarItems, 'blockquote'),
     codeBlock: toolbarHasString(toolbarItems, 'code-block'),
     clean: toolbarHasString(toolbarItems, 'clean'),
@@ -901,6 +946,7 @@ export default function ReactQuill({
           '[&_.embedded-video_iframe]:aspect-video [&_.embedded-video_iframe]:w-full [&_.embedded-video_iframe]:min-h-[320px]',
           '[&_.genflix-columns]:my-6 [&_.genflix-columns]:grid [&_.genflix-columns]:gap-4',
           '[&_.genflix-column]:min-h-[110px] [&_.genflix-column]:rounded-[16px] [&_.genflix-column]:border [&_.genflix-column]:border-dashed [&_.genflix-column]:border-slate-300 [&_.genflix-column]:bg-slate-50 [&_.genflix-column]:p-4',
+           '[&_.genflix-inline-button]:inline-flex [&_.genflix-inline-button]:items-center [&_.genflix-inline-button]:rounded-lg [&_.genflix-inline-button]:border [&_.genflix-inline-button]:border-sky-200 [&_.genflix-inline-button]:bg-sky-50 [&_.genflix-inline-button]:px-2.5 [&_.genflix-inline-button]:py-1 [&_.genflix-inline-button]:text-xs [&_.genflix-inline-button]:font-bold [&_.genflix-inline-button]:text-sky-700 [&_.genflix-inline-button]:shadow-sm',
           '[&_.genflix-editor-table]:overflow-hidden',
           '[&_.genflix-editor-image]:h-auto [&_.genflix-editor-image]:max-w-full',
         ),
@@ -1034,6 +1080,27 @@ export default function ReactQuill({
     editor.chain().focus().insertContent({
       type: 'embeddedVideo',
       attrs: normalized,
+    }).run();
+  }
+
+  async function handleInsertButton() {
+    if (!editor || !onRequestButton) {
+      return;
+    }
+    const selection = editor.state.selection;
+    const content = await onRequestButton();
+    if (!content) {
+      return;
+    }
+    const label = content.source_type === 'global'
+      ? content.cached_action?.label || 'Botão'
+      : content.local_config?.label || 'Botão';
+    editor.chain().focus().insertContentAt(selection, {
+      type: 'inlineButton',
+      attrs: {
+        payload: encodeURIComponent(JSON.stringify(content)),
+        label,
+      },
     }).run();
   }
 
@@ -1220,6 +1287,11 @@ export default function ReactQuill({
         {toolbarButtons.video ? (
           <ToolbarButton title="Inserir vídeo" onClick={handleInsertVideo} className={cn('px-0 shrink-0', compact ? 'h-8 w-8' : 'w-9')}>
             <Film className={compact ? 'h-3.5 w-3.5' : 'h-4 w-4'} />
+          </ToolbarButton>
+        ) : null}
+        {toolbarButtons.button && onRequestButton ? (
+          <ToolbarButton title="Inserir botão" onClick={() => void handleInsertButton()} className={cn('px-0 shrink-0', compact ? 'h-8 w-8' : 'w-9')}>
+            <MousePointerClick className={compact ? 'h-3.5 w-3.5' : 'h-4 w-4'} />
           </ToolbarButton>
         ) : null}
         {toolbarButtons.table ? (

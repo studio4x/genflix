@@ -210,7 +210,7 @@ const ALLOWED_RICH_TEXT_TAGS = new Set([
     'u',
     'ul',
 ]);
-const ALLOWED_RICH_TEXT_ATTRS = new Set(['href', 'target', 'rel']);
+const ALLOWED_RICH_TEXT_ATTRS = new Set(['href', 'target', 'rel', 'data-hcm-inline-button', 'data-hcm-button-payload']);
 const ALLOWED_RICH_TEXT_IMG_ATTRS = new Set(['src', 'alt', 'title', 'width', 'height', 'data-align']);
 function isBrowser(): boolean {
     return typeof window !== 'undefined' && typeof DOMParser !== 'undefined';
@@ -362,6 +362,14 @@ function sanitizeRichTextNode(element: Element): void {
             }
         }
     });
+    if (tag === 'span' && element.getAttribute('data-hcm-inline-button') === 'true') {
+        const payload = element.getAttribute('data-hcm-button-payload');
+        if (!payload || !decodeLessonButtonPayload(payload)) {
+            element.remove();
+            return;
+        }
+        element.setAttribute('class', 'genflix-inline-button');
+    }
     if (tag === 'img' && !(element.getAttribute('src')?.trim())) {
         element.remove();
         return;
@@ -1374,10 +1382,10 @@ export function createEmptyLessonButtonBlockContent(): LessonButtonBlockContent 
         cached_action: null,
     };
 }
-function encodeButtonPayload(content: LessonButtonBlockContent): string {
+export function encodeLessonButtonPayload(content: LessonButtonBlockContent): string {
     return encodeURIComponent(JSON.stringify(content));
 }
-function decodeButtonPayload(payload: string): LessonButtonBlockContent | null {
+export function decodeLessonButtonPayload(payload: string): LessonButtonBlockContent | null {
     try {
         const parsed = JSON.parse(decodeURIComponent(payload)) as LessonButtonBlockContent;
         if (!parsed || (parsed.source_type !== 'local' && parsed.source_type !== 'global')) {
@@ -1399,7 +1407,7 @@ function buildButtonFallbackHtml(content: LessonButtonBlockContent): string {
     return `<div class="genflix-button-block-fallback" style="margin: 1rem 0; text-align: ${content.alignment || 'left'};"><span style="display: inline-block; padding: 0.6rem 1.25rem; border-radius: 0.75rem; border: 1px solid #cbd5e1; background: #f8fafc; color: #64748b; font-weight: bold;">${escapeHtml(label)}</span></div>`;
 }
 export function serializeLessonButtonBlock(content: LessonButtonBlockContent): string {
-    const payload = encodeButtonPayload(content);
+    const payload = encodeLessonButtonPayload(content);
     return `
     <div
       ${LESSON_IMAGE_HOTSPOTS_BLOCK_ATTR}="${LESSON_BUTTON_BLOCK_TYPE}"
@@ -1414,7 +1422,7 @@ function extractLessonButtonBlock(element: Element): LessonContentBlock | null {
     if (!payload) {
         return null;
     }
-    const content = decodeButtonPayload(payload);
+    const content = decodeLessonButtonPayload(payload);
     if (!content) {
         return null;
     }
@@ -1431,7 +1439,15 @@ export function parseLessonButtonBlockElement(element: Element): LessonButtonBlo
     if (!payload) {
         return null;
     }
-    return decodeButtonPayload(payload);
+    return decodeLessonButtonPayload(payload);
+}
+
+export function parseInlineLessonButtonElement(element: Element): LessonButtonBlockContent | null {
+    if (element.getAttribute('data-hcm-inline-button') !== 'true') {
+        return null;
+    }
+    const payload = element.getAttribute('data-hcm-button-payload');
+    return payload ? decodeLessonButtonPayload(payload) : null;
 }
 /**
  * Sanitiza uma tabela preservando apenas estrutura segura e atributos mínimos.
@@ -1717,6 +1733,16 @@ export function collectGlobalButtonIds(blocks: LessonContentBlock[]): string[] {
     for (const block of blocks) {
         if (block.type === 'button' && block.content.source_type === 'global' && block.content.global_button_id) {
             ids.push(block.content.global_button_id);
+        }
+        else if (block.type === 'rich-text' && isBrowser()) {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(block.content, 'text/html');
+            doc.querySelectorAll('[data-hcm-inline-button="true"]').forEach((element) => {
+                const inlineButton = parseInlineLessonButtonElement(element);
+                if (inlineButton?.source_type === 'global' && inlineButton.global_button_id) {
+                    ids.push(inlineButton.global_button_id);
+                }
+            });
         }
         else if (block.type === 'columns') {
             for (const col of block.content) {

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties, type ChangeEvent, type DragEvent, type IframeHTMLAttributes } from 'react';
+import { createElement, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ChangeEvent, type DragEvent, type IframeHTMLAttributes, type ReactNode } from 'react';
 import { ChevronDown, ChevronUp, Library, Upload } from 'lucide-react';
 import ReactQuill from '@/components/forms/react-quill';
 import { Button } from '@/components/ui/button';
@@ -23,6 +23,7 @@ import {
     getColumnsWidthsAttributeValue,
     sanitizeRichTextHtml,
     sanitizeTableHtml,
+    parseInlineLessonButtonElement,
     type LessonImageBlockCaptionAlignment,
     type LessonHtmlBlockContent,
     type LessonContentBlock,
@@ -35,7 +36,7 @@ import {
 } from '@/features/admin/content/content-blocks';
 import { LessonActionButton } from '@/features/admin/content/lesson-action-button';
 import { LessonButtonBlockModal } from '@/features/admin/content/lesson-button-block-modal';
-import type { GlobalButtonDefinition, LessonButtonBlockLocalConfig } from '@/types/content';
+import type { GlobalButtonDefinition, LessonButtonBlockContent, LessonButtonBlockLocalConfig } from '@/types/content';
 
 const FULL_QUILL_MODULES = {
     toolbar: [
@@ -46,6 +47,7 @@ const FULL_QUILL_MODULES = {
         [{ color: [] }, { background: [] }],
         ['blockquote', 'code-block'],
         ['link', 'image', 'video', 'table', 'hr'],
+        ['button'],
         ['undo', 'redo', 'clean'],
     ],
 };
@@ -1418,6 +1420,7 @@ export interface LessonContentBlocksEditorProps {
     excludedBlockTypes?: Array<LessonContentBlock['type']>;
     assetContext?: 'lesson' | 'global';
     columnCount?: number;
+    enableInlineButtons?: boolean;
 }
 
 export function LessonContentBlocksEditor({
@@ -1429,9 +1432,11 @@ export function LessonContentBlocksEditor({
     excludedBlockTypes,
     assetContext = 'lesson',
     columnCount,
+    enableInlineButtons = true,
 }: LessonContentBlocksEditorProps) {
     const isCompactMode = (columnCount ?? 0) >= 3;
     const [editingButtonBlockIndex, setEditingButtonBlockIndex] = useState<number | null>(null);
+    const [inlineButtonResolver, setInlineButtonResolver] = useState<((content: LessonButtonBlockContent | null) => void) | null>(null);
     const [globalButtonsMap, setGlobalButtonsMap] = useState<Record<string, GlobalButtonDefinition | null>>({});
 
     const referencedGlobalIds = useMemo(() => {
@@ -1516,6 +1521,24 @@ export function LessonContentBlocksEditor({
             setEditingButtonBlockIndex(nextBlocks.length - 1);
         }
     };
+
+    const requestInlineButton = useCallback(() => new Promise<LessonButtonBlockContent | null>((resolve) => {
+        setInlineButtonResolver(() => resolve);
+    }), []);
+
+    const closeInlineButtonModal = useCallback(() => {
+        setInlineButtonResolver((resolver: ((content: LessonButtonBlockContent | null) => void) | null) => {
+            resolver?.(null);
+            return null;
+        });
+    }, []);
+
+    const saveInlineButton = useCallback((content: LessonButtonBlockContent) => {
+        setInlineButtonResolver((resolver: ((content: LessonButtonBlockContent | null) => void) | null) => {
+            resolver?.(content);
+            return null;
+        });
+    }, []);
 
     const addBarClassName = level === 0
         ? 'border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50/50'
@@ -1804,7 +1827,7 @@ export function LessonContentBlocksEditor({
                             </div>
                         </div>
                     ) : (
-                        <ReactQuill theme="snow" value={block.content} onChange={(value: string) => updateBlock(index, { ...block, content: value })} modules={FULL_QUILL_MODULES} formats={FULL_QUILL_FORMATS} enableHtmlMode compact={isCompactMode} placeholder="Escreva aqui o texto da aula..." />
+                        <ReactQuill theme="snow" value={block.content} onChange={(value: string) => updateBlock(index, { ...block, content: value })} onRequestButton={enableInlineButtons ? requestInlineButton : undefined} modules={FULL_QUILL_MODULES} formats={FULL_QUILL_FORMATS} enableHtmlMode compact={isCompactMode} placeholder="Escreva aqui o texto da aula..." />
                     )}
                 </div>
             ))}
@@ -1895,6 +1918,24 @@ export function LessonContentBlocksEditor({
                             level={1}
                             allowEmptyState={false}
                             excludedBlockTypes={['button', 'image-hotspots', 'flashcards', 'svg']}
+                            enableInlineButtons={false}
+                            assetContext={assetContext}
+                        />
+                    )}
+                />
+            ) : inlineButtonResolver ? (
+                <LessonButtonBlockModal
+                    isOpen={true}
+                    onClose={closeInlineButtonModal}
+                    onSave={saveInlineButton}
+                    renderBlockEditor={({ blocks: modalBlocks, onChange }) => (
+                        <LessonContentBlocksEditor
+                            blocks={modalBlocks}
+                            onChange={onChange}
+                            level={1}
+                            allowEmptyState={false}
+                            excludedBlockTypes={['button', 'image-hotspots', 'flashcards', 'svg']}
+                            enableInlineButtons={false}
                             assetContext={assetContext}
                         />
                     )}
@@ -1902,6 +1943,69 @@ export function LessonContentBlocksEditor({
             ) : null}
         </div>
     );
+}
+
+function renderRichTextNode(
+    node: globalThis.Node,
+    key: string,
+    resolvedGlobalButtons?: Record<string, GlobalButtonDefinition>,
+): ReactNode {
+    if (node.nodeType === globalThis.Node.TEXT_NODE) {
+        return node.textContent;
+    }
+    if (!(node instanceof Element)) {
+        return null;
+    }
+    const inlineButton = parseInlineLessonButtonElement(node);
+    if (inlineButton) {
+        const resolvedGlobal = inlineButton.source_type === 'global' && inlineButton.global_button_id
+            ? resolvedGlobalButtons?.[inlineButton.global_button_id]
+            : undefined;
+        return (
+            <LessonActionButton
+                key={key}
+                inline
+                blockContent={inlineButton}
+                resolvedGlobalButton={resolvedGlobal}
+                className="genflix-inline-button-rendered"
+                renderModalBlocks={(modalBlocks) => (
+                    <LessonContentBlocksRenderer
+                        blocks={modalBlocks as LessonContentBlock[]}
+                        resolvedGlobalButtons={resolvedGlobalButtons}
+                    />
+                )}
+            />
+        );
+    }
+    const tagName = node.tagName.toLowerCase();
+    const props: Record<string, string> = {};
+    for (const attribute of Array.from(node.attributes)) {
+        if (attribute.name === 'class') {
+            props.className = attribute.value;
+        }
+        else if (attribute.name === 'for') {
+            props.htmlFor = attribute.value;
+        }
+        else {
+            props[attribute.name] = attribute.value;
+        }
+    }
+    const children = Array.from(node.childNodes).map((child, index) => renderRichTextNode(child, `${key}-${index}`, resolvedGlobalButtons));
+    return createElement(tagName, { ...props, key }, children);
+}
+
+function RichTextBlockRenderer({
+    html,
+    resolvedGlobalButtons,
+}: {
+    html: string;
+    resolvedGlobalButtons?: Record<string, GlobalButtonDefinition>;
+}) {
+    if (typeof DOMParser === 'undefined') {
+        return <div className="lesson-rich-text" dangerouslySetInnerHTML={{ __html: sanitizeRichTextHtml(html) }} />;
+    }
+    const doc = new DOMParser().parseFromString(sanitizeRichTextHtml(html), 'text/html');
+    return <div className="lesson-rich-text">{Array.from(doc.body.childNodes).map((node, index) => renderRichTextNode(node, `rich-${index}`, resolvedGlobalButtons))}</div>;
 }
 
 interface LessonContentBlockRendererProps {
@@ -1979,7 +2083,7 @@ export function LessonContentBlocksRenderer({ blocks, className, resolvedGlobalB
                         </div>
                     );
                 }
-                return <div key={`rich-${index}`} className="lesson-rich-text" dangerouslySetInnerHTML={{ __html: sanitizeRichTextHtml(block.content) }} />;
+                return <RichTextBlockRenderer key={`rich-${index}`} html={block.content} resolvedGlobalButtons={resolvedGlobalButtons} />;
             })}
         </div>
     );

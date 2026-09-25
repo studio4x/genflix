@@ -54,6 +54,7 @@ export interface LessonActionButtonProps {
     // Estados e Modos
     disabled?: boolean;
     previewMode?: boolean;
+    inline?: boolean;
     className?: string;
 
     // Callback para renderizar blocos internos do modal
@@ -90,6 +91,7 @@ export function LessonActionButton({
     width: propWidth,
     disabled = false,
     previewMode = false,
+    inline = false,
     className,
     renderModalBlocks,
 }: LessonActionButtonProps) {
@@ -269,8 +271,10 @@ export function LessonActionButton({
             ? 'ml-auto'
             : '';
 
+    const Wrapper = inline ? 'span' : 'div';
+
     return (
-        <div className={cn('inline-block max-w-full', widthClass, alignmentClass)}>
+        <Wrapper className={cn('inline-block max-w-full align-middle', widthClass, alignmentClass)}>
             <Button
                 type="button"
                 disabled={disabled || isLoadingFile || isGlobalUnavailable || isGlobalInactive}
@@ -358,6 +362,6 @@ export function LessonActionButton({
                     </DialogContent>
                 </Dialog>
             )}
-        </div>
+        </Wrapper>
     );
 }
