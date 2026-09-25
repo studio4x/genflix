@@ -1991,6 +1991,10 @@ function renderRichTextNode(
         }
     }
     const children = Array.from(node.childNodes).map((child, index) => renderRichTextNode(child, `${key}-${index}`, resolvedGlobalButtons));
+    const voidTags = new Set(['area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'param', 'source', 'track', 'wbr']);
+    if (voidTags.has(tagName)) {
+        return createElement(tagName, { ...props, key });
+    }
     return createElement(tagName, { ...props, key }, children);
 }
 
