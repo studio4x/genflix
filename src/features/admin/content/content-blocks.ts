@@ -364,10 +364,12 @@ function sanitizeRichTextNode(element: Element): void {
     });
     if (tag === 'span' && element.getAttribute('data-hcm-inline-button') === 'true') {
         const payload = element.getAttribute('data-hcm-button-payload');
-        if (!payload || !decodeLessonButtonPayload(payload)) {
+        if (!payload) {
             element.remove();
             return;
         }
+        // Mantém payloads legados mesmo quando algum campo novo não puder ser
+        // decodificado. Assim o texto não desaparece durante um novo salvamento.
         element.setAttribute('class', 'genflix-inline-button');
     }
     if (tag === 'img' && !(element.getAttribute('src')?.trim())) {
@@ -1386,16 +1388,33 @@ export function encodeLessonButtonPayload(content: LessonButtonBlockContent): st
     return encodeURIComponent(JSON.stringify(content));
 }
 export function decodeLessonButtonPayload(payload: string): LessonButtonBlockContent | null {
-    try {
-        const parsed = JSON.parse(decodeURIComponent(payload)) as LessonButtonBlockContent;
-        if (!parsed || (parsed.source_type !== 'local' && parsed.source_type !== 'global')) {
-            return null;
+    const candidates = [payload];
+    let current = payload;
+    for (let index = 0; index < 2; index += 1) {
+        try {
+            const decoded = decodeURIComponent(current);
+            if (decoded === current) {
+                break;
+            }
+            candidates.push(decoded);
+            current = decoded;
         }
-        return parsed;
+        catch {
+            break;
+        }
     }
-    catch {
-        return null;
+    for (const candidate of candidates) {
+        try {
+            const parsed = JSON.parse(candidate) as LessonButtonBlockContent;
+            if (parsed && (parsed.source_type === 'local' || parsed.source_type === 'global')) {
+                return parsed;
+            }
+        }
+        catch {
+            // Tenta a próxima camada de codificação antes de desistir.
+        }
     }
+    return null;
 }
 function buildButtonFallbackHtml(content: LessonButtonBlockContent): string {
     const label = content.local_config?.label || content.cached_action?.label || 'Botão';

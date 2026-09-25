@@ -1436,7 +1436,8 @@ export function LessonContentBlocksEditor({
 }: LessonContentBlocksEditorProps) {
     const isCompactMode = (columnCount ?? 0) >= 3;
     const [editingButtonBlockIndex, setEditingButtonBlockIndex] = useState<number | null>(null);
-    const [inlineButtonResolver, setInlineButtonResolver] = useState<((content: LessonButtonBlockContent | null) => void) | null>(null);
+    const [isInlineButtonModalOpen, setIsInlineButtonModalOpen] = useState(false);
+    const inlineButtonResolverRef = useRef<((content: LessonButtonBlockContent | null) => void) | null>(null);
     const [globalButtonsMap, setGlobalButtonsMap] = useState<Record<string, GlobalButtonDefinition | null>>({});
 
     const referencedGlobalIds = useMemo(() => {
@@ -1523,21 +1524,20 @@ export function LessonContentBlocksEditor({
     };
 
     const requestInlineButton = useCallback(() => new Promise<LessonButtonBlockContent | null>((resolve) => {
-        setInlineButtonResolver(() => resolve);
+        inlineButtonResolverRef.current = resolve;
+        setIsInlineButtonModalOpen(true);
     }), []);
 
     const closeInlineButtonModal = useCallback(() => {
-        setInlineButtonResolver((resolver: ((content: LessonButtonBlockContent | null) => void) | null) => {
-            resolver?.(null);
-            return null;
-        });
+        inlineButtonResolverRef.current?.(null);
+        inlineButtonResolverRef.current = null;
+        setIsInlineButtonModalOpen(false);
     }, []);
 
     const saveInlineButton = useCallback((content: LessonButtonBlockContent) => {
-        setInlineButtonResolver((resolver: ((content: LessonButtonBlockContent | null) => void) | null) => {
-            resolver?.(content);
-            return null;
-        });
+        inlineButtonResolverRef.current?.(content);
+        inlineButtonResolverRef.current = null;
+        setIsInlineButtonModalOpen(false);
     }, []);
 
     const addBarClassName = level === 0
@@ -1923,7 +1923,7 @@ export function LessonContentBlocksEditor({
                         />
                     )}
                 />
-            ) : inlineButtonResolver ? (
+            ) : isInlineButtonModalOpen ? (
                 <LessonButtonBlockModal
                     isOpen={true}
                     onClose={closeInlineButtonModal}
